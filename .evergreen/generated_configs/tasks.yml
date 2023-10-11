@@ -12,7 +12,7 @@ tasks:
       - func: upload-build
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.2"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.2", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -34,7 +34,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth-with-mongocrypt
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.2", with-mongocrypt]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.2", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -57,7 +57,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.4"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.4", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -79,7 +79,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth-with-mongocrypt
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.4", with-mongocrypt]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.4", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -102,7 +102,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "5.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "5.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -124,7 +124,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth-with-mongocrypt
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "5.0", with-mongocrypt]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "5.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -147,7 +147,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "6.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "6.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -169,7 +169,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth-with-mongocrypt
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "6.0", with-mongocrypt]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "6.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -200,7 +200,7 @@ tasks:
       - func: upload-build
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-replica-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "7.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "7.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -222,7 +222,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-replica-auth-with-mongocrypt
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "7.0", with-mongocrypt]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "7.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -245,7 +245,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-server-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "7.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "7.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -267,7 +267,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-server-auth-with-mongocrypt
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "7.0", with-mongocrypt]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "7.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -290,7 +290,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-replica-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, latest]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, latest, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -312,7 +312,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-replica-auth-with-mongocrypt
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, latest, with-mongocrypt]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, latest, with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -335,7 +335,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-server-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, latest]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, latest, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -357,7 +357,7 @@ tasks:
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-server-auth-with-mongocrypt
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, latest, with-mongocrypt]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, latest, with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -388,7 +388,7 @@ tasks:
       - func: upload-build
   - name: asan-sasl-cyrus-openssl-ubuntu1604-clang-test-3.6-replica-auth
     run_on: ubuntu1604-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1604, clang, sasl-cyrus, asan, auth, replica, "3.6"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1604, clang, sasl-cyrus, asan, auth, replica, "3.6", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1604-clang-compile }]
     commands:
       - func: fetch-build
@@ -408,7 +408,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1604-clang-test-3.6-server-auth
     run_on: ubuntu1604-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1604, clang, sasl-cyrus, asan, auth, server, "3.6"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1604, clang, sasl-cyrus, asan, auth, server, "3.6", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1604-clang-compile }]
     commands:
       - func: fetch-build
@@ -428,7 +428,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1604-clang-test-3.6-sharded-auth
     run_on: ubuntu1604-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1604, clang, sasl-cyrus, asan, auth, sharded, "3.6"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1604, clang, sasl-cyrus, asan, auth, sharded, "3.6", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1604-clang-compile }]
     commands:
       - func: fetch-build
@@ -456,7 +456,7 @@ tasks:
       - func: upload-build
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "4.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "4.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -476,7 +476,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "4.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "4.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -496,7 +496,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "4.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "4.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -516,7 +516,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "4.2"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "4.2", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -536,7 +536,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "4.2"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "4.2", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -556,7 +556,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "4.2"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "4.2", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -576,7 +576,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "4.4"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "4.4", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -596,7 +596,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "4.4"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "4.4", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -616,7 +616,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "4.4"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "4.4", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -636,7 +636,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "5.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "5.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -656,7 +656,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "5.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "5.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -676,7 +676,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "5.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "5.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -696,7 +696,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "6.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "6.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -716,7 +716,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "6.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "6.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -736,7 +736,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "6.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "6.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -764,7 +764,7 @@ tasks:
       - func: upload-build
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-replica-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, replica, "7.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, replica, "7.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -784,7 +784,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-server-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, server, "7.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, server, "7.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -804,7 +804,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-sharded-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, sharded, "7.0"]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, sharded, "7.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -824,7 +824,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-replica-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, replica, latest]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, replica, latest, openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -844,7 +844,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-server-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, server, latest]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, server, latest, openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -864,7 +864,7 @@ tasks:
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-sharded-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, sharded, latest]
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, sharded, latest, openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -1161,7 +1161,7 @@ tasks:
       - func: upload-build
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-4.2-replica-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "4.2"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "4.2", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1181,7 +1181,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-4.2-server-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "4.2"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "4.2", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1201,7 +1201,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-4.4-replica-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "4.4"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "4.4", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1221,7 +1221,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-4.4-server-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "4.4"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "4.4", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1241,7 +1241,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-5.0-replica-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "5.0"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "5.0", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1261,7 +1261,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-5.0-server-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "5.0"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "5.0", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1281,7 +1281,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-6.0-replica-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "6.0"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "6.0", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1301,7 +1301,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-6.0-server-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "6.0"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "6.0", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1321,7 +1321,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-7.0-replica-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "7.0"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "7.0", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1341,7 +1341,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-7.0-server-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "7.0"]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "7.0", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1361,7 +1361,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-latest-replica-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, latest]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, latest, darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1381,7 +1381,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-latest-server-auth
     run_on: macos-1100
-    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, latest]
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, latest, darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -1449,7 +1449,7 @@ tasks:
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-5.0-server-auth
     run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "5.0"]
+    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1469,7 +1469,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-7.0-replica-auth
     run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, "7.0"]
+    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1489,7 +1489,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-7.0-server-auth
     run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "7.0"]
+    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1509,7 +1509,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-replica-auth
     run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, latest]
+    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1529,7 +1529,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-server-auth
     run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, latest]
+    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1565,7 +1565,7 @@ tasks:
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-4.2-server-auth
     run_on: ubuntu1804-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "4.2"]
+    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "4.2", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1585,7 +1585,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-4.4-server-auth
     run_on: ubuntu1804-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "4.4"]
+    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "4.4", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1605,7 +1605,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-5.0-server-auth
     run_on: ubuntu1804-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "5.0"]
+    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1625,7 +1625,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-6.0-server-auth
     run_on: ubuntu1804-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "6.0"]
+    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1653,7 +1653,7 @@ tasks:
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-test-4.2-server-auth
     run_on: ubuntu1804-small
-    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "4.2"]
+    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "4.2", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1673,7 +1673,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-test-4.4-server-auth
     run_on: ubuntu1804-small
-    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "4.4"]
+    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "4.4", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1693,7 +1693,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-test-5.0-server-auth
     run_on: ubuntu1804-small
-    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "5.0"]
+    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1713,7 +1713,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-test-6.0-server-auth
     run_on: ubuntu1804-small
-    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "6.0"]
+    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1741,7 +1741,7 @@ tasks:
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-replica-auth
     run_on: ubuntu2004-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, "7.0"]
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1761,7 +1761,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
     run_on: ubuntu2004-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, server, "7.0"]
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1781,7 +1781,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-replica-auth
     run_on: ubuntu2004-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, latest]
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1801,7 +1801,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
     run_on: ubuntu2004-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, server, latest]
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1829,7 +1829,7 @@ tasks:
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-7.0-replica-auth
     run_on: ubuntu2004-small
-    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, replica, "7.0"]
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1849,7 +1849,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-7.0-server-auth
     run_on: ubuntu2004-small
-    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, server, "7.0"]
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1869,7 +1869,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-latest-replica-auth
     run_on: ubuntu2004-small
-    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, replica, latest]
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1889,7 +1889,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-latest-server-auth
     run_on: ubuntu2004-small
-    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, server, latest]
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
     commands:
       - func: fetch-build
@@ -1917,7 +1917,7 @@ tasks:
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.2"]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.2", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -1937,7 +1937,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.4-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.4"]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.4", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -1957,7 +1957,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-5.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "5.0"]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "5.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -1977,7 +1977,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-6.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "6.0"]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "6.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -1997,7 +1997,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-replica-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "7.0"]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2017,7 +2017,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "7.0"]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2037,7 +2037,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-replica-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, latest]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2057,7 +2057,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, latest]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2093,7 +2093,7 @@ tasks:
       - func: upload-build
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.2"]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.2", winssl]
     depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2113,7 +2113,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-4.4-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.4"]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.4", winssl]
     depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2133,7 +2133,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-5.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "5.0"]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "5.0", winssl]
     depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2153,7 +2153,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-6.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "6.0"]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "6.0", winssl]
     depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2173,7 +2173,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-7.0-replica-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "7.0"]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "7.0", winssl]
     depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2193,7 +2193,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-7.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "7.0"]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "7.0", winssl]
     depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2213,7 +2213,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-latest-replica-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, latest]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, latest, winssl]
     depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2233,7 +2233,7 @@ tasks:
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-latest-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, latest]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, latest, winssl]
     depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2254,6 +2254,232 @@ tasks:
   - name: kms-divergence-check
     commands:
       - func: kms-divergence-check
+  - name: loadbalanced-rhel87-gcc-compile
+    run_on: rhel87-large
+    tags: [loadbalanced, rhel87, gcc]
+    commands:
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          env:
+            CC: gcc
+            CFLAGS: -fno-omit-frame-pointer
+            EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF
+            SSL: OPENSSL
+          args:
+            - -c
+            - .evergreen/scripts/compile.sh
+      - func: upload-build
+  - name: loadbalanced-rhel87-gcc-test-5.0-auth-openssl
+    run_on: rhel87-small
+    tags: [loadbalanced, rhel87, gcc, auth, openssl]
+    depends_on: [{ name: loadbalanced-rhel87-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-rhel87-gcc-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: auth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "5.0"
+          SSL: openssl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start-load-balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: auth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: openssl
+  - name: loadbalanced-rhel87-gcc-test-5.0-noauth-nossl
+    run_on: rhel87-small
+    tags: [loadbalanced, rhel87, gcc, noauth, nossl]
+    depends_on: [{ name: loadbalanced-rhel87-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-rhel87-gcc-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: noauth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "5.0"
+          SSL: nossl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start-load-balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: noauth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: nossl
+  - name: loadbalanced-rhel87-gcc-test-6.0-auth-openssl
+    run_on: rhel87-small
+    tags: [loadbalanced, rhel87, gcc, auth, openssl]
+    depends_on: [{ name: loadbalanced-rhel87-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-rhel87-gcc-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: auth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "6.0"
+          SSL: openssl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start-load-balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: auth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: openssl
+  - name: loadbalanced-rhel87-gcc-test-6.0-noauth-nossl
+    run_on: rhel87-small
+    tags: [loadbalanced, rhel87, gcc, noauth, nossl]
+    depends_on: [{ name: loadbalanced-rhel87-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-rhel87-gcc-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: noauth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "6.0"
+          SSL: nossl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start-load-balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: noauth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: nossl
+  - name: loadbalanced-rhel87-gcc-test-7.0-auth-openssl
+    run_on: rhel87-small
+    tags: [loadbalanced, rhel87, gcc, auth, openssl]
+    depends_on: [{ name: loadbalanced-rhel87-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-rhel87-gcc-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: auth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "7.0"
+          SSL: openssl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start-load-balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: auth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: openssl
+  - name: loadbalanced-rhel87-gcc-test-7.0-noauth-nossl
+    run_on: rhel87-small
+    tags: [loadbalanced, rhel87, gcc, noauth, nossl]
+    depends_on: [{ name: loadbalanced-rhel87-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-rhel87-gcc-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: noauth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "7.0"
+          SSL: nossl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start-load-balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: noauth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: nossl
+  - name: loadbalanced-rhel87-gcc-test-latest-auth-openssl
+    run_on: rhel87-small
+    tags: [loadbalanced, rhel87, gcc, auth, openssl]
+    depends_on: [{ name: loadbalanced-rhel87-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-rhel87-gcc-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: auth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: latest
+          SSL: openssl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start-load-balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: auth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: openssl
+  - name: loadbalanced-rhel87-gcc-test-latest-noauth-nossl
+    run_on: rhel87-small
+    tags: [loadbalanced, rhel87, gcc, noauth, nossl]
+    depends_on: [{ name: loadbalanced-rhel87-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-rhel87-gcc-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: noauth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: latest
+          SSL: nossl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start-load-balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: noauth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: nossl
   - name: make-docs
     commands:
       - func: make-docs
@@ -2344,7 +2570,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-3.6-server-auth
     run_on: macos-1100
-    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "3.6"]
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "3.6", darwinssl]
     depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -2364,7 +2590,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-4.0-server-auth
     run_on: macos-1100
-    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "4.0"]
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "4.0", darwinssl]
     depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -2384,7 +2610,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-4.2-server-auth
     run_on: macos-1100
-    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "4.2"]
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "4.2", darwinssl]
     depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -2404,7 +2630,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-4.4-server-auth
     run_on: macos-1100
-    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "4.4"]
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "4.4", darwinssl]
     depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -2424,7 +2650,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-5.0-server-auth
     run_on: macos-1100
-    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "5.0"]
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "5.0", darwinssl]
     depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -2444,7 +2670,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-6.0-server-auth
     run_on: macos-1100
-    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "6.0"]
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "6.0", darwinssl]
     depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -2464,7 +2690,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-7.0-server-auth
     run_on: macos-1100
-    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "7.0"]
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "7.0", darwinssl]
     depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -2484,7 +2710,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-latest-server-auth
     run_on: macos-1100
-    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, latest]
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, latest, darwinssl]
     depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
@@ -2592,7 +2818,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-4.2-server-auth
     run_on: rhel81-power8-small
-    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "4.2"]
+    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "4.2", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2612,7 +2838,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-4.4-server-auth
     run_on: rhel81-power8-small
-    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "4.4"]
+    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "4.4", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2632,7 +2858,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-5.0-server-auth
     run_on: rhel81-power8-small
-    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "5.0"]
+    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "5.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2652,7 +2878,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-6.0-server-auth
     run_on: rhel81-power8-small
-    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "6.0"]
+    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "6.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2672,7 +2898,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-7.0-server-auth
     run_on: rhel81-power8-small
-    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "7.0"]
+    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "7.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2692,7 +2918,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-latest-server-auth
     run_on: rhel81-power8-small
-    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, latest]
+    tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, latest, openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2720,7 +2946,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-5.0-server-auth
     run_on: rhel83-zseries-small
-    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "5.0"]
+    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "5.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2740,7 +2966,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-6.0-server-auth
     run_on: rhel83-zseries-small
-    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "6.0"]
+    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "6.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2760,7 +2986,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-7.0-server-auth
     run_on: rhel83-zseries-small
-    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "7.0"]
+    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "7.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2780,7 +3006,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-server-auth
     run_on: rhel83-zseries-small
-    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, latest]
+    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, latest, openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2824,7 +3050,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu1604-arm64-gcc-test-4.0-server-auth
     run_on: ubuntu1604-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1604-arm64, gcc, sasl-cyrus, auth, server, "4.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu1604-arm64, gcc, sasl-cyrus, auth, server, "4.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1604-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2860,7 +3086,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-4.2-server-auth
     run_on: ubuntu1804-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "4.2"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "4.2", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2880,7 +3106,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-4.4-server-auth
     run_on: ubuntu1804-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "4.4"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "4.4", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2900,7 +3126,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-5.0-server-auth
     run_on: ubuntu1804-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "5.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "5.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2920,7 +3146,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-6.0-server-auth
     run_on: ubuntu1804-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "6.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "6.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2948,7 +3174,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.0-replica-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "4.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "4.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2968,7 +3194,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "4.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "4.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -2988,7 +3214,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.2-replica-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "4.2"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "4.2", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3008,7 +3234,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.2-server-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "4.2"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "4.2", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3028,7 +3254,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.4-replica-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "4.4"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "4.4", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3048,7 +3274,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.4-server-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "4.4"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "4.4", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3068,7 +3294,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-5.0-replica-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "5.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "5.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3088,7 +3314,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-5.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "5.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "5.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3108,7 +3334,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-6.0-replica-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "6.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "6.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3128,7 +3354,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-6.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "6.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "6.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3156,7 +3382,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
     run_on: ubuntu2004-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, auth, server, "7.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, auth, server, "7.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3176,7 +3402,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
     run_on: ubuntu2004-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, auth, server, latest]
+    tags: [sasl-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, auth, server, latest, openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3204,7 +3430,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-7.0-server-auth
     run_on: ubuntu2004-small
-    tags: [sasl-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, auth, server, "7.0"]
+    tags: [sasl-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, auth, server, "7.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3224,7 +3450,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-latest-server-auth
     run_on: ubuntu2004-small
-    tags: [sasl-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, auth, server, latest]
+    tags: [sasl-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, auth, server, latest, openssl]
     depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
     commands:
       - func: fetch-build
@@ -3252,7 +3478,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, latest]
+    tags: [sasl-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, latest, openssl]
     depends_on: [{ name: sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -3296,7 +3522,7 @@ tasks:
       - func: upload-build
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-test-3.6-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "3.6"]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "3.6", winssl]
     depends_on: [{ name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -3316,7 +3542,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-test-4.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "4.0"]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "4.0", winssl]
     depends_on: [{ name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -3336,7 +3562,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "4.2"]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "4.2", winssl]
     depends_on: [{ name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -3356,7 +3582,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-test-4.4-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "4.4"]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "4.4", winssl]
     depends_on: [{ name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -3376,7 +3602,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-test-5.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "5.0"]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "5.0", winssl]
     depends_on: [{ name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -3396,7 +3622,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-test-6.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "6.0"]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "6.0", winssl]
     depends_on: [{ name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -3416,7 +3642,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-test-7.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "7.0"]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, "7.0", winssl]
     depends_on: [{ name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -3436,7 +3662,7 @@ tasks:
       - func: run-tests
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-test-latest-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, latest]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, auth, server, latest, winssl]
     depends_on: [{ name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -4016,7 +4242,7 @@ tasks:
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-mingw-test-latest-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, mingw, sasl-sspi, auth, server, latest]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, mingw, sasl-sspi, auth, server, latest, winssl]
     depends_on: [{ name: sasl-sspi-winssl-windows-2019-mingw-compile }]
     commands:
       - func: fetch-build
@@ -4044,7 +4270,7 @@ tasks:
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-latest-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, latest]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, latest, winssl]
     depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -4072,7 +4298,7 @@ tasks:
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-vs2017-x86-test-latest-server-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x86, sasl-sspi, auth, server, latest]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x86, sasl-sspi, auth, server, latest, winssl]
     depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x86-compile }]
     commands:
       - func: fetch-build
@@ -4288,7 +4514,7 @@ tasks:
       - func: upload-build
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "4.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "4.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4308,7 +4534,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "4.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "4.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4328,7 +4554,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "4.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "4.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4348,7 +4574,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "4.2"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "4.2", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4368,7 +4594,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "4.2"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "4.2", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4388,7 +4614,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "4.2"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "4.2", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4408,7 +4634,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "4.4"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "4.4", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4428,7 +4654,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "4.4"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "4.4", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4448,7 +4674,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "4.4"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "4.4", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4468,7 +4694,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "5.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "5.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4488,7 +4714,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "5.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "5.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4508,7 +4734,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "5.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "5.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4528,7 +4754,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-replica-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "6.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "6.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4548,7 +4774,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "6.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "6.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4568,7 +4794,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-sharded-auth
     run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "6.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "6.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
     commands:
       - func: fetch-build
@@ -4596,7 +4822,7 @@ tasks:
       - func: upload-build
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-replica-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, replica, "7.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, replica, "7.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -4616,7 +4842,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-server-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, server, "7.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, server, "7.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -4636,7 +4862,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-sharded-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, sharded, "7.0"]
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, sharded, "7.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -4656,7 +4882,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-replica-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, replica, latest]
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, replica, latest, openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -4676,7 +4902,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-server-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, server, latest]
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, server, latest, openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
@@ -4696,7 +4922,7 @@ tasks:
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-latest-sharded-auth
     run_on: ubuntu2004-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, sharded, latest]
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, sharded, latest, openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
