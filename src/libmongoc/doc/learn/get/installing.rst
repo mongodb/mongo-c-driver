@@ -11,14 +11,16 @@ Installing Prebuilt MongoDB C Driver Libraries
 .. _Homebrew: https://brew.sh/
 
 The |libmongoc| and |libbson| libraries are often available in the package
-management repositories of `common Linux distributions <linux_>`_ and
-`macOS via Homebrew <macos_>`_.
+management repositories of `common Linux distributions <installing.linux_>`_ and
+`macOS via Homebrew <installing.macos_>`_.
 
 .. note::
 
-  For Windows, it is recommended to instead
+  For :index:`Windows`, it is recommended to instead
   :doc:`build the libraries from source <from-source>`, for maximum
-  compatibility with the local toolchain.
+  compatibility with the local toolchain. Building from source can be automated
+  by using a from-source library package management tool such as Conan_ or
+  vcpkg_ (See: :ref:`installing.pkgman`).
 
 .. caution::
 
@@ -30,8 +32,110 @@ management repositories of `common Linux distributions <linux_>`_ and
   For the most up-to-date versions of the C driver libraries, prefer to instead
   :doc:`build from source <from-source>`.
 
+.. seealso::
 
-.. _linux:
+  For a listing and common reference on available packages, refer to
+  :doc:`/ref/packages`.
+
+
+.. index::
+  package managers; Conan
+  package managers; vcpkg
+  pair: installation; package managers
+  :name: installing.pkgman
+
+Cross Platform Installs Using Library Package Managers
+******************************************************
+
+Various library package managers offer |libbson| and |libmongoc| as installable
+packages, including Conan_ and vcpkg_. This section will detail how to install
+using those tools.
+
+.. _conan: https://conan.io/
+.. _vcpkg: https://vcpkg.io/
+
+
+.. index::
+  ! pair: installation; vcpkg
+
+Installing using vcpkg
+======================
+
+.. note::
+  This page will not detail how to get started using vcpkg_. For that, refer to
+  `Get started with vcpkg`__
+
+  __ https://vcpkg.io/en/getting-started
+
+.. tab-set::
+
+  .. tab-item:: vcpkg Manifest Mode (Recommended)
+
+    In `vcpkg manifest mode`__, add the desired libraries to your project's
+    ``vcpkg.json`` manifest file:
+
+    __ https://learn.microsoft.com/en-us/vcpkg/users/manifests
+
+    .. code-block:: js
+      :caption: ``vcpkg.json``
+      :linenos:
+
+      {
+        // ...
+        "dependencies": [
+          // ...
+          "mongo-c-driver"
+        ]
+      }
+
+    When you build a CMake project with vcpkg integration and have a
+    ``vcpkg.json`` manifest file, vcpkg will automatically install the project's
+    dependencies before proceeding with the configuration phase, so no
+    additional manual work is required.
+
+
+  .. tab-item:: vcpkg Classic Mode
+
+    In `vcpkg classic mode`__, |libbson| and |libmongoc| can be installed through the
+    names ``libbson`` and ``mongo-c-driver``, respectively::
+
+      $ vcpkg install mongo-c-driver
+
+    __ https://learn.microsoft.com/en-us/vcpkg/users/classic-mode
+
+    (Installing ``mongo-c-driver`` will transitively install |libbson| as well.)
+
+    When the |libmongoc| and |libbson| packages are installed and vcpkg has been
+    properly integrated into your build system, the desired libraries will be
+    available for import.
+
+With CMake, the standard config-file package will be available, as well as the
+generated ``IMPORTED`` targets:
+
+.. code-block:: cmake
+  :caption: ``CMakeLists.txt``
+
+  find_package(mongoc-1.0 CONFIG REQUIRED)
+  target_link_libraries(my-application
+      PRIVATE $<IF:$<TARGET_EXISTS:mongo::mongoc_shared>,mongo::mongoc_shared,mongo::mongoc_static>)
+
+.. note::
+
+  The large ``$<IF:$<TARGET_EXISTS...>:...>`` generator expression
+  (:external:doc:`manual/cmake-generator-expressions.7`) can be used to switch
+  the link type of |libmongoc| based on whichever form is available from the
+  ``find_package()`` command. |libmongoc| supports building with both *dynamic*
+  and *static* library types, but vcpkg will only install one of the two library
+  types at a time.
+
+Configuring a CMake project with vcpkg integration is a matter of setting the
+CMake toolchain file at the initial configure command::
+
+  $ cmake -S . -B _build -D CMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+
+.. index::
+  ! pair: Linux; installation
+  :name: installing.linux
 
 Installing in Linux
 *******************
@@ -48,7 +152,20 @@ The following Linux distributions provide |libbson| and |libmongoc| packages:
 - `Debian <debian_>`_ and Debian-based distributions, including
   `Ubuntu <debian_>`_ and Ubuntu derivatives, via APT.
 
+.. seealso::
 
+  For a list of available packages and package options, see:
+  :doc:`/ref/packages`.
+
+
+.. index::
+  !pair: installation; RHEL
+  !pair: installation; Fedora
+  !pair: installation; CentOS
+  !pair: installation; Rocky Linux
+  !pair: installation; AlmaLinux
+  !pair: installation; Yum
+  !pair: installation; DNF
 .. _redhat:
 
 RedHat-based Systems
@@ -91,6 +208,10 @@ To install the full C database driver (|libmongoc|), install
   # yum install mongo-c-driver-devel
 
 
+.. index::
+    !pair: installation; Debian
+    !pair: installation; Ubuntu
+    !pair: installation; APT
 .. _debian:
 
 Debian-based Systems
@@ -112,25 +233,24 @@ To install |libmongoc| (which will also install |libbson|)::
   # apt install libmongoc-dev
 
 
-.. _macos:
+.. index::
+  !pair: installation; macOS
+  !pair: installation; Homebrew
+  package managers; Homebrew
+.. _installing.macos:
 
 Installing on macOS with Homebrew
 *********************************
 
 If you are using a macOS system, the C driver libraries (including both
-|libmongoc| and |libbson|) may be installed using the Homebrew_ package manager [#macos_brew]_
-with the following command::
+|libmongoc| and |libbson|) may be installed using the Homebrew_ package manager
+[#macos_brew]_ with the following command::
 
   $ brew install mongo-c-driver
 
 .. note::
 
   Homebrew does not provide separate packages for |libbson| and |libmongoc|.
-
-
-.. todo
-  Packages for Windows, via Conan, and via vcpkg
-
 
 .. [#macos_brew]
 

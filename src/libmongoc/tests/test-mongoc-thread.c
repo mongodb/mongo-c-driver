@@ -5,13 +5,11 @@
 
 
 static void
-test_cond_wait (void *unused)
+test_cond_wait (void)
 {
    int64_t start, duration_usec;
    bson_mutex_t mutex;
    mongoc_cond_t cond;
-
-   BSON_UNUSED (unused);
 
    bson_mutex_init (&mutex);
    mongoc_cond_init (&cond);
@@ -35,10 +33,5 @@ test_cond_wait (void *unused)
 void
 test_thread_install (TestSuite *suite)
 {
-   TestSuite_AddFull (suite,
-                      "/Thread/cond_wait",
-                      test_cond_wait,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_time_sensitive);
+   TestSuite_Add (suite, "/Thread/cond_wait", test_cond_wait);
 }

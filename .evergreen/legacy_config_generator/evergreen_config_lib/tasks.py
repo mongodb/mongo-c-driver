@@ -741,7 +741,7 @@ for server_version in [ "7.0", "6.0", "5.0"]:
         [
             PostCompileTask(
                 "test-versioned-api-" + server_version,
-                tags=["versioned-api"],
+                tags=["versioned-api", f"{server_version}"],
                 get_build="debug-compile-nosasl-openssl",
                 commands=[
                     func("fetch-det"),
@@ -759,7 +759,7 @@ for server_version in [ "7.0", "6.0", "5.0"]:
             ),
             PostCompileTask(
                 "test-versioned-api-accept-version-two-" + server_version,
-                tags=["versioned-api"],
+                tags=["versioned-api", f"{server_version}"],
                 get_build="debug-compile-nosasl-nossl",
                 commands=[
                     func("fetch-det"),
@@ -944,6 +944,7 @@ class AWSTestTask(MatrixTask):
 
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
+        yield f'{self.settings.version}'
         yield f'test-aws'
 
     def post_commands(self) -> Iterable[Value]:
