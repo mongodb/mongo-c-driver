@@ -1422,8 +1422,8 @@ tasks:
       ASAN: 'on'
 - name: test-versioned-api-7.0
   tags:
+  - '7.0'
   - versioned-api
-  - versioned-api-7.0
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
@@ -1470,8 +1470,8 @@ tasks:
       SSL: nossl
 - name: test-versioned-api-6.0
   tags:
+  - '6.0'
   - versioned-api
-  - versioned-api-6.0
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
@@ -1518,8 +1518,8 @@ tasks:
       SSL: nossl
 - name: test-versioned-api-5.0
   tags:
+  - '5.0'
   - versioned-api
-  - versioned-api-5.0
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
