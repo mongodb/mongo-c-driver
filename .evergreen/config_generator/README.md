@@ -6,7 +6,7 @@ files stored in `.evergreen/generated_configs/`.
 The easiest way to execute these scripts is using the Poetry to install the
 dependencies and then run the scripts.
 
-**Note**: These scripts requires Python 3.8 or newer
+**Note**: These scripts require Python 3.10 or newer.
 
 
 ## Setting Up
