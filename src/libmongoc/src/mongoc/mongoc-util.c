@@ -25,11 +25,15 @@
 #include "common-md5-private.h"
 #include "common-thread-private.h"
 #include "mongoc-rand-private.h"
+#include "mongoc-util.h"
 #include "mongoc-util-private.h"
 #include "mongoc-client.h"
 #include "mongoc-client-private.h" // WIRE_VERSION_* macros.
 #include "mongoc-client-session-private.h"
 #include "mongoc-trace-private.h"
+
+static mongoc_usleep_func_t gUsleepFunc = mongoc_usleep_default_impl;
+static void *gUsleepData;
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
@@ -84,9 +88,15 @@ _mongoc_hex_md5 (const char *input)
    return bson_strdup (digest_str);
 }
 
+void
+mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func, void *user_data)
+{
+   gUsleepFunc = usleep_func;
+   gUsleepData = user_data;
+}
 
 void
-_mongoc_usleep (int64_t usec)
+mongoc_usleep_default_impl (int64_t usec, void *user_data)
 {
 #ifdef _WIN32
    LARGE_INTEGER ft;
@@ -104,6 +114,13 @@ _mongoc_usleep (int64_t usec)
    usleep ((useconds_t) usec);
 #endif
 }
+
+void
+_mongoc_usleep (int64_t usec)
+{
+   gUsleepFunc (usec, gUsleepData);
+}
+
 
 int64_t
 _mongoc_get_real_time_ms (void)

@@ -1,3 +1,4 @@
+#include <mongoc/mongoc.h>
 #include "mongoc/mongoc-util-private.h"
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -16,8 +17,33 @@ test_mongoc_usleep_basic (void)
    ASSERT_CMPTIME ((int) duration, 200 * 1000);
 }
 
+static void
+custom_usleep_impl (int64_t usec, void *user_data) {
+   if (user_data) {
+      *(int64_t*)user_data = usec;
+   }
+}
+
+static void
+test_mongoc_usleep_custom (void)
+{
+   static const int64_t expected = 42;
+   int64_t last_sleep_dur = -1;
+
+   mongoc_usleep_set_impl(custom_usleep_impl, &last_sleep_dur);
+
+   _mongoc_usleep (expected);
+   ASSERT_CMPINT64 (last_sleep_dur, =, expected);
+}
+
 void
 test_usleep_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Sleep/basic", test_mongoc_usleep_basic);
+   TestSuite_AddFull (suite,
+                      "/Sleep/custom",
+                      test_mongoc_usleep_custom,
+                      NULL /* dtor */,
+                      NULL /* dtor */,
+                      test_framework_skip_if_time_sensitive);
 }
