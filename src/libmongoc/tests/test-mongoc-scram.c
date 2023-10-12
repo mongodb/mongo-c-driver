@@ -188,12 +188,10 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
 {
    bson_error_t error;
 
-   int *pun_i_ptr = username_number_ptr;
-   int i = *pun_i_ptr;
-   bson_free (username_number_ptr);
-
    const char *password = "mypass";
-   char *username = bson_strdup_printf ("cachetestuser%dX", i);
+   char *username =
+      bson_strdup_printf ("cachetestuser%dX", *(int *) username_number_ptr);
+   bson_free (username_number_ptr);
 
    const char *uri_str = _scram_cache_invalidation_uri_str;
    char *cache_test_user_uri =
