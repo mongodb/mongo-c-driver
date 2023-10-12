@@ -40,10 +40,5 @@ void
 test_usleep_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Sleep/basic", test_mongoc_usleep_basic);
-   TestSuite_AddFull (suite,
-                      "/Sleep/custom",
-                      test_mongoc_usleep_custom,
-                      NULL /* dtor */,
-                      NULL /* dtor */,
-                      test_framework_skip_if_time_sensitive);
+   TestSuite_Add (suite, "/Sleep/custom", test_mongoc_usleep_custom);
 }
