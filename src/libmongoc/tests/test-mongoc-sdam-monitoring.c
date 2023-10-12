@@ -848,7 +848,7 @@ _test_heartbeat_fails_dns (bool pooled)
     * client for a client pool). */
    start = bson_get_monotonic_time ();
    uri = mongoc_uri_new (
-      "mongodb://doesntexist.foobar/?serverSelectionTimeoutMS=3000");
+      "mongodb://doesntexist.invalid/?serverSelectionTimeoutMS=100");
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
       pool_set_heartbeat_event_callbacks (pool, &context);
@@ -862,15 +862,13 @@ _test_heartbeat_fails_dns (bool pooled)
    r = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
-   /* This should result in either a DNS failure or connection failure depending
-    * on the network. We assert the domain/code but not the message string. */
+   /* Expect a server selection error. */
    ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "");
+                          "No suitable servers found");
 
-   duration = bson_get_monotonic_time () - start;
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -878,6 +876,8 @@ _test_heartbeat_fails_dns (bool pooled)
    } else {
       mongoc_client_destroy (client);
    }
+
+   duration = bson_get_monotonic_time () - start;
 
    durations = &context.heartbeat_failed_durations;
 
@@ -893,18 +893,14 @@ _test_heartbeat_fails_dns (bool pooled)
 }
 
 static void
-test_heartbeat_fails_dns_single (void *ctx)
+test_heartbeat_fails_dns_single (void)
 {
-   BSON_UNUSED (ctx);
-
    _test_heartbeat_fails_dns (false);
 }
 
 static void
-test_heartbeat_fails_dns_pooled (void *ctx)
+test_heartbeat_fails_dns_pooled (void)
 {
-   BSON_UNUSED (ctx);
-
    _test_heartbeat_fails_dns (true);
 }
 
@@ -1054,21 +1050,14 @@ test_sdam_monitoring_install (TestSuite *suite)
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
       test_heartbeat_events_pooled_failed);
-   TestSuite_AddFull (
+   TestSuite_Add (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/dns",
-      test_heartbeat_fails_dns_single,
-      NULL,
-      NULL,
-      test_framework_skip_if_offline);
-   TestSuite_AddFull (
+      test_heartbeat_fails_dns_single);
+   TestSuite_Add (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns",
-      test_heartbeat_fails_dns_pooled,
-      NULL,
-      NULL,
-      test_framework_skip_if_offline,
-      test_framework_skip_if_rhel8_zseries);
+      test_heartbeat_fails_dns_pooled);
    TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/no_duplicates",
