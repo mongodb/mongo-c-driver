@@ -823,7 +823,7 @@ skip_if_not_loadbalanced (void)
    return test_framework_is_loadbalanced () ? 1 : 0;
 }
 
-void
+static void
 store_last_command_started_callback (const mongoc_apm_command_started_t *event)
 {
    bson_t **last_command = mongoc_apm_command_started_get_context (event);
