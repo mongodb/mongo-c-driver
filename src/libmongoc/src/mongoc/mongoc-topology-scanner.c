@@ -170,7 +170,6 @@ _mongoc_topology_scanner_add_speculative_authentication (
    bson_t *cmd,
    const mongoc_uri_t *uri,
    const mongoc_ssl_opt_t *ssl_opts,
-   mongoc_scram_cache_t *scram_cache,
    mongoc_scram_t *scram /* OUT */)
 {
    bson_t auth_cmd;
@@ -203,10 +202,6 @@ _mongoc_topology_scanner_add_speculative_authentication (
             : MONGOC_CRYPTO_ALGORITHM_SHA_256;
 
       _mongoc_uri_init_scram (uri, scram, algo);
-
-      if (scram_cache) {
-         _mongoc_scram_set_cache (scram, scram_cache);
-      }
 
       if (_mongoc_cluster_get_auth_cmd_scram (algo, scram, &auth_cmd, &error)) {
          const char *auth_source;
@@ -411,12 +406,8 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
       ssl_opts = ts->ssl_opts;
 #endif
 
-      // _mongoc_topology_scanner_add_speculative_authentication is called with
-      // NULL for the scram_cache argument. The scram cache is not used for
-      // speculative authentication in the topology scanner. This is planned to
-      // be improved in CDRIVER-3642.
       _mongoc_topology_scanner_add_speculative_authentication (
-         &cmd, ts->uri, ssl_opts, NULL, &node->scram);
+         &cmd, ts->uri, ssl_opts, &node->scram);
    }
 
    if (!bson_empty (&ts->cluster_time)) {

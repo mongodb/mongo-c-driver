@@ -229,15 +229,4 @@ all_functions = OD([
         bash .evergreen/scripts/run-aws-tests.sh
         ''', add_expansions_to_env=True)
     )),
-    ('start load balancer', Function(
-        shell_exec(r'''
-        export DRIVERS_TOOLS=./drivers-evergreen-tools
-        export MONGODB_URI="${MONGODB_URI}"
-        bash $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
-        ''', test=False),
-        OD([
-            ("command", "expansions.update"),
-            ("params", OD([("file", "lb-expansion.yml")]))
-        ]),
-    )),
 ])

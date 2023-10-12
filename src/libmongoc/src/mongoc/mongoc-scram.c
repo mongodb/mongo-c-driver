@@ -29,7 +29,21 @@
 #include "common-b64-private.h"
 
 #include "mongoc-memcmp-private.h"
+#include "common-thread-private.h"
 #include <utf8proc.h>
+
+typedef struct _mongoc_scram_cache_entry_t {
+   /* book keeping */
+   bool taken;
+   /* pre-secrets */
+   char hashed_password[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
+   uint32_t iterations;
+   /* secrets */
+   uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t server_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t salted_password[MONGOC_SCRAM_HASH_MAX_SIZE];
+} mongoc_scram_cache_entry_t;
 
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
@@ -64,6 +78,44 @@ _mongoc_utf8_code_point_length (uint32_t c);
 ssize_t
 _mongoc_utf8_code_point_to_str (uint32_t c, char *out);
 
+static bson_shared_mutex_t g_scram_cache_rwlock;
+
+static bson_once_t init_cache_once_control = BSON_ONCE_INIT;
+static bson_mutex_t clear_cache_lock;
+
+/*
+ * Cache lookups are a linear search through this table. This table is a
+ * constant size, which is small enough that lookup cost is insignificant.
+ *
+ * This can be refactored into a hashmap if the cache size needs to grow larger
+ * in the future, but a linear lookup is currently fast enough and is much
+ * simpler logic to reason about.
+ */
+static mongoc_scram_cache_entry_t g_scram_cache[MONGOC_SCRAM_CACHE_SIZE];
+
+static void
+_mongoc_scram_cache_clear (void)
+{
+   bson_mutex_lock (&clear_cache_lock);
+   memset (g_scram_cache, 0, sizeof (g_scram_cache));
+   bson_mutex_unlock (&clear_cache_lock);
+}
+
+static BSON_ONCE_FUN (_mongoc_scram_cache_init)
+{
+   bson_shared_mutex_init (&g_scram_cache_rwlock);
+   bson_mutex_init (&clear_cache_lock);
+   _mongoc_scram_cache_clear ();
+
+   BSON_ONCE_RETURN;
+}
+
+static void
+_mongoc_scram_cache_init_once (void)
+{
+   bson_once (&init_cache_once_control, _mongoc_scram_cache_init);
+}
+
 static int
 _scram_hash_size (mongoc_scram_t *scram)
 {
@@ -77,7 +129,7 @@ _scram_hash_size (mongoc_scram_t *scram)
 
 /* Copies the cache's secrets to scram */
 static void
-_mongoc_scram_cache_apply_secrets (mongoc_scram_cache_t *cache,
+_mongoc_scram_cache_apply_secrets (mongoc_scram_cache_entry_t *cache,
                                    mongoc_scram_t *scram)
 {
    BSON_ASSERT (cache);
@@ -91,76 +143,66 @@ _mongoc_scram_cache_apply_secrets (mongoc_scram_cache_t *cache,
 }
 
 
-static mongoc_scram_cache_t *
-_mongoc_scram_cache_copy (const mongoc_scram_cache_t *cache)
-{
-   mongoc_scram_cache_t *ret = NULL;
-
-   if (cache) {
-      ret = (mongoc_scram_cache_t *) bson_malloc0 (sizeof (*ret));
-      ret->hashed_password = bson_strdup (cache->hashed_password);
-      memcpy (
-         ret->decoded_salt, cache->decoded_salt, sizeof (ret->decoded_salt));
-      ret->iterations = cache->iterations;
-      memcpy (ret->client_key, cache->client_key, sizeof (ret->client_key));
-      memcpy (ret->server_key, cache->server_key, sizeof (ret->server_key));
-      memcpy (ret->salted_password,
-              cache->salted_password,
-              sizeof (ret->salted_password));
-   }
-
-   return ret;
-}
-
 void
-_mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache)
+_mongoc_scram_cache_destroy (mongoc_scram_cache_entry_t *cache)
 {
    BSON_ASSERT (cache);
-
-   if (cache->hashed_password) {
-      bson_zero_free (cache->hashed_password, strlen (cache->hashed_password));
-   }
-
    bson_free (cache);
 }
 
 
-/* Checks whether the cache contains scram's pre-secrets */
+/*
+ * Checks whether the cache contains scram's pre-secrets.
+ * Populate `cache` with the values found in the global cache if found.
+ */
 static bool
-_mongoc_scram_cache_has_presecrets (mongoc_scram_cache_t *cache,
-                                    mongoc_scram_t *scram)
+_mongoc_scram_cache_has_presecrets (mongoc_scram_cache_entry_t *cache /* out */,
+                                    const mongoc_scram_t *scram)
 {
+   bool cache_hit = false;
+
    BSON_ASSERT (cache);
    BSON_ASSERT (scram);
 
-   return cache->hashed_password && scram->hashed_password &&
-          !strcmp (cache->hashed_password, scram->hashed_password) &&
-          cache->iterations == scram->iterations &&
-          !memcmp (cache->decoded_salt,
-                   scram->decoded_salt,
-                   sizeof (cache->decoded_salt));
-}
+   _mongoc_scram_cache_init_once ();
 
+   /*
+    * - Take a read lock
+    * - Search through g_scram_cache if the hashed_password, decoded_salt, and
+    *   iterations match an entry.
+    * - If so, then return true
+    * - Otherwise return false
+    */
+   bson_shared_mutex_lock_shared (&g_scram_cache_rwlock);
 
-mongoc_scram_cache_t *
-_mongoc_scram_get_cache (mongoc_scram_t *scram)
-{
-   BSON_ASSERT (scram);
-
-   return _mongoc_scram_cache_copy (scram->cache);
-}
-
-
-void
-_mongoc_scram_set_cache (mongoc_scram_t *scram, mongoc_scram_cache_t *cache)
-{
-   BSON_ASSERT (scram);
-
-   if (scram->cache) {
-      _mongoc_scram_cache_destroy (scram->cache);
+   for (size_t i = 0; i < MONGOC_SCRAM_CACHE_SIZE; i++) {
+      if (g_scram_cache[i].taken) {
+         mongoc_scram_cache_entry_t *cache_entry = &g_scram_cache[i];
+         cache_hit =
+            !strcmp (cache_entry->hashed_password, scram->hashed_password) &&
+            cache_entry->iterations == scram->iterations &&
+            !memcmp (cache_entry->decoded_salt,
+                     scram->decoded_salt,
+                     sizeof (cache_entry->decoded_salt));
+         if (cache_hit) {
+            /* copy the found cache items into the 'cache' output parameter */
+            memcpy (cache->client_key,
+                    cache_entry->client_key,
+                    sizeof (cache->client_key));
+            memcpy (cache->server_key,
+                    cache_entry->server_key,
+                    sizeof (cache->server_key));
+            memcpy (cache->salted_password,
+                    cache_entry->salted_password,
+                    sizeof (cache->salted_password));
+            goto done;
+         }
+      }
    }
 
-   scram->cache = _mongoc_scram_cache_copy (cache);
+done:
+   bson_shared_mutex_unlock (&g_scram_cache_rwlock);
+   return cache_hit;
 }
 
 
@@ -209,44 +251,85 @@ _mongoc_scram_destroy (mongoc_scram_t *scram)
       bson_zero_free (scram->pass, strlen (scram->pass));
    }
 
-   if (scram->hashed_password) {
-      bson_zero_free (scram->hashed_password, strlen (scram->hashed_password));
-   }
+   memset (scram->hashed_password, 0, sizeof (scram->hashed_password));
 
    bson_free (scram->auth_message);
-
-   if (scram->cache) {
-      _mongoc_scram_cache_destroy (scram->cache);
-   }
 
    memset (scram, 0, sizeof *scram);
 }
 
+static void
+_mongoc_scram_cache_insert (const mongoc_scram_t *scram)
+{
+   bson_shared_mutex_lock (&g_scram_cache_rwlock);
+
+again:
+   for (size_t i = 0; i < MONGOC_SCRAM_CACHE_SIZE; i++) {
+      mongoc_scram_cache_entry_t *cache_entry = &g_scram_cache[i];
+      bool already_exists =
+         !strcmp (cache_entry->hashed_password, scram->hashed_password) &&
+         cache_entry->iterations == scram->iterations &&
+         !memcmp (cache_entry->decoded_salt,
+                  scram->decoded_salt,
+                  sizeof (cache_entry->decoded_salt)) &&
+         !memcmp (cache_entry->client_key,
+                  scram->client_key,
+                  sizeof (cache_entry->client_key)) &&
+         !memcmp (cache_entry->server_key,
+                  scram->server_key,
+                  sizeof (cache_entry->server_key)) &&
+         !memcmp (cache_entry->salted_password,
+                  scram->salted_password,
+                  sizeof (cache_entry->salted_password));
+
+      if (already_exists) {
+         /* cache entry already populated between read and write lock
+          * acquisition, skipping */
+         break;
+      }
+
+      if (!cache_entry->taken) {
+         /* found an empty slot */
+         memcpy (cache_entry->client_key,
+                 scram->client_key,
+                 sizeof (cache_entry->client_key));
+         memcpy (cache_entry->server_key,
+                 scram->server_key,
+                 sizeof (cache_entry->server_key));
+         memcpy (cache_entry->salted_password,
+                 scram->salted_password,
+                 sizeof (cache_entry->salted_password));
+         memcpy (cache_entry->decoded_salt,
+                 scram->decoded_salt,
+                 sizeof (cache_entry->decoded_salt));
+         memcpy (cache_entry->hashed_password,
+                 scram->hashed_password,
+                 sizeof (cache_entry->hashed_password));
+         cache_entry->iterations = scram->iterations;
+         cache_entry->taken = true;
+         break;
+      }
+
+      /* if cache is full, then invalidate the cache and insert again */
+      if (i == (MONGOC_SCRAM_CACHE_SIZE - 1)) {
+         _mongoc_scram_cache_clear ();
+         goto again;
+      }
+   }
+
+   bson_shared_mutex_unlock (&g_scram_cache_rwlock);
+}
 
 /* Updates the cache with scram's last-used pre-secrets and secrets */
 static void
-_mongoc_scram_update_cache (mongoc_scram_t *scram)
+_mongoc_scram_update_cache (const mongoc_scram_t *scram)
 {
-   mongoc_scram_cache_t *cache;
-
-   BSON_ASSERT (scram);
-
-   if (scram->cache) {
-      _mongoc_scram_cache_destroy (scram->cache);
+   mongoc_scram_cache_entry_t cache;
+   bool found = _mongoc_scram_cache_has_presecrets (&cache, scram);
+   if (!found) {
+      /* cache miss, insert this as a new cache entry */
+      _mongoc_scram_cache_insert (scram);
    }
-
-   cache = (mongoc_scram_cache_t *) bson_malloc0 (sizeof (*cache));
-   cache->hashed_password = bson_strdup (scram->hashed_password);
-   memcpy (
-      cache->decoded_salt, scram->decoded_salt, sizeof (cache->decoded_salt));
-   cache->iterations = scram->iterations;
-   memcpy (cache->client_key, scram->client_key, sizeof (cache->client_key));
-   memcpy (cache->server_key, scram->server_key, sizeof (cache->server_key));
-   memcpy (cache->salted_password,
-           scram->salted_password,
-           sizeof (cache->salted_password));
-
-   scram->cache = cache;
 }
 
 
@@ -557,7 +640,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    const uint8_t *next_comma;
 
    char *tmp;
-   char *hashed_password;
+   char *hashed_password = NULL;
 
    uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE] = {0};
    int32_t decoded_salt_len;
@@ -779,13 +862,18 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    /* Save the presecrets for caching */
-   scram->hashed_password = bson_strdup (hashed_password);
+   if (hashed_password) {
+      bson_strncpy (scram->hashed_password,
+                    hashed_password,
+                    sizeof (scram->hashed_password));
+   }
+
    scram->iterations = iterations;
    memcpy (scram->decoded_salt, decoded_salt, sizeof (scram->decoded_salt));
 
-   if (scram->cache &&
-       _mongoc_scram_cache_has_presecrets (scram->cache, scram)) {
-      _mongoc_scram_cache_apply_secrets (scram->cache, scram);
+   mongoc_scram_cache_entry_t cache;
+   if (_mongoc_scram_cache_has_presecrets (&cache, scram)) {
+      _mongoc_scram_cache_apply_secrets (&cache, scram);
    }
 
    if (!*scram->salted_password) {

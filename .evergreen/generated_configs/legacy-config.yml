@@ -307,18 +307,6 @@ functions:
         . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
         bash .evergreen/scripts/run-aws-tests.sh
-  start load balancer:
-  - command: shell.exec
-    params:
-      shell: bash
-      script: |-
-        set -o errexit
-        export DRIVERS_TOOLS=./drivers-evergreen-tools
-        export MONGODB_URI="${MONGODB_URI}"
-        bash $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
-  - command: expansions.update
-    params:
-      file: lb-expansion.yml
 tasks:
 - name: hardened-compile
   tags:
@@ -1157,7 +1145,7 @@ tasks:
       SSL: ssl
       TOPOLOGY: sharded_cluster
   - func: fetch-det
-  - func: start load balancer
+  - func: start-load-balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
   - func: run-tests
@@ -1434,8 +1422,8 @@ tasks:
       ASAN: 'on'
 - name: test-versioned-api-7.0
   tags:
+  - '7.0'
   - versioned-api
-  - versioned-api-7.0
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
@@ -1482,8 +1470,8 @@ tasks:
       SSL: nossl
 - name: test-versioned-api-6.0
   tags:
+  - '6.0'
   - versioned-api
-  - versioned-api-6.0
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
@@ -1530,8 +1518,8 @@ tasks:
       SSL: nossl
 - name: test-versioned-api-5.0
   tags:
+  - '5.0'
   - versioned-api
-  - versioned-api-5.0
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
@@ -13789,230 +13777,6 @@ tasks:
         set -o errexit
         LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
-- name: test-loadbalanced-asan-auth-openssl-7.0
-  tags:
-  - '7.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '7.0'
-      SSL: ssl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      LOADBALANCED: loadbalanced
-      SSL: ssl
-- name: test-loadbalanced-asan-auth-openssl-6.0
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '6.0'
-      SSL: ssl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      LOADBALANCED: loadbalanced
-      SSL: ssl
-- name: test-loadbalanced-asan-auth-openssl-5.0
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '5.0'
-      SSL: ssl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      LOADBALANCED: loadbalanced
-      SSL: ssl
-- name: test-loadbalanced-asan-auth-openssl-latest
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: latest
-      SSL: ssl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      LOADBALANCED: loadbalanced
-      SSL: ssl
-- name: test-loadbalanced-asan-noauth-nossl-7.0
-  tags:
-  - '7.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '7.0'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      LOADBALANCED: loadbalanced
-      SSL: nossl
-- name: test-loadbalanced-asan-noauth-nossl-6.0
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '6.0'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      LOADBALANCED: loadbalanced
-      SSL: nossl
-- name: test-loadbalanced-asan-noauth-nossl-5.0
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '5.0'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      LOADBALANCED: loadbalanced
-      SSL: nossl
-- name: test-loadbalanced-asan-noauth-nossl-latest
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: latest
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      LOADBALANCED: loadbalanced
-      SSL: nossl
 - name: testazurekms-task
   commands:
   - func: fetch-source

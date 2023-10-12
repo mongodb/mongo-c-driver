@@ -675,24 +675,6 @@ test_mongoc_client_authenticate_cached (bool pooled)
       }
    }
 
-   /* screw up the cache */
-   memcpy (client->cluster.scram_cache->client_key, "foo", 3);
-   cursor = mongoc_collection_find_with_opts (collection, &insert, NULL, NULL);
-   capture_logs (true);
-   r = mongoc_cursor_next (cursor, &doc);
-
-   if (pooled) {
-      ASSERT_CAPTURED_LOG ("The cachekey broke",
-                           MONGOC_LOG_LEVEL_WARNING,
-                           "Failed authentication");
-   }
-   capture_logs (false);
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "");
-   ASSERT (!r);
-   mongoc_cursor_destroy (cursor);
-
    mongoc_collection_destroy (collection);
    if (pooled) {
       capture_logs (true);
@@ -4089,7 +4071,18 @@ test_mongoc_client_get_handshake_hello_response_pooled (void)
    invalidated_sd =
       mongoc_client_get_server_description (client, monitor_sd->id);
    BSON_ASSERT (NULL != invalidated_sd);
-   ASSERT_CMPSTR ("Unknown", mongoc_server_description_type (invalidated_sd));
+
+   // Check the resulting server description.
+   // Invalidating sets the type to Unknown.
+   // A background monitor may have set the type to PossiblePrimary.
+   const char *got_description_type =
+      mongoc_server_description_type (invalidated_sd);
+   if (0 != strcmp ("Unknown", got_description_type) &&
+       0 != strcmp ("PossiblePrimary", got_description_type)) {
+      test_error ("Expected server to have type 'Unknown' or "
+                  "'PossiblePrimary', got: '%s'",
+                  got_description_type);
+   }
 
    /* The previously established connection should have a valid server
     * description. */

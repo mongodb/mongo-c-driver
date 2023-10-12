@@ -38,22 +38,17 @@ BSON_BEGIN_DECLS
 #define MONGOC_SCRAM_B64_HASH_MAX_SIZE \
    MONGOC_SCRAM_B64_ENCODED_SIZE (MONGOC_SCRAM_HASH_MAX_SIZE)
 
-typedef struct _mongoc_scram_cache_t {
-   /* pre-secrets */
-   char *hashed_password;
-   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
-   uint32_t iterations;
-   /* secrets */
-   uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
-   uint8_t server_key[MONGOC_SCRAM_HASH_MAX_SIZE];
-   uint8_t salted_password[MONGOC_SCRAM_HASH_MAX_SIZE];
-} mongoc_scram_cache_t;
+enum {
+   /* It is unlikely that there will be more than 64 different user accounts
+    * used in a single process */
+   MONGOC_SCRAM_CACHE_SIZE = 64,
+};
 
 typedef struct _mongoc_scram_t {
    int step;
    char *user;
    char *pass;
-   char *hashed_password;
+   char hashed_password[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
    uint32_t iterations;
    uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
@@ -67,19 +62,12 @@ typedef struct _mongoc_scram_t {
 #ifdef MONGOC_ENABLE_CRYPTO
    mongoc_crypto_t crypto;
 #endif
-   mongoc_scram_cache_t *cache;
 } mongoc_scram_t;
 
 #ifdef MONGOC_ENABLE_CRYPTO
 void
 _mongoc_scram_init (mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo);
 #endif
-
-mongoc_scram_cache_t *
-_mongoc_scram_get_cache (mongoc_scram_t *scram);
-
-void
-_mongoc_scram_set_cache (mongoc_scram_t *scram, mongoc_scram_cache_t *cache);
 
 void
 _mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass);
@@ -108,9 +96,6 @@ _mongoc_scram_step (mongoc_scram_t *scram,
                     uint32_t outbufmax,
                     uint32_t *outbuflen,
                     bson_error_t *error);
-
-void
-_mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache);
 
 /* returns false if this string does not need SASLPrep. It returns true
  * conservatively, if str might need to be SASLPrep'ed. */

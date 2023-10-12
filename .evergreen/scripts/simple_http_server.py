@@ -23,7 +23,7 @@ class Simple(BaseHTTPRequestHandler):
 
 
 def main():
-    HTTPServer(server_address=('', 8000),
+    HTTPServer(server_address=('', 18000),
                RequestHandlerClass=Simple).serve_forever()
 
 

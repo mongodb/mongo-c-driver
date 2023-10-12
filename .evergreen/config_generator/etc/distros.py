@@ -80,6 +80,8 @@ RHEL_DISTROS = [
     Distro(name='rhel80-small', os='rhel', os_type='linux', os_ver='8.0', size='small'),
     Distro(name='rhel84-large', os='rhel', os_type='linux', os_ver='8.4', size='large'),
     Distro(name='rhel84-small', os='rhel', os_type='linux', os_ver='8.4', size='small'),
+    Distro(name='rhel87-large', os='rhel', os_type='linux', os_ver='8.7', size='large'),
+    Distro(name='rhel87-small', os='rhel', os_type='linux', os_ver='8.7', size='small'),
     Distro(name='rhel90-large', os='rhel', os_type='linux', os_ver='9.0', size='large'),
     Distro(name='rhel90-small', os='rhel', os_type='linux', os_ver='9.0', size='small'),
 ]
@@ -191,7 +193,7 @@ ALL_DISTROS = [] + \
     WINDOWS_DISTROS
 
 
-def find_distro(name):
+def find_distro(name) -> Distro:
     candidates = [d for d in ALL_DISTROS if name == d.name]
 
     if not candidates:
@@ -200,7 +202,7 @@ def find_distro(name):
     return candidates[0]
 
 
-def find_large_distro(name):
+def find_large_distro(name) -> Distro:
     candidates = [d for d in ALL_DISTROS if f'{name}-large' == d.name]
 
     if candidates:
@@ -209,7 +211,7 @@ def find_large_distro(name):
     return find_distro(name)
 
 
-def find_small_distro(name):
+def find_small_distro(name) -> Distro:
     candidates = [d for d in ALL_DISTROS if f'{name}-small' == d.name]
 
     if candidates:
@@ -218,7 +220,7 @@ def find_small_distro(name):
     return find_distro(name)
 
 
-def make_distro_str(distro_name, compiler, arch):
+def make_distro_str(distro_name, compiler, arch) -> str:
     if distro_name.startswith('windows-vsCurrent'):
         # Rename `windows-vsCurrent-*` distros to `windows-<year>` where`<year>`
         # is the Windows Server version used by the distro, e.g.:
