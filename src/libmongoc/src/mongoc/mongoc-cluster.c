@@ -813,7 +813,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
                    const char *address,
                    uint32_t server_id,
                    bool negotiate_sasl_supported_mechs,
-                   mongoc_scram_cache_t *scram_cache,
                    mongoc_scram_t *scram,
                    bson_t *speculative_auth_response /* OUT */,
                    bson_error_t *error)
@@ -844,7 +843,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 #endif
 
       _mongoc_topology_scanner_add_speculative_authentication (
-         &handshake_command, cluster->uri, ssl_opts, scram_cache, scram);
+         &handshake_command, cluster->uri, ssl_opts, scram);
    }
 
    if (negotiate_sasl_supported_mechs) {
@@ -967,7 +966,6 @@ static mongoc_server_description_t *
 _cluster_run_hello (mongoc_cluster_t *cluster,
                     mongoc_cluster_node_t *node,
                     uint32_t server_id,
-                    mongoc_scram_cache_t *scram_cache,
                     mongoc_scram_t *scram /* OUT */,
                     bson_t *speculative_auth_response /* OUT */,
                     bson_error_t *error /* OUT */)
@@ -985,7 +983,6 @@ _cluster_run_hello (mongoc_cluster_t *cluster,
                            node->connection_address,
                            server_id,
                            _mongoc_uri_requires_auth_negotiation (cluster->uri),
-                           scram_cache,
                            scram,
                            speculative_auth_response,
                            error);
@@ -1416,11 +1413,6 @@ _mongoc_cluster_init_scram (const mongoc_cluster_t *cluster,
                             mongoc_crypto_hash_algorithm_t algo)
 {
    _mongoc_uri_init_scram (cluster->uri, scram, algo);
-
-   /* Apply previously cached SCRAM secrets if available */
-   if (cluster->scram_cache) {
-      _mongoc_scram_set_cache (scram, cluster->scram_cache);
-   }
 }
 
 /*
@@ -1781,13 +1773,6 @@ _mongoc_cluster_auth_scram_continue (
    }
 
    TRACE ("%s", "SCRAM: authenticated");
-
-   /* Save cached SCRAM secrets for future use */
-   if (cluster->scram_cache) {
-      _mongoc_scram_cache_destroy (cluster->scram_cache);
-   }
-
-   cluster->scram_cache = _mongoc_scram_get_cache (scram);
 
    return true;
 }
@@ -2176,7 +2161,6 @@ _cluster_add_node (mongoc_cluster_t *cluster,
    handshake_sd = _cluster_run_hello (cluster,
                                       cluster_node,
                                       server_id,
-                                      cluster->scram_cache,
                                       &scram,
                                       &speculative_auth_response,
                                       error);
@@ -2782,12 +2766,6 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
    mongoc_set_destroy (cluster->nodes);
 
    _mongoc_array_destroy (&cluster->iov);
-
-#ifdef MONGOC_ENABLE_CRYPTO
-   if (cluster->scram_cache) {
-      _mongoc_scram_cache_destroy (cluster->scram_cache);
-   }
-#endif
 
    EXIT;
 }

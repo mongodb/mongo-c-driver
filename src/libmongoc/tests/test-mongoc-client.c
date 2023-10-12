@@ -675,24 +675,6 @@ test_mongoc_client_authenticate_cached (bool pooled)
       }
    }
 
-   /* screw up the cache */
-   memcpy (client->cluster.scram_cache->client_key, "foo", 3);
-   cursor = mongoc_collection_find_with_opts (collection, &insert, NULL, NULL);
-   capture_logs (true);
-   r = mongoc_cursor_next (cursor, &doc);
-
-   if (pooled) {
-      ASSERT_CAPTURED_LOG ("The cachekey broke",
-                           MONGOC_LOG_LEVEL_WARNING,
-                           "Failed authentication");
-   }
-   capture_logs (false);
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "");
-   ASSERT (!r);
-   mongoc_cursor_destroy (cursor);
-
    mongoc_collection_destroy (collection);
    if (pooled) {
       capture_logs (true);

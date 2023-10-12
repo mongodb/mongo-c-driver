@@ -1295,16 +1295,17 @@ test_framework_replset_name (void)
 {
    bson_t reply;
    bson_iter_t iter;
-   char *replset_name;
+   char *replset_name = NULL;
 
    call_hello (&reply);
    if (!bson_iter_init_find (&iter, &reply, "setName")) {
-      return NULL;
+      goto cleanup;
    }
 
    replset_name = bson_strdup (bson_iter_utf8 (&iter, NULL));
-   bson_destroy (&reply);
 
+cleanup:
+   bson_destroy (&reply);
    return replset_name;
 }
 
