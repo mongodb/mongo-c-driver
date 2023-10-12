@@ -13,9 +13,6 @@ BSON_BEGIN_DECLS
  * mongoc_usleep_func_t:
  * @usec: Number of microseconds to sleep for.
  * @user_data: User data provided to mongoc_usleep_set_impl().
- *
- * This function prototype is userver-specific.
- * See TAXICOMMON-3810.
  */
 typedef void (*mongoc_usleep_func_t) (int64_t usec, void *user_data);
 
@@ -25,7 +22,6 @@ typedef void (*mongoc_usleep_func_t) (int64_t usec, void *user_data);
  *
  * Sets the function to be called to perform sleep.
  * Not thread-safe.
- * See TAXICOMMON-3810.
  */
 MONGOC_EXPORT (void)
 mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func, void *user_data);
