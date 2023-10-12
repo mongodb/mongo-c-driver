@@ -874,11 +874,6 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    mongoc_scram_cache_entry_t cache;
    if (_mongoc_scram_cache_has_presecrets (&cache, scram)) {
       _mongoc_scram_cache_apply_secrets (&cache, scram);
-   } else {
-      /*
-       * Block other threads here to until SCRAM step 3 finishes so that the
-       * cache will get populated for the others threads.
-       */
    }
 
    if (!*scram->salted_password) {
