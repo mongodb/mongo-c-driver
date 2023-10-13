@@ -233,8 +233,27 @@ bson_utf8_validate (const char *utf8, /* IN */
 }
 
 
-#define BSON_BIT_TEST(bits, bit) \
-   (((bits)[(bit) / (sizeof((bits)[0])*8)] >> ((bit) & (sizeof((bits)[0])*8-1))) & 1)
+static bool
+is_special_char (bson_unichar_t c)
+{
+   /*
+   C++ equivalent:
+   std::bitset<256> charmap = [...]
+   return charmap[c];
+   */
+   static const bson_unichar_t charmap[8] = {0xffffffff, // control characters
+                                             0x00000004, // double quote "
+                                             0x10000000, // backslash
+                                             0x00000000,
+                                             0xffffffff,
+                                             0xffffffff,
+                                             0xffffffff,
+                                             0xffffffff}; // non-ASCII
+   const int int_index = c / (sizeof (bson_unichar_t) * 8);
+   const int bit_index = c & (sizeof (bson_unichar_t) * 8 - 1);
+   return (charmap[int_index] >> bit_index) & 1;
+}
+
 
 /*
  *--------------------------------------------------------------------------
@@ -287,13 +306,8 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
    pos = 0;
 
    do {
-      static const bson_unichar_t charmap[8] = {
-         0xffffffff, 0x00000004, 0x10000000, 0x00000000,
-         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff};
-
       c = (unsigned char) utf8[pos];
-
-      if (!BSON_BIT_TEST(charmap, c)) {
+      if (!is_special_char (c)) {
          /* Not a special character. Move along, but copy the remaining buffer
           * upon reaching the end of the string. */
          pos++;
@@ -316,7 +330,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
       /* Read unicode character and validate it. Then, update the cursor and
        * length before moving on to the next character. */
-      if (c >= 0x80) {
+      if (c > 0x7f /* highest ASCII character */) {
          const char* utf8_old = utf8;
          uint8_t char_len;
 
@@ -390,8 +404,6 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
    return bson_string_free (str, false);
 }
-
-#undef BSON_BIT_TEST
 
 
 /*

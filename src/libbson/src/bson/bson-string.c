@@ -77,10 +77,8 @@ bson_string_new (const char *str) /* IN */
    if (str) {
       memcpy (ret->str, str, ret->len);
    }
-   ret->str[ret->len] = '\0';
 
    ret->str[ret->len] = '\0';
-
    return ret;
 }
 
@@ -127,11 +125,7 @@ bson_string_alloc (uint8_t len)
    BSON_ASSERT (ret->alloc >= 1);
 
    ret->str = bson_malloc (ret->alloc);
-
    ret->str[ret->len] = '\0';
-
-   ret->str[ret->len] = '\0';
-
    return ret;
 }
 
@@ -302,7 +296,7 @@ bson_string_append_codepoint (bson_string_t *string,  /* IN */
 
    BSON_ASSERT (string);
 
-   if (unichar > 0xFFFF) {
+   if (unichar > 0xffff) {
       bson_string_append_printf (string, "\\u%04x", unichar);
       return;
    }
