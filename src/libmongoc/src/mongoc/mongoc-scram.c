@@ -201,7 +201,7 @@ _mongoc_scram_cache_has_presecrets (mongoc_scram_cache_entry_t *cache /* out */,
    }
 
 done:
-   bson_shared_mutex_unlock (&g_scram_cache_rwlock);
+   bson_shared_mutex_unlock_shared (&g_scram_cache_rwlock);
    return cache_hit;
 }
 
