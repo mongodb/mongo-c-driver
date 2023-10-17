@@ -19,8 +19,6 @@ COMPILE_MATRIX = [
     ('archlinux',         'gcc',        None, ['cyrus']),
     ('debian10',          'gcc',        None, ['cyrus']),
     ('debian11',          'gcc',        None, ['cyrus']),
-    ('debian81',          'clang',      None, ['cyrus']),
-    ('debian81',          'gcc',        None, ['cyrus']),
     ('debian92',          'clang',      None, ['cyrus']),
     ('debian92',          'gcc',        None, ['cyrus']),
     ('rhel70',            'gcc',        None, ['cyrus']),

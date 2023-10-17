@@ -2760,22 +2760,6 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
-  - name: sasl-cyrus-openssl-debian81-clang-compile
-    run_on: debian81-large
-    tags: [sasl-matrix-openssl, compile, debian81, clang, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-cyrus-openssl-debian81-gcc-compile
-    run_on: debian81-large
-    tags: [sasl-matrix-openssl, compile, debian81, gcc, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
   - name: sasl-cyrus-openssl-debian92-clang-compile
     run_on: debian92-large
     tags: [sasl-matrix-openssl, compile, debian92, clang, sasl-cyrus]
@@ -4389,14 +4373,6 @@ tasks:
       - func: std-compile
         vars:
           CC: gcc
-          C_STD_VERSION: 11
-  - name: std-c11-debian81-clang-compile
-    run_on: debian81-large
-    tags: [std-matrix, debian81, clang, compile, std-c11]
-    commands:
-      - func: std-compile
-        vars:
-          CC: clang
           C_STD_VERSION: 11
   - name: std-c11-debian92-clang-compile
     run_on: debian92-large

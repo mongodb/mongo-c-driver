@@ -81,18 +81,6 @@ all_variants = [
         tags=["pr-merge-gate"],
     ),
     Variant(
-        "clang35",
-        "clang 3.5 (Debian 8.1)",
-        "debian81-test",
-        [
-            "release-compile",
-            "debug-compile-sasl-openssl",
-            "debug-compile-nosasl-openssl",
-            ".authentication-tests .openssl",
-        ],
-        {"CC": "clang"},
-    ),
-    Variant(
         "clang38",
         "clang 3.8 (Debian 9.2)",
         "debian92-test",
@@ -191,18 +179,6 @@ all_variants = [
             "debug-compile-nosasl-openssl",
             ".authentication-tests .openssl",
             ".latest .nossl",
-        ],
-        {"CC": "gcc"},
-    ),
-    Variant(
-        "gcc49",
-        "GCC 4.9 (Debian 8.1)",
-        "debian81-test",
-        [
-            "release-compile",
-            "debug-compile-sasl-openssl",
-            "debug-compile-nosasl-openssl",
-            ".authentication-tests .openssl",
         ],
         {"CC": "gcc"},
     ),

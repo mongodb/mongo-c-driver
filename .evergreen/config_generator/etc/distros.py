@@ -54,8 +54,6 @@ DEBIAN_DISTROS = [
     Distro(name='debian10-small', os='debian', os_type='linux', os_ver='10', size='small'),
     Distro(name='debian11-large', os='debian', os_type='linux', os_ver='11', size='large'),
     Distro(name='debian11-small', os='debian', os_type='linux', os_ver='11', size='small'),
-    Distro(name='debian81-large', os='debian', os_type='linux', os_ver='8.1', size='large'),
-    Distro(name='debian81-small', os='debian', os_type='linux', os_ver='8.1', size='small'),
     Distro(name='debian92-large', os='debian', os_type='linux', os_ver='9.2', size='large'),
     Distro(name='debian92-small', os='debian', os_type='linux', os_ver='9.2', size='small'),
 ]
