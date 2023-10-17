@@ -13,7 +13,7 @@ Synopsis
 
 Fork Safety
 -----------
-A :symbol:`mongoc_client_session_t` is only usable in the parent process after a fork. The child process must call :symbol:`mongo_client_reset` on the ``client`` field.
+A :symbol:`mongoc_client_session_t` is only usable in the parent process after a fork. The child process must call :symbol:`mongoc_client_reset` on the ``client`` field.
 
 Example
 -------
