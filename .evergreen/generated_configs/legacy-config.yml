@@ -14010,10 +14010,10 @@ buildvariants:
   - link-with-cmake-snappy-deprecated
   - name: link-with-cmake-mac
     distros:
-    - macos-1014
+    - macos-1100
   - name: link-with-cmake-mac-deprecated
     distros:
-    - macos-1014
+    - macos-1100
   - name: link-with-cmake-windows
     distros:
     - windows-vsCurrent-large
@@ -14031,7 +14031,7 @@ buildvariants:
     - ubuntu1804-test
   - name: link-with-pkg-config-mac
     distros:
-    - macos-1014
+    - macos-1100
   - link-with-pkg-config-ssl
   - link-with-bson
   - name: link-with-bson-windows
@@ -14039,7 +14039,7 @@ buildvariants:
     - windows-vsCurrent-large
   - name: link-with-bson-mac
     distros:
-    - macos-1014
+    - macos-1100
   - name: link-with-bson-mingw
     distros:
     - windows-vsCurrent-large
@@ -14266,7 +14266,7 @@ buildvariants:
   display_name: '*Darwin, macOS (Apple LLVM)'
   expansions:
     CC: clang
-  run_on: macos-1014
+  run_on: macos-1100
   tasks:
   - .compression !.snappy
   - release-compile
@@ -14462,14 +14462,14 @@ buildvariants:
   - name: debug-compile-nosasl-openssl-static
   - name: debug-compile-nosasl-darwinssl
     distros:
-    - macos-1014
+    - macos-1100
   - name: debug-compile-nosasl-winssl
     distros:
     - windows-vsCurrent-large
   - name: .ocsp-openssl
   - name: .ocsp-darwinssl
     distros:
-    - macos-1014
+    - macos-1100
   - name: .ocsp-winssl
     distros:
     - windows-vsCurrent-large
