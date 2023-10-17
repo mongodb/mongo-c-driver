@@ -14058,14 +14058,6 @@ buildvariants:
   - install-libmongoc-after-libbson
   tags:
   - pr-merge-gate
-- name: clang34ubuntu
-  display_name: clang 3.4 (Ubuntu 14.04)
-  expansions:
-    CC: clang
-  run_on: ubuntu1404-build
-  tasks:
-  - release-compile
-  - debug-compile-rdtscp
 - name: clang35
   display_name: clang 3.5 (Debian 8.1)
   expansions:
@@ -14139,13 +14131,6 @@ buildvariants:
   - debug-compile-nosasl-openssl
   - debug-compile-no-align
   - .authentication-tests .openssl
-- name: gcc48ubuntu
-  display_name: GCC 4.8 (Ubuntu 14.04)
-  expansions:
-    CC: gcc
-  run_on: ubuntu1404-build
-  tasks:
-  - release-compile
 - name: gcc82rhel
   display_name: GCC 8.2 (RHEL 8.0)
   expansions:

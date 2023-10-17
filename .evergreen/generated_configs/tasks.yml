@@ -3024,22 +3024,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1404-clang-compile
-    run_on: ubuntu1404-large
-    tags: [sasl-matrix-openssl, compile, ubuntu1404, clang, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-cyrus-openssl-ubuntu1404-gcc-compile
-    run_on: ubuntu1404-large
-    tags: [sasl-matrix-openssl, compile, ubuntu1404, gcc, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu1604-arm64-gcc-compile
     run_on: ubuntu1604-arm64-large
     tags: [sasl-matrix-openssl, compile, ubuntu1604-arm64, gcc, sasl-cyrus]

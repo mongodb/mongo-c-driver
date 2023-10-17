@@ -27,8 +27,6 @@ COMPILE_MATRIX = [
     ('rhel80',            'gcc',        None, ['cyrus']),
     ('rhel81-power8',     'gcc',        None, ['cyrus']),
     ('rhel83-zseries',    'gcc',        None, ['cyrus']),
-    ('ubuntu1404',        'clang',      None, ['cyrus']),
-    ('ubuntu1404',        'gcc',        None, ['cyrus']),
     ('ubuntu1604-arm64',  'gcc',        None, ['cyrus']),
     ('ubuntu1604',        'clang',      None, ['cyrus']),
     ('ubuntu1804-arm64',  'gcc',        None, ['cyrus']),

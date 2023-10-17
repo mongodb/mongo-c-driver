@@ -81,13 +81,6 @@ all_variants = [
         tags=["pr-merge-gate"],
     ),
     Variant(
-        "clang34ubuntu",
-        "clang 3.4 (Ubuntu 14.04)",
-        "ubuntu1404-build",
-        ["release-compile", "debug-compile-rdtscp"],
-        {"CC": "clang"},
-    ),
-    Variant(
         "clang35",
         "clang 3.5 (Debian 8.1)",
         "debian81-test",
@@ -167,7 +160,6 @@ all_variants = [
         ],
         {"CC": "clang"},
     ),
-    Variant("gcc48ubuntu", "GCC 4.8 (Ubuntu 14.04)", "ubuntu1404-build", ["release-compile"], {"CC": "gcc"}),
     Variant(
         "gcc82rhel",
         "GCC 8.2 (RHEL 8.0)",

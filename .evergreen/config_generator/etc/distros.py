@@ -110,8 +110,6 @@ RHEL_ZSERIES_DISTROS = [
 ]
 
 UBUNTU_DISTROS = [
-    Distro(name='ubuntu1404-large', os='ubuntu', os_type='linux', os_ver='14.04', size='large'),
-    Distro(name='ubuntu1404-small', os='ubuntu', os_type='linux', os_ver='14.04', size='small'),
     Distro(name='ubuntu1604-large', os='ubuntu', os_type='linux', os_ver='16.04', size='large'),
     Distro(name='ubuntu1604-small', os='ubuntu', os_type='linux', os_ver='16.04', size='small'),
     Distro(name='ubuntu1804-large', os='ubuntu', os_type='linux', os_ver='18.04', size='large'),
