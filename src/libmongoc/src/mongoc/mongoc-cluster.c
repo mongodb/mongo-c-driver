@@ -492,12 +492,30 @@ done:
    RETURN (ret);
 }
 
-bool
+static bool
 _in_sharded_txn (const mongoc_client_session_t *session)
 {
    return session && _mongoc_client_session_in_txn_or_ending (session) &&
           _mongoc_topology_get_type (session->client->topology) ==
              MONGOC_TOPOLOGY_SHARDED;
+}
+
+static bool
+_in_sharded_or_loadbalanced_txn (const mongoc_client_session_t *session)
+{
+   if (!session) {
+      return false;
+   }
+
+   if (!_mongoc_client_session_in_txn_or_ending (session)) {
+      return false;
+   }
+
+   mongoc_topology_description_type_t type =
+      _mongoc_topology_get_type (session->client->topology);
+
+   return (type == MONGOC_TOPOLOGY_SHARDED) ||
+          (type == MONGOC_TOPOLOGY_LOAD_BALANCED);
 }
 
 static void
@@ -654,7 +672,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
 
    _handle_txn_error_labels (retval, error, cmd, reply);
 
-   if (retval && _in_sharded_txn (cmd->session) &&
+   if (retval && _in_sharded_or_loadbalanced_txn (cmd->session) &&
        bson_iter_init_find (&iter, reply, "recoveryToken")) {
       bson_destroy (cmd->session->recovery_token);
       if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
