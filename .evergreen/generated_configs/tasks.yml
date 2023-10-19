@@ -2535,23 +2535,6 @@ tasks:
       - func: openssl-static-compile
         vars:
           CC: gcc
-  - name: sasl-cyrus-darwinssl-macos-1014-clang-compile
-    run_on: macos-1014
-    tags: [sasl-matrix-darwinssl, compile, macos-1014, clang, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-darwinssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-cyrus-darwinssl-macos-1015-clang-compile
-    run_on: macos-1015
-    tags: [sasl-matrix-darwinssl, compile, macos-1015, clang, sasl-cyrus]
-    disable: true
-    commands:
-      - func: sasl-cyrus-darwinssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
   - name: sasl-cyrus-darwinssl-macos-1100-arm64-clang-compile
     run_on: macos-1100-arm64
     tags: [sasl-matrix-darwinssl, compile, macos-1100-arm64, clang, sasl-cyrus]
@@ -3648,14 +3631,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-off-nossl-macos-1014-clang-compile
-    run_on: macos-1014
-    tags: [sasl-matrix-nossl, compile, macos-1014, clang, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: clang
-      - func: upload-build
   - name: sasl-off-nossl-ubuntu1604-gcc-compile
     run_on: ubuntu1604-large
     tags: [sasl-matrix-nossl, compile, ubuntu1604, gcc, sasl-off]

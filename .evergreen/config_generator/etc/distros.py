@@ -59,9 +59,6 @@ DEBIAN_DISTROS = [
 ]
 
 MACOS_DISTROS = [
-    Distro(name='macos-1012', os='macos', os_type='macos', os_ver='10.12'),
-    Distro(name='macos-1014', os='macos', os_type='macos', os_ver='10.14'),
-    Distro(name='macos-1015', os='macos', os_type='macos', os_ver='10.15'),
     Distro(name='macos-1100', os='macos', os_type='macos', os_ver='11.00'),
 ]
 
