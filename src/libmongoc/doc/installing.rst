@@ -29,6 +29,12 @@ Install libbson with a Package Manager
 
 .. note:: Moved: :doc:`/learn/get/installing`
 
+Docker image
+------------
+
+You can find a Docker image in `Docker Hub <https://hub.docker.com/r/mongodb/mongo-cxx-driver>`_
+along with example usage of using libmongoc to ping a MongoDB database from
+within a Docker container.
 
 Build environment
 -----------------
