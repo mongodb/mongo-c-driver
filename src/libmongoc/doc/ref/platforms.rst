@@ -30,7 +30,7 @@ The following operating systems are continually tested with |mongo-c-driver|:
   - - Arch Linux
     -
   - - macOS
-    - Versions **10.14** and **11.0**
+    - Version **11.0**
   - - Windows Server 2008 and Windows Server 2016
     - Windows variants of the same generation are supported
 
@@ -47,10 +47,10 @@ The following compilers are continually tested for |mongo-c-driver|:
   - - Compiler
     - Notes
   - - Clang
-    - Versions **3.4**, **3.5**, **3.7**, **3.8**, and **6.0**. Newer versions
+    - Versions **3.7**, **3.8**, and **6.0**. Newer versions
       are also supported, as well as the corresponding Apple Clang releases.
   - - GCC
-    - Versions **4.8**, **4.9**, **5.4**, **6.3**, **7.5**, **8.2**, **8.3**,
+    - Versions **4.8**, **5.4**, **6.3**, **7.5**, **8.2**, **8.3**,
       **9.4**, and **10.2**. The MinGW-w64 GCC is also tested and supported.
   - - Microsoft Visual C++ (MSVC)
     - Tested with MSVC **12.x** (Visual Studio **2013**), **14.x** (Visual

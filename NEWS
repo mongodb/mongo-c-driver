@@ -5,6 +5,12 @@ Improvements:
 
   * Remove optional dependency of libicu.
 
+Platform Support:
+
+  * Support for macOS 10.14 is dropped.
+  * Support for Ubuntu 14.04 is dropped.
+  * Support for Debian 8.1 is dropped.
+
 Other:
 
   * The constructed source-distribution archive is no longer available as a

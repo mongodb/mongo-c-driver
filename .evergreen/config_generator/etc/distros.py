@@ -54,16 +54,11 @@ DEBIAN_DISTROS = [
     Distro(name='debian10-small', os='debian', os_type='linux', os_ver='10', size='small'),
     Distro(name='debian11-large', os='debian', os_type='linux', os_ver='11', size='large'),
     Distro(name='debian11-small', os='debian', os_type='linux', os_ver='11', size='small'),
-    Distro(name='debian81-large', os='debian', os_type='linux', os_ver='8.1', size='large'),
-    Distro(name='debian81-small', os='debian', os_type='linux', os_ver='8.1', size='small'),
     Distro(name='debian92-large', os='debian', os_type='linux', os_ver='9.2', size='large'),
     Distro(name='debian92-small', os='debian', os_type='linux', os_ver='9.2', size='small'),
 ]
 
 MACOS_DISTROS = [
-    Distro(name='macos-1012', os='macos', os_type='macos', os_ver='10.12'),
-    Distro(name='macos-1014', os='macos', os_type='macos', os_ver='10.14'),
-    Distro(name='macos-1015', os='macos', os_type='macos', os_ver='10.15'),
     Distro(name='macos-1100', os='macos', os_type='macos', os_ver='11.00'),
 ]
 
@@ -110,8 +105,6 @@ RHEL_ZSERIES_DISTROS = [
 ]
 
 UBUNTU_DISTROS = [
-    Distro(name='ubuntu1404-large', os='ubuntu', os_type='linux', os_ver='14.04', size='large'),
-    Distro(name='ubuntu1404-small', os='ubuntu', os_type='linux', os_ver='14.04', size='small'),
     Distro(name='ubuntu1604-large', os='ubuntu', os_type='linux', os_ver='16.04', size='large'),
     Distro(name='ubuntu1604-small', os='ubuntu', os_type='linux', os_ver='16.04', size='small'),
     Distro(name='ubuntu1804-large', os='ubuntu', os_type='linux', os_ver='18.04', size='large'),

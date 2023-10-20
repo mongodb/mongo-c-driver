@@ -2535,23 +2535,6 @@ tasks:
       - func: openssl-static-compile
         vars:
           CC: gcc
-  - name: sasl-cyrus-darwinssl-macos-1014-clang-compile
-    run_on: macos-1014
-    tags: [sasl-matrix-darwinssl, compile, macos-1014, clang, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-darwinssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-cyrus-darwinssl-macos-1015-clang-compile
-    run_on: macos-1015
-    tags: [sasl-matrix-darwinssl, compile, macos-1015, clang, sasl-cyrus]
-    disable: true
-    commands:
-      - func: sasl-cyrus-darwinssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
   - name: sasl-cyrus-darwinssl-macos-1100-arm64-clang-compile
     run_on: macos-1100-arm64
     tags: [sasl-matrix-darwinssl, compile, macos-1100-arm64, clang, sasl-cyrus]
@@ -2755,22 +2738,6 @@ tasks:
   - name: sasl-cyrus-openssl-debian11-gcc-compile
     run_on: debian11-large
     tags: [sasl-matrix-openssl, compile, debian11, gcc, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-cyrus-openssl-debian81-clang-compile
-    run_on: debian81-large
-    tags: [sasl-matrix-openssl, compile, debian81, clang, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-cyrus-openssl-debian81-gcc-compile
-    run_on: debian81-large
-    tags: [sasl-matrix-openssl, compile, debian81, gcc, sasl-cyrus]
     commands:
       - func: sasl-cyrus-openssl-compile
         vars:
@@ -3024,22 +2991,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1404-clang-compile
-    run_on: ubuntu1404-large
-    tags: [sasl-matrix-openssl, compile, ubuntu1404, clang, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-cyrus-openssl-ubuntu1404-gcc-compile
-    run_on: ubuntu1404-large
-    tags: [sasl-matrix-openssl, compile, ubuntu1404, gcc, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu1604-arm64-gcc-compile
     run_on: ubuntu1604-arm64-large
     tags: [sasl-matrix-openssl, compile, ubuntu1604-arm64, gcc, sasl-cyrus]
@@ -3680,14 +3631,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-off-nossl-macos-1014-clang-compile
-    run_on: macos-1014
-    tags: [sasl-matrix-nossl, compile, macos-1014, clang, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: clang
-      - func: upload-build
   - name: sasl-off-nossl-ubuntu1604-gcc-compile
     run_on: ubuntu1604-large
     tags: [sasl-matrix-nossl, compile, ubuntu1604, gcc, sasl-off]
@@ -4405,14 +4348,6 @@ tasks:
       - func: std-compile
         vars:
           CC: gcc
-          C_STD_VERSION: 11
-  - name: std-c11-debian81-clang-compile
-    run_on: debian81-large
-    tags: [std-matrix, debian81, clang, compile, std-c11]
-    commands:
-      - func: std-compile
-        vars:
-          CC: clang
           C_STD_VERSION: 11
   - name: std-c11-debian92-clang-compile
     run_on: debian92-large
