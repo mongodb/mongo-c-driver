@@ -813,7 +813,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
 endif ()
 
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-if (WIN32)
+if(WIN32)
    set_property(TARGET mongoc_shared APPEND PROPERTY SOURCES libmongoc.rc)
 endif()
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
