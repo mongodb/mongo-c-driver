@@ -2600,6 +2600,10 @@ cleanup:
 static void
 test_example_59 (mongoc_database_t *db)
 {
+   if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
    mongoc_client_t *client = NULL;
    client = test_framework_new_default_client ();
 
@@ -2713,6 +2717,10 @@ cleanup:
 static void
 test_example_60 (mongoc_database_t *db)
 {
+   if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
    mongoc_client_t *client = NULL;
    client = test_framework_new_default_client ();
 
@@ -4331,13 +4339,11 @@ test_sample_commands (void)
    test_sample_command (test_example_53, 53, db, collection, false);
    test_sample_command (test_example_54, 54, db, collection, true);
    test_sample_command (test_example_55, 55, db, collection, false);
-   test_sample_command (test_example_56, 56, db, collection, true);
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
-   if (test_framework_skip_if_not_replset ()) {
-      test_sample_command (test_example_59, 59, db, collection, true);
-      test_sample_command (test_example_60, 60, db, collection, true);
-   }
+   test_sample_command (test_example_56, 56, db, collection, true);
+   test_sample_command (test_example_59, 59, db, collection, true);
+   test_sample_command (test_example_60, 60, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
