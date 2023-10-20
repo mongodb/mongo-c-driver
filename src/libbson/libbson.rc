@@ -27,12 +27,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "MongoDB, Inc"
             VALUE "FileDescription", "A BSON Library for C"
-            VALUE "FileVersion", BSON_VERSION_S "\0"
+            VALUE "FileVersion", BSON_VERSION_S
             VALUE "InternalName", "bson-1.0"
             VALUE "OriginalFilename", "bson-1.0.dll"
             VALUE "ProductName", "MongoDB C Driver"
-            VALUE "ProductVersion", BSON_VERSION_S "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2023-present MongoDB, Inc.\0"
+            VALUE "ProductVersion", BSON_VERSION_S
+            VALUE "LegalCopyright", "Copyright (C) 2023-present MongoDB, Inc."
         END
     END
     BLOCK "VarFileInfo"
