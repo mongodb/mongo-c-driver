@@ -228,11 +228,8 @@ if(ENABLE_STATIC)
 endif()
 
 if(ENABLE_SHARED)
-   add_library(bson_shared SHARED)
+   add_library(bson_shared SHARED $<$<PLATFORM_ID:Windows>:libbson.rc>)
    target_link_libraries(bson_shared PRIVATE $<BUILD_INTERFACE:bson_obj_pic>)
-   if(WIN32)
-      set_property(TARGET bson_shared APPEND PROPERTY SOURCES libbson.rc)
-   endif()
    list(APPEND bson_libs bson_shared)
 endif()
 
