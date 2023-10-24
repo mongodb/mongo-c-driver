@@ -812,7 +812,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
 
-add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING} $<$<PLATFORM_ID:Windows>:libmongoc.rc>)
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
