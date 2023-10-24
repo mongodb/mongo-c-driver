@@ -177,6 +177,9 @@ set(bson_libs)
 if(ENABLE_STATIC)
    add_library(bson_static STATIC ${all_sources})
    list(APPEND bson_libs bson_static)
+   # Define `BSON_STATIC` when building to suppress the annotation __declspec(dllexport).
+   # This prevents consumers of bson_static from exporting the symbols.
+   target_compile_definitions(bson_static PRIVATE BSON_STATIC)
    # When consumers link against bson_static, suppress the annotation __declspec(dllimport),
    # since those symbols will be available immediately at the link step:
    target_compile_definitions(bson_static INTERFACE BSON_STATIC)
