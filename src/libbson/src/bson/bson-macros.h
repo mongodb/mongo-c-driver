@@ -66,11 +66,10 @@
 
 
 /* Decorate public functions:
- * - if BSON_STATIC, we're compiling a program that uses libbson as a static
- *   library, don't decorate functions
- * - else if BSON_COMPILATION, we're compiling a static or shared libbson, mark
- *   public functions for export from the shared lib (which has no effect on
- *   the static lib)
+ * - if BSON_STATIC, we're compiling a static libbson or a program
+ *   that uses libbson as a static library. Don't decorate functions.
+ * - else if BSON_COMPILATION, we're compiling a shared libbson, mark
+ *   public functions for export from the shared lib
  * - else, we're compiling a program that uses libbson as a shared library,
  *   mark public functions as DLL imports for Microsoft Visual C
  */

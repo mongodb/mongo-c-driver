@@ -20,11 +20,10 @@
 #define MONGOC_MACROS_H
 
 /* Decorate public functions:
- * - if MONGOC_STATIC, we're compiling a program that uses libmongoc as
- *   a static library, don't decorate functions
- * - else if MONGOC_COMPILATION, we're compiling a static or shared libmongoc,
- *   mark public functions for export from the shared lib (which has no effect
- *   on the static lib)
+ * - if MONGOC_STATIC, we're compiling a static libmongoc or a program
+ *   that uses libmongoc as a static library. Don't decorate functions
+ * - else if MONGOC_COMPILATION, we're compiling a shared libmongoc,
+ *   mark public functions for export from the shared lib.
  * - else, we're compiling a program that uses libmongoc as a shared library,
  *   mark public functions as DLL imports for Microsoft Visual C.
  */
