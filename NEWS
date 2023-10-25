@@ -1,6 +1,10 @@
 libmongoc 1.25.0 (Unreleased)
 =============================
 
+Fixes:
+
+  * Send `recoveryToken` in transactions when connected to a load balancer.
+
 Improvements:
 
   * Remove optional dependency of libicu.
