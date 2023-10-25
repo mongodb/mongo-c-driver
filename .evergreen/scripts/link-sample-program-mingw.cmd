@@ -1,6 +1,3 @@
-rem Ensure Cygwin executables like sh.exe are not in PATH
-rem set PATH=C:\Windows\system32;C:\Windows
-
 echo on
 echo
 
