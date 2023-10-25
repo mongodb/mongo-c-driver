@@ -1,14 +1,18 @@
-libbson 1.24.4
-==============
-
-Fixes:
-  * Fix libmongoc build failure caused by missing install of `bson-dsl.h`.
+libbson 1.25.0 (Unreleased)
+===========================
 
 Platform Support:
 
   * Support for macOS 10.14 is dropped.
   * Support for Ubuntu 14.04 is dropped.
   * Support for Debian 8.1 is dropped.
+
+
+libbson 1.24.4
+==============
+
+Fixes:
+  * Fix libmongoc build failure caused by missing install of `bson-dsl.h`.
 
 Thanks to everyone who contributed to the development of this release.
 
