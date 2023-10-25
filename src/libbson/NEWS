@@ -1,6 +1,10 @@
 libbson 1.25.0 (Unreleased)
 ===========================
 
+New Features:
+
+  * Add `bson_array_builder_t`.
+
 Platform Support:
 
   * Support for macOS 10.14 is dropped.
