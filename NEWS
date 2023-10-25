@@ -4,6 +4,7 @@ libmongoc 1.25.0 (Unreleased)
 Improvements:
 
   * Remove optional dependency of libicu.
+  * Use OP_MSG exhaust for mongod >= 4.2. Enable exhaust cursors for mongos >= 7.1.
 Build Configuration:
 
   * Remove `ENABLE_SRV=AUTO`. Only support boolean values for `ENABLE_SRV`.
