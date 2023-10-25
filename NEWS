@@ -4,6 +4,9 @@ libmongoc 1.25.0 (Unreleased)
 Improvements:
 
   * Remove optional dependency of libicu.
+Build Configuration:
+
+  * Remove `ENABLE_SRV=AUTO`. Only support boolean values for `ENABLE_SRV`.
 
 Platform Support:
 
