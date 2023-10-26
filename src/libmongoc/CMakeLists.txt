@@ -813,7 +813,8 @@ if (MONGOC_ENABLE_STATIC_BUILD)
 endif ()
 
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING} $<$<PLATFORM_ID:Windows>:libmongoc.rc>)
-set_source_files_properties (libmongoc.rc PROPERTIES COMPILE_DEFINITIONS MONGOC_OUTPUT_BASENAME="${MONGOC_OUTPUT_BASENAME}")
+# Set MONGOC_OUTPUT_BASENAME without quotes. MinGW appears not to keep the quotes when invoking the preprocessor. Quote are added in the .rc file.
+set_source_files_properties (libmongoc.rc PROPERTIES COMPILE_DEFINITIONS MONGOC_OUTPUT_BASENAME=${MONGOC_OUTPUT_BASENAME})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})

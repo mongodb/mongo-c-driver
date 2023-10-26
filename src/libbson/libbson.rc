@@ -5,6 +5,10 @@
 #include <bson/bson-version.h> // Defines BSON_MAJOR_VERSION and other version macros.
 #undef BSON_COMPILATION
 
+#define TO_STR_AFTER_EVAL(TOKEN) #TOKEN
+// TO_STR evaluates the TOKEN (which may be a macro) and then applies the # operator to quote it.
+#define TO_STR(TOKEN) TO_STR_AFTER_EVAL(TOKEN)
+
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION BSON_MAJOR_VERSION,BSON_MINOR_VERSION,BSON_MICRO_VERSION,0
  PRODUCTVERSION BSON_MAJOR_VERSION,BSON_MINOR_VERSION,BSON_MICRO_VERSION,0
@@ -29,7 +33,7 @@ BEGIN
             VALUE "FileDescription", "A BSON Library for C"
             VALUE "FileVersion", BSON_VERSION_S
             VALUE "InternalName", "bson-1.0"
-            VALUE "OriginalFilename", BSON_OUTPUT_BASENAME "-1.0.dll"
+            VALUE "OriginalFilename", TO_STR(BSON_OUTPUT_BASENAME) "-1.0.dll"
             VALUE "ProductName", "MongoDB C Driver"
             VALUE "ProductVersion", BSON_VERSION_S
             VALUE "LegalCopyright", "Copyright (C) 2013-present MongoDB, Inc."
@@ -41,3 +45,6 @@ BEGIN
         VALUE "Translation", 0x409, 1200
     END
 END
+
+#undef TO_STR
+#undef TO_STR_AFTER_EVAL
