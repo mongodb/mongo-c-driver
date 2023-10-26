@@ -58,8 +58,7 @@ def setup(app):
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme_path = ["../"]
-html_theme = 'readable'
+html_theme = 'furo'
 html_title = html_shorttitle = 'MongoDB C Driver %s' % version
 # html_favicon = None
 html_use_smartypants = False
