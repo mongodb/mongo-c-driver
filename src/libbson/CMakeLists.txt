@@ -229,6 +229,7 @@ endif()
 
 if(ENABLE_SHARED)
    add_library(bson_shared SHARED $<$<PLATFORM_ID:Windows>:libbson.rc>)
+   set_source_files_properties (libbson.rc PROPERTIES COMPILE_DEFINITIONS BSON_OUTPUT_BASENAME="${BSON_OUTPUT_BASENAME}")
    target_link_libraries(bson_shared PRIVATE $<BUILD_INTERFACE:bson_obj_pic>)
    list(APPEND bson_libs bson_shared)
 endif()
