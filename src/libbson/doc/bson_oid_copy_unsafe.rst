@@ -10,6 +10,7 @@ Synopsis
 
   static inline void
   bson_oid_copy_unsafe (const bson_oid_t *src, bson_oid_t *dst);
+
 Description
 -----------
 

@@ -10,6 +10,7 @@ Synopsis
 
   static inline bool
   bson_oid_equal_unsafe (const bson_oid_t *oid1, const bson_oid_t *oid2);
+
 Description
 -----------
 
