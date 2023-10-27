@@ -228,7 +228,12 @@ if(ENABLE_STATIC)
 endif()
 
 if(ENABLE_SHARED)
-   add_library(bson_shared SHARED $<$<PLATFORM_ID:Windows>:libbson.rc>)
+   add_library(bson_shared SHARED)
+   if(WIN32)
+      # Add resource-definition script for Windows shared library (.dll).
+      configure_file(libbson.rc.in libbson.rc)
+      target_sources(bson_shared PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libbson.rc)
+   endif()
    target_link_libraries(bson_shared PRIVATE $<BUILD_INTERFACE:bson_obj_pic>)
    list(APPEND bson_libs bson_shared)
 endif()
