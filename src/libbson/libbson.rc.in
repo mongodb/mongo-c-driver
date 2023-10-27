@@ -31,7 +31,7 @@ BEGIN
             VALUE "CompanyName", "MongoDB, Inc"
             VALUE "FileDescription", "A BSON Library for C"
             VALUE "FileVersion", BSON_VERSION_S
-            VALUE "InternalName", "bson-" BSON_API_VERSION
+            VALUE "InternalName", BSON_OUTPUT_BASENAME "-" BSON_API_VERSION
             VALUE "OriginalFilename", BSON_OUTPUT_BASENAME "-" BSON_API_VERSION ".dll"
             VALUE "ProductName", "MongoDB C Driver"
             VALUE "ProductVersion", BSON_VERSION_S

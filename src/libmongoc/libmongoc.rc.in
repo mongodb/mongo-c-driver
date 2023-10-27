@@ -29,7 +29,7 @@ BEGIN
             VALUE "CompanyName", "MongoDB, Inc"
             VALUE "FileDescription", "MongoDB Client Library for C"
             VALUE "FileVersion", MONGOC_VERSION_S
-            VALUE "InternalName", "mongoc-" MONGOC_API_VERSION
+            VALUE "InternalName", MONGOC_OUTPUT_BASENAME "-" MONGOC_API_VERSION
             VALUE "OriginalFilename", MONGOC_OUTPUT_BASENAME "-" MONGOC_API_VERSION ".dll"
             VALUE "ProductName", "MongoDB C Driver"
             VALUE "ProductVersion", MONGOC_VERSION_S
