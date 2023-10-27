@@ -3,9 +3,7 @@
 #include <winver.h> // Defines VS_VERSION_INFO
 #include <mongoc/mongoc-version.h> // Defines MONGOC_MAJOR_VERSION and other version macros.
 
-#define TO_STR_AFTER_EVAL(TOKEN) #TOKEN
-// TO_STR evaluates the TOKEN (which may be a macro) and then applies the # operator to quote it.
-#define TO_STR(TOKEN) TO_STR_AFTER_EVAL(TOKEN)
+#define MONGOC_OUTPUT_BASENAME "@MONGOC_OUTPUT_BASENAME@"
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION MONGOC_MAJOR_VERSION,MONGOC_MINOR_VERSION,MONGOC_MICRO_VERSION,0
@@ -31,7 +29,7 @@ BEGIN
             VALUE "FileDescription", "MongoDB Client Library for C"
             VALUE "FileVersion", MONGOC_VERSION_S
             VALUE "InternalName", "mongoc-1.0"
-            VALUE "OriginalFilename", TO_STR(MONGOC_OUTPUT_BASENAME) "-1.0.dll"
+            VALUE "OriginalFilename", MONGOC_OUTPUT_BASENAME "-1.0.dll"
             VALUE "ProductName", "MongoDB C Driver"
             VALUE "ProductVersion", MONGOC_VERSION_S
             VALUE "LegalCopyright", "Copyright (C) 2013-present MongoDB, Inc."
@@ -43,6 +41,3 @@ BEGIN
         VALUE "Translation", 0x409, 1200
     END
 END
-
-#undef TO_STR
-#undef TO_STR_AFTER_EVAL

@@ -228,9 +228,8 @@ if(ENABLE_STATIC)
 endif()
 
 if(ENABLE_SHARED)
-   add_library(bson_shared SHARED $<$<PLATFORM_ID:Windows>:libbson.rc>)
-   # Set BSON_OUTPUT_BASENAME without quotes. MinGW appears not to keep the quotes when invoking the preprocessor. Quote are added in the .rc file.
-   set_source_files_properties (libbson.rc PROPERTIES COMPILE_DEFINITIONS BSON_OUTPUT_BASENAME=${BSON_OUTPUT_BASENAME})
+   configure_file (libbson.rc.in libbson.rc)
+   add_library(bson_shared SHARED $<$<PLATFORM_ID:Windows>:${CMAKE_CURRENT_BINARY_DIR}/libbson.rc>)
    target_link_libraries(bson_shared PRIVATE $<BUILD_INTERFACE:bson_obj_pic>)
    list(APPEND bson_libs bson_shared)
 endif()
