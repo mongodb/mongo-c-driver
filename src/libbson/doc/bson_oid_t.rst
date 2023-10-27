@@ -57,13 +57,19 @@ You can validate that a string containing a hex-encoded ObjectID is valid using 
     :maxdepth: 1
 
     bson_oid_compare
+    bson_oid_compare_unsafe
     bson_oid_copy
+    bson_oid_copy_unsafe
     bson_oid_equal
+    bson_oid_equal_unsafe
     bson_oid_get_time_t
+    bson_oid_get_time_t_unsafe
     bson_oid_hash
+    bson_oid_hash_unsafe
     bson_oid_init
     bson_oid_init_from_data
     bson_oid_init_from_string
+    bson_oid_init_from_string_unsafe
     bson_oid_init_sequence
     bson_oid_is_valid
     bson_oid_to_string
