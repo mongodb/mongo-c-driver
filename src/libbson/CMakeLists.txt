@@ -191,7 +191,12 @@ if(ENABLE_STATIC)
 endif()
 
 if(ENABLE_SHARED)
-   add_library(bson_shared SHARED  ${all_sources} $<$<PLATFORM_ID:Windows>:libbson.rc>)
+   add_library(bson_shared SHARED  ${all_sources})
+   if(WIN32)
+      # Add resource-definition script for Windows shared library (.dll).
+      configure_file(libbson.rc.in libbson.rc)
+      target_sources(bson_shared PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libbson.rc)
+   endif()
    list(APPEND bson_libs bson_shared)
    # Always use PIC on shared libs.
    set_property(TARGET bson_shared PROPERTY POSITION_INDEPENDENT_CODE TRUE)
