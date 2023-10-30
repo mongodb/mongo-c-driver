@@ -184,8 +184,8 @@ if(ENABLE_STATIC)
    # since those symbols will be available immediately at the link step:
    target_compile_definitions(bson_static INTERFACE BSON_STATIC)
 
-   if(ENABLE_PIC OR WIN32)
-      # User wants (or platform requires) static libs to use PIC code.
+   if(ENABLE_PIC)
+      # User wants static libs to use PIC code.
       set_property(TARGET bson_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    endif()
 endif()
