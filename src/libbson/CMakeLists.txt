@@ -198,8 +198,6 @@ if(ENABLE_SHARED)
       target_sources(bson_shared PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libbson.rc)
    endif()
    list(APPEND bson_libs bson_shared)
-   # Always use PIC on shared libs.
-   set_property(TARGET bson_shared PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 endif()
 
 if(NOT bson_libs)
