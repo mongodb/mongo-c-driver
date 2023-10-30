@@ -234,7 +234,7 @@ bson_utf8_validate (const char *utf8, /* IN */
 
 
 static bool
-is_special_char (bson_unichar_t c)
+is_special_char (unsigned char c)
 {
    /*
    C++ equivalent:

@@ -32,3 +32,7 @@ Returns
 -------
 
 A newly allocated string that should be freed with :symbol:`bson_free()`.
+
+.. warning::
+  If ``utf8`` represents invalid UTF-8 data the behavior of :symbol:`bson_utf8_escape_for_json` is undefined.
+  UTF-8 may be validated with :symbol:`bson_utf8_validate`.
