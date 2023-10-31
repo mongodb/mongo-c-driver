@@ -27,15 +27,9 @@ includes RHEL 6, which uses Python 2.6!
 """
 
 # XXX NOTE XXX NOTE XXX NOTE XXX
-# After modifying this script it is advisable to execute the self-test.
-#
-# This is done by starting in the directory containing this script and then
-# executing a separate self-test script, like this:
-#
-# $ bash ./calc_release_version_selftest.sh
-#
-# The self-test script will emit diagnostic output. If tracing of the execution
-# of each command is desired, then add the -x option to the bash invocation.
+# After modifying this script it is advisable to execute the self-tests in this directory:
+# - calc_release_version_selftest.sh
+# - calc_release_version_selftest.py
 # XXX NOTE XXX NOTE XXX NOTE XXX
 
 # pyright: reportTypeCommentUsage=false
