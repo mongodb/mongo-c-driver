@@ -20,7 +20,7 @@ Parameters
 ----------
 
 * ``session``: A :symbol:`mongoc_client_session_t`.
-* ``reply``: An optional uninitialized :symbol:`bson:bson_t` to receive the server reply, or ``NULL``.
+* ``reply``: Optional overwritable storage for a new :symbol:`bson_t`, typically on the stack. See :doc:`BSON out parameters <bson:lifetimes>`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Return

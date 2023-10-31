@@ -31,7 +31,7 @@ Parameters
 * ``cb``: A :symbol:`mongoc_client_session_with_transaction_cb_t` callback, which will run inside of a new transaction on the session. See example below.
 * ``opts``: An optional :symbol:`mongoc_transaction_opt_t`.
 * ``ctx``: A ``void*``. This user-provided data will be passed to ``cb``.
-* ``reply``: An optional location to initialize a :symbol:`bson_t` or ``NULL``. This should be on the stack.
+* ``reply``: Optional overwritable storage for a new :symbol:`bson_t`, typically on the stack. See :doc:`BSON out parameters <bson:lifetimes>`.
 * ``error``: An optional location for a :symbol:`bson_error_t` or ``NULL``.
 
 Return
