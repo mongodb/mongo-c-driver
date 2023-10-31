@@ -402,7 +402,8 @@ def previous(rel_ver):  # type: (str) -> str
 
     return version_str
 
-RELEASE_VER = previous(main()) if PREVIOUS else main()
+if __name__ == "__main__":
+    RELEASE_VER = previous(main()) if PREVIOUS else main()
 
-debug('Final calculated release version:')
-print(RELEASE_VER)
+    debug('Final calculated release version:')
+    print(RELEASE_VER)
