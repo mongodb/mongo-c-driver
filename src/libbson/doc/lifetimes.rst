@@ -8,9 +8,10 @@ or allowing a stack-allocated BSON to go out of scope may cause a memory leak. A
 
 BSON out parameters
 -------------------
-A `bson_t*` used as an out parameter must point to valid overwritable storage for a new :symbol:`bson_t`.
+A :symbol:`bson_t` pointer used as an out parameter must point to valid overwritable storage for a new :symbol:`bson_t`.
 
 This can be on the stack:
+
 .. code-block:: c
 
   bson_t stack_doc = BSON_INITIALIZER;
@@ -18,9 +19,10 @@ This can be on the stack:
   bson_destroy (&stack_doc);
 
 Or on the heap:
+
 .. code-block:: c
 
-  bson_t \*heap_doc = bson_malloc (sizeof (bson_t));
+  bson_t *heap_doc = bson_malloc (sizeof (bson_t));
   example_get_doc (heap_doc);
   bson_destroy (heap_doc);
   bson_free (heap_doc);
