@@ -1,7 +1,7 @@
 #!/bin/bash
 # calc_release_version_selftest.sh is used to test output of calc_release_version.py.
 # run with:
-# cd etc
+# cd build
 # ./calc_release_version_selftest.sh
 
 set -o errexit
