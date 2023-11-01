@@ -35,16 +35,12 @@ todo_include_todos = False
 def download_link(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     if text == "mongoc":
         lib = "mongo-c-driver"
-    elif text == "bson":
-        lib = "libbson"
     else:
         raise ValueError(
-            "download link must be mongoc or libbson, not \"%s\"" % text)
+            "download link must be mongoc, not \"%s\"" % text)
 
-    title = "%s-%s.tar.gz" % (lib, version)
-    url = ("https://github.com/mongodb/%(lib)s/"
-           "releases/download/%(version)s/%(lib)s-%(version)s.tar.gz") % {
-              "lib": lib,
+    title = "%s-%s" % (lib, version)
+    url = ("https://github.com/mongodb/mongo-c-driver/releases/tag/%(version)s") % {
               "version": version
           }
 
