@@ -1,6 +1,5 @@
-:orphan:
-
 :man_page: mongoc_installing
+:orphan:
 
 Installing the MongoDB C Driver (libmongoc) and BSON library (libbson)
 ======================================================================
