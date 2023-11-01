@@ -1,5 +1,5 @@
-libmongoc 1.25.0 (Unreleased)
-=============================
+libmongoc 1.25.0
+================
 
 Fixes:
 
@@ -28,6 +28,17 @@ Other:
     release artifact. Please instead use the per-release repository archive
     attached to a GitHub release, or clone the repository at the desired release
     tag.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
+  * Adrian Dole
+  * Roberto C. Sánchez
+  * Ezra Chung
+  * Joshua Siegel
+  * Kyle Kloberdanz
+  * Jeremy Mikola
 
 libmongoc 1.24.4
 ================
