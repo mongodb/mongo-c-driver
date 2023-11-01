@@ -15,6 +15,7 @@ Improvements:
 Build Configuration:
 
   * Remove `ENABLE_SRV=AUTO`. Only support boolean values for `ENABLE_SRV`.
+  * Remove `BUILD_VERSION` CMake option. To set a build version, create a file in the source root named `VERSION_CURRENT` containing the version.
 
 Platform Support:
 
