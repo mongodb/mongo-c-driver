@@ -874,63 +874,61 @@ if (BUILD_STATIC_LIBS)
       add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
       set_target_properties (mongoc_static PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
       target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
+
+      if (NOT WIN32 AND ENABLE_PIC)
+       target_compile_options (mongoc_static PUBLIC -fPIC)
+       message (STATUS "Adding -fPIC to compilation of mongoc_static components")
+      endif ()
+      if(ENABLE_SRV AND RESOLVE_LIB_NAME)
+       # The static library needs to link to the resolver in pkg-config:
+       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-l${RESOLVE_LIB_NAME}")
+      endif()
+      if(SASL_BACKEND STREQUAL "Cyrus")
+       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lsasl2")
+      endif()
+
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${${TLS_BACKEND}/pkg_config_LIBS})
+      target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
+      target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
+      target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
+
+      if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
+       target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
+      endif ()
+      target_compile_definitions (mongoc_static
+       PUBLIC
+          MONGOC_STATIC
+          ${BSON_STATIC_PUBLIC_DEFINITIONS}
+       PRIVATE
+          MONGOC_COMPILATION
+          ${KMS_MSG_DEFINITIONS}
+          MCOMMON_NAME_PREFIX=_mongoc_mcommon
+      )
+      if (USE_BUNDLED_UTF8PROC)
+       target_compile_definitions (mongoc_static PRIVATE UTF8PROC_STATIC)
+      endif ()
+      # Several directories in the source and build trees contain headers we would like
+      # include via relative reference, but they all end up in the same install path
+      target_include_directories (
+       mongoc_static
+       PUBLIC
+          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
+          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
+          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
+          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
+          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+      )
+      set_target_properties (mongoc_static PROPERTIES
+       VERSION 0.0.0
+       OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}"
+       pkg_config_REQUIRES "libbson-static-1.0"
+       )
+      if(MONGOC_ENABLE_STATIC_INSTALL)
+       mongo_generate_pkg_config (mongoc_static FILENAME libmongoc-static-${MONGOC_API_VERSION}.pc INSTALL)
+      endif()
    endif ()
-
-    if (MONGOC_ENABLE_STATIC_BUILD)
-       if (NOT WIN32 AND ENABLE_PIC)
-          target_compile_options (mongoc_static PUBLIC -fPIC)
-          message (STATUS "Adding -fPIC to compilation of mongoc_static components")
-       endif ()
-       if(ENABLE_SRV AND RESOLVE_LIB_NAME)
-          # The static library needs to link to the resolver in pkg-config:
-          set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-l${RESOLVE_LIB_NAME}")
-       endif()
-       if(SASL_BACKEND STREQUAL "Cyrus")
-          set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lsasl2")
-       endif()
-
-       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${${TLS_BACKEND}/pkg_config_LIBS})
-       target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
-       target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
-       target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
-
-       if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
-          target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
-       endif ()
-       target_compile_definitions (mongoc_static
-          PUBLIC
-             MONGOC_STATIC
-             ${BSON_STATIC_PUBLIC_DEFINITIONS}
-          PRIVATE
-             MONGOC_COMPILATION
-             ${KMS_MSG_DEFINITIONS}
-             MCOMMON_NAME_PREFIX=_mongoc_mcommon
-       )
-       if (USE_BUNDLED_UTF8PROC)
-          target_compile_definitions (mongoc_static PRIVATE UTF8PROC_STATIC)
-       endif ()
-       # Several directories in the source and build trees contain headers we would like
-       # include via relative reference, but they all end up in the same install path
-       target_include_directories (
-          mongoc_static
-          PUBLIC
-             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
-             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
-             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
-             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
-             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
-             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
-       )
-       set_target_properties (mongoc_static PROPERTIES
-          VERSION 0.0.0
-          OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}"
-          pkg_config_REQUIRES "libbson-static-1.0"
-          )
-       if(MONGOC_ENABLE_STATIC_INSTALL)
-          mongo_generate_pkg_config (mongoc_static FILENAME libmongoc-static-${MONGOC_API_VERSION}.pc INSTALL)
-       endif()
-    endif ()
 endif ()
 
 if (BUILD_SHARED_LIBS)
