@@ -1,3 +1,26 @@
+libbson 1.25.0
+==============
+
+New Features:
+
+  * Add `bson_array_builder_t`.
+
+Platform Support:
+
+  * Support for macOS 10.14 is dropped.
+  * Support for Ubuntu 14.04 is dropped.
+  * Support for Debian 8.1 is dropped.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
+  * Adrian Dole
+  * Roberto C. Sánchez
+  * Ezra Chung
+  * Joshua Siegel
+
+
 libbson 1.24.4
 ==============
 

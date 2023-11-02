@@ -108,3 +108,9 @@ aside.footnote> :not(:first-child) {
 body[data-theme="light"] .highlight .nv {
   color: #0004ff;
 }
+
+a.reference.external::after {
+  content: "⇗";
+  font-weight: bolder;
+  font-size: 80%;
+}

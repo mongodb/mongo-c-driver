@@ -36,7 +36,7 @@ test_mongoc_http_get (void *unused)
    req.method = "GET";
    req.host = "localhost";
    req.path = "get";
-   req.port = 8000;
+   req.port = 18000;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
    ASSERT_OR_PRINT (r, error);
 
@@ -68,7 +68,7 @@ test_mongoc_http_post (void *unused)
    req.method = "POST";
    req.host = "localhost";
    req.path = "post";
-   req.port = 8000;
+   req.port = 18000;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
    ASSERT_OR_PRINT (r, error);
 

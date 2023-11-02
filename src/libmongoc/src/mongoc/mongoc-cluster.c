@@ -493,12 +493,30 @@ done:
    RETURN (ret);
 }
 
-bool
+static bool
 _in_sharded_txn (const mongoc_client_session_t *session)
 {
    return session && _mongoc_client_session_in_txn_or_ending (session) &&
           _mongoc_topology_get_type (session->client->topology) ==
              MONGOC_TOPOLOGY_SHARDED;
+}
+
+static bool
+_in_sharded_or_loadbalanced_txn (const mongoc_client_session_t *session)
+{
+   if (!session) {
+      return false;
+   }
+
+   if (!_mongoc_client_session_in_txn_or_ending (session)) {
+      return false;
+   }
+
+   mongoc_topology_description_type_t type =
+      _mongoc_topology_get_type (session->client->topology);
+
+   return (type == MONGOC_TOPOLOGY_SHARDED) ||
+          (type == MONGOC_TOPOLOGY_LOAD_BALANCED);
 }
 
 static void
@@ -655,7 +673,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
 
    _handle_txn_error_labels (retval, error, cmd, reply);
 
-   if (retval && _in_sharded_txn (cmd->session) &&
+   if (retval && _in_sharded_or_loadbalanced_txn (cmd->session) &&
        bson_iter_init_find (&iter, reply, "recoveryToken")) {
       bson_destroy (cmd->session->recovery_token);
       if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
@@ -813,7 +831,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
                    const char *address,
                    uint32_t server_id,
                    bool negotiate_sasl_supported_mechs,
-                   mongoc_scram_cache_t *scram_cache,
                    mongoc_scram_t *scram,
                    bson_t *speculative_auth_response /* OUT */,
                    bson_error_t *error)
@@ -844,7 +861,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 #endif
 
       _mongoc_topology_scanner_add_speculative_authentication (
-         &handshake_command, cluster->uri, ssl_opts, scram_cache, scram);
+         &handshake_command, cluster->uri, ssl_opts, scram);
    }
 
    if (negotiate_sasl_supported_mechs) {
@@ -894,7 +911,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       if (negotiate_sasl_supported_mechs) {
          bsonParse (reply,
                     find (allOf (key ("ok"), isFalse), //
-                          do({
+                          do ({
                              /* hello response returned ok: 0. According to
                               * auth spec: "If the hello of the MongoDB
                               * Handshake fails with an error, drivers MUST
@@ -967,7 +984,6 @@ static mongoc_server_description_t *
 _cluster_run_hello (mongoc_cluster_t *cluster,
                     mongoc_cluster_node_t *node,
                     uint32_t server_id,
-                    mongoc_scram_cache_t *scram_cache,
                     mongoc_scram_t *scram /* OUT */,
                     bson_t *speculative_auth_response /* OUT */,
                     bson_error_t *error /* OUT */)
@@ -985,7 +1001,6 @@ _cluster_run_hello (mongoc_cluster_t *cluster,
                            node->connection_address,
                            server_id,
                            _mongoc_uri_requires_auth_negotiation (cluster->uri),
-                           scram_cache,
                            scram,
                            speculative_auth_response,
                            error);
@@ -1416,11 +1431,6 @@ _mongoc_cluster_init_scram (const mongoc_cluster_t *cluster,
                             mongoc_crypto_hash_algorithm_t algo)
 {
    _mongoc_uri_init_scram (cluster->uri, scram, algo);
-
-   /* Apply previously cached SCRAM secrets if available */
-   if (cluster->scram_cache) {
-      _mongoc_scram_set_cache (scram, cluster->scram_cache);
-   }
 }
 
 /*
@@ -1781,13 +1791,6 @@ _mongoc_cluster_auth_scram_continue (
    }
 
    TRACE ("%s", "SCRAM: authenticated");
-
-   /* Save cached SCRAM secrets for future use */
-   if (cluster->scram_cache) {
-      _mongoc_scram_cache_destroy (cluster->scram_cache);
-   }
-
-   cluster->scram_cache = _mongoc_scram_get_cache (scram);
 
    return true;
 }
@@ -2176,7 +2179,6 @@ _cluster_add_node (mongoc_cluster_t *cluster,
    handshake_sd = _cluster_run_hello (cluster,
                                       cluster_node,
                                       server_id,
-                                      cluster->scram_cache,
                                       &scram,
                                       &speculative_auth_response,
                                       error);
@@ -2782,12 +2784,6 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
    mongoc_set_destroy (cluster->nodes);
 
    _mongoc_array_destroy (&cluster->iov);
-
-#ifdef MONGOC_ENABLE_CRYPTO
-   if (cluster->scram_cache) {
-      _mongoc_scram_cache_destroy (cluster->scram_cache);
-   }
-#endif
 
    EXIT;
 }

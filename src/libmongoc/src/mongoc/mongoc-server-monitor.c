@@ -20,6 +20,7 @@
 #include "mongoc/mcd-rpc.h"
 #include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-error-private.h"
+#include "mongoc/mongoc-handshake-private.h"
 #include "mongoc/mongoc-ssl-private.h"
 #include "mongoc/mongoc-stream-private.h"
 #include "mongoc/mongoc-topology-background-monitoring-private.h"
@@ -1073,7 +1074,11 @@ _server_monitor_check_server (
       GOTO (exit);
    }
 
-   if (!bson_empty (&previous_description->topology_version)) {
+   if (!bson_empty (&previous_description->topology_version) &&
+       _mongoc_handshake_get ()->env == MONGOC_HANDSHAKE_ENV_NONE) {
+       // Use stream monitoring if:
+       // - Server supports stream monitoring (indicated by `topologyVersion`).
+       // - Application is not in an FaaS environment (e.g. AWS Lambda).
       awaited = true;
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "awaitable hello");

@@ -105,7 +105,7 @@ def _maybe_update_inventories(app: Sphinx, config: Config):
 html_theme = "furo"
 html_title = html_shorttitle = "libmongoc %s" % version
 # html_favicon = None
-html_use_index = False
+html_use_index = True
 
 rst_prolog = rf"""
 .. |qenc:is-experimental| replace::

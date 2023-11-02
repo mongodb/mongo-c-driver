@@ -33,8 +33,11 @@ class FetchBuild(Function):
     ]
 
     @classmethod
-    def call(cls, build_name, **kwargs):
-        return cls.default_call(vars={'BUILD_NAME': build_name}, **kwargs)
+    def call(cls, build_name, vars=None, **kwargs):
+        if vars is None:
+            vars = {}
+        vars.update({'BUILD_NAME': build_name})
+        return cls.default_call(vars=vars, **kwargs)
 
 
 def functions():

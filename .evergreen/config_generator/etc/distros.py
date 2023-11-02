@@ -54,16 +54,11 @@ DEBIAN_DISTROS = [
     Distro(name='debian10-small', os='debian', os_type='linux', os_ver='10', size='small'),
     Distro(name='debian11-large', os='debian', os_type='linux', os_ver='11', size='large'),
     Distro(name='debian11-small', os='debian', os_type='linux', os_ver='11', size='small'),
-    Distro(name='debian81-large', os='debian', os_type='linux', os_ver='8.1', size='large'),
-    Distro(name='debian81-small', os='debian', os_type='linux', os_ver='8.1', size='small'),
     Distro(name='debian92-large', os='debian', os_type='linux', os_ver='9.2', size='large'),
     Distro(name='debian92-small', os='debian', os_type='linux', os_ver='9.2', size='small'),
 ]
 
 MACOS_DISTROS = [
-    Distro(name='macos-1012', os='macos', os_type='macos', os_ver='10.12'),
-    Distro(name='macos-1014', os='macos', os_type='macos', os_ver='10.14'),
-    Distro(name='macos-1015', os='macos', os_type='macos', os_ver='10.15'),
     Distro(name='macos-1100', os='macos', os_type='macos', os_ver='11.00'),
 ]
 
@@ -80,6 +75,8 @@ RHEL_DISTROS = [
     Distro(name='rhel80-small', os='rhel', os_type='linux', os_ver='8.0', size='small'),
     Distro(name='rhel84-large', os='rhel', os_type='linux', os_ver='8.4', size='large'),
     Distro(name='rhel84-small', os='rhel', os_type='linux', os_ver='8.4', size='small'),
+    Distro(name='rhel87-large', os='rhel', os_type='linux', os_ver='8.7', size='large'),
+    Distro(name='rhel87-small', os='rhel', os_type='linux', os_ver='8.7', size='small'),
     Distro(name='rhel90-large', os='rhel', os_type='linux', os_ver='9.0', size='large'),
     Distro(name='rhel90-small', os='rhel', os_type='linux', os_ver='9.0', size='small'),
 ]
@@ -108,8 +105,6 @@ RHEL_ZSERIES_DISTROS = [
 ]
 
 UBUNTU_DISTROS = [
-    Distro(name='ubuntu1404-large', os='ubuntu', os_type='linux', os_ver='14.04', size='large'),
-    Distro(name='ubuntu1404-small', os='ubuntu', os_type='linux', os_ver='14.04', size='small'),
     Distro(name='ubuntu1604-large', os='ubuntu', os_type='linux', os_ver='16.04', size='large'),
     Distro(name='ubuntu1604-small', os='ubuntu', os_type='linux', os_ver='16.04', size='small'),
     Distro(name='ubuntu1804-large', os='ubuntu', os_type='linux', os_ver='18.04', size='large'),
@@ -191,7 +186,7 @@ ALL_DISTROS = [] + \
     WINDOWS_DISTROS
 
 
-def find_distro(name):
+def find_distro(name) -> Distro:
     candidates = [d for d in ALL_DISTROS if name == d.name]
 
     if not candidates:
@@ -200,7 +195,7 @@ def find_distro(name):
     return candidates[0]
 
 
-def find_large_distro(name):
+def find_large_distro(name) -> Distro:
     candidates = [d for d in ALL_DISTROS if f'{name}-large' == d.name]
 
     if candidates:
@@ -209,7 +204,7 @@ def find_large_distro(name):
     return find_distro(name)
 
 
-def find_small_distro(name):
+def find_small_distro(name) -> Distro:
     candidates = [d for d in ALL_DISTROS if f'{name}-small' == d.name]
 
     if candidates:
@@ -218,7 +213,7 @@ def find_small_distro(name):
     return find_distro(name)
 
 
-def make_distro_str(distro_name, compiler, arch):
+def make_distro_str(distro_name, compiler, arch) -> str:
     if distro_name.startswith('windows-vsCurrent'):
         # Rename `windows-vsCurrent-*` distros to `windows-<year>` where`<year>`
         # is the Windows Server version used by the distro, e.g.:

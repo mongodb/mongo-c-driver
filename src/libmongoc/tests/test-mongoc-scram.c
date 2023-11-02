@@ -174,6 +174,115 @@ test_mongoc_utf8_to_unicode (void)
 
 #endif
 
+enum {
+   // ensure there are more users than slots in cache to test cache invalidation
+   NUM_CACHE_TEST_USERS = 10 + MONGOC_SCRAM_CACHE_SIZE,
+
+   // ensure that there are several times that the cache needs to be invalidated
+   NUM_CACHE_TEST_THREADS = 3 * NUM_CACHE_TEST_USERS,
+};
+
+static char *_scram_cache_invalidation_uri_str = NULL;
+
+static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
+{
+   bson_error_t error;
+
+   const char *password = "mypass";
+   char *username =
+      bson_strdup_printf ("cachetestuser%dX", *(int *) username_number_ptr);
+   bson_free (username_number_ptr);
+
+   const char *uri_str = _scram_cache_invalidation_uri_str;
+   char *cache_test_user_uri =
+      test_framework_add_user_password (uri_str, username, password);
+   BSON_ASSERT (cache_test_user_uri);
+
+   mongoc_uri_t *cache_test_uri = mongoc_uri_new (cache_test_user_uri);
+   BSON_ASSERT (cache_test_uri);
+
+   // Set serverSelectionTryOnce=false so a single failed connection attempt
+   // does not result in an error.
+   mongoc_uri_set_option_as_bool (
+      cache_test_uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
+
+   mongoc_client_t *client =
+      test_framework_client_new_from_uri (cache_test_uri, NULL /* api */);
+   BSON_ASSERT (client);
+
+   test_framework_set_ssl_opts (client);
+   BSON_ASSERT (client);
+
+   mongoc_collection_t *collection =
+      mongoc_client_get_collection (client, "admin", "testcache");
+   BSON_ASSERT (collection);
+
+   bson_t insert = BSON_INITIALIZER;
+   bool ok =
+      mongoc_collection_insert_one (collection, &insert, NULL, NULL, &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (cache_test_uri);
+   bson_free (cache_test_user_uri);
+   bson_free (username);
+
+   BSON_THREAD_RETURN;
+}
+
+static void
+test_mongoc_scram_cache_invalidation (void *ctx)
+{
+   bson_error_t error;
+   mongoc_uri_t *const uri = test_framework_get_uri ();
+   BSON_ASSERT (uri);
+
+   mongoc_client_t *client = test_framework_new_default_client ();
+   BSON_ASSERT (client);
+
+   mongoc_database_t *const db = mongoc_client_get_database (client, "admin");
+   BSON_ASSERT (db);
+
+   bson_t *roles = tmp_bson ("[{'role': 'readWrite', 'db': 'admin'}]");
+
+   _scram_cache_invalidation_uri_str =
+      test_framework_get_uri_str_no_auth ("admin");
+
+   /* Remove cache test users if they already exist.
+    * Create more test users than could exist in cache. */
+   for (int i = 0; i < NUM_CACHE_TEST_USERS; i++) {
+      const char *password = "mypass";
+      char *username = bson_strdup_printf ("cachetestuser%dX", i);
+
+      mongoc_database_remove_user (db, username, &error);
+      bool ok =
+         mongoc_database_add_user (db, username, password, roles, NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+      bson_free (username);
+   }
+
+   bson_thread_t threads[NUM_CACHE_TEST_THREADS];
+   for (int i = 0; i < NUM_CACHE_TEST_THREADS; i++) {
+      int *username_number_ptr = bson_malloc (sizeof (*username_number_ptr));
+      *username_number_ptr = i % NUM_CACHE_TEST_USERS;
+      int rc = mcommon_thread_create (
+         &threads[i], _scram_cache_invalidation_thread, username_number_ptr);
+      BSON_ASSERT (rc == 0);
+   }
+
+   for (int i = 0; i < NUM_CACHE_TEST_THREADS; i++) {
+      int rc = mcommon_thread_join (threads[i]);
+      BSON_ASSERT (rc == 0);
+   }
+
+   bson_free (_scram_cache_invalidation_uri_str);
+   _scram_cache_invalidation_uri_str = NULL;
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+}
+
 static void
 _clear_scram_users (void)
 {
@@ -679,6 +788,12 @@ test_scram_install (TestSuite *suite)
       suite, "/scram/utf8_string_length", test_mongoc_utf8_string_length);
    TestSuite_Add (suite, "/scram/utf8_to_unicode", test_mongoc_utf8_to_unicode);
 #endif
+   TestSuite_AddFull (suite,
+                      "/scram/cache_invalidation",
+                      test_mongoc_scram_cache_invalidation,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/scram/auth_tests",
                       test_mongoc_scram_auth,

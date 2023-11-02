@@ -473,6 +473,21 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile-scan-build.sh
+  start-load-balancer:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            export DRIVERS_TOOLS=./drivers-evergreen-tools
+            export MONGODB_URI="${MONGODB_URI}"
+            $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
+    - command: expansions.update
+      type: setup
+      params:
+        file: lb-expansion.yml
   std-compile:
     - command: subprocess.exec
       type: test
