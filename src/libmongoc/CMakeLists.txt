@@ -803,13 +803,6 @@ endif ()
 
 if (BUILD_STATIC_LIBS)
    if (MONGOC_ENABLE_STATIC_BUILD)
-      add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-      set_target_properties (mongoc_static PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
-      target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
-      target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
-      target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
-      target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
-
       add_library (mcd_rpc STATIC EXCLUDE_FROM_ALL ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c)
       target_include_directories (mcd_rpc PUBLIC ${PROJECT_SOURCE_DIR}/src)
       target_link_libraries (mcd_rpc PUBLIC ${BSON_STATIC_LIBRARIES})
@@ -818,6 +811,14 @@ if (BUILD_STATIC_LIBS)
       endif ()
       target_compile_definitions (mcd_rpc PUBLIC ${BSON_STATIC_PUBLIC_DEFINITIONS})
       set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
+
+
+      add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+      set_target_properties (mongoc_static PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
+      target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
+      target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
+      target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
+      target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    endif ()
 endif ()
 
