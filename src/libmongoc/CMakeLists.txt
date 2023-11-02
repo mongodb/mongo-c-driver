@@ -834,9 +834,7 @@ if (BUILD_SHARED_LIBS)
          set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.map\"")
       endif ()
    endif ()
-endif ()
 
-if (BUILD_SHARED_LIBS)
     target_compile_definitions (mongoc_shared
        PRIVATE
           MONGOC_COMPILATION
@@ -869,7 +867,6 @@ if (BUILD_SHARED_LIBS)
        pkg_config_REQUIRES "libbson-1.0"
        )
     mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VERSION}.pc)
-
 endif ()
 
 if (BUILD_STATIC_LIBS)
@@ -881,9 +878,7 @@ if (BUILD_STATIC_LIBS)
       target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
       target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    endif ()
-endif ()
 
-if (BUILD_STATIC_LIBS)
     if (MONGOC_ENABLE_STATIC_BUILD)
        if (NOT WIN32 AND ENABLE_PIC)
           target_compile_options (mongoc_static PUBLIC -fPIC)
