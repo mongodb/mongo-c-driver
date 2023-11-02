@@ -836,18 +836,6 @@ if (BUILD_SHARED_LIBS)
    endif ()
 endif ()
 
-if (BUILD_STATIC_LIBS)
-   if (MONGOC_ENABLE_STATIC_BUILD)
-      add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-      set_target_properties (mongoc_static PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
-      target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
-      target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
-      target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
-      target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
-   endif ()
-endif ()
-
-
 if (BUILD_SHARED_LIBS)
     target_compile_definitions (mongoc_shared
        PRIVATE
@@ -882,6 +870,17 @@ if (BUILD_SHARED_LIBS)
        )
     mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VERSION}.pc)
 
+endif ()
+
+if (BUILD_STATIC_LIBS)
+   if (MONGOC_ENABLE_STATIC_BUILD)
+      add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+      set_target_properties (mongoc_static PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
+      target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
+      target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
+      target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
+      target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
+   endif ()
 endif ()
 
 if (BUILD_STATIC_LIBS)
