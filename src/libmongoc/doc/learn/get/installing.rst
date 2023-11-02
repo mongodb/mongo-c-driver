@@ -186,7 +186,7 @@ Yum/DNF.
 .. important:: **Except for Fedora:**
 
   The C driver libraries are only available in version 7 and newer of the
-  resepective enterprise Linux distributions. However, the C driver libraries
+  respective enterprise Linux distributions. However, the C driver libraries
   are not available in the default repositories, but can be obtained by enabling
   the EPEL_ repositories. This can be done by installing the `epel-release`
   package::
