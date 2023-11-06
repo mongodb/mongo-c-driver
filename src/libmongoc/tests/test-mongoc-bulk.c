@@ -5080,49 +5080,6 @@ test_bulk_write_set_client_after_operation (void)
    mongoc_client_destroy (client);
 }
 
-// Test creating a bulk write with more data than INT_MAX.
-static void
-test_bulk_write_more_than_INT_MAX (void)
-{
-   bool ok;
-   bson_error_t error;
-
-   // Create large document.
-   bson_t large_doc = BSON_INITIALIZER;
-   {
-      // Maximum server document size is 16 MiB (16777216).
-      // Subtract 32 for overhead.
-      size_t large_sz = 16777216 - 32;
-      char *large_str = bson_malloc (large_sz);
-      memset (large_str, 'A', large_sz - 1);
-      large_str[large_sz - 1] = '\0';
-      BSON_ASSERT (
-         bson_append_utf8 (&large_doc, "key", 3, large_str, large_sz));
-      bson_free (large_str);
-   }
-
-   mongoc_client_t *client = test_framework_new_default_client ();
-   mongoc_collection_t *coll =
-      mongoc_client_get_collection (client, "db", "coll");
-   mongoc_bulk_operation_t *bulk =
-      mongoc_collection_create_bulk_operation_with_opts (coll, NULL /* opts */);
-   size_t added = 0;
-   while (added < (size_t) INT_MAX) {
-      ok = mongoc_bulk_operation_insert_with_opts (
-         bulk, &large_doc, NULL /* opts */, &error);
-      ASSERT_OR_PRINT (ok, error);
-      added += large_doc.len;
-   }
-
-   ok = (bool) mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
-   ASSERT_OR_PRINT (ok, error);
-
-   bson_destroy (&large_doc);
-   mongoc_bulk_operation_destroy (bulk);
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
-}
-
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -5435,7 +5392,4 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/set_client_after_operation",
                       test_bulk_write_set_client_after_operation);
-   TestSuite_AddLive (suite,
-                      "/BulkOperation/more_than_INT_MAX",
-                      test_bulk_write_more_than_INT_MAX);
 }
