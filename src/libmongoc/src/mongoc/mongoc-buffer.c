@@ -31,8 +31,15 @@
 #endif
 
 
-#define SPACE_FOR(_b, _sz) \
-   (((ssize_t) (_b)->datalen - (ssize_t) (_b)->len) >= (ssize_t) (_sz))
+static void
+make_space_for (mongoc_buffer_t *buffer, size_t data_size)
+{
+   if (buffer->len + data_size > buffer->datalen) {
+      buffer->datalen = bson_next_power_of_two (buffer->len + data_size);
+      buffer->data = (uint8_t *) buffer->realloc_func (
+         buffer->data, buffer->datalen, buffer->realloc_data);
+   }
+}
 
 
 /**
@@ -135,12 +142,7 @@ _mongoc_buffer_append (mongoc_buffer_t *buffer,
 
    BSON_ASSERT (buffer->datalen);
 
-   if (!SPACE_FOR (buffer, data_size)) {
-      BSON_ASSERT ((buffer->datalen + data_size) < INT_MAX);
-      buffer->datalen = bson_next_power_of_two (data_size + buffer->len);
-      buffer->data =
-         (uint8_t *) buffer->realloc_func (buffer->data, buffer->datalen, NULL);
-   }
+   make_space_for (buffer, data_size);
 
    buf = &buffer->data[buffer->len];
 
@@ -186,12 +188,7 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
 
    BSON_ASSERT (buffer->datalen);
 
-   if (!SPACE_FOR (buffer, size)) {
-      BSON_ASSERT ((buffer->datalen + size) < INT_MAX);
-      buffer->datalen = bson_next_power_of_two (size + buffer->len);
-      buffer->data =
-         (uint8_t *) buffer->realloc_func (buffer->data, buffer->datalen, NULL);
-   }
+   make_space_for (buffer, size);
 
    buf = &buffer->data[buffer->len];
 
@@ -260,11 +257,7 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    min_bytes -= buffer->len;
 
-   if (!SPACE_FOR (buffer, min_bytes)) {
-      buffer->datalen = bson_next_power_of_two (buffer->len + min_bytes);
-      buffer->data = (uint8_t *) buffer->realloc_func (
-         buffer->data, buffer->datalen, buffer->realloc_data);
-   }
+   make_space_for (buffer, min_bytes);
 
    avail_bytes = buffer->datalen - buffer->len;
 
@@ -341,12 +334,7 @@ _mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
 
    BSON_ASSERT (buffer->datalen);
 
-   if (!SPACE_FOR (buffer, size)) {
-      BSON_ASSERT ((buffer->datalen + size) < INT_MAX);
-      buffer->datalen = bson_next_power_of_two (size + buffer->len);
-      buffer->data =
-         (uint8_t *) buffer->realloc_func (buffer->data, buffer->datalen, NULL);
-   }
+   make_space_for (buffer, size);
 
    buf = &buffer->data[buffer->len];
 
