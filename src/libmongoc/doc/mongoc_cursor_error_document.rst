@@ -18,7 +18,7 @@ Parameters
 
 * ``cursor``: A :symbol:`mongoc_cursor_t`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
-* ``reply``: Overwritable storage for a new :symbol:`bson_t`, typically on the stack. See :doc:`BSON out parameters <bson:lifetimes>`.
+* ``reply``: A location for a :symbol:`const bson_t * <bson:bson_t>`.
 
 Description
 -----------

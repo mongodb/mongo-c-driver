@@ -17,7 +17,7 @@ Parameters
 ----------
 
 * ``client``: A :symbol:`mongoc_client_t`.
-* ``reply``: Overwritable storage for a new :symbol:`bson_t`, typically on the stack. See :doc:`BSON out parameters <bson:lifetimes>`.
+* ``reply``: The reply to a command, such as "aggregate", "find", or "listCollections", that returns a cursor document. The reply is destroyed by ``mongoc_cursor_new_from_command_reply_with_opts`` and must not be accessed afterward.
 * ``opts``: A :symbol:`bson:bson_t`.
 
 ``opts`` may be NULL or a BSON document with additional options, which have the same meaning for this function as for :symbol:`mongoc_collection_find_with_opts`:
