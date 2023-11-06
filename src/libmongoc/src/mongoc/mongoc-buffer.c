@@ -31,7 +31,7 @@
 #endif
 
 
-static inline void
+static void
 make_space_for (mongoc_buffer_t *buffer, size_t data_size)
 {
    if (buffer->len + data_size > buffer->datalen) {

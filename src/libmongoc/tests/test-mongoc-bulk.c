@@ -5094,10 +5094,8 @@ test_bulk_write_more_than_INT_MAX (void)
       // Subtract 32 for overhead.
       size_t large_sz = 16777216 - 32;
       char *large_str = bson_malloc (large_sz);
-      for (size_t i = 0; i < large_sz; i++) {
-         large_str[i] = 'A';
-      }
-      large_str[large_sz] = '\0';
+      memset (large_str, 'A', large_sz - 1);
+      large_str[large_sz - 1] = '\0';
       BSON_ASSERT (
          bson_append_utf8 (&large_doc, "key", 3, large_str, large_sz));
       bson_free (large_str);
@@ -5118,6 +5116,8 @@ test_bulk_write_more_than_INT_MAX (void)
 
    ok = (bool) mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ok, error);
+
+   bson_destroy (&large_doc);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
