@@ -46,8 +46,10 @@ function(compute_build_version outvar)
     set("${outvar}" "${output}" PARENT_SCOPE)
 endfunction()
 
-# Define the BUILD_VERSION:
-compute_build_version(BUILD_VERSION)
+# Compute the BUILD_VERSION if it is not already defined:
+if(NOT DEFINED BUILD_VERSION)
+    compute_build_version(BUILD_VERSION)
+endif()
 
 # Set a BUILD_VERSION_SIMPLE, which is just a three-number-triple that CMake understands
 string (REGEX REPLACE "([0-9]+\\.[0-9]+\\.[0-9]+).*$" "\\1" BUILD_VERSION_SIMPLE "${BUILD_VERSION}")

@@ -1,3 +1,10 @@
+libmongoc 1.25.1 (Unreleased)
+=============================
+
+Fixes:
+
+  * Add back support for `BUILD_VERSION` CMake option. `BUILD_VERSION` was unintentionally removed in 1.25.0.
+
 libmongoc 1.25.0
 ================
 
