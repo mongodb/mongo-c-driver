@@ -122,6 +122,11 @@ declare -a test_args=(
   ".evergreen/etc/skip-tests.txt"
 )
 
+# TEMP: only test to reproduce TSAN race
+test_args+=("-l" "/mongoc_cursor_get_host/does_not_race")
+test_args+=("-l" "/Client/get_description/pooled")
+
+
 # TODO (CDRIVER-4045): consolidate DNS tests into regular test tasks.
 if [[ "${DNS}" != "nodns" ]]; then
   if [[ "${CC}" =~ mingw ]]; then

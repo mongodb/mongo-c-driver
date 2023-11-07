@@ -4254,6 +4254,60 @@ test_failure_to_auth (void)
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
 }
+
+#include "mongoc-client-pool-private.h" // _mongoc_client_pool_get_topology
+// test_mongoc_cursor_get_host_does_not_race is a temporary test intended to
+// reproduce a data race reported by TSAN.
+static void
+test_mongoc_cursor_get_host_does_not_race (void)
+{
+   mongoc_client_pool_t *pool;
+   // Create a client pool.
+   {
+      pool = test_framework_new_default_client_pool ();
+
+      // Set a small heartbeatFrequencyMS and minHeartbeatFrequencyMS to make a
+      // race between updating the topology and getting the description more
+      // likely.
+      mc_tpld_modification tdmod =
+         mc_tpld_modify_begin (_mongoc_client_pool_get_topology (pool));
+      const int64_t FAST_HEARTBEAT_MS = 10;
+      tdmod.new_td->heartbeat_msec = FAST_HEARTBEAT_MS;
+      tdmod.topology->min_heartbeat_frequency_msec = FAST_HEARTBEAT_MS;
+      mc_tpld_modify_commit (tdmod);
+   }
+
+   mongoc_client_t *client = mongoc_client_pool_pop (pool);
+   ASSERT (client);
+   mongoc_collection_t *coll = get_test_collection (client, BSON_FUNC);
+
+   int64_t start = bson_get_monotonic_time ();
+   while (true) {
+      // Create a cursor.
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         coll, tmp_bson ("{}"), NULL /* opts */, NULL);
+      // Send find command to select a server.
+      const bson_t *doc;
+      mongoc_cursor_next (cursor, &doc);
+      bson_error_t error;
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      mongoc_host_list_t result = {0};
+      mongoc_cursor_get_host (cursor, &result);
+      // Check that a result has been returned.
+      ASSERT_CMPUINT16 (result.port, !=, 0);
+      mongoc_cursor_destroy (cursor);
+      if (bson_get_monotonic_time () - start > 1000 * 1000 * 5) {
+         printf ("Done.\n");
+         break;
+      }
+   }
+
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -4568,4 +4622,7 @@ test_client_install (TestSuite *suite)
       "/Client/resends_handshake_on_network_error",
       test_mongoc_client_resends_handshake_on_network_error);
    TestSuite_Add (suite, "/Client/failure_to_auth", test_failure_to_auth);
+   TestSuite_Add (suite,
+                  "/mongoc_cursor_get_host/does_not_race",
+                  test_mongoc_cursor_get_host_does_not_race);
 }
