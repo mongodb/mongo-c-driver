@@ -1,3 +1,18 @@
+libbson 1.25.1
+==============
+
+Fixes:
+
+  * The `BUILD_VERSION` CMake option was restored.
+  * Fixes to some format strings in trace logs.
+  * Allow mongoc_buffer_t to be larger than INT_MAX.
+
+Thanks to everyone who contributed to the development of this release:
+
+  * Adrian Dole
+  * Kevin Albertson
+  * Roberto C. Sánchez
+
 libbson 1.25.0
 ==============
 
