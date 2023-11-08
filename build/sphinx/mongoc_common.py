@@ -143,7 +143,7 @@ def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: dic
         return
     if page == "index" or page.endswith(".index"):
         return
-    path = app.project.doc2path(page, basedir=False)
+    path = app.project.doc2path(page, absolute=True)
     out_index_html = Path(builder.get_outfilename(page))
     slug = out_index_html.parent.name
     redirect_file = out_index_html.parent.parent / f"{slug}.html"
