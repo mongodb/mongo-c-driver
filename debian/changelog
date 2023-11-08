@@ -1,3 +1,10 @@
+mongo-c-driver (1.25.1-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+  * Fix 32 bit builds (Closes: #1055264)
+
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Wed, 08 Nov 2023 14:22:34 -0600
+
 mongo-c-driver (1.25.0-1) unstable; urgency=medium
 
   * New upstream release (Closes: #1042682)
