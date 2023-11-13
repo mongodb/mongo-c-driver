@@ -157,6 +157,7 @@ mongoc_stream_writev (mongoc_stream_t *stream,
 
    BSON_ASSERT (stream->writev);
 
+   // CDRIVER-4781: for backward compatibility.
    if (timeout_msec < 0) {
       timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
    }
