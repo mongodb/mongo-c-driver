@@ -491,9 +491,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    mongocrypt_binary_t *http_req = NULL;
    mongocrypt_binary_t *http_reply = NULL;
    const char *endpoint;
-   uint32_t sockettimeout;
-
-   sockettimeout = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
+   const int32_t sockettimeout = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
    kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
    while (kms_ctx) {
       mongoc_iovec_t iov;

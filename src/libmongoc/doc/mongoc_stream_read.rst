@@ -26,6 +26,13 @@ Parameters
 
 The :symbol:`mongoc_stream_read()` function shall perform a read from a :symbol:`mongoc_stream_t`. It's modeled on the API and semantics of ``read()``, though the parameters map only loosely.
 
+.. warning::
+
+  The "default timeout" indicated by a negative value is both unspecified and
+  unrelated to the documented default values for ``*TimeoutMS`` URI options.
+  To specify a default timeout value for a ``*TimeoutMS`` URI option, use the
+  ``MONGOC_DEFAULT_*`` constants defined in ``mongoc-client.h``.
+
 Returns
 -------
 
@@ -38,4 +45,3 @@ The :symbol:`mongoc_stream_read` function returns the number of bytes read on su
   | :symbol:`mongoc_stream_write()`
 
   | :symbol:`mongoc_stream_writev()`
-

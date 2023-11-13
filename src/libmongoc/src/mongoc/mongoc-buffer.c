@@ -199,7 +199,7 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "timeout_msec value %" PRIu64
+                      "timeout_msec value %" PRId64
                       " exceeds supported 32-bit range",
                       timeout_msec);
       RETURN (false);
@@ -266,7 +266,7 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "timeout_msec value %" PRIu64
+                      "timeout_msec value %" PRId64
                       " exceeds supported 32-bit range",
                       timeout_msec);
       RETURN (false);
@@ -342,7 +342,7 @@ _mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
 
    if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, timeout_msec))) {
       // CDRIVER-4589
-      MONGOC_ERROR ("timeout_msec value %" PRIu64
+      MONGOC_ERROR ("timeout_msec value %" PRId64
                     " exceeds supported 32-bit range",
                     timeout_msec);
       RETURN (-1);
