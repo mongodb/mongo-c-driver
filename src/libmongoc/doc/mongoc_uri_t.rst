@@ -104,8 +104,6 @@ MONGOC_URI_LOADBALANCED                    loadbalanced                      fal
 MONGOC_URI_SRVMAXHOSTS                     srvmaxhosts                       0                                 If zero, the number of hosts in DNS results is unlimited. If greater than zero, the number of hosts in DNS results is limited to being less than or equal to the given value.
 ========================================== ================================= ================================= ============================================================================================================================================================================================================================================
 
-Setting any of the \*timeoutMS options above to ``0`` will be interpreted as "use the default value".
-
 .. warning::
 
   Setting any of the \*timeoutMS options above to either ``0`` or a negative value is discouraged due to unspecified and inconsistent behavior.
