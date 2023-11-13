@@ -26,6 +26,13 @@ Parameters
 
 This function is identical to :symbol:`mongoc_stream_read()` except that it takes a :symbol:`mongoc_iovec_t` to perform gathered I/O.
 
+.. warning::
+
+  The "default timeout" indicated by a negative value is both unspecified and
+  unrelated to the documented default values for ``*TimeoutMS`` URI options.
+  To specify a default timeout value for a ``*TimeoutMS`` URI option, use the
+  ``MONGOC_DEFAULT_*`` constants defined in ``mongoc-client.h``.
+
 Returns
 -------
 
@@ -38,4 +45,3 @@ Returns
   | :symbol:`mongoc_stream_write()`
 
   | :symbol:`mongoc_stream_writev()`
-
