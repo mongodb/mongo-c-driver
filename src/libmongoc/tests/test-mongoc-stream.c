@@ -235,7 +235,7 @@ test_stream_writev_timeout (void)
       ASSERT_CMPSSIZE_T (res, ==, 0);
       ASSERT_WITH_MSG (
          stream->is_set,
-         "expected test_writev_timeout_stream_writev() to be invoked");
+         "expected _writev_timeout_stream_writev() to be invoked");
       ASSERT_CMPINT32 (
          stream->timeout_msec, ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 
@@ -251,7 +251,7 @@ test_stream_writev_timeout (void)
       ASSERT_CMPSSIZE_T (res, ==, 0);
       ASSERT_WITH_MSG (
          stream->is_set,
-         "expected test_writev_timeout_stream_writev() to be invoked");
+         "expected _writev_timeout_stream_writev() to be invoked");
       ASSERT_CMPINT32 (stream->timeout_msec, ==, 0);
 
       mongoc_stream_destroy ((mongoc_stream_t *) stream);
@@ -271,7 +271,7 @@ test_stream_writev_timeout (void)
       ASSERT_CMPSSIZE_T (res, ==, 0);
       ASSERT_WITH_MSG (
          stream->is_set,
-         "expected test_writev_timeout_stream_writev() to be invoked");
+         "expected _writev_timeout_stream_writev() to be invoked");
       ASSERT_CMPINT32 (stream->timeout_msec, ==, default_timeout_msec);
 
       mongoc_stream_destroy ((mongoc_stream_t *) stream);
