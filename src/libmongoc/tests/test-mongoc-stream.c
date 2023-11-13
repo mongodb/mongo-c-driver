@@ -168,25 +168,25 @@ typedef struct {
    mongoc_stream_t vtable;
    int32_t timeout_msec;
    bool is_set;
-} test_negative_timeout_stream_t;
+} writev_timeout_stream_t;
 
 static void
-test_timeout_stream_destroy (mongoc_stream_t *stream)
+_writev_timeout_stream_destroy (mongoc_stream_t *stream)
 {
    bson_free (stream);
 }
 
 static ssize_t
-test_timeout_stream_writev (mongoc_stream_t *stream_param,
-                            mongoc_iovec_t *iov,
-                            size_t iovcnt,
-                            int32_t timeout_msec)
+_writev_timeout_stream_writev (mongoc_stream_t *stream_param,
+                               mongoc_iovec_t *iov,
+                               size_t iovcnt,
+                               int32_t timeout_msec)
 {
    BSON_UNUSED (iov);
    BSON_UNUSED (iovcnt);
 
-   test_negative_timeout_stream_t *const stream =
-      (test_negative_timeout_stream_t *) stream_param;
+   writev_timeout_stream_t *const stream =
+      (writev_timeout_stream_t *) stream_param;
 
    stream->is_set = true;
    stream->timeout_msec = timeout_msec;
@@ -194,18 +194,18 @@ test_timeout_stream_writev (mongoc_stream_t *stream_param,
    return 0;
 }
 
-static test_negative_timeout_stream_t *
-test_negative_timeout_stream_new (void)
+static writev_timeout_stream_t *
+_writev_timeout_stream_new (void)
 {
-   test_negative_timeout_stream_t *const stream =
-      bson_malloc (sizeof (test_negative_timeout_stream_t));
+   writev_timeout_stream_t *const stream =
+      bson_malloc (sizeof (writev_timeout_stream_t));
 
-   *stream = (test_negative_timeout_stream_t){
+   *stream = (writev_timeout_stream_t){
       .vtable =
          {
             .type = 999, // For testing purposes.
-            .destroy = test_timeout_stream_destroy,
-            .writev = test_timeout_stream_writev,
+            .destroy = _writev_timeout_stream_destroy,
+            .writev = _writev_timeout_stream_writev,
          },
       .is_set = false,
       .timeout_msec = 0,
@@ -224,8 +224,7 @@ test_stream_writev_timeout (void)
 
    // A positive timeout value should be forwarded as-is to the writev function.
    {
-      test_negative_timeout_stream_t *const stream =
-         test_negative_timeout_stream_new ();
+      writev_timeout_stream_t *const stream = _writev_timeout_stream_new ();
 
       ssize_t const res =
          _mongoc_stream_writev_full ((mongoc_stream_t *) stream,
@@ -234,8 +233,9 @@ test_stream_writev_timeout (void)
                                      MONGOC_DEFAULT_SOCKETTIMEOUTMS,
                                      &error);
       ASSERT_CMPSSIZE_T (res, ==, 0);
-      ASSERT_WITH_MSG (stream->is_set,
-                       "expected test_timeout_stream_writev() to be invoked");
+      ASSERT_WITH_MSG (
+         stream->is_set,
+         "expected test_writev_timeout_stream_writev() to be invoked");
       ASSERT_CMPINT32 (
          stream->timeout_msec, ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 
@@ -244,14 +244,14 @@ test_stream_writev_timeout (void)
 
    // A timeout value of 0 should be forwarded as-is to the writev function.
    {
-      test_negative_timeout_stream_t *const stream =
-         test_negative_timeout_stream_new ();
+      writev_timeout_stream_t *const stream = _writev_timeout_stream_new ();
 
       ssize_t const res = _mongoc_stream_writev_full (
          (mongoc_stream_t *) stream, &iov, 1u, 0, &error);
       ASSERT_CMPSSIZE_T (res, ==, 0);
-      ASSERT_WITH_MSG (stream->is_set,
-                       "expected test_timeout_stream_writev() to be invoked");
+      ASSERT_WITH_MSG (
+         stream->is_set,
+         "expected test_writev_timeout_stream_writev() to be invoked");
       ASSERT_CMPINT32 (stream->timeout_msec, ==, 0);
 
       mongoc_stream_destroy ((mongoc_stream_t *) stream);
@@ -264,14 +264,14 @@ test_stream_writev_timeout (void)
       // See: MONGOC_DEFAULT_TIMEOUT_MSEC in mongoc-stream.c.
       const int32_t default_timeout_msec = 60 * 60 * 1000;
 
-      test_negative_timeout_stream_t *const stream =
-         test_negative_timeout_stream_new ();
+      writev_timeout_stream_t *const stream = _writev_timeout_stream_new ();
 
       ssize_t const res = _mongoc_stream_writev_full (
          (mongoc_stream_t *) stream, &iov, 1u, -1, &error);
       ASSERT_CMPSSIZE_T (res, ==, 0);
-      ASSERT_WITH_MSG (stream->is_set,
-                       "expected test_timeout_stream_writev() to be invoked");
+      ASSERT_WITH_MSG (
+         stream->is_set,
+         "expected test_writev_timeout_stream_writev() to be invoked");
       ASSERT_CMPINT32 (stream->timeout_msec, ==, default_timeout_msec);
 
       mongoc_stream_destroy ((mongoc_stream_t *) stream);
