@@ -441,7 +441,7 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "timeout_msec value %" PRIu64
+                      "timeout_msec value %" PRId64
                       " exceeds supported 32-bit range",
                       timeout_msec);
       RETURN (false);
