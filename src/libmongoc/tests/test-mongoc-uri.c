@@ -1623,8 +1623,8 @@ test_mongoc_uri_tls_ssl (const char *tls,
                   "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,"
                   "ST=New York,C=US@ldaptest.10gen.cc/?"
                   "%s=true&authMechanism=MONGODB-X509&"
-                  "%s=tests/x509gen/legacy-x509.pem&"
-                  "%s=tests/x509gen/legacy-ca.crt&"
+                  "%s=tests/x509gen/ldaptest-client-key-and-cert.pem&"
+                  "%s=tests/x509gen/ldaptest-ca-cert.crt&"
                   "%s=true",
                   tls,
                   tlsCertificateKeyFile,
@@ -1642,13 +1642,13 @@ test_mongoc_uri_tls_ssl (const char *tls,
 
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
                      uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, "none"),
-                  "tests/x509gen/legacy-x509.pem");
+                  "tests/x509gen/ldaptest-client-key-and-cert.pem");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
                      uri, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD, "none"),
                   "none");
    ASSERT_CMPSTR (
       mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, "none"),
-      "tests/x509gen/legacy-ca.crt");
+      "tests/x509gen/ldaptest-ca-cert.crt");
    ASSERT (!mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
    ASSERT (mongoc_uri_get_option_as_bool (
