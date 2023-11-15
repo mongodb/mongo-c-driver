@@ -220,7 +220,7 @@ test_stream_writev_timeout (void)
    bson_error_t error;
 
    uint8_t data[1] = {0};
-   mongoc_iovec_t iov = {.iov_base = data, .iov_len = 1u};
+   mongoc_iovec_t iov = {.iov_base = (void *) data, .iov_len = 1u};
 
    // A positive timeout value should be forwarded as-is to the writev function.
    {
