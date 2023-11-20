@@ -228,6 +228,10 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 mongo_platform_use_target(Threads::Threads)
 
+if(CMAKE_THREAD_LIBS_INIT)
+   set_property(DIRECTORY APPEND PROPERTY pkg_config_LIBS ${CMAKE_THREAD_LIBS_INIT})
+endif()
+
 if(WIN32)
    # Required for gethostbyname on Windows:
    mongo_platform_link_libraries(ws2_32)
