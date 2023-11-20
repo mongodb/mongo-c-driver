@@ -2122,9 +2122,7 @@ test_example_52 (mongoc_database_t *db)
       "lastModified", BCON_BOOL (true),
       "}");
 
-   /* MONGOC_UPDATE_NONE means "no special options" */
-   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, selector,
-                                 update, NULL, &error);
+   r = mongoc_collection_update_one(collection, selector, update, NULL, NULL, &error);
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -2179,7 +2177,7 @@ test_example_53 (mongoc_database_t *db)
       "lastModified", BCON_BOOL (true),
       "}");
 
-   r = mongoc_collection_update (collection, MONGOC_UPDATE_MULTI_UPDATE, selector, update, NULL, &error);
+   r = mongoc_collection_update_many(collection, selector, update, NULL, NULL, &error);
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -2238,7 +2236,7 @@ test_example_54 (mongoc_database_t *db)
       "]");
 
    /* MONGOC_UPDATE_NONE means "no special options" */
-   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, selector, replacement, NULL, &error);
+   r = mongoc_collection_replace_one(collection, selector, replacement, NULL, NULL, &error);
    bson_destroy (selector);
    bson_destroy (replacement);
 
@@ -2602,6 +2600,10 @@ cleanup:
 static void
 test_example_59 (mongoc_database_t *db)
 {
+   if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
    mongoc_client_t *client = NULL;
    client = test_framework_new_default_client ();
 
@@ -2715,6 +2717,10 @@ cleanup:
 static void
 test_example_60 (mongoc_database_t *db)
 {
+   if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
    mongoc_client_t *client = NULL;
    client = test_framework_new_default_client ();
 
