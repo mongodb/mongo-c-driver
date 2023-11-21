@@ -25,12 +25,12 @@
 #include "common-md5-private.h"
 #include "common-thread-private.h"
 #include "mongoc-rand-private.h"
-#include "mongoc-util.h"
 #include "mongoc-util-private.h"
 #include "mongoc-client.h"
 #include "mongoc-client-private.h" // WIRE_VERSION_* macros.
 #include "mongoc-client-session-private.h"
 #include "mongoc-trace-private.h"
+#include "mongoc-sleep.h"
 
 static mongoc_usleep_func_t gUsleepFunc = mongoc_usleep_default_impl;
 static void *gUsleepData;
@@ -88,11 +88,21 @@ _mongoc_hex_md5 (const char *input)
    return bson_strdup (digest_str);
 }
 
-void
-mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func, void *user_data)
+mongoc_usleep_func_t
+mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func,
+                        void *user_data,
+                        void **old_user_data)
 {
+   mongoc_usleep_func_t old_usleep_func = gUsleepFunc;
+   if (old_user_data)
+   {
+      *old_user_data = gUsleepData;
+   }
+
    gUsleepFunc = usleep_func;
    gUsleepData = user_data;
+
+   return old_usleep_func;
 }
 
 void

@@ -695,6 +695,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-api.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-session.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sleep.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
@@ -705,7 +706,6 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-uri.h
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-util.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand.h

@@ -22,9 +22,13 @@ typedef void (*mongoc_usleep_func_t) (int64_t usec, void *user_data);
  *
  * Sets the function to be called to perform sleep.
  * Not thread-safe.
+ * Providing a `usleep_func` that does not sleep (e.g. coroutine suspension) is
+ * not supported. Doing so is at the user's own risk.
  */
-MONGOC_EXPORT (void)
-mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func, void *user_data);
+MONGOC_EXPORT (mongoc_usleep_func_t)
+mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func,
+                        void *user_data,
+                        void **old_user_data);
 
 MONGOC_EXPORT (void)
 mongoc_usleep_default_impl (int64_t usec, void *user_data);

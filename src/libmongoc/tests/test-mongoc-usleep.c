@@ -30,9 +30,13 @@ test_mongoc_usleep_custom (void)
    static const int64_t expected = 42;
    int64_t last_sleep_dur = -1;
 
-   mongoc_usleep_set_impl(custom_usleep_impl, &last_sleep_dur);
+   void *old_usleep_data;
+   mongoc_usleep_func_t old_usleep_fn = mongoc_usleep_set_impl(
+      custom_usleep_impl, &last_sleep_dur, &old_usleep_data);
 
    _mongoc_usleep (expected);
+   (void)mongoc_usleep_set_impl(old_usleep_fn, old_usleep_data, NULL);
+
    ASSERT_CMPINT64 (last_sleep_dur, =, expected);
 }
 
