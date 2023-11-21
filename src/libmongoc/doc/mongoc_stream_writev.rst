@@ -27,8 +27,14 @@ to a :symbol:`mongoc_stream_t`. It's modeled on the
 API and semantics of ``writev()``, though the parameters map only
 loosely.
 
+.. warning::
+
+  The "default timeout" indicated by a negative value is both unspecified and
+  unrelated to the documented default values for ``*TimeoutMS`` URI options.
+  To specify a default timeout value for a ``*TimeoutMS`` URI option, use the
+  ``MONGOC_DEFAULT_*`` constants defined in ``mongoc-client.h``.
+
 Returns
 -------
 
 The number of bytes written on success, or ``-1`` upon failure and ``errno`` is set.
-
