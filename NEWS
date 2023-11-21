@@ -1,7 +1,9 @@
 libmongoc 1.25.2 (Unreleased)
 =============================
 
-TODO: Add news.
+Fixes:
+
+  * Fix data race in `mongoc_cursor_get_host`.
 
 libmongoc 1.25.1
 ================
