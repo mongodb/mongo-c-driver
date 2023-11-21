@@ -1370,12 +1370,10 @@ mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host)
    td = mc_tpld_take_ref (cursor->client->topology);
    description = mongoc_topology_description_server_by_id_const (
       td.ptr, cursor->server_id, &cursor->error);
-   mc_tpld_drop_ref (&td);
-   if (!description) {
-      return;
+   if (description) {
+      *host = description->host;
    }
-
-   *host = description->host;
+   mc_tpld_drop_ref (&td);
 
    EXIT;
 }
