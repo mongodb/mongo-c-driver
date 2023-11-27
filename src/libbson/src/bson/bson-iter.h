@@ -442,7 +442,7 @@ bson_iter_timeval_unsafe (const bson_iter_t *iter, struct timeval *tv)
    tv->tv_sec = (long) (value / 1000);
    tv->tv_usec = (long) (value % 1000) * 1000;
 #else
-   tv->tv_sec = (suseconds_t) (value / 1000);
+   tv->tv_sec = (time_t) (value / 1000);
    tv->tv_usec = (suseconds_t) (value % 1000) * 1000;
 #endif
 }
