@@ -21,6 +21,8 @@ typedef void (*mongoc_usleep_func_t) (int64_t usec, void *user_data);
  * @usleep_func: A function to perform microsecond sleep.
  *
  * Sets the function to be called to perform sleep.
+ * Returns the old function.
+ * If old_user_data is not NULL, *old_user_data is set to the old user_data.
  * Not thread-safe.
  * Providing a `usleep_func` that does not sleep (e.g. coroutine suspension) is
  * not supported. Doing so is at the user's own risk.
