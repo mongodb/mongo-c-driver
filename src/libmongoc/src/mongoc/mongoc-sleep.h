@@ -1,7 +1,7 @@
 #include "mongoc-prelude.h"
 
-#ifndef MONGOC_UTIL_H
-#define MONGOC_UTIL_H
+#ifndef MONGOC_SLEEP_H
+#define MONGOC_SLEEP_H
 
 #include <bson/bson.h>
 
@@ -35,4 +35,4 @@ mongoc_usleep_default_impl (int64_t usec, void *user_data);
 
 BSON_END_DECLS
 
-#endif /* MONGOC_UTIL_H */
+#endif /* MONGOC_SLEEP_H */
