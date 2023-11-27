@@ -94,8 +94,7 @@ mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func,
                         void **old_user_data)
 {
    mongoc_usleep_func_t old_usleep_func = gUsleepFunc;
-   if (old_user_data)
-   {
+   if (old_user_data) {
       *old_user_data = gUsleepData;
    }
 
