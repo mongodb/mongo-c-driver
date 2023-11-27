@@ -101,8 +101,7 @@ fi
 
 if [[ "${ssl}" != "OFF" ]]; then
   # FIXME: CDRIVER-2008 for the cygwin check
-  # FIXME: BUILD-18145/CDRIVER-4746 for the darwin check
-  if [[ "${OSTYPE}" != "cygwin" && ! ( "${OSTYPE}" =~ "darwin" ) ]]; then
+  if [[ "${OSTYPE}" != "cygwin" ]]; then
     echo "Authenticating using X.509"
     LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout}"
   fi
