@@ -107,6 +107,8 @@ mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func,
 void
 mongoc_usleep_default_impl (int64_t usec, void *user_data)
 {
+   BSON_UNUSED (user_data);
+
 #ifdef _WIN32
    LARGE_INTEGER ft;
    HANDLE timer;
