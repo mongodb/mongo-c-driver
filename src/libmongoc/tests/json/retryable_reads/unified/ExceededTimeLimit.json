@@ -1,0 +1,170 @@
+{
+  "description": "ExceededTimeLimit is a retryable read",
+  "schemaVersion": "1.0",
+  "runOnRequirements": [
+    {
+      "minServerVersion": "4.2",
+      "topologies": [
+        "replicaset",
+        "sharded",
+        "load-balanced"
+      ],
+      "auth": true
+    }
+  ],
+  "createEntities": [
+    {
+      "client": {
+        "id": "client0",
+        "useMultipleMongoses": false,
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "database0",
+        "client": "client0",
+        "databaseName": "find-tests"
+      }
+    },
+    {
+      "collection": {
+        "id": "collection0",
+        "database": "database0",
+        "collectionName": "coll0"
+      }
+    }
+  ],
+  "initialData": [
+    {
+      "collectionName": "coll0",
+      "databaseName": "find-tests",
+      "documents": [
+        {
+          "_id": 1,
+          "x": 11
+        },
+        {
+          "_id": 2,
+          "x": 22
+        },
+        {
+          "_id": 3,
+          "x": 33
+        },
+        {
+          "_id": 4,
+          "x": 44
+        },
+        {
+          "_id": 5,
+          "x": 55
+        },
+        {
+          "_id": 6,
+          "x": 66
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "description": "Find succeeds on second attempt after ExceededTimeLimit",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 1
+              },
+              "data": {
+                "failCommands": [
+                  "find"
+                ],
+                "closeConnection": false,
+                "errorCode": 262
+              }
+            }
+          }
+        },
+        {
+          "name": "find",
+          "arguments": {
+            "filter": {
+              "_id": {
+                "$gt": 1
+              }
+            },
+            "batchSize": 10
+          },
+          "object": "collection0",
+          "expectResult": [
+            {
+              "_id": 2,
+              "x": 22
+            },
+            {
+              "_id": 3,
+              "x": 33
+            },
+            {
+              "_id": 4,
+              "x": 44
+            },
+            {
+              "_id": 5,
+              "x": 55
+            },
+            {
+              "_id": 6,
+              "x": 66
+            }
+          ]
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "find": "coll0",
+                  "filter": {
+                    "_id": {
+                      "$gt": 1
+                    }
+                  },
+                  "batchSize": 10
+                },
+                "commandName": "find",
+                "databaseName": "find-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "find": "coll0",
+                  "filter": {
+                    "_id": {
+                      "$gt": 1
+                    }
+                  },
+                  "batchSize": 10
+                },
+                "commandName": "find",
+                "databaseName": "find-tests"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
