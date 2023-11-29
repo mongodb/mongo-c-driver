@@ -1,7 +1,9 @@
 libbson 1.25.2 (Unreleased)
 ===========================
 
-TODO: Add news.
+Fixes:
+
+  * Fix conversion warning with GCC 12.
 
 libbson 1.25.1
 ==============
