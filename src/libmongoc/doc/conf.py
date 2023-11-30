@@ -205,9 +205,14 @@ else:
         has_content = True
         def run(self):
             return []
+        
+def check_html_builder_requirements (app):
+    if isinstance(app.builder, DirectoryHTMLBuilder) and not has_sphinx_design:
+        raise RuntimeError("The sphinx-design package is required to build HTML documentation but was not detected. Install sphinx-design.")
 
 def setup(app: Sphinx):
     mongoc_common_setup(app)
+    app.connect("builder-inited", check_html_builder_requirements)
     if has_sphinx_design:
         app.add_directive("ad-dropdown", AdDropdown)
     else:
