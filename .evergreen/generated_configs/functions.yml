@@ -254,6 +254,21 @@ functions:
             bash tools/poetry.sh install --with=docs
             # See SphinxBuild.cmake for EVG_DOCS_BUILD reasoning
             bash tools/poetry.sh run env EVG_DOCS_BUILD=1 bash .evergreen/scripts/build-docs.sh
+  make-docs-manonly:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        include_expansions_in_env:
+          - distro_id
+        args:
+          - -c
+          - |
+            set -o errexit
+            # Build man pages with only dependencies required for man pages.
+            bash tools/poetry.sh install --with=docs-manonly
+            bash tools/poetry.sh run bash .evergreen/scripts/build-docs-manonly.sh
   openssl-static-compile:
     - command: subprocess.exec
       type: test

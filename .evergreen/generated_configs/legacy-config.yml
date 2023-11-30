@@ -13998,6 +13998,7 @@ buildvariants:
   run_on: ubuntu2204-small
   tasks:
   - make-docs
+  - make-docs-manonly
   - kms-divergence-check
   - release-compile
   - debug-compile-no-counters

@@ -2485,6 +2485,9 @@ tasks:
       - func: make-docs
       - func: upload-docs
       - func: upload-man-pages
+  - name: make-docs-manonly
+    commands:
+      - func: make-docs-manonly
   - name: mock-server-test
     run_on: ubuntu2204-small
     commands:
