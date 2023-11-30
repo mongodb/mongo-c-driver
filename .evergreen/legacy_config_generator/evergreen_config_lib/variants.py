@@ -43,6 +43,7 @@ all_variants = [
         "ubuntu2204-small",
         [
             "make-docs",
+            "make-docs-manonly",
             "kms-divergence-check",
             "release-compile",
             "debug-compile-no-counters",
