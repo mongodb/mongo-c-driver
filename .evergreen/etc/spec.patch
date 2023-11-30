@@ -18,3 +18,13 @@
  Release:   1%{?dist}
  # See THIRD_PARTY_NOTICES
  License:   Apache-2.0 AND ISC AND MIT AND Zlib
+@@ -50,7 +50,8 @@ BuildRequires: perl-interpreter
+ # From man pages
+ BuildRequires: python3
+ BuildRequires: python3-sphinx
+-BuildRequires: python3-sphinx-design
++# python3-sphinx-design is intentionally removed to test build succeeds without python3-sphinx-design.
++# At present, python3-sphinx-design is not available in EPEL. Refer: CDRIVER-4767
+ 
+ Requires:   %{name}-libs%{?_isa} = %{version}-%{release}
+ # Sub package removed
