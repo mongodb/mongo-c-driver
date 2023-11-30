@@ -112,7 +112,7 @@ tgz_filepath="$HOME/rpmbuild/SOURCES/$expect_filename"
 echo "Creating source archive [$tgz_filepath]"
 # If Evergreen is running a patch build, changes have been git applied to the index.
 # Commit the changes to include them in the tarball.
-git commit -am "Include applied changes from a patch build"
+git commit -m "Include applied changes from a patch build"
 git archive --format=tar --output="$tar_filepath" --prefix="$tar_filestem/" HEAD
 mkdir -p "$tar_filestem"
 cp VERSION_CURRENT "$tar_filestem/."
