@@ -6,11 +6,21 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from docutils.parsers.rst import directives
+from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+from docutils.parsers.rst import directives, Directive
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log
 from sphinx.config import Config
-from sphinx_design.dropdown import DropdownDirective
+
+has_sphinx_design = False
+try:
+    # Try to import sphinx-design to include directives for HTML pages (e.g. tabs and dropdowns).
+    # sphinx-design is not required for building man pages.
+    # python-sphinx-design is not currently available on EPEL. The package for EPEL includes man pages.
+    from sphinx_design.dropdown import DropdownDirective
+    has_sphinx_design = True
+except ImportError:
+    print ("Unable to import sphinx_design. Documentation cannot be built as HTML.")
 
 # Ensure we can import "mongoc" extension module.
 this_path = os.path.dirname(__file__)
@@ -29,9 +39,11 @@ extensions = [
     # package building.
     # "sphinxcontrib.moderncmakedomain",
     "cmakerefdomain",
-    "sphinx_design",
     "sphinx.ext.mathjax",
 ]
+
+if has_sphinx_design:
+    extensions.append("sphinx_design")
 
 # General information about the project.
 project = "libmongoc"
@@ -176,22 +188,31 @@ def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: d
     context["metatags"] = context.get("metatags", "") + link
 
 
-class AdDropdown(DropdownDirective):
-    """A sphinx-design dropdown that can also be an admonition."""
+if has_sphinx_design:
+    class AdDropdown(DropdownDirective):
+        """A sphinx-design dropdown that can also be an admonition."""
 
-    option_spec = DropdownDirective.option_spec | {"admonition": directives.unchanged_required}
+        option_spec = DropdownDirective.option_spec | {"admonition": directives.unchanged_required}
 
-    def run(self):
-        adm = self.options.get("admonition")
-        if adm is not None:
-            self.options.setdefault("class-container", []).extend(("admonition", adm))
-            self.options.setdefault("class-title", []).append(f"admonition-title")
-        return super().run()
-
+        def run(self):
+            adm = self.options.get("admonition")
+            if adm is not None:
+                self.options.setdefault("class-container", []).extend(("admonition", adm))
+                self.options.setdefault("class-title", []).append(f"admonition-title")
+            return super().run()
+else:
+    class EmptyDirective(Directive):
+        has_content = True
+        def run(self):
+            return []
 
 def setup(app: Sphinx):
     mongoc_common_setup(app)
-    app.add_directive("ad-dropdown", AdDropdown)
+    if has_sphinx_design:
+        app.add_directive("ad-dropdown", AdDropdown)
+    else:
+        app.add_directive("ad-dropdown", EmptyDirective)
+        app.add_directive("tab-set", EmptyDirective)
     app.connect("html-page-context", add_canonical_link)
     app.add_css_file("styles.css")
     app.connect("config-inited", _maybe_update_inventories)
