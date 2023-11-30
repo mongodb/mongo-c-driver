@@ -21,16 +21,6 @@ sphinx = "^7.1.1"
 furo = "^2023.5.20"
 sphinx-design = "^0.5.0"
 
-# docs-manonly is the set of dependencies needed to build man pages.
-# It notably does not contain sphinx-design. sphinx-design is not currently available on EPEL.
-# Refer: CDRIVER-4788
-[tool.poetry.group.docs-manonly]
-optional = true
-
-[tool.poetry.group.docs-manonly.dependencies]
-sphinx = "^7.1.1"
-furo = "^2023.5.20"
-
 [tool.poetry.group.dev]
 optional = true
 
