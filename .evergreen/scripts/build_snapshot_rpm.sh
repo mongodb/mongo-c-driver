@@ -76,7 +76,7 @@ build_dir=$(basename $(pwd))
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --clean
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --init
 mock_root=$(sudo mock -r ${config} --use-bootstrap-image --isolation=simple --print-root-path)
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdevtools git rpm-build cmake python python3-sphinx gcc openssl-devel
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdevtools git rpm-build cmake python gcc openssl-devel
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
   python build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
