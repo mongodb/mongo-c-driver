@@ -27,26 +27,6 @@ class MakeDocs(Function):
     def call(cls, **kwargs):
         return cls.default_call(**kwargs)
 
-class MakeDocsManOnly(Function):
-    name = "make-docs-manonly"
-    commands = [
-        bash_exec(
-            command_type=EvgCommandType.TEST,
-            working_dir="mongoc",
-            include_expansions_in_env=["distro_id"],
-            script="""\
-                set -o errexit
-                # Build man pages only using the dependencies required for man pages.
-                bash tools/poetry.sh install --with=docs-manonly
-                bash tools/poetry.sh run bash .evergreen/scripts/build-docs-manonly.sh
-                """,
-        ),
-    ]
-
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
-
 
 class UploadDocs(Function):
     name = "upload-docs"
@@ -144,7 +124,6 @@ def functions():
         MakeDocs.defn(),
         UploadDocs.defn(),
         UploadManPages.defn(),
-        MakeDocsManOnly.defn(),
     )
 
 
@@ -156,12 +135,6 @@ def tasks():
                 MakeDocs.call(),
                 UploadDocs.call(),
                 UploadManPages.call(),
-            ],
-        ),
-        EvgTask(
-            name="make-docs-manonly",
-            commands=[
-                MakeDocsManOnly.call()
             ],
         )
     ]
