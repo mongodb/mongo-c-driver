@@ -34,7 +34,7 @@ Parameters
 * ``command``: A :symbol:`bson:bson_t` containing the command specification.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`.
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
-* ``reply``: Overwritable storage for a new :symbol:`bson_t`, typically on the stack. See :doc:`BSON out parameters <bson:lifetimes>`.
+* ``reply``: A |bson_t-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. include:: includes/read-write-opts.txt

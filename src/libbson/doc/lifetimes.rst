@@ -8,7 +8,11 @@ or allowing a stack-allocated :symbol:`bson_t` to go out of scope may cause a me
 
 :symbol:`bson_t` out parameters
 -------------------------------
-A :symbol:`bson_t` pointer used as an out parameter must point to valid overwritable storage for a new :symbol:`bson_t`.
+A :symbol:`bson_t` pointer used as an out parameter must point to valid overwritable storage for a new :symbol:`bson_t` which must be one of:
+#. Uninitialized storage for a :symbol:`bson_t`.
+#. A zero-initialized :symbol:`bson_t` object.
+#. A :symbol:`bson_t` object initialized with ``BSON_INITIALIZER``.
+#. A :symbol:`bson_t` object not created with :symbol:`bson_new` that was destroyed with :symbol:`bson_destroy`.
 
 This can be on the stack:
 

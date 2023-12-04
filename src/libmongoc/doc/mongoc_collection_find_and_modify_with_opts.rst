@@ -22,7 +22,7 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``query``: A :symbol:`bson:bson_t` containing the query to locate target document(s).
 * ``opts``: A :symbol:`find and modify options <mongoc_find_and_modify_opts_t>`. Must not be NULL.
-* ``reply``: Optional overwritable storage for a new :symbol:`bson_t`, typically on the stack. See :doc:`BSON out parameters <bson:lifetimes>`.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

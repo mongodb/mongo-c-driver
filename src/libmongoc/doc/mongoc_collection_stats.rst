@@ -24,7 +24,7 @@ Parameters
 
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``options``: An optional :symbol:`bson:bson_t` containing extra options to pass to the ``collStats`` command.
-* ``reply``: Overwritable storage for a new :symbol:`bson_t`, typically on the stack. See :doc:`BSON out parameters <bson:lifetimes>`.
+* ``reply``: A |bson_t-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

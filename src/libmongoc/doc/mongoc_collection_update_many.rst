@@ -22,7 +22,7 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``selector``: A :symbol:`bson:bson_t` containing the query to match documents for updating.
 * ``update``: A :symbol:`bson:bson_t` containing the update to perform. If updating with a pipeline, a :symbol:`bson:bson_t` array.
-* ``reply``: Optional overwritable storage for a new :symbol:`bson_t`, typically on the stack. See :doc:`BSON out parameters <bson:lifetimes>`.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. |opts-source| replace:: ``collection``

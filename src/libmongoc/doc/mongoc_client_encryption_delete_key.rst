@@ -22,7 +22,7 @@ Parameters
 
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
 * ``keyid``: The UUID (BSON binary subtype 0x04) of the key to delete.
-* ``reply``: Optional overwritable storage for a new :symbol:`bson_t`, typically on the stack. See :doc:`BSON out parameters <bson:lifetimes>`.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: Optional. :symbol:`bson_error_t`.
 
 Returns
