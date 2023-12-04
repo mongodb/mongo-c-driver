@@ -812,6 +812,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
 
+if (ENABLE_SHARED)
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 if(WIN32)
    # Add resource-definition script for Windows shared library (.dll).
@@ -864,6 +865,7 @@ set_target_properties (mongoc_shared PROPERTIES
    pkg_config_REQUIRES "libbson-1.0"
    )
 mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VERSION}.pc)
+endif () # ENABLE_SHARED
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
@@ -922,6 +924,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    endif()
 endif ()
 
+if (ENABLE_SHARED)
 if (ENABLE_APPLE_FRAMEWORK)
    set_target_properties (mongoc_shared PROPERTIES
       FRAMEWORK TRUE
@@ -932,7 +935,9 @@ if (ENABLE_APPLE_FRAMEWORK)
       PUBLIC_HEADER "${HEADERS}"
    )
 endif ()
+endif () # ENABLE_SHARED
 
+if (ENABLE_SHARED)
 add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
 target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
 
@@ -942,6 +947,7 @@ if (ENABLE_SHM_COUNTERS)
             EXPORT mongoc_targets
             RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif ()
+endif () # ENABLE_SHARED
 
 set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.c
@@ -1166,6 +1172,7 @@ if (ENABLE_TESTS)
    )
 endif ()
 
+if (ENABLE_SHARED)
 if (ENABLE_EXAMPLES)
    function (mongoc_add_example example)
       add_executable (${example} ${ARGN})
@@ -1237,16 +1244,21 @@ if (ENABLE_EXAMPLES)
    mongoc_add_example (executing ${PROJECT_SOURCE_DIR}/examples/tutorial/executing.c)
    mongoc_add_example (appending ${PROJECT_SOURCE_DIR}/examples/tutorial/appending.c)
 endif ()
+endif () # ENABLE_SHARED
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/release_files DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
+set (TARGETS_TO_INSTALL)
+
 if (MONGOC_ENABLE_STATIC_INSTALL)
-   set (TARGETS_TO_INSTALL mongoc_shared mongoc_static)
-else ()
-   set (TARGETS_TO_INSTALL mongoc_shared)
+   list (APPEND TARGETS_TO_INSTALL mongoc_static)
+endif ()
+
+if (ENABLE_SHARED)
+   list (APPEND TARGETS_TO_INSTALL mongoc_shared)
 endif ()
 
 set (MONGOC_HEADER_INSTALL_DIR
