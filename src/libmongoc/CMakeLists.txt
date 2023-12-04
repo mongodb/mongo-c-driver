@@ -865,6 +865,28 @@ set_target_properties (mongoc_shared PROPERTIES
    pkg_config_REQUIRES "libbson-1.0"
    )
 mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VERSION}.pc)
+
+if (ENABLE_APPLE_FRAMEWORK)
+   set_target_properties (mongoc_shared PROPERTIES
+      FRAMEWORK TRUE
+      MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION}
+      MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${MONGOC_VERSION}
+      MACOSX_FRAMEWORK_IDENTIFIER org.mongodb.mongoc
+      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}"
+      PUBLIC_HEADER "${HEADERS}"
+   )
+endif () # ENABLE_APPLE_FRAMEWORK
+
+add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
+target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
+
+# mongoc-stat works if shared memory performance counters are enabled.
+if (ENABLE_SHM_COUNTERS)
+   install (TARGETS mongoc-stat
+            EXPORT mongoc_targets
+            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif () # ENABLE_SHM_COUNTERS
+
 endif () # ENABLE_SHARED
 
 if (MONGOC_ENABLE_STATIC_BUILD)
@@ -924,30 +946,6 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    endif()
 endif ()
 
-if (ENABLE_SHARED)
-if (ENABLE_APPLE_FRAMEWORK)
-   set_target_properties (mongoc_shared PROPERTIES
-      FRAMEWORK TRUE
-      MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION}
-      MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${MONGOC_VERSION}
-      MACOSX_FRAMEWORK_IDENTIFIER org.mongodb.mongoc
-      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}"
-      PUBLIC_HEADER "${HEADERS}"
-   )
-endif ()
-endif () # ENABLE_SHARED
-
-if (ENABLE_SHARED)
-add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
-target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
-
-# mongoc-stat works if shared memory performance counters are enabled.
-if (ENABLE_SHM_COUNTERS)
-   install (TARGETS mongoc-stat
-            EXPORT mongoc_targets
-            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-endif ()
-endif () # ENABLE_SHARED
 
 set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.c
