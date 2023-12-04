@@ -1170,8 +1170,7 @@ if (ENABLE_TESTS)
    )
 endif ()
 
-if (ENABLE_SHARED)
-if (ENABLE_EXAMPLES)
+if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    function (mongoc_add_example example)
       add_executable (${example} ${ARGN})
       target_link_libraries (${example} mongoc_shared ${LIBRARIES})
@@ -1242,7 +1241,6 @@ if (ENABLE_EXAMPLES)
    mongoc_add_example (executing ${PROJECT_SOURCE_DIR}/examples/tutorial/executing.c)
    mongoc_add_example (appending ${PROJECT_SOURCE_DIR}/examples/tutorial/appending.c)
 endif ()
-endif () # ENABLE_SHARED
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)
