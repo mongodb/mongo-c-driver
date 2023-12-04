@@ -4,6 +4,7 @@ libmongoc 1.25.2 (Unreleased)
 Fixes:
 
   * Fix data race in `mongoc_cursor_get_host`.
+  * Accept discouraged timeout values for backwards compatibility.
 
 libmongoc 1.25.1
 ================
