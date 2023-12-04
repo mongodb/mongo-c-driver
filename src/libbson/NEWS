@@ -4,6 +4,7 @@ libbson 1.25.2 (Unreleased)
 Fixes:
 
   * Fix conversion warning with GCC 12.
+  * Include -pthread in pkg-config Libs.
 
 libbson 1.25.1
 ==============
