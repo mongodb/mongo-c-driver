@@ -23,7 +23,7 @@
  BuildRequires: python3
  BuildRequires: python3-sphinx
 -BuildRequires: python3-sphinx-design
-+# python3-sphinx-design is intentionally removed to test build succeeds without python3-sphinx-design.
++# python3-sphinx-design is intentionally removed to test that the build succeeds without python3-sphinx-design.
 +# At present, python3-sphinx-design is not available in EPEL. Refer: CDRIVER-4767
  
  Requires:   %{name}-libs%{?_isa} = %{version}-%{release}
