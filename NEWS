@@ -5,6 +5,13 @@ Fixes:
 
   * Fix data race in `mongoc_cursor_get_host`.
 
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Kyle Kloberdanz
+  * Roberto C. Sánchez
+
 libmongoc 1.25.1
 ================
 

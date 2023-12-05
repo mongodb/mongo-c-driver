@@ -5,6 +5,12 @@ Fixes:
 
   * Fix conversion warning with GCC 12.
 
+Thanks to everyone who contributed to the development of this release.
+
+  * Calvin Buckley
+  * Kevin Albertson
+  * Roland Hieber
+
 libbson 1.25.1
 ==============
 
