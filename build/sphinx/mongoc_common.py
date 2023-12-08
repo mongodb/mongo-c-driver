@@ -17,7 +17,7 @@ except ImportError:
     from sphinx.builders.html import DirectoryHTMLBuilder
 from sphinx.config import Config
 from sphinx.project import Project
-from sphinx.util.docutils import SphinxDirective
+from docutils.parsers.rst import Directive
 
 needs_sphinx = "5.0"
 author = "MongoDB, Inc"
@@ -103,7 +103,7 @@ def add_ga_javascript(app: Sphinx, pagename: str, templatename: str, context: di
     )
 
 
-class VersionList(SphinxDirective):
+class VersionList(Directive):
     """Custom directive to generate the version list from an environment variable"""
 
     option_spec = {}
