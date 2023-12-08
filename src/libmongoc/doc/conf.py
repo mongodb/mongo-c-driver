@@ -6,7 +6,12 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+try:
+    from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+except ImportError:
+    # Try importing from older Sphinx version path.
+    from sphinx.builders.html import DirectoryHTMLBuilder
+
 from docutils.parsers.rst import directives, Directive
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log

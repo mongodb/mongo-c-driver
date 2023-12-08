@@ -10,7 +10,11 @@ from docutils.nodes import Node, document
 
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log
-from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+try:
+    from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+except ImportError:
+    # Try importing from older Sphinx version path.
+    from sphinx.builders.html import DirectoryHTMLBuilder
 from sphinx.config import Config
 from sphinx.project import Project
 from sphinx.util.docutils import SphinxDirective
