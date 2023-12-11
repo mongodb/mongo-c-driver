@@ -16,7 +16,6 @@ except ImportError:
     # Try importing from older Sphinx version path.
     from sphinx.builders.html import DirectoryHTMLBuilder
 from sphinx.config import Config
-from sphinx.project import Project
 from docutils.parsers.rst import Directive
 
 needs_sphinx = "5.0"
@@ -46,7 +45,6 @@ def _collect_man(app: Sphinx, config: Config) -> None:
     "Populate the man_pages value from the given source directory input"
     # Note: 'app' is partially-formed, as this is called from the Sphinx.__init__
     docdir = Path(app.srcdir)
-    proj = Project(app.srcdir, config.source_suffix)
     # Find everything:
     children = docdir.rglob("*")
     # Find only regular files:
@@ -59,7 +57,7 @@ def _collect_man(app: Sphinx, config: Config) -> None:
     pairs: Iterable[tuple[Path, str]] = ((f, m) for f, m in with_man_name if m)
     # Populate the man_pages:
     for filepath, man_name in pairs:
-        docname = proj.path2doc(str(filepath))
+        docname = app.env.path2doc(str(filepath))
         assert docname, filepath
         man_pages.append((docname, man_name, "", [author], 3))
 
