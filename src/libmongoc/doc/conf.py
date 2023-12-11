@@ -211,9 +211,14 @@ else:
         def run(self):
             return []
         
+has_add_css_file = True
+        
 def check_html_builder_requirements (app):
-    if isinstance(app.builder, DirectoryHTMLBuilder) and not has_sphinx_design:
-        raise RuntimeError("The sphinx-design package is required to build HTML documentation but was not detected. Install sphinx-design.")
+    if isinstance(app.builder, DirectoryHTMLBuilder):
+        if not has_sphinx_design:
+            raise RuntimeError("The sphinx-design package is required to build HTML documentation but was not detected. Install sphinx-design.")
+        if not has_add_css_file:
+            raise RuntimeError("A newer version of Sphinx is required to build HTML documentation with CSS files. Upgrade Sphinx to v3.5.0 or newer")
 
 def setup(app: Sphinx):
     mongoc_common_setup(app)
@@ -224,6 +229,11 @@ def setup(app: Sphinx):
         app.add_directive("ad-dropdown", EmptyDirective)
         app.add_directive("tab-set", EmptyDirective)
     app.connect("html-page-context", add_canonical_link)
-    app.add_css_file("styles.css")
+    if hasattr(app, "add_css_file"):
+        app.add_css_file("styles.css")
+    else:
+        global has_add_css_file
+        has_add_css_file = False
+        
     app.connect("config-inited", _maybe_update_inventories)
     app.add_config_value(_UPDATE_KEY, default=False, rebuild=True, types=[bool])
