@@ -82,7 +82,7 @@ intersphinx_mapping = {
 _UPDATE_KEY = "update_external_inventories"
 
 
-def _maybe_update_inventories(app: Sphinx, config: Config):
+def _maybe_update_inventories(app: Sphinx):
     """
     We save Sphinx inventories for external projects saved within our own project
     so that we can support fully-offline builds. This is a convenience function
@@ -92,6 +92,7 @@ def _maybe_update_inventories(app: Sphinx, config: Config):
     value is defined.
     """
     prefix = "[libmongoc/doc/conf.py]"
+    config = app.config
     if not config[_UPDATE_KEY]:
         sphinx_log.info(
             "%s Using existing intersphinx inventories. Refresh by running with ‘-D %s=1’",
@@ -235,5 +236,5 @@ def setup(app: Sphinx):
         global has_add_css_file
         has_add_css_file = False
         
-    app.connect("config-inited", _maybe_update_inventories)
+    app.connect("builder-inited", _maybe_update_inventories)
     app.add_config_value(_UPDATE_KEY, default=False, rebuild=True, types=[bool])
