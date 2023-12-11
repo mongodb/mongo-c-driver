@@ -18,7 +18,7 @@ except ImportError:
 from sphinx.config import Config
 from docutils.parsers.rst import Directive
 
-needs_sphinx = "5.0"
+needs_sphinx = "1.7" # Do not require newer sphinx. EPEL packages build man pages with Sphinx 1.7.6. Refer: CDRIVER-4767
 author = "MongoDB, Inc"
 
 # -- Options for HTML output ----------------------------------------------
