@@ -40,9 +40,7 @@ def _file_man_page_name(fpath: Path) -> str | None:
             continue
         return mat[1]
 
-
-def _collect_man(app: Sphinx, config: Config) -> None:
-    "Populate the man_pages value from the given source directory input"
+def _collect_man (app: Sphinx):
     # Note: 'app' is partially-formed, as this is called from the Sphinx.__init__
     docdir = Path(app.srcdir)
     # Find everything:
@@ -57,14 +55,17 @@ def _collect_man(app: Sphinx, config: Config) -> None:
     pairs: Iterable[tuple[Path, str]] = ((f, m) for f, m in with_man_name if m)
     # Populate the man_pages:
     for filepath, man_name in pairs:
-        docname = app.env.path2doc(str(filepath))
+        # Generate the docname.
+        relative_path = filepath.relative_to(app.srcdir)
+        # The docname is relative to the source directory, and excludes the suffix.
+        docname = str(relative_path.parent / filepath.stem)
+
         assert docname, filepath
         man_pages.append((docname, man_name, "", [author], 3))
 
-
 # -- Options for manual page output ---------------------------------------
 
-# NOTE: This starts empty, but we populate it during "config-inited" in _collect_man() (see above)
+# NOTE: This starts empty, but we populate it in `setup` in _collect_man() (see above)
 man_pages: list[tuple[str, str, str, list[str], int]] = []
 
 # If true, show URL addresses after external links.
@@ -166,9 +167,8 @@ def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: dic
     builder.css_files[:] = prev_css
     sphinx_log.debug("Wrote redirect: %r -> %r", path, page)
 
-
 def mongoc_common_setup(app: Sphinx):
-    app.connect("config-inited", _collect_man)
+    _collect_man(app)
     app.connect("html-page-context", generate_html_redirs)
     app.connect("html-page-context", add_ga_javascript)
     # Run sphinx-build -D analytics=1 to enable Google Analytics.
