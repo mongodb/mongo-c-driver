@@ -174,16 +174,16 @@ rst_prolog = rf"""
    Offer these substitutions for simpler variable references:
 
 .. |cmvar:CMAKE_BUILD_TYPE| replace::
-    :external+cmake:cmake:variable:`CMAKE_BUILD_TYPE <variable:CMAKE_BUILD_TYPE>`
+    :cmake:variable:`CMAKE_BUILD_TYPE <variable:CMAKE_BUILD_TYPE>`
 
 .. |cmvar:CMAKE_INSTALL_PREFIX| replace::
-    :external+cmake:cmake:variable:`CMAKE_INSTALL_PREFIX <variable:CMAKE_INSTALL_PREFIX>`
+    :cmake:variable:`CMAKE_INSTALL_PREFIX <variable:CMAKE_INSTALL_PREFIX>`
 
 .. |cmvar:CMAKE_PREFIX_PATH| replace::
-    :external+cmake:cmake:variable:`CMAKE_PREFIX_PATH <variable:CMAKE_PREFIX_PATH>`
+    :cmake:variable:`CMAKE_PREFIX_PATH <variable:CMAKE_PREFIX_PATH>`
 
 .. |cmcmd:find_package| replace::
-    :external+cmake:cmake:command:`find_package() <command:find_package>`
+    :cmake:command:`find_package() <command:find_package>`
 
 """
 
