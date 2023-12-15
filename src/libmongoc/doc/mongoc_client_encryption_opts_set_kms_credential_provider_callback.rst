@@ -34,7 +34,6 @@ Parameters
 .. rubric:: Related:
 
 .. c:type:: mongoc_kms_credentials_provider_callback_fn
-  :noindexentry:
 
   .. -
     The :noindexentry: prevents a one-off index entry for this item.
