@@ -11,8 +11,8 @@ Installing Prebuilt MongoDB C Driver Libraries
 .. _Homebrew: https://brew.sh/
 
 The |libmongoc| and |libbson| libraries are often available in the package
-management repositories of `common Linux distributions <installing.linux_>`_ and
-`macOS via Homebrew <installing.macos_>`_.
+management repositories of :ref:`common Linux distributions <installing.linux>` and
+:ref:`macOS via Homebrew <installing.macos>`.
 
 .. note::
 
@@ -42,7 +42,8 @@ management repositories of `common Linux distributions <installing.linux_>`_ and
   package managers; Conan
   package managers; vcpkg
   pair: installation; package managers
-  :name: installing.pkgman
+
+.. _installing.pkgman:
 
 Cross Platform Installs Using Library Package Managers
 ******************************************************
@@ -135,7 +136,8 @@ CMake toolchain file at the initial configure command::
 
 .. index::
   ! pair: Linux; installation
-  :name: installing.linux
+
+.. _installing.linux:
 
 Installing in Linux
 *******************
