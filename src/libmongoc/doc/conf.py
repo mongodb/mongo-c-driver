@@ -25,7 +25,7 @@ try:
     from sphinx_design.dropdown import DropdownDirective
     has_sphinx_design = True
 except ImportError:
-    print ("Unable to import sphinx_design. Documentation cannot be built as HTML.")
+    pass
 
 # Ensure we can import "mongoc" extension module.
 this_path = os.path.dirname(__file__)
