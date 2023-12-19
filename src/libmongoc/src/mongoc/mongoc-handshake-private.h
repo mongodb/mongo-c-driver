@@ -111,7 +111,7 @@ typedef struct _mongoc_handshake_t {
    char *platform;
    char *compiler_info;
    char *flags;
-   
+
    mongoc_handshake_env_t env;
    optional_int32 env_timeout_sec;
    optional_int32 env_memory_mb;
@@ -127,8 +127,7 @@ void
 _mongoc_handshake_cleanup (void);
 
 bson_t *
-_mongoc_handshake_build_doc_with_application (
-                                              const char *application);
+_mongoc_handshake_build_doc_with_application (const char *application);
 
 void
 _mongoc_handshake_freeze (void);
