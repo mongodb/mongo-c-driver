@@ -32,9 +32,6 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-sleep.h"
 
-static mongoc_usleep_func_t gUsleepFunc = mongoc_usleep_default_impl;
-static void *gUsleepData;
-
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
    BSON_VALIDATE_EMPTY_KEYS;
@@ -89,17 +86,18 @@ _mongoc_hex_md5 (const char *input)
 }
 
 mongoc_usleep_func_t
-mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func,
-                        void *user_data,
-                        void **old_user_data)
+mongoc_client_set_usleep_impl (mongoc_client_t *client,
+                               mongoc_usleep_func_t usleep_func,
+                               void *user_data,
+                               void **old_user_data)
 {
-   mongoc_usleep_func_t old_usleep_func = gUsleepFunc;
+   mongoc_usleep_func_t old_usleep_func = client->topology->usleep_fn;
    if (old_user_data) {
-      *old_user_data = gUsleepData;
+      *old_user_data = client->topology->usleep_data;
    }
 
-   gUsleepFunc = usleep_func;
-   gUsleepData = user_data;
+   client->topology->usleep_fn = usleep_func;
+   client->topology->usleep_data = user_data;
 
    return old_usleep_func;
 }
@@ -129,7 +127,7 @@ mongoc_usleep_default_impl (int64_t usec, void *user_data)
 void
 _mongoc_usleep (int64_t usec)
 {
-   gUsleepFunc (usec, gUsleepData);
+   mongoc_usleep_default_impl (usec, NULL);
 }
 
 

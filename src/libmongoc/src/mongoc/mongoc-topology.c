@@ -405,6 +405,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 #endif
 
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
+   topology->usleep_fn = mongoc_usleep_default_impl;
    topology->session_pool =
       mongoc_server_session_pool_new_with_params (_server_session_init,
                                                   _server_session_destroy,
@@ -1263,8 +1264,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                   server_id = 0;
                   goto done;
                }
-
-               _mongoc_usleep (sleep_usec);
+               topology->usleep_fn (sleep_usec, topology->usleep_data);
             }
 
             /* takes up to connectTimeoutMS. sets "last_scan", clears "stale" */

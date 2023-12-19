@@ -12,15 +12,15 @@ BSON_BEGIN_DECLS
 /**
  * mongoc_usleep_func_t:
  * @usec: Number of microseconds to sleep for.
- * @user_data: User data provided to mongoc_usleep_set_impl().
+ * @user_data: User data provided to mongoc_client_set_usleep_impl().
  */
 typedef void (*mongoc_usleep_func_t) (int64_t usec, void *user_data);
 
 /**
- * mongoc_usleep_set_impl:
+ * mongoc_client_set_usleep_impl:
  * @usleep_func: A function to perform microsecond sleep.
  *
- * Sets the function to be called to perform sleep.
+ * Sets the function to be called to perform sleep during scanning.
  * Returns the old function.
  * If old_user_data is not NULL, *old_user_data is set to the old user_data.
  * Not thread-safe.
@@ -28,9 +28,10 @@ typedef void (*mongoc_usleep_func_t) (int64_t usec, void *user_data);
  * not supported. Doing so is at the user's own risk.
  */
 MONGOC_EXPORT (mongoc_usleep_func_t)
-mongoc_usleep_set_impl (mongoc_usleep_func_t usleep_func,
-                        void *user_data,
-                        void **old_user_data);
+mongoc_client_set_usleep_impl (mongoc_client_t *client,
+                               mongoc_usleep_func_t usleep_func,
+                               void *user_data,
+                               void **old_user_data);
 
 MONGOC_EXPORT (void)
 mongoc_usleep_default_impl (int64_t usec, void *user_data);
