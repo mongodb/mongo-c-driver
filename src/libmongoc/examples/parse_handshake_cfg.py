@@ -34,6 +34,8 @@ MD_FLAGS = {
     "MONGOC_MD_FLAG_HAVE_SCHED_GETCPU": 28,
     "MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS": 29,
     "MONGOC_MD_FLAG_TRACE": 30,
+    # `MONGOC_MD_FLAG_ENABLE_ICU` was accidentally removed in libmongoc 1.25.0-1.25.3.
+    # If parsing a config-bitfield produced by libmongoc 1.25.0-1.25.3, use the version of `parse_handshake_cfg.py` from the git tag 1.25.0.
     "MONGOC_MD_FLAG_ENABLE_ICU": 31,
     "MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION": 32,
     "MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH": 33,
