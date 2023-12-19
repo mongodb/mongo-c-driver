@@ -53,8 +53,7 @@ test_mongoc_usleep_custom (void)
 
    // Override the sleep.
    int64_t last_sleep_dur = 0;
-   mongoc_client_set_usleep_impl (
-      client, custom_usleep_impl, &last_sleep_dur, NULL /* old_user_data */);
+   mongoc_client_set_usleep_impl (client, custom_usleep_impl, &last_sleep_dur);
 
    bson_error_t error;
    future_t *future = future_client_command_simple (client,

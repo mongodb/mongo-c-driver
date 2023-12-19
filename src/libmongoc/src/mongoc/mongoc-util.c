@@ -85,21 +85,13 @@ _mongoc_hex_md5 (const char *input)
    return bson_strdup (digest_str);
 }
 
-mongoc_usleep_func_t
+void
 mongoc_client_set_usleep_impl (mongoc_client_t *client,
                                mongoc_usleep_func_t usleep_func,
-                               void *user_data,
-                               void **old_user_data)
+                               void *user_data)
 {
-   mongoc_usleep_func_t old_usleep_func = client->topology->usleep_fn;
-   if (old_user_data) {
-      *old_user_data = client->topology->usleep_data;
-   }
-
    client->topology->usleep_fn = usleep_func;
    client->topology->usleep_data = user_data;
-
-   return old_usleep_func;
 }
 
 void
