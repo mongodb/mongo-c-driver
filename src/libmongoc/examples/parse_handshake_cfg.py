@@ -44,17 +44,17 @@ def main():
     flag_to_number = {s: 2 ** i for i,s in enumerate(MD_FLAGS)}
 
     if len(sys.argv) < 2:
-        print "Usage: python {0} config-bitfield".format(sys.argv[0])
-        print "Example: python parse_handshake_cfg.py 0x3e65"
+        print ("Usage: python {0} config-bitfield".format(sys.argv[0]))
+        print ("Example: python parse_handshake_cfg.py 0x3e65")
         return
 
     config_bitfield_string = sys.argv[1]
     config_bitfield_num = int(config_bitfield_string, 0)
-    print "Decimal value: {}".format(config_bitfield_num)
+    print ("Decimal value: {}".format(config_bitfield_num))
 
-    for flag, num in flag_to_number.iteritems():
+    for flag, num in flag_to_number.items():
         v = "true" if config_bitfield_num & num else "false"
-        print "{:<50}: {}".format(flag, v)
+        print ("{:<50}: {}".format(flag, v))
 
 if __name__ == "__main__":
     main()
