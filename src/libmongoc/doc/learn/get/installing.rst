@@ -194,7 +194,7 @@ Yum/DNF.
     # yum install epel-release
 
   `epel-release` must be installed before attempting to install the C driver
-  libraries (i.e. one cannot install them both in a single `yum intsall`
+  libraries (i.e. one cannot install them both in a single `yum install`
   command).
 
 To install |libbson| only, install the `libbson-devel` package::
