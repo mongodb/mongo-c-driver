@@ -21,6 +21,10 @@ Package Names and Availability
 
 This table details the names and usage notes of such packages.
 
+.. note::
+  
+  The development packages (ending in ``-dev`` or ``-devel``) include files required to build applications using |libbson| and |libmongoc|.
+
 .. seealso::
 
   For a step-by-step tutorial on installing packages, refer to
