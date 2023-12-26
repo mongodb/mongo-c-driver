@@ -77,7 +77,6 @@ bson_string_new (const char *str) /* IN */
    if (str) {
       memcpy (ret->str, str, ret->len);
    }
-   ret->str[ret->len] = '\0';
 
    ret->str[ret->len] = '\0';
 
