@@ -30,7 +30,9 @@ DIR=$(dirname $0)
 
 get_distro
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
-DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT" "$MONGOSH_DOWNLOAD_URL" "$EXTRACT_MONGOSH"
+# TODO (CDRIVER-4512): remove `INSTALL_LEGACY_SHELL=1` to verify legacy `mongo` shell is no longer needed.
+# Currently, the legacy `mongo` shell is used in AWS test setup scripts.
+INSTALL_LEGACY_SHELL=1 DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT" "$MONGOSH_DOWNLOAD_URL" "$EXTRACT_MONGOSH"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 
