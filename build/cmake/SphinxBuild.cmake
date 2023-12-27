@@ -144,7 +144,6 @@ function (sphinx_build_man target_name)
          "PYTHONDONTWRITEBYTECODE=1"
       ${SPHINX_EXECUTABLE}
          -qW -b man
-         -j "${NPROCS}"
          -c "${CMAKE_CURRENT_SOURCE_DIR}"
          -d "${doctrees_dir}"
          "${CMAKE_CURRENT_SOURCE_DIR}"

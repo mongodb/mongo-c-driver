@@ -1,9 +1,16 @@
+libmongoc 1.25.4 (Unreleased)
+=============================
+
+Fixes:
+
+  * Restore support for Sphinx 1.7.6 for man page build.
+
 libmongoc 1.25.3
 ================
 
 Fixes:
 
-  * Fix data race in `mongoc_cursor_get_host`.
+  * Disable shared libmongoc targets if `ENABLE_SHARED=OFF`
   * Fix documentation build with Python 3.9.
 
 Thanks to everyone who contributed to the development of this release.
