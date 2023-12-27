@@ -196,7 +196,7 @@ Yum/DNF.
     # yum install epel-release
 
   `epel-release` must be installed before attempting to install the C driver
-  libraries (i.e. one cannot install them both in a single `yum intsall`
+  libraries (i.e. one cannot install them both in a single `yum install`
   command).
 
 To install |libbson| only, install the `libbson-devel` package::
@@ -209,6 +209,10 @@ To install the full C database driver (|libmongoc|), install
   ## (This package will transitively install libbson-devel)
   # yum install mongo-c-driver-devel
 
+To check which version is available, see https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver-devel.
+
+The development packages (ending in `-devel`) include files required to build applications using |libbson| and |libmongoc|.
+To only install the libraries without development files, install the `libbson` or `mongo-c-driver-libs` packages.
 
 .. index::
     !pair: installation; Debian
@@ -234,6 +238,10 @@ To install |libmongoc| (which will also install |libbson|)::
 
   # apt install libmongoc-dev
 
+To check which version is available, run `apt-cache policy libmongoc-dev`.
+
+The development packages (ending in `-dev`) include files required to build applications using |libbson| and |libmongoc|.
+To only install the libraries without development files, install the `libbson-1.0-0` or `libmongoc-1.0-0` packages.
 
 .. index::
   !pair: installation; macOS
