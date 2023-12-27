@@ -6,7 +6,12 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+try:
+    from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+except ImportError:
+    # Try importing from older Sphinx version path.
+    from sphinx.builders.html import DirectoryHTMLBuilder
+
 from docutils.parsers.rst import directives, Directive
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log
@@ -20,7 +25,7 @@ try:
     from sphinx_design.dropdown import DropdownDirective
     has_sphinx_design = True
 except ImportError:
-    print ("Unable to import sphinx_design. Documentation cannot be built as HTML.")
+    pass
 
 # Ensure we can import "mongoc" extension module.
 this_path = os.path.dirname(__file__)
@@ -77,7 +82,7 @@ intersphinx_mapping = {
 _UPDATE_KEY = "update_external_inventories"
 
 
-def _maybe_update_inventories(app: Sphinx, config: Config):
+def _maybe_update_inventories(app: Sphinx):
     """
     We save Sphinx inventories for external projects saved within our own project
     so that we can support fully-offline builds. This is a convenience function
@@ -87,6 +92,7 @@ def _maybe_update_inventories(app: Sphinx, config: Config):
     value is defined.
     """
     prefix = "[libmongoc/doc/conf.py]"
+    config = app.config
     if not config[_UPDATE_KEY]:
         sphinx_log.info(
             "%s Using existing intersphinx inventories. Refresh by running with ‘-D %s=1’",
@@ -168,16 +174,16 @@ rst_prolog = rf"""
    Offer these substitutions for simpler variable references:
 
 .. |cmvar:CMAKE_BUILD_TYPE| replace::
-    :external+cmake:cmake:variable:`CMAKE_BUILD_TYPE <variable:CMAKE_BUILD_TYPE>`
+    :cmake:variable:`CMAKE_BUILD_TYPE <variable:CMAKE_BUILD_TYPE>`
 
 .. |cmvar:CMAKE_INSTALL_PREFIX| replace::
-    :external+cmake:cmake:variable:`CMAKE_INSTALL_PREFIX <variable:CMAKE_INSTALL_PREFIX>`
+    :cmake:variable:`CMAKE_INSTALL_PREFIX <variable:CMAKE_INSTALL_PREFIX>`
 
 .. |cmvar:CMAKE_PREFIX_PATH| replace::
-    :external+cmake:cmake:variable:`CMAKE_PREFIX_PATH <variable:CMAKE_PREFIX_PATH>`
+    :cmake:variable:`CMAKE_PREFIX_PATH <variable:CMAKE_PREFIX_PATH>`
 
 .. |cmcmd:find_package| replace::
-    :external+cmake:cmake:command:`find_package() <command:find_package>`
+    :cmake:command:`find_package() <command:find_package>`
 
 """
 
@@ -206,9 +212,14 @@ else:
         def run(self):
             return []
         
+has_add_css_file = True
+        
 def check_html_builder_requirements (app):
-    if isinstance(app.builder, DirectoryHTMLBuilder) and not has_sphinx_design:
-        raise RuntimeError("The sphinx-design package is required to build HTML documentation but was not detected. Install sphinx-design.")
+    if isinstance(app.builder, DirectoryHTMLBuilder):
+        if not has_sphinx_design:
+            raise RuntimeError("The sphinx-design package is required to build HTML documentation but was not detected. Install sphinx-design.")
+        if not has_add_css_file:
+            raise RuntimeError("A newer version of Sphinx is required to build HTML documentation with CSS files. Upgrade Sphinx to v3.5.0 or newer")
 
 def setup(app: Sphinx):
     mongoc_common_setup(app)
@@ -219,6 +230,11 @@ def setup(app: Sphinx):
         app.add_directive("ad-dropdown", EmptyDirective)
         app.add_directive("tab-set", EmptyDirective)
     app.connect("html-page-context", add_canonical_link)
-    app.add_css_file("styles.css")
-    app.connect("config-inited", _maybe_update_inventories)
+    if hasattr(app, "add_css_file"):
+        app.add_css_file("styles.css")
+    else:
+        global has_add_css_file
+        has_add_css_file = False
+        
+    app.connect("builder-inited", _maybe_update_inventories)
     app.add_config_value(_UPDATE_KEY, default=False, rebuild=True, types=[bool])

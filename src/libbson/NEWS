@@ -1,3 +1,16 @@
+libbson 1.25.4 (Unreleased)
+===========================
+
+Fixes:
+
+  * Restore support for Sphinx 1.7.6 for man page build.
+
+
+libbson 1.25.3
+==============
+
+No changes since 1.25.2. Version incremented to match the libmongoc version.
+
 libbson 1.25.2
 ==============
 
