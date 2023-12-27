@@ -3565,7 +3565,15 @@ _bson_iter_validate_document (const bson_iter_t *iter,
       state->phase = BSON_VALIDATE_PHASE_LF_REF_KEY;
    }
 
-   (void) bson_iter_visit_all (&child, &bson_validate_funcs, state);
+   bson_iter_visit_all_v2 (
+      &child, &bson_validate_funcs, BSON_ITER_VISIT_VALIDATE_KEYS, state);
+
+   // Assert: bson_iter_visit_all_v2 will never generate an error and not give
+   // that error to our visitor as a "corrupt" BSON element. This implies that
+   // if child.err_off is greater than zero, our own error offset MUST ALSO be
+   // greater than zero, because the state will have been told about that
+   // invalid element.
+   BSON_ASSERT (child.err_off <= 0 || state->err_offset > 0);
 
    if (state->phase == BSON_VALIDATE_PHASE_LF_ID_KEY ||
        state->phase == BSON_VALIDATE_PHASE_LF_REF_UTF8 ||

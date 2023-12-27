@@ -23,7 +23,11 @@ Parameters
 Description
 -----------
 
-A convenience function to iterate all remaining fields of ``iter`` using the callback vtable provided by ``visitor``.
+A convenience function to iterate all remaining fields of ``iter`` using the
+callback vtable provided by ``visitor``.
+
+This function is equivalent to :symbol:`bson_iter_visit_all_v2` with
+``BSON_ITER_VISIT_DEFAULT`` given for its ``flags`` argument.
 
 Returns
 -------

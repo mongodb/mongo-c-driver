@@ -132,6 +132,7 @@ The :symbol:`bson_t` *MUST* be valid for the lifetime of the iter and it is an e
     bson_iter_utf8
     bson_iter_value
     bson_iter_visit_all
+    bson_iter_visit_all_v2
 
 Examples
 --------
