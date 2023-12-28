@@ -422,7 +422,7 @@ _bson_append (bson_t *bson,              /* IN */
          key_length = (int) strlen (key);                                 \
       } else {                                                            \
          /* Necessary to validate embedded NULL is not present in key. */ \
-         if (strnlen (key, key_length) < key_length) {                                 \
+         if (strnlen (key, key_length) < key_length) {                    \
             return false;                                                 \
          }                                                                \
       }                                                                   \
@@ -1559,7 +1559,13 @@ bson_append_regex_w_len (bson_t *bson,
       regex_length = (int) strlen (regex);
    } else {
       /* Necessary to validate embedded NULL is not present in key. */
-      HANDLE_KEY_LENGTH(regex, regex_length);
+<<<<<<< HEAD
+      HANDLE_KEY_LENGTH (regex, regex_length);
+=======
+      if (strlen (regex) < regex_length) {
+         return false;
+      }
+>>>>>>> f345bf55bb (Replace custom null check with strlen)
    }
 
    if (!regex) {
