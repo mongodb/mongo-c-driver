@@ -416,24 +416,13 @@ _bson_append (bson_t *bson,              /* IN */
    return ok;
 }
 
-static BSON_INLINE bool
-_string_contains_null (const char *str, size_t len)
-{
-   for (; len; ++str, --len) {
-      if (*str == 0) {
-         return true;
-      }
-   }
-   return false;
-}
-
 #define HANDLE_KEY_LENGTH(key, key_length)                                \
    do {                                                                   \
       if (key_length < 0) {                                               \
          key_length = (int) strlen (key);                                 \
       } else {                                                            \
          /* Necessary to validate embedded NULL is not present in key. */ \
-         if (_string_contains_null (key, key_length)) {                   \
+         if (strlen (key) < key_length) {                                 \
             return false;                                                 \
          }                                                                \
       }                                                                   \
