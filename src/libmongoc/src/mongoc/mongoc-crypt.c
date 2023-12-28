@@ -34,12 +34,96 @@
 #include "mcd-time.h"
 #include "service-gcp.h"
 
+// `mcd_mapof_kmsid_to_tlsopts` maps a KMS ID (e.g. `aws` or `aws:myname`) to a
+// `mongoc_ssl_opt_t`. The acryonym TLS is preferred over SSL for
+// consistency with the CSE and URI specifications.
+typedef struct {
+   mongoc_array_t entries;
+} mcd_mapof_kmsid_to_tlsopts;
+
+typedef struct {
+   char *kmsid;
+   mongoc_ssl_opt_t tlsopts;
+} mcd_mapof_kmsid_to_tlsopts_entry;
+
+mcd_mapof_kmsid_to_tlsopts *
+mcd_mapof_kmsid_to_tlsopts_new (void)
+{
+   mcd_mapof_kmsid_to_tlsopts *k2t =
+      bson_malloc0 (sizeof (mcd_mapof_kmsid_to_tlsopts));
+   _mongoc_array_init (&k2t->entries,
+                       sizeof (mcd_mapof_kmsid_to_tlsopts_entry));
+   return k2t;
+}
+
+void
+mcd_mapof_kmsid_to_tlsopts_destroy (mcd_mapof_kmsid_to_tlsopts *k2t)
+{
+   if (!k2t) {
+      return;
+   }
+   for (size_t i = 0; i < k2t->entries.len; i++) {
+      mcd_mapof_kmsid_to_tlsopts_entry *e = &_mongoc_array_index (
+         &k2t->entries, mcd_mapof_kmsid_to_tlsopts_entry, i);
+      bson_free (e->kmsid);
+      _mongoc_ssl_opts_cleanup (&e->tlsopts, true /* free_internal */);
+   }
+   _mongoc_array_destroy (&k2t->entries);
+   bson_free (k2t);
+}
+
+// `mcd_mapof_kmsid_to_tlsopts_insert` adds an entry into the map.
+// `kmsid` and `tlsopts` are copied.
+// No checking is done to prohibit duplicate entries.
+void
+mcd_mapof_kmsid_to_tlsopts_insert (mcd_mapof_kmsid_to_tlsopts *k2t,
+                                   const char *kmsid,
+                                   const mongoc_ssl_opt_t *tlsopts)
+{
+   BSON_ASSERT_PARAM (k2t);
+   BSON_ASSERT_PARAM (kmsid);
+   BSON_ASSERT_PARAM (tlsopts);
+
+   mcd_mapof_kmsid_to_tlsopts_entry e = {.kmsid = bson_strdup (kmsid)};
+   _mongoc_ssl_opts_copy_to (tlsopts, &e.tlsopts, true /* copy_internal */);
+   _mongoc_array_append_val (&k2t->entries, e);
+}
+
+// `mcd_mapof_kmsid_to_tlsopts_get` returns the TLS options for a KMS ID, or
+// NULL.
+const mongoc_ssl_opt_t *
+mcd_mapof_kmsid_to_tlsopts_get (const mcd_mapof_kmsid_to_tlsopts *k2t,
+                                const char *kmsid)
+{
+   BSON_ASSERT_PARAM (k2t);
+   BSON_ASSERT_PARAM (kmsid);
+
+   for (size_t i = 0; i < k2t->entries.len; i++) {
+      mcd_mapof_kmsid_to_tlsopts_entry *e = &_mongoc_array_index (
+         &k2t->entries, mcd_mapof_kmsid_to_tlsopts_entry, i);
+      if (0 == strcmp (e->kmsid, kmsid)) {
+         return &e->tlsopts;
+      }
+   }
+   return NULL;
+}
+
+
+bool
+mcd_mapof_kmsid_to_tlsopts_has (const mcd_mapof_kmsid_to_tlsopts *k2t,
+                                const char *kmsid)
+{
+   return NULL != mcd_mapof_kmsid_to_tlsopts_get (k2t, kmsid);
+}
+
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
    mongoc_ssl_opt_t kmip_tls_opt;
    mongoc_ssl_opt_t aws_tls_opt;
    mongoc_ssl_opt_t azure_tls_opt;
    mongoc_ssl_opt_t gcp_tls_opt;
+   mcd_mapof_kmsid_to_tlsopts *kmsid_to_tlsopts;
+
    /// The kmsProviders that were provided by the user when encryption was
    /// initiated. We need to remember this in case we need to load on-demand
    /// credentials.
@@ -508,6 +592,10 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          ssl_opt = &state_machine->crypt->azure_tls_opt;
       } else if (0 == strcmp ("gcp", provider)) {
          ssl_opt = &state_machine->crypt->gcp_tls_opt;
+      } else if (mcd_mapof_kmsid_to_tlsopts_has (
+                    state_machine->crypt->kmsid_to_tlsopts, provider)) {
+         ssl_opt = mcd_mapof_kmsid_to_tlsopts_get (
+            state_machine->crypt->kmsid_to_tlsopts, provider);
       } else {
          ssl_opt = mongoc_ssl_opt_get_default ();
       }
@@ -1258,6 +1346,29 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
          continue;
       }
 
+      const char *colon_pos = strstr (key, ":");
+      if (colon_pos != NULL) {
+         // Parse TLS options for a named KMS provider.
+         if (mcd_mapof_kmsid_to_tlsopts_has (crypt->kmsid_to_tlsopts, key)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                            "Error parsing duplicate TLS options for %s",
+                            key);
+            goto fail;
+         }
+
+         mongoc_ssl_opt_t tlsopts = {0};
+         if (!_parse_one_tls_opts (&iter, &tlsopts, error)) {
+            _mongoc_ssl_opts_cleanup (&tlsopts, true /* free_internal */);
+            goto fail;
+         }
+         mcd_mapof_kmsid_to_tlsopts_insert (
+            crypt->kmsid_to_tlsopts, key, &tlsopts);
+         _mongoc_ssl_opts_cleanup (&tlsopts, true /* free_internal */);
+         continue;
+      }
+
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
@@ -1325,6 +1436,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
 
    /* Create the handle to libmongocrypt. */
    crypt = bson_malloc0 (sizeof (*crypt));
+   crypt->kmsid_to_tlsopts = mcd_mapof_kmsid_to_tlsopts_new ();
    crypt->handle = mongocrypt_new ();
 
    // Stash away a copy of the user's kmsProviders in case we need to lazily
@@ -1447,6 +1559,7 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
    _mongoc_ssl_opts_cleanup (&crypt->gcp_tls_opt, true /* free_internal */);
    bson_destroy (&crypt->kms_providers);
    mcd_azure_access_token_destroy (&crypt->azure_token);
+   mcd_mapof_kmsid_to_tlsopts_destroy (crypt->kmsid_to_tlsopts);
    bson_free (crypt);
 }
 
