@@ -109,7 +109,7 @@ if [[ "${TESTCASE}" == "EC2" ]]; then
   # Do necessary setup for EC2
   # Create user on $external db.
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
-  mongo --verbose aws_e2e_ec2.js
+  . aws_setup.sh ec2
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
   echo "Valid credentials via EC2 - should succeed"
