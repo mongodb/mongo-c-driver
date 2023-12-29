@@ -74,15 +74,11 @@ if [[ "${TESTCASE}" == "REGULAR" ]]; then
 
   # Create user on $external db.
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
-  mongo --verbose aws_e2e_regular_aws.js
+  . aws_setup.sh regular # Sets USER and PASS
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
-  declare user_encoded pass_encoded
-  user_encoded="$(url_encode "${iam_auth_ecs_account:?}")"
-  pass_encoded="$(url_encode "${iam_auth_ecs_secret_access_key:?}")"
-
-  expect_success "mongodb://${user_encoded:?}:${pass_encoded:?}@localhost/?authMechanism=MONGODB-AWS"
-  expect_failure "mongodb://${user_encoded:?}:bad_password@localhost/?authMechanism=MONGODB-AWS"
+  expect_success "mongodb://${USER:?}:${PASS:?}@localhost/?authMechanism=MONGODB-AWS"
+  expect_failure "mongodb://${USER:?}:bad_password@localhost/?authMechanism=MONGODB-AWS"
 
   exit
 fi
