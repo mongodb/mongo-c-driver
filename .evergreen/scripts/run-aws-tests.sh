@@ -98,18 +98,8 @@ if [[ "LAMBDA" = "$TESTCASE" ]]; then
   echo "===== Testing auth via environment variables ====="
 
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
-  mongo --verbose aws_e2e_assume_role.js
+  . aws_setup.sh session-creds # Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and SESSION_TOKEN
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
-
-  declare user pass token
-  user="$(jq -r '.AccessKeyId' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
-  pass="$(jq -r '.SecretAccessKey' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
-  token="$(jq -r '.SessionToken' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
-
-  echo "Valid credentials - should succeed:"
-  export AWS_ACCESS_KEY_ID="${user:?}"
-  export AWS_SECRET_ACCESS_KEY="${pass:?}"
-  export AWS_SESSION_TOKEN="${token:?}"
   expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
   exit
 fi
