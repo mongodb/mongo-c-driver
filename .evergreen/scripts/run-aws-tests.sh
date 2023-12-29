@@ -86,21 +86,11 @@ fi
 if [[ "${TESTCASE}" == "ASSUME_ROLE" ]]; then
   echo "===== Testing auth with session token via URI with AssumeRole ====="
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
-  mongo --verbose aws_e2e_assume_role.js
+  . aws_setup.sh assume-role # Sets USER, PASS, and SESSION_TOKEN
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
-  declare user pass token
-  user="$(jq -r '.AccessKeyId' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
-  pass="$(jq -r '.SecretAccessKey' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
-  token="$(jq -r '.SessionToken' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
-
-  declare user_encoded pass_encoded token_encoded
-  user_encoded="$(url_encode "${user:?}")"
-  pass_encoded="$(url_encode "${pass:?}")"
-  token_encoded="$(url_encode "${token:?}")"
-
-  expect_success "mongodb://${user_encoded}:${pass_encoded}@localhost/aws?authMechanism=MONGODB-AWS&authSource=\$external&authMechanismProperties=AWS_SESSION_TOKEN:${token_encoded}"
-  expect_failure "mongodb://${user_encoded}:${pass_encoded}@localhost/aws?authMechanism=MONGODB-AWS&authSource=\$external&authMechanismProperties=AWS_SESSION_TOKEN:bad_token"
+  expect_success "mongodb://${USER}:${PASS}@localhost/aws?authMechanism=MONGODB-AWS&authSource=\$external&authMechanismProperties=AWS_SESSION_TOKEN:${SESSION_TOKEN}"
+  expect_failure "mongodb://${USER}:${PASS}@localhost/aws?authMechanism=MONGODB-AWS&authSource=\$external&authMechanismProperties=AWS_SESSION_TOKEN:bad_token"
   exit
 fi
 
