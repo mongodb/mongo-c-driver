@@ -19,6 +19,8 @@
 #include <bson/bson.h>
 #include <stddef.h>
 
+#include "mongoc-server-description.h"
+
 BSON_BEGIN_DECLS
 
 typedef enum {
@@ -72,7 +74,7 @@ void
 _mongoc_write_error_handle_labels (bool cmd_ret,
                                    const bson_error_t *cmd_err,
                                    bson_t *reply,
-                                   int32_t server_max_wire_version);
+                                   mongoc_server_description_t *sd);
 
 bool
 _mongoc_error_is_shutdown (bson_error_t *error);

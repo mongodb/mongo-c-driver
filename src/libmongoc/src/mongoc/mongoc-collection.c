@@ -3548,7 +3548,7 @@ retry:
 
    if (parts.is_retryable_write) {
       _mongoc_write_error_handle_labels (
-         ret, error, reply_ptr, server_stream->sd->max_wire_version);
+         ret, error, reply_ptr, server_stream->sd);
    }
 
    if (is_retryable) {

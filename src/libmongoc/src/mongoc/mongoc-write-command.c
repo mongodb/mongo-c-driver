@@ -750,7 +750,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
 
          if (parts.is_retryable_write) {
             _mongoc_write_error_handle_labels (
-               ret, error, &reply, server_stream->sd->max_wire_version);
+               ret, error, &reply, server_stream->sd);
          }
 
          /* Add this batch size so we skip these documents next time */
