@@ -257,10 +257,19 @@ transactions_test_run_operation (json_test_ctx_t *ctx,
 }
 
 
+static test_skip_t skips[] = {
+   {"callback is not retried after non-transient error (DuplicateKeyError)",
+    "Waiting on CDRIVER-4811"},
+   {0}};
+
+
 static void
 test_transactions_cb (bson_t *scenario)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
+
+   config.skips = skips;
+
    config.before_test_cb = transactions_test_before_test;
    config.run_operation_cb = transactions_test_run_operation;
    config.after_test_cb = transactions_test_after_test;
