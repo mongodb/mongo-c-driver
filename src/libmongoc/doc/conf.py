@@ -109,8 +109,10 @@ def _maybe_update_inventories(app: Sphinx):
             dest = Path(app.srcdir) / filename
             sphinx_log.info("%s Saving inventory [%s] to file [%s]", prefix, url, dest)
             with dest.open("wb") as out:
-                while buf := req.read(1024 * 4):
+                buf = req.read(1024 * 4)
+                while buf:
                     out.write(buf)
+                    buf = req.read(1024 * 4)
         sphinx_log.info(
             "%s Inventory file [%s] was updated. Commit the result to save it for subsequent builds.",
             prefix,
