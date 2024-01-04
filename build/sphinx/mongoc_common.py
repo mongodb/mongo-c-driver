@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, Iterable, Sequence, Union
+from typing import Any, Iterable, Sequence, Union, List, Tuple, Dict
 
 from docutils import nodes
 from docutils.nodes import Node, document
@@ -64,7 +64,7 @@ def _collect_man (app: Sphinx):
 # -- Options for manual page output ---------------------------------------
 
 # NOTE: This starts empty, but we populate it in `setup` in _collect_man() (see above)
-man_pages: list[tuple[str, str, str, list[str], int]] = []
+man_pages: List[Tuple[str, str, str, List[str], int]] = []
 
 # If true, show URL addresses after external links.
 #
@@ -73,7 +73,7 @@ man_pages: list[tuple[str, str, str, list[str], int]] = []
 # -- Sphinx customization ---------------------------------------
 
 
-def add_ga_javascript(app: Sphinx, pagename: str, templatename: str, context: dict[str, Any], doctree: document):
+def add_ga_javascript(app: Sphinx, pagename: str, templatename: str, context: Dict[str, Any], doctree: document):
     if not app.env.config.analytics:
         return
 
@@ -140,7 +140,7 @@ class VersionList(Directive):
         return [header, blist]
 
 
-def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: dict[str, Any], doctree: Any) -> None:
+def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: Dict[str, Any], doctree: Any) -> None:
     builder = app.builder
     if not isinstance(builder, DirectoryHTMLBuilder) or "writing-redirect" in context:
         return

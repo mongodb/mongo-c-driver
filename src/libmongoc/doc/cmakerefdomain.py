@@ -8,7 +8,7 @@ domain plugin. If that is the case, this extention can likely be disabled and
 replaced by a more full-featured extension.
 
 """
-from typing import Any
+from typing import Any, List
 from sphinx.application import Sphinx
 from sphinx.roles import XRefRole
 from sphinx.domains import Domain, ObjType
@@ -43,7 +43,7 @@ class CMakeRefDomain(Domain):
     directives = {}
     initial_data: Any = {}
 
-    def merge_domaindata(self, docnames: list[str], otherdata: Any) -> None:
+    def merge_domaindata(self, docnames: List[str], otherdata: Any) -> None:
         # We have nothing to do, but this is required for parallel execution
         return
 

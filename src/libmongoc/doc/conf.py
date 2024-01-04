@@ -4,7 +4,7 @@ import os.path
 import sys
 import urllib.request
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 try:
     from sphinx.builders.dirhtml import DirectoryHTMLBuilder
@@ -190,7 +190,7 @@ rst_prolog = rf"""
 """
 
 
-def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: dict[str, Any], doctree: Any):
+def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: Dict[str, Any], doctree: Any):
     link = f'<link rel="canonical" href="https://www.mongoc.org/libmongoc/current/{pagename}/"/>'
 
     context["metatags"] = context.get("metatags", "") + link
