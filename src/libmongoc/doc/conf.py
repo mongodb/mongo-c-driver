@@ -4,7 +4,7 @@ import os.path
 import sys
 import urllib.request
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 try:
     from sphinx.builders.dirhtml import DirectoryHTMLBuilder
@@ -109,8 +109,10 @@ def _maybe_update_inventories(app: Sphinx):
             dest = Path(app.srcdir) / filename
             sphinx_log.info("%s Saving inventory [%s] to file [%s]", prefix, url, dest)
             with dest.open("wb") as out:
-                while buf := req.read(1024 * 4):
+                buf = req.read(1024 * 4)
+                while buf:
                     out.write(buf)
+                    buf = req.read(1024 * 4)
         sphinx_log.info(
             "%s Inventory file [%s] was updated. Commit the result to save it for subsequent builds.",
             prefix,
@@ -188,7 +190,7 @@ rst_prolog = rf"""
 """
 
 
-def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: dict[str, Any], doctree: Any):
+def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: Dict[str, Any], doctree: Any):
     link = f'<link rel="canonical" href="https://www.mongoc.org/libmongoc/current/{pagename}/"/>'
 
     context["metatags"] = context.get("metatags", "") + link
