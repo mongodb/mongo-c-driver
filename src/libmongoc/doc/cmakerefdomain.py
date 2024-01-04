@@ -38,7 +38,8 @@ class CMakeRefDomain(Domain):
     name = "cmake"
     label = "CMake (Minimal)"
     object_types = {k: ObjType(k, k) for k in kinds}
-    roles = {k: XRefRole() for k in kinds} | {"command": XRefRole(fix_parens=True)}
+    roles = {k: XRefRole() for k in kinds}
+    roles["command"] = XRefRole(fix_parens=True)
     directives = {}
     initial_data: Any = {}
 
