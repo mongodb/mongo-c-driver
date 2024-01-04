@@ -1,9 +1,7 @@
-from __future__ import annotations
-
 import os
 import re
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Sequence, Union
 
 from docutils import nodes
 from docutils.nodes import Node, document
@@ -31,7 +29,7 @@ html_show_sourcelink = False
 html_copy_source = False
 
 
-def _file_man_page_name(fpath: Path) -> str | None:
+def _file_man_page_name(fpath: Path) -> Union[str, None]:
     "Given an rST file input, find the :man_page: frontmatter value, if present"
     lines = fpath.read_text().splitlines()
     for line in lines:
