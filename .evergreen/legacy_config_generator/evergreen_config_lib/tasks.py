@@ -313,6 +313,16 @@ all_tasks = [
                 remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz",
                 content_type="${content_type|application/x-gzip}",
             ),
+            s3_put(
+                local_file="deb-i386.tar.gz",
+                remote_file="${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz",
+                content_type="${content_type|application/x-gzip}",
+            ),
+            s3_put(
+                local_file="deb-i386.tar.gz",
+                remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz",
+                content_type="${content_type|application/x-gzip}",
+            ),
         ],
     ),
     NamedTask(
