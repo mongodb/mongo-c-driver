@@ -33,7 +33,7 @@ Or on the heap:
 
 Omitting :symbol:`bson_destroy` in either case may cause memory leaks.
 
-.. warning:
+.. warning::
 
   Passing a :symbol:`bson_t` pointer obtained from :symbol:`bson_new` as an out parameter will result in a leak of the :symbol:`bson_t` struct.
 
@@ -43,4 +43,4 @@ Omitting :symbol:`bson_destroy` in either case may cause memory leaks.
       example_get_doc (heap_doc);
       bson_destroy (heap_doc); // Leaks the `bson_t` struct!
       
-Omitting :symbol:`bson_destroy` in either case may cause memory leaks.
+  Omitting :symbol:`bson_destroy` in either case may cause memory leaks.
