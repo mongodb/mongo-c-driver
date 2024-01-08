@@ -1856,7 +1856,7 @@ run_json_general_test (const json_test_config_t *config)
 
          if (should_skip) {
             fprintf (stderr,
-                     " - %s SKIPPED, due to reason: %s",
+                     " - %s SKIPPED, due to reason: %s\n",
                      description,
                      iter->reason);
             continue;
