@@ -24,7 +24,7 @@ Parameters
 
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``options``: An optional :symbol:`bson:bson_t` containing extra options to pass to the ``collStats`` command.
-* ``reply``: A |bson_t-storage-ptr| to contain the results.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

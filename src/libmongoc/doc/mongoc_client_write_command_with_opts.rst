@@ -31,7 +31,7 @@ Parameters
 * ``db_name``: The name of the database to run the command on.
 * ``command``: A :symbol:`bson:bson_t` containing the command specification.
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
-* ``reply``: A |bson_t-storage-ptr| to contain the results.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. include:: includes/write-opts.txt
