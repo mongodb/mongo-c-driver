@@ -140,37 +140,33 @@ if [[ "${TESTCASE}" == "ASSUME_ROLE_WITH_WEB_IDENTITY" ]]; then
   # Do necessary setup.
   # Create user on $external db.
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
-  mongo --verbose aws_e2e_web_identity.js
+  . aws_setup.sh web-identity # Sets AWS_ROLE_ARN and AWS_WEB_IDENTITY_TOKEN_FILE
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
-  declare iam_auth_assume_web_role_name iam_web_identity_token_file
-  iam_auth_assume_web_role_name="$(jq -r '.iam_auth_assume_web_role_name' "${drivers_tools_dir}/.evergreen/auth_aws/aws_e2e_setup.json")"
-  iam_web_identity_token_file="$(jq -r '.iam_web_identity_token_file' "${drivers_tools_dir}/.evergreen/auth_aws/aws_e2e_setup.json")"
-
   echo "Valid credentials via Web Identity - should succeed"
-  AWS_ROLE_ARN="${iam_auth_assume_web_role_name}" \
-  AWS_WEB_IDENTITY_TOKEN_FILE="${iam_web_identity_token_file}" \
+  AWS_ROLE_ARN="${AWS_ROLE_ARN}" \
+  AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE}" \
     expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
 
   echo "Valid credentials via Web Identity with session name - should succeed"
-  AWS_ROLE_ARN="${iam_auth_assume_web_role_name}" \
-  AWS_WEB_IDENTITY_TOKEN_FILE="${iam_web_identity_token_file}" \
+  AWS_ROLE_ARN="${AWS_ROLE_ARN}" \
+  AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE}" \
   AWS_ROLE_SESSION_NAME=test \
     expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
 
   echo "Invalid AWS_ROLE_ARN via Web Identity with session name - should fail"
   AWS_ROLE_ARN="invalid_role_arn" \
-  AWS_WEB_IDENTITY_TOKEN_FILE="${iam_web_identity_token_file}" \
+  AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE}" \
     expect_failure "mongodb://localhost/?authMechanism=MONGODB-AWS"
 
   echo "Invalid AWS_WEB_IDENTITY_TOKEN_FILE via Web Identity with session name - should fail"
-  AWS_ROLE_ARN="${iam_auth_assume_web_role_name}" \
+  AWS_ROLE_ARN="${AWS_ROLE_ARN}" \
   AWS_WEB_IDENTITY_TOKEN_FILE="/invalid/path" \
     expect_failure "mongodb://localhost/?authMechanism=MONGODB-AWS"
 
   echo "Invalid AWS_ROLE_SESSION_NAME via Web Identity with session name - should fail"
-  AWS_ROLE_ARN="${iam_auth_assume_web_role_name}" \
-  AWS_WEB_IDENTITY_TOKEN_FILE="${iam_web_identity_token_file}" \
+  AWS_ROLE_ARN="${AWS_ROLE_ARN}" \
+  AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE}" \
   AWS_ROLE_SESSION_NAME="contains_invalid_character_^" \
     expect_failure "mongodb://localhost/?authMechanism=MONGODB-AWS"
   exit
