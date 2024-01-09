@@ -9,6 +9,7 @@ or allowing a stack-allocated :symbol:`bson_t` to go out of scope may cause a me
 :symbol:`bson_t` out parameters
 -------------------------------
 A :symbol:`bson_t` pointer used as an out parameter must point to valid overwritable storage for a new :symbol:`bson_t` which must be one of:
+
 #. Uninitialized storage for a :symbol:`bson_t`.
 #. A zero-initialized :symbol:`bson_t` object.
 #. A :symbol:`bson_t` object initialized with ``BSON_INITIALIZER``.
@@ -43,4 +44,3 @@ Omitting :symbol:`bson_destroy` in either case may cause memory leaks.
       example_get_doc (heap_doc);
       bson_destroy (heap_doc); // Leaks the `bson_t` struct!
       
-  Omitting :symbol:`bson_destroy` in either case may cause memory leaks.
