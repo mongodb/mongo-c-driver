@@ -1,3 +1,29 @@
+mongo-c-driver (1.25.4-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Wed, 03 Jan 2024 09:37:40 -0600
+
+mongo-c-driver (1.25.2-1) unstable; urgency=medium
+
+  * New upstream release
+  * drop 0002_sphinx_api_fix.diff (fixed upstream)
+
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Tue, 05 Dec 2023 11:02:47 -0600
+
+mongo-c-driver (1.25.1-1) unstable; urgency=medium
+
+  * New upstream release
+  * Fix 32 bit builds (Closes: #1055264)
+
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Wed, 08 Nov 2023 14:32:27 -0600
+
+mongo-c-driver (1.25.0-1) unstable; urgency=medium
+
+  * New upstream release (Closes: #1042682)
+
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Thu, 02 Nov 2023 16:30:03 -0500
+
 mongo-c-driver (1.24.4-1) unstable; urgency=medium
 
   [ Roberto C. Sanchez ]

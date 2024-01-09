@@ -35,6 +35,11 @@ Parameters
 
 .. c:type:: mongoc_kms_credentials_provider_callback_fn
 
+  .. -
+    The :noindexentry: prevents a one-off index entry for this item.
+    Most entities are not documented as Sphinx objects, and thus do not generate
+    index entries. Future changes may flip the script.
+
   .. code-block:: c
 
     typedef

@@ -753,6 +753,32 @@ test_cluster_time_insert_pooled (void)
 
 
 static void
+test_cluster_command_timeout_negative (void)
+{
+   bson_error_t error;
+
+   mongoc_uri_t *const uri = test_framework_get_uri ();
+
+   // CDRIVER-4781: libmongoc historically supports negative values as
+   // fallback to a "default" value for timeouts.
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, -1);
+
+   mongoc_client_t *const client =
+      test_framework_client_new_from_uri (uri, NULL);
+   test_framework_set_ssl_opts (client);
+
+   // There should not be an error when validating sockettimeoutms.
+   ASSERT_OR_PRINT (
+      mongoc_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error),
+      error);
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+}
+
+
+static void
 replies_with_cluster_time (request_t *request,
                            int t,
                            int i,
@@ -1924,6 +1950,9 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Cluster/cluster_time/insert/pooled",
                       test_cluster_time_insert_pooled);
+   TestSuite_AddLive (suite,
+                      "/Cluster/command/timeout/negative",
+                      test_cluster_command_timeout_negative);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/cluster_time/comparison/single",
                                 test_cluster_time_comparison_single,

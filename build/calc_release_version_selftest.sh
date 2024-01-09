@@ -1,7 +1,7 @@
 #!/bin/bash
 # calc_release_version_selftest.sh is used to test output of calc_release_version.py.
 # run with:
-# cd etc
+# cd build
 # ./calc_release_version_selftest.sh
 
 set -o errexit
@@ -77,7 +77,7 @@ echo "Test next minor version ... begin"
     # failed, then it is probably because a new major/minor release was made.
     # Update the expected output to represent the correct next version.
     # XXX NOTE XXX NOTE XXX
-    assert_eq "$got" "1.24.1"
+    assert_eq "$got" "1.24.4"
 }
 echo "Test next minor version ... end"
 

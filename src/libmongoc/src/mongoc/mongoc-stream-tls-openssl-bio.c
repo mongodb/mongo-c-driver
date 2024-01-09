@@ -218,7 +218,7 @@ mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
 
    if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
-      MONGOC_ERROR ("timeout_msec value %" PRIu64
+      MONGOC_ERROR ("timeout_msec value %" PRId64
                     " exceeds supported 32-bit range",
                     tls->timeout_msec);
       return -1;
@@ -289,7 +289,7 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
 
    if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
-      MONGOC_ERROR ("timeout_msec value %" PRIu64
+      MONGOC_ERROR ("timeout_msec value %" PRId64
                     " exceeds supported 32-bit range",
                     tls->timeout_msec);
       RETURN (-1);

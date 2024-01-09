@@ -1237,6 +1237,10 @@ test_handshake_platform_config (void)
       BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
    }
 
+   // Check that `MONGOC_MD_FLAG_ENABLE_ICU` is always unset. libicu dependency
+   // was removed in CDRIVER-4680.
+   BSON_ASSERT (!_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_ICU_UNUSED));
+
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
    BSON_ASSERT (
       _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION));

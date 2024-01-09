@@ -1037,12 +1037,12 @@ test_change_stream_live_watch (void *test_ctx)
 
    /* Test updating a doc */
    ASSERT_OR_PRINT (
-      mongoc_collection_update (coll,
-                                MONGOC_UPDATE_NONE,
-                                tmp_bson ("{}"),
-                                tmp_bson ("{'$set': {'x': 'z'} }"),
-                                wc,
-                                &err),
+      mongoc_collection_update_one (coll,
+                                    tmp_bson ("{}"),
+                                    tmp_bson ("{'$set': {'x': 'z'} }"),
+                                    &opts,
+                                    NULL,
+                                    &err),
       err);
 
    ASSERT (mongoc_change_stream_next (stream, &next_doc));

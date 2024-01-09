@@ -171,34 +171,48 @@ file(GLOB_RECURSE all_sources CONFIGURE_DEPENDS
    "${mongo-c-driver_SOURCE_DIR}/src/common/*.c"
    )
 
-# The default object library for all libbson translation units:
-add_library(bson_obj OBJECT EXCLUDE_FROM_ALL ${all_sources})
+# List of the primary BSON library targets that we are building
+set(bson_libs)
 
-# The libbson object libraries that we will build
-set(bson_obj_libs bson_obj)
+if(ENABLE_STATIC)
+   add_library(bson_static STATIC ${all_sources})
+   list(APPEND bson_libs bson_static)
+   # Define `BSON_STATIC` when building to suppress the annotation __declspec(dllexport).
+   # This prevents consumers of bson_static from exporting the symbols.
+   target_compile_definitions(bson_static PRIVATE BSON_STATIC)
+   # When consumers link against bson_static, suppress the annotation __declspec(dllimport),
+   # since those symbols will be available immediately at the link step:
+   target_compile_definitions(bson_static INTERFACE BSON_STATIC)
 
-if(ENABLE_PIC OR WIN32)
-   # User wants (or platform requires) static libs to use PIC code. Since we
-   # already need PIC for the dynamic library, we can consolidate things and
-   # use a single object library for both the static and the shared library.
-   # No duplicate compilations necessary!
-   set_property(TARGET bson_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-   # The bson_obj_pic is just an alias of the base library:
-   add_library(bson_obj_pic ALIAS bson_obj)
-else()
-   # User does not want PIC in the static library. In that case, we just need a second object
-   # library that has PIC enabled so it can be used in creating the dynamic library.
-   add_library(bson_obj_pic OBJECT EXCLUDE_FROM_ALL ${all_sources})
-   set_property(TARGET bson_obj_pic PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-   list(APPEND bson_obj_libs bson_obj_pic)
+   if(ENABLE_PIC)
+      # User wants static libs to use PIC code.
+      set_property(TARGET bson_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   endif()
 endif()
 
-# Set target properties for the object libraries.
+if(ENABLE_SHARED)
+   add_library(bson_shared SHARED  ${all_sources})
+   if(WIN32)
+      # Add resource-definition script for Windows shared library (.dll).
+      configure_file(libbson.rc.in libbson.rc)
+      target_sources(bson_shared PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libbson.rc)
+   endif()
+   list(APPEND bson_libs bson_shared)
+endif()
+
+if(NOT bson_libs)
+   message(FATAL_ERROR "Neither bson_shared nor bson_static is going to be built. Did you mean to enable at least one of them?")
+endif()
+
+# Set target properties for the libraries.
 mongo_target_requirements(
-   ${bson_obj_libs}
+   ${bson_libs}
    LINK_LIBRARIES
       PUBLIC
-         _libbson_build_interface
+         # Build-local requirements:
+         $<BUILD_INTERFACE:_libbson_build_interface>
+         # Include in the install interface explicitly:
+         mongo::detail::c_platform
    COMPILE_DEFINITIONS
       PRIVATE
          # Tell headers that they are part of compilation:
@@ -215,35 +229,6 @@ mongo_target_requirements(
          $<$<AND:$<C_COMPILER_ID:MSVC>,$<VERSION_LESS:${MSVC_VERSION},1900>>:/wd4756>
 )
 
-# List of the primary BSON library targets that we are building
-set(bson_libs)
-
-if(ENABLE_STATIC)
-   add_library(bson_static STATIC)
-   target_link_libraries(bson_static PRIVATE $<BUILD_INTERFACE:bson_obj>)
-   list(APPEND bson_libs bson_static)
-   # When consumers link against bson_static, suppress the annotation __declspec(dllimport),
-   # since those symbols will be available immediately at the link step:
-   target_compile_definitions(bson_static INTERFACE BSON_STATIC)
-endif()
-
-if(ENABLE_SHARED)
-   add_library(bson_shared SHARED)
-   target_link_libraries(bson_shared PRIVATE $<BUILD_INTERFACE:bson_obj_pic>)
-   list(APPEND bson_libs bson_shared)
-endif()
-
-if(NOT bson_libs)
-   message(FATAL_ERROR "Neither bson_shared nor bson_static is going to be built. Did you mean to enable at least one of them?")
-endif()
-
-mongo_target_requirements(
-   ${bson_libs} LINK_LIBRARIES PUBLIC
-   # Build-local requirements:
-   $<BUILD_INTERFACE:_libbson_build_interface>
-   # Include in the install interface explicitly:
-   mongo::detail::c_platform
-)
 set_target_properties(${bson_libs} PROPERTIES
    VERSION "0.0.0"
    SOVERSION "0"

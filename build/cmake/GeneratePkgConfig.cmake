@@ -286,7 +286,7 @@ function(_generate_pkg_config_content out)
     # XXX: Could we define a genex that can transform the INTERFACE_LINK_LIBRARIES to a list of
     #      pkg-config-compatible "-l"-flags? That would remove the need to populate pkg_config_LIBS
     #      manually, and instead rely on target properties to handle transitive dependencies.
-    string(APPEND libs "$<JOIN:${gx_libs};${gx_linkopts}, >")
+    string(APPEND libs "$<JOIN:${gx_libs}, >")
 
     # Cflags:
     set(cflags)

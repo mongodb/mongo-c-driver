@@ -1,9 +1,67 @@
-libmongoc 1.25.0 (Unreleased)
-=============================
+libmongoc 1.25.4
+================
+
+Fixes:
+
+  * Restore support for Sphinx 1.7.6 for man page build.
+
+libmongoc 1.25.3
+================
+
+Fixes:
+
+  * Disable shared libmongoc targets if `ENABLE_SHARED=OFF`
+  * Fix documentation build with Python 3.9.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 1.25.2
+================
+
+Fixes:
+
+  * Fix data race in `mongoc_cursor_get_host`.
+  * Accept discouraged timeout values for backwards compatibility.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Kyle Kloberdanz
+  * Roberto C. Sánchez
+
+libmongoc 1.25.1
+================
+
+Fixes:
+
+  * Add back support for `BUILD_VERSION` CMake option. `BUILD_VERSION` was unintentionally removed in 1.25.0.
+
+libmongoc 1.25.0
+================
+
+Fixes:
+
+  * Send `recoveryToken` in transactions when connected to a load balancer.
 
 Improvements:
 
   * Remove optional dependency of libicu.
+  * Use OP_MSG exhaust for mongod >= 4.2. Enable exhaust cursors for mongos >= 7.1.
+  * Share cached credentials for SCRAM authentication among all clients to improve performance.
+  * Use polling monitoring in FaaS environments.
+
+Build Configuration:
+
+  * Remove `ENABLE_SRV=AUTO`. Only support boolean values for `ENABLE_SRV`.
+
+Platform Support:
+
+  * Support for macOS 10.14 is dropped.
+  * Support for Ubuntu 14.04 is dropped.
+  * Support for Debian 8.1 is dropped.
 
 Other:
 
@@ -11,6 +69,17 @@ Other:
     release artifact. Please instead use the per-release repository archive
     attached to a GitHub release, or clone the repository at the desired release
     tag.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
+  * Adrian Dole
+  * Roberto C. Sánchez
+  * Ezra Chung
+  * Joshua Siegel
+  * Kyle Kloberdanz
+  * Jeremy Mikola
 
 libmongoc 1.24.4
 ================

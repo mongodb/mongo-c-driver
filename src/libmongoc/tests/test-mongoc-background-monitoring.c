@@ -18,6 +18,7 @@
 #include "mongoc/mongoc.h"
 #include "mongoc/mongoc-client-pool-private.h"
 #include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-handshake-private.h"
 #include "mongoc/mongoc-server-description-private.h"
 #include "mongoc/mongoc-topology-background-monitoring-private.h"
 #include "mongoc/mongoc-topology-description-private.h"
@@ -388,6 +389,25 @@ test_connect_succeeds (void)
    OBSERVE (tf, !tf->observations->awaited);
 
    tf_destroy (tf);
+}
+
+void
+test_connect_faas_use_polling (void)
+{
+   test_fixture_t *tf;
+   mongoc_handshake_t *md = _mongoc_handshake_get ();
+   md->env = MONGOC_HANDSHAKE_ENV_AWS;
+
+   /* This mock server will not respond to streaming hello, so OBSERVE_SOON
+    will timeout if the server monitor doesn't detect ENV_AWS and switch to
+    polling */
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
+   OBSERVE (tf, !tf->observations->awaited);
+
+   tf_destroy (tf);
+   md->env = MONGOC_HANDSHAKE_ENV_NONE;
 }
 
 void
@@ -1134,6 +1154,10 @@ test_monitoring_install (TestSuite *suite)
    /* Tests for initial connection. */
    TestSuite_AddMockServerTest (
       suite, "/server_monitor_thread/connect/succeeds", test_connect_succeeds);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/server_monitor_thread/connect/faas_use_polling",
+      test_connect_faas_use_polling);
    TestSuite_AddMockServerTest (
       suite, "/server_monitor_thread/connect/hangup", test_connect_hangup);
    TestSuite_AddMockServerTest (

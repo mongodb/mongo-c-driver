@@ -1,6 +1,3 @@
-rem Ensure Cygwin executables like sh.exe are not in PATH
-rem set PATH=C:\Windows\system32;C:\Windows
-
 echo on
 echo
 
@@ -8,7 +5,7 @@ set TAR=C:\cygwin\bin\tar
 set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\mingw32-make.exe
 set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
 rem Ensure Cygwin executables like sh.exe are not in PATH
-set PATH=C:\cygwin\bin;C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson;src\libmongoc
+set "PATH=C:\cygwin\bin;C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson;src\libmongoc;C:\Program Files\Git\cmd"
 set LINK_STATIC=1
 
 set SRCROOT=%CD%

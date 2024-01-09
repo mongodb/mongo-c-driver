@@ -80,11 +80,6 @@ def tasks():
             )
         )
 
-    # TODO: remove once BUILD-16814 is resolved.
-    for task in res:
-        if task.run_on == 'macos-1014':
-            task.disable = True
-
     return res
 
 

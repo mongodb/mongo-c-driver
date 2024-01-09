@@ -376,7 +376,7 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
       "admin",
       tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': { 'times': 2 }, "
                 "'data': {'closeConnection': true, 'failCommands': ['ping', "
-                "'isMaster']}}"),
+                "'hello']}}"),
       NULL /* read prefs */,
       NULL /* reply */,
       &error);
@@ -393,7 +393,7 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
       error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
 
    /* The next attempted command should attempt to scan, and fail when
-    * performing the handshake with the isMaster command. */
+    * performing the handshake with the hello command. */
    ok = mongoc_client_command_simple (client,
                                       "admin",
                                       tmp_bson ("{'ping': 1}"),
@@ -823,6 +823,98 @@ skip_if_not_loadbalanced (void)
    return test_framework_is_loadbalanced () ? 1 : 0;
 }
 
+static void
+store_last_command_started_callback (const mongoc_apm_command_started_t *event)
+{
+   bson_t **last_command = mongoc_apm_command_started_get_context (event);
+   const bson_t *cmd = mongoc_apm_command_started_get_command (event);
+   bson_destroy (*last_command);
+   *last_command = bson_copy (cmd);
+}
+
+// `test_loadbalanced_sends_recoveryToken` is a regression test for
+// CDRIVER-4718. Ensure that a `recoveryToken` is included in the outgoing
+// `commitTransaction` and `abortTransaction` commands when connected to a load
+// balanced cluster.
+static void
+test_loadbalanced_sends_recoveryToken (void *unused)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *last_command = NULL;
+
+   BSON_UNUSED (unused);
+
+   client = test_framework_new_default_client ();
+   // Set a callback to store the most recent command started.
+   {
+      mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new ();
+      mongoc_apm_set_command_started_cb (cbs,
+                                         store_last_command_started_callback);
+      mongoc_client_set_apm_callbacks (client, cbs, &last_command);
+      mongoc_apm_callbacks_destroy (cbs);
+   }
+
+   mongoc_client_session_t *session =
+      mongoc_client_start_session (client, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (session, error);
+
+   mongoc_collection_t *coll =
+      mongoc_client_get_collection (client, "db", "coll");
+
+   // Commit a transaction. Expect `commitTransaction` to include
+   // `recoveryToken`.
+   {
+      bool ok = mongoc_client_session_start_transaction (
+         session, NULL /* opts */, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      bson_t *insert_opts = tmp_bson ("{}");
+      ok = mongoc_client_session_append (session, insert_opts, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      ok = mongoc_collection_insert_one (
+         coll, tmp_bson ("{}"), insert_opts, NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      ok = mongoc_client_session_commit_transaction (
+         session, NULL /* reply */, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      ASSERT_MATCH (
+         last_command,
+         "{'commitTransaction': 1, 'recoveryToken': { '$exists': true } }");
+   }
+
+   // Abort a transaction. Expect `abortTransaction` to include
+   // `recoveryToken`.
+   {
+      bool ok = mongoc_client_session_start_transaction (
+         session, NULL /* opts */, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      bson_t *insert_opts = tmp_bson ("{}");
+      ok = mongoc_client_session_append (session, insert_opts, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      ok = mongoc_collection_insert_one (
+         coll, tmp_bson ("{}"), insert_opts, NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      ok = mongoc_client_session_abort_transaction (session, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      ASSERT_MATCH (
+         last_command,
+         "{'abortTransaction': 1, 'recoveryToken': { '$exists': true } }");
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+   bson_destroy (last_command);
+}
+
 void
 test_loadbalanced_install (TestSuite *suite)
 {
@@ -893,4 +985,11 @@ test_loadbalanced_install (TestSuite *suite)
       suite,
       "/loadbalanced/post_handshake_error_clears_pool",
       test_post_handshake_error_clears_pool);
+
+   TestSuite_AddFull (suite,
+                      "/loadbalanced/sends_recoveryToken",
+                      test_loadbalanced_sends_recoveryToken,
+                      NULL /* ctx */,
+                      NULL /* dtor */,
+                      skip_if_not_loadbalanced);
 }

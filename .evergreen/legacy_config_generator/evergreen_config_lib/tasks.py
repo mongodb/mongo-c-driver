@@ -313,6 +313,16 @@ all_tasks = [
                 remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz",
                 content_type="${content_type|application/x-gzip}",
             ),
+            s3_put(
+                local_file="deb-i386.tar.gz",
+                remote_file="${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz",
+                content_type="${content_type|application/x-gzip}",
+            ),
+            s3_put(
+                local_file="deb-i386.tar.gz",
+                remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz",
+                content_type="${content_type|application/x-gzip}",
+            ),
         ],
     ),
     NamedTask(
@@ -556,7 +566,7 @@ class DNSTask(MatrixTask):
         if self.settings.loadbalanced:
             dns = "loadbalanced"
             yield func("fetch-det")
-            yield func("start load balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018")
+            yield func("start-load-balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018")
         elif self.settings.auth:
             dns = "dns-auth"
         yield func("run-tests", SSL="ssl", AUTH=self.display("auth"), DNS=dns)
@@ -741,7 +751,7 @@ for server_version in [ "7.0", "6.0", "5.0"]:
         [
             PostCompileTask(
                 "test-versioned-api-" + server_version,
-                tags=["versioned-api"],
+                tags=["versioned-api", f"{server_version}"],
                 get_build="debug-compile-nosasl-openssl",
                 commands=[
                     func("fetch-det"),
@@ -759,7 +769,7 @@ for server_version in [ "7.0", "6.0", "5.0"]:
             ),
             PostCompileTask(
                 "test-versioned-api-accept-version-two-" + server_version,
-                tags=["versioned-api"],
+                tags=["versioned-api", f"{server_version}"],
                 get_build="debug-compile-nosasl-nossl",
                 commands=[
                     func("fetch-det"),
@@ -944,6 +954,7 @@ class AWSTestTask(MatrixTask):
 
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
+        yield f'{self.settings.version}'
         yield f'test-aws'
 
     def post_commands(self) -> Iterable[Value]:
@@ -1111,82 +1122,5 @@ class OCSPTask(MatrixTask):
 
 
 all_tasks = chain(all_tasks, OCSPTask.matrix())
-
-
-class LoadBalancedTask(MatrixTask):
-    axes = OD(
-        [
-            ("asan", [True]),
-            # The SSL library the C driver is built with.
-            ("build_ssl", ["openssl"]),
-            # Whether tests are run with SSL connections.
-            ("test_ssl", [True, False]),
-            ("test_auth", [True, False]),
-            ("version", ["7.0", "6.0", "5.0", "latest"]),
-        ]
-    )
-
-    def do_is_valid_combination(self) -> bool:
-        # Test with both SSL and auth, or neither.
-        return self.settings.test_ssl == self.settings.test_auth
-
-    def additional_tags(self) -> Iterable[str]:
-        yield from super().additional_tags()
-        if self.settings.asan and self.setting_eq("build_ssl", "openssl"):
-            yield "test-asan"
-        yield str(self.settings.version)
-
-    def additional_dependencies(self) -> Iterable[DependencySpec]:
-        if self.settings.asan and self.setting_eq("build_ssl", "openssl"):
-            yield "debug-compile-asan-clang-openssl"
-
-    # Return the task name.
-    # Example: test-loadbalanced-asan-auth-openssl-latest
-    @property
-    def name(self):
-        name = "test-loadbalanced-"
-        name += "-".join(self.name_parts())
-        return name
-
-    def name_parts(self) -> Iterable[str]:
-        if self.settings.asan:
-            yield "asan"
-        if self.settings.test_auth:
-            yield "auth"
-        else:
-            yield "noauth"
-        if self.settings.test_ssl:
-            yield str(self.settings.build_ssl)
-        else:
-            yield "nossl"
-        yield str(self.settings.version)
-
-    def post_commands(self) -> Iterable[Value]:
-        yield (func("fetch-build", BUILD_NAME=self.dependencies[0]["name"]))
-        yield (func("fetch-det"))
-
-        orchestration = func(
-            "bootstrap-mongo-orchestration",
-            TOPOLOGY="sharded_cluster",
-            AUTH="auth" if self.settings.test_auth else "noauth",
-            SSL="ssl" if self.settings.test_ssl else "nossl",
-            MONGODB_VERSION=self.settings.version,
-            LOAD_BALANCER="on",
-        )
-        yield (orchestration)
-        yield (func("run-simple-http-server"))
-        yield (func("start load balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
-        yield (
-            func(
-                "run-tests",
-                ASAN="on" if self.settings.asan else "off",
-                SSL="ssl" if self.settings.test_ssl else "nossl",
-                AUTH="auth" if self.settings.test_auth else "noauth",
-                LOADBALANCED="loadbalanced",
-            )
-        )
-
-
-all_tasks = chain(all_tasks, LoadBalancedTask.matrix())
 
 all_tasks = list(all_tasks)
