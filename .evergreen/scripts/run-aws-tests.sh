@@ -120,18 +120,21 @@ fi
 if [[ "${TESTCASE}" == "ECS" ]]; then
   echo "===== Testing auth via ECS task metadata ====="
   [[ -d "${drivers_tools_dir}" ]]
-  # Overwrite the test that gets run by remote ECS task.
-  cp "${mongoc_dir}/.evergreen/etc/ecs_hosted_test.js" "${drivers_tools_dir}/.evergreen/auth_aws/lib"
+
+  # Set up the target directory.
+  ECS_SRC_DIR=${drivers_tools_dir}/.evergreen/auth_aws/src
+  mkdir -p "${ECS_SRC_DIR}/.evergreen"
+  # Move the test script to the correct location.
   chmod 777 "${script_dir}/run-mongodb-aws-ecs-test.sh"
+  cp "${script_dir}/run-mongodb-aws-ecs-test.sh" "${ECS_SRC_DIR}/.evergreen"
+  # Move artifacts needed for test to $ECS_SRC_DIR
+  cp "${mongoc_dir}/src/libmongoc/test-awsauth" "${ECS_SRC_DIR}/"
 
+  # Run the test
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
-
-  cat <<EOF >setup.js
-    const mongo_binaries = "${mongodb_bin_dir}";
-    const project_dir = "${mongoc_dir}";
-EOF
-
-  "${mongodb_bin_dir}/mongo" --nodb setup.js aws_e2e_ecs.js
+  chmod u+x ./aws_setup.sh
+  PROJECT_DIRECTORY="$ECS_SRC_DIR" MONGODB_BINARIES=${mongoc_dir}/mongodb/bin ./aws_setup.sh ecs
+  popd # "${drivers_tools_dir}/.evergreen/auth_aws"
   exit
 fi
 
