@@ -67,7 +67,7 @@ _fgets_wrapper (char *buffer, size_t buffer_size, FILE *f)
        * This protects us from files like:
        * aaaaa...DISTRIB_ID=nasal demons
        */
-      TRACE ("Found line of length %ld, bailing out", len);
+      TRACE ("Found line of length %zu, bailing out", len);
       return 0;
    }
 

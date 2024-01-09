@@ -40,22 +40,6 @@ mongoc_error_has_label (const bson_t *reply, const char *label)
       }
    }
 
-   if (!bson_iter_init_find (&iter, reply, "writeConcernError")) {
-      return false;
-   }
-
-   BSON_ASSERT (bson_iter_recurse (&iter, &iter));
-
-   if (bson_iter_find (&iter, "errorLabels") &&
-       bson_iter_recurse (&iter, &error_labels)) {
-      while (bson_iter_next (&error_labels)) {
-         if (BSON_ITER_HOLDS_UTF8 (&error_labels) &&
-             !strcmp (bson_iter_utf8 (&error_labels, NULL), label)) {
-            return true;
-         }
-      }
-   }
-
    return false;
 }
 
@@ -184,12 +168,14 @@ _mongoc_read_error_get_type (bool cmd_ret,
    }
 
    switch (error.code) {
+   case MONGOC_SERVER_ERR_EXCEEDEDTIMELIMIT:
    case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
    case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
    case MONGOC_SERVER_ERR_NOTPRIMARY:
    case MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK:
    case MONGOC_SERVER_ERR_NOTPRIMARYORSECONDARY:
    case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
+   case MONGOC_SERVER_ERR_READCONCERNMAJORITYNOTAVAILABLEYET:
    case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
    case MONGOC_SERVER_ERR_HOSTNOTFOUND:
    case MONGOC_SERVER_ERR_HOSTUNREACHABLE:

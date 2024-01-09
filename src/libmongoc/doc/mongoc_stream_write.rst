@@ -24,6 +24,13 @@ Parameters
 
 The :symbol:`mongoc_stream_write()` function shall perform a write to a :symbol:`mongoc_stream_t`. It's modeled on the API and semantics of ``write()``, though the parameters map only loosely.
 
+.. warning::
+
+  The "default timeout" indicated by a negative value is both unspecified and
+  unrelated to the documented default values for ``*TimeoutMS`` URI options.
+  To specify a default timeout value for a ``*TimeoutMS`` URI option, use the
+  ``MONGOC_DEFAULT_*`` constants defined in ``mongoc-client.h``.
+
 Returns
 -------
 
@@ -36,4 +43,3 @@ The :symbol:`mongoc_stream_write` function returns the number of bytes written o
   | :symbol:`mongoc_stream_readv()`
 
   | :symbol:`mongoc_stream_writev()`
-

@@ -100,10 +100,10 @@ elif command -v otool >/dev/null; then
 fi
 
 if [[ "${ssl}" != "OFF" ]]; then
-  # FIXME: CDRIVER-2008
+  # FIXME: CDRIVER-2008 for the cygwin check
   if [[ "${OSTYPE}" != "cygwin" ]]; then
     echo "Authenticating using X.509"
-    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${c_timeout}"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout}"
   fi
 
   echo "Connecting to Atlas Free Tier"

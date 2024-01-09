@@ -11,8 +11,8 @@ Installing Prebuilt MongoDB C Driver Libraries
 .. _Homebrew: https://brew.sh/
 
 The |libmongoc| and |libbson| libraries are often available in the package
-management repositories of `common Linux distributions <installing.linux_>`_ and
-`macOS via Homebrew <installing.macos_>`_.
+management repositories of :ref:`common Linux distributions <installing.linux>` and
+:ref:`macOS via Homebrew <installing.macos>`.
 
 .. note::
 
@@ -42,7 +42,8 @@ management repositories of `common Linux distributions <installing.linux_>`_ and
   package managers; Conan
   package managers; vcpkg
   pair: installation; package managers
-  :name: installing.pkgman
+
+.. _installing.pkgman:
 
 Cross Platform Installs Using Library Package Managers
 ******************************************************
@@ -135,7 +136,8 @@ CMake toolchain file at the initial configure command::
 
 .. index::
   ! pair: Linux; installation
-  :name: installing.linux
+
+.. _installing.linux:
 
 Installing in Linux
 *******************
@@ -186,7 +188,7 @@ Yum/DNF.
 .. important:: **Except for Fedora:**
 
   The C driver libraries are only available in version 7 and newer of the
-  resepective enterprise Linux distributions. However, the C driver libraries
+  respective enterprise Linux distributions. However, the C driver libraries
   are not available in the default repositories, but can be obtained by enabling
   the EPEL_ repositories. This can be done by installing the `epel-release`
   package::
@@ -194,7 +196,7 @@ Yum/DNF.
     # yum install epel-release
 
   `epel-release` must be installed before attempting to install the C driver
-  libraries (i.e. one cannot install them both in a single `yum intsall`
+  libraries (i.e. one cannot install them both in a single `yum install`
   command).
 
 To install |libbson| only, install the `libbson-devel` package::
@@ -207,6 +209,10 @@ To install the full C database driver (|libmongoc|), install
   ## (This package will transitively install libbson-devel)
   # yum install mongo-c-driver-devel
 
+To check which version is available, see https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver-devel.
+
+The development packages (ending in `-devel`) include files required to build applications using |libbson| and |libmongoc|.
+To only install the libraries without development files, install the `libbson` or `mongo-c-driver-libs` packages.
 
 .. index::
     !pair: installation; Debian
@@ -232,6 +238,10 @@ To install |libmongoc| (which will also install |libbson|)::
 
   # apt install libmongoc-dev
 
+To check which version is available, run `apt-cache policy libmongoc-dev`.
+
+The development packages (ending in `-dev`) include files required to build applications using |libbson| and |libmongoc|.
+To only install the libraries without development files, install the `libbson-1.0-0` or `libmongoc-1.0-0` packages.
 
 .. index::
   !pair: installation; macOS

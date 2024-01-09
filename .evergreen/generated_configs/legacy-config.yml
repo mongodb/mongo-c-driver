@@ -875,6 +875,24 @@ tasks:
       permissions: public-read
       local_file: deb.tar.gz
       content_type: ${content_type|application/x-gzip}
+  - command: s3.put
+    params:
+      aws_key: ${aws_key}
+      aws_secret: ${aws_secret}
+      remote_file: ${project}/${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz
+      bucket: mciuploads
+      permissions: public-read
+      local_file: deb-i386.tar.gz
+      content_type: ${content_type|application/x-gzip}
+  - command: s3.put
+    params:
+      aws_key: ${aws_key}
+      aws_secret: ${aws_secret}
+      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz
+      bucket: mciuploads
+      permissions: public-read
+      local_file: deb-i386.tar.gz
+      content_type: ${content_type|application/x-gzip}
 - name: rpm-package-build
   commands:
   - command: shell.exec
@@ -14010,10 +14028,10 @@ buildvariants:
   - link-with-cmake-snappy-deprecated
   - name: link-with-cmake-mac
     distros:
-    - macos-1014
+    - macos-1100
   - name: link-with-cmake-mac-deprecated
     distros:
-    - macos-1014
+    - macos-1100
   - name: link-with-cmake-windows
     distros:
     - windows-vsCurrent-large
@@ -14031,7 +14049,7 @@ buildvariants:
     - ubuntu1804-test
   - name: link-with-pkg-config-mac
     distros:
-    - macos-1014
+    - macos-1100
   - link-with-pkg-config-ssl
   - link-with-bson
   - name: link-with-bson-windows
@@ -14039,7 +14057,7 @@ buildvariants:
     - windows-vsCurrent-large
   - name: link-with-bson-mac
     distros:
-    - macos-1014
+    - macos-1100
   - name: link-with-bson-mingw
     distros:
     - windows-vsCurrent-large
@@ -14058,24 +14076,6 @@ buildvariants:
   - install-libmongoc-after-libbson
   tags:
   - pr-merge-gate
-- name: clang34ubuntu
-  display_name: clang 3.4 (Ubuntu 14.04)
-  expansions:
-    CC: clang
-  run_on: ubuntu1404-build
-  tasks:
-  - release-compile
-  - debug-compile-rdtscp
-- name: clang35
-  display_name: clang 3.5 (Debian 8.1)
-  expansions:
-    CC: clang
-  run_on: debian81-test
-  tasks:
-  - release-compile
-  - debug-compile-sasl-openssl
-  - debug-compile-nosasl-openssl
-  - .authentication-tests .openssl
 - name: clang38
   display_name: clang 3.8 (Debian 9.2)
   expansions:
@@ -14139,13 +14139,6 @@ buildvariants:
   - debug-compile-nosasl-openssl
   - debug-compile-no-align
   - .authentication-tests .openssl
-- name: gcc48ubuntu
-  display_name: GCC 4.8 (Ubuntu 14.04)
-  expansions:
-    CC: gcc
-  run_on: ubuntu1404-build
-  tasks:
-  - release-compile
 - name: gcc82rhel
   display_name: GCC 8.2 (RHEL 8.0)
   expansions:
@@ -14174,16 +14167,6 @@ buildvariants:
   - debug-compile-nosasl-openssl
   - .authentication-tests .openssl
   - .latest .nossl
-- name: gcc49
-  display_name: GCC 4.9 (Debian 8.1)
-  expansions:
-    CC: gcc
-  run_on: debian81-test
-  tasks:
-  - release-compile
-  - debug-compile-sasl-openssl
-  - debug-compile-nosasl-openssl
-  - .authentication-tests .openssl
 - name: gcc63
   display_name: GCC 6.3 (Debian 9.2)
   expansions:
@@ -14266,7 +14249,7 @@ buildvariants:
   display_name: '*Darwin, macOS (Apple LLVM)'
   expansions:
     CC: clang
-  run_on: macos-1014
+  run_on: macos-1100
   tasks:
   - .compression !.snappy
   - release-compile
@@ -14462,14 +14445,14 @@ buildvariants:
   - name: debug-compile-nosasl-openssl-static
   - name: debug-compile-nosasl-darwinssl
     distros:
-    - macos-1014
+    - macos-1100
   - name: debug-compile-nosasl-winssl
     distros:
     - windows-vsCurrent-large
   - name: .ocsp-openssl
   - name: .ocsp-darwinssl
     distros:
-    - macos-1014
+    - macos-1100
   - name: .ocsp-winssl
     distros:
     - windows-vsCurrent-large

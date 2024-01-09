@@ -33,8 +33,8 @@ endif
 
 override_dh_auto_configure:
 	[ "$(DOCS)" = "ON" ] || echo "Found 'nodoc' in 'DEB_BUILD_OPTIONS'; not building documentation"
+	echo $(DEB_VERSION_UPSTREAM) > VERSION_CURRENT
 	dh_auto_configure -- \
-	-DBUILD_VERSION=$(DEB_VERSION_UPSTREAM) \
 	-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
 	-DENABLE_MONGOC=ON \
 	-DENABLE_MAN_PAGES=$(DOCS) \
@@ -43,6 +43,10 @@ override_dh_auto_configure:
 	-DENABLE_TESTS=OFF \
 	-DENABLE_ZLIB=SYSTEM \
 	-DUSE_BUNDLED_UTF8PROC=OFF
+
+override_dh_auto_clean:
+	rm -f VERSION_CURRENT
+	dh_auto_clean
 
 override_dh_auto_install:
 	dh_auto_install

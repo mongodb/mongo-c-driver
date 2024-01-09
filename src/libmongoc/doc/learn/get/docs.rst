@@ -36,7 +36,7 @@ to be run when the `pyproject.toml` file is changed.
 Running Sphinx
 **************
 
-Poetry can be used to execute the :external:doc:`man/sphinx-build` command::
+Poetry can be used to execute the :std:doc:`man/sphinx-build` command::
 
   $ poetry run sphinx-build -b dirhtml "./src/libmongoc/doc" "./_build/docs/html"
 
@@ -47,8 +47,8 @@ subdirectory.
 
   Because Sphinx builds many pages, the build may run quite slowly. For faster
   builds, it is recommended to use the
-  :external:option:`--jobs <sphinx-build.--jobs>` command-line option when
-  invoking :external:doc:`man/sphinx-build`.
+  :std:option:`--jobs <sphinx:sphinx-build.--jobs>` command-line option when
+  invoking :std:doc:`sphinx:man/sphinx-build`.
 
 
 Viewing the Documentation
@@ -56,7 +56,7 @@ Viewing the Documentation
 
 To quickly view the rendered HTML pages, a simple local HTTP server can be
 spawned on the command line by using Python's built-in
-:external:mod:`http.server` module:
+:py:mod:`http.server` module:
 
 .. code-block:: sh
 

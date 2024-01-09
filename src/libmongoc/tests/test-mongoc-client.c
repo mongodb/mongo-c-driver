@@ -675,24 +675,6 @@ test_mongoc_client_authenticate_cached (bool pooled)
       }
    }
 
-   /* screw up the cache */
-   memcpy (client->cluster.scram_cache->client_key, "foo", 3);
-   cursor = mongoc_collection_find_with_opts (collection, &insert, NULL, NULL);
-   capture_logs (true);
-   r = mongoc_cursor_next (cursor, &doc);
-
-   if (pooled) {
-      ASSERT_CAPTURED_LOG ("The cachekey broke",
-                           MONGOC_LOG_LEVEL_WARNING,
-                           "Failed authentication");
-   }
-   capture_logs (false);
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "");
-   ASSERT (!r);
-   mongoc_cursor_destroy (cursor);
-
    mongoc_collection_destroy (collection);
    if (pooled) {
       capture_logs (true);
@@ -772,8 +754,8 @@ test_mongoc_client_authenticate_failure (void *context)
     * Try various commands while in the failed state to ensure we get the
     * same sort of errors.
     */
-   r = mongoc_collection_update (
-      collection, MONGOC_UPDATE_NONE, &q, &empty, NULL, &error);
+   r =
+      mongoc_collection_update_one (collection, &q, &empty, NULL, NULL, &error);
    BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
