@@ -936,17 +936,21 @@ _parse_kms_provider_aws (bson_t *kms_providers,
       }
 
       if (strcmp (key, "accessKeyId") == 0) {
+         const char *envvar = "MONGOC_TEST_AWS_ACCESS_KEY_ID";
+         if (0 == strcmp (provider, "aws:name2")) {
+            envvar = "MONGOC_TEST_AWSNAME2_ACCESS_KEY_ID";
+         }
          if (!_append_kms_provider_value_or_getenv (
-                &child, key, value, "MONGOC_TEST_AWS_ACCESS_KEY_ID", error)) {
+                &child, key, value, envvar, error)) {
             return false;
          }
       } else if (strcmp (key, "secretAccessKey") == 0) {
+         const char *envvar = "MONGOC_TEST_AWS_SECRET_ACCESS_KEY";
+         if (0 == strcmp (provider, "aws:name2")) {
+            envvar = "MONGOC_TEST_AWSNAME2_SECRET_ACCESS_KEY";
+         }
          if (!_append_kms_provider_value_or_getenv (
-                &child,
-                key,
-                value,
-                "MONGOC_TEST_AWS_SECRET_ACCESS_KEY",
-                error)) {
+                &child, key, value, envvar, error)) {
             return false;
          }
       } else {
@@ -1187,10 +1191,17 @@ _parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts,
 
    const prov_map_t prov_map[] = {
       {.provider = "aws", .parse = _parse_kms_provider_aws},
+      {.provider = "aws:name1", .parse = _parse_kms_provider_aws},
+      {.provider = "aws:name2", .parse = _parse_kms_provider_aws},
       {.provider = "azure", .parse = _parse_kms_provider_azure},
+      {.provider = "azure:name1", .parse = _parse_kms_provider_azure},
       {.provider = "gcp", .parse = _parse_kms_provider_gcp},
+      {.provider = "gcp:name1", .parse = _parse_kms_provider_gcp},
       {.provider = "kmip", .parse = _parse_kms_provider_kmip},
-      {.provider = "local", .parse = _parse_kms_provider_local}};
+      {.provider = "kmip:name1", .parse = _parse_kms_provider_kmip},
+      {.provider = "local", .parse = _parse_kms_provider_local},
+      {.provider = "local:name1", .parse = _parse_kms_provider_local},
+      {.provider = "local:name2", .parse = _parse_kms_provider_local}};
 
    const size_t prov_map_size = sizeof (prov_map) / sizeof (prov_map[0]);
 
