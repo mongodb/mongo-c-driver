@@ -717,6 +717,151 @@ done:
 }
 
 static bool
+operation_encrypt (test_t *test,
+                   operation_t *op,
+                   result_t *result,
+                   bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_client_encryption_t *ce = NULL;
+   mongoc_client_encryption_encrypt_opts_t *eo =
+      mongoc_client_encryption_encrypt_opts_new ();
+   bson_val_t *value = NULL;
+   bson_t *opts = NULL;
+   char *opts_keyaltname = NULL;
+   bson_val_t *opts_id = NULL;
+   char *opts_algorithm = NULL;
+
+   // Parse `value` and `opts`.
+   {
+      bson_parser_t *const parser = bson_parser_new ();
+      bool success = false;
+
+      bson_parser_any (parser, "value", &value);
+      bson_parser_doc (parser, "opts", &opts);
+
+      success = bson_parser_parse (parser, op->arguments, error);
+
+      bson_parser_destroy (parser);
+
+      if (!success) {
+         goto done;
+      }
+   }
+
+   // Parse fields in `opts`.
+   {
+      bson_parser_t *const parser = bson_parser_new ();
+      bool success = false;
+
+      bson_parser_utf8_optional (parser, "keyAltName", &opts_keyaltname);
+      bson_parser_any_optional (parser, "id", &opts_id);
+      bson_parser_utf8 (parser, "algorithm", &opts_algorithm);
+
+      success = bson_parser_parse (parser, opts, error);
+
+      bson_parser_destroy (parser);
+
+      if (!success) {
+         goto done;
+      }
+   }
+
+   // Get ClientEncryption object.
+   if (!(ce = entity_map_get_client_encryption (
+            test->entity_map, op->object, error))) {
+      goto done;
+   }
+
+   // Encrypt.
+   {
+      if (opts_id) {
+         mongoc_client_encryption_encrypt_opts_set_keyid (
+            eo, bson_val_to_value (opts_id));
+      }
+      if (opts_keyaltname) {
+         mongoc_client_encryption_encrypt_opts_set_keyaltname (eo,
+                                                               opts_keyaltname);
+      }
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, opts_algorithm);
+
+      bson_value_t ciphertext;
+      const bool success = mongoc_client_encryption_encrypt (
+         ce, bson_val_to_value (value), eo, &ciphertext, error);
+      bson_val_t *const val =
+         success ? bson_val_from_value (&ciphertext) : NULL;
+      result_from_val_and_reply (result, val, NULL /* reply */, error);
+      bson_value_destroy (&ciphertext);
+      bson_val_destroy (val);
+   }
+
+   ret = true;
+
+done:
+
+   bson_free (opts_algorithm);
+   bson_val_destroy (opts_id);
+   bson_free (opts_keyaltname);
+   bson_destroy (opts);
+   bson_val_destroy (value);
+   mongoc_client_encryption_encrypt_opts_destroy (eo);
+
+   return ret;
+}
+
+static bool
+operation_decrypt (test_t *test,
+                   operation_t *op,
+                   result_t *result,
+                   bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_client_encryption_t *ce = NULL;
+   bson_val_t *value = NULL;
+
+   // Parse `value`.
+   {
+      bson_parser_t *const parser = bson_parser_new ();
+      bool success = false;
+
+      bson_parser_any (parser, "value", &value);
+
+      success = bson_parser_parse (parser, op->arguments, error);
+
+      bson_parser_destroy (parser);
+
+      if (!success) {
+         goto done;
+      }
+   }
+
+   // Get ClientEncryption object.
+   if (!(ce = entity_map_get_client_encryption (
+            test->entity_map, op->object, error))) {
+      goto done;
+   }
+
+   // Decrypt.
+   {
+      bson_value_t plaintext;
+      const bool success = mongoc_client_encryption_decrypt (
+         ce, bson_val_to_value (value), &plaintext, error);
+      bson_val_t *const val = success ? bson_val_from_value (&plaintext) : NULL;
+      result_from_val_and_reply (result, val, NULL /* reply */, error);
+      bson_value_destroy (&plaintext);
+      bson_val_destroy (val);
+   }
+
+   ret = true;
+
+done:
+
+   bson_val_destroy (value);
+
+   return ret;
+}
+
+static bool
 operation_create_collection (test_t *test,
                              operation_t *op,
                              result_t *result,
@@ -3776,6 +3921,8 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"addKeyAltName", operation_add_key_alt_name},
       {"removeKeyAltName", operation_remove_key_alt_name},
       {"getKeyByAltName", operation_get_key_by_alt_name},
+      {"encrypt", operation_encrypt},
+      {"decrypt", operation_decrypt},
 
       /* Database operations */
       {"createCollection", operation_create_collection},
