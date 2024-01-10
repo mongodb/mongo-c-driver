@@ -654,8 +654,8 @@ set_up_original_error_test (mongoc_apm_callbacks_t *callbacks,
       client,
       "admin",
       tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': {'times': 1}, "
-                "'data': {'failCommands': ['%s'], 'writeConcernError': {"
-                "'code': 91, 'errorLabels': ['RetryableWriteError']}}}",
+                "'data': {'failCommands': ['%s'], 'errorLabels': "
+                "['RetryableWriteError'], 'writeConcernError': {'code': 91 }}}",
                 failCommand),
       NULL,
       NULL,
@@ -711,8 +711,8 @@ retryable_writes_prose_test_3 (void *ctx)
 
    // the reply holds the original error information
    ASSERT_MATCH (&reply,
-                 "{'insertedCount': 1, 'writeConcernErrors': [{ 'code': 91, "
-                 "'errorLabels': ['RetryableWriteError']}]}");
+                 "{'insertedCount': 1, 'writeConcernErrors': [{ 'code': 91 }], "
+                 "'errorLabels': ['RetryableWriteError']}");
 
    cleanup_original_error_test (client, server_id, &reply, coll, callbacks);
 }
@@ -758,8 +758,8 @@ retryable_writes_original_error_find_modify (void *ctx)
    ASSERT_MATCH (
       &reply,
       "{'lastErrorObject' : { 'n': 0, 'updatedExisting' : false }, 'value' : "
-      "null, 'writeConcernError' : { 'code': 91, 'errorLabels' : [ "
-      "'RetryableWriteError' ]}, 'ok' : 1.0}");
+      "null, 'writeConcernError' : { 'code': 91 }, 'errorLabels' : [ "
+      "'RetryableWriteError' ], 'ok' : 1.0}");
 
    cleanup_original_error_test (client, server_id, &reply, coll, callbacks);
    mongoc_find_and_modify_opts_destroy (opts);
@@ -805,8 +805,8 @@ retryable_writes_original_error_general_command (void *ctx)
 
    // the reply holds the original error information
    ASSERT_MATCH (&reply,
-                 "{'writeConcernError' : { 'code' : { '$numberInt' : '91' }, "
-                 "'errorLabels' : [ 'RetryableWriteError' ] }, 'ok': { "
+                 "{'writeConcernError' : { 'code' : { '$numberInt' : '91' } }, "
+                 "'errorLabels' : [ 'RetryableWriteError' ], 'ok': { "
                  "'$numberDouble' : '1.0' }}");
 
    cleanup_original_error_test (client, server_id, &reply, coll, callbacks);
