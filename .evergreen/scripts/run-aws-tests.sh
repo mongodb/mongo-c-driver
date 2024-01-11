@@ -30,7 +30,6 @@ mongoc_dir="$(to_absolute "${script_dir}/../..")"
 declare drivers_tools_dir
 drivers_tools_dir="$(to_absolute "${mongoc_dir}/../drivers-evergreen-tools")"
 
-declare mongodb_bin_dir="${mongoc_dir}/mongodb/bin"
 declare test_awsauth="${mongoc_dir}/src/libmongoc/test-awsauth"
 
 if [[ "${OSTYPE}" == "cygwin" ]]; then
