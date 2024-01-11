@@ -29,6 +29,7 @@
 #include "mongoc-crypt-private.h"
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
+#include "mongoc-sleep.h"
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -212,6 +213,11 @@ typedef struct _mongoc_topology_t {
     * topology. This could occur if the URI is invalid.
     * An invalid topology does not monitor servers. */
    bool valid;
+
+   // `usleep_fn` and `usleep_data` may be overridden by
+   // `mongoc_client_set_usleep_impl`.
+   mongoc_usleep_func_t usleep_fn;
+   void *usleep_data;
 } mongoc_topology_t;
 
 mongoc_topology_t *
