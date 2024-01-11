@@ -4,8 +4,8 @@
  %global gh_project   mongo-c-driver
  %global libname      libmongoc
  %global libver       1.0
--%global up_version   1.25.1
-+%global up_version   1.25.2
+-%global up_version   1.25.4
++%global up_version   1.25.5
  #global up_prever    rc0
  # disabled as require a MongoDB server
  %bcond_with          tests
@@ -18,13 +18,3 @@
  Release:   1%{?dist}
  # See THIRD_PARTY_NOTICES
  License:   Apache-2.0 AND ISC AND MIT AND Zlib
-@@ -50,7 +50,8 @@ BuildRequires: perl-interpreter
- # From man pages
- BuildRequires: python3
- BuildRequires: python3-sphinx
--BuildRequires: python3-sphinx-design
-+# python3-sphinx-design is intentionally removed to test that the build succeeds without python3-sphinx-design.
-+# At present, python3-sphinx-design is not available in EPEL. Refer: CDRIVER-4767
- 
- Requires:   %{name}-libs%{?_isa} = %{version}-%{release}
- # Sub package removed
