@@ -17,6 +17,17 @@ class FetchDET(Function):
             ''',
         ),
 
+        # Make shell scripts executable.
+        bash_exec(
+            command_type=EvgCommandType.SETUP,
+            working_dir="drivers-evergreen-tools",
+            script='''\
+                for file in $(find .evergreen -type f -name \*.sh); do
+                    chmod +x "$file" || exit
+                done
+            ''',
+        ),
+
         # python is used frequently enough by many tasks that it is worth
         # running find_python3 once here and reusing the result.
         bash_exec(
