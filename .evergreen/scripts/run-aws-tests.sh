@@ -7,10 +7,7 @@
 #
 # Example:
 # TESTCASE=EC2 run-aws-tests.sh
-#
-# Optional environment variables:
-# iam_auth_ecs_account and iam_auth_ecs_secret_access_key
-#   Set to access key id/secret access key. Required for some tests.
+
 
 set -o errexit
 set -o pipefail
