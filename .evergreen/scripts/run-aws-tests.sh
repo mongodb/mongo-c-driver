@@ -48,10 +48,6 @@ expect_failure() {
 }
 
 
-# Some of the setup scripts expect mongo to be on path.
-export PATH
-PATH+=":${mongodb_bin_dir}"
-
 if [[ "${TESTCASE}" == "REGULAR" ]]; then
   echo "===== Testing regular auth via URI ====="
 
