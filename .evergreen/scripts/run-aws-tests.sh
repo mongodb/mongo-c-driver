@@ -111,14 +111,12 @@ if [[ "${TESTCASE}" == "ECS" ]]; then
   ECS_SRC_DIR=${drivers_tools_dir}/.evergreen/auth_aws/src
   mkdir -p "${ECS_SRC_DIR}/.evergreen"
   # Move the test script to the correct location.
-  chmod 777 "${script_dir}/run-mongodb-aws-ecs-test.sh"
   cp "${script_dir}/run-mongodb-aws-ecs-test.sh" "${ECS_SRC_DIR}/.evergreen"
   # Move artifacts needed for test to $ECS_SRC_DIR
   cp "${mongoc_dir}/src/libmongoc/test-awsauth" "${ECS_SRC_DIR}/"
 
   # Run the test
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
-  chmod u+x ./aws_setup.sh
   PROJECT_DIRECTORY="$ECS_SRC_DIR" MONGODB_BINARIES=${mongoc_dir}/mongodb/bin ./aws_setup.sh ecs
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
   exit
