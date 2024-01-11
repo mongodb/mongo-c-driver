@@ -50,20 +50,6 @@ expect_failure() {
   "${test_awsauth}" "${1:?}" "EXPECT_FAILURE" || exit
 }
 
-url_encode() {
-  declare encoded=""
-  for c in $(echo ${1:?} | grep -o .); do
-    case "${c}" in
-    [a-zA-Z0-9.~_-])
-      encoded="${encoded}${c}"
-      ;;
-    *)
-      encoded="${encoded}$(printf '%%%02X' "'${c}")"
-      ;;
-    esac
-  done
-  echo "${encoded}"
-}
 
 # Some of the setup scripts expect mongo to be on path.
 export PATH
