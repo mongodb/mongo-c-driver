@@ -76,13 +76,22 @@ if [[ "${TESTCASE}" == "ASSUME_ROLE" ]]; then
 fi
 
 if [[ "LAMBDA" = "$TESTCASE" ]]; then
-  echo "===== Testing auth via environment variables ====="
-
-  pushd "${drivers_tools_dir}/.evergreen/auth_aws"
-  # shellcheck source=/dev/null
-  . aws_setup.sh session-creds # Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and SESSION_TOKEN
-  popd # "${drivers_tools_dir}/.evergreen/auth_aws"
-  expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
+  (
+    echo "===== Testing auth via environment variables without session token ====="
+    pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+    # shellcheck source=/dev/null
+    . aws_setup.sh env-creds # Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+    popd # "${drivers_tools_dir}/.evergreen/auth_aws"
+    expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
+  )
+  (
+    echo "===== Testing auth via environment variables with session token ====="
+    pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+    # shellcheck source=/dev/null
+    . aws_setup.sh session-creds # Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and SESSION_TOKEN
+    popd # "${drivers_tools_dir}/.evergreen/auth_aws"
+    expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
+  )
   exit
 fi
 
