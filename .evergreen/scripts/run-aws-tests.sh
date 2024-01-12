@@ -17,6 +17,7 @@ set +o xtrace
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
+# shellcheck source=.evergreen/scripts/use-tools.sh
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 check_var_req TESTCASE
@@ -52,6 +53,7 @@ if [[ "${TESTCASE}" == "REGULAR" ]]; then
 
   # Create user on $external db.
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+  # shellcheck source=/dev/null
   . aws_setup.sh regular # Sets USER and PASS
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
@@ -64,6 +66,7 @@ fi
 if [[ "${TESTCASE}" == "ASSUME_ROLE" ]]; then
   echo "===== Testing auth with session token via URI with AssumeRole ====="
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+  # shellcheck source=/dev/null
   . aws_setup.sh assume-role # Sets USER, PASS, and SESSION_TOKEN
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
@@ -76,6 +79,7 @@ if [[ "LAMBDA" = "$TESTCASE" ]]; then
   echo "===== Testing auth via environment variables ====="
 
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+  # shellcheck source=/dev/null
   . aws_setup.sh session-creds # Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and SESSION_TOKEN
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
   expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
@@ -87,6 +91,7 @@ if [[ "${TESTCASE}" == "EC2" ]]; then
   # Do necessary setup for EC2
   # Create user on $external db.
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+  # shellcheck source=/dev/null
   . aws_setup.sh ec2
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
@@ -119,6 +124,7 @@ if [[ "${TESTCASE}" == "ASSUME_ROLE_WITH_WEB_IDENTITY" ]]; then
   # Do necessary setup.
   # Create user on $external db.
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+  # shellcheck source=/dev/null
   . aws_setup.sh web-identity # Sets AWS_ROLE_ARN and AWS_WEB_IDENTITY_TOKEN_FILE
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
