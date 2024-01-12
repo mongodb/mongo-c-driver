@@ -16,7 +16,7 @@ Test whether a reply from a failed operation includes a specific error label. Se
 Parameters
 ----------
 
-* ``reply``: A :symbol:`bson:bson_t`, the reply to a failed operation.
+* ``reply``: A |bson_t-storage-ptr| to contain the results.
 * ``label``: The label to test for, such as "TransientTransactionError" or "UnknownTransactionCommitResult".
 
 Returns

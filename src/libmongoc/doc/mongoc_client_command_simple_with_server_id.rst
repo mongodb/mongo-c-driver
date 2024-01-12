@@ -29,7 +29,7 @@ Parameters
 * ``db_name``: The name of the database to run the command on.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`.
 * ``server_id``: An opaque id specifying which server to use.
-* ``reply``: An optional location for a :symbol:`bson:bson_t` which will store the server's reply.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or a ``NULL``.
 
 Returns
