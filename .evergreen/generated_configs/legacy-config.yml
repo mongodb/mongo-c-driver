@@ -14407,6 +14407,13 @@ buildvariants:
   - debug-compile-aws
   - .test-aws .4.4
   - .test-aws .5.0
+- name: aws-ubuntu2204
+  display_name: AWS Tests (Ubuntu 22.04)
+  expansions:
+    CC: clang
+  run_on: ubuntu2004-small
+  tasks:
+  - debug-compile-aws
   - .test-aws .6.0
   - .test-aws .7.0
   - .test-aws .latest
