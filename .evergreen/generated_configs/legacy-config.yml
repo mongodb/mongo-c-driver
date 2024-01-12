@@ -1786,7 +1786,7 @@ tasks:
         export distro_id='${distro_id}' # Required by find_cmake_latest.
         . .evergreen/scripts/find-cmake-latest.sh
         cmake_binary="$(find_cmake_latest)"
-        # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
+        # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
         export CC='${CC}'
         "$cmake_binary" -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         "$cmake_binary" --build . --target test-awsauth
@@ -14398,16 +14398,6 @@ buildvariants:
   tasks:
   - debug-compile-sasl-openssl-static
   - .authentication-tests .asan
-- name: aws-ubuntu1804
-  display_name: AWS Tests (Ubuntu 18.04)
-  expansions:
-    CC: clang
-  run_on: ubuntu1804-small
-  tasks:
-  - debug-compile-aws
-  - .test-aws .4.4
-  - .test-aws .5.0
-  - .test-aws .6.0
 - name: aws-ubuntu2004
   display_name: AWS Tests (Ubuntu 20.04)
   expansions:
@@ -14415,6 +14405,9 @@ buildvariants:
   run_on: ubuntu2004-small
   tasks:
   - debug-compile-aws
+  - .test-aws .4.4
+  - .test-aws .5.0
+  - .test-aws .6.0
   - .test-aws .7.0
   - .test-aws .latest
 - name: mongohouse

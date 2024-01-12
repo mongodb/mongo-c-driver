@@ -422,25 +422,16 @@ all_variants = [
         ],
         {"CC": "clang"},
     ),
-    Variant(
-        "aws-ubuntu1804",
-        "AWS Tests (Ubuntu 18.04)",
-        "ubuntu1804-small",
-        [
-            "debug-compile-aws",
-            ".test-aws .4.4",
-            ".test-aws .5.0",
-            ".test-aws .6.0",
-        ],
-        {"CC": "clang"},
-    ),
-    # Test 7.0+ with Ubuntu 20.04+ since MongoDB 7.0 no longer ships binaries for Ubuntu 18.04.
+    # Test with Ubuntu 20.04+. MongoDB 7.0 no longer ships binaries for Ubuntu 18.04. AWS setup scripts expect Ubuntu 20.04+.
     Variant(
         "aws-ubuntu2004",
         "AWS Tests (Ubuntu 20.04)",
         "ubuntu2004-small",
         [
             "debug-compile-aws",
+            ".test-aws .4.4",
+            ".test-aws .5.0",
+            ".test-aws .6.0",
             ".test-aws .7.0",
             ".test-aws .latest",
         ],
