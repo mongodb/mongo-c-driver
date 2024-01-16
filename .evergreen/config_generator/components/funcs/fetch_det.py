@@ -21,11 +21,7 @@ class FetchDET(Function):
         bash_exec(
             command_type=EvgCommandType.SETUP,
             working_dir="drivers-evergreen-tools",
-            script='''\
-                for file in $(find .evergreen -type f -name "*.sh"); do
-                    chmod +rx "$file" || exit
-                done
-            ''',
+            script='find .evergreen -type f -name "*.sh" -execdir chmod +rx "{}" \;',
         ),
 
         # python is used frequently enough by many tasks that it is worth
