@@ -20,9 +20,9 @@ To run the examples in this tutorial, MongoDB must be installed and running on `
 
 .. code-block:: none
 
-  $ mongo --host localhost --port 27017
-  MongoDB shell version: 3.0.6
-  connecting to: localhost:27017/test
+  $ mongosh --host localhost --port 27017 --quiet
+  Enterprise rs0 [direct: primary] test> db.version()
+  7.0.0
   >
 
 Include and link libmongoc in your C program
