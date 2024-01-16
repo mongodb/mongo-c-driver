@@ -55,6 +55,7 @@ if [[ "${TESTCASE}" == "REGULAR" ]]; then
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
   # shellcheck source=/dev/null
   . aws_setup.sh regular # Sets USER and PASS
+  : "${USER:?}" "${PASS:?}"
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
   expect_success "mongodb://${USER:?}:${PASS:?}@localhost/?authMechanism=MONGODB-AWS"
@@ -68,6 +69,7 @@ if [[ "${TESTCASE}" == "ASSUME_ROLE" ]]; then
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
   # shellcheck source=/dev/null
   . aws_setup.sh assume-role # Sets USER, PASS, and SESSION_TOKEN
+  : "${USER:?}" "${PASS:?}" "${SESSION_TOKEN:?}"
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
   expect_success "mongodb://${USER}:${PASS}@localhost/aws?authMechanism=MONGODB-AWS&authSource=\$external&authMechanismProperties=AWS_SESSION_TOKEN:${SESSION_TOKEN}"
@@ -81,6 +83,7 @@ if [[ "LAMBDA" = "$TESTCASE" ]]; then
     pushd "${drivers_tools_dir}/.evergreen/auth_aws"
     # shellcheck source=/dev/null
     . aws_setup.sh env-creds # Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+    : "${AWS_ACCESS_KEY_ID:?}" "${AWS_SECRET_ACCESS_KEY:?}"
     popd # "${drivers_tools_dir}/.evergreen/auth_aws"
     expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
   )
@@ -89,6 +92,7 @@ if [[ "LAMBDA" = "$TESTCASE" ]]; then
     pushd "${drivers_tools_dir}/.evergreen/auth_aws"
     # shellcheck source=/dev/null
     . aws_setup.sh session-creds # Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and SESSION_TOKEN
+    : "${AWS_ACCESS_KEY_ID:?}" "${AWS_SECRET_ACCESS_KEY:?}" "${SESSION_TOKEN:?}"
     popd # "${drivers_tools_dir}/.evergreen/auth_aws"
     expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
   )
@@ -135,6 +139,7 @@ if [[ "${TESTCASE}" == "ASSUME_ROLE_WITH_WEB_IDENTITY" ]]; then
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
   # shellcheck source=/dev/null
   . aws_setup.sh web-identity # Sets AWS_ROLE_ARN and AWS_WEB_IDENTITY_TOKEN_FILE
+  : "${AWS_ROLE_ARN:?}" "${AWS_WEB_IDENTITY_TOKEN_FILE:?}"
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
   echo "Valid credentials via Web Identity - should succeed"
