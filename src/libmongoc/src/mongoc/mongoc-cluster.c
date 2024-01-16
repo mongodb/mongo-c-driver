@@ -530,7 +530,7 @@ _handle_txn_error_labels (bool cmd_ret,
    }
 
    _mongoc_write_error_handle_labels (
-      cmd_ret, cmd_err, reply, cmd->server_stream->sd->max_wire_version);
+      cmd_ret, cmd_err, reply, cmd->server_stream->sd);
 }
 
 /*

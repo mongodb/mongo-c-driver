@@ -20,6 +20,7 @@
 #include "mongoc-error-private.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-server-description-private.h"
 
 bool
 mongoc_error_has_label (const bson_t *reply, const char *label)
@@ -102,7 +103,7 @@ void
 _mongoc_write_error_handle_labels (bool cmd_ret,
                                    const bson_error_t *cmd_err,
                                    bson_t *reply,
-                                   int32_t server_max_wire_version)
+                                   mongoc_server_description_t *sd)
 {
    bson_error_t error;
 
@@ -115,14 +116,21 @@ _mongoc_write_error_handle_labels (bool cmd_ret,
       return;
    }
 
-   if (server_max_wire_version >= WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL) {
+   if (sd->max_wire_version >= WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL) {
       return;
    }
 
-   /* check for a server error. */
-   if (_mongoc_cmd_check_ok_no_wce (
-          reply, MONGOC_ERROR_API_VERSION_2, &error)) {
-      return;
+   /* Check for a server error. Do not consult writeConcernError for pre-4.4
+    * mongos. */
+   if (sd->type == MONGOC_SERVER_MONGOS) {
+      if (_mongoc_cmd_check_ok (reply, MONGOC_ERROR_API_VERSION_2, &error)) {
+         return;
+      }
+   } else {
+      if (_mongoc_cmd_check_ok_no_wce (
+             reply, MONGOC_ERROR_API_VERSION_2, &error)) {
+         return;
+      }
    }
 
    if (_mongoc_write_error_is_retryable (&error)) {
