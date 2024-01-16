@@ -162,15 +162,15 @@ all_functions = OD([
         shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/build-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/pull-mongohouse-image.sh
         '''),
     )),
     ('run mongohouse', Function(
         shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/run-mongohouse-local.sh
-        ''', background=True),
+        bash .evergreen/atlas_data_lake/run-mongohouse-image.sh
+        '''),
     )),
     ('test mongohouse', Function(
         shell_mongoc(r'''

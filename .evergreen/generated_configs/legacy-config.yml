@@ -223,18 +223,17 @@ functions:
         set -o errexit
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/build-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/pull-mongohouse-image.sh
   run mongohouse:
   - command: shell.exec
     type: test
     params:
-      background: true
       shell: bash
       script: |-
         set -o errexit
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/run-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/run-mongohouse-image.sh
   test mongohouse:
   - command: shell.exec
     type: test
