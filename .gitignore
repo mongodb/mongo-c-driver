@@ -37,4 +37,5 @@ x64
 dist
 
 # `secrets-export.sh` is created by the drivers-evergreen-tools `setup_secrets.sh` script.
+# Ignore this file to reduce risk of committing credentials during local development.
 secrets-export.sh
