@@ -91,8 +91,8 @@ if [[ "LAMBDA" = "$TESTCASE" ]]; then
     echo "===== Testing auth via environment variables with session token ====="
     pushd "${drivers_tools_dir}/.evergreen/auth_aws"
     # shellcheck source=/dev/null
-    . aws_setup.sh session-creds # Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and SESSION_TOKEN
-    : "${AWS_ACCESS_KEY_ID:?}" "${AWS_SECRET_ACCESS_KEY:?}" "${SESSION_TOKEN:?}"
+    . aws_setup.sh session-creds # Sets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_SESSION_TOKEN
+    : "${AWS_ACCESS_KEY_ID:?}" "${AWS_SECRET_ACCESS_KEY:?}" "${AWS_SESSION_TOKEN:?}"
     popd # "${drivers_tools_dir}/.evergreen/auth_aws"
     expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
   )
