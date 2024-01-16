@@ -103,7 +103,7 @@ void
 _mongoc_write_error_handle_labels (bool cmd_ret,
                                    const bson_error_t *cmd_err,
                                    bson_t *reply,
-                                   mongoc_server_description_t *sd)
+                                   const mongoc_server_description_t *sd)
 {
    bson_error_t error;
 
