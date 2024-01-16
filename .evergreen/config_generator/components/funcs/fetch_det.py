@@ -22,8 +22,8 @@ class FetchDET(Function):
             command_type=EvgCommandType.SETUP,
             working_dir="drivers-evergreen-tools",
             script='''\
-                for file in $(find .evergreen -type f -name \*.sh); do
-                    chmod +x "$file" || exit
+                for file in $(find .evergreen -type f -name "*.sh"); do
+                    chmod +rx "$file" || exit
                 done
             ''',
         ),
