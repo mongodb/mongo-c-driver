@@ -35,3 +35,7 @@ x64
 
 # "dist" is produced during the release process
 dist
+
+# `secrets-export.sh` is created by the drivers-evergreen-tools `setup_secrets.sh` script.
+# Ignore this file to reduce risk of committing credentials during local development.
+secrets-export.sh

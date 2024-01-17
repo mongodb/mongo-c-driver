@@ -196,37 +196,25 @@ all_functions = OD([
         '''),
     )),
     ('run aws tests', Function(
-        shell_mongoc(r'''
-        # Add AWS variables to a file.
-        cat <<EOF > ../drivers-evergreen-tools/.evergreen/auth_aws/aws_e2e_setup.json
+        # Assume role to get AWS secrets.
         {
-            "iam_auth_ecs_account" : "${iam_auth_ecs_account}",
-            "iam_auth_ecs_secret_access_key" : "${iam_auth_ecs_secret_access_key}",
-            "iam_auth_ecs_account_arn": "arn:aws:iam::557821124784:user/authtest_fargate_user",
-            "iam_auth_ecs_cluster": "${iam_auth_ecs_cluster}",
-            "iam_auth_ecs_task_definition": "${iam_auth_ecs_task_definition}",
-            "iam_auth_ecs_subnet_a": "${iam_auth_ecs_subnet_a}",
-            "iam_auth_ecs_subnet_b": "${iam_auth_ecs_subnet_b}",
-            "iam_auth_ecs_security_group": "${iam_auth_ecs_security_group}",
-            "iam_auth_assume_aws_account" : "${iam_auth_assume_aws_account}",
-            "iam_auth_assume_aws_secret_access_key" : "${iam_auth_assume_aws_secret_access_key}",
-            "iam_auth_assume_role_name" : "${iam_auth_assume_role_name}",
-            "iam_auth_ec2_instance_account" : "${iam_auth_ec2_instance_account}",
-            "iam_auth_ec2_instance_secret_access_key" : "${iam_auth_ec2_instance_secret_access_key}",
-            "iam_auth_ec2_instance_profile" : "${iam_auth_ec2_instance_profile}",
-            "iam_auth_assume_web_role_name": "${iam_auth_assume_web_role_name}",
-            "iam_web_identity_issuer": "${iam_web_identity_issuer}",
-            "iam_web_identity_rsa_key": "${iam_web_identity_rsa_key}",
-            "iam_web_identity_jwks_uri": "${iam_web_identity_jwks_uri}",
-            "iam_web_identity_token_file": "${iam_web_identity_token_file}"
-        }
-        EOF
-        ''', silent=True),
+            "command": "ec2.assume_role",
+            "params": {
+                "role_arn": "${aws_test_secrets_role}"
+            }
+        },
+
+        shell_mongoc(r'''
+        pushd ../drivers-evergreen-tools/.evergreen/auth_aws
+        ./setup_secrets.sh drivers/aws_auth
+        popd # ../drivers-evergreen-tools/.evergreen/auth_aws
+        ''', include_expansions_in_env=["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]),
+
         shell_mongoc(r'''
         pushd ../drivers-evergreen-tools/.evergreen/auth_aws
         . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
         bash .evergreen/scripts/run-aws-tests.sh
-        ''', add_expansions_to_env=True)
+        ''', include_expansions_in_env=["TESTCASE"])
     )),
 ])
