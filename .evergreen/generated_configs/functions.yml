@@ -180,7 +180,7 @@ functions:
         working_dir: drivers-evergreen-tools
         args:
           - -c
-          - find .evergreen -type f -name "*.sh" -execdir chmod +rx "{}" \;
+          - find .evergreen -type f -name "*.sh" -exec chmod +rx "{}" \;
     - command: subprocess.exec
       type: setup
       params:
