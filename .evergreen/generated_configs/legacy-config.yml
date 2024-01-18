@@ -14418,7 +14418,7 @@ buildvariants:
   - .test-aws .latest
 - name: mongohouse
   display_name: Mongohouse Test
-  run_on: ubuntu1804-test
+  run_on: ubuntu2204-small
   tasks:
   - debug-compile-sasl-openssl
   - test-mongohouse
