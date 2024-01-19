@@ -1338,6 +1338,11 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
 
    ASSERT (client);
 
+   if (test_framework_getenv_bool ("RUN_MONGOHOUSE_TESTS")) {
+      // mongohouse does not support failpoints.
+      return;
+   }
+
    if (server_id) {
       sd = mongoc_client_get_server_description (client, server_id);
       BSON_ASSERT (sd);
