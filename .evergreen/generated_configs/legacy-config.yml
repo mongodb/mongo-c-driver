@@ -223,18 +223,17 @@ functions:
         set -o errexit
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/build-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/pull-mongohouse-image.sh
   run mongohouse:
   - command: shell.exec
     type: test
     params:
-      background: true
       shell: bash
       script: |-
         set -o errexit
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/run-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/run-mongohouse-image.sh
   test mongohouse:
   - command: shell.exec
     type: test
@@ -14419,7 +14418,7 @@ buildvariants:
   - .test-aws .latest
 - name: mongohouse
   display_name: Mongohouse Test
-  run_on: ubuntu1804-test
+  run_on: ubuntu2204-small
   tasks:
   - debug-compile-sasl-openssl
   - test-mongohouse
