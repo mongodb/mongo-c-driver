@@ -373,6 +373,77 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
    RETURN (client);
 }
 
+static bool
+_mongoc_connect_client_to_servers (mongoc_client_t *client)
+{
+   bool ok = true;
+   bson_error_t error = {0};
+   bson_t *ping_command = BCON_NEW ("ping", BCON_INT32 (1));
+   size_t num_servers = 0;
+   mongoc_server_description_t **descriptions =
+      mongoc_client_get_server_descriptions (client, &num_servers);
+
+   for (size_t i = 0; i < num_servers; i++) {
+      ok = mongoc_client_command_simple_with_server_id (client,
+                                                        "admin",
+                                                        ping_command,
+                                                        NULL,
+                                                        descriptions[i]->id,
+                                                        NULL,
+                                                        &error);
+      if (!ok) {
+         MONGOC_WARNING ("failed to ping server during client pool warmup: %s",
+                         error.message);
+         goto done;
+      }
+   }
+
+done:
+   bson_destroy (ping_command);
+   mongoc_server_descriptions_destroy_all (descriptions, num_servers);
+   return ok;
+}
+
+bool
+mongoc_client_pool_warmup (mongoc_client_pool_t *pool, size_t num_to_warmup)
+{
+   mongoc_client_t **clients = bson_malloc0 (num_to_warmup * sizeof (*clients));
+   bool ok = true;
+
+   BSON_ASSERT (pool);
+
+   for (size_t i = 0; i < num_to_warmup; i++) {
+      bson_mutex_lock (&pool->mutex);
+      size_t size = pool->size;
+      size_t max_pool_size = pool->max_pool_size;
+      bson_mutex_unlock (&pool->mutex);
+
+      if ((size >= max_pool_size) || (size >= num_to_warmup)) {
+         goto done;
+      }
+
+      clients[i] = mongoc_client_pool_pop (pool);
+      if (!clients[i]) {
+         ok = false;
+         goto done;
+      }
+
+      ok = _mongoc_connect_client_to_servers (clients[i]);
+      if (!ok) {
+         goto done;
+      }
+   }
+
+done:
+   for (size_t i = 0; i < num_to_warmup; i++) {
+      if (!clients[i]) {
+         break;
+      }
+      mongoc_client_pool_push (pool, clients[i]);
+   }
+   bson_free (clients);
+   return ok;
+}
 
 void
 mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)

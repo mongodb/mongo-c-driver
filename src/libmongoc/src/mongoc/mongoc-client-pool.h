@@ -49,6 +49,8 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
    BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client);
+MONGOC_EXPORT (bool)
+mongoc_client_pool_warmup (mongoc_client_pool_t *pool, size_t num_to_warmup);
 MONGOC_EXPORT (mongoc_client_t *)
 mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
    BSON_GNUC_WARN_UNUSED_RESULT;
