@@ -470,6 +470,87 @@ test_client_pool_max_pool_size_exceeded (void)
    bson_free (args);
 }
 
+static void
+_test_client_pool_warmup_with_maxpoolsize (size_t max_pool_size,
+                                           size_t num_to_warmup)
+{
+   mongoc_uri_t *uri = NULL;
+   mongoc_client_pool_t *pool = NULL;
+   char *uri_str = bson_strdup_printf ("mongodb://127.0.0.1/?maxpoolsize=%zu",
+                                       max_pool_size);
+
+   uri = mongoc_uri_new (uri_str);
+
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   ASSERT_WITH_MSG (mongoc_client_pool_warmup (pool, num_to_warmup),
+                    "failed to warmup to client pool");
+
+   /* We want the size of the pool to equal the number to warmup unless that
+    * would exceed the max pool size, in which case we want the size of the pool
+    * to equal the max pool size */
+   size_t size = mongoc_client_pool_get_size (pool);
+   BSON_ASSERT (size <= max_pool_size);
+   if (size != num_to_warmup) {
+      BSON_ASSERT (size == max_pool_size);
+      BSON_ASSERT (max_pool_size < num_to_warmup);
+   }
+
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+   mongoc_client_pool_destroy (pool);
+}
+
+static BSON_THREAD_FUN (pool_pop_push_loop, data)
+{
+   mongoc_client_pool_t *pool = data;
+
+   for (size_t i = 0; i < 10; i++) {
+      mongoc_client_t *client = mongoc_client_pool_pop (pool);
+      BSON_ASSERT (client);
+      _mongoc_usleep (i * 100);
+      mongoc_client_pool_push (pool, client);
+   }
+
+   BSON_THREAD_RETURN;
+}
+
+static void
+test_client_pool_warmup (void)
+{
+   mongoc_uri_t *uri = NULL;
+   mongoc_client_pool_t *pool = NULL;
+   const size_t num_threads = 10;
+   const size_t num_to_warmup = 20;
+   bson_thread_t *threads = bson_malloc0 (sizeof (*threads) * num_threads);
+
+   /* Ensure correct handling of max_pool_size when warming up n connections */
+   _test_client_pool_warmup_with_maxpoolsize (1, 1);
+   _test_client_pool_warmup_with_maxpoolsize (10, 2);
+   _test_client_pool_warmup_with_maxpoolsize (10, 20);
+   _test_client_pool_warmup_with_maxpoolsize (100, 100);
+
+   /* Ensure there are no race conditions if you are already using the pool with
+    * clients in different threads */
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/");
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+
+   for (size_t i = 0; i < num_threads; i++) {
+      ASSERT_CMPINT (
+         0, ==, mcommon_thread_create (&threads[i], pool_pop_push_loop, pool));
+   }
+
+   ASSERT_WITH_MSG (mongoc_client_pool_warmup (pool, num_to_warmup),
+                    "failed to warmup to client pool");
+
+   for (size_t i = 0; i < num_threads; i++) {
+      ASSERT_CMPINT (0, ==, mcommon_thread_join (threads[i]));
+   }
+
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   bson_free (threads);
+}
+
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -491,6 +572,8 @@ test_client_pool_install (TestSuite *suite)
 
    TestSuite_Add (
       suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
+
+   TestSuite_Add (suite, "/ClientPool/warmup", test_client_pool_warmup);
 
    TestSuite_AddFull (suite,
                       "/ClientPool/create_client_pool_unused_session",
