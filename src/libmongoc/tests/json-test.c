@@ -1338,7 +1338,7 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
 
    ASSERT (client);
 
-   if (test_framework_getenv_bool ("RUN_MONGOHOUSE_TESTS")) {
+   if (test_framework_is_mongohouse ()) {
       // mongohouse does not support failpoints.
       return;
    }
@@ -1927,7 +1927,7 @@ run_json_general_test (const json_test_config_t *config)
 
       set_auto_encryption_opts (client, &test);
       /* Drop and recreate test database/collection if necessary. */
-      if (!test_framework_getenv_bool ("RUN_MONGOHOUSE_TESTS")) {
+      if (!test_framework_is_mongohouse ()) {
          // mongohouse test user is not authorized to run `drop`.
          _recreate (db_name, collection_name, scenario);
          _recreate (db2_name, collection2_name, scenario);
