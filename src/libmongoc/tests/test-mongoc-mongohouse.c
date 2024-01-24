@@ -221,6 +221,7 @@ test_mongohouse_kill_cursors (void *ctx_unused)
    mongoc_apm_set_command_started_cb (callbacks, cmd_started_cb);
    mongoc_apm_set_command_succeeded_cb (callbacks, cmd_succeeded_cb);
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test);
+   mongoc_apm_callbacks_destroy (callbacks);
 
    coll = mongoc_client_get_collection (client, "test", "driverdata");
 
