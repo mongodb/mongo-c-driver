@@ -44,6 +44,11 @@ mkdir -p $INSTALL_DIR
 
 cd $BUILD_DIR
 
+# Allow reuse of ccache compilation results between different build directories.
+export CCACHE_BASEDIR CCACHE_NOHASHDIR
+CCACHE_BASEDIR="$SCRATCH_DIR"
+CCACHE_NOHASHDIR=1
+
 if [ "$LINK_STATIC" ]; then
   # Our CMake system builds shared and static by default.
   $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF "$SCRATCH_DIR"
@@ -70,6 +75,9 @@ else
   fi
 
 fi
+
+# Revert ccache options, they no longer apply.
+unset CCACHE_BASEDIR CCACHE_NOHASHDIR
 
 ls -l $INSTALL_DIR/lib
 
