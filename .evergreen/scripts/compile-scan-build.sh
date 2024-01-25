@@ -148,10 +148,9 @@ for dir in "${scan_build_directories[@]}"; do
 done
 : "${scan_build_binary:?"could not find a scan-build binary!"}"
 
-# Allow reuse of ccache compilation results between different build directories.
-export CCACHE_BASEDIR CCACHE_NOHASHDIR
-CCACHE_BASEDIR="$(pwd)"
-CCACHE_NOHASHDIR=1
+# Use ccache if able.
+. "${script_dir:?}/find-ccache.sh"
+find_ccache_and_export_vars "$(pwd)" || true
 
 "${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" "${cmake_binary}" "${configure_flags[@]}" .
 
