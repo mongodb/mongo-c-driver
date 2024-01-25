@@ -1072,6 +1072,16 @@ _parse_kms_provider_kmip (bson_t *kms_providers,
    BSON_FOREACH (kms_doc, iter)
    {
       const char *const key = bson_iter_key (&iter);
+      if (strcmp (key, "delegated") == 0) {
+         if (BSON_ITER_HOLDS_BOOL (&iter)) {
+            BSON_ASSERT (
+               BSON_APPEND_BOOL (&child, key, bson_iter_bool (&iter)));
+         } else {
+            test_set_error (error, "expected boolean value for 'delegated'");
+            return false;
+         }
+         continue;
+      }
       const char *const value = bson_iter_utf8 (&iter, NULL);
 
       if (!_validate_string_or_placeholder (&iter, error)) {

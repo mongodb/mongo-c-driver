@@ -1045,6 +1045,198 @@
       ]
     },
     {
+      "description": "rewrap with new KMIP delegated KMS provider",
+      "operations": [
+        {
+          "name": "rewrapManyDataKey",
+          "object": "clientEncryption0",
+          "arguments": {
+            "filter": {
+              "keyAltNames": {
+                "$ne": "kmip_key"
+              }
+            },
+            "opts": {
+              "provider": "kmip",
+              "masterKey": {
+                "delegated": true
+              }
+            }
+          },
+          "expectResult": {
+            "bulkWriteResult": {
+              "insertedCount": 0,
+              "matchedCount": 4,
+              "modifiedCount": 4,
+              "deletedCount": 0,
+              "upsertedCount": 0,
+              "upsertedIds": {},
+              "insertedIds": {
+                "$$unsetOrMatches": {}
+              }
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "find": "datakeys",
+                  "filter": {
+                    "keyAltNames": {
+                      "$ne": "kmip_key"
+                    }
+                  },
+                  "readConcern": {
+                    "level": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "update": "datakeys",
+                  "ordered": true,
+                  "updates": [
+                    {
+                      "q": {
+                        "_id": {
+                          "$$type": "binData"
+                        }
+                      },
+                      "u": {
+                        "$set": {
+                          "masterKey": {
+                            "provider": "kmip",
+                            "delegated": true,
+                            "keyId": {
+                              "$$type": "string"
+                            }
+                          },
+                          "keyMaterial": {
+                            "$$type": "binData"
+                          }
+                        },
+                        "$currentDate": {
+                          "updateDate": true
+                        }
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
+                      },
+                      "upsert": {
+                        "$$unsetOrMatches": false
+                      }
+                    },
+                    {
+                      "q": {
+                        "_id": {
+                          "$$type": "binData"
+                        }
+                      },
+                      "u": {
+                        "$set": {
+                          "masterKey": {
+                            "provider": "kmip",
+                            "delegated": true,
+                            "keyId": {
+                              "$$type": "string"
+                            }
+                          },
+                          "keyMaterial": {
+                            "$$type": "binData"
+                          }
+                        },
+                        "$currentDate": {
+                          "updateDate": true
+                        }
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
+                      },
+                      "upsert": {
+                        "$$unsetOrMatches": false
+                      }
+                    },
+                    {
+                      "q": {
+                        "_id": {
+                          "$$type": "binData"
+                        }
+                      },
+                      "u": {
+                        "$set": {
+                          "masterKey": {
+                            "provider": "kmip",
+                            "delegated": true,
+                            "keyId": {
+                              "$$type": "string"
+                            }
+                          },
+                          "keyMaterial": {
+                            "$$type": "binData"
+                          }
+                        },
+                        "$currentDate": {
+                          "updateDate": true
+                        }
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
+                      },
+                      "upsert": {
+                        "$$unsetOrMatches": false
+                      }
+                    },
+                    {
+                      "q": {
+                        "_id": {
+                          "$$type": "binData"
+                        }
+                      },
+                      "u": {
+                        "$set": {
+                          "masterKey": {
+                            "provider": "kmip",
+                            "delegated": true,
+                            "keyId": {
+                              "$$type": "string"
+                            }
+                          },
+                          "keyMaterial": {
+                            "$$type": "binData"
+                          }
+                        },
+                        "$currentDate": {
+                          "updateDate": true
+                        }
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
+                      },
+                      "upsert": {
+                        "$$unsetOrMatches": false
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "description": "rewrap with new local KMS provider",
       "operations": [
         {
