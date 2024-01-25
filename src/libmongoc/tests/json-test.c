@@ -16,6 +16,7 @@
 
 
 #include <mongoc/mongoc.h>
+#include "bson/bson.h"
 #include "mongoc/mongoc-client-side-encryption-private.h"
 #include "mongoc/mongoc-collection-private.h"
 #include "mongoc/mongoc-util-private.h"
@@ -1617,15 +1618,27 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
                         "CSFLE tests.");
          }
 
-         bson_concat (&kms_providers,
-                      tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' }}"));
+         bson_t *kmip_opts =
+            BCON_NEW ("endpoint", BCON_UTF8 ("localhost:5698"));
 
+         bson_iter_t opts_iter;
+         bson_iter_t delegated_iter;
+         if (bson_iter_init (&opts_iter, &opts) &&
+             bson_iter_find_descendant (
+                &opts_iter, "kmsProviders.kmip.delegated", &delegated_iter) &&
+             BSON_ITER_HOLDS_BOOL (&delegated_iter) &&
+             bson_iter_bool (&delegated_iter)) {
+            bson_append_bool (kmip_opts, "delegated", -1, true);
+         }
+
+         bson_append_document (&kms_providers, "kmip", -1, kmip_opts);
          bson_concat (&tls_opts,
                       tmp_bson ("{'kmip': { 'tlsCAFile': '%s', "
                                 "'tlsCertificateKeyFile': '%s' } }",
                                 kmip_tls_ca_file,
                                 kmip_tls_certificate_key_file));
 
+         bson_free (kmip_opts);
          bson_free (kmip_tls_ca_file);
          bson_free (kmip_tls_certificate_key_file);
       }

@@ -1,0 +1,160 @@
+{
+  "runOn": [
+    {
+      "minServerVersion": "4.1.10"
+    }
+  ],
+  "database_name": "default",
+  "collection_name": "default",
+  "data": [],
+  "json_schema": {
+    "properties": {
+      "encrypted_string_kmip": {
+        "encrypt": {
+          "keyId": [
+            {
+              "$uuid": "7411e9af-c688-4df7-8143-5e60ae96cba5"
+            }
+          ],
+          "bsonType": "string",
+          "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+        }
+      }
+    },
+    "bsonType": "object"
+  },
+  "key_vault_data": [
+    {
+      "_id": {
+        "$uuid": "7411e9af-c688-4df7-8143-5e60ae96cba5"
+      },
+      "keyMaterial": {
+        "$binary": {
+          "base64": "5TLMFWlguBWe5GUESTvOVtkdBsCrynhnV72XRyZ66/nk+EP9/1oEp1t1sg0+vwCTqULHjBiUE6DRx2mYD/Eup1+u2Jgz9/+1sV1drXeOPALNPkSgiZiDbIb67zRi+wTABEcKcegJH+FhmSGxwUoQAiHCsCbcvia5P8tN1lt98YQ=",
+          "subType": "00"
+        }
+      },
+      "creationDate": {
+        "$date": {
+          "$numberLong": "1634220190041"
+        }
+      },
+      "updateDate": {
+        "$date": {
+          "$numberLong": "1634220190041"
+        }
+      },
+      "status": {
+        "$numberInt": "0"
+      },
+      "masterKey": {
+        "provider": "kmip",
+        "delegated": true,
+        "keyId": "11"
+      },
+      "keyAltNames": [
+        "altname",
+        "kmip_altname"
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "description": "Insert a document with auto encryption using KMIP delegated KMS provider",
+      "clientOptions": {
+        "autoEncryptOpts": {
+          "kmsProviders": {
+            "kmip": {
+              "delegated": true
+            }
+          }
+        }
+      },
+      "operations": [
+        {
+          "name": "insertOne",
+          "arguments": {
+            "document": {
+              "_id": 1,
+              "encrypted_string_kmip": "string0"
+            }
+          }
+        }
+      ],
+      "expectations": [
+        {
+          "command_started_event": {
+            "command": {
+              "listCollections": 1,
+              "filter": {
+                "name": "default"
+              }
+            },
+            "command_name": "listCollections"
+          }
+        },
+        {
+          "command_started_event": {
+            "command": {
+              "find": "datakeys",
+              "filter": {
+                "$or": [
+                  {
+                    "_id": {
+                      "$in": [
+                        {
+                          "$uuid": "7411e9af-c688-4df7-8143-5e60ae96cba5"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "keyAltNames": {
+                      "$in": []
+                    }
+                  }
+                ]
+              },
+              "$db": "keyvault"
+            },
+            "command_name": "find"
+          }
+        },
+        {
+          "command_started_event": {
+            "command": {
+              "insert": "default",
+              "documents": [
+                {
+                  "_id": 1,
+                  "encrypted_string_kmip": {
+                    "$binary": {
+                      "base64": "AXQR6a/GiE33gUNeYK6Wy6UCCzx3IomqOxk5kAfJCwoff6J0Z3DArTpTJAkApwL8D1aKaxe6qOq9zsoHS2wu7uy+zbp1kTpclPBYiFREIjHI4A==",
+                      "subType": "06"
+                    }
+                  }
+                }
+              ]
+            },
+            "command_name": "insert"
+          }
+        }
+      ],
+      "outcome": {
+        "collection": {
+          "data": [
+            {
+              "_id": 1,
+              "encrypted_string_kmip": {
+                "$binary": {
+                  "base64": "AXQR6a/GiE33gUNeYK6Wy6UCCzx3IomqOxk5kAfJCwoff6J0Z3DArTpTJAkApwL8D1aKaxe6qOq9zsoHS2wu7uy+zbp1kTpclPBYiFREIjHI4A==",
+                  "subType": "06"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
