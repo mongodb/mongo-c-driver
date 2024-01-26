@@ -21,19 +21,19 @@ buildvariants:
     tasks:
       - name: .cse-matrix-winssl
   - name: earthly-alpine3.18
-    display_name: Alpine 3.18
+    display_name: "Earthly: Alpine 3.18"
     expansions:
       MONGOC_EARTHLY_ENV: alpine3.18
     tasks:
       - name: .earthly-alpine3.18
   - name: earthly-archlinux
-    display_name: Arch Linux
+    display_name: "Earthly: Arch Linux"
     expansions:
       MONGOC_EARTHLY_ENV: archlinux
     tasks:
       - name: .earthly-archlinux
   - name: earthly-u22
-    display_name: Ubuntu 22.04
+    display_name: "Earthly: Ubuntu 22.04"
     expansions:
       MONGOC_EARTHLY_ENV: u22
     tasks:

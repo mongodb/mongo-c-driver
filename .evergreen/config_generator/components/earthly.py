@@ -186,7 +186,7 @@ def variants() -> list[BuildVariant]:
         BuildVariant(
             name=f"earthly-{env}",
             tasks=[EvgTaskRef(name=f".earthly-{env}")],
-            display_name=_ENV_NAMES[env],
+            display_name=f"Earthly: {_ENV_NAMES[env]}",
             expansions={
                 _ENV_PARAM_NAME: env,
             },
