@@ -1,3 +1,8 @@
+libbson 1.26.0 (Unreleased)
+=============================
+
+No changes since 1.25.4. Version incremented to match the libmongoc version.
+
 libbson 1.25.4
 ==============
 
