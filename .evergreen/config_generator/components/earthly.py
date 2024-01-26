@@ -52,8 +52,7 @@ class Configuration(NamedTuple):
         Generate all configurations for all options of our parameters.
         """
         # Iter each configuration parameter:
-        fields: Iterable[tuple[str, type]] = get_type_hints(
-            Configuration).items()
+        fields: Iterable[tuple[str, type]] = get_type_hints(Configuration).items()
         # Generate lists of pairs of parameter names their options:
         all_pairs: Iterable[Iterable[tuple[str, str]]] = (
             # Generate a (key, opt) pair for each option in parameter 'key'
@@ -62,8 +61,7 @@ class Configuration(NamedTuple):
             for key, typ in fields
         )
         # Now generate the cross product of all alternative for all options:
-        matrix: Iterable[dict[str, Any]] = map(
-            dict, itertools.product(*all_pairs))
+        matrix: Iterable[dict[str, Any]] = map(dict, itertools.product(*all_pairs))
         for items in matrix:
             # Convert each item to a Configuration:
             yield Configuration(**items)
