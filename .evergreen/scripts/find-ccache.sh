@@ -49,7 +49,7 @@ find_ccache() {
 
 # Find, export, and set ccache env vars in one command for convenience.
 # Requires base_dir as first argument.
-# Returns a non-zero (false) value a ccache binary is not found.
+# Returns a non-zero (false) value if a ccache binary is not found.
 # Redirects find_ccache's stderr to stdout to avoid output sync issues on EVG.
 find_ccache_and_export_vars() {
   declare base_dir
