@@ -20,24 +20,20 @@ buildvariants:
       DEBUG: "ON"
     tasks:
       - name: .cse-matrix-winssl
-  - name: earthly-alpine3.18
-    display_name: "Earthly: Alpine 3.18"
-    expansions:
-      MONGOC_EARTHLY_ENV: alpine3.18
+  - name: earthly
+    display_name: earthly
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
     tasks:
-      - name: .earthly-alpine3.18
-  - name: earthly-archlinux
-    display_name: "Earthly: Arch Linux"
-    expansions:
-      MONGOC_EARTHLY_ENV: archlinux
-    tasks:
-      - name: .earthly-archlinux
-  - name: earthly-u22
-    display_name: "Earthly: Ubuntu 22.04"
-    expansions:
-      MONGOC_EARTHLY_ENV: u22
-    tasks:
-      - name: .earthly-u22
+      - name: .earthly
   - name: loadbalanced
     display_name: loadbalanced
     tasks:

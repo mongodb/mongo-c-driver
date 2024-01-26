@@ -5,34 +5,29 @@ import itertools
 from typing import Any, Iterable, Literal, TypeVar, get_args, NamedTuple, get_type_hints
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_task import EvgTaskRef
-from ..etc.utils import Task
 from shrub.v3.evg_command import subprocess_exec, EvgCommandType
+
+from config_generator.etc.utils import Task
 
 T = TypeVar("T")
 
-_ENV_PARAM_NAME = "MONGOC_EARTHLY_ENV"
-"The name of the EVG expansion parameter used to key the Earthly build env"
+# Identifiers for environments. These correspond to special '*-env' targets in the Earthfile.
+EnvKey = Literal["ubuntu2204", "alpine3.18", "archlinux"]
 
-EnvKey = Literal["u22", "alpine3.18", "archlinux"]
-"Identifiers for environments. These correspond to special '*-env' targets in the Earthfile."
-
+# A mapping from environment keys to 'pretty' environment names.
 _ENV_NAMES: dict[EnvKey, str] = {
-    "u22": "Ubuntu 22.04",
+    "ubuntu2204": "Ubuntu 22.04",
     "alpine3.18": "Alpine 3.18",
     "archlinux": "Arch Linux",
 }
-"A mapping from environment keys to 'pretty' environment names"
 
-# Other options: SSPI (Windows only), AUTO (not reliably test-able without more environments)
-SASLOption = Literal["Cyrus", "off"]
-"Valid options for the SASL configuration parameter"
-TLSOption = Literal["LibreSSL", "OpenSSL", "off"]
-"Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
+# Other options.
+# Valid options for the SASL configuration parameter.
+SASLOption = Literal["cyrus", "off"]
+# Options for the TLS backend configuration parameter (aka 'ENABLE_SSL').
+TLSOption = Literal["libressl", "openssl", "off"]
+# C++ Driver versions that are under CI test.
 CxxVersion = Literal["master", "r3.8.0"]
-"C++ driver refs that are under CI test"
-
-# A Unicode non-breaking space character
-_BULLET = "\N{Bullet}"
 
 
 class Configuration(NamedTuple):
@@ -49,7 +44,7 @@ class Configuration(NamedTuple):
 
     sasl: SASLOption
     tls: TLSOption
-    test_mongocxx_ref: CxxVersion
+    version: CxxVersion
 
     @classmethod
     def all(cls) -> Iterable[Configuration]:
@@ -57,7 +52,8 @@ class Configuration(NamedTuple):
         Generate all configurations for all options of our parameters.
         """
         # Iter each configuration parameter:
-        fields: Iterable[tuple[str, type]] = get_type_hints(Configuration).items()
+        fields: Iterable[tuple[str, type]] = get_type_hints(
+            Configuration).items()
         # Generate lists of pairs of parameter names their options:
         all_pairs: Iterable[Iterable[tuple[str, str]]] = (
             # Generate a (key, opt) pair for each option in parameter 'key'
@@ -66,14 +62,15 @@ class Configuration(NamedTuple):
             for key, typ in fields
         )
         # Now generate the cross product of all alternative for all options:
-        matrix: Iterable[dict[str, Any]] = map(dict, itertools.product(*all_pairs))
+        matrix: Iterable[dict[str, Any]] = map(
+            dict, itertools.product(*all_pairs))
         for items in matrix:
             # Convert each item to a Configuration:
             yield Configuration(**items)
 
     @property
     def suffix(self) -> str:
-        return f"{_BULLET}".join(f"{k}={v}" for k, v in self._asdict().items())
+        return "-".join(f"{k}-{v}" for k, v in self._asdict().items())
 
 
 def task_filter(env: EnvKey, conf: Configuration) -> bool:
@@ -83,15 +80,15 @@ def task_filter(env: EnvKey, conf: Configuration) -> bool:
     """
     match env, conf:
         # We only need one task with "sasl=off"
-        case "u22", ("off", "OpenSSL", "master"):
+        case "ubuntu2204", ("off", "openssl", "master"):
             return True
         # Other sasl=off tasks we'll just ignore:
         case _, ("off", _tls, _cxx):
             return False
         # Ubuntu does not ship with a LibreSSL package:
-        case e, (_sasl, "LibreSSL", _cxx) if _ENV_NAMES[e].startswith("Ubuntu"):
+        case e, (_sasl, "libressl", _cxx) if e.startswith("ubuntu"):
             return False
-        # Anything else: Allow it to run:
+        # Run all other combinations.
         case _:
             return True
 
@@ -108,17 +105,11 @@ def earthly_task(
     name: str,
     targets: Iterable[str],
     config: Configuration,
+    env: EnvKey,
 ) -> Task | None:
-    # Attach "earthly-xyz" tags to the task to allow build variants to select
-    # these tasks by the environment of that variant.
-    env_tags = sorted(f"earthly-{e}" for e in sorted(envs_for(config)))
-    if not env_tags:
-        # All environments have been excluded for this configuration. This means
-        # the task itself should not be run:
-        return
     # Generate the build-arg arguments based on the configuration options. The
     # NamedTuple field names must match with the ARG keys in the Earthfile!
-    earthly_args = [f"--{key}={val}" for key, val in config._asdict().items()]
+    earthly_args = " ".join(f"--{key}={val}" for key, val in config._asdict().items())
     return Task(
         name=name,
         commands=[
@@ -129,10 +120,8 @@ def earthly_task(
             subprocess_exec(
                 "bash",
                 args=[
-                    "tools/earthly.sh",
-                    "+env-warmup",
-                    f"--env=${{{_ENV_PARAM_NAME}}}",
-                    *earthly_args,
+                    "-c",
+                    f"./tools/earthly.sh +env-warmup --env={env} {earthly_args}",
                 ],
                 working_dir="mongoc",
                 command_type=EvgCommandType.SETUP,
@@ -141,18 +130,14 @@ def earthly_task(
             subprocess_exec(
                 "bash",
                 args=[
-                    "tools/earthly.sh",
-                    "+run",
-                    f"--targets={' '.join(targets)}",
-                    f"--env=${{{_ENV_PARAM_NAME}}}",
-                    *earthly_args,
+                    "-c",
+                    f"./tools/earthly.sh +run --targets=\"{' '.join(targets)}\" --env={env} {earthly_args}",
                 ],
                 working_dir="mongoc",
                 command_type=EvgCommandType.TEST,
             ),
         ],
-        tags=[f"earthly", "pr-merge-gate", *env_tags],
-        run_on=CONTAINER_RUN_DISTROS,
+        tags=["earthly", "pr-merge-gate", f"earthly-{env}"],
     )
 
 
@@ -171,25 +156,22 @@ CONTAINER_RUN_DISTROS = [
 
 def tasks() -> Iterable[Task]:
     for conf in Configuration.all():
-        task = earthly_task(
-            name=f"check:{conf.suffix}",
-            targets=("test-example", "test-cxx-driver"),
-            config=conf,
-        )
-        if task is not None:
-            yield task
+        for env in envs_for(conf):
+            yield earthly_task(
+                name=f"earthly-{env}-{conf.suffix}",
+                targets=("test-example", "test-cxx-driver"),
+                config=conf,
+                env=env,
+            )
 
 
 def variants() -> list[BuildVariant]:
-    envs: tuple[EnvKey, ...] = get_args(EnvKey)
     return [
         BuildVariant(
-            name=f"earthly-{env}",
-            tasks=[EvgTaskRef(name=f".earthly-{env}")],
-            display_name=f"Earthly: {_ENV_NAMES[env]}",
-            expansions={
-                _ENV_PARAM_NAME: env,
-            },
+            name="earthly",
+            tasks=[EvgTaskRef(name=".earthly")],
+            display_name="earthly",
+            # Earthly tasks do not depend on a specific EVG distro.
+            run_on=CONTAINER_RUN_DISTROS,
         )
-        for env in envs
     ]

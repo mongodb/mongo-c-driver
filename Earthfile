@@ -91,12 +91,12 @@ alpine-base:
     DO +INIT
     ARG --required tls
     ARG --required sasl
-    IF str test "$sasl" -ieq "Cyrus"
+    IF str test "$sasl" -ieq "cyrus"
         RUN apk add cyrus-sasl-dev
     END
-    IF str test "$tls" -ieq "LibreSSL" || str test $tls -ieq auto
+    IF str test "$tls" -ieq "libressl" || str test $tls -ieq auto
         RUN apk add libressl-dev
-    ELSE IF str test "$tls" -ieq "OpenSSL"
+    ELSE IF str test "$tls" -ieq "openssl"
         RUN apk add openssl-dev
     END
 
@@ -124,10 +124,10 @@ archlinux-base:
     DO +INIT
     ARG tls
     # We don't install libsasl2 here, because it's pre-installed on Arch
-    IF str test "$tls" -ieq "LibreSSL" || str test $tls -ieq auto
+    IF str test "$tls" -ieq "libressl" || str test $tls -ieq auto
         RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet libressl
     END
-    IF str test "$tls" -ieq "OpenSSL" || str test $tls -ieq auto
+    IF str test "$tls" -ieq "openssl" || str test $tls -ieq auto
         RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet openssl
     END
 
@@ -149,25 +149,25 @@ ubuntu-base:
     DO +INIT
     ARG --required sasl
     ARG --required tls
-    IF str test "$sasl" -ieq Cyrus
+    IF str test "$sasl" -ieq cyrus
         RUN apt-get update && apt-get -y install libsasl2-dev
     END
-    IF str test "$tls" -ieq LibreSSL
-        RUN echo "Ubuntu does not support LibreSSL" && exit 1
-    ELSE IF str test $tls -ieq OpenSSL || str test $tls -ieq auto
+    IF str test "$tls" -ieq libressl
+        RUN echo "Ubuntu does not support libressl" && exit 1
+    ELSE IF str test $tls -ieq openssl || str test $tls -ieq auto
         RUN apt-get update && apt-get -y install libssl-dev
     END
 
-# u22-build-env :
+# ubuntu2204-build-env :
 #   A build environment based on Ubuntu 22.04
-u22-build-env:
+ubuntu2204-build-env:
     FROM +ubuntu-base --version=22.04
     # Build dependencies:
     RUN apt-get update && apt-get -y install \
             ninja-build gcc ccache libsnappy-dev zlib1g-dev
     DO +PREP_CMAKE
 
-u22-test-env:
+ubuntu2204-test-env:
     FROM +ubuntu-base --version=22.04
     RUN apt-get update && apt-get -y install libsnappy1v5 libsasl2-2 ninja-build
     DO +PREP_CMAKE
@@ -214,20 +214,20 @@ test-example:
 #   Clone and build the mongo-cxx-driver project, using the current mongo-c-driver
 #   for the build.
 #
-# The “--test_mongocxx_ref” argument must be a clone-able Git ref. The driver source
+# The “--version” argument must be a clone-able Git ref. The driver source
 # will be cloned at this point and built.
 #
 # The “--cxx_version_current” argument will be inserted into the VERSION_CURRENT
 # file for the cxx-driver build.
 test-cxx-driver:
     ARG --required env
-    ARG --required test_mongocxx_ref
+    ARG --required version
     ARG cxx_version_current=0.0.0
     FROM +$env-build-env
     COPY +build/root /opt/mongo-c-driver
     LET source=/opt/mongo-cxx-driver/src
     LET build=/opt/mongo-cxx-driver/bld
-    GIT CLONE --branch=$test_mongocxx_ref https://github.com/mongodb/mongo-cxx-driver.git $source
+    GIT CLONE --branch=$version https://github.com/mongodb/mongo-cxx-driver.git $source
     RUN echo $cxx_version_current > $source/build/VERSION_CURRENT
     RUN cmake -S $source -B $build -G Ninja -D CMAKE_PREFIX_PATH=/opt/mongo-c-driver -D CMAKE_CXX_STANDARD=17
     ENV CCACHE_HOME=/root/.cache/ccache
@@ -236,14 +236,14 @@ test-cxx-driver:
 
 # Simultaneously builds and tests multiple different platforms
 multibuild:
-    BUILD +test-example --env=u22 --env=archlinux --env=alpine3.18 \
-            --sasl=Cyrus --sasl=off \
-            --tls=OpenSSL --tls=off
-    # Note: At time of writing, Ubuntu does not support LibreSSL, so run those
+    BUILD +test-example --env=ubuntu2204 --env=archlinux --env=alpine3.18 \
+            --sasl=cyrus --sasl=off \
+            --tls=openssl --tls=off
+    # Note: At time of writing, Ubuntu does not support libressl, so run those
     #   tests on a separate BUILD line that does not include Ubuntu:
     BUILD +test-example --env=archlinux --env=alpine3.18 \
-            --sasl=Cyrus --sasl=off \
-            --tls=LibreSSL
+            --sasl=cyrus --sasl=off \
+            --tls=libressl
 
 # test-vcpkg-classic :
 #   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and

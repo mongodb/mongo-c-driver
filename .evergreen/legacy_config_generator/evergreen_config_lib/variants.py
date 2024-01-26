@@ -75,7 +75,7 @@ all_variants = [
             "install-libmongoc-after-libbson",
         ],
         {
-            # Disable the MongoDB legacy shell download, which is not available in 5.0 for u22
+            # Disable the MongoDB legacy shell download, which is not available in 5.0 for ubuntu2204
             "SKIP_LEGACY_SHELL": "1"
         },
         tags=["pr-merge-gate"],
