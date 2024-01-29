@@ -12,12 +12,12 @@ from config_generator.etc.utils import Task
 T = TypeVar("T")
 
 # Identifiers for environments. These correspond to special '*-env' targets in the Earthfile.
-EnvKey = Literal["ubuntu2204", "alpine3.18", "archlinux"]
+EnvKey = Literal["ubuntu2204", "alpine3.19", "archlinux"]
 
 # A mapping from environment keys to 'pretty' environment names.
 _ENV_NAMES: dict[EnvKey, str] = {
     "ubuntu2204": "Ubuntu 22.04",
-    "alpine3.18": "Alpine 3.18",
+    "alpine3.19": "Alpine 3.19",
     "archlinux": "Arch Linux",
 }
 
