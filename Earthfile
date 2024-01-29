@@ -31,7 +31,7 @@ PREP_CMAKE:
 #   Create the VERSION_CURRENT file using Git. This file is exported as an artifact at /
 version-current:
     # Run on Alpine, which does this work the fastest
-    FROM alpine:3
+    FROM alpine:3.18
     # Install Python and Git, the only things required for this job:
     RUN apk add git python3
     COPY --dir .git/ build/calc_release_version.py /s/
@@ -110,13 +110,13 @@ alpine-test-env-base:
     FROM +alpine-base --version=$version
     RUN apk add snappy
 
-# alpine3-build-env :
-#   A build environment based on Alpine Linux version 3
-alpine3-build-env:
-    FROM +alpine-build-env-base --version=3
+# alpine3.18-build-env :
+#   A build environment based on Alpine Linux version 3.18
+alpine3.18-build-env:
+    FROM +alpine-build-env-base --version=3.18
 
-alpine3-test-env:
-    FROM +alpine-test-env-base --version=3
+alpine3.18-test-env:
+    FROM +alpine-test-env-base --version=3.18
 
 archlinux-base:
     FROM archlinux
@@ -236,12 +236,12 @@ test-cxx-driver:
 
 # Simultaneously builds and tests multiple different platforms
 multibuild:
-    BUILD +test-example --env=ubuntu2204 --env=archlinux --env=alpine3 \
+    BUILD +test-example --env=ubuntu2204 --env=archlinux --env=alpine3.18 \
             --sasl=cyrus --sasl=off \
             --tls=openssl --tls=off
     # Note: At time of writing, Ubuntu does not support libressl, so run those
     #   tests on a separate BUILD line that does not include Ubuntu:
-    BUILD +test-example --env=archlinux --env=alpine3 \
+    BUILD +test-example --env=archlinux --env=alpine3.18 \
             --sasl=cyrus --sasl=off \
             --tls=libressl
 
@@ -272,7 +272,7 @@ test-vcpkg-manifest-mode:
         make test-manifest-mode
 
 vcpkg-base:
-    FROM alpine:3
+    FROM alpine:3.18
     RUN apk add cmake curl gcc g++ musl-dev ninja-is-really-ninja zip unzip tar \
                 build-base git pkgconf perl bash linux-headers
     ENV VCPKG_ROOT=/opt/vcpkg-git

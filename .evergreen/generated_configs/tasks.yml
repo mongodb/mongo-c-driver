@@ -1985,8 +1985,8 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: earthly-alpine3-sasl-cyrus-tls-libressl-version-master
-    tags: [earthly, pr-merge-gate, earthly-alpine3]
+  - name: earthly-alpine3.18-sasl-cyrus-tls-libressl-version-master
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18]
     commands:
       - command: subprocess.exec
         type: setup
@@ -1995,7 +1995,7 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +env-warmup --env=alpine3 --sasl=cyrus --tls=libressl --version=master
+            - ./tools/earthly.sh +env-warmup --env=alpine3.18 --sasl=cyrus --tls=libressl --version=master
       - command: subprocess.exec
         type: test
         params:
@@ -2003,9 +2003,9 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3 --sasl=cyrus --tls=libressl --version=master
-  - name: earthly-alpine3-sasl-cyrus-tls-libressl-version-r3.8.0
-    tags: [earthly, pr-merge-gate, earthly-alpine3]
+            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3.18 --sasl=cyrus --tls=libressl --version=master
+  - name: earthly-alpine3.18-sasl-cyrus-tls-libressl-version-r3.8.0
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18]
     commands:
       - command: subprocess.exec
         type: setup
@@ -2014,7 +2014,7 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +env-warmup --env=alpine3 --sasl=cyrus --tls=libressl --version=r3.8.0
+            - ./tools/earthly.sh +env-warmup --env=alpine3.18 --sasl=cyrus --tls=libressl --version=r3.8.0
       - command: subprocess.exec
         type: test
         params:
@@ -2022,9 +2022,9 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3 --sasl=cyrus --tls=libressl --version=r3.8.0
-  - name: earthly-alpine3-sasl-cyrus-tls-off-version-master
-    tags: [earthly, pr-merge-gate, earthly-alpine3]
+            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3.18 --sasl=cyrus --tls=libressl --version=r3.8.0
+  - name: earthly-alpine3.18-sasl-cyrus-tls-off-version-master
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18]
     commands:
       - command: subprocess.exec
         type: setup
@@ -2033,7 +2033,7 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +env-warmup --env=alpine3 --sasl=cyrus --tls=off --version=master
+            - ./tools/earthly.sh +env-warmup --env=alpine3.18 --sasl=cyrus --tls=off --version=master
       - command: subprocess.exec
         type: test
         params:
@@ -2041,9 +2041,9 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3 --sasl=cyrus --tls=off --version=master
-  - name: earthly-alpine3-sasl-cyrus-tls-off-version-r3.8.0
-    tags: [earthly, pr-merge-gate, earthly-alpine3]
+            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3.18 --sasl=cyrus --tls=off --version=master
+  - name: earthly-alpine3.18-sasl-cyrus-tls-off-version-r3.8.0
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18]
     commands:
       - command: subprocess.exec
         type: setup
@@ -2052,7 +2052,7 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +env-warmup --env=alpine3 --sasl=cyrus --tls=off --version=r3.8.0
+            - ./tools/earthly.sh +env-warmup --env=alpine3.18 --sasl=cyrus --tls=off --version=r3.8.0
       - command: subprocess.exec
         type: test
         params:
@@ -2060,9 +2060,9 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3 --sasl=cyrus --tls=off --version=r3.8.0
-  - name: earthly-alpine3-sasl-cyrus-tls-openssl-version-master
-    tags: [earthly, pr-merge-gate, earthly-alpine3]
+            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3.18 --sasl=cyrus --tls=off --version=r3.8.0
+  - name: earthly-alpine3.18-sasl-cyrus-tls-openssl-version-master
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18]
     commands:
       - command: subprocess.exec
         type: setup
@@ -2071,7 +2071,7 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +env-warmup --env=alpine3 --sasl=cyrus --tls=openssl --version=master
+            - ./tools/earthly.sh +env-warmup --env=alpine3.18 --sasl=cyrus --tls=openssl --version=master
       - command: subprocess.exec
         type: test
         params:
@@ -2079,9 +2079,9 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3 --sasl=cyrus --tls=openssl --version=master
-  - name: earthly-alpine3-sasl-cyrus-tls-openssl-version-r3.8.0
-    tags: [earthly, pr-merge-gate, earthly-alpine3]
+            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3.18 --sasl=cyrus --tls=openssl --version=master
+  - name: earthly-alpine3.18-sasl-cyrus-tls-openssl-version-r3.8.0
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18]
     commands:
       - command: subprocess.exec
         type: setup
@@ -2090,7 +2090,7 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +env-warmup --env=alpine3 --sasl=cyrus --tls=openssl --version=r3.8.0
+            - ./tools/earthly.sh +env-warmup --env=alpine3.18 --sasl=cyrus --tls=openssl --version=r3.8.0
       - command: subprocess.exec
         type: test
         params:
@@ -2098,7 +2098,7 @@ tasks:
           working_dir: mongoc
           args:
             - -c
-            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3 --sasl=cyrus --tls=openssl --version=r3.8.0
+            - ./tools/earthly.sh +run --targets="test-example test-cxx-driver" --env=alpine3.18 --sasl=cyrus --tls=openssl --version=r3.8.0
   - name: earthly-archlinux-sasl-cyrus-tls-libressl-version-master
     tags: [earthly, pr-merge-gate, earthly-archlinux]
     commands:
