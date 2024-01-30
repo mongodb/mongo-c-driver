@@ -2526,7 +2526,6 @@ _mongoc_topology_description_clear_connection_pool (mongoc_topology_description_
    mc_tpl_sd_increment_generation (sd, service_id);
 }
 
-
 void
 mongoc_deprioritized_servers_add_if_sharded (mongoc_deprioritized_servers_t *ds,
                                              mongoc_topology_description_type_t topology_type,
@@ -2539,4 +2538,29 @@ mongoc_deprioritized_servers_add_if_sharded (mongoc_deprioritized_servers_t *ds,
       TRACE ("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
       mongoc_deprioritized_servers_add (ds, sd);
    }
+}
+
+bool
+_append_server_info (void *sd, void *info)
+{
+   bson_string_t *server_info = mongoc_server_description_info ((mongoc_server_description_t *) sd);
+   bson_string_append_printf ((bson_string_t *) info, "<%s>, ", server_info->str);
+   bson_string_free (server_info, true);
+   return true;
+}
+
+bson_string_t *
+_mongoc_topology_description_info (const mongoc_topology_description_t *td)
+{
+   bson_string_t *info = bson_string_new (NULL);
+   if (!td->_servers_ || td->_servers_->items_len == 0) {
+      bson_string_append (info, "No available servers.");
+      return info;
+   }
+
+   bson_string_append_printf (info, "Topology type: %s, servers: [", mongoc_topology_description_type (td));
+   mongoc_set_for_each (td->_servers_, _append_server_info, (void *) info);
+   bson_string_append_c (info, ']');
+
+   return info;
 }
