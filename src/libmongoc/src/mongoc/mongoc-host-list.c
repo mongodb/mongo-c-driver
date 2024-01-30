@@ -356,12 +356,14 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       }
 
       mongoc_lowercase (link_->host, link_->host);
-      bson_snprintf (link_->host_and_port,
-                     sizeof link_->host_and_port,
-                     "[%s]:%hu",
-                     link_->host,
-                     link_->port);
-
+      int req = bson_snprintf (link_->host_and_port,
+                               sizeof link_->host_and_port,
+                               "[%s]:%hu",
+                               link_->host,
+                               link_->port);
+      BSON_ASSERT (bson_in_range_size_t_signed (req));
+      // Use `<`, not `<=` to account for NULL byte.
+      BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
    } else if (strchr (host, '/') && strstr (host, ".sock")) {
       link_->family = AF_UNIX;
       bson_strncpy (link_->host_and_port, link_->host, host_len + 1);
@@ -370,11 +372,14 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       link_->family = AF_UNSPEC;
 
       mongoc_lowercase (link_->host, link_->host);
-      bson_snprintf (link_->host_and_port,
-                     sizeof link_->host_and_port,
-                     "%s:%hu",
-                     link_->host,
-                     link_->port);
+      int req = bson_snprintf (link_->host_and_port,
+                               sizeof link_->host_and_port,
+                               "%s:%hu",
+                               link_->host,
+                               link_->port);
+      BSON_ASSERT (bson_in_range_size_t_signed (req));
+      // Use `<`, not `<=` to account for NULL byte.
+      BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
    }
 
    link_->next = NULL;
