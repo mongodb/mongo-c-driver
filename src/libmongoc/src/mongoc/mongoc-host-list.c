@@ -358,7 +358,7 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       mongoc_lowercase (link_->host, link_->host);
       int req = bson_snprintf (link_->host_and_port,
                                sizeof link_->host_and_port,
-                               "[%s]:%hu",
+                               "[%s]:%" PRIu16,
                                link_->host,
                                link_->port);
       BSON_ASSERT (bson_in_range_size_t_signed (req));
@@ -374,7 +374,7 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       mongoc_lowercase (link_->host, link_->host);
       int req = bson_snprintf (link_->host_and_port,
                                sizeof link_->host_and_port,
-                               "%s:%hu",
+                               "%s:%" PRIu16,
                                link_->host,
                                link_->port);
       BSON_ASSERT (bson_in_range_size_t_signed (req));
