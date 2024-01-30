@@ -289,7 +289,7 @@ test_int32 (void)
    bson_init (&bcon);
    bson_init (&expected);
 
-   bson_append_int32 (&expected, "foo", -1, 100);
+   bson_append_int32 (&expected, "foobar", 3, 100);
 
    BCON_APPEND (&bcon, "foo", BCON_INT32 (100));
 
