@@ -107,6 +107,15 @@ test_bson_string_append_printf (void)
    bson_string_free (str, true);
 }
 
+static void
+test_bson_string_new_printf (void)
+{
+   bson_string_t *str =
+      bson_string_new_printf ("%s %d %d %d", "testing", 1, 2, 3);
+   BSON_ASSERT (!strcmp (str->str, "testing 1 2 3"));
+   bson_string_free (str, true);
+}
+
 
 static void
 test_bson_string_append_unichar (void)
