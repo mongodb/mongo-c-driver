@@ -2782,10 +2782,20 @@ test_parses_long_ipv6 (void)
 
       char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
       char *uri_string = bson_strdup_printf ("mongodb://%s", host_and_port);
+      capture_logs (true);
       mongoc_uri_t *uri = mongoc_uri_new_with_error (uri_string, &error);
+      // Expect error parsing IPv6 literal is logged.
+      ASSERT_CAPTURED_LOG ("parsing IPv6",
+                           MONGOC_LOG_LEVEL_ERROR,
+                           "IPv6 literal provided in URI is too long");
+      capture_logs (false);
 
-      // Expect an error.
-      ASSERT (!uri); // Bug: No error occurs.
+      // Expect a generic parsing error is also returned.
+      ASSERT (!uri);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid host string in URI");
 
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
