@@ -1,7 +1,7 @@
 /*
  * Copyright 2015 MongoDB Inc.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
+ *
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include <inttypes.h> // PRIu16
 
 #include "mongoc-host-list-private.h"
 /* strcasecmp on windows */
@@ -343,13 +345,27 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
    if (strchr (host, ':')) {
       link_->family = AF_INET6;
 
-      mongoc_lowercase (link_->host, link_->host);
-      bson_snprintf (link_->host_and_port,
-                     sizeof link_->host_and_port,
-                     "[%s]:%hu",
-                     link_->host,
-                     link_->port);
+      // Check that IPv6 literal is two less than the max to account for `[` and
+      // `]` added below.
+      if (host_len > BSON_HOST_NAME_MAX - 2) {
+         bson_set_error (
+            error,
+            MONGOC_ERROR_STREAM,
+            MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+            "IPv6 literal provided in URI is too long, max is %d chars",
+            BSON_HOST_NAME_MAX - 2);
+         return false;
+      }
 
+      mongoc_lowercase (link_->host, link_->host);
+      int req = bson_snprintf (link_->host_and_port,
+                               sizeof link_->host_and_port,
+                               "[%s]:%" PRIu16,
+                               link_->host,
+                               link_->port);
+      BSON_ASSERT (bson_in_range_size_t_signed (req));
+      // Use `<`, not `<=` to account for NULL byte.
+      BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
    } else if (strchr (host, '/') && strstr (host, ".sock")) {
       link_->family = AF_UNIX;
       bson_strncpy (link_->host_and_port, link_->host, host_len + 1);
@@ -358,11 +374,14 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       link_->family = AF_UNSPEC;
 
       mongoc_lowercase (link_->host, link_->host);
-      bson_snprintf (link_->host_and_port,
-                     sizeof link_->host_and_port,
-                     "%s:%hu",
-                     link_->host,
-                     link_->port);
+      int req = bson_snprintf (link_->host_and_port,
+                               sizeof link_->host_and_port,
+                               "%s:%" PRIu16,
+                               link_->host,
+                               link_->port);
+      BSON_ASSERT (bson_in_range_size_t_signed (req));
+      // Use `<`, not `<=` to account for NULL byte.
+      BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
    }
 
    link_->next = NULL;
