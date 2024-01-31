@@ -1225,15 +1225,3 @@ mongoc_server_description_has_service_id (const mongoc_server_description_t *des
    }
    return true;
 }
-
-bson_string_t *
-mongoc_server_description_info (const mongoc_server_description_t *sd)
-{
-   bson_string_t *info = bson_string_new (NULL);
-   bson_string_append_printf (info,
-                              "%s server_type: %s, rtt: %ld",
-                              sd->host.host_and_port,
-                              mongoc_server_description_type (sd),
-                              sd->round_trip_time_msec);
-   return info;
-}

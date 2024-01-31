@@ -56,7 +56,6 @@ struct _mongoc_topology_description_t {
     * see Driver Sessions Spec. */
    bson_t cluster_time;
 
-
    /* smallest seen logicalSessionTimeoutMinutes, or -1 if any server has no
     * logicalSessionTimeoutMinutes. see Server Discovery and Monitoring Spec */
    int64_t session_timeout_minutes;
@@ -180,10 +179,5 @@ void
 mongoc_deprioritized_servers_add_if_sharded (mongoc_deprioritized_servers_t *ds,
                                              mongoc_topology_description_type_t topology_type,
                                              const mongoc_server_description_t *sd);
-
-
-/* Generate human-readable description of the topology */
-bson_string_t *
-_mongoc_topology_description_info (const mongoc_topology_description_t *td);
 
 #endif /* MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H */
