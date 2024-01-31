@@ -1168,6 +1168,9 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   bool *must_use_primary,
                                   bson_error_t *error)
 {
+   static const char *timeout_msg =
+      "No suitable servers found: `serverSelectionTimeoutMS` expired";
+
    mongoc_topology_scanner_t *ts;
    int r;
    int64_t local_threshold_ms;
@@ -1179,8 +1182,10 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    int64_t heartbeat_msec;
    uint32_t server_id;
    mc_shared_tpld td = mc_tpld_take_ref (topology);
-   const char *timeout_msg =
-      "No suitable servers found: `serverSelectionTimeoutMS` expired.";
+
+   bson_string_t *topology_type = bson_string_new (". Topology type: ");
+   bson_string_append (topology_type,
+                       mongoc_topology_description_type (td.ptr));
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
@@ -1241,15 +1246,10 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
             if (scan_ready > expire_at && !try_once) {
                /* selection timeout will expire before min heartbeat passes */
-               bson_string_t *topology_info =
-                  _mongoc_topology_description_info (td.ptr);
-               bson_string_t *msg = bson_string_new_printf (
-                  "%s %s", timeout_msg, topology_info->str);
-               _mongoc_server_selection_error (msg->str, &scanner_error, error);
+               _mongoc_server_selection_error (
+                  timeout_msg, &scanner_error, error);
 
                server_id = 0;
-               bson_string_free (topology_info, true);
-               bson_string_free (msg, true);
                goto done;
             }
 
@@ -1402,6 +1402,10 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    }
 
 done:
+   if (error) {
+      _mongoc_error_append (error, topology_type->str);
+   }
+   bson_string_free (topology_type, true);
    mc_tpld_drop_ref (&td);
    return server_id;
 }
@@ -1977,7 +1981,6 @@ static void
 _topology_collect_errors (const mongoc_topology_description_t *td,
                           bson_error_t *error_out)
 {
-   // zz
    const mongoc_server_description_t *server_description;
    bson_string_t *error_message;
 
@@ -1993,9 +1996,8 @@ _topology_collect_errors (const mongoc_topology_description_t *td,
          if (error_message->len > 0) {
             bson_string_append_c (error_message, ' ');
          }
-         bson_string_append_printf (error_message,
-                                    "[%s (SERVER TYPE)]",
-                                    server_description->error.message);
+         bson_string_append_printf (
+            error_message, "[%s]", server_description->error.message);
          /* The last error's code and domain wins. */
          error_out->code = error->code;
          error_out->domain = error->domain;

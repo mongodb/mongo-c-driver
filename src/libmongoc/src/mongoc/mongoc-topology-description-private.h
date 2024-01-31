@@ -55,7 +55,6 @@ struct _mongoc_topology_description_t {
     * see Driver Sessions Spec. */
    bson_t cluster_time;
 
-
    /* smallest seen logicalSessionTimeoutMinutes, or -1 if any server has no
     * logicalSessionTimeoutMinutes. see Server Discovery and Monitoring Spec */
    int64_t session_timeout_minutes;
@@ -194,10 +193,5 @@ _mongoc_topology_description_clear_connection_pool (
    mongoc_topology_description_t *td,
    uint32_t server_id,
    const bson_oid_t *service_id);
-
-
-/* Generate human-readable description of the topology */
-bson_string_t *
-_mongoc_topology_description_info (const mongoc_topology_description_t *td);
 
 #endif /* MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H */

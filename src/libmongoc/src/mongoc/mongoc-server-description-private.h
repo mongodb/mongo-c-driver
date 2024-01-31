@@ -241,8 +241,4 @@ bool
 mongoc_server_description_has_service_id (
    const mongoc_server_description_t *description);
 
-/* Generate human-readable description of the server */
-bson_string_t *
-mongoc_server_description_info (const mongoc_server_description_t *sd);
-
 #endif
