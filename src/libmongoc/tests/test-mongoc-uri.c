@@ -2740,6 +2740,70 @@ test_casing_options (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_parses_long_ipv6 (void)
+{
+   // Test parsing long malformed IPv6 literals. This is a regression test for
+   // CDRIVER-4816.
+   bson_error_t error;
+
+   // Test the largest permitted IPv6 literal.
+   {
+      // Construct a string of repeating `:`.
+      bson_string_t *host = bson_string_new (NULL);
+      for (int i = 0; i < BSON_HOST_NAME_MAX - 2; i++) {
+         // Max IPv6 literal is two less due to including `[` and `]`.
+         bson_string_append (host, ":");
+      }
+
+      char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
+      char *uri_string = bson_strdup_printf ("mongodb://%s", host_and_port);
+      mongoc_uri_t *uri = mongoc_uri_new_with_error (uri_string, &error);
+      ASSERT_OR_PRINT (uri, error);
+      const mongoc_host_list_t *hosts = mongoc_uri_get_hosts (uri);
+      ASSERT_CMPSTR (hosts->host, host->str);
+      ASSERT_CMPSTR (hosts->host_and_port, host_and_port);
+      ASSERT_CMPUINT16 (hosts->port, ==, 27017);
+      ASSERT (!hosts->next);
+
+      mongoc_uri_destroy (uri);
+      bson_free (uri_string);
+      bson_free (host_and_port);
+      bson_string_free (host, true /* free_segment */);
+   }
+
+   // Test one character more than the largest IPv6 literal.
+   {
+      // Construct a string of repeating `:`.
+      bson_string_t *host = bson_string_new (NULL);
+      for (int i = 0; i < BSON_HOST_NAME_MAX - 2 + 1; i++) {
+         bson_string_append (host, ":");
+      }
+
+      char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
+      char *uri_string = bson_strdup_printf ("mongodb://%s", host_and_port);
+      capture_logs (true);
+      mongoc_uri_t *uri = mongoc_uri_new_with_error (uri_string, &error);
+      // Expect error parsing IPv6 literal is logged.
+      ASSERT_CAPTURED_LOG ("parsing IPv6",
+                           MONGOC_LOG_LEVEL_ERROR,
+                           "IPv6 literal provided in URI is too long");
+      capture_logs (false);
+
+      // Expect a generic parsing error is also returned.
+      ASSERT (!uri);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid host string in URI");
+
+      mongoc_uri_destroy (uri);
+      bson_free (uri_string);
+      bson_free (host_and_port);
+      bson_string_free (host, true /* free_segment */);
+   }
+}
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -2774,4 +2838,5 @@ test_uri_install (TestSuite *suite)
                   "/Uri/one_tls_option_enables_tls",
                   test_one_tls_option_enables_tls);
    TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
+   TestSuite_Add (suite, "/Uri/parses_long_ipv6", test_parses_long_ipv6);
 }

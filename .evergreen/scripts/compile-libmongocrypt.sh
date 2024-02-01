@@ -9,13 +9,13 @@ compile_libmongocrypt() {
   # libmongocrypt's kms-message in `src/kms-message`. Run
   # `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no
   # divergence in the copied files.
-  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.8.0 || return
 
-  # Remove this workaround once fcf2b5b5 is included in the minimum libmongocrypt commit.
+  # TODO: once 1.9.0 is released (containing MONGOCRYPT-605) replace the following with:
+  # git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.9.0 || return
   {
-    git -C libmongocrypt fetch -q origin master || return
-    git -C libmongocrypt cherry-pick --no-commit fcf2b5b5 || return
-    git -C libmongocrypt diff HEAD
+    git clone -q https://github.com/mongodb/libmongocrypt || return
+    # Check out commit containing MONGOCRYPT-605
+    git -C libmongocrypt checkout c87cc3489c9a68875ff7fab541154841469991fb
   }
 
   declare -a crypt_cmake_flags=(
@@ -23,6 +23,7 @@ compile_libmongocrypt() {
     "-DBUILD_TESTING=OFF"
     "-DENABLE_ONLINE_TESTS=OFF"
     "-DENABLE_MONGOC=OFF"
+    "-DBUILD_VERSION=1.9.0-pre"
   )
 
   DEBUG="0" \

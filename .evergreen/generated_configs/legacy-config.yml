@@ -223,18 +223,17 @@ functions:
         set -o errexit
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/build-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/pull-mongohouse-image.sh
   run mongohouse:
   - command: shell.exec
     type: test
     params:
-      background: true
       shell: bash
       script: |-
         set -o errexit
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/run-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/run-mongohouse-image.sh
   test mongohouse:
   - command: shell.exec
     type: test
@@ -259,9 +258,8 @@ functions:
         wait_for_mongohouse 27017 || exit
         echo "Waiting for mongohouse to start... done."
         pgrep -a "mongohouse"
-        export RUN_MONGOHOUSE_TESTS=true
+        export RUN_MONGOHOUSE_TESTS=ON
         ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
-        unset RUN_MONGOHOUSE_TESTS
   run aws tests:
   - command: ec2.assume_role
     params:
@@ -1786,6 +1784,10 @@ tasks:
         export distro_id='${distro_id}' # Required by find_cmake_latest.
         . .evergreen/scripts/find-cmake-latest.sh
         cmake_binary="$(find_cmake_latest)"
+        # Allow reuse of ccache compilation results between different build directories.
+        export CCACHE_BASEDIR CCACHE_NOHASHDIR
+        CCACHE_BASEDIR="$(pwd)"
+        CCACHE_NOHASHDIR=1
         # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
         export CC='${CC}'
         "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
@@ -14419,7 +14421,7 @@ buildvariants:
   - .test-aws .latest
 - name: mongohouse
   display_name: Mongohouse Test
-  run_on: ubuntu1804-test
+  run_on: ubuntu2204-small
   tasks:
   - debug-compile-sasl-openssl
   - test-mongohouse
