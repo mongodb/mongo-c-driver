@@ -107,6 +107,7 @@ test_bson_string_append_printf (void)
    bson_string_free (str, true);
 }
 
+
 static void
 test_bson_string_new_printf (void)
 {
@@ -322,6 +323,8 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/append_c", test_bson_string_append_c);
    TestSuite_Add (
       suite, "/bson/string/append_printf", test_bson_string_append_printf);
+   TestSuite_Add (
+      suite, "/bson/string/new_printf", test_bson_string_new_printf);
    TestSuite_Add (
       suite, "/bson/string/append_unichar", test_bson_string_append_unichar);
    TestSuite_Add (suite, "/bson/string/strdup", test_bson_strdup);
