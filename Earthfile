@@ -87,10 +87,12 @@ alpine-base:
     # XXX: On Alpine, we just use the system's CMake. At time of writing, it is
     # very up-to-date and much faster than building our own from source (since
     # Kitware does not (yet) provide libmuslc builds of CMake)
-    RUN apk add cmake ninja-is-really-ninja gcc musl-dev g++
+    RUN apk add cmake ninja-is-really-ninja gcc musl-dev g++ clang compiler-rt
     DO +INIT
     ARG --required tls
     ARG --required sasl
+    ARG --required c_compiler
+    ENV CC=$c_compiler
     IF str test "$sasl" -ieq "Cyrus"
         RUN apk add cyrus-sasl-dev
     END
@@ -120,14 +122,17 @@ alpine3.18-test-env:
 
 archlinux-base:
     FROM archlinux
-    RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet ninja gcc snappy
+    RUN pacman-key --init
+    RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet ninja gcc snappy clang
     DO +INIT
     ARG tls
+    ARG --required c_compiler
+    ENV CC=$c_compiler
     # We don't install libsasl2 here, because it's pre-installed on Arch
-    IF str test "$tls" -ieq "LibreSSL" || str test $tls -ieq auto
+    IF str test "$tls" -ieq "LibreSSL" || str test "$tls" -ieq auto
         RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet libressl
     END
-    IF str test "$tls" -ieq "OpenSSL" || str test $tls -ieq auto
+    IF str test "$tls" -ieq "OpenSSL" || str test "$tls" -ieq auto
         RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet openssl
     END
 
@@ -145,10 +150,12 @@ archlinux-test-env:
 ubuntu-base:
     ARG --required version
     FROM ubuntu:$version
-    RUN apt-get update && apt-get -y install curl build-essential
+    RUN apt-get update && apt-get -y install curl build-essential clang
     DO +INIT
     ARG --required sasl
     ARG --required tls
+    ARG --required c_compiler
+    ENV CC=$c_compiler
     IF str test "$sasl" -ieq Cyrus
         RUN apt-get update && apt-get -y install libsasl2-dev
     END
@@ -238,12 +245,14 @@ test-cxx-driver:
 multibuild:
     BUILD +test-example --env=u22 --env=archlinux --env=alpine3.18 \
             --sasl=Cyrus --sasl=off \
-            --tls=OpenSSL --tls=off
+            --tls=OpenSSL --tls=off \
+            --c_compiler=gcc --c_compiler=clang
     # Note: At time of writing, Ubuntu does not support LibreSSL, so run those
     #   tests on a separate BUILD line that does not include Ubuntu:
     BUILD +test-example --env=archlinux --env=alpine3.18 \
             --sasl=Cyrus --sasl=off \
-            --tls=LibreSSL
+            --tls=LibreSSL \
+            --c_compiler=gcc --c_compiler=clang
 
 # test-vcpkg-classic :
 #   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and

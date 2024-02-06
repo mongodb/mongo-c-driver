@@ -896,7 +896,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux]
+    tags: [earthly, pr-merge-gate, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -906,10 +906,11 @@ tasks:
           args:
             - tools/earthly.sh
             - +env-warmup
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=LibreSSL
             - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -919,10 +920,11 @@ tasks:
             - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=LibreSSL
             - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\u2022tls=LibreSSL\u2022test_mongocxx_ref=r3.8.0"
     run_on:
       - ubuntu2204-small
@@ -934,7 +936,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux]
+    tags: [earthly, pr-merge-gate, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -944,10 +946,11 @@ tasks:
           args:
             - tools/earthly.sh
             - +env-warmup
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=LibreSSL
             - --test_mongocxx_ref=r3.8.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -957,10 +960,51 @@ tasks:
             - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=LibreSSL
             - --test_mongocxx_ref=r3.8.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\u2022tls=LibreSSL\u2022test_mongocxx_ref=r3.9.0"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --sasl=Cyrus
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --sasl=Cyrus
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\u2022tls=OpenSSL\u2022test_mongocxx_ref=master"
     run_on:
       - ubuntu2204-small
@@ -972,7 +1016,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    tags: [earthly, pr-merge-gate, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -982,10 +1026,11 @@ tasks:
           args:
             - tools/earthly.sh
             - +env-warmup
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -995,10 +1040,11 @@ tasks:
             - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\u2022tls=OpenSSL\u2022test_mongocxx_ref=r3.8.0"
     run_on:
       - ubuntu2204-small
@@ -1010,7 +1056,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    tags: [earthly, pr-merge-gate, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -1020,10 +1066,11 @@ tasks:
           args:
             - tools/earthly.sh
             - +env-warmup
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=r3.8.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1033,10 +1080,51 @@ tasks:
             - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=r3.8.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\u2022tls=OpenSSL\u2022test_mongocxx_ref=r3.9.0"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u22-clang, u22-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\u2022tls=off\u2022test_mongocxx_ref=master"
     run_on:
       - ubuntu2204-small
@@ -1048,7 +1136,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    tags: [earthly, pr-merge-gate, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -1058,10 +1146,11 @@ tasks:
           args:
             - tools/earthly.sh
             - +env-warmup
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1071,10 +1160,11 @@ tasks:
             - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\u2022tls=off\u2022test_mongocxx_ref=r3.8.0"
     run_on:
       - ubuntu2204-small
@@ -1086,7 +1176,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    tags: [earthly, pr-merge-gate, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -1096,10 +1186,11 @@ tasks:
           args:
             - tools/earthly.sh
             - +env-warmup
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=r3.8.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1109,10 +1200,51 @@ tasks:
             - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=r3.8.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\u2022tls=off\u2022test_mongocxx_ref=r3.9.0"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u22-clang, u22-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=off\u2022tls=OpenSSL\u2022test_mongocxx_ref=master"
     run_on:
       - ubuntu2204-small
@@ -1124,7 +1256,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [earthly, pr-merge-gate, earthly-u22]
+    tags: [earthly, pr-merge-gate, u22-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -1134,10 +1266,11 @@ tasks:
           args:
             - tools/earthly.sh
             - +env-warmup
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1147,10 +1280,11 @@ tasks:
             - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
-            - --env=${MONGOC_EARTHLY_ENV}
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
     run_on: macos-1100
     tags: [cse-matrix-darwinssl, compile, macos-1100, clang, cse, sasl-cyrus]
@@ -2711,22 +2845,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-cyrus-openssl-archlinux-clang-compile
-    run_on: archlinux-large
-    tags: [sasl-matrix-openssl, compile, archlinux, clang, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-cyrus-openssl-archlinux-gcc-compile
-    run_on: archlinux-large
-    tags: [sasl-matrix-openssl, compile, archlinux, gcc, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
   - name: sasl-cyrus-openssl-debian10-gcc-compile
     run_on: debian10-large
     tags: [sasl-matrix-openssl, compile, debian10, gcc, sasl-cyrus]
@@ -4309,14 +4427,6 @@ tasks:
           CC: clang
           MARCH: i686
       - func: upload scan artifacts
-  - name: std-c11-archlinux-clang-compile
-    run_on: archlinux-large
-    tags: [std-matrix, archlinux, clang, compile, std-c11]
-    commands:
-      - func: std-compile
-        vars:
-          CC: clang
-          C_STD_VERSION: 11
   - name: std-c11-debian10-clang-compile
     run_on: debian10-large
     tags: [std-matrix, debian10, clang, compile, std-c11]
