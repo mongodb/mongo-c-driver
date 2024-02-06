@@ -816,7 +816,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
                                               error);
       } else {
          server_stream = mongoc_cluster_stream_for_writes (
-            cluster, bulk->session, reply, error);
+            cluster, bulk->session, NULL, reply, error);
       }
 
       if (!server_stream) {

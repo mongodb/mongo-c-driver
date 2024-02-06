@@ -772,12 +772,26 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             /* each write command may be retried at most once */
             is_retryable = false;
 
-            if (retry_server_stream) {
-               mongoc_server_stream_cleanup (retry_server_stream);
-            }
+            {
+               mongoc_deprioritized_servers_t *const ds =
+                  mongoc_deprioritized_servers_new ();
 
-            retry_server_stream = mongoc_cluster_stream_for_writes (
-               &client->cluster, cs, NULL, &ignored_error);
+               if (retry_server_stream) {
+                  mongoc_deprioritized_servers_add_if_sharded (
+                     ds,
+                     retry_server_stream->topology_type,
+                     retry_server_stream->sd);
+                  mongoc_server_stream_cleanup (retry_server_stream);
+               } else {
+                  mongoc_deprioritized_servers_add_if_sharded (
+                     ds, server_stream->topology_type, server_stream->sd);
+               }
+
+               retry_server_stream = mongoc_cluster_stream_for_writes (
+                  &client->cluster, cs, ds, NULL, &ignored_error);
+
+               mongoc_deprioritized_servers_destroy (ds);
+            }
 
             if (retry_server_stream) {
                parts.assembled.server_stream = retry_server_stream;

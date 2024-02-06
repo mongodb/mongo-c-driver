@@ -1104,8 +1104,12 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    BSON_ASSERT (session);
 
    ret = true;
-   server_stream = mongoc_cluster_stream_for_writes (
-      &session->client->cluster, session, NULL /* reply */, error);
+   server_stream =
+      mongoc_cluster_stream_for_writes (&session->client->cluster,
+                                        session,
+                                        NULL /* deprioritized servers */,
+                                        NULL /* reply */,
+                                        error);
    if (!server_stream) {
       ret = false;
       GOTO (done);

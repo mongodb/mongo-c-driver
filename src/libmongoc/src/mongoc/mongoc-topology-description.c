@@ -514,6 +514,7 @@ _mongoc_try_mode_secondary (mongoc_array_t *set, /* OUT */
                             const mongoc_topology_description_t *topology,
                             const mongoc_read_prefs_t *read_pref,
                             bool *must_use_primary,
+                            const mongoc_deprioritized_servers_t *ds,
                             int64_t local_threshold_ms)
 {
    mongoc_read_prefs_t *secondary;
@@ -526,24 +527,99 @@ _mongoc_try_mode_secondary (mongoc_array_t *set, /* OUT */
                                                  topology,
                                                  secondary,
                                                  must_use_primary,
+                                                 ds,
                                                  local_threshold_ms);
 
    mongoc_read_prefs_destroy (secondary);
 }
 
 
-/* if any mongos are candidates, add them to the candidates array */
 static bool
-_mongoc_find_suitable_mongos_cb (const void *item, void *ctx)
+_mongoc_td_servers_to_candidates_array (const void *item, void *ctx)
 {
-   const mongoc_server_description_t *server = item;
-   mongoc_suitable_data_t *data = (mongoc_suitable_data_t *) ctx;
+   BSON_ASSERT_PARAM (item);
+   BSON_ASSERT_PARAM (ctx);
 
-   if (_mongoc_topology_description_server_is_candidate (
-          server->type, data->read_mode, data->topology_type)) {
-      data->candidates[data->candidates_len++] = server;
-   }
+   const mongoc_server_description_t *const server = item;
+   mongoc_suitable_data_t *const data = (mongoc_suitable_data_t *) ctx;
+
+   data->candidates[data->candidates_len++] = server;
+
    return true;
+}
+
+// Server Selection Spec: If a list of deprioritized servers is provided, and
+// the topology is a sharded cluster, these servers should be selected only if
+// there are no other suitable servers. The server selection algorithm MUST
+// ignore the deprioritized servers if the topology is not a sharded cluster.
+static void
+_mongoc_filter_deprioritized_servers (mongoc_suitable_data_t *data,
+                                      const mongoc_deprioritized_servers_t *ds)
+{
+   BSON_ASSERT_PARAM (data);
+   BSON_ASSERT_PARAM (ds);
+
+   TRACE ("%s", "deprioritization: filtering list of candidates");
+
+   mongoc_array_t filtered_servers;
+   _mongoc_array_init (&filtered_servers,
+                       sizeof (const mongoc_server_description_t *));
+
+   for (size_t idx = 0u; idx < data->candidates_len; ++idx) {
+      mongoc_server_description_t const *const sd = data->candidates[idx];
+
+      if (!mongoc_deprioritized_servers_contains (ds, sd)) {
+         TRACE ("deprioritization: - kept: %s (id: %" PRIu32 ")",
+                sd->host.host_and_port,
+                sd->id);
+         _mongoc_array_append_val (&filtered_servers, sd);
+      } else {
+         TRACE ("deprioritization: - removed: %s (id: %" PRIu32 ")",
+                sd->host.host_and_port,
+                sd->id);
+      }
+   }
+
+   if (filtered_servers.len == 0u) {
+      TRACE ("%s",
+             "deprioritization: reverted due to no other suitable servers");
+      _mongoc_array_destroy (&filtered_servers);
+   } else if (filtered_servers.len == data->candidates_len) {
+      TRACE ("%s", "deprioritization: none found in list of candidates");
+      _mongoc_array_destroy (&filtered_servers);
+   } else {
+      TRACE ("%s", "deprioritization: using filtered list of candidates");
+      data->candidates_len = filtered_servers.len;
+      // `(void*)`: avoid MSVC error C4090:
+      //   'function': different 'const' qualifiers
+      memmove ((void *) data->candidates,
+               filtered_servers.data,
+               filtered_servers.len * filtered_servers.element_size);
+      _mongoc_array_destroy (&filtered_servers);
+   }
+}
+
+
+// Keep only suitable mongoses in the candidates array.
+static void
+_mongoc_filter_suitable_mongos (mongoc_suitable_data_t *data)
+{
+   size_t idx = 0u;
+
+   while (idx < data->candidates_len) {
+      if (_mongoc_topology_description_server_is_candidate (
+             data->candidates[idx]->type,
+             data->read_mode,
+             data->topology_type)) {
+         // All candidates in the latency window are suitable.
+         ++idx;
+      } else {
+         // Remove from list using swap+pop.
+         // Order doesn't matter; the list will be randomized in
+         // mongoc_topology_description_select prior to server selection.
+         data->candidates[idx] = data->candidates[--data->candidates_len];
+      }
+   }
 }
 
 
@@ -765,22 +841,23 @@ mongoc_topology_description_suitable_servers (
    const mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t *read_pref,
    bool *must_use_primary,
+   const mongoc_deprioritized_servers_t *ds,
    int64_t local_threshold_ms)
 {
-   mongoc_suitable_data_t data;
-
    const mongoc_set_t *td_servers = mc_tpld_servers_const (topology);
    const mongoc_read_mode_t given_read_mode =
       mongoc_read_prefs_get_mode (read_pref);
    const bool override_use_primary =
       _must_use_primary (topology, optype, given_read_mode);
 
-   data.primary = NULL;
-   data.topology_type = topology->type;
-   data.has_secondary = false;
-   data.candidates_len = 0;
-   data.candidates = bson_malloc0 (sizeof (mongoc_server_description_t *) *
-                                   td_servers->items_len);
+   mongoc_suitable_data_t data = {
+      .primary = NULL,
+      .topology_type = topology->type,
+      .has_secondary = false,
+      .candidates_len = 0,
+      .candidates = bson_malloc0 (sizeof (mongoc_server_description_t *) *
+                                  td_servers->items_len),
+   };
 
    /* The "effective" read mode is the read mode that we should behave for, and
     * depends on the user's provided read mode, the type of operation that the
@@ -843,8 +920,12 @@ mongoc_topology_description_suitable_servers (
 
          if (data.read_mode == MONGOC_READ_SECONDARY_PREFERRED) {
             /* try read_mode SECONDARY */
-            _mongoc_try_mode_secondary (
-               set, topology, read_pref, must_use_primary, local_threshold_ms);
+            _mongoc_try_mode_secondary (set,
+                                        topology,
+                                        read_pref,
+                                        must_use_primary,
+                                        NULL,
+                                        local_threshold_ms);
 
             /* otherwise fall back to primary */
             if (!set->len && data.primary) {
@@ -894,11 +975,16 @@ mongoc_topology_description_suitable_servers (
       }
    }
 
-   /* Sharded clusters --
-    * All candidates in the latency window are suitable */
+   // Sharded clusters --
    if (topology->type == MONGOC_TOPOLOGY_SHARDED) {
       mongoc_set_for_each_const (
-         td_servers, _mongoc_find_suitable_mongos_cb, &data);
+         td_servers, _mongoc_td_servers_to_candidates_array, &data);
+
+      if (ds) {
+         _mongoc_filter_deprioritized_servers (&data, ds);
+      }
+
+      _mongoc_filter_suitable_mongos (&data);
    }
 
    /* Load balanced clusters --
@@ -998,16 +1084,16 @@ mongoc_topology_description_select (
    mongoc_ss_optype_t optype,
    const mongoc_read_prefs_t *read_pref,
    bool *must_use_primary,
+   const mongoc_deprioritized_servers_t *ds,
    int64_t local_threshold_ms)
 {
    mongoc_array_t suitable_servers;
-   mongoc_server_description_t const *sd = NULL;
-   int rand_n;
 
    ENTRY;
 
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
-      sd = mongoc_set_get_item_const (mc_tpld_servers_const (topology), 0);
+      mongoc_server_description_t const *const sd =
+         mongoc_set_get_item_const (mc_tpld_servers_const (topology), 0);
 
       if (optype == MONGOC_SS_AGGREGATE_WITH_WRITE &&
           sd->max_wire_version < WIRE_VERSION_5_0) {
@@ -1035,12 +1121,17 @@ mongoc_topology_description_select (
                                                  topology,
                                                  read_pref,
                                                  must_use_primary,
+                                                 ds,
                                                  local_threshold_ms);
+
+   mongoc_server_description_t const *sd = NULL;
+
    if (suitable_servers.len != 0) {
-      rand_n = _mongoc_rand_simple ((unsigned *) &topology->rand_seed);
+      const int rand_n =
+         _mongoc_rand_simple ((unsigned *) &topology->rand_seed);
       sd = _mongoc_array_index (&suitable_servers,
                                 mongoc_server_description_t *,
-                                rand_n % suitable_servers.len);
+                                (size_t) rand_n % suitable_servers.len);
    }
 
    _mongoc_array_destroy (&suitable_servers);
@@ -2328,7 +2419,7 @@ mongoc_topology_description_has_readable_server (
 
    /* local threshold argument doesn't matter */
    return mongoc_topology_description_select (
-             td, MONGOC_SS_READ, prefs, NULL, 0) != NULL;
+             td, MONGOC_SS_READ, prefs, NULL, NULL, 0) != NULL;
 }
 
 /*
@@ -2355,7 +2446,7 @@ mongoc_topology_description_has_writable_server (
    }
 
    return mongoc_topology_description_select (
-             td, MONGOC_SS_WRITE, NULL, NULL, 0) != NULL;
+             td, MONGOC_SS_WRITE, NULL, NULL, NULL, 0) != NULL;
 }
 
 /*
@@ -2601,4 +2692,22 @@ _mongoc_topology_description_clear_connection_pool (
    TRACE ("clearing pool for server: %s", sd->host.host_and_port);
 
    mc_tpl_sd_increment_generation (sd, service_id);
+}
+
+
+void
+mongoc_deprioritized_servers_add_if_sharded (
+   mongoc_deprioritized_servers_t *ds,
+   mongoc_topology_description_type_t topology_type,
+   const mongoc_server_description_t *sd)
+{
+   // In a sharded cluster, the server on which the operation failed MUST
+   // be provided to the server selection mechanism as a deprioritized
+   // server.
+   if (topology_type == MONGOC_TOPOLOGY_SHARDED) {
+      TRACE ("deprioritization: add to list: %s (id: %" PRIu32 ")",
+             sd->host.host_and_port,
+             sd->id);
+      mongoc_deprioritized_servers_add (ds, sd);
+   }
 }

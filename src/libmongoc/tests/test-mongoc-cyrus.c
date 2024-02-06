@@ -77,7 +77,7 @@ test_sasl_canonicalize_hostname (void *ctx)
 
    client = test_framework_new_default_client ();
    ss = mongoc_cluster_stream_for_reads (
-      &client->cluster, NULL, NULL, NULL, &error);
+      &client->cluster, NULL, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (ss, error);
 
    BSON_ASSERT (_mongoc_sasl_get_canonicalized_name (

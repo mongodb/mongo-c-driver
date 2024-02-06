@@ -566,6 +566,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-deprioritized-servers.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-flags.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-generation-map.c
