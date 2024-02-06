@@ -120,6 +120,12 @@ alpine3.18-build-env:
 alpine3.18-test-env:
     FROM +alpine-test-env-base --version=3.18
 
+alpine3.19-build-env:
+    FROM +alpine-build-env-base --version=3.19
+
+alpine3.19-test-env:
+    FROM +alpine-test-env-base --version=3.19
+
 archlinux-base:
     FROM archlinux
     RUN pacman-key --init
@@ -243,13 +249,13 @@ test-cxx-driver:
 
 # Simultaneously builds and tests multiple different platforms
 multibuild:
-    BUILD +test-example --env=u22 --env=archlinux --env=alpine3.18 \
+    BUILD +test-example --env=u22 --env=archlinux --env=alpine3.18 --env=alpine3.19 \
             --sasl=Cyrus --sasl=off \
             --tls=OpenSSL --tls=off \
             --c_compiler=gcc --c_compiler=clang
     # Note: At time of writing, Ubuntu does not support LibreSSL, so run those
     #   tests on a separate BUILD line that does not include Ubuntu:
-    BUILD +test-example --env=archlinux --env=alpine3.18 \
+    BUILD +test-example --env=archlinux --env=alpine3.18 --env=alpine3.19 \
             --sasl=Cyrus --sasl=off \
             --tls=LibreSSL \
             --c_compiler=gcc --c_compiler=clang
