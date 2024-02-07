@@ -438,6 +438,7 @@ typedef struct {
    int started_calls;
    int succeeded_calls;
    int failed_calls;
+   char *db;
 } op_id_test_t;
 
 
@@ -451,6 +452,7 @@ op_id_test_init (op_id_test_t *test)
    test->started_calls = 0;
    test->succeeded_calls = 0;
    test->failed_calls = 0;
+   test->db = NULL;
 }
 
 
@@ -460,6 +462,7 @@ op_id_test_cleanup (op_id_test_t *test)
    _mongoc_array_destroy (&test->started_ids);
    _mongoc_array_destroy (&test->succeeded_ids);
    _mongoc_array_destroy (&test->failed_ids);
+   bson_free (test->db);
 }
 
 
@@ -504,6 +507,7 @@ test_op_id_failed_cb (const mongoc_apm_command_failed_t *event)
    test = (op_id_test_t *) mongoc_apm_command_failed_get_context (event);
    ids.request_id = mongoc_apm_command_failed_get_request_id (event);
    ids.op_id = mongoc_apm_command_failed_get_operation_id (event);
+   test->db = bson_strdup (mongoc_apm_command_failed_get_database_name (event));
 
    _mongoc_array_append_val (&test->failed_ids, ids);
 
@@ -688,7 +692,7 @@ _test_query_operation_id (bool pooled)
                             tmp_bson ("{'ok': 1,"
                                       " 'cursor': {"
                                       "    'id': {'$numberLong': '123'},"
-                                      "    'ns': 'db.collection',"
+                                      "    'ns': 'db2.collection',"
                                       "    'firstBatch': [{}]}}"));
 
    ASSERT (future_get_bool (future));
@@ -709,6 +713,7 @@ _test_query_operation_id (bool pooled)
    ASSERT_CMPINT (test.started_calls, ==, 2);
    ASSERT_CMPINT (test.succeeded_calls, ==, 1);
    ASSERT_CMPINT (test.failed_calls, ==, 1);
+   ASSERT_CMPSTR (test.db, "db2");
 
    ASSERT_CMPINT64 (REQUEST_ID (started, 0), ==, REQUEST_ID (succeeded, 0));
    ASSERT_CMPINT64 (REQUEST_ID (started, 1), ==, REQUEST_ID (failed, 0));
@@ -1047,6 +1052,7 @@ test_killcursors_deprecated (void *unused)
 typedef struct {
    int failed_calls;
    bson_t reply;
+   char *db;
 } cmd_failed_reply_test_t;
 
 
@@ -1062,6 +1068,7 @@ static void
 cmd_failed_reply_test_cleanup (cmd_failed_reply_test_t *test)
 {
    bson_destroy (&test->reply);
+   bson_free (test->db);
 }
 
 
@@ -1074,8 +1081,9 @@ command_failed_reply_command_failed_cb (
    test =
       (cmd_failed_reply_test_t *) mongoc_apm_command_failed_get_context (event);
    test->failed_calls++;
-   bson_destroy (&test->reply);
+   test->db = bson_strdup (mongoc_apm_command_failed_get_database_name (event));
 
+   bson_destroy (&test->reply);
    bson_copy_to (mongoc_apm_command_failed_get_reply (event), &test->reply);
 }
 
@@ -1122,6 +1130,7 @@ test_command_failed_reply_mock (void)
 
    ASSERT_MATCH (&test.reply, "{'ok': 0, 'code': 42, 'errmsg': 'bad!'}");
    ASSERT_CMPINT (test.failed_calls, ==, 1);
+   ASSERT_CMPSTR (test.db, "db");
 
    mock_server_destroy (server);
 
@@ -1165,7 +1174,7 @@ test_command_failed_reply_hangup (void)
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
-   collection = mongoc_client_get_collection (client, "db", "collection");
+   collection = mongoc_client_get_collection (client, "db2", "collection");
    cursor = mongoc_collection_find (
       collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
 
@@ -1180,6 +1189,7 @@ test_command_failed_reply_hangup (void)
 
    ASSERT_MATCH (&test.reply, "{}");
    ASSERT_CMPINT (test.failed_calls, ==, 1);
+   ASSERT_CMPSTR (test.db, "db2");
 
    mock_server_destroy (server);
 
