@@ -171,6 +171,7 @@ test_bson_append_utf8 (void)
    BSON_ASSERT_BSON_EQUAL (b3, b2);
    bson_destroy (b);
    bson_destroy (b2);
+   bson_destroy (b3);
 }
 
 
