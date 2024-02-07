@@ -293,6 +293,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
 
    event->duration = duration;
    event->command_name = command_name;
+   event->database_name = database_name;
    event->error = error;
    event->request_id = request_id;
    event->operation_id = operation_id;
@@ -632,6 +633,14 @@ void *
 mongoc_apm_command_failed_get_context (const mongoc_apm_command_failed_t *event)
 {
    return event->context;
+}
+
+
+const char *
+mongoc_apm_command_failed_get_database_name (
+   const mongoc_apm_command_failed_t *event)
+{
+   return event->database_name;
 }
 
 
