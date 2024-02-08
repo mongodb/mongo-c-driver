@@ -334,10 +334,7 @@
                   }
                 ]
               },
-              "$db": "keyvault",
-              "readConcern": {
-                "level": "majority"
-              }
+              "$db": "keyvault"
             },
             "command_name": "find",
             "database_name": "keyvault"
