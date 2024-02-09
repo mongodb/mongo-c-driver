@@ -302,11 +302,9 @@
               "listCollections": 1,
               "filter": {
                 "name": "datakeys"
-              },
-              "$db": "keyvault"
+              }
             },
-            "command_name": "listCollections",
-            "database_name": "keyvault"
+            "command_name": "listCollections"
           }
         },
         {
@@ -336,15 +334,13 @@
               },
               "$db": "keyvault"
             },
-            "command_name": "find",
-            "database_name": "keyvault"
+            "command_name": "find"
           }
         },
         {
           "command_started_event": {
             "command": {
               "insert": "default",
-              "ordered": true,
               "documents": [
                 {
                   "_id": 1,
@@ -356,10 +352,9 @@
                   }
                 }
               ],
-              "$db": "default"
+              "ordered": true
             },
-            "command_name": "insert",
-            "database_name": "default"
+            "command_name": "insert"
           }
         }
       ],

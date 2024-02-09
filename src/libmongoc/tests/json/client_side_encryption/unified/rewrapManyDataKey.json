@@ -273,8 +273,8 @@
           "status": 1,
           "masterKey": {
             "provider": "kmip",
-            "delegated": true,
-            "keyId": "11"
+            "keyId": "11",
+            "delegated": true
           }
         }
       ]
@@ -1693,8 +1693,8 @@
               },
               "masterKey": {
                 "provider": "kmip",
-                "delegated": true,
-                "keyId": "11"
+                "keyId": "11",
+                "delegated": true
               }
             },
             {
