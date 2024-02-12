@@ -92,8 +92,8 @@ test_example_1 (mongoc_database_t *db)
    }
    /* End Example 1 */
    ASSERT_COUNT (1, collection);
-   /* Start Example 1 Post */
 done:
+   /* Start Example 1 Post */
    mongoc_collection_destroy (collection);
    /* End Example 1 Post */
 }
