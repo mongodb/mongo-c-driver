@@ -579,7 +579,7 @@ test_example_14 (mongoc_database_t *db)
    }
    /* End Example 14 */
 
-   done:
+done:
    /* Start Example 14 Post */
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
