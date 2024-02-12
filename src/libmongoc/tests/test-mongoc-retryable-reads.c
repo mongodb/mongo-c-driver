@@ -592,8 +592,8 @@ test_retry_reads_sharded_on_same_mongos (void *_ctx)
          mongoc_cursor_t *const cursor =
             mongoc_collection_find_with_opts (coll, &opts, NULL, NULL);
          const bson_t *reply = NULL;
-         ASSERT_WITH_MSG (mongoc_cursor_next (cursor, &reply) ||
-                             !mongoc_cursor_error (cursor, &error),
+         (void) mongoc_cursor_next (cursor, &reply);
+         ASSERT_WITH_MSG (!mongoc_cursor_error (cursor, &error),
                           "expecting find to succeed, but observed error: %s",
                           error.message);
          mongoc_cursor_destroy (cursor);
