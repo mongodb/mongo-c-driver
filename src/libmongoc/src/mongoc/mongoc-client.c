@@ -1727,23 +1727,17 @@ retry:
        _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
       bson_error_t ignored_error;
 
-      /* each write command may be retried at most once */
+      // The write command may be retried at most once.
       is_retryable = false;
 
       {
          mongoc_deprioritized_servers_t *const ds =
             mongoc_deprioritized_servers_new ();
 
-         if (retry_server_stream) {
-            mongoc_deprioritized_servers_add_if_sharded (
-               ds, retry_server_stream->topology_type, server_stream->sd);
+         mongoc_deprioritized_servers_add_if_sharded (
+            ds, server_stream->topology_type, server_stream->sd);
 
-            mongoc_server_stream_cleanup (retry_server_stream);
-         } else {
-            mongoc_deprioritized_servers_add_if_sharded (
-               ds, server_stream->topology_type, server_stream->sd);
-         }
-
+         BSON_ASSERT (!retry_server_stream);
          retry_server_stream =
             mongoc_cluster_stream_for_writes (&client->cluster,
                                               parts->assembled.session,
