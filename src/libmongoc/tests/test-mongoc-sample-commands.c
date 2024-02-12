@@ -197,8 +197,8 @@ test_example_3 (mongoc_database_t *db)
    }
    /* End Example 3 */
    ASSERT_COUNT (4, collection);
-   /* Start Example 3 Post */
 done:
+   /* Start Example 3 Post */
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -311,8 +311,8 @@ test_example_6 (mongoc_database_t *db)
    }
    /* End Example 6 */
    ASSERT_COUNT (5, collection);
-   /* Start Example 6 Post */
 done:
+   /* Start Example 6 Post */
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -579,8 +579,8 @@ test_example_14 (mongoc_database_t *db)
    }
    /* End Example 14 */
 
+   done:
    /* Start Example 14 Post */
-done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -816,8 +816,8 @@ test_example_20 (mongoc_database_t *db)
    }
    /* End Example 20 */
 
+done:   
    /* Start Example 20 Post */
-done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -1132,8 +1132,8 @@ test_example_29 (mongoc_database_t *db)
    }
    /* End Example 29 */
 
-   /* Start Example 29 Post */
 done:
+   /* Start Example 29 Post */
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -1383,8 +1383,8 @@ test_example_38 (mongoc_database_t *db)
    }
    /* End Example 38 */
 
-   /* Start Example 38 Post */
 done:
+   /* Start Example 38 Post */
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -1594,8 +1594,8 @@ test_example_42 (mongoc_database_t *db)
    }
    /* End Example 42 */
 
-   /* Start Example 42 Post */
 done:
+   /* Start Example 42 Post */
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -2092,8 +2092,8 @@ test_example_51 (mongoc_database_t *db)
    }
    /* End Example 51 */
 
-   /* Start Example 51 Post */
 done:
+   /* Start Example 51 Post */
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -2146,8 +2146,8 @@ test_example_52 (mongoc_database_t *db)
       mongoc_cursor_destroy (cursor);
       bson_destroy (filter);
    }
-   /* Start Example 52 Post */
 done:
+   /* Start Example 52 Post */
    mongoc_collection_destroy (collection);
    /* End Example 52 Post */
 }
@@ -2204,8 +2204,8 @@ test_example_53 (mongoc_database_t *db)
       mongoc_cursor_destroy (cursor);
       bson_destroy (filter);
    }
-   /* Start Example 53 Post */
 done:
+   /* Start Example 53 Post */
    mongoc_collection_destroy (collection);
    /* End Example 53 Post */
 }
@@ -2267,8 +2267,8 @@ test_example_54 (mongoc_database_t *db)
       bson_destroy (opts);
       bson_destroy (filter);
    }
-   /* Start Example 54 Post */
 done:
+   /* Start Example 54 Post */
    mongoc_collection_destroy (collection);
    /* End Example 54 Post */
 }
@@ -2379,8 +2379,8 @@ test_example_55 (mongoc_database_t *db)
    }
    /* End Example 55 */
    ASSERT_COUNT (5, collection);
-   /* Start Example 55 Post */
 done:
+   /* Start Example 55 Post */
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -2409,8 +2409,8 @@ test_example_57 (mongoc_database_t *db)
    }
    /* End Example 57 */
    ASSERT_COUNT (3, collection);
-   /* Start Example 57 Post */
 done:
+   /* Start Example 57 Post */
    mongoc_collection_destroy (collection);
    /* End Example 57 Post */
 }
@@ -2437,8 +2437,8 @@ test_example_58 (mongoc_database_t *db)
    }
    /* End Example 58 */
    ASSERT_COUNT (2, collection);
-   /* Start Example 58 Post */
 done:
+   /* Start Example 58 Post */
    mongoc_collection_destroy (collection);
    /* End Example 58 Post */
 }
@@ -2465,8 +2465,8 @@ test_example_56 (mongoc_database_t *db)
    }
    /* End Example 56 */
    ASSERT_COUNT (0, collection);
-   /* Start Example 56 Post */
 done:
+   /* Start Example 56 Post */
    mongoc_collection_destroy (collection);
    /* End Example 56 Post */
 }
