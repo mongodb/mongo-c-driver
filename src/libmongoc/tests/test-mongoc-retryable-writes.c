@@ -951,8 +951,8 @@ _test_retry_writes_sharded_on_other_mongos_cb (
    ctx->ports[ctx->count++] = host->port;
 }
 
-// Test that in a sharded cluster writes are retried on a different mongos if
-// one available.
+// Test that in a sharded cluster writes are retried on a different mongos when
+// one is available.
 static void
 retryable_writes_sharded_on_other_mongos (void *_ctx)
 {
@@ -1148,7 +1148,8 @@ _test_retry_writes_sharded_on_same_mongos_succeeded_cb (
       mongoc_apm_command_succeeded_get_context (event), NULL, event);
 }
 
-// Test that in a sharded cluster on the same mongos if no other is available.
+// Test that in a sharded cluster writes are retried on the same mongos when no
+// others are available.
 static void
 retryable_writes_sharded_on_same_mongos (void *_ctx)
 {

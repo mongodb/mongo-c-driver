@@ -284,8 +284,8 @@ mongoc_topology_select (mongoc_topology_t *topology,
  * @param must_use_primary An optional output parameter. Server selection might
  * need to override the caller's read preferences' read mode to 'primary'.
  * Whether or not that takes place will be set through this pointer.
- * @param ds A list of server that should be selected only if there are no other
- * suitable servers.
+ * @param ds A list of servers that should be selected only if there are no
+ * other suitable servers.
  * @param error An output parameter for any error information.
  * @return uint32_t A non-zero integer ID of the server description. In case of
  * error, sets `error` and returns zero.
