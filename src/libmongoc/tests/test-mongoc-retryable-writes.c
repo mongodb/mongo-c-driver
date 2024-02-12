@@ -1237,6 +1237,9 @@ retryable_writes_sharded_on_same_mongos (void *_ctx)
          mongoc_database_destroy (db);
       }
 
+      // Avoid capturing additional events.
+      mongoc_client_set_apm_callbacks (client, NULL, NULL);
+
       // Assert that exactly one failed command event and one succeeded
       // command event occurred.
       ASSERT_WITH_MSG (
