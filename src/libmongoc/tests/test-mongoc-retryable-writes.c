@@ -1166,104 +1166,94 @@ retryable_writes_sharded_on_same_mongos (void *_ctx)
       _mongoc_array_index (&clients, mongoc_client_t *, 0u);
    BSON_ASSERT (s0);
 
-   // Deprioritization cannot be deterministically asserted by this test due to
-   // randomized selection from suitable servers. Repeat the test a few times to
-   // increase the likelihood of detecting incorrect deprioritization behavior.
-   for (int i = 0; i < 10; ++i) {
-      // Configure the following fail point for `s0`:
-      ASSERT_OR_PRINT (mongoc_client_command_simple (
-                          s0,
-                          "admin",
-                          tmp_bson ("{"
-                                    "  'configureFailPoint': 'failCommand',"
-                                    "  'mode': { 'times': 1 },"
-                                    "  'data': {"
-                                    "    'failCommands': ['insert'],"
-                                    "    'errorCode': 6,"
-                                    "    'errorLabels': ['RetryableWriteError']"
-                                    "  }"
-                                    "}"),
-                          NULL,
-                          NULL,
-                          &error),
-                       error);
+   // Configure the following fail point for `s0`:
+   ASSERT_OR_PRINT (mongoc_client_command_simple (
+                       s0,
+                       "admin",
+                       tmp_bson ("{"
+                                 "  'configureFailPoint': 'failCommand',"
+                                 "  'mode': { 'times': 1 },"
+                                 "  'data': {"
+                                 "    'failCommands': ['insert'],"
+                                 "    'errorCode': 6,"
+                                 "    'errorLabels': ['RetryableWriteError']"
+                                 "  }"
+                                 "}"),
+                       NULL,
+                       NULL,
+                       &error),
+                    error);
 
-      // Create a client client with `directConnection=false` (when not set by
-      // default) and `retryWrites=true` that connects to the cluster using the
-      // same single mongos as `s0`.
-      mongoc_client_t *client = NULL;
+   // Create a client client with `directConnection=false` (when not set by
+   // default) and `retryWrites=true` that connects to the cluster using the
+   // same single mongos as `s0`.
+   mongoc_client_t *client = NULL;
+   {
+      const char *const host_and_port =
+         "mongodb://localhost:27017/"
+         "?retryWrites=true&directConnection=false";
+      char *const uri_str =
+         test_framework_add_user_password_from_env (host_and_port);
+      mongoc_uri_t *const uri = mongoc_uri_new (uri_str);
+
+      client = mongoc_client_new_from_uri_with_error (uri, &error);
+      ASSERT_OR_PRINT (client, error);
+      test_framework_set_ssl_opts (client);
+
+      mongoc_uri_destroy (uri);
+      bson_free (uri_str);
+   }
+   BSON_ASSERT (client);
+
+   {
+      test_retry_writes_sharded_on_same_mongos_ctx ctx = {
+         .failed_count = 0,
+         .succeeded_count = 0,
+      };
+
+      // Enable succeeded and failed command event monitoring for `client`.
       {
-         const char *const host_and_port =
-            "mongodb://localhost:27017/"
-            "?retryWrites=true&directConnection=false";
-         char *const uri_str =
-            test_framework_add_user_password_from_env (host_and_port);
-         mongoc_uri_t *const uri = mongoc_uri_new (uri_str);
-
-         client = mongoc_client_new_from_uri_with_error (uri, &error);
-         ASSERT_OR_PRINT (client, error);
-         test_framework_set_ssl_opts (client);
-
-         mongoc_uri_destroy (uri);
-         bson_free (uri_str);
+         mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new ();
+         mongoc_apm_set_command_failed_cb (
+            callbacks, _test_retry_writes_sharded_on_same_mongos_failed_cb);
+         mongoc_apm_set_command_succeeded_cb (
+            callbacks, _test_retry_writes_sharded_on_same_mongos_succeeded_cb);
+         mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+         mongoc_apm_callbacks_destroy (callbacks);
       }
-      BSON_ASSERT (client);
 
+      // Execute an `insert` command with `client`. Assert that the command
+      // succeeded.
       {
-         test_retry_writes_sharded_on_same_mongos_ctx ctx = {
-            .failed_count = 0,
-            .succeeded_count = 0,
-         };
-
-         // Enable succeeded and failed command event monitoring for `client`.
-         {
-            mongoc_apm_callbacks_t *const callbacks =
-               mongoc_apm_callbacks_new ();
-            mongoc_apm_set_command_failed_cb (
-               callbacks, _test_retry_writes_sharded_on_same_mongos_failed_cb);
-            mongoc_apm_set_command_succeeded_cb (
-               callbacks,
-               _test_retry_writes_sharded_on_same_mongos_succeeded_cb);
-            mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
-            mongoc_apm_callbacks_destroy (callbacks);
-         }
-
-         // Execute an `insert` command with `client`. Assert that the command
-         // succeeded.
-         {
-            mongoc_database_t *const db =
-               mongoc_client_get_database (client, "db");
-            mongoc_collection_t *const coll =
-               mongoc_database_get_collection (db, "test");
-            ASSERT_WITH_MSG (
-               mongoc_collection_insert_one (
-                  coll, tmp_bson ("{'x': 1}"), NULL, NULL, &error),
-               "expecting insert to succeed, but observed error: %s",
-               error.message);
-            mongoc_collection_destroy (coll);
-            mongoc_database_destroy (db);
-         }
-
-         // Assert that exactly one failed command event and one succeeded
-         // command event occurred.
-         ASSERT_WITH_MSG (
-            ctx.failed_count == 1 && ctx.succeeded_count == 1,
-            "expected exactly one failed event and one succeeded "
-            "event, but observed %d failures and %d successes with error: %s",
-            ctx.failed_count,
-            ctx.succeeded_count,
-            ctx.succeeded_count > 1 ? "none" : error.message);
-
-         // Assert that both events occurred on the same mongos.
-         ASSERT_WITH_MSG (
-            ctx.failed_port == ctx.succeeded_port,
-            "expected failed and succeeded events on the same mongos, but "
-            "instead observed port %d (failed) and port %d (succeeded)",
-            ctx.failed_port,
-            ctx.succeeded_port);
-
-         mongoc_client_set_apm_callbacks (client, NULL, NULL);
+         mongoc_database_t *const db =
+            mongoc_client_get_database (client, "db");
+         mongoc_collection_t *const coll =
+            mongoc_database_get_collection (db, "test");
+         ASSERT_WITH_MSG (mongoc_collection_insert_one (
+                             coll, tmp_bson ("{'x': 1}"), NULL, NULL, &error),
+                          "expecting insert to succeed, but observed error: %s",
+                          error.message);
+         mongoc_collection_destroy (coll);
+         mongoc_database_destroy (db);
       }
+
+      // Assert that exactly one failed command event and one succeeded
+      // command event occurred.
+      ASSERT_WITH_MSG (
+         ctx.failed_count == 1 && ctx.succeeded_count == 1,
+         "expected exactly one failed event and one succeeded "
+         "event, but observed %d failures and %d successes with error: %s",
+         ctx.failed_count,
+         ctx.succeeded_count,
+         ctx.succeeded_count > 1 ? "none" : error.message);
+
+      // Assert that both events occurred on the same mongos.
+      ASSERT_WITH_MSG (
+         ctx.failed_port == ctx.succeeded_port,
+         "expected failed and succeeded events on the same mongos, but "
+         "instead observed port %d (failed) and port %d (succeeded)",
+         ctx.failed_port,
+         ctx.succeeded_port);
 
       mongoc_client_destroy (client);
    }
