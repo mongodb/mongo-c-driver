@@ -1106,7 +1106,7 @@ _test_retry_writes_sharded_on_same_mongos_cb (
    BSON_ASSERT (succeeded || true);
 
    ASSERT_WITH_MSG (
-      ctx->failed_count < 2 && ctx->succeeded_count < 2,
+      ctx->failed_count + ctx->succeeded_count < 2,
       "expected at most two events, but observed %d failed and %d succeeded",
       ctx->failed_count,
       ctx->succeeded_count);
