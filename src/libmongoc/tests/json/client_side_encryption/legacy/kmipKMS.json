@@ -267,9 +267,7 @@
       "clientOptions": {
         "autoEncryptOpts": {
           "kmsProviders": {
-            "kmip": {
-              "delegated": true
-            }
+            "kmip": {}
           }
         }
       },
@@ -317,10 +315,7 @@
                     "_id": {
                       "$in": [
                         {
-                          "$binary": {
-                            "base64": "dBHpr8aITfeBQ15grpbLpg==",
-                            "subType": "04"
-                          }
+                          "$uuid": "7411e9af-c688-4df7-8143-5e60ae96cba6"
                         }
                       ]
                     }
