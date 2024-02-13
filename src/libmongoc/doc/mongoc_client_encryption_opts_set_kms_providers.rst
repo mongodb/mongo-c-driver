@@ -68,7 +68,6 @@ The format for the KMS provider type ``kmip`` is as follows:
 
    kmip: {
       endpoint: String
-      delegated: Optional<Boolean> /* If true (recommended), the KMIP server will perform encryption and decryption. Defaults to false. */
    }
 
 KMS providers may include an optional name suffix separate with a colon. This enables configuring multiple KMS providers with the same KMS provider type. Example:
