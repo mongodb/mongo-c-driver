@@ -2794,6 +2794,7 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bool *must_use_primary,
+                                  const mongoc_deprioritized_servers_t *ds,
                                   bson_error_t *error)
 {
    BSON_ASSERT (cs || true);
@@ -2808,14 +2809,14 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
       server_id = cs->server_id;
       if (!server_id) {
          server_id = mongoc_topology_select_server_id (
-            topology, optype, read_prefs, must_use_primary, error);
+            topology, optype, read_prefs, must_use_primary, ds, error);
          if (server_id) {
             _mongoc_client_session_pin (cs, server_id);
          }
       }
    } else {
       server_id = mongoc_topology_select_server_id (
-         topology, optype, read_prefs, must_use_primary, error);
+         topology, optype, read_prefs, must_use_primary, ds, error);
       /* Transactions Spec: Additionally, any non-transaction operation using a
        * pinned ClientSession MUST unpin the session and the operation MUST
        * perform normal server selection. */
@@ -2851,6 +2852,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
                                    const mongoc_read_prefs_t *read_prefs,
                                    mongoc_client_session_t *cs,
                                    bool is_retryable,
+                                   const mongoc_deprioritized_servers_t *ds,
                                    bson_t *reply,
                                    bson_error_t *error)
 {
@@ -2870,7 +2872,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
 
    server_id = _mongoc_cluster_select_server_id (
-      cs, topology, optype, read_prefs, &must_use_primary, error);
+      cs, topology, optype, read_prefs, &must_use_primary, ds, error);
 
    if (!server_id) {
       if (reply) {
@@ -2883,7 +2885,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    if (!mongoc_cluster_check_interval (cluster, server_id)) {
       /* Server Selection Spec: try once more */
       server_id = _mongoc_cluster_select_server_id (
-         cs, topology, optype, read_prefs, &must_use_primary, error);
+         cs, topology, optype, read_prefs, &must_use_primary, ds, error);
 
       if (!server_id) {
          if (reply) {
@@ -2967,6 +2969,7 @@ mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
+                                 const mongoc_deprioritized_servers_t *ds,
                                  bson_t *reply,
                                  bson_error_t *error)
 {
@@ -2979,13 +2982,20 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    const bool is_retryable = mongoc_uri_get_option_as_bool (
       cluster->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
 
-   return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_READ, prefs_override, cs, is_retryable, reply, error);
+   return _mongoc_cluster_stream_for_optype (cluster,
+                                             MONGOC_SS_READ,
+                                             prefs_override,
+                                             cs,
+                                             is_retryable,
+                                             ds,
+                                             reply,
+                                             error);
 }
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
                                   mongoc_client_session_t *cs,
+                                  const mongoc_deprioritized_servers_t *ds,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
@@ -2993,7 +3003,7 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
       cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
 
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_WRITE, NULL, cs, is_retryable, reply, error);
+      cluster, MONGOC_SS_WRITE, NULL, cs, is_retryable, ds, reply, error);
 }
 
 mongoc_server_stream_t *
@@ -3015,6 +3025,7 @@ mongoc_cluster_stream_for_aggr_with_write (
                                              prefs_override,
                                              cs,
                                              is_retryable,
+                                             NULL,
                                              reply,
                                              error);
 }

@@ -38,6 +38,7 @@
 #include "mongoc-scram-private.h"
 #include "mongoc-cmd-private.h"
 #include "mongoc-crypto-private.h"
+#include "mongoc-deprioritized-servers-private.h"
 
 BSON_BEGIN_DECLS
 
@@ -121,6 +122,7 @@ mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
+                                 const mongoc_deprioritized_servers_t *ds,
                                  bson_t *reply,
                                  bson_error_t *error);
 
@@ -138,6 +140,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
                                   mongoc_client_session_t *cs,
+                                  const mongoc_deprioritized_servers_t *ds,
                                   bson_t *reply,
                                   bson_error_t *error);
 

@@ -1727,15 +1727,26 @@ retry:
        _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
       bson_error_t ignored_error;
 
-      /* each write command may be retried at most once */
+      // The write command may be retried at most once.
       is_retryable = false;
 
-      if (retry_server_stream) {
-         mongoc_server_stream_cleanup (retry_server_stream);
-      }
+      {
+         mongoc_deprioritized_servers_t *const ds =
+            mongoc_deprioritized_servers_new ();
 
-      retry_server_stream = mongoc_cluster_stream_for_writes (
-         &client->cluster, parts->assembled.session, NULL, &ignored_error);
+         mongoc_deprioritized_servers_add_if_sharded (
+            ds, server_stream->topology_type, server_stream->sd);
+
+         BSON_ASSERT (!retry_server_stream);
+         retry_server_stream =
+            mongoc_cluster_stream_for_writes (&client->cluster,
+                                              parts->assembled.session,
+                                              ds,
+                                              NULL,
+                                              &ignored_error);
+
+         mongoc_deprioritized_servers_destroy (ds);
+      }
 
       if (retry_server_stream) {
          parts->assembled.server_stream = retry_server_stream;
@@ -1820,16 +1831,29 @@ retry:
       /* each read command may be retried at most once */
       is_retryable = false;
 
-      if (retry_server_stream) {
-         mongoc_server_stream_cleanup (retry_server_stream);
-      }
+      {
+         mongoc_deprioritized_servers_t *const ds =
+            mongoc_deprioritized_servers_new ();
 
-      retry_server_stream =
-         mongoc_cluster_stream_for_reads (&client->cluster,
-                                          parts->read_prefs,
-                                          parts->assembled.session,
-                                          NULL,
-                                          &ignored_error);
+         if (retry_server_stream) {
+            mongoc_deprioritized_servers_add_if_sharded (
+               ds, retry_server_stream->topology_type, retry_server_stream->sd);
+            mongoc_server_stream_cleanup (retry_server_stream);
+         } else {
+            mongoc_deprioritized_servers_add_if_sharded (
+               ds, server_stream->topology_type, server_stream->sd);
+         }
+
+         retry_server_stream =
+            mongoc_cluster_stream_for_reads (&client->cluster,
+                                             parts->read_prefs,
+                                             parts->assembled.session,
+                                             ds,
+                                             NULL,
+                                             &ignored_error);
+
+         mongoc_deprioritized_servers_destroy (ds);
+      }
 
       if (retry_server_stream) {
          parts->assembled.server_stream = retry_server_stream;
@@ -1918,8 +1942,8 @@ mongoc_client_command_simple (mongoc_client_t *client,
     * configuration. The generic command method SHOULD allow an optional read
     * preference argument."
     */
-   server_stream =
-      mongoc_cluster_stream_for_reads (cluster, read_prefs, NULL, reply, error);
+   server_stream = mongoc_cluster_stream_for_reads (
+      cluster, read_prefs, NULL, NULL, reply, error);
 
    if (server_stream) {
       ret = _mongoc_client_command_with_stream (
@@ -2074,10 +2098,10 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       }
    } else if (parts.is_write_command) {
       server_stream =
-         mongoc_cluster_stream_for_writes (cluster, cs, reply_ptr, error);
+         mongoc_cluster_stream_for_writes (cluster, cs, NULL, reply_ptr, error);
    } else {
-      server_stream =
-         mongoc_cluster_stream_for_reads (cluster, prefs, cs, reply_ptr, error);
+      server_stream = mongoc_cluster_stream_for_reads (
+         cluster, prefs, cs, NULL, reply_ptr, error);
    }
 
    if (!server_stream) {
@@ -2622,6 +2646,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
                                           MONGOC_SS_WRITE,
                                           read_prefs,
                                           NULL /* chosen read mode */,
+                                          NULL /* deprioritized servers */,
                                           topology->local_threshold_msec);
 
    if (selected_server) {
@@ -3060,8 +3085,13 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
 
    while (!mongoc_server_session_pool_is_empty (t->session_pool)) {
       prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
-      server_id = mongoc_topology_select_server_id (
-         t, MONGOC_SS_READ, prefs, NULL /* chosen read mode */, &error);
+      server_id =
+         mongoc_topology_select_server_id (t,
+                                           MONGOC_SS_READ,
+                                           prefs,
+                                           NULL /* chosen read mode */,
+                                           NULL /* deprioritized servers */,
+                                           &error);
 
       mongoc_read_prefs_destroy (prefs);
       if (!server_id) {

@@ -1101,6 +1101,7 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
       mongoc_server_stream_t *stream =
          mongoc_cluster_stream_for_writes (&database->client->cluster,
                                            NULL /* client session */,
+                                           NULL /* deprioritized servers */,
                                            NULL /* reply */,
                                            error);
       if (!stream) {
