@@ -1623,17 +1623,15 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
                         "CSFLE tests.");
          }
 
-         bson_t *kmip_opts =
-            BCON_NEW ("endpoint", BCON_UTF8 ("localhost:5698"));
+         bson_concat (&kms_providers,
+                      tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' }}"));
 
-         bson_append_document (&kms_providers, "kmip", -1, kmip_opts);
          bson_concat (&tls_opts,
                       tmp_bson ("{'kmip': { 'tlsCAFile': '%s', "
                                 "'tlsCertificateKeyFile': '%s' } }",
                                 kmip_tls_ca_file,
                                 kmip_tls_certificate_key_file));
 
-         bson_free (kmip_opts);
          bson_free (kmip_tls_ca_file);
          bson_free (kmip_tls_certificate_key_file);
       }
