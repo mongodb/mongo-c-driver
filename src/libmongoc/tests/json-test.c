@@ -16,7 +16,6 @@
 
 
 #include <mongoc/mongoc.h>
-#include "bson/bson.h"
 #include "mongoc/mongoc-client-side-encryption-private.h"
 #include "mongoc/mongoc-collection-private.h"
 #include "mongoc/mongoc-util-private.h"
