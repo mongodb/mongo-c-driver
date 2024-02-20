@@ -1,15 +1,18 @@
-from importlib import import_module
 import itertools
+from importlib import import_module
+from inspect import isclass
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Literal, NamedTuple, Sequence, Iterable, Mapping, Type, TypeVar
-from typing_extensions import get_args, get_origin, get_type_hints
+from typing import (Any, Iterable, Literal, Mapping, Sequence, Type, TypeVar,
+                    Union, cast)
 
 import yaml
-
+from shrub.v3.evg_command import EvgCommandType, subprocess_exec
 from shrub.v3.evg_project import EvgProject
 from shrub.v3.evg_task import EvgTask
-from shrub.v3.evg_command import subprocess_exec, EvgCommandType
+from typing_extensions import get_args, get_origin, get_type_hints
+
+T = TypeVar('T')
 
 
 # Equivalent to EvgTask but defines additional properties.
@@ -214,26 +217,40 @@ def to_yaml(project: EvgProject) -> str:
     )
 
 
-def _args_of_literal(name: str, ty: Any) -> Iterable[Any]:
-    if  get_origin(ty) != Literal:
-        raise TypeError(f'NamedTuple field {name!r} must be annotated with a Literal[...] type')
-    return get_args(ty)
+def all_possible(typ: Type[T]) -> Iterable[T]:
+    """
+    Given a finite type, enumerate all possible values of that type.
+    The following are "finite" types:
 
-NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
-
-def all_possible(ty: Type[NamedTupleT]) -> Iterable[NamedTupleT]:
-    """Given a named tuple annotated with literal type fields, generate all possible combinations thereof"""
-    # Iter each configuration parameter:
-    fields: Iterable[tuple[str, type]] = get_type_hints(ty).items()
-    # Generate lists of pairs of parameter names their options:
-    all_pairs: Iterable[Iterable[tuple[str, str]]] = (
-        # Generate a (key, opt) pair for each option in parameter 'key'
-        [(key, opt) for opt in _args_of_literal(key, typ)]
-        # Over each parameter and type thereof:
-        for key, typ in fields
-    )
-    # Now generate the cross product of all alternative for all options:
-    matrix: Iterable[dict[str, Any]] = map(dict, itertools.product(*all_pairs))
-    for items in matrix:
-        # Convert each item to a Configuration:
-        yield ty(**items)  # type: ignore
+    - Literal[...] types
+    - Union[...] of finite types
+    - NamedTuple where each field is a finite type
+    - None
+    """
+    origin = get_origin(typ)
+    if typ is type(None):
+        yield cast(T, None)
+    elif origin is Literal:
+        # It is a literal type, so enumerate its literal operands
+        yield from get_args(typ)
+        return
+    elif origin == Union:
+        args = get_args(typ)
+        yield from itertools.chain.from_iterable(map(all_possible, args))
+    elif isclass(typ) and issubclass(typ, tuple):
+        # Iter each configuration parameter:
+        fields: Iterable[tuple[str, type]] = get_type_hints(typ).items()
+        # Generate lists of pairs of parameter names their options:
+        all_pairs: Iterable[Iterable[tuple[str, str]]] = (
+            # Generate a (key, opt) pair for each option in parameter 'key'
+            [(key, opt) for opt in all_possible(typ)]
+            # Over each parameter and type thereof:
+            for key, typ in fields
+        )
+        # Now generate the cross product of all alternative for all options:
+        matrix: Iterable[dict[str, Any]] = map(dict, itertools.product(*all_pairs))
+        for items in matrix:
+            # Convert each item to a Configuration:
+            yield typ(**items)  # type: ignore
+    else:
+        raise TypeError(f'Do not know how to do "all_possible" of type {typ!r} ({origin=})')
