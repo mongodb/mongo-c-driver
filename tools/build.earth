@@ -146,7 +146,7 @@ ADD_TLS:
         END
     ELSE IF __str test "$tls" -ieq LibreSSL
         # Detect package names
-        IF test "libressl_dev_pkg$libressl_rt_pkg" != ""
+        IF test "$libressl_dev_pkg$libressl_rt_pkg" != ""
             # Nothing to infer
         ELSE IF __is_alpine
             LET libressl_dev_pkg = libressl-dev
