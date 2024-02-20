@@ -45,16 +45,19 @@ _SEPARATOR = "\N{no-break space}\N{bullet}\N{no-break space}"
 def os_split(env: EnvKey) -> tuple[str, None | str]:
     """Convert the environment key into a pretty name+version pair"""
     match env:
-        case alp if mat := re.match(r"alpine(\d+\.\d+)", alp): # match 'alpine3.18' 'alpine53.123' etc.
+        # match 'alpine3.18' 'alpine53.123' etc.
+        case alp if mat := re.match(r"alpine(\d+\.\d+)", alp):
             return ("Alpine", mat[1])
         case "archlinux":
             return "ArchLinux", None
-        case ubu if mat := re.match(r"u(\d\d)", ubu): # Match 'u22', 'u20', 'u71' etc.
+        # Match 'u22', 'u20', 'u71' etc.
+        case ubu if mat := re.match(r"u(\d\d)", ubu):
             return "Ubuntu", f"{mat[1]}.04"
         case _:
             raise ValueError(
                 f"Failed to split OS env key {env=} into a name+version pair (unrecognized)"
             )
+
 
 class EarthlyVariant(NamedTuple):
     """
