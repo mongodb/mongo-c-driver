@@ -291,6 +291,11 @@ if (ENABLE_EXAMPLES)
    add_example (creating examples/creating.c)
 endif () # ENABLE_EXAMPLES
 
+add_executable(fuzz_test_bson_utf8_escape_for_json ${PROJECT_SOURCE_DIR}/fuzz/fuzz_test_bson_utf8_escape_for_json.c)
+target_link_libraries(fuzz_test_bson_utf8_escape_for_json bson_static)
+target_compile_options (fuzz_test_bson_utf8_escape_for_json PRIVATE "-fsanitize=fuzzer")
+target_link_options (fuzz_test_bson_utf8_escape_for_json PRIVATE "-fsanitize=fuzzer")
+
 
 # 8888888                   888             888 888
 #   888                     888             888 888
