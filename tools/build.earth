@@ -51,20 +51,30 @@ ADD_C_COMPILER:
 ADD_CXX_COMPILER:
     COMMAND
     ARG --required cxx_compiler
-    ARG gxx_pkg = g++
-    ARG clangxx_pkg = clang++
+    ARG cxx_compiler_bin=$cxx_compiler
     ARG cxx_pkg
     IF test "$cxx_pkg" != ""
-        # Caller has provided a package name
-    ELSE IF test "$cxx_compiler" = g++
-        LET cxx_pkg=$gxx_pkg
-    ELSE IF test "$cxx_compiler" = clang++
-        LET cxx_pkg=$clangxx_pkg
+        # Nothing to infer
+    ELSE IF __is_archlinux
+        # Arch bundles the C and C++ compilers in the same package
+        IF test "$cxx_compiler" = g++
+            LET cxx_pkg = "gcc"
+        ELSE IF test "$cxx_compiler" = clang++
+            LET cxx_pkg = clang
+        END
     ELSE
+        # Other platforms use g++/clang++ packages
+        IF test "$cxx_pkg" != ""
+            # Caller has provided a package name
+        ELSE IF test "$cxx_compiler" = g++ || test "$cxx_compiler" = clang++
+            LET cxx_pkg = $cxx_compiler
+        END
+    END
+    IF test "$cxx_pkg" = ""
         RUN __fail "Unable to infer package name for --cxx_compiler “%s” (check spelling or pass a “--cxx_pkg” argument)" "$cxx_compiler"
     END
     RUN __install $cxx_pkg
-    ENV CXX=$cxx_compiler
+    ENV CXX=$cxx_compiler_bin
 
 # ADD_SASL :
 #   Add SASL libraries to the environment. Requires --sasl and --purpose arguments to be
