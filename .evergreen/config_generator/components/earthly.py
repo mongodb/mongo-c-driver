@@ -18,6 +18,7 @@ _CC_PARAM_NAME = "MONGOC_EARTHLY_C_COMPILER"
 
 
 EnvKey = Literal[
+    "u18",
     "u20",
     "u22",
     "alpine3.16",
