@@ -143,6 +143,9 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
         # We only need one task with "sasl=off"
         case ["u22", "gcc"], ("off", "OpenSSL", "r3.8.0"):
             return True
+        # The Ubuntu 18.04 GCC has a bug that fails to build the 3.8.0 C++ driver
+        case ["u18", "gcc"], [_, _, "r3.8.0"]:
+            return False
         # Other sasl=off tasks we'll just ignore:
         case _, ("off", _tls, _cxx):
             return False
