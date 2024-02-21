@@ -76,8 +76,11 @@ ADD_CXX_COMPILER:
         END
         SET cxx_pkg = "$cxx_pkg build-essential"
     ELSE IF __is_alpine
-        IF test "$cxx_compiler" = g++ || test "$cxx_compiler" = clang++
+        IF test "$cxx_compiler" = g++
             LET cxx_pkg = $cxx_compiler
+        ELSE IF test "$cxx_compiler" = clang++
+            # Alpine bundles clang and clang++ together
+            LET cxx_pkg = clang
         END
     END
     IF test "$cxx_pkg" = ""
