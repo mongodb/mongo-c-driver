@@ -139,7 +139,7 @@ ADD_TLS:
         ELSE IF __is_ubuntu
             LET openssl_dev_pkg = libssl-dev
             # APT will handle this as a regex to match a libssl runtime package:
-            LET openssl_rt_pkg = libssl[0-9]
+            LET openssl_rt_pkg = libssl1.[0-9]
         ELSE IF __is_archlinux
             LET openssl_dev_pkg = openssl
             LET openssl_rt_pkg = openssl
