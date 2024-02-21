@@ -79,8 +79,9 @@ ADD_CXX_COMPILER:
         IF test "$cxx_compiler" = g++
             LET cxx_pkg = $cxx_compiler
         ELSE IF test "$cxx_compiler" = clang++
-            # Alpine bundles clang and clang++ together
-            LET cxx_pkg = clang
+            # Alpine bundles clang and clang++ together.
+            # Old Alpine 3.16 bundles libstdc++ in g++, so we need to pull GCC along anyway
+            LET cxx_pkg = clang g++
         END
     END
     IF test "$cxx_pkg" = ""
