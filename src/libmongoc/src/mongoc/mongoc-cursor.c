@@ -787,6 +787,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                            kv ("ns", utf8_w_len (cursor->ns, cursor->nslen)),
                            kv (first_batch ? "firstBatch" : "nextBatch",
                                bsonArray (docs_array)))));
+   char *db = bson_strndup (cursor->ns, cursor->dblen);
 
    bson_destroy (&docs_array);
 
@@ -794,6 +795,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                                       duration,
                                       &reply,
                                       cmd_name,
+                                      db,
                                       client->cluster.request_id,
                                       cursor->operation_id,
                                       &stream->sd->host,
@@ -807,6 +809,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
 
    mongoc_apm_command_succeeded_cleanup (&event);
    bson_destroy (&reply);
+   bson_free (db);
 
    EXIT;
 }
@@ -833,10 +836,12 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
     * {ok: 0}
     */
    bsonBuildDecl (reply, kv ("ok", int32 (0)));
+   char *db = bson_strndup (cursor->ns, cursor->dblen);
 
    mongoc_apm_command_failed_init (&event,
                                    duration,
                                    cmd_name,
+                                   db,
                                    &cursor->error,
                                    &reply,
                                    client->cluster.request_id,
@@ -852,6 +857,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
 
    mongoc_apm_command_failed_cleanup (&event);
    bson_destroy (&reply);
+   bson_free (db);
 
    EXIT;
 }

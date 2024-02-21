@@ -2406,7 +2406,8 @@ _mongoc_client_monitor_op_killcursors_succeeded (
    int64_t duration,
    mongoc_server_stream_t *server_stream,
    int64_t cursor_id,
-   int64_t operation_id)
+   int64_t operation_id,
+   const char *db)
 {
    mongoc_client_t *client;
    bson_t doc;
@@ -2433,6 +2434,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (
                                       duration,
                                       &doc,
                                       "killCursors",
+                                      db,
                                       cluster->request_id,
                                       operation_id,
                                       &server_stream->sd->host,
@@ -2455,7 +2457,8 @@ _mongoc_client_monitor_op_killcursors_failed (
    int64_t duration,
    mongoc_server_stream_t *server_stream,
    const bson_error_t *error,
-   int64_t operation_id)
+   int64_t operation_id,
+   const char *db)
 {
    mongoc_client_t *client;
    bson_t doc;
@@ -2476,6 +2479,7 @@ _mongoc_client_monitor_op_killcursors_failed (
    mongoc_apm_command_failed_init (&event,
                                    duration,
                                    "killCursors",
+                                   db,
                                    error,
                                    &doc,
                                    cluster->request_id,
@@ -2545,14 +2549,16 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
             bson_get_monotonic_time () - started,
             server_stream,
             cursor_id,
-            operation_id);
+            operation_id,
+            db);
       } else {
          _mongoc_client_monitor_op_killcursors_failed (
             cluster,
             bson_get_monotonic_time () - started,
             server_stream,
             &error,
-            operation_id);
+            operation_id,
+            db);
       }
    }
 
