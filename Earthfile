@@ -91,9 +91,20 @@ test-example:
 test-cxx-driver:
     ARG --required env
     ARG --required test_mongocxx_ref
-    ARG cxx_version_current=0.0.0
     FROM --pass-args +env.$env --purpose=build
-    DO tools+ADD_CXX_COMPILER --cxx_compiler=g++
+    ARG cxx_compiler
+    IF test "$cxx_compiler" = ""
+        # No cxx_compiler is set, so infer based on a possible c_compiler option
+        ARG c_compiler
+        IF test "$c_compiler" != ""
+            # ADD_CXX_COMPILER will remap the C compiler name to an appropriate C++ name
+            LET cxx_compiler="$c_compiler"
+        ELSE
+            LET cxx_compiler =  gcc
+        END
+    END
+    ARG cxx_version_current=0.0.0
+    DO tools+ADD_CXX_COMPILER --cxx_compiler=$cxx_compiler
     COPY --pass-args +build/root /opt/mongo-c-driver
     LET source=/opt/mongo-cxx-driver/src
     LET build=/opt/mongo-cxx-driver/bld
