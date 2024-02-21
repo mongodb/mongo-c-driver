@@ -14447,6 +14447,19 @@ buildvariants:
   - name: debug-compile-nosasl-openssl-1.0.1
   - name: .ocsp-openssl-1.0.1
   batchtime: 10080
+  display_tasks:
+  - execution_tasks:
+    - .ocsp-openssl
+    name: ocsp-openssl
+  - execution_tasks:
+    - .ocsp-darwinssl
+    name: ocsp-darwinssl
+  - execution_tasks:
+    - .ocsp-winssl
+    name: ocsp-winssl
+  - execution_tasks:
+    - .ocsp-openssl-1.0.1
+    name: ocsp-openssl-1.0.1
 - name: packaging
   display_name: Linux Distro Packaging
   run_on: ubuntu1804-test
