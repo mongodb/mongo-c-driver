@@ -238,19 +238,21 @@ def all_possible(typ: Type[T]) -> Iterable[T]:
         args = get_args(typ)
         yield from itertools.chain.from_iterable(map(all_possible, args))
     elif isclass(typ) and issubclass(typ, tuple):
-        # Iter each configuration parameter:
+        # Iter each NamedTuple field:
         fields: Iterable[tuple[str, type]] = get_type_hints(typ).items()
-        # Generate lists of pairs of parameter names their options:
+        # Generate lists of pairs of field names and their possible values
         all_pairs: Iterable[Iterable[tuple[str, str]]] = (
-            # Generate a (key, opt) pair for each option in parameter 'key'
+            # Generate a (key, opt) pair for each option for 'key'
             [(key, opt) for opt in all_possible(typ)]
-            # Over each parameter and type thereof:
+            # Over each field and type thereof:
             for key, typ in fields
         )
-        # Now generate the cross product of all alternative for all options:
+        # Now generate the cross product of all alternative for all fields:
         matrix: Iterable[dict[str, Any]] = map(dict, itertools.product(*all_pairs))
         for items in matrix:
-            # Convert each item to a Configuration:
+            # Reconstruct as a NamedTuple:
             yield typ(**items)  # type: ignore
     else:
-        raise TypeError(f'Do not know how to do "all_possible" of type {typ!r} ({origin=})')
+        raise TypeError(
+            f'Do not know how to do "all_possible" of type {typ!r} ({origin=})'
+        )
