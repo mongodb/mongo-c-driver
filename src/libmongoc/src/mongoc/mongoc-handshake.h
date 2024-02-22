@@ -28,7 +28,7 @@ BSON_BEGIN_DECLS
 
 #define MONGOC_HANDSHAKE_APPNAME_MAX 128
 
-MONGOC_EXPORT (bool) 
+MONGOC_EXPORT (bool)
 mongoc_handshake_data_append (const char *driver_name,
                               const char *driver_version,
                               const char *platform);

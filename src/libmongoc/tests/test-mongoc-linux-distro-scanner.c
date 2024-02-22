@@ -37,11 +37,13 @@ test_read_generic_release_file (void)
    };
 
    const char *paths2[] = {
-      OS_RELEASE_FILE_DIR "/example-etc-xyz-release-no-delimiter.txt", NULL,
+      OS_RELEASE_FILE_DIR "/example-etc-xyz-release-no-delimiter.txt",
+      NULL,
    };
 
    const char *paths3[] = {
-      OS_RELEASE_FILE_DIR "/empty-file.txt", NULL,
+      OS_RELEASE_FILE_DIR "/empty-file.txt",
+      NULL,
    };
 
    _mongoc_linux_distro_scanner_read_generic_release_file (

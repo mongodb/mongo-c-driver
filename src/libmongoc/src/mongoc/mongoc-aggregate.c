@@ -107,7 +107,7 @@ _make_agg_cmd (const char *ns,
               // If 'ns' contains a dot, insert the string after the dot:
               then (cstr (dot + 1)),
               // Otherwise just an integer 1:
-              else(int32 (1)))));
+              else (int32 (1)))));
    if ((error_hint = "append-aggregate", error = bsonBuildError)) {
       goto fail;
    }
@@ -121,8 +121,8 @@ _make_agg_cmd (const char *ns,
       find (keyWithType ("pipeline", array),
             // There is a "pipeline" array in the document
             append (*command, kv ("pipeline", iterValue (bsonVisitIter)))),
-      else( // We did not find a "pipeline" array. copy the pipeline as
-            // an array into the command
+      else ( // We did not find a "pipeline" array. copy the pipeline as
+             // an array into the command
          append (*command, kv ("pipeline", array (insert (*pipeline, true))))));
    if ((error_hint = "append-pipeline", error = bsonParseError)) {
       goto fail;
@@ -140,7 +140,7 @@ _make_agg_cmd (const char *ns,
                           // If it has an "$out" or "$merge" key, it is a
                           // writing aggregate command.
                           parse (find (key ("$out", "$merge"),
-                                       do(has_write_key = true)))))));
+                                       do (has_write_key = true)))))));
    if ((error_hint = "parse-pipeline", error = bsonParseError)) {
       goto fail;
    }

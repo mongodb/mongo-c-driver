@@ -30,13 +30,13 @@ typedef struct _test_bson_valid_type_t {
    const char *scenario_description;
    bson_type_t bson_type;
    const char *test_description;
-   uint8_t *cB;         /* "canonical_bson" */
+   uint8_t *cB; /* "canonical_bson" */
    uint32_t cB_len;
-   uint8_t *dB;         /* "degenerate_bson" */
+   uint8_t *dB; /* "degenerate_bson" */
    uint32_t dB_len;
-   const char *cE;      /* "canonical_extjson" */
-   const char *rE;      /* "relaxed_extjson" */
-   const char *dE;      /* "degenerate_extjson" */
+   const char *cE; /* "canonical_extjson" */
+   const char *rE; /* "relaxed_extjson" */
+   const char *dE; /* "degenerate_extjson" */
    bool lossy;
 } test_bson_valid_type_t;
 

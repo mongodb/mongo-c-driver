@@ -23,10 +23,10 @@ skipped_corpus_test_t SKIPPED_CORPUS_TESTS[] = {
    {"Double type", "1.2345678921232E+18"},
    {"Double type", "-1.2345678921232E+18"},
    /* CDRIVER-4017, libbson does not emit escape sequences */
-   {"Javascript Code", "two-byte UTF-8 (\xc3\xa9)"}, /* \u00e9 */
+   {"Javascript Code", "two-byte UTF-8 (\xc3\xa9)"},       /* \u00e9 */
    {"Javascript Code", "three-byte UTF-8 (\xe2\x98\x86)"}, /* \u2606 */
-   {"String", "two-byte UTF-8 (\xc3\xa9)"}, /* \u00e9 */
-   {"String", "three-byte UTF-8 (\xe2\x98\x86)"}, /* \u2606 */
+   {"String", "two-byte UTF-8 (\xc3\xa9)"},                /* \u00e9 */
+   {"String", "three-byte UTF-8 (\xe2\x98\x86)"},          /* \u2606 */
    {0}};
 
 
@@ -292,7 +292,8 @@ test_bson_corpus_cb (bson_t *scenario)
 }
 
 static void
-test_bson_corpus_prose_1 (void) {
+test_bson_corpus_prose_1 (void)
+{
    bson_t *bson;
    bool ok;
    bson_t subdoc;
@@ -304,7 +305,7 @@ test_bson_corpus_prose_1 (void) {
    bson_destroy (bson);
 
    /* Field name within a sub-document */
-   bson = bson_new();
+   bson = bson_new ();
    bson_append_document_begin (bson, "subdoc", -1, &subdoc);
    ok = bson_append_int32 (&subdoc, "a\0b", 3, 123);
    BSON_ASSERT (!ok);

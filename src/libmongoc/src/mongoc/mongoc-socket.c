@@ -556,7 +556,7 @@ static bool
 #ifdef _WIN32
 _mongoc_socket_setnodelay (SOCKET sd) /* IN */
 #else
-_mongoc_socket_setnodelay (int sd)   /* IN */
+_mongoc_socket_setnodelay (int sd) /* IN */
 #endif
 {
 #ifdef _WIN32
@@ -1224,7 +1224,8 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
    for (size_t i = 0u; i < iovcnt; i++) {
 #ifdef _WIN32
       BSON_ASSERT (bson_in_range_unsigned (int, iov[i].iov_len));
-      const int wrote = send (sock->sd, iov[i].iov_base, (int) iov[i].iov_len, 0);
+      const int wrote =
+         send (sock->sd, iov[i].iov_base, (int) iov[i].iov_len, 0);
       if (wrote == SOCKET_ERROR) {
 #else
       const ssize_t wrote = send (sock->sd, iov[i].iov_base, iov[i].iov_len, 0);

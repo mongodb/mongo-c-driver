@@ -93,7 +93,7 @@ _mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
  *
  * Write to a page.
  *
-* Writes are copy-on-write with regards to the buffer that was passed to the
+ * Writes are copy-on-write with regards to the buffer that was passed to the
  * mongoc_gridfs_file_page_t during construction. In other words, the first
  * write allocates a large enough buffer for file->chunk_size, which becomes
  * authoritative from then on.

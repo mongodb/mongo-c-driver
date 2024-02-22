@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #ifdef _WIN32
-#define sleep(_n) Sleep ((_n) *1000)
+#define sleep(_n) Sleep ((_n) * 1000)
 #endif
 
 
