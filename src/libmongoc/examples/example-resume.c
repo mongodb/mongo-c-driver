@@ -1,13 +1,13 @@
 #include <mongoc/mongoc.h>
 
 /* An example implementation of custom resume logic in a change stream.
-* example-resume starts a client-wide change stream and persists the resume
-* token in a file "resume-token.json". On restart, if "resume-token.json"
-* exists, the change stream starts watching after the persisted resume token.
-*
-* This behavior allows a user to exit example-resume, and restart it later
-* without missing any change events.
-*/
+ * example-resume starts a client-wide change stream and persists the resume
+ * token in a file "resume-token.json". On restart, if "resume-token.json"
+ * exists, the change stream starts watching after the persisted resume token.
+ *
+ * This behavior allows a user to exit example-resume, and restart it later
+ * without missing any change events.
+ */
 #include <unistd.h>
 
 static const char *RESUME_TOKEN_PATH = "resume-token.json";

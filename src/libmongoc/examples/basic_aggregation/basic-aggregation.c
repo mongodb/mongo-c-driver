@@ -97,7 +97,7 @@ main (int argc, char *argv[])
    if (!map_reduce_advanced (database)) {
       goto cleanup;
    }
-   
+
    exit_code = EXIT_SUCCESS;
 
 cleanup:
