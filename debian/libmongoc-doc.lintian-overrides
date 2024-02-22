@@ -1,6 +1,0 @@
-# Sphinx embeds jQuery
-libmongoc-doc: embedded-javascript-library
-
-# Sphinx generated man pages have tables which overflow 80 column lines because
-# the names of libmongoc functions are too long to fit in 80 columns.
-libmongoc-doc: groff-message
