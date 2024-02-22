@@ -23,7 +23,14 @@ source_dirs=(
   src/libmongoc
 )
 
-mapfile -t source_files < <(find "${source_dirs[@]:?}" -name '*.[ch]')
+exclude_patterns=(
+  -e src/libbson/src/jsonsl
+)
+
+mapfile -t source_files < <(
+  find "${source_dirs[@]:?}" -name '*.[ch]' |
+    grep -E -v "${exclude_patterns[@]}"
+)
 
 if [[ -n "${DRYRUN:-}" ]]; then
   clang-format --dry-run -Werror "${source_files[@]:?}"
