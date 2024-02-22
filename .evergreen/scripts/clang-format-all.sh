@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# clang-format.sh
+# clang-format-all.sh
 #
 # Usage:
 #   ./tools/poetry.sh install --with=dev
-#   ./tools/poetry.sh run .evergreen/scripts/clang-format.sh
-#   DRYRUN=1 ./tools/poetry.sh run .evergreen/scripts/clang-format.sh
-#   ./tools/poetry.sh run env DRYRUN=1 .evergreen/scripts/clang-format.sh
+#   ./tools/poetry.sh run .evergreen/scripts/clang-format-all.sh
+#   DRYRUN=1 ./tools/poetry.sh run .evergreen/scripts/clang-format-all.sh
+#   ./tools/poetry.sh run env DRYRUN=1 .evergreen/scripts/clang-format-all.sh
 #
 # This script is meant to be run from the project root directory.
 

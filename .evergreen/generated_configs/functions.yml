@@ -89,7 +89,7 @@ functions:
           DRYRUN: "1"
         args:
           - -c
-          - ./tools/poetry.sh run .evergreen/scripts/clang-format.sh
+          - ./tools/poetry.sh run .evergreen/scripts/clang-format-all.sh
   cse-sasl-cyrus-darwinssl-compile:
     - command: expansions.update
       params:

@@ -30,7 +30,7 @@ class ClangFormat(Function):
             env={
                 "DRYRUN": "1",
             },
-            script="./tools/poetry.sh run .evergreen/scripts/clang-format.sh",
+            script="./tools/poetry.sh run .evergreen/scripts/clang-format-all.sh",
         ),
     ]
 
