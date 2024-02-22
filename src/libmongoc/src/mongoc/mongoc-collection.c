@@ -59,7 +59,7 @@ _mongoc_collection_write_command_execute (
    ENTRY;
 
    server_stream = mongoc_cluster_stream_for_writes (
-      &collection->client->cluster, cs, NULL, &result->error);
+      &collection->client->cluster, cs, NULL, NULL, &result->error);
 
    if (!server_stream) {
       /* result->error has been filled out */
@@ -97,6 +97,7 @@ _mongoc_collection_write_command_execute_idl (
    server_stream =
       mongoc_cluster_stream_for_writes (&collection->client->cluster,
                                         crud->client_session,
+                                        NULL,
                                         &reply,
                                         &result->error);
 
@@ -815,7 +816,7 @@ mongoc_collection_estimated_document_count (
    BSON_ASSERT_PARAM (coll);
 
    server_stream = mongoc_cluster_stream_for_reads (
-      &coll->client->cluster, read_prefs, NULL, reply, error);
+      &coll->client->cluster, read_prefs, NULL, NULL, reply, error);
 
    if (opts && bson_has_field (opts, "sessionId")) {
       bson_set_error (error,
@@ -1625,7 +1626,7 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    bson_append_array_builder_end (&cmd, ar);
 
    server_stream = mongoc_cluster_stream_for_writes (
-      &collection->client->cluster, parsed.client_session, reply, error);
+      &collection->client->cluster, parsed.client_session, NULL, reply, error);
 
    if (!server_stream) {
       reply_initialized = true;
@@ -2245,6 +2246,7 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
    server_stream =
       mongoc_cluster_stream_for_writes (&collection->client->cluster,
                                         update_opts->crud.client_session,
+                                        NULL,
                                         reply,
                                         error);
 
@@ -3396,7 +3398,7 @@ mongoc_collection_find_and_modify_with_opts (
    }
 
    server_stream = mongoc_cluster_stream_for_writes (
-      cluster, appended_opts.client_session, &ss_reply, error);
+      cluster, appended_opts.client_session, NULL, &ss_reply, error);
 
    if (!server_stream) {
       bson_concat (reply_ptr, &ss_reply);
@@ -3566,8 +3568,23 @@ retry:
 
       /* each write command may be retried at most once */
       is_retryable = false;
-      retry_server_stream = mongoc_cluster_stream_for_writes (
-         cluster, parts.assembled.session, NULL /* reply */, &ignored_error);
+
+      {
+         mongoc_deprioritized_servers_t *const ds =
+            mongoc_deprioritized_servers_new ();
+
+         mongoc_deprioritized_servers_add_if_sharded (
+            ds, server_stream->topology_type, server_stream->sd);
+
+         retry_server_stream =
+            mongoc_cluster_stream_for_writes (cluster,
+                                              parts.assembled.session,
+                                              ds,
+                                              NULL /* reply */,
+                                              &ignored_error);
+
+         mongoc_deprioritized_servers_destroy (ds);
+      }
 
       if (retry_server_stream) {
          parts.assembled.server_stream = retry_server_stream;
@@ -3782,6 +3799,7 @@ mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
       server_stream =
          mongoc_cluster_stream_for_writes (&collection->client->cluster,
                                            NULL /* mongoc_client_session_t */,
+                                           NULL /* deprioritized servers */,
                                            reply_ptr,
                                            error);
       if (server_stream->sd->max_wire_version < WIRE_VERSION_4_4) {

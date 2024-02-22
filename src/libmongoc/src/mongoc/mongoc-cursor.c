@@ -666,6 +666,7 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
             : mongoc_cluster_stream_for_reads (&cursor->client->cluster,
                                                cursor->read_prefs,
                                                cursor->client_session,
+                                               NULL,
                                                &reply,
                                                &cursor->error);
 
@@ -1098,16 +1099,28 @@ retry:
           MONGOC_READ_ERR_RETRY) {
       is_retryable = false;
 
-      mongoc_server_stream_cleanup (server_stream);
+      {
+         mongoc_deprioritized_servers_t *const ds =
+            mongoc_deprioritized_servers_new ();
 
-      BSON_ASSERT (!cursor->is_aggr_with_write_stage &&
-                   "Cannot attempt a retry on an aggregate operation that "
-                   "contains write stages");
-      server_stream = mongoc_cluster_stream_for_reads (&cursor->client->cluster,
-                                                       cursor->read_prefs,
-                                                       cursor->client_session,
-                                                       reply,
-                                                       &cursor->error);
+         mongoc_deprioritized_servers_add_if_sharded (
+            ds, server_stream->topology_type, server_stream->sd);
+
+         mongoc_server_stream_cleanup (server_stream);
+
+         BSON_ASSERT (!cursor->is_aggr_with_write_stage &&
+                      "Cannot attempt a retry on an aggregate operation that "
+                      "contains write stages");
+         server_stream =
+            mongoc_cluster_stream_for_reads (&cursor->client->cluster,
+                                             cursor->read_prefs,
+                                             cursor->client_session,
+                                             ds,
+                                             reply,
+                                             &cursor->error);
+
+         mongoc_deprioritized_servers_destroy (ds);
+      }
 
       if (server_stream) {
          cursor->server_id = server_stream->sd->id;

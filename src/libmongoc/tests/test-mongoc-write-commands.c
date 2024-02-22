@@ -54,8 +54,8 @@ test_split_insert (void)
       _mongoc_write_command_insert_append (&command, docs[i]);
    }
 
-   server_stream =
-      mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_writes (
+      &client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    _mongoc_write_command_execute (&command,
                                   client,
@@ -125,8 +125,8 @@ test_invalid_write_concern (void)
    _mongoc_write_command_init_insert (
       &command, doc, NULL, write_flags, ++client->cluster.operation_id);
    _mongoc_write_result_init (&result);
-   server_stream =
-      mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_writes (
+      &client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    _mongoc_write_command_execute (&command,
                                   client,

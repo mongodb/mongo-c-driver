@@ -24,6 +24,7 @@
 #include "mongoc-array-private.h"
 #include "mongoc-topology-description.h"
 #include "mongoc-apm-private.h"
+#include "mongoc-deprioritized-servers-private.h"
 
 
 typedef enum {
@@ -114,6 +115,7 @@ mongoc_topology_description_select (
    mongoc_ss_optype_t optype,
    const mongoc_read_prefs_t *read_pref,
    bool *must_use_primary,
+   const mongoc_deprioritized_servers_t *ds,
    int64_t local_threshold_ms);
 
 mongoc_server_description_t *
@@ -149,6 +151,7 @@ mongoc_topology_description_suitable_servers (
    const mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t *read_pref,
    bool *must_use_primary,
+   const mongoc_deprioritized_servers_t *ds,
    int64_t local_threshold_ms);
 
 bool
@@ -193,5 +196,11 @@ _mongoc_topology_description_clear_connection_pool (
    mongoc_topology_description_t *td,
    uint32_t server_id,
    const bson_oid_t *service_id);
+
+void
+mongoc_deprioritized_servers_add_if_sharded (
+   mongoc_deprioritized_servers_t *ds,
+   mongoc_topology_description_type_t topology_type,
+   const mongoc_server_description_t *sd);
 
 #endif /* MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H */
