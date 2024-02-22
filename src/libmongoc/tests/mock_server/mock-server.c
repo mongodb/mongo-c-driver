@@ -329,7 +329,6 @@ mock_server_run (mock_server_t *server)
    size_t bind_addr_len = 0;
    int r;
 
-   MONGOC_INFO ("Starting mock server on port %d.", server->port);
    ssock = mongoc_socket_new (
       server->bind_opts.family ? server->bind_opts.family : AF_INET,
       SOCK_STREAM,
@@ -385,6 +384,8 @@ mock_server_run (mock_server_t *server)
       perror ("Failed to get bound port number");
       return 0;
    }
+
+   MONGOC_INFO ("Starting mock server on port %d.", bound_port);
 
    bson_mutex_lock (&server->mutex);
 

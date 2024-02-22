@@ -28,7 +28,7 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``keys``: A :symbol:`bson:bson_t`.
 * ``index_opts``: A mongoc_index_opt_t.
-* ``reply``: An optional location for a :symbol:`bson:bson_t` which will store the server's reply.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. |opts-source| replace:: ``collection``

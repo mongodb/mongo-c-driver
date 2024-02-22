@@ -1,3 +1,8 @@
+libbson 1.26.0
+==============
+
+No changes since 1.25.4. Version incremented to match the libmongoc version.
+
 libbson 1.25.4
 ==============
 
@@ -17,6 +22,7 @@ libbson 1.25.2
 Fixes:
 
   * Fix conversion warning with GCC 12.
+  * Include -pthread in pkg-config Libs.
 
 Thanks to everyone who contributed to the development of this release.
 

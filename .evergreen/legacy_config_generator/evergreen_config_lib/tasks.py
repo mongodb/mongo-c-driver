@@ -313,6 +313,16 @@ all_tasks = [
                 remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz",
                 content_type="${content_type|application/x-gzip}",
             ),
+            s3_put(
+                local_file="deb-i386.tar.gz",
+                remote_file="${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz",
+                content_type="${content_type|application/x-gzip}",
+            ),
+            s3_put(
+                local_file="deb-i386.tar.gz",
+                remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz",
+                content_type="${content_type|application/x-gzip}",
+            ),
         ],
     ),
     NamedTask(
@@ -916,9 +926,15 @@ aws_compile_task = NamedTask(
             export distro_id='${distro_id}' # Required by find_cmake_latest.
             . .evergreen/scripts/find-cmake-latest.sh
             cmake_binary="$(find_cmake_latest)"
-            # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
+
+            # Allow reuse of ccache compilation results between different build directories.
+            export CCACHE_BASEDIR CCACHE_NOHASHDIR
+            CCACHE_BASEDIR="$(pwd)"
+            CCACHE_NOHASHDIR=1
+
+            # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
             export CC='${CC}'
-            "$cmake_binary" -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+            "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
             "$cmake_binary" --build . --target test-awsauth
             """
         ),

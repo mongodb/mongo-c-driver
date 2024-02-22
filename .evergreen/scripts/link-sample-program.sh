@@ -72,9 +72,17 @@ fi
 
 ZSTD="AUTO"
 
+# Allow reuse of ccache compilation results between different build directories.
+export CCACHE_BASEDIR CCACHE_NOHASHDIR
+CCACHE_BASEDIR="$SCRATCH_DIR"
+CCACHE_NOHASHDIR=1
+
 $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"
 $CMAKE --build . --parallel
 $CMAKE --build . --parallel --target install
+
+# Revert ccache options, they no longer apply.
+unset CCACHE_BASEDIR CCACHE_NOHASHDIR
 
 ls -l $INSTALL_DIR/lib
 

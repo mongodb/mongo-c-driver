@@ -424,6 +424,25 @@ test_multithreaded (const mongoc_uri_t *uri)
    }
 }
 
+static void
+log_func (mongoc_log_level_t log_level,
+          const char *log_domain,
+          const char *message,
+          void *user_data)
+{
+   if (log_level != MONGOC_LOG_LEVEL_TRACE) {
+      mongoc_log_default_handler (log_level, log_domain, message, user_data);
+      return;
+   }
+
+   // Only log trace messages from AWS auth.
+   if (0 == strcmp (log_domain, "aws_auth")) {
+      mongoc_log_default_handler (log_level, log_domain, message, user_data);
+   }
+
+   // Do not print other trace logs to reduce verbosity.
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -436,6 +455,10 @@ main (int argc, char *argv[])
    if (argc != 3) {
       FAILF ("usage: %s URI [EXPECT_SUCCESS|EXPECT_FAILURE]\n", argv[0]);
    }
+
+   // Set a custom log callback to only print trace messages related to fetching
+   // AWS credentials.
+   mongoc_log_set_handler (log_func, NULL /* user_data */);
 
    mongoc_init ();
 

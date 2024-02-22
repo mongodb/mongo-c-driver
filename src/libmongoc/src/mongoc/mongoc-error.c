@@ -20,6 +20,7 @@
 #include "mongoc-error-private.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-server-description-private.h"
 
 bool
 mongoc_error_has_label (const bson_t *reply, const char *label)
@@ -31,22 +32,6 @@ mongoc_error_has_label (const bson_t *reply, const char *label)
    BSON_ASSERT (label);
 
    if (bson_iter_init_find (&iter, reply, "errorLabels") &&
-       bson_iter_recurse (&iter, &error_labels)) {
-      while (bson_iter_next (&error_labels)) {
-         if (BSON_ITER_HOLDS_UTF8 (&error_labels) &&
-             !strcmp (bson_iter_utf8 (&error_labels, NULL), label)) {
-            return true;
-         }
-      }
-   }
-
-   if (!bson_iter_init_find (&iter, reply, "writeConcernError")) {
-      return false;
-   }
-
-   BSON_ASSERT (bson_iter_recurse (&iter, &iter));
-
-   if (bson_iter_find (&iter, "errorLabels") &&
        bson_iter_recurse (&iter, &error_labels)) {
       while (bson_iter_next (&error_labels)) {
          if (BSON_ITER_HOLDS_UTF8 (&error_labels) &&
@@ -118,7 +103,7 @@ void
 _mongoc_write_error_handle_labels (bool cmd_ret,
                                    const bson_error_t *cmd_err,
                                    bson_t *reply,
-                                   int32_t server_max_wire_version)
+                                   const mongoc_server_description_t *sd)
 {
    bson_error_t error;
 
@@ -131,14 +116,21 @@ _mongoc_write_error_handle_labels (bool cmd_ret,
       return;
    }
 
-   if (server_max_wire_version >= WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL) {
+   if (sd->max_wire_version >= WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL) {
       return;
    }
 
-   /* check for a server error. */
-   if (_mongoc_cmd_check_ok_no_wce (
-          reply, MONGOC_ERROR_API_VERSION_2, &error)) {
-      return;
+   /* Check for a server error. Do not consult writeConcernError for pre-4.4
+    * mongos. */
+   if (sd->type == MONGOC_SERVER_MONGOS) {
+      if (_mongoc_cmd_check_ok (reply, MONGOC_ERROR_API_VERSION_2, &error)) {
+         return;
+      }
+   } else {
+      if (_mongoc_cmd_check_ok_no_wce (
+             reply, MONGOC_ERROR_API_VERSION_2, &error)) {
+         return;
+      }
    }
 
    if (_mongoc_write_error_is_retryable (&error)) {
@@ -184,12 +176,14 @@ _mongoc_read_error_get_type (bool cmd_ret,
    }
 
    switch (error.code) {
+   case MONGOC_SERVER_ERR_EXCEEDEDTIMELIMIT:
    case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
    case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
    case MONGOC_SERVER_ERR_NOTPRIMARY:
    case MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK:
    case MONGOC_SERVER_ERR_NOTPRIMARYORSECONDARY:
    case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
+   case MONGOC_SERVER_ERR_READCONCERNMAJORITYNOTAVAILABLEYET:
    case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
    case MONGOC_SERVER_ERR_HOSTNOTFOUND:
    case MONGOC_SERVER_ERR_HOSTUNREACHABLE:

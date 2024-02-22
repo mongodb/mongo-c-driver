@@ -29,7 +29,7 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``command``: A :symbol:`bson:bson_t` containing the command specification.
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
-* ``reply``: A location for the resulting document.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. include:: includes/write-opts.txt

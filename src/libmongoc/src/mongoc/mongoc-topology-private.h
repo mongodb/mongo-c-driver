@@ -29,6 +29,7 @@
 #include "mongoc-crypt-private.h"
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
+#include "mongoc-sleep.h"
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -212,6 +213,11 @@ typedef struct _mongoc_topology_t {
     * topology. This could occur if the URI is invalid.
     * An invalid topology does not monitor servers. */
    bool valid;
+
+   // `usleep_fn` and `usleep_data` may be overridden by
+   // `mongoc_client_set_usleep_impl`.
+   mongoc_usleep_func_t usleep_fn;
+   void *usleep_data;
 } mongoc_topology_t;
 
 mongoc_topology_t *
@@ -278,6 +284,8 @@ mongoc_topology_select (mongoc_topology_t *topology,
  * @param must_use_primary An optional output parameter. Server selection might
  * need to override the caller's read preferences' read mode to 'primary'.
  * Whether or not that takes place will be set through this pointer.
+ * @param ds A list of servers that should be selected only if there are no
+ * other suitable servers.
  * @param error An output parameter for any error information.
  * @return uint32_t A non-zero integer ID of the server description. In case of
  * error, sets `error` and returns zero.
@@ -289,6 +297,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bool *must_use_primary,
+                                  const mongoc_deprioritized_servers_t *ds,
                                   bson_error_t *error);
 
 /**

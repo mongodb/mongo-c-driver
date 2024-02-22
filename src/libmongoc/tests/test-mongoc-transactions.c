@@ -257,10 +257,19 @@ transactions_test_run_operation (json_test_ctx_t *ctx,
 }
 
 
+static test_skip_t skips[] = {
+   {"callback is not retried after non-transient error (DuplicateKeyError)",
+    "Waiting on CDRIVER-4811"},
+   {0}};
+
+
 static void
 test_transactions_cb (bson_t *scenario)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
+
+   config.skips = skips;
+
    config.before_test_cb = transactions_test_before_test;
    config.run_operation_cb = transactions_test_run_operation;
    config.after_test_cb = transactions_test_after_test;
@@ -974,7 +983,7 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    BSON_ASSERT (0 == mongoc_client_session_get_server_id (session));
 
    expected_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+      client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (expected_id, error);
 
    /* session should still be unpinned */

@@ -31,7 +31,7 @@ Parameters
 * ``db_name``: The name of the database to run the command on.
 * ``command``: A :symbol:`bson:bson_t` containing the command specification.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
-* ``reply``: A location for the resulting document.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Errors

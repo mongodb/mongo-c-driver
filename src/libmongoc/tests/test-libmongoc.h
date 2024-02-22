@@ -138,6 +138,11 @@ bool
 test_framework_is_mongos (void);
 bool
 test_framework_is_replset (void);
+// `test_framework_is_mongohouse` returns true if configured to test
+// mongohoused (used for Atlas Data Lake).
+// See: "Atlas Data Lake Tests" in the MongoDB Specifications.
+bool
+test_framework_is_mongohouse (void);
 bool
 test_framework_server_is_secondary (mongoc_client_t *client,
                                     uint32_t server_id);

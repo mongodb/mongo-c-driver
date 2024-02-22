@@ -2240,10 +2240,16 @@ test_framework_skip_if_single (void)
    return (test_framework_is_mongos () || test_framework_is_replset ());
 }
 
+bool
+test_framework_is_mongohouse (void)
+{
+   return test_framework_getenv_bool ("RUN_MONGOHOUSE_TESTS");
+}
+
 int
 test_framework_skip_if_no_mongohouse (void)
 {
-   if (!getenv ("RUN_MONGOHOUSE_TESTS")) {
+   if (!test_framework_is_mongohouse ()) {
       return 0;
    }
    return 1;
@@ -2435,6 +2441,8 @@ test_framework_skip_if_no_client_side_encryption (void)
    const char *required_env_vars[] = {
       "MONGOC_TEST_AWS_SECRET_ACCESS_KEY",
       "MONGOC_TEST_AWS_ACCESS_KEY_ID",
+      "MONGOC_TEST_AWSNAME2_SECRET_ACCESS_KEY",
+      "MONGOC_TEST_AWSNAME2_ACCESS_KEY_ID",
       "MONGOC_TEST_AZURE_TENANT_ID",
       "MONGOC_TEST_AZURE_CLIENT_ID",
       "MONGOC_TEST_AZURE_CLIENT_SECRET",

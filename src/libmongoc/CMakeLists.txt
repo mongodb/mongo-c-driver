@@ -566,6 +566,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-deprioritized-servers.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-flags.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-generation-map.c
@@ -695,6 +696,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-api.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-session.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sleep.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
@@ -1038,6 +1040,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryability-helpers.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sample-commands.c

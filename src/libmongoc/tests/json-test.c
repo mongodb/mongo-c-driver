@@ -501,6 +501,7 @@ test_server_selection_logic_cb (bson_t *test)
       &topology,
       read_prefs,
       NULL,
+      NULL,
       MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
 
    /* check each server in expected_servers is in selected_servers */
@@ -1213,7 +1214,7 @@ execute_test (const json_test_config_t *config,
 
    /* Select a primary for testing */
    server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+      client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
    json_test_ctx_init (&ctx, test, client, db, collection, config);
@@ -1337,6 +1338,11 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
    bson_error_t error;
 
    ASSERT (client);
+
+   if (test_framework_is_mongohouse ()) {
+      // mongohouse does not support failpoints.
+      return;
+   }
 
    if (server_id) {
       sd = mongoc_client_get_server_description (client, server_id);
@@ -1856,7 +1862,7 @@ run_json_general_test (const json_test_config_t *config)
 
          if (should_skip) {
             fprintf (stderr,
-                     " - %s SKIPPED, due to reason: %s",
+                     " - %s SKIPPED, due to reason: %s\n",
                      description,
                      iter->reason);
             continue;
@@ -1900,7 +1906,7 @@ run_json_general_test (const json_test_config_t *config)
 
       /* clean up in case a previous test aborted */
       server_id = mongoc_topology_select_server_id (
-         client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+         client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
       ASSERT_OR_PRINT (server_id, error);
       deactivate_fail_points (client, server_id);
       r = mongoc_client_command_with_opts (client,
@@ -1922,8 +1928,11 @@ run_json_general_test (const json_test_config_t *config)
 
       set_auto_encryption_opts (client, &test);
       /* Drop and recreate test database/collection if necessary. */
-      _recreate (db_name, collection_name, scenario);
-      _recreate (db2_name, collection2_name, scenario);
+      if (!test_framework_is_mongohouse ()) {
+         // mongohouse test user is not authorized to run `drop`.
+         _recreate (db_name, collection_name, scenario);
+         _recreate (db2_name, collection2_name, scenario);
+      }
       insert_data (db_name, collection_name, scenario);
 
       db = mongoc_client_get_database (client, db_name);

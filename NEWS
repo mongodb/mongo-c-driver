@@ -1,3 +1,29 @@
+libmongoc 1.26.0
+================
+
+New Features:
+
+  * Support named KMS providers.
+  * Redirect retries in sharded clusters to another mongos if possible.
+
+Improvements:
+
+  * Add `VERSION_CURRENT` file in source to ease building.
+  * Consider more errors retryable.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Jeremy Mikola
+  * Adrian Dole
+  * Kyle Kloberdanz
+  * Ezra Chung
+  * MongoCaleb
+  * Roberto C. Sánchez
+  * itrofimow
+
+
+
 libmongoc 1.25.4
 ================
 
@@ -23,6 +49,7 @@ libmongoc 1.25.2
 Fixes:
 
   * Fix data race in `mongoc_cursor_get_host`.
+  * Accept discouraged timeout values for backwards compatibility.
 
 Thanks to everyone who contributed to the development of this release.
 
