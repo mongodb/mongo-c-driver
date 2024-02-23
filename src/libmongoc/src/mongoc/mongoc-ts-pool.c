@@ -7,7 +7,7 @@
  * Toggle this to enable/disable checks that all items are returned to the pool
  * before the pool is destroyed
  */
-enum { AUDIT_POOL_ENABLED = 0 };
+static const bool audit_pool_enabled = false;
 
 /**
  * To support correct alignment of the item allocated within pool_node::data,
@@ -41,7 +41,7 @@ struct mongoc_ts_pool {
    int32_t size;
    bson_mutex_t mtx;
    /* Number of elements that the pool has given to users.
-    * If AUDIT_POOL_ENABLED is zero, this member is unused */
+    * If audit_pool_enabled is zero, this member is unused */
    int32_t outstanding_items;
 };
 
@@ -164,7 +164,7 @@ _new_item (mongoc_ts_pool *pool, bson_error_t *error)
          node = NULL;
       }
    }
-   if (node && AUDIT_POOL_ENABLED) {
+   if (node && audit_pool_enabled) {
       bson_atomic_int32_fetch_add (
          &pool->outstanding_items, 1, bson_memory_order_relaxed);
    }
@@ -200,7 +200,7 @@ _try_get (mongoc_ts_pool *pool)
    bson_mutex_unlock (&pool->mtx);
    if (node) {
       bson_atomic_int32_fetch_sub (&pool->size, 1, bson_memory_order_relaxed);
-      if (AUDIT_POOL_ENABLED) {
+      if (audit_pool_enabled) {
          bson_atomic_int32_fetch_add (
             &pool->outstanding_items, 1, bson_memory_order_relaxed);
       }
@@ -215,7 +215,7 @@ mongoc_ts_pool_new (mongoc_ts_pool_params params)
    r->params = params;
    r->head = NULL;
    r->size = 0;
-   if (AUDIT_POOL_ENABLED) {
+   if (audit_pool_enabled) {
       r->outstanding_items = 0;
    }
    bson_mutex_init (&r->mtx);
@@ -235,7 +235,7 @@ mongoc_ts_pool_new (mongoc_ts_pool_params params)
 void
 mongoc_ts_pool_free (mongoc_ts_pool *pool)
 {
-   if (AUDIT_POOL_ENABLED) {
+   if (audit_pool_enabled) {
       BSON_ASSERT (
          pool->outstanding_items == 0 &&
          "Pool was destroyed while there are still items checked out");
@@ -315,7 +315,7 @@ mongoc_ts_pool_return (mongoc_ts_pool *pool, void *item)
       bson_mutex_unlock (&pool->mtx);
       bson_atomic_int32_fetch_add (
          &node->owner_pool->size, 1, bson_memory_order_relaxed);
-      if (AUDIT_POOL_ENABLED) {
+      if (audit_pool_enabled) {
          bson_atomic_int32_fetch_sub (
             &node->owner_pool->outstanding_items, 1, bson_memory_order_relaxed);
       }
@@ -329,7 +329,7 @@ mongoc_ts_pool_drop (mongoc_ts_pool *pool, void *item)
 
    BSON_ASSERT (pool == node->owner_pool);
 
-   if (AUDIT_POOL_ENABLED) {
+   if (audit_pool_enabled) {
       bson_atomic_int32_fetch_sub (
          &node->owner_pool->outstanding_items, 1, bson_memory_order_relaxed);
    }

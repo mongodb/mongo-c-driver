@@ -961,8 +961,6 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence)
    default:
       errno = EINVAL;
       return -1;
-
-      break;
    }
 
    if (offset < 0) {

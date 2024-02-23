@@ -2862,8 +2862,6 @@ BSON_THREAD_FUN (insert_docs, p)
       bson_mutex_unlock (&ctx->lock);
       _mongoc_usleep (100 * 1000);  /* 100 ms */
    }
-   bson_destroy (&doc);
-   BSON_THREAD_RETURN;
 }
 
 

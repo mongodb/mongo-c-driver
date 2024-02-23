@@ -1142,7 +1142,6 @@ _state_machine_run (_state_machine_t *state_machine,
          break;
       case MONGOCRYPT_CTX_DONE:
          goto success;
-         break;
       }
    }
 
