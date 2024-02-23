@@ -43,7 +43,7 @@ struct _mongoc_cyrus_t {
 
 
 #ifndef SASL_CALLBACK_FN
-#define SASL_CALLBACK_FN(_f) ((int (*) (void)) (_f))
+#define SASL_CALLBACK_FN(_f) ((int (*) (void)) ((void (*) (void)) (_f)))
 #endif
 
 void
