@@ -2578,11 +2578,16 @@ initiator_fail (const mongoc_uri_t *uri,
                 void *user_data,
                 bson_error_t *error)
 {
+   BSON_UNUSED (uri);
+   BSON_UNUSED (host);
+   BSON_UNUSED (user_data);
+
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_CONNECT,
                    "failing in initiator");
    printf ("failing in initiator\n");
+
    return false;
 }
 

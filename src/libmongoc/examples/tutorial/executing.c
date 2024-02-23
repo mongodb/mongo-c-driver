@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int
-main (int argc, char *argv[])
+main (void)
 {
    mongoc_client_t *client;
    bson_error_t error;

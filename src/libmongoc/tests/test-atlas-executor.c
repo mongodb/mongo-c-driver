@@ -38,7 +38,7 @@ void (*original_sigint_handler) (int) = NULL;
 static void
 sigint_handler (int sigint)
 {
-   assert (sigint == SIGINT);
+   BSON_ASSERT (sigint == SIGINT);
    operation_loop_terminated = true;
    signal (SIGINT, original_sigint_handler);
 }

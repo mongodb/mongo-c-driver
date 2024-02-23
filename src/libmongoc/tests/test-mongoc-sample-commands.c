@@ -2600,6 +2600,8 @@ cleanup:
 static void
 test_example_59 (mongoc_database_t *db)
 {
+   BSON_UNUSED (db);
+
    if (!test_framework_skip_if_no_txns ()) {
       return;
    }
@@ -2717,6 +2719,8 @@ cleanup:
 static void
 test_example_60 (mongoc_database_t *db)
 {
+   BSON_UNUSED (db);
+
    if (!test_framework_skip_if_no_txns ()) {
       return;
    }

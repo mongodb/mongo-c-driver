@@ -705,7 +705,7 @@ fail:
  * @retval false Otherwise or on error
  */
 static bool
-_needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
+_needs_on_demand_aws_kms (bson_t const *kms_providers)
 {
    bson_iter_t iter;
    if (!bson_iter_init_find (&iter, kms_providers, "aws")) {
@@ -995,7 +995,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
       bson_iter_init_find (&iter, &creds, "aws");
 
    if (!callback_provided_aws &&
-       _needs_on_demand_aws_kms (&sm->crypt->kms_providers, error)) {
+       _needs_on_demand_aws_kms (&sm->crypt->kms_providers)) {
       // The original kmsProviders had an empty "aws" property, and the
       // user-provided callback did not fill in a new "aws" property for us.
       // Attempt instead to load the AWS credentials from the environment:

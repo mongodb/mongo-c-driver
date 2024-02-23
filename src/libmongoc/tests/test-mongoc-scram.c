@@ -234,6 +234,8 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
 static void
 test_mongoc_scram_cache_invalidation (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    bson_error_t error;
    mongoc_uri_t *const uri = test_framework_get_uri ();
    BSON_ASSERT (uri);

@@ -115,6 +115,7 @@ _test_with_mock_server (void *ctx)
 static int
 have_mock_server_env (TestSuite *ctx)
 {
+   BSON_UNUSED (ctx);
    return _get_test_imds_host () != NULL;
 }
 
