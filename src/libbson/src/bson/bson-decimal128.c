@@ -165,8 +165,10 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
       *(str_out++) = '-';
    }
 
-   low = (uint32_t) dec->low, midl = (uint32_t) (dec->low >> 32),
-   midh = (uint32_t) dec->high, high = (uint32_t) (dec->high >> 32);
+   low = (uint32_t) dec->low;
+   midl = (uint32_t) (dec->low >> 32);
+   midh = (uint32_t) dec->high;
+   high = (uint32_t) (dec->high >> 32);
 
    /* Decode combination field and exponent */
    combination = (high >> 26) & COMBINATION_MASK;

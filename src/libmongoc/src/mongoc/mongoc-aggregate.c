@@ -108,7 +108,8 @@ _make_agg_cmd (const char *ns,
               then (cstr (dot + 1)),
               // Otherwise just an integer 1:
               else (int32 (1)))));
-   if ((error_hint = "append-aggregate", error = bsonBuildError)) {
+   if ((error = bsonBuildError)) {
+      error_hint = "append-aggregate";
       goto fail;
    }
 
@@ -124,7 +125,8 @@ _make_agg_cmd (const char *ns,
       else ( // We did not find a "pipeline" array. copy the pipeline as
              // an array into the command
          append (*command, kv ("pipeline", array (insert (*pipeline, true))))));
-   if ((error_hint = "append-pipeline", error = bsonParseError)) {
+   if ((error = bsonParseError)) {
+      error_hint = "append-pipeline";
       goto fail;
    }
 
@@ -141,7 +143,9 @@ _make_agg_cmd (const char *ns,
                           // writing aggregate command.
                           parse (find (key ("$out", "$merge"),
                                        do (has_write_key = true)))))));
-   if ((error_hint = "parse-pipeline", error = bsonParseError)) {
+
+   if ((error = bsonParseError)) {
+      error_hint = "parse-pipeline";
       goto fail;
    }
 
@@ -154,7 +158,8 @@ _make_agg_cmd (const char *ns,
           doc (if (opts->batchSize_is_set &&
                       !(has_write_key && opts->batchSize == 0),
                    then (kv ("batchSize", int32 (opts->batchSize)))))));
-   if ((error_hint = "build-cursor", error = bsonBuildError)) {
+   if ((error = bsonBuildError)) {
+      error_hint = "build-cursor";
       goto fail;
    }
 

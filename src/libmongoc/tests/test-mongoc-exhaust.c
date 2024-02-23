@@ -239,7 +239,7 @@ test_exhaust_cursor (bool pooled)
          BSON_ASSERT (doc);
       }
 
-      while (!cursor->in_exhaust && (r = mongoc_cursor_next (cursor, &doc), r))
+      while (!cursor->in_exhaust && (r = mongoc_cursor_next (cursor, &doc)))
          ;
       BSON_ASSERT (client->in_exhaust);
       BSON_ASSERT (r);
@@ -288,7 +288,7 @@ test_exhaust_cursor (bool pooled)
       stream =
          (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes, server_id);
 
-      while (cursor->in_exhaust && (r = mongoc_cursor_next (cursor, &doc), r))
+      while (cursor->in_exhaust && (r = mongoc_cursor_next (cursor, &doc)))
          ;
       BSON_ASSERT (!r);
       BSON_ASSERT (!doc);
