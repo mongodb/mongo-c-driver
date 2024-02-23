@@ -37,7 +37,7 @@
    do {                                 \
       (dec).high = (h);                 \
       (dec).low = (l);                  \
-   } while (0);
+   } while (0)
 
 
 static void

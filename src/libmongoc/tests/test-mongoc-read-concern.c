@@ -39,7 +39,7 @@ test_read_concern_basic (void)
 
    read_concern = mongoc_read_concern_new ();
 
-   BEGIN_IGNORE_DEPRECATIONS;
+   BEGIN_IGNORE_DEPRECATIONS
 
    /*
     * Test defaults.

@@ -347,7 +347,7 @@ _noop (void)
    do {                                 \
       STACK_POP_DOC (_noop ());         \
       bson->code_data.in_scope = false; \
-   } while (0);
+   } while (0)
 #define STACK_POP_DBPOINTER STACK_POP_DOC (_noop ())
 #define BASIC_CB_PREAMBLE                         \
    const char *key;                               \
@@ -355,7 +355,8 @@ _noop (void)
    bson_json_reader_bson_t *bson = &reader->bson; \
    _bson_json_read_fixup_key (bson);              \
    key = bson->key;                               \
-   len = bson->key_buf.len;
+   len = bson->key_buf.len;                       \
+   (void) 0
 #define BASIC_CB_BAIL_IF_NOT_NORMAL(_type)                                     \
    if (bson->read_state != BSON_JSON_REGULAR) {                                \
       _bson_json_read_set_error (reader,                                       \
@@ -369,7 +370,8 @@ _noop (void)
                                  (_type),                                      \
                                  read_state_names[bson->read_state]);          \
       return;                                                                  \
-   }
+   } else                                                                      \
+      (void) 0
 #define HANDLE_OPTION(_selection_statement, _key, _type, _state)               \
    _selection_statement (len == strlen (_key) &&                               \
                          strncmp ((const char *) val, (_key), len) == 0)       \

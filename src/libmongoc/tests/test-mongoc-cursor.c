@@ -441,17 +441,13 @@ _make_array_cursor (mongoc_collection_t *coll)
    return mongoc_client_find_databases_with_opts (coll->client, NULL);
 }
 
-#define TEST_CURSOR_FIND(prefix, fn)               \
-   TestSuite_AddFullWithTestFn (suite,             \
-                                prefix "/find",    \
-                                fn,                \
-                                NULL,              \
-                                _make_find_cursor, \
-                                TestSuite_CheckLive);
+#define TEST_CURSOR_FIND(prefix, fn) \
+   TestSuite_AddFullWithTestFn (     \
+      suite, prefix "/find", fn, NULL, _make_find_cursor, TestSuite_CheckLive)
 
 #define TEST_CURSOR_CMD(prefix, fn) \
    TestSuite_AddFullWithTestFn (    \
-      suite, prefix "/cmd", fn, NULL, _make_cmd_cursor, TestSuite_CheckLive);
+      suite, prefix "/cmd", fn, NULL, _make_cmd_cursor, TestSuite_CheckLive)
 
 #define TEST_CURSOR_CMD_DEPRECATED(prefix, fn)               \
    TestSuite_AddFullWithTestFn (suite,                       \
@@ -459,7 +455,7 @@ _make_array_cursor (mongoc_collection_t *coll)
                                 fn,                          \
                                 NULL,                        \
                                 _make_cmd_deprecated_cursor, \
-                                TestSuite_CheckLive);
+                                TestSuite_CheckLive)
 
 #define TEST_CURSOR_ARRAY(prefix, fn)               \
    TestSuite_AddFullWithTestFn (suite,              \
@@ -467,7 +463,7 @@ _make_array_cursor (mongoc_collection_t *coll)
                                 fn,                 \
                                 NULL,               \
                                 _make_array_cursor, \
-                                TestSuite_CheckLive);
+                                TestSuite_CheckLive)
 
 #define TEST_CURSOR_AGG(prefix, fn)                        \
    TestSuite_AddFullWithTestFn (suite,                     \
@@ -475,15 +471,18 @@ _make_array_cursor (mongoc_collection_t *coll)
                                 fn,                        \
                                 NULL,                      \
                                 _make_cmd_cursor_from_agg, \
-                                TestSuite_CheckLive);
+                                TestSuite_CheckLive)
 
 
-#define TEST_FOREACH_CURSOR(prefix, fn)     \
-   TEST_CURSOR_FIND (prefix, fn);           \
-   TEST_CURSOR_CMD (prefix, fn);            \
-   TEST_CURSOR_CMD_DEPRECATED (prefix, fn); \
-   TEST_CURSOR_ARRAY (prefix, fn);          \
-   TEST_CURSOR_AGG (prefix, fn);
+#define TEST_FOREACH_CURSOR(prefix, fn)        \
+   if (1) {                                    \
+      TEST_CURSOR_FIND (prefix, fn);           \
+      TEST_CURSOR_CMD (prefix, fn);            \
+      TEST_CURSOR_CMD_DEPRECATED (prefix, fn); \
+      TEST_CURSOR_ARRAY (prefix, fn);          \
+      TEST_CURSOR_AGG (prefix, fn);            \
+   } else                                      \
+      (void) 0
 
 
 static void
@@ -613,10 +612,13 @@ killcursors_succeeded (const mongoc_apm_command_succeeded_t *event)
 
    reply = mongoc_apm_command_succeeded_get_reply (event);
 
-#define ASSERT_EMPTY(_fieldname)                                   \
-   BSON_ASSERT (bson_iter_init_find (&iter, reply, (_fieldname))); \
-   BSON_ASSERT (bson_iter_recurse (&iter, &array));                \
-   BSON_ASSERT (!bson_iter_next (&array));
+#define ASSERT_EMPTY(_fieldname)                                      \
+   if (1) {                                                           \
+      BSON_ASSERT (bson_iter_init_find (&iter, reply, (_fieldname))); \
+      BSON_ASSERT (bson_iter_recurse (&iter, &array));                \
+      BSON_ASSERT (!bson_iter_next (&array));                         \
+   } else                                                             \
+      (void) 0
 
    ASSERT_EMPTY ("cursorsNotFound");
    ASSERT_EMPTY ("cursorsAlive");
@@ -784,7 +786,7 @@ _test_kill_cursors (bool pooled)
    if (!future_get_bool (future)) {
       mongoc_cursor_error (cursor, &error);
       test_error ("%s", error.message);
-   };
+   }
 
    ASSERT_MATCH (doc, "{'b': 1}");
    ASSERT_CMPINT (123, ==, (int) mongoc_cursor_get_id (cursor));

@@ -32,15 +32,17 @@
 #define BSON_DECIMAL128_MAX_DIGITS 34
 
 #define BSON_DECIMAL128_SET_NAN(dec)      \
-   do {                                   \
+   if (1) {                               \
       (dec).high = 0x7c00000000000000ull; \
       (dec).low = 0;                      \
-   } while (0);
+   } else                                 \
+      (void) 0
 #define BSON_DECIMAL128_SET_INF(dec, isneg)                                 \
-   do {                                                                     \
+   if (1) {                                                                 \
       (dec).high = 0x7800000000000000ull + 0x8000000000000000ull * (isneg); \
       (dec).low = 0;                                                        \
-   } while (0);
+   } else                                                                   \
+      (void) 0
 
 /**
  * _bson_uint128_t:

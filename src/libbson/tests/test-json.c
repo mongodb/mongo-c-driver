@@ -2951,7 +2951,7 @@ _test_json_produces_multiple (const char *json_in, int err_expected, ...)
 }
 
 #define TEST_JSON_PRODUCES_MULTIPLE(_json, _has_err, ...) \
-   _test_json_produces_multiple (_json, _has_err, __VA_ARGS__, NULL);
+   _test_json_produces_multiple (_json, _has_err, __VA_ARGS__, NULL)
 
 static void
 test_bson_as_json_multi_object (void)

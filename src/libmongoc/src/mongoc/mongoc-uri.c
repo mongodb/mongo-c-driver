@@ -61,7 +61,7 @@ struct _mongoc_uri_t {
                    MONGOC_ERROR_COMMAND,             \
                    MONGOC_ERROR_COMMAND_INVALID_ARG, \
                    format,                           \
-                   __VA_ARGS__);
+                   __VA_ARGS__)
 
 
 static const char *escape_instructions = "Percent-encode username and password"
@@ -1061,9 +1061,10 @@ HANDLE_CONFLICT:
       MONGOC_WARNING ("Cannot override URI option \"%s\" from TXT record",    \
                       key);                                                   \
       continue;                                                               \
-   } else {                                                                   \
+   } else if (1) {                                                            \
       MONGOC_WARNING ("Overwriting previously provided value for '%s'", key); \
-   }
+   } else                                                                     \
+      (void) 0
 
 static bool
 mongoc_uri_apply_options (mongoc_uri_t *uri,

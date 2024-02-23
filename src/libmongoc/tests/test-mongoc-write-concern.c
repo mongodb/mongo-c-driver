@@ -47,7 +47,7 @@ test_write_concern_basic (void)
 
    write_concern = mongoc_write_concern_new ();
 
-   BEGIN_IGNORE_DEPRECATIONS;
+   BEGIN_IGNORE_DEPRECATIONS
 
    /*
     * Test defaults.
@@ -108,7 +108,7 @@ test_write_concern_basic (void)
 
    mongoc_write_concern_destroy (write_concern);
 
-   END_IGNORE_DEPRECATIONS;
+   END_IGNORE_DEPRECATIONS
 }
 
 

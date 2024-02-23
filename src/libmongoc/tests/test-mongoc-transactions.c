@@ -566,7 +566,7 @@ _test_transient_txn_err (bool hangup)
    TEST_CMD_ERR (0 < mongoc_collection_count_documents (
                         collection, b, &opts, NULL, &reply, NULL));
 
-   BEGIN_IGNORE_DEPRECATIONS;
+   BEGIN_IGNORE_DEPRECATIONS
    TEST_CMD_ERR (mongoc_collection_create_index_with_opts (
       collection, b, NULL, &opts, &reply, NULL));
    END_IGNORE_DEPRECATIONS

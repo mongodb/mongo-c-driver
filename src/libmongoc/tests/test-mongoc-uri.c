@@ -758,7 +758,7 @@ test_mongoc_uri_new_with_error (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid host string in URI")
+                          "Invalid host string in URI");
 
    memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db.na%me", &error));
@@ -2301,17 +2301,19 @@ test_mongoc_uri_duplicates (void)
    const mongoc_read_prefs_t *rp;
    bson_iter_t iter = {0};
 
-#define RECREATE_URI(opts)                                                     \
-   mongoc_uri_destroy (uri);                                                   \
-   uri = mongoc_uri_new_with_error ("mongodb://user:pwd@localhost/test?" opts, \
-                                    &err);                                     \
-   ASSERT_OR_PRINT (uri, err);
+#define RECREATE_URI(opts)                                 \
+   if (1) {                                                \
+      mongoc_uri_destroy (uri);                            \
+      uri = mongoc_uri_new_with_error (                    \
+         "mongodb://user:pwd@localhost/test?" opts, &err); \
+      ASSERT_OR_PRINT (uri, err);                          \
+   } else                                                  \
+      (void) 0
 
-#define ASSERT_LOG_DUPE(opt)                                              \
-   ASSERT_CAPTURED_LOG ("option: " opt,                                   \
-                        MONGOC_LOG_LEVEL_WARNING,                         \
-                        "Overwriting previously provided value for '" opt \
-                        "'");
+#define ASSERT_LOG_DUPE(opt)                      \
+   ASSERT_CAPTURED_LOG ("option: " opt,           \
+                        MONGOC_LOG_LEVEL_WARNING, \
+                        "Overwriting previously provided value for '" opt "'")
 
 /* iterate iter to key, and check that no other occurrences exist. */
 #define BSON_ITER_UNIQUE(key)                                             \
@@ -2324,7 +2326,7 @@ test_mongoc_uri_duplicates (void)
             ASSERT_WITH_MSG (false, "bson has duplicate keys for: " key); \
          }                                                                \
       }                                                                   \
-   } while (0);
+   } while (0)
 
    capture_logs (true);
 

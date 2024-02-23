@@ -563,7 +563,7 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
           test_framework_max_wire_version_at_least (WIRE_VERSION_4_4)) {
          ASSERT_CAPTURED_LOG ("cluster",
                               MONGOC_LOG_LEVEL_WARNING,
-                              "Failed to send \"saslStart\" command")
+                              "Failed to send \"saslStart\" command");
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_CLIENT,
                                 MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -3568,7 +3568,7 @@ _test_null_error_pointer (bool pooled)
    if (pooled) {
       ASSERT_CAPTURED_LOG ("cluster",
                            MONGOC_LOG_LEVEL_WARNING,
-                           "Failed to connect to target host")
+                           "Failed to connect to target host");
    }
    capture_logs (false);
 

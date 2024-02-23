@@ -1892,7 +1892,7 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
    if (!mongoc_cmd_parts_assemble (parts, server_stream, error)) {
       _mongoc_bson_init_if_set (reply);
       return false;
-   };
+   }
 
    if (parts->is_retryable_write) {
       RETURN (_mongoc_client_retryable_write_command_with_stream (

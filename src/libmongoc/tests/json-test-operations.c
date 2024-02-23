@@ -887,7 +887,7 @@ bulk_write (mongoc_collection_t *collection,
 
 #define COPY_EXCEPT(...)           \
    bson_copy_to_excluding_noinit ( \
-      &args, &opts, "session", "readPreference", __VA_ARGS__, NULL);
+      &args, &opts, "session", "readPreference", __VA_ARGS__, NULL)
 
 
 static bool

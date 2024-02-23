@@ -531,21 +531,24 @@ test_primary_stepdown_install (TestSuite *suite)
    test_ctx_t single_ctx = {.use_pooled = false};
    test_ctx_t pooled_ctx = {.use_pooled = true};
 
-#define TestPooledAndSingle(name, fn)                      \
-   TestSuite_AddFull (suite,                               \
-                      name "/single",                      \
-                      fn,                                  \
-                      NULL,                                \
-                      &single_ctx,                         \
-                      test_framework_skip_if_auth,         \
-                      test_framework_skip_if_not_replset); \
-   TestSuite_AddFull (suite,                               \
-                      name "/pooled",                      \
-                      fn,                                  \
-                      NULL,                                \
-                      &pooled_ctx,                         \
-                      test_framework_skip_if_auth,         \
-                      test_framework_skip_if_not_replset);
+#define TestPooledAndSingle(name, fn)                         \
+   if (1) {                                                   \
+      TestSuite_AddFull (suite,                               \
+                         name "/single",                      \
+                         fn,                                  \
+                         NULL,                                \
+                         &single_ctx,                         \
+                         test_framework_skip_if_auth,         \
+                         test_framework_skip_if_not_replset); \
+      TestSuite_AddFull (suite,                               \
+                         name "/pooled",                      \
+                         fn,                                  \
+                         NULL,                                \
+                         &pooled_ctx,                         \
+                         test_framework_skip_if_auth,         \
+                         test_framework_skip_if_not_replset); \
+   } else                                                     \
+      (void) 0
 
    TestPooledAndSingle ("/Stepdown/getmore", test_getmore_iteration_runner);
    TestPooledAndSingle ("/Stepdown/not_primary_keep",
