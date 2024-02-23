@@ -774,16 +774,8 @@ missing_chunk (mongoc_gridfs_file_t *file)
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 {
-   bson_t query;
-   bson_t child;
-   bson_t opts;
-   const char *key;
-   bson_iter_t iter;
-   int64_t existing_chunks;
-   int64_t required_chunks;
-
    const uint8_t *data = NULL;
-   uint32_t len;
+   uint32_t len = 0u;
 
    ENTRY;
 
@@ -798,8 +790,11 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
    /* if the file pointer is past the end of the current file (i.e. pointing to
     * a new chunk), we'll pass the page constructor a new empty page. */
-   existing_chunks = divide_round_up (file->length, file->chunk_size);
-   required_chunks = divide_round_up (file->pos + 1, file->chunk_size);
+   const int64_t existing_chunks =
+      divide_round_up (file->length, file->chunk_size);
+   const int64_t required_chunks =
+      divide_round_up (file->pos + 1, file->chunk_size);
+
    if (required_chunks > existing_chunks) {
       data = (uint8_t *) "";
       len = 0;
@@ -812,12 +807,16 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       }
 
       if (!file->cursor) {
+         bson_t query;
          bson_init (&query);
          BSON_APPEND_VALUE (&query, "files_id", &file->files_id);
+
+         bson_t child;
          BSON_APPEND_DOCUMENT_BEGIN (&query, "n", &child);
          BSON_APPEND_INT32 (&child, "$gte", file->n);
          bson_append_document_end (&query, &child);
 
+         bson_t opts;
          bson_init (&opts);
          BSON_APPEND_DOCUMENT_BEGIN (&opts, "sort", &child);
          BSON_APPEND_INT32 (&child, "n", 1);
@@ -859,11 +858,12 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
          file->cursor_range[0]++;
       }
 
+      bson_iter_t iter;
       BSON_ASSERT (bson_iter_init (&iter, chunk));
 
       /* grab out what we need from the chunk */
       while (bson_iter_next (&iter)) {
-         key = bson_iter_key (&iter);
+         const char *const key = bson_iter_key (&iter);
 
          if (strcmp (key, "n") == 0) {
             if (file->n != bson_iter_int32 (&iter)) {

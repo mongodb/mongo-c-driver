@@ -3296,12 +3296,10 @@ test_mongoc_handshake_pool (void)
 static void
 _test_client_sends_handshake (bool pooled)
 {
-   mock_server_t *server;
-   request_t *request;
-   mongoc_uri_t *uri;
-   future_t *future;
-   mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
+   request_t *request = NULL;
+   future_t *future = NULL;
+   mongoc_client_t *client = NULL;
+   mongoc_client_pool_t *pool = NULL;
    const char *const server_reply = tmp_str ("{'ok': 1,"
                                              " 'isWritablePrimary': true,"
                                              " 'minWireVersion': %d,"
@@ -3314,9 +3312,9 @@ _test_client_sends_handshake (bool pooled)
       return;
    }
 
-   server = mock_server_new ();
+   mock_server_t *const server = mock_server_new ();
    mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_t *const uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", heartbeat_ms);
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
 
@@ -3420,12 +3418,9 @@ test_client_sends_handshake_pooled (void)
 static void
 test_client_appname (bool pooled, bool use_uri)
 {
-   mock_server_t *server;
-   request_t *request;
-   mongoc_uri_t *uri;
-   future_t *future;
-   mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
+   future_t *future = NULL;
+   mongoc_client_t *client = NULL;
+   mongoc_client_pool_t *pool = NULL;
    const char *const server_reply = tmp_str ("{'ok': 1,"
                                              " 'isWritablePrimary': true,"
                                              " 'minWireVersion': %d,"
@@ -3434,9 +3429,9 @@ test_client_appname (bool pooled, bool use_uri)
                                              WIRE_VERSION_MAX);
    const int heartbeat_ms = 500;
 
-   server = mock_server_new ();
+   mock_server_t *const server = mock_server_new ();
    mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_t *const uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", heartbeat_ms);
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 120 * 1000);
 
@@ -3458,7 +3453,7 @@ test_client_appname (bool pooled, bool use_uri)
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-   request =
+   request_t *const request =
       mock_server_receives_any_hello_with_match (server,
                                                  "{'client': {"
                                                  "    'application': {"

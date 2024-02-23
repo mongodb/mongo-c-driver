@@ -52,7 +52,8 @@
 int
 bson_streaming_remote_open (const char *hostname, const char *port)
 {
-   int error, sock;
+   int error = 0;
+   int sock = 0;
    struct addrinfo hints, *ptr, *server_list;
 
    /*
