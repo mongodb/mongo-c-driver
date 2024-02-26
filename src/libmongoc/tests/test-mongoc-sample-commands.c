@@ -2600,6 +2600,8 @@ cleanup:
 static void
 test_example_59 (mongoc_database_t *db)
 {
+   BSON_UNUSED (db);
+
    if (!test_framework_skip_if_no_txns ()) {
       return;
    }
@@ -2717,6 +2719,8 @@ cleanup:
 static void
 test_example_60 (mongoc_database_t *db)
 {
+   BSON_UNUSED (db);
+
    if (!test_framework_skip_if_no_txns ()) {
       return;
    }
@@ -2862,8 +2866,6 @@ BSON_THREAD_FUN (insert_docs, p)
       bson_mutex_unlock (&ctx->lock);
       _mongoc_usleep (100 * 1000);  /* 100 ms */
    }
-   bson_destroy (&doc);
-   BSON_THREAD_RETURN;
 }
 
 

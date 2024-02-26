@@ -504,13 +504,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define LL_COUNT(head, el, counter) LL_COUNT2 (head, el, counter, next)
 
 #define LL_COUNT2(head, el, counter, next) \
-   {                                       \
+   if (1) {                                \
       counter = 0;                         \
       LL_FOREACH2 (head, el, next)         \
       {                                    \
          ++counter;                        \
       }                                    \
-   }
+   } else                                  \
+      (void) 0
 
 #define LL_FOREACH(head, el) LL_FOREACH2 (head, el, next)
 
@@ -658,13 +659,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DL_COUNT(head, el, counter) DL_COUNT2 (head, el, counter, next)
 
 #define DL_COUNT2(head, el, counter, next) \
-   {                                       \
+   if (1) {                                \
       counter = 0;                         \
       DL_FOREACH2 (head, el, next)         \
       {                                    \
          ++counter;                        \
       }                                    \
-   }
+   } else                                  \
+      (void) 0
 
 #define DL_FOREACH(head, el) DL_FOREACH2 (head, el, next)
 
@@ -760,13 +762,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CDL_COUNT(head, el, counter) CDL_COUNT2 (head, el, counter, next)
 
 #define CDL_COUNT2(head, el, counter, next) \
-   {                                        \
+   if (1) {                                 \
       counter = 0;                          \
       CDL_FOREACH2 (head, el, next)         \
       {                                     \
          ++counter;                         \
       }                                     \
-   }
+   } else                                   \
+      (void) 0
 
 #define CDL_FOREACH(head, el) CDL_FOREACH2 (head, el, next)
 

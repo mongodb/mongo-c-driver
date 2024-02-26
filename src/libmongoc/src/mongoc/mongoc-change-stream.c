@@ -29,7 +29,7 @@
    bson_set_error (&stream->err,        \
                    MONGOC_ERROR_CURSOR, \
                    MONGOC_ERROR_BSON,   \
-                   "Could not set " _str);
+                   "Could not set " _str)
 
 /* the caller knows either a client or server error has occurred.
  * `reply` contains the server reply or an empty document. */

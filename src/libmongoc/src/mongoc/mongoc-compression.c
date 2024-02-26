@@ -43,24 +43,20 @@ mongoc_compressor_max_compressed_length (int32_t compressor_id, size_t len)
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
    case MONGOC_COMPRESSOR_SNAPPY_ID:
       return snappy_max_compressed_length (len);
-      break;
 #endif
 
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
    case MONGOC_COMPRESSOR_ZLIB_ID:
       BSON_ASSERT (bson_in_range_unsigned (unsigned_long, len));
       return compressBound ((unsigned long) len);
-      break;
 #endif
 
 #ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
    case MONGOC_COMPRESSOR_ZSTD_ID:
       return ZSTD_compressBound (len);
-      break;
 #endif
    case MONGOC_COMPRESSOR_NOOP_ID:
       return len;
-      break;
    default:
       return 0;
    }
@@ -169,7 +165,6 @@ mongoc_uncompress (int32_t compressor_id,
                       "compression is not compiled in");
       return false;
 #endif
-      break;
    }
 
    case MONGOC_COMPRESSOR_ZLIB_ID: {
@@ -186,7 +181,6 @@ mongoc_uncompress (int32_t compressor_id,
                       "compression is not compiled in");
       return false;
 #endif
-      break;
    }
 
    case MONGOC_COMPRESSOR_ZSTD_ID: {
@@ -208,7 +202,6 @@ mongoc_uncompress (int32_t compressor_id,
                       "compression is not compiled in");
       return false;
 #endif
-      break;
    }
    case MONGOC_COMPRESSOR_NOOP_ID:
       memcpy (uncompressed, compressed, compressed_len);

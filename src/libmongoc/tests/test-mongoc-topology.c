@@ -2333,23 +2333,19 @@ test_slow_server_pooled (void)
 static void
 _test_hello_versioned_api (bool pooled)
 {
-   mock_server_t *server;
-   mongoc_uri_t *uri;
-   mongoc_client_pool_t *pool;
-   mongoc_client_t *client;
-   char *hello_reply; /* the server's reply to the OP_MSG hello request */
-   future_t *future;
-   request_t *request;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client = NULL;
+   future_t *future = NULL;
+   request_t *request = NULL;
    bson_error_t error;
    mongoc_server_api_version_t version;
-   mongoc_server_api_t *api;
 
-   server = mock_server_new ();
+   mock_server_t *const server = mock_server_new ();
    mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_t *const uri = mongoc_uri_copy (mock_server_get_uri (server));
 
    BSON_ASSERT (mongoc_server_api_version_from_string ("1", &version));
-   api = mongoc_server_api_new (version);
+   mongoc_server_api_t *const api = mongoc_server_api_new (version);
 
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, api);
@@ -2359,15 +2355,16 @@ _test_hello_versioned_api (bool pooled)
       client = test_framework_client_new_from_uri (uri, api);
    }
 
-   hello_reply = bson_strdup_printf ("{'ok': 1,"
-                                     " 'isWritablePrimary': true,"
-                                     " 'setName': 'rs',"
-                                     " 'minWireVersion': %d,"
-                                     " 'maxWireVersion': %d,"
-                                     " 'hosts': ['%s']}",
-                                     WIRE_VERSION_MIN,
-                                     WIRE_VERSION_MAX,
-                                     mock_server_get_host_and_port (server));
+   char *const hello_reply =
+      bson_strdup_printf ("{'ok': 1,"
+                          " 'isWritablePrimary': true,"
+                          " 'setName': 'rs',"
+                          " 'minWireVersion': %d,"
+                          " 'maxWireVersion': %d,"
+                          " 'hosts': ['%s']}",
+                          WIRE_VERSION_MIN,
+                          WIRE_VERSION_MAX,
+                          mock_server_get_host_and_port (server));
 
    /* For client pools, the first handshake happens when the client is popped.
     * For non-pooled clients, we send a ping command to trigger a handshake. */
@@ -2578,11 +2575,16 @@ initiator_fail (const mongoc_uri_t *uri,
                 void *user_data,
                 bson_error_t *error)
 {
+   BSON_UNUSED (uri);
+   BSON_UNUSED (host);
+   BSON_UNUSED (user_data);
+
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_CONNECT,
                    "failing in initiator");
    printf ("failing in initiator\n");
+
    return false;
 }
 

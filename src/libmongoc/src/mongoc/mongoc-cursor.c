@@ -870,7 +870,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
       if (bson_iter_as_bool (&iter)) {                             \
          *_flags |= _value;                                        \
       }                                                            \
-   } while (false);
+   } while (false)
 
 bool
 _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,

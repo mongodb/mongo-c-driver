@@ -483,7 +483,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          abort ();                                                    \
       };                                                              \
       ASSERT_CONTAINS (error.message, _message);                      \
-   } while (0);
+   } while (0)
 
 #define ASSERT_CAPTURED_LOG(_info, _level, _msg)                             \
    do {                                                                      \
@@ -497,7 +497,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          print_captured_logs ("\t");                                         \
          abort ();                                                           \
       }                                                                      \
-   } while (0);
+   } while (0)
 
 #define ASSERT_NO_CAPTURED_LOGS(_info)                         \
    do {                                                        \
@@ -511,7 +511,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          print_captured_logs ("\t");                           \
          abort ();                                             \
       }                                                        \
-   } while (0);
+   } while (0)
 
 #define ASSERT_HAS_FIELD(_bson, _field)                            \
    do {                                                            \

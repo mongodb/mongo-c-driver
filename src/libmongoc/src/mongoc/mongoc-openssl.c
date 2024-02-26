@@ -1086,7 +1086,6 @@ _mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
 
    certbio = BIO_new (BIO_s_file ());
    strbio = BIO_new (BIO_s_mem ());
-   ;
 
    BSON_ASSERT (certbio);
    BSON_ASSERT (strbio);

@@ -17,7 +17,7 @@
 #include <bson/bson.h>
 
 int
-main (int argc, const char **argv)
+main (void)
 {
    {
       // bson_append_document_begin example ... begin
