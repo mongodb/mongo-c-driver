@@ -130,12 +130,16 @@ func_ctx_cleanup (func_ctx_t *ctx)
                                                                                \
    mongoc_read_concern_set_level (rc, #_type);                                 \
    mongoc_write_concern_set_wtag (wc, #_type);                                 \
-   mongoc_read_prefs_set_tags (prefs, tmp_bson ("[{'%s': 'yes'}]", #_type))
+   mongoc_read_prefs_set_tags (prefs, tmp_bson ("[{'%s': 'yes'}]", #_type));   \
+   (void) 0
 
-#define SET_OPT_CLEANUP               \
-   mongoc_read_concern_destroy (rc);  \
-   mongoc_write_concern_destroy (wc); \
-   mongoc_read_prefs_destroy (prefs);
+#define SET_OPT_CLEANUP                  \
+   if (1) {                              \
+      mongoc_read_concern_destroy (rc);  \
+      mongoc_write_concern_destroy (wc); \
+      mongoc_read_prefs_destroy (prefs); \
+   } else                                \
+      (void) 0
 
 #define SET_OPT(_type)                                        \
    static void set_##_type##_opt (mongoc_##_type##_t *obj,    \

@@ -483,7 +483,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          abort ();                                                    \
       };                                                              \
       ASSERT_CONTAINS (error.message, _message);                      \
-   } while (0);
+   } while (0)
 
 #define ASSERT_CAPTURED_LOG(_info, _level, _msg)                             \
    do {                                                                      \
@@ -497,7 +497,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          print_captured_logs ("\t");                                         \
          abort ();                                                           \
       }                                                                      \
-   } while (0);
+   } while (0)
 
 #define ASSERT_NO_CAPTURED_LOGS(_info)                         \
    do {                                                        \
@@ -511,7 +511,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          print_captured_logs ("\t");                           \
          abort ();                                             \
       }                                                        \
-   } while (0);
+   } while (0)
 
 #define ASSERT_HAS_FIELD(_bson, _field)                            \
    do {                                                            \
@@ -535,15 +535,15 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                    \
    } while (0)
 
-#define ASSERT_CMPTIME(actual, maxduration)   \
-   do {                                       \
+#define ASSERT_CMPTIME(actual, maxduration)     \
+   do {                                         \
       ASSERT_CMPINT64 (actual, <, maxduration); \
    } while (0)
 
 #define ASSERT_WITHIN_TIME_INTERVAL(actual, minduration, maxduration) \
    do {                                                               \
-      ASSERT_CMPINT64 (actual, >=, minduration);                        \
-      ASSERT_CMPINT64 (actual, <, maxduration);                         \
+      ASSERT_CMPINT64 (actual, >=, minduration);                      \
+      ASSERT_CMPINT64 (actual, <, maxduration);                       \
    } while (0)
 
 #if defined(_WIN32) && !defined(__MINGW32__)

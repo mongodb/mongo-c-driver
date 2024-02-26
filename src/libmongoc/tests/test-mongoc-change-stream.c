@@ -41,7 +41,7 @@
       future_wait (_future);                                               \
       future_destroy (_future);                                            \
       request_destroy (_request);                                          \
-   } while (0);
+   } while (0)
 
 
 typedef struct _data_change_stream_t {

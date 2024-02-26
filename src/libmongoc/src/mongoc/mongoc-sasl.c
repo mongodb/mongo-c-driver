@@ -75,8 +75,8 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
    const char *service_name = NULL;
    bool canonicalize = false;
 
-   _mongoc_sasl_set_pass(sasl, mongoc_uri_get_password(uri));
-   _mongoc_sasl_set_user(sasl, mongoc_uri_get_username(uri));
+   _mongoc_sasl_set_pass (sasl, mongoc_uri_get_password (uri));
+   _mongoc_sasl_set_user (sasl, mongoc_uri_get_username (uri));
 
    options = mongoc_uri_get_options (uri);
 

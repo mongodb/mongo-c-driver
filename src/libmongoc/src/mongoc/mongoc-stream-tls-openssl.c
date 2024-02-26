@@ -286,7 +286,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream,
    size_t bytes;
 
    char *to_write = NULL;
-   size_t to_write_len;
+   size_t to_write_len = 0u;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (iov);

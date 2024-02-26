@@ -61,7 +61,7 @@ struct _mongoc_uri_t {
                    MONGOC_ERROR_COMMAND,             \
                    MONGOC_ERROR_COMMAND_INVALID_ARG, \
                    format,                           \
-                   __VA_ARGS__);
+                   __VA_ARGS__)
 
 
 static const char *escape_instructions = "Percent-encode username and password"
@@ -1061,9 +1061,10 @@ HANDLE_CONFLICT:
       MONGOC_WARNING ("Cannot override URI option \"%s\" from TXT record",    \
                       key);                                                   \
       continue;                                                               \
-   } else {                                                                   \
+   } else if (1) {                                                            \
       MONGOC_WARNING ("Overwriting previously provided value for '%s'", key); \
-   }
+   } else                                                                     \
+      (void) 0
 
 static bool
 mongoc_uri_apply_options (mongoc_uri_t *uri,
@@ -1735,14 +1736,14 @@ _mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri, bson_error_t *error)
          // Find the 'readPreference' string
          iKeyWithType (MONGOC_URI_READPREFERENCE, utf8),
          case ( // Switch on the string content:
-            when (iStrEqual ("primary"), do(mode = MONGOC_READ_PRIMARY)),
+            when (iStrEqual ("primary"), do (mode = MONGOC_READ_PRIMARY)),
             when (iStrEqual ("primaryPreferred"),
-                  do(mode = MONGOC_READ_PRIMARY_PREFERRED)),
-            when (iStrEqual ("secondary"), do(mode = MONGOC_READ_SECONDARY)),
+                  do (mode = MONGOC_READ_PRIMARY_PREFERRED)),
+            when (iStrEqual ("secondary"), do (mode = MONGOC_READ_SECONDARY)),
             when (iStrEqual ("secondaryPreferred"),
-                  do(mode = MONGOC_READ_SECONDARY_PREFERRED)),
-            when (iStrEqual ("nearest"), do(mode = MONGOC_READ_NEAREST)),
-            else(do({
+                  do (mode = MONGOC_READ_SECONDARY_PREFERRED)),
+            when (iStrEqual ("nearest"), do (mode = MONGOC_READ_NEAREST)),
+            else (do ({
                pref = bsonAs (cstr);
                bsonParseError = "Unsupported readPreference value";
             })))));
@@ -1779,7 +1780,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
    bsonParse (
       uri->options,
       find (iKeyWithType (MONGOC_URI_SAFE, bool),
-            do(mongoc_write_concern_set_w (
+            do (mongoc_write_concern_set_w (
                write_concern,
                bsonAs (bool) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED))));
 
@@ -1800,8 +1801,8 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
 
    bsonParse (uri->options,
               find (iKeyWithType (MONGOC_URI_JOURNAL, bool),
-                    do(mongoc_write_concern_set_journal (write_concern,
-                                                         bsonAs (bool)))));
+                    do (mongoc_write_concern_set_journal (write_concern,
+                                                          bsonAs (bool)))));
    if (bsonParseError) {
       MONGOC_URI_ERROR (
          error, "Error while parsing 'journal' URI option: %s", bsonParseError);
@@ -1824,21 +1825,21 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
                // These conflict with journalling:
                if (eval (mongoc_write_concern_get_journal (write_concern)),
                    then (error ("Journal conflicts with w value"))),
-               do(mongoc_write_concern_set_w (write_concern, bsonAs (int32)))),
+               do (mongoc_write_concern_set_w (write_concern, bsonAs (int32)))),
             // Other positive 'w' value:
             when (
                allOf (type (int32), eval (bsonAs (int32) > 0)),
-               do(mongoc_write_concern_set_w (write_concern, bsonAs (int32)))),
+               do (mongoc_write_concern_set_w (write_concern, bsonAs (int32)))),
             // Special "majority" string:
             when (iStrEqual ("majority"),
-                  do(mongoc_write_concern_set_w (
+                  do (mongoc_write_concern_set_w (
                      write_concern, MONGOC_WRITE_CONCERN_W_MAJORITY))),
             // Other string:
             when (type (utf8),
-                  do(mongoc_write_concern_set_wtag (write_concern,
-                                                    bsonAs (cstr)))),
+                  do (mongoc_write_concern_set_wtag (write_concern,
+                                                     bsonAs (cstr)))),
             // Invalid value:
-            else(error ("Unsupported w value")))));
+            else (error ("Unsupported w value")))));
 
    if (bsonParseError) {
       const char *const prefix = "Error while parsing the 'w' URI option";

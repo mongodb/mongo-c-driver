@@ -1165,6 +1165,10 @@ tasks:
             - --test_mongocxx_ref=r3.8.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: clang-format
+    tags: [clang-format]
+    commands:
+      - func: clang-format
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
     run_on: macos-1100
     tags: [cse-matrix-darwinssl, compile, macos-1100, clang, cse, sasl-cyrus]

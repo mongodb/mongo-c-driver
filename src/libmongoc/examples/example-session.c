@@ -83,7 +83,7 @@ main (int argc, char *argv[])
    if (!mongoc_client_session_append (client_session, find_opts, &error)) {
       fprintf (stderr, "Could not add session to opts: %s\n", error.message);
       goto done;
-   };
+   }
 
    /* read from secondary. since we're in a causally consistent session, the
     * data is guaranteed to reflect the update we did on the primary. the query

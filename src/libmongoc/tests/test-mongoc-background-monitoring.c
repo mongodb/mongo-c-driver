@@ -299,7 +299,7 @@ tf_destroy (test_fixture_t *tf)
             &_tf->cond, &_tf->mutex, _expires_ms - _start_ms);  \
       }                                                         \
       bson_mutex_unlock (&_tf->mutex);                          \
-   } while (0);
+   } while (0)
 
 /* Check that _predicate is true immediately. Upon failure,
  * dumps logs and observations. */
@@ -312,13 +312,13 @@ tf_destroy (test_fixture_t *tf)
          test_error ("Predicate failed: %s", #_predicate); \
       }                                                    \
       bson_mutex_unlock (&_tf->mutex);                     \
-   } while (0);
+   } while (0)
 
 /* Wait for two periods of the faster heartbeat.
  * Used to make observations that a scan doesn't occur when a test fixture is
  * configured with a faster heartbeat.
  */
-#define WAIT_TWO_MIN_HEARTBEAT_MS _mongoc_usleep (2 * FAST_HEARTBEAT_MS * 1000);
+#define WAIT_TWO_MIN_HEARTBEAT_MS _mongoc_usleep (2 * FAST_HEARTBEAT_MS * 1000)
 
 static void
 _signal_shutdown (test_fixture_t *tf)

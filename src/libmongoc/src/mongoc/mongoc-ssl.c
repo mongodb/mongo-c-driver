@@ -45,7 +45,10 @@
 #endif
 
 static mongoc_ssl_opt_t gMongocSslOptDefault = {
-   NULL, NULL, MONGOC_SSL_DEFAULT_TRUST_FILE, MONGOC_SSL_DEFAULT_TRUST_DIR,
+   NULL,
+   NULL,
+   MONGOC_SSL_DEFAULT_TRUST_FILE,
+   MONGOC_SSL_DEFAULT_TRUST_DIR,
 };
 
 const mongoc_ssl_opt_t *
@@ -214,9 +217,9 @@ _mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt,
          } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCAFILE)) {
             ssl_opt->ca_file = bson_strdup (bson_iter_utf8 (&iter, NULL));
             continue;
-         }         
+         }
       }
-      
+
       if (BSON_ITER_HOLDS_BOOL (&iter)) {
          if (0 ==
              bson_strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES)) {
@@ -252,7 +255,7 @@ _mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt,
             continue;
          }
       }
-      
+
       bson_string_append_printf (
          errmsg,
          "unexpected %s option: %s",

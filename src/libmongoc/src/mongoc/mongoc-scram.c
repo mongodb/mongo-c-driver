@@ -627,28 +627,25 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
                      bson_error_t *error)
 {
    uint8_t *val_r = NULL;
-   uint32_t val_r_len;
+   uint32_t val_r_len = 0u;
    uint8_t *val_s = NULL;
-   uint32_t val_s_len;
+   uint32_t val_s_len = 0u;
    uint8_t *val_i = NULL;
-   uint32_t val_i_len;
+   uint32_t val_i_len = 0u;
 
-   uint8_t **current_val;
-   uint32_t *current_val_len;
+   uint8_t **current_val = NULL;
+   uint32_t *current_val_len = NULL;
 
-   const uint8_t *ptr;
-   const uint8_t *next_comma;
-
-   char *tmp;
+   char *tmp = NULL;
    char *hashed_password = NULL;
 
    uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE] = {0};
-   int32_t decoded_salt_len;
+   int32_t decoded_salt_len = 0;
    /* the decoded salt leaves four trailing bytes to add the int32 0x00000001 */
    const int32_t expected_salt_length = _scram_hash_size (scram) - 4;
    bool rval = true;
 
-   int iterations;
+   int iterations = 0;
 
 
    BSON_ASSERT (scram);
@@ -692,7 +689,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       goto BUFFER_AUTH;
    }
 
-   for (ptr = inbuf; ptr < inbuf + inbuflen;) {
+   for (const uint8_t *ptr = inbuf; ptr < inbuf + inbuflen;) {
       switch (*ptr) {
       case 'r':
          current_val = &val_r;
@@ -728,7 +725,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
 
       ptr++;
 
-      next_comma =
+      const uint8_t *const next_comma =
          (const uint8_t *) memchr (ptr, ',', (inbuf + inbuflen) - ptr);
 
       if (next_comma) {
@@ -976,15 +973,12 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
                      bson_error_t *error)
 {
    uint8_t *val_e = NULL;
-   uint32_t val_e_len;
+   uint32_t val_e_len = 0;
    uint8_t *val_v = NULL;
-   uint32_t val_v_len;
+   uint32_t val_v_len = 0;
 
    uint8_t **current_val;
-   uint32_t *current_val_len;
-
-   const uint8_t *ptr;
-   const uint8_t *next_comma;
+   uint32_t *current_val_len = 0;
 
    bool rval = true;
 
@@ -993,7 +987,7 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
    BSON_ASSERT (outbufmax);
    BSON_ASSERT (outbuflen);
 
-   for (ptr = inbuf; ptr < inbuf + inbuflen;) {
+   for (const uint8_t *ptr = inbuf; ptr < inbuf + inbuflen;) {
       switch (*ptr) {
       case 'e':
          current_val = &val_e;
@@ -1024,7 +1018,7 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
 
       ptr++;
 
-      next_comma =
+      const uint8_t *const next_comma =
          (const uint8_t *) memchr (ptr, ',', (inbuf + inbuflen) - ptr);
 
       if (next_comma) {

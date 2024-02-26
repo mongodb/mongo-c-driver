@@ -2055,7 +2055,7 @@ mc_tpld_modify_begin (mongoc_topology_t *tpl)
    mongoc_topology_description_t *new_td;
    bson_mutex_lock (&tpl->tpld_modification_mtx);
    prev_td = mc_tpld_take_ref (tpl);
-   new_td = mongoc_topology_description_new_copy (prev_td.ptr),
+   new_td = mongoc_topology_description_new_copy (prev_td.ptr);
    mc_tpld_drop_ref (&prev_td);
    return (mc_tpld_modification){
       .new_td = new_td,

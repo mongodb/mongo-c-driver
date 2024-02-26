@@ -76,7 +76,6 @@ parser_type_to_string (bson_parser_type_t ptype)
    default:
       return "INVALID";
    }
-   return "INVALID";
 }
 
 static mongoc_write_concern_t *

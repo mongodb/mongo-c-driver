@@ -248,7 +248,8 @@ test_timestamp (void)
 
    bson_t *bcon = BCON_NEW ("foo", BCON_TIMESTAMP (100, 1000));
 
-   BSON_ASSERT (BCON_EXTRACT (bcon, "foo", BCONE_TIMESTAMP (timestamp, increment)));
+   BSON_ASSERT (
+      BCON_EXTRACT (bcon, "foo", BCONE_TIMESTAMP (timestamp, increment)));
 
    BSON_ASSERT (timestamp == 100);
    BSON_ASSERT (increment == 1000);
@@ -421,13 +422,13 @@ test_nested (void)
       BCON_NEW ("hello", "world", "foo", "{", "bar", BCON_INT32 (10), "}");
 
    BSON_ASSERT (BCON_EXTRACT (bcon,
-                         "hello",
-                         BCONE_UTF8 (utf8),
-                         "foo",
-                         "{",
-                         "bar",
-                         BCONE_INT32 (i32),
-                         "}"));
+                              "hello",
+                              BCONE_UTF8 (utf8),
+                              "foo",
+                              "{",
+                              "bar",
+                              BCONE_INT32 (i32),
+                              "}"));
 
    BSON_ASSERT (strcmp ("world", utf8) == 0);
    BSON_ASSERT (i32 == 10);
@@ -443,22 +444,22 @@ test_skip (void)
       BCON_NEW ("hello", "world", "foo", "{", "bar", BCON_INT32 (10), "}");
 
    BSON_ASSERT (BCON_EXTRACT (bcon,
-                         "hello",
-                         BCONE_SKIP (BSON_TYPE_UTF8),
-                         "foo",
-                         "{",
-                         "bar",
-                         BCONE_SKIP (BSON_TYPE_INT32),
-                         "}"));
+                              "hello",
+                              BCONE_SKIP (BSON_TYPE_UTF8),
+                              "foo",
+                              "{",
+                              "bar",
+                              BCONE_SKIP (BSON_TYPE_INT32),
+                              "}"));
 
    BSON_ASSERT (!BCON_EXTRACT (bcon,
-                          "hello",
-                          BCONE_SKIP (BSON_TYPE_UTF8),
-                          "foo",
-                          "{",
-                          "bar",
-                          BCONE_SKIP (BSON_TYPE_INT64),
-                          "}"));
+                               "hello",
+                               BCONE_SKIP (BSON_TYPE_UTF8),
+                               "foo",
+                               "{",
+                               "bar",
+                               BCONE_SKIP (BSON_TYPE_INT64),
+                               "}"));
 
    bson_destroy (bcon);
 }

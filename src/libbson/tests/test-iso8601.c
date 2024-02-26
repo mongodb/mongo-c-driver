@@ -3,7 +3,7 @@
 #include "bson/bson-iso8601-private.h"
 #include "TestSuite.h"
 
-#define IS_TIME_T_SMALL (sizeof (time_t) == sizeof (int32_t))
+static const bool is_time_t_small = (sizeof (time_t) == sizeof (int32_t));
 
 static void
 test_date (const char *str, int64_t millis)
@@ -91,7 +91,7 @@ test_bson_iso8601_utc (void)
    test_date_rt ("1970-06-30T01:06:40.981Z", 15556000981ULL);
    test_date ("1970-01-01T00:00:00.000+0100", -3600LL * 1000);
 
-   if (!IS_TIME_T_SMALL) {
+   if (!is_time_t_small) {
       test_date_rt ("2058-02-20T18:29:11.100Z", 2781455351100ULL);
       test_date ("3001-01-01T08:00:00.000Z", 32535244800000ULL);
    }
@@ -134,7 +134,7 @@ test_bson_iso8601_local (void)
                  15556000981ULL);
    test_date_io ("1969-12-31T16:00:00.000-0800", "1970-01-01T00:00:00Z", 0ULL);
 
-   if (!IS_TIME_T_SMALL) {
+   if (!is_time_t_small) {
       test_date_io ("2058-02-20T13:29:11.100-0500",
                     "2058-02-20T18:29:11.100Z",
                     2781455351100ULL);
@@ -291,7 +291,7 @@ test_bson_iso8601_leap_year (void)
    test_date_rt ("2032-02-29T00:00:00Z", 1961625600000ULL);
    test_date_rt ("2036-02-29T00:00:00Z", 2087856000000ULL);
 
-   if (!IS_TIME_T_SMALL) {
+   if (!is_time_t_small) {
       test_date_rt ("2040-02-29T00:00:00Z", 2214086400000ULL);
       test_date_rt ("2044-02-29T00:00:00Z", 2340316800000ULL);
       test_date_rt ("2048-02-29T00:00:00Z", 2466547200000ULL);

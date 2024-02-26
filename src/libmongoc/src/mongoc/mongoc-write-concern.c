@@ -558,10 +558,10 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter,
          if (!BSON_ITER_HOLDS_BOOL (&inner)) {
             goto fail;
          }
-         BEGIN_IGNORE_DEPRECATIONS;
+         BEGIN_IGNORE_DEPRECATIONS
          mongoc_write_concern_set_fsync (write_concern,
                                          bson_iter_bool (&inner));
-         END_IGNORE_DEPRECATIONS;
+         END_IGNORE_DEPRECATIONS
       } else if (BSON_ITER_IS_KEY (&inner, "j")) {
          if (!BSON_ITER_HOLDS_BOOL (&inner)) {
             goto fail;

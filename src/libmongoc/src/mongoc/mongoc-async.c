@@ -169,9 +169,6 @@ mongoc_async_run (mongoc_async_t *async)
 
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)
       {
-         bool remove_cmd = false;
-         mongoc_async_cmd_result_t result;
-
          /* check if an initiated cmd has passed the connection timeout.  */
          if (acmd->state != MONGOC_ASYNC_CMD_INITIATE &&
              now > acmd->connect_started + acmd->timeout_msec * 1000) {
@@ -182,15 +179,18 @@ mongoc_async_run (mongoc_async_t *async)
                                ? "connection timeout"
                                : "socket timeout");
 
-            remove_cmd = true;
-            result = MONGOC_ASYNC_CMD_TIMEOUT;
-         } else if (acmd->state == MONGOC_ASYNC_CMD_CANCELED_STATE) {
-            remove_cmd = true;
-            result = MONGOC_ASYNC_CMD_ERROR;
-         }
+            acmd->cb (acmd,
+                      MONGOC_ASYNC_CMD_TIMEOUT,
+                      NULL,
+                      (now - acmd->connect_started) / 1000);
 
-         if (remove_cmd) {
-            acmd->cb (acmd, result, NULL, (now - acmd->connect_started) / 1000);
+            /* Remove acmd from the async->cmds doubly-linked list */
+            mongoc_async_cmd_destroy (acmd);
+         } else if (acmd->state == MONGOC_ASYNC_CMD_CANCELED_STATE) {
+            acmd->cb (acmd,
+                      MONGOC_ASYNC_CMD_ERROR,
+                      NULL,
+                      (now - acmd->connect_started) / 1000);
 
             /* Remove acmd from the async->cmds doubly-linked list */
             mongoc_async_cmd_destroy (acmd);

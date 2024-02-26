@@ -77,7 +77,8 @@ _mongoc_openssl_init (void)
    SSL_library_init ();
    SSL_load_error_strings ();
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-   // See: https://www.openssl.org/docs/man3.0/man7/migration_guide.html#Deprecated-function-mappings
+   // See:
+   // https://www.openssl.org/docs/man3.0/man7/migration_guide.html#Deprecated-function-mappings
    ERR_load_BIO_strings ();
 #endif
    OpenSSL_add_all_algorithms ();
@@ -1085,7 +1086,6 @@ _mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
 
    certbio = BIO_new (BIO_s_file ());
    strbio = BIO_new (BIO_s_mem ());
-   ;
 
    BSON_ASSERT (certbio);
    BSON_ASSERT (strbio);

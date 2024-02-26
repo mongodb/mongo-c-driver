@@ -836,14 +836,14 @@ test_insert_bulk_empty (void)
    database = get_test_database (client);
    collection = get_test_collection (client, "test_insert_bulk_empty");
 
-   BEGIN_IGNORE_DEPRECATIONS;
+   BEGIN_IGNORE_DEPRECATIONS
    ASSERT (!mongoc_collection_insert_bulk (collection,
                                            MONGOC_INSERT_NONE,
                                            (const bson_t **) &bptr,
                                            0,
                                            NULL,
                                            &error));
-   END_IGNORE_DEPRECATIONS;
+   END_IGNORE_DEPRECATIONS
 
    ASSERT_CMPINT (MONGOC_ERROR_COLLECTION, ==, error.domain);
    ASSERT_CMPINT (MONGOC_ERROR_COLLECTION_INSERT_FAILED, ==, error.code);
@@ -995,7 +995,7 @@ test_save (void)
    context = bson_context_new (BSON_CONTEXT_NONE);
    ASSERT (context);
 
-   BEGIN_IGNORE_DEPRECATIONS;
+   BEGIN_IGNORE_DEPRECATIONS
 
    for (i = 0; i < 10; i++) {
       bson_init (&b);
@@ -1009,7 +1009,7 @@ test_save (void)
 
    r = mongoc_collection_save (collection, tmp_bson ("{'': 1}"), NULL, &error);
 
-   END_IGNORE_DEPRECATIONS;
+   END_IGNORE_DEPRECATIONS
 
    ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
@@ -3762,7 +3762,7 @@ test_many_return (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CURSOR,
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                          "Cannot advance a completed or failed cursor")
+                          "Cannot advance a completed or failed cursor");
 
    mongoc_cursor_destroy (cursor);
 

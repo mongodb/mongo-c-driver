@@ -69,6 +69,13 @@ buildvariants:
       MONGOC_EARTHLY_ENV: archlinux
     tasks:
       - name: .archlinux-gcc
+  - name: clang-format
+    display_name: clang-format
+    run_on:
+      - ubuntu2204-large
+      - ubuntu2004-large
+    tasks:
+      - name: .clang-format
   - name: cse-matrix-darwinssl
     display_name: cse-matrix-darwinssl
     expansions:

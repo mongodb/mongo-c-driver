@@ -169,7 +169,7 @@ bson_md5_process (bson_md5_t *md5, const uint8_t *data)
           * On little-endian machines, we can process properly aligned
           * data without copying it.
           */
-         if (!((data - (const uint8_t *) 0) & 3)) {
+         if (!(((uintptr_t) data) & 3u)) {
 /* data are properly aligned */
 #ifdef __clang__
 #pragma clang diagnostic push

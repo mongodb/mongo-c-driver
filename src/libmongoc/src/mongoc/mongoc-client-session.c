@@ -1241,7 +1241,6 @@ mongoc_client_session_get_transaction_state (
       MONGOC_ERROR ("invalid state %d when getting transaction state",
                     (int) session->txn.state);
       abort ();
-      break;
    }
 }
 

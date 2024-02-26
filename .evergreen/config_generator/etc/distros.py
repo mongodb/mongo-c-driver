@@ -89,8 +89,6 @@ RHEL_POWER8_DISTROS = [
 ]
 
 RHEL_ZSERIES_DISTROS = [
-    Distro(name='rhel67-zseries-large', os='rhel', os_type='linux', os_ver='6.7', size='large', arch='zseries'),
-    Distro(name='rhel67-zseries-small', os='rhel', os_type='linux', os_ver='6.7', size='small', arch='zseries'),
     Distro(name='rhel72-zseries-large', os='rhel', os_type='linux', os_ver='7.2', size='large', arch='zseries'),
     Distro(name='rhel72-zseries-small', os='rhel', os_type='linux', os_ver='7.2', size='small', arch='zseries'),
     Distro(name='rhel83-zseries-large', os='rhel', os_type='linux', os_ver='8.3', size='large', arch='zseries'),
@@ -108,13 +106,6 @@ UBUNTU_DISTROS = [
     Distro(name='ubuntu2204-small', os='ubuntu', os_type='linux', os_ver='22.04', size='small'),
 ]
 
-UBUNTU_POWER8_DISTROS = [
-    Distro(name='ubuntu1604-power8-large', os='ubuntu', os_type='linux', os_ver='16.04', size='large', arch='power8'),
-    Distro(name='ubuntu1604-power8-small', os='ubuntu', os_type='linux', os_ver='16.04', size='small', arch='power8'),
-    Distro(name='ubuntu1804-power8-large', os='ubuntu', os_type='linux', os_ver='18.04', size='large', arch='power8'),
-    Distro(name='ubuntu1804-power8-small', os='ubuntu', os_type='linux', os_ver='18.04', size='small', arch='power8'),
-]
-
 UBUNTU_ARM64_DISTROS = [
     Distro(name='ubuntu1604-arm64-large', os='ubuntu', os_type='linux', os_ver='16.04', size='large', arch='arm64'),
     Distro(name='ubuntu1604-arm64-small', os='ubuntu', os_type='linux', os_ver='16.04', size='small', arch='arm64'),
@@ -124,13 +115,6 @@ UBUNTU_ARM64_DISTROS = [
     Distro(name='ubuntu2004-arm64-small', os='ubuntu', os_type='linux', os_ver='20.04', size='small', arch='arm64'),
     Distro(name='ubuntu2204-arm64-large', os='ubuntu', os_type='linux', os_ver='22.04', size='large', arch='arm64'),
     Distro(name='ubuntu2204-arm64-small', os='ubuntu', os_type='linux', os_ver='22.04', size='small', arch='arm64'),
-]
-
-UBUNTU_ZSERIES_DISTROS = [
-    Distro(name='ubuntu1604-zseries-large', os='ubuntu', os_type='linux', os_ver='16.04', size='large', arch='zseries'),
-    Distro(name='ubuntu1604-zseries-small', os='ubuntu', os_type='linux', os_ver='16.04', size='small', arch='zseries'),
-    Distro(name='ubuntu1804-zseries-large', os='ubuntu', os_type='linux', os_ver='18.04', size='large', arch='zseries'),
-    Distro(name='ubuntu1804-zseries-small', os='ubuntu', os_type='linux', os_ver='18.04', size='small', arch='zseries'),
 ]
 
 WINDOWS_DISTROS = [
@@ -173,8 +157,6 @@ ALL_DISTROS = [] + \
     RHEL_ZSERIES_DISTROS + \
     UBUNTU_DISTROS + \
     UBUNTU_ARM64_DISTROS + \
-    UBUNTU_POWER8_DISTROS + \
-    UBUNTU_ZSERIES_DISTROS + \
     WINDOWS_DISTROS
 
 

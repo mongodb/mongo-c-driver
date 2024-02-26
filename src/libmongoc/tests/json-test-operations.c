@@ -887,7 +887,7 @@ bulk_write (mongoc_collection_t *collection,
 
 #define COPY_EXCEPT(...)           \
    bson_copy_to_excluding_noinit ( \
-      &args, &opts, "session", "readPreference", __VA_ARGS__, NULL);
+      &args, &opts, "session", "readPreference", __VA_ARGS__, NULL)
 
 
 static bool
@@ -1994,8 +1994,7 @@ drop_collection (mongoc_database_t *db,
 
 
 static bool
-create_index (mongoc_database_t *db,
-              mongoc_collection_t *collection,
+create_index (mongoc_collection_t *collection,
               const bson_t *test,
               const bson_t *operation,
               mongoc_client_session_t *session,
@@ -2407,7 +2406,7 @@ json_test_operation (json_test_ctx_t *ctx,
       } else if (!strcmp (op_name, "mapReduce")) {
          test_error ("operation not implemented in libmongoc");
       } else if (!strcmp (op_name, "createIndex")) {
-         res = create_index (db, c, test, operation, session, reply);
+         res = create_index (c, test, operation, session, reply);
       } else {
          test_error ("unrecognized collection operation name %s", op_name);
       }
