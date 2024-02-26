@@ -24,10 +24,7 @@
 typedef struct _mock_rs_t mock_rs_t;
 
 mock_rs_t *
-mock_rs_with_auto_hello (int32_t max_wire_version,
-                         bool has_primary,
-                         int n_secondaries,
-                         int n_arbiters);
+mock_rs_with_auto_hello (int32_t max_wire_version, bool has_primary, int n_secondaries, int n_arbiters);
 
 
 void
@@ -51,8 +48,7 @@ mock_rs_receives_kill_cursors (mock_rs_t *rs, int64_t cursor_id);
 request_t *
 _mock_rs_receives_msg (mock_rs_t *rs, uint32_t flags, ...);
 
-#define mock_rs_receives_msg(_rs, _flags, ...) \
-   _mock_rs_receives_msg (_rs, _flags, __VA_ARGS__, NULL)
+#define mock_rs_receives_msg(_rs, _flags, ...) _mock_rs_receives_msg (_rs, _flags, __VA_ARGS__, NULL)
 
 bool
 mock_rs_request_is_to_primary (mock_rs_t *rs, request_t *request);

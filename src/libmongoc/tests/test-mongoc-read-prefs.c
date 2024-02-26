@@ -34,14 +34,7 @@ _test_op_msg (const mongoc_uri_t *uri,
    client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_NONE,
-                                    0,
-                                    1,
-                                    0,
-                                    tmp_bson (query_or_cmd),
-                                    NULL,
-                                    read_prefs);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 1, 0, tmp_bson (query_or_cmd), NULL, read_prefs);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server, 0, tmp_bson (expected_find));
@@ -83,19 +76,11 @@ _test_command (const mongoc_uri_t *uri,
    collection = mongoc_client_get_collection (client, "test", "test");
    mongoc_collection_set_read_prefs (collection, read_prefs);
 
-   cursor = mongoc_collection_command (collection,
-                                       MONGOC_QUERY_NONE,
-                                       0,
-                                       1,
-                                       0,
-                                       tmp_bson (command),
-                                       NULL,
-                                       read_prefs);
+   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 1, 0, tmp_bson (command), NULL, read_prefs);
 
    future = future_cursor_next (cursor, &doc);
 
-   request = mock_server_receives_msg (
-      server, MONGOC_MSG_NONE, tmp_bson (expected_cmd));
+   request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson (expected_cmd));
 
    reply_to_request (request,
                      MONGOC_REPLY_NONE, /* flags */
@@ -131,11 +116,9 @@ _test_command_simple (const mongoc_uri_t *uri,
    collection = mongoc_client_get_collection (client, "test", "test");
    mongoc_collection_set_read_prefs (collection, read_prefs);
 
-   future = future_client_command_simple (
-      client, "test", tmp_bson (command), read_prefs, NULL, NULL);
+   future = future_client_command_simple (client, "test", tmp_bson (command), read_prefs, NULL, NULL);
 
-   request = mock_server_receives_msg (
-      server, MONGOC_MSG_NONE, tmp_bson (expected_cmd));
+   request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson (expected_cmd));
 
    reply_to_request (request,
                      MONGOC_REPLY_NONE, /* flags */
@@ -261,8 +244,7 @@ _test_read_prefs_op_msg (read_pref_test_type_t test_type,
    if (_can_be_command (query_or_cmd)) {
       _test_command (uri, server, query_or_cmd, read_prefs, expected_cmd);
 
-      _test_command_simple (
-         uri, server, query_or_cmd, read_prefs, expected_cmd);
+      _test_command_simple (uri, server, query_or_cmd, read_prefs, expected_cmd);
    }
 
    _test_op_msg (uri, server, query_or_cmd, read_prefs, expected_find);
@@ -279,8 +261,7 @@ _test_read_prefs (read_pref_test_type_t test_type,
                   const char *expected_cmd,
                   const char *expected_find)
 {
-   _test_read_prefs_op_msg (
-      test_type, read_prefs, query_or_cmd, expected_cmd, expected_find);
+   _test_read_prefs_op_msg (test_type, read_prefs, query_or_cmd, expected_cmd, expected_find);
 }
 
 
@@ -395,17 +376,10 @@ test_read_prefs_primary_rsprimary (void)
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   _test_read_prefs (READ_PREF_TEST_PRIMARY,
-                     read_prefs,
-                     "{}",
-                     "{}",
-                     "{'find': 'test', 'filter':  {}}");
+   _test_read_prefs (READ_PREF_TEST_PRIMARY, read_prefs, "{}", "{}", "{'find': 'test', 'filter':  {}}");
 
-   _test_read_prefs (READ_PREF_TEST_PRIMARY,
-                     read_prefs,
-                     "{'a': 1}",
-                     "{'a': 1}",
-                     "{'find': 'test', 'filter':  {'a': 1}}");
+   _test_read_prefs (
+      READ_PREF_TEST_PRIMARY, read_prefs, "{'a': 1}", "{'a': 1}", "{'find': 'test', 'filter':  {'a': 1}}");
 
    mongoc_read_prefs_destroy (read_prefs);
 }
@@ -418,17 +392,10 @@ test_read_prefs_secondary_rssecondary (void)
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
-   _test_read_prefs (READ_PREF_TEST_SECONDARY,
-                     read_prefs,
-                     "{}",
-                     "{}",
-                     "{'find': 'test', 'filter':  {}}");
+   _test_read_prefs (READ_PREF_TEST_SECONDARY, read_prefs, "{}", "{}", "{'find': 'test', 'filter':  {}}");
 
-   _test_read_prefs (READ_PREF_TEST_SECONDARY,
-                     read_prefs,
-                     "{'a': 1}",
-                     "{'a': 1}",
-                     "{'find': 'test', 'filter':  {'a': 1}}");
+   _test_read_prefs (
+      READ_PREF_TEST_SECONDARY, read_prefs, "{'a': 1}", "{'a': 1}", "{'find': 'test', 'filter':  {'a': 1}}");
 
    mongoc_read_prefs_destroy (read_prefs);
 }
@@ -438,17 +405,9 @@ test_read_prefs_secondary_rssecondary (void)
 static void
 test_read_prefs_mongos_null (void)
 {
-   _test_read_prefs (READ_PREF_TEST_MONGOS,
-                     NULL,
-                     "{}",
-                     "{}",
-                     "{'find': 'test', 'filter':  {}}");
+   _test_read_prefs (READ_PREF_TEST_MONGOS, NULL, "{}", "{}", "{'find': 'test', 'filter':  {}}");
 
-   _test_read_prefs (READ_PREF_TEST_MONGOS,
-                     NULL,
-                     "{'a': 1}",
-                     "{'a': 1}",
-                     "{'find': 'test', 'filter':  {}}");
+   _test_read_prefs (READ_PREF_TEST_MONGOS, NULL, "{'a': 1}", "{'a': 1}", "{'find': 'test', 'filter':  {}}");
 }
 
 
@@ -459,17 +418,10 @@ test_read_prefs_mongos_primary (void)
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   _test_read_prefs (READ_PREF_TEST_MONGOS,
-                     read_prefs,
-                     "{}",
-                     "{}",
-                     "{'find': 'test', 'filter':  {}}");
+   _test_read_prefs (READ_PREF_TEST_MONGOS, read_prefs, "{}", "{}", "{'find': 'test', 'filter':  {}}");
 
-   _test_read_prefs (READ_PREF_TEST_MONGOS,
-                     read_prefs,
-                     "{'a': 1}",
-                     "{'a': 1}",
-                     "{'find': 'test', 'filter':  {'a': 1}}");
+   _test_read_prefs (
+      READ_PREF_TEST_MONGOS, read_prefs, "{'a': 1}", "{'a': 1}", "{'find': 'test', 'filter':  {'a': 1}}");
 
    mongoc_read_prefs_destroy (read_prefs);
 }
@@ -482,29 +434,26 @@ test_read_prefs_mongos_secondary (void)
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
-   _test_read_prefs_op_msg (
-      READ_PREF_TEST_MONGOS,
-      read_prefs,
-      "{}",
-      "{'find': 'test','$readPreference': {'mode': 'secondary'}}",
-      "{'find': 'test', 'filter':  {},"
-      " '$readPreference': {'mode': 'secondary'}}");
+   _test_read_prefs_op_msg (READ_PREF_TEST_MONGOS,
+                            read_prefs,
+                            "{}",
+                            "{'find': 'test','$readPreference': {'mode': 'secondary'}}",
+                            "{'find': 'test', 'filter':  {},"
+                            " '$readPreference': {'mode': 'secondary'}}");
 
-   _test_read_prefs_op_msg (
-      READ_PREF_TEST_MONGOS,
-      read_prefs,
-      "{'a': 1}",
-      "{'a': 1, '$readPreference': {'mode': 'secondary'}}",
-      "{'find': 'test', 'filter':  {'a': 1},"
-      " '$readPreference': {'mode': 'secondary'}}");
+   _test_read_prefs_op_msg (READ_PREF_TEST_MONGOS,
+                            read_prefs,
+                            "{'a': 1}",
+                            "{'a': 1, '$readPreference': {'mode': 'secondary'}}",
+                            "{'find': 'test', 'filter':  {'a': 1},"
+                            " '$readPreference': {'mode': 'secondary'}}");
 
-   _test_read_prefs_op_msg (
-      READ_PREF_TEST_MONGOS,
-      read_prefs,
-      "{'$query': {'a': 1}}",
-      "{'$query': {'a': 1}, '$readPreference': {'mode': 'secondary'}}",
-      "{'find': 'test', 'filter':  {'a': 1},"
-      " '$readPreference': {'mode': 'secondary'}}");
+   _test_read_prefs_op_msg (READ_PREF_TEST_MONGOS,
+                            read_prefs,
+                            "{'$query': {'a': 1}}",
+                            "{'$query': {'a': 1}, '$readPreference': {'mode': 'secondary'}}",
+                            "{'find': 'test', 'filter':  {'a': 1},"
+                            " '$readPreference': {'mode': 'secondary'}}");
 
    mongoc_read_prefs_destroy (read_prefs);
 }
@@ -518,17 +467,10 @@ test_read_prefs_mongos_secondary_preferred (void)
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
    /* $readPreference not sent, only secondaryOk */
-   _test_read_prefs (READ_PREF_TEST_MONGOS,
-                     read_prefs,
-                     "{}",
-                     "{}",
-                     "{'find': 'test', 'filter':  {}}");
+   _test_read_prefs (READ_PREF_TEST_MONGOS, read_prefs, "{}", "{}", "{'find': 'test', 'filter':  {}}");
 
-   _test_read_prefs (READ_PREF_TEST_MONGOS,
-                     read_prefs,
-                     "{'a': 1}",
-                     "{'a': 1}",
-                     "{'find': 'test', 'filter':  {'a': 1}}");
+   _test_read_prefs (
+      READ_PREF_TEST_MONGOS, read_prefs, "{'a': 1}", "{'a': 1}", "{'find': 'test', 'filter':  {'a': 1}}");
 
    mongoc_read_prefs_destroy (read_prefs);
 }
@@ -546,26 +488,24 @@ test_read_prefs_mongos_tags (void)
    mongoc_read_prefs_add_tag (read_prefs, &b);
    mongoc_read_prefs_add_tag (read_prefs, NULL);
 
-   _test_read_prefs_op_msg (
-      READ_PREF_TEST_MONGOS,
-      read_prefs,
-      "{}",
-      "{'$query': {}, '$readPreference': {'mode': 'secondaryPreferred',"
-      "                                   'tags': [{'dc': 'ny'}, {}]}}",
-      "{'find': 'test', 'filter':  {},"
-      " '$readPreference': {'mode': 'secondaryPreferred',"
-      "                             'tags': [{'dc': 'ny'}, {}]}}");
+   _test_read_prefs_op_msg (READ_PREF_TEST_MONGOS,
+                            read_prefs,
+                            "{}",
+                            "{'$query': {}, '$readPreference': {'mode': 'secondaryPreferred',"
+                            "                                   'tags': [{'dc': 'ny'}, {}]}}",
+                            "{'find': 'test', 'filter':  {},"
+                            " '$readPreference': {'mode': 'secondaryPreferred',"
+                            "                             'tags': [{'dc': 'ny'}, {}]}}");
 
-   _test_read_prefs_op_msg (
-      READ_PREF_TEST_MONGOS,
-      read_prefs,
-      "{'a': 1}",
-      "{'a': 1,"
-      " '$readPreference': {'mode': 'secondaryPreferred',"
-      "                     'tags': [{'dc': 'ny'}, {}]}}",
-      "{'find': 'test', 'filter':  {},"
-      " '$readPreference': {'mode': 'secondaryPreferred',"
-      "                             'tags': [{'dc': 'ny'}, {}]}}");
+   _test_read_prefs_op_msg (READ_PREF_TEST_MONGOS,
+                            read_prefs,
+                            "{'a': 1}",
+                            "{'a': 1,"
+                            " '$readPreference': {'mode': 'secondaryPreferred',"
+                            "                     'tags': [{'dc': 'ny'}, {}]}}",
+                            "{'find': 'test', 'filter':  {},"
+                            " '$readPreference': {'mode': 'secondaryPreferred',"
+                            "                             'tags': [{'dc': 'ny'}, {}]}}");
 
    mongoc_read_prefs_destroy (read_prefs);
    bson_destroy (&b);
@@ -588,8 +528,7 @@ test_read_prefs_mongos_max_staleness (void)
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    mock_server_auto_endsessions (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
@@ -597,27 +536,19 @@ test_read_prefs_mongos_max_staleness (void)
 
    /* exhaust cursor is required per CDRIVER-3633 so the driver downgrades the
     * OP_QUERY find command to an OP_QUERY legacy find */
-   cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (
-      server,
-      "test.test",
-      MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
-      0,
-      0,
-      "{'$query': {'a': 1},"
-      " '$readPreference': {'mode': 'secondaryPreferred',"
-      "                     'maxStalenessSeconds': 120}}",
-      "{}");
+   request = mock_server_receives_query (server,
+                                         "test.test",
+                                         MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
+                                         0,
+                                         0,
+                                         "{'$query': {'a': 1},"
+                                         " '$readPreference': {'mode': 'secondaryPreferred',"
+                                         "                     'maxStalenessSeconds': 120}}",
+                                         "{}");
 
-   reply_to_find_request (request,
-                          MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
-                          0,
-                          1,
-                          "test.test",
-                          "{}",
-                          false);
+   reply_to_find_request (request, MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK, 0, 1, "test.test", "{}", false);
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));
@@ -647,8 +578,7 @@ test_read_prefs_mongos_hedged_reads (void)
 
    server = mock_mongos_new (WIRE_VERSION_HEDGED_READS);
    mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
@@ -656,16 +586,14 @@ test_read_prefs_mongos_hedged_reads (void)
 
    mongoc_read_prefs_set_hedge (prefs, &hedge_doc);
 
-   cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'find': 'test',"
-                " 'filter': {'a': {'$numberInt': '1'}},"
-                " '$readPreference': {'mode': 'secondaryPreferred',"
-                "                     'hedge': {'enabled': true}}}"));
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_EXHAUST_ALLOWED,
+                                       tmp_bson ("{'find': 'test',"
+                                                 " 'filter': {'a': {'$numberInt': '1'}},"
+                                                 " '$readPreference': {'mode': 'secondaryPreferred',"
+                                                 "                     'hedge': {'enabled': true}}}"));
    reply_to_request_simple (request,
                             "{'ok': 1,"
                             " 'cursor': {"
@@ -703,26 +631,21 @@ test_mongos_read_concern (void)
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    mock_server_auto_endsessions (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    cursor = mongoc_collection_find_with_opts (
-      collection,
-      tmp_bson ("{'a': 1}"),
-      tmp_bson ("{'readConcern': {'level': 'foo'}}"),
-      prefs);
+      collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'readConcern': {'level': 'foo'}}"), prefs);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'test',"
-                " 'find': 'test',"
-                " 'filter': {},"
-                " 'readConcern': {'level': 'foo'},"
-                " '$readPreference': {'mode': 'secondary'},"
-                " 'readConcern': {'level': 'foo'}}"));
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'test',"
+                                                 " 'find': 'test',"
+                                                 " 'filter': {},"
+                                                 " 'readConcern': {'level': 'foo'},"
+                                                 " '$readPreference': {'mode': 'secondary'},"
+                                                 " 'readConcern': {'level': 'foo'}}"));
 
    reply_to_op_msg_request (request,
                             MONGOC_MSG_NONE,
@@ -745,16 +668,13 @@ test_mongos_read_concern (void)
 }
 
 
-typedef mongoc_cursor_t *(*test_op_msg_direct_fn_t) (mongoc_collection_t *,
-                                                     mongoc_read_prefs_t *);
+typedef mongoc_cursor_t *(*test_op_msg_direct_fn_t) (mongoc_collection_t *, mongoc_read_prefs_t *);
 
 
 /* direct connection to a secondary requires read pref primaryPreferred to
  * avoid "not primary" error from server */
 static void
-_test_op_msg_direct_connection (bool is_mongos,
-                                test_op_msg_direct_fn_t fn,
-                                const char *expected_cmd)
+_test_op_msg_direct_connection (bool is_mongos, test_op_msg_direct_fn_t fn, const char *expected_cmd)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -787,8 +707,7 @@ _test_op_msg_direct_connection (bool is_mongos,
    mock_server_auto_endsessions (server);
 
    mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    for (i = 0; i < 2; i++) {
@@ -824,16 +743,14 @@ _test_op_msg_direct_connection (bool is_mongos,
 static mongoc_cursor_t *
 find (mongoc_collection_t *collection, mongoc_read_prefs_t *prefs)
 {
-   return mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{}"), NULL /* opts */, prefs);
+   return mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL /* opts */, prefs);
 }
 
 
 static mongoc_cursor_t *
 aggregate (mongoc_collection_t *collection, mongoc_read_prefs_t *prefs)
 {
-   return mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), NULL /* opts */, prefs);
+   return mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), NULL /* opts */, prefs);
 }
 
 
@@ -842,21 +759,19 @@ aggregate (mongoc_collection_t *collection, mongoc_read_prefs_t *prefs)
 static void
 test_op_msg_direct_secondary (void)
 {
-   _test_op_msg_direct_connection (
-      false /* is_mongos */,
-      find,
-      "{"
-      "   'find': 'collection',"
-      "   '$readPreference': {'mode': 'primaryPreferred'}"
-      "}");
+   _test_op_msg_direct_connection (false /* is_mongos */,
+                                   find,
+                                   "{"
+                                   "   'find': 'collection',"
+                                   "   '$readPreference': {'mode': 'primaryPreferred'}"
+                                   "}");
 
-   _test_op_msg_direct_connection (
-      false /* is_mongos */,
-      aggregate,
-      "{"
-      "   'aggregate': 'collection',"
-      "   '$readPreference': {'mode': 'primaryPreferred'}"
-      "}");
+   _test_op_msg_direct_connection (false /* is_mongos */,
+                                   aggregate,
+                                   "{"
+                                   "   'aggregate': 'collection',"
+                                   "   '$readPreference': {'mode': 'primaryPreferred'}"
+                                   "}");
 }
 
 
@@ -883,42 +798,21 @@ test_op_msg_direct_mongos (void)
 void
 test_read_prefs_install (TestSuite *suite)
 {
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/standalone/null", test_read_prefs_standalone_null);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/standalone/primary", test_read_prefs_standalone_primary);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/standalone/secondary", test_read_prefs_standalone_secondary);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/standalone/tags", test_read_prefs_standalone_tags);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/rsprimary/primary", test_read_prefs_primary_rsprimary);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/rssecondary/secondary", test_read_prefs_secondary_rssecondary);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/mongos/null", test_read_prefs_mongos_null);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/mongos/primary", test_read_prefs_mongos_primary);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/mongos/secondary", test_read_prefs_mongos_secondary);
    TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/standalone/null", test_read_prefs_standalone_null);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadPrefs/standalone/primary",
-                                test_read_prefs_standalone_primary);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadPrefs/standalone/secondary",
-                                test_read_prefs_standalone_secondary);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/standalone/tags", test_read_prefs_standalone_tags);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/rsprimary/primary", test_read_prefs_primary_rsprimary);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadPrefs/rssecondary/secondary",
-                                test_read_prefs_secondary_rssecondary);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/mongos/null", test_read_prefs_mongos_null);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/mongos/primary", test_read_prefs_mongos_primary);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/mongos/secondary", test_read_prefs_mongos_secondary);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadPrefs/mongos/secondaryPreferred",
-                                test_read_prefs_mongos_secondary_preferred);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/mongos/tags", test_read_prefs_mongos_tags);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadPrefs/mongos/maxStaleness",
-                                test_read_prefs_mongos_max_staleness);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadPrefs/mongos/hedgedReads",
-                                test_read_prefs_mongos_hedged_reads);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/mongos/readConcern", test_mongos_read_concern);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/OP_MSG/secondary", test_op_msg_direct_secondary);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/OP_MSG/mongos", test_op_msg_direct_mongos);
+      suite, "/ReadPrefs/mongos/secondaryPreferred", test_read_prefs_mongos_secondary_preferred);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/mongos/tags", test_read_prefs_mongos_tags);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/mongos/maxStaleness", test_read_prefs_mongos_max_staleness);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/mongos/hedgedReads", test_read_prefs_mongos_hedged_reads);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/mongos/readConcern", test_mongos_read_concern);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/OP_MSG/secondary", test_op_msg_direct_secondary);
+   TestSuite_AddMockServerTest (suite, "/ReadPrefs/OP_MSG/mongos", test_op_msg_direct_mongos);
 }

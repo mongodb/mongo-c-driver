@@ -32,10 +32,8 @@
 #undef COUNTER
 
 /* helper to reset a prev_* counter */
-#define RESET(ident)                                              \
-   bson_atomic_int32_exchange (&prev_##ident,                     \
-                               mongoc_counter_##ident##_count (), \
-                               bson_memory_order_seq_cst)
+#define RESET(ident) \
+   bson_atomic_int32_exchange (&prev_##ident, mongoc_counter_##ident##_count (), bson_memory_order_seq_cst)
 
 /* helper to compare and reset a prev_* counter. */
 #define DIFF_AND_RESET(ident, cmp, expected)                 \
@@ -66,8 +64,7 @@ _client_new_disable_ss (bool use_compression)
 
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
-   mongoc_uri_set_option_as_int32 (
-      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
    if (use_compression) {
       char *compressors = test_framework_get_compressors ();
       mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_COMPRESSORS, compressors);
@@ -79,10 +76,7 @@ _client_new_disable_ss (bool use_compression)
    ASSERT_OR_PRINT (sd, err);
    mongoc_server_description_destroy (sd);
    // Trigger authentication handshake now to avoid interfering with ping test.
-   ASSERT_OR_PRINT (
-      mongoc_client_command_simple (
-         client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err),
-      err);
+   ASSERT_OR_PRINT (mongoc_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err), err);
    mongoc_uri_destroy (uri);
    /* reset counters to exclude anything done in server selection. */
    reset_all_counters ();
@@ -104,8 +98,7 @@ _drop_and_populate_coll (mongoc_client_t *client)
    coll = mongoc_client_get_collection (client, "test", "test");
    mongoc_collection_drop (coll, NULL); /* don't care if ns not found. */
    for (i = 0; i < 3; i++) {
-      ret =
-         mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &err);
+      ret = mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &err);
       ASSERT_OR_PRINT (ret, err);
    }
    return coll;
@@ -120,8 +113,7 @@ _ping (mongoc_client_t *client)
 
    ASSERT (client);
 
-   ret = mongoc_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
+   ret = mongoc_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
    ASSERT_OR_PRINT (ret, err);
 }
 
@@ -147,8 +139,7 @@ test_counters_op_msg (void *ctx)
    DIFF_AND_RESET (op_egress_total, ==, 4);
    DIFF_AND_RESET (op_ingress_msg, ==, 4);
    DIFF_AND_RESET (op_ingress_total, ==, 4);
-   cursor =
-      mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL, NULL);
    while (mongoc_cursor_next (cursor, &bson))
       ;
    mongoc_cursor_destroy (cursor);
@@ -202,8 +193,7 @@ test_counters_cursors (void)
 
    client = _client_new_disable_ss (false);
    coll = _drop_and_populate_coll (client);
-   cursor = mongoc_collection_find_with_opts (
-      coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
+   cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
    DIFF_AND_RESET (cursors_active, ==, 1);
    while (mongoc_cursor_next (cursor, &bson))
       ;
@@ -224,8 +214,7 @@ test_counters_clients (void)
    uri = test_framework_get_uri ();
 
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
-   mongoc_uri_set_option_as_int32 (
-      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
    reset_all_counters ();
    client = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client);
@@ -305,8 +294,7 @@ test_counters_streams (void *ctx)
       mongoc_ssl_opt_t opts = *default_opts;
       mongoc_stream_t *ssl_buffered_stream_socket;
 
-      ssl_buffered_stream_socket = mongoc_stream_tls_new_with_hostname (
-         buffered_stream_sock, NULL, &opts, 0);
+      ssl_buffered_stream_socket = mongoc_stream_tls_new_with_hostname (buffered_stream_sock, NULL, &opts, 0);
       DIFF_AND_RESET (streams_active, ==, 1);
       DIFF_AND_RESET (streams_disposed, ==, 0);
       mongoc_stream_destroy (ssl_buffered_stream_socket);
@@ -322,11 +310,9 @@ test_counters_streams (void *ctx)
    }
 /* check a file stream. */
 #ifdef WIN32
-   file_stream = mongoc_stream_file_new_for_path (
-      BINARY_DIR "/temp.dat", O_CREAT | O_WRONLY | O_TRUNC, _S_IWRITE);
+   file_stream = mongoc_stream_file_new_for_path (BINARY_DIR "/temp.dat", O_CREAT | O_WRONLY | O_TRUNC, _S_IWRITE);
 #else
-   file_stream = mongoc_stream_file_new_for_path (
-      BINARY_DIR "/temp.dat", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+   file_stream = mongoc_stream_file_new_for_path (BINARY_DIR "/temp.dat", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
 #endif
    BSON_ASSERT (file_stream);
    DIFF_AND_RESET (streams_active, ==, 1);
@@ -337,8 +323,7 @@ test_counters_streams (void *ctx)
    mongoc_stream_destroy (file_stream);
    DIFF_AND_RESET (streams_active, ==, -1);
    DIFF_AND_RESET (streams_disposed, ==, 1);
-   file_stream =
-      mongoc_stream_file_new_for_path (BINARY_DIR "/temp.dat", O_RDONLY, 0);
+   file_stream = mongoc_stream_file_new_for_path (BINARY_DIR "/temp.dat", O_RDONLY, 0);
    BSON_ASSERT (file_stream);
    DIFF_AND_RESET (streams_active, ==, 1);
    DIFF_AND_RESET (streams_disposed, ==, 0);
@@ -393,8 +378,7 @@ test_counters_auth (void *ctx)
 {
    char *host_and_port = test_framework_get_host_and_port ();
    char *uri_str = test_framework_get_uri_str ();
-   char *uri_str_bad = bson_strdup_printf (
-      "mongodb://%s:%s@%s/", "bad_user", "bad_pass", host_and_port);
+   char *uri_str_bad = bson_strdup_printf ("mongodb://%s:%s@%s/", "bad_user", "bad_pass", host_and_port);
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    bool ret;
@@ -404,14 +388,12 @@ test_counters_auth (void *ctx)
 
    uri = mongoc_uri_new (uri_str);
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
-   mongoc_uri_set_option_as_int32 (
-      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
    reset_all_counters ();
    client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    BSON_ASSERT (client);
-   ret = mongoc_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
+   ret = mongoc_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
    ASSERT_OR_PRINT (ret, err);
    DIFF_AND_RESET (auth_success, ==, 1);
    DIFF_AND_RESET (auth_failure, ==, 0);
@@ -468,10 +450,8 @@ test_counters_streams_timeout (void)
    sd = mongoc_client_select_server (client, true, NULL, &err);
    mongoc_server_description_destroy (sd);
    reset_all_counters ();
-   future = future_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
-   request = mock_server_receives_msg (
-      server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+   future = future_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
+   request = mock_server_receives_msg (server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
    _mongoc_usleep (350);
    request_destroy (request);
    ret = future_get_bool (future);
@@ -525,50 +505,47 @@ rpc_op_egress_counters_reset (void)
    mongoc_counter_op_egress_update_reset ();
 }
 
-#define ASSERT_RPC_OP_EGRESS_COUNTERS(expected, actual)                        \
-   if (1) {                                                                    \
-      const rpc_op_egress_counters e = (expected);                             \
-      const rpc_op_egress_counters a = (actual);                               \
-      ASSERT_WITH_MSG (e.op_egress_compressed == a.op_egress_compressed,       \
-                       "op_egress_compressed: expected %" PRId32               \
-                       ", got %" PRId32,                                       \
-                       e.op_egress_compressed,                                 \
-                       a.op_egress_compressed);                                \
-      ASSERT_WITH_MSG (e.op_egress_delete == a.op_egress_delete,               \
-                       "op_egress_delete: expected %" PRId32 ", got %" PRId32, \
-                       e.op_egress_delete,                                     \
-                       a.op_egress_delete);                                    \
-      ASSERT_WITH_MSG (e.op_egress_getmore == a.op_egress_getmore,             \
-                       "op_egress_getmore: expected %" PRId32                  \
-                       ", got %" PRId32,                                       \
-                       e.op_egress_getmore,                                    \
-                       a.op_egress_getmore);                                   \
-      ASSERT_WITH_MSG (e.op_egress_insert == a.op_egress_insert,               \
-                       "op_egress_insert: expected %" PRId32 ", got %" PRId32, \
-                       e.op_egress_insert,                                     \
-                       a.op_egress_insert);                                    \
-      ASSERT_WITH_MSG (e.op_egress_killcursors == a.op_egress_killcursors,     \
-                       "op_egress_killcursors: expected %" PRId32              \
-                       ", got %" PRId32,                                       \
-                       e.op_egress_killcursors,                                \
-                       a.op_egress_killcursors);                               \
-      ASSERT_WITH_MSG (e.op_egress_msg == a.op_egress_msg,                     \
-                       "op_egress_msg: expected %" PRId32 ", got %" PRId32,    \
-                       e.op_egress_msg,                                        \
-                       a.op_egress_msg);                                       \
-      ASSERT_WITH_MSG (e.op_egress_query == a.op_egress_query,                 \
-                       "op_egress_query: expected %" PRId32 ", got %" PRId32,  \
-                       e.op_egress_query,                                      \
-                       a.op_egress_query);                                     \
-      ASSERT_WITH_MSG (e.op_egress_total == a.op_egress_total,                 \
-                       "op_egress_total: expected %" PRId32 ", got %" PRId32,  \
-                       e.op_egress_total,                                      \
-                       a.op_egress_total);                                     \
-      ASSERT_WITH_MSG (e.op_egress_update == a.op_egress_update,               \
-                       "op_egress_update: expected %" PRId32 ", got %" PRId32, \
-                       e.op_egress_update,                                     \
-                       a.op_egress_update);                                    \
-   } else                                                                      \
+#define ASSERT_RPC_OP_EGRESS_COUNTERS(expected, actual)                             \
+   if (1) {                                                                         \
+      const rpc_op_egress_counters e = (expected);                                  \
+      const rpc_op_egress_counters a = (actual);                                    \
+      ASSERT_WITH_MSG (e.op_egress_compressed == a.op_egress_compressed,            \
+                       "op_egress_compressed: expected %" PRId32 ", got %" PRId32,  \
+                       e.op_egress_compressed,                                      \
+                       a.op_egress_compressed);                                     \
+      ASSERT_WITH_MSG (e.op_egress_delete == a.op_egress_delete,                    \
+                       "op_egress_delete: expected %" PRId32 ", got %" PRId32,      \
+                       e.op_egress_delete,                                          \
+                       a.op_egress_delete);                                         \
+      ASSERT_WITH_MSG (e.op_egress_getmore == a.op_egress_getmore,                  \
+                       "op_egress_getmore: expected %" PRId32 ", got %" PRId32,     \
+                       e.op_egress_getmore,                                         \
+                       a.op_egress_getmore);                                        \
+      ASSERT_WITH_MSG (e.op_egress_insert == a.op_egress_insert,                    \
+                       "op_egress_insert: expected %" PRId32 ", got %" PRId32,      \
+                       e.op_egress_insert,                                          \
+                       a.op_egress_insert);                                         \
+      ASSERT_WITH_MSG (e.op_egress_killcursors == a.op_egress_killcursors,          \
+                       "op_egress_killcursors: expected %" PRId32 ", got %" PRId32, \
+                       e.op_egress_killcursors,                                     \
+                       a.op_egress_killcursors);                                    \
+      ASSERT_WITH_MSG (e.op_egress_msg == a.op_egress_msg,                          \
+                       "op_egress_msg: expected %" PRId32 ", got %" PRId32,         \
+                       e.op_egress_msg,                                             \
+                       a.op_egress_msg);                                            \
+      ASSERT_WITH_MSG (e.op_egress_query == a.op_egress_query,                      \
+                       "op_egress_query: expected %" PRId32 ", got %" PRId32,       \
+                       e.op_egress_query,                                           \
+                       a.op_egress_query);                                          \
+      ASSERT_WITH_MSG (e.op_egress_total == a.op_egress_total,                      \
+                       "op_egress_total: expected %" PRId32 ", got %" PRId32,       \
+                       e.op_egress_total,                                           \
+                       a.op_egress_total);                                          \
+      ASSERT_WITH_MSG (e.op_egress_update == a.op_egress_update,                    \
+                       "op_egress_update: expected %" PRId32 ", got %" PRId32,      \
+                       e.op_egress_update,                                          \
+                       a.op_egress_update);                                         \
+   } else                                                                           \
       (void) 0
 
 #define ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT(expected) \
@@ -597,9 +574,7 @@ test_counters_rpc_op_egress_autoresponder (request_t *request, void *data)
       reply_to_request_simple (request, ar_data->hello);
       request_destroy (request);
    } else {
-      ASSERT_WITH_MSG (request->is_command,
-                       "expected only handshakes and commands, but got: %s",
-                       request->as_str);
+      ASSERT_WITH_MSG (request->is_command, "expected only handshakes and commands, but got: %s", request->as_str);
       reply_to_request_with_ok_and_destroy (request);
    }
 
@@ -626,8 +601,7 @@ _test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
    mock_server_run (server);
 
    bson_error_t error = {0};
-   mongoc_client_t *const client = mongoc_client_new_from_uri_with_error (
-      mock_server_get_uri (server), &error);
+   mongoc_client_t *const client = mongoc_client_new_from_uri_with_error (mock_server_get_uri (server), &error);
    ASSERT_OR_PRINT (client, error);
 
    // Stable API for Drivers spec: If an API version was declared, drivers MUST
@@ -635,18 +609,15 @@ _test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
    // afterwards. Instead, drivers MUST use the `hello` command exclusively and
    // use the `OP_MSG` protocol.
    if (with_op_msg) {
-      mongoc_server_api_t *const api =
-         mongoc_server_api_new (MONGOC_SERVER_API_V1);
-      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
-                       error);
+      mongoc_server_api_t *const api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error), error);
       mongoc_server_api_destroy (api);
    }
 
    ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
 
    rpc_op_egress_counters expected = {0};
-   int32_t *const handshake_counter =
-      with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
+   int32_t *const handshake_counter = with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
    {
       const bson_t *const command = tmp_bson ("{'ping': 1}");
@@ -654,13 +625,11 @@ _test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
       // Trigger:
       //  - mongoc_topology_scanner_node_setup
       //  - mongoc_cluster_run_command_monitored
-      future_t *const ping = future_client_command_simple (
-         client, "db", command, NULL, NULL, &error);
+      future_t *const ping = future_client_command_simple (client, "db", command, NULL, NULL, &error);
 
       {
          request_t *const request =
-            with_op_msg ? mock_server_receives_hello_op_msg (server)
-                        : mock_server_receives_legacy_hello (server, NULL);
+            with_op_msg ? mock_server_receives_hello_op_msg (server) : mock_server_receives_legacy_hello (server, NULL);
 
          // OP_QUERY 1 / OP_MSG 1:
          //  - by _mongoc_rpc_op_egress_inc
@@ -684,8 +653,7 @@ _test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
       }
 
       {
-         request_t *const request =
-            mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
+         request_t *const request = mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
 
          // OP_MSG 1 / OP_MSG 2:
          //  - by _mongoc_rpc_op_egress_inc
@@ -708,11 +676,9 @@ _test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
    {
       int responses = 0;
 
-      server_monitor_autoresponder_data data = {.hello = hello,
-                                                .responses = &responses};
+      server_monitor_autoresponder_data data = {.hello = hello, .responses = &responses};
 
-      mock_server_autoresponds (
-         server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
+      mock_server_autoresponds (server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
 
       mongoc_client_destroy (client);
       mock_server_destroy (server);
@@ -752,8 +718,7 @@ test_counters_rpc_op_egress_cluster_legacy (void)
    mock_server_run (server);
 
    bson_error_t error = {0};
-   mongoc_client_t *const client = mongoc_client_new_from_uri_with_error (
-      mock_server_get_uri (server), &error);
+   mongoc_client_t *const client = mongoc_client_new_from_uri_with_error (mock_server_get_uri (server), &error);
    ASSERT_OR_PRINT (client, error);
 
    ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
@@ -764,12 +729,10 @@ test_counters_rpc_op_egress_cluster_legacy (void)
    {
       const bson_t *const command = tmp_bson ("{'ping': 1}");
 
-      future_t *const ping = future_client_command_simple (
-         client, "db", command, NULL, NULL, &error);
+      future_t *const ping = future_client_command_simple (client, "db", command, NULL, NULL, &error);
 
       {
-         request_t *const request =
-            mock_server_receives_legacy_hello (server, NULL);
+         request_t *const request = mock_server_receives_legacy_hello (server, NULL);
 
          // OP_QUERY 1:
          //  - by _mongoc_rpc_op_egress_inc
@@ -794,8 +757,7 @@ test_counters_rpc_op_egress_cluster_legacy (void)
       }
 
       {
-         request_t *const request =
-            mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
+         request_t *const request = mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
 
          // OP_MSG 1:
          //  - by _mongoc_rpc_op_egress_inc
@@ -818,8 +780,7 @@ test_counters_rpc_op_egress_cluster_legacy (void)
    mongoc_client_kill_cursor (client, 123);
 
    {
-      request_t *const request =
-         mock_server_receives_kill_cursors (server, 123);
+      request_t *const request = mock_server_receives_kill_cursors (server, 123);
 
       ASSERT_WITH_MSG (request->opcode == MONGOC_OPCODE_KILL_CURSORS,
                        "expected OP_KILL_CURSORS request, but received: %s",
@@ -843,11 +804,9 @@ test_counters_rpc_op_egress_cluster_legacy (void)
    {
       int responses = 0;
 
-      server_monitor_autoresponder_data data = {.hello = hello,
-                                                .responses = &responses};
+      server_monitor_autoresponder_data data = {.hello = hello, .responses = &responses};
 
-      mock_server_autoresponds (
-         server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
+      mock_server_autoresponds (server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
 
       mongoc_client_destroy (client);
       mock_server_destroy (server);
@@ -876,8 +835,7 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
    mock_server_run (server);
 
    bson_error_t error = {0};
-   mongoc_client_pool_t *const pool =
-      mongoc_client_pool_new_with_error (mock_server_get_uri (server), &error);
+   mongoc_client_pool_t *const pool = mongoc_client_pool_new_with_error (mock_server_get_uri (server), &error);
    ASSERT_OR_PRINT (pool, error);
 
    // Stable API for Drivers spec: If an API version was declared, drivers MUST
@@ -885,10 +843,8 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
    // afterwards. Instead, drivers MUST use the `hello` command exclusively and
    // use the `OP_MSG` protocol.
    if (with_op_msg) {
-      mongoc_server_api_t *const api =
-         mongoc_server_api_new (MONGOC_SERVER_API_V1);
-      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
-                       error);
+      mongoc_server_api_t *const api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
+      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error), error);
       mongoc_server_api_destroy (api);
    }
 
@@ -898,13 +854,11 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
    mongoc_client_t *const client = mongoc_client_pool_pop (pool);
 
    rpc_op_egress_counters expected = {0};
-   int32_t *const handshake_counter =
-      with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
+   int32_t *const handshake_counter = with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
    {
       request_t *const request =
-         with_op_msg ? mock_server_receives_hello_op_msg (server)
-                     : mock_server_receives_legacy_hello (server, NULL);
+         with_op_msg ? mock_server_receives_hello_op_msg (server) : mock_server_receives_legacy_hello (server, NULL);
 
       // OP_QUERY 1 / OP_MSG 1:
       //  - by _mongoc_rpc_op_egress_inc
@@ -926,13 +880,11 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
    {
       const bson_t *const command = tmp_bson ("{'ping': 1}");
 
-      future_t *const ping = future_client_command_simple (
-         client, "db", command, NULL, NULL, &error);
+      future_t *const ping = future_client_command_simple (client, "db", command, NULL, NULL, &error);
 
       {
          request_t *const request =
-            with_op_msg ? mock_server_receives_hello_op_msg (server)
-                        : mock_server_receives_legacy_hello (server, NULL);
+            with_op_msg ? mock_server_receives_hello_op_msg (server) : mock_server_receives_legacy_hello (server, NULL);
 
          // OP_QUERY 2 / OP_MSG 2:
          //  - by _mongoc_rpc_op_egress_inc
@@ -958,8 +910,7 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
       }
 
       {
-         request_t *const request =
-            mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
+         request_t *const request = mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
 
          // OP_MSG 1 / OP_MSG 3:
          //  - by _mongoc_rpc_op_egress_inc
@@ -982,11 +933,9 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
    {
       int responses = 0;
 
-      server_monitor_autoresponder_data data = {.hello = hello,
-                                                .responses = &responses};
+      server_monitor_autoresponder_data data = {.hello = hello, .responses = &responses};
 
-      mock_server_autoresponds (
-         server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
+      mock_server_autoresponds (server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
 
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
@@ -1014,18 +963,17 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
 {
    const rpc_op_egress_counters zero = {0};
 
-   const char *const hello =
-      tmp_str ("{'ok': 1,%s"
-               " 'isWritablePrimary': true,"
-               " 'topologyVersion': {"
-               "  'processId': {'$oid': '000000000000000000000001'},"
-               "  'counter': {'$numberLong': '1'}"
-               " },"
-               " 'minWireVersion': %d,"
-               " 'maxWireVersion': %d}",
-               with_op_msg ? " 'helloOk': true," : "",
-               WIRE_VERSION_MIN,
-               WIRE_VERSION_MAX);
+   const char *const hello = tmp_str ("{'ok': 1,%s"
+                                      " 'isWritablePrimary': true,"
+                                      " 'topologyVersion': {"
+                                      "  'processId': {'$oid': '000000000000000000000001'},"
+                                      "  'counter': {'$numberLong': '1'}"
+                                      " },"
+                                      " 'minWireVersion': %d,"
+                                      " 'maxWireVersion': %d}",
+                                      with_op_msg ? " 'helloOk': true," : "",
+                                      WIRE_VERSION_MIN,
+                                      WIRE_VERSION_MAX);
 
    rpc_op_egress_counters_reset ();
 
@@ -1035,8 +983,7 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
    bson_error_t error = {0};
    mongoc_uri_t *const uri = mongoc_uri_copy (mock_server_get_uri (server));
 
-   mongoc_client_pool_t *const pool =
-      mongoc_client_pool_new_with_error (uri, &error);
+   mongoc_client_pool_t *const pool = mongoc_client_pool_new_with_error (uri, &error);
    ASSERT_OR_PRINT (pool, error);
 
    // Stable API for Drivers spec: If an API version was declared, drivers MUST
@@ -1044,10 +991,8 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
    // afterwards. Instead, drivers MUST use the `hello` command exclusively and
    // use the `OP_MSG` protocol.
    if (with_op_msg) {
-      mongoc_server_api_t *const api =
-         mongoc_server_api_new (MONGOC_SERVER_API_V1);
-      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
-                       error);
+      mongoc_server_api_t *const api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
+      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error), error);
       mongoc_server_api_destroy (api);
    }
 
@@ -1068,23 +1013,16 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
       request_t *const request = mock_server_receives_request (server);
 
       if (strstr (request->as_str, "maxAwaitTimeMS")) {
-         ASSERT_WITH_MSG (!awaitable_hello,
-                          "received more than one awaitable hello");
+         ASSERT_WITH_MSG (!awaitable_hello, "received more than one awaitable hello");
          awaitable_hello = request;
       } else {
-         const bool is_hello =
-            strcmp (request->command_name, HANDSHAKE_CMD_HELLO) == 0;
-         const bool is_legacy_hello =
-            strcmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) == 0;
+         const bool is_hello = strcmp (request->command_name, HANDSHAKE_CMD_HELLO) == 0;
+         const bool is_legacy_hello = strcmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) == 0;
 
          if (with_op_msg) {
-            ASSERT_WITH_MSG (is_hello,
-                             "expected only OP_MSG hello requests, but got: %s",
-                             request->as_str);
+            ASSERT_WITH_MSG (is_hello, "expected only OP_MSG hello requests, but got: %s", request->as_str);
          } else {
-            ASSERT_WITH_MSG (is_hello || is_legacy_hello,
-                             "expected only hello requests, but got: %s",
-                             request->as_str);
+            ASSERT_WITH_MSG (is_hello || is_legacy_hello, "expected only hello requests, but got: %s", request->as_str);
          }
 
          reply_to_request_simple (request, hello);
@@ -1093,8 +1031,7 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
    }
 
    rpc_op_egress_counters expected = {0};
-   int32_t *const handshake_counter =
-      with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
+   int32_t *const handshake_counter = with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
    // OP_QUERY 1 / OP_MSG 1:
    //  - by _mongoc_rpc_op_egress_inc
@@ -1143,13 +1080,11 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
       // Trigger:
       //  - mongoc_cluster_run_command_private
       //  - mongoc_cluster_run_command_monitored
-      future_t *const ping = future_client_command_simple (
-         client, "db", command, NULL, NULL, &error);
+      future_t *const ping = future_client_command_simple (client, "db", command, NULL, NULL, &error);
 
       {
          request_t *const request =
-            with_op_msg ? mock_server_receives_hello_op_msg (server)
-                        : mock_server_receives_legacy_hello (server, NULL);
+            with_op_msg ? mock_server_receives_hello_op_msg (server) : mock_server_receives_legacy_hello (server, NULL);
 
          // OP_QUERY 4 / OP_MSG 5:
          //  - by _mongoc_rpc_op_egress_inc
@@ -1175,8 +1110,7 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
       }
 
       {
-         request_t *const request =
-            mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
+         request_t *const request = mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
 
          // OP_MSG 2 / OP_MSG 6:
          //  - by _mongoc_rpc_op_egress_inc
@@ -1199,11 +1133,9 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
    {
       int responses = 0;
 
-      server_monitor_autoresponder_data data = {.hello = hello,
-                                                .responses = &responses};
+      server_monitor_autoresponder_data data = {.hello = hello, .responses = &responses};
 
-      mock_server_autoresponds (
-         server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
+      mock_server_autoresponds (server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
 
       mongoc_uri_destroy (uri);
       mongoc_client_pool_push (pool, client);
@@ -1244,8 +1176,7 @@ _test_counters_rpc_op_egress_mock_server (bool with_op_msg)
    mock_server_run (server);
 
    bson_error_t error = {0};
-   mongoc_client_t *const client = mongoc_client_new_from_uri_with_error (
-      mock_server_get_uri (server), &error);
+   mongoc_client_t *const client = mongoc_client_new_from_uri_with_error (mock_server_get_uri (server), &error);
    ASSERT_OR_PRINT (client, error);
 
    // Stable API for Drivers spec: If an API version was declared, drivers MUST
@@ -1253,10 +1184,8 @@ _test_counters_rpc_op_egress_mock_server (bool with_op_msg)
    // afterwards. Instead, drivers MUST use the `hello` command exclusively and
    // use the `OP_MSG` protocol.
    if (with_op_msg) {
-      mongoc_server_api_t *const api =
-         mongoc_server_api_new (MONGOC_SERVER_API_V1);
-      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
-                       error);
+      mongoc_server_api_t *const api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error), error);
       mongoc_server_api_destroy (api);
    }
 
@@ -1264,10 +1193,8 @@ _test_counters_rpc_op_egress_mock_server (bool with_op_msg)
 
    {
       const bson_t *const command = tmp_bson ("{'ping': 1}");
-      future_t *const future = future_client_command_simple (
-         client, "db", command, NULL, NULL, &error);
-      reply_to_request_with_ok_and_destroy (
-         mock_server_receives_msg (server, MONGOC_MSG_NONE, command));
+      future_t *const future = future_client_command_simple (client, "db", command, NULL, NULL, &error);
+      reply_to_request_with_ok_and_destroy (mock_server_receives_msg (server, MONGOC_MSG_NONE, command));
       ASSERT_OR_PRINT (future_get_bool (future), error);
       future_destroy (future);
    }
@@ -1319,13 +1246,11 @@ wait_for_background_threads (rpc_op_egress_counters expected)
       current = rpc_op_egress_counters_current ();
    }
 
-   ASSERT_WITH_MSG (
-      false,
-      "expected %" PRId32
-      " total requests by background threads, but observed %" PRId32
-      " total requests",
-      expected.op_egress_total,
-      current.op_egress_total);
+   ASSERT_WITH_MSG (false,
+                    "expected %" PRId32 " total requests by background threads, but observed %" PRId32
+                    " total requests",
+                    expected.op_egress_total,
+                    current.op_egress_total);
 }
 
 
@@ -1344,8 +1269,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    // supports a new argument, `speculativeAuthenticate`, provided as a BSON
    // document. Clients specifying this argument to hello or legacy hello will
    // speculatively include the first command of an authentication handshake.
-   const bool has_speculative_auth = test_framework_get_server_version () >=
-                                     test_framework_str_to_version ("4.4.0");
+   const bool has_speculative_auth = test_framework_get_server_version () >= test_framework_str_to_version ("4.4.0");
 
    // Used to calculate expected values of OP_COMPRESSED RPC egress counter.
    const int32_t has_compressors = test_framework_has_compressors ();
@@ -1354,8 +1278,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    // MUST NOT use the legacy hello command during the initial handshake or
    // afterwards. Instead, drivers MUST use the `hello` command exclusively
    // and use the `OP_MSG` protocol.
-   mongoc_server_api_t *const api =
-      with_op_msg ? mongoc_server_api_new (MONGOC_SERVER_API_V1) : NULL;
+   mongoc_server_api_t *const api = with_op_msg ? mongoc_server_api_new (MONGOC_SERVER_API_V1) : NULL;
 
    // SCRAM-SHA-1 is available since MongoDB server 3.0 and forces OP_MSG
    // requests for authentication steps that follow the initial connection
@@ -1400,8 +1323,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
       // Awaitable hello is also a 4.4+ feature.
       if (has_speculative_auth) {
          rpc_op_egress_counters expected = {0};
-         int32_t *const handshake_counter =
-            with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
+         int32_t *const handshake_counter = with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
          // OP_QUERY / OP_MSG (for each replset member):
          //  - initial connection handshake by server monitor thread
@@ -1446,10 +1368,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    //  - _cluster_run_hello (SASL step 1 if `has_speculative_auth`)
    //  - _mongoc_cluster_auth_node (if not `has_speculative_auth`)
    //  - mongoc_cluster_run_command_monitored
-   ASSERT_OR_PRINT (
-      mongoc_client_command_simple (
-         client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_client_command_simple (client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error), error);
 
    const int32_t auth_success = mongoc_counter_auth_success_count ();
    const int32_t auth_failure = mongoc_counter_auth_failure_count ();
@@ -1457,14 +1376,12 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    // Ensure we are not testing more than we intend.
    ASSERT_WITH_MSG (auth_success == 1 && auth_failure == 0,
                     "expected exactly one authentication attempt to succeed, "
-                    "but observed %" PRId32 " successes and %" PRId32
-                    " failures",
+                    "but observed %" PRId32 " successes and %" PRId32 " failures",
                     auth_success,
                     auth_failure);
 
    rpc_op_egress_counters expected = {0};
-   int32_t *const handshake_counter =
-      with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
+   int32_t *const handshake_counter = with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
    // The number of expected OP_QUERY requests depends on pooling and the
    // presence of the RTT monitor thread.
@@ -1572,12 +1489,7 @@ test_counters_install (TestSuite *suite)
                       TestSuite_CheckLive);
    TestSuite_AddLive (suite, "/counters/cursors", test_counters_cursors);
    TestSuite_AddLive (suite, "/counters/clients", test_counters_clients);
-   TestSuite_AddFull (suite,
-                      "/counters/streams",
-                      test_counters_streams,
-                      NULL,
-                      NULL,
-                      TestSuite_CheckLive);
+   TestSuite_AddFull (suite, "/counters/streams", test_counters_streams, NULL, NULL, TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/counters/auth",
                       test_counters_auth,
@@ -1586,51 +1498,34 @@ test_counters_install (TestSuite *suite)
                       test_framework_skip_if_no_auth,
                       test_framework_skip_if_not_single);
    TestSuite_AddLive (suite, "/counters/dns", test_counters_dns);
-   TestSuite_AddMockServerTest (
-      suite, "/counters/streams_timeout", test_counters_streams_timeout);
+   TestSuite_AddMockServerTest (suite, "/counters/streams_timeout", test_counters_streams_timeout);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/counters/rpc/op_egress/cluster/single/op_query",
-      test_counters_rpc_op_egress_cluster_single_op_query);
+      suite, "/counters/rpc/op_egress/cluster/single/op_query", test_counters_rpc_op_egress_cluster_single_op_query);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/counters/rpc/op_egress/cluster/single/op_msg",
-      test_counters_rpc_op_egress_cluster_single_op_msg);
-
-   TestSuite_AddMockServerTest (suite,
-                                "/counters/rpc/op_egress/cluster/legacy",
-                                test_counters_rpc_op_egress_cluster_legacy);
+      suite, "/counters/rpc/op_egress/cluster/single/op_msg", test_counters_rpc_op_egress_cluster_single_op_msg);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/counters/rpc/op_egress/cluster/pooled/op_query",
-      test_counters_rpc_op_egress_cluster_pooled_op_query);
+      suite, "/counters/rpc/op_egress/cluster/legacy", test_counters_rpc_op_egress_cluster_legacy);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/counters/rpc/op_egress/cluster/pooled/op_msg",
-      test_counters_rpc_op_egress_cluster_pooled_op_msg);
+      suite, "/counters/rpc/op_egress/cluster/pooled/op_query", test_counters_rpc_op_egress_cluster_pooled_op_query);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/counters/rpc/op_egress/awaitable_hello/op_query",
-      test_counters_rpc_op_egress_awaitable_hello_op_query);
+      suite, "/counters/rpc/op_egress/cluster/pooled/op_msg", test_counters_rpc_op_egress_cluster_pooled_op_msg);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/counters/rpc/op_egress/awaitable_hello/op_msg",
-      test_counters_rpc_op_egress_awaitable_hello_op_msg);
+      suite, "/counters/rpc/op_egress/awaitable_hello/op_query", test_counters_rpc_op_egress_awaitable_hello_op_query);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/counters/rpc/op_egress/mock_server/op_query",
-      test_counters_rpc_op_egress_mock_server_op_query);
+      suite, "/counters/rpc/op_egress/awaitable_hello/op_msg", test_counters_rpc_op_egress_awaitable_hello_op_msg);
 
-   TestSuite_AddMockServerTest (suite,
-                                "/counters/rpc/op_egress/mock_server/op_msg",
-                                test_counters_rpc_op_egress_mock_server_op_msg);
+   TestSuite_AddMockServerTest (
+      suite, "/counters/rpc/op_egress/mock_server/op_query", test_counters_rpc_op_egress_mock_server_op_query);
+
+   TestSuite_AddMockServerTest (
+      suite, "/counters/rpc/op_egress/mock_server/op_msg", test_counters_rpc_op_egress_mock_server_op_msg);
 
 #if defined(MONGOC_ENABLE_SSL)
    TestSuite_AddFull (suite,

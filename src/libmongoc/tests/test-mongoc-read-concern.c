@@ -51,17 +51,14 @@ test_read_concern_basic (void)
    /*
     * Test changes to level.
     */
-   mongoc_read_concern_set_level (read_concern,
-                                  MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   mongoc_read_concern_set_level (read_concern, MONGOC_READ_CONCERN_LEVEL_LOCAL);
    ASSERT (!mongoc_read_concern_is_default (read_concern));
-   ASSERT_CMPSTR (mongoc_read_concern_get_level (read_concern),
-                  MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (read_concern), MONGOC_READ_CONCERN_LEVEL_LOCAL);
 
    /*
     * Check generated bson.
     */
-   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern),
-                 "{'level': 'local'}");
+   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern), "{'level': 'local'}");
 
    mongoc_read_concern_destroy (read_concern);
 }
@@ -98,20 +95,14 @@ test_read_concern_always_mutable (void)
 
    ASSERT (read_concern);
 
-   mongoc_read_concern_set_level (read_concern,
-                                  MONGOC_READ_CONCERN_LEVEL_LOCAL);
-   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern),
-                 "{'level': 'local'}");
+   mongoc_read_concern_set_level (read_concern, MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern), "{'level': 'local'}");
 
-   mongoc_read_concern_set_level (read_concern,
-                                  MONGOC_READ_CONCERN_LEVEL_MAJORITY);
-   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern),
-                 "{'level': 'majority'}");
+   mongoc_read_concern_set_level (read_concern, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern), "{'level': 'majority'}");
 
-   mongoc_read_concern_set_level (read_concern,
-                                  MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE);
-   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern),
-                 "{'level': 'linearizable'}");
+   mongoc_read_concern_set_level (read_concern, MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE);
+   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern), "{'level': 'linearizable'}");
 
    mongoc_read_concern_destroy (read_concern);
 }
@@ -136,8 +127,7 @@ _test_read_concern_wire_version (bool explicit)
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    if (explicit) {
@@ -150,16 +140,12 @@ _test_read_concern_wire_version (bool explicit)
    /*
     * aggregate
     */
-   cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, tmp_bson (NULL), &opts, NULL);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, tmp_bson (NULL), &opts, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
-   reply_to_request_simple (request,
-                            "{'ok': 1, 'cursor': {'id': 0, 'firstBatch': []}}");
+   request =
+      mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
+   reply_to_request_simple (request, "{'ok': 1, 'cursor': {'id': 0, 'firstBatch': []}}");
    request_destroy (request);
    BSON_ASSERT (future_wait (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -169,12 +155,9 @@ _test_read_concern_wire_version (bool explicit)
    /*
     * generic mongoc_client_write_command_with_opts
     */
-   future = future_client_read_command_with_opts (
-      client, "db", tmp_bson ("{'foo': 1}"), NULL, &opts, NULL, &error);
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
+   future = future_client_read_command_with_opts (client, "db", tmp_bson ("{'foo': 1}"), NULL, &opts, NULL, &error);
+   request =
+      mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
    reply_to_request_with_ok_and_destroy (request);
    BSON_ASSERT (future_get_bool (future));
 
@@ -183,18 +166,10 @@ _test_read_concern_wire_version (bool explicit)
    /*
     * count
     */
-   future = future_collection_count_with_opts (collection,
-                                               MONGOC_QUERY_NONE,
-                                               tmp_bson ("{}"),
-                                               0,
-                                               0,
-                                               &opts,
-                                               NULL,
-                                               &error);
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
+   future =
+      future_collection_count_with_opts (collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), 0, 0, &opts, NULL, &error);
+   request =
+      mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
    reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    request_destroy (request);
    ASSERT_CMPINT64 (future_get_int64_t (future), ==, (int64_t) 1);
@@ -228,13 +203,8 @@ test_read_concern_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/ReadConcern/append", test_read_concern_append);
    TestSuite_Add (suite, "/ReadConcern/basic", test_read_concern_basic);
-   TestSuite_Add (suite,
-                  "/ReadConcern/bson_omits_defaults",
-                  test_read_concern_bson_omits_defaults);
-   TestSuite_Add (
-      suite, "/ReadConcern/always_mutable", test_read_concern_always_mutable);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadConcern/inherited", test_inherited_read_concern);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadConcern/explicit", test_explicit_read_concern);
+   TestSuite_Add (suite, "/ReadConcern/bson_omits_defaults", test_read_concern_bson_omits_defaults);
+   TestSuite_Add (suite, "/ReadConcern/always_mutable", test_read_concern_always_mutable);
+   TestSuite_AddMockServerTest (suite, "/ReadConcern/inherited", test_inherited_read_concern);
+   TestSuite_AddMockServerTest (suite, "/ReadConcern/explicit", test_explicit_read_concern);
 }

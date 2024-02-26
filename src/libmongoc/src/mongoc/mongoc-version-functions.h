@@ -35,9 +35,7 @@ mongoc_get_micro_version (void);
 MONGOC_EXPORT (const char *)
 mongoc_get_version (void);
 MONGOC_EXPORT (bool)
-mongoc_check_version (int required_major,
-                      int required_minor,
-                      int required_micro);
+mongoc_check_version (int required_major, int required_minor, int required_micro);
 
 BSON_END_DECLS
 

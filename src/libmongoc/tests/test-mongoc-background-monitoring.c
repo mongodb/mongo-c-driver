@@ -43,9 +43,8 @@ typedef enum {
    TF_FAST_HEARTBEAT = 1 << 0,
    TF_FAST_MIN_HEARTBEAT = 1 << 1,
    TF_AUTO_RESPOND_POLLING_HELLO = 1 << 2,
-   TF_NO_MONGODB_API_VERSION =
-      1 << 3, /* if set, do not pick up the MONGODB_API_VERSION environment
-                 variable */
+   TF_NO_MONGODB_API_VERSION = 1 << 3, /* if set, do not pick up the MONGODB_API_VERSION environment
+                                          variable */
 } tf_flags_t;
 
 typedef struct {
@@ -65,8 +64,7 @@ tf_dump (test_fixture_t *tf)
    printf ("== Begin dump ==\n");
    printf ("-- Current observations --\n");
    printf ("n_heartbeat_started=%d\n", tf->observations->n_heartbeat_started);
-   printf ("n_heartbeat_succeeded=%d\n",
-           tf->observations->n_heartbeat_succeeded);
+   printf ("n_heartbeat_succeeded=%d\n", tf->observations->n_heartbeat_succeeded);
    printf ("n_heartbeat_failed=%d\n", tf->observations->n_heartbeat_failed);
    printf ("n_server_changed=%d\n", tf->observations->n_server_changed);
    printf ("sd_type=%d\n", tf->observations->sd_type);
@@ -76,8 +74,7 @@ tf_dump (test_fixture_t *tf)
    printf ("== End dump ==\n");
 }
 
-void BSON_GNUC_PRINTF (2, 3)
-   tf_log (test_fixture_t *tf, const char *format, ...)
+void BSON_GNUC_PRINTF (2, 3) tf_log (test_fixture_t *tf, const char *format, ...)
 {
    va_list ap;
    char *str;
@@ -117,15 +114,11 @@ _heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
 {
    test_fixture_t *tf;
 
-   tf = (test_fixture_t *) mongoc_apm_server_heartbeat_started_get_context (
-      event);
+   tf = (test_fixture_t *) mongoc_apm_server_heartbeat_started_get_context (event);
    bson_mutex_lock (&tf->mutex);
    tf->observations->n_heartbeat_started++;
-   tf->observations->awaited =
-      mongoc_apm_server_heartbeat_started_get_awaited (event);
-   TF_LOG (tf,
-           "%s heartbeat started",
-           tf->observations->awaited ? "awaitable" : "polling");
+   tf->observations->awaited = mongoc_apm_server_heartbeat_started_get_awaited (event);
+   TF_LOG (tf, "%s heartbeat started", tf->observations->awaited ? "awaitable" : "polling");
    mongoc_cond_broadcast (&tf->cond);
    bson_mutex_unlock (&tf->mutex);
 }
@@ -135,15 +128,11 @@ _heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    test_fixture_t *tf;
 
-   tf = (test_fixture_t *) mongoc_apm_server_heartbeat_succeeded_get_context (
-      event);
+   tf = (test_fixture_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
    bson_mutex_lock (&tf->mutex);
    tf->observations->n_heartbeat_succeeded++;
-   tf->observations->awaited =
-      mongoc_apm_server_heartbeat_succeeded_get_awaited (event);
-   TF_LOG (tf,
-           "%s heartbeat succeeded",
-           tf->observations->awaited ? "awaitable" : "polling");
+   tf->observations->awaited = mongoc_apm_server_heartbeat_succeeded_get_awaited (event);
+   TF_LOG (tf, "%s heartbeat succeeded", tf->observations->awaited ? "awaitable" : "polling");
    mongoc_cond_broadcast (&tf->cond);
    bson_mutex_unlock (&tf->mutex);
 }
@@ -153,15 +142,11 @@ _heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
 {
    test_fixture_t *tf;
 
-   tf =
-      (test_fixture_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
+   tf = (test_fixture_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
    bson_mutex_lock (&tf->mutex);
    tf->observations->n_heartbeat_failed++;
-   tf->observations->awaited =
-      mongoc_apm_server_heartbeat_failed_get_awaited (event);
-   TF_LOG (tf,
-           "%s heartbeat failed",
-           tf->observations->awaited ? "awaitable" : "polling");
+   tf->observations->awaited = mongoc_apm_server_heartbeat_failed_get_awaited (event);
+   TF_LOG (tf, "%s heartbeat failed", tf->observations->awaited ? "awaitable" : "polling");
    mongoc_cond_broadcast (&tf->cond);
    bson_mutex_unlock (&tf->mutex);
 }
@@ -177,18 +162,15 @@ _server_changed (const mongoc_apm_server_changed_t *event)
    old_sd = mongoc_apm_server_changed_get_previous_description (event);
    new_sd = mongoc_apm_server_changed_get_new_description (event);
    bson_mutex_lock (&tf->mutex);
-   TF_LOG (tf,
-           "server changed %s => %s",
-           mongoc_server_description_type (old_sd),
-           mongoc_server_description_type (new_sd));
+   TF_LOG (
+      tf, "server changed %s => %s", mongoc_server_description_type (old_sd), mongoc_server_description_type (new_sd));
    tf->observations->sd_type = new_sd->type;
    tf->observations->n_server_changed++;
    mongoc_cond_broadcast (&tf->cond);
    bson_mutex_unlock (&tf->mutex);
 }
 
-#define TV \
-   "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
+#define TV "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
 
 bool
 auto_respond_polling_hello (request_t *request, void *ctx)
@@ -201,8 +183,7 @@ auto_respond_polling_hello (request_t *request, void *ctx)
 
       doc = request_get_doc ((request), 0);
       if (!bson_has_field (doc, "topologyVersion")) {
-         reply_to_request_simple (request,
-                                  "{'ok': 1, 'topologyVersion': " TV " }");
+         reply_to_request_simple (request, "{'ok': 1, 'topologyVersion': " TV " }");
          request_destroy (request);
          return true;
       }
@@ -229,23 +210,20 @@ tf_new (tf_flags_t flags)
 
    mongoc_apm_set_server_heartbeat_started_cb (callbacks, _heartbeat_started);
    mongoc_apm_set_server_changed_cb (callbacks, _server_changed);
-   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks,
-                                                 _heartbeat_succeeded);
+   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks, _heartbeat_succeeded);
    mongoc_apm_set_server_heartbeat_failed_cb (callbacks, _heartbeat_failed);
 
    if (flags & TF_NO_MONGODB_API_VERSION) {
       tf->pool = mongoc_client_pool_new (mock_server_get_uri (tf->server));
    } else {
-      tf->pool = test_framework_client_pool_new_from_uri (
-         mock_server_get_uri (tf->server), NULL);
+      tf->pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (tf->server), NULL);
    }
 
    mongoc_client_pool_set_apm_callbacks (tf->pool, callbacks, tf);
    mongoc_apm_callbacks_destroy (callbacks);
 
    if (flags & TF_FAST_HEARTBEAT) {
-      mc_tpld_modification tdmod =
-         mc_tpld_modify_begin (_mongoc_client_pool_get_topology (tf->pool));
+      mc_tpld_modification tdmod = mc_tpld_modify_begin (_mongoc_client_pool_get_topology (tf->pool));
       tdmod.new_td->heartbeat_msec = FAST_HEARTBEAT_MS;
       mc_tpld_modify_commit (tdmod);
       /* A fast heartbeat implies a fast min heartbeat. */
@@ -253,13 +231,11 @@ tf_new (tf_flags_t flags)
    }
 
    if (flags & TF_FAST_MIN_HEARTBEAT) {
-      _mongoc_client_pool_get_topology (tf->pool)
-         ->min_heartbeat_frequency_msec = FAST_HEARTBEAT_MS;
+      _mongoc_client_pool_get_topology (tf->pool)->min_heartbeat_frequency_msec = FAST_HEARTBEAT_MS;
    }
 
    if (flags & TF_AUTO_RESPOND_POLLING_HELLO) {
-      mock_server_autoresponds (
-         tf->server, auto_respond_polling_hello, NULL, NULL);
+      mock_server_autoresponds (tf->server, auto_respond_polling_hello, NULL, NULL);
    }
    tf->flags = flags;
    tf->logs = bson_string_new ("");
@@ -284,21 +260,20 @@ tf_destroy (test_fixture_t *tf)
  * _predicate is only tested when observations change.
  * Upon failure, dumps logs and observations.
  */
-#define OBSERVE_SOON(_tf, _predicate)                           \
-   do {                                                         \
-      int64_t _start_ms = bson_get_monotonic_time () / 1000;    \
-      int64_t _expires_ms = _start_ms + 5000;                   \
-      bson_mutex_lock (&_tf->mutex);                            \
-      while (!(_predicate)) {                                   \
-         if (bson_get_monotonic_time () / 1000 > _expires_ms) { \
-            bson_mutex_unlock (&_tf->mutex);                    \
-            tf_dump (_tf);                                      \
-            test_error ("Predicate expired: %s", #_predicate);  \
-         }                                                      \
-         mongoc_cond_timedwait (                                \
-            &_tf->cond, &_tf->mutex, _expires_ms - _start_ms);  \
-      }                                                         \
-      bson_mutex_unlock (&_tf->mutex);                          \
+#define OBSERVE_SOON(_tf, _predicate)                                              \
+   do {                                                                            \
+      int64_t _start_ms = bson_get_monotonic_time () / 1000;                       \
+      int64_t _expires_ms = _start_ms + 5000;                                      \
+      bson_mutex_lock (&_tf->mutex);                                               \
+      while (!(_predicate)) {                                                      \
+         if (bson_get_monotonic_time () / 1000 > _expires_ms) {                    \
+            bson_mutex_unlock (&_tf->mutex);                                       \
+            tf_dump (_tf);                                                         \
+            test_error ("Predicate expired: %s", #_predicate);                     \
+         }                                                                         \
+         mongoc_cond_timedwait (&_tf->cond, &_tf->mutex, _expires_ms - _start_ms); \
+      }                                                                            \
+      bson_mutex_unlock (&_tf->mutex);                                             \
    } while (0)
 
 /* Check that _predicate is true immediately. Upon failure,
@@ -330,8 +305,7 @@ _signal_shutdown (test_fixture_t *tf)
    mongoc_topology_description_reconcile (tdmod.new_td, NULL);
    capture_logs (false);
    /* remove the server monitor from the set of server monitors. */
-   _mongoc_topology_background_monitoring_reconcile (tf->client->topology,
-                                                     tdmod.new_td);
+   _mongoc_topology_background_monitoring_reconcile (tf->client->topology, tdmod.new_td);
    mc_tpld_modify_commit (tdmod);
 }
 
@@ -344,11 +318,9 @@ _add_server_monitor (test_fixture_t *tf)
 
    uri = mock_server_get_uri (tf->server);
    /* remove the server description from the topology description. */
-   mongoc_topology_description_add_server (
-      tdmod.new_td, mongoc_uri_get_hosts (uri)->host_and_port, &id);
+   mongoc_topology_description_add_server (tdmod.new_td, mongoc_uri_get_hosts (uri)->host_and_port, &id);
    /* add the server monitor from the set of server monitors. */
-   _mongoc_topology_background_monitoring_reconcile (tf->client->topology,
-                                                     tdmod.new_td);
+   _mongoc_topology_background_monitoring_reconcile (tf->client->topology, tdmod.new_td);
    mc_tpld_modify_commit (tdmod);
 }
 
@@ -365,8 +337,7 @@ _request_cancel (test_fixture_t *tf)
 {
    bson_mutex_lock (&tf->client->topology->tpld_modification_mtx);
    /* Assume server id is 1. */
-   _mongoc_topology_background_monitoring_cancel_check (tf->client->topology,
-                                                        1);
+   _mongoc_topology_background_monitoring_cancel_check (tf->client->topology, 1);
    bson_mutex_unlock (&tf->client->topology->tpld_modification_mtx);
 }
 
@@ -765,9 +736,7 @@ test_streaming_succeeds (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
@@ -790,9 +759,7 @@ test_streaming_hangup (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
@@ -818,9 +785,7 @@ test_streaming_badreply (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    reply_to_request_simple (request, "{'ok': 0}");
@@ -850,9 +815,7 @@ test_streaming_shutdown (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO | TF_FAST_HEARTBEAT);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _signal_shutdown (tf);
@@ -872,9 +835,7 @@ test_streaming_cancel (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _request_cancel (tf);
@@ -892,9 +853,7 @@ test_streaming_cancel (void)
    /* The handshake will be handled by the auto responder. */
 
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 4);
    reply_to_request_with_ok_and_destroy (request);
@@ -912,15 +871,11 @@ test_moretocome_succeeds (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
-   reply_to_op_msg_request (request,
-                            MONGOC_MSG_MORE_TO_COME,
-                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request, MONGOC_MSG_MORE_TO_COME, tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -929,23 +884,17 @@ test_moretocome_succeeds (void)
    OBSERVE (tf, tf->observations->awaited);
 
    /* Server monitor is still streaming replies. */
-   reply_to_op_msg_request (request,
-                            MONGOC_MSG_MORE_TO_COME,
-                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request, MONGOC_MSG_MORE_TO_COME, tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 3);
    OBSERVE (tf, tf->observations->awaited);
    /* Reply with no moretocome flag. */
-   reply_to_op_msg_request (request,
-                            MONGOC_MSG_NONE,
-                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request, MONGOC_MSG_NONE, tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 4);
    OBSERVE (tf, tf->observations->awaited);
    request_destroy (request);
    /* Server monitor immediately sends awaitable hello. */
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 5);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -965,15 +914,11 @@ test_moretocome_hangup (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
-   reply_to_op_msg_request (request,
-                            MONGOC_MSG_MORE_TO_COME,
-                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request, MONGOC_MSG_MORE_TO_COME, tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -1003,14 +948,10 @@ test_moretocome_badreply (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
-   reply_to_op_msg_request (request,
-                            MONGOC_MSG_MORE_TO_COME,
-                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request, MONGOC_MSG_MORE_TO_COME, tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -1042,14 +983,10 @@ test_moretocome_shutdown (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO | TF_FAST_HEARTBEAT);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
-   reply_to_op_msg_request (request,
-                            MONGOC_MSG_MORE_TO_COME,
-                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request, MONGOC_MSG_MORE_TO_COME, tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -1076,14 +1013,10 @@ test_moretocome_cancel (void)
 
    tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
-   reply_to_op_msg_request (request,
-                            MONGOC_MSG_MORE_TO_COME,
-                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request, MONGOC_MSG_MORE_TO_COME, tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -1114,14 +1047,10 @@ test_moretocome_cancel (void)
 
    /* Server monitor sends a fresh awaitable hello. */
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 5);
-   reply_to_op_msg_request (request,
-                            MONGOC_MSG_NONE,
-                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request, MONGOC_MSG_NONE, tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 4);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
@@ -1131,14 +1060,10 @@ test_moretocome_cancel (void)
    /* Since the reply did not include moretocome, server monitor sends another.
     */
    request = mock_server_receives_msg (
-      tf->server,
-      MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
+      tf->server, MONGOC_MSG_EXHAUST_ALLOWED, tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 6);
-   reply_to_op_msg_request (request,
-                            MONGOC_MSG_NONE,
-                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request, MONGOC_MSG_NONE, tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 5);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
@@ -1152,73 +1077,39 @@ void
 test_monitoring_install (TestSuite *suite)
 {
    /* Tests for initial connection. */
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/connect/succeeds", test_connect_succeeds);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/connect/succeeds", test_connect_succeeds);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/server_monitor_thread/connect/faas_use_polling",
-      test_connect_faas_use_polling);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/connect/hangup", test_connect_hangup);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/connect/badreply", test_connect_badreply);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/connect/shutdown", test_connect_shutdown);
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/connect/requestscan",
-                                test_connect_requestscan);
+      suite, "/server_monitor_thread/connect/faas_use_polling", test_connect_faas_use_polling);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/connect/hangup", test_connect_hangup);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/connect/badreply", test_connect_badreply);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/connect/shutdown", test_connect_shutdown);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/connect/requestscan", test_connect_requestscan);
 
    /* Tests for retry. */
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/retry/succeeds", test_retry_succeeds);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/retry/hangup", test_retry_hangup);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/retry/badreply", test_retry_badreply);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/retry/shutdown", test_retry_shutdown);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/retry/succeeds", test_retry_succeeds);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/retry/hangup", test_retry_hangup);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/retry/badreply", test_retry_badreply);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/retry/shutdown", test_retry_shutdown);
 
    /* Tests for streaming. */
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/streaming/succeeds",
-                                test_streaming_succeeds);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/streaming/hangup", test_streaming_hangup);
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/streaming/badreply",
-                                test_streaming_badreply);
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/streaming/shutdown",
-                                test_streaming_shutdown);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/streaming/cancel", test_streaming_cancel);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/streaming/succeeds", test_streaming_succeeds);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/streaming/hangup", test_streaming_hangup);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/streaming/badreply", test_streaming_badreply);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/streaming/shutdown", test_streaming_shutdown);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/streaming/cancel", test_streaming_cancel);
 
    /* Tests for moretocome. */
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/moretocome/succeeds",
-                                test_moretocome_succeeds);
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/moretocome/hangup",
-                                test_moretocome_hangup);
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/moretocome/badreply",
-                                test_moretocome_badreply);
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/moretocome/shutdown",
-                                test_moretocome_shutdown);
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/moretocome/cancel",
-                                test_moretocome_cancel);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/moretocome/succeeds", test_moretocome_succeeds);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/moretocome/hangup", test_moretocome_hangup);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/moretocome/badreply", test_moretocome_badreply);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/moretocome/shutdown", test_moretocome_shutdown);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/moretocome/cancel", test_moretocome_cancel);
 
    /* Test flip flopping. */
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/flip_flop", test_flip_flop);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/flip_flop", test_flip_flop);
 
    /* Test repeated scan requests. */
-   TestSuite_AddMockServerTest (suite,
-                                "/server_monitor_thread/repeated_requestscan",
-                                test_repeated_requestscan);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/repeated_requestscan", test_repeated_requestscan);
 
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/sleep_after_scan", test_sleep_after_scan);
+   TestSuite_AddMockServerTest (suite, "/server_monitor_thread/sleep_after_scan", test_sleep_after_scan);
 }

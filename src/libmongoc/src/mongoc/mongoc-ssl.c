@@ -72,17 +72,15 @@ mongoc_ssl_extract_subject (const char *filename, const char *passphrase)
 #else
    if (access (filename, R_OK) != 0) {
 #endif
-      MONGOC_ERROR ("Can't extract subject from unreadable file: '%s'",
-                    filename);
+      MONGOC_ERROR ("Can't extract subject from unreadable file: '%s'", filename);
       return NULL;
    }
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    retval = _mongoc_openssl_extract_subject (filename, passphrase);
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   MONGOC_WARNING (
-      "libtls doesn't support automatically extracting subject from "
-      "certificate to use with authentication");
+   MONGOC_WARNING ("libtls doesn't support automatically extracting subject from "
+                   "certificate to use with authentication");
    retval = NULL;
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 retval = _mongoc_secure_transport_extract_subject (filename, passphrase);
@@ -98,35 +96,25 @@ retval = _mongoc_secure_channel_extract_subject (filename, passphrase);
 }
 
 void
-_mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt,
-                           _mongoc_internal_tls_opts_t *internal,
-                           mongoc_uri_t *uri)
+_mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt, _mongoc_internal_tls_opts_t *internal, mongoc_uri_t *uri)
 {
-   bool insecure =
-      mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSINSECURE, false);
+   bool insecure = mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSINSECURE, false);
 
-   ssl_opt->pem_file = mongoc_uri_get_option_as_utf8 (
-      uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, NULL);
-   ssl_opt->pem_pwd = mongoc_uri_get_option_as_utf8 (
-      uri, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD, NULL);
-   ssl_opt->ca_file =
-      mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, NULL);
-   ssl_opt->weak_cert_validation = mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, insecure);
-   ssl_opt->allow_invalid_hostname = mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, insecure);
+   ssl_opt->pem_file = mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, NULL);
+   ssl_opt->pem_pwd = mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD, NULL);
+   ssl_opt->ca_file = mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, NULL);
+   ssl_opt->weak_cert_validation =
+      mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, insecure);
+   ssl_opt->allow_invalid_hostname = mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, insecure);
    ssl_opt->internal = internal;
    internal->tls_disable_certificate_revocation_check =
-      mongoc_uri_get_option_as_bool (
-         uri, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK, false);
-   internal->tls_disable_ocsp_endpoint_check = mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK, false);
+      mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK, false);
+   internal->tls_disable_ocsp_endpoint_check =
+      mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK, false);
 }
 
 void
-_mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t *src,
-                          mongoc_ssl_opt_t *dst,
-                          bool copy_internal)
+_mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t *src, mongoc_ssl_opt_t *dst, bool copy_internal)
 {
    BSON_ASSERT (src);
    BSON_ASSERT (dst);
@@ -142,8 +130,7 @@ _mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t *src,
       dst->internal = NULL;
       if (src->internal) {
          dst->internal = bson_malloc (sizeof (_mongoc_internal_tls_opts_t));
-         memcpy (
-            dst->internal, src->internal, sizeof (_mongoc_internal_tls_opts_t));
+         memcpy (dst->internal, src->internal, sizeof (_mongoc_internal_tls_opts_t));
       }
    }
 }
@@ -162,14 +149,12 @@ _mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t *opt, bool free_internal)
 }
 
 bool
-_mongoc_ssl_opts_disable_certificate_revocation_check (
-   const mongoc_ssl_opt_t *ssl_opt)
+_mongoc_ssl_opts_disable_certificate_revocation_check (const mongoc_ssl_opt_t *ssl_opt)
 {
    if (!ssl_opt->internal) {
       return false;
    }
-   return ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)
-      ->tls_disable_certificate_revocation_check;
+   return ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)->tls_disable_certificate_revocation_check;
 }
 
 bool
@@ -178,28 +163,23 @@ _mongoc_ssl_opts_disable_ocsp_endpoint_check (const mongoc_ssl_opt_t *ssl_opt)
    if (!ssl_opt->internal) {
       return false;
    }
-   return ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)
-      ->tls_disable_ocsp_endpoint_check;
+   return ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)->tls_disable_ocsp_endpoint_check;
 }
 
 bool
-_mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt,
-                            const bson_t *bson,
-                            bson_string_t *errmsg)
+_mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, bson_string_t *errmsg)
 {
    bson_iter_t iter;
 
    if (ssl_opt->internal) {
-      bson_string_append (errmsg,
-                          "SSL options must not have internal state set");
+      bson_string_append (errmsg, "SSL options must not have internal state set");
       return false;
    }
 
    ssl_opt->internal = bson_malloc0 (sizeof (_mongoc_internal_tls_opts_t));
 
    if (!bson_iter_init (&iter, bson)) {
-      bson_string_append (errmsg,
-                          "error initializing iterator to BSON SSL options");
+      bson_string_append (errmsg, "error initializing iterator to BSON SSL options");
       return false;
    }
 
@@ -210,8 +190,7 @@ _mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt,
          if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE)) {
             ssl_opt->pem_file = bson_strdup (bson_iter_utf8 (&iter, NULL));
             continue;
-         } else if (0 == bson_strcasecmp (
-                            key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
+         } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
             ssl_opt->pem_pwd = bson_strdup (bson_iter_utf8 (&iter, NULL));
             continue;
          } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCAFILE)) {
@@ -221,19 +200,15 @@ _mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt,
       }
 
       if (BSON_ITER_HOLDS_BOOL (&iter)) {
-         if (0 ==
-             bson_strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES)) {
+         if (0 == bson_strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES)) {
             /* If MONGOC_URI_TLSINSECURE was parsed, weak_cert_validation must
              * remain true. */
-            ssl_opt->weak_cert_validation =
-               ssl_opt->weak_cert_validation || bson_iter_bool (&iter);
+            ssl_opt->weak_cert_validation = ssl_opt->weak_cert_validation || bson_iter_bool (&iter);
             continue;
-         } else if (0 == bson_strcasecmp (
-                            key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES)) {
+         } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES)) {
             /* If MONGOC_URI_TLSINSECURE was parsed, allow_invalid_hostname must
              * remain true. */
-            ssl_opt->allow_invalid_hostname =
-               ssl_opt->allow_invalid_hostname || bson_iter_bool (&iter);
+            ssl_opt->allow_invalid_hostname = ssl_opt->allow_invalid_hostname || bson_iter_bool (&iter);
             continue;
          } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSINSECURE)) {
             if (bson_iter_bool (&iter)) {
@@ -241,26 +216,19 @@ _mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt,
                ssl_opt->allow_invalid_hostname = true;
             }
             continue;
-         } else if (0 ==
-                    bson_strcasecmp (
-                       key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK)) {
-            ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)
-               ->tls_disable_certificate_revocation_check =
+         } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK)) {
+            ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)->tls_disable_certificate_revocation_check =
                bson_iter_bool (&iter);
             continue;
-         } else if (0 == bson_strcasecmp (
-                            key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK)) {
-            ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)
-               ->tls_disable_ocsp_endpoint_check = bson_iter_bool (&iter);
+         } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK)) {
+            ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)->tls_disable_ocsp_endpoint_check =
+               bson_iter_bool (&iter);
             continue;
          }
       }
 
       bson_string_append_printf (
-         errmsg,
-         "unexpected %s option: %s",
-         _mongoc_bson_type_to_str (bson_iter_type (&iter)),
-         key);
+         errmsg, "unexpected %s option: %s", _mongoc_bson_type_to_str (bson_iter_type (&iter)), key);
       return false;
    }
 

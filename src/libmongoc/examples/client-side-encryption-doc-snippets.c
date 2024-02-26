@@ -10,8 +10,7 @@ main (void)
 
    {
       /* BEGIN:mongoc_auto_encryption_opts_set_tls_opts. */
-      mongoc_auto_encryption_opts_t *ae_opts =
-         mongoc_auto_encryption_opts_new ();
+      mongoc_auto_encryption_opts_t *ae_opts = mongoc_auto_encryption_opts_new ();
       bson_t *tls_opts = bson_new ();
 
       BCON_APPEND (tls_opts, "kmip", "{", MONGOC_URI_TLSCAFILE, "ca1.pem", "}");
@@ -25,8 +24,7 @@ main (void)
 
    {
       /* BEGIN:mongoc_client_encryption_opts_set_tls_opts. */
-      mongoc_client_encryption_opts_t *ce_opts =
-         mongoc_client_encryption_opts_new ();
+      mongoc_client_encryption_opts_t *ce_opts = mongoc_client_encryption_opts_new ();
       bson_t *tls_opts = bson_new ();
 
       BCON_APPEND (tls_opts, "kmip", "{", MONGOC_URI_TLSCAFILE, "ca1.pem", "}");

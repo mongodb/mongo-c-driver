@@ -81,8 +81,7 @@ main (int argc, char *argv[])
     */
    command = BCON_NEW ("ping", BCON_INT32 (1));
 
-   retval = mongoc_client_command_simple (
-      client, "admin", command, NULL, &reply, &error);
+   retval = mongoc_client_command_simple (client, "admin", command, NULL, &reply, &error);
 
    if (!retval) {
       fprintf (stderr, "%s\n", error.message);

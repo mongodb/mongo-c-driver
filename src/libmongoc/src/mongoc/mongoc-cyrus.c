@@ -30,9 +30,7 @@
 #define MONGOC_LOG_DOMAIN "CYRUS-SASL"
 
 bool
-_mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl,
-                             const char *mechanism,
-                             bson_error_t *error)
+_mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl, const char *mechanism, bson_error_t *error)
 {
    bson_string_t *str = bson_string_new ("");
    const char **mechs = sasl_global_listmech ();
@@ -71,10 +69,7 @@ _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl,
 
 
 static int
-_mongoc_cyrus_get_pass (mongoc_cyrus_t *sasl,
-                        int param_id,
-                        const char **result,
-                        unsigned *result_len)
+_mongoc_cyrus_get_pass (mongoc_cyrus_t *sasl, int param_id, const char **result, unsigned *result_len)
 {
    BSON_ASSERT (sasl);
    BSON_ASSERT (param_id == SASL_CB_PASS);
@@ -84,9 +79,7 @@ _mongoc_cyrus_get_pass (mongoc_cyrus_t *sasl,
    }
 
    if (result_len) {
-      *result_len = sasl->credentials.pass
-                       ? (unsigned) strlen (sasl->credentials.pass)
-                       : 0;
+      *result_len = sasl->credentials.pass ? (unsigned) strlen (sasl->credentials.pass) : 0;
    }
 
    return (sasl->credentials.pass != NULL) ? SASL_OK : SASL_FAIL;
@@ -117,10 +110,7 @@ _mongoc_cyrus_canon_user (sasl_conn_t *conn,
 }
 
 static int
-_mongoc_cyrus_get_user (mongoc_cyrus_t *sasl,
-                        int param_id,
-                        const char **result,
-                        unsigned *result_len)
+_mongoc_cyrus_get_user (mongoc_cyrus_t *sasl, int param_id, const char **result, unsigned *result_len)
 {
    BSON_ASSERT (sasl);
    BSON_ASSERT ((param_id == SASL_CB_USER) || (param_id == SASL_CB_AUTHNAME));
@@ -130,9 +120,7 @@ _mongoc_cyrus_get_user (mongoc_cyrus_t *sasl,
    }
 
    if (result_len) {
-      *result_len = sasl->credentials.user
-                       ? (unsigned) strlen (sasl->credentials.user)
-                       : 0;
+      *result_len = sasl->credentials.user ? (unsigned) strlen (sasl->credentials.user) : 0;
    }
 
    return (sasl->credentials.user != NULL) ? SASL_OK : SASL_FAIL;
@@ -142,12 +130,11 @@ _mongoc_cyrus_get_user (mongoc_cyrus_t *sasl,
 void
 _mongoc_cyrus_init (mongoc_cyrus_t *sasl)
 {
-   sasl_callback_t callbacks[] = {
-      {SASL_CB_AUTHNAME, SASL_CALLBACK_FN (_mongoc_cyrus_get_user), sasl},
-      {SASL_CB_USER, SASL_CALLBACK_FN (_mongoc_cyrus_get_user), sasl},
-      {SASL_CB_PASS, SASL_CALLBACK_FN (_mongoc_cyrus_get_pass), sasl},
-      {SASL_CB_CANON_USER, SASL_CALLBACK_FN (_mongoc_cyrus_canon_user), sasl},
-      {SASL_CB_LIST_END}};
+   sasl_callback_t callbacks[] = {{SASL_CB_AUTHNAME, SASL_CALLBACK_FN (_mongoc_cyrus_get_user), sasl},
+                                  {SASL_CB_USER, SASL_CALLBACK_FN (_mongoc_cyrus_get_user), sasl},
+                                  {SASL_CB_PASS, SASL_CALLBACK_FN (_mongoc_cyrus_get_pass), sasl},
+                                  {SASL_CB_CANON_USER, SASL_CALLBACK_FN (_mongoc_cyrus_canon_user), sasl},
+                                  {SASL_CB_LIST_END}};
 
    BSON_ASSERT (sasl);
 
@@ -167,11 +154,8 @@ _mongoc_cyrus_init (mongoc_cyrus_t *sasl)
 }
 
 bool
-_mongoc_cyrus_new_from_cluster (mongoc_cyrus_t *sasl,
-                                mongoc_cluster_t *cluster,
-                                mongoc_stream_t *stream,
-                                const char *hostname,
-                                bson_error_t *error)
+_mongoc_cyrus_new_from_cluster (
+   mongoc_cyrus_t *sasl, mongoc_cluster_t *cluster, mongoc_stream_t *stream, const char *hostname, bson_error_t *error)
 {
    const char *mechanism;
    char real_name[BSON_HOST_NAME_MAX + 1];
@@ -188,10 +172,8 @@ _mongoc_cyrus_new_from_cluster (mongoc_cyrus_t *sasl,
       return false;
    }
 
-   _mongoc_sasl_set_pass ((mongoc_sasl_t *) sasl,
-                          mongoc_uri_get_password (cluster->uri));
-   _mongoc_sasl_set_user ((mongoc_sasl_t *) sasl,
-                          mongoc_uri_get_username (cluster->uri));
+   _mongoc_sasl_set_pass ((mongoc_sasl_t *) sasl, mongoc_uri_get_password (cluster->uri));
+   _mongoc_sasl_set_user ((mongoc_sasl_t *) sasl, mongoc_uri_get_username (cluster->uri));
    _mongoc_sasl_set_properties ((mongoc_sasl_t *) sasl, cluster->uri);
 
    /*
@@ -206,8 +188,7 @@ _mongoc_cyrus_new_from_cluster (mongoc_cyrus_t *sasl,
     * See CDRIVER-323 for more information.
     */
    if (sasl->credentials.canonicalize_host_name &&
-       _mongoc_sasl_get_canonicalized_name (
-          stream, real_name, sizeof real_name)) {
+       _mongoc_sasl_get_canonicalized_name (stream, real_name, sizeof real_name)) {
       _mongoc_sasl_set_service_host ((mongoc_sasl_t *) sasl, real_name);
    } else {
       _mongoc_sasl_set_service_host ((mongoc_sasl_t *) sasl, hostname);
@@ -238,18 +219,11 @@ _mongoc_cyrus_is_failure (int status, bson_error_t *error)
 {
    bool ret = (status < 0);
 
-   TRACE ("Got status: %d ok is %d, continue=%d interact=%d\n",
-          status,
-          SASL_OK,
-          SASL_CONTINUE,
-          SASL_INTERACT);
+   TRACE ("Got status: %d ok is %d, continue=%d interact=%d\n", status, SASL_OK, SASL_CONTINUE, SASL_INTERACT);
    if (ret) {
       switch (status) {
       case SASL_NOMEM:
-         bson_set_error (error,
-                         MONGOC_ERROR_SASL,
-                         status,
-                         "SASL Failure: insufficient memory.");
+         bson_set_error (error, MONGOC_ERROR_SASL, status, "SASL Failure: insufficient memory.");
          break;
       case SASL_NOMECH: {
          bson_string_t *str = bson_string_new ("available mechanisms: ");
@@ -262,11 +236,8 @@ _mongoc_cyrus_is_failure (int status, bson_error_t *error)
                bson_string_append (str, ",");
             }
          }
-         bson_set_error (error,
-                         MONGOC_ERROR_SASL,
-                         status,
-                         "SASL Failure: failure to negotiate mechanism (%s)",
-                         str->str);
+         bson_set_error (
+            error, MONGOC_ERROR_SASL, status, "SASL Failure: failure to negotiate mechanism (%s)", str->str);
          bson_string_free (str, 0);
       } break;
       case SASL_BADPARAM:
@@ -277,12 +248,8 @@ _mongoc_cyrus_is_failure (int status, bson_error_t *error)
                          "with mongo-c-driver.");
          break;
       default:
-         bson_set_error (error,
-                         MONGOC_ERROR_SASL,
-                         status,
-                         "SASL Failure: (%d): %s",
-                         status,
-                         sasl_errstring (status, NULL, NULL));
+         bson_set_error (
+            error, MONGOC_ERROR_SASL, status, "SASL Failure: (%d): %s", status, sasl_errstring (status, NULL, NULL));
          break;
       }
    }
@@ -292,10 +259,7 @@ _mongoc_cyrus_is_failure (int status, bson_error_t *error)
 
 
 static bool
-_mongoc_cyrus_start (mongoc_cyrus_t *sasl,
-                     uint8_t **outbuf,
-                     uint32_t *outbuflen,
-                     bson_error_t *error)
+_mongoc_cyrus_start (mongoc_cyrus_t *sasl, uint8_t **outbuf, uint32_t *outbuflen, bson_error_t *error)
 {
    const char *service_name = "mongodb";
    const char *service_host = "";
@@ -316,48 +280,31 @@ _mongoc_cyrus_start (mongoc_cyrus_t *sasl,
       service_host = sasl->credentials.service_host;
    }
 
-   status = sasl_client_new (
-      service_name, service_host, NULL, NULL, sasl->callbacks, 0, &sasl->conn);
-   TRACE ("Created new sasl client %s",
-          status == SASL_OK ? "successfully" : "UNSUCCESSFULLY");
+   status = sasl_client_new (service_name, service_host, NULL, NULL, sasl->callbacks, 0, &sasl->conn);
+   TRACE ("Created new sasl client %s", status == SASL_OK ? "successfully" : "UNSUCCESSFULLY");
    if (_mongoc_cyrus_is_failure (status, error)) {
       return false;
    }
 
-   status = sasl_client_start (sasl->conn,
-                               sasl->credentials.mechanism,
-                               &sasl->interact,
-                               &raw,
-                               &raw_len,
-                               &mechanism);
-   TRACE ("Started the sasl client %s",
-          status == SASL_CONTINUE ? "successfully" : "UNSUCCESSFULLY");
+   status = sasl_client_start (sasl->conn, sasl->credentials.mechanism, &sasl->interact, &raw, &raw_len, &mechanism);
+   TRACE ("Started the sasl client %s", status == SASL_CONTINUE ? "successfully" : "UNSUCCESSFULLY");
    if (_mongoc_cyrus_is_failure (status, error)) {
       return false;
    }
 
-   if ((0 != strcasecmp (mechanism, "GSSAPI")) &&
-       (0 != strcasecmp (mechanism, "PLAIN"))) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SASL,
-                      SASL_NOMECH,
-                      "SASL Failure: invalid mechanism \"%s\"",
-                      mechanism);
+   if ((0 != strcasecmp (mechanism, "GSSAPI")) && (0 != strcasecmp (mechanism, "PLAIN"))) {
+      bson_set_error (error, MONGOC_ERROR_SASL, SASL_NOMECH, "SASL Failure: invalid mechanism \"%s\"", mechanism);
       return false;
    }
 
    *outbuflen = 0;
-   const size_t outbuf_capacity =
-      mcommon_b64_ntop_calculate_target_size (raw_len);
+   const size_t outbuf_capacity = mcommon_b64_ntop_calculate_target_size (raw_len);
    *outbuf = bson_malloc (outbuf_capacity);
 
-   const int b64_ret = mcommon_b64_ntop (
-      (uint8_t *) raw, raw_len, (char *) *outbuf, outbuf_capacity);
+   const int b64_ret = mcommon_b64_ntop ((uint8_t *) raw, raw_len, (char *) *outbuf, outbuf_capacity);
    if (b64_ret < 0) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SASL,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "Unable to base64 encode client SASL message");
+      bson_set_error (
+         error, MONGOC_ERROR_SASL, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Unable to base64 encode client SASL message");
       return false;
    } else {
       BSON_ASSERT (bson_in_range_signed (uint32_t, b64_ret));
@@ -393,10 +340,7 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    if (sasl->step == 1) {
       return _mongoc_cyrus_start (sasl, outbuf, outbuflen, error);
    } else if (sasl->step >= 10) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SASL,
-                      SASL_NOTDONE,
-                      "SASL Failure: maximum steps detected");
+      bson_set_error (error, MONGOC_ERROR_SASL, SASL_NOTDONE, "SASL Failure: maximum steps detected");
       return false;
    }
 
@@ -411,18 +355,14 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    }
 
    unsigned int decoded_len = 0;
-   const size_t decoded_capacity =
-      mcommon_b64_pton_calculate_target_size (inbuflen);
+   const size_t decoded_capacity = mcommon_b64_pton_calculate_target_size (inbuflen);
 
    char *const decoded = bson_malloc (decoded_capacity);
    {
-      const int b64_ret = mcommon_b64_pton (
-         (char *) inbuf, (uint8_t *) decoded, decoded_capacity);
+      const int b64_ret = mcommon_b64_pton ((char *) inbuf, (uint8_t *) decoded, decoded_capacity);
       if (b64_ret < 0) {
-         bson_set_error (error,
-                         MONGOC_ERROR_SASL,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "Unable to base64 decode client SASL message");
+         bson_set_error (
+            error, MONGOC_ERROR_SASL, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Unable to base64 decode client SASL message");
          bson_free (decoded);
          bson_free (*outbuf);
          *outbuf = NULL;
@@ -435,27 +375,21 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    }
 
    TRACE ("%s", "Running client_step");
-   status = sasl_client_step (
-      sasl->conn, decoded, decoded_len, &sasl->interact, &raw, &rawlen);
-   TRACE ("%s sent a client step",
-          status == SASL_OK ? "Successfully" : "UNSUCCESSFULLY");
+   status = sasl_client_step (sasl->conn, decoded, decoded_len, &sasl->interact, &raw, &rawlen);
+   TRACE ("%s sent a client step", status == SASL_OK ? "Successfully" : "UNSUCCESSFULLY");
    if (_mongoc_cyrus_is_failure (status, error)) {
       bson_free (decoded);
       return false;
    }
 
    *outbuflen = 0;
-   const size_t outbuf_capacity =
-      mcommon_b64_ntop_calculate_target_size (rawlen);
+   const size_t outbuf_capacity = mcommon_b64_ntop_calculate_target_size (rawlen);
    *outbuf = bson_malloc0 (outbuf_capacity);
    {
-      const int b64_ret = mcommon_b64_ntop (
-         (const uint8_t *) raw, rawlen, (char *) *outbuf, outbuf_capacity);
+      const int b64_ret = mcommon_b64_ntop ((const uint8_t *) raw, rawlen, (char *) *outbuf, outbuf_capacity);
       if (b64_ret < 0) {
-         bson_set_error (error,
-                         MONGOC_ERROR_SASL,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "Unable to base64 encode client SASL message");
+         bson_set_error (
+            error, MONGOC_ERROR_SASL, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Unable to base64 encode client SASL message");
          bson_free (decoded);
          bson_free (*outbuf);
          *outbuf = NULL;

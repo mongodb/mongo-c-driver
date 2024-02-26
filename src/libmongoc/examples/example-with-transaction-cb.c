@@ -42,11 +42,9 @@ create_and_insert_doc (mongoc_client_session_t *session,
     */
    doc = BCON_NEW ("_id", BCON_INT32 (1));
 
-   printf (
-      "Running the user-defined callback in a newly created transaction...\n");
+   printf ("Running the user-defined callback in a newly created transaction...\n");
    data = (ctx_t *) ctx;
-   retval = mongoc_collection_insert_one (
-      data->collection, doc, data->insert_opts, &local_reply, error);
+   retval = mongoc_collection_insert_one (data->collection, doc, data->insert_opts, &local_reply, error);
 
    /*
     * To return to the mongoc_client_session_with_transaction() method, set
@@ -119,8 +117,7 @@ main (int argc, char *argv[])
     * Inserting into a nonexistent collection normally creates it, but a
     * collection can't be created in a transaction; create it now
     */
-   collection =
-      mongoc_database_create_collection (database, "collection", NULL, &error);
+   collection = mongoc_database_create_collection (database, "collection", NULL, &error);
    if (!collection) {
       /* code 48 is NamespaceExists, see error_codes.err in mongodb source */
       if (error.code == 48) {
@@ -157,8 +154,7 @@ main (int argc, char *argv[])
     * function, i.e., &create_and_insert_doc, passing &ctx as an argument and
     * commit the transaction.
     */
-   if (!mongoc_client_session_with_transaction (
-          session, &create_and_insert_doc, NULL, &ctx, &reply, &error)) {
+   if (!mongoc_client_session_with_transaction (session, &create_and_insert_doc, NULL, &ctx, &reply, &error)) {
       MONGOC_ERROR ("Insert failed: %s", error.message);
       goto done;
    }

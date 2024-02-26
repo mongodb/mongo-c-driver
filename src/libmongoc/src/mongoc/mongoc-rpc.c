@@ -32,11 +32,9 @@ mcd_rpc_message_get_body (const mcd_rpc_message *rpc, bson_t *reply)
       for (size_t index = 0u; index < sections_count; ++index) {
          switch (mcd_rpc_op_msg_section_get_kind (rpc, index)) {
          case 0: { // Body.
-            const uint8_t *const body =
-               mcd_rpc_op_msg_section_get_body (rpc, index);
+            const uint8_t *const body = mcd_rpc_op_msg_section_get_body (rpc, index);
 
-            const int32_t body_len =
-               bson_iter_int32_unsafe (&(bson_iter_t){.raw = body});
+            const int32_t body_len = bson_iter_int32_unsafe (&(bson_iter_t){.raw = body});
 
             return bson_init_static (reply, body, (size_t) body_len);
          }
@@ -60,10 +58,7 @@ mcd_rpc_message_get_body (const mcd_rpc_message *rpc, bson_t *reply)
       // Assume the first document in OP_REPLY is the body.
       const uint8_t *const body = mcd_rpc_op_reply_get_documents (rpc);
 
-      return bson_init_static (
-         reply,
-         body,
-         (size_t) bson_iter_int32_unsafe (&(bson_iter_t){.raw = body}));
+      return bson_init_static (reply, body, (size_t) bson_iter_int32_unsafe (&(bson_iter_t){.raw = body}));
    }
 
    default:
@@ -76,10 +71,7 @@ mcd_rpc_message_get_body (const mcd_rpc_message *rpc, bson_t *reply)
 
 /* returns true if an error was found. */
 static bool
-_parse_error_reply (const bson_t *doc,
-                    bool check_wce,
-                    uint32_t *code,
-                    const char **msg)
+_parse_error_reply (const bson_t *doc, bool check_wce, uint32_t *code, const char **msg)
 {
    bson_iter_t iter;
    bool found_error = false;
@@ -93,19 +85,16 @@ _parse_error_reply (const bson_t *doc,
    /* The server only returns real error codes as int32.
     * But it may return as a double or int64 if a failpoint
     * based on how it is configured to error. */
-   if (bson_iter_init_find (&iter, doc, "code") &&
-       BSON_ITER_HOLDS_NUMBER (&iter)) {
+   if (bson_iter_init_find (&iter, doc, "code") && BSON_ITER_HOLDS_NUMBER (&iter)) {
       *code = (uint32_t) bson_iter_as_int64 (&iter);
       BSON_ASSERT (*code);
       found_error = true;
    }
 
-   if (bson_iter_init_find (&iter, doc, "errmsg") &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
+   if (bson_iter_init_find (&iter, doc, "errmsg") && BSON_ITER_HOLDS_UTF8 (&iter)) {
       *msg = bson_iter_utf8 (&iter, NULL);
       found_error = true;
-   } else if (bson_iter_init_find (&iter, doc, "$err") &&
-              BSON_ITER_HOLDS_UTF8 (&iter)) {
+   } else if (bson_iter_init_find (&iter, doc, "$err") && BSON_ITER_HOLDS_UTF8 (&iter)) {
       *msg = bson_iter_utf8 (&iter, NULL);
       found_error = true;
    }
@@ -117,19 +106,16 @@ _parse_error_reply (const bson_t *doc,
 
    if (check_wce) {
       /* check for a write concern error */
-      if (bson_iter_init_find (&iter, doc, "writeConcernError") &&
-          BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      if (bson_iter_init_find (&iter, doc, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          bson_iter_t child;
          BSON_ASSERT (bson_iter_recurse (&iter, &child));
-         if (bson_iter_find (&child, "code") &&
-             BSON_ITER_HOLDS_NUMBER (&child)) {
+         if (bson_iter_find (&child, "code") && BSON_ITER_HOLDS_NUMBER (&child)) {
             *code = (uint32_t) bson_iter_as_int64 (&child);
             BSON_ASSERT (*code);
             found_error = true;
          }
          BSON_ASSERT (bson_iter_recurse (&iter, &child));
-         if (bson_iter_find (&child, "errmsg") &&
-             BSON_ITER_HOLDS_UTF8 (&child)) {
+         if (bson_iter_find (&child, "errmsg") && BSON_ITER_HOLDS_UTF8 (&child)) {
             *msg = bson_iter_utf8 (&child, NULL);
             found_error = true;
          }
@@ -159,13 +145,10 @@ _parse_error_reply (const bson_t *doc,
  *--------------------------------------------------------------------------
  */
 bool
-_mongoc_cmd_check_ok (const bson_t *doc,
-                      int32_t error_api_version,
-                      bson_error_t *error)
+_mongoc_cmd_check_ok (const bson_t *doc, int32_t error_api_version, bson_error_t *error)
 {
    mongoc_error_domain_t domain =
-      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER
-                                                      : MONGOC_ERROR_QUERY;
+      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
    uint32_t code;
    bson_iter_t iter;
    const char *msg = "Unknown command error";
@@ -215,13 +198,10 @@ _mongoc_cmd_check_ok (const bson_t *doc,
  *--------------------------------------------------------------------------
  */
 bool
-_mongoc_cmd_check_ok_no_wce (const bson_t *doc,
-                             int32_t error_api_version,
-                             bson_error_t *error)
+_mongoc_cmd_check_ok_no_wce (const bson_t *doc, int32_t error_api_version, bson_error_t *error)
 {
    mongoc_error_domain_t domain =
-      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER
-                                                      : MONGOC_ERROR_QUERY;
+      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
    uint32_t code;
    const char *msg = "Unknown command error";
 
@@ -248,13 +228,10 @@ _mongoc_cmd_check_ok_no_wce (const bson_t *doc,
 
 /* helper function to parse error reply document to an OP_QUERY */
 static void
-_mongoc_populate_query_error (const bson_t *doc,
-                              int32_t error_api_version,
-                              bson_error_t *error)
+_mongoc_populate_query_error (const bson_t *doc, int32_t error_api_version, bson_error_t *error)
 {
    mongoc_error_domain_t domain =
-      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER
-                                                      : MONGOC_ERROR_QUERY;
+      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
    uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
    bson_iter_t iter;
    const char *msg = "Unknown query failure";
@@ -263,14 +240,12 @@ _mongoc_populate_query_error (const bson_t *doc,
 
    BSON_ASSERT (doc);
 
-   if (bson_iter_init_find (&iter, doc, "code") &&
-       BSON_ITER_HOLDS_NUMBER (&iter)) {
+   if (bson_iter_init_find (&iter, doc, "code") && BSON_ITER_HOLDS_NUMBER (&iter)) {
       code = (uint32_t) bson_iter_as_int64 (&iter);
       BSON_ASSERT (code);
    }
 
-   if (bson_iter_init_find (&iter, doc, "$err") &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
+   if (bson_iter_init_find (&iter, doc, "$err") && BSON_ITER_HOLDS_UTF8 (&iter)) {
       msg = bson_iter_utf8 (&iter, NULL);
    }
 
@@ -290,10 +265,8 @@ mcd_rpc_message_check_ok (mcd_rpc_message *rpc,
    ENTRY;
 
    if (mcd_rpc_header_get_op_code (rpc) != MONGOC_OP_CODE_REPLY) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Received rpc other than OP_REPLY.");
+      bson_set_error (
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Received rpc other than OP_REPLY.");
       RETURN (false);
    }
 
@@ -312,20 +285,15 @@ mcd_rpc_message_check_ok (mcd_rpc_message *rpc,
 
          bson_destroy (&body);
       } else {
-         bson_set_error (error,
-                         MONGOC_ERROR_QUERY,
-                         MONGOC_ERROR_QUERY_FAILURE,
-                         "Unknown query failure.");
+         bson_set_error (error, MONGOC_ERROR_QUERY, MONGOC_ERROR_QUERY_FAILURE, "Unknown query failure.");
       }
 
       RETURN (false);
    }
 
    if (flags & MONGOC_OP_REPLY_RESPONSE_FLAG_CURSOR_NOT_FOUND) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CURSOR,
-                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                      "The cursor is invalid or has expired.");
+      bson_set_error (
+         error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "The cursor is invalid or has expired.");
 
       RETURN (false);
    }
@@ -341,16 +309,14 @@ mcd_rpc_message_egress (const mcd_rpc_message *rpc)
    // `mcd_rpc_message_to_iovecs`, which converts the opCode field to
    // little endian.
    int32_t op_code = mcd_rpc_header_get_op_code (rpc);
-   op_code = bson_iter_int32_unsafe (
-      &(bson_iter_t){.raw = (const uint8_t *) &op_code});
+   op_code = bson_iter_int32_unsafe (&(bson_iter_t){.raw = (const uint8_t *) &op_code});
 
    if (op_code == MONGOC_OP_CODE_COMPRESSED) {
       mongoc_counter_op_egress_compressed_inc ();
       mongoc_counter_op_egress_total_inc ();
 
       op_code = mcd_rpc_op_compressed_get_original_opcode (rpc);
-      op_code = bson_iter_int32_unsafe (
-         &(bson_iter_t){.raw = (const uint8_t *) &op_code});
+      op_code = bson_iter_int32_unsafe (&(bson_iter_t){.raw = (const uint8_t *) &op_code});
    }
 
    switch (op_code) {

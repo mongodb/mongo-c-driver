@@ -84,9 +84,7 @@ bson_parser_array_optional (bson_parser_t *bp, const char *key, bson_t **out);
 void
 bson_parser_array_or_doc (bson_parser_t *bp, const char *key, bson_t **out);
 void
-bson_parser_array_or_doc_optional (bson_parser_t *bp,
-                                   const char *key,
-                                   bson_t **out);
+bson_parser_array_or_doc_optional (bson_parser_t *bp, const char *key, bson_t **out);
 
 void
 bson_parser_bool (bson_parser_t *bp, const char *key, bool **out);
@@ -107,14 +105,12 @@ bson_parser_any_optional (bson_parser_t *bp, const char *key, bson_val_t **out);
 void
 bson_parser_write_concern (bson_parser_t *bp, mongoc_write_concern_t **out);
 void
-bson_parser_write_concern_optional (bson_parser_t *bp,
-                                    mongoc_write_concern_t **out);
+bson_parser_write_concern_optional (bson_parser_t *bp, mongoc_write_concern_t **out);
 
 void
 bson_parser_read_concern (bson_parser_t *bp, mongoc_read_concern_t **out);
 void
-bson_parser_read_concern_optional (bson_parser_t *bp,
-                                   mongoc_read_concern_t **out);
+bson_parser_read_concern_optional (bson_parser_t *bp, mongoc_read_concern_t **out);
 
 void
 bson_parser_read_prefs (bson_parser_t *bp, mongoc_read_prefs_t **out);

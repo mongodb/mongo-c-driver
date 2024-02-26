@@ -39,12 +39,10 @@ void
 mongoc_server_monitor_request_scan (mongoc_server_monitor_t *server_monitor);
 
 bool
-mongoc_server_monitor_request_shutdown (
-   mongoc_server_monitor_t *server_monitor);
+mongoc_server_monitor_request_shutdown (mongoc_server_monitor_t *server_monitor);
 
 void
-mongoc_server_monitor_wait_for_shutdown (
-   mongoc_server_monitor_t *server_monitor);
+mongoc_server_monitor_wait_for_shutdown (mongoc_server_monitor_t *server_monitor);
 
 void
 mongoc_server_monitor_destroy (mongoc_server_monitor_t *server_monitor);

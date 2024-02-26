@@ -185,28 +185,27 @@ _int32_from_le (const void *data)
 
 // In addition to validating expected size against remaining bytes, ensure
 // proper conversion from little endian format.
-#define MONGOC_RPC_CONSUME(type, raw_type, from_le)               \
-   static bool _consume_##type (                                  \
-      type *target, const uint8_t **ptr, size_t *remaining_bytes) \
-   {                                                              \
-      BSON_ASSERT_PARAM (target);                                 \
-      BSON_ASSERT_PARAM (ptr);                                    \
-      BSON_ASSERT_PARAM (remaining_bytes);                        \
-                                                                  \
-      if (*remaining_bytes < sizeof (type)) {                     \
-         return false;                                            \
-      }                                                           \
-                                                                  \
-      raw_type raw;                                               \
-      memcpy (&raw, *ptr, sizeof (type));                         \
-                                                                  \
-      const raw_type native = from_le (raw);                      \
-      memcpy (target, &native, sizeof (type));                    \
-                                                                  \
-      *ptr += sizeof (type);                                      \
-      *remaining_bytes -= sizeof (type);                          \
-                                                                  \
-      return true;                                                \
+#define MONGOC_RPC_CONSUME(type, raw_type, from_le)                                         \
+   static bool _consume_##type (type *target, const uint8_t **ptr, size_t *remaining_bytes) \
+   {                                                                                        \
+      BSON_ASSERT_PARAM (target);                                                           \
+      BSON_ASSERT_PARAM (ptr);                                                              \
+      BSON_ASSERT_PARAM (remaining_bytes);                                                  \
+                                                                                            \
+      if (*remaining_bytes < sizeof (type)) {                                               \
+         return false;                                                                      \
+      }                                                                                     \
+                                                                                            \
+      raw_type raw;                                                                         \
+      memcpy (&raw, *ptr, sizeof (type));                                                   \
+                                                                                            \
+      const raw_type native = from_le (raw);                                                \
+      memcpy (target, &native, sizeof (type));                                              \
+                                                                                            \
+      *ptr += sizeof (type);                                                                \
+      *remaining_bytes -= sizeof (type);                                                    \
+                                                                                            \
+      return true;                                                                          \
    }
 
 MONGOC_RPC_CONSUME (uint8_t, uint8_t, (uint8_t))
@@ -215,10 +214,7 @@ MONGOC_RPC_CONSUME (uint32_t, uint32_t, BSON_UINT32_FROM_LE)
 MONGOC_RPC_CONSUME (int64_t, uint64_t, BSON_UINT64_FROM_LE)
 
 static bool
-_consume_utf8 (const char **target,
-               size_t *length,
-               const uint8_t **ptr,
-               size_t *remaining_bytes)
+_consume_utf8 (const char **target, size_t *length, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (target);
    BSON_ASSERT_PARAM (length);
@@ -270,10 +266,7 @@ _consume_reserved_zero (const uint8_t **ptr, size_t *remaining_bytes)
 
 
 static bool
-_consume_bson_objects (const uint8_t **ptr,
-                       size_t *remaining_bytes,
-                       int32_t *num_parsed,
-                       int32_t limit)
+_consume_bson_objects (const uint8_t **ptr, size_t *remaining_bytes, int32_t *num_parsed, int32_t limit)
 {
    BSON_ASSERT_PARAM (ptr);
    BSON_ASSERT_PARAM (remaining_bytes);
@@ -311,9 +304,7 @@ _consume_bson_objects (const uint8_t **ptr,
 
 
 static bool
-_consume_op_compressed (mcd_rpc_message *rpc,
-                        const uint8_t **ptr,
-                        size_t *remaining_bytes)
+_consume_op_compressed (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (ptr);
@@ -321,18 +312,15 @@ _consume_op_compressed (mcd_rpc_message *rpc,
 
    mcd_rpc_op_compressed *const op_compressed = &rpc->op_compressed;
 
-   if (!_consume_int32_t (
-          &op_compressed->original_opcode, ptr, remaining_bytes)) {
+   if (!_consume_int32_t (&op_compressed->original_opcode, ptr, remaining_bytes)) {
       return false;
    }
 
-   if (!_consume_int32_t (
-          &op_compressed->uncompressed_size, ptr, remaining_bytes)) {
+   if (!_consume_int32_t (&op_compressed->uncompressed_size, ptr, remaining_bytes)) {
       return false;
    }
 
-   if (!_consume_uint8_t (
-          &op_compressed->compressor_id, ptr, remaining_bytes)) {
+   if (!_consume_uint8_t (&op_compressed->compressor_id, ptr, remaining_bytes)) {
       return false;
    }
 
@@ -347,11 +335,8 @@ _consume_op_compressed (mcd_rpc_message *rpc,
 
 
 static bool
-_consume_op_msg_section (mcd_rpc_op_msg *op_msg,
-                         const uint8_t **ptr,
-                         size_t *remaining_bytes,
-                         size_t *capacity,
-                         bool *found_kind_0)
+_consume_op_msg_section (
+   mcd_rpc_op_msg *op_msg, const uint8_t **ptr, size_t *remaining_bytes, size_t *capacity, bool *found_kind_0)
 {
    BSON_ASSERT_PARAM (op_msg);
    BSON_ASSERT_PARAM (ptr);
@@ -383,8 +368,7 @@ _consume_op_msg_section (mcd_rpc_op_msg *op_msg,
       section.payload.body.bson = *ptr;
 
       int32_t num_parsed = 0;
-      if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) ||
-          num_parsed != 1) {
+      if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) || num_parsed != 1) {
          return false;
       }
 
@@ -392,9 +376,7 @@ _consume_op_msg_section (mcd_rpc_op_msg *op_msg,
    }
 
    case 1: { // Document Sequence
-      if (!_consume_int32_t (&section.payload.document_sequence.section_len,
-                             ptr,
-                             remaining_bytes)) {
+      if (!_consume_int32_t (&section.payload.document_sequence.section_len, ptr, remaining_bytes)) {
          return false;
       }
 
@@ -403,16 +385,13 @@ _consume_op_msg_section (mcd_rpc_op_msg *op_msg,
       // identifier field, but 4 bytes is sufficient to avoid unsigned integer
       // overflow when computing `remaining_section_bytes` and to encourage as
       // much progress is made parsing input data as able.
-      if (bson_cmp_less_su (section.payload.document_sequence.section_len,
-                            sizeof (int32_t))) {
+      if (bson_cmp_less_su (section.payload.document_sequence.section_len, sizeof (int32_t))) {
          *ptr -= sizeof (int32_t); // Revert so *data_end points to start of
                                    // document sequence as invalid input.
          return false;
       }
 
-      size_t remaining_section_bytes =
-         (size_t) section.payload.document_sequence.section_len -
-         sizeof (int32_t);
+      size_t remaining_section_bytes = (size_t) section.payload.document_sequence.section_len - sizeof (int32_t);
 
       // Section length exceeds remaining data.
       if (remaining_section_bytes > *remaining_bytes) {
@@ -434,8 +413,7 @@ _consume_op_msg_section (mcd_rpc_op_msg *op_msg,
       }
 
       section.payload.document_sequence.bson_objects = *ptr;
-      section.payload.document_sequence.bson_objects_len =
-         remaining_section_bytes;
+      section.payload.document_sequence.bson_objects_len = remaining_section_bytes;
 
       _consume_bson_objects (ptr, &remaining_section_bytes, NULL, INT32_MAX);
 
@@ -444,9 +422,7 @@ _consume_op_msg_section (mcd_rpc_op_msg *op_msg,
          return false;
       }
 
-      *remaining_bytes -=
-         (size_t) (*ptr - (const uint8_t *)
-                             section.payload.document_sequence.bson_objects);
+      *remaining_bytes -= (size_t) (*ptr - (const uint8_t *) section.payload.document_sequence.bson_objects);
 
       break;
    }
@@ -460,8 +436,7 @@ _consume_op_msg_section (mcd_rpc_op_msg *op_msg,
    // Expand sections capacity if required.
    if (op_msg->sections_count >= *capacity) {
       *capacity *= 2u;
-      op_msg->sections = bson_realloc (
-         op_msg->sections, *capacity * sizeof (mcd_rpc_op_msg_section));
+      op_msg->sections = bson_realloc (op_msg->sections, *capacity * sizeof (mcd_rpc_op_msg_section));
    }
 
    // Append the valid section.
@@ -471,9 +446,7 @@ _consume_op_msg_section (mcd_rpc_op_msg *op_msg,
 }
 
 static bool
-_consume_op_msg (mcd_rpc_message *rpc,
-                 const uint8_t **ptr,
-                 size_t *remaining_bytes)
+_consume_op_msg (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (ptr);
@@ -486,9 +459,8 @@ _consume_op_msg (mcd_rpc_message *rpc,
    }
 
    {
-      const uint32_t defined_bits = MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT |
-                                    MONGOC_OP_MSG_FLAG_MORE_TO_COME |
-                                    MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED;
+      const uint32_t defined_bits =
+         MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT | MONGOC_OP_MSG_FLAG_MORE_TO_COME | MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED;
 
       // Clients MUST error if any unsupported or undefined required bits are
       // set to 1 and MUST ignore all undefined optional bits.
@@ -513,8 +485,7 @@ _consume_op_msg (mcd_rpc_message *rpc,
 
       // A section requires at least 5 bytes for kind (1) + length (4).
       while (*remaining_bytes > 4u) {
-         if (!_consume_op_msg_section (
-                op_msg, ptr, remaining_bytes, &capacity, &found_kind_0)) {
+         if (!_consume_op_msg_section (op_msg, ptr, remaining_bytes, &capacity, &found_kind_0)) {
             return false;
          }
       }
@@ -537,9 +508,7 @@ _consume_op_msg (mcd_rpc_message *rpc,
 
 
 static bool
-_consume_op_reply (mcd_rpc_message *rpc,
-                   const uint8_t **ptr,
-                   size_t *remaining_bytes)
+_consume_op_reply (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (ptr);
@@ -578,8 +547,7 @@ _consume_op_reply (mcd_rpc_message *rpc,
    }
 
    int32_t num_parsed = 0;
-   if (!_consume_bson_objects (
-          ptr, remaining_bytes, &num_parsed, op_reply->number_returned) ||
+   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, op_reply->number_returned) ||
        num_parsed != op_reply->number_returned) {
       return false;
    }
@@ -589,9 +557,7 @@ _consume_op_reply (mcd_rpc_message *rpc,
 
 
 static bool
-_consume_op_update (mcd_rpc_message *rpc,
-                    const uint8_t **ptr,
-                    size_t *remaining_bytes)
+_consume_op_update (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (ptr);
@@ -603,10 +569,7 @@ _consume_op_update (mcd_rpc_message *rpc,
       return false;
    }
 
-   if (!_consume_utf8 (&op_update->full_collection_name,
-                       &op_update->full_collection_name_len,
-                       ptr,
-                       remaining_bytes)) {
+   if (!_consume_utf8 (&op_update->full_collection_name, &op_update->full_collection_name_len, ptr, remaining_bytes)) {
       return false;
    }
 
@@ -624,14 +587,12 @@ _consume_op_update (mcd_rpc_message *rpc,
    int32_t num_parsed = 0;
 
    op_update->selector = *ptr;
-   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) ||
-       num_parsed != 1) {
+   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) || num_parsed != 1) {
       return false;
    }
 
    op_update->update = *ptr;
-   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) ||
-       num_parsed != 1) {
+   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) || num_parsed != 1) {
       return false;
    }
 
@@ -640,9 +601,7 @@ _consume_op_update (mcd_rpc_message *rpc,
 
 
 static bool
-_consume_op_insert (mcd_rpc_message *rpc,
-                    const uint8_t **ptr,
-                    size_t *remaining_bytes)
+_consume_op_insert (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (ptr);
@@ -661,10 +620,7 @@ _consume_op_insert (mcd_rpc_message *rpc,
       return false;
    }
 
-   if (!_consume_utf8 (&op_insert->full_collection_name,
-                       &op_insert->full_collection_name_len,
-                       ptr,
-                       remaining_bytes)) {
+   if (!_consume_utf8 (&op_insert->full_collection_name, &op_insert->full_collection_name_len, ptr, remaining_bytes)) {
       return false;
    }
 
@@ -672,8 +628,7 @@ _consume_op_insert (mcd_rpc_message *rpc,
    op_insert->documents_len = *remaining_bytes;
 
    int32_t num_parsed = 0;
-   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, INT32_MAX) ||
-       num_parsed == 0) {
+   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, INT32_MAX) || num_parsed == 0) {
       return false;
    }
 
@@ -682,9 +637,7 @@ _consume_op_insert (mcd_rpc_message *rpc,
 
 
 static bool
-_consume_op_query (mcd_rpc_message *rpc,
-                   const uint8_t **ptr,
-                   size_t *remaining_bytes)
+_consume_op_query (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (ptr);
@@ -710,10 +663,7 @@ _consume_op_query (mcd_rpc_message *rpc,
       return false;
    }
 
-   if (!_consume_utf8 (&op_query->full_collection_name,
-                       &op_query->full_collection_name_len,
-                       ptr,
-                       remaining_bytes)) {
+   if (!_consume_utf8 (&op_query->full_collection_name, &op_query->full_collection_name_len, ptr, remaining_bytes)) {
       return false;
    }
 
@@ -728,8 +678,7 @@ _consume_op_query (mcd_rpc_message *rpc,
    int32_t num_parsed = 0;
 
    op_query->query = *ptr;
-   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) ||
-       num_parsed != 1) {
+   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) || num_parsed != 1) {
       return false;
    }
 
@@ -748,9 +697,7 @@ _consume_op_query (mcd_rpc_message *rpc,
 
 
 static bool
-_consume_op_get_more (mcd_rpc_message *rpc,
-                      const uint8_t **ptr,
-                      size_t *remaining_bytes)
+_consume_op_get_more (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (ptr);
@@ -762,15 +709,12 @@ _consume_op_get_more (mcd_rpc_message *rpc,
       return false;
    }
 
-   if (!_consume_utf8 (&op_get_more->full_collection_name,
-                       &op_get_more->full_collection_name_len,
-                       ptr,
-                       remaining_bytes)) {
+   if (!_consume_utf8 (
+          &op_get_more->full_collection_name, &op_get_more->full_collection_name_len, ptr, remaining_bytes)) {
       return false;
    }
 
-   if (!_consume_int32_t (
-          &op_get_more->number_to_return, ptr, remaining_bytes)) {
+   if (!_consume_int32_t (&op_get_more->number_to_return, ptr, remaining_bytes)) {
       return false;
    }
 
@@ -783,9 +727,7 @@ _consume_op_get_more (mcd_rpc_message *rpc,
 
 
 static bool
-_consume_op_delete (mcd_rpc_message *rpc,
-                    const uint8_t **ptr,
-                    size_t *remaining_bytes)
+_consume_op_delete (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (ptr);
@@ -797,10 +739,7 @@ _consume_op_delete (mcd_rpc_message *rpc,
       return false;
    }
 
-   if (!_consume_utf8 (&op_delete->full_collection_name,
-                       &op_delete->full_collection_name_len,
-                       ptr,
-                       remaining_bytes)) {
+   if (!_consume_utf8 (&op_delete->full_collection_name, &op_delete->full_collection_name_len, ptr, remaining_bytes)) {
       return false;
    }
 
@@ -818,8 +757,7 @@ _consume_op_delete (mcd_rpc_message *rpc,
    op_delete->selector = *ptr;
 
    int32_t num_parsed = 0;
-   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) ||
-       num_parsed != 1) {
+   if (!_consume_bson_objects (ptr, remaining_bytes, &num_parsed, 1) || num_parsed != 1) {
       return false;
    }
 
@@ -828,9 +766,7 @@ _consume_op_delete (mcd_rpc_message *rpc,
 
 
 static bool
-_consume_op_kill_cursors (mcd_rpc_message *rpc,
-                          const uint8_t **ptr,
-                          size_t *remaining_bytes)
+_consume_op_kill_cursors (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *remaining_bytes)
 {
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (ptr);
@@ -842,31 +778,27 @@ _consume_op_kill_cursors (mcd_rpc_message *rpc,
       return false;
    }
 
-   if (!_consume_int32_t (
-          &op_kill_cursors->number_of_cursor_ids, ptr, remaining_bytes)) {
+   if (!_consume_int32_t (&op_kill_cursors->number_of_cursor_ids, ptr, remaining_bytes)) {
       return false;
    }
 
    if (op_kill_cursors->number_of_cursor_ids < 0 ||
        // Truncation may (deliberately) leave unparsed bytes that will later
        // trigger validation failure due to unexpected remaining bytes.
-       bson_cmp_greater_su (op_kill_cursors->number_of_cursor_ids,
-                            *remaining_bytes / sizeof (int64_t))) {
+       bson_cmp_greater_su (op_kill_cursors->number_of_cursor_ids, *remaining_bytes / sizeof (int64_t))) {
       *ptr -= sizeof (int32_t); // Revert so *data_len points to start of
                                 // numberOfCursorIds as invalid input.
       return false;
    }
 
-   const size_t cursor_ids_length =
-      (size_t) op_kill_cursors->number_of_cursor_ids * sizeof (int64_t);
+   const size_t cursor_ids_length = (size_t) op_kill_cursors->number_of_cursor_ids * sizeof (int64_t);
 
    bson_free (op_kill_cursors->cursor_ids);
 
    if (op_kill_cursors->number_of_cursor_ids > 0) {
       op_kill_cursors->cursor_ids = bson_malloc (cursor_ids_length);
       for (int32_t i = 0; i < op_kill_cursors->number_of_cursor_ids; ++i) {
-         if (!_consume_int64_t (
-                op_kill_cursors->cursor_ids + i, ptr, remaining_bytes)) {
+         if (!_consume_int64_t (op_kill_cursors->cursor_ids + i, ptr, remaining_bytes)) {
             return false;
          }
       }
@@ -879,9 +811,7 @@ _consume_op_kill_cursors (mcd_rpc_message *rpc,
 
 
 mcd_rpc_message *
-mcd_rpc_message_from_data (const void *data,
-                           size_t length,
-                           const void **data_end)
+mcd_rpc_message_from_data (const void *data, size_t length, const void **data_end)
 {
    BSON_ASSERT_PARAM (data);
    BSON_ASSERT (data_end || true);
@@ -904,10 +834,7 @@ fail:
 }
 
 bool
-mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc,
-                                    const void *data,
-                                    size_t length,
-                                    const void **data_end)
+mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc, const void *data, size_t length, const void **data_end)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT_PARAM (data);
@@ -919,14 +846,12 @@ mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc,
 
    const uint8_t *ptr = data;
 
-   if (!_consume_int32_t (
-          &rpc->msg_header.message_length, &ptr, &remaining_bytes)) {
+   if (!_consume_int32_t (&rpc->msg_header.message_length, &ptr, &remaining_bytes)) {
       goto fail;
    }
 
    if (rpc->msg_header.message_length < MONGOC_RPC_MINIMUM_MESSAGE_LENGTH ||
-       bson_cmp_greater_su (rpc->msg_header.message_length,
-                            remaining_bytes + sizeof (int32_t))) {
+       bson_cmp_greater_su (rpc->msg_header.message_length, remaining_bytes + sizeof (int32_t))) {
       ptr -= sizeof (int32_t); // Revert so *data_end points to start of
                                // messageLength as invalid input.
       goto fail;
@@ -935,13 +860,11 @@ mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc,
    // Use reported message length as upper bound.
    remaining_bytes = (size_t) rpc->msg_header.message_length - sizeof (int32_t);
 
-   if (!_consume_int32_t (
-          &rpc->msg_header.request_id, &ptr, &remaining_bytes)) {
+   if (!_consume_int32_t (&rpc->msg_header.request_id, &ptr, &remaining_bytes)) {
       goto fail;
    }
 
-   if (!_consume_int32_t (
-          &rpc->msg_header.response_to, &ptr, &remaining_bytes)) {
+   if (!_consume_int32_t (&rpc->msg_header.response_to, &ptr, &remaining_bytes)) {
       goto fail;
    }
 
@@ -1045,10 +968,7 @@ _append_iovec_reserve_space_for (mongoc_iovec_t **iovecs,
 }
 
 static bool
-_append_iovec (mongoc_iovec_t *iovecs,
-               size_t *capacity,
-               size_t *count,
-               mongoc_iovec_t iovec)
+_append_iovec (mongoc_iovec_t *iovecs, size_t *capacity, size_t *count, mongoc_iovec_t iovec)
 {
    BSON_ASSERT_PARAM (iovecs);
    BSON_ASSERT_PARAM (capacity);
@@ -1069,21 +989,20 @@ _append_iovec (mongoc_iovec_t *iovecs,
    return true;
 }
 
-#define MONGOC_RPC_APPEND_IOVEC(type, raw_type, to_le)                      \
-   static bool _append_iovec_##type (                                       \
-      mongoc_iovec_t *iovecs, size_t *capacity, size_t *count, type *value) \
-   {                                                                        \
-      raw_type storage;                                                     \
-      memcpy (&storage, value, sizeof (raw_type));                          \
-      storage = to_le (storage);                                            \
-      memcpy (value, &storage, sizeof (raw_type));                          \
-      return _append_iovec (iovecs,                                         \
-                            capacity,                                       \
-                            count,                                          \
-                            (mongoc_iovec_t){                               \
-                               .iov_base = (void *) value,                  \
-                               .iov_len = sizeof (type),                    \
-                            });                                             \
+#define MONGOC_RPC_APPEND_IOVEC(type, raw_type, to_le)                                                     \
+   static bool _append_iovec_##type (mongoc_iovec_t *iovecs, size_t *capacity, size_t *count, type *value) \
+   {                                                                                                       \
+      raw_type storage;                                                                                    \
+      memcpy (&storage, value, sizeof (raw_type));                                                         \
+      storage = to_le (storage);                                                                           \
+      memcpy (value, &storage, sizeof (raw_type));                                                         \
+      return _append_iovec (iovecs,                                                                        \
+                            capacity,                                                                      \
+                            count,                                                                         \
+                            (mongoc_iovec_t){                                                              \
+                               .iov_base = (void *) value,                                                 \
+                               .iov_len = sizeof (type),                                                   \
+                            });                                                                            \
    }
 
 MONGOC_RPC_APPEND_IOVEC (uint8_t, uint8_t, (uint8_t))
@@ -1092,11 +1011,7 @@ MONGOC_RPC_APPEND_IOVEC (uint32_t, uint32_t, BSON_UINT32_TO_LE)
 MONGOC_RPC_APPEND_IOVEC (int64_t, uint64_t, BSON_UINT64_TO_LE)
 
 static bool
-_append_iovec_data (mongoc_iovec_t *iovecs,
-                    size_t *capacity,
-                    size_t *count,
-                    const void *data,
-                    size_t length)
+_append_iovec_data (mongoc_iovec_t *iovecs, size_t *capacity, size_t *count, const void *data, size_t length)
 {
    return _append_iovec (iovecs,
                          capacity,
@@ -1108,9 +1023,7 @@ _append_iovec_data (mongoc_iovec_t *iovecs,
 }
 
 static bool
-_append_iovec_reserved_zero (mongoc_iovec_t *iovecs,
-                             size_t *capacity,
-                             size_t *count)
+_append_iovec_reserved_zero (mongoc_iovec_t *iovecs, size_t *capacity, size_t *count)
 {
    static int32_t zero = 0u;
 
@@ -1138,26 +1051,20 @@ _append_iovec_op_compressed (mongoc_iovec_t **iovecs,
 
    _append_iovec_reserve_space_for (iovecs, capacity, header_iovecs, 4u);
 
-   if (!_append_iovec_int32_t (
-          *iovecs, capacity, count, &op_compressed->original_opcode)) {
+   if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_compressed->original_opcode)) {
       return false;
    }
 
-   if (!_append_iovec_int32_t (
-          *iovecs, capacity, count, &op_compressed->uncompressed_size)) {
+   if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_compressed->uncompressed_size)) {
       return false;
    }
 
-   if (!_append_iovec_uint8_t (
-          *iovecs, capacity, count, &op_compressed->compressor_id)) {
+   if (!_append_iovec_uint8_t (*iovecs, capacity, count, &op_compressed->compressor_id)) {
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_compressed->compressed_message,
-                            op_compressed->compressed_message_len)) {
+   if (!_append_iovec_data (
+          *iovecs, capacity, count, op_compressed->compressed_message, op_compressed->compressed_message_len)) {
       return false;
    }
 
@@ -1208,8 +1115,7 @@ _append_iovec_op_msg (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   _append_iovec_reserve_space_for (
-      iovecs, capacity, header_iovecs, 2u + section_iovecs);
+   _append_iovec_reserve_space_for (iovecs, capacity, header_iovecs, 2u + section_iovecs);
 
    if (!_append_iovec_uint32_t (*iovecs, capacity, count, &op_msg->flag_bits)) {
       return false;
@@ -1228,39 +1134,30 @@ _append_iovec_op_msg (mongoc_iovec_t **iovecs,
 
       switch (section->kind) {
       case 0: // Body
-         if (!_append_iovec_data (*iovecs,
-                                  capacity,
-                                  count,
-                                  section->payload.body.bson,
-                                  (size_t) section->payload.body.section_len)) {
+         if (!_append_iovec_data (
+                *iovecs, capacity, count, section->payload.body.bson, (size_t) section->payload.body.section_len)) {
             return false;
          }
          break;
 
       case 1: // Document Sequence
-         if (!_append_iovec_int32_t (
-                *iovecs,
-                capacity,
-                count,
-                &section->payload.document_sequence.section_len)) {
+         if (!_append_iovec_int32_t (*iovecs, capacity, count, &section->payload.document_sequence.section_len)) {
             return false;
          }
 
-         if (!_append_iovec_data (
-                *iovecs,
-                capacity,
-                count,
-                section->payload.document_sequence.identifier,
-                section->payload.document_sequence.identifier_len)) {
+         if (!_append_iovec_data (*iovecs,
+                                  capacity,
+                                  count,
+                                  section->payload.document_sequence.identifier,
+                                  section->payload.document_sequence.identifier_len)) {
             return false;
          }
 
-         if (!_append_iovec_data (
-                *iovecs,
-                capacity,
-                count,
-                section->payload.document_sequence.bson_objects,
-                section->payload.document_sequence.bson_objects_len)) {
+         if (!_append_iovec_data (*iovecs,
+                                  capacity,
+                                  count,
+                                  section->payload.document_sequence.bson_objects,
+                                  section->payload.document_sequence.bson_objects_len)) {
             return false;
          }
 
@@ -1272,8 +1169,7 @@ _append_iovec_op_msg (mongoc_iovec_t **iovecs,
    }
 
    if (op_msg->checksum_set) {
-      if (!_append_iovec_uint32_t (
-             *iovecs, capacity, count, &op_msg->checksum)) {
+      if (!_append_iovec_uint32_t (*iovecs, capacity, count, &op_msg->checksum)) {
          return false;
       }
    }
@@ -1296,32 +1192,24 @@ _append_iovec_op_reply (mongoc_iovec_t **iovecs,
 
    _append_iovec_reserve_space_for (iovecs, capacity, header_iovecs, 5u);
 
-   if (!_append_iovec_int32_t (
-          *iovecs, capacity, count, &op_reply->response_flags)) {
+   if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_reply->response_flags)) {
       return false;
    }
 
-   if (!_append_iovec_int64_t (
-          *iovecs, capacity, count, &op_reply->cursor_id)) {
+   if (!_append_iovec_int64_t (*iovecs, capacity, count, &op_reply->cursor_id)) {
       return false;
    }
 
-   if (!_append_iovec_int32_t (
-          *iovecs, capacity, count, &op_reply->starting_from)) {
+   if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_reply->starting_from)) {
       return false;
    }
 
-   if (!_append_iovec_int32_t (
-          *iovecs, capacity, count, &op_reply->number_returned)) {
+   if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_reply->number_returned)) {
       return false;
    }
 
    if (op_reply->number_returned > 0 &&
-       !_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_reply->documents,
-                            op_reply->documents_len)) {
+       !_append_iovec_data (*iovecs, capacity, count, op_reply->documents, op_reply->documents_len)) {
       return false;
    }
 
@@ -1347,11 +1235,8 @@ _append_iovec_op_update (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_update->full_collection_name,
-                            op_update->full_collection_name_len)) {
+   if (!_append_iovec_data (
+          *iovecs, capacity, count, op_update->full_collection_name, op_update->full_collection_name_len)) {
       return false;
    }
 
@@ -1359,19 +1244,12 @@ _append_iovec_op_update (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_update->selector,
-                            (size_t) _int32_from_le (op_update->selector))) {
+   if (!_append_iovec_data (
+          *iovecs, capacity, count, op_update->selector, (size_t) _int32_from_le (op_update->selector))) {
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_update->update,
-                            (size_t) _int32_from_le (op_update->update))) {
+   if (!_append_iovec_data (*iovecs, capacity, count, op_update->update, (size_t) _int32_from_le (op_update->update))) {
       return false;
    }
 
@@ -1397,19 +1275,12 @@ _append_iovec_op_insert (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_insert->full_collection_name,
-                            op_insert->full_collection_name_len)) {
+   if (!_append_iovec_data (
+          *iovecs, capacity, count, op_insert->full_collection_name, op_insert->full_collection_name_len)) {
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_insert->documents,
-                            op_insert->documents_len)) {
+   if (!_append_iovec_data (*iovecs, capacity, count, op_insert->documents, op_insert->documents_len)) {
       return false;
    }
 
@@ -1431,48 +1302,35 @@ _append_iovec_op_query (mongoc_iovec_t **iovecs,
    BSON_ASSERT_PARAM (header_iovecs);
 
    _append_iovec_reserve_space_for (
-      iovecs,
-      capacity,
-      header_iovecs,
-      5u + (size_t) (!!op_query->return_fields_selector));
+      iovecs, capacity, header_iovecs, 5u + (size_t) (!!op_query->return_fields_selector));
 
    if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_query->flags)) {
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_query->full_collection_name,
-                            op_query->full_collection_name_len)) {
+   if (!_append_iovec_data (
+          *iovecs, capacity, count, op_query->full_collection_name, op_query->full_collection_name_len)) {
       return false;
    }
 
-   if (!_append_iovec_int32_t (
-          *iovecs, capacity, count, &op_query->number_to_skip)) {
+   if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_query->number_to_skip)) {
       return false;
    }
 
-   if (!_append_iovec_int32_t (
-          *iovecs, capacity, count, &op_query->number_to_return)) {
+   if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_query->number_to_return)) {
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_query->query,
-                            (size_t) _int32_from_le (op_query->query))) {
+   if (!_append_iovec_data (*iovecs, capacity, count, op_query->query, (size_t) _int32_from_le (op_query->query))) {
       return false;
    }
 
    if (op_query->return_fields_selector) {
-      if (!_append_iovec_data (
-             *iovecs,
-             capacity,
-             count,
-             op_query->return_fields_selector,
-             (size_t) _int32_from_le (op_query->return_fields_selector))) {
+      if (!_append_iovec_data (*iovecs,
+                               capacity,
+                               count,
+                               op_query->return_fields_selector,
+                               (size_t) _int32_from_le (op_query->return_fields_selector))) {
          return false;
       }
    }
@@ -1499,21 +1357,16 @@ _append_iovec_op_get_more (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_get_more->full_collection_name,
-                            op_get_more->full_collection_name_len)) {
+   if (!_append_iovec_data (
+          *iovecs, capacity, count, op_get_more->full_collection_name, op_get_more->full_collection_name_len)) {
       return false;
    }
 
-   if (!_append_iovec_int32_t (
-          *iovecs, capacity, count, &op_get_more->number_to_return)) {
+   if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_get_more->number_to_return)) {
       return false;
    }
 
-   if (!_append_iovec_int64_t (
-          *iovecs, capacity, count, &op_get_more->cursor_id)) {
+   if (!_append_iovec_int64_t (*iovecs, capacity, count, &op_get_more->cursor_id)) {
       return false;
    }
 
@@ -1539,11 +1392,8 @@ _append_iovec_op_delete (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_delete->full_collection_name,
-                            op_delete->full_collection_name_len)) {
+   if (!_append_iovec_data (
+          *iovecs, capacity, count, op_delete->full_collection_name, op_delete->full_collection_name_len)) {
       return false;
    }
 
@@ -1551,11 +1401,8 @@ _append_iovec_op_delete (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_delete->selector,
-                            (size_t) _int32_from_le (op_delete->selector))) {
+   if (!_append_iovec_data (
+          *iovecs, capacity, count, op_delete->selector, (size_t) _int32_from_le (op_delete->selector))) {
       return false;
    }
 
@@ -1584,8 +1431,7 @@ _append_iovec_op_kill_cursors (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_int32_t (
-          *iovecs, capacity, count, &op_kill_cursors->number_of_cursor_ids)) {
+   if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_kill_cursors->number_of_cursor_ids)) {
       return false;
    }
 
@@ -1599,11 +1445,8 @@ _append_iovec_op_kill_cursors (mongoc_iovec_t **iovecs,
    }
 
    if (number_of_cursor_ids > 0 &&
-       !_append_iovec_data (*iovecs,
-                            capacity,
-                            count,
-                            op_kill_cursors->cursor_ids,
-                            (size_t) number_of_cursor_ids * sizeof (int64_t))) {
+       !_append_iovec_data (
+          *iovecs, capacity, count, op_kill_cursors->cursor_ids, (size_t) number_of_cursor_ids * sizeof (int64_t))) {
       return false;
    }
 
@@ -1624,14 +1467,10 @@ mcd_rpc_message_to_iovecs (mcd_rpc_message *rpc, size_t *count)
    size_t capacity = 4u;
    *count = 0u;
 
-   (void) _append_iovec_int32_t (
-      header_iovecs, &capacity, count, &rpc->msg_header.message_length);
-   (void) _append_iovec_int32_t (
-      header_iovecs, &capacity, count, &rpc->msg_header.request_id);
-   (void) _append_iovec_int32_t (
-      header_iovecs, &capacity, count, &rpc->msg_header.response_to);
-   (void) _append_iovec_int32_t (
-      header_iovecs, &capacity, count, &rpc->msg_header.op_code);
+   (void) _append_iovec_int32_t (header_iovecs, &capacity, count, &rpc->msg_header.message_length);
+   (void) _append_iovec_int32_t (header_iovecs, &capacity, count, &rpc->msg_header.request_id);
+   (void) _append_iovec_int32_t (header_iovecs, &capacity, count, &rpc->msg_header.response_to);
+   (void) _append_iovec_int32_t (header_iovecs, &capacity, count, &rpc->msg_header.op_code);
 
    mongoc_iovec_t *iovecs = NULL;
    mongoc_iovec_t *ret = NULL;
@@ -1643,65 +1482,56 @@ mcd_rpc_message_to_iovecs (mcd_rpc_message *rpc, size_t *count)
 
    switch (op_code) {
    case MONGOC_OP_CODE_COMPRESSED:
-      if (!_append_iovec_op_compressed (
-             &iovecs, &capacity, count, &rpc->op_compressed, header_iovecs)) {
+      if (!_append_iovec_op_compressed (&iovecs, &capacity, count, &rpc->op_compressed, header_iovecs)) {
          goto fail;
       }
       break;
 
    case MONGOC_OP_CODE_MSG: {
-      if (!_append_iovec_op_msg (
-             &iovecs, &capacity, count, &rpc->op_msg, header_iovecs)) {
+      if (!_append_iovec_op_msg (&iovecs, &capacity, count, &rpc->op_msg, header_iovecs)) {
          goto fail;
       }
       break;
    }
 
    case MONGOC_OP_CODE_REPLY:
-      if (!_append_iovec_op_reply (
-             &iovecs, &capacity, count, &rpc->op_reply, header_iovecs)) {
+      if (!_append_iovec_op_reply (&iovecs, &capacity, count, &rpc->op_reply, header_iovecs)) {
          goto fail;
       }
       break;
 
    case MONGOC_OP_CODE_UPDATE:
-      if (!_append_iovec_op_update (
-             &iovecs, &capacity, count, &rpc->op_update, header_iovecs)) {
+      if (!_append_iovec_op_update (&iovecs, &capacity, count, &rpc->op_update, header_iovecs)) {
          goto fail;
       }
       break;
 
    case MONGOC_OP_CODE_INSERT:
-      if (!_append_iovec_op_insert (
-             &iovecs, &capacity, count, &rpc->op_insert, header_iovecs)) {
+      if (!_append_iovec_op_insert (&iovecs, &capacity, count, &rpc->op_insert, header_iovecs)) {
          goto fail;
       }
       break;
 
    case MONGOC_OP_CODE_QUERY:
-      if (!_append_iovec_op_query (
-             &iovecs, &capacity, count, &rpc->op_query, header_iovecs)) {
+      if (!_append_iovec_op_query (&iovecs, &capacity, count, &rpc->op_query, header_iovecs)) {
          goto fail;
       }
       break;
 
    case MONGOC_OP_CODE_GET_MORE:
-      if (!_append_iovec_op_get_more (
-             &iovecs, &capacity, count, &rpc->op_get_more, header_iovecs)) {
+      if (!_append_iovec_op_get_more (&iovecs, &capacity, count, &rpc->op_get_more, header_iovecs)) {
          goto fail;
       }
       break;
 
    case MONGOC_OP_CODE_DELETE:
-      if (!_append_iovec_op_delete (
-             &iovecs, &capacity, count, &rpc->op_delete, header_iovecs)) {
+      if (!_append_iovec_op_delete (&iovecs, &capacity, count, &rpc->op_delete, header_iovecs)) {
          goto fail;
       }
       break;
 
    case MONGOC_OP_CODE_KILL_CURSORS:
-      if (!_append_iovec_op_kill_cursors (
-             &iovecs, &capacity, count, &rpc->op_kill_cursors, header_iovecs)) {
+      if (!_append_iovec_op_kill_cursors (&iovecs, &capacity, count, &rpc->op_kill_cursors, header_iovecs)) {
          goto fail;
       }
       break;
@@ -1936,8 +1766,7 @@ mcd_rpc_op_compressed_get_compressed_message_length (const mcd_rpc_message *rpc)
 }
 
 int32_t
-mcd_rpc_op_compressed_set_original_opcode (mcd_rpc_message *rpc,
-                                           int32_t original_opcode)
+mcd_rpc_op_compressed_set_original_opcode (mcd_rpc_message *rpc, int32_t original_opcode)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
@@ -1946,8 +1775,7 @@ mcd_rpc_op_compressed_set_original_opcode (mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_compressed_set_uncompressed_size (mcd_rpc_message *rpc,
-                                             int32_t uncompressed_size)
+mcd_rpc_op_compressed_set_uncompressed_size (mcd_rpc_message *rpc, int32_t uncompressed_size)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
@@ -1956,8 +1784,7 @@ mcd_rpc_op_compressed_set_uncompressed_size (mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_compressed_set_compressor_id (mcd_rpc_message *rpc,
-                                         uint8_t compressor_id)
+mcd_rpc_op_compressed_set_compressor_id (mcd_rpc_message *rpc, uint8_t compressor_id)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
@@ -2036,8 +1863,7 @@ mcd_rpc_op_msg_section_get_body (const mcd_rpc_message *rpc, size_t index)
 }
 
 const void *
-mcd_rpc_op_msg_section_get_document_sequence (const mcd_rpc_message *rpc,
-                                              size_t index)
+mcd_rpc_op_msg_section_get_document_sequence (const mcd_rpc_message *rpc, size_t index)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
@@ -2049,8 +1875,7 @@ mcd_rpc_op_msg_section_get_document_sequence (const mcd_rpc_message *rpc,
 }
 
 size_t
-mcd_rpc_op_msg_section_get_document_sequence_length (const mcd_rpc_message *rpc,
-                                                     size_t index)
+mcd_rpc_op_msg_section_get_document_sequence_length (const mcd_rpc_message *rpc, size_t index)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
@@ -2062,9 +1887,7 @@ mcd_rpc_op_msg_section_get_document_sequence_length (const mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_msg_section_set_kind (mcd_rpc_message *rpc,
-                                 size_t index,
-                                 uint8_t kind)
+mcd_rpc_op_msg_section_set_kind (mcd_rpc_message *rpc, size_t index, uint8_t kind)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
@@ -2074,9 +1897,7 @@ mcd_rpc_op_msg_section_set_kind (mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_msg_section_set_length (mcd_rpc_message *rpc,
-                                   size_t index,
-                                   int32_t length)
+mcd_rpc_op_msg_section_set_length (mcd_rpc_message *rpc, size_t index, int32_t length)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
@@ -2087,9 +1908,7 @@ mcd_rpc_op_msg_section_set_length (mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_msg_section_set_identifier (mcd_rpc_message *rpc,
-                                       size_t index,
-                                       const char *identifier)
+mcd_rpc_op_msg_section_set_identifier (mcd_rpc_message *rpc, size_t index, const char *identifier)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
@@ -2098,19 +1917,15 @@ mcd_rpc_op_msg_section_set_identifier (mcd_rpc_message *rpc,
 
    const size_t identifier_len = identifier ? strlen (identifier) + 1u : 0u;
 
-   rpc->op_msg.sections[index].payload.document_sequence.identifier =
-      identifier;
-   rpc->op_msg.sections[index].payload.document_sequence.identifier_len =
-      identifier_len;
+   rpc->op_msg.sections[index].payload.document_sequence.identifier = identifier;
+   rpc->op_msg.sections[index].payload.document_sequence.identifier_len = identifier_len;
 
    BSON_ASSERT (bson_in_range_unsigned (int32_t, identifier_len));
    return (int32_t) identifier_len;
 }
 
 int32_t
-mcd_rpc_op_msg_section_set_body (mcd_rpc_message *rpc,
-                                 size_t index,
-                                 const void *body)
+mcd_rpc_op_msg_section_set_body (mcd_rpc_message *rpc, size_t index, const void *body)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
@@ -2136,13 +1951,10 @@ mcd_rpc_op_msg_section_set_document_sequence (mcd_rpc_message *rpc,
    BSON_ASSERT (index < rpc->op_msg.sections_count);
    BSON_ASSERT (rpc->op_msg.sections[index].kind == 1);
 
-   const size_t bson_objects_len =
-      document_sequence ? document_sequence_length : 0u;
+   const size_t bson_objects_len = document_sequence ? document_sequence_length : 0u;
 
-   rpc->op_msg.sections[index].payload.document_sequence.bson_objects =
-      document_sequence;
-   rpc->op_msg.sections[index].payload.document_sequence.bson_objects_len =
-      bson_objects_len;
+   rpc->op_msg.sections[index].payload.document_sequence.bson_objects = document_sequence;
+   rpc->op_msg.sections[index].payload.document_sequence.bson_objects_len = bson_objects_len;
 
    BSON_ASSERT (bson_in_range_unsigned (int32_t, document_sequence_length));
    return (int32_t) bson_objects_len;
@@ -2188,8 +2000,7 @@ mcd_rpc_op_msg_set_sections_count (mcd_rpc_message *rpc, size_t section_count)
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
 
-   rpc->op_msg.sections = bson_realloc (
-      rpc->op_msg.sections, section_count * sizeof (mcd_rpc_op_msg_section));
+   rpc->op_msg.sections = bson_realloc (rpc->op_msg.sections, section_count * sizeof (mcd_rpc_op_msg_section));
    rpc->op_msg.sections_count = section_count;
 }
 
@@ -2253,8 +2064,7 @@ mcd_rpc_op_reply_get_documents_len (const mcd_rpc_message *rpc)
 }
 
 int32_t
-mcd_rpc_op_reply_set_response_flags (mcd_rpc_message *rpc,
-                                     int32_t response_flags)
+mcd_rpc_op_reply_set_response_flags (mcd_rpc_message *rpc, int32_t response_flags)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_reply.response_flags = response_flags;
@@ -2278,8 +2088,7 @@ mcd_rpc_op_reply_set_starting_from (mcd_rpc_message *rpc, int32_t starting_from)
 }
 
 int32_t
-mcd_rpc_op_reply_set_number_returned (mcd_rpc_message *rpc,
-                                      int32_t number_returned)
+mcd_rpc_op_reply_set_number_returned (mcd_rpc_message *rpc, int32_t number_returned)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_reply.number_returned = number_returned;
@@ -2287,9 +2096,7 @@ mcd_rpc_op_reply_set_number_returned (mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_reply_set_documents (mcd_rpc_message *rpc,
-                                const void *documents,
-                                size_t documents_len)
+mcd_rpc_op_reply_set_documents (mcd_rpc_message *rpc, const void *documents, size_t documents_len)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
 
@@ -2334,13 +2141,11 @@ mcd_rpc_op_update_get_update (const mcd_rpc_message *rpc)
 }
 
 int32_t
-mcd_rpc_op_update_set_full_collection_name (mcd_rpc_message *rpc,
-                                            const char *full_collection_name)
+mcd_rpc_op_update_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
 
-   const size_t length =
-      full_collection_name ? strlen (full_collection_name) + 1u : 0u;
+   const size_t length = full_collection_name ? strlen (full_collection_name) + 1u : 0u;
 
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_UPDATE);
    rpc->op_update.full_collection_name = full_collection_name;
@@ -2417,14 +2222,12 @@ mcd_rpc_op_insert_set_flags (mcd_rpc_message *rpc, int32_t flags)
 }
 
 int32_t
-mcd_rpc_op_insert_set_full_collection_name (mcd_rpc_message *rpc,
-                                            const char *full_collection_name)
+mcd_rpc_op_insert_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_INSERT);
 
-   const size_t length =
-      full_collection_name ? strlen (full_collection_name) + 1u : 0u;
+   const size_t length = full_collection_name ? strlen (full_collection_name) + 1u : 0u;
 
    rpc->op_insert.full_collection_name = full_collection_name;
    rpc->op_insert.full_collection_name_len = length;
@@ -2434,9 +2237,7 @@ mcd_rpc_op_insert_set_full_collection_name (mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_insert_set_documents (mcd_rpc_message *rpc,
-                                 const void *documents,
-                                 size_t documents_len)
+mcd_rpc_op_insert_set_documents (mcd_rpc_message *rpc, const void *documents, size_t documents_len)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_INSERT);
@@ -2507,14 +2308,12 @@ mcd_rpc_op_query_set_flags (mcd_rpc_message *rpc, int32_t flags)
 }
 
 int32_t
-mcd_rpc_op_query_set_full_collection_name (mcd_rpc_message *rpc,
-                                           const char *full_collection_name)
+mcd_rpc_op_query_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
 
-   const size_t length =
-      full_collection_name ? strlen (full_collection_name) + 1u : 0u;
+   const size_t length = full_collection_name ? strlen (full_collection_name) + 1u : 0u;
 
    rpc->op_query.full_collection_name = full_collection_name;
    rpc->op_query.full_collection_name_len = length;
@@ -2524,8 +2323,7 @@ mcd_rpc_op_query_set_full_collection_name (mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_query_set_number_to_skip (mcd_rpc_message *rpc,
-                                     int32_t number_to_skip)
+mcd_rpc_op_query_set_number_to_skip (mcd_rpc_message *rpc, int32_t number_to_skip)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
@@ -2534,8 +2332,7 @@ mcd_rpc_op_query_set_number_to_skip (mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_query_set_number_to_return (mcd_rpc_message *rpc,
-                                       int32_t number_to_return)
+mcd_rpc_op_query_set_number_to_return (mcd_rpc_message *rpc, int32_t number_to_return)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
@@ -2553,8 +2350,7 @@ mcd_rpc_op_query_set_query (mcd_rpc_message *rpc, const void *query)
 }
 
 int32_t
-mcd_rpc_op_query_set_return_fields_selector (mcd_rpc_message *rpc,
-                                             const void *return_fields_selector)
+mcd_rpc_op_query_set_return_fields_selector (mcd_rpc_message *rpc, const void *return_fields_selector)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
@@ -2588,14 +2384,12 @@ mcd_rpc_op_get_more_get_cursor_id (const mcd_rpc_message *rpc)
 }
 
 int32_t
-mcd_rpc_op_get_more_set_full_collection_name (mcd_rpc_message *rpc,
-                                              const char *full_collection_name)
+mcd_rpc_op_get_more_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_GET_MORE);
 
-   const size_t length =
-      full_collection_name ? strlen (full_collection_name) + 1u : 0u;
+   const size_t length = full_collection_name ? strlen (full_collection_name) + 1u : 0u;
 
    rpc->op_get_more.full_collection_name = full_collection_name;
    rpc->op_get_more.full_collection_name_len = length;
@@ -2605,8 +2399,7 @@ mcd_rpc_op_get_more_set_full_collection_name (mcd_rpc_message *rpc,
 }
 
 int32_t
-mcd_rpc_op_get_more_set_number_to_return (mcd_rpc_message *rpc,
-                                          int32_t number_to_return)
+mcd_rpc_op_get_more_set_number_to_return (mcd_rpc_message *rpc, int32_t number_to_return)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_GET_MORE);
@@ -2649,14 +2442,12 @@ mcd_rpc_op_delete_get_selector (const mcd_rpc_message *rpc)
 }
 
 int32_t
-mcd_rpc_op_delete_set_full_collection_name (mcd_rpc_message *rpc,
-                                            const char *full_collection_name)
+mcd_rpc_op_delete_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
 
-   const size_t length =
-      full_collection_name ? strlen (full_collection_name) + 1u : 0u;
+   const size_t length = full_collection_name ? strlen (full_collection_name) + 1u : 0u;
 
    rpc->op_delete.full_collection_name = full_collection_name;
    rpc->op_delete.full_collection_name_len = length;
@@ -2697,23 +2488,17 @@ mcd_rpc_op_kill_cursors_get_cursor_ids (const mcd_rpc_message *rpc)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_KILL_CURSORS);
-   return rpc->op_kill_cursors.number_of_cursor_ids > 0
-             ? rpc->op_kill_cursors.cursor_ids
-             : NULL;
+   return rpc->op_kill_cursors.number_of_cursor_ids > 0 ? rpc->op_kill_cursors.cursor_ids : NULL;
 }
 
 int32_t
-mcd_rpc_op_kill_cursors_set_cursor_ids (mcd_rpc_message *rpc,
-                                        const int64_t *cursor_ids,
-                                        int32_t number_of_cursor_ids)
+mcd_rpc_op_kill_cursors_set_cursor_ids (mcd_rpc_message *rpc, const int64_t *cursor_ids, int32_t number_of_cursor_ids)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_KILL_CURSORS);
-   BSON_ASSERT (bson_cmp_less_su (number_of_cursor_ids,
-                                  (size_t) INT32_MAX / sizeof (int64_t)));
+   BSON_ASSERT (bson_cmp_less_su (number_of_cursor_ids, (size_t) INT32_MAX / sizeof (int64_t)));
 
-   const size_t cursor_ids_length =
-      (size_t) number_of_cursor_ids * sizeof (int64_t);
+   const size_t cursor_ids_length = (size_t) number_of_cursor_ids * sizeof (int64_t);
 
    rpc->op_kill_cursors.number_of_cursor_ids = number_of_cursor_ids;
 

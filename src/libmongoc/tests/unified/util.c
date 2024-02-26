@@ -57,26 +57,16 @@ typedef struct {
 
 /* List of aliases: https://www.mongodb.com/docs/manual/reference/bson-types/ */
 bson_string_and_type_t bson_type_map[] = {
-   {"double", BSON_TYPE_DOUBLE},
-   {"string", BSON_TYPE_UTF8},
-   {"object", BSON_TYPE_DOCUMENT},
-   {"array", BSON_TYPE_ARRAY},
-   {"binData", BSON_TYPE_BINARY},
-   {"undefined", BSON_TYPE_UNDEFINED},
-   {"objectId", BSON_TYPE_OID},
-   {"bool", BSON_TYPE_BOOL},
-   {"date", BSON_TYPE_DATE_TIME},
-   {"null", BSON_TYPE_NULL},
-   {"regex", BSON_TYPE_REGEX},
-   {"dbPointer", BSON_TYPE_DBPOINTER},
-   {"javascript", BSON_TYPE_CODE},
-   {"javascriptWithScope", BSON_TYPE_CODEWSCOPE},
-   {"int", BSON_TYPE_INT32},
-   {"timestamp", BSON_TYPE_TIMESTAMP},
-   {"long", BSON_TYPE_INT64},
-   {"decimal", BSON_TYPE_DECIMAL128},
-   {"minKey", BSON_TYPE_MINKEY},
-   {"maxKey", BSON_TYPE_MAXKEY},
+   {"double", BSON_TYPE_DOUBLE},   {"string", BSON_TYPE_UTF8},
+   {"object", BSON_TYPE_DOCUMENT}, {"array", BSON_TYPE_ARRAY},
+   {"binData", BSON_TYPE_BINARY},  {"undefined", BSON_TYPE_UNDEFINED},
+   {"objectId", BSON_TYPE_OID},    {"bool", BSON_TYPE_BOOL},
+   {"date", BSON_TYPE_DATE_TIME},  {"null", BSON_TYPE_NULL},
+   {"regex", BSON_TYPE_REGEX},     {"dbPointer", BSON_TYPE_DBPOINTER},
+   {"javascript", BSON_TYPE_CODE}, {"javascriptWithScope", BSON_TYPE_CODEWSCOPE},
+   {"int", BSON_TYPE_INT32},       {"timestamp", BSON_TYPE_TIMESTAMP},
+   {"long", BSON_TYPE_INT64},      {"decimal", BSON_TYPE_DECIMAL128},
+   {"minKey", BSON_TYPE_MINKEY},   {"maxKey", BSON_TYPE_MAXKEY},
    {"eod", BSON_TYPE_EOD},
 };
 
@@ -121,8 +111,7 @@ test_copy_and_sort (void)
 void
 test_bson_util_install (TestSuite *suite)
 {
-   TestSuite_Add (
-      suite, "/unified/selftest/util/copy_and_sort", test_copy_and_sort);
+   TestSuite_Add (suite, "/unified/selftest/util/copy_and_sort", test_copy_and_sort);
 }
 
 /* TODO (CDRIVER-3525) add test support for CMAP events once the C driver
