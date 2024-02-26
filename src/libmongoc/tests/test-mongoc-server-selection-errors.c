@@ -93,7 +93,8 @@ test_server_selection_error_dns_direct_single (void)
    server_selection_error_dns (
       "mongodb://example-localhost.invalid:27017/",
       "No suitable servers found (`serverSelectionTryOnce` set): "
-      "[Fake error for 'example-localhost.invalid']",
+      "[Fake error for 'example-localhost.invalid']"
+      ". Topology type: Single",
       false,
       false);
 }
@@ -106,7 +107,8 @@ test_server_selection_error_dns_direct_pooled (void *ctx)
    server_selection_error_dns (
       "mongodb://example-localhost.invalid:27017/",
       "No suitable servers found: `serverSelectionTimeoutMS` expired: "
-      "[Fake error for 'example-localhost.invalid']",
+      "[Fake error for 'example-localhost.invalid']"
+      ". Topology type: Single",
       false,
       true);
 }
@@ -119,7 +121,8 @@ test_server_selection_error_dns_multi_fail_single (void)
       "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
       "No suitable servers found (`serverSelectionTryOnce` set):"
       " [Fake error for 'example-localhost.invalid']"
-      " [Fake error for 'other-example-localhost.invalid']",
+      " [Fake error for 'other-example-localhost.invalid']"
+      ". Topology type: Unknown",
       false,
       false);
 }
@@ -134,7 +137,8 @@ test_server_selection_error_dns_multi_fail_pooled (void *ctx)
       "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
       "No suitable servers found: `serverSelectionTimeoutMS` expired:"
       " [Fake error for 'example-localhost.invalid']"
-      " [Fake error for 'other-example-localhost.invalid']",
+      " [Fake error for 'other-example-localhost.invalid']"
+      ". Topology type: Unknown",
       false,
       true);
 }
