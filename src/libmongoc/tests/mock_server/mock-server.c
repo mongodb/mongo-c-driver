@@ -100,9 +100,7 @@ static BSON_THREAD_FUN (main_thread, data);
 static BSON_THREAD_FUN (worker_thread, data);
 
 static void
-_mock_server_reply_with_stream (mock_server_t *server,
-                                reply_t *reply,
-                                mongoc_stream_t *client);
+_mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_stream_t *client);
 
 void
 autoresponder_handle_destroy (autoresponder_handle_t *handle);
@@ -131,12 +129,10 @@ get_port (mongoc_socket_t *sock);
 mock_server_t *
 mock_server_new (void)
 {
-   mock_server_t *server =
-      (mock_server_t *) bson_malloc0 (sizeof (mock_server_t));
+   mock_server_t *server = (mock_server_t *) bson_malloc0 (sizeof (mock_server_t));
 
    server->request_timeout_msec = get_future_timeout_ms ();
-   _mongoc_array_init (&server->autoresponders,
-                       sizeof (autoresponder_handle_t));
+   _mongoc_array_init (&server->autoresponders, sizeof (autoresponder_handle_t));
    _mongoc_array_init (&server->worker_threads, sizeof (bson_thread_t));
    mongoc_cond_init (&server->cond);
    bson_mutex_init (&server->mutex);
@@ -170,8 +166,7 @@ mock_server_with_auto_hello (int32_t max_wire_version)
    mock_server_t *server = mock_server_new ();
 
    ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
-                    "max_wire_version %" PRId32
-                    " must be greater than or equal to minimum wire version %d",
+                    "max_wire_version %" PRId32 " must be greater than or equal to minimum wire version %d",
                     max_wire_version,
                     WIRE_VERSION_MIN);
 
@@ -210,28 +205,26 @@ mock_mongos_new (int32_t max_wire_version)
    mock_server_t *server = mock_server_new ();
 
    ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
-                    "max_wire_version %" PRId32
-                    " must be greater than or equal to minimum wire version %d",
+                    "max_wire_version %" PRId32 " must be greater than or equal to minimum wire version %d",
                     max_wire_version,
                     WIRE_VERSION_MIN);
 
-   mock_server_auto_hello (
-      server,
-      "{'ok': 1.0,"
-      " 'isWritablePrimary': true,"
-      " 'msg': 'isdbgrid',"
-      " 'minWireVersion': %d,"
-      " 'maxWireVersion': %d,"
-      " '$clusterTime': {"
-      "   'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
-      "   'signature': {"
-      "     'hash': {'$binary': {'subType': '0', 'base64': ''}},"
-      "     'keyId': {'$numberLong': '6446735049323708417'}"
-      "   },"
-      "   'operationTime': {'$timestamp': {'t': 1, 'i': 1}}},"
-      " 'logicalSessionTimeoutMinutes': 30}",
-      WIRE_VERSION_MIN,
-      max_wire_version);
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'isWritablePrimary': true,"
+                           " 'msg': 'isdbgrid',"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " '$clusterTime': {"
+                           "   'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
+                           "   'signature': {"
+                           "     'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+                           "     'keyId': {'$numberLong': '6446735049323708417'}"
+                           "   },"
+                           "   'operationTime': {'$timestamp': {'t': 1, 'i': 1}}},"
+                           " 'logicalSessionTimeoutMinutes': 30}",
+                           WIRE_VERSION_MIN,
+                           max_wire_version);
 
    return server;
 }
@@ -329,22 +322,17 @@ mock_server_run (mock_server_t *server)
    size_t bind_addr_len = 0;
    int r;
 
-   ssock = mongoc_socket_new (
-      server->bind_opts.family ? server->bind_opts.family : AF_INET,
-      SOCK_STREAM,
-      0);
+   ssock = mongoc_socket_new (server->bind_opts.family ? server->bind_opts.family : AF_INET, SOCK_STREAM, 0);
    if (!ssock) {
       perror ("Failed to create socket.");
       return 0;
    }
 
    optval = 1;
-   mongoc_socket_setsockopt (
-      ssock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+   mongoc_socket_setsockopt (ssock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
    optval = server->bind_opts.ipv6_only;
-   mongoc_socket_setsockopt (
-      ssock, IPPROTO_IPV6, IPV6_V6ONLY, &optval, sizeof (optval));
+   mongoc_socket_setsockopt (ssock, IPPROTO_IPV6, IPV6_V6ONLY, &optval, sizeof (optval));
 
    memset (&default_bind_addr, 0, sizeof default_bind_addr);
 
@@ -367,9 +355,7 @@ mock_server_run (mock_server_t *server)
    // should not use values larger than 2^32 - 1.
    BSON_ASSERT (bson_in_range_unsigned (uint32_t, bind_addr_len));
 
-   if (-1 == mongoc_socket_bind (ssock,
-                                 (struct sockaddr *) bind_addr,
-                                 (uint32_t) bind_addr_len)) {
+   if (-1 == mongoc_socket_bind (ssock, (struct sockaddr *) bind_addr, (uint32_t) bind_addr_len)) {
       perror ("Failed to bind socket");
       return 0;
    }
@@ -392,10 +378,9 @@ mock_server_run (mock_server_t *server)
    server->sock = ssock;
    server->port = bound_port;
    /* TODO: configurable timeouts, perhaps from env */
-   server->uri_str = bson_strdup_printf (
-      "mongodb://127.0.0.1:%hu/?serverselectiontimeoutms=10000&"
-      "sockettimeoutms=10000",
-      bound_port);
+   server->uri_str = bson_strdup_printf ("mongodb://127.0.0.1:%hu/?serverselectiontimeoutms=10000&"
+                                         "sockettimeoutms=10000",
+                                         bound_port);
    server->uri = mongoc_uri_new (server->uri_str);
 
    // Many mock server tests do not expect retryable handshakes. Disable by
@@ -403,8 +388,7 @@ mock_server_run (mock_server_t *server)
    mongoc_uri_set_option_as_bool (server->uri, MONGOC_URI_RETRYREADS, false);
    mongoc_uri_set_option_as_bool (server->uri, MONGOC_URI_RETRYWRITES, false);
 
-   r = mcommon_thread_create (
-      &server->main_thread, main_thread, (void *) server);
+   r = mcommon_thread_create (&server->main_thread, main_thread, (void *) server);
    BSON_ASSERT (r == 0);
    while (!server->running) {
       mongoc_cond_wait (&server->cond, &server->mutex);
@@ -443,10 +427,7 @@ mock_server_run (mock_server_t *server)
  */
 
 int
-mock_server_autoresponds (mock_server_t *server,
-                          autoresponder_t responder,
-                          void *data,
-                          destructor_t destructor)
+mock_server_autoresponds (mock_server_t *server, autoresponder_t responder, void *data, destructor_t destructor)
 {
    autoresponder_handle_t handle = {responder, data, destructor};
    int id;
@@ -504,9 +485,7 @@ mock_server_remove_autoresponder (mock_server_t *server, int id)
 
 
 static bool
-auto_hello_generate_response (request_t *request,
-                              void *data,
-                              bson_t *hello_response)
+auto_hello_generate_response (request_t *request, void *data, bson_t *hello_response)
 {
    const char *response_json = (const char *) data;
    char *quotes_replaced;
@@ -541,8 +520,7 @@ auto_hello (request_t *request, void *data)
 
    /* Check whether we've got "hello" or legacy hello */
    is_hello = strcasecmp (request->command_name, "hello") == 0;
-   is_legacy_hello =
-      strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) == 0;
+   is_legacy_hello = strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) == 0;
 
    if (!is_hello && !is_legacy_hello) {
       return false;
@@ -554,10 +532,8 @@ auto_hello (request_t *request, void *data)
 
    /* Convert responses for legacy hello */
    if (bson_iter_init_find (&iter, &response, "isWritablePrimary")) {
-      BSON_APPEND_BOOL (
-         &response, HANDSHAKE_RESPONSE_LEGACY_HELLO, bson_iter_bool (&iter));
-   } else if (bson_iter_init_find (
-                 &iter, &response, HANDSHAKE_RESPONSE_LEGACY_HELLO)) {
+      BSON_APPEND_BOOL (&response, HANDSHAKE_RESPONSE_LEGACY_HELLO, bson_iter_bool (&iter));
+   } else if (bson_iter_init_find (&iter, &response, HANDSHAKE_RESPONSE_LEGACY_HELLO)) {
       BSON_APPEND_BOOL (&response, "isWritablePrimary", bson_iter_bool (&iter));
    }
 
@@ -608,8 +584,7 @@ mock_server_auto_hello_callback (mock_server_t *server,
    callback->data = data;
    callback->destructor = destructor;
 
-   return mock_server_autoresponds (
-      server, auto_hello, (void *) callback, hello_callback_free);
+   return mock_server_autoresponds (server, auto_hello, (void *) callback, hello_callback_free);
 }
 
 /*--------------------------------------------------------------------------
@@ -638,10 +613,8 @@ mock_server_auto_hello (mock_server_t *server, const char *response_json, ...)
    formatted_response_json = bson_strdupv_printf (response_json, args);
    va_end (args);
 
-   return mock_server_auto_hello_callback (server,
-                                           auto_hello_generate_response,
-                                           (void *) formatted_response_json,
-                                           bson_free);
+   return mock_server_auto_hello_callback (
+      server, auto_hello_generate_response, (void *) formatted_response_json, bson_free);
 }
 
 
@@ -650,8 +623,7 @@ auto_endsessions (request_t *request, void *data)
 {
    BSON_UNUSED (data);
 
-   if (!request->is_command ||
-       strcasecmp (request->command_name, "endSessions") != 0) {
+   if (!request->is_command || strcasecmp (request->command_name, "endSessions") != 0) {
       return false;
    }
 
@@ -791,8 +763,7 @@ mock_server_get_request_timeout_msec (mock_server_t *server)
  */
 
 void
-mock_server_set_request_timeout_msec (mock_server_t *server,
-                                      int64_t request_timeout_msec)
+mock_server_set_request_timeout_msec (mock_server_t *server, int64_t request_timeout_msec)
 {
    bson_mutex_lock (&server->mutex);
    server->request_timeout_msec = request_timeout_msec;
@@ -920,11 +891,8 @@ mock_server_receives_request (mock_server_t *server)
  *--------------------------------------------------------------------------
  */
 request_t *
-mock_server_receives_bulk_msg (mock_server_t *server,
-                               uint32_t flags,
-                               const bson_t *msg_pattern,
-                               const bson_t *doc_pattern,
-                               size_t n_docs)
+mock_server_receives_bulk_msg (
+   mock_server_t *server, uint32_t flags, const bson_t *msg_pattern, const bson_t *doc_pattern, size_t n_docs)
 {
    request_t *request;
    bool r;
@@ -974,11 +942,8 @@ mock_server_receives_bulk_msg (mock_server_t *server,
 
 MONGOC_PRINTF_FORMAT (4, 5)
 request_t *
-mock_server_receives_command (mock_server_t *server,
-                              const char *database_name,
-                              mongoc_query_flags_t flags,
-                              const char *command_json,
-                              ...)
+mock_server_receives_command (
+   mock_server_t *server, const char *database_name, mongoc_query_flags_t flags, const char *command_json, ...)
 {
    va_list args;
    char *formatted_command_json = NULL;
@@ -995,9 +960,7 @@ mock_server_receives_command (mock_server_t *server,
 
    request = mock_server_receives_request (server);
 
-   if (request &&
-       !request_matches_query (
-          request, ns, flags, 0, 1, formatted_command_json, NULL, true)) {
+   if (request && !request_matches_query (request, ns, flags, 0, 1, formatted_command_json, NULL, true)) {
       request_destroy (request);
       request = NULL;
    }
@@ -1050,9 +1013,7 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
 }
 
 request_t *
-_mock_server_receives_single_msg (mock_server_t *server,
-                                  uint32_t flags,
-                                  const bson_t *doc)
+_mock_server_receives_single_msg (mock_server_t *server, uint32_t flags, const bson_t *doc)
 {
    request_t *request;
    bool r;
@@ -1088,8 +1049,7 @@ mock_server_matches_any_hello_with_json (request_t *request,
    like to abort the program when checks fail: */
    if (MONGOC_OPCODE_MSG == request->opcode) {
       bson_t *hello_doc = NULL;
-      const char *hello_str =
-         "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}";
+      const char *hello_str = "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}";
 
       if (NULL != match_json_op_msg)
          hello_doc = tmp_bson (match_json_op_msg);
@@ -1104,8 +1064,7 @@ mock_server_matches_any_hello_with_json (request_t *request,
       }
    }
 
-   if (mock_server_matches_legacy_hello (
-          request, match_json_op_query ? match_json_op_query : NULL)) {
+   if (mock_server_matches_legacy_hello (request, match_json_op_query ? match_json_op_query : NULL)) {
       return request;
    }
 
@@ -1162,8 +1121,7 @@ mock_server_matches_legacy_hello (request_t *request, const char *match_json)
       return NULL;
    }
 
-   if (strcasecmp (request->command_name, "hello") &&
-       strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO)) {
+   if (strcasecmp (request->command_name, "hello") && strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO)) {
       request_destroy (request);
 
       fprintf (stderr,
@@ -1175,8 +1133,7 @@ mock_server_matches_legacy_hello (request_t *request, const char *match_json)
    }
 
    formatted_command_json =
-      bson_strdup_printf ("{'%s': 1, 'maxAwaitTimeMS': { '$exists': false }}",
-                          request->command_name);
+      bson_strdup_printf ("{'%s': 1, 'maxAwaitTimeMS': { '$exists': false }}", request->command_name);
 
    /* request_matches_query() always checks for OPCODE_QUERY, used by legacy
     * hello: */
@@ -1216,11 +1173,9 @@ mock_server_matches_legacy_hello (request_t *request, const char *match_json)
  */
 
 request_t *
-mock_server_receives_legacy_hello (mock_server_t *server,
-                                   const char *match_json)
+mock_server_receives_legacy_hello (mock_server_t *server, const char *match_json)
 {
-   return mock_server_matches_legacy_hello (
-      mock_server_receives_request (server), match_json);
+   return mock_server_matches_legacy_hello (mock_server_receives_request (server), match_json);
 }
 
 
@@ -1245,10 +1200,7 @@ request_t *
 mock_server_receives_hello (mock_server_t *server)
 {
    return mock_server_receives_command (
-      server,
-      "admin",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
 }
 
 /*--------------------------------------------------------------------------
@@ -1284,8 +1236,7 @@ mock_server_receives_any_hello_with_match (mock_server_t *server,
       return NULL;
    }
 
-   return mock_server_matches_any_hello_with_json (
-      request, match_json_op_msg, match_json_op_query);
+   return mock_server_matches_any_hello_with_json (request, match_json_op_msg, match_json_op_query);
 }
 
 /*--------------------------------------------------------------------------
@@ -1319,9 +1270,7 @@ mock_server_receives_query (mock_server_t *server,
 
    request = mock_server_receives_request (server);
 
-   if (request &&
-       !request_matches_query (
-          request, ns, flags, skip, n_return, query_json, fields_json, false)) {
+   if (request && !request_matches_query (request, ns, flags, skip, n_return, query_json, fields_json, false)) {
       request_destroy (request);
       return NULL;
    }
@@ -1350,9 +1299,7 @@ request_t *
 mock_server_receives_hello_op_msg (mock_server_t *server)
 {
    return _mock_server_receives_single_msg (
-      server,
-      0,
-      tmp_bson ("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}"));
+      server, 0, tmp_bson ("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}"));
 }
 
 
@@ -1525,9 +1472,7 @@ reply_to_request_simple (request_t *request, const char *docs_json)
 
 /* To specify additional flags for OP_MSG replies. */
 void
-reply_to_op_msg_request (request_t *request,
-                         mongoc_op_msg_flags_t flags,
-                         const bson_t *doc)
+reply_to_op_msg_request (request_t *request, mongoc_op_msg_flags_t flags, const bson_t *doc)
 {
    reply_t *reply;
 
@@ -1617,21 +1562,19 @@ reply_to_find_request (request_t *request,
    assert_request_matches_flags (request, flags);
 
    if (is_command) {
-      find_reply =
-         bson_strdup_printf ("{'ok': 1,"
-                             " 'cursor': {"
-                             "    'id': {'$numberLong': '%" PRId64 "'},"
-                             "    'ns': '%s',"
-                             "    'firstBatch': [%s]}}",
-                             cursor_id,
-                             ns,
-                             reply_json);
+      find_reply = bson_strdup_printf ("{'ok': 1,"
+                                       " 'cursor': {"
+                                       "    'id': {'$numberLong': '%" PRId64 "'},"
+                                       "    'ns': '%s',"
+                                       "    'firstBatch': [%s]}}",
+                                       cursor_id,
+                                       ns,
+                                       reply_json);
 
       reply_to_request_simple (request, find_reply);
       bson_free (find_reply);
    } else {
-      reply_to_request (
-         request, MONGOC_REPLY_NONE, cursor_id, 0, number_returned, reply_json);
+      reply_to_request (request, MONGOC_REPLY_NONE, cursor_id, 0, number_returned, reply_json);
    }
    bson_free (db);
 }
@@ -1694,8 +1637,7 @@ mock_server_destroy (mock_server_t *server)
    _mongoc_array_destroy (&server->worker_threads);
 
    for (i = 0; i < server->autoresponders.len; i++) {
-      handle = &_mongoc_array_index (
-         &server->autoresponders, autoresponder_handle_t, i);
+      handle = &_mongoc_array_index (&server->autoresponders, autoresponder_handle_t, i);
 
       autoresponder_handle_destroy (handle);
    }
@@ -1723,8 +1665,7 @@ get_port (mongoc_socket_t *sock)
    struct sockaddr_storage bound_addr = {0};
    mongoc_socklen_t addr_len = (mongoc_socklen_t) sizeof bound_addr;
 
-   if (mongoc_socket_getsockname (
-          sock, (struct sockaddr *) &bound_addr, &addr_len) < 0) {
+   if (mongoc_socket_getsockname (sock, (struct sockaddr *) &bound_addr, &addr_len) < 0) {
       perror ("Failed to get listening port number");
       return 0;
    }
@@ -1775,8 +1716,7 @@ static BSON_THREAD_FUN (main_thread, data)
    bson_mutex_unlock (&server->mutex);
 
    for (;;) {
-      client_sock = mongoc_socket_accept_ex (
-         server->sock, bson_get_monotonic_time () + 100 * 1000, &port);
+      client_sock = mongoc_socket_accept_ex (server->sock, bson_get_monotonic_time () + 100 * 1000, &port);
 
       if (_mock_server_stopping (server)) {
          mongoc_socket_destroy (client_sock);
@@ -1785,10 +1725,7 @@ static BSON_THREAD_FUN (main_thread, data)
 
       if (client_sock) {
          test_suite_mock_server_log (
-            "%5.2f  %hu -> server port %hu (connected)",
-            mock_server_get_uptime_sec (server),
-            port,
-            server->port);
+            "%5.2f  %hu -> server port %hu (connected)", mock_server_get_uptime_sec (server), port, server->port);
 
          client_stream = mongoc_stream_socket_new (client_sock);
 
@@ -1797,8 +1734,7 @@ static BSON_THREAD_FUN (main_thread, data)
          if (server->ssl) {
             mongoc_stream_t *tls_stream;
             server->ssl_opts.weak_cert_validation = 1;
-            tls_stream = mongoc_stream_tls_new_with_hostname (
-               client_stream, NULL, &server->ssl_opts, 0);
+            tls_stream = mongoc_stream_tls_new_with_hostname (client_stream, NULL, &server->ssl_opts, 0);
             if (!tls_stream) {
                mongoc_stream_destroy (client_stream);
                bson_mutex_unlock (&server->mutex);
@@ -1829,8 +1765,7 @@ static BSON_THREAD_FUN (main_thread, data)
    bson_mutex_unlock (&server->mutex);
 
    for (i = 0; i < worker_threads.len; i++) {
-      mcommon_thread_join (
-         _mongoc_array_index (&worker_threads, bson_thread_t, i));
+      mcommon_thread_join (_mongoc_array_index (&worker_threads, bson_thread_t, i));
    }
 
    _mongoc_array_destroy (&worker_threads);
@@ -1889,8 +1824,7 @@ static BSON_THREAD_FUN (worker_thread, data)
    bson_mutex_unlock (&server->mutex);
 
    if (ssl) {
-      if (!mongoc_stream_tls_handshake_block (
-             client_stream, "localhost", TIMEOUT, &error)) {
+      if (!mongoc_stream_tls_handshake_block (client_stream, "localhost", TIMEOUT, &error)) {
          mongoc_stream_close (client_stream);
          mongoc_stream_destroy (client_stream);
          bson_free (closure);
@@ -1916,8 +1850,7 @@ again:
          GOTO (failure);
       }
 
-      if (_mongoc_buffer_fill (
-             &buffer, client_stream, (size_t) msg_len, -1, &error) == -1) {
+      if (_mongoc_buffer_fill (&buffer, client_stream, (size_t) msg_len, -1, &error) == -1) {
          MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__, error.message);
          GOTO (failure);
       }
@@ -1925,8 +1858,7 @@ again:
       BSON_ASSERT (buffer.len >= (unsigned) msg_len);
 
       /* copies message from buffer */
-      request = request_new (
-         &buffer, msg_len, server, client_stream, closure->port, replies);
+      request = request_new (&buffer, msg_len, server, client_stream, closure->port, replies);
 
       memmove (buffer.data, buffer.data + msg_len, buffer.len - msg_len);
       buffer.len -= msg_len;
@@ -1935,18 +1867,14 @@ again:
       _mongoc_array_copy (&autoresponders, &server->autoresponders);
       bson_mutex_unlock (&server->mutex);
 
-      test_suite_mock_server_log ("%5.2f  %hu -> %hu %s",
-                                  mock_server_get_uptime_sec (server),
-                                  closure->port,
-                                  server->port,
-                                  request->as_str);
+      test_suite_mock_server_log (
+         "%5.2f  %hu -> %hu %s", mock_server_get_uptime_sec (server), closure->port, server->port, request->as_str);
 
       /* run responders most-recently-added-first */
       handled = false;
 
       for (i = server->autoresponders.len - 1u; i >= 0; i--) {
-         handle = _mongoc_array_index (
-            &server->autoresponders, autoresponder_handle_t, i);
+         handle = _mongoc_array_index (&server->autoresponders, autoresponder_handle_t, i);
 
          if (handle.responder (request, handle.data)) {
             /* responder destroyed request and enqueued a reply in "replies" */
@@ -2000,11 +1928,8 @@ failure:
 
 /* enqueue server reply for this connection's worker thread to send to client */
 void
-reply_to_request_with_multiple_docs (request_t *request,
-                                     mongoc_reply_flags_t flags,
-                                     const bson_t *docs,
-                                     int n_docs,
-                                     int64_t cursor_id)
+reply_to_request_with_multiple_docs (
+   request_t *request, mongoc_reply_flags_t flags, const bson_t *docs, int n_docs, int64_t cursor_id)
 {
    reply_t *reply;
    int i;
@@ -2016,8 +1941,7 @@ reply_to_request_with_multiple_docs (request_t *request,
    reply->type = REPLY;
    reply->flags = flags;
    reply->n_docs = n_docs;
-   reply->docs = bson_aligned_alloc0 (BSON_ALIGNOF (bson_t),
-                                      (size_t) n_docs * sizeof (bson_t));
+   reply->docs = bson_aligned_alloc0 (BSON_ALIGNOF (bson_t), (size_t) n_docs * sizeof (bson_t));
 
    for (i = 0; i < n_docs; i++) {
       bson_copy_to (&docs[i], &reply->docs[i]);
@@ -2039,9 +1963,7 @@ reply_to_request_with_multiple_docs (request_t *request,
 
 
 static void
-_mock_server_reply_with_stream (mock_server_t *server,
-                                reply_t *reply,
-                                mongoc_stream_t *client)
+_mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_stream_t *client)
 {
    char *doc_json;
    bson_string_t *docs_json;
@@ -2063,8 +1985,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
       no_linger.l_linger = 0;
 
       /* send RST packet to client */
-      mongoc_stream_setsockopt (
-         client, SOL_SOCKET, SO_LINGER, &no_linger, sizeof no_linger);
+      mongoc_stream_setsockopt (client, SOL_SOCKET, SO_LINGER, &no_linger, sizeof no_linger);
 
       mongoc_stream_close (client);
       return;
@@ -2107,8 +2028,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
 
    bson_mutex_lock (&server->mutex);
 
-   if (!(reply->request_opcode == MONGOC_OPCODE_QUERY &&
-         reply->query_flags & MONGOC_QUERY_EXHAUST)) {
+   if (!(reply->request_opcode == MONGOC_OPCODE_QUERY && reply->query_flags & MONGOC_QUERY_EXHAUST)) {
       server->last_response_id++;
    }
 
@@ -2169,8 +2089,7 @@ mock_server_set_bind_opts (mock_server_t *server, mock_server_bind_opts_t *opts)
 }
 
 void
-rs_response_to_hello (
-   mock_server_t *server, int max_wire_version, bool primary, int has_tags, ...)
+rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary, int has_tags, ...)
 {
    va_list ap;
    bson_string_t *hosts;
@@ -2178,8 +2097,7 @@ rs_response_to_hello (
    mock_server_t *host;
 
    ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
-                    "max_wire_version %" PRId32
-                    " must be greater than or equal to minimum wire version %d",
+                    "max_wire_version %" PRId32 " must be greater than or equal to minimum wire version %d",
                     max_wire_version,
                     WIRE_VERSION_MIN);
 
@@ -2195,8 +2113,7 @@ rs_response_to_hello (
          bson_string_append (hosts, ",");
       }
 
-      bson_string_append_printf (
-         hosts, "'%s'", mock_server_get_host_and_port (host));
+      bson_string_append_printf (hosts, "'%s'", mock_server_get_host_and_port (host));
    }
 
    va_end (ap);

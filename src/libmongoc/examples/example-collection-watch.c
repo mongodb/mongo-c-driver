@@ -57,9 +57,7 @@ main (void)
 
    if (mongoc_change_stream_error_document (stream, &error, &err_doc)) {
       if (!bson_empty (err_doc)) {
-         fprintf (stderr,
-                  "Server Error: %s\n",
-                  bson_as_relaxed_extended_json (err_doc, NULL));
+         fprintf (stderr, "Server Error: %s\n", bson_as_relaxed_extended_json (err_doc, NULL));
       } else {
          fprintf (stderr, "Client Error: %s\n", error.message);
       }

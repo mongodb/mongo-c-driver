@@ -30,10 +30,7 @@ typedef struct {
 } check_depth_t;
 
 bool
-_check_depth_document (const bson_iter_t *iter,
-                       const char *key,
-                       const bson_t *v_document,
-                       void *data);
+_check_depth_document (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data);
 
 static const bson_visitor_t check_depth_funcs = {
    NULL,
@@ -47,10 +44,7 @@ static const bson_visitor_t check_depth_funcs = {
 };
 
 bool
-_check_depth_document (const bson_iter_t *iter,
-                       const char *key,
-                       const bson_t *v_document,
-                       void *data)
+_check_depth_document (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data)
 {
    check_depth_t *state = (check_depth_t *) data;
    bson_iter_t child;
@@ -88,8 +82,7 @@ check_depth (const bson_t *bson, uint32_t max_depth)
    state.max_depth = max_depth;
    _check_depth_document (&iter, NULL, bson, &state);
    if (!state.valid) {
-      printf ("document exceeds maximum depth of %" PRIu32 "\n",
-              state.max_depth);
+      printf ("document exceeds maximum depth of %" PRIu32 "\n", state.max_depth);
    } else {
       char *as_json = bson_as_canonical_extended_json (bson, NULL);
       printf ("document %s ", as_json);

@@ -38,8 +38,7 @@ main (void)
       return EXIT_FAILURE;
    }
 
-   if (!mongoc_collection_update_one (
-          coll, selector, update, NULL, NULL, &error)) {
+   if (!mongoc_collection_update_one (coll, selector, update, NULL, NULL, &error)) {
       fprintf (stderr, "update failed: %s\n", error.message);
       return EXIT_FAILURE;
    }

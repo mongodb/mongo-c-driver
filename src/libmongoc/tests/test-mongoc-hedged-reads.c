@@ -43,8 +43,7 @@ test_mongos_hedged_reads_read_pref (void)
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    mock_server_auto_endsessions (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
@@ -53,13 +52,11 @@ test_mongos_hedged_reads_read_pref (void)
     * readPreference. */
    mongoc_collection_set_read_prefs (collection, prefs);
 
-   future = future_collection_count (
-      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db',"
-                " '$readPreference': {'mode': 'secondaryPreferred'}}"));
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " '$readPreference': {'mode': 'secondaryPreferred'}}"));
 
    reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -74,15 +71,13 @@ test_mongos_hedged_reads_read_pref (void)
    mongoc_read_prefs_set_hedge (prefs, &hedge_doc);
    mongoc_collection_set_read_prefs (collection, prefs);
 
-   future = future_collection_count (
-      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request =
-      mock_server_receives_msg (server,
-                                MONGOC_MSG_NONE,
-                                tmp_bson ("{'$db': 'db',"
-                                          " '$readPreference': {"
-                                          "   'mode': 'secondaryPreferred',"
-                                          "   'hedge': {'enabled': true}}}"));
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " '$readPreference': {"
+                                                 "   'mode': 'secondaryPreferred',"
+                                                 "   'hedge': {'enabled': true}}}"));
 
    reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -101,6 +96,5 @@ test_mongos_hedged_reads_read_pref (void)
 void
 test_client_hedged_reads_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (
-      suite, "/Client/hedged_reads/mongos", test_mongos_hedged_reads_read_pref);
+   TestSuite_AddMockServerTest (suite, "/Client/hedged_reads/mongos", test_mongos_hedged_reads_read_pref);
 }

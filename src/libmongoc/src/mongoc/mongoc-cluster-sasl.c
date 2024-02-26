@@ -38,10 +38,7 @@
 #endif
 
 void
-_mongoc_cluster_build_sasl_start (bson_t *cmd,
-                                  const char *mechanism,
-                                  const char *buf,
-                                  uint32_t buflen)
+_mongoc_cluster_build_sasl_start (bson_t *cmd, const char *mechanism, const char *buf, uint32_t buflen)
 {
    BSON_APPEND_INT32 (cmd, "saslStart", 1);
    BSON_APPEND_UTF8 (cmd, "mechanism", mechanism);
@@ -49,10 +46,7 @@ _mongoc_cluster_build_sasl_start (bson_t *cmd,
    BSON_APPEND_INT32 (cmd, "autoAuthorize", 1);
 }
 void
-_mongoc_cluster_build_sasl_continue (bson_t *cmd,
-                                     int conv_id,
-                                     const char *buf,
-                                     uint32_t buflen)
+_mongoc_cluster_build_sasl_continue (bson_t *cmd, int conv_id, const char *buf, uint32_t buflen)
 {
    BSON_APPEND_INT32 (cmd, "saslContinue", 1);
    BSON_APPEND_INT32 (cmd, "conversationId", conv_id);
@@ -63,8 +57,7 @@ _mongoc_cluster_get_conversation_id (const bson_t *reply)
 {
    bson_iter_t iter;
 
-   if (bson_iter_init_find (&iter, reply, "conversationId") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
+   if (bson_iter_init_find (&iter, reply, "conversationId") && BSON_ITER_HOLDS_INT32 (&iter)) {
       return bson_iter_int32 (&iter);
    }
 

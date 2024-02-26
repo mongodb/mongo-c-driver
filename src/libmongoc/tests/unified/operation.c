@@ -59,10 +59,8 @@ operation_new (bson_t *bson, bson_error_t *error)
    bson_parser_doc_optional (op->parser, "arguments", &op->arguments);
    bson_parser_doc_optional (op->parser, "expectError", &op->expect_error);
    bson_parser_any_optional (op->parser, "expectResult", &op->expect_result);
-   bson_parser_bool_optional (
-      op->parser, "ignoreResultAndError", &op->ignore_result_and_error);
-   bson_parser_utf8_optional (
-      op->parser, "saveResultAsEntity", &op->save_result_as_entity);
+   bson_parser_bool_optional (op->parser, "ignoreResultAndError", &op->ignore_result_and_error);
+   bson_parser_utf8_optional (op->parser, "saveResultAsEntity", &op->save_result_as_entity);
    if (!bson_parser_parse (op->parser, bson, error)) {
       operation_destroy (op);
       return NULL;
@@ -71,10 +69,7 @@ operation_new (bson_t *bson, bson_error_t *error)
 }
 
 static bool
-operation_create_change_stream (test_t *test,
-                                operation_t *op,
-                                result_t *result,
-                                bson_error_t *error)
+operation_create_change_stream (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    entity_t *entity = NULL;
@@ -121,10 +116,7 @@ operation_create_change_stream (test_t *test,
    result_from_val_and_reply (result, NULL, (bson_t *) op_reply, &op_error);
 
    if (op->save_result_as_entity) {
-      if (!entity_map_add_changestream (test->entity_map,
-                                        op->save_result_as_entity,
-                                        changestream,
-                                        error)) {
+      if (!entity_map_add_changestream (test->entity_map, op->save_result_as_entity, changestream, error)) {
          goto done;
       } else {
          // Successfully saved the changestream
@@ -142,10 +134,7 @@ done:
 }
 
 static bool
-operation_list_databases (test_t *test,
-                          operation_t *op,
-                          result_t *result,
-                          bson_error_t *error)
+operation_list_databases (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_client_t *client = NULL;
@@ -179,10 +168,7 @@ done:
 }
 
 static bool
-operation_list_database_names (test_t *test,
-                               operation_t *op,
-                               result_t *result,
-                               bson_error_t *error)
+operation_list_database_names (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_client_t *client = NULL;
@@ -203,8 +189,7 @@ operation_list_database_names (test_t *test,
       goto done;
    }
 
-   char **names =
-      mongoc_client_get_database_names_with_opts (client, opts, error);
+   char **names = mongoc_client_get_database_names_with_opts (client, opts, error);
 
    {
       bson_val_t *val = NULL;
@@ -237,10 +222,7 @@ done:
 }
 
 static bool
-operation_create_datakey (test_t *test,
-                          operation_t *op,
-                          result_t *result,
-                          bson_error_t *error)
+operation_create_datakey (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bson_parser_t *parser = bson_parser_new ();
    char *kms_provider = NULL;
@@ -257,8 +239,7 @@ operation_create_datakey (test_t *test,
       goto done;
    }
 
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
@@ -280,8 +261,7 @@ operation_create_datakey (test_t *test,
       }
 
       if (master_key) {
-         mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
-                                                              master_key);
+         mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts, master_key);
       }
 
       if (key_alt_names) {
@@ -299,8 +279,7 @@ operation_create_datakey (test_t *test,
 
          BSON_ASSERT (bson_in_range_unsigned (uint32_t, arr.len));
 
-         mongoc_client_encryption_datakey_opts_set_keyaltnames (
-            datakey_opts, arr.data, (uint32_t) arr.len);
+         mongoc_client_encryption_datakey_opts_set_keyaltnames (datakey_opts, arr.data, (uint32_t) arr.len);
 
          _mongoc_array_destroy (&arr);
       }
@@ -310,18 +289,13 @@ operation_create_datakey (test_t *test,
 
          BSON_ASSERT (value);
 
-         if (value->value_type != BSON_TYPE_BINARY ||
-             value->value.v_binary.subtype != BSON_SUBTYPE_BINARY) {
-            test_set_error (
-               error,
-               "expected field 'keyMaterial' to be binData with subtype 00");
+         if (value->value_type != BSON_TYPE_BINARY || value->value.v_binary.subtype != BSON_SUBTYPE_BINARY) {
+            test_set_error (error, "expected field 'keyMaterial' to be binData with subtype 00");
             goto opts_done;
          }
 
          mongoc_client_encryption_datakey_opts_set_keymaterial (
-            datakey_opts,
-            value->value.v_binary.data,
-            value->value.v_binary.data_len);
+            datakey_opts, value->value.v_binary.data, value->value.v_binary.data_len);
       }
 
       success = true;
@@ -335,8 +309,8 @@ operation_create_datakey (test_t *test,
    }
 
    {
-      const bool success = mongoc_client_encryption_create_datakey (
-         ce, kms_provider, datakey_opts, &key_id_value, error);
+      const bool success =
+         mongoc_client_encryption_create_datakey (ce, kms_provider, datakey_opts, &key_id_value, error);
       bson_val_t *val = NULL;
 
       if (success) {
@@ -359,10 +333,7 @@ done:
 }
 
 static bool
-operation_rewrap_many_datakey (test_t *test,
-                               operation_t *op,
-                               result_t *result,
-                               bson_error_t *error)
+operation_rewrap_many_datakey (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
    mongoc_client_encryption_rewrap_many_datakey_result_t *const rmd_result =
@@ -382,8 +353,7 @@ operation_rewrap_many_datakey (test_t *test,
       goto done;
    }
 
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
@@ -403,17 +373,14 @@ operation_rewrap_many_datakey (test_t *test,
       }
    }
 
-   if (mongoc_client_encryption_rewrap_many_datakey (
-          ce, filter_doc, provider, master_key, rmd_result, error)) {
+   if (mongoc_client_encryption_rewrap_many_datakey (ce, filter_doc, provider, master_key, rmd_result, error)) {
       const bson_t *const bulk_write_result =
-         mongoc_client_encryption_rewrap_many_datakey_result_get_bulk_write_result (
-            rmd_result);
+         mongoc_client_encryption_rewrap_many_datakey_result_get_bulk_write_result (rmd_result);
 
       bson_t doc = BSON_INITIALIZER;
 
       if (bulk_write_result) {
-         bson_t *const rewritten =
-            rewrite_bulk_write_result (bulk_write_result);
+         bson_t *const rewritten = rewrite_bulk_write_result (bulk_write_result);
          BSON_APPEND_DOCUMENT (&doc, "bulkWriteResult", rewritten);
          bson_destroy (rewritten);
       }
@@ -441,10 +408,7 @@ done:
 }
 
 static bool
-operation_delete_key (test_t *test,
-                      operation_t *op,
-                      result_t *result,
-                      bson_error_t *error)
+operation_delete_key (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
 
@@ -458,15 +422,13 @@ operation_delete_key (test_t *test,
       goto done;
    }
 
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
    {
       bson_t reply;
-      const bool success = mongoc_client_encryption_delete_key (
-         ce, bson_val_to_value (id_val), &reply, error);
+      const bool success = mongoc_client_encryption_delete_key (ce, bson_val_to_value (id_val), &reply, error);
       bson_val_t *const val = success ? bson_val_from_bson (&reply) : NULL;
 
       result_from_val_and_reply (result, val, NULL, error);
@@ -484,10 +446,7 @@ done:
 }
 
 static bool
-operation_get_key (test_t *test,
-                   operation_t *op,
-                   result_t *result,
-                   bson_error_t *error)
+operation_get_key (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
 
@@ -501,20 +460,16 @@ operation_get_key (test_t *test,
       goto done;
    }
 
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
    {
       bson_t key_doc;
-      const bool success = mongoc_client_encryption_get_key (
-         ce, bson_val_to_value (id_val), &key_doc, error);
+      const bool success = mongoc_client_encryption_get_key (ce, bson_val_to_value (id_val), &key_doc, error);
       const bson_value_t value = {.value_type = BSON_TYPE_NULL};
       bson_val_t *const val =
-         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value)
-                                          : bson_val_from_bson (&key_doc))
-                 : NULL;
+         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value) : bson_val_from_bson (&key_doc)) : NULL;
 
       result_from_val_and_reply (result, val, NULL, error);
 
@@ -531,10 +486,7 @@ done:
 }
 
 static bool
-operation_get_keys (test_t *test,
-                    operation_t *op,
-                    result_t *result,
-                    bson_error_t *error)
+operation_get_keys (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
 
@@ -545,14 +497,12 @@ operation_get_keys (test_t *test,
       goto done;
    }
 
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
    {
-      mongoc_cursor_t *const cursor =
-         mongoc_client_encryption_get_keys (ce, error);
+      mongoc_cursor_t *const cursor = mongoc_client_encryption_get_keys (ce, error);
 
       if (cursor) {
          result_from_cursor (result, cursor);
@@ -572,10 +522,7 @@ done:
 }
 
 static bool
-operation_add_key_alt_name (test_t *test,
-                            operation_t *op,
-                            result_t *result,
-                            bson_error_t *error)
+operation_add_key_alt_name (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
 
@@ -591,20 +538,17 @@ operation_add_key_alt_name (test_t *test,
       goto done;
    }
 
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
    {
       bson_t key_doc;
-      const bool success = mongoc_client_encryption_add_key_alt_name (
-         ce, bson_val_to_value (id_val), alt_name, &key_doc, error);
+      const bool success =
+         mongoc_client_encryption_add_key_alt_name (ce, bson_val_to_value (id_val), alt_name, &key_doc, error);
       const bson_value_t value = {.value_type = BSON_TYPE_NULL};
       bson_val_t *const val =
-         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value)
-                                          : bson_val_from_bson (&key_doc))
-                 : NULL;
+         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value) : bson_val_from_bson (&key_doc)) : NULL;
 
       result_from_val_and_reply (result, val, NULL, error);
 
@@ -621,10 +565,7 @@ done:
 }
 
 static bool
-operation_remove_key_alt_name (test_t *test,
-                               operation_t *op,
-                               result_t *result,
-                               bson_error_t *error)
+operation_remove_key_alt_name (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
 
@@ -640,20 +581,17 @@ operation_remove_key_alt_name (test_t *test,
       goto done;
    }
 
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
    {
       bson_t key_doc;
-      const bool success = mongoc_client_encryption_remove_key_alt_name (
-         ce, bson_val_to_value (id_val), alt_name, &key_doc, error);
+      const bool success =
+         mongoc_client_encryption_remove_key_alt_name (ce, bson_val_to_value (id_val), alt_name, &key_doc, error);
       const bson_value_t value = {.value_type = BSON_TYPE_NULL};
       bson_val_t *const val =
-         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value)
-                                          : bson_val_from_bson (&key_doc))
-                 : NULL;
+         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value) : bson_val_from_bson (&key_doc)) : NULL;
 
       result_from_val_and_reply (result, val, NULL, error);
 
@@ -670,10 +608,7 @@ done:
 }
 
 static bool
-operation_get_key_by_alt_name (test_t *test,
-                               operation_t *op,
-                               result_t *result,
-                               bson_error_t *error)
+operation_get_key_by_alt_name (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
 
@@ -687,20 +622,16 @@ operation_get_key_by_alt_name (test_t *test,
       goto done;
    }
 
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
    {
       bson_t key_doc;
-      const bool success = mongoc_client_encryption_get_key_by_alt_name (
-         ce, keyaltname, &key_doc, error);
+      const bool success = mongoc_client_encryption_get_key_by_alt_name (ce, keyaltname, &key_doc, error);
       const bson_value_t value = {.value_type = BSON_TYPE_NULL};
       bson_val_t *const val =
-         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value)
-                                          : bson_val_from_bson (&key_doc))
-                 : NULL;
+         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value) : bson_val_from_bson (&key_doc)) : NULL;
 
       result_from_val_and_reply (result, val, NULL, error);
 
@@ -717,15 +648,11 @@ done:
 }
 
 static bool
-operation_encrypt (test_t *test,
-                   operation_t *op,
-                   result_t *result,
-                   bson_error_t *error)
+operation_encrypt (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_client_encryption_t *ce = NULL;
-   mongoc_client_encryption_encrypt_opts_t *eo =
-      mongoc_client_encryption_encrypt_opts_new ();
+   mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new ();
    bson_val_t *value = NULL;
    bson_t *opts = NULL;
    char *opts_keyaltname = NULL;
@@ -768,28 +695,23 @@ operation_encrypt (test_t *test,
    }
 
    // Get ClientEncryption object.
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
    // Encrypt.
    {
       if (opts_id) {
-         mongoc_client_encryption_encrypt_opts_set_keyid (
-            eo, bson_val_to_value (opts_id));
+         mongoc_client_encryption_encrypt_opts_set_keyid (eo, bson_val_to_value (opts_id));
       }
       if (opts_keyaltname) {
-         mongoc_client_encryption_encrypt_opts_set_keyaltname (eo,
-                                                               opts_keyaltname);
+         mongoc_client_encryption_encrypt_opts_set_keyaltname (eo, opts_keyaltname);
       }
       mongoc_client_encryption_encrypt_opts_set_algorithm (eo, opts_algorithm);
 
       bson_value_t ciphertext;
-      const bool success = mongoc_client_encryption_encrypt (
-         ce, bson_val_to_value (value), eo, &ciphertext, error);
-      bson_val_t *const val =
-         success ? bson_val_from_value (&ciphertext) : NULL;
+      const bool success = mongoc_client_encryption_encrypt (ce, bson_val_to_value (value), eo, &ciphertext, error);
+      bson_val_t *const val = success ? bson_val_from_value (&ciphertext) : NULL;
       result_from_val_and_reply (result, val, NULL /* reply */, error);
       bson_value_destroy (&ciphertext);
       bson_val_destroy (val);
@@ -810,10 +732,7 @@ done:
 }
 
 static bool
-operation_decrypt (test_t *test,
-                   operation_t *op,
-                   result_t *result,
-                   bson_error_t *error)
+operation_decrypt (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_client_encryption_t *ce = NULL;
@@ -836,16 +755,14 @@ operation_decrypt (test_t *test,
    }
 
    // Get ClientEncryption object.
-   if (!(ce = entity_map_get_client_encryption (
-            test->entity_map, op->object, error))) {
+   if (!(ce = entity_map_get_client_encryption (test->entity_map, op->object, error))) {
       goto done;
    }
 
    // Decrypt.
    {
       bson_value_t plaintext;
-      const bool success = mongoc_client_encryption_decrypt (
-         ce, bson_val_to_value (value), &plaintext, error);
+      const bool success = mongoc_client_encryption_decrypt (ce, bson_val_to_value (value), &plaintext, error);
       bson_val_t *const val = success ? bson_val_from_value (&plaintext) : NULL;
       result_from_val_and_reply (result, val, NULL /* reply */, error);
       bson_value_destroy (&plaintext);
@@ -862,10 +779,7 @@ done:
 }
 
 static bool
-operation_create_collection (test_t *test,
-                             operation_t *op,
-                             result_t *result,
-                             bson_error_t *error)
+operation_create_collection (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *parser = NULL;
@@ -907,10 +821,7 @@ done:
 }
 
 static bool
-operation_drop_collection (test_t *test,
-                           operation_t *op,
-                           result_t *result,
-                           bson_error_t *error)
+operation_drop_collection (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *parser = NULL;
@@ -959,10 +870,7 @@ done:
 }
 
 static bool
-operation_list_collections (test_t *test,
-                            operation_t *op,
-                            result_t *result,
-                            bson_error_t *error)
+operation_list_collections (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_database_t *db = NULL;
@@ -996,10 +904,7 @@ done:
 }
 
 static bool
-operation_list_collection_names (test_t *test,
-                                 operation_t *op,
-                                 result_t *result,
-                                 bson_error_t *error)
+operation_list_collection_names (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_database_t *db = NULL;
@@ -1021,8 +926,7 @@ operation_list_collection_names (test_t *test,
       goto done;
    }
 
-   op_ret =
-      mongoc_database_get_collection_names_with_opts (db, opts, &op_error);
+   op_ret = mongoc_database_get_collection_names_with_opts (db, opts, &op_error);
 
    result_from_ok (result);
 
@@ -1035,10 +939,7 @@ done:
 }
 
 static bool
-operation_list_indexes (test_t *test,
-                        operation_t *op,
-                        result_t *result,
-                        bson_error_t *error)
+operation_list_indexes (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1073,10 +974,7 @@ done:
 }
 
 static bool
-operation_run_command (test_t *test,
-                       operation_t *op,
-                       result_t *result,
-                       bson_error_t *error)
+operation_run_command (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *parser = NULL;
@@ -1120,8 +1018,7 @@ operation_run_command (test_t *test,
    }
 
    bson_destroy (&op_reply);
-   mongoc_database_command_with_opts (
-      db, command, rp, opts, &op_reply, &op_error);
+   mongoc_database_command_with_opts (db, command, rp, opts, &op_reply, &op_error);
 
    result_from_val_and_reply (result, NULL, &op_reply, &op_error);
 
@@ -1134,10 +1031,7 @@ done:
 }
 
 static bool
-operation_modify_collection (test_t *test,
-                             operation_t *op,
-                             result_t *result,
-                             bson_error_t *error)
+operation_modify_collection (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
 
@@ -1165,8 +1059,7 @@ operation_modify_collection (test_t *test,
    {
       bson_t reply;
 
-      mongoc_database_write_command_with_opts (
-         db, &command, NULL, &reply, error);
+      mongoc_database_write_command_with_opts (db, &command, NULL, &reply, error);
       result_from_val_and_reply (result, NULL, &reply, error);
 
       bson_destroy (&reply);
@@ -1182,10 +1075,7 @@ done:
 }
 
 static bool
-operation_aggregate (test_t *test,
-                     operation_t *op,
-                     result_t *result,
-                     bson_error_t *error)
+operation_aggregate (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    entity_t *entity = NULL;
@@ -1211,12 +1101,10 @@ operation_aggregate (test_t *test,
    entity = entity_map_get (test->entity_map, op->object, error);
    if (0 == strcmp (entity->type, "collection")) {
       mongoc_collection_t *coll = (mongoc_collection_t *) entity->value;
-      cursor = mongoc_collection_aggregate (
-         coll, 0 /* query flags */, pipeline, opts, NULL /* read prefs */);
+      cursor = mongoc_collection_aggregate (coll, 0 /* query flags */, pipeline, opts, NULL /* read prefs */);
    } else if (0 == strcmp (entity->type, "database")) {
       mongoc_database_t *db = (mongoc_database_t *) entity->value;
-      cursor =
-         mongoc_database_aggregate (db, pipeline, opts, NULL /* read prefs */);
+      cursor = mongoc_database_aggregate (db, pipeline, opts, NULL /* read prefs */);
    } else {
       goto done;
    }
@@ -1232,9 +1120,7 @@ done:
 }
 
 static bool
-bulk_op_append (mongoc_bulk_operation_t *bulk,
-                bson_t *request,
-                bson_error_t *error)
+bulk_op_append (mongoc_bulk_operation_t *bulk, bson_t *request, bson_error_t *error)
 {
    bool ret = false;
    bson_iter_t iter;
@@ -1246,9 +1132,7 @@ bulk_op_append (mongoc_bulk_operation_t *bulk,
    bson_iter_init (&iter, request);
    bson_iter_next (&iter);
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      test_set_error (error,
-                      "Unexpected non-document in bulk write model: %s",
-                      bson_iter_key (&iter));
+      test_set_error (error, "Unexpected non-document in bulk write model: %s", bson_iter_key (&iter));
    }
    op_type = bson_iter_key (&iter);
    bson_iter_bson (&iter, &request_doc);
@@ -1263,8 +1147,7 @@ bulk_op_append (mongoc_bulk_operation_t *bulk,
          goto done;
       }
 
-      mongoc_bulk_operation_insert_with_opts (
-         bulk, document, bson_parser_get_extra (parser), error);
+      mongoc_bulk_operation_insert_with_opts (bulk, document, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "updateOne")) {
       bson_parser_doc (parser, "filter", &filter);
       bson_parser_array_or_doc (parser, "update", &update);
@@ -1272,8 +1155,7 @@ bulk_op_append (mongoc_bulk_operation_t *bulk,
          goto done;
       }
 
-      mongoc_bulk_operation_update_one_with_opts (
-         bulk, filter, update, bson_parser_get_extra (parser), error);
+      mongoc_bulk_operation_update_one_with_opts (bulk, filter, update, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "updateMany")) {
       bson_parser_doc (parser, "filter", &filter);
       bson_parser_array_or_doc (parser, "update", &update);
@@ -1281,8 +1163,7 @@ bulk_op_append (mongoc_bulk_operation_t *bulk,
          goto done;
       }
 
-      mongoc_bulk_operation_update_many_with_opts (
-         bulk, filter, update, bson_parser_get_extra (parser), error);
+      mongoc_bulk_operation_update_many_with_opts (bulk, filter, update, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "deleteOne")) {
       bson_parser_doc (parser, "filter", &filter);
 
@@ -1290,16 +1171,14 @@ bulk_op_append (mongoc_bulk_operation_t *bulk,
          goto done;
       }
 
-      mongoc_bulk_operation_remove_one_with_opts (
-         bulk, filter, bson_parser_get_extra (parser), error);
+      mongoc_bulk_operation_remove_one_with_opts (bulk, filter, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "deleteMany")) {
       bson_parser_doc (parser, "filter", &filter);
       if (!bson_parser_parse (parser, &request_doc, error)) {
          goto done;
       }
 
-      mongoc_bulk_operation_remove_many_with_opts (
-         bulk, filter, bson_parser_get_extra (parser), error);
+      mongoc_bulk_operation_remove_many_with_opts (bulk, filter, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "replaceOne")) {
       bson_parser_doc (parser, "filter", &filter);
       bson_parser_doc (parser, "replacement", &replacement);
@@ -1307,8 +1186,7 @@ bulk_op_append (mongoc_bulk_operation_t *bulk,
          goto done;
       }
 
-      mongoc_bulk_operation_replace_one_with_opts (
-         bulk, filter, replacement, bson_parser_get_extra (parser), error);
+      mongoc_bulk_operation_replace_one_with_opts (bulk, filter, replacement, bson_parser_get_extra (parser), error);
    }
 
    ret = true;
@@ -1318,10 +1196,7 @@ done:
 }
 
 static bool
-operation_bulk_write (test_t *test,
-                      operation_t *op,
-                      result_t *result,
-                      bson_error_t *error)
+operation_bulk_write (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1393,10 +1268,7 @@ done:
 }
 
 static bool
-operation_count_documents (test_t *test,
-                           operation_t *op,
-                           result_t *result,
-                           bson_error_t *error)
+operation_count_documents (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1428,8 +1300,7 @@ operation_count_documents (test_t *test,
    }
 
    bson_destroy (&op_reply);
-   op_ret = mongoc_collection_count_documents (
-      coll, filter, opts, NULL /* read prefs */, &op_reply, &op_error);
+   op_ret = mongoc_collection_count_documents (coll, filter, opts, NULL /* read prefs */, &op_reply, &op_error);
 
    if (op_ret != -1) {
       val = bson_val_from_int64 (op_ret);
@@ -1447,10 +1318,7 @@ done:
 }
 
 static bool
-operation_create_find_cursor (test_t *test,
-                              operation_t *op,
-                              result_t *result,
-                              bson_error_t *error)
+operation_create_find_cursor (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1481,8 +1349,7 @@ operation_create_find_cursor (test_t *test,
       }
    }
 
-   cursor = mongoc_collection_find_with_opts (
-      coll, filter, opts, NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (coll, filter, opts, NULL /* read prefs */);
 
    mongoc_cursor_next (cursor, &first_result);
 
@@ -1496,11 +1363,7 @@ operation_create_find_cursor (test_t *test,
       goto done;
    }
 
-   if (!entity_map_add_findcursor (test->entity_map,
-                                   op->save_result_as_entity,
-                                   cursor,
-                                   first_result,
-                                   error)) {
+   if (!entity_map_add_findcursor (test->entity_map, op->save_result_as_entity, cursor, first_result, error)) {
       goto done;
    }
 
@@ -1511,10 +1374,7 @@ done:
 }
 
 static bool
-operation_create_index (test_t *test,
-                        operation_t *op,
-                        result_t *result,
-                        bson_error_t *error)
+operation_create_index (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1557,8 +1417,7 @@ operation_create_index (test_t *test,
    }
 
    im = mongoc_index_model_new (keys, index_opts);
-   mongoc_collection_create_indexes_with_opts (
-      coll, &im, 1, opts, &op_reply, &op_error);
+   mongoc_collection_create_indexes_with_opts (coll, &im, 1, opts, &op_reply, &op_error);
 
    MONGOC_DEBUG ("running createIndexes: %s", tmp_json (create_indexes));
 
@@ -1579,10 +1438,7 @@ done:
 }
 
 static bool
-operation_delete_one (test_t *test,
-                      operation_t *op,
-                      result_t *result,
-                      bson_error_t *error)
+operation_delete_one (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1625,10 +1481,7 @@ done:
 }
 
 static bool
-operation_delete_many (test_t *test,
-                       operation_t *op,
-                       result_t *result,
-                       bson_error_t *error)
+operation_delete_many (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1671,10 +1524,7 @@ done:
 }
 
 static bool
-operation_distinct (test_t *test,
-                    operation_t *op,
-                    result_t *result,
-                    bson_error_t *error)
+operation_distinct (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1706,18 +1556,11 @@ operation_distinct (test_t *test,
       goto done;
    }
 
-   distinct = BCON_NEW ("distinct",
-                        mongoc_collection_get_name (coll),
-                        "key",
-                        BCON_UTF8 (field_name),
-                        "query",
-                        "{",
-                        &filter,
-                        "}");
+   distinct = BCON_NEW (
+      "distinct", mongoc_collection_get_name (coll), "key", BCON_UTF8 (field_name), "query", "{", &filter, "}");
 
    bson_destroy (&op_reply);
-   mongoc_collection_read_command_with_opts (
-      coll, distinct, NULL /* read prefs */, opts, &op_reply, &op_error);
+   mongoc_collection_read_command_with_opts (coll, distinct, NULL /* read prefs */, opts, &op_reply, &op_error);
 
    result_from_distinct (result, &op_reply, &op_error);
 
@@ -1731,10 +1574,7 @@ done:
 }
 
 static bool
-operation_estimated_document_count (test_t *test,
-                                    operation_t *op,
-                                    result_t *result,
-                                    bson_error_t *error)
+operation_estimated_document_count (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1764,8 +1604,7 @@ operation_estimated_document_count (test_t *test,
    }
 
    bson_destroy (&op_reply);
-   op_ret = mongoc_collection_estimated_document_count (
-      coll, opts, NULL /* read prefs */, &op_reply, &op_error);
+   op_ret = mongoc_collection_estimated_document_count (coll, opts, NULL /* read prefs */, &op_reply, &op_error);
 
    if (op_ret != -1) {
       val = bson_val_from_int64 (op_ret);
@@ -1783,10 +1622,7 @@ done:
 }
 
 static bool
-operation_find (test_t *test,
-                operation_t *op,
-                result_t *result,
-                bson_error_t *error)
+operation_find (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1814,8 +1650,7 @@ operation_find (test_t *test,
       }
    }
 
-   cursor = mongoc_collection_find_with_opts (
-      coll, filter, opts, NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (coll, filter, opts, NULL /* read prefs */);
 
    result_from_cursor (result, cursor);
 
@@ -1828,10 +1663,7 @@ done:
 }
 
 static bool
-operation_find_one_and_update (test_t *test,
-                               operation_t *op,
-                               result_t *result,
-                               bson_error_t *error)
+operation_find_one_and_update (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1873,8 +1705,7 @@ operation_find_one_and_update (test_t *test,
    mongoc_find_and_modify_opts_append (opts, session_opts);
 
    bson_destroy (&op_reply);
-   mongoc_collection_find_and_modify_with_opts (
-      coll, filter, opts, &op_reply, &op_error);
+   mongoc_collection_find_and_modify_with_opts (coll, filter, opts, &op_reply, &op_error);
 
    if (bson_iter_init_find (&iter, &op_reply, "value")) {
       val = bson_val_from_iter (&iter);
@@ -1892,10 +1723,7 @@ done:
 }
 
 static bool
-operation_find_one_and_replace (test_t *test,
-                                operation_t *op,
-                                result_t *result,
-                                bson_error_t *error)
+operation_find_one_and_replace (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1940,8 +1768,7 @@ operation_find_one_and_replace (test_t *test,
    mongoc_find_and_modify_opts_append (opts, session_opts);
 
    bson_destroy (&op_reply);
-   mongoc_collection_find_and_modify_with_opts (
-      coll, filter, opts, &op_reply, &op_error);
+   mongoc_collection_find_and_modify_with_opts (coll, filter, opts, &op_reply, &op_error);
 
    if (bson_iter_init_find (&iter, &op_reply, "value")) {
       val = bson_val_from_iter (&iter);
@@ -1959,10 +1786,7 @@ done:
 }
 
 static bool
-operation_find_one_and_delete (test_t *test,
-                               operation_t *op,
-                               result_t *result,
-                               bson_error_t *error)
+operation_find_one_and_delete (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -2000,8 +1824,7 @@ operation_find_one_and_delete (test_t *test,
    mongoc_find_and_modify_opts_append (opts, session_opts);
 
    bson_destroy (&op_reply);
-   mongoc_collection_find_and_modify_with_opts (
-      coll, filter, opts, &op_reply, &op_error);
+   mongoc_collection_find_and_modify_with_opts (coll, filter, opts, &op_reply, &op_error);
 
    if (bson_iter_init_find (&iter, &op_reply, "value")) {
       val = bson_val_from_iter (&iter);
@@ -2019,10 +1842,7 @@ done:
 }
 
 static bool
-operation_insert_many (test_t *test,
-                       operation_t *op,
-                       result_t *result,
-                       bson_error_t *error)
+operation_insert_many (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -2071,8 +1891,7 @@ operation_insert_many (test_t *test,
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_insert_many (
-      coll, (const bson_t **) docs, n_docs, opts, &op_reply, &op_error);
+   mongoc_collection_insert_many (coll, (const bson_t **) docs, n_docs, opts, &op_reply, &op_error);
    result_from_insert_many (result, &op_reply, &op_error);
    ret = true;
 done:
@@ -2089,10 +1908,7 @@ done:
 }
 
 static bool
-operation_insert_one (test_t *test,
-                      operation_t *op,
-                      result_t *result,
-                      bson_error_t *error)
+operation_insert_one (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -2135,10 +1951,7 @@ done:
 }
 
 static bool
-operation_replace_one (test_t *test,
-                       operation_t *op,
-                       result_t *result,
-                       bson_error_t *error)
+operation_replace_one (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -2170,8 +1983,7 @@ operation_replace_one (test_t *test,
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_replace_one (
-      coll, filter, replacement, opts, &op_reply, &op_error);
+   mongoc_collection_replace_one (coll, filter, replacement, opts, &op_reply, &op_error);
 
    result_from_update_or_replace (result, &op_reply, &op_error);
 
@@ -2184,10 +1996,7 @@ done:
 }
 
 static bool
-operation_update_one (test_t *test,
-                      operation_t *op,
-                      result_t *result,
-                      bson_error_t *error)
+operation_update_one (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -2219,8 +2028,7 @@ operation_update_one (test_t *test,
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_update_one (
-      coll, filter, update, opts, &op_reply, &op_error);
+   mongoc_collection_update_one (coll, filter, update, opts, &op_reply, &op_error);
 
    result_from_update_or_replace (result, &op_reply, &op_error);
 
@@ -2233,10 +2041,7 @@ done:
 }
 
 static bool
-operation_update_many (test_t *test,
-                       operation_t *op,
-                       result_t *result,
-                       bson_error_t *error)
+operation_update_many (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -2268,8 +2073,7 @@ operation_update_many (test_t *test,
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_update_many (
-      coll, filter, update, opts, &op_reply, &op_error);
+   mongoc_collection_update_many (coll, filter, update, opts, &op_reply, &op_error);
 
    result_from_update_or_replace (result, &op_reply, &op_error);
 
@@ -2282,10 +2086,7 @@ done:
 }
 
 static bool
-operation_iterate_until_document_or_error (test_t *test,
-                                           operation_t *op,
-                                           result_t *result,
-                                           bson_error_t *error)
+operation_iterate_until_document_or_error (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_change_stream_t *changestream = NULL;
@@ -2302,28 +2103,24 @@ operation_iterate_until_document_or_error (test_t *test,
    }
 
    if (strcmp ("changestream", entity->type) == 0) {
-      changestream =
-         entity_map_get_changestream (test->entity_map, op->object, error);
+      changestream = entity_map_get_changestream (test->entity_map, op->object, error);
       if (!changestream) {
          goto done;
       }
 
       /* Loop until error or document is returned. */
       while (!mongoc_change_stream_next (changestream, &doc)) {
-         if (mongoc_change_stream_error_document (
-                changestream, &op_error, &op_reply)) {
+         if (mongoc_change_stream_error_document (changestream, &op_error, &op_reply)) {
             break;
          }
       }
    } else {
-      findcursor =
-         entity_map_get_findcursor (test->entity_map, op->object, error);
+      findcursor = entity_map_get_findcursor (test->entity_map, op->object, error);
       if (!findcursor) {
          goto done;
       }
 
-      entity_findcursor_iterate_until_document_or_error (
-         findcursor, &doc, &op_error, &op_reply);
+      entity_findcursor_iterate_until_document_or_error (findcursor, &doc, &op_error, &op_reply);
    }
 
    if (NULL != doc) {
@@ -2339,10 +2136,7 @@ done:
 }
 
 static bool
-operation_close (test_t *test,
-                 operation_t *op,
-                 result_t *result,
-                 bson_error_t *error)
+operation_close (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    entity_t *entity;
@@ -2351,10 +2145,8 @@ operation_close (test_t *test,
       goto done;
    }
 
-   if (0 != strcmp (entity->type, "findcursor") &&
-       0 != strcmp (entity->type, "changestream")) {
-      test_set_error (
-         error, "attempting to close an unsupported entity: %s", entity->type);
+   if (0 != strcmp (entity->type, "findcursor") && 0 != strcmp (entity->type, "changestream")) {
+      test_set_error (error, "attempting to close an unsupported entity: %s", entity->type);
       goto done;
    }
 
@@ -2368,10 +2160,7 @@ done:
 }
 
 static bool
-operation_drop_index (test_t *test,
-                      operation_t *op,
-                      result_t *result,
-                      bson_error_t *error)
+operation_drop_index (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    entity_t *entity;
@@ -2411,10 +2200,7 @@ done:
 }
 
 static bool
-operation_failpoint (test_t *test,
-                     operation_t *op,
-                     result_t *result,
-                     bson_error_t *error)
+operation_failpoint (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = NULL;
@@ -2441,16 +2227,11 @@ operation_failpoint (test_t *test,
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
-   mongoc_client_command_simple (
-      client, "admin", failpoint, rp, &op_reply, &op_error);
+   mongoc_client_command_simple (client, "admin", failpoint, rp, &op_reply, &op_error);
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
-   register_failpoint (
-      test,
-      (char *) bson_lookup_utf8 (failpoint, "configureFailPoint"),
-      client_id,
-      0);
+   register_failpoint (test, (char *) bson_lookup_utf8 (failpoint, "configureFailPoint"), client_id, 0);
 
    ret = true;
 done:
@@ -2461,10 +2242,7 @@ done:
 }
 
 static bool
-operation_targeted_failpoint (test_t *test,
-                              operation_t *op,
-                              result_t *result,
-                              bson_error_t *error)
+operation_targeted_failpoint (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = NULL;
@@ -2488,8 +2266,7 @@ operation_targeted_failpoint (test_t *test,
       goto done;
    }
 
-   client_id = entity_map_get_session_client_id (
-      test->entity_map, op->session_id, error);
+   client_id = entity_map_get_session_client_id (test->entity_map, op->session_id, error);
    if (!client_id) {
       goto done;
    }
@@ -2501,24 +2278,18 @@ operation_targeted_failpoint (test_t *test,
 
    server_id = mongoc_client_session_get_server_id (op->session);
    if (0 == server_id) {
-      test_set_error (
-         error, "expected session %s to be pinned but was not", op->session_id);
+      test_set_error (error, "expected session %s to be pinned but was not", op->session_id);
       goto done;
    }
 
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
-   mongoc_client_command_simple_with_server_id (
-      client, "admin", failpoint, rp, server_id, &op_reply, &op_error);
+   mongoc_client_command_simple_with_server_id (client, "admin", failpoint, rp, server_id, &op_reply, &op_error);
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
-   register_failpoint (
-      test,
-      (char *) bson_lookup_utf8 (failpoint, "configureFailPoint"),
-      client_id,
-      server_id);
+   register_failpoint (test, (char *) bson_lookup_utf8 (failpoint, "configureFailPoint"), client_id, server_id);
 
    ret = true;
 done:
@@ -2529,10 +2300,7 @@ done:
 }
 
 static bool
-operation_delete (test_t *test,
-                  operation_t *op,
-                  result_t *result,
-                  bson_error_t *error)
+operation_delete (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_gridfs_bucket_t *bucket = NULL;
@@ -2551,8 +2319,7 @@ operation_delete (test_t *test,
       goto done;
    }
 
-   mongoc_gridfs_bucket_delete_by_id (
-      bucket, bson_val_to_value (id), &op_error);
+   mongoc_gridfs_bucket_delete_by_id (bucket, bson_val_to_value (id), &op_error);
    result_from_val_and_reply (result, NULL, NULL, &op_error);
 
    ret = true;
@@ -2562,10 +2329,7 @@ done:
 }
 
 static bool
-operation_download (test_t *test,
-                    operation_t *op,
-                    result_t *result,
-                    bson_error_t *error)
+operation_download (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_gridfs_bucket_t *bucket = NULL;
@@ -2590,12 +2354,10 @@ operation_download (test_t *test,
       goto done;
    }
 
-   stream = mongoc_gridfs_bucket_open_download_stream (
-      bucket, bson_val_to_value (id), &op_error);
+   stream = mongoc_gridfs_bucket_open_download_stream (bucket, bson_val_to_value (id), &op_error);
 
    if (stream) {
-      while ((bytes_read =
-                 mongoc_stream_read (stream, buf, sizeof (buf), 1, 0)) > 0) {
+      while ((bytes_read = mongoc_stream_read (stream, buf, sizeof (buf), 1, 0)) > 0) {
          ASSERT (bson_in_range_signed (uint32_t, bytes_read));
          _mongoc_array_append_vals (&all_bytes, buf, (uint32_t) bytes_read);
       }
@@ -2616,10 +2378,7 @@ done:
 }
 
 static bool
-operation_upload (test_t *test,
-                  operation_t *op,
-                  result_t *result,
-                  bson_error_t *error)
+operation_upload (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_gridfs_bucket_t *bucket = NULL;
@@ -2644,8 +2403,7 @@ operation_upload (test_t *test,
       goto done;
    }
 
-   stream = mongoc_gridfs_bucket_open_upload_stream (
-      bucket, filename, bson_parser_get_extra (bp), &file_id, &op_error);
+   stream = mongoc_gridfs_bucket_open_upload_stream (bucket, filename, bson_parser_get_extra (bp), &file_id, &op_error);
 
    if (stream) {
       size_t total_written = 0u;
@@ -2653,17 +2411,14 @@ operation_upload (test_t *test,
       uint32_t source_bytes_len;
       bson_iter_t iter;
 
-      if (!bson_iter_init_find (&iter, source, "$$hexBytes") ||
-          !BSON_ITER_HOLDS_UTF8 (&iter)) {
+      if (!bson_iter_init_find (&iter, source, "$$hexBytes") || !BSON_ITER_HOLDS_UTF8 (&iter)) {
          test_set_error (error, "$$hexBytes not found in source data");
          goto done;
       }
 
-      source_bytes =
-         hex_to_bin (bson_iter_utf8 (&iter, NULL), &source_bytes_len);
+      source_bytes = hex_to_bin (bson_iter_utf8 (&iter, NULL), &source_bytes_len);
       while (total_written < source_bytes_len) {
-         const ssize_t bytes_written = mongoc_stream_write (
-            stream, source_bytes, source_bytes_len - total_written, 0);
+         const ssize_t bytes_written = mongoc_stream_write (stream, source_bytes, source_bytes_len - total_written, 0);
          if (bytes_written < 0) {
             break;
          }
@@ -2685,11 +2440,7 @@ done:
 }
 
 static bool
-assert_session_dirty_helper (test_t *test,
-                             operation_t *op,
-                             result_t *result,
-                             bool check_dirty,
-                             bson_error_t *error)
+assert_session_dirty_helper (test_t *test, operation_t *op, result_t *result, bool check_dirty, bson_error_t *error)
 {
    bool ret = false;
 
@@ -2701,9 +2452,7 @@ assert_session_dirty_helper (test_t *test,
    }
 
    if (check_dirty != mongoc_client_session_get_dirty (op->session)) {
-      test_set_error (error,
-                      "expected session to%s be dirty but was not",
-                      check_dirty ? "" : " not");
+      test_set_error (error, "expected session to%s be dirty but was not", check_dirty ? "" : " not");
       goto done;
    }
 
@@ -2714,19 +2463,13 @@ done:
    return ret;
 }
 static bool
-operation_assert_session_not_dirty (test_t *test,
-                                    operation_t *op,
-                                    result_t *result,
-                                    bson_error_t *error)
+operation_assert_session_not_dirty (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    return assert_session_dirty_helper (test, op, result, false, error);
 }
 
 static bool
-operation_assert_session_dirty (test_t *test,
-                                operation_t *op,
-                                result_t *result,
-                                bson_error_t *error)
+operation_assert_session_dirty (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    return assert_session_dirty_helper (test, op, result, true, error);
 }
@@ -2746,11 +2489,7 @@ next_started_event (event_t *iter)
 }
 
 static bool
-assert_lsid_on_last_two_commands (test_t *test,
-                                  operation_t *op,
-                                  result_t *result,
-                                  bool check_same,
-                                  bson_error_t *error)
+assert_lsid_on_last_two_commands (test_t *test, operation_t *op, result_t *result, bool check_same, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = NULL;
@@ -2788,27 +2527,19 @@ assert_lsid_on_last_two_commands (test_t *test,
    }
 
    if (NULL == a || NULL == b) {
-      test_set_error (error,
-                      "unable to find two commandStartedEvents on client: %s",
-                      client_id);
+      test_set_error (error, "unable to find two commandStartedEvents on client: %s", client_id);
       goto done;
    }
 
    if (!bson_iter_init_find (&iter, a->command, "lsid")) {
-      test_set_error (
-         error,
-         "unable to find lsid in second to last commandStartedEvent: %s",
-         tmp_json (a->command));
+      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (a->command));
       goto done;
    }
 
    bson_iter_bson (&iter, &a_lsid);
 
    if (!bson_iter_init_find (&iter, b->command, "lsid")) {
-      test_set_error (
-         error,
-         "unable to find lsid in second to last commandStartedEvent: %s",
-         tmp_json (b->command));
+      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (b->command));
       goto done;
    }
 
@@ -2832,10 +2563,7 @@ done:
 }
 
 static bool
-operation_assert_same_lsid_on_last_two_commands (test_t *test,
-                                                 operation_t *op,
-                                                 result_t *result,
-                                                 bson_error_t *error)
+operation_assert_same_lsid_on_last_two_commands (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    return assert_lsid_on_last_two_commands (test, op, result, true, error);
 }
@@ -2850,10 +2578,7 @@ operation_assert_different_lsid_on_last_two_commands (test_t *test,
 }
 
 static bool
-operation_end_session (test_t *test,
-                       operation_t *op,
-                       result_t *result,
-                       bson_error_t *error)
+operation_end_session (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
 
@@ -2868,10 +2593,7 @@ done:
 }
 
 static bool
-operation_start_transaction (test_t *test,
-                             operation_t *op,
-                             result_t *result,
-                             bson_error_t *error)
+operation_start_transaction (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_client_session_t *session = NULL;
@@ -2934,10 +2656,7 @@ transaction_state_to_string (mongoc_transaction_state_t tstate)
 }
 
 static bool
-operation_assert_session_transaction_state (test_t *test,
-                                            operation_t *op,
-                                            result_t *result,
-                                            bson_error_t *error)
+operation_assert_session_transaction_state (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = NULL;
@@ -2961,8 +2680,7 @@ operation_assert_session_transaction_state (test_t *test,
    state = mongoc_client_session_get_transaction_state (op->session);
    actual = transaction_state_to_string (state);
    if (0 != strcmp (expected, actual)) {
-      test_set_error (
-         error, "expected state: %s, got state: %s", expected, actual);
+      test_set_error (error, "expected state: %s, got state: %s", expected, actual);
       goto done;
    }
 
@@ -2975,11 +2693,7 @@ done:
 }
 
 static bool
-assert_collection_exists (test_t *test,
-                          operation_t *op,
-                          result_t *result,
-                          bool expect_exist,
-                          bson_error_t *error)
+assert_collection_exists (test_t *test, operation_t *op, result_t *result, bool expect_exist, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = NULL;
@@ -2997,8 +2711,7 @@ assert_collection_exists (test_t *test,
       goto done;
    }
 
-   db = mongoc_client_get_database (
-      test->test_file->test_runner->internal_client, database_name);
+   db = mongoc_client_get_database (test->test_file->test_runner->internal_client, database_name);
    head = mongoc_database_get_collection_names_with_opts (db, NULL, &op_error);
    for (iter = head; *iter; iter++) {
       if (0 == strcmp (*iter, collection_name)) {
@@ -3027,28 +2740,19 @@ done:
 }
 
 static bool
-operation_assert_collection_exists (test_t *test,
-                                    operation_t *op,
-                                    result_t *result,
-                                    bson_error_t *error)
+operation_assert_collection_exists (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    return assert_collection_exists (test, op, result, true, error);
 }
 
 static bool
-operation_assert_collection_not_exists (test_t *test,
-                                        operation_t *op,
-                                        result_t *result,
-                                        bson_error_t *error)
+operation_assert_collection_not_exists (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    return assert_collection_exists (test, op, result, false, error);
 }
 
 static bool
-operation_commit_transaction (test_t *test,
-                              operation_t *op,
-                              result_t *result,
-                              bson_error_t *error)
+operation_commit_transaction (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_client_session_t *session = NULL;
@@ -3071,10 +2775,7 @@ done:
 }
 
 static bool
-operation_abort_transaction (test_t *test,
-                             operation_t *op,
-                             result_t *result,
-                             bson_error_t *error)
+operation_abort_transaction (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongoc_client_session_t *session = NULL;
@@ -3094,11 +2795,7 @@ done:
 }
 
 static bool
-assert_index_exists (test_t *test,
-                     operation_t *op,
-                     result_t *result,
-                     bool expect_exist,
-                     bson_error_t *error)
+assert_index_exists (test_t *test, operation_t *op, result_t *result, bool expect_exist, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = NULL;
@@ -3120,10 +2817,7 @@ assert_index_exists (test_t *test,
       goto done;
    }
 
-   coll = mongoc_client_get_collection (
-      test->test_file->test_runner->internal_client,
-      database_name,
-      collection_name);
+   coll = mongoc_client_get_collection (test->test_file->test_runner->internal_client, database_name, collection_name);
    cursor = mongoc_collection_find_indexes_with_opts (coll, NULL);
    while (mongoc_cursor_next (cursor, &index)) {
       bson_iter_t iter;
@@ -3166,19 +2860,13 @@ done:
 }
 
 static bool
-operation_assert_index_exists (test_t *test,
-                               operation_t *op,
-                               result_t *result,
-                               bson_error_t *error)
+operation_assert_index_exists (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    return assert_index_exists (test, op, result, true, error);
 }
 
 static bool
-operation_assert_index_not_exists (test_t *test,
-                                   operation_t *op,
-                                   result_t *result,
-                                   bson_error_t *error)
+operation_assert_index_not_exists (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    return assert_index_exists (test, op, result, false, error);
 }
@@ -3189,10 +2877,7 @@ typedef struct {
 } txn_ctx_t;
 
 static bool
-with_transaction_cb (mongoc_client_session_t *session,
-                     void *ctx,
-                     bson_t **reply,
-                     bson_error_t *error)
+with_transaction_cb (mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error_t *error)
 {
    bool ret = false;
    bson_iter_t iter;
@@ -3220,10 +2905,7 @@ done:
 }
 
 static bool
-operation_with_transaction (test_t *test,
-                            operation_t *op,
-                            result_t *result,
-                            bson_error_t *error)
+operation_with_transaction (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = NULL;
@@ -3265,8 +2947,7 @@ operation_with_transaction (test_t *test,
 
    tctx.test = test;
    bson_destroy (&op_reply);
-   mongoc_client_session_with_transaction (
-      session, with_transaction_cb, topts, &tctx, &op_reply, &op_error);
+   mongoc_client_session_with_transaction (session, with_transaction_cb, topts, &tctx, &op_reply, &op_error);
 
    result_from_val_and_reply (result, NULL, &op_reply, &op_error);
 
@@ -3279,11 +2960,7 @@ done:
 }
 
 static bool
-assert_session_pinned (test_t *test,
-                       operation_t *op,
-                       result_t *result,
-                       bool expect_pinned,
-                       bson_error_t *error)
+assert_session_pinned (test_t *test, operation_t *op, result_t *result, bool expect_pinned, bson_error_t *error)
 {
    bool ret = false;
    bool actual_pinned = false;
@@ -3314,27 +2991,19 @@ done:
 }
 
 static bool
-operation_assert_session_pinned (test_t *test,
-                                 operation_t *op,
-                                 result_t *result,
-                                 bson_error_t *error)
+operation_assert_session_pinned (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    return assert_session_pinned (test, op, result, true, error);
 }
 
 static bool
-operation_assert_session_unpinned (test_t *test,
-                                   operation_t *op,
-                                   result_t *result,
-                                   bson_error_t *error)
+operation_assert_session_unpinned (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    return assert_session_pinned (test, op, result, false, error);
 }
 
 static bool
-create_loop_bson_array_entity (entity_map_t *em,
-                               const char *id,
-                               bson_error_t *error)
+create_loop_bson_array_entity (entity_map_t *em, const char *id, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (em);
    BSON_ASSERT (id || true);
@@ -3362,16 +3031,13 @@ create_loop_bson_array_entity (entity_map_t *em,
    // If the entity exists and is of a different type, the test runner MUST
    // raise an error.
    else {
-      test_set_error (
-         error, "loop entity %s exists but is not of type BSON array", id);
+      test_set_error (error, "loop entity %s exists but is not of type BSON array", id);
       return false;
    }
 }
 
 static bool
-create_loop_size_t_entity (entity_map_t *em,
-                           const char *id,
-                           bson_error_t *error)
+create_loop_size_t_entity (entity_map_t *em, const char *id, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (em);
    BSON_ASSERT (id || true);
@@ -3386,8 +3052,7 @@ create_loop_size_t_entity (entity_map_t *em,
    // If the entity of the specified name already exists, the test runner MUST
    // raise an error.
    if (entity) {
-      test_set_error (
-         error, "loop entity %s already exists when it should not", id);
+      test_set_error (error, "loop entity %s already exists when it should not", id);
       return false;
    }
 
@@ -3412,10 +3077,7 @@ increment_loop_counter (entity_map_t *em, const char *id)
 }
 
 static bool
-append_loop_error (entity_map_t *em,
-                   const char *id,
-                   bson_error_t *op_error,
-                   bson_error_t *error)
+append_loop_error (entity_map_t *em, const char *id, bson_error_t *op_error, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (em);
    BSON_ASSERT (id || true);
@@ -3449,10 +3111,7 @@ append_loop_error (entity_map_t *em,
 volatile sig_atomic_t operation_loop_terminated = false;
 
 static bool
-operation_loop (test_t *test,
-                operation_t *op,
-                result_t *result,
-                bson_error_t *error)
+operation_loop (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
 
@@ -3462,8 +3121,7 @@ operation_loop (test_t *test,
    BSON_ASSERT_PARAM (error);
 
    if (test->loop_operation_executed) {
-      test_set_error (error,
-                      "test should not contain more than one loop operation");
+      test_set_error (error, "test should not contain more than one loop operation");
       return false;
    } else {
       test->loop_operation_executed = true;
@@ -3484,12 +3142,9 @@ operation_loop (test_t *test,
 
    bson_parser_array (parser, "operations", &operations);
    bson_parser_utf8_optional (parser, "storeErrorsAsEntity", &errors_as_entity);
-   bson_parser_utf8_optional (
-      parser, "storeFailuresAsEntity", &failures_as_entity);
-   bson_parser_utf8_optional (
-      parser, "storeSuccessesAsEntity", &successes_as_entity);
-   bson_parser_utf8_optional (
-      parser, "storeIterationsAsEntity", &iterations_as_entity);
+   bson_parser_utf8_optional (parser, "storeFailuresAsEntity", &failures_as_entity);
+   bson_parser_utf8_optional (parser, "storeSuccessesAsEntity", &successes_as_entity);
+   bson_parser_utf8_optional (parser, "storeIterationsAsEntity", &iterations_as_entity);
 
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
@@ -3516,23 +3171,19 @@ operation_loop (test_t *test,
       }
    }
 
-   if (!create_loop_bson_array_entity (
-          test->entity_map, errors_as_entity, error)) {
+   if (!create_loop_bson_array_entity (test->entity_map, errors_as_entity, error)) {
       goto done;
    }
 
-   if (!create_loop_bson_array_entity (
-          test->entity_map, failures_as_entity, error)) {
+   if (!create_loop_bson_array_entity (test->entity_map, failures_as_entity, error)) {
       goto done;
    }
 
-   if (!create_loop_size_t_entity (
-          test->entity_map, successes_as_entity, error)) {
+   if (!create_loop_size_t_entity (test->entity_map, successes_as_entity, error)) {
       goto done;
    }
 
-   if (!create_loop_size_t_entity (
-          test->entity_map, iterations_as_entity, error)) {
+   if (!create_loop_size_t_entity (test->entity_map, iterations_as_entity, error)) {
       goto done;
    }
 
@@ -3562,14 +3213,12 @@ operation_loop (test_t *test,
          } else {
             // Categorize errors triggered by a sub-operation as a "failure".
             // If this operation fails, categorize as an "error" instead.
-            (void) append_loop_error (
-               test->entity_map, failures_as_entity, &op_error, error);
+            (void) append_loop_error (test->entity_map, failures_as_entity, &op_error, error);
 
             // If neither storeErrorsAsEntity nor storeFailuresAsEntity are
             // specified, the loop MUST terminate and raise the error/failure
             // (i.e. the error/failure will interrupt the test).
-            operation_loop_terminated =
-               operation_loop_terminated || should_propagate;
+            operation_loop_terminated = operation_loop_terminated || should_propagate;
 
             // If, in the course of executing sub-operations, a sub-operation
             // yields an error or failure, the test runner MUST NOT execute
@@ -3584,15 +3233,12 @@ operation_loop (test_t *test,
          // We have a problem if we can't store errors without triggering a new
          // error. Terminate the test suite early instead of looping with an
          // irrecoverable state.
-         ASSERT_OR_PRINT (append_loop_error (
-                             test->entity_map, errors_as_entity, error, error),
-                          (*error));
+         ASSERT_OR_PRINT (append_loop_error (test->entity_map, errors_as_entity, error, error), (*error));
 
          // If neither storeErrorsAsEntity nor storeFailuresAsEntity are
          // specified, the loop MUST terminate and raise the error/failure
          // (i.e. the error/failure will interrupt the test).
-         operation_loop_terminated =
-            operation_loop_terminated || should_propagate;
+         operation_loop_terminated = operation_loop_terminated || should_propagate;
       }
    }
    MONGOC_DEBUG ("running loop operations... done.");
@@ -3607,10 +3253,7 @@ done:
 }
 
 static bool
-operation_assert_number_connections_checked_out (test_t *test,
-                                                 operation_t *op,
-                                                 result_t *result,
-                                                 bson_error_t *error)
+operation_assert_number_connections_checked_out (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    BSON_UNUSED (test);
    BSON_UNUSED (op);
@@ -3623,10 +3266,7 @@ operation_assert_number_connections_checked_out (test_t *test,
 }
 
 static bool
-operation_rename (test_t *test,
-                  operation_t *op,
-                  result_t *result,
-                  bson_error_t *error)
+operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    // First validate the arguments
    const char *object = op->object;
@@ -3671,10 +3311,7 @@ done:
 }
 
 static bool
-operation_createSearchIndex (test_t *test,
-                             operation_t *op,
-                             result_t *result,
-                             bson_error_t *error)
+operation_createSearchIndex (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = bson_parser_new ();
@@ -3696,13 +3333,10 @@ operation_createSearchIndex (test_t *test,
    }
 
    // Build command.
-   bsonBuildAppend (*cmd,
-                    kv ("createSearchIndexes", cstr (coll->collection)),
-                    kv ("indexes", array (bson (*model))));
+   bsonBuildAppend (*cmd, kv ("createSearchIndexes", cstr (coll->collection)), kv ("indexes", array (bson (*model))));
    ASSERT (!bsonBuildError);
 
-   mongoc_collection_command_simple (
-      coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
+   mongoc_collection_command_simple (coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
    result_from_val_and_reply (result, NULL, &op_reply, &op_error);
    ret = true;
 done:
@@ -3713,10 +3347,7 @@ done:
 }
 
 static bool
-operation_createSearchIndexes (test_t *test,
-                               operation_t *op,
-                               result_t *result,
-                               bson_error_t *error)
+operation_createSearchIndexes (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = bson_parser_new ();
@@ -3738,13 +3369,10 @@ operation_createSearchIndexes (test_t *test,
    }
 
    // Build command.
-   bsonBuildAppend (*cmd,
-                    kv ("createSearchIndexes", cstr (coll->collection)),
-                    kv ("indexes", bsonArray (*models)));
+   bsonBuildAppend (*cmd, kv ("createSearchIndexes", cstr (coll->collection)), kv ("indexes", bsonArray (*models)));
    ASSERT (!bsonBuildError);
 
-   mongoc_collection_command_simple (
-      coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
+   mongoc_collection_command_simple (coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
    result_from_val_and_reply (result, NULL, &op_reply, &op_error);
    ret = true;
 done:
@@ -3755,10 +3383,7 @@ done:
 }
 
 static bool
-operation_dropSearchIndex (test_t *test,
-                           operation_t *op,
-                           result_t *result,
-                           bson_error_t *error)
+operation_dropSearchIndex (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = bson_parser_new ();
@@ -3780,13 +3405,10 @@ operation_dropSearchIndex (test_t *test,
    }
 
    // Build command.
-   bsonBuildAppend (*cmd,
-                    kv ("dropSearchIndex", cstr (coll->collection)),
-                    kv ("name", cstr (name)));
+   bsonBuildAppend (*cmd, kv ("dropSearchIndex", cstr (coll->collection)), kv ("name", cstr (name)));
    ASSERT (!bsonBuildError);
 
-   mongoc_collection_command_simple (
-      coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
+   mongoc_collection_command_simple (coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
    result_from_val_and_reply (result, NULL, &op_reply, &op_error);
    ret = true;
 done:
@@ -3797,10 +3419,7 @@ done:
 }
 
 static bool
-operation_listSearchIndexes (test_t *test,
-                             operation_t *op,
-                             result_t *result,
-                             bson_error_t *error)
+operation_listSearchIndexes (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = bson_parser_new ();
@@ -3825,20 +3444,14 @@ operation_listSearchIndexes (test_t *test,
    }
 
    // Build command.
-   bsonBuildAppend (
-      *pipeline,
-      kv ("pipeline",
-          array (doc (kv ("$listSearchIndexes",
-                          if (name != NULL,
-                              then (doc (kv ("name", cstr (name)))),
-                              else (doc ())))))));
+   bsonBuildAppend (*pipeline,
+                    kv ("pipeline",
+                        array (doc (kv ("$listSearchIndexes",
+                                        if (name != NULL, then (doc (kv ("name", cstr (name)))), else (doc ())))))));
    ASSERT (!bsonBuildError);
 
-   cursor = mongoc_collection_aggregate (coll,
-                                         MONGOC_QUERY_NONE,
-                                         pipeline,
-                                         aggregateOptions /* opts */,
-                                         NULL /* read_prefs */);
+   cursor = mongoc_collection_aggregate (
+      coll, MONGOC_QUERY_NONE, pipeline, aggregateOptions /* opts */, NULL /* read_prefs */);
 
    result_from_cursor (result, cursor);
    ret = true;
@@ -3850,10 +3463,7 @@ done:
 }
 
 static bool
-operation_updateSearchIndex (test_t *test,
-                             operation_t *op,
-                             result_t *result,
-                             bson_error_t *error)
+operation_updateSearchIndex (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = bson_parser_new ();
@@ -3883,8 +3493,7 @@ operation_updateSearchIndex (test_t *test,
                     if (name != NULL, then (kv ("name", cstr (name)))));
    ASSERT (!bsonBuildError);
 
-   mongoc_collection_command_simple (
-      coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
+   mongoc_collection_command_simple (coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
    result_from_val_and_reply (result, NULL, &op_reply, &op_error);
    ret = true;
 done:
@@ -3960,8 +3569,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"updateSearchIndex", operation_updateSearchIndex},
 
       /* Change stream and cursor operations */
-      {"iterateUntilDocumentOrError",
-       operation_iterate_until_document_or_error},
+      {"iterateUntilDocumentOrError", operation_iterate_until_document_or_error},
       {"close", operation_close},
       {"dropIndex", operation_drop_index},
 
@@ -3970,12 +3578,9 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"targetedFailPoint", operation_targeted_failpoint},
       {"assertSessionDirty", operation_assert_session_dirty},
       {"assertSessionNotDirty", operation_assert_session_not_dirty},
-      {"assertSameLsidOnLastTwoCommands",
-       operation_assert_same_lsid_on_last_two_commands},
-      {"assertDifferentLsidOnLastTwoCommands",
-       operation_assert_different_lsid_on_last_two_commands},
-      {"assertSessionTransactionState",
-       operation_assert_session_transaction_state},
+      {"assertSameLsidOnLastTwoCommands", operation_assert_same_lsid_on_last_two_commands},
+      {"assertDifferentLsidOnLastTwoCommands", operation_assert_different_lsid_on_last_two_commands},
+      {"assertSessionTransactionState", operation_assert_session_transaction_state},
       {"assertCollectionNotExists", operation_assert_collection_not_exists},
       {"assertCollectionExists", operation_assert_collection_exists},
       {"assertIndexNotExists", operation_assert_index_not_exists},
@@ -3983,8 +3588,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"assertSessionPinned", operation_assert_session_pinned},
       {"assertSessionUnpinned", operation_assert_session_unpinned},
       {"loop", operation_loop},
-      {"assertNumberConnectionsCheckedOut",
-       operation_assert_number_connections_checked_out},
+      {"assertNumberConnectionsCheckedOut", operation_assert_number_connections_checked_out},
 
       /* GridFS operations */
       {"delete", operation_delete},
@@ -4012,10 +3616,8 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       bson_t copied;
       mongoc_client_session_t *session = NULL;
 
-      op->session_id =
-         bson_strdup (bson_lookup_utf8 (op->arguments, "session"));
-      session =
-         entity_map_get_session (test->entity_map, op->session_id, error);
+      op->session_id = bson_strdup (bson_lookup_utf8 (op->arguments, "session"));
+      session = entity_map_get_session (test->entity_map, op->session_id, error);
 
       if (!session) {
          goto done;
@@ -4045,22 +3647,14 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
          if (!op_to_fn_map[i].fn (test, op, result, error)) {
             goto done;
          }
-         if (check_result && !result_check (result,
-                                            test->entity_map,
-                                            op->expect_result,
-                                            op->expect_error,
-                                            error)) {
-            test_diagnostics_error_info (
-               "checking for result (%s) / error (%s)",
-               bson_val_to_json (op->expect_result),
-               tmp_json (op->expect_error));
+         if (check_result && !result_check (result, test->entity_map, op->expect_result, op->expect_error, error)) {
+            test_diagnostics_error_info ("checking for result (%s) / error (%s)",
+                                         bson_val_to_json (op->expect_result),
+                                         tmp_json (op->expect_error));
             goto done;
          }
          if (result_get_val (result) != NULL && op->save_result_as_entity) {
-            if (!entity_map_add_bson (test->entity_map,
-                                      op->save_result_as_entity,
-                                      result_get_val (result),
-                                      error)) {
+            if (!entity_map_add_bson (test->entity_map, op->save_result_as_entity, result_get_val (result), error)) {
                goto done;
             }
          }

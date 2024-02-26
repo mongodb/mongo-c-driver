@@ -62,8 +62,7 @@ test_mongoc_cache_insert (void)
 {
    ASN1_GENERALIZEDTIME *this_update_in, *next_update_in;
    ASN1_GENERALIZEDTIME *this_update_out, *next_update_out;
-   int i, size = 5, status = V_OCSP_CERTSTATUS_GOOD,
-          reason = OCSP_REVOKED_STATUS_NOSTATUS;
+   int i, size = 5, status = V_OCSP_CERTSTATUS_GOOD, reason = OCSP_REVOKED_STATUS_NOSTATUS;
 
    CLEAR_CACHE;
 
@@ -73,10 +72,8 @@ test_mongoc_cache_insert (void)
       int s, r;
       OCSP_CERTID *id = create_cert_id (i);
 
-      BSON_ASSERT (!_mongoc_ocsp_cache_get_status (
-         id, &s, &r, &this_update_out, &next_update_out));
-      _mongoc_ocsp_cache_set_resp (
-         id, status, reason, this_update_in, next_update_in);
+      BSON_ASSERT (!_mongoc_ocsp_cache_get_status (id, &s, &r, &this_update_out, &next_update_out));
+      _mongoc_ocsp_cache_set_resp (id, status, reason, this_update_in, next_update_in);
 
       OCSP_CERTID_free (id);
    }
@@ -87,8 +84,7 @@ test_mongoc_cache_insert (void)
       OCSP_CERTID *id = create_cert_id (i);
       int s, r;
 
-      BSON_ASSERT (_mongoc_ocsp_cache_get_status (
-         id, &s, &r, &this_update_out, &next_update_out));
+      BSON_ASSERT (_mongoc_ocsp_cache_get_status (id, &s, &r, &this_update_out, &next_update_out));
 
       BSON_ASSERT (status == s);
       BSON_ASSERT (reason == r);
@@ -115,36 +111,28 @@ test_mongoc_cache_update (void)
    next_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL));
    id = create_cert_id (1);
 
-   _mongoc_ocsp_cache_set_resp (
-      id, V_OCSP_CERTSTATUS_GOOD, 0, NULL, next_update_in);
+   _mongoc_ocsp_cache_set_resp (id, V_OCSP_CERTSTATUS_GOOD, 0, NULL, next_update_in);
    BSON_ASSERT (_mongoc_ocsp_cache_length () == 1);
 
-   BSON_ASSERT (_mongoc_ocsp_cache_get_status (
-      id, &status, &reason, &this_update_out, &next_update_out));
+   BSON_ASSERT (_mongoc_ocsp_cache_get_status (id, &status, &reason, &this_update_out, &next_update_out));
    BSON_ASSERT (status == V_OCSP_CERTSTATUS_GOOD);
 
    ASN1_GENERALIZEDTIME_free (next_update_in);
-   next_update_in = ASN1_GENERALIZEDTIME_set (
-      NULL, time (NULL) + 999 /* some time in the future */);
+   next_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) + 999 /* some time in the future */);
 
-   _mongoc_ocsp_cache_set_resp (
-      id, V_OCSP_CERTSTATUS_REVOKED, 0, NULL, next_update_in);
+   _mongoc_ocsp_cache_set_resp (id, V_OCSP_CERTSTATUS_REVOKED, 0, NULL, next_update_in);
    BSON_ASSERT (_mongoc_ocsp_cache_length () == 1);
 
-   BSON_ASSERT (_mongoc_ocsp_cache_get_status (
-      id, &status, &reason, &this_update_out, &next_update_out));
+   BSON_ASSERT (_mongoc_ocsp_cache_get_status (id, &status, &reason, &this_update_out, &next_update_out));
    BSON_ASSERT (status == V_OCSP_CERTSTATUS_REVOKED);
 
    ASN1_GENERALIZEDTIME_free (next_update_in);
-   next_update_in = ASN1_GENERALIZEDTIME_set (
-      NULL, time (NULL) - 999 /* some time in the past */);
+   next_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) - 999 /* some time in the past */);
 
-   _mongoc_ocsp_cache_set_resp (
-      id, V_OCSP_CERTSTATUS_GOOD, 0, NULL, next_update_in);
+   _mongoc_ocsp_cache_set_resp (id, V_OCSP_CERTSTATUS_GOOD, 0, NULL, next_update_in);
    BSON_ASSERT (_mongoc_ocsp_cache_length () == 1);
 
-   BSON_ASSERT (_mongoc_ocsp_cache_get_status (
-      id, &status, &reason, &this_update_out, &next_update_out));
+   BSON_ASSERT (_mongoc_ocsp_cache_get_status (id, &status, &reason, &this_update_out, &next_update_out));
    BSON_ASSERT (status == V_OCSP_CERTSTATUS_REVOKED);
 
    CLEAR_CACHE;
@@ -165,8 +153,7 @@ test_mongoc_cache_remove_expired_cert (void)
    next_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) - 1);
    this_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) - 999);
 
-   _mongoc_ocsp_cache_set_resp (
-      id, status, reason, this_update_in, next_update_in);
+   _mongoc_ocsp_cache_set_resp (id, status, reason, this_update_in, next_update_in);
 
    BSON_ASSERT (_mongoc_ocsp_cache_length () == 1);
    BSON_ASSERT (!_mongoc_ocsp_cache_get_status (id, NULL, NULL, NULL, NULL));
@@ -184,9 +171,7 @@ test_ocsp_cache_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/OCSPCache/insert", test_mongoc_cache_insert);
    TestSuite_Add (suite, "/OCSPCache/update", test_mongoc_cache_update);
-   TestSuite_Add (suite,
-                  "/OCSPCache/remove_expired_cert",
-                  test_mongoc_cache_remove_expired_cert);
+   TestSuite_Add (suite, "/OCSPCache/remove_expired_cert", test_mongoc_cache_remove_expired_cert);
 }
 #else
 extern int no_mongoc_ocsp;

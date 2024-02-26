@@ -36,8 +36,7 @@ print_pipeline (mongoc_collection_t *collection)
                         "}",
                         "]");
 
-   cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
 
    while (mongoc_cursor_next (cursor, &doc)) {
       str = bson_as_canonical_extended_json (doc, NULL);
@@ -58,8 +57,7 @@ main (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
-   const char *uri_string =
-      "mongodb://localhost:27017/?appname=aggregation-example";
+   const char *uri_string = "mongodb://localhost:27017/?appname=aggregation-example";
    mongoc_uri_t *uri;
    bson_error_t error;
 

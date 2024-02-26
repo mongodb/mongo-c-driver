@@ -17,8 +17,7 @@ int
 main (int argc, char *argv[])
 {
    mongoc_client_t *client = NULL;
-   const char *uri_string =
-      "mongodb://127.0.0.1/?appname=create-indexes-example";
+   const char *uri_string = "mongodb://127.0.0.1/?appname=create-indexes-example";
    mongoc_uri_t *uri = NULL;
    mongoc_collection_t *coll = NULL;
    bson_error_t error;
@@ -27,9 +26,7 @@ main (int argc, char *argv[])
    mongoc_init ();
 
    if (argc > 2) {
-      HANDLE_ERROR (
-         "Unexpected arguments. Expected usage: %s [CONNECTION_STRING]",
-         argv[0]);
+      HANDLE_ERROR ("Unexpected arguments. Expected usage: %s [CONNECTION_STRING]", argv[0]);
    }
 
    if (argc > 1) {
@@ -52,8 +49,7 @@ main (int argc, char *argv[])
       // `keys` represents an ascending index on field `x`.
       bson_t *keys = BCON_NEW ("x", BCON_INT32 (1));
       mongoc_index_model_t *im = mongoc_index_model_new (keys, NULL /* opts */);
-      if (mongoc_collection_create_indexes_with_opts (
-             coll, &im, 1, NULL /* opts */, NULL /* reply */, &error)) {
+      if (mongoc_collection_create_indexes_with_opts (coll, &im, 1, NULL /* opts */, NULL /* reply */, &error)) {
          printf ("Successfully created index\n");
       } else {
          bson_destroy (keys);
@@ -65,8 +61,7 @@ main (int argc, char *argv[])
 
    {
       // List indexes ... begin
-      mongoc_cursor_t *cursor =
-         mongoc_collection_find_indexes_with_opts (coll, NULL /* opts */);
+      mongoc_cursor_t *cursor = mongoc_collection_find_indexes_with_opts (coll, NULL /* opts */);
       printf ("Listing indexes:\n");
       const bson_t *got;
       while (mongoc_cursor_next (cursor, &got)) {
@@ -86,8 +81,7 @@ main (int argc, char *argv[])
       // Drop an index ... begin
       bson_t *keys = BCON_NEW ("x", BCON_INT32 (1));
       char *index_name = mongoc_collection_keys_to_index_string (keys);
-      if (mongoc_collection_drop_index_with_opts (
-             coll, index_name, NULL /* opts */, &error)) {
+      if (mongoc_collection_drop_index_with_opts (coll, index_name, NULL /* opts */, &error)) {
          printf ("Successfully dropped index\n");
       } else {
          bson_free (index_name);

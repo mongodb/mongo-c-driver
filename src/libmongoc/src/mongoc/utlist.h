@@ -519,11 +519,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define LL_FOREACH_SAFE(head, el, tmp) LL_FOREACH_SAFE2 (head, el, tmp, next)
 
-#define LL_FOREACH_SAFE2(head, el, tmp, next) \
-   for ((el) = (head); (el) && (tmp = (el)->next, 1); (el) = tmp)
+#define LL_FOREACH_SAFE2(head, el, tmp, next) for ((el) = (head); (el) && (tmp = (el)->next, 1); (el) = tmp)
 
-#define LL_SEARCH_SCALAR(head, out, field, val) \
-   LL_SEARCH_SCALAR2 (head, out, field, val, next)
+#define LL_SEARCH_SCALAR(head, out, field, val) LL_SEARCH_SCALAR2 (head, out, field, val, next)
 
 #define LL_SEARCH_SCALAR2(head, out, field, val, next) \
    do {                                                \
@@ -675,8 +673,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* this version is safe for deleting the elements during iteration */
 #define DL_FOREACH_SAFE(head, el, tmp) DL_FOREACH_SAFE2 (head, el, tmp, next)
 
-#define DL_FOREACH_SAFE2(head, el, tmp, next) \
-   for ((el) = (head); (el) && (tmp = (el)->next, 1); (el) = tmp)
+#define DL_FOREACH_SAFE2(head, el, tmp, next) for ((el) = (head); (el) && (tmp = (el)->next, 1); (el) = tmp)
 
 /* these are identical to their singly-linked list counterparts */
 #define DL_SEARCH_SCALAR LL_SEARCH_SCALAR
@@ -773,19 +770,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define CDL_FOREACH(head, el) CDL_FOREACH2 (head, el, next)
 
-#define CDL_FOREACH2(head, el, next) \
-   for (el = head; el; el = ((el)->next == head ? 0L : (el)->next))
+#define CDL_FOREACH2(head, el, next) for (el = head; el; el = ((el)->next == head ? 0L : (el)->next))
 
-#define CDL_FOREACH_SAFE(head, el, tmp1, tmp2) \
-   CDL_FOREACH_SAFE2 (head, el, tmp1, tmp2, prev, next)
+#define CDL_FOREACH_SAFE(head, el, tmp1, tmp2) CDL_FOREACH_SAFE2 (head, el, tmp1, tmp2, prev, next)
 
-#define CDL_FOREACH_SAFE2(head, el, tmp1, tmp2, prev, next)       \
-   for ((el) = (head), ((tmp1) = (head) ? ((head)->prev) : NULL); \
-        (el) && ((tmp2) = (el)->next, 1);                         \
+#define CDL_FOREACH_SAFE2(head, el, tmp1, tmp2, prev, next)                                         \
+   for ((el) = (head), ((tmp1) = (head) ? ((head)->prev) : NULL); (el) && ((tmp2) = (el)->next, 1); \
         ((el) = (((el) == (tmp1)) ? 0L : (tmp2))))
 
-#define CDL_SEARCH_SCALAR(head, out, field, val) \
-   CDL_SEARCH_SCALAR2 (head, out, field, val, next)
+#define CDL_SEARCH_SCALAR(head, out, field, val) CDL_SEARCH_SCALAR2 (head, out, field, val, next)
 
 #define CDL_SEARCH_SCALAR2(head, out, field, val, next) \
    do {                                                 \

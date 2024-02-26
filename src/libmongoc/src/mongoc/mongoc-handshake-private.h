@@ -69,8 +69,7 @@ typedef enum {
    MONGOC_MD_FLAG_ENABLE_COMPRESSION = 18,
    MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY = 19,
    MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB = 20,
-   MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI_UNUSED =
-      21, /* CDRIVER-2654 removed this . */
+   MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI_UNUSED = 21, /* CDRIVER-2654 removed this . */
    MONGOC_MD_FLAG_ENABLE_RES_NSEARCH = 22,
    MONGOC_MD_FLAG_ENABLE_RES_NDESTROY = 23,
    MONGOC_MD_FLAG_ENABLE_RES_NCLOSE = 24,
@@ -145,13 +144,11 @@ typedef struct {
 } mongoc_handshake_sasl_supported_mechs_t;
 
 void
-_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri,
-                                               bson_t *hello);
+_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri, bson_t *hello);
 
 void
-_mongoc_handshake_parse_sasl_supported_mechs (
-   const bson_t *hello,
-   mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
+_mongoc_handshake_parse_sasl_supported_mechs (const bson_t *hello,
+                                              mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
 
 BSON_END_DECLS
 

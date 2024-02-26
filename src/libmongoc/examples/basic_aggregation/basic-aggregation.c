@@ -40,8 +40,7 @@ main (int argc, char *argv[])
 
    if (argc != 2) {
       fprintf (stderr, "usage: %s CONNECTION-STRING\n", argv[0]);
-      fprintf (stderr,
-               "the connection string can be of the following forms:\n");
+      fprintf (stderr, "the connection string can be of the following forms:\n");
       fprintf (stderr, "localhost\t\t\t\tlocal machine\n");
       fprintf (stderr, "localhost:27018\t\t\t\tlocal machine on port 27018\n");
       fprintf (stderr,

@@ -36,8 +36,7 @@ static bson_oid_t kObjectIdZero = {{0}};
 const bson_oid_t kZeroServiceId = {{0}};
 
 static bool
-_match_tag_set (const mongoc_server_description_t *sd,
-                bson_iter_t *tag_set_iter);
+_match_tag_set (const mongoc_server_description_t *sd, bson_iter_t *tag_set_iter);
 
 /* Destroy allocated resources within @description, but don't free it */
 void
@@ -117,9 +116,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
  *--------------------------------------------------------------------------
  */
 void
-mongoc_server_description_init (mongoc_server_description_t *sd,
-                                const char *address,
-                                uint32_t id)
+mongoc_server_description_init (mongoc_server_description_t *sd, const char *address, uint32_t id)
 {
    ENTRY;
 
@@ -201,8 +198,7 @@ mongoc_server_description_destroy (mongoc_server_description_t *description)
  *--------------------------------------------------------------------------
  */
 bool
-mongoc_server_description_has_rs_member (
-   const mongoc_server_description_t *server, const char *address)
+mongoc_server_description_has_rs_member (const mongoc_server_description_t *server, const char *address)
 {
    bson_iter_t member_iter;
    const bson_t *rs_members[3];
@@ -217,8 +213,7 @@ mongoc_server_description_has_rs_member (
          BSON_ASSERT (bson_iter_init (&member_iter, rs_members[i]));
 
          while (bson_iter_next (&member_iter)) {
-            if (strcasecmp (address, bson_iter_utf8 (&member_iter, NULL)) ==
-                0) {
+            if (strcasecmp (address, bson_iter_utf8 (&member_iter, NULL)) == 0) {
                return true;
             }
          }
@@ -242,8 +237,7 @@ mongoc_server_description_has_rs_member (
  */
 
 bool
-mongoc_server_description_has_set_version (
-   const mongoc_server_description_t *description)
+mongoc_server_description_has_set_version (const mongoc_server_description_t *description)
 {
    return description->set_version != MONGOC_NO_SET_VERSION;
 }
@@ -262,8 +256,7 @@ mongoc_server_description_has_set_version (
  */
 
 bool
-mongoc_server_description_has_election_id (
-   const mongoc_server_description_t *description)
+mongoc_server_description_has_election_id (const mongoc_server_description_t *description)
 {
    return 0 != bson_oid_compare (&description->election_id, &kObjectIdZero);
 }
@@ -308,8 +301,7 @@ mongoc_server_description_host (const mongoc_server_description_t *description)
 }
 
 int64_t
-mongoc_server_description_last_update_time (
-   const mongoc_server_description_t *description)
+mongoc_server_description_last_update_time (const mongoc_server_description_t *description)
 {
    return description->last_update_time_usec;
 }
@@ -329,8 +321,7 @@ mongoc_server_description_last_update_time (
  */
 
 int64_t
-mongoc_server_description_round_trip_time (
-   const mongoc_server_description_t *description)
+mongoc_server_description_round_trip_time (const mongoc_server_description_t *description)
 {
    return description->round_trip_time_msec;
 }
@@ -394,8 +385,7 @@ mongoc_server_description_type (const mongoc_server_description_t *description)
  */
 
 const bson_t *
-mongoc_server_description_hello_response (
-   const mongoc_server_description_t *description)
+mongoc_server_description_hello_response (const mongoc_server_description_t *description)
 {
    return &description->last_hello_response;
 }
@@ -414,8 +404,7 @@ mongoc_server_description_hello_response (
  */
 
 const bson_t *
-mongoc_server_description_ismaster (
-   const mongoc_server_description_t *description)
+mongoc_server_description_ismaster (const mongoc_server_description_t *description)
 {
    return mongoc_server_description_hello_response (description);
 }
@@ -430,8 +419,7 @@ mongoc_server_description_ismaster (
  *--------------------------------------------------------------------------
  */
 void
-mongoc_server_description_set_state (mongoc_server_description_t *description,
-                                     mongoc_server_description_type_t type)
+mongoc_server_description_set_state (mongoc_server_description_t *description, mongoc_server_description_type_t type)
 {
    description->type = type;
 }
@@ -449,8 +437,7 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
  *--------------------------------------------------------------------------
  */
 void
-mongoc_server_description_set_set_version (
-   mongoc_server_description_t *description, int64_t set_version)
+mongoc_server_description_set_set_version (mongoc_server_description_t *description, int64_t set_version)
 {
    description->set_version = set_version;
 }
@@ -469,8 +456,7 @@ mongoc_server_description_set_set_version (
  *--------------------------------------------------------------------------
  */
 void
-mongoc_server_description_set_election_id (
-   mongoc_server_description_t *description, const bson_oid_t *election_id)
+mongoc_server_description_set_election_id (mongoc_server_description_t *description, const bson_oid_t *election_id)
 {
    if (election_id) {
       bson_oid_copy_unsafe (election_id, &description->election_id);
@@ -495,36 +481,28 @@ mongoc_server_description_set_election_id (
  *-------------------------------------------------------------------------
  */
 void
-mongoc_server_description_update_rtt (mongoc_server_description_t *server,
-                                      int64_t rtt_msec)
+mongoc_server_description_update_rtt (mongoc_server_description_t *server, int64_t rtt_msec)
 {
    if (rtt_msec == MONGOC_RTT_UNSET) {
       return;
    }
    if (server->round_trip_time_msec == MONGOC_RTT_UNSET) {
-      bson_atomic_int64_exchange (
-         &server->round_trip_time_msec, rtt_msec, bson_memory_order_relaxed);
+      bson_atomic_int64_exchange (&server->round_trip_time_msec, rtt_msec, bson_memory_order_relaxed);
    } else {
-      bson_atomic_int64_exchange (
-         &server->round_trip_time_msec,
-         (int64_t) (ALPHA * rtt_msec +
-                    (1 - ALPHA) * server->round_trip_time_msec),
-         bson_memory_order_relaxed);
+      bson_atomic_int64_exchange (&server->round_trip_time_msec,
+                                  (int64_t) (ALPHA * rtt_msec + (1 - ALPHA) * server->round_trip_time_msec),
+                                  bson_memory_order_relaxed);
    }
 }
 
 
 static void
-_mongoc_server_description_set_error (mongoc_server_description_t *sd,
-                                      const bson_error_t *error)
+_mongoc_server_description_set_error (mongoc_server_description_t *sd, const bson_error_t *error)
 {
    if (error && error->code) {
       memcpy (&sd->error, error, sizeof (bson_error_t));
    } else {
-      bson_set_error (&sd->error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_CONNECT,
-                      "unknown error calling hello");
+      bson_set_error (&sd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "unknown error calling hello");
    }
 
    /* Server Discovery and Monitoring Spec: if the server type changes from a
@@ -572,8 +550,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
    }
 
    bson_destroy (&sd->last_hello_response);
-   bsonBuild (sd->last_hello_response,
-              insert (*hello_response, not(key ("speculativeAuthenticate"))));
+   bsonBuild (sd->last_hello_response, insert (*hello_response, not(key ("speculativeAuthenticate"))));
    sd->has_hello_response = true;
 
    /* Only reinitialize the topology version if we have a hello response.
@@ -588,8 +565,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          if (!bson_iter_as_bool (&iter)) {
             /* it doesn't really matter what error API we use. the code and
              * domain will be overwritten. */
-            (void) _mongoc_cmd_check_ok (
-               hello_response, MONGOC_ERROR_API_VERSION_2, &sd->error);
+            (void) _mongoc_cmd_check_ok (hello_response, MONGOC_ERROR_API_VERSION_2, &sd->error);
             /* TODO CDRIVER-3696: this is an existing bug. If this is handling
              * a hello reply that is NOT from a handshake, this should not
              * be considered an auth error. */
@@ -601,8 +577,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
             GOTO (authfailure);
          }
       } else if (strcmp ("isWritablePrimary", bson_iter_key (&iter)) == 0 ||
-                 strcmp (HANDSHAKE_RESPONSE_LEGACY_HELLO,
-                         bson_iter_key (&iter)) == 0) {
+                 strcmp (HANDSHAKE_RESPONSE_LEGACY_HELLO, bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_BOOL (&iter))
             GOTO (typefailure);
          is_primary = bson_iter_bool (&iter);
@@ -626,8 +601,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          if (!BSON_ITER_HOLDS_INT32 (&iter))
             GOTO (typefailure);
          sd->max_write_batch_size = bson_iter_int32 (&iter);
-      } else if (strcmp ("logicalSessionTimeoutMinutes",
-                         bson_iter_key (&iter)) == 0) {
+      } else if (strcmp ("logicalSessionTimeoutMinutes", bson_iter_key (&iter)) == 0) {
          if (BSON_ITER_HOLDS_NUMBER (&iter)) {
             sd->session_timeout_minutes = bson_iter_as_int64 (&iter);
          } else if (BSON_ITER_HOLDS_NULL (&iter)) {
@@ -657,8 +631,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
             GOTO (typefailure);
          sd->set_name = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("setVersion", bson_iter_key (&iter)) == 0) {
-         mongoc_server_description_set_set_version (sd,
-                                                    bson_iter_as_int64 (&iter));
+         mongoc_server_description_set_set_version (sd, bson_iter_as_int64 (&iter));
       } else if (strcmp ("electionId", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_OID (&iter))
             GOTO (typefailure);
@@ -706,10 +679,8 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
       } else if (strcmp ("hidden", bson_iter_key (&iter)) == 0) {
          is_hidden = bson_iter_bool (&iter);
       } else if (strcmp ("lastWrite", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_DOCUMENT (&iter) ||
-             !bson_iter_recurse (&iter, &child) ||
-             !bson_iter_find (&child, "lastWriteDate") ||
-             !BSON_ITER_HOLDS_DATE_TIME (&child)) {
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter) || !bson_iter_recurse (&iter, &child) ||
+             !bson_iter_find (&child, "lastWriteDate") || !BSON_ITER_HOLDS_DATE_TIME (&child)) {
             GOTO (typefailure);
          }
 
@@ -728,10 +699,8 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          }
 
          bson_iter_document (&iter, &len, &bytes);
-         BSON_ASSERT (
-            bson_init_static (&incoming_topology_version, bytes, len));
-         mongoc_server_description_set_topology_version (
-            sd, &incoming_topology_version);
+         BSON_ASSERT (bson_init_static (&incoming_topology_version, bytes, len));
+         mongoc_server_description_set_topology_version (sd, &incoming_topology_version);
          bson_destroy (&incoming_topology_version);
       } else if (strcmp ("serviceId", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_OID (&iter))
@@ -799,8 +768,7 @@ authfailure:
  *-------------------------------------------------------------------------
  */
 mongoc_server_description_t *
-mongoc_server_description_new_copy (
-   const mongoc_server_description_t *description)
+mongoc_server_description_new_copy (const mongoc_server_description_t *description)
 {
    mongoc_server_description_t *copy;
 
@@ -828,12 +796,9 @@ mongoc_server_description_new_copy (
 
    if (description->has_hello_response) {
       /* calls mongoc_server_description_reset */
-      int64_t last_rtt_ms = bson_atomic_int64_fetch (
-         &description->round_trip_time_msec, bson_memory_order_relaxed);
-      mongoc_server_description_handle_hello (copy,
-                                              &description->last_hello_response,
-                                              last_rtt_ms,
-                                              &description->error);
+      int64_t last_rtt_ms = bson_atomic_int64_fetch (&description->round_trip_time_msec, bson_memory_order_relaxed);
+      mongoc_server_description_handle_hello (
+         copy, &description->last_hello_response, last_rtt_ms, &description->error);
    } else {
       mongoc_server_description_reset (copy);
       /* preserve the original server description type, which is manually set
@@ -845,8 +810,7 @@ mongoc_server_description_new_copy (
    memcpy (&copy->error, &description->error, sizeof copy->error);
 
    copy->generation = description->generation;
-   copy->_generation_map_ =
-      mongoc_generation_map_copy (mc_tpl_sd_generation_map_const (description));
+   copy->_generation_map_ = mongoc_generation_map_copy (mc_tpl_sd_generation_map_const (description));
    return copy;
 }
 
@@ -864,12 +828,11 @@ mongoc_server_description_new_copy (
  */
 
 void
-mongoc_server_description_filter_stale (
-   const mongoc_server_description_t **sds,
-   size_t sds_len,
-   const mongoc_server_description_t *primary,
-   int64_t heartbeat_frequency_ms,
-   const mongoc_read_prefs_t *read_prefs)
+mongoc_server_description_filter_stale (const mongoc_server_description_t **sds,
+                                        size_t sds_len,
+                                        const mongoc_server_description_t *primary,
+                                        int64_t heartbeat_frequency_ms,
+                                        const mongoc_read_prefs_t *read_prefs)
 {
    int64_t max_staleness_seconds;
    size_t i;
@@ -884,8 +847,7 @@ mongoc_server_description_filter_stale (
       return;
    }
 
-   max_staleness_seconds =
-      mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
+   max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
 
    if (max_staleness_seconds == MONGOC_NO_MAX_STALENESS) {
       return;
@@ -902,14 +864,12 @@ mongoc_server_description_filter_stale (
          }
 
          /* See max-staleness.rst for explanation of these formulae. */
-         staleness_usec =
-            primary->last_write_date_ms * 1000 +
-            (sds[i]->last_update_time_usec - primary->last_update_time_usec) -
-            sds[i]->last_write_date_ms * 1000 + heartbeat_frequency_usec;
+         staleness_usec = primary->last_write_date_ms * 1000 +
+                          (sds[i]->last_update_time_usec - primary->last_update_time_usec) -
+                          sds[i]->last_write_date_ms * 1000 + heartbeat_frequency_usec;
 
          if (staleness_usec > max_staleness_usec) {
-            TRACE ("Rejected stale RSSecondary [%s]",
-                   sds[i]->host.host_and_port);
+            TRACE ("Rejected stale RSSecondary [%s]", sds[i]->host.host_and_port);
             sds[i] = NULL;
          }
       }
@@ -918,8 +878,7 @@ mongoc_server_description_filter_stale (
       max_last_write_date_usec = 0;
       for (i = 0; i < sds_len; i++) {
          if (sds[i] && sds[i]->type == MONGOC_SERVER_RS_SECONDARY) {
-            max_last_write_date_usec = BSON_MAX (
-               max_last_write_date_usec, sds[i]->last_write_date_ms * 1000);
+            max_last_write_date_usec = BSON_MAX (max_last_write_date_usec, sds[i]->last_write_date_ms * 1000);
          }
       }
 
@@ -929,13 +888,10 @@ mongoc_server_description_filter_stale (
             continue;
          }
 
-         staleness_usec = max_last_write_date_usec -
-                          sds[i]->last_write_date_ms * 1000 +
-                          heartbeat_frequency_usec;
+         staleness_usec = max_last_write_date_usec - sds[i]->last_write_date_ms * 1000 + heartbeat_frequency_usec;
 
          if (staleness_usec > max_staleness_usec) {
-            TRACE ("Rejected stale RSSecondary [%s]",
-                   sds[i]->host.host_and_port);
+            TRACE ("Rejected stale RSSecondary [%s]", sds[i]->host.host_and_port);
             sds[i] = NULL;
          }
       }
@@ -957,10 +913,9 @@ mongoc_server_description_filter_stale (
  */
 
 void
-mongoc_server_description_filter_tags (
-   const mongoc_server_description_t **descriptions,
-   size_t description_len,
-   const mongoc_read_prefs_t *read_prefs)
+mongoc_server_description_filter_tags (const mongoc_server_description_t **descriptions,
+                                       size_t description_len,
+                                       const mongoc_read_prefs_t *read_prefs)
 {
    const bson_t *rp_tags;
    bson_iter_t rp_tagset_iter;
@@ -1043,8 +998,7 @@ CLEANUP:
  *-------------------------------------------------------------------------
  */
 static bool
-_match_tag_set (const mongoc_server_description_t *sd,
-                bson_iter_t *tag_set_iter)
+_match_tag_set (const mongoc_server_description_t *sd, bson_iter_t *tag_set_iter)
 {
    bson_iter_t sd_iter;
    uint32_t read_pref_tag_len;
@@ -1061,8 +1015,7 @@ _match_tag_set (const mongoc_server_description_t *sd,
       if (bson_iter_init_find (&sd_iter, &sd->tags, read_pref_tag)) {
          /* The server has this tag - does it have the right value? */
          server_val = bson_iter_utf8 (&sd_iter, &sd_len);
-         if (sd_len != read_pref_tag_len ||
-             memcmp (read_pref_val, server_val, read_pref_tag_len)) {
+         if (sd_len != read_pref_tag_len || memcmp (read_pref_val, server_val, read_pref_tag_len)) {
             /* If the values don't match, no match */
             return false;
          }
@@ -1089,8 +1042,7 @@ _match_tag_set (const mongoc_server_description_t *sd,
  */
 
 int32_t
-mongoc_server_description_compressor_id (
-   const mongoc_server_description_t *description)
+mongoc_server_description_compressor_id (const mongoc_server_description_t *description)
 {
    int id;
    bson_iter_t iter;
@@ -1141,8 +1093,7 @@ _nullable_strcmp (const char *a, const char *b)
 }
 
 bool
-_mongoc_server_description_equal (mongoc_server_description_t *sd1,
-                                  mongoc_server_description_t *sd2)
+_mongoc_server_description_equal (mongoc_server_description_t *sd1, mongoc_server_description_t *sd2)
 {
    if (sd1->type != sd2->type) {
       return false;
@@ -1210,8 +1161,7 @@ _mongoc_server_description_equal (mongoc_server_description_t *sd1,
 }
 
 int
-mongoc_server_description_topology_version_cmp (const bson_t *tv1,
-                                                const bson_t *tv2)
+mongoc_server_description_topology_version_cmp (const bson_t *tv1, const bson_t *tv2)
 {
    const bson_oid_t *pid1;
    const bson_oid_t *pid2;
@@ -1226,14 +1176,12 @@ mongoc_server_description_topology_version_cmp (const bson_t *tv1,
       return -1;
    }
 
-   if (!bson_iter_init_find (&iter, tv1, "processId") ||
-       !BSON_ITER_HOLDS_OID (&iter)) {
+   if (!bson_iter_init_find (&iter, tv1, "processId") || !BSON_ITER_HOLDS_OID (&iter)) {
       return -1;
    }
    pid1 = bson_iter_oid (&iter);
 
-   if (!bson_iter_init_find (&iter, tv2, "processId") ||
-       !BSON_ITER_HOLDS_OID (&iter)) {
+   if (!bson_iter_init_find (&iter, tv2, "processId") || !BSON_ITER_HOLDS_OID (&iter)) {
       return -1;
    }
    pid2 = bson_iter_oid (&iter);
@@ -1243,14 +1191,12 @@ mongoc_server_description_topology_version_cmp (const bson_t *tv1,
       return -1;
    }
 
-   if (!bson_iter_init_find (&iter, tv1, "counter") ||
-       !BSON_ITER_HOLDS_INT (&iter)) {
+   if (!bson_iter_init_find (&iter, tv1, "counter") || !BSON_ITER_HOLDS_INT (&iter)) {
       return -1;
    }
    counter1 = bson_iter_as_int64 (&iter);
 
-   if (!bson_iter_init_find (&iter, tv2, "counter") ||
-       !BSON_ITER_HOLDS_INT (&iter)) {
+   if (!bson_iter_init_find (&iter, tv2, "counter") || !BSON_ITER_HOLDS_INT (&iter)) {
       return -1;
    }
    counter2 = bson_iter_as_int64 (&iter);
@@ -1264,8 +1210,7 @@ mongoc_server_description_topology_version_cmp (const bson_t *tv1,
 }
 
 void
-mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
-                                                const bson_t *tv)
+mongoc_server_description_set_topology_version (mongoc_server_description_t *sd, const bson_t *tv)
 {
    BSON_ASSERT (tv);
    bson_destroy (&sd->topology_version);
@@ -1273,8 +1218,7 @@ mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
 }
 
 bool
-mongoc_server_description_has_service_id (
-   const mongoc_server_description_t *description)
+mongoc_server_description_has_service_id (const mongoc_server_description_t *description)
 {
    if (0 == bson_oid_compare (&description->service_id, &kZeroServiceId)) {
       return false;

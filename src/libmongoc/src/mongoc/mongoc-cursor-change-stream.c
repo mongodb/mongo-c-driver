@@ -34,9 +34,7 @@ _update_post_batch_resume_token (mongoc_cursor_t *cursor)
    }
 
    if (bson_iter_init (&iter, &data->response.reply) &&
-       bson_iter_find_descendant (
-          &iter, "cursor.postBatchResumeToken", &child) &&
-       BSON_ITER_HOLDS_DOCUMENT (&child)) {
+       bson_iter_find_descendant (&iter, "cursor.postBatchResumeToken", &child) && BSON_ITER_HOLDS_DOCUMENT (&child)) {
       uint32_t len;
       const uint8_t *buf;
       bson_t post_batch_resume_token;
@@ -81,8 +79,7 @@ _get_next_batch (mongoc_cursor_t *cursor)
    bson_t getmore_cmd;
 
    _mongoc_cursor_prepare_getmore_command (cursor, &getmore_cmd);
-   _mongoc_cursor_response_refresh (
-      cursor, &getmore_cmd, NULL /* opts */, &data->response);
+   _mongoc_cursor_response_refresh (cursor, &getmore_cmd, NULL /* opts */, &data->response);
    bson_destroy (&getmore_cmd);
 
    _update_post_batch_resume_token (cursor);
@@ -113,9 +110,7 @@ _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 
 
 mongoc_cursor_t *
-_mongoc_cursor_change_stream_new (mongoc_client_t *client,
-                                  bson_t *reply,
-                                  const bson_t *getmore_opts)
+_mongoc_cursor_change_stream_new (mongoc_client_t *client, bson_t *reply, const bson_t *getmore_opts)
 {
    mongoc_cursor_t *cursor;
    _data_change_stream_t *data;
@@ -129,8 +124,7 @@ _mongoc_cursor_change_stream_new (mongoc_client_t *client,
    BSON_ASSERT (bson_steal (&data->response.reply, reply));
    bson_init (&data->post_batch_resume_token);
 
-   cursor = _mongoc_cursor_new_with_opts (
-      client, NULL, getmore_opts, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_new_with_opts (client, NULL, getmore_opts, NULL, NULL, NULL);
    cursor->impl.prime = _prime;
    cursor->impl.pop_from_batch = _pop_from_batch;
    cursor->impl.get_next_batch = _get_next_batch;
@@ -140,10 +134,8 @@ _mongoc_cursor_change_stream_new (mongoc_client_t *client,
    cursor->state = IN_BATCH;
 
    if (!_mongoc_cursor_start_reading_response (cursor, &data->response)) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_CURSOR,
-                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                      "Couldn't parse cursor document");
+      bson_set_error (
+         &cursor->error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Couldn't parse cursor document");
    }
 
    _update_post_batch_resume_token (cursor);
@@ -173,8 +165,7 @@ _mongoc_cursor_change_stream_end_of_batch (mongoc_cursor_t *cursor)
 
 
 const bson_t *
-_mongoc_cursor_change_stream_get_post_batch_resume_token (
-   mongoc_cursor_t *cursor)
+_mongoc_cursor_change_stream_get_post_batch_resume_token (mongoc_cursor_t *cursor)
 {
    _data_change_stream_t *data = (_data_change_stream_t *) cursor->impl.data;
 
@@ -183,8 +174,7 @@ _mongoc_cursor_change_stream_get_post_batch_resume_token (
 
 
 bool
-_mongoc_cursor_change_stream_has_post_batch_resume_token (
-   mongoc_cursor_t *cursor)
+_mongoc_cursor_change_stream_has_post_batch_resume_token (mongoc_cursor_t *cursor)
 {
    _data_change_stream_t *data = (_data_change_stream_t *) cursor->impl.data;
 

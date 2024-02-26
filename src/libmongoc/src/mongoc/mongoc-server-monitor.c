@@ -90,11 +90,10 @@ struct _mongoc_server_monitor_t {
    bool is_rtt;
 };
 
-static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (
-   mongoc_server_monitor_t *server_monitor,
-   mongoc_log_level_t level,
-   const char *format,
-   ...)
+static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (mongoc_server_monitor_t *server_monitor,
+                                                         mongoc_log_level_t level,
+                                                         const char *format,
+                                                         ...)
 {
    va_list ap;
    char *msg;
@@ -120,19 +119,15 @@ static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (
    } while (0)
 
 /* TODO CDRIVER-3710 use MONGOC_LOG_LEVEL_ERROR */
-#define MONITOR_LOG_ERROR(sm, ...) \
-   _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
+#define MONITOR_LOG_ERROR(sm, ...) _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
 /* TODO CDRIVER-3710 use MONGOC_LOG_LEVEL_WARNING */
-#define MONITOR_LOG_WARNING(sm, ...) \
-   _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
+#define MONITOR_LOG_WARNING(sm, ...) _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
 
 static void
-_server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor,
-                                   bool awaited)
+_server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor, bool awaited)
 {
    mongoc_apm_server_heartbeat_started_t event;
-   MONGOC_DEBUG_ASSERT (
-      !mcommon_mutex_is_locked (&server_monitor->topology->apm_mutex));
+   MONGOC_DEBUG_ASSERT (!mcommon_mutex_is_locked (&server_monitor->topology->apm_mutex));
 
    if (!server_monitor->apm_callbacks.server_heartbeat_started) {
       return;
@@ -140,9 +135,7 @@ _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor,
 
    event.host = &server_monitor->description->host;
    event.context = server_monitor->apm_context;
-   MONITOR_LOG (server_monitor,
-                "%s heartbeat started",
-                awaited ? "awaitable" : "regular");
+   MONITOR_LOG (server_monitor, "%s heartbeat started", awaited ? "awaitable" : "regular");
    event.awaited = awaited;
    bson_mutex_lock (&server_monitor->topology->apm_mutex);
    server_monitor->apm_callbacks.server_heartbeat_started (&event);
@@ -165,9 +158,7 @@ _server_monitor_heartbeat_succeeded (mongoc_server_monitor_t *server_monitor,
    event.context = server_monitor->apm_context;
    event.reply = reply;
    event.duration_usec = duration_usec;
-   MONITOR_LOG (server_monitor,
-                "%s heartbeat succeeded",
-                awaited ? "awaitable" : "regular");
+   MONITOR_LOG (server_monitor, "%s heartbeat succeeded", awaited ? "awaitable" : "regular");
    event.awaited = awaited;
    bson_mutex_lock (&server_monitor->topology->apm_mutex);
    server_monitor->apm_callbacks.server_heartbeat_succeeded (&event);
@@ -190,8 +181,7 @@ _server_monitor_heartbeat_failed (mongoc_server_monitor_t *server_monitor,
    event.context = server_monitor->apm_context;
    event.error = error;
    event.duration_usec = duration_usec;
-   MONITOR_LOG (
-      server_monitor, "%s heartbeat failed", awaited ? "awaitable" : "regular");
+   MONITOR_LOG (server_monitor, "%s heartbeat failed", awaited ? "awaitable" : "regular");
    event.awaited = awaited;
    bson_mutex_lock (&server_monitor->topology->apm_mutex);
    server_monitor->apm_callbacks.server_heartbeat_failed (&event);
@@ -199,11 +189,9 @@ _server_monitor_heartbeat_failed (mongoc_server_monitor_t *server_monitor,
 }
 
 static void
-_server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
-                                     bson_t *cmd)
+_server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor, bson_t *cmd)
 {
-   mc_shared_tpld td =
-      mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (server_monitor)->topology);
+   mc_shared_tpld td = mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (server_monitor)->topology);
 
    /* Cluster time is updated on every reply. */
    if (!bson_empty (&td.ptr->cluster_time)) {
@@ -220,11 +208,10 @@ _int32_from_le (const void *data)
 }
 
 static bool
-_server_monitor_send_and_recv_hello_opmsg (
-   mongoc_server_monitor_t *server_monitor,
-   const bson_t *cmd,
-   bson_t *reply,
-   bson_error_t *error)
+_server_monitor_send_and_recv_hello_opmsg (mongoc_server_monitor_t *server_monitor,
+                                           const bson_t *cmd,
+                                           bson_t *reply,
+                                           bson_error_t *error)
 {
    bool ret = false;
 
@@ -239,18 +226,15 @@ _server_monitor_send_and_recv_hello_opmsg (
       int32_t message_length = 0;
 
       message_length += mcd_rpc_header_set_message_length (rpc, 0);
-      message_length +=
-         mcd_rpc_header_set_request_id (rpc, server_monitor->request_id++);
+      message_length += mcd_rpc_header_set_request_id (rpc, server_monitor->request_id++);
       message_length += mcd_rpc_header_set_response_to (rpc, 0);
       message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_MSG);
 
       mcd_rpc_op_msg_set_sections_count (rpc, 1u);
 
-      message_length +=
-         mcd_rpc_op_msg_set_flag_bits (rpc, MONGOC_OP_MSG_FLAG_NONE);
+      message_length += mcd_rpc_op_msg_set_flag_bits (rpc, MONGOC_OP_MSG_FLAG_NONE);
       message_length += mcd_rpc_op_msg_section_set_kind (rpc, 0u, 0);
-      message_length +=
-         mcd_rpc_op_msg_section_set_body (rpc, 0u, bson_get_data (cmd));
+      message_length += mcd_rpc_op_msg_section_set_body (rpc, 0u, bson_get_data (cmd));
 
       mcd_rpc_message_set_length (rpc, message_length);
    }
@@ -259,27 +243,18 @@ _server_monitor_send_and_recv_hello_opmsg (
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
    BSON_ASSERT (iovecs);
 
-   MONITOR_LOG (server_monitor,
-                "sending with timeout %" PRId64,
-                server_monitor->connect_timeout_ms);
+   MONITOR_LOG (server_monitor, "sending with timeout %" PRId64, server_monitor->connect_timeout_ms);
 
    mcd_rpc_message_egress (rpc);
-   if (!_mongoc_stream_writev_full (server_monitor->stream,
-                                    iovecs,
-                                    num_iovecs,
-                                    server_monitor->connect_timeout_ms,
-                                    error)) {
-      MONITOR_LOG_ERROR (
-         server_monitor, "failed to write polling hello: %s", error->message);
+   if (!_mongoc_stream_writev_full (
+          server_monitor->stream, iovecs, num_iovecs, server_monitor->connect_timeout_ms, error)) {
+      MONITOR_LOG_ERROR (server_monitor, "failed to write polling hello: %s", error->message);
       goto fail;
    }
 
    /* Done sending! Now, receive the reply: */
-   if (!_mongoc_buffer_append_from_stream (&buffer,
-                                           server_monitor->stream,
-                                           sizeof (int32_t),
-                                           server_monitor->connect_timeout_ms,
-                                           error)) {
+   if (!_mongoc_buffer_append_from_stream (
+          &buffer, server_monitor->stream, sizeof (int32_t), server_monitor->connect_timeout_ms, error)) {
       goto fail;
    }
 
@@ -298,17 +273,13 @@ _server_monitor_send_and_recv_hello_opmsg (
 
    const size_t remaining_bytes = (size_t) message_length - sizeof (int32_t);
 
-   if (!_mongoc_buffer_append_from_stream (&buffer,
-                                           server_monitor->stream,
-                                           remaining_bytes,
-                                           server_monitor->connect_timeout_ms,
-                                           error)) {
+   if (!_mongoc_buffer_append_from_stream (
+          &buffer, server_monitor->stream, remaining_bytes, server_monitor->connect_timeout_ms, error)) {
       goto fail;
    }
 
    mcd_rpc_message_reset (rpc);
-   if (!mcd_rpc_message_from_data_in_place (
-          rpc, buffer.data, buffer.len, NULL)) {
+   if (!mcd_rpc_message_from_data_in_place (rpc, buffer.data, buffer.len, NULL)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -318,8 +289,7 @@ _server_monitor_send_and_recv_hello_opmsg (
 
    mcd_rpc_message_ingress (rpc);
 
-   if (!mcd_rpc_message_decompress_if_necessary (
-          rpc, &decompressed_data, &decompressed_data_len)) {
+   if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -374,15 +344,12 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
       int32_t message_length = 0;
 
       message_length += mcd_rpc_header_set_message_length (rpc, 0);
-      message_length +=
-         mcd_rpc_header_set_request_id (rpc, server_monitor->request_id++);
+      message_length += mcd_rpc_header_set_request_id (rpc, server_monitor->request_id++);
       message_length += mcd_rpc_header_set_response_to (rpc, 0);
       message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_QUERY);
 
-      message_length +=
-         mcd_rpc_op_query_set_flags (rpc, MONGOC_OP_QUERY_FLAG_SECONDARY_OK);
-      message_length +=
-         mcd_rpc_op_query_set_full_collection_name (rpc, "admin.$cmd");
+      message_length += mcd_rpc_op_query_set_flags (rpc, MONGOC_OP_QUERY_FLAG_SECONDARY_OK);
+      message_length += mcd_rpc_op_query_set_full_collection_name (rpc, "admin.$cmd");
       message_length += mcd_rpc_op_query_set_number_to_skip (rpc, 0);
       message_length += mcd_rpc_op_query_set_number_to_return (rpc, -1);
       message_length += mcd_rpc_op_query_set_query (rpc, bson_get_data (cmd));
@@ -394,19 +361,13 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
    BSON_ASSERT (iovecs);
 
    mcd_rpc_message_egress (rpc);
-   if (!_mongoc_stream_writev_full (server_monitor->stream,
-                                    iovecs,
-                                    num_iovecs,
-                                    server_monitor->connect_timeout_ms,
-                                    error)) {
+   if (!_mongoc_stream_writev_full (
+          server_monitor->stream, iovecs, num_iovecs, server_monitor->connect_timeout_ms, error)) {
       goto fail;
    }
 
-   if (!_mongoc_buffer_append_from_stream (&buffer,
-                                           server_monitor->stream,
-                                           sizeof (int32_t),
-                                           server_monitor->connect_timeout_ms,
-                                           error)) {
+   if (!_mongoc_buffer_append_from_stream (
+          &buffer, server_monitor->stream, sizeof (int32_t), server_monitor->connect_timeout_ms, error)) {
       goto fail;
    }
 
@@ -425,17 +386,13 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
 
    const size_t remaining_bytes = (size_t) message_length - sizeof (int32_t);
 
-   if (!_mongoc_buffer_append_from_stream (&buffer,
-                                           server_monitor->stream,
-                                           remaining_bytes,
-                                           server_monitor->connect_timeout_ms,
-                                           error)) {
+   if (!_mongoc_buffer_append_from_stream (
+          &buffer, server_monitor->stream, remaining_bytes, server_monitor->connect_timeout_ms, error)) {
       goto fail;
    }
 
    mcd_rpc_message_reset (rpc);
-   if (!mcd_rpc_message_from_data_in_place (
-          rpc, buffer.data, buffer.len, NULL)) {
+   if (!mcd_rpc_message_from_data_in_place (rpc, buffer.data, buffer.len, NULL)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -445,8 +402,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
 
    mcd_rpc_message_ingress (rpc);
 
-   if (!mcd_rpc_message_decompress_if_necessary (
-          rpc, &decompressed_data, &decompressed_data_len)) {
+   if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -482,21 +438,16 @@ fail:
 }
 
 static bool
-_server_monitor_send_and_recv (mongoc_server_monitor_t *server_monitor,
-                               bson_t *cmd,
-                               bson_t *reply,
-                               bson_error_t *error)
+_server_monitor_send_and_recv (mongoc_server_monitor_t *server_monitor, bson_t *cmd, bson_t *reply, bson_error_t *error)
 {
    if (mongoc_topology_uses_server_api (server_monitor->topology) ||
        mongoc_topology_uses_loadbalanced (server_monitor->topology)) {
       /* OP_MSG requires a "db" parameter: */
       bson_append_utf8 (cmd, "$db", 3, "admin", 5);
 
-      return _server_monitor_send_and_recv_hello_opmsg (
-         server_monitor, cmd, reply, error);
+      return _server_monitor_send_and_recv_hello_opmsg (server_monitor, cmd, reply, error);
    } else {
-      return _server_monitor_send_and_recv_opquery (
-         server_monitor, cmd, reply, error);
+      return _server_monitor_send_and_recv_opquery (server_monitor, cmd, reply, error);
    }
 }
 
@@ -510,23 +461,19 @@ _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
    const bson_t *hello;
    bool ret;
 
-   hello = _mongoc_topology_scanner_get_monitoring_cmd (
-      server_monitor->topology->scanner, hello_ok);
+   hello = _mongoc_topology_scanner_get_monitoring_cmd (server_monitor->topology->scanner, hello_ok);
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
 
-   ret = _server_monitor_send_and_recv (
-      server_monitor, &cmd, hello_response, error);
+   ret = _server_monitor_send_and_recv (server_monitor, &cmd, hello_response, error);
 
    bson_destroy (&cmd);
    return ret;
 }
 
 static bool
-_server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
-                                      bson_t *cmd,
-                                      bson_error_t *error)
+_server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor, bson_t *cmd, bson_error_t *error)
 {
    bool ret = false;
 
@@ -536,18 +483,15 @@ _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
       int32_t message_length = 0;
 
       message_length += mcd_rpc_header_set_message_length (rpc, 0);
-      message_length +=
-         mcd_rpc_header_set_request_id (rpc, server_monitor->request_id++);
+      message_length += mcd_rpc_header_set_request_id (rpc, server_monitor->request_id++);
       message_length += mcd_rpc_header_set_response_to (rpc, 0);
       message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_MSG);
 
       mcd_rpc_op_msg_set_sections_count (rpc, 1);
 
-      message_length +=
-         mcd_rpc_op_msg_set_flag_bits (rpc, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED);
+      message_length += mcd_rpc_op_msg_set_flag_bits (rpc, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED);
       message_length += mcd_rpc_op_msg_section_set_kind (rpc, 0u, 0);
-      message_length +=
-         mcd_rpc_op_msg_section_set_body (rpc, 0u, bson_get_data (cmd));
+      message_length += mcd_rpc_op_msg_section_set_body (rpc, 0u, bson_get_data (cmd));
 
       mcd_rpc_message_set_length (rpc, message_length);
    }
@@ -556,18 +500,12 @@ _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
    BSON_ASSERT (iovecs);
 
-   MONITOR_LOG (server_monitor,
-                "sending with timeout %" PRId64,
-                server_monitor->connect_timeout_ms);
+   MONITOR_LOG (server_monitor, "sending with timeout %" PRId64, server_monitor->connect_timeout_ms);
 
    mcd_rpc_message_egress (rpc);
-   if (!_mongoc_stream_writev_full (server_monitor->stream,
-                                    iovecs,
-                                    num_iovecs,
-                                    server_monitor->connect_timeout_ms,
-                                    error)) {
-      MONITOR_LOG_ERROR (
-         server_monitor, "failed to write awaitable hello: %s", error->message);
+   if (!_mongoc_stream_writev_full (
+          server_monitor->stream, iovecs, num_iovecs, server_monitor->connect_timeout_ms, error)) {
+      MONITOR_LOG_ERROR (server_monitor, "failed to write awaitable hello: %s", error->message);
       goto done;
    }
 
@@ -602,35 +540,21 @@ _server_monitor_poll_with_interrupt (mongoc_server_monitor_t *server_monitor,
       ssize_t ret;
       mongoc_stream_poll_t poller[1];
 
-      MONITOR_LOG (server_monitor,
-                   "_server_monitor_poll_with_interrupt expires in: %" PRIu64
-                   "ms",
-                   timeleft_ms);
+      MONITOR_LOG (server_monitor, "_server_monitor_poll_with_interrupt expires in: %" PRIu64 "ms", timeleft_ms);
       poller[0].stream = server_monitor->stream;
-      poller[0].events =
-         POLLIN; /* POLLERR and POLLHUP are added in mongoc_socket_poll. */
+      poller[0].events = POLLIN; /* POLLERR and POLLHUP are added in mongoc_socket_poll. */
       poller[0].revents = 0;
 
-      MONITOR_LOG (
-         server_monitor,
-         "polling for awaitable hello reply with timeleft_ms: %" PRId64,
-         timeleft_ms);
-      ret = mongoc_stream_poll (
-         poller, 1, (int32_t) BSON_MIN (timeleft_ms, monitor_tick_ms));
+      MONITOR_LOG (server_monitor, "polling for awaitable hello reply with timeleft_ms: %" PRId64, timeleft_ms);
+      ret = mongoc_stream_poll (poller, 1, (int32_t) BSON_MIN (timeleft_ms, monitor_tick_ms));
       if (ret == -1) {
          MONITOR_LOG (server_monitor, "mongoc_stream_poll error");
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "poll error");
+         bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "poll error");
          return false;
       }
 
       if (poller[0].revents & (POLLERR | POLLHUP)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "connection closed while polling");
+         bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "connection closed while polling");
          return false;
       }
 
@@ -650,10 +574,7 @@ _server_monitor_poll_with_interrupt (mongoc_server_monitor_t *server_monitor,
          return true;
       }
    }
-   bson_set_error (error,
-                   MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_SOCKET,
-                   "connection timeout while polling");
+   bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "connection timeout while polling");
    return false;
 }
 
@@ -669,10 +590,8 @@ _get_timeout_ms (int64_t expire_at_ms, bson_error_t *error)
 
    timeout_ms = expire_at_ms - _now_ms ();
    if (timeout_ms <= 0) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "connection timed out reading message length");
+      bson_set_error (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "connection timed out reading message length");
       return 0;
    }
    return timeout_ms;
@@ -703,12 +622,10 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
    void *decompressed_data = NULL;
    size_t decompressed_data_len = 0u;
 
-   const int64_t expire_at_ms = _now_ms () +
-                                server_monitor->heartbeat_frequency_ms +
-                                server_monitor->connect_timeout_ms;
+   const int64_t expire_at_ms =
+      _now_ms () + server_monitor->heartbeat_frequency_ms + server_monitor->connect_timeout_ms;
 
-   if (!_server_monitor_poll_with_interrupt (
-          server_monitor, expire_at_ms, cancelled, error)) {
+   if (!_server_monitor_poll_with_interrupt (server_monitor, expire_at_ms, cancelled, error)) {
       GOTO (fail);
    }
 
@@ -717,14 +634,9 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
       GOTO (fail);
    }
 
-   MONITOR_LOG (server_monitor,
-                "reading first 4 bytes with timeout: %" PRId64,
-                timeout_ms);
-   if (!_mongoc_buffer_append_from_stream (&buffer,
-                                           server_monitor->stream,
-                                           sizeof (int32_t),
-                                           (int32_t) timeout_ms,
-                                           error)) {
+   MONITOR_LOG (server_monitor, "reading first 4 bytes with timeout: %" PRId64, timeout_ms);
+   if (!_mongoc_buffer_append_from_stream (
+          &buffer, server_monitor->stream, sizeof (int32_t), (int32_t) timeout_ms, error)) {
       GOTO (fail);
    }
 
@@ -733,13 +645,11 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
    // msgHeader consists of four int32 fields.
    const int32_t message_header_length = 4u * sizeof (int32_t);
 
-   if ((message_length < message_header_length) ||
-       (message_length > server_monitor->description->max_msg_size)) {
+   if ((message_length < message_header_length) || (message_length > server_monitor->description->max_msg_size)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "message size %" PRId32
-                      " is not within expected range 16-%" PRId32 " bytes",
+                      "message size %" PRId32 " is not within expected range 16-%" PRId32 " bytes",
                       message_length,
                       server_monitor->description->max_msg_size);
       GOTO (fail);
@@ -752,52 +662,35 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
 
    const size_t remaining_bytes = (size_t) message_length - sizeof (int32_t);
 
-   MONITOR_LOG (server_monitor,
-                "reading remaining %zu bytes. Timeout %" PRId64,
-                remaining_bytes,
-                timeout_ms);
-   if (!_mongoc_buffer_append_from_stream (&buffer,
-                                           server_monitor->stream,
-                                           remaining_bytes,
-                                           timeout_ms,
-                                           error)) {
+   MONITOR_LOG (server_monitor, "reading remaining %zu bytes. Timeout %" PRId64, remaining_bytes, timeout_ms);
+   if (!_mongoc_buffer_append_from_stream (&buffer, server_monitor->stream, remaining_bytes, timeout_ms, error)) {
       GOTO (fail);
    }
 
-   if (!mcd_rpc_message_from_data_in_place (
-          rpc, buffer.data, buffer.len, NULL)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "malformed message from server");
+   if (!mcd_rpc_message_from_data_in_place (rpc, buffer.data, buffer.len, NULL)) {
+      bson_set_error (
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");
       GOTO (fail);
    }
 
    mcd_rpc_message_ingress (rpc);
 
-   if (!mcd_rpc_message_decompress_if_necessary (
-          rpc, &decompressed_data, &decompressed_data_len)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "decompression failure");
+   if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
+      bson_set_error (error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "decompression failure");
       GOTO (fail);
    }
 
    bson_t body;
    if (!mcd_rpc_message_get_body (rpc, &body)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "malformed BSON payload from server");
+      bson_set_error (
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed BSON payload from server");
       GOTO (fail);
    }
 
    bson_copy_to (&body, hello_response);
    bson_destroy (&body);
 
-   server_monitor->more_to_come = (mcd_rpc_op_msg_get_flag_bits (rpc) &
-                                   MONGOC_OP_MSG_FLAG_MORE_TO_COME) != 0;
+   server_monitor->more_to_come = (mcd_rpc_op_msg_get_flag_bits (rpc) & MONGOC_OP_MSG_FLAG_MORE_TO_COME) != 0;
 
    ret = true;
 
@@ -830,23 +723,19 @@ _server_monitor_awaitable_hello (mongoc_server_monitor_t *server_monitor,
    const bson_t *hello;
    bool ret = false;
 
-   hello = _mongoc_topology_scanner_get_monitoring_cmd (
-      server_monitor->topology->scanner, description->hello_ok);
+   hello = _mongoc_topology_scanner_get_monitoring_cmd (server_monitor->topology->scanner, description->hello_ok);
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
-   bson_append_document (
-      &cmd, "topologyVersion", 15, &description->topology_version);
-   bson_append_int64 (
-      &cmd, "maxAwaitTimeMS", 14, server_monitor->heartbeat_frequency_ms);
+   bson_append_document (&cmd, "topologyVersion", 15, &description->topology_version);
+   bson_append_int64 (&cmd, "maxAwaitTimeMS", 14, server_monitor->heartbeat_frequency_ms);
    bson_append_utf8 (&cmd, "$db", 3, "admin", 5);
 
    if (!_server_monitor_awaitable_hello_send (server_monitor, &cmd, error)) {
       GOTO (fail);
    }
 
-   if (!_server_monitor_awaitable_hello_recv (
-          server_monitor, hello_response, cancelled, error)) {
+   if (!_server_monitor_awaitable_hello_recv (server_monitor, hello_response, cancelled, error)) {
       bson_destroy (hello_response);
       GOTO (fail);
    }
@@ -867,8 +756,7 @@ fail:
  * Locks server monitor mutex.
  */
 static void
-_update_topology_description (mongoc_server_monitor_t *server_monitor,
-                              mongoc_server_description_t *description)
+_update_topology_description (mongoc_server_monitor_t *server_monitor, mongoc_server_description_t *description)
 {
    mongoc_topology_t *topology;
    bson_t *hello_response = NULL;
@@ -883,8 +771,7 @@ _update_topology_description (mongoc_server_monitor_t *server_monitor,
       _mongoc_topology_update_cluster_time (topology, hello_response);
    }
 
-   if (bson_atomic_int_fetch (&topology->scanner_state,
-                              bson_memory_order_relaxed) ==
+   if (bson_atomic_int_fetch (&topology->scanner_state, bson_memory_order_relaxed) ==
        MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
       return;
    }
@@ -893,11 +780,8 @@ _update_topology_description (mongoc_server_monitor_t *server_monitor,
    bson_mutex_lock (&server_monitor->shared.mutex);
    server_monitor->shared.scan_requested = false;
    bson_mutex_unlock (&server_monitor->shared.mutex);
-   mongoc_topology_description_handle_hello (tdmod.new_td,
-                                             server_monitor->server_id,
-                                             hello_response,
-                                             description->round_trip_time_msec,
-                                             &description->error);
+   mongoc_topology_description_handle_hello (
+      tdmod.new_td, server_monitor->server_id, hello_response, description->round_trip_time_msec, &description->error);
    /* Reconcile server monitors. */
    _mongoc_topology_background_monitoring_reconcile (topology, tdmod.new_td);
    /* Wake threads performing server selection. */
@@ -915,15 +799,12 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
                            mongoc_topology_description_t *td,
                            mongoc_server_description_t *init_description)
 {
-   mongoc_server_monitor_t *server_monitor =
-      bson_malloc0 (sizeof (*server_monitor));
-   server_monitor->description =
-      mongoc_server_description_new_copy (init_description);
+   mongoc_server_monitor_t *server_monitor = bson_malloc0 (sizeof (*server_monitor));
+   server_monitor->description = mongoc_server_description_new_copy (init_description);
    server_monitor->server_id = init_description->id;
    server_monitor->topology = topology;
    server_monitor->heartbeat_frequency_ms = td->heartbeat_msec;
-   server_monitor->min_heartbeat_frequency_ms =
-      topology->min_heartbeat_frequency_msec;
+   server_monitor->min_heartbeat_frequency_ms = topology->min_heartbeat_frequency_msec;
    server_monitor->connect_timeout_ms = topology->connect_timeout_msec;
    server_monitor->uri = mongoc_uri_copy (topology->uri);
 /* TODO CDRIVER-3682: Do not retrieve ssl opts from topology scanner. They
@@ -932,13 +813,10 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
    if (topology->scanner->ssl_opts) {
       server_monitor->ssl_opts = bson_malloc0 (sizeof (mongoc_ssl_opt_t));
 
-      _mongoc_ssl_opts_copy_to (
-         topology->scanner->ssl_opts, server_monitor->ssl_opts, true);
+      _mongoc_ssl_opts_copy_to (topology->scanner->ssl_opts, server_monitor->ssl_opts, true);
    }
 #endif
-   memcpy (&server_monitor->apm_callbacks,
-           &td->apm_callbacks,
-           sizeof (mongoc_apm_callbacks_t));
+   memcpy (&server_monitor->apm_callbacks, &td->apm_callbacks, sizeof (mongoc_apm_callbacks_t));
    server_monitor->apm_context = td->apm_context;
    server_monitor->initiator = topology->scanner->initiator;
    server_monitor->initiator_context = topology->scanner->initiator_context;
@@ -973,24 +851,16 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    /* Using an initiator isn't really necessary. Users can't set them on
     * pools. But it is used for tests. */
    if (server_monitor->initiator) {
-      server_monitor->stream =
-         server_monitor->initiator (server_monitor->uri,
-                                    &server_monitor->description->host,
-                                    server_monitor->initiator_context,
-                                    error);
+      server_monitor->stream = server_monitor->initiator (
+         server_monitor->uri, &server_monitor->description->host, server_monitor->initiator_context, error);
    } else {
       void *ssl_opts_void = NULL;
 
 #ifdef MONGOC_ENABLE_SSL
       ssl_opts_void = server_monitor->ssl_opts;
 #endif
-      server_monitor->stream =
-         mongoc_client_connect (false,
-                                ssl_opts_void != NULL,
-                                ssl_opts_void,
-                                server_monitor->uri,
-                                &server_monitor->description->host,
-                                error);
+      server_monitor->stream = mongoc_client_connect (
+         false, ssl_opts_void != NULL, ssl_opts_void, server_monitor->uri, &server_monitor->description->host, error);
    }
 
    if (!server_monitor->stream) {
@@ -1005,8 +875,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    bson_destroy (hello_response);
 
-   ret = _server_monitor_send_and_recv (
-      server_monitor, &cmd, hello_response, error);
+   ret = _server_monitor_send_and_recv (server_monitor, &cmd, hello_response, error);
 
 fail:
    bson_destroy (&cmd);
@@ -1029,10 +898,9 @@ fail:
  * information, but with no hello reply.
  */
 static mongoc_server_description_t *
-_server_monitor_check_server (
-   mongoc_server_monitor_t *server_monitor,
-   const mongoc_server_description_t *previous_description,
-   bool *cancelled)
+_server_monitor_check_server (mongoc_server_monitor_t *server_monitor,
+                              const mongoc_server_description_t *previous_description,
+                              bool *cancelled)
 {
    bool ret = false;
    bson_error_t error;
@@ -1050,17 +918,14 @@ _server_monitor_check_server (
    memset (&error, 0, sizeof (bson_error_t));
    description = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
    mongoc_server_description_init (
-      description,
-      server_monitor->description->connection_address,
-      server_monitor->description->id);
+      description, server_monitor->description->connection_address, server_monitor->description->id);
    start_us = _now_us ();
 
    if (!server_monitor->stream) {
       MONITOR_LOG (server_monitor, "setting up connection");
       awaited = false;
       _server_monitor_heartbeat_started (server_monitor, awaited);
-      ret = _server_monitor_setup_connection (
-         server_monitor, &hello_response, &start_us, &error);
+      ret = _server_monitor_setup_connection (server_monitor, &hello_response, &start_us, &error);
       GOTO (exit);
    }
 
@@ -1069,8 +934,7 @@ _server_monitor_check_server (
       /* Publish a heartbeat started for each additional response read. */
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "more to come");
-      ret = _server_monitor_awaitable_hello_recv (
-         server_monitor, &hello_response, cancelled, &error);
+      ret = _server_monitor_awaitable_hello_recv (server_monitor, &hello_response, cancelled, &error);
       GOTO (exit);
    }
 
@@ -1082,28 +946,21 @@ _server_monitor_check_server (
       awaited = true;
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "awaitable hello");
-      ret = _server_monitor_awaitable_hello (server_monitor,
-                                             previous_description,
-                                             &hello_response,
-                                             cancelled,
-                                             &error);
+      ret = _server_monitor_awaitable_hello (server_monitor, previous_description, &hello_response, cancelled, &error);
       GOTO (exit);
    }
 
    MONITOR_LOG (server_monitor, "polling hello");
    awaited = false;
    _server_monitor_heartbeat_started (server_monitor, awaited);
-   ret = _server_monitor_polling_hello (
-      server_monitor, previous_description->hello_ok, &hello_response, &error);
+   ret = _server_monitor_polling_hello (server_monitor, previous_description->hello_ok, &hello_response, &error);
 
 exit:
    duration_us = _now_us () - start_us;
-   MONITOR_LOG (
-      server_monitor, "server check duration (us): %" PRId64, duration_us);
+   MONITOR_LOG (server_monitor, "server check duration (us): %" PRId64, duration_us);
 
    /* If ret is true, we have a reply. Check if "ok": 1. */
-   if (ret && _mongoc_cmd_check_ok (
-                 &hello_response, MONGOC_ERROR_API_VERSION_2, &error)) {
+   if (ret && _mongoc_cmd_check_ok (&hello_response, MONGOC_ERROR_API_VERSION_2, &error)) {
       int64_t rtt_ms = MONGOC_RTT_UNSET;
 
       /* rtt remains MONGOC_RTT_UNSET if awaited. */
@@ -1111,20 +968,15 @@ exit:
          rtt_ms = duration_us / 1000;
       }
 
-      mongoc_server_description_handle_hello (
-         description, &hello_response, rtt_ms, NULL);
+      mongoc_server_description_handle_hello (description, &hello_response, rtt_ms, NULL);
       /* If the hello reply could not be parsed, consider this a command
        * error. */
       if (description->error.code) {
-         MONITOR_LOG_ERROR (server_monitor,
-                            "error parsing server reply: %s",
-                            description->error.message);
+         MONITOR_LOG_ERROR (server_monitor, "error parsing server reply: %s", description->error.message);
          command_or_network_error = true;
-         _server_monitor_heartbeat_failed (
-            server_monitor, &description->error, duration_us, awaited);
+         _server_monitor_heartbeat_failed (server_monitor, &description->error, duration_us, awaited);
       } else {
-         _server_monitor_heartbeat_succeeded (
-            server_monitor, &hello_response, duration_us, awaited);
+         _server_monitor_heartbeat_succeeded (server_monitor, &hello_response, duration_us, awaited);
       }
    } else if (*cancelled) {
       MONITOR_LOG (server_monitor, "server monitor cancelled");
@@ -1133,18 +985,13 @@ exit:
       }
       server_monitor->stream = NULL;
       server_monitor->more_to_come = false;
-      _server_monitor_heartbeat_failed (
-         server_monitor, &description->error, duration_us, awaited);
+      _server_monitor_heartbeat_failed (server_monitor, &description->error, duration_us, awaited);
    } else {
       /* The hello reply had "ok":0 or a network error occurred. */
-      MONITOR_LOG_ERROR (server_monitor,
-                         "command or network error occurred: %s",
-                         error.message);
+      MONITOR_LOG_ERROR (server_monitor, "command or network error occurred: %s", error.message);
       command_or_network_error = true;
-      mongoc_server_description_handle_hello (
-         description, NULL, MONGOC_RTT_UNSET, &error);
-      _server_monitor_heartbeat_failed (
-         server_monitor, &description->error, duration_us, awaited);
+      mongoc_server_description_handle_hello (description, NULL, MONGOC_RTT_UNSET, &error);
+      _server_monitor_heartbeat_failed (server_monitor, &description->error, duration_us, awaited);
    }
 
    if (command_or_network_error) {
@@ -1157,9 +1004,7 @@ exit:
       /* clear_connection_pool() is a no-op if 'description->id' was already
        * removed. */
       _mongoc_topology_description_clear_connection_pool (
-         tdmod.new_td,
-         server_monitor->description->id,
-         &server_monitor->description->service_id);
+         tdmod.new_td, server_monitor->description->id, &server_monitor->description->service_id);
       mc_tpld_modify_commit (tdmod);
    }
 
@@ -1231,9 +1076,7 @@ mongoc_server_monitor_wait (mongoc_server_monitor_t *server_monitor)
       }
 
       MONITOR_LOG (server_monitor, "sleeping for %" PRId64, sleep_duration_ms);
-      cond_ret = mongoc_cond_timedwait (&server_monitor->shared.cond,
-                                        &server_monitor->shared.mutex,
-                                        sleep_duration_ms);
+      cond_ret = mongoc_cond_timedwait (&server_monitor->shared.cond, &server_monitor->shared.mutex, sleep_duration_ms);
       if (mongo_cond_ret_is_timedout (cond_ret)) {
          break;
       }
@@ -1252,8 +1095,7 @@ static BSON_THREAD_FUN (_server_monitor_thread, server_monitor_void)
    mongoc_server_description_t *previous_description;
 
    server_monitor = (mongoc_server_monitor_t *) server_monitor_void;
-   description =
-      mongoc_server_description_new_copy (server_monitor->description);
+   description = mongoc_server_description_new_copy (server_monitor->description);
    previous_description = NULL;
 
    while (true) {
@@ -1269,8 +1111,7 @@ static BSON_THREAD_FUN (_server_monitor_thread, server_monitor_void)
       mongoc_server_description_destroy (previous_description);
       previous_description = mongoc_server_description_new_copy (description);
       mongoc_server_description_destroy (description);
-      description = _server_monitor_check_server (
-         server_monitor, previous_description, &cancelled);
+      description = _server_monitor_check_server (server_monitor, previous_description, &cancelled);
 
       if (cancelled) {
          mongoc_server_monitor_wait (server_monitor);
@@ -1281,26 +1122,21 @@ static BSON_THREAD_FUN (_server_monitor_thread, server_monitor_void)
 
       /* Immediately proceed to the next check if the previous response was
        * successful and included the topologyVersion field. */
-      if (description->type != MONGOC_SERVER_UNKNOWN &&
-          !bson_empty (&description->topology_version)) {
-         MONITOR_LOG (server_monitor,
-                      "immediately proceeding due to topologyVersion");
+      if (description->type != MONGOC_SERVER_UNKNOWN && !bson_empty (&description->topology_version)) {
+         MONITOR_LOG (server_monitor, "immediately proceeding due to topologyVersion");
          continue;
       }
 
       /* ... or the previous response included the moreToCome flag */
       if (server_monitor->more_to_come) {
-         MONITOR_LOG (server_monitor,
-                      "immediately proceeding due to moreToCome");
+         MONITOR_LOG (server_monitor, "immediately proceeding due to moreToCome");
          continue;
       }
 
       /* ... or the server has just transitioned to Unknown due to a network
        * error. */
-      if (_mongoc_error_is_network (&description->error) &&
-          previous_description->type != MONGOC_SERVER_UNKNOWN) {
-         MONITOR_LOG (server_monitor,
-                      "immediately proceeding due to network error");
+      if (_mongoc_error_is_network (&description->error) && previous_description->type != MONGOC_SERVER_UNKNOWN) {
+         MONITOR_LOG (server_monitor, "immediately proceeding due to network error");
          continue;
       }
 
@@ -1316,9 +1152,7 @@ static BSON_THREAD_FUN (_server_monitor_thread, server_monitor_void)
 }
 
 static bool
-_server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
-                             bool hello_ok,
-                             int64_t *rtt_ms)
+_server_monitor_ping_server (mongoc_server_monitor_t *server_monitor, bool hello_ok, int64_t *rtt_ms)
 {
    bool ret = false;
    int64_t start_us = _now_us ();
@@ -1329,15 +1163,13 @@ _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
 
    if (!server_monitor->stream) {
       MONITOR_LOG (server_monitor, "rtt setting up connection");
-      ret = _server_monitor_setup_connection (
-         server_monitor, &hello_response, &start_us, &error);
+      ret = _server_monitor_setup_connection (server_monitor, &hello_response, &start_us, &error);
       bson_destroy (&hello_response);
    }
 
    if (server_monitor->stream) {
       MONITOR_LOG (server_monitor, "rtt polling hello");
-      ret = _server_monitor_polling_hello (
-         server_monitor, hello_ok, &hello_response, &error);
+      ret = _server_monitor_polling_hello (server_monitor, hello_ok, &hello_response, &error);
       if (ret) {
          *rtt_ms = (_now_us () - start_us) / 1000;
       }
@@ -1369,19 +1201,16 @@ static BSON_THREAD_FUN (_server_monitor_rtt_thread, server_monitor_void)
       {
          mc_shared_tpld td = mc_tpld_take_ref (server_monitor->topology);
          const mongoc_server_description_t *sd =
-            mongoc_topology_description_server_by_id_const (
-               td.ptr, server_monitor->description->id, &error);
+            mongoc_topology_description_server_by_id_const (td.ptr, server_monitor->description->id, &error);
          hello_ok = sd ? sd->hello_ok : false;
          mc_tpld_drop_ref (&td);
       }
 
       _server_monitor_ping_server (server_monitor, hello_ok, &rtt_ms);
       if (rtt_ms != MONGOC_RTT_UNSET) {
-         mc_tpld_modification tdmod =
-            mc_tpld_modify_begin (server_monitor->topology);
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (server_monitor->topology);
          mongoc_server_description_t *const mut_sd =
-            mongoc_topology_description_server_by_id (
-               tdmod.new_td, server_monitor->description->id, &error);
+            mongoc_topology_description_server_by_id (tdmod.new_td, server_monitor->description->id, &error);
          if (mut_sd) {
             mongoc_server_description_update_rtt (mut_sd, rtt_ms);
             mc_tpld_modify_commit (tdmod);
@@ -1407,8 +1236,7 @@ mongoc_server_monitor_run (mongoc_server_monitor_t *server_monitor)
    bson_mutex_lock (&server_monitor->shared.mutex);
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = false;
-      int ret = mcommon_thread_create (
-         &server_monitor->thread, _server_monitor_thread, server_monitor);
+      int ret = mcommon_thread_create (&server_monitor->thread, _server_monitor_thread, server_monitor);
       if (ret == 0) {
          server_monitor->shared.state = MONGOC_THREAD_RUNNING;
       } else {
@@ -1430,18 +1258,16 @@ mongoc_server_monitor_run_as_rtt (mongoc_server_monitor_t *server_monitor)
    bson_mutex_lock (&server_monitor->shared.mutex);
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = true;
-      int ret = mcommon_thread_create (
-         &server_monitor->thread, _server_monitor_rtt_thread, server_monitor);
+      int ret = mcommon_thread_create (&server_monitor->thread, _server_monitor_rtt_thread, server_monitor);
       if (ret == 0) {
          server_monitor->shared.state = MONGOC_THREAD_RUNNING;
       } else {
          char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
          char *errmsg = bson_strerror_r (ret, errmsg_buf, sizeof errmsg_buf);
-         _server_monitor_log (
-            server_monitor,
-            MONGOC_LOG_LEVEL_ERROR,
-            "Failed to start Round-Trip Time monitoring thread. Error: %s",
-            errmsg);
+         _server_monitor_log (server_monitor,
+                              MONGOC_LOG_LEVEL_ERROR,
+                              "Failed to start Round-Trip Time monitoring thread. Error: %s",
+                              errmsg);
       }
    }
    bson_mutex_unlock (&server_monitor->shared.mutex);
@@ -1485,8 +1311,7 @@ mongoc_server_monitor_request_shutdown (mongoc_server_monitor_t *server_monitor)
  * Locks the server monitor mutex.
  */
 void
-mongoc_server_monitor_wait_for_shutdown (
-   mongoc_server_monitor_t *server_monitor)
+mongoc_server_monitor_wait_for_shutdown (mongoc_server_monitor_t *server_monitor)
 {
    if (mongoc_server_monitor_request_shutdown (server_monitor)) {
       return;

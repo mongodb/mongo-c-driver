@@ -39,24 +39,20 @@ ping (void)
    char *uri;
    int ret = EXIT_FAILURE;
 
-   uri = bson_strdup_printf ("mongodb://localhost/?tls=true&tlsCAFile=%s",
-                             ca_file);
+   uri = bson_strdup_printf ("mongodb://localhost/?tls=true&tlsCAFile=%s", ca_file);
    ASSERT ((client = mongoc_client_new (uri)));
 
    bson_init (&ping);
    bson_append_int32 (&ping, "ping", 4, 1);
    database = mongoc_client_get_database (client, "cache");
 
-   if (mongoc_database_command_with_opts (
-          database, &ping, NULL, NULL, &reply, &error)) {
+   if (mongoc_database_command_with_opts (database, &ping, NULL, NULL, &reply, &error)) {
       MONGOC_DEBUG ("Ping success\n");
       ret = EXIT_SUCCESS;
    } else {
       MONGOC_DEBUG ("Ping failure: %s\n", error.message);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_SERVER_SELECTION,
-                             MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                             "TLS handshake failed");
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "TLS handshake failed");
    }
 
    bson_free (uri);

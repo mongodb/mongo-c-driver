@@ -10,11 +10,9 @@ test_mongoc_version (void)
    ASSERT_CMPINT (mongoc_get_micro_version (), ==, MONGOC_MICRO_VERSION);
    ASSERT_CMPSTR (mongoc_get_version (), MONGOC_VERSION_S);
 
-   ASSERT (mongoc_check_version (
-      MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, MONGOC_MICRO_VERSION));
+   ASSERT (mongoc_check_version (MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, MONGOC_MICRO_VERSION));
 
-   ASSERT (!mongoc_check_version (
-      MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION + 1, MONGOC_MICRO_VERSION));
+   ASSERT (!mongoc_check_version (MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION + 1, MONGOC_MICRO_VERSION));
 }
 
 void

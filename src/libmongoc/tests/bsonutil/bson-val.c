@@ -37,10 +37,8 @@ bson_val_from_value (const bson_value_t *value)
 
    val = bson_malloc0 (sizeof (bson_val_t));
    bson_value_copy (value, &val->value);
-   if (value->value_type == BSON_TYPE_DOCUMENT ||
-       value->value_type == BSON_TYPE_ARRAY) {
-      val->as_bson = bson_new_from_data (value->value.v_doc.data,
-                                         value->value.v_doc.data_len);
+   if (value->value_type == BSON_TYPE_DOCUMENT || value->value_type == BSON_TYPE_ARRAY) {
+      val->as_bson = bson_new_from_data (value->value.v_doc.data, value->value.v_doc.data_len);
    }
    val->type = value->value_type;
 
@@ -70,8 +68,7 @@ bson_val_from_json (const char *single_quoted_json)
    bson_error_t error;
 
    if (!bson_init_from_json (&as_bson, double_quoted, -1, &error)) {
-      test_error ("unable to construct bson value from: %s",
-                  single_quoted_json);
+      test_error ("unable to construct bson value from: %s", single_quoted_json);
    }
 
    val = bson_val_from_bson (&as_bson);
@@ -175,15 +172,12 @@ bson_val_destroy (bson_val_t *val)
 }
 
 bool
-bson_val_eq (const bson_val_t *a,
-             const bson_val_t *b,
-             bson_val_comparison_flags_t flags)
+bson_val_eq (const bson_val_t *a, const bson_val_t *b, bson_val_comparison_flags_t flags)
 {
    bson_type_t vtype;
 
    vtype = a->type;
-   if (vtype == BSON_TYPE_DOUBLE || vtype == BSON_TYPE_INT32 ||
-       vtype == BSON_TYPE_INT64) {
+   if (vtype == BSON_TYPE_DOUBLE || vtype == BSON_TYPE_INT32 || vtype == BSON_TYPE_INT64) {
       if (flags & BSON_VAL_FLEXIBLE_NUMERICS) {
          return bson_val_convert_int64 (a) == bson_val_convert_int64 (b);
       }
@@ -210,10 +204,8 @@ bson_val_eq (const bson_val_t *a,
       bool scope_equal;
       bson_t *a_scope, *a_scope_sorted, *b_scope, *b_scope_sorted;
 
-      a_scope = bson_new_from_data (a->value.value.v_codewscope.scope_data,
-                                    a->value.value.v_codewscope.scope_len);
-      b_scope = bson_new_from_data (b->value.value.v_codewscope.scope_data,
-                                    b->value.value.v_codewscope.scope_len);
+      a_scope = bson_new_from_data (a->value.value.v_codewscope.scope_data, a->value.value.v_codewscope.scope_len);
+      b_scope = bson_new_from_data (b->value.value.v_codewscope.scope_data, b->value.value.v_codewscope.scope_len);
 
       a_scope_sorted = bson_copy_and_sort (a_scope);
       b_scope_sorted = bson_copy_and_sort (b_scope);
@@ -228,8 +220,7 @@ bson_val_eq (const bson_val_t *a,
          return false;
       }
 
-      return 0 == strcmp (a->value.value.v_codewscope.code,
-                          b->value.value.v_codewscope.code);
+      return 0 == strcmp (a->value.value.v_codewscope.code, b->value.value.v_codewscope.code);
    }
 
    /* All other cases, compare exact match by looking at canonical extended JSON
@@ -247,8 +238,7 @@ const bson_t *
 bson_val_to_document (const bson_val_t *val)
 {
    if (val->type != BSON_TYPE_DOCUMENT) {
-      test_error ("expected document, got: %s",
-                  bson_type_to_string (val->type));
+      test_error ("expected document, got: %s", bson_type_to_string (val->type));
    }
    return val->as_bson;
 }
@@ -267,8 +257,7 @@ const bson_t *
 bson_val_to_bson (const bson_val_t *val)
 {
    if (val->type != BSON_TYPE_ARRAY && val->type != BSON_TYPE_DOCUMENT) {
-      test_error ("expected document or array, got: %s",
-                  bson_type_to_string (val->type));
+      test_error ("expected document or array, got: %s", bson_type_to_string (val->type));
    }
    return val->as_bson;
 }
@@ -299,8 +288,7 @@ bson_val_to_utf8 (const bson_val_t *val)
 bool
 bson_val_is_numeric (const bson_val_t *val)
 {
-   return (val->type == BSON_TYPE_INT32 || val->type == BSON_TYPE_INT64 ||
-           val->type == BSON_TYPE_DOUBLE);
+   return (val->type == BSON_TYPE_INT32 || val->type == BSON_TYPE_INT64 || val->type == BSON_TYPE_DOUBLE);
 }
 
 int64_t
@@ -316,8 +304,7 @@ bson_val_convert_int64 (const bson_val_t *val)
       return (int64_t) val->value.value.v_double;
    }
 
-   test_error ("expected int64, int32, or double, got: %s",
-               bson_type_to_string (val->type));
+   test_error ("expected int64, int32, or double, got: %s", bson_type_to_string (val->type));
    return 0;
 }
 
