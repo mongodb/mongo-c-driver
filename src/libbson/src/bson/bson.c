@@ -3657,7 +3657,7 @@ struct _bson_array_builder_t {
 bson_array_builder_t *
 bson_array_builder_new (void)
 {
-   bson_array_builder_t *bab = bson_malloc0 (sizeof (bson_array_builder_t));
+   bson_array_builder_t *bab = bson_aligned_alloc0 (128, sizeof (bson_array_builder_t));
    bson_init (&bab->bson);
    return bab;
 }
