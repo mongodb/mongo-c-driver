@@ -174,7 +174,7 @@ ADD_TLS:
             # Nothing to infer
         ELSE IF __is_alpine
             LET libressl_dev_pkg = libressl-dev
-            LET libressl_rt_pkg = libressl-dev
+            LET libressl_rt_pkg = libressl
         ELSE IF __is_ubuntu
             RUN __fail "Cannot infer the LibreSSL TLS library package names on Ubuntu, as Ubuntu does not ship LibreSSL packages. Set --openssl_dev_pkg and --openssl_rt_pkg or update the ADD_TLS utility."
         ELSE IF __is_archlinux

@@ -16,7 +16,7 @@ set -eu
 # Read the value of the variable named by <varname> into a variable <dest>
 __readvar() {
     local __readvar_tmp
-    eval "__readvar_tmp=\$(printf %s.\"\${$2}\"); $1=\${__readvar_tmp%.}"
+    eval "__readvar_tmp=\$(printf %s. \"\${$2}\"); $1=\${__readvar_tmp%.}"
 }
 
 __fail() {

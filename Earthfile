@@ -4,17 +4,17 @@ LOCALLY
 IMPORT ./tools/ AS tools
 
 # For target names, descriptions, and build parameters, run the "doc" Earthly subcommand.
+# Example use: <earthly> +build --env=u22 --sasl=off --tls=OpenSSL --c_compiler=gcc
 
 # build :
 #   Build libmongoc and libbson using the specified environment.
 #
-# The --env argument specifies the build environment, using “+${env}-build-env”
-# as the build environment target. Refer to the list of targets for a list of
-# available environments.
+# The --env argument specifies the build environment among the `+env.xyz` environment
+# targets, using --purpose=build for the build environment. Refer to the target
+# list for a list of available build environments.
 build:
     # env is an argument
     ARG --required env
-    # FROM +$os-env --for=build
     FROM --pass-args +env.$env --purpose=build
     # The configuration to be built
     ARG config=RelWithDebInfo
@@ -142,9 +142,7 @@ PREP_CMAKE:
         .evergreen/scripts/cmake.sh \
         $scratch/.evergreen/scripts/
     # "Install" a shim that runs our managed CMake executable:
-    RUN printf '#!/bin/sh\n /opt/mongoc-cmake/.evergreen/scripts/cmake.sh "$@"\n' \
-            > /usr/local/bin/cmake && \
-        chmod +x /usr/local/bin/cmake
+    RUN __alias cmake /opt/mongoc-cmake/.evergreen/scripts/cmake.sh
     # Executing any CMake command will warm the cache:
     RUN cmake --version
 

@@ -157,7 +157,7 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
             return True
 
 
-def envs_for(config: Configuration) -> Iterable[EarthlyVariant]:
+def variants_for(config: Configuration) -> Iterable[EarthlyVariant]:
     """Get all Earthly variants that are not excluded for the given build configuration"""
     all_envs = all_possible(EarthlyVariant)
     allow_env_for_config = functools.partial(task_filter, conf=config)
@@ -175,9 +175,9 @@ def earthly_task(
     function returns `None`, then the task configuration is excluded from executing
     and no task should be defined.
     """
-    # Attach "earthly-xyz" tags to the task to allow build variants to select
+    # Attach tags to the task to allow build variants to select
     # these tasks by the environment of that variant.
-    env_tags = sorted(e.task_selector_tag for e in sorted(envs_for(config)))
+    env_tags = sorted(e.task_selector_tag for e in sorted(variants_for(config)))
     if not env_tags:
         # All environments have been excluded for this configuration. This means
         # the task itself should not be run:
