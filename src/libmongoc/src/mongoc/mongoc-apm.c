@@ -229,6 +229,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
 
    event->duration = duration;
    event->command_name = command_name;
+   event->database_name = database_name;
    event->request_id = request_id;
    event->operation_id = operation_id;
    event->host = host;
@@ -448,6 +449,12 @@ mongoc_apm_command_succeeded_get_command_name (
    return event->command_name;
 }
 
+const char *
+mongoc_apm_command_succeeded_get_database_name (
+   const mongoc_apm_command_succeeded_t *event)
+{
+   return event->database_name;
+}
 
 int64_t
 mongoc_apm_command_succeeded_get_request_id (

@@ -125,6 +125,9 @@ mongoc_apm_command_succeeded_get_reply (
 MONGOC_EXPORT (const char *)
 mongoc_apm_command_succeeded_get_command_name (
    const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT (const char *)
+mongoc_apm_command_succeeded_get_database_name (
+   const mongoc_apm_command_succeeded_t *event);
 MONGOC_EXPORT (int64_t)
 mongoc_apm_command_succeeded_get_request_id (
    const mongoc_apm_command_succeeded_t *event);
