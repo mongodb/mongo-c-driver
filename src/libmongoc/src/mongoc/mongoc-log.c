@@ -212,9 +212,9 @@ mongoc_log_default_handler (mongoc_log_level_t log_level,
 #endif
 
    fprintf (stream,
-            "%s.%04ld: [%5d]: %8s: %12s: %s\n",
+            "%s.%04" PRId64 ": [%5d]: %8s: %12s: %s\n",
             nowstr,
-            tv.tv_usec / 1000L,
+            (int64_t) (tv.tv_usec / 1000),
             pid,
             mongoc_log_level_str (log_level),
             log_domain,
