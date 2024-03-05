@@ -328,6 +328,7 @@ all_tasks = [
     NamedTask(
         "rpm-package-build",
         commands=[
+            shell_mongoc('export IS_PATCH="${is_patch}"\n' "sh .evergreen/scripts/check_rpm_spec.sh"),
             shell_mongoc("sh .evergreen/scripts/build_snapshot_rpm.sh"),
             s3_put(
                 local_file="rpm.tar.gz",
