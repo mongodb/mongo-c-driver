@@ -1,3 +1,10 @@
+mongo-c-driver (1.26.0-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Rename libraries for 64-bit time_t transition.  Closes: #1062948
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 28 Feb 2024 20:18:34 +0000
+
 mongo-c-driver (1.26.0-1) unstable; urgency=medium
 
   * New upstream release

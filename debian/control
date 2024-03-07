@@ -4,7 +4,7 @@ Maintainer: Mongo C Driver Team <mongo-c-driver-debian@googlegroups.com>
 Uploaders: Kevin Albertson <kevin.albertson@mongodb.com>,
            Roberto C. Sanchez <roberto@connexer.com>,
            Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>
-Build-Depends: debhelper (>= 11),
+Build-Depends: dpkg-dev (>= 1.22.5), debhelper (>= 11),
                cmake,
                libssl-dev,
                pkgconf,
@@ -27,7 +27,7 @@ Package: libmongoc-dev
 Section: libdevel
 Architecture: any
 Build-Profiles: <!pkg.mongo-c-driver.no-libmongocrypt>
-Depends: libmongoc-1.0-0 (= ${binary:Version}),
+Depends: libmongoc-1.0-0t64 (= ${binary:Version}),
          libbson-dev (= ${binary:Version}),
          libmongocrypt-dev,
          libssl-dev,
@@ -44,7 +44,10 @@ Description: MongoDB C client library - dev files
  This package contains all files necessary to develop applications which
  use libmongoc.
 
-Package: libmongoc-1.0-0
+Package: libmongoc-1.0-0t64
+Provides: ${t64:Provides}
+Replaces: libmongoc-1.0-0
+Breaks: libmongoc-1.0-0 (<< ${source:Version})
 Architecture: any
 Build-Profiles: <!pkg.mongo-c-driver.no-libmongocrypt>
 Depends: ${misc:Depends},
@@ -71,7 +74,7 @@ Description: MongoDB C client library - documentation
 Package: libbson-dev
 Section: libdevel
 Architecture: any
-Depends: libbson-1.0-0 (= ${binary:Version}),
+Depends: libbson-1.0-0t64 (= ${binary:Version}),
          ${misc:Depends}
 Description: Library to parse and generate BSON documents - dev files
  libbson parses and generates BSON documents, the data format for
@@ -82,7 +85,10 @@ Description: Library to parse and generate BSON documents - dev files
  This package contains all files necessary to develop applications which
  use libbson.
 
-Package: libbson-1.0-0
+Package: libbson-1.0-0t64
+Provides: ${t64:Provides}
+Replaces: libbson-1.0-0
+Breaks: libbson-1.0-0 (<< ${source:Version})
 Architecture: any
 Depends: ${misc:Depends},
          ${shlibs:Depends}
