@@ -472,11 +472,11 @@ bson_strndup (const char *str, /* IN */
 void
 bson_strfreev (char **str) /* IN */
 {
-   int i;
-
    if (str) {
-      for (i = 0; str[i]; i++)
+      for (size_t i = 0u; str[i] != NULL; ++i) {
          bson_free (str[i]);
+      }
+
       bson_free (str);
    }
 }
