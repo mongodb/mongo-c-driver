@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.26.0
+%global up_version   1.26.1
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -243,6 +243,9 @@ exit $ret
 
 
 %changelog
+* Wed Mar  6 2024 Remi Collet <remi@remirepo.net> - 1.26.1-1
+- update to 1.26.1
+
 * Fri Feb 16 2024 Remi Collet <remi@remirepo.net> - 1.26.0-1
 - update to 1.26.0
 - raise dependency to libmongocrypt 1.8.0
