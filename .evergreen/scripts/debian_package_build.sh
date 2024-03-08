@@ -65,6 +65,7 @@ sudo chroot ./unstable-chroot /bin/bash -c '(\
   git remote remove upstream || true && \
   git remote add upstream https://github.com/mongodb/mongo-c-driver && \
   git fetch upstream && \
+  export CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)" && \
   git checkout upstream/debian/unstable && \
   git checkout ${CURRENT_BRANCH} && \
   git checkout upstream/debian/unstable -- ./debian/ && \
