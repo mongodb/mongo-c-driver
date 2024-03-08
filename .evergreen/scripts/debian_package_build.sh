@@ -21,29 +21,21 @@ on_exit () {
 trap on_exit EXIT
 
 if [ "${IS_PATCH}" = "true" ]; then
-  git diff HEAD -- . ':!debian' > ../upstream.patch
-  git diff HEAD -- debian > ../debian.patch
+  git diff HEAD > ../upstream.patch
   git clean -fdx
   git reset --hard HEAD
-  if [ -s ../upstream.patch ]; then
-    git remote add upstream https://github.com/mongodb/mongo-c-driver
-    git fetch upstream
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    git checkout upstream/debian/unstable
-    git checkout ${CURRENT_BRANCH}
-    git checkout upstream/debian/unstable -- ./debian/
-    [ -d debian/patches ] || mkdir debian/patches
-    mv ../upstream.patch debian/patches/
-    echo upstream.patch >> debian/patches/series
-    git add debian/patches/*
-    git commit -m 'Evergreen patch build - upstream changes'
-    git log -n1 -p
-  fi
-  if [ -s ../debian.patch ]; then
-    git apply --index ../debian.patch
-    git commit -m 'Evergreen patch build - Debian packaging changes'
-    git log -n1 -p
-  fi
+  git remote add upstream https://github.com/mongodb/mongo-c-driver
+  git fetch upstream
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  git checkout upstream/debian/unstable
+  git checkout ${CURRENT_BRANCH}
+  git checkout upstream/debian/unstable -- ./debian/
+  [ -d debian/patches ] || mkdir debian/patches
+  mv ../upstream.patch debian/patches/
+  echo upstream.patch >> debian/patches/series
+  git add debian/patches/*
+  git commit -m 'Evergreen patch build - upstream changes'
+  git log -n1 -p
 fi
 
 cd ..
