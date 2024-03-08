@@ -407,8 +407,8 @@ all_tasks = [
                         "params",
                         OD(
                             [
-                                ("aws_key", "${toolchain_aws_key}"),
-                                ("aws_secret", "${toolchain_aws_secret}"),
+                                ("aws_key", "${aws_key}"),
+                                ("aws_secret", "${aws_secret}"),
                                 ("remote_file", "mongo-c-toolchain/${distro_id}/2023/06/07/mongo-c-toolchain.tar.gz"),
                                 ("bucket", "mongo-c-toolchain"),
                                 ("local_file", "mongo-c-toolchain.tar.gz"),
