@@ -473,8 +473,8 @@ void
 bson_strfreev (char **str) /* IN */
 {
    if (str) {
-      for (size_t i = 0u; str[i] != NULL; ++i) {
-         bson_free (str[i]);
+      for (char **ptr = str; *ptr != NULL; ++ptr) {
+         bson_free (*ptr);
       }
 
       bson_free (str);
