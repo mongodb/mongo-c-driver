@@ -30,12 +30,14 @@ if [ "${IS_PATCH}" = "true" ]; then
   git checkout upstream/debian/unstable
   git checkout ${CURRENT_BRANCH}
   git checkout upstream/debian/unstable -- ./debian/
-  [ -d debian/patches ] || mkdir debian/patches
-  mv ../upstream.patch debian/patches/
-  echo upstream.patch >> debian/patches/series
-  git add debian/patches/*
-  git commit -m 'Evergreen patch build - upstream changes'
-  git log -n1 -p
+  if [ -s ../upstream.patch ]; then
+    [ -d debian/patches ] || mkdir debian/patches
+    mv ../upstream.patch debian/patches/
+    echo upstream.patch >> debian/patches/series
+    git add debian/patches/*
+    git commit -m 'Evergreen patch build - upstream changes'
+    git log -n1 -p
+  fi
 fi
 
 cd ..
