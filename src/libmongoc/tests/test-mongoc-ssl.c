@@ -51,99 +51,97 @@ MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK "tlsdisableocspendpointcheck"
 static void
 test_mongoc_ssl_opts_from_bson (void)
 {
-   testcase_t tests[] = {
-      {
-         "test all options set",
-         "{'tlsCertificateKeyFile': 'test_pem_file', "
-         "'tlsCertificateKeyFilePassword': 'test_pem_pwd', 'tlsCAFile': "
-         "'test_ca_file', 'tlsAllowInvalidCertificates': true, "
-         "'tlsAllowInvalidHostnames': true, 'tlsInsecure': true, "
-         "'tlsDisableCertificateRevocationCheck': true, "
-         "'tlsDisableOCSPEndpointCheck': true }",
-         NULL /* expect_error */,
-         "test_pem_file" /* pem_file */,
-         "test_pem_pwd" /* pem_pwd */,
-         "test_ca_file" /* ca_file */,
-         true /* weak_cert_validation */,
-         true /* allow_invalid_hostname */,
-         true /* disable_ocsp_endpoint_check */,
-         true /* disable_certificate_revocation_check */
-      },
-      {
-         "test options are case insentive",
-         "{'tlscertificatekeyfile': 'test_pem_file', "
-         "'tlscertificatekeyfilepassword': 'test_pem_pwd', 'tlscafile': "
-         "'test_ca_file', 'tlsallowinvalidcertificates': true, "
-         "'tlsallowinvalidhostnames': true, 'tlsinsecure': true, "
-         "'tlsdisablecertificaterevocationcheck': true, "
-         "'tlsdisableocspendpointcheck': true }",
-         NULL /* expect_error */,
-         "test_pem_file" /* pem_file */,
-         "test_pem_pwd" /* pem_pwd */,
-         "test_ca_file" /* ca_file */,
-         true /* weak_cert_validation */,
-         true /* allow_invalid_hostname */,
-         true /* disable_ocsp_endpoint_check */,
-         true /* disable_certificate_revocation_check */
-      },
-      {
-         "test no options set",
-         "{}",
-         NULL /* expect_error */,
-         NULL /* pem_file */,
-         NULL /* pem_pwd */,
-         NULL /* ca_file */,
-         false /* weak_cert_validation */,
-         false /* allow_invalid_hostname */,
-         false /* disable_ocsp_endpoint_check */,
-         false /* disable_certificate_revocation_check */
-      },
-      {
-         "test tlsInsecure overrides tlsAllowInvalidHostnames and "
-         "tlsAllowInvalidCertificates set",
-         "{'tlsInsecure': true, 'tlsAllowInvalidHostnames': false, "
-         "'tlsAllowInvalidCertificates': false}",
-         NULL /* expect_error */,
-         NULL /* pem_file */,
-         NULL /* pem_pwd */,
-         NULL /* ca_file */,
-         true /* weak_cert_validation */,
-         true /* allow_invalid_hostname */,
-         false /* disable_ocsp_endpoint_check */,
-         false /* disable_certificate_revocation_check */
-      },
-      {
-         "test unrecognized option",
-         "{'foo': true }",
-         "unexpected BOOL option: foo" /* expect_error */,
-         NULL /* pem_file */,
-         NULL /* pem_pwd */,
-         NULL /* ca_file */,
-         false /* weak_cert_validation */,
-         false /* allow_invalid_hostname */,
-         false /* disable_ocsp_endpoint_check */,
-         false /* disable_certificate_revocation_check */
-      },
-      {
-         "test wrong value type",
-         "{'tlsCaFile': true }",
-         "unexpected BOOL option: tlsCaFile" /* expect_error */,
-         NULL /* pem_file */,
-         NULL /* pem_pwd */,
-         NULL /* ca_file */,
-         false /* weak_cert_validation */,
-         false /* allow_invalid_hostname */,
-         false /* disable_ocsp_endpoint_check */,
-         false /* disable_certificate_revocation_check */
-      },
-      {0}};
+   testcase_t tests[] = {{
+                            "test all options set",
+                            "{'tlsCertificateKeyFile': 'test_pem_file', "
+                            "'tlsCertificateKeyFilePassword': 'test_pem_pwd', 'tlsCAFile': "
+                            "'test_ca_file', 'tlsAllowInvalidCertificates': true, "
+                            "'tlsAllowInvalidHostnames': true, 'tlsInsecure': true, "
+                            "'tlsDisableCertificateRevocationCheck': true, "
+                            "'tlsDisableOCSPEndpointCheck': true }",
+                            NULL /* expect_error */,
+                            "test_pem_file" /* pem_file */,
+                            "test_pem_pwd" /* pem_pwd */,
+                            "test_ca_file" /* ca_file */,
+                            true /* weak_cert_validation */,
+                            true /* allow_invalid_hostname */,
+                            true /* disable_ocsp_endpoint_check */,
+                            true /* disable_certificate_revocation_check */
+                         },
+                         {
+                            "test options are case insentive",
+                            "{'tlscertificatekeyfile': 'test_pem_file', "
+                            "'tlscertificatekeyfilepassword': 'test_pem_pwd', 'tlscafile': "
+                            "'test_ca_file', 'tlsallowinvalidcertificates': true, "
+                            "'tlsallowinvalidhostnames': true, 'tlsinsecure': true, "
+                            "'tlsdisablecertificaterevocationcheck': true, "
+                            "'tlsdisableocspendpointcheck': true }",
+                            NULL /* expect_error */,
+                            "test_pem_file" /* pem_file */,
+                            "test_pem_pwd" /* pem_pwd */,
+                            "test_ca_file" /* ca_file */,
+                            true /* weak_cert_validation */,
+                            true /* allow_invalid_hostname */,
+                            true /* disable_ocsp_endpoint_check */,
+                            true /* disable_certificate_revocation_check */
+                         },
+                         {
+                            "test no options set",
+                            "{}",
+                            NULL /* expect_error */,
+                            NULL /* pem_file */,
+                            NULL /* pem_pwd */,
+                            NULL /* ca_file */,
+                            false /* weak_cert_validation */,
+                            false /* allow_invalid_hostname */,
+                            false /* disable_ocsp_endpoint_check */,
+                            false /* disable_certificate_revocation_check */
+                         },
+                         {
+                            "test tlsInsecure overrides tlsAllowInvalidHostnames and "
+                            "tlsAllowInvalidCertificates set",
+                            "{'tlsInsecure': true, 'tlsAllowInvalidHostnames': false, "
+                            "'tlsAllowInvalidCertificates': false}",
+                            NULL /* expect_error */,
+                            NULL /* pem_file */,
+                            NULL /* pem_pwd */,
+                            NULL /* ca_file */,
+                            true /* weak_cert_validation */,
+                            true /* allow_invalid_hostname */,
+                            false /* disable_ocsp_endpoint_check */,
+                            false /* disable_certificate_revocation_check */
+                         },
+                         {
+                            "test unrecognized option",
+                            "{'foo': true }",
+                            "unexpected BOOL option: foo" /* expect_error */,
+                            NULL /* pem_file */,
+                            NULL /* pem_pwd */,
+                            NULL /* ca_file */,
+                            false /* weak_cert_validation */,
+                            false /* allow_invalid_hostname */,
+                            false /* disable_ocsp_endpoint_check */,
+                            false /* disable_certificate_revocation_check */
+                         },
+                         {
+                            "test wrong value type",
+                            "{'tlsCaFile': true }",
+                            "unexpected BOOL option: tlsCaFile" /* expect_error */,
+                            NULL /* pem_file */,
+                            NULL /* pem_pwd */,
+                            NULL /* ca_file */,
+                            false /* weak_cert_validation */,
+                            false /* allow_invalid_hostname */,
+                            false /* disable_ocsp_endpoint_check */,
+                            false /* disable_certificate_revocation_check */
+                         },
+                         {0}};
    testcase_t *test;
 
    for (test = tests; test->bson != NULL; test++) {
       mongoc_ssl_opt_t ssl_opt = {0};
       bson_string_t *errmsg = bson_string_new (NULL);
-      bool ok =
-         _mongoc_ssl_opts_from_bson (&ssl_opt, tmp_bson (test->bson), errmsg);
+      bool ok = _mongoc_ssl_opts_from_bson (&ssl_opt, tmp_bson (test->bson), errmsg);
 
       MONGOC_DEBUG ("testcase: %s", test->bson);
       if (test->expect_error) {
@@ -176,12 +174,9 @@ test_mongoc_ssl_opts_from_bson (void)
          ASSERT_CMPSTR (test->expect_ca_file, ssl_opt.ca_file);
       }
 
-      ASSERT (test->expect_weak_cert_validation ==
-              ssl_opt.weak_cert_validation);
-      ASSERT (test->expect_allow_invalid_hostname ==
-              ssl_opt.allow_invalid_hostname);
-      ASSERT (test->expect_disable_ocsp_endpoint_check ==
-              _mongoc_ssl_opts_disable_ocsp_endpoint_check (&ssl_opt));
+      ASSERT (test->expect_weak_cert_validation == ssl_opt.weak_cert_validation);
+      ASSERT (test->expect_allow_invalid_hostname == ssl_opt.allow_invalid_hostname);
+      ASSERT (test->expect_disable_ocsp_endpoint_check == _mongoc_ssl_opts_disable_ocsp_endpoint_check (&ssl_opt));
       ASSERT (test->expect_disable_certificate_revocation_check ==
               _mongoc_ssl_opts_disable_certificate_revocation_check (&ssl_opt));
 

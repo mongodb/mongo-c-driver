@@ -93,9 +93,7 @@ typedef union _mcd_rpc_message mcd_rpc_message;
 //
 // Returns the new RPC message object on success. Returns `NULL` on failure.
 mcd_rpc_message *
-mcd_rpc_message_from_data (const void *data,
-                           size_t length,
-                           const void **data_end);
+mcd_rpc_message_from_data (const void *data, size_t length, const void **data_end);
 
 // The in-place version of `mcd_rpc_message_from_data`.
 //
@@ -103,10 +101,7 @@ mcd_rpc_message_from_data (const void *data,
 //
 // Returns `true` on success. Returns `false` on failure.
 bool
-mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc,
-                                    const void *data,
-                                    size_t length,
-                                    const void **data_end);
+mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc, const void *data, size_t length, const void **data_end);
 
 // Convert the given RPC message object into an array of iovec structures,
 // putting the RPC message object in an iovecs state. The return value must be
@@ -168,8 +163,7 @@ mcd_rpc_header_get_op_code (const mcd_rpc_message *rpc);
 //
 // Returns the length of the field as part of msgHeader.messageLength.
 int32_t
-mcd_rpc_header_set_message_length (mcd_rpc_message *rpc,
-                                   int32_t message_length);
+mcd_rpc_header_set_message_length (mcd_rpc_message *rpc, int32_t message_length);
 
 // Set the msgHeader.requestId field.
 //
@@ -222,29 +216,25 @@ mcd_rpc_op_compressed_get_compressed_message (const mcd_rpc_message *rpc);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_COMPRESSED.
 size_t
-mcd_rpc_op_compressed_get_compressed_message_length (
-   const mcd_rpc_message *rpc);
+mcd_rpc_op_compressed_get_compressed_message_length (const mcd_rpc_message *rpc);
 
 // Set the OP_COMPRESSED originalOpcode field.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_COMPRESSED.
 int32_t
-mcd_rpc_op_compressed_set_original_opcode (mcd_rpc_message *rpc,
-                                           int32_t original_opcode);
+mcd_rpc_op_compressed_set_original_opcode (mcd_rpc_message *rpc, int32_t original_opcode);
 
 // Set the OP_COMPRESSED uncompressedSize field.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_COMPRESSED.
 int32_t
-mcd_rpc_op_compressed_set_uncompressed_size (mcd_rpc_message *rpc,
-                                             int32_t uncompressed_size);
+mcd_rpc_op_compressed_set_uncompressed_size (mcd_rpc_message *rpc, int32_t uncompressed_size);
 
 // Set the OP_COMPRESSED compressorId field.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_COMPRESSED.
 int32_t
-mcd_rpc_op_compressed_set_compressor_id (mcd_rpc_message *rpc,
-                                         uint8_t compressor_id);
+mcd_rpc_op_compressed_set_compressor_id (mcd_rpc_message *rpc, uint8_t compressor_id);
 
 // Set the OP_COMPRESSED compressedMessage field.
 //
@@ -279,8 +269,7 @@ mcd_rpc_op_msg_section_get_length (const mcd_rpc_message *rpc, size_t index);
 // The given index MUST be a valid index into the OP_MSG sections array.
 // The section kind at the given index MUST equal 1.
 const char *
-mcd_rpc_op_msg_section_get_identifier (const mcd_rpc_message *rpc,
-                                       size_t index);
+mcd_rpc_op_msg_section_get_identifier (const mcd_rpc_message *rpc, size_t index);
 
 // Get a pointer to the beginning of the single BSON object of the OP_MSG body
 // section at the given index.
@@ -298,8 +287,7 @@ mcd_rpc_op_msg_section_get_body (const mcd_rpc_message *rpc, size_t index);
 // The given index MUST be a valid index into the OP_MSG sections array.
 // The section kind at the given index MUST equal 1.
 const void *
-mcd_rpc_op_msg_section_get_document_sequence (const mcd_rpc_message *rpc,
-                                              size_t index);
+mcd_rpc_op_msg_section_get_document_sequence (const mcd_rpc_message *rpc, size_t index);
 
 // Get the length of the document sequence of the OP_MSG document sequence
 // section at the given index.
@@ -310,17 +298,14 @@ mcd_rpc_op_msg_section_get_document_sequence (const mcd_rpc_message *rpc,
 // The given index MUST be a valid index into the OP_MSG sections array.
 // The section kind at the given index MUST equal 1.
 size_t
-mcd_rpc_op_msg_section_get_document_sequence_length (const mcd_rpc_message *rpc,
-                                                     size_t index);
+mcd_rpc_op_msg_section_get_document_sequence_length (const mcd_rpc_message *rpc, size_t index);
 
 // Set the kind byte for the OP_MSG section at the given index.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_MSG.
 // The given index MUST be a valid index into the OP_MSG sections array.
 int32_t
-mcd_rpc_op_msg_section_set_kind (mcd_rpc_message *rpc,
-                                 size_t index,
-                                 uint8_t kind);
+mcd_rpc_op_msg_section_set_kind (mcd_rpc_message *rpc, size_t index, uint8_t kind);
 
 // Set the length of the OP_MSG document sequence section at the given index.
 //
@@ -331,9 +316,7 @@ mcd_rpc_op_msg_section_set_kind (mcd_rpc_message *rpc,
 // The given index MUST be a valid index into the OP_MSG sections array.
 // The section kind at the given index MUST equal 1.
 int32_t
-mcd_rpc_op_msg_section_set_length (mcd_rpc_message *rpc,
-                                   size_t index,
-                                   int32_t length);
+mcd_rpc_op_msg_section_set_length (mcd_rpc_message *rpc, size_t index, int32_t length);
 
 // Set the document sequence identifier of the OP_MSG document sequence section
 // at the given index.
@@ -342,9 +325,7 @@ mcd_rpc_op_msg_section_set_length (mcd_rpc_message *rpc,
 // The given index MUST be a valid index into the OP_MSG sections array.
 // The section kind at the given index MUST equal 1.
 int32_t
-mcd_rpc_op_msg_section_set_identifier (mcd_rpc_message *rpc,
-                                       size_t index,
-                                       const char *identifier);
+mcd_rpc_op_msg_section_set_identifier (mcd_rpc_message *rpc, size_t index, const char *identifier);
 
 // Set the BSON object for the OP_MSG body section at the given index.
 //
@@ -355,9 +336,7 @@ mcd_rpc_op_msg_section_set_identifier (mcd_rpc_message *rpc,
 // The given index MUST be a valid index into the OP_MSG sections array.
 // The section kind at the given index MUST equal 0.
 int32_t
-mcd_rpc_op_msg_section_set_body (mcd_rpc_message *rpc,
-                                 size_t index,
-                                 const void *body);
+mcd_rpc_op_msg_section_set_body (mcd_rpc_message *rpc, size_t index, const void *body);
 
 // Set the document sequence for the OP_MSG document sequence section at the
 // given index.
@@ -458,8 +437,7 @@ mcd_rpc_op_reply_get_documents_len (const mcd_rpc_message *rpc);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_REPLY.
 int32_t
-mcd_rpc_op_reply_set_response_flags (mcd_rpc_message *rpc,
-                                     int32_t response_flags);
+mcd_rpc_op_reply_set_response_flags (mcd_rpc_message *rpc, int32_t response_flags);
 
 // Set the OP_REPLY cursorID field.
 //
@@ -471,15 +449,13 @@ mcd_rpc_op_reply_set_cursor_id (mcd_rpc_message *rpc, int64_t cursor_id);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_REPLY.
 int32_t
-mcd_rpc_op_reply_set_starting_from (mcd_rpc_message *rpc,
-                                    int32_t starting_from);
+mcd_rpc_op_reply_set_starting_from (mcd_rpc_message *rpc, int32_t starting_from);
 
 // Set the OP_REPLY numberReturned field.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_REPLY.
 int32_t
-mcd_rpc_op_reply_set_number_returned (mcd_rpc_message *rpc,
-                                      int32_t number_returned);
+mcd_rpc_op_reply_set_number_returned (mcd_rpc_message *rpc, int32_t number_returned);
 
 // Set the OP_REPLY documents field.
 //
@@ -487,9 +463,7 @@ mcd_rpc_op_reply_set_number_returned (mcd_rpc_message *rpc,
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_REPLY.
 int32_t
-mcd_rpc_op_reply_set_documents (mcd_rpc_message *rpc,
-                                const void *documents,
-                                size_t documents_len);
+mcd_rpc_op_reply_set_documents (mcd_rpc_message *rpc, const void *documents, size_t documents_len);
 
 
 // Get the OP_UPDATE fullCollectionName field.
@@ -520,8 +494,7 @@ mcd_rpc_op_update_get_update (const mcd_rpc_message *rpc);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_UPDATE.
 int32_t
-mcd_rpc_op_update_set_full_collection_name (mcd_rpc_message *rpc,
-                                            const char *full_collection_name);
+mcd_rpc_op_update_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name);
 
 // Set the OP_UPDATE flags field.
 //
@@ -578,8 +551,7 @@ mcd_rpc_op_insert_set_flags (mcd_rpc_message *rpc, int32_t flags);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_INSERT.
 int32_t
-mcd_rpc_op_insert_set_full_collection_name (mcd_rpc_message *rpc,
-                                            const char *full_collection_name);
+mcd_rpc_op_insert_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name);
 
 // Set the OP_INSERT documents array.
 //
@@ -587,9 +559,7 @@ mcd_rpc_op_insert_set_full_collection_name (mcd_rpc_message *rpc,
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_INSERT.
 int32_t
-mcd_rpc_op_insert_set_documents (mcd_rpc_message *rpc,
-                                 const void *documents,
-                                 size_t documents_len);
+mcd_rpc_op_insert_set_documents (mcd_rpc_message *rpc, const void *documents, size_t documents_len);
 
 
 // Get the OP_QUERY flags field.
@@ -640,22 +610,19 @@ mcd_rpc_op_query_set_flags (mcd_rpc_message *rpc, int32_t flags);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_QUERY.
 int32_t
-mcd_rpc_op_query_set_full_collection_name (mcd_rpc_message *rpc,
-                                           const char *full_collection_name);
+mcd_rpc_op_query_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name);
 
 // Set the OP_QUERY numberToSkip field.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_QUERY.
 int32_t
-mcd_rpc_op_query_set_number_to_skip (mcd_rpc_message *rpc,
-                                     int32_t number_to_skip);
+mcd_rpc_op_query_set_number_to_skip (mcd_rpc_message *rpc, int32_t number_to_skip);
 
 // Set the OP_QUERY numberToReturn field.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_QUERY.
 int32_t
-mcd_rpc_op_query_set_number_to_return (mcd_rpc_message *rpc,
-                                       int32_t number_to_return);
+mcd_rpc_op_query_set_number_to_return (mcd_rpc_message *rpc, int32_t number_to_return);
 
 // Set the OP_QUERY query field.
 //
@@ -669,8 +636,7 @@ mcd_rpc_op_query_set_query (mcd_rpc_message *rpc, const void *query);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_QUERY.
 int32_t
-mcd_rpc_op_query_set_return_fields_selector (
-   mcd_rpc_message *rpc, const void *return_fields_selector);
+mcd_rpc_op_query_set_return_fields_selector (mcd_rpc_message *rpc, const void *return_fields_selector);
 
 
 // Get the OP_GET_MORE fullCollectionName field.
@@ -695,15 +661,13 @@ mcd_rpc_op_get_more_get_cursor_id (const mcd_rpc_message *rpc);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_GET_MORE.
 int32_t
-mcd_rpc_op_get_more_set_full_collection_name (mcd_rpc_message *rpc,
-                                              const char *full_collection_name);
+mcd_rpc_op_get_more_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name);
 
 // Set the OP_GET_MORE numberToReturn field.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_GET_MORE.
 int32_t
-mcd_rpc_op_get_more_set_number_to_return (mcd_rpc_message *rpc,
-                                          int32_t number_to_return);
+mcd_rpc_op_get_more_set_number_to_return (mcd_rpc_message *rpc, int32_t number_to_return);
 
 // Set the OP_GET_MORE cursorID field.
 //
@@ -734,8 +698,7 @@ mcd_rpc_op_delete_get_selector (const mcd_rpc_message *rpc);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_DELETE.
 int32_t
-mcd_rpc_op_delete_set_full_collection_name (mcd_rpc_message *rpc,
-                                            const char *full_collection_name);
+mcd_rpc_op_delete_set_full_collection_name (mcd_rpc_message *rpc, const char *full_collection_name);
 
 // Set the OP_DELETE flags field.
 //
@@ -768,9 +731,7 @@ mcd_rpc_op_kill_cursors_get_cursor_ids (const mcd_rpc_message *rpc);
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_KILL_CURSORS.
 int32_t
-mcd_rpc_op_kill_cursors_set_cursor_ids (mcd_rpc_message *rpc,
-                                        const int64_t *cursor_ids,
-                                        int32_t number_of_cursor_ids);
+mcd_rpc_op_kill_cursors_set_cursor_ids (mcd_rpc_message *rpc, const int64_t *cursor_ids, int32_t number_of_cursor_ids);
 
 
 #ifdef __cplusplus

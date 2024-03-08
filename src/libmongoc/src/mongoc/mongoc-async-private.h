@@ -45,14 +45,10 @@ typedef void (*mongoc_async_cmd_cb_t) (struct _mongoc_async_cmd *acmd,
                                        const bson_t *bson,
                                        int64_t duration_usec);
 
-typedef mongoc_stream_t *(*mongoc_async_cmd_initiate_t) (
-   struct _mongoc_async_cmd *);
+typedef mongoc_stream_t *(*mongoc_async_cmd_initiate_t) (struct _mongoc_async_cmd *);
 
-typedef int (*mongoc_async_cmd_setup_t) (mongoc_stream_t *stream,
-                                         int *events,
-                                         void *ctx,
-                                         int32_t timeout_msec,
-                                         bson_error_t *error);
+typedef int (*mongoc_async_cmd_setup_t) (
+   mongoc_stream_t *stream, int *events, void *ctx, int32_t timeout_msec, bson_error_t *error);
 
 
 mongoc_async_t *

@@ -79,8 +79,7 @@ main (int argc, char *argv[])
    opts = bson_new ();
    mongoc_write_concern_append (write_concern, opts);
 
-   if (mongoc_client_write_command_with_opts (
-          client, "test", cmd, opts, &reply, &error)) {
+   if (mongoc_client_write_command_with_opts (client, "test", cmd, opts, &reply, &error)) {
       json = bson_as_canonical_extended_json (&reply, NULL);
       printf ("cloneCollectionAsCapped: %s\n", json);
       bson_free (json);
@@ -108,23 +107,15 @@ main (int argc, char *argv[])
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
    /* "One" normally sorts before "one"; make "One" sort after "one" */
-   opts = BCON_NEW ("collation",
-                    "{",
-                    "locale",
-                    BCON_UTF8 ("en_US"),
-                    "caseFirst",
-                    BCON_UTF8 ("lower"),
-                    "}");
+   opts = BCON_NEW ("collation", "{", "locale", BCON_UTF8 ("en_US"), "caseFirst", BCON_UTF8 ("lower"), "}");
 
    /* add a read concern to "opts" */
    read_concern = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (read_concern,
-                                  MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_read_concern_set_level (read_concern, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
 
    mongoc_read_concern_append (read_concern, opts);
 
-   if (mongoc_client_read_command_with_opts (
-          client, "test", cmd, read_prefs, opts, &reply, &error)) {
+   if (mongoc_client_read_command_with_opts (client, "test", cmd, read_prefs, opts, &reply, &error)) {
       json = bson_as_canonical_extended_json (&reply, NULL);
       printf ("distinct: %s\n", json);
       bson_free (json);

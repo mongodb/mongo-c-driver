@@ -44,8 +44,7 @@ test_client_cmd_options (void)
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
@@ -53,18 +52,9 @@ test_client_cmd_options (void)
    mongoc_read_concern_append (rc, &opts);
 
    future =
-      future_client_command_with_opts (client,
-                                       "db",
-                                       tmp_bson ("{'ping': 1, '$db': 'db'}"),
-                                       NULL,
-                                       &opts,
-                                       NULL,
-                                       &error);
+      future_client_command_with_opts (client, "db", tmp_bson ("{'ping': 1, '$db': 'db'}"), NULL, &opts, NULL, &error);
 
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_QUERY_NONE,
-      tmp_bson ("{'readConcern': { '$exists': true }}"));
+   request = mock_server_receives_msg (server, MONGOC_QUERY_NONE, tmp_bson ("{'readConcern': { '$exists': true }}"));
 
    reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -82,6 +72,5 @@ test_client_cmd_options (void)
 void
 test_client_cmd_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (
-      suite, "/Client/cmd/options", test_client_cmd_options);
+   TestSuite_AddMockServerTest (suite, "/Client/cmd/options", test_client_cmd_options);
 }

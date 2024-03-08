@@ -34,12 +34,88 @@
 #include "mcd-time.h"
 #include "service-gcp.h"
 
+// `mcd_mapof_kmsid_to_tlsopts` maps a KMS ID (e.g. `aws` or `aws:myname`) to a
+// `mongoc_ssl_opt_t`. The acryonym TLS is preferred over SSL for
+// consistency with the CSE and URI specifications.
+typedef struct {
+   mongoc_array_t entries;
+} mcd_mapof_kmsid_to_tlsopts;
+
+typedef struct {
+   char *kmsid;
+   mongoc_ssl_opt_t tlsopts;
+} mcd_mapof_kmsid_to_tlsopts_entry;
+
+mcd_mapof_kmsid_to_tlsopts *
+mcd_mapof_kmsid_to_tlsopts_new (void)
+{
+   mcd_mapof_kmsid_to_tlsopts *k2t = bson_malloc0 (sizeof (mcd_mapof_kmsid_to_tlsopts));
+   _mongoc_array_init (&k2t->entries, sizeof (mcd_mapof_kmsid_to_tlsopts_entry));
+   return k2t;
+}
+
+void
+mcd_mapof_kmsid_to_tlsopts_destroy (mcd_mapof_kmsid_to_tlsopts *k2t)
+{
+   if (!k2t) {
+      return;
+   }
+   for (size_t i = 0; i < k2t->entries.len; i++) {
+      mcd_mapof_kmsid_to_tlsopts_entry *e = &_mongoc_array_index (&k2t->entries, mcd_mapof_kmsid_to_tlsopts_entry, i);
+      bson_free (e->kmsid);
+      _mongoc_ssl_opts_cleanup (&e->tlsopts, true /* free_internal */);
+   }
+   _mongoc_array_destroy (&k2t->entries);
+   bson_free (k2t);
+}
+
+// `mcd_mapof_kmsid_to_tlsopts_insert` adds an entry into the map.
+// `kmsid` and `tlsopts` are copied.
+// No checking is done to prohibit duplicate entries.
+void
+mcd_mapof_kmsid_to_tlsopts_insert (mcd_mapof_kmsid_to_tlsopts *k2t, const char *kmsid, const mongoc_ssl_opt_t *tlsopts)
+{
+   BSON_ASSERT_PARAM (k2t);
+   BSON_ASSERT_PARAM (kmsid);
+   BSON_ASSERT_PARAM (tlsopts);
+
+   mcd_mapof_kmsid_to_tlsopts_entry e = {.kmsid = bson_strdup (kmsid)};
+   _mongoc_ssl_opts_copy_to (tlsopts, &e.tlsopts, true /* copy_internal */);
+   _mongoc_array_append_val (&k2t->entries, e);
+}
+
+// `mcd_mapof_kmsid_to_tlsopts_get` returns the TLS options for a KMS ID, or
+// NULL.
+const mongoc_ssl_opt_t *
+mcd_mapof_kmsid_to_tlsopts_get (const mcd_mapof_kmsid_to_tlsopts *k2t, const char *kmsid)
+{
+   BSON_ASSERT_PARAM (k2t);
+   BSON_ASSERT_PARAM (kmsid);
+
+   for (size_t i = 0; i < k2t->entries.len; i++) {
+      mcd_mapof_kmsid_to_tlsopts_entry *e = &_mongoc_array_index (&k2t->entries, mcd_mapof_kmsid_to_tlsopts_entry, i);
+      if (0 == strcmp (e->kmsid, kmsid)) {
+         return &e->tlsopts;
+      }
+   }
+   return NULL;
+}
+
+
+bool
+mcd_mapof_kmsid_to_tlsopts_has (const mcd_mapof_kmsid_to_tlsopts *k2t, const char *kmsid)
+{
+   return NULL != mcd_mapof_kmsid_to_tlsopts_get (k2t, kmsid);
+}
+
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
    mongoc_ssl_opt_t kmip_tls_opt;
    mongoc_ssl_opt_t aws_tls_opt;
    mongoc_ssl_opt_t azure_tls_opt;
    mongoc_ssl_opt_t gcp_tls_opt;
+   mcd_mapof_kmsid_to_tlsopts *kmsid_to_tlsopts;
+
    /// The kmsProviders that were provided by the user when encryption was
    /// initiated. We need to remember this in case we need to load on-demand
    /// credentials.
@@ -54,10 +130,7 @@ struct __mongoc_crypt_t {
 };
 
 static void
-_log_callback (mongocrypt_log_level_t mongocrypt_log_level,
-               const char *message,
-               uint32_t message_len,
-               void *ctx)
+_log_callback (mongocrypt_log_level_t mongocrypt_log_level, const char *message, uint32_t message_len, void *ctx)
 {
    mongoc_log_level_t log_level = MONGOC_LOG_LEVEL_ERROR;
 
@@ -124,9 +197,7 @@ _status_to_error (mongocrypt_status_t *status, bson_error_t *error)
  * Returns false if error, and sets @error.
  */
 bool
-_ctx_check_error (mongocrypt_ctx_t *ctx,
-                  bson_error_t *error,
-                  bool error_expected)
+_ctx_check_error (mongocrypt_ctx_t *ctx, bson_error_t *error, bool error_expected)
 {
    mongocrypt_status_t *status;
 
@@ -148,9 +219,7 @@ _ctx_check_error (mongocrypt_ctx_t *ctx,
 }
 
 bool
-_kms_ctx_check_error (mongocrypt_kms_ctx_t *kms_ctx,
-                      bson_error_t *error,
-                      bool error_expected)
+_kms_ctx_check_error (mongocrypt_kms_ctx_t *kms_ctx, bson_error_t *error, bool error_expected)
 {
    mongocrypt_status_t *status;
 
@@ -172,9 +241,7 @@ _kms_ctx_check_error (mongocrypt_kms_ctx_t *kms_ctx,
 }
 
 bool
-_crypt_check_error (mongocrypt_t *crypt,
-                    bson_error_t *error,
-                    bool error_expected)
+_crypt_check_error (mongocrypt_t *crypt, bson_error_t *error, bool error_expected)
 {
    mongocrypt_status_t *status;
 
@@ -200,12 +267,8 @@ static bool
 _bin_to_static_bson (mongocrypt_binary_t *bin, bson_t *out, bson_error_t *error)
 {
    /* Copy bin into bson_t result. */
-   if (!bson_init_static (
-          out, mongocrypt_binary_data (bin), mongocrypt_binary_len (bin))) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "invalid returned bson");
+   if (!bson_init_static (out, mongocrypt_binary_data (bin), mongocrypt_binary_len (bin))) {
+      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "invalid returned bson");
       return false;
    }
    return true;
@@ -241,8 +304,7 @@ _state_machine_destroy (_state_machine_t *state_machine)
 
 /* State handler MONGOCRYPT_CTX_NEED_MONGO_COLLINFO */
 static bool
-_state_need_mongo_collinfo (_state_machine_t *state_machine,
-                            bson_error_t *error)
+_state_need_mongo_collinfo (_state_machine_t *state_machine, bson_error_t *error)
 {
    mongoc_database_t *db = NULL;
    mongoc_cursor_t *cursor = NULL;
@@ -266,8 +328,7 @@ _state_need_mongo_collinfo (_state_machine_t *state_machine,
    }
 
    bson_append_document (&opts, "filter", -1, &filter_bson);
-   db = mongoc_client_get_database (state_machine->collinfo_client,
-                                    state_machine->db_name);
+   db = mongoc_client_get_database (state_machine->collinfo_client, state_machine->db_name);
    cursor = mongoc_database_find_collections_with_opts (db, &opts);
    if (mongoc_cursor_error (cursor, error)) {
       goto fail;
@@ -276,8 +337,7 @@ _state_need_mongo_collinfo (_state_machine_t *state_machine,
    /* 2. Return the first result (if any) with mongocrypt_ctx_mongo_feed or
     * proceed to the next step if nothing was returned. */
    if (mongoc_cursor_next (cursor, &collinfo_bson)) {
-      collinfo_bin = mongocrypt_binary_new_from_data (
-         (uint8_t *) bson_get_data (collinfo_bson), collinfo_bson->len);
+      collinfo_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (collinfo_bson), collinfo_bson->len);
       if (!mongocrypt_ctx_mongo_feed (state_machine->ctx, collinfo_bin)) {
          _ctx_check_error (state_machine->ctx, error, true);
          goto fail;
@@ -305,8 +365,7 @@ fail:
 }
 
 static bool
-_state_need_mongo_markings (_state_machine_t *state_machine,
-                            bson_error_t *error)
+_state_need_mongo_markings (_state_machine_t *state_machine, bson_error_t *error)
 {
    bool ret = false;
    mongocrypt_binary_t *mongocryptd_cmd_bin = NULL;
@@ -321,8 +380,7 @@ _state_need_mongo_markings (_state_machine_t *state_machine,
       goto fail;
    }
 
-   if (!_bin_to_static_bson (
-          mongocryptd_cmd_bin, &mongocryptd_cmd_bson, error)) {
+   if (!_bin_to_static_bson (mongocryptd_cmd_bin, &mongocryptd_cmd_bson, error)) {
       goto fail;
    }
 
@@ -340,8 +398,7 @@ _state_need_mongo_markings (_state_machine_t *state_machine,
    }
 
    /* 2. Feed the reply back with mongocrypt_ctx_mongo_feed. */
-   mongocryptd_reply_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (&reply), reply.len);
+   mongocryptd_reply_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (&reply), reply.len);
    if (!mongocrypt_ctx_mongo_feed (state_machine->ctx, mongocryptd_reply_bin)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
@@ -387,21 +444,17 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
    }
 
    {
-      const mongoc_read_concern_t *const rc =
-         mongoc_collection_get_read_concern (state_machine->keyvault_coll);
+      const mongoc_read_concern_t *const rc = mongoc_collection_get_read_concern (state_machine->keyvault_coll);
       const char *const level = rc ? mongoc_read_concern_get_level (rc) : NULL;
-      BSON_ASSERT (level &&
-                   strcmp (level, MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
+      BSON_ASSERT (level && strcmp (level, MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
    }
 
-   cursor = mongoc_collection_find_with_opts (
-      state_machine->keyvault_coll, &filter_bson, &opts, NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (state_machine->keyvault_coll, &filter_bson, &opts, NULL /* read prefs */);
    /* 2. Feed all resulting documents back (if any) with repeated calls to
     * mongocrypt_ctx_mongo_feed. */
    while (mongoc_cursor_next (cursor, &key_bson)) {
       mongocrypt_binary_destroy (key_bin);
-      key_bin = mongocrypt_binary_new_from_data (
-         (uint8_t *) bson_get_data (key_bson), key_bson->len);
+      key_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (key_bson), key_bson->len);
       if (!mongocrypt_ctx_mongo_feed (state_machine->ctx, key_bin)) {
          _ctx_check_error (state_machine->ctx, error, true);
          goto fail;
@@ -428,10 +481,7 @@ fail:
 }
 
 static mongoc_stream_t *
-_get_stream (const char *endpoint,
-             int32_t connecttimeoutms,
-             const mongoc_ssl_opt_t *ssl_opt,
-             bson_error_t *error)
+_get_stream (const char *endpoint, int32_t connecttimeoutms, const mongoc_ssl_opt_t *ssl_opt, bson_error_t *error)
 {
    mongoc_stream_t *base_stream = NULL;
    mongoc_stream_t *tls_stream = NULL;
@@ -450,20 +500,15 @@ _get_stream (const char *endpoint,
 
    /* Wrap in a tls_stream. */
    _mongoc_ssl_opts_copy_to (ssl_opt, &ssl_opt_copy, true /* copy_internal */);
-   tls_stream = mongoc_stream_tls_new_with_hostname (
-      base_stream, host.host, &ssl_opt_copy, 1 /* client */);
+   tls_stream = mongoc_stream_tls_new_with_hostname (base_stream, host.host, &ssl_opt_copy, 1 /* client */);
 
    if (!tls_stream) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to create TLS stream to: %s",
-                      endpoint);
+      bson_set_error (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to create TLS stream to: %s", endpoint);
       goto fail;
    }
 
-   if (!mongoc_stream_tls_handshake_block (
-          tls_stream, host.host, connecttimeoutms, error)) {
+   if (!mongoc_stream_tls_handshake_block (tls_stream, host.host, connecttimeoutms, error)) {
       goto fail;
    }
 
@@ -508,6 +553,8 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          ssl_opt = &state_machine->crypt->azure_tls_opt;
       } else if (0 == strcmp ("gcp", provider)) {
          ssl_opt = &state_machine->crypt->gcp_tls_opt;
+      } else if (mcd_mapof_kmsid_to_tlsopts_has (state_machine->crypt->kmsid_to_tlsopts, provider)) {
+         ssl_opt = mcd_mapof_kmsid_to_tlsopts_get (state_machine->crypt->kmsid_to_tlsopts, provider);
       } else {
          ssl_opt = mongoc_ssl_opt_get_default ();
       }
@@ -539,8 +586,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       iov.iov_base = (char *) mongocrypt_binary_data (http_req);
       iov.iov_len = mongocrypt_binary_len (http_req);
 
-      if (!_mongoc_stream_writev_full (
-             tls_stream, &iov, 1, sockettimeout, error)) {
+      if (!_mongoc_stream_writev_full (tls_stream, &iov, 1, sockettimeout, error)) {
          goto fail;
       }
 
@@ -556,30 +602,22 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
             bytes_needed = BUFFER_SIZE;
          }
 
-         read_ret = mongoc_stream_read (
-            tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
+         read_ret = mongoc_stream_read (tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
          if (read_ret == -1) {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "failed to read from KMS stream: %d",
-                            errno);
+            bson_set_error (
+               error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "failed to read from KMS stream: %d", errno);
             goto fail;
          }
 
          if (read_ret == 0) {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "unexpected EOF from KMS stream");
+            bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "unexpected EOF from KMS stream");
             goto fail;
          }
 
          mongocrypt_binary_destroy (http_reply);
 
          BSON_ASSERT (bson_in_range_signed (uint32_t, read_ret));
-         http_reply =
-            mongocrypt_binary_new_from_data (buf, (uint32_t) read_ret);
+         http_reply = mongocrypt_binary_new_from_data (buf, (uint32_t) read_ret);
          if (!mongocrypt_kms_ctx_feed (kms_ctx, http_reply)) {
             _kms_ctx_check_error (kms_ctx, error, true);
             goto fail;
@@ -617,7 +655,7 @@ fail:
  * @retval false Otherwise or on error
  */
 static bool
-_needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
+_needs_on_demand_aws_kms (bson_t const *kms_providers)
 {
    bson_iter_t iter;
    if (!bson_iter_init_find (&iter, kms_providers, "aws")) {
@@ -702,16 +740,14 @@ _try_add_aws_from_env (bson_t *out, bson_error_t *error)
 
    // Build the new "aws" subdoc
    bson_t aws;
-   bool okay =
-      BSON_APPEND_DOCUMENT_BEGIN (out, "aws", &aws)
-      // Add the accessKeyId and the secretAccessKey
-      && BSON_APPEND_UTF8 (&aws, "accessKeyId", creds.access_key_id)         //
-      && BSON_APPEND_UTF8 (&aws, "secretAccessKey", creds.secret_access_key) //
-      // Add the sessionToken, if we got one:
-      && (!creds.session_token ||
-          BSON_APPEND_UTF8 (&aws, "sessionToken", creds.session_token)) //
-      // Finish the document
-      && bson_append_document_end (out, &aws);
+   bool okay = BSON_APPEND_DOCUMENT_BEGIN (out, "aws", &aws)
+               // Add the accessKeyId and the secretAccessKey
+               && BSON_APPEND_UTF8 (&aws, "accessKeyId", creds.access_key_id)         //
+               && BSON_APPEND_UTF8 (&aws, "secretAccessKey", creds.secret_access_key) //
+               // Add the sessionToken, if we got one:
+               && (!creds.session_token || BSON_APPEND_UTF8 (&aws, "sessionToken", creds.session_token)) //
+               // Finish the document
+               && bson_append_document_end (out, &aws);
    BSON_ASSERT (okay && "Failed to build aws credentials document");
    // Good!
    _mongoc_aws_credentials_cleanup (&creds);
@@ -746,15 +782,12 @@ _request_new_azure_token (mcd_azure_access_token *out, bson_error_t *error)
  * @retval false If there was an error obtaining or appending credentials
  */
 static bool
-_try_add_azure_from_env (_mongoc_crypt_t *crypt,
-                         bson_t *out,
-                         bson_error_t *error)
+_try_add_azure_from_env (_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error)
 {
    if (crypt->azure_token.access_token) {
       // The access-token is non-null, so we may have one cached.
       mcd_time_point one_min_from_now = mcd_later (mcd_now (), mcd_minutes (1));
-      mcd_time_point expires_at = mcd_later (crypt->azure_token_issued_at,
-                                             crypt->azure_token.expires_in);
+      mcd_time_point expires_at = mcd_later (crypt->azure_token_issued_at, crypt->azure_token.expires_in);
       if (mcd_time_compare (expires_at, one_min_from_now) >= 0) {
          // The token is still valid for at least another minute
       } else {
@@ -781,9 +814,7 @@ _try_add_azure_from_env (_mongoc_crypt_t *crypt,
 
    // Build the new KMS credentials
    bson_t new_azure_creds = BSON_INITIALIZER;
-   const bool okay = BSON_APPEND_UTF8 (&new_azure_creds,
-                                       "accessToken",
-                                       crypt->azure_token.access_token) &&
+   const bool okay = BSON_APPEND_UTF8 (&new_azure_creds, "accessToken", crypt->azure_token.access_token) &&
                      BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds);
    bson_destroy (&new_azure_creds);
    if (!okay) {
@@ -860,9 +891,7 @@ _try_add_gcp_from_env (bson_t *out, bson_error_t *error)
 
    // Build the new KMS credentials
    bson_t new_gcp_creds = BSON_INITIALIZER;
-   const bool okay = BSON_APPEND_UTF8 (&new_gcp_creds,
-                                       "accessToken",
-                                       gcp_token.access_token) &&
+   const bool okay = BSON_APPEND_UTF8 (&new_gcp_creds, "accessToken", gcp_token.access_token) &&
                      BSON_APPEND_DOCUMENT (out, "gcp", &new_gcp_creds);
    bson_destroy (&new_gcp_creds);
    gcp_access_token_destroy (&gcp_token);
@@ -885,8 +914,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
 
    if (sm->crypt->creds_cb.fn) {
       // We have a user-provided credentials callback. Try it.
-      if (!sm->crypt->creds_cb.fn (
-             sm->crypt->creds_cb.userdata, &empty, &creds, error)) {
+      if (!sm->crypt->creds_cb.fn (sm->crypt->creds_cb.userdata, &empty, &creds, error)) {
          // User-provided callback indicated failure
          if (!error->code) {
             // The callback did not set an error, so we'll provide a default
@@ -903,11 +931,9 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    }
 
    bson_iter_t iter;
-   const bool callback_provided_aws =
-      bson_iter_init_find (&iter, &creds, "aws");
+   const bool callback_provided_aws = bson_iter_init_find (&iter, &creds, "aws");
 
-   if (!callback_provided_aws &&
-       _needs_on_demand_aws_kms (&sm->crypt->kms_providers, error)) {
+   if (!callback_provided_aws && _needs_on_demand_aws_kms (&sm->crypt->kms_providers)) {
       // The original kmsProviders had an empty "aws" property, and the
       // user-provided callback did not fill in a new "aws" property for us.
       // Attempt instead to load the AWS credentials from the environment:
@@ -920,8 +946,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    // Whether the callback provided Azure credentials
    const bool cb_provided_azure = bson_iter_init_find (&iter, &creds, "azure");
    // Whether the original kmsProviders requested auto-Azure credentials:
-   const bool orig_wants_auto_azure =
-      _check_azure_kms_auto (&sm->crypt->kms_providers, error);
+   const bool orig_wants_auto_azure = _check_azure_kms_auto (&sm->crypt->kms_providers, error);
    if (error->code) {
       // _check_azure_kms_auto failed
       goto fail;
@@ -936,8 +961,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    // Whether the callback provided GCP credentials
    const bool cb_provided_gcp = bson_iter_init_find (&iter, &creds, "gcp");
    // Whether the original kmsProviders requested auto-GCP credentials:
-   const bool orig_wants_auto_gcp =
-      _check_gcp_kms_auto (&sm->crypt->kms_providers, error);
+   const bool orig_wants_auto_gcp = _check_gcp_kms_auto (&sm->crypt->kms_providers, error);
    if (error->code) {
       // _check_gcp_kms_auto failed
       goto fail;
@@ -950,8 +974,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    }
 
    // Now actually send that data to libmongocrypt
-   mongocrypt_binary_t *const def = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (&creds), creds.len);
+   mongocrypt_binary_t *const def = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (&creds), creds.len);
    okay = mongocrypt_ctx_provide_kms_providers (sm->ctx, def);
    if (!okay) {
       _ctx_check_error (sm->ctx, error, true);
@@ -966,9 +989,7 @@ fail:
 
 
 static bool
-_state_ready (_state_machine_t *state_machine,
-              bson_t *result,
-              bson_error_t *error)
+_state_ready (_state_machine_t *state_machine, bson_t *result, bson_error_t *error)
 {
    mongocrypt_binary_t *result_bin = NULL;
    bson_t tmp;
@@ -1007,9 +1028,7 @@ fail:
  * --------------------------------------------------------------------------
  */
 bool
-_state_machine_run (_state_machine_t *state_machine,
-                    bson_t *result,
-                    bson_error_t *error)
+_state_machine_run (_state_machine_t *state_machine, bson_t *result, bson_error_t *error)
 {
    bool ret = false;
    mongocrypt_binary_t *bin = NULL;
@@ -1054,7 +1073,6 @@ _state_machine_run (_state_machine_t *state_machine,
          break;
       case MONGOCRYPT_CTX_DONE:
          goto success;
-         break;
       }
    }
 
@@ -1073,9 +1091,7 @@ fail:
  * - @out_opt is always initialized.
  * Returns false and sets @error on error. */
 static bool
-_parse_one_tls_opts (bson_iter_t *iter,
-                     mongoc_ssl_opt_t *out_opt,
-                     bson_error_t *error)
+_parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t *error)
 {
    bool ok = false;
    const char *kms_provider;
@@ -1100,8 +1116,7 @@ _parse_one_tls_opts (bson_iter_t *iter,
    }
 
    bson_iter_document (iter, &len, &data);
-   if (!bson_init_static (&tls_opts_doc, data, len) ||
-       !bson_iter_init (&permitted_iter, &tls_opts_doc)) {
+   if (!bson_init_static (&tls_opts_doc, data, len) || !bson_iter_init (&permitted_iter, &tls_opts_doc)) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
@@ -1113,8 +1128,7 @@ _parse_one_tls_opts (bson_iter_t *iter,
    while (bson_iter_next (&permitted_iter)) {
       const char *key = bson_iter_key (&permitted_iter);
 
-      if (0 ==
-          bson_strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
+      if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
          continue;
       }
 
@@ -1130,13 +1144,12 @@ _parse_one_tls_opts (bson_iter_t *iter,
          continue;
       }
 
-      bson_set_error (
-         error,
-         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-         "Error setting TLS option %s for %s. Insecure TLS options prohibited.",
-         key,
-         kms_provider);
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                      "Error setting TLS option %s for %s. Insecure TLS options prohibited.",
+                      key,
+                      kms_provider);
       goto fail;
    }
 
@@ -1163,9 +1176,7 @@ fail:
  * Defaults to using mongoc_ssl_opt_get_default() if options are not passed for
  * a provider. Returns false and sets @error on error. */
 static bool
-_parse_all_tls_opts (_mongoc_crypt_t *crypt,
-                     const bson_t *tls_opts,
-                     bson_error_t *error)
+_parse_all_tls_opts (_mongoc_crypt_t *crypt, const bson_t *tls_opts, bson_error_t *error)
 {
    bson_iter_t iter;
    bool ok = false;
@@ -1258,6 +1269,28 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
          continue;
       }
 
+      const char *colon_pos = strstr (key, ":");
+      if (colon_pos != NULL) {
+         // Parse TLS options for a named KMS provider.
+         if (mcd_mapof_kmsid_to_tlsopts_has (crypt->kmsid_to_tlsopts, key)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                            "Error parsing duplicate TLS options for %s",
+                            key);
+            goto fail;
+         }
+
+         mongoc_ssl_opt_t tlsopts = {0};
+         if (!_parse_one_tls_opts (&iter, &tlsopts, error)) {
+            _mongoc_ssl_opts_cleanup (&tlsopts, true /* free_internal */);
+            goto fail;
+         }
+         mcd_mapof_kmsid_to_tlsopts_insert (crypt->kmsid_to_tlsopts, key, &tlsopts);
+         _mongoc_ssl_opts_cleanup (&tlsopts, true /* free_internal */);
+         continue;
+      }
+
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
@@ -1271,27 +1304,19 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
     * MONGOC_SSL_DEFAULT_TRUST_FILE or MONGOC_SSL_DEFAULT_TRUST_DIR are defined.
     */
    if (!has_aws) {
-      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
-                                &crypt->aws_tls_opt,
-                                false /* copy internal */);
+      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (), &crypt->aws_tls_opt, false /* copy internal */);
    }
 
    if (!has_azure) {
-      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
-                                &crypt->azure_tls_opt,
-                                false /* copy internal */);
+      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (), &crypt->azure_tls_opt, false /* copy internal */);
    }
 
    if (!has_gcp) {
-      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
-                                &crypt->gcp_tls_opt,
-                                false /* copy internal */);
+      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (), &crypt->gcp_tls_opt, false /* copy internal */);
    }
 
    if (!has_kmip) {
-      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
-                                &crypt->kmip_tls_opt,
-                                false /* copy internal */);
+      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (), &crypt->kmip_tls_opt, false /* copy internal */);
    }
    ok = true;
 fail:
@@ -1325,6 +1350,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
 
    /* Create the handle to libmongocrypt. */
    crypt = bson_malloc0 (sizeof (*crypt));
+   crypt->kmsid_to_tlsopts = mcd_mapof_kmsid_to_tlsopts_new ();
    crypt->handle = mongocrypt_new ();
 
    // Stash away a copy of the user's kmsProviders in case we need to lazily
@@ -1335,19 +1361,16 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       goto fail;
    }
 
-   mongocrypt_setopt_log_handler (
-      crypt->handle, _log_callback, NULL /* context */);
+   mongocrypt_setopt_log_handler (crypt->handle, _log_callback, NULL /* context */);
 
-   kms_providers_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (kms_providers), kms_providers->len);
+   kms_providers_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (kms_providers), kms_providers->len);
    if (!mongocrypt_setopt_kms_providers (crypt->handle, kms_providers_bin)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;
    }
 
    if (schema_map) {
-      schema_map_bin = mongocrypt_binary_new_from_data (
-         (uint8_t *) bson_get_data (schema_map), schema_map->len);
+      schema_map_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (schema_map), schema_map->len);
       if (!mongocrypt_setopt_schema_map (crypt->handle, schema_map_bin)) {
          _crypt_check_error (crypt->handle, error, true);
          goto fail;
@@ -1355,26 +1378,22 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    }
 
    if (encrypted_fields_map) {
-      encrypted_fields_map_bin = mongocrypt_binary_new_from_data (
-         (uint8_t *) bson_get_data (encrypted_fields_map),
-         encrypted_fields_map->len);
-      if (!mongocrypt_setopt_encrypted_field_config_map (
-             crypt->handle, encrypted_fields_map_bin)) {
+      encrypted_fields_map_bin =
+         mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (encrypted_fields_map), encrypted_fields_map->len);
+      if (!mongocrypt_setopt_encrypted_field_config_map (crypt->handle, encrypted_fields_map_bin)) {
          _crypt_check_error (crypt->handle, error, true);
          goto fail;
       }
    }
 
    if (!bypass_auto_encryption) {
-      mongocrypt_setopt_append_crypt_shared_lib_search_path (crypt->handle,
-                                                             "$SYSTEM");
+      mongocrypt_setopt_append_crypt_shared_lib_search_path (crypt->handle, "$SYSTEM");
       if (!_crypt_check_error (crypt->handle, error, false)) {
          goto fail;
       }
 
       if (crypt_shared_lib_path != NULL) {
-         mongocrypt_setopt_set_crypt_shared_lib_path_override (
-            crypt->handle, crypt_shared_lib_path);
+         mongocrypt_setopt_set_crypt_shared_lib_path_override (crypt->handle, crypt_shared_lib_path);
          if (!_crypt_check_error (crypt->handle, error, false)) {
             goto fail;
          }
@@ -1398,23 +1417,19 @@ _mongoc_crypt_new (const bson_t *kms_providers,
 
    if (crypt_shared_lib_required) {
       uint32_t len = 0;
-      const char *s =
-         mongocrypt_crypt_shared_lib_version_string (crypt->handle, &len);
+      const char *s = mongocrypt_crypt_shared_lib_version_string (crypt->handle, &len);
       if (!s || len == 0) {
          // empty/null version string indicates that crypt_shared was not loaded
          // by libmongocrypt
-         bson_set_error (
-            error,
-            MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-            "Option 'cryptSharedLibRequired' is 'true', but failed to "
-            "load the crypt_shared runtime library");
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "Option 'cryptSharedLibRequired' is 'true', but failed to "
+                         "load the crypt_shared runtime library");
          goto fail;
       }
-      mongoc_log (MONGOC_LOG_LEVEL_DEBUG,
-                  MONGOC_LOG_DOMAIN,
-                  "crypt_shared library version '%s' was found and loaded",
-                  s);
+      mongoc_log (
+         MONGOC_LOG_LEVEL_DEBUG, MONGOC_LOG_DOMAIN, "crypt_shared library version '%s' was found and loaded", s);
    }
 
    crypt->creds_cb = creds_cb;
@@ -1447,6 +1462,7 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
    _mongoc_ssl_opts_cleanup (&crypt->gcp_tls_opt, true /* free_internal */);
    bson_destroy (&crypt->kms_providers);
    mcd_azure_access_token_destroy (&crypt->azure_token);
+   mcd_mapof_kmsid_to_tlsopts_destroy (crypt->kmsid_to_tlsopts);
    bson_free (crypt);
 }
 
@@ -1478,10 +1494,8 @@ _mongoc_crypt_auto_encrypt (_mongoc_crypt_t *crypt,
       goto fail;
    }
 
-   cmd_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (cmd_in), cmd_in->len);
-   if (!mongocrypt_ctx_encrypt_init (
-          state_machine->ctx, db_name, -1, cmd_bin)) {
+   cmd_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (cmd_in), cmd_in->len);
+   if (!mongocrypt_ctx_encrypt_init (state_machine->ctx, db_name, -1, cmd_bin)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
@@ -1519,8 +1533,7 @@ _mongoc_crypt_auto_decrypt (_mongoc_crypt_t *crypt,
       goto fail;
    }
 
-   doc_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (doc_in), doc_in->len);
+   doc_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (doc_in), doc_in->len);
    if (!mongocrypt_ctx_decrypt_init (state_machine->ctx, doc_bin)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
@@ -1580,10 +1593,9 @@ _create_explicit_state_machine (_mongoc_crypt_t *crypt,
 
    if (range_opts != NULL) {
       /* mongocrypt error checks and parses range options */
-      mongocrypt_binary_t *binary_range_opts = mongocrypt_binary_new_from_data (
-         (uint8_t *) bson_get_data (range_opts), range_opts->len);
-      if (!mongocrypt_ctx_setopt_algorithm_range (state_machine->ctx,
-                                                  binary_range_opts)) {
+      mongocrypt_binary_t *binary_range_opts =
+         mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (range_opts), range_opts->len);
+      if (!mongocrypt_ctx_setopt_algorithm_range (state_machine->ctx, binary_range_opts)) {
          mongocrypt_binary_destroy (binary_range_opts);
          _ctx_check_error (state_machine->ctx, error, true);
          goto fail;
@@ -1592,15 +1604,13 @@ _create_explicit_state_machine (_mongoc_crypt_t *crypt,
    }
 
    if (query_type != NULL) {
-      if (!mongocrypt_ctx_setopt_query_type (
-             state_machine->ctx, query_type, -1)) {
+      if (!mongocrypt_ctx_setopt_query_type (state_machine->ctx, query_type, -1)) {
          goto fail;
       }
    }
 
    if (contention_factor != NULL) {
-      if (!mongocrypt_ctx_setopt_contention_factor (state_machine->ctx,
-                                                    *contention_factor)) {
+      if (!mongocrypt_ctx_setopt_contention_factor (state_machine->ctx, *contention_factor)) {
          _ctx_check_error (state_machine->ctx, error, true);
          goto fail;
       }
@@ -1612,10 +1622,9 @@ _create_explicit_state_machine (_mongoc_crypt_t *crypt,
       bson_t *keyaltname_doc;
 
       keyaltname_doc = BCON_NEW ("keyAltName", keyaltname);
-      keyaltname_bin = mongocrypt_binary_new_from_data (
-         (uint8_t *) bson_get_data (keyaltname_doc), keyaltname_doc->len);
-      keyaltname_ret = mongocrypt_ctx_setopt_key_alt_name (state_machine->ctx,
-                                                           keyaltname_bin);
+      keyaltname_bin =
+         mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (keyaltname_doc), keyaltname_doc->len);
+      keyaltname_ret = mongocrypt_ctx_setopt_key_alt_name (state_machine->ctx, keyaltname_bin);
       mongocrypt_binary_destroy (keyaltname_bin);
       bson_destroy (keyaltname_doc);
       if (!keyaltname_ret) {
@@ -1629,15 +1638,12 @@ _create_explicit_state_machine (_mongoc_crypt_t *crypt,
       bool keyid_ret;
 
       if (keyid->value.v_binary.subtype != BSON_SUBTYPE_UUID) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                         "keyid must be a UUID");
+         bson_set_error (
+            error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "keyid must be a UUID");
          goto fail;
       }
 
-      keyid_bin = mongocrypt_binary_new_from_data (
-         keyid->value.v_binary.data, keyid->value.v_binary.data_len);
+      keyid_bin = mongocrypt_binary_new_from_data (keyid->value.v_binary.data, keyid->value.v_binary.data_len);
       keyid_ret = mongocrypt_ctx_setopt_key_id (state_machine->ctx, keyid_bin);
       mongocrypt_binary_destroy (keyid_bin);
       if (!keyid_ret) {
@@ -1688,25 +1694,16 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
 
    value_out->value_type = BSON_TYPE_EOD;
 
-   state_machine = _create_explicit_state_machine (crypt,
-                                                   keyvault_coll,
-                                                   algorithm,
-                                                   keyid,
-                                                   keyaltname,
-                                                   query_type,
-                                                   contention_factor,
-                                                   range_opts,
-                                                   error);
+   state_machine = _create_explicit_state_machine (
+      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, error);
    if (!state_machine) {
       goto fail;
    }
 
    to_encrypt_doc = bson_new ();
    BSON_APPEND_VALUE (to_encrypt_doc, "v", value_in);
-   to_encrypt_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (to_encrypt_doc), to_encrypt_doc->len);
-   if (!mongocrypt_ctx_explicit_encrypt_init (state_machine->ctx,
-                                              to_encrypt_bin)) {
+   to_encrypt_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (to_encrypt_doc), to_encrypt_doc->len);
+   if (!mongocrypt_ctx_explicit_encrypt_init (state_machine->ctx, to_encrypt_bin)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
@@ -1772,25 +1769,16 @@ _mongoc_crypt_explicit_encrypt_expression (_mongoc_crypt_t *crypt,
 
    bson_init (expr_out);
 
-   state_machine = _create_explicit_state_machine (crypt,
-                                                   keyvault_coll,
-                                                   algorithm,
-                                                   keyid,
-                                                   keyaltname,
-                                                   query_type,
-                                                   contention_factor,
-                                                   range_opts,
-                                                   error);
+   state_machine = _create_explicit_state_machine (
+      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, error);
    if (!state_machine) {
       goto fail;
    }
 
    to_encrypt_doc = bson_new ();
    BSON_APPEND_DOCUMENT (to_encrypt_doc, "v", expr_in);
-   to_encrypt_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (to_encrypt_doc), to_encrypt_doc->len);
-   if (!mongocrypt_ctx_explicit_encrypt_expression_init (state_machine->ctx,
-                                                         to_encrypt_bin)) {
+   to_encrypt_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (to_encrypt_doc), to_encrypt_doc->len);
+   if (!mongocrypt_ctx_explicit_encrypt_expression_init (state_machine->ctx, to_encrypt_bin)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
@@ -1811,12 +1799,11 @@ _mongoc_crypt_explicit_encrypt_expression (_mongoc_crypt_t *crypt,
       bson_t tmp;
 
       if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         bson_set_error (
-            error,
-            MONGOC_ERROR_CLIENT,
-            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-            "encrypted result unexpected: 'v' is not a document, got: %s",
-            _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "encrypted result unexpected: 'v' is not a document, got: %s",
+                         _mongoc_bson_type_to_str (bson_iter_type (&iter)));
          goto fail;
       }
 
@@ -1860,10 +1847,8 @@ _mongoc_crypt_explicit_decrypt (_mongoc_crypt_t *crypt,
 
    to_decrypt_doc = bson_new ();
    BSON_APPEND_VALUE (to_decrypt_doc, "v", value_in);
-   to_decrypt_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (to_decrypt_doc), to_decrypt_doc->len);
-   if (!mongocrypt_ctx_explicit_decrypt_init (state_machine->ctx,
-                                              to_decrypt_bin)) {
+   to_decrypt_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (to_decrypt_doc), to_decrypt_doc->len);
+   if (!mongocrypt_ctx_explicit_decrypt_init (state_machine->ctx, to_decrypt_bin)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
@@ -1875,10 +1860,8 @@ _mongoc_crypt_explicit_decrypt (_mongoc_crypt_t *crypt,
 
    /* extract value */
    if (!bson_iter_init_find (&iter, &result, "v")) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                      "decrypted result unexpected");
+      bson_set_error (
+         error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE, "decrypted result unexpected");
       goto fail;
    } else {
       const bson_value_t *tmp;
@@ -1924,12 +1907,10 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
    if (masterkey) {
       bson_concat (&masterkey_w_provider, masterkey);
    }
-   masterkey_w_provider_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (&masterkey_w_provider),
-      masterkey_w_provider.len);
+   masterkey_w_provider_bin =
+      mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (&masterkey_w_provider), masterkey_w_provider.len);
 
-   if (!mongocrypt_ctx_setopt_key_encryption_key (state_machine->ctx,
-                                                  masterkey_w_provider_bin)) {
+   if (!mongocrypt_ctx_setopt_key_encryption_key (state_machine->ctx, masterkey_w_provider_bin)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
@@ -1941,10 +1922,9 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
          bson_t *keyaltname_doc;
 
          keyaltname_doc = BCON_NEW ("keyAltName", keyaltnames[i]);
-         keyaltname_bin = mongocrypt_binary_new_from_data (
-            (uint8_t *) bson_get_data (keyaltname_doc), keyaltname_doc->len);
-         keyaltname_ret = mongocrypt_ctx_setopt_key_alt_name (
-            state_machine->ctx, keyaltname_bin);
+         keyaltname_bin =
+            mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (keyaltname_doc), keyaltname_doc->len);
+         keyaltname_ret = mongocrypt_ctx_setopt_key_alt_name (state_machine->ctx, keyaltname_bin);
          mongocrypt_binary_destroy (keyaltname_bin);
          bson_destroy (keyaltname_doc);
          if (!keyaltname_ret) {
@@ -1955,11 +1935,8 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
    }
 
    if (keymaterial) {
-      bson_t *const bson = BCON_NEW (
-         "keyMaterial",
-         BCON_BIN (BSON_SUBTYPE_BINARY, keymaterial, keymaterial_len));
-      mongocrypt_binary_t *const bin = mongocrypt_binary_new_from_data (
-         (uint8_t *) bson_get_data (bson), bson->len);
+      bson_t *const bson = BCON_NEW ("keyMaterial", BCON_BIN (BSON_SUBTYPE_BINARY, keymaterial, keymaterial_len));
+      mongocrypt_binary_t *const bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (bson), bson->len);
 
       mongocrypt_ctx_setopt_key_material (state_machine->ctx, bin);
 
@@ -2024,11 +2001,10 @@ _mongoc_crypt_rewrap_many_datakey (_mongoc_crypt_t *crypt,
             bson_concat (&new_provider, master_key);
          }
 
-         new_provider_bin = mongocrypt_binary_new_from_data (
-            (uint8_t *) bson_get_data (&new_provider), new_provider.len);
+         new_provider_bin =
+            mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (&new_provider), new_provider.len);
 
-         if (!mongocrypt_ctx_setopt_key_encryption_key (state_machine->ctx,
-                                                        new_provider_bin)) {
+         if (!mongocrypt_ctx_setopt_key_encryption_key (state_machine->ctx, new_provider_bin)) {
             _ctx_check_error (state_machine->ctx, error, true);
             success = false;
          }
@@ -2047,11 +2023,9 @@ _mongoc_crypt_rewrap_many_datakey (_mongoc_crypt_t *crypt,
       filter = &empty_bson;
    }
 
-   filter_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (filter), filter->len);
+   filter_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (filter), filter->len);
 
-   if (!mongocrypt_ctx_rewrap_many_datakey_init (state_machine->ctx,
-                                                 filter_bin)) {
+   if (!mongocrypt_ctx_rewrap_many_datakey_init (state_machine->ctx, filter_bin)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }

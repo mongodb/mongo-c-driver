@@ -170,16 +170,9 @@ print_captured_logs (const char *prefix)
    for (i = 0; i < captured_logs.len; i++) {
       log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
       if (prefix) {
-         fprintf (stderr,
-                  "%s%s %s\n",
-                  prefix,
-                  mongoc_log_level_str (log_entry->level),
-                  log_entry->msg);
+         fprintf (stderr, "%s%s %s\n", prefix, mongoc_log_level_str (log_entry->level), log_entry->msg);
       } else {
-         fprintf (stderr,
-                  "%s %s\n",
-                  mongoc_log_level_str (log_entry->level),
-                  log_entry->msg);
+         fprintf (stderr, "%s %s\n", mongoc_log_level_str (log_entry->level), log_entry->msg);
       }
    }
    bson_mutex_unlock (&captured_logs_mutex);
@@ -191,15 +184,11 @@ print_captured_logs (const char *prefix)
 int64_t
 get_future_timeout_ms (void)
 {
-   return test_framework_getenv_int64 ("MONGOC_TEST_FUTURE_TIMEOUT_MS",
-                                       DEFAULT_FUTURE_TIMEOUT_MS);
+   return test_framework_getenv_int64 ("MONGOC_TEST_FUTURE_TIMEOUT_MS", DEFAULT_FUTURE_TIMEOUT_MS);
 }
 
 static void
-log_handler (mongoc_log_level_t log_level,
-             const char *log_domain,
-             const char *message,
-             void *user_data)
+log_handler (mongoc_log_level_t log_level, const char *log_domain, const char *message, void *user_data)
 {
    TestSuite *suite;
    log_entry_t *log_entry;
@@ -219,8 +208,7 @@ log_handler (mongoc_log_level_t log_level,
       if (!suite->silent) {
          mongoc_log_default_handler (log_level, log_domain, message, NULL);
       }
-   } else if (log_level == MONGOC_LOG_LEVEL_DEBUG &&
-              test_suite_debug_output ()) {
+   } else if (log_level == MONGOC_LOG_LEVEL_DEBUG && test_suite_debug_output ()) {
       mongoc_log_default_handler (log_level, log_domain, message, NULL);
    }
 }
@@ -236,10 +224,7 @@ get_test_database (mongoc_client_t *client)
 char *
 gen_collection_name (const char *str)
 {
-   return bson_strdup_printf ("%s_%u_%u",
-                              str,
-                              (uint32_t) bson_get_monotonic_time (),
-                              (uint32_t) gettestpid ());
+   return bson_strdup_printf ("%s_%u_%u", str, (uint32_t) bson_get_monotonic_time (), (uint32_t) gettestpid ());
 }
 
 
@@ -303,10 +288,7 @@ test_framework_getenv_bool (const char *name)
       } else if (!strcasecmp (value, "") || !strcasecmp (value, "on")) {
          ret = true;
       } else {
-         test_error (
-            "Unrecognized value for %s: \"%s\". Use \"on\" or \"off\".",
-            name,
-            value);
+         test_error ("Unrecognized value for %s: \"%s\". Use \"on\" or \"off\".", name, value);
       }
    }
 
@@ -362,8 +344,7 @@ test_framework_get_unix_domain_socket_path (void)
       return path;
    }
 
-   return bson_strdup_printf ("/tmp/mongodb-%d.sock",
-                              test_framework_get_port ());
+   return bson_strdup_printf ("/tmp/mongodb-%d.sock", test_framework_get_port ());
 }
 
 
@@ -414,8 +395,7 @@ static char *
 _uri_str_from_env (void)
 {
    if (test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED")) {
-      char *loadbalanced_uri_str =
-         test_framework_getenv ("SINGLE_MONGOS_LB_URI");
+      char *loadbalanced_uri_str = test_framework_getenv ("SINGLE_MONGOS_LB_URI");
       if (!loadbalanced_uri_str) {
          test_error ("SINGLE_MONGOS_LB_URI and MULTI_MONGOS_LB_URI must be set "
                      "when MONGOC_TEST_LOADBALANCED is enabled");
@@ -468,9 +448,7 @@ test_framework_get_host (void)
    if (env_uri) {
       /* choose first host */
       hosts = mongoc_uri_get_hosts (env_uri);
-      ASSERT_WITH_MSG (hosts,
-                       "could not obtain hosts from URI [%s]",
-                       mongoc_uri_get_string (env_uri));
+      ASSERT_WITH_MSG (hosts, "could not obtain hosts from URI [%s]", mongoc_uri_get_string (env_uri));
       host = bson_strdup (hosts->host);
       mongoc_uri_destroy (env_uri);
       return host;
@@ -676,12 +654,9 @@ test_framework_get_user_password (char **user, char **password)
  *--------------------------------------------------------------------------
  */
 char *
-test_framework_add_user_password (const char *uri_str,
-                                  const char *user,
-                                  const char *password)
+test_framework_add_user_password (const char *uri_str, const char *user, const char *password)
 {
-   return bson_strdup_printf (
-      "mongodb://%s:%s@%s", user, password, uri_str + strlen ("mongodb://"));
+   return bson_strdup_printf ("mongodb://%s:%s@%s", user, password, uri_str + strlen ("mongodb://"));
 }
 
 
@@ -833,8 +808,7 @@ test_framework_get_unix_domain_socket_uri_str (void)
    char *test_uri_str_auth;
 
    path = test_framework_get_unix_domain_socket_path_escaped ();
-   test_uri_str = bson_strdup_printf (
-      "mongodb://%s/%s", path, test_framework_get_ssl () ? "?ssl=true" : "");
+   test_uri_str = bson_strdup_printf ("mongodb://%s/%s", path, test_framework_get_ssl () ? "?ssl=true" : "");
 
    test_uri_str_auth = test_framework_add_user_password_from_env (test_uri_str);
 
@@ -868,28 +842,19 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
    bson_error_t error;
 
    if (test_framework_get_user_password (&user, &password)) {
-      uri_str =
-         bson_strdup_printf ("mongodb://%s:%s@%s%s",
-                             user,
-                             password,
-                             host_and_port,
-                             test_framework_get_ssl () ? "/?ssl=true" : "");
+      uri_str = bson_strdup_printf (
+         "mongodb://%s:%s@%s%s", user, password, host_and_port, test_framework_get_ssl () ? "/?ssl=true" : "");
       bson_free (user);
       bson_free (password);
    } else {
-      uri_str =
-         bson_strdup_printf ("mongodb://%s%s",
-                             host_and_port,
-                             test_framework_get_ssl () ? "/?ssl=true" : "");
+      uri_str = bson_strdup_printf ("mongodb://%s%s", host_and_port, test_framework_get_ssl () ? "/?ssl=true" : "");
    }
 
    uri = mongoc_uri_new (uri_str);
    BSON_ASSERT (uri);
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 10000);
-   mongoc_uri_set_option_as_int32 (
-      uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 10000);
-   mongoc_uri_set_option_as_bool (
-      uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 10000);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
    if (test_framework_has_compressors ()) {
       char *compressors = test_framework_get_compressors ();
 
@@ -907,17 +872,11 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
    test_framework_set_ssl_opts (client);
 #endif
 
-   if (!mongoc_client_command_simple (
-          client, "admin", tmp_bson ("{'hello': 1}"), NULL, reply, &error)) {
+   if (!mongoc_client_command_simple (client, "admin", tmp_bson ("{'hello': 1}"), NULL, reply, &error)) {
       bson_destroy (reply);
 
       if (!mongoc_client_command_simple (
-             client,
-             "admin",
-             tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
-             NULL,
-             reply,
-             &error)) {
+             client, "admin", tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"), NULL, reply, &error)) {
          test_error ("error calling legacy hello: '%s'\n"
                      "URI = %s",
                      error.message,
@@ -979,11 +938,7 @@ uri_str_has_db (bson_string_t *uri_string)
    const bool is_standard = strstr (str, standard) == str;
    const bool is_srv = strstr (str, srv) == str;
 
-   ASSERT_WITH_MSG (is_standard || is_srv,
-                    "[%s] does not start with [%s] or [%s]",
-                    uri_string->str,
-                    standard,
-                    srv);
+   ASSERT_WITH_MSG (is_standard || is_srv, "[%s] does not start with [%s] or [%s]", uri_string->str, standard, srv);
 
    if (is_standard) {
       return strchr (str + strlen (standard), '/') != NULL;
@@ -994,9 +949,7 @@ uri_str_has_db (bson_string_t *uri_string)
 
 
 static void
-add_option_to_uri_str (bson_string_t *uri_string,
-                       const char *option,
-                       const char *value)
+add_option_to_uri_str (bson_string_t *uri_string, const char *option, const char *value)
 {
    if (strchr (uri_string->str, '?')) {
       /* already has some options */
@@ -1115,8 +1068,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
 
    // Required by test-atlas-executor. Not required by normal unified test
    // runner, but make tests a little more resilient to transient errors.
-   add_option_to_uri_str (
-      uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
+   add_option_to_uri_str (uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
    return bson_string_free (uri_string, false);
 }
@@ -1212,9 +1164,7 @@ test_framework_get_uri_multi_mongos_loadbalanced (void)
 }
 
 bool
-test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri,
-                                       bool use_multi,
-                                       bson_error_t *error)
+test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri, bool use_multi, bson_error_t *error)
 {
    bool ret = false;
 
@@ -1331,24 +1281,17 @@ test_framework_replset_member_count (void)
    size_t count = 0;
 
    client = test_framework_new_default_client ();
-   r = mongoc_client_command_simple (client,
-                                     "admin",
-                                     tmp_bson ("{'replSetGetStatus': 1}"),
-                                     NULL,
-                                     &reply,
-                                     &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'replSetGetStatus': 1}"), NULL, &reply, &error);
 
    if (r) {
-      if (bson_iter_init_find (&iter, &reply, "members") &&
-          BSON_ITER_HOLDS_ARRAY (&iter)) {
+      if (bson_iter_init_find (&iter, &reply, "members") && BSON_ITER_HOLDS_ARRAY (&iter)) {
          bson_iter_recurse (&iter, &array);
          while (bson_iter_next (&array)) {
             ++count;
          }
       }
    } else if (!strstr (error.message, "not running with --replSet") &&
-              !strstr (error.message,
-                       "replSetGetStatus is not supported through mongos")) {
+              !strstr (error.message, "replSetGetStatus is not supported through mongos")) {
       /* failed for some other reason */
       ASSERT_OR_PRINT (false, error);
    }
@@ -1442,9 +1385,8 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
 
    if (test_framework_get_ssl ()) {
 #ifndef MONGOC_ENABLE_SSL
-      test_error (
-         "SSL test config variables are specified in the environment, but"
-         " SSL isn't enabled");
+      test_error ("SSL test config variables are specified in the environment, but"
+                  " SSL isn't enabled");
 #else
       mongoc_client_set_ssl_opts (client, &gSSLOptions);
 #endif
@@ -1562,13 +1504,11 @@ test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api)
    }
 
    if (api) {
-      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
-                       error);
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error), error);
    } else {
       default_api = test_framework_get_default_server_api ();
       if (default_api) {
-         ASSERT_OR_PRINT (
-            mongoc_client_set_server_api (client, default_api, &error), error);
+         ASSERT_OR_PRINT (mongoc_client_set_server_api (client, default_api, &error), error);
       }
    }
 
@@ -1599,8 +1539,7 @@ test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api)
  *--------------------------------------------------------------------------
  */
 mongoc_client_t *
-test_framework_client_new_from_uri (const mongoc_uri_t *uri,
-                                    const mongoc_server_api_t *api)
+test_framework_client_new_from_uri (const mongoc_uri_t *uri, const mongoc_server_api_t *api)
 {
    mongoc_client_t *client = mongoc_client_new_from_uri (uri);
    bson_error_t error;
@@ -1611,13 +1550,11 @@ test_framework_client_new_from_uri (const mongoc_uri_t *uri,
    }
 
    if (api) {
-      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
-                       error);
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error), error);
    } else {
       default_api = test_framework_get_default_server_api ();
       if (default_api) {
-         ASSERT_OR_PRINT (
-            mongoc_client_set_server_api (client, default_api, &error), error);
+         ASSERT_OR_PRINT (mongoc_client_set_server_api (client, default_api, &error), error);
       }
    }
 
@@ -1674,9 +1611,8 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 
    if (test_framework_get_ssl ()) {
 #ifndef MONGOC_ENABLE_SSL
-      test_error (
-         "SSL test config variables are specified in the environment, but"
-         " SSL isn't enabled");
+      test_error ("SSL test config variables are specified in the environment, but"
+                  " SSL isn't enabled");
 #else
       mongoc_client_pool_set_ssl_opts (pool, &gSSLOptions);
 #endif
@@ -1703,8 +1639,7 @@ mongoc_client_pool_t *
 test_framework_new_default_client_pool (void)
 {
    mongoc_uri_t *test_uri = test_framework_get_uri ();
-   mongoc_client_pool_t *pool =
-      test_framework_client_pool_new_from_uri (test_uri, NULL);
+   mongoc_client_pool_t *pool = test_framework_client_pool_new_from_uri (test_uri, NULL);
 
    BSON_ASSERT (pool);
    test_framework_set_pool_ssl_opts (pool);
@@ -1736,8 +1671,7 @@ test_framework_new_default_client_pool (void)
  *--------------------------------------------------------------------------
  */
 mongoc_client_pool_t *
-test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri,
-                                         const mongoc_server_api_t *api)
+test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri, const mongoc_server_api_t *api)
 {
    mongoc_client_pool_t *pool = mongoc_client_pool_new (uri);
    bson_error_t error;
@@ -1748,14 +1682,11 @@ test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri,
    }
 
    if (api) {
-      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
-                       error);
+      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error), error);
    } else {
       default_api = test_framework_get_default_server_api ();
       if (default_api) {
-         ASSERT_OR_PRINT (
-            mongoc_client_pool_set_server_api (pool, default_api, &error),
-            error);
+         ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, default_api, &error), error);
       }
    }
 
@@ -1775,8 +1706,7 @@ test_framework_global_ssl_opts_init (void)
    gSSLOptions.ca_file = test_framework_getenv ("MONGOC_TEST_SSL_CA_FILE");
    gSSLOptions.ca_dir = test_framework_getenv ("MONGOC_TEST_SSL_CA_DIR");
    gSSLOptions.crl_file = test_framework_getenv ("MONGOC_TEST_SSL_CRL_FILE");
-   gSSLOptions.weak_cert_validation =
-      test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION");
+   gSSLOptions.weak_cert_validation = test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION");
 }
 
 static void
@@ -1800,8 +1730,7 @@ test_framework_is_mongos (void)
 
    call_hello (&reply);
 
-   is_mongos = (bson_iter_init_find (&iter, &reply, "msg") &&
-                BSON_ITER_HOLDS_UTF8 (&iter) &&
+   is_mongos = (bson_iter_init_find (&iter, &reply, "msg") && BSON_ITER_HOLDS_UTF8 (&iter) &&
                 !strcasecmp (bson_iter_utf8 (&iter, NULL), "isdbgrid"));
 
    bson_destroy (&reply);
@@ -1827,14 +1756,12 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
 
    ASSERT (client);
 
-   sd = mongoc_topology_description_server_by_id_const (
-      client->topology->_shared_descr_.ptr, server_id, &error);
+   sd = mongoc_topology_description_server_by_id_const (client->topology->_shared_descr_.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
 
    call_hello_with_host_and_port (sd->host.host_and_port, &reply);
 
-   ret = bson_iter_init_find (&iter, &reply, "secondary") &&
-         bson_iter_as_bool (&iter);
+   ret = bson_iter_init_find (&iter, &reply, "secondary") && bson_iter_as_bool (&iter);
 
    bson_destroy (&reply);
 
@@ -2050,17 +1977,13 @@ test_framework_skip_if_no_uds (void)
 int
 test_framework_skip_if_no_txns (void)
 {
-   if (test_framework_skip_if_no_crypto () &&
-       test_framework_skip_if_no_sessions () &&
-       test_framework_skip_if_not_replset () &&
-       test_framework_skip_if_max_wire_version_less_than_7 ()) {
+   if (test_framework_skip_if_no_crypto () && test_framework_skip_if_no_sessions () &&
+       test_framework_skip_if_not_replset () && test_framework_skip_if_max_wire_version_less_than_7 ()) {
       return 1;
    }
 
-   if (test_framework_skip_if_no_crypto () &&
-       test_framework_skip_if_no_sessions () &&
-       test_framework_skip_if_not_mongos () &&
-       test_framework_skip_if_max_wire_version_less_than_8 ()) {
+   if (test_framework_skip_if_no_crypto () && test_framework_skip_if_no_sessions () &&
+       test_framework_skip_if_not_mongos () && test_framework_skip_if_max_wire_version_less_than_8 ()) {
       return 1;
    }
 
@@ -2116,8 +2039,7 @@ _parse_server_version (const bson_t *buildinfo)
    /* Server returns a 4-part version like [3, 2, 0, 0], or like [3, 2, 0, -49]
     * for an RC. Ignore the 4th part since RCs are equivalent to non-RCs for
     * testing purposes. */
-   for (i = 0; i < N_SERVER_VERSION_PARTS && bson_iter_next (&array_iter);
-        i++) {
+   for (i = 0; i < N_SERVER_VERSION_PARTS && bson_iter_next (&array_iter); i++) {
       ret *= 1000;
       ret += 100 + bson_iter_as_int64 (&array_iter);
    }
@@ -2135,10 +2057,8 @@ test_framework_get_server_version_with_client (mongoc_client_t *client)
 
    ASSERT (client);
 
-   ASSERT_OR_PRINT (
-      mongoc_client_command_simple (
-         client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_client_command_simple (client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
+                    error);
 
    ret = _parse_server_version (&reply);
 
@@ -2206,25 +2126,20 @@ test_version_cmp (void)
    server_version_t v3_2_0 = 103102100;
 
    ASSERT (v2_6_12 == test_framework_str_to_version ("2.6.12"));
-   ASSERT (v2_6_12 == _parse_server_version (
-                         tmp_bson ("{'versionArray': [2, 6, 12, 0]}")));
+   ASSERT (v2_6_12 == _parse_server_version (tmp_bson ("{'versionArray': [2, 6, 12, 0]}")));
 
    ASSERT (v3_0_0 == test_framework_str_to_version ("3"));
-   ASSERT (v3_0_0 ==
-           _parse_server_version (tmp_bson ("{'versionArray': [3, 0, 0, 0]}")));
+   ASSERT (v3_0_0 == _parse_server_version (tmp_bson ("{'versionArray': [3, 0, 0, 0]}")));
 
    ASSERT (v3_0_1 == test_framework_str_to_version ("3.0.1"));
-   ASSERT (v3_0_1 ==
-           _parse_server_version (tmp_bson ("{'versionArray': [3, 0, 1, 0]}")));
+   ASSERT (v3_0_1 == _parse_server_version (tmp_bson ("{'versionArray': [3, 0, 1, 0]}")));
 
    ASSERT (v3_0_10 == test_framework_str_to_version ("3.0.10"));
-   ASSERT (v3_0_10 == _parse_server_version (
-                         tmp_bson ("{'versionArray': [3, 0, 10, 0]}")));
+   ASSERT (v3_0_10 == _parse_server_version (tmp_bson ("{'versionArray': [3, 0, 10, 0]}")));
 
    /* release candidates should be equivalent to non-rcs. */
    ASSERT (v3_2_0 == test_framework_str_to_version ("3.2.0.-49"));
-   ASSERT (v3_2_0 == _parse_server_version (
-                        tmp_bson ("{'versionArray': [3, 2, 0, -49]}")));
+   ASSERT (v3_2_0 == _parse_server_version (tmp_bson ("{'versionArray': [3, 2, 0, -49]}")));
 
    ASSERT (v3_2_0 > test_framework_str_to_version ("3.1.9"));
    ASSERT (v3_2_0 == test_framework_str_to_version ("3.2"));
@@ -2301,40 +2216,34 @@ test_framework_skip_if_not_replset (void)
 }
 
 /* convenience skip functions based on the wire version. */
-#define WIRE_VERSION_CHECKS(wv)                                         \
-   int test_framework_skip_if_max_wire_version_more_than_##wv (void)    \
-   {                                                                    \
-      if (!TestSuite_CheckLive ()) {                                    \
-         return 0;                                                      \
-      }                                                                 \
-      return test_framework_max_wire_version_at_least (wv + 1) ? 0 : 1; \
-   }                                                                    \
-   int test_framework_skip_if_max_wire_version_less_than_##wv (void)    \
-   {                                                                    \
-      if (!TestSuite_CheckLive ()) {                                    \
-         return 0;                                                      \
-      }                                                                 \
-      return test_framework_max_wire_version_at_least (wv);             \
-   }                                                                    \
-   int test_framework_skip_if_not_rs_version_##wv (void)                \
-   {                                                                    \
-      if (!TestSuite_CheckLive ()) {                                    \
-         return 0;                                                      \
-      }                                                                 \
-      return (test_framework_max_wire_version_at_least (wv) &&          \
-              test_framework_is_replset ())                             \
-                ? 1                                                     \
-                : 0;                                                    \
-   }                                                                    \
-   int test_framework_skip_if_rs_version_##wv (void)                    \
-   {                                                                    \
-      if (!TestSuite_CheckLive ()) {                                    \
-         return 0;                                                      \
-      }                                                                 \
-      return (test_framework_max_wire_version_at_least (wv) &&          \
-              test_framework_is_replset ())                             \
-                ? 0                                                     \
-                : 1;                                                    \
+#define WIRE_VERSION_CHECKS(wv)                                                                       \
+   int test_framework_skip_if_max_wire_version_more_than_##wv (void)                                  \
+   {                                                                                                  \
+      if (!TestSuite_CheckLive ()) {                                                                  \
+         return 0;                                                                                    \
+      }                                                                                               \
+      return test_framework_max_wire_version_at_least (wv + 1) ? 0 : 1;                               \
+   }                                                                                                  \
+   int test_framework_skip_if_max_wire_version_less_than_##wv (void)                                  \
+   {                                                                                                  \
+      if (!TestSuite_CheckLive ()) {                                                                  \
+         return 0;                                                                                    \
+      }                                                                                               \
+      return test_framework_max_wire_version_at_least (wv);                                           \
+   }                                                                                                  \
+   int test_framework_skip_if_not_rs_version_##wv (void)                                              \
+   {                                                                                                  \
+      if (!TestSuite_CheckLive ()) {                                                                  \
+         return 0;                                                                                    \
+      }                                                                                               \
+      return (test_framework_max_wire_version_at_least (wv) && test_framework_is_replset ()) ? 1 : 0; \
+   }                                                                                                  \
+   int test_framework_skip_if_rs_version_##wv (void)                                                  \
+   {                                                                                                  \
+      if (!TestSuite_CheckLive ()) {                                                                  \
+         return 0;                                                                                    \
+      }                                                                                               \
+      return (test_framework_max_wire_version_at_least (wv) && test_framework_is_replset ()) ? 0 : 1; \
    }
 
 WIRE_VERSION_CHECKS (7)
@@ -2417,14 +2326,13 @@ test_framework_skip_if_no_failpoint (void)
 
    client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
-   ret = mongoc_client_command_simple (
-      client,
-      "admin",
-      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': 'off', 'data': "
-                "{'errorCode': 10107, 'failCommands': ['count']}}"),
-      NULL,
-      NULL,
-      &error);
+   ret = mongoc_client_command_simple (client,
+                                       "admin",
+                                       tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': 'off', 'data': "
+                                                 "{'errorCode': 10107, 'failCommands': ['count']}}"),
+                                       NULL,
+                                       NULL,
+                                       &error);
    mongoc_client_destroy (client);
 
    if (!ret) {
@@ -2438,17 +2346,18 @@ test_framework_skip_if_no_failpoint (void)
 int
 test_framework_skip_if_no_client_side_encryption (void)
 {
-   const char *required_env_vars[] = {
-      "MONGOC_TEST_AWS_SECRET_ACCESS_KEY",
-      "MONGOC_TEST_AWS_ACCESS_KEY_ID",
-      "MONGOC_TEST_AZURE_TENANT_ID",
-      "MONGOC_TEST_AZURE_CLIENT_ID",
-      "MONGOC_TEST_AZURE_CLIENT_SECRET",
-      "MONGOC_TEST_GCP_EMAIL",
-      "MONGOC_TEST_GCP_PRIVATEKEY",
-      "MONGOC_TEST_CSFLE_TLS_CA_FILE",
-      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE",
-      NULL};
+   const char *required_env_vars[] = {"MONGOC_TEST_AWS_SECRET_ACCESS_KEY",
+                                      "MONGOC_TEST_AWS_ACCESS_KEY_ID",
+                                      "MONGOC_TEST_AWSNAME2_SECRET_ACCESS_KEY",
+                                      "MONGOC_TEST_AWSNAME2_ACCESS_KEY_ID",
+                                      "MONGOC_TEST_AZURE_TENANT_ID",
+                                      "MONGOC_TEST_AZURE_CLIENT_ID",
+                                      "MONGOC_TEST_AZURE_CLIENT_SECRET",
+                                      "MONGOC_TEST_GCP_EMAIL",
+                                      "MONGOC_TEST_GCP_PRIVATEKEY",
+                                      "MONGOC_TEST_CSFLE_TLS_CA_FILE",
+                                      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE",
+                                      NULL};
    const char **iter;
    bool has_creds = true;
 
@@ -2480,7 +2389,7 @@ test_framework_skip_if_no_aws (void)
 #ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH
    return 1; /* proceed. */
 #else
-   return 0;    /* do not proceed. */
+   return 0; /* do not proceed. */
 #endif
 }
 
@@ -2518,10 +2427,8 @@ test_framework_skip_if_serverless (void)
 int
 test_framework_skip_due_to_cdriver3708 (void)
 {
-   if (0 == test_framework_skip_if_auth () &&
-       0 == test_framework_skip_if_replset () &&
-       test_framework_get_server_version () >
-          test_framework_str_to_version ("4.4.0")) {
+   if (0 == test_framework_skip_if_auth () && 0 == test_framework_skip_if_replset () &&
+       test_framework_get_server_version () > test_framework_str_to_version ("4.4.0")) {
       /* If auth is enabled, we're using a replica set, and using a > 4.4
        * server, skip test. */
       return 0;
@@ -2551,21 +2458,13 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
    char exception_string[128];
    bson_snprintf (exception_string,
                   sizeof (exception_string),
-                  (exception_code == EXCEPTION_ACCESS_VIOLATION)
-                     ? "(access violation)"
-                     : "0x%08X",
+                  (exception_code == EXCEPTION_ACCESS_VIOLATION) ? "(access violation)" : "0x%08X",
                   exception_code);
 
    char address_string[32];
-   bson_snprintf (address_string,
-                  sizeof (address_string),
-                  "0x%p",
-                  pExceptionInfo->ExceptionRecord->ExceptionAddress);
+   bson_snprintf (address_string, sizeof (address_string), "0x%p", pExceptionInfo->ExceptionRecord->ExceptionAddress);
 
-   fprintf (stderr,
-            "exception '%s' at '%s', terminating\n",
-            exception_string,
-            address_string);
+   fprintf (stderr, "exception '%s' at '%s', terminating\n", exception_string, address_string);
 
    STACKFRAME64 stack_frame;
    memset (&stack_frame, 0, sizeof (stack_frame));
@@ -2601,10 +2500,7 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
                        NULL)) {
       DWORD64 displacement = 0;
 
-      if (SymFromAddr (process,
-                       (DWORD64) stack_frame.AddrPC.Offset,
-                       &displacement,
-                       symbol)) {
+      if (SymFromAddr (process, (DWORD64) stack_frame.AddrPC.Offset, &displacement, symbol)) {
          IMAGEHLP_MODULE64 moduleInfo;
          memset (&moduleInfo, 0, sizeof (moduleInfo));
          moduleInfo.SizeOfStruct = sizeof (moduleInfo);
@@ -2619,8 +2515,7 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
       line.SizeOfStruct = sizeof (IMAGEHLP_LINE);
 
       DWORD offset_ln = 0;
-      if (SymGetLineFromAddr (
-             process, (DWORD64) stack_frame.AddrPC.Offset, &offset_ln, &line)) {
+      if (SymGetLineFromAddr (process, (DWORD64) stack_frame.AddrPC.Offset, &offset_ln, &line)) {
          fprintf (stderr, " %s:%d ", line.FileName, line.LineNumber);
       }
 
@@ -2634,21 +2529,15 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
 
 
 void
-test_libmongoc_init (TestSuite *suite,
-                     BSON_MAYBE_UNUSED const char *name,
-                     int argc,
-                     char **argv)
+test_libmongoc_init (TestSuite *suite, BSON_MAYBE_UNUSED const char *name, int argc, char **argv)
 {
 #if defined(_MSC_VER) && defined(_WIN64)
    SetUnhandledExceptionFilter (windows_exception_handler);
 #endif
    mongoc_init ();
 
-   bson_snprintf (MONGOC_TEST_UNIQUE,
-                  sizeof MONGOC_TEST_UNIQUE,
-                  "test_%u_%u",
-                  (unsigned) time (NULL),
-                  (unsigned) gettestpid ());
+   bson_snprintf (
+      MONGOC_TEST_UNIQUE, sizeof MONGOC_TEST_UNIQUE, "test_%u_%u", (unsigned) time (NULL), (unsigned) gettestpid ());
 
    bson_mutex_init (&captured_logs_mutex);
    _mongoc_array_init (&captured_logs, sizeof (log_entry_t *));

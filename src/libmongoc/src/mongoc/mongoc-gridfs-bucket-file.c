@@ -44,8 +44,7 @@ _mongoc_min (const size_t a, const size_t b)
  *--------------------------------------------------------------------------
  */
 static bool
-_mongoc_gridfs_bucket_create_indexes (mongoc_gridfs_bucket_t *bucket,
-                                      bson_error_t *error)
+_mongoc_gridfs_bucket_create_indexes (mongoc_gridfs_bucket_t *bucket, bson_error_t *error)
 {
    mongoc_read_prefs_t *prefs;
    bson_t filter;
@@ -63,8 +62,7 @@ _mongoc_gridfs_bucket_create_indexes (mongoc_gridfs_bucket_t *bucket,
    bson_append_bool (&opts, "singleBatch", 11, true);
    bson_append_int32 (&opts, "limit", 5, 1);
    prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   cursor =
-      mongoc_collection_find_with_opts (bucket->files, &filter, &opts, prefs);
+   cursor = mongoc_collection_find_with_opts (bucket->files, &filter, &opts, prefs);
    bson_destroy (&filter);
    bson_destroy (&opts);
 
@@ -86,8 +84,7 @@ _mongoc_gridfs_bucket_create_indexes (mongoc_gridfs_bucket_t *bucket,
    BSON_APPEND_INT32 (&files_index, "filename", 1);
    BSON_APPEND_INT32 (&files_index, "uploadDate", 1);
 
-   r = _mongoc_collection_create_index_if_not_exists (
-      bucket->files, &files_index, NULL, error);
+   r = _mongoc_collection_create_index_if_not_exists (bucket->files, &files_index, NULL, error);
    bson_destroy (&files_index);
    if (!r) {
       return false;
@@ -102,8 +99,7 @@ _mongoc_gridfs_bucket_create_indexes (mongoc_gridfs_bucket_t *bucket,
    BSON_APPEND_INT32 (&chunks_index, "files_id", 1);
    BSON_APPEND_INT32 (&chunks_index, "n", 1);
 
-   r = _mongoc_collection_create_index_if_not_exists (
-      bucket->chunks, &chunks_index, &opts, error);
+   r = _mongoc_collection_create_index_if_not_exists (bucket->chunks, &chunks_index, &opts, error);
    bson_destroy (&opts);
    bson_destroy (&chunks_index);
 
@@ -138,18 +134,10 @@ _mongoc_gridfs_bucket_write_chunk (mongoc_gridfs_bucket_file_t *file)
 
    BSON_APPEND_INT32 (&chunk, "n", file->curr_chunk);
    BSON_APPEND_VALUE (&chunk, "files_id", file->file_id);
-   BSON_APPEND_BINARY (&chunk,
-                       "data",
-                       BSON_SUBTYPE_BINARY,
-                       file->buffer,
-                       (uint32_t) file->in_buffer);
+   BSON_APPEND_BINARY (&chunk, "data", BSON_SUBTYPE_BINARY, file->buffer, (uint32_t) file->in_buffer);
 
 
-   r = mongoc_collection_insert_one (file->bucket->chunks,
-                                     &chunk,
-                                     NULL /* opts */,
-                                     NULL /* reply */,
-                                     &file->err);
+   r = mongoc_collection_insert_one (file->bucket->chunks, &chunk, NULL /* opts */, NULL /* reply */, &file->err);
    bson_destroy (&chunk);
    if (!r) {
       return false;
@@ -185,8 +173,7 @@ _mongoc_gridfs_bucket_init_cursor (mongoc_gridfs_bucket_file_t *file)
    BSON_APPEND_INT32 (&sort, "n", 1);
    BSON_APPEND_DOCUMENT (&opts, "sort", &sort);
 
-   file->cursor = mongoc_collection_find_with_opts (
-      file->bucket->chunks, &filter, &opts, NULL);
+   file->cursor = mongoc_collection_find_with_opts (file->bucket->chunks, &filter, &opts, NULL);
 
    bson_destroy (&filter);
    bson_destroy (&opts);
@@ -250,11 +237,8 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
    }
 
    if (!r) {
-      bson_set_error (&file->err,
-                      MONGOC_ERROR_GRIDFS,
-                      MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
-                      "Missing chunk %d.",
-                      file->curr_chunk);
+      bson_set_error (
+         &file->err, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CHUNK_MISSING, "Missing chunk %d.", file->curr_chunk);
       return false;
    }
 
@@ -271,11 +255,8 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
    n = bson_iter_int32 (&iter);
 
    if (n != file->curr_chunk) {
-      bson_set_error (&file->err,
-                      MONGOC_ERROR_GRIDFS,
-                      MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
-                      "Missing chunk %d.",
-                      file->curr_chunk);
+      bson_set_error (
+         &file->err, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CHUNK_MISSING, "Missing chunk %d.", file->curr_chunk);
       return false;
    }
 
@@ -302,8 +283,7 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
       bson_set_error (&file->err,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "Chunk %d expected to have size %" PRId64
-                      " but is size %d.",
+                      "Chunk %d expected to have size %" PRId64 " but is size %d.",
                       file->curr_chunk,
                       expected_size,
                       data_len);
@@ -319,9 +299,7 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
 }
 
 ssize_t
-_mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
-                                   const mongoc_iovec_t *iov,
-                                   size_t iovcnt)
+_mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file, const mongoc_iovec_t *iov, size_t iovcnt)
 {
    BSON_ASSERT (file);
    BSON_ASSERT (iov);
@@ -361,9 +339,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
          const size_t space_available = chunk_size - file->in_buffer;
          const size_t to_write = _mongoc_min (bytes_available, space_available);
 
-         memcpy (file->buffer + file->in_buffer,
-                 ((char *) iov[i].iov_base) + written_this_iov,
-                 to_write);
+         memcpy (file->buffer + file->in_buffer, ((char *) iov[i].iov_base) + written_this_iov, to_write);
 
          file->in_buffer += to_write;
          written_this_iov += to_write;
@@ -381,9 +357,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
 }
 
 ssize_t
-_mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file,
-                                  mongoc_iovec_t *iov,
-                                  size_t iovcnt)
+_mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file, mongoc_iovec_t *iov, size_t iovcnt)
 {
    BSON_ASSERT (file);
    BSON_ASSERT (iov);
@@ -407,9 +381,7 @@ _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file,
          const size_t space_available = iov[i].iov_len - read_this_iov;
          const size_t to_read = _mongoc_min (bytes_available, space_available);
 
-         memcpy (((char *) iov[i].iov_base) + read_this_iov,
-                 file->buffer + file->bytes_read,
-                 to_read);
+         memcpy (((char *) iov[i].iov_base) + read_this_iov, file->buffer + file->bytes_read, to_read);
 
          file->bytes_read += to_read;
          read_this_iov += to_read;
@@ -485,8 +457,7 @@ _mongoc_gridfs_bucket_file_save (mongoc_gridfs_bucket_file_t *file)
       BSON_APPEND_DOCUMENT (&new_doc, "metadata", file->metadata);
    }
 
-   r = mongoc_collection_insert_one (
-      file->bucket->files, &new_doc, NULL, NULL, &file->err);
+   r = mongoc_collection_insert_one (file->bucket->files, &new_doc, NULL, NULL, &file->err);
    bson_destroy (&new_doc);
    file->saved = r;
    return (file->err.code) ? false : true;

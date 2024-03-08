@@ -33,8 +33,7 @@ MONGOC_EXPORT (void)
 mongoc_server_description_destroy (mongoc_server_description_t *description);
 
 MONGOC_EXPORT (mongoc_server_description_t *)
-mongoc_server_description_new_copy (
-   const mongoc_server_description_t *description) BSON_GNUC_WARN_UNUSED_RESULT;
+mongoc_server_description_new_copy (const mongoc_server_description_t *description) BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (uint32_t)
 mongoc_server_description_id (const mongoc_server_description_t *description);
@@ -43,28 +42,23 @@ MONGOC_EXPORT (mongoc_host_list_t *)
 mongoc_server_description_host (const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (int64_t)
-mongoc_server_description_last_update_time (
-   const mongoc_server_description_t *description);
+mongoc_server_description_last_update_time (const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (int64_t)
-mongoc_server_description_round_trip_time (
-   const mongoc_server_description_t *description);
+mongoc_server_description_round_trip_time (const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (const char *)
 mongoc_server_description_type (const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (const bson_t *)
-mongoc_server_description_hello_response (
-   const mongoc_server_description_t *description);
+mongoc_server_description_hello_response (const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (const bson_t *)
-mongoc_server_description_ismaster (
-   const mongoc_server_description_t *description)
+mongoc_server_description_ismaster (const mongoc_server_description_t *description)
    BSON_GNUC_DEPRECATED_FOR (mongoc_server_description_hello_response);
 
 MONGOC_EXPORT (int32_t)
-mongoc_server_description_compressor_id (
-   const mongoc_server_description_t *description);
+mongoc_server_description_compressor_id (const mongoc_server_description_t *description);
 
 BSON_END_DECLS
 

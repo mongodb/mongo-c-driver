@@ -63,13 +63,9 @@ test_binary (void)
    bson_init (&bcon);
    bson_init (&expected);
 
-   bson_append_binary (
-      &expected, "foo", -1, BSON_SUBTYPE_BINARY, (uint8_t *) "deadbeef", 8);
+   bson_append_binary (&expected, "foo", -1, BSON_SUBTYPE_BINARY, (uint8_t *) "deadbeef", 8);
 
-   BCON_APPEND (&bcon,
-                "foo",
-                BCON_BIN (BSON_SUBTYPE_BINARY, (const uint8_t *) "deadbeef", 8),
-                NULL);
+   BCON_APPEND (&bcon, "foo", BCON_BIN (BSON_SUBTYPE_BINARY, (const uint8_t *) "deadbeef", 8), NULL);
 
    bson_eq_bson (&bcon, &expected);
 
@@ -484,19 +480,7 @@ test_inline_nested (void)
    bson_append_array (&foo, "bar", -1, &bar);
    bson_append_document (&expected, "foo", -1, &foo);
 
-   BCON_APPEND (&bcon,
-                "foo",
-                "{",
-                "bar",
-                "[",
-                BCON_INT32 (1),
-                BCON_INT32 (2),
-                "{",
-                "hello",
-                "world",
-                "}",
-                "]",
-                "}");
+   BCON_APPEND (&bcon, "foo", "{", "bar", "[", BCON_INT32 (1), BCON_INT32 (2), "{", "hello", "world", "}", "]", "}");
 
    bson_eq_bson (&bcon, &expected);
 
@@ -618,8 +602,7 @@ test_append_ctx (void)
 
    bson_append_document (&expected, "a", -1, &child);
 
-   test_append_ctx_helper (
-      &bcon, "a", "{", NULL, "add magic", "e", "f", "}", NULL);
+   test_append_ctx_helper (&bcon, "a", "{", NULL, "add magic", "e", "f", "}", NULL);
 
    bson_eq_bson (&bcon, &expected);
 

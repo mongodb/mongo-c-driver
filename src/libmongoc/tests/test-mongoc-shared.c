@@ -100,8 +100,7 @@ test_aliased (void)
    struct widget *w;
    mongoc_shared_ptr ptr = MONGOC_SHARED_PTR_NULL;
 
-   ptr = mongoc_shared_ptr_create (bson_malloc0 (sizeof (struct widget)),
-                                   widget_delete);
+   ptr = mongoc_shared_ptr_create (bson_malloc0 (sizeof (struct widget)), widget_delete);
    w = ptr.ptr;
    w->store_value_here = &destroyed_valued;
 

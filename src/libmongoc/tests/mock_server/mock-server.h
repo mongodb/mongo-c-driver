@@ -41,9 +41,7 @@ typedef struct _mock_server_bind_opts_t {
 
 typedef bool (*autoresponder_t) (request_t *request, void *data);
 
-typedef bool (*hello_callback_func_t) (request_t *request,
-                                       void *data,
-                                       bson_t *hello_response);
+typedef bool (*hello_callback_func_t) (request_t *request, void *data, bson_t *hello_response);
 
 typedef void (*destructor_t) (void *data);
 
@@ -60,10 +58,7 @@ mock_server_t *
 mock_server_down (void);
 
 int
-mock_server_autoresponds (mock_server_t *server,
-                          autoresponder_t responder,
-                          void *data,
-                          destructor_t destructor);
+mock_server_autoresponds (mock_server_t *server, autoresponder_t responder, void *data, destructor_t destructor);
 
 void
 mock_server_remove_autoresponder (mock_server_t *server, int id);
@@ -88,8 +83,7 @@ mock_server_set_ssl_opts (mock_server_t *server, mongoc_ssl_opt_t *opts);
 #endif
 
 void
-mock_server_set_bind_opts (mock_server_t *server,
-                           mock_server_bind_opts_t *opts);
+mock_server_set_bind_opts (mock_server_t *server, mock_server_bind_opts_t *opts);
 
 uint16_t
 mock_server_run (mock_server_t *server);
@@ -104,8 +98,7 @@ uint16_t
 mock_server_get_port (mock_server_t *server);
 
 void
-mock_server_set_request_timeout_msec (mock_server_t *server,
-                                      int64_t request_timeout_msec);
+mock_server_set_request_timeout_msec (mock_server_t *server, int64_t request_timeout_msec);
 
 bool
 mock_server_get_rand_delay (mock_server_t *server);
@@ -117,18 +110,14 @@ request_t *
 mock_server_receives_request (mock_server_t *server);
 
 request_t *
-mock_server_receives_command (mock_server_t *server,
-                              const char *database_name,
-                              mongoc_query_flags_t flags,
-                              const char *command_json,
-                              ...);
+mock_server_receives_command (
+   mock_server_t *server, const char *database_name, mongoc_query_flags_t flags, const char *command_json, ...);
 
 request_t *
 mock_server_receives_any_hello (mock_server_t *server);
 
 request_t *
-mock_server_receives_legacy_hello (mock_server_t *server,
-                                   const char *match_json);
+mock_server_receives_legacy_hello (mock_server_t *server, const char *match_json);
 
 request_t *
 mock_server_receives_hello (mock_server_t *server);
@@ -155,15 +144,11 @@ mock_server_receives_kill_cursors (mock_server_t *server, int64_t cursor_id);
 
 request_t *
 _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...);
-#define mock_server_receives_msg(_server, _flags, ...) \
-   _mock_server_receives_msg (_server, _flags, __VA_ARGS__, NULL)
+#define mock_server_receives_msg(_server, _flags, ...) _mock_server_receives_msg (_server, _flags, __VA_ARGS__, NULL)
 
 request_t *
-mock_server_receives_bulk_msg (mock_server_t *server,
-                               uint32_t flags,
-                               const bson_t *msg_json,
-                               const bson_t *doc_json,
-                               size_t n_docs);
+mock_server_receives_bulk_msg (
+   mock_server_t *server, uint32_t flags, const bson_t *msg_json, const bson_t *doc_json, size_t n_docs);
 
 void
 reply_to_request_with_hang_up (request_t *request);
@@ -195,29 +180,19 @@ reply_to_find_request (request_t *request,
                        bool is_command);
 
 void
-reply_to_op_msg_request (request_t *request,
-                         mongoc_op_msg_flags_t flags,
-                         const bson_t *doc);
+reply_to_op_msg_request (request_t *request, mongoc_op_msg_flags_t flags, const bson_t *doc);
 
 void
-reply_to_request_with_multiple_docs (request_t *request,
-                                     mongoc_reply_flags_t flags,
-                                     const bson_t *docs,
-                                     int n_docs,
-                                     int64_t cursor_id);
+reply_to_request_with_multiple_docs (
+   request_t *request, mongoc_reply_flags_t flags, const bson_t *docs, int n_docs, int64_t cursor_id);
 
 void
 mock_server_destroy (mock_server_t *server);
 
 void
-rs_response_to_hello (mock_server_t *server,
-                      int max_wire_version,
-                      bool primary,
-                      int has_tags,
-                      ...);
+rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary, int has_tags, ...);
 
 #define RS_RESPONSE_TO_HELLO(server, max_wire_version, primary, has_tags, ...) \
-   rs_response_to_hello (                                                      \
-      server, max_wire_version, primary, has_tags, __VA_ARGS__, NULL)
+   rs_response_to_hello (server, max_wire_version, primary, has_tags, __VA_ARGS__, NULL)
 
 #endif /* MOCK_SERVER_H */

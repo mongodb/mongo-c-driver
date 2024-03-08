@@ -28,9 +28,7 @@ typedef void (*mongoc_usleep_func_t) (int64_t usec, void *user_data);
  * not supported. Doing so is at the user's own risk.
  */
 MONGOC_EXPORT (void)
-mongoc_client_set_usleep_impl (mongoc_client_t *client,
-                               mongoc_usleep_func_t usleep_func,
-                               void *user_data);
+mongoc_client_set_usleep_impl (mongoc_client_t *client, mongoc_usleep_func_t usleep_func, void *user_data);
 
 MONGOC_EXPORT (void)
 mongoc_usleep_default_impl (int64_t usec, void *user_data);

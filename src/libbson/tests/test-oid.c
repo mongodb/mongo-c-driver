@@ -247,8 +247,7 @@ test_bson_oid_get_time_t (void)
    context = bson_context_new (BSON_CONTEXT_NONE);
    bson_oid_init (&oid, context);
    ASSERT_CMPUINT32 ((uint32_t) bson_oid_get_time_t (&oid), >=, start);
-   ASSERT_CMPUINT32 (
-      (uint32_t) bson_oid_get_time_t (&oid), <=, (uint32_t) time (NULL));
+   ASSERT_CMPUINT32 ((uint32_t) bson_oid_get_time_t (&oid), <=, (uint32_t) time (NULL));
 
    bson_oid_init_from_string (&oid, "000000000000000000000000");
    str = get_time_as_string (&oid);
@@ -473,18 +472,14 @@ void
 test_oid_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/bson/oid/init", test_bson_oid_init);
-   TestSuite_Add (
-      suite, "/bson/oid/init_from_string", test_bson_oid_init_from_string);
-   TestSuite_Add (
-      suite, "/bson/oid/init_sequence", test_bson_oid_init_sequence);
-   TestSuite_Add (
-      suite, "/bson/oid/init_with_threads", test_bson_oid_init_with_threads);
+   TestSuite_Add (suite, "/bson/oid/init_from_string", test_bson_oid_init_from_string);
+   TestSuite_Add (suite, "/bson/oid/init_sequence", test_bson_oid_init_sequence);
+   TestSuite_Add (suite, "/bson/oid/init_with_threads", test_bson_oid_init_with_threads);
    TestSuite_Add (suite, "/bson/oid/hash", test_bson_oid_hash);
    TestSuite_Add (suite, "/bson/oid/compare", test_bson_oid_compare);
    TestSuite_Add (suite, "/bson/oid/copy", test_bson_oid_copy);
    TestSuite_Add (suite, "/bson/oid/get_time_t", test_bson_oid_get_time_t);
-   TestSuite_Add (
-      suite, "/bson/oid/counter_overflow", test_bson_oid_counter_overflow);
+   TestSuite_Add (suite, "/bson/oid/counter_overflow", test_bson_oid_counter_overflow);
 #ifndef _WIN32
    if (!TestSuite_NoFork (suite)) {
       TestSuite_Add (suite, "/bson/oid/after_fork", test_bson_oid_after_fork);

@@ -80,9 +80,7 @@ typedef struct mongoc_shared_ptr {
  *    *ptr = mongoc_shared_ptr_create(pointee, deleter);
  */
 extern void
-mongoc_shared_ptr_reset (mongoc_shared_ptr *ptr,
-                         void *pointee,
-                         void (*deleter) (void *));
+mongoc_shared_ptr_reset (mongoc_shared_ptr *ptr, void *pointee, void (*deleter) (void *));
 
 /**
  * @brief Reassign the given shared pointer to manage the same resource as
@@ -119,8 +117,7 @@ mongoc_shared_ptr_assign (mongoc_shared_ptr *dest, mongoc_shared_ptr from);
  * Thread-safe equivalent of `mongoc_shared_ptr_assign`
  */
 extern void
-mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *dest,
-                                mongoc_shared_ptr from);
+mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *dest, mongoc_shared_ptr from);
 
 /**
  * @brief Create a copy of the given shared pointer. Increases the reference

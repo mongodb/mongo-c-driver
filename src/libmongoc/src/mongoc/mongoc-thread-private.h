@@ -31,17 +31,14 @@
 #define mongoc_cond_init(_n) pthread_cond_init ((_n), NULL)
 
 #if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS)
-#define mongoc_cond_wait(cond, mutex) \
-   pthread_cond_wait (cond, &(mutex)->wrapped_mutex);
+#define mongoc_cond_wait(cond, mutex) pthread_cond_wait (cond, &(mutex)->wrapped_mutex);
 #else
 #define mongoc_cond_wait pthread_cond_wait
 #endif
 
 #define mongoc_cond_signal pthread_cond_signal
 static BSON_INLINE int
-mongoc_cond_timedwait (pthread_cond_t *cond,
-                       bson_mutex_t *mutex,
-                       int64_t timeout_msec)
+mongoc_cond_timedwait (pthread_cond_t *cond, bson_mutex_t *mutex, int64_t timeout_msec)
 {
    struct timespec to;
    struct timeval tv;
@@ -71,9 +68,7 @@ mongo_cond_ret_is_timedout (int ret)
 #define mongoc_cond_init InitializeConditionVariable
 #define mongoc_cond_wait(_c, _m) mongoc_cond_timedwait ((_c), (_m), INFINITE)
 static BSON_INLINE int
-mongoc_cond_timedwait (mongoc_cond_t *cond,
-                       bson_mutex_t *mutex,
-                       int64_t timeout_msec)
+mongoc_cond_timedwait (mongoc_cond_t *cond, bson_mutex_t *mutex, int64_t timeout_msec)
 {
    int r;
 

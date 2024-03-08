@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.25.4
+%global up_version   1.26.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -38,13 +38,14 @@ BuildRequires: pkgconfig(libsasl2)
 BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(snappy)
 BuildRequires: pkgconfig(libutf8proc)
-BuildRequires: pkgconfig(libzstd)
+BuildRequires: pkgconfig(libzstd) >= 0.8.0
 %if %{with tests}
 BuildRequires: mongodb-server
 BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
-BuildRequires: cmake(mongocrypt) >= 1.5.2
+# grep VERSION_LESS src/*/CMakeLists.txt
+BuildRequires: cmake(mongocrypt) >= 1.8.0
 %endif
 BuildRequires: perl-interpreter
 # From man pages
@@ -242,6 +243,16 @@ exit $ret
 
 
 %changelog
+* Fri Feb 16 2024 Remi Collet <remi@remirepo.net> - 1.26.0-1
+- update to 1.26.0
+- raise dependency to libmongocrypt 1.8.0
+
+* Thu Jan 25 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.25.4-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
+* Sun Jan 21 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.25.4-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
 * Wed Jan  3 2024 Remi Collet <remi@remirepo.net> - 1.25.4-1
 - update to 1.25.4
 

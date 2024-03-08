@@ -34,13 +34,11 @@ get_localhost_stream (uint16_t port)
    server_addr.sin_family = AF_INET;
    server_addr.sin_port = htons (port);
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
-   r = mongoc_socket_connect (
-      conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), 0);
+   r = mongoc_socket_connect (conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), 0);
 
    errcode = mongoc_socket_errno (conn_sock);
    if (!(r == 0 || MONGOC_ERRNO_IS_AGAIN (errcode))) {
-      test_error (
-         "mongoc_socket_connect unexpected return: %d (errno: %d)", r, errcode);
+      test_error ("mongoc_socket_connect unexpected return: %d (errno: %d)", r, errcode);
    }
 
    return mongoc_stream_socket_new (conn_sock);
@@ -131,8 +129,7 @@ test_hello_impl (bool with_ssl)
          copt.ca_file = CERT_CA;
          copt.weak_cert_validation = 1;
 
-         sock_streams[i] = mongoc_stream_tls_new_with_hostname (
-            sock_streams[i], NULL, &copt, 1);
+         sock_streams[i] = mongoc_stream_tls_new_with_hostname (sock_streams[i], NULL, &copt, 1);
          setup = mongoc_async_cmd_tls_setup;
          setup_ctx = (void *) "127.0.0.1";
       }
@@ -162,19 +159,17 @@ test_hello_impl (bool with_ssl)
    offset = NSERVERS / 2;
    for (i = 0; i < NSERVERS; i++) {
       server_id = (i + offset) % NSERVERS;
-      request = mock_server_receives_command (
-         servers[server_id], "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
+      request = mock_server_receives_command (servers[server_id], "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
       /* use "serverId" field to distinguish among responses */
-      reply =
-         bson_strdup_printf ("{'ok': 1,"
-                             " '" HANDSHAKE_RESPONSE_LEGACY_HELLO "': true,"
-                             " 'minWireVersion': %d,"
-                             " 'maxWireVersion': %d,"
-                             " 'serverId': %d}",
-                             WIRE_VERSION_MIN,
-                             WIRE_VERSION_MAX,
-                             server_id);
+      reply = bson_strdup_printf ("{'ok': 1,"
+                                  " '" HANDSHAKE_RESPONSE_LEGACY_HELLO "': true,"
+                                  " 'minWireVersion': %d,"
+                                  " 'maxWireVersion': %d,"
+                                  " 'serverId': %d}",
+                                  WIRE_VERSION_MIN,
+                                  WIRE_VERSION_MAX,
+                                  server_id);
 
       reply_to_request_simple (request, reply);
       bson_free (reply);
@@ -236,8 +231,7 @@ test_large_hello_helper (mongoc_async_cmd_t *acmd,
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
    ASSERT_HAS_FIELD (bson, HANDSHAKE_RESPONSE_LEGACY_HELLO);
-   BSON_ASSERT (
-      bson_iter_init_find (&iter, bson, HANDSHAKE_RESPONSE_LEGACY_HELLO));
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, HANDSHAKE_RESPONSE_LEGACY_HELLO));
    BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
 }
 
@@ -268,8 +262,7 @@ test_large_hello (void *ctx)
 #ifdef MONGOC_ENABLE_SSL
    if (test_framework_get_ssl ()) {
       ssl_opts = *test_framework_get_ssl_opts ();
-      sock_stream =
-         mongoc_stream_tls_new_with_hostname (sock_stream, NULL, &ssl_opts, 1);
+      sock_stream = mongoc_stream_tls_new_with_hostname (sock_stream, NULL, &ssl_opts, 1);
    }
 #endif
 
@@ -287,8 +280,7 @@ test_large_hello (void *ctx)
                          NULL, /* initiator. */
                          0,    /* initiate delay. */
 #ifdef MONGOC_ENABLE_SSL
-                         test_framework_get_ssl () ? mongoc_async_cmd_tls_setup
-                                                   : NULL,
+                         test_framework_get_ssl () ? mongoc_async_cmd_tls_setup : NULL,
 #else
                          NULL,
 #endif
@@ -343,8 +335,7 @@ test_hello_delay (void)
 
    mock_server_run (server);
 
-   stream_with_result.stream =
-      get_localhost_stream (mock_server_get_port (server));
+   stream_with_result.stream = get_localhost_stream (mock_server_get_port (server));
    stream_with_result.finished = false;
 
    BSON_ASSERT (BSON_APPEND_INT32 (&hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1));
@@ -366,8 +357,7 @@ test_hello_delay (void)
    mongoc_async_run (async);
 
    /* it should have taken at least 100ms to finish. */
-   ASSERT_CMPINT64 (
-      bson_get_monotonic_time () - start, >, (int64_t) (100 * 1000));
+   ASSERT_CMPINT64 (bson_get_monotonic_time () - start, >, (int64_t) (100 * 1000));
    BSON_ASSERT (stream_with_result.finished);
 
    bson_destroy (&hello_cmd);

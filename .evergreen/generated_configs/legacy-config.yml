@@ -886,6 +886,15 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
+        export IS_PATCH="${is_patch}"
+        sh .evergreen/scripts/check_rpm_spec.sh
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
         sh .evergreen/scripts/build_snapshot_rpm.sh
   - command: s3.put
     params:
@@ -1002,8 +1011,8 @@ tasks:
   commands:
   - command: s3.get
     params:
-      aws_key: ${toolchain_aws_key}
-      aws_secret: ${toolchain_aws_secret}
+      aws_key: ${aws_key}
+      aws_secret: ${aws_secret}
       remote_file: mongo-c-toolchain/${distro_id}/2023/06/07/mongo-c-toolchain.tar.gz
       bucket: mongo-c-toolchain
       local_file: mongo-c-toolchain.tar.gz
@@ -14446,6 +14455,19 @@ buildvariants:
   - name: debug-compile-nosasl-openssl-1.0.1
   - name: .ocsp-openssl-1.0.1
   batchtime: 10080
+  display_tasks:
+  - execution_tasks:
+    - .ocsp-openssl
+    name: ocsp-openssl
+  - execution_tasks:
+    - .ocsp-darwinssl
+    name: ocsp-darwinssl
+  - execution_tasks:
+    - .ocsp-winssl
+    name: ocsp-winssl
+  - execution_tasks:
+    - .ocsp-openssl-1.0.1
+    name: ocsp-openssl-1.0.1
 - name: packaging
   display_name: Linux Distro Packaging
   run_on: ubuntu1804-test

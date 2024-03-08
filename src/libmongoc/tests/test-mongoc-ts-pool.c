@@ -6,8 +6,7 @@
 static void
 test_ts_pool_empty (void)
 {
-   mongoc_ts_pool *pool = mongoc_ts_pool_new (
-      (mongoc_ts_pool_params){.element_size = sizeof (int)});
+   mongoc_ts_pool *pool = mongoc_ts_pool_new ((mongoc_ts_pool_params){.element_size = sizeof (int)});
    BSON_ASSERT (mongoc_ts_pool_is_empty (pool));
    mongoc_ts_pool_free (pool);
 }
@@ -16,8 +15,7 @@ test_ts_pool_empty (void)
 static void
 test_ts_pool_simple (void)
 {
-   mongoc_ts_pool *pool = mongoc_ts_pool_new (
-      (mongoc_ts_pool_params){.element_size = sizeof (int)});
+   mongoc_ts_pool *pool = mongoc_ts_pool_new ((mongoc_ts_pool_params){.element_size = sizeof (int)});
    int *item;
    int *item2;
 
@@ -60,8 +58,7 @@ _set_int_to_7 (int *v, void *unused, bson_error_t *unused2)
 
 /* Declare a pool that contains `int`, sets each new int to seven, and drops
  * integers that are equal to 42. */
-MONGOC_DECL_SPECIAL_TS_POOL (
-   int, int_pool, void, _set_int_to_7, NULL, _is_int_42)
+MONGOC_DECL_SPECIAL_TS_POOL (int, int_pool, void, _set_int_to_7, NULL, _is_int_42)
 
 static void
 test_ts_pool_special (void)

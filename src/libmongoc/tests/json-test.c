@@ -135,15 +135,13 @@ optype_from_test (const char *op)
  *-----------------------------------------------------------------------
  */
 const mongoc_server_description_t *
-server_description_by_hostname (const mongoc_topology_description_t *topology,
-                                const char *address)
+server_description_by_hostname (const mongoc_topology_description_t *topology, const char *address)
 {
    const mongoc_set_t *set = mc_tpld_servers_const (topology);
    const mongoc_server_description_t *server_iter;
 
    for (size_t i = 0; i < set->items_len; i++) {
-      server_iter =
-         mongoc_set_get_item_const (mc_tpld_servers_const (topology), i);
+      server_iter = mongoc_set_get_item_const (mc_tpld_servers_const (topology), i);
 
       if (strcasecmp (address, server_iter->connection_address) == 0) {
          return server_iter;
@@ -221,18 +219,14 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          /* send hello through the topology description's handler */
          capture_logs (true);
-         mongoc_topology_description_handle_hello (
-            tdmod.new_td, sd->id, &response, 1, NULL);
+         mongoc_topology_description_handle_hello (tdmod.new_td, sd->id, &response, 1, NULL);
          if (mc_tpld_servers_const (tdmod.new_td)->items_len == 0) {
-            ASSERT_CAPTURED_LOG ("topology",
-                                 MONGOC_LOG_LEVEL_WARNING,
-                                 "Last server removed from topology");
+            ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_WARNING, "Last server removed from topology");
          }
          capture_logs (false);
          mc_tpld_modify_commit (tdmod);
       }
-   } else if (bson_iter_init_find (
-                 &phase_field_iter, phase, "applicationErrors")) {
+   } else if (bson_iter_init_find (&phase_field_iter, phase, "applicationErrors")) {
       bson_t app_errors;
       bson_iter_t app_error_iter;
       bson_t app_error;
@@ -266,8 +260,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
             continue;
          }
 
-         if (bson_iter_init_find (
-                &app_error_field_iter, &app_error, "generation")) {
+         if (bson_iter_init_find (&app_error_field_iter, &app_error, "generation")) {
             BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&app_error_field_iter));
             generation = bson_iter_int32 (&app_error_field_iter);
          } else {
@@ -275,13 +268,11 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
             generation = mc_tpl_sd_get_generation (sd, &kZeroServiceId);
          }
 
-         BSON_ASSERT (bson_iter_init_find (
-            &app_error_field_iter, &app_error, "maxWireVersion"));
+         BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "maxWireVersion"));
          BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&app_error_field_iter));
          max_wire_version = bson_iter_int32 (&app_error_field_iter);
 
-         BSON_ASSERT (
-            bson_iter_init_find (&app_error_field_iter, &app_error, "when"));
+         BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "when"));
          BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&app_error_field_iter));
          when_str = bson_iter_utf8 (&app_error_field_iter, 0);
          if (0 == strcmp (when_str, "beforeHandshakeCompletes")) {
@@ -292,8 +283,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
             test_error ("unexpected 'when' value: %s", when_str);
          }
 
-         BSON_ASSERT (
-            bson_iter_init_find (&app_error_field_iter, &app_error, "type"));
+         BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "type"));
          BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&app_error_field_iter));
          type_str = bson_iter_utf8 (&app_error_field_iter, 0);
          if (0 == strcmp (type_str, "command")) {
@@ -307,22 +297,14 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
          }
 
          if (MONGOC_SDAM_APP_ERROR_COMMAND == type) {
-            BSON_ASSERT (bson_iter_init_find (
-               &app_error_field_iter, &app_error, "response"));
+            BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "response"));
             BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&app_error_field_iter));
             bson_iter_bson (&app_error_field_iter, &response);
          }
 
          memset (&err, 0, sizeof (bson_error_t));
-         _mongoc_topology_handle_app_error (topology,
-                                            sd->id,
-                                            handshake_complete,
-                                            type,
-                                            &response,
-                                            &err,
-                                            max_wire_version,
-                                            generation,
-                                            &kZeroServiceId);
+         _mongoc_topology_handle_app_error (
+            topology, sd->id, handshake_complete, type, &response, &err, max_wire_version, generation, &kZeroServiceId);
          mc_tpld_drop_ref (&td);
       }
    }
@@ -368,13 +350,11 @@ test_server_selection_logic_cb (bson_t *test)
    bool matched_servers[50];
    mongoc_array_t selected_servers;
 
-   _mongoc_array_init (&selected_servers,
-                       sizeof (mongoc_server_description_t *));
+   _mongoc_array_init (&selected_servers, sizeof (mongoc_server_description_t *));
 
    BSON_ASSERT (test);
 
-   expected_error =
-      bson_iter_init_find (&iter, test, "error") && bson_iter_as_bool (&iter);
+   expected_error = bson_iter_init_find (&iter, test, "error") && bson_iter_as_bool (&iter);
 
    heartbeat_msec = MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED;
 
@@ -390,12 +370,10 @@ test_server_selection_logic_cb (bson_t *test)
    BSON_ASSERT (bson_iter_init_find (&topology_iter, &test_topology, "type"));
 
    mongoc_topology_description_init (&topology, heartbeat_msec);
-   topology.type =
-      topology_type_from_test (bson_iter_utf8 (&topology_iter, NULL));
+   topology.type = topology_type_from_test (bson_iter_utf8 (&topology_iter, NULL));
 
    /* for each server description in test, add server to our topology */
-   BSON_ASSERT (
-      bson_iter_init_find (&topology_iter, &test_topology, "servers"));
+   BSON_ASSERT (bson_iter_init_find (&topology_iter, &test_topology, "servers"));
    bson_iter_bson (&topology_iter, &test_servers);
 
    bson_iter_init (&server_iter, &test_servers);
@@ -425,10 +403,8 @@ test_server_selection_logic_cb (bson_t *test)
       }
 
       if (bson_iter_init_find (&sd_iter, &server, "lastWrite")) {
-         BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&sd_iter) &&
-                      bson_iter_recurse (&sd_iter, &last_write_iter) &&
-                      bson_iter_find (&last_write_iter, "lastWriteDate") &&
-                      BSON_ITER_HOLDS_INT (&last_write_iter));
+         BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&sd_iter) && bson_iter_recurse (&sd_iter, &last_write_iter) &&
+                      bson_iter_find (&last_write_iter, "lastWriteDate") && BSON_ITER_HOLDS_INT (&last_write_iter));
          sd->last_write_date_ms = bson_iter_as_int64 (&last_write_iter);
       }
 
@@ -456,8 +432,7 @@ test_server_selection_logic_cb (bson_t *test)
 
    if (bson_iter_init_find (&read_pref_iter, &test_read_pref, "tag_sets")) {
       /* ignore  "tag_sets: [{}]" */
-      if (bson_iter_recurse (&read_pref_iter, &tag_sets_iter) &&
-          bson_iter_next (&tag_sets_iter) &&
+      if (bson_iter_recurse (&read_pref_iter, &tag_sets_iter) && bson_iter_next (&tag_sets_iter) &&
           BSON_ITER_HOLDS_DOCUMENT (&tag_sets_iter)) {
          bson_iter_bson (&tag_sets_iter, &first_tag_set);
          if (!bson_empty (&first_tag_set)) {
@@ -468,10 +443,8 @@ test_server_selection_logic_cb (bson_t *test)
       }
    }
 
-   if (bson_iter_init_find (
-          &read_pref_iter, &test_read_pref, "maxStalenessSeconds")) {
-      mongoc_read_prefs_set_max_staleness_seconds (
-         read_prefs, bson_iter_as_int64 (&read_pref_iter));
+   if (bson_iter_init_find (&read_pref_iter, &test_read_pref, "maxStalenessSeconds")) {
+      mongoc_read_prefs_set_max_staleness_seconds (read_prefs, bson_iter_as_int64 (&read_pref_iter));
    }
 
    /* get operation type */
@@ -496,12 +469,7 @@ test_server_selection_logic_cb (bson_t *test)
 
    /* TODO: use topology_select instead? */
    mongoc_topology_description_suitable_servers (
-      &selected_servers,
-      op,
-      &topology,
-      read_prefs,
-      NULL,
-      MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
+      &selected_servers, op, &topology, read_prefs, NULL, NULL, MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
 
    /* check each server in expected_servers is in selected_servers */
    memset (matched_servers, 0, sizeof (matched_servers));
@@ -514,19 +482,16 @@ test_server_selection_logic_cb (bson_t *test)
       BSON_ASSERT (bson_iter_find (&host, "address"));
 
       for (i = 0; i < selected_servers.len; i++) {
-         sd = _mongoc_array_index (
-            &selected_servers, mongoc_server_description_t *, i);
+         sd = _mongoc_array_index (&selected_servers, mongoc_server_description_t *, i);
 
-         if (strcmp (sd->host.host_and_port, bson_iter_utf8 (&host, NULL)) ==
-             0) {
+         if (strcmp (sd->host.host_and_port, bson_iter_utf8 (&host, NULL)) == 0) {
             found = true;
             break;
          }
       }
 
       if (!found) {
-         test_error ("Should have been selected but wasn't: %s",
-                     bson_iter_utf8 (&host, NULL));
+         test_error ("Should have been selected but wasn't: %s", bson_iter_utf8 (&host, NULL));
       }
 
       matched_servers[i] = true;
@@ -535,11 +500,9 @@ test_server_selection_logic_cb (bson_t *test)
    /* check each server in selected_servers is in expected_servers */
    for (i = 0; i < selected_servers.len; i++) {
       if (!matched_servers[i]) {
-         sd = _mongoc_array_index (
-            &selected_servers, mongoc_server_description_t *, i);
+         sd = _mongoc_array_index (&selected_servers, mongoc_server_description_t *, i);
 
-         test_error ("Shouldn't have been selected but was: %s",
-                     sd->host.host_and_port);
+         test_error ("Shouldn't have been selected but was: %s", sd->host.host_and_port);
       }
    }
 
@@ -562,9 +525,7 @@ DONE:
  *-----------------------------------------------------------------------
  */
 void
-assemble_path (const char *parent_path,
-               const char *child_name,
-               char *dst /* OUT */)
+assemble_path (const char *parent_path, const char *child_name, char *dst /* OUT */)
 {
    char *p;
    int path_len = (int) strlen (parent_path);
@@ -623,8 +584,7 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
          /* recursively call on child directories */
          if (strcmp (info.name, "..") != 0 && strcmp (info.name, ".") != 0) {
             assemble_path (dir_path, info.name, child_path);
-            paths_index = collect_tests_from_dir (
-               paths, child_path, paths_index, max_paths);
+            paths_index = collect_tests_from_dir (paths, child_path, paths_index, max_paths);
          }
       } else if (strstr (info.name, ".json")) {
          /* if this is a JSON test, collect its path */
@@ -655,8 +615,7 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
 
    while ((entry = readdir (dir))) {
       BSON_ASSERT (paths_index < max_paths);
-      if (strcmp (entry->d_name, "..") == 0 ||
-          strcmp (entry->d_name, ".") == 0) {
+      if (strcmp (entry->d_name, "..") == 0 || strcmp (entry->d_name, ".") == 0) {
          continue;
       }
 
@@ -664,8 +623,7 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
 
       if (0 == stat (child_path, &dir_stat) && S_ISDIR (dir_stat.st_mode)) {
          /* recursively call on child directories */
-         paths_index =
-            collect_tests_from_dir (paths, child_path, paths_index, max_paths);
+         paths_index = collect_tests_from_dir (paths, child_path, paths_index, max_paths);
       } else if (strstr (entry->d_name, ".json")) {
          /* if this is a JSON test, collect its path */
          assemble_path (dir_path, entry->d_name, paths[paths_index++]);
@@ -808,8 +766,7 @@ check_version_info (const bson_t *scenario, bool print_reason)
 
       /* If we didn't match any of the listed topologies, skip */
       if (print_reason && test_suite_debug_output ()) {
-         printf ("     SKIP, test topologies do not match current %s setup\n",
-                 current_topology);
+         printf ("     SKIP, test topologies do not match current %s setup\n", current_topology);
          fflush (stdout);
       }
 
@@ -892,8 +849,7 @@ check_test_version (const bson_t *test)
       server_version = test_framework_get_server_version ();
       if (server_version > test_version) {
          if (test_suite_debug_output ()) {
-            printf ("      SKIP, ignore_if_server_version_greater_than %s\n",
-                    s);
+            printf ("      SKIP, ignore_if_server_version_greater_than %s\n", s);
             fflush (stdout);
          }
          return false;
@@ -982,9 +938,7 @@ check_topology_type (const bson_t *test)
  * https://github.com/mongodb/specifications/tree/d68e85c33c5a3b02bcd8a32a0bec9f11471e41ad/source/client-side-encryption/tests#spec-test-format
  */
 static void
-_recreate (const char *db_name,
-           const char *collection_name,
-           const bson_t *scenario)
+_recreate (const char *db_name, const char *collection_name, const bson_t *scenario)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -1006,8 +960,7 @@ _recreate (const char *db_name,
       bson_t encrypted_fields;
 
       bson_iter_bson (&iter, &encrypted_fields);
-      BCON_APPEND (
-         drop_opts, "encryptedFields", BCON_DOCUMENT (&encrypted_fields));
+      BCON_APPEND (drop_opts, "encryptedFields", BCON_DOCUMENT (&encrypted_fields));
    }
    if (!mongoc_collection_drop_with_opts (collection, drop_opts, &error)) {
       /* Ignore "namespace does not exist" error. */
@@ -1023,12 +976,7 @@ _recreate (const char *db_name,
       bson_t json_schema;
 
       bson_iter_bson (&iter, &json_schema);
-      BCON_APPEND (opts,
-                   "validator",
-                   "{",
-                   "$jsonSchema",
-                   BCON_DOCUMENT (&json_schema),
-                   "}");
+      BCON_APPEND (opts, "validator", "{", "$jsonSchema", BCON_DOCUMENT (&json_schema), "}");
    }
 
    if (bson_iter_init_find (&iter, scenario, "encrypted_fields")) {
@@ -1039,8 +987,7 @@ _recreate (const char *db_name,
    }
 
    db = mongoc_client_get_database (client, db_name);
-   collection =
-      mongoc_database_create_collection (db, collection_name, opts, &error);
+   collection = mongoc_database_create_collection (db, collection_name, opts, &error);
    ASSERT_OR_PRINT (collection, error);
    bson_destroy (opts);
    mongoc_collection_destroy (collection);
@@ -1059,24 +1006,21 @@ _insert_data (mongoc_collection_t *collection, bson_t *documents)
    uint32_t server_id;
    bson_error_t error;
 
-   mongoc_collection_delete_many (
-      collection, tmp_bson ("{}"), majority, NULL, NULL);
+   mongoc_collection_delete_many (collection, tmp_bson ("{}"), majority, NULL, NULL);
 
    if (!bson_count_keys (documents)) {
       return;
    }
 
    bson_iter_init (&iter, documents);
-   bulk =
-      mongoc_collection_create_bulk_operation_with_opts (collection, majority);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, majority);
 
    while (bson_iter_next (&iter)) {
       bson_t document;
       bson_t opts = BSON_INITIALIZER;
 
       bson_iter_bson (&iter, &document);
-      r = mongoc_bulk_operation_insert_with_opts (
-         bulk, &document, &opts, &error);
+      r = mongoc_bulk_operation_insert_with_opts (bulk, &document, &opts, &error);
       ASSERT_OR_PRINT (r, error);
 
       bson_destroy (&opts);
@@ -1091,9 +1035,7 @@ _insert_data (mongoc_collection_t *collection, bson_t *documents)
 
 /* insert the documents in a spec test scenario's "data" array */
 void
-insert_data (const char *db_name,
-             const char *collection_name,
-             const bson_t *scenario)
+insert_data (const char *db_name, const char *collection_name, const bson_t *scenario)
 {
    mongoc_client_t *client;
    mongoc_database_t *db;
@@ -1107,8 +1049,7 @@ insert_data (const char *db_name,
 
    db = mongoc_client_get_database (client, db_name);
    collection = mongoc_database_get_collection (db, collection_name);
-   mongoc_collection_delete_many (
-      collection, tmp_bson ("{}"), majority, NULL, NULL);
+   mongoc_collection_delete_many (collection, tmp_bson ("{}"), majority, NULL, NULL);
 
    if (!bson_has_field (scenario, "data")) {
       goto DONE;
@@ -1126,8 +1067,7 @@ insert_data (const char *db_name,
          bson_t collection_documents;
 
          mongoc_collection_destroy (collection);
-         collection =
-            mongoc_database_get_collection (db, bson_iter_key (&iter));
+         collection = mongoc_database_get_collection (db, bson_iter_key (&iter));
          bson_iter_bson (&iter, &collection_documents);
          _insert_data (collection, &collection_documents);
       }
@@ -1212,8 +1152,7 @@ execute_test (const json_test_config_t *config,
    }
 
    /* Select a primary for testing */
-   server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
    json_test_ctx_init (&ctx, test, client, db, collection, config);
@@ -1256,15 +1195,11 @@ execute_test (const json_test_config_t *config,
       outcome_client = test_framework_new_default_client ();
       if (bson_has_field (test, "outcome.collection.name")) {
          outcome_coll = mongoc_client_get_collection (
-            outcome_client,
-            mongoc_database_get_name (db),
-            bson_lookup_utf8 (test, "outcome.collection.name"));
+            outcome_client, mongoc_database_get_name (db), bson_lookup_utf8 (test, "outcome.collection.name"));
 
       } else {
          outcome_coll = mongoc_client_get_collection (
-            outcome_client,
-            mongoc_database_get_name (db),
-            mongoc_collection_get_name (collection));
+            outcome_client, mongoc_database_get_name (db), mongoc_collection_get_name (collection));
       }
       check_outcome_collection (outcome_coll, test);
       mongoc_collection_destroy (outcome_coll);
@@ -1289,10 +1224,7 @@ execute_test (const json_test_config_t *config,
 
 
 void
-activate_fail_point (mongoc_client_t *client,
-                     const uint32_t server_id,
-                     const bson_t *test,
-                     const char *key)
+activate_fail_point (mongoc_client_t *client, const uint32_t server_id, const bson_t *test, const char *key)
 {
    bson_t command;
    bson_error_t error;
@@ -1304,16 +1236,10 @@ activate_fail_point (mongoc_client_t *client,
 
    ASSERT_CMPSTR (_mongoc_get_command_name (&command), "configureFailPoint");
    if (server_id) {
-      r = mongoc_client_command_simple_with_server_id (
-         client, "admin", &command, NULL, server_id, NULL, &error);
+      r = mongoc_client_command_simple_with_server_id (client, "admin", &command, NULL, server_id, NULL, &error);
    } else {
       /* Use default "primary" read preference. */
-      r = mongoc_client_command_simple (client,
-                                        "admin",
-                                        &command,
-                                        NULL /* read prefs */,
-                                        NULL /* reply */,
-                                        &error);
+      r = mongoc_client_command_simple (client, "admin", &command, NULL /* read prefs */, NULL /* reply */, &error);
    }
    ASSERT_OR_PRINT (r, error);
 }
@@ -1352,19 +1278,16 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
    }
 
    if (sd->type == MONGOC_SERVER_RS_PRIMARY) {
-      command =
-         tmp_bson ("{'configureFailPoint': 'onPrimaryTransactionalWrite',"
-                   " 'mode': 'off'}");
+      command = tmp_bson ("{'configureFailPoint': 'onPrimaryTransactionalWrite',"
+                          " 'mode': 'off'}");
 
-      r = mongoc_client_command_simple_with_server_id (
-         client, "admin", command, NULL, sd->id, NULL, &error);
+      r = mongoc_client_command_simple_with_server_id (client, "admin", command, NULL, sd->id, NULL, &error);
       ASSERT_OR_PRINT (r, error);
 
       command = tmp_bson ("{'configureFailPoint': 'failCommand',"
                           " 'mode': 'off'}");
 
-      r = mongoc_client_command_simple_with_server_id (
-         client, "admin", command, NULL, sd->id, NULL, &error);
+      r = mongoc_client_command_simple_with_server_id (client, "admin", command, NULL, sd->id, NULL, &error);
 
       /* ignore error from servers that predate "failCommand" fail point */
       if (!r && !strstr (error.message, "failCommand not found")) {
@@ -1376,8 +1299,7 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
       /* failGetMoreAfterCursorCheckout added in 4.4 */
       command = tmp_bson ("{'configureFailPoint': "
                           "'failGetMoreAfterCursorCheckout', 'mode': 'off'}");
-      r = mongoc_client_command_simple_with_server_id (
-         client, "admin", command, NULL, sd->id, NULL, &error);
+      r = mongoc_client_command_simple_with_server_id (client, "admin", command, NULL, sd->id, NULL, &error);
       ASSERT_OR_PRINT (r, error);
    }
 
@@ -1400,11 +1322,9 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
          if (BSON_ITER_HOLDS_UTF8 (&iter)) {
             mongoc_write_concern_set_wtag (wc, bson_iter_utf8 (&iter, NULL));
          } else if (BSON_ITER_HOLDS_INT (&iter)) {
-            mongoc_write_concern_set_w (wc,
-                                        (int32_t) bson_iter_as_int64 (&iter));
+            mongoc_write_concern_set_w (wc, (int32_t) bson_iter_as_int64 (&iter));
          } else {
-            test_error ("Unrecognized type for 'w': %d",
-                        bson_iter_type (&iter));
+            test_error ("Unrecognized type for 'w': %d", bson_iter_type (&iter));
          }
 
          mongoc_uri_set_write_concern (uri, wc);
@@ -1415,15 +1335,13 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
          mongoc_uri_set_read_concern (uri, rc);
          mongoc_read_concern_destroy (rc);
       } else if (!strcmp (key, "readPreference")) {
-         mongoc_read_prefs_t *read_prefs = mongoc_read_prefs_new (
-            read_mode_from_test (bson_iter_utf8 (&iter, NULL)));
+         mongoc_read_prefs_t *read_prefs = mongoc_read_prefs_new (read_mode_from_test (bson_iter_utf8 (&iter, NULL)));
          mongoc_uri_set_read_prefs_t (uri, read_prefs);
          mongoc_read_prefs_destroy (read_prefs);
       } else if (!strcmp (key, "autoEncryptOpts")) {
          /* Auto encrypt options are set on constructed client, not in URI. */
       } else if (!strcmp (key, "writeConcern")) {
-         mongoc_write_concern_t *wc =
-            bson_lookup_write_concern (opts, "writeConcern");
+         mongoc_write_concern_t *wc = bson_lookup_write_concern (opts, "writeConcern");
          mongoc_uri_set_write_concern (uri, wc);
          mongoc_write_concern_destroy (wc);
       } else if (mongoc_uri_option_is_bool (key)) {
@@ -1433,9 +1351,7 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
       } else if (mongoc_uri_option_is_utf8 (key)) {
          mongoc_uri_set_option_as_utf8 (uri, key, bson_iter_utf8 (&iter, NULL));
       } else {
-         test_error ("Unsupported clientOptions field \"%s\" in %s",
-                     key,
-                     bson_as_json (opts, NULL));
+         test_error ("Unsupported clientOptions field \"%s\" in %s", key, bson_as_json (opts, NULL));
       }
    }
 }
@@ -1465,35 +1381,24 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_t tmp;
 
       bson_iter_bson (&iter, &tmp);
-      bson_copy_to_excluding (&tmp,
-                              &kms_providers,
-                              "aws",
-                              "awsTemporary",
-                              "awsTemporaryNoSessionToken",
-                              "azure",
-                              "gcp",
-                              "kmip",
-                              NULL);
+      bson_copy_to_excluding (
+         &tmp, &kms_providers, "aws", "awsTemporary", "awsTemporaryNoSessionToken", "azure", "gcp", "kmip", NULL);
 
       /* AWS credentials are set from environment variables. */
       if (bson_has_field (&opts, "kmsProviders.aws")) {
-         char *const secret_access_key =
-            test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
-         char *const access_key_id =
-            test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+         char *const secret_access_key = test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+         char *const access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
 
          if (!secret_access_key || !access_key_id) {
-            test_error (
-               "Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
-               "MONGOC_TEST_AWS_ACCESS_KEY_ID environment variables to "
-               "run Client Side Encryption tests.");
+            test_error ("Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
+                        "MONGOC_TEST_AWS_ACCESS_KEY_ID environment variables to "
+                        "run Client Side Encryption tests.");
          }
 
          {
             bson_t aws = BSON_INITIALIZER;
 
-            BSON_ASSERT (
-               BSON_APPEND_UTF8 (&aws, "secretAccessKey", secret_access_key));
+            BSON_ASSERT (BSON_APPEND_UTF8 (&aws, "secretAccessKey", secret_access_key));
             BSON_ASSERT (BSON_APPEND_UTF8 (&aws, "accessKeyId", access_key_id));
 
             BSON_APPEND_DOCUMENT (&kms_providers, "aws", &aws);
@@ -1505,25 +1410,19 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          bson_free (access_key_id);
       }
 
-      const bool need_aws_with_session_token =
-         bson_has_field (&opts, "kmsProviders.awsTemporary");
+      const bool need_aws_with_session_token = bson_has_field (&opts, "kmsProviders.awsTemporary");
       const bool need_aws_with_temp_creds =
-         need_aws_with_session_token ||
-         bson_has_field (&opts, "kmsProviders.awsTemporaryNoSessionToken");
+         need_aws_with_session_token || bson_has_field (&opts, "kmsProviders.awsTemporaryNoSessionToken");
 
       if (need_aws_with_temp_creds) {
-         char *const secret_access_key =
-            test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY");
-         char *const access_key_id =
-            test_framework_getenv ("MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID");
-         char *const session_token =
-            test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SESSION_TOKEN");
+         char *const secret_access_key = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY");
+         char *const access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID");
+         char *const session_token = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SESSION_TOKEN");
 
          if (!secret_access_key || !access_key_id) {
-            test_error (
-               "Set MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY and "
-               "MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID environment variables "
-               "to run Client Side Encryption tests.");
+            test_error ("Set MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY and "
+                        "MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID environment variables "
+                        "to run Client Side Encryption tests.");
          }
 
          // Only require session token when requested.
@@ -1535,13 +1434,11 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          {
             bson_t aws = BSON_INITIALIZER;
 
-            BSON_ASSERT (
-               BSON_APPEND_UTF8 (&aws, "secretAccessKey", secret_access_key));
+            BSON_ASSERT (BSON_APPEND_UTF8 (&aws, "secretAccessKey", secret_access_key));
             BSON_ASSERT (BSON_APPEND_UTF8 (&aws, "accessKeyId", access_key_id));
 
             if (need_aws_with_session_token) {
-               BSON_ASSERT (
-                  BSON_APPEND_UTF8 (&aws, "sessionToken", session_token));
+               BSON_ASSERT (BSON_APPEND_UTF8 (&aws, "sessionToken", session_token));
             }
 
             BSON_APPEND_DOCUMENT (&kms_providers, "aws", &aws);
@@ -1559,12 +1456,9 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          char *azure_client_id;
          char *azure_client_secret;
 
-         azure_tenant_id =
-            test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
-         azure_client_id =
-            test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
-         azure_client_secret =
-            test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
+         azure_tenant_id = test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
+         azure_client_id = test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
+         azure_client_secret = test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
 
          if (!azure_tenant_id || !azure_client_id || !azure_client_secret) {
             test_error ("Set MONGOC_TEST_AZURE_TENANT_ID, "
@@ -1598,11 +1492,8 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
                         "tests.");
          }
 
-         bson_concat (
-            &kms_providers,
-            tmp_bson ("{ 'gcp': { 'email': '%s', 'privateKey': '%s' }}",
-                      gcp_email,
-                      gcp_privatekey));
+         bson_concat (&kms_providers,
+                      tmp_bson ("{ 'gcp': { 'email': '%s', 'privateKey': '%s' }}", gcp_email, gcp_privatekey));
 
          bson_free (gcp_email);
          bson_free (gcp_privatekey);
@@ -1612,18 +1503,15 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          char *kmip_tls_ca_file;
          char *kmip_tls_certificate_key_file;
 
-         kmip_tls_ca_file =
-            test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
-         kmip_tls_certificate_key_file = test_framework_getenv (
-            "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+         kmip_tls_ca_file = test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+         kmip_tls_certificate_key_file = test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
          if (!kmip_tls_ca_file || !kmip_tls_certificate_key_file) {
             test_error ("Set MONGOC_TEST_CSFLE_TLS_CA_FILE, and "
                         "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE to enable "
                         "CSFLE tests.");
          }
 
-         bson_concat (&kms_providers,
-                      tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' }}"));
+         bson_concat (&kms_providers, tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' }}"));
 
          bson_concat (&tls_opts,
                       tmp_bson ("{'kmip': { 'tlsCAFile': '%s', "
@@ -1635,10 +1523,8 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          bson_free (kmip_tls_certificate_key_file);
       }
 
-      mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
-                                                     &kms_providers);
-      mongoc_auto_encryption_opts_set_tls_opts (auto_encryption_opts,
-                                                &tls_opts);
+      mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts, &kms_providers);
+      mongoc_auto_encryption_opts_set_tls_opts (auto_encryption_opts, &tls_opts);
       bson_destroy (&kms_providers);
       bson_destroy (&tls_opts);
    }
@@ -1647,19 +1533,16 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_t schema_map;
 
       bson_iter_bson (&iter, &schema_map);
-      mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts,
-                                                  &schema_map);
+      mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts, &schema_map);
       bson_destroy (&schema_map);
    }
 
    if (bson_iter_init_find (&iter, &opts, "bypassAutoEncryption")) {
-      mongoc_auto_encryption_opts_set_bypass_auto_encryption (
-         auto_encryption_opts, bson_iter_as_bool (&iter));
+      mongoc_auto_encryption_opts_set_bypass_auto_encryption (auto_encryption_opts, bson_iter_as_bool (&iter));
    }
 
    if (bson_iter_init_find (&iter, &opts, "bypassQueryAnalysis")) {
-      mongoc_auto_encryption_opts_set_bypass_query_analysis (
-         auto_encryption_opts, bson_iter_as_bool (&iter));
+      mongoc_auto_encryption_opts_set_bypass_query_analysis (auto_encryption_opts, bson_iter_as_bool (&iter));
    }
 
    if (bson_iter_init_find (&iter, &opts, "keyVaultNamespace")) {
@@ -1674,16 +1557,14 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       BSON_ASSERT (dot);
       db_name = bson_strndup (keyvault_ns, dot - keyvault_ns);
       coll_name = bson_strdup (dot + 1);
-      mongoc_auto_encryption_opts_set_keyvault_namespace (
-         auto_encryption_opts, db_name, coll_name);
+      mongoc_auto_encryption_opts_set_keyvault_namespace (auto_encryption_opts, db_name, coll_name);
 
       bson_free (db_name);
       bson_free (coll_name);
    } else {
       /* "If ``autoEncryptOpts`` does not include ``keyVaultNamespace``, default
        * it to ``keyvault.datakeys``" */
-      mongoc_auto_encryption_opts_set_keyvault_namespace (
-         auto_encryption_opts, "keyvault", "datakeys");
+      mongoc_auto_encryption_opts_set_keyvault_namespace (auto_encryption_opts, "keyvault", "datakeys");
    }
 
    if (bson_iter_init_find (&iter, &opts, "extra")) {
@@ -1700,8 +1581,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_t efm;
 
       bson_iter_bson (&iter, &efm);
-      mongoc_auto_encryption_opts_set_encrypted_fields_map (
-         auto_encryption_opts, &efm);
+      mongoc_auto_encryption_opts_set_encrypted_fields_map (auto_encryption_opts, &efm);
       bson_destroy (&efm);
    }
 
@@ -1712,8 +1592,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       BSON_APPEND_BOOL (&extra, "mongocryptdBypassSpawn", true);
    }
 
-   char *env_cryptSharedLibPath =
-      test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+   char *env_cryptSharedLibPath = test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
    if (env_cryptSharedLibPath) {
       BSON_APPEND_UTF8 (&extra, "cryptSharedLibPath", env_cryptSharedLibPath);
       bson_free (env_cryptSharedLibPath);
@@ -1722,8 +1601,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
    mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, &extra);
    bson_destroy (&extra);
 
-   ret = mongoc_client_enable_auto_encryption (
-      client, auto_encryption_opts, &error);
+   ret = mongoc_client_enable_auto_encryption (client, auto_encryption_opts, &error);
    ASSERT_OR_PRINT (ret, error);
    mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
 }
@@ -1784,20 +1662,14 @@ run_json_general_test (const json_test_config_t *config)
       return;
    }
 
-   db_name = bson_has_field (scenario, "database_name")
-                ? bson_lookup_utf8 (scenario, "database_name")
-                : "test";
-   collection_name = bson_has_field (scenario, "collection_name")
-                        ? bson_lookup_utf8 (scenario, "collection_name")
-                        : "test";
+   db_name = bson_has_field (scenario, "database_name") ? bson_lookup_utf8 (scenario, "database_name") : "test";
+   collection_name =
+      bson_has_field (scenario, "collection_name") ? bson_lookup_utf8 (scenario, "collection_name") : "test";
 
    /* database2_name/collection2_name are optional. */
-   db2_name = bson_has_field (scenario, "database2_name")
-                 ? bson_lookup_utf8 (scenario, "database2_name")
-                 : NULL;
-   collection2_name = bson_has_field (scenario, "collection2_name")
-                         ? bson_lookup_utf8 (scenario, "collection2_name")
-                         : NULL;
+   db2_name = bson_has_field (scenario, "database2_name") ? bson_lookup_utf8 (scenario, "database2_name") : NULL;
+   collection2_name =
+      bson_has_field (scenario, "collection2_name") ? bson_lookup_utf8 (scenario, "collection2_name") : NULL;
 
 
    ASSERT (bson_iter_init_find (&scenario_iter, scenario, "tests"));
@@ -1824,27 +1696,22 @@ run_json_general_test (const json_test_config_t *config)
       selected_test = test_framework_getenv ("MONGOC_JSON_SUBTEST");
       description = bson_lookup_utf8 (&test, "description");
       if (selected_test && strcmp (selected_test, description) != 0) {
-         fprintf (
-            stderr, "  - %s SKIPPED by MONGOC_JSON_SUBTEST\n", description);
+         fprintf (stderr, "  - %s SKIPPED by MONGOC_JSON_SUBTEST\n", description);
          bson_free (selected_test);
          continue;
       }
       bson_free (selected_test);
 
       if (bson_has_field (&test, "skipReason")) {
-         fprintf (stderr,
-                  " - %s SKIPPED, reason: %s\n",
-                  description,
-                  bson_lookup_utf8 (&test, "skipReason"));
+         fprintf (stderr, " - %s SKIPPED, reason: %s\n", description, bson_lookup_utf8 (&test, "skipReason"));
          continue;
       }
 
       if (_should_skip_due_to_unsupported_operation (&test)) {
-         fprintf (
-            stderr,
-            " - %s SKIPPED, reason: test requires operation that libmongoc"
-            " does not provide\n",
-            description);
+         fprintf (stderr,
+                  " - %s SKIPPED, reason: test requires operation that libmongoc"
+                  " does not provide\n",
+                  description);
          continue;
       }
 
@@ -1860,31 +1727,22 @@ run_json_general_test (const json_test_config_t *config)
          }
 
          if (should_skip) {
-            fprintf (stderr,
-                     " - %s SKIPPED, due to reason: %s\n",
-                     description,
-                     iter->reason);
+            fprintf (stderr, " - %s SKIPPED, due to reason: %s\n", description, iter->reason);
             continue;
          }
       }
 
-      uri = (config->uri_str != NULL) ? mongoc_uri_new (config->uri_str)
-                                      : test_framework_get_uri ();
+      uri = (config->uri_str != NULL) ? mongoc_uri_new (config->uri_str) : test_framework_get_uri ();
 
       /* If we are using multiple mongos, hardcode them in, for now, but keep
        * the other URI components (CDRIVER-3285) */
-      if (bson_iter_init_find (&uri_iter, &test, "useMultipleMongoses") &&
-          bson_iter_as_bool (&uri_iter)) {
+      if (bson_iter_init_find (&uri_iter, &test, "useMultipleMongoses") && bson_iter_as_bool (&uri_iter)) {
          if (test_framework_is_loadbalanced ()) {
             mongoc_uri_destroy (uri);
             uri = test_framework_get_uri_multi_mongos_loadbalanced ();
          } else {
-            ASSERT_OR_PRINT (
-               mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error),
-               error);
-            ASSERT_OR_PRINT (
-               mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error),
-               error);
+            ASSERT_OR_PRINT (mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error), error);
+            ASSERT_OR_PRINT (mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error), error);
          }
       }
 
@@ -1904,23 +1762,15 @@ run_json_general_test (const json_test_config_t *config)
       mongoc_uri_destroy (uri);
 
       /* clean up in case a previous test aborted */
-      server_id = mongoc_topology_select_server_id (
-         client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+      server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
       ASSERT_OR_PRINT (server_id, error);
       deactivate_fail_points (client, server_id);
-      r = mongoc_client_command_with_opts (client,
-                                           "admin",
-                                           tmp_bson ("{'killAllSessions': []}"),
-                                           NULL,
-                                           NULL,
-                                           NULL,
-                                           &error);
+      r = mongoc_client_command_with_opts (
+         client, "admin", tmp_bson ("{'killAllSessions': []}"), NULL, NULL, NULL, &error);
 
       /* expect "operation was interrupted", ignore "command not found" or "is
        * not supported" */
-      if (!r &&
-          (error.domain != MONGOC_ERROR_SERVER ||
-           (error.code != 11601 && error.code != 59)) &&
+      if (!r && (error.domain != MONGOC_ERROR_SERVER || (error.code != 11601 && error.code != 59)) &&
           (strstr (error.message, "is unsupported") == NULL)) {
          MONGOC_WARNING ("Error in killAllSessions: %s", error.message);
       }
@@ -1970,19 +1820,17 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
 {
    int i;
    bool skip = false;
-   const char *unsupported_tests[] = {
-      "/retryable_reads/legacy/gridfs-downloadByName",
-      "/retryable_reads/legacy/gridfs-downloadByName-serverErrors",
-      "/retryable_reads/legacy/listCollectionObjects",
-      "/retryable_reads/legacy/listCollectionObjects-serverErrors",
-      "/retryable_reads/legacy/listDatabaseObjects",
-      "/retryable_reads/legacy/listDatabaseObjects-serverErrors",
-      "/retryable_reads/legacy/listIndexNames",
-      "/retryable_reads/legacy/listIndexNames-serverErrors",
-      "/retryable_reads/legacy/mapReduce"};
+   const char *unsupported_tests[] = {"/retryable_reads/legacy/gridfs-downloadByName",
+                                      "/retryable_reads/legacy/gridfs-downloadByName-serverErrors",
+                                      "/retryable_reads/legacy/listCollectionObjects",
+                                      "/retryable_reads/legacy/listCollectionObjects-serverErrors",
+                                      "/retryable_reads/legacy/listDatabaseObjects",
+                                      "/retryable_reads/legacy/listDatabaseObjects-serverErrors",
+                                      "/retryable_reads/legacy/listIndexNames",
+                                      "/retryable_reads/legacy/listIndexNames-serverErrors",
+                                      "/retryable_reads/legacy/mapReduce"};
 
-   for (i = 0; i < sizeof (unsupported_tests) / sizeof (unsupported_tests[0]);
-        i++) {
+   for (i = 0; i < sizeof (unsupported_tests) / sizeof (unsupported_tests[0]); i++) {
       if (0 == strcmp (test_name, unsupported_tests[i])) {
          skip = true;
          break;
@@ -2003,14 +1851,10 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
          bson_t modified_test;
 
          bson_iter_bson (&iter, &original_test);
-         bson_array_builder_append_document_begin (modified_tests,
-                                                   &modified_test);
+         bson_array_builder_append_document_begin (modified_tests, &modified_test);
          bson_concat (&modified_test, &original_test);
-         BSON_APPEND_UTF8 (&modified_test,
-                           "skipReason",
-                           "libmongoc does not support required operation.");
-         bson_array_builder_append_document_end (modified_tests,
-                                                 &modified_test);
+         BSON_APPEND_UTF8 (&modified_test, "skipReason", "libmongoc does not support required operation.");
+         bson_array_builder_append_document_end (modified_tests, &modified_test);
       }
       bson_append_array_builder_end (modified, modified_tests);
       bson_destroy (original);
@@ -2034,11 +1878,7 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
  *-----------------------------------------------------------------------
  */
 void
-_install_json_test_suite_with_check (TestSuite *suite,
-                                     const char *base,
-                                     const char *subdir,
-                                     test_hook callback,
-                                     ...)
+_install_json_test_suite_with_check (TestSuite *suite, const char *base, const char *subdir, test_hook callback, ...)
 {
    char test_paths[MAX_NUM_TESTS][MAX_TEST_NAME_LENGTH];
    int num_tests;
@@ -2059,13 +1899,11 @@ _install_json_test_suite_with_check (TestSuite *suite,
       }
    }
 
-   num_tests =
-      collect_tests_from_dir (&test_paths[0], resolved, 0, MAX_NUM_TESTS);
+   num_tests = collect_tests_from_dir (&test_paths[0], resolved, 0, MAX_NUM_TESTS);
 
    for (int i = 0; i < num_tests; i++) {
       test = get_bson_from_json_file (test_paths[i]);
-      skip_json = COALESCE (strstr (test_paths[i], "/json"),
-                            strstr (test_paths[i], "\\json"));
+      skip_json = COALESCE (strstr (test_paths[i], "/json"), strstr (test_paths[i], "\\json"));
       BSON_ASSERT (skip_json);
       skip_json += strlen ("/json");
       ext = strstr (skip_json, ".json");
@@ -2074,8 +1912,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
 
       test = _skip_if_unsupported (skip_json, test);
       for (size_t j = 0u; j < suite->failing_flaky_skips.len; j++) {
-         TestSkip *skip =
-            _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, j);
+         TestSkip *skip = _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, j);
          if (0 == strcmp (skip_json, skip->test_name)) {
             /* Modify the test file to give applicable entries a skipReason */
             bson_t *modified = bson_new ();
@@ -2083,8 +1920,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
             bson_iter_t iter;
 
             bson_copy_to_excluding_noinit (test, modified, "tests", NULL);
-            BSON_APPEND_ARRAY_BUILDER_BEGIN (
-               modified, "tests", &modified_tests);
+            BSON_APPEND_ARRAY_BUILDER_BEGIN (modified, "tests", &modified_tests);
             BSON_ASSERT (bson_iter_init_find (&iter, test, "tests"));
             for (bson_iter_recurse (&iter, &iter); bson_iter_next (&iter);) {
                bson_iter_t desc_iter;
@@ -2097,18 +1933,12 @@ _install_json_test_suite_with_check (TestSuite *suite,
                bson_iter_init_find (&desc_iter, &original_test, "description");
                desc = bson_iter_utf8 (&desc_iter, &desc_len);
 
-               bson_array_builder_append_document_begin (modified_tests,
-                                                         &modified_test);
+               bson_array_builder_append_document_begin (modified_tests, &modified_test);
                bson_concat (&modified_test, &original_test);
-               if (!skip->subtest_desc ||
-                   0 == strcmp (skip->subtest_desc, desc)) {
-                  BSON_APPEND_UTF8 (&modified_test,
-                                    "skipReason",
-                                    skip->reason != NULL ? skip->reason
-                                                         : "(null)");
+               if (!skip->subtest_desc || 0 == strcmp (skip->subtest_desc, desc)) {
+                  BSON_APPEND_UTF8 (&modified_test, "skipReason", skip->reason != NULL ? skip->reason : "(null)");
                }
-               bson_array_builder_append_document_end (modified_tests,
-                                                       &modified_test);
+               bson_array_builder_append_document_end (modified_tests, &modified_test);
             }
             bson_append_array_builder_end (modified, modified_tests);
             bson_destroy (test);
@@ -2117,12 +1947,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
       }
       /* list of "check" functions that decide whether to skip the test */
       va_start (ap, callback);
-      _V_TestSuite_AddFull (suite,
-                            skip_json,
-                            (void (*) (void *)) callback,
-                            (void (*) (void *)) bson_destroy,
-                            test,
-                            ap);
+      _V_TestSuite_AddFull (suite, skip_json, (void (*) (void *)) callback, (void (*) (void *)) bson_destroy, test, ap);
 
       va_end (ap);
    }
@@ -2144,11 +1969,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
  *-----------------------------------------------------------------------
  */
 void
-install_json_test_suite (TestSuite *suite,
-                         const char *base,
-                         const char *subdir,
-                         test_hook callback)
+install_json_test_suite (TestSuite *suite, const char *base, const char *subdir, test_hook callback)
 {
-   install_json_test_suite_with_check (
-      suite, base, subdir, callback, TestSuite_CheckLive);
+   install_json_test_suite_with_check (suite, base, subdir, callback, TestSuite_CheckLive);
 }

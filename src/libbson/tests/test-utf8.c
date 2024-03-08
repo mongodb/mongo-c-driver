@@ -22,11 +22,9 @@
 static void
 test_bson_utf8_validate (void)
 {
-   static const unsigned char test1[] = {
-      0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, 0};
+   static const unsigned char test1[] = {0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, 0};
    static const unsigned char test2[] = {0xc0, 0x80, 0};
-   static const unsigned char out_of_bound[] = {
-      0xfd, 0x9f, 0xb0, 0x80, 0x80, 0x80, 0};
+   static const unsigned char out_of_bound[] = {0xfd, 0x9f, 0xb0, 0x80, 0x80, 0x80, 0};
    static const unsigned char bad[] = {0xed, 0xa0, 0xa5, 0};
 
    BSON_ASSERT (bson_utf8_validate ("asdf", 4, false));
@@ -122,8 +120,7 @@ static void
 test_bson_utf8_get_char (void)
 {
    static const char *test1 = "asdf";
-   static const unsigned char test2[] = {
-      0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, 0};
+   static const unsigned char test2[] = {0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, 0};
    const char *c;
 
    c = test1;
@@ -217,22 +214,20 @@ test_bson_utf8_from_unichar (void)
 static void
 test_bson_utf8_non_shortest (void)
 {
-   static const char *tests[] = {
-      "\xE0\x80\x80",     /* Non-shortest form representation of U+0000 */
-      "\xF0\x80\x80\x80", /* Non-shortest form representation of U+0000 */
+   static const char *tests[] = {"\xE0\x80\x80",     /* Non-shortest form representation of U+0000 */
+                                 "\xF0\x80\x80\x80", /* Non-shortest form representation of U+0000 */
 
-      "\xE0\x83\xBF",     /* Non-shortest form representation of U+00FF */
-      "\xF0\x80\x83\xBF", /* Non-shortest form representation of U+00FF */
+                                 "\xE0\x83\xBF",     /* Non-shortest form representation of U+00FF */
+                                 "\xF0\x80\x83\xBF", /* Non-shortest form representation of U+00FF */
 
-      "\xF0\x80\xA3\x80", /* Non-shortest form representation of U+08C0 */
+                                 "\xF0\x80\xA3\x80", /* Non-shortest form representation of U+08C0 */
 
-      NULL};
-   static const char *valid_tests[] = {
-      "\xC0\x80", /* Non-shortest form representation of U+0000.
-                   * This is how \0 should be encoded. Special casing
-                   * to allow for use in things like strlen(). */
+                                 NULL};
+   static const char *valid_tests[] = {"\xC0\x80", /* Non-shortest form representation of U+0000.
+                                                    * This is how \0 should be encoded. Special casing
+                                                    * to allow for use in things like strlen(). */
 
-      NULL};
+                                       NULL};
    int i;
 
    for (i = 0; tests[i]; i++) {
@@ -257,12 +252,8 @@ test_utf8_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/utf8/validate", test_bson_utf8_validate);
    TestSuite_Add (suite, "/bson/utf8/invalid", test_bson_utf8_invalid);
    TestSuite_Add (suite, "/bson/utf8/nil", test_bson_utf8_nil);
-   TestSuite_Add (
-      suite, "/bson/utf8/escape_for_json", test_bson_utf8_escape_for_json);
-   TestSuite_Add (
-      suite, "/bson/utf8/get_char_next_char", test_bson_utf8_get_char);
-   TestSuite_Add (
-      suite, "/bson/utf8/from_unichar", test_bson_utf8_from_unichar);
-   TestSuite_Add (
-      suite, "/bson/utf8/non_shortest", test_bson_utf8_non_shortest);
+   TestSuite_Add (suite, "/bson/utf8/escape_for_json", test_bson_utf8_escape_for_json);
+   TestSuite_Add (suite, "/bson/utf8/get_char_next_char", test_bson_utf8_get_char);
+   TestSuite_Add (suite, "/bson/utf8/from_unichar", test_bson_utf8_from_unichar);
+   TestSuite_Add (suite, "/bson/utf8/non_shortest", test_bson_utf8_non_shortest);
 }

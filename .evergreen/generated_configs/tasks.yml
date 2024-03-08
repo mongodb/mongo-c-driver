@@ -1151,6 +1151,10 @@ tasks:
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
+  - name: clang-format
+    tags: [clang-format]
+    commands:
+      - func: clang-format
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
     run_on: macos-1100
     tags: [cse-matrix-darwinssl, compile, macos-1100, clang, cse, sasl-cyrus]

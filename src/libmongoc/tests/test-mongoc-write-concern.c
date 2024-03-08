@@ -32,8 +32,7 @@ test_write_concern_append (void)
    mongoc_write_concern_set_w (wc, 1);
    BSON_ASSERT (mongoc_write_concern_append (wc, cmd));
 
-   assert_match_bson (
-      cmd, tmp_bson ("{'foo': 1, 'writeConcern': {'w': 1}}"), true);
+   assert_match_bson (cmd, tmp_bson ("{'foo': 1, 'writeConcern': {'w': 1}}"), true);
 
    mongoc_write_concern_destroy (wc);
 }
@@ -47,7 +46,7 @@ test_write_concern_basic (void)
 
    write_concern = mongoc_write_concern_new ();
 
-   BEGIN_IGNORE_DEPRECATIONS;
+   BEGIN_IGNORE_DEPRECATIONS
 
    /*
     * Test defaults.
@@ -55,8 +54,7 @@ test_write_concern_basic (void)
    ASSERT (write_concern);
    ASSERT (!mongoc_write_concern_get_fsync (write_concern));
    ASSERT (!mongoc_write_concern_get_journal (write_concern));
-   ASSERT (mongoc_write_concern_get_w (write_concern) ==
-           MONGOC_WRITE_CONCERN_W_DEFAULT);
+   ASSERT (mongoc_write_concern_get_w (write_concern) == MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT (!mongoc_write_concern_get_wtimeout_int64 (write_concern));
    ASSERT (!mongoc_write_concern_get_wmajority (write_concern));
 
@@ -83,11 +81,9 @@ test_write_concern_basic (void)
    mongoc_write_concern_set_wtimeout (write_concern, 0);
    ASSERT (!mongoc_write_concern_get_wtimeout (write_concern));
    mongoc_write_concern_set_wtimeout_int64 (write_concern, INT64_MAX);
-   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) ==
-           INT64_MAX);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == INT64_MAX);
    mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
-   ASSERT (mongoc_write_concern_get_w (write_concern) ==
-           MONGOC_WRITE_CONCERN_W_DEFAULT);
+   ASSERT (mongoc_write_concern_get_w (write_concern) == MONGOC_WRITE_CONCERN_W_DEFAULT);
    mongoc_write_concern_set_w (write_concern, 3);
    ASSERT (mongoc_write_concern_get_w (write_concern) == 3);
 
@@ -99,16 +95,13 @@ test_write_concern_basic (void)
 
    bson = _mongoc_write_concern_get_bson (write_concern);
    ASSERT (bson);
-   ASSERT (bson_iter_init_find (&iter, bson, "fsync") &&
-           BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
-   ASSERT (bson_iter_init_find (&iter, bson, "j") &&
-           BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
-   ASSERT (bson_iter_init_find (&iter, bson, "w") &&
-           BSON_ITER_HOLDS_INT32 (&iter) && bson_iter_int32 (&iter) == 3);
+   ASSERT (bson_iter_init_find (&iter, bson, "fsync") && BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
+   ASSERT (bson_iter_init_find (&iter, bson, "j") && BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
+   ASSERT (bson_iter_init_find (&iter, bson, "w") && BSON_ITER_HOLDS_INT32 (&iter) && bson_iter_int32 (&iter) == 3);
 
    mongoc_write_concern_destroy (write_concern);
 
-   END_IGNORE_DEPRECATIONS;
+   END_IGNORE_DEPRECATIONS
 }
 
 
@@ -153,10 +146,8 @@ test_write_concern_bson_includes_false_fsync_and_journal (void)
 
    bson = _mongoc_write_concern_get_bson (write_concern);
    ASSERT (bson);
-   ASSERT (bson_iter_init_find (&iter, bson, "fsync") &&
-           BSON_ITER_HOLDS_BOOL (&iter) && !bson_iter_bool (&iter));
-   ASSERT (bson_iter_init_find (&iter, bson, "j") &&
-           BSON_ITER_HOLDS_BOOL (&iter) && !bson_iter_bool (&iter));
+   ASSERT (bson_iter_init_find (&iter, bson, "fsync") && BSON_ITER_HOLDS_BOOL (&iter) && !bson_iter_bool (&iter));
+   ASSERT (bson_iter_init_find (&iter, bson, "j") && BSON_ITER_HOLDS_BOOL (&iter) && !bson_iter_bool (&iter));
    ASSERT (!bson_iter_init_find (&iter, bson, "w"));
 
    mongoc_write_concern_destroy (write_concern);
@@ -185,8 +176,7 @@ test_write_concern_fsync_and_journal_w1_and_validity (void)
    ASSERT (!mongoc_write_concern_journal_is_set (write_concern));
 
    /* w=0 does not need GLE and is valid */
-   mongoc_write_concern_set_w (write_concern,
-                               MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    ASSERT (!mongoc_write_concern_is_acknowledged (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
    ASSERT (!mongoc_write_concern_journal_is_set (write_concern));
@@ -206,8 +196,7 @@ test_write_concern_fsync_and_journal_w1_and_validity (void)
    mongoc_write_concern_set_journal (write_concern, false);
 
    /* w=-1 does not need GLE and is valid */
-   mongoc_write_concern_set_w (write_concern,
-                               MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED);
+   mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED);
    ASSERT (!mongoc_write_concern_is_acknowledged (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
    ASSERT (mongoc_write_concern_journal_is_set (write_concern));
@@ -250,23 +239,20 @@ test_write_concern_wtimeout_validity (void)
 
    /* Test defaults */
    ASSERT (write_concern);
-   ASSERT (mongoc_write_concern_get_w (write_concern) ==
-           MONGOC_WRITE_CONCERN_W_DEFAULT);
+   ASSERT (mongoc_write_concern_get_w (write_concern) == MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == 0);
    ASSERT (!mongoc_write_concern_get_wmajority (write_concern));
 
    /* mongoc_write_concern_set_wtimeout_int64() ignores invalid wtimeout */
    mongoc_write_concern_set_wtimeout_int64 (write_concern, -1);
-   ASSERT (mongoc_write_concern_get_w (write_concern) ==
-           MONGOC_WRITE_CONCERN_W_DEFAULT);
+   ASSERT (mongoc_write_concern_get_w (write_concern) == MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == 0);
    ASSERT (!mongoc_write_concern_get_wmajority (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
 
    /* mongoc_write_concern_set_wmajority() ignores invalid wtimeout */
    mongoc_write_concern_set_wmajority (write_concern, -1);
-   ASSERT (mongoc_write_concern_get_w (write_concern) ==
-           MONGOC_WRITE_CONCERN_W_MAJORITY);
+   ASSERT (mongoc_write_concern_get_w (write_concern) == MONGOC_WRITE_CONCERN_W_MAJORITY);
    ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == 0);
    ASSERT (mongoc_write_concern_get_wmajority (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
@@ -303,10 +289,7 @@ _test_write_concern_from_iterator (const char *swc, bool ok, bool is_default)
       mongoc_write_concern_destroy (wc);
    } else {
       BSON_ASSERT (!wc);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "Invalid writeConcern");
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
    }
 }
 
@@ -314,76 +297,40 @@ static void
 test_write_concern_from_iterator (void)
 {
    _test_write_concern_from_iterator ("{'writeConcern': {}}", true, true);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'majority'}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'majority', 'j': true}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'sometag'}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'sometag', 'j': true}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'sometag', 'j': false}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 1, 'j': true}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 1, 'j': false}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 0, 'j': true}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 0, 'j': false}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 42}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 1}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'j': true}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'j': false}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': -1}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': -2}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': -3}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': -4}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': -5}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'majority', 'wtimeout': 42}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'sometag', 'wtimeout': 42}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'wtimeout': 42}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'wtimeout': -42}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'wtimeout': {'$numberLong': '123'}}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'wtimeout': {'$numberLong': '2147483648'}}}",
-      true,
-      false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 1, 'wtimeout': 42}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 0, 'wtimeout': 42}}", true, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 1.0}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': {'some': 'stuff'}}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': []}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'wtimeout': 'never'}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'j': 'never'}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'j': 1.0}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'fsync': 1.0}}", false, false);
-   _test_write_concern_from_iterator (
-      "{'writeConcern': {'fsync': true}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'majority'}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'majority', 'j': true}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'sometag'}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'sometag', 'j': true}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'sometag', 'j': false}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1, 'j': true}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1, 'j': false}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 0, 'j': true}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 0, 'j': false}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 42}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'j': true}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'j': false}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': -1}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': -2}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': -3}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': -4}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': -5}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'majority', 'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'sometag', 'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'wtimeout': -42}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'wtimeout': {'$numberLong': '123'}}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'wtimeout': {'$numberLong': '2147483648'}}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1, 'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 0, 'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1.0}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': {'some': 'stuff'}}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': []}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'wtimeout': 'never'}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'j': 'never'}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'j': 1.0}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'fsync': 1.0}}", false, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'fsync': true}}", true, false);
 }
 
 
@@ -397,30 +344,24 @@ test_write_concern_always_mutable (void)
    ASSERT (write_concern);
 
    mongoc_write_concern_set_fsync (write_concern, true);
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
-                 "{'fsync': true}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'fsync': true}");
 
    mongoc_write_concern_set_journal (write_concern, true);
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
-                 "{'fsync': true, 'j': true}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'fsync': true, 'j': true}");
 
    mongoc_write_concern_set_w (write_concern, 2);
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
-                 "{'w': 2, 'fsync': true, 'j': true}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'w': 2, 'fsync': true, 'j': true}");
 
    mongoc_write_concern_set_wtimeout_int64 (write_concern, 100);
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
-                 "{'w': 2, 'fsync': true, 'j': true, 'wtimeout': 100}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'w': 2, 'fsync': true, 'j': true, 'wtimeout': 100}");
 
    mongoc_write_concern_set_wmajority (write_concern, 200);
-   ASSERT_MATCH (
-      _mongoc_write_concern_get_bson (write_concern),
-      "{'w': 'majority', 'fsync': true, 'j': true, 'wtimeout': 200}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
+                 "{'w': 'majority', 'fsync': true, 'j': true, 'wtimeout': 200}");
 
    mongoc_write_concern_set_wtag (write_concern, "MultipleDC");
-   ASSERT_MATCH (
-      _mongoc_write_concern_get_bson (write_concern),
-      "{'w': 'MultipleDC', 'fsync': true, 'j': true, 'wtimeout': 200}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
+                 "{'w': 'MultipleDC', 'fsync': true, 'j': true, 'wtimeout': 200}");
 
    mongoc_write_concern_destroy (write_concern);
 }
@@ -433,10 +374,7 @@ _test_wc_request (future_t *future, mock_server_t *server, bson_error_t *error)
 
    BSON_UNUSED (error);
 
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db', 'writeConcern': {'w': 2}}"));
+   request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'writeConcern': {'w': 2}}"));
    reply_to_request_with_ok_and_destroy (request);
    BSON_ASSERT (future_get_bool (future));
 
@@ -458,25 +396,19 @@ test_write_concern (void)
    opts = tmp_bson ("{'writeConcern': {'w': 2}}");
    server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    /*
     * aggregate with $out
     */
-   cursor = mongoc_collection_aggregate (collection,
-                                         MONGOC_QUERY_NONE,
-                                         tmp_bson ("[{'$out': 'foo'}]"),
-                                         opts,
-                                         NULL);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, tmp_bson ("[{'$out': 'foo'}]"), opts, NULL);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    /*
     * generic mongoc_client_write_command_with_opts
     */
-   future = future_client_write_command_with_opts (
-      client, "db", tmp_bson ("{'foo': 1}"), opts, NULL, &error);
+   future = future_client_write_command_with_opts (client, "db", tmp_bson ("{'foo': 1}"), opts, NULL, &error);
    _test_wc_request (future, server, &error);
 
    /*
@@ -518,8 +450,7 @@ test_write_concern_unacknowledged (void)
    /* In this insert_one with w:0, we write an OP_MSG on the socket, but don't
     * read a reply. Before CDRIVER-2902 was fixed, since we forget to set
     * moreToCome, the server still sends a reply. */
-   r = mongoc_collection_insert_one (
-      coll, tmp_bson ("{}"), &opts, &reply, &error);
+   r = mongoc_collection_insert_one (coll, tmp_bson ("{}"), &opts, &reply, &error);
    ASSERT_OR_PRINT (r, error);
    ASSERT (bson_empty (&reply));
    bson_destroy (&reply);
@@ -578,8 +509,7 @@ write_concern_count (const mongoc_apm_command_started_t *event)
    bson_iter_t iter, iter_rec;
 
    if (bson_iter_init (&iter, command)) {
-      int *sent_collection_w =
-         (int *) mongoc_apm_command_started_get_context (event);
+      int *sent_collection_w = (int *) mongoc_apm_command_started_get_context (event);
       if (bson_iter_find_descendant (&iter, "writeConcern.w", &iter_rec)) {
          *sent_collection_w = bson_iter_int32 (&iter_rec);
       } else {
@@ -643,8 +573,7 @@ test_write_concern_inheritance_fam_txn (bool in_session, bool in_txn)
    }
 
    mongoc_find_and_modify_opts_set_update (opts, update);
-   success = mongoc_collection_find_and_modify_with_opts (
-      collection, &query, opts, NULL, &error);
+   success = mongoc_collection_find_and_modify_with_opts (collection, &query, opts, NULL, &error);
 
    if (in_txn) {
       /* check that the sent write concern is not inherited */
@@ -662,14 +591,12 @@ test_write_concern_inheritance_fam_txn (bool in_session, bool in_txn)
    mongoc_collection_set_write_concern (collection, wc);
 
    sent_w = MONGOC_WRITE_CONCERN_W_DEFAULT;
-   success = mongoc_collection_find_and_modify_with_opts (
-      collection, &query, opts, NULL, &error);
+   success = mongoc_collection_find_and_modify_with_opts (collection, &query, opts, NULL, &error);
 
    if (in_txn) {
       /* check that the sent write concern is not inherited */
       BSON_ASSERT (sent_w == MONGOC_WRITE_CONCERN_W_DEFAULT);
-      success =
-         mongoc_client_session_commit_transaction (session, NULL, &error);
+      success = mongoc_client_session_commit_transaction (session, NULL, &error);
       ASSERT_OR_PRINT (success, error);
    } else if (!in_session) {
       /* assert that write concern is inherited */
@@ -720,34 +647,20 @@ test_write_concern_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/WriteConcern/append", test_write_concern_append);
    TestSuite_Add (suite, "/WriteConcern/basic", test_write_concern_basic);
-   TestSuite_Add (suite,
-                  "/WriteConcern/bson_omits_defaults",
-                  test_write_concern_bson_omits_defaults);
+   TestSuite_Add (suite, "/WriteConcern/bson_omits_defaults", test_write_concern_bson_omits_defaults);
    TestSuite_Add (suite,
                   "/WriteConcern/bson_includes_false_fsync_and_journal",
                   test_write_concern_bson_includes_false_fsync_and_journal);
-   TestSuite_Add (suite,
-                  "/WriteConcern/fsync_and_journal_gle_and_validity",
-                  test_write_concern_fsync_and_journal_w1_and_validity);
-   TestSuite_Add (suite,
-                  "/WriteConcern/wtimeout_validity",
-                  test_write_concern_wtimeout_validity);
    TestSuite_Add (
-      suite, "/WriteConcern/from_iterator", test_write_concern_from_iterator);
-   TestSuite_Add (
-      suite, "/WriteConcern/always_mutable", test_write_concern_always_mutable);
-   TestSuite_Add (suite,
-                  "/WriteConcern/wtimeout_preserved",
-                  test_write_concern_wtimeout_preserved);
+      suite, "/WriteConcern/fsync_and_journal_gle_and_validity", test_write_concern_fsync_and_journal_w1_and_validity);
+   TestSuite_Add (suite, "/WriteConcern/wtimeout_validity", test_write_concern_wtimeout_validity);
+   TestSuite_Add (suite, "/WriteConcern/from_iterator", test_write_concern_from_iterator);
+   TestSuite_Add (suite, "/WriteConcern/always_mutable", test_write_concern_always_mutable);
+   TestSuite_Add (suite, "/WriteConcern/wtimeout_preserved", test_write_concern_wtimeout_preserved);
    TestSuite_AddMockServerTest (suite, "/WriteConcern", test_write_concern);
-   TestSuite_AddLive (
-      suite, "/WriteConcern/unacknowledged", test_write_concern_unacknowledged);
-   TestSuite_AddFull (suite,
-                      "/WriteConcern/inherited_fam",
-                      test_fam_no_session_no_txn,
-                      NULL,
-                      NULL,
-                      TestSuite_CheckLive);
+   TestSuite_AddLive (suite, "/WriteConcern/unacknowledged", test_write_concern_unacknowledged);
+   TestSuite_AddFull (
+      suite, "/WriteConcern/inherited_fam", test_fam_no_session_no_txn, NULL, NULL, TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/WriteConcern/inherited_fam_session_no_txn",
                       test_fam_session_no_txn,
