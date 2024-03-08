@@ -1,7 +1,11 @@
 libbson 1.27.0 (Unreleased)
 =============================
 
-No changes since 1.26.1. Version incremented to match the libmongoc version.
+Build Configuration:
+
+  * Remove automatic ccache detection and usage (CCache.cmake).
+      * Set [`CMAKE_<LANG>_COMPILER_LAUNCHER`](https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html) to build with ccache.
+  * Remove `MONGO_USE_CCACHE` (no longer applicable; see above).
 
 libbson 1.26.1
 ==============
