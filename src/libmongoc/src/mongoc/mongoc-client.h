@@ -107,6 +107,10 @@ MONGOC_EXPORT (mongoc_client_t *)
 mongoc_client_new_from_uri (const mongoc_uri_t *uri) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_client_t *)
 mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+MONGOC_EXPORT (void)
+mongoc_client_update_sockettimeoutms (mongoc_client_t *client, const uint32_t timeoutms);
+MONGOC_EXPORT (void)
+mongoc_client_reset_sockettimeoutms (mongoc_client_t *client);
 MONGOC_EXPORT (const mongoc_uri_t *)
 mongoc_client_get_uri (const mongoc_client_t *client);
 MONGOC_EXPORT (void)
