@@ -1,5 +1,6 @@
 #include <mongoc/mongoc.h>
 #include "mongoc/mongoc-client-pool-private.h"
+#include <mongoc/mongoc-client-private.h>
 #include "mongoc/mongoc-util-private.h"
 
 
@@ -454,6 +455,32 @@ test_client_pool_max_pool_size_exceeded (void)
    bson_free (args);
 }
 
+static void
+test_client_pool_can_override_sockettimeoutms (void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new ("mongodb://localhost:27017/?socketTimeoutMS=1000");
+   mongoc_client_pool_t *pool = mongoc_client_pool_new (uri);
+
+   // Override the client's socketTimeoutMS.
+   {
+      mongoc_client_t *client = mongoc_client_pool_pop (pool);
+      ASSERT_CMPINT32 (client->cluster.sockettimeoutms, ==, 1000);
+      mongoc_client_set_sockettimeoutms (client, 2000);
+      ASSERT_CMPINT32 (client->cluster.sockettimeoutms, ==, 2000);
+      mongoc_client_pool_push (pool, client);
+   }
+
+   // Pop again. Expect the newly popped client to have the socketTimeoutMS from the URI.
+   {
+      mongoc_client_t *client = mongoc_client_pool_pop (pool);
+      ASSERT_CMPINT32 (client->cluster.sockettimeoutms, ==, 1000);
+      mongoc_client_pool_push (pool, client);
+   }
+
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+}
+
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -478,4 +505,5 @@ test_client_pool_install (TestSuite *suite)
 #endif
    TestSuite_AddLive (suite, "/ClientPool/destroy_without_push", test_client_pool_destroy_without_pushing);
    TestSuite_AddLive (suite, "/ClientPool/max_pool_size_exceeded", test_client_pool_max_pool_size_exceeded);
+   TestSuite_Add (suite, "/ClientPool/can_override_sockettimeoutms", test_client_pool_can_override_sockettimeoutms);
 }
