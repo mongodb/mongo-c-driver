@@ -1,6 +1,7 @@
 // Defines Version Information to include in DLL on Windows.
 // Refer: https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource
 #include <winver.h> // Defines VS_VERSION_INFO
+
 #include <mongoc/mongoc-version.h> // Defines MONGOC_MAJOR_VERSION and other version macros.
 
 #define MONGOC_OUTPUT_BASENAME "@MONGOC_OUTPUT_BASENAME@"
