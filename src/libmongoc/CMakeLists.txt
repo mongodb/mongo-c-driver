@@ -814,6 +814,8 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
 
+set_source_files_properties (src/mongoc/mongoc-cyrus.c PROPERTIES COMPILE_DEFINITIONS MONGOC_CYRUS_PLUGIN_PATH_PREFIX="${CYRUS_PLUGIN_PATH_PREFIX}")
+
 if (ENABLE_SHARED)
    add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    if(WIN32)
