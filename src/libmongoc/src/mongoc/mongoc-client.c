@@ -2653,11 +2653,10 @@ mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t
    return true;
 }
 
-/* TODO: allow setting callback function (as a struct?) */
-bool
-mongoc_client_set_oidc_callback(mongoc_client_t *client,  mongoc_oidc_credential_t (*callback)(mongoc_oidc_callback_params_t *))
+void
+mongoc_client_set_oidc_callback(mongoc_client_t *client,  mongoc_oidc_credential_t (*oidc_callback)(mongoc_oidc_callback_params_t *))
 {
-   return true;
+   client->oidc_callback = oidc_callback;
 }
 
 mongoc_server_description_t *
