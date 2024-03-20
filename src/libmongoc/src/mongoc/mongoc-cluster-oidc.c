@@ -4,7 +4,7 @@
 
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
-#include "mongoc-oidc-callback.h"
+#include "mongoc-client.h"
 
 struct _mongoc_oidc_callback_params_t {
     int64_t callback_timeout_ms;
@@ -47,8 +47,8 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
                                 bson_error_t *error)
 {
    bool ret = true;
-   mongoc_oidc_callback_params_t *params = NULL;
-   mongoc_oidc_credential_t *creds = NULL;
+   struct _mongoc_oidc_callback_params_t params;
+   struct _mongoc_oidc_credential_t *creds = NULL;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (cluster->client);
@@ -59,6 +59,6 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
     * 1) Call callback function with params, store the result as the OIDC Token
     */
 
-   // creds = cluster->client->oidc_callback(params);
+   creds = cluster->client->oidc_callback(&params);
    return ret;
 }

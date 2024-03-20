@@ -116,7 +116,7 @@ struct _mongoc_client_t {
 
    uint32_t generation;
 
-   mongoc_oidc_credential_t (*oidc_callback)(mongoc_oidc_callback_params_t *);
+   mongoc_oidc_credential_t *(*oidc_callback)(mongoc_oidc_callback_params_t *);
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read
