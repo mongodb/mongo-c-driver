@@ -2655,7 +2655,7 @@ mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t
 
 /* TODO: allow setting callback function (as a struct?) */
 bool
-mongoc_client_set_oidc_callback(mongoc_client_t *client, mongoc_oidc_callback_params_t *callback_params)
+mongoc_client_set_oidc_callback(mongoc_client_t *client,  mongoc_oidc_credential_t (*callback)(mongoc_oidc_callback_params_t *))
 {
    return true;
 }
