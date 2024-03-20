@@ -22,7 +22,7 @@
 #include "bson/bson.h"
 #include "mcd-time.h"
 #include "mongoc/mongoc-cluster-private.h"
-#include "common-thread-private.h" // bson_mutex_t
+#include "common-thread-private.h"
 
 bool
 _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,

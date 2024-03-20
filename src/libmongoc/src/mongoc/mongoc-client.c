@@ -2653,6 +2653,13 @@ mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t
    return true;
 }
 
+/* TODO: allow setting callback function (as a struct?) */
+bool
+mongoc_client_set_oidc_callback(mongoc_client_t *client, mongoc_oidc_callback_params_t *callback_params)
+{
+   return true;
+}
+
 mongoc_server_description_t *
 mongoc_client_get_handshake_description (mongoc_client_t *client, uint32_t server_id, bson_t *opts, bson_error_t *error)
 {

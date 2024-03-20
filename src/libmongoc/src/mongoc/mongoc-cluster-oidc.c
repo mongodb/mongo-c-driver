@@ -4,13 +4,6 @@
 
 #include "mongoc-cluster-private.h"
 
-struct _mongoc_oidc_callback_t {
-    int64_t callback_timeout_ms;
-    int64_t version;
-};
-
-typedef struct _mongoc_oidc_callback_t mongoc_oidc_callback_t;
-
 /*
  */
 bool
