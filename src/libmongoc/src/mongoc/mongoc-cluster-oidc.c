@@ -30,49 +30,111 @@ mongoc_oidc_credential_set_expires_in_seconds(mongoc_oidc_credential_t *credenti
    credential->expires_in_seconds = expires_in_seconds;
 }
 
-bool
-_mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
-                                mongoc_stream_t *stream,
-                                mongoc_server_description_t *sd,
-                                bson_error_t *error)
+static bool
+_oidc_get_token (mongoc_client_t *client)
 {
+#undef MONGOC_MIN
+#define MONGOC_MIN(A, B) (((A) < (B)) ? (A) : (B))
+
    bool ok = true;
    mongoc_oidc_callback_params_t params;
    mongoc_oidc_credential_t creds;
-
-#undef MIN
-#define MIN(A, B) (((A) < (B)) ? (A) : (B))
+   char *prev_token = NULL;
 
    params.version = 1;
    /*
     * TODO: set timeout to:
     *     min(remaining connectTimeoutMS, remaining timeoutMS)
     */
-   params.callback_timeout_ms = MIN (100, 200); /* placeholder */
+   params.callback_timeout_ms = MONGOC_MIN (100, 200); /* placeholder */
 
-   BSON_ASSERT (sd);
-   BSON_ASSERT (error);
-   BSON_ASSERT (stream);
-   BSON_ASSERT (cluster);
-   BSON_ASSERT (cluster->client);
-   BSON_ASSERT (cluster->client->oidc_callback);
+   BSON_ASSERT (client);
+   BSON_ASSERT (client->oidc_callback);
 
    /*
     * 1) Call callback function with params.
     */
-   ok = cluster->client->oidc_callback (&params, &creds);
+   ok = client->oidc_callback (&params, &creds);
    if (!ok) {
       goto done;
    }
 
    /*
-    * Store the resulting access token in the client.
+    * 2) Zero out and free the previous token
     */
-   cluster->client->oidc_credential->access_token = bson_strdup (creds.access_token);
-   cluster->client->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
+   prev_token = client->oidc_credential->access_token;
+   if (prev_token) {
+      bson_zero_free (prev_token, strlen (prev_token));
+   }
+
+   /*
+    * 3) Store the resulting access token in the client.
+    */
+   client->oidc_credential->access_token = bson_strdup (creds.access_token);
+   client->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
 
 done:
    return ok;
 
-#undef MIN
+#undef MONGOC_MIN
+}
+
+static bool
+_oidc_sasl_one_step_conversation (mongoc_client_t *client)
+{
+    bool ok = true;
+    bson_t jwt_step_request = BSON_INITIALIZER;
+    bson_t client_command = BSON_INITIALIZER;
+
+    bson_append_utf8 (&jwt_step_request,
+                      "jwt",
+                      -1,
+                      client->oidc_credential->access_token,
+                      -1);
+
+    BCON_APPEND (&client_command,
+                 "saslStart",
+                 BCON_INT32 (1),
+                 "mechanism",
+                 "MONGODB-AWS",
+                 "payload",
+                 BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_step_request), jwt_step_request.len));
+
+    bson_destroy (&jwt_step_request);
+    bson_destroy (&client_command);
+    return ok;
+}
+
+bool
+_mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
+                                mongoc_stream_t *stream,
+                                mongoc_server_description_t *sd,
+                                bson_error_t *error)
+{
+   BSON_ASSERT (sd);
+   BSON_ASSERT (error);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (cluster);
+
+   bool ok = true;
+
+   /*
+    * TODO:
+    * - token caching
+    * - token refresh
+    * - token expiration
+    */
+
+   ok = _oidc_get_token (cluster->client);
+   if (!ok) {
+      goto done;
+   }
+
+   ok = _oidc_sasl_one_step_conversation (cluster->client);
+   if (!ok) {
+      goto done;
+   }
+
+done:
+   return ok;
 }

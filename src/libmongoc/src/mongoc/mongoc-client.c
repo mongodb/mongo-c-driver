@@ -1083,7 +1083,7 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
    RETURN (client);
 }
 
-mongoc_oidc_credential_t *
+static mongoc_oidc_credential_t *
 _mongoc_oidc_credential_new (char *access_token, int64_t expires_in_seconds)
 {
    mongoc_oidc_credential_t *cred = bson_malloc (sizeof (*cred));
@@ -1161,7 +1161,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    return client;
 }
 
-void
+static void
 _mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred)
 {
    bson_zero_free (cred->access_token, strlen(cred->access_token));
