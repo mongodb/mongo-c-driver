@@ -278,7 +278,7 @@ MONGOC_EXPORT (bool)
 mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t *api, bson_error_t *error);
 
 MONGOC_EXPORT (void)
-mongoc_client_set_oidc_callback(mongoc_client_t *client,  mongoc_oidc_credential_t *(*oidc_callback)(mongoc_oidc_callback_params_t *));
+mongoc_client_set_oidc_callback(mongoc_client_t *client,  bool (*oidc_callback)(const mongoc_oidc_callback_params_t *, mongoc_oidc_credential_t * /* OUT */));
 
 MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_client_get_handshake_description (mongoc_client_t *client, uint32_t server_id, bson_t *opts, bson_error_t *error)

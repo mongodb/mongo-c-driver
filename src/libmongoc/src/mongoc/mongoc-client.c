@@ -2654,7 +2654,7 @@ mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t
 }
 
 void
-mongoc_client_set_oidc_callback(mongoc_client_t *client,  mongoc_oidc_credential_t *(*oidc_callback)(mongoc_oidc_callback_params_t *))
+mongoc_client_set_oidc_callback(mongoc_client_t *client,  bool (*oidc_callback)(const mongoc_oidc_callback_params_t *, mongoc_oidc_credential_t * /* OUT */))
 {
    client->oidc_callback = oidc_callback;
 }
