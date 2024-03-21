@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "mongoc-cluster-private.h"
+#include "mongoc-cluster-sasl-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-client.h"
 
@@ -56,7 +57,7 @@ _oidc_get_token (mongoc_client_t *client)
     */
    ok = client->oidc_callback (&params, &creds);
    if (!ok) {
-      goto done;
+      goto fail;
    }
 
    /*
@@ -73,36 +74,57 @@ _oidc_get_token (mongoc_client_t *client)
    client->oidc_credential->access_token = bson_strdup (creds.access_token);
    client->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
 
-done:
+fail:
    return ok;
 
 #undef MONGOC_MIN
 }
 
 static bool
-_oidc_sasl_one_step_conversation (mongoc_client_t *client)
+_oidc_sasl_one_step_conversation (
+   mongoc_cluster_t *cluster,
+   mongoc_stream_t *stream,
+   mongoc_server_description_t *sd,
+   bson_error_t *error
+)
 {
-    bool ok = true;
-    bson_t jwt_step_request = BSON_INITIALIZER;
-    bson_t client_command = BSON_INITIALIZER;
+   bool ok = true;
+   bson_t jwt_step_request = BSON_INITIALIZER;
+   bson_t client_command = BSON_INITIALIZER;
+   bson_t server_reply = BSON_INITIALIZER;
+   int conv_id = 0;
 
-    bson_append_utf8 (&jwt_step_request,
-                      "jwt",
-                      -1,
-                      client->oidc_credential->access_token,
-                      -1);
+   bson_append_utf8 (&jwt_step_request,
+                     "jwt",
+                     -1,
+                     cluster->client->oidc_credential->access_token,
+                     -1);
 
-    BCON_APPEND (&client_command,
-                 "saslStart",
-                 BCON_INT32 (1),
-                 "mechanism",
-                 "MONGODB-AWS",
-                 "payload",
-                 BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_step_request), jwt_step_request.len));
+   BCON_APPEND (&client_command,
+                "saslStart",
+                BCON_INT32 (1),
+                "mechanism",
+                "MONGODB-AWS",
+                "payload",
+                BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_step_request), jwt_step_request.len));
 
-    bson_destroy (&jwt_step_request);
-    bson_destroy (&client_command);
-    return ok;
+   bson_destroy (&server_reply);
+   ok = _mongoc_sasl_run_command (cluster, stream, sd, &client_command, &server_reply, error);
+   if (!ok) {
+      goto fail;
+   }
+
+   conv_id = _mongoc_cluster_get_conversation_id (&server_reply);
+   if (!conv_id) {
+      ok = false;
+      AUTH_ERROR_AND_FAIL ("server reply did not contain conversationId for OIDC one-step SASL");
+   }
+
+fail:
+   bson_destroy (&jwt_step_request);
+   bson_destroy (&client_command);
+   bson_destroy (&server_reply);
+   return ok;
 }
 
 bool
@@ -125,16 +147,34 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
     * - token expiration
     */
 
+   /*
+    * Fetch an OIDC access token using the user's callback function.
+    * Store the access token in the client.
+    *
+    * Spec:
+    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#oidc-callback
+    */
    ok = _oidc_get_token (cluster->client);
    if (!ok) {
-      goto done;
+      goto fail;
    }
 
-   ok = _oidc_sasl_one_step_conversation (cluster->client);
+   /*
+    * Connect to the server using OIDC One Step Authentication:
+    *
+    * Spec:
+    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#conversation-6
+    */
+   ok = _oidc_sasl_one_step_conversation (
+      cluster,
+      stream,
+      sd,
+      error
+   );
    if (!ok) {
-      goto done;
+      goto fail;
    }
 
-done:
+fail:
    return ok;
 }

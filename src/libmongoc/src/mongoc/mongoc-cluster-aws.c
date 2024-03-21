@@ -46,36 +46,6 @@
 #include <kms_message/kms_message.h>
 
 /*
- * Run a single command on a stream.
- *
- * On success, returns true.
- * On failure, returns false and sets error.
- * reply is always initialized.
- */
-static bool
-_run_command (mongoc_cluster_t *cluster,
-              mongoc_stream_t *stream,
-              mongoc_server_description_t *sd,
-              bson_t *command,
-              bson_t *reply,
-              bson_error_t *error)
-{
-   mongoc_cmd_parts_t parts;
-   mongoc_server_stream_t *server_stream;
-   bool ret;
-   mc_shared_tpld td = mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
-
-   mongoc_cmd_parts_init (&parts, cluster->client, "$external", MONGOC_QUERY_NONE /* unused for OP_MSG */, command);
-   /* Drivers must not append session ids to auth commands per sessions spec. */
-   parts.prohibit_lsid = true;
-   server_stream = _mongoc_cluster_create_server_stream (td.ptr, sd, stream);
-   mc_tpld_drop_ref (&td);
-   ret = mongoc_cluster_run_command_parts (cluster, server_stream, &parts, reply, error);
-   mongoc_server_stream_cleanup (server_stream);
-   return ret;
-}
-
-/*
  * Utility function to parse out a server reply's payload.
  *
  * Given a server reply like { ok: 1, payload: <BSON data>, ... } parse out the
@@ -997,7 +967,7 @@ _client_first (mongoc_cluster_t *cluster,
                 BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&client_payload), client_payload.len));
 
    bson_destroy (&server_reply);
-   if (!_run_command (cluster, stream, sd, &client_command, &server_reply, error)) {
+   if (!_mongoc_sasl_run_command (cluster, stream, sd, &client_command, &server_reply, error)) {
       goto fail;
    }
 
@@ -1174,7 +1144,7 @@ _client_second (mongoc_cluster_t *cluster,
                 BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&client_payload), client_payload.len));
 
    bson_destroy (&server_reply);
-   if (!_run_command (cluster, stream, sd, &client_command, &server_reply, error)) {
+   if (!_mongoc_sasl_run_command (cluster, stream, sd, &client_command, &server_reply, error)) {
       goto fail;
    }
 
