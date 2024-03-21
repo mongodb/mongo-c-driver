@@ -32,7 +32,7 @@ mongoc_oidc_credential_set_expires_in_seconds(mongoc_oidc_credential_t *credenti
 }
 
 static bool
-_oidc_get_token (mongoc_client_t *client)
+_oidc_get_token (mongoc_client_t *client, bson_error_t *error)
 {
 #undef MONGOC_MIN
 #define MONGOC_MIN(A, B) (((A) < (B)) ? (A) : (B))
@@ -55,9 +55,9 @@ _oidc_get_token (mongoc_client_t *client)
    /*
     * 1) Call callback function with params.
     */
-   ok = client->oidc_callback (&params, &creds);
+   ok = client->oidc_callback (&params, &creds); /* TODO: Should this take an 'error' out parameter? */
    if (!ok) {
-      goto fail;
+      AUTH_ERROR_AND_FAIL ("error from user provided OIDC callback");
    }
 
    /*
@@ -80,6 +80,10 @@ fail:
 #undef MONGOC_MIN
 }
 
+/*
+ * Spec:
+ * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#one-step
+ */
 static bool
 _oidc_sasl_one_step_conversation (
    mongoc_cluster_t *cluster,
@@ -111,7 +115,7 @@ _oidc_sasl_one_step_conversation (
    bson_destroy (&server_reply);
    ok = _mongoc_sasl_run_command (cluster, stream, sd, &client_command, &server_reply, error);
    if (!ok) {
-      goto fail;
+      AUTH_ERROR_AND_FAIL ("failed to run OIDC SASL one-step conversation command");
    }
 
    conv_id = _mongoc_cluster_get_conversation_id (&server_reply);
@@ -154,7 +158,7 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
     * Spec:
     * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#oidc-callback
     */
-   ok = _oidc_get_token (cluster->client);
+   ok = _oidc_get_token (cluster->client, error);
    if (!ok) {
       goto fail;
    }
@@ -165,12 +169,10 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
     * Spec:
     * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#conversation-6
     */
-   ok = _oidc_sasl_one_step_conversation (
-      cluster,
-      stream,
-      sd,
-      error
-   );
+   ok = _oidc_sasl_one_step_conversation (cluster,
+                                          stream,
+                                          sd,
+                                          error);
    if (!ok) {
       goto fail;
    }
