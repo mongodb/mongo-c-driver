@@ -6,38 +6,28 @@
 #include "mongoc-client-private.h"
 #include "mongoc-client.h"
 
-struct _mongoc_oidc_callback_params_t {
-    int64_t callback_timeout_ms;
-    int64_t version;
-};
-
-struct _mongoc_oidc_credential_t {
-    char *access_token;
-    int64_t expires_in_seconds;
-};
-
 int64_t
-mongoc_oidc_callback_params_get_timeout_ms(mongoc_oidc_callback_params_t* callback_params)
+mongoc_oidc_callback_params_get_timeout_ms(const mongoc_oidc_callback_params_t *callback_params)
 {
-    return callback_params->callback_timeout_ms;
+   return callback_params->callback_timeout_ms;
 }
 
 int64_t
-mongoc_oidc_callback_params_get_version(mongoc_oidc_callback_params_t* callback_params)
+mongoc_oidc_callback_params_get_version(const mongoc_oidc_callback_params_t *callback_params)
 {
-    return callback_params->version;
+   return callback_params->version;
 }
 
-char *
-mongoc_oidc_credential_get_access_token(mongoc_oidc_credential_t *credential)
+void
+mongoc_oidc_credential_set_access_token(mongoc_oidc_credential_t *credential, char *access_token)
 {
-    return credential->access_token;
+   credential->access_token = access_token;
 }
 
-int64_t
-mongoc_oidc_credential_get_expires_in_seconds(mongoc_oidc_credential_t *credential)
+void
+mongoc_oidc_credential_set_expires_in_seconds(mongoc_oidc_credential_t *credential, int64_t expires_in_seconds)
 {
-    return credential->expires_in_seconds;
+   credential->expires_in_seconds = expires_in_seconds;
 }
 
 bool
@@ -58,21 +48,28 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
     * TODO: set timeout to:
     *     min(remaining connectTimeoutMS, remaining timeoutMS)
     */
-   params.callback_timeout_ms = MIN (100, 200);
+   params.callback_timeout_ms = MIN (100, 200); /* placeholder */
 
+   BSON_ASSERT (sd);
+   BSON_ASSERT (error);
+   BSON_ASSERT (stream);
    BSON_ASSERT (cluster);
    BSON_ASSERT (cluster->client);
    BSON_ASSERT (cluster->client->oidc_callback);
-   BSON_ASSERT (stream);
 
    /*
-    * 1) Call callback function with params, store the result as the OIDC Token
+    * 1) Call callback function with params.
     */
-
    ok = cluster->client->oidc_callback (&params, &creds);
    if (!ok) {
       goto done;
    }
+
+   /*
+    * Store the resulting access token in the client.
+    */
+   cluster->client->oidc_credential->access_token = bson_strdup (creds.access_token);
+   cluster->client->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
 
 done:
    return ok;

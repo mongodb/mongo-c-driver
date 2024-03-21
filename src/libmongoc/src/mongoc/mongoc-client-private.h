@@ -117,6 +117,17 @@ struct _mongoc_client_t {
    uint32_t generation;
 
    bool (*oidc_callback)(const mongoc_oidc_callback_params_t *, mongoc_oidc_credential_t * /* OUT */);
+   mongoc_oidc_credential_t *oidc_credential;
+};
+
+struct _mongoc_oidc_callback_params_t {
+    int64_t callback_timeout_ms;
+    int64_t version;
+};
+
+struct _mongoc_oidc_credential_t {
+    char *access_token;
+    int64_t expires_in_seconds;
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read

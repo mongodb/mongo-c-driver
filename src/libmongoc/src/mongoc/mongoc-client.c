@@ -1083,6 +1083,17 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
    RETURN (client);
 }
 
+mongoc_oidc_credential_t *
+_mongoc_oidc_credential_new (char *access_token, int64_t expires_in_seconds)
+{
+   mongoc_oidc_credential_t *cred = bson_malloc (sizeof (*cred));
+
+   cred->access_token = access_token;
+   cred->expires_in_seconds = expires_in_seconds;
+
+   return cred;
+}
+
 
 /* precondition: topology is valid */
 mongoc_client_t *
@@ -1106,6 +1117,8 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    client->error_api_set = false;
    client->client_sessions = mongoc_set_new (8, NULL, NULL);
    client->csid_rand_seed = (unsigned int) bson_get_monotonic_time ();
+   client->oidc_callback = NULL;
+   client->oidc_credential = _mongoc_oidc_credential_new (NULL, 0);
 
    write_concern = mongoc_uri_get_write_concern (client->uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
@@ -1148,6 +1161,14 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    return client;
 }
 
+void
+_mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred)
+{
+   bson_zero_free (cred->access_token, strlen(cred->access_token));
+   cred->access_token = NULL;
+   free(cred);
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1181,6 +1202,9 @@ mongoc_client_destroy (mongoc_client_t *client)
       mongoc_uri_destroy (client->uri);
       mongoc_set_destroy (client->client_sessions);
       mongoc_server_api_destroy (client->api);
+      _mongoc_oidc_credential_destroy (client->oidc_credential);
+      client->oidc_credential = NULL;
+      client->oidc_callback = NULL;
 
 #ifdef MONGOC_ENABLE_SSL
       _mongoc_ssl_opts_cleanup (&client->ssl_opts, true);
