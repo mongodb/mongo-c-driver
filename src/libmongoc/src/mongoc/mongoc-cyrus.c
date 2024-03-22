@@ -158,8 +158,8 @@ _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t
       if (has_valid_prefix) {
          return SASL_OK;
       }
-      MONGOC_WARNING ("Not loading Cyrus SASL plugin: %s. If plugin is needed, set CMake option "
-                      "`CYRUS_PLUGIN_PATH_PREFIX (currently '%s')` to a non-empty string contain the path prefix.",
+      MONGOC_WARNING ("Refusing to load Cyrus SASL plugin at: '%s'. If needed, set CYRUS_PLUGIN_PATH_PREFIX (currently "
+                      "'%s') to the absolute path prefix during build configuration.",
                       file,
                       path_prefix);
       return SASL_CONTINUE;
