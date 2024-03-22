@@ -150,7 +150,7 @@ mongo_setting(
    ]]
 )
 
-mongo_setting(CYRUS_PLUGIN_PATH_PREFIX "An absolute path prefix to enable loading Cyrus-SASL plug-ins on Windows"
+mongo_setting(CYRUS_PLUGIN_PATH_PREFIX "An absolute path prefix to enable loading Cyrus SASL plug-ins on Windows"
    TYPE STRING
    VISIBLE_IF [[ENABLE_SASL STREQUAL "CYRUS" AND WIN32]]
 )
