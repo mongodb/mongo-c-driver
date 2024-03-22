@@ -159,7 +159,7 @@ _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t
          return SASL_OK;
       }
       MONGOC_WARNING ("Refusing to load Cyrus SASL plugin at: '%s'. If needed, set CYRUS_PLUGIN_PATH_PREFIX (currently "
-                      "'%s') to the absolute path prefix during build configuration.",
+                      "'%s') to the absolute path prefix of the plugin during build configuration of the C Driver.",
                       file,
                       path_prefix ? path_prefix : "(unset)");
       return SASL_CONTINUE;
