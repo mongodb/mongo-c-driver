@@ -1,7 +1,7 @@
 libmongoc 1.26.2 (unreleased)
 =============================
 
-Fixes:
+Cyrus SASL:
 
   * Disable plug-in loading with Cyrus-SASL on Windows by default. To re-enable, set the CMake option `CYRUS_PLUGIN_PATH_PREFIX` to the path prefix of the Cyrus-SASL plug-ins.
 
