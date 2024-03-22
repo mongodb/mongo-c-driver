@@ -124,6 +124,12 @@ _oidc_sasl_one_step_conversation (
       AUTH_ERROR_AND_FAIL ("server reply did not contain conversationId for OIDC one-step SASL");
    }
 
+   /*
+    * TODO:
+    * - check "ok" field
+    * - How should we handle an error? Where will the server error message be?
+    */
+
 fail:
    bson_destroy (&jwt_step_request);
    bson_destroy (&client_command);
