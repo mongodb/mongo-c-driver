@@ -82,6 +82,7 @@ GSSAPI (Kerberos) Authentication
   On UNIX-like environments, Kerberos support requires compiling the driver against `Cyrus SASL <https://www.cyrusimap.org/sasl/>`_.
 
   On Windows, Kerberos support requires compiling the driver against Windows Native SSPI or Cyrus SASL. The default configuration of the driver will use Windows Native SSPI.
+  If using Cyrus SASL on Windows, setting the CMake option ``CYRUS_PLUGIN_PATH_PREFIX`` to the absolute path prefix is required to enable loading plugins.
 
   To modify the default configuration, use the cmake option ``ENABLE_SASL``.
 
