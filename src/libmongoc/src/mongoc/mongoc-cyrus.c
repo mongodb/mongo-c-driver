@@ -149,7 +149,7 @@ _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t
    TRACE ("Attempting to load file: `%s`. Type is %s\n", file, sasl_verify_type_to_str (type));
 
 #ifdef _WIN32
-   // On Windows, Cyrus-SASL hard-codes the plugin path.
+   // On Windows, Cyrus SASL hard-codes the plugin path.
    // Only permit loading plug-in from user configured path to prevent unintentional library loading.
    if (type == SASL_VRFY_PLUGIN) {
       const char *path_prefix = MONGOC_CYRUS_PLUGIN_PATH_PREFIX;
@@ -158,7 +158,7 @@ _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t
       if (has_valid_prefix) {
          return SASL_OK;
       }
-      MONGOC_WARNING ("Not loading Cyrus-SASL plugin: %s. If plugin is needed, set CMake option "
+      MONGOC_WARNING ("Not loading Cyrus SASL plugin: %s. If plugin is needed, set CMake option "
                       "`CYRUS_PLUGIN_PATH_PREFIX (currently '%s')` to a non-empty string contain the path prefix.",
                       file,
                       path_prefix);
