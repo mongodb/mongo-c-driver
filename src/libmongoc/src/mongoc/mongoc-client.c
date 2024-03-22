@@ -1164,8 +1164,10 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
 static void
 _mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred)
 {
-   bson_zero_free (cred->access_token, strlen(cred->access_token));
-   cred->access_token = NULL;
+   if (cred->access_token) {
+      bson_zero_free (cred->access_token, strlen(cred->access_token));
+      cred->access_token = NULL;
+   }
    free(cred);
 }
 
