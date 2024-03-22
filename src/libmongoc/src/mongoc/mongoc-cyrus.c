@@ -150,7 +150,7 @@ _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t
 
 #ifdef _WIN32
    // On Windows, Cyrus SASL hard-codes the plugin path.
-   // Only permit loading plug-in from user configured path to prevent unintentional library loading.
+   // Only permit loading plugin from user configured path to prevent unintentional library loading.
    if (type == SASL_VRFY_PLUGIN) {
       const char *path_prefix = MONGOC_CYRUS_PLUGIN_PATH_PREFIX;
       bool has_valid_prefix = (path_prefix && file == strstr (file, path_prefix));
