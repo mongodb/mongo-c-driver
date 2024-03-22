@@ -153,7 +153,7 @@ _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t
    // Only permit loading plug-in from user configured path to prevent unintentional library loading.
    if (type == SASL_VRFY_PLUGIN) {
       const char *path_prefix = MONGOC_CYRUS_PLUGIN_PATH_PREFIX;
-      bool has_valid_prefix = (0 != strlen (path_prefix) && file == strstr (file, path_prefix));
+      bool has_valid_prefix = (path_prefix && file == strstr (file, path_prefix));
       // Check if `file` has necessary prefix.
       if (has_valid_prefix) {
          return SASL_OK;
@@ -161,7 +161,7 @@ _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t
       MONGOC_WARNING ("Refusing to load Cyrus SASL plugin at: '%s'. If needed, set CYRUS_PLUGIN_PATH_PREFIX (currently "
                       "'%s') to the absolute path prefix during build configuration.",
                       file,
-                      path_prefix);
+                      path_prefix ? path_prefix : "(unset)");
       return SASL_CONTINUE;
    }
 #endif
