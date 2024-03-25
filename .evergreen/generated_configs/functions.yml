@@ -141,15 +141,6 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-  early-termination:
-    - command: subprocess.exec
-      params:
-        binary: bash
-        args:
-          - -c
-          - |
-            echo 'EVERGREEN HOST WAS UNEXPECTEDLY TERMINATED!!!' 1>&2
-            echo 'Restart this Evergreen task and try again!' 1>&2
   fetch-build:
     - command: subprocess.exec
       type: setup

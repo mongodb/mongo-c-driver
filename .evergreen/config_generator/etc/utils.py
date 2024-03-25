@@ -1,13 +1,18 @@
+import itertools
 from importlib import import_module
+from inspect import isclass
 from pathlib import Path
 from textwrap import dedent
-from typing import Sequence, Iterable, Mapping
+from typing import (Any, Iterable, Literal, Mapping, Sequence, Type, TypeVar,
+                    Union, cast)
 
 import yaml
-
+from shrub.v3.evg_command import EvgCommandType, subprocess_exec
 from shrub.v3.evg_project import EvgProject
 from shrub.v3.evg_task import EvgTask
-from shrub.v3.evg_command import subprocess_exec, EvgCommandType
+from typing_extensions import get_args, get_origin, get_type_hints
+
+T = TypeVar('T')
 
 
 # Equivalent to EvgTask but defines additional properties.
@@ -210,3 +215,44 @@ def to_yaml(project: EvgProject) -> str:
         default_flow_style=False,
         width=float('inf'),
     )
+
+
+def all_possible(typ: Type[T]) -> Iterable[T]:
+    """
+    Given a finite type, enumerate all possible values of that type.
+    The following are "finite" types:
+
+    - Literal[...] types
+    - Union[...] of finite types
+    - NamedTuple where each field is a finite type
+    - None
+    """
+    origin = get_origin(typ)
+    if typ is type(None):
+        yield cast(T, None)
+    elif origin is Literal:
+        # It is a literal type, so enumerate its literal operands
+        yield from get_args(typ)
+        return
+    elif origin == Union:
+        args = get_args(typ)
+        yield from itertools.chain.from_iterable(map(all_possible, args))
+    elif isclass(typ) and issubclass(typ, tuple):
+        # Iter each NamedTuple field:
+        fields: Iterable[tuple[str, type]] = get_type_hints(typ).items()
+        # Generate lists of pairs of field names and their possible values
+        all_pairs: Iterable[Iterable[tuple[str, str]]] = (
+            # Generate a (key, opt) pair for each option for 'key'
+            [(key, opt) for opt in all_possible(typ)]
+            # Over each field and type thereof:
+            for key, typ in fields
+        )
+        # Now generate the cross product of all alternative for all fields:
+        matrix: Iterable[dict[str, Any]] = map(dict, itertools.product(*all_pairs))
+        for items in matrix:
+            # Reconstruct as a NamedTuple:
+            yield typ(**items)  # type: ignore
+    else:
+        raise TypeError(
+            f'Do not know how to do "all_possible" of type {typ!r} ({origin=})'
+        )

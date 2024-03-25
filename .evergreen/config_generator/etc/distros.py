@@ -42,13 +42,6 @@ class Distro(BaseModel):
 # See: https://evergreen.mongodb.com/distros
 # pylint: disable=line-too-long
 #fmt: off
-ARCHLINUX_DISTROS = [
-    Distro(name='archlinux-large', os='archlinux', os_type='linux', size='large'),
-    Distro(name='archlinux-small', os='archlinux', os_type='linux', size='small'),
-    Distro(name='archlinux-new-large', os='archlinux', os_type='linux', size='large'),
-    Distro(name='archlinux-new-small', os='archlinux', os_type='linux', size='small'),
-]
-
 DEBIAN_DISTROS = [
     Distro(name='debian10-large', os='debian', os_type='linux', os_ver='10', size='large'),
     Distro(name='debian10-small', os='debian', os_type='linux', os_ver='10', size='small'),
@@ -155,7 +148,6 @@ WINDOWS_DISTROS = [
 
 # Ensure no-arch distros are ordered before arch-specific distros.
 ALL_DISTROS = [] + \
-    ARCHLINUX_DISTROS + \
     DEBIAN_DISTROS + \
     MACOS_DISTROS + \
     MACOS_ARM64_DISTROS + \

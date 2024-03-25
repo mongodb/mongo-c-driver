@@ -15,8 +15,6 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('archlinux',         'clang',      None, ['cyrus']),
-    ('archlinux',         'gcc',        None, ['cyrus']),
     ('debian10',          'gcc',        None, ['cyrus']),
     ('debian11',          'gcc',        None, ['cyrus']),
     ('debian92',          'clang',      None, ['cyrus']),
