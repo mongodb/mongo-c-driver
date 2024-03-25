@@ -1077,7 +1077,7 @@ _state_machine_run (_state_machine_t *state_machine, bson_t *result, bson_error_
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                         0,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                          "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB is "
                          "unimplemented");
          goto fail;
