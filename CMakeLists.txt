@@ -150,6 +150,11 @@ mongo_setting(
    ]]
 )
 
+mongo_setting(CYRUS_PLUGIN_PATH_PREFIX "An absolute path prefix to enable loading Cyrus SASL plugins on Windows"
+   TYPE STRING
+   VISIBLE_IF [[ENABLE_SASL STREQUAL "CYRUS" AND WIN32]]
+)
+
 mongo_setting(ENABLE_CLIENT_SIDE_ENCRYPTION "Enable In-Use Encryption support. Requires additional support libraries."
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)

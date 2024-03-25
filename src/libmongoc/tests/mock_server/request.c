@@ -64,8 +64,7 @@ request_new (const mongoc_buffer_t *buffer,
    memcpy (request->data, buffer->data, request->data_len);
 
    const void *data_end = NULL;
-   request->rpc =
-      mcd_rpc_message_from_data (request->data, request->data_len, &data_end);
+   request->rpc = mcd_rpc_message_from_data (request->data, request->data_len, &data_end);
 
    if (!request->rpc) {
       test_error ("failed to parse incoming message due to byte %zu of %zu",
@@ -160,8 +159,7 @@ request_matches_query (const request_t *request,
       doc_as_json = NULL;
    }
 
-   if (!match_json (
-          doc, is_command, __FILE__, __LINE__, BSON_FUNC, query_json)) {
+   if (!match_json (doc, is_command, __FILE__, __LINE__, BSON_FUNC, query_json)) {
       /* match_json has logged the err */
       goto done;
    }
@@ -192,31 +190,22 @@ request_matches_query (const request_t *request,
       goto done;
    }
 
-   const char *const request_ns =
-      mcd_rpc_op_query_get_full_collection_name (request->rpc);
+   const char *const request_ns = mcd_rpc_op_query_get_full_collection_name (request->rpc);
    if (0 != strcmp (request_ns, ns)) {
-      test_error ("request's namespace is '%s', expected '%s': %s",
-                  request_ns,
-                  ns,
-                  doc_as_json);
+      test_error ("request's namespace is '%s', expected '%s': %s", request_ns, ns, doc_as_json);
       goto done;
    }
 
    assert_request_matches_flags (request, flags);
 
-   const int32_t request_skip =
-      mcd_rpc_op_query_get_number_to_skip (request->rpc);
+   const int32_t request_skip = mcd_rpc_op_query_get_number_to_skip (request->rpc);
    if (bson_cmp_not_equal_su (request_skip, skip)) {
-      test_error ("requests's skip = %" PRId32 ", expected %" PRIu32 ": %s",
-                  request_skip,
-                  skip,
-                  doc_as_json);
+      test_error ("requests's skip = %" PRId32 ", expected %" PRIu32 ": %s", request_skip, skip, doc_as_json);
       goto done;
    }
 
 
-   const int32_t request_n_return =
-      mcd_rpc_op_query_get_number_to_return (request->rpc);
+   const int32_t request_n_return = mcd_rpc_op_query_get_number_to_return (request->rpc);
    bool n_return_equal = (request_n_return == n_return);
 
    if (!n_return_equal && abs (request_n_return) == 1) {
@@ -227,10 +216,8 @@ request_matches_query (const request_t *request,
    }
 
    if (!n_return_equal) {
-      test_error ("requests's n_return = %" PRId32 ", expected %" PRId32 ": %s",
-                  request_n_return,
-                  n_return,
-                  doc_as_json);
+      test_error (
+         "requests's n_return = %" PRId32 ", expected %" PRId32 ": %s", request_n_return, n_return, doc_as_json);
       goto done;
    }
 
@@ -249,25 +236,19 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
    BSON_ASSERT (request);
 
    if (request->opcode != MONGOC_OPCODE_KILL_CURSORS) {
-      test_error ("request's opcode does not match KILL_CURSORS, got: %d",
-                  request->opcode);
+      test_error ("request's opcode does not match KILL_CURSORS, got: %d", request->opcode);
       return false;
    }
 
-   const int32_t request_n_cursors =
-      mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (request->rpc);
+   const int32_t request_n_cursors = mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (request->rpc);
    if (request_n_cursors != 1) {
-      test_error ("request's n_cursors is %" PRId32 ", expected 1",
-                  request_n_cursors);
+      test_error ("request's n_cursors is %" PRId32 ", expected 1", request_n_cursors);
       return false;
    }
 
-   const int64_t request_cursor_id =
-      mcd_rpc_op_kill_cursors_get_cursor_ids (request->rpc)[0];
+   const int64_t request_cursor_id = mcd_rpc_op_kill_cursors_get_cursor_ids (request->rpc)[0];
    if (request_cursor_id != cursor_id) {
-      test_error ("request's cursor_id %" PRId64 ", expected %" PRId64,
-                  request_cursor_id,
-                  cursor_id);
+      test_error ("request's cursor_id %" PRId64 ", expected %" PRId64, request_cursor_id, cursor_id);
       return false;
    }
 
@@ -295,10 +276,7 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
  */
 
 bool
-request_matches_msg (const request_t *request,
-                     uint32_t flags,
-                     const bson_t **docs,
-                     size_t n_docs)
+request_matches_msg (const request_t *request, uint32_t flags, const bson_t **docs, size_t n_docs)
 {
    const bson_t *doc;
    const bson_t *pattern;
@@ -317,23 +295,16 @@ request_matches_msg (const request_t *request,
 
       /* make sure the pattern is reasonable, e.g. that we didn't pass a string
        * instead of a bson_t* by mistake */
-      ASSERT_WITH_MSG (bson_validate_with_error (pattern,
-                                                 BSON_VALIDATE_EMPTY_KEYS |
-                                                    BSON_VALIDATE_UTF8,
-                                                 &bson_error),
+      ASSERT_WITH_MSG (bson_validate_with_error (pattern, BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_UTF8, &bson_error),
                        "invalid argument at position %zu (note: must be "
-                       "bson_t*, not char*):\ndomain: %" PRIu32
-                       ", code: %" PRIu32 ", message: %s\n",
+                       "bson_t*, not char*):\ndomain: %" PRIu32 ", code: %" PRIu32 ", message: %s\n",
                        i,
                        bson_error.domain,
                        bson_error.code,
                        bson_error.message);
 
       if (i > request->docs.len) {
-         fprintf (stderr,
-                  "Expected at least %zu documents in request, got %zu\n",
-                  i,
-                  request->docs.len);
+         fprintf (stderr, "Expected at least %zu documents in request, got %zu\n", i, request->docs.len);
          return false;
       }
 
@@ -344,19 +315,13 @@ request_matches_msg (const request_t *request,
    }
 
    if (n_docs < request->docs.len) {
-      fprintf (stderr,
-               "Expected %zu documents in request, got %zu\n",
-               n_docs,
-               request->docs.len);
+      fprintf (stderr, "Expected %zu documents in request, got %zu\n", n_docs, request->docs.len);
       return false;
    }
 
    const uint32_t request_flags = mcd_rpc_op_msg_get_flag_bits (request->rpc);
    if (request_flags != flags) {
-      fprintf (stderr,
-               "Expected OP_MSG flags %" PRIu32 ", got %" PRIu32 "\n",
-               flags,
-               request_flags);
+      fprintf (stderr, "Expected OP_MSG flags %" PRIu32 ", got %" PRIu32 "\n", flags, request_flags);
       return false;
    }
 
@@ -569,15 +534,11 @@ request_from_query (request_t *request)
    char *str;
 
    const int32_t request_flags = mcd_rpc_op_query_get_flags (request->rpc);
-   const char *const request_coll =
-      mcd_rpc_op_query_get_full_collection_name (request->rpc);
-   const int32_t request_skip =
-      mcd_rpc_op_query_get_number_to_skip (request->rpc);
-   const int32_t request_return =
-      mcd_rpc_op_query_get_number_to_return (request->rpc);
+   const char *const request_coll = mcd_rpc_op_query_get_full_collection_name (request->rpc);
+   const int32_t request_skip = mcd_rpc_op_query_get_number_to_skip (request->rpc);
+   const int32_t request_return = mcd_rpc_op_query_get_number_to_return (request->rpc);
    const void *const request_query = mcd_rpc_op_query_get_query (request->rpc);
-   const void *const request_fields =
-      mcd_rpc_op_query_get_return_fields_selector (request->rpc);
+   const void *const request_fields = mcd_rpc_op_query_get_return_fields_selector (request->rpc);
 
    {
       const int32_t len = length_prefix (request_query);
@@ -625,8 +586,7 @@ request_from_query (request_t *request)
    }
 
    if (request_return) {
-      bson_string_append_printf (
-         query_as_str, " n_return=%" PRId32, request_return);
+      bson_string_append_printf (query_as_str, " n_return=%" PRId32, request_return);
    }
 
    request->as_str = bson_string_free (query_as_str, false);
@@ -637,30 +597,24 @@ static void
 request_from_killcursors (request_t *request)
 {
    /* protocol allows multiple cursor ids but we only implement one */
-   BSON_ASSERT (
-      mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (request->rpc) == 1);
-   request->as_str = bson_strdup_printf (
-      "OP_KILLCURSORS %" PRId64,
-      mcd_rpc_op_kill_cursors_get_cursor_ids (request->rpc)[0]);
+   BSON_ASSERT (mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (request->rpc) == 1);
+   request->as_str =
+      bson_strdup_printf ("OP_KILLCURSORS %" PRId64, mcd_rpc_op_kill_cursors_get_cursor_ids (request->rpc)[0]);
 }
 
 
 static void
 request_from_getmore (request_t *request)
 {
-   request->as_str = bson_strdup_printf (
-      "OP_GETMORE %s %" PRId64 " n_return=%d",
-      mcd_rpc_op_get_more_get_full_collection_name (request->rpc),
-      mcd_rpc_op_get_more_get_cursor_id (request->rpc),
-      mcd_rpc_op_get_more_get_number_to_return (request->rpc));
+   request->as_str = bson_strdup_printf ("OP_GETMORE %s %" PRId64 " n_return=%d",
+                                         mcd_rpc_op_get_more_get_full_collection_name (request->rpc),
+                                         mcd_rpc_op_get_more_get_cursor_id (request->rpc),
+                                         mcd_rpc_op_get_more_get_number_to_return (request->rpc));
 }
 
 
 static void
-parse_op_msg_doc (request_t *request,
-                  const uint8_t *data,
-                  size_t data_len,
-                  bson_string_t *msg_as_str)
+parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, bson_string_t *msg_as_str)
 {
    const uint8_t *pos = data;
    while (pos < data + data_len) {
@@ -687,34 +641,26 @@ request_from_op_msg (request_t *request)
 {
    bson_string_t *msg_as_str = bson_string_new ("OP_MSG");
 
-   const size_t sections_count =
-      mcd_rpc_op_msg_get_sections_count (request->rpc);
+   const size_t sections_count = mcd_rpc_op_msg_get_sections_count (request->rpc);
 
    BSON_ASSERT (sections_count <= 2u);
    for (size_t index = 0; index < sections_count; ++index) {
       bson_string_append (msg_as_str, (index > 0 ? ", " : " "));
-      const uint8_t kind =
-         mcd_rpc_op_msg_section_get_kind (request->rpc, index);
+      const uint8_t kind = mcd_rpc_op_msg_section_get_kind (request->rpc, index);
       switch (kind) {
       case 0: { /* a single BSON document */
-         const void *const body =
-            mcd_rpc_op_msg_section_get_body (request->rpc, index);
-         parse_op_msg_doc (
-            request, body, (size_t) length_prefix (body), msg_as_str);
+         const void *const body = mcd_rpc_op_msg_section_get_body (request->rpc, index);
+         parse_op_msg_doc (request, body, (size_t) length_prefix (body), msg_as_str);
          break;
       }
 
       case 1: { /* a sequence of BSON documents */
-         bson_string_append (
-            msg_as_str,
-            mcd_rpc_op_msg_section_get_identifier (request->rpc, index));
+         bson_string_append (msg_as_str, mcd_rpc_op_msg_section_get_identifier (request->rpc, index));
          bson_string_append (msg_as_str, ": [");
-         parse_op_msg_doc (
-            request,
-            mcd_rpc_op_msg_section_get_document_sequence (request->rpc, index),
-            mcd_rpc_op_msg_section_get_document_sequence_length (request->rpc,
-                                                                 index),
-            msg_as_str);
+         parse_op_msg_doc (request,
+                           mcd_rpc_op_msg_section_get_document_sequence (request->rpc, index),
+                           mcd_rpc_op_msg_section_get_document_sequence_length (request->rpc, index),
+                           msg_as_str);
 
          bson_string_append (msg_as_str, "]");
          break;

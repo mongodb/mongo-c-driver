@@ -160,9 +160,7 @@ test_reader_from_handle (void)
    fd = bson_open (BSON_BINARY_DIR "/stream.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
-   reader = bson_reader_new_from_handle ((void *) &fd,
-                                         &test_reader_from_handle_read,
-                                         &test_reader_from_handle_destroy);
+   reader = bson_reader_new_from_handle ((void *) &fd, &test_reader_from_handle_read, &test_reader_from_handle_destroy);
 
    for (i = 0; i < 1000; i++) {
       eof = false;
@@ -193,9 +191,7 @@ test_reader_tell (void)
    fd = bson_open (BSON_BINARY_DIR "/stream.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
-   reader = bson_reader_new_from_handle ((void *) &fd,
-                                         &test_reader_from_handle_read,
-                                         &test_reader_from_handle_destroy);
+   reader = bson_reader_new_from_handle ((void *) &fd, &test_reader_from_handle_read, &test_reader_from_handle_destroy);
 
    for (i = 0; i < 1000; i++) {
       if (i) {
@@ -232,9 +228,7 @@ test_reader_from_handle_corrupt (void)
    fd = bson_open (BSON_BINARY_DIR "/stream_corrupt.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
-   reader = bson_reader_new_from_handle ((void *) &fd,
-                                         &test_reader_from_handle_read,
-                                         &test_reader_from_handle_destroy);
+   reader = bson_reader_new_from_handle ((void *) &fd, &test_reader_from_handle_read, &test_reader_from_handle_destroy);
 
    for (i = 0; i < 1000; i++) {
       b = bson_reader_read (reader, &eof);
@@ -260,9 +254,7 @@ test_reader_grow_buffer (void)
    fd = bson_open (BSON_BINARY_DIR "/readergrow.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
-   reader = bson_reader_new_from_handle ((void *) &fd,
-                                         &test_reader_from_handle_read,
-                                         &test_reader_from_handle_destroy);
+   reader = bson_reader_new_from_handle ((void *) &fd, &test_reader_from_handle_read, &test_reader_from_handle_destroy);
 
    b = bson_reader_read (reader, &eof);
    BSON_ASSERT (b);
@@ -311,21 +303,14 @@ void
 test_reader_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/bson/reader/new_from_data", test_reader_from_data);
-   TestSuite_Add (suite,
-                  "/bson/reader/new_from_data_overflow",
-                  test_reader_from_data_overflow);
-   TestSuite_Add (suite,
-                  "/bson/reader/new_from_data_document_length_too_large",
-                  test_reader_from_data_document_length_too_large);
-   TestSuite_Add (suite,
-                  "/bson/reader/new_from_data_document_length_too_small",
-                  test_reader_from_data_document_length_too_small);
+   TestSuite_Add (suite, "/bson/reader/new_from_data_overflow", test_reader_from_data_overflow);
    TestSuite_Add (
-      suite, "/bson/reader/new_from_handle", test_reader_from_handle);
+      suite, "/bson/reader/new_from_data_document_length_too_large", test_reader_from_data_document_length_too_large);
+   TestSuite_Add (
+      suite, "/bson/reader/new_from_data_document_length_too_small", test_reader_from_data_document_length_too_small);
+   TestSuite_Add (suite, "/bson/reader/new_from_handle", test_reader_from_handle);
    TestSuite_Add (suite, "/bson/reader/tell", test_reader_tell);
-   TestSuite_Add (suite,
-                  "/bson/reader/new_from_handle_corrupt",
-                  test_reader_from_handle_corrupt);
+   TestSuite_Add (suite, "/bson/reader/new_from_handle_corrupt", test_reader_from_handle_corrupt);
    TestSuite_Add (suite, "/bson/reader/grow_buffer", test_reader_grow_buffer);
    TestSuite_Add (suite, "/bson/reader/reset", test_reader_reset);
 }

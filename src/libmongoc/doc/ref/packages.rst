@@ -63,7 +63,7 @@ This table details the names and usage notes of such packages.
   - - :index:`APK <!pair: APK; package names>`
     - :index:`Alpine Linux <!pair: Alpine Linux; package names>`
     - ``libbson``, ``libbson-dev``, ``libbson-static``
-    - ``libmongoc``, ``libmongoc-dev``, ``libmongoc-static``
+    - ``mongo-c-driver``, ``mongo-c-driver-dev``, ``mongo-c-driver-static``
     - .. empty cell
 
   - - :index:`pacman <!pair: package names; pacman>`

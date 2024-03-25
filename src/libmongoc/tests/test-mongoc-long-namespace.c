@@ -43,23 +43,18 @@ command_started (const mongoc_apm_command_started_t *event)
    test_fixture_t *test_fixture;
 
    test_fixture = mongoc_apm_command_started_get_context (event);
-   if (0 == strcmp (mongoc_apm_command_started_get_command_name (event),
-                    "renameCollection")) {
-      ASSERT_CMPSTR (mongoc_apm_command_started_get_database_name (event),
-                     "admin");
+   if (0 == strcmp (mongoc_apm_command_started_get_command_name (event), "renameCollection")) {
+      ASSERT_CMPSTR (mongoc_apm_command_started_get_database_name (event), "admin");
       /* Always runs on admin. */
    } else {
-      ASSERT_CMPSTR (mongoc_apm_command_started_get_database_name (event),
-                     test_fixture->ns_db);
+      ASSERT_CMPSTR (mongoc_apm_command_started_get_database_name (event), test_fixture->ns_db);
    }
 }
 
 /* Test long namespaces. Prior to SERVER-32959, the total namespace limit was
  * 120 characters. */
 static void
-test_fixture_init (test_fixture_t *test_fixture,
-                   uint32_t db_len,
-                   uint32_t coll_len)
+test_fixture_init (test_fixture_t *test_fixture, uint32_t db_len, uint32_t coll_len)
 {
    bool ret;
    bson_error_t error;
@@ -73,29 +68,23 @@ test_fixture_init (test_fixture_t *test_fixture,
    memset (test_fixture->ns_coll, 'c', coll_len);
    test_fixture->ns_coll[coll_len] = '\0';
 
-   test_fixture->ns =
-      bson_strdup_printf ("%s.%s", test_fixture->ns_db, test_fixture->ns_coll);
+   test_fixture->ns = bson_strdup_printf ("%s.%s", test_fixture->ns_db, test_fixture->ns_coll);
 
    /* Construct client, database, and collection objects. */
    test_fixture->client = test_framework_new_default_client ();
    test_framework_set_ssl_opts (test_fixture->client);
-   mongoc_client_set_error_api (test_fixture->client,
-                                MONGOC_ERROR_API_VERSION_2);
+   mongoc_client_set_error_api (test_fixture->client, MONGOC_ERROR_API_VERSION_2);
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, command_started);
-   mongoc_client_set_apm_callbacks (
-      test_fixture->client, callbacks, test_fixture);
+   mongoc_client_set_apm_callbacks (test_fixture->client, callbacks, test_fixture);
 
-   test_fixture->db =
-      mongoc_client_get_database (test_fixture->client, test_fixture->ns_db);
+   test_fixture->db = mongoc_client_get_database (test_fixture->client, test_fixture->ns_db);
    ASSERT_CMPSTR (test_fixture->db->name, test_fixture->ns_db);
 
-   test_fixture->coll =
-      mongoc_database_get_collection (test_fixture->db, test_fixture->ns_coll);
+   test_fixture->coll = mongoc_database_get_collection (test_fixture->db, test_fixture->ns_coll);
    ASSERT_CMPSTR (test_fixture->coll->collection, test_fixture->ns_coll);
-   ASSERT_CMPSIZE_T (
-      test_fixture->coll->collectionlen, ==, strlen (test_fixture->ns_coll));
+   ASSERT_CMPSIZE_T (test_fixture->coll->collectionlen, ==, strlen (test_fixture->ns_coll));
    ASSERT_CMPSTR (test_fixture->coll->db, test_fixture->ns_db);
    ASSERT_CMPSTR (test_fixture->coll->ns, test_fixture->ns);
    ASSERT_CMPSIZE_T (test_fixture->coll->nslen, ==, strlen (test_fixture->ns));
@@ -110,12 +99,11 @@ test_fixture_init (test_fixture_t *test_fixture,
 
    /* Explicitly create 'coll', so it shows up in listCollections. */
    mongoc_collection_destroy (test_fixture->coll);
-   test_fixture->coll = mongoc_database_create_collection (
-      test_fixture->db, test_fixture->ns_coll, NULL /* opts */, &error);
+   test_fixture->coll =
+      mongoc_database_create_collection (test_fixture->db, test_fixture->ns_coll, NULL /* opts */, &error);
    ASSERT_OR_PRINT (test_fixture->coll, error);
    ASSERT_CMPSTR (test_fixture->coll->collection, test_fixture->ns_coll);
-   ASSERT_CMPSIZE_T (
-      test_fixture->coll->collectionlen, ==, strlen (test_fixture->ns_coll));
+   ASSERT_CMPSIZE_T (test_fixture->coll->collectionlen, ==, strlen (test_fixture->ns_coll));
    ASSERT_CMPSTR (test_fixture->coll->db, test_fixture->ns_db);
    ASSERT_CMPSTR (test_fixture->coll->ns, test_fixture->ns);
    ASSERT_CMPSIZE_T (test_fixture->coll->nslen, ==, strlen (test_fixture->ns));
@@ -148,18 +136,13 @@ crud (test_fixture_t *test_fixture)
    const bson_t *found;
 
    /* Insert. */
-   ret = mongoc_collection_insert_one (test_fixture->coll,
-                                       tmp_bson ("{'_id': 'hello'}"),
-                                       NULL /* opts */,
-                                       NULL /* reply */,
-                                       &error);
+   ret = mongoc_collection_insert_one (
+      test_fixture->coll, tmp_bson ("{'_id': 'hello'}"), NULL /* opts */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
    /* Find that document back. */
-   cursor = mongoc_collection_find_with_opts (test_fixture->coll,
-                                              tmp_bson ("{'_id': 'hello'}"),
-                                              NULL /* opts */,
-                                              NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (
+      test_fixture->coll, tmp_bson ("{'_id': 'hello'}"), NULL /* opts */, NULL /* read prefs */);
    ret = mongoc_cursor_next (cursor, &found);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error) && ret, error);
    ASSERT_MATCH (found, "{'_id': 'hello'}");
@@ -178,10 +161,8 @@ crud (test_fixture_t *test_fixture)
 
    /* Find that document back to ensure the document in the right collection was
     * updated. */
-   cursor = mongoc_collection_find_with_opts (test_fixture->coll,
-                                              tmp_bson ("{'_id': 'hello'}"),
-                                              NULL /* opts */,
-                                              NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (
+      test_fixture->coll, tmp_bson ("{'_id': 'hello'}"), NULL /* opts */, NULL /* read prefs */);
    ret = mongoc_cursor_next (cursor, &found);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error) && ret, error);
    ASSERT_MATCH (found, "{'_id': 'hello', 'x': 1}");
@@ -190,19 +171,14 @@ crud (test_fixture_t *test_fixture)
    mongoc_cursor_destroy (cursor);
 
    /* Delete it. */
-   ret = mongoc_collection_delete_one (test_fixture->coll,
-                                       tmp_bson ("{'_id': 'hello'}"),
-                                       NULL /* opts */,
-                                       NULL /* reply */,
-                                       &error);
+   ret = mongoc_collection_delete_one (
+      test_fixture->coll, tmp_bson ("{'_id': 'hello'}"), NULL /* opts */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
    /* Attempt to find that document back to ensure the document in the right
     * collection was deleted. */
-   cursor = mongoc_collection_find_with_opts (test_fixture->coll,
-                                              tmp_bson ("{'_id': 'hello'}"),
-                                              NULL /* opts */,
-                                              NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (
+      test_fixture->coll, tmp_bson ("{'_id': 'hello'}"), NULL /* opts */, NULL /* read prefs */);
    ASSERT_CURSOR_DONE (cursor);
    ASSERT_CMPSTR (cursor->ns, test_fixture->ns);
    mongoc_cursor_destroy (cursor);
@@ -219,25 +195,17 @@ getmore (test_fixture_t *test_fixture)
    const bson_t *found;
 
    /* Insert two documents. */
-   ret = mongoc_collection_insert_one (test_fixture->coll,
-                                       tmp_bson ("{'_id': 'hello'}"),
-                                       NULL /* opts */,
-                                       NULL /* reply */,
-                                       &error);
+   ret = mongoc_collection_insert_one (
+      test_fixture->coll, tmp_bson ("{'_id': 'hello'}"), NULL /* opts */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
-   ret = mongoc_collection_insert_one (test_fixture->coll,
-                                       tmp_bson ("{'_id': 'world'}"),
-                                       NULL /* opts */,
-                                       NULL /* reply */,
-                                       &error);
+   ret = mongoc_collection_insert_one (
+      test_fixture->coll, tmp_bson ("{'_id': 'world'}"), NULL /* opts */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
    /* Find each document back in two separate batches. */
-   cursor = mongoc_collection_find_with_opts (test_fixture->coll,
-                                              tmp_bson ("{}"),
-                                              tmp_bson ("{'batchSize': 1}"),
-                                              NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (
+      test_fixture->coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL /* read prefs */);
    ret = mongoc_cursor_next (cursor, &found);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error) && ret, error);
    ASSERT_MATCH (found, "{'_id': 'hello'}");
@@ -263,8 +231,7 @@ change_stream (test_fixture_t *test_fixture)
    mongoc_client_session_t *client_session;
    bson_t opts_w_session;
 
-   client_session = mongoc_client_start_session (
-      test_fixture->client, NULL /* opts */, &error);
+   client_session = mongoc_client_start_session (test_fixture->client, NULL /* opts */, &error);
    ASSERT_OR_PRINT (client_session, error);
    bson_init (&opts_w_session);
    ret = mongoc_client_session_append (client_session, &opts_w_session, &error);
@@ -272,29 +239,22 @@ change_stream (test_fixture_t *test_fixture)
 
    /* Create a change stream. Do all operations within a session, to guarantee
     * change stream sees the subsequent insert operation. */
-   change_stream = mongoc_collection_watch (
-      test_fixture->coll, tmp_bson ("{}"), &opts_w_session);
+   change_stream = mongoc_collection_watch (test_fixture->coll, tmp_bson ("{}"), &opts_w_session);
    ASSERT_CMPSTR (change_stream->db, test_fixture->ns_db);
    ASSERT_CMPSTR (change_stream->coll, test_fixture->ns_coll);
 
    /* Insert. */
-   ret = mongoc_collection_insert_one (test_fixture->coll,
-                                       tmp_bson ("{'_id': 'hello'}"),
-                                       NULL /* opts */,
-                                       NULL /* reply */,
-                                       &error);
+   ret = mongoc_collection_insert_one (
+      test_fixture->coll, tmp_bson ("{'_id': 'hello'}"), NULL /* opts */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
    /* Get a change stream event. */
    ret = mongoc_change_stream_next (change_stream, &found);
-   ASSERT_OR_PRINT (
-      !mongoc_change_stream_error_document (change_stream, &error, NULL) && ret,
-      error);
-   ASSERT_MATCH (
-      found,
-      "{'operationType': 'insert', 'ns': { 'db': '%s', 'coll': '%s' }}",
-      test_fixture->ns_db,
-      test_fixture->ns_coll);
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (change_stream, &error, NULL) && ret, error);
+   ASSERT_MATCH (found,
+                 "{'operationType': 'insert', 'ns': { 'db': '%s', 'coll': '%s' }}",
+                 test_fixture->ns_db,
+                 test_fixture->ns_coll);
 
    mongoc_change_stream_destroy (change_stream);
    mongoc_client_session_destroy (client_session);
@@ -312,22 +272,18 @@ client_command (test_fixture_t *test_fixture)
    bool ret;
    bson_error_t error;
 
-   cursor = mongoc_client_command (
-      test_fixture->client,
-      test_fixture->ns_db,
-      MONGOC_QUERY_NONE,
-      0 /* skip */,
-      0 /* limit */,
-      0 /* batch size */,
-      tmp_bson ("{'listCollections': 1, 'filter': {'name': '%s'}}",
-                test_fixture->ns_coll),
-      NULL /* fields */,
-      NULL /* read prefs */);
+   cursor = mongoc_client_command (test_fixture->client,
+                                   test_fixture->ns_db,
+                                   MONGOC_QUERY_NONE,
+                                   0 /* skip */,
+                                   0 /* limit */,
+                                   0 /* batch size */,
+                                   tmp_bson ("{'listCollections': 1, 'filter': {'name': '%s'}}", test_fixture->ns_coll),
+                                   NULL /* fields */,
+                                   NULL /* read prefs */);
    ret = mongoc_cursor_next (cursor, &found);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error) && ret, error);
-   ASSERT_MATCH (found,
-                 "{'cursor': {'firstBatch': [{'name': '%s'}]}}",
-                 test_fixture->ns_coll);
+   ASSERT_MATCH (found, "{'cursor': {'firstBatch': [{'name': '%s'}]}}", test_fixture->ns_coll);
    mongoc_cursor_destroy (cursor);
 }
 
@@ -341,21 +297,18 @@ database_command (test_fixture_t *test_fixture)
    bool ret;
    bson_error_t error;
 
-   cursor = mongoc_database_command (
-      test_fixture->db,
-      MONGOC_QUERY_NONE,
-      0 /* skip */,
-      0 /* limit */,
-      0 /* batch size */,
-      tmp_bson ("{'listCollections': 1, 'filter': {'name': '%s'}}",
-                test_fixture->ns_coll),
-      NULL /* fields */,
-      NULL /* read prefs */);
+   cursor =
+      mongoc_database_command (test_fixture->db,
+                               MONGOC_QUERY_NONE,
+                               0 /* skip */,
+                               0 /* limit */,
+                               0 /* batch size */,
+                               tmp_bson ("{'listCollections': 1, 'filter': {'name': '%s'}}", test_fixture->ns_coll),
+                               NULL /* fields */,
+                               NULL /* read prefs */);
    ret = mongoc_cursor_next (cursor, &found);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error) && ret, error);
-   ASSERT_MATCH (found,
-                 "{'cursor': {'firstBatch': [{'name': '%s'}]}}",
-                 test_fixture->ns_coll);
+   ASSERT_MATCH (found, "{'cursor': {'firstBatch': [{'name': '%s'}]}}", test_fixture->ns_coll);
    mongoc_cursor_destroy (cursor);
 }
 
@@ -369,30 +322,24 @@ collection_command (test_fixture_t *test_fixture)
    bool ret;
    bson_error_t error;
 
-   cursor = mongoc_collection_command (
-      test_fixture->coll,
-      MONGOC_QUERY_NONE,
-      0 /* skip */,
-      0 /* limit */,
-      0 /* batch size */,
-      tmp_bson ("{'listCollections': 1, 'filter': {'name': '%s'}}",
-                test_fixture->ns_coll),
-      NULL /* fields */,
-      NULL /* read prefs */);
+   cursor =
+      mongoc_collection_command (test_fixture->coll,
+                                 MONGOC_QUERY_NONE,
+                                 0 /* skip */,
+                                 0 /* limit */,
+                                 0 /* batch size */,
+                                 tmp_bson ("{'listCollections': 1, 'filter': {'name': '%s'}}", test_fixture->ns_coll),
+                                 NULL /* fields */,
+                                 NULL /* read prefs */);
    ret = mongoc_cursor_next (cursor, &found);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error) && ret, error);
-   ASSERT_MATCH (found,
-                 "{'cursor': {'firstBatch': [{'name': '%s'}]}}",
-                 test_fixture->ns_coll);
+   ASSERT_MATCH (found, "{'cursor': {'firstBatch': [{'name': '%s'}]}}", test_fixture->ns_coll);
    mongoc_cursor_destroy (cursor);
 }
 
 /* Check whether a collection exists. */
 static void
-_check_existence (mongoc_client_t *client,
-                  char *ns_db,
-                  char *ns_coll,
-                  bool should_exist)
+_check_existence (mongoc_client_t *client, char *ns_db, char *ns_coll, bool should_exist)
 {
    mongoc_database_t *db;
    char **db_names;
@@ -405,10 +352,8 @@ _check_existence (mongoc_client_t *client,
    ASSERT (client);
 
    db = mongoc_client_get_database (client, ns_db);
-   db_names = mongoc_client_get_database_names_with_opts (
-      client, NULL /* opts */, &error);
-   coll_names = mongoc_database_get_collection_names_with_opts (
-      db, NULL /* opts */, &error);
+   db_names = mongoc_client_get_database_names_with_opts (client, NULL /* opts */, &error);
+   coll_names = mongoc_database_get_collection_names_with_opts (db, NULL /* opts */, &error);
 
    for (iter = db_names; *iter != NULL; ++iter) {
       if (0 == strcmp (ns_db, *iter)) {
@@ -455,15 +400,11 @@ collection_rename (test_fixture_t *test_fixture)
    new_ns = bson_strdup_printf ("%s.%s", new_db, new_coll);
 
    /* Insert to create source namespace. */
-   ret = mongoc_collection_insert_one (test_fixture->coll,
-                                       tmp_bson ("{'_id': 'hello'}"),
-                                       NULL /* opts */,
-                                       NULL /* reply */,
-                                       &error);
+   ret = mongoc_collection_insert_one (
+      test_fixture->coll, tmp_bson ("{'_id': 'hello'}"), NULL /* opts */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
-   ret = mongoc_collection_rename (
-      test_fixture->coll, new_db, new_coll, true, &error);
+   ret = mongoc_collection_rename (test_fixture->coll, new_db, new_coll, true, &error);
    ASSERT_OR_PRINT (ret, error);
 
    /* The fields in the collection struct are updated to the new names. */
@@ -533,8 +474,7 @@ unsupported_long_coll (void *unused)
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "test", long_coll);
    /* Insert. */
-   ret = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'x': 1}"), NULL /* opts */, NULL /* reply */, &error);
+   ret = mongoc_collection_insert_one (coll, tmp_bson ("{'x': 1}"), NULL /* opts */, NULL /* reply */, &error);
    BSON_ASSERT (!ret);
    /* Error code changed in 4.0 and the message in 4.2. Just validate an error
     * happened. */
@@ -564,8 +504,7 @@ unsupported_long_db (void)
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, long_db, "test");
    /* Insert. */
-   ret = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'x': 1}"), NULL /* opts */, NULL /* reply */, &error);
+   ret = mongoc_collection_insert_one (coll, tmp_bson ("{'x': 1}"), NULL /* opts */, NULL /* reply */, &error);
 
    BSON_ASSERT (!ret);
    /* Error code changed in 3.4. Just validate an error happened. */
@@ -580,45 +519,40 @@ test_long_namespace_install (TestSuite *suite)
 {
    /* MongoDB 4.4 (wire version 9) introduced support for long namespaces in
     * SERVER-32959 */
-   TestSuite_AddFullWithTestFn (
-      suite,
-      "/long_namespace/client_command",
-      run_test,
-      NULL /* dtor */,
-      client_command,
-      test_framework_skip_if_max_wire_version_less_than_9);
+   TestSuite_AddFullWithTestFn (suite,
+                                "/long_namespace/client_command",
+                                run_test,
+                                NULL /* dtor */,
+                                client_command,
+                                test_framework_skip_if_max_wire_version_less_than_9);
 
-   TestSuite_AddFullWithTestFn (
-      suite,
-      "/long_namespace/database_command",
-      run_test,
-      NULL /* dtor */,
-      database_command,
-      test_framework_skip_if_max_wire_version_less_than_9);
+   TestSuite_AddFullWithTestFn (suite,
+                                "/long_namespace/database_command",
+                                run_test,
+                                NULL /* dtor */,
+                                database_command,
+                                test_framework_skip_if_max_wire_version_less_than_9);
 
-   TestSuite_AddFullWithTestFn (
-      suite,
-      "/long_namespace/collection_command",
-      run_test,
-      NULL /* dtor */,
-      collection_command,
-      test_framework_skip_if_max_wire_version_less_than_9);
+   TestSuite_AddFullWithTestFn (suite,
+                                "/long_namespace/collection_command",
+                                run_test,
+                                NULL /* dtor */,
+                                collection_command,
+                                test_framework_skip_if_max_wire_version_less_than_9);
 
-   TestSuite_AddFullWithTestFn (
-      suite,
-      "/long_namespace/crud",
-      run_test,
-      NULL /* dtor */,
-      crud,
-      test_framework_skip_if_max_wire_version_less_than_9);
+   TestSuite_AddFullWithTestFn (suite,
+                                "/long_namespace/crud",
+                                run_test,
+                                NULL /* dtor */,
+                                crud,
+                                test_framework_skip_if_max_wire_version_less_than_9);
 
-   TestSuite_AddFullWithTestFn (
-      suite,
-      "/long_namespace/getmore",
-      run_test,
-      NULL /* dtor */,
-      getmore,
-      test_framework_skip_if_max_wire_version_less_than_9);
+   TestSuite_AddFullWithTestFn (suite,
+                                "/long_namespace/getmore",
+                                run_test,
+                                NULL /* dtor */,
+                                getmore,
+                                test_framework_skip_if_max_wire_version_less_than_9);
 
    TestSuite_AddFullWithTestFn (suite,
                                 "/long_namespace/change_stream",
@@ -628,14 +562,13 @@ test_long_namespace_install (TestSuite *suite)
                                 test_framework_skip_if_not_rs_version_9,
                                 test_framework_skip_if_no_sessions);
 
-   TestSuite_AddFullWithTestFn (
-      suite,
-      "/long_namespace/collection_rename",
-      run_test,
-      NULL /* dtor */,
-      collection_rename,
-      test_framework_skip_if_max_wire_version_less_than_9,
-      test_framework_skip_if_mongos);
+   TestSuite_AddFullWithTestFn (suite,
+                                "/long_namespace/collection_rename",
+                                run_test,
+                                NULL /* dtor */,
+                                collection_rename,
+                                test_framework_skip_if_max_wire_version_less_than_9,
+                                test_framework_skip_if_mongos);
 
    TestSuite_AddFull (suite,
                       "/long_namespace/unsupported_long_coll",
@@ -644,6 +577,5 @@ test_long_namespace_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_more_than_8);
 
-   TestSuite_AddLive (
-      suite, "/long_namespace/unsupported_long_db", unsupported_long_db);
+   TestSuite_AddLive (suite, "/long_namespace/unsupported_long_db", unsupported_long_db);
 }

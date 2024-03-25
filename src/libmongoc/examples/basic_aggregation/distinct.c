@@ -21,16 +21,14 @@ distinct (mongoc_database_t *database)
                        BCON_DOUBLE (1.0),
                        "}",
                        "}");
-   res =
-      mongoc_database_command_simple (database, command, NULL, &reply, &error);
+   res = mongoc_database_command_simple (database, command, NULL, &reply, &error);
    if (!res) {
       fprintf (stderr, "Error with distinct: %s\n", error.message);
       goto cleanup;
    }
 
    /* Do something with reply (in this case iterate through the values) */
-   if (!(bson_iter_init_find (&iter, &reply, "values") &&
-         BSON_ITER_HOLDS_ARRAY (&iter) &&
+   if (!(bson_iter_init_find (&iter, &reply, "values") && BSON_ITER_HOLDS_ARRAY (&iter) &&
          bson_iter_recurse (&iter, &array_iter))) {
       fprintf (stderr, "Couldn't extract \"values\" field from response\n");
       goto cleanup;

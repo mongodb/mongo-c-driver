@@ -50,35 +50,28 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
-   if (!_mongoc_cyrus_new_from_cluster (
-          &sasl, cluster, stream, sd->host.host, error)) {
+   if (!_mongoc_cyrus_new_from_cluster (&sasl, cluster, stream, sd->host.host, error)) {
       return false;
    }
 
    for (;;) {
-      mongoc_cmd_parts_init (
-         &parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &cmd);
+      mongoc_cmd_parts_init (&parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &cmd);
       parts.prohibit_lsid = true;
 
       /* If this is the first step, input buffer is NULL. */
       bson_free (outbuf);
       outbuf = NULL;
       outbuf_len = 0;
-      if (!_mongoc_cyrus_step (
-             &sasl, inbuf, inbuf_len, &outbuf, &outbuf_len, error)) {
+      if (!_mongoc_cyrus_step (&sasl, inbuf, inbuf_len, &outbuf, &outbuf_len, error)) {
          goto failure;
       }
 
       bson_init (&cmd);
 
       if (sasl.step == 1) {
-         _mongoc_cluster_build_sasl_start (&cmd,
-                                           sasl.credentials.mechanism,
-                                           (const char *) outbuf,
-                                           outbuf_len);
+         _mongoc_cluster_build_sasl_start (&cmd, sasl.credentials.mechanism, (const char *) outbuf, outbuf_len);
       } else {
-         _mongoc_cluster_build_sasl_continue (
-            &cmd, conv_id, (const char *) outbuf, outbuf_len);
+         _mongoc_cluster_build_sasl_continue (&cmd, conv_id, (const char *) outbuf, outbuf_len);
       }
 
       TRACE ("SASL: authenticating (step %d)", sasl.step);
@@ -92,8 +85,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
          goto failure;
       }
 
-      if (!mongoc_cluster_run_command_private (
-             cluster, &parts.assembled, &reply, error)) {
+      if (!mongoc_cluster_run_command_private (cluster, &parts.assembled, &reply, error)) {
          mongoc_server_stream_cleanup (server_stream);
          bson_destroy (&cmd);
          bson_destroy (&reply);
@@ -103,16 +95,14 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
 
       bson_destroy (&cmd);
 
-      if (bson_iter_init_find (&iter, &reply, "done") &&
-          bson_iter_as_bool (&iter)) {
+      if (bson_iter_init_find (&iter, &reply, "done") && bson_iter_as_bool (&iter)) {
          bson_destroy (&reply);
          break;
       }
 
       conv_id = _mongoc_cluster_get_conversation_id (&reply);
 
-      if (!bson_iter_init_find (&iter, &reply, "payload") ||
-          !BSON_ITER_HOLDS_UTF8 (&iter)) {
+      if (!bson_iter_init_find (&iter, &reply, "payload") || !BSON_ITER_HOLDS_UTF8 (&iter)) {
          MONGOC_DEBUG ("SASL: authentication failed");
          bson_destroy (&reply);
          bson_set_error (error,

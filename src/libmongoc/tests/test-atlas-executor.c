@@ -38,7 +38,7 @@ void (*original_sigint_handler) (int) = NULL;
 static void
 sigint_handler (int sigint)
 {
-   assert (sigint == SIGINT);
+   BSON_ASSERT (sigint == SIGINT);
    operation_loop_terminated = true;
    signal (SIGINT, original_sigint_handler);
 }
@@ -73,17 +73,11 @@ main (int argc, char **argv)
    TestSuite_Init_Atlas (&suite, argc, argv);
 
    bson_error_t error;
-   bson_t *const bson =
-      bson_new_from_json ((const uint8_t *) argv[1], -1, &error);
+   bson_t *const bson = bson_new_from_json ((const uint8_t *) argv[1], -1, &error);
    ASSERT_OR_PRINT (bson, error);
 
-   TestSuite_AddFull (&suite,
-                      "test",
-                      (TestFuncWC) &run_one_test_file,
-                      (TestFuncDtor) &bson_destroy,
-                      bson,
-                      TestSuite_CheckLive,
-                      NULL);
+   TestSuite_AddFull (
+      &suite, "test", (TestFuncWC) &run_one_test_file, (TestFuncDtor) &bson_destroy, bson, TestSuite_CheckLive, NULL);
 
    mongoc_init ();
    TestSuite_Run_Atlas (&suite);

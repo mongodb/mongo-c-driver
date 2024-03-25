@@ -142,10 +142,7 @@ mongoc_stream_flush (mongoc_stream_t *stream)
  * Returns: the number of bytes written, or -1 upon failure.
  */
 ssize_t
-mongoc_stream_writev (mongoc_stream_t *stream,
-                      mongoc_iovec_t *iov,
-                      size_t iovcnt,
-                      int32_t timeout_msec)
+mongoc_stream_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
    ssize_t ret;
 
@@ -180,10 +177,7 @@ mongoc_stream_writev (mongoc_stream_t *stream,
  * Returns: -1 on failure, otherwise the number of bytes written.
  */
 ssize_t
-mongoc_stream_write (mongoc_stream_t *stream,
-                     void *buf,
-                     size_t count,
-                     int32_t timeout_msec)
+mongoc_stream_write (mongoc_stream_t *stream, void *buf, size_t count, int32_t timeout_msec)
 {
    mongoc_iovec_t iov;
    ssize_t ret;
@@ -219,11 +213,8 @@ mongoc_stream_write (mongoc_stream_t *stream,
  * Returns: the number of bytes read or -1 on failure.
  */
 ssize_t
-mongoc_stream_readv (mongoc_stream_t *stream,
-                     mongoc_iovec_t *iov,
-                     size_t iovcnt,
-                     size_t min_bytes,
-                     int32_t timeout_msec)
+mongoc_stream_readv (
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
 {
    ssize_t ret;
 
@@ -260,11 +251,7 @@ mongoc_stream_readv (mongoc_stream_t *stream,
  * Returns: -1 on failure, otherwise the number of bytes read.
  */
 ssize_t
-mongoc_stream_read (mongoc_stream_t *stream,
-                    void *buf,
-                    size_t count,
-                    size_t min_bytes,
-                    int32_t timeout_msec)
+mongoc_stream_read (mongoc_stream_t *stream, void *buf, size_t count, size_t min_bytes, int32_t timeout_msec)
 {
    mongoc_iovec_t iov;
    ssize_t ret;
@@ -286,11 +273,7 @@ mongoc_stream_read (mongoc_stream_t *stream,
 
 
 int
-mongoc_stream_setsockopt (mongoc_stream_t *stream,
-                          int level,
-                          int optname,
-                          void *optval,
-                          mongoc_socklen_t optlen)
+mongoc_stream_setsockopt (mongoc_stream_t *stream, int level, int optname, void *optval, mongoc_socklen_t optlen)
 {
    BSON_ASSERT_PARAM (stream);
 
@@ -332,20 +315,16 @@ mongoc_stream_get_tls_stream (mongoc_stream_t *stream) /* IN */
 {
    BSON_ASSERT_PARAM (stream);
 
-   for (; stream && stream->type != MONGOC_STREAM_TLS;
-        stream = stream->get_base_stream (stream))
+   for (; stream && stream->type != MONGOC_STREAM_TLS; stream = stream->get_base_stream (stream))
       ;
 
    return stream;
 }
 
 ssize_t
-mongoc_stream_poll (mongoc_stream_poll_t *streams,
-                    size_t nstreams,
-                    int32_t timeout)
+mongoc_stream_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
 {
-   mongoc_stream_poll_t *poller =
-      (mongoc_stream_poll_t *) bson_malloc (sizeof (*poller) * nstreams);
+   mongoc_stream_poll_t *poller = (mongoc_stream_poll_t *) bson_malloc (sizeof (*poller) * nstreams);
 
    int last_type = 0;
    ssize_t rval = -1;
@@ -423,11 +402,8 @@ mongoc_stream_should_retry (mongoc_stream_t *stream)
 }
 
 bool
-_mongoc_stream_writev_full (mongoc_stream_t *stream,
-                            mongoc_iovec_t *iov,
-                            size_t iovcnt,
-                            int64_t timeout_msec,
-                            bson_error_t *error)
+_mongoc_stream_writev_full (
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int64_t timeout_msec, bson_error_t *error)
 {
    size_t total_bytes = 0;
    ssize_t r;
@@ -442,8 +418,7 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "timeout_msec value %" PRId64
-                      " exceeds supported 32-bit range",
+                      "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
                       timeout_msec);
       RETURN (false);
    }
@@ -473,8 +448,8 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "Failure to send all requested bytes (only sent: %" PRIu64
-                      "/%zu in %" PRId64 "ms) during socket delivery",
+                      "Failure to send all requested bytes (only sent: %" PRIu64 "/%zu in %" PRId64
+                      "ms) during socket delivery",
                       (uint64_t) r,
                       total_bytes,
                       timeout_msec);

@@ -117,8 +117,7 @@ _mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opcode, /* IN */
    mongoc_matcher_op_t *op;
 
    BSON_ASSERT (left);
-   BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_OR) &&
-                (opcode <= MONGOC_MATCHER_OPCODE_NOR));
+   BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_OR) && (opcode <= MONGOC_MATCHER_OPCODE_NOR));
 
    op = BSON_ALIGNED_ALLOC0 (mongoc_matcher_op_t);
    op->logical.base.opcode = opcode;
@@ -298,8 +297,7 @@ _mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists, /* IN */
    BSON_ASSERT (exists);
    BSON_ASSERT (bson);
 
-   found = (bson_iter_init (&iter, bson) &&
-            bson_iter_find_descendant (&iter, exists->path, &desc));
+   found = (bson_iter_init (&iter, bson) && bson_iter_find_descendant (&iter, exists->path, &desc));
 
    return (found == exists->exists);
 }
@@ -332,8 +330,7 @@ _mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type, /* IN */
    BSON_ASSERT (type);
    BSON_ASSERT (bson);
 
-   if (bson_iter_init (&iter, bson) &&
-       bson_iter_find_descendant (&iter, type->path, &desc)) {
+   if (bson_iter_init (&iter, bson) && bson_iter_find_descendant (&iter, type->path, &desc)) {
       return (bson_iter_type (&iter) == type->type);
    }
 
@@ -371,8 +368,7 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not_, /* IN */
 
 
 #define _TYPE_CODE(l, r) ((((int) (l)) << 8) | ((int) (r)))
-#define _NATIVE_COMPARE(op, t1, t2) \
-   (bson_iter##t2 (iter) op bson_iter##t1 (compare_iter))
+#define _NATIVE_COMPARE(op, t1, t2) (bson_iter##t2 (iter) op bson_iter##t1 (compare_iter))
 #define _EQ_COMPARE(t1, t2) _NATIVE_COMPARE (==, t1, t2)
 #define _NE_COMPARE(t1, t2) _NATIVE_COMPARE (!=, t1, t2)
 #define _GT_COMPARE(t1, t2) _NATIVE_COMPARE (>, t1, t2)
@@ -604,9 +600,7 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
       return _GT_COMPARE (_int64, _int64);
 
    default:
-      MONGOC_WARNING ("Implement for (Type(%d) > Type(%d))",
-                      bson_iter_type (compare_iter),
-                      bson_iter_type (iter));
+      MONGOC_WARNING ("Implement for (Type(%d) > Type(%d))", bson_iter_type (compare_iter), bson_iter_type (iter));
       break;
    }
 
@@ -675,9 +669,7 @@ _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
       return _GTE_COMPARE (_int64, _int64);
 
    default:
-      MONGOC_WARNING ("Implement for (Type(%d) >= Type(%d))",
-                      bson_iter_type (compare_iter),
-                      bson_iter_type (iter));
+      MONGOC_WARNING ("Implement for (Type(%d) >= Type(%d))", bson_iter_type (compare_iter), bson_iter_type (iter));
       break;
    }
 
@@ -710,8 +702,7 @@ _mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare, /* IN */
    op.base.opcode = MONGOC_MATCHER_OPCODE_EQ;
    op.path = compare->path;
 
-   if (!BSON_ITER_HOLDS_ARRAY (&compare->iter) ||
-       !bson_iter_recurse (&compare->iter, &op.iter)) {
+   if (!BSON_ITER_HOLDS_ARRAY (&compare->iter) || !bson_iter_recurse (&compare->iter, &op.iter)) {
       return false;
    }
 
@@ -786,9 +777,7 @@ _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare, /* IN */
       return _LT_COMPARE (_int64, _int64);
 
    default:
-      MONGOC_WARNING ("Implement for (Type(%d) < Type(%d))",
-                      bson_iter_type (compare_iter),
-                      bson_iter_type (iter));
+      MONGOC_WARNING ("Implement for (Type(%d) < Type(%d))", bson_iter_type (compare_iter), bson_iter_type (iter));
       break;
    }
 
@@ -857,9 +846,7 @@ _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare, /* IN */
       return _LTE_COMPARE (_int64, _int64);
 
    default:
-      MONGOC_WARNING ("Implement for (Type(%d) <= Type(%d))",
-                      bson_iter_type (compare_iter),
-                      bson_iter_type (iter));
+      MONGOC_WARNING ("Implement for (Type(%d) <= Type(%d))", bson_iter_type (compare_iter), bson_iter_type (iter));
       break;
    }
 
@@ -944,8 +931,7 @@ _mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare, /* IN */
    BSON_ASSERT (bson);
 
    if (strchr (compare->path, '.')) {
-      if (!bson_iter_init (&tmp, bson) ||
-          !bson_iter_find_descendant (&tmp, compare->path, &iter)) {
+      if (!bson_iter_init (&tmp, bson) || !bson_iter_find_descendant (&tmp, compare->path, &iter)) {
          return false;
       }
    } else if (!bson_iter_init_find (&iter, bson, compare->path)) {
@@ -1004,14 +990,11 @@ _mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical, /* IN */
 
    switch ((int) logical->base.opcode) {
    case MONGOC_MATCHER_OPCODE_OR:
-      return (_mongoc_matcher_op_match (logical->left, bson) ||
-              _mongoc_matcher_op_match (logical->right, bson));
+      return (_mongoc_matcher_op_match (logical->left, bson) || _mongoc_matcher_op_match (logical->right, bson));
    case MONGOC_MATCHER_OPCODE_AND:
-      return (_mongoc_matcher_op_match (logical->left, bson) &&
-              _mongoc_matcher_op_match (logical->right, bson));
+      return (_mongoc_matcher_op_match (logical->left, bson) && _mongoc_matcher_op_match (logical->right, bson));
    case MONGOC_MATCHER_OPCODE_NOR:
-      return !(_mongoc_matcher_op_match (logical->left, bson) ||
-               _mongoc_matcher_op_match (logical->right, bson));
+      return !(_mongoc_matcher_op_match (logical->left, bson) || _mongoc_matcher_op_match (logical->right, bson));
    default:
       BSON_ASSERT (false);
       break;

@@ -1,3 +1,19 @@
+libbson 1.26.1
+==============
+
+Fixes:
+
+  * Use aligned alloc for `bson_array_builder_t`
+
+Thanks to everyone who contributed to the development of this release.
+
+  * 0x1 Louis
+
+libbson 1.26.0
+==============
+
+No changes since 1.25.4. Version incremented to match the libmongoc version.
+
 libbson 1.25.4
 ==============
 

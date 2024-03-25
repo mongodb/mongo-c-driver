@@ -23,10 +23,7 @@
  * bson_val_t is a convenience wrapper around a bson_value_t.
  */
 typedef struct _bson_val_t bson_val_t;
-typedef enum {
-   BSON_VAL_FLEXIBLE_NUMERICS = 1 << 0,
-   BSON_VAL_UNORDERED = 1 << 1
-} bson_val_comparison_flags_t;
+typedef enum { BSON_VAL_FLEXIBLE_NUMERICS = 1 << 0, BSON_VAL_UNORDERED = 1 << 1 } bson_val_comparison_flags_t;
 
 bson_val_t *
 bson_val_from_value (const bson_value_t *value);
@@ -80,9 +77,7 @@ int64_t
 bson_val_convert_int64 (const bson_val_t *val);
 
 bool
-bson_val_eq (const bson_val_t *a,
-             const bson_val_t *b,
-             bson_val_comparison_flags_t flags);
+bson_val_eq (const bson_val_t *a, const bson_val_t *b, bson_val_comparison_flags_t flags);
 
 bson_type_t
 bson_val_type (const bson_val_t *val);

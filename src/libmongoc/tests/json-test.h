@@ -65,16 +65,13 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
                         int max_paths);
 
 void
-assemble_path (const char *parent_path,
-               const char *child_name,
-               char *dst /* OUT */);
+assemble_path (const char *parent_path, const char *child_name, char *dst /* OUT */);
 
 mongoc_topology_description_type_t
 topology_type_from_test (const char *type);
 
 const mongoc_server_description_t *
-server_description_by_hostname (const mongoc_topology_description_t *topology,
-                                const char *address);
+server_description_by_hostname (const mongoc_topology_description_t *topology, const char *address);
 
 void
 process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology);
@@ -86,10 +83,7 @@ mongoc_server_description_type_t
 server_type_from_test (const char *type);
 
 void
-activate_fail_point (mongoc_client_t *client,
-                     const uint32_t server_id,
-                     const bson_t *test,
-                     const char *key);
+activate_fail_point (mongoc_client_t *client, const uint32_t server_id, const bson_t *test, const char *key);
 
 void
 deactivate_fail_points (mongoc_client_t *client, uint32_t server_id);
@@ -101,29 +95,19 @@ void
 json_test_config_cleanup (json_test_config_t *config);
 
 void
-_install_json_test_suite_with_check (TestSuite *suite,
-                                     const char *base,
-                                     const char *subdir,
-                                     test_hook callback,
-                                     ...);
+_install_json_test_suite_with_check (TestSuite *suite, const char *base, const char *subdir, test_hook callback, ...);
 
 void
-install_json_test_suite (TestSuite *suite,
-                         const char *base,
-                         const char *subdir,
-                         test_hook callback);
+install_json_test_suite (TestSuite *suite, const char *base, const char *subdir, test_hook callback);
 
 #define install_json_test_suite_with_check(_suite, _base, _subdir, ...) \
-   _install_json_test_suite_with_check (                                \
-      _suite, _base, _subdir, __VA_ARGS__, NULL)
+   _install_json_test_suite_with_check (_suite, _base, _subdir, __VA_ARGS__, NULL)
 
 void
 set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts);
 
 void
-insert_data (const char *db_name,
-             const char *collection_name,
-             const bson_t *scenario);
+insert_data (const char *db_name, const char *collection_name, const bson_t *scenario);
 
 bool
 check_scenario_version (const bson_t *scenario);

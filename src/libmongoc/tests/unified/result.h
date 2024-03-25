@@ -31,43 +31,28 @@ void
 result_destroy (result_t *result);
 
 void
-result_from_bulk_write (result_t *result,
-                        const bson_t *reply,
-                        const bson_error_t *error);
+result_from_bulk_write (result_t *result, const bson_t *reply, const bson_error_t *error);
 
 void
-result_from_insert_one (result_t *result,
-                        const bson_t *reply,
-                        const bson_error_t *error);
+result_from_insert_one (result_t *result, const bson_t *reply, const bson_error_t *error);
 
 void
-result_from_insert_many (result_t *result,
-                         const bson_t *reply,
-                         const bson_error_t *error);
+result_from_insert_many (result_t *result, const bson_t *reply, const bson_error_t *error);
 
 void
-result_from_delete (result_t *result,
-                    const bson_t *reply,
-                    const bson_error_t *error);
+result_from_delete (result_t *result, const bson_t *reply, const bson_error_t *error);
 
 void
-result_from_distinct (result_t *result,
-                      const bson_t *reply,
-                      const bson_error_t *error);
+result_from_distinct (result_t *result, const bson_t *reply, const bson_error_t *error);
 
 void
-result_from_update_or_replace (result_t *result,
-                               const bson_t *reply,
-                               const bson_error_t *error);
+result_from_update_or_replace (result_t *result, const bson_t *reply, const bson_error_t *error);
 
 void
 result_from_cursor (result_t *result, mongoc_cursor_t *cursor);
 
 void
-result_from_val_and_reply (result_t *result,
-                           const bson_val_t *value,
-                           const bson_t *reply,
-                           const bson_error_t *error);
+result_from_val_and_reply (result_t *result, const bson_val_t *value, const bson_t *reply, const bson_error_t *error);
 
 void
 result_from_ok (result_t *result);
@@ -82,10 +67,6 @@ bson_t *
 rewrite_bulk_write_result (const bson_t *bulk_write_result);
 
 bool
-result_check (result_t *result,
-              entity_map_t *em,
-              bson_val_t *expect_result,
-              bson_t *expect_error,
-              bson_error_t *error);
+result_check (result_t *result, entity_map_t *em, bson_val_t *expect_result, bson_t *expect_error, bson_error_t *error);
 
 #endif /* UNIFIED_OPERATION_RESULT_H */

@@ -47,8 +47,7 @@ server_opening (const mongoc_apm_server_opening_t *event)
    context = (stats_t *) mongoc_apm_server_opening_get_context (event);
    context->server_opening_events++;
 
-   printf ("server opening: %s\n",
-           mongoc_apm_server_opening_get_host (event)->host_and_port);
+   printf ("server opening: %s\n", mongoc_apm_server_opening_get_host (event)->host_and_port);
 }
 
 
@@ -60,8 +59,7 @@ server_closed (const mongoc_apm_server_closed_t *event)
    context = (stats_t *) mongoc_apm_server_closed_get_context (event);
    context->server_closed_events++;
 
-   printf ("server closed: %s\n",
-           mongoc_apm_server_closed_get_host (event)->host_and_port);
+   printf ("server closed: %s\n", mongoc_apm_server_closed_get_host (event)->host_and_port);
 }
 
 
@@ -111,15 +109,13 @@ topology_changed (const mongoc_apm_topology_changed_t *event)
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
    /* it is safe, and unfortunately necessary, to cast away const here */
-   if (mongoc_topology_description_has_readable_server (
-          (mongoc_topology_description_t *) new_td, prefs)) {
+   if (mongoc_topology_description_has_readable_server ((mongoc_topology_description_t *) new_td, prefs)) {
       printf ("  secondary AVAILABLE\n");
    } else {
       printf ("  secondary UNAVAILABLE\n");
    }
 
-   if (mongoc_topology_description_has_writable_server (
-          (mongoc_topology_description_t *) new_td)) {
+   if (mongoc_topology_description_has_writable_server ((mongoc_topology_description_t *) new_td)) {
       printf ("  primary AVAILABLE\n");
    } else {
       printf ("  primary UNAVAILABLE\n");
@@ -160,33 +156,26 @@ server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
 {
    stats_t *context;
 
-   context =
-      (stats_t *) mongoc_apm_server_heartbeat_started_get_context (event);
+   context = (stats_t *) mongoc_apm_server_heartbeat_started_get_context (event);
    context->heartbeat_started_events++;
 
-   printf ("%s heartbeat started\n",
-           mongoc_apm_server_heartbeat_started_get_host (event)->host_and_port);
+   printf ("%s heartbeat started\n", mongoc_apm_server_heartbeat_started_get_host (event)->host_and_port);
 }
 
 
 static void
-server_heartbeat_succeeded (
-   const mongoc_apm_server_heartbeat_succeeded_t *event)
+server_heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    stats_t *context;
    char *reply;
 
-   context =
-      (stats_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
+   context = (stats_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
    context->heartbeat_succeeded_events++;
 
-   reply = bson_as_canonical_extended_json (
-      mongoc_apm_server_heartbeat_succeeded_get_reply (event), NULL);
+   reply = bson_as_canonical_extended_json (mongoc_apm_server_heartbeat_succeeded_get_reply (event), NULL);
 
    printf (
-      "%s heartbeat succeeded: %s\n",
-      mongoc_apm_server_heartbeat_succeeded_get_host (event)->host_and_port,
-      reply);
+      "%s heartbeat succeeded: %s\n", mongoc_apm_server_heartbeat_succeeded_get_host (event)->host_and_port, reply);
 
    bson_free (reply);
 }
@@ -202,9 +191,8 @@ server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
    context->heartbeat_failed_events++;
    mongoc_apm_server_heartbeat_failed_get_error (event, &error);
 
-   printf ("%s heartbeat failed: %s\n",
-           mongoc_apm_server_heartbeat_failed_get_host (event)->host_and_port,
-           error.message);
+   printf (
+      "%s heartbeat failed: %s\n", mongoc_apm_server_heartbeat_failed_get_host (event)->host_and_port, error.message);
 }
 
 
@@ -214,8 +202,7 @@ main (int argc, char *argv[])
    mongoc_client_t *client;
    mongoc_apm_callbacks_t *cbs;
    stats_t stats = {0};
-   const char *uri_string =
-      "mongodb://127.0.0.1/?appname=sdam-monitoring-example";
+   const char *uri_string = "mongodb://127.0.0.1/?appname=sdam-monitoring-example";
    mongoc_uri_t *uri;
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
@@ -251,11 +238,9 @@ main (int argc, char *argv[])
    mongoc_apm_set_topology_opening_cb (cbs, topology_opening);
    mongoc_apm_set_topology_closed_cb (cbs, topology_closed);
    mongoc_apm_set_server_heartbeat_started_cb (cbs, server_heartbeat_started);
-   mongoc_apm_set_server_heartbeat_succeeded_cb (cbs,
-                                                 server_heartbeat_succeeded);
+   mongoc_apm_set_server_heartbeat_succeeded_cb (cbs, server_heartbeat_succeeded);
    mongoc_apm_set_server_heartbeat_failed_cb (cbs, server_heartbeat_failed);
-   mongoc_client_set_apm_callbacks (
-      client, cbs, (void *) &stats /* context pointer */);
+   mongoc_client_set_apm_callbacks (client, cbs, (void *) &stats /* context pointer */);
 
    /* the driver connects on demand to perform first operation */
    BSON_APPEND_INT32 (&cmd, "buildinfo", 1);

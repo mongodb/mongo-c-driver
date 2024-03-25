@@ -1,2 +1,0 @@
-# Poetry is not used for building debian packages
-mongo-c-driver source: missing-prerequisite-for-pyproject-backend

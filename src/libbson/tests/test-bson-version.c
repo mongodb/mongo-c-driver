@@ -10,11 +10,9 @@ test_bson_version (void)
    ASSERT_CMPINT (bson_get_micro_version (), ==, BSON_MICRO_VERSION);
    ASSERT_CMPSTR (bson_get_version (), BSON_VERSION_S);
 
-   ASSERT (bson_check_version (
-      BSON_MAJOR_VERSION, BSON_MINOR_VERSION, BSON_MICRO_VERSION));
+   ASSERT (bson_check_version (BSON_MAJOR_VERSION, BSON_MINOR_VERSION, BSON_MICRO_VERSION));
 
-   ASSERT (!bson_check_version (
-      BSON_MAJOR_VERSION, BSON_MINOR_VERSION + 1, BSON_MICRO_VERSION));
+   ASSERT (!bson_check_version (BSON_MAJOR_VERSION, BSON_MINOR_VERSION + 1, BSON_MICRO_VERSION));
 }
 
 void

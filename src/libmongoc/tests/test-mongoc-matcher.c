@@ -115,8 +115,7 @@ test_mongoc_matcher_array (void)
    /* query matches itself */
    BSON_ASSERT (mongoc_matcher_match (matcher, query));
 
-   to_match =
-      BCON_NEW ("a", "[", BCON_INT32 (1), BCON_INT32 (2), "]", "b", "whatever");
+   to_match = BCON_NEW ("a", "[", BCON_INT32 (1), BCON_INT32 (2), "]", "b", "whatever");
    BSON_ASSERT (mongoc_matcher_match (matcher, to_match));
 
    /* query {a: [1, 2]} doesn't match {a: 1} */
@@ -130,8 +129,7 @@ test_mongoc_matcher_array (void)
    bson_destroy (should_fail);
 
    /* query {a: [1, 2]} doesn't match {a: [1, 2, 3]} */
-   should_fail =
-      BCON_NEW ("a", "[", BCON_INT32 (1), BCON_INT32 (2), BCON_INT32 (3), "]");
+   should_fail = BCON_NEW ("a", "[", BCON_INT32 (1), BCON_INT32 (2), BCON_INT32 (3), "]");
    BSON_ASSERT (!mongoc_matcher_match (matcher, should_fail));
    bson_destroy (should_fail);
 
@@ -225,28 +223,16 @@ test_mongoc_matcher_logic_ops (void)
       {"{\"$or\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1}", true},
       {"{\"$or\": [{\"a\": 1}, {\"b\": 2}]}", "{\"b\": 2}", true},
       {"{\"$or\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 3}", false},
-      {"{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}",
-       "{\"a\": 3}",
-       true},
-      {"{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}",
-       "{\"a\": -2}",
-       true},
-      {"{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}",
-       "{\"a\": 0}",
-       false},
+      {"{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}", "{\"a\": 3}", true},
+      {"{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}", "{\"a\": -2}", true},
+      {"{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}", "{\"a\": 0}", false},
       {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1, \"b\": 2}", true},
       {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1, \"b\": 1}", false},
       {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1}", false},
       {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"b\": 2}", false},
-      {"{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}",
-       "{\"a\": 0}",
-       true},
-      {"{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}",
-       "{\"a\": -2}",
-       false},
-      {"{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}",
-       "{\"a\": 1}",
-       false},
+      {"{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}", "{\"a\": 0}", true},
+      {"{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}", "{\"a\": -2}", false},
+      {"{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}", "{\"a\": 1}", false},
    };
 
    int n_tests = sizeof tests / sizeof (logic_op_test_t);
@@ -262,8 +248,7 @@ test_mongoc_matcher_logic_ops (void)
       test = tests[i];
       spec = bson_new_from_json ((uint8_t *) test.spec, -1, &error);
       if (!spec) {
-         test_error (
-            "couldn't parse JSON query:\n\n%s\n\n%s", test.spec, error.message);
+         test_error ("couldn't parse JSON query:\n\n%s\n\n%s", test.spec, error.message);
       }
 
       matcher = mongoc_matcher_new (spec, &error);
@@ -271,17 +256,12 @@ test_mongoc_matcher_logic_ops (void)
 
       doc = bson_new_from_json ((uint8_t *) test.doc, -1, &error);
       if (!doc) {
-         test_error ("couldn't parse JSON document:\n\n%s\n\n%s",
-                     test.doc,
-                     error.message);
+         test_error ("couldn't parse JSON document:\n\n%s\n\n%s", test.doc, error.message);
       }
 
       r = mongoc_matcher_match (matcher, doc);
       if (test.match != r) {
-         test_error ("query:\n\n%s\n\nshould %shave matched:\n\n%s",
-                     test.match ? "" : "not ",
-                     test.spec,
-                     test.doc);
+         test_error ("query:\n\n%s\n\nshould %shave matched:\n\n%s", test.match ? "" : "not ", test.spec, test.doc);
       }
 
       mongoc_matcher_destroy (matcher);
@@ -446,8 +426,7 @@ test_mongoc_matcher_eq_doc (void)
    BSON_ASSERT (mongoc_matcher_match (matcher, spec));
 
    /* {doc: {a: 1}} matches {doc: {a: 1}, foo: "whatever"} */
-   doc = BCON_NEW (
-      "doc", "{", "a", BCON_INT32 (1), "}", "foo", BCON_UTF8 ("whatever"));
+   doc = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "}", "foo", BCON_UTF8 ("whatever"));
    BSON_ASSERT (mongoc_matcher_match (matcher, doc));
    bson_destroy (doc);
 
@@ -502,15 +481,7 @@ test_mongoc_matcher_in_basic (void)
    bson_t *spec;
    bson_t doc = BSON_INITIALIZER;
 
-   spec = BCON_NEW ("key",
-                    "{",
-                    "$in",
-                    "[",
-                    BCON_INT32 (1),
-                    BCON_INT32 (2),
-                    BCON_INT32 (3),
-                    "]",
-                    "}");
+   spec = BCON_NEW ("key", "{", "$in", "[", BCON_INT32 (1), BCON_INT32 (2), BCON_INT32 (3), "]", "}");
 
    matcher = mongoc_matcher_new (spec, &error);
    r = mongoc_matcher_match (matcher, &doc);

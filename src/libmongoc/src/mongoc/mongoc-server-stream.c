@@ -66,8 +66,7 @@ mongoc_server_stream_cleanup (mongoc_server_stream_t *server_stream)
 int32_t
 mongoc_server_stream_max_bson_obj_size (mongoc_server_stream_t *server_stream)
 {
-   return COALESCE (server_stream->sd->max_bson_obj_size,
-                    MONGOC_DEFAULT_BSON_OBJ_SIZE);
+   return COALESCE (server_stream->sd->max_bson_obj_size, MONGOC_DEFAULT_BSON_OBJ_SIZE);
 }
 
 /*
@@ -83,8 +82,7 @@ mongoc_server_stream_max_bson_obj_size (mongoc_server_stream_t *server_stream)
 int32_t
 mongoc_server_stream_max_msg_size (mongoc_server_stream_t *server_stream)
 {
-   return COALESCE (server_stream->sd->max_msg_size,
-                    MONGOC_DEFAULT_MAX_MSG_SIZE);
+   return COALESCE (server_stream->sd->max_msg_size, MONGOC_DEFAULT_MAX_MSG_SIZE);
 }
 
 /*
@@ -98,9 +96,7 @@ mongoc_server_stream_max_msg_size (mongoc_server_stream_t *server_stream)
  */
 
 int32_t
-mongoc_server_stream_max_write_batch_size (
-   mongoc_server_stream_t *server_stream)
+mongoc_server_stream_max_write_batch_size (mongoc_server_stream_t *server_stream)
 {
-   return COALESCE (server_stream->sd->max_write_batch_size,
-                    MONGOC_DEFAULT_WRITE_BATCH_SIZE);
+   return COALESCE (server_stream->sd->max_write_batch_size, MONGOC_DEFAULT_WRITE_BATCH_SIZE);
 }

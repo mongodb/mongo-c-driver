@@ -36,9 +36,7 @@ mongoc_dump_mkdir_p (const char *path, int mode)
 
 
 static int
-mongoc_dump_collection (mongoc_client_t *client,
-                        const char *database,
-                        const char *collection)
+mongoc_dump_collection (mongoc_client_t *client, const char *database, const char *collection)
 {
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor;
@@ -66,8 +64,7 @@ mongoc_dump_collection (mongoc_client_t *client,
    cursor = mongoc_collection_find_with_opts (col, &query, NULL, NULL);
 
    while (mongoc_cursor_next (cursor, &doc)) {
-      if (BSON_UNLIKELY (doc->len !=
-                         fwrite (bson_get_data (doc), 1, doc->len, stream))) {
+      if (BSON_UNLIKELY (doc->len != fwrite (bson_get_data (doc), 1, doc->len, stream))) {
          fprintf (stderr, "Failed to write %u bytes to %s\n", doc->len, path);
          ret = EXIT_FAILURE;
          goto cleanup;
@@ -90,9 +87,7 @@ cleanup:
 
 
 static int
-mongoc_dump_database (mongoc_client_t *client,
-                      const char *database,
-                      const char *collection)
+mongoc_dump_database (mongoc_client_t *client, const char *database, const char *collection)
 {
    mongoc_database_t *db;
    bson_error_t error;
@@ -135,9 +130,7 @@ cleanup:
 
 
 static int
-mongoc_dump (mongoc_client_t *client,
-             const char *database,
-             const char *collection)
+mongoc_dump (mongoc_client_t *client, const char *database, const char *collection)
 {
    bson_error_t error;
    char **str;
@@ -154,8 +147,7 @@ mongoc_dump (mongoc_client_t *client,
       return mongoc_dump_database (client, database, collection);
    }
 
-   if (!(str = mongoc_client_get_database_names_with_opts (
-            client, NULL, &error))) {
+   if (!(str = mongoc_client_get_database_names_with_opts (client, NULL, &error))) {
       fprintf (stderr, "Failed to fetch database names: %s\n", error.message);
       return EXIT_FAILURE;
    }
@@ -231,12 +223,8 @@ main (int argc, char *argv[])
       }
    }
 
-   uri_string =
-      bson_strdup_printf ("mongodb://%s:%hu/%s?appname=dump-example&ssl=%s",
-                          host,
-                          port,
-                          database ? database : "",
-                          ssl ? "true" : "false");
+   uri_string = bson_strdup_printf (
+      "mongodb://%s:%hu/%s?appname=dump-example&ssl=%s", host, port, database ? database : "", ssl ? "true" : "false");
 
    uri = mongoc_uri_new_with_error (uri_string, &error);
    if (!uri) {
