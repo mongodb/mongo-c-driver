@@ -1143,6 +1143,14 @@ _state_machine_run (_state_machine_t *state_machine,
       case MONGOCRYPT_CTX_DONE:
          goto success;
          break;
+      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
+         bson_set_error (
+            error,
+            MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+            0,
+            "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB is unimplemented");
+         goto fail;
+         break;
       }
    }
 
