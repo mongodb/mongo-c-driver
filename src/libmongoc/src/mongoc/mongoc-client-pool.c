@@ -366,6 +366,9 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)
    BSON_ASSERT_PARAM (pool);
    BSON_ASSERT_PARAM (client);
 
+   /* reset sockettimeoutms to the default in case it was changed with mongoc_client_update_sockettimeoutms() */
+   mongoc_client_reset_sockettimeoutms (client);
+
    bson_mutex_lock (&pool->mutex);
    _mongoc_queue_push_head (&pool->queue, client);
 
