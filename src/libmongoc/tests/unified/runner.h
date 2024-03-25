@@ -66,10 +66,7 @@ typedef struct {
 
 /* Set server_id to 0 if the failpoint was not against a pinned mongos. */
 void
-register_failpoint (test_t *test,
-                    char *failpoint,
-                    char *client_id,
-                    uint32_t server_id);
+register_failpoint (test_t *test, char *failpoint, char *client_id, uint32_t server_id);
 
 /* Run a directory of test files through the unified test runner. */
 void

@@ -62,11 +62,9 @@ tail_collection (mongoc_collection_t *collection)
 
    while (true) {
       cursor = query_collection (collection, last_time);
-      while (!mongoc_cursor_error (cursor, &error) &&
-             mongoc_cursor_more (cursor)) {
+      while (!mongoc_cursor_error (cursor, &error) && mongoc_cursor_more (cursor)) {
          if (mongoc_cursor_next (cursor, &doc)) {
-            if (bson_iter_init_find (&iter, doc, "ts") &&
-                BSON_ITER_HOLDS_TIMESTAMP (&iter)) {
+            if (bson_iter_init_find (&iter, doc, "ts") && BSON_ITER_HOLDS_TIMESTAMP (&iter)) {
                bson_iter_timestamp (&iter, &last_time, NULL);
             }
             print_bson (doc);

@@ -70,8 +70,7 @@ is_test_file_skipped (test_file_t *test_file)
    skipped_unified_test_t *skip;
 
    for (skip = SKIPPED_TESTS; skip->file_description != NULL; skip++) {
-      if (!strcmp (skip->file_description, test_file->description) &&
-          skip->test_description == SKIP_ALL_TESTS) {
+      if (!strcmp (skip->file_description, test_file->description) && skip->test_description == SKIP_ALL_TESTS) {
          return true;
       }
    }
@@ -125,10 +124,7 @@ failpoint_destroy (failpoint_t *fp)
 
 /* Set server_id to 0 if the failpoint was not against a pinned mongos. */
 void
-register_failpoint (test_t *test,
-                    char *name,
-                    char *client_id,
-                    uint32_t server_id)
+register_failpoint (test_t *test, char *name, char *client_id, uint32_t server_id)
 {
    failpoint_t *fp = NULL;
 
@@ -155,22 +151,15 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
          goto done;
       }
 
-      disable_cmd =
-         tmp_bson ("{'configureFailPoint': '%s', 'mode': 'off' }", iter->name);
+      disable_cmd = tmp_bson ("{'configureFailPoint': '%s', 'mode': 'off' }", iter->name);
       if (iter->server_id != 0) {
-         if (!mongoc_client_command_simple_with_server_id (client,
-                                                           "admin",
-                                                           disable_cmd,
-                                                           rp,
-                                                           iter->server_id,
-                                                           NULL /* reply */,
-                                                           error)) {
+         if (!mongoc_client_command_simple_with_server_id (
+                client, "admin", disable_cmd, rp, iter->server_id, NULL /* reply */, error)) {
             bson_destroy (disable_cmd);
             goto done;
          }
       } else {
-         if (!mongoc_client_command_simple (
-                client, "admin", disable_cmd, rp, NULL /* reply */, error)) {
+         if (!mongoc_client_command_simple (client, "admin", disable_cmd, rp, NULL /* reply */, error)) {
             bson_destroy (disable_cmd);
             goto done;
          }
@@ -206,21 +195,18 @@ get_topology_type (mongoc_client_t *client);
 static bool
 is_topology_type_sharded (const char *topology_type)
 {
-   return 0 == strcmp ("sharded", topology_type) ||
-          0 == strcmp ("sharded-replicaset", topology_type);
+   return 0 == strcmp ("sharded", topology_type) || 0 == strcmp ("sharded-replicaset", topology_type);
 }
 
 static bool
-is_topology_type_compatible (const char *test_topology_type,
-                             const char *server_topology_type)
+is_topology_type_compatible (const char *test_topology_type, const char *server_topology_type)
 {
    if (0 == strcmp (test_topology_type, server_topology_type)) {
       return true;
    }
    /* If a requirement specifies a "sharded" topology and server is of type
     * "sharded-replicaset", that is also compatible. */
-   return 0 == strcmp (test_topology_type, "sharded") &&
-          is_topology_type_sharded (server_topology_type);
+   return 0 == strcmp (test_topology_type, "sharded") && is_topology_type_sharded (server_topology_type);
 }
 
 /* This callback tracks the set of server IDs for all connected servers.
@@ -236,8 +222,7 @@ on_topology_changed (const mongoc_apm_topology_changed_t *event)
    size_t sds_len;
    size_t i;
 
-   test_runner =
-      (test_runner_t *) mongoc_apm_topology_changed_get_context (event);
+   test_runner = (test_runner_t *) mongoc_apm_topology_changed_get_context (event);
    _mongoc_array_clear (&test_runner->server_ids);
    td = mongoc_apm_topology_changed_get_new_description (event);
    sds = mongoc_topology_description_get_servers (td, &sds_len);
@@ -276,8 +261,7 @@ test_runner_get_all_server_ids (test_runner_t *test_runner, mongoc_array_t *out)
  * See also: Spec section "Terminating Open Transactions"
  */
 static bool
-test_runner_terminate_open_transactions (test_runner_t *test_runner,
-                                         bson_error_t *error)
+test_runner_terminate_open_transactions (test_runner_t *test_runner, bson_error_t *error)
 {
    bson_t *kill_all_sessions_cmd = NULL;
    bool ret = false;
@@ -303,22 +287,20 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner,
       for (i = 0; i < server_ids.len; i++) {
          uint32_t server_id = _mongoc_array_index (&server_ids, uint32_t, i);
 
-         cmd_ret = mongoc_client_command_simple_with_server_id (
-            test_runner->internal_client,
-            "admin",
-            kill_all_sessions_cmd,
-            NULL /* read prefs. */,
-            server_id,
-            NULL,
-            &cmd_error);
+         cmd_ret = mongoc_client_command_simple_with_server_id (test_runner->internal_client,
+                                                                "admin",
+                                                                kill_all_sessions_cmd,
+                                                                NULL /* read prefs. */,
+                                                                server_id,
+                                                                NULL,
+                                                                &cmd_error);
 
          /* Ignore error code 11601 as a workaround for SERVER-38335. */
          if (!cmd_ret && cmd_error.code != 11601) {
-            test_set_error (
-               error,
-               "Unexpected error running killAllSessions on server (%d): %s",
-               (int) server_id,
-               cmd_error.message);
+            test_set_error (error,
+                            "Unexpected error running killAllSessions on server (%d): %s",
+                            (int) server_id,
+                            cmd_error.message);
             _mongoc_array_destroy (&server_ids);
             goto done;
          }
@@ -326,19 +308,12 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner,
       _mongoc_array_destroy (&server_ids);
    } else {
       /* Run on primary. */
-      cmd_ret = mongoc_client_command_simple (test_runner->internal_client,
-                                              "admin",
-                                              kill_all_sessions_cmd,
-                                              NULL /* read prefs. */,
-                                              NULL,
-                                              &cmd_error);
+      cmd_ret = mongoc_client_command_simple (
+         test_runner->internal_client, "admin", kill_all_sessions_cmd, NULL /* read prefs. */, NULL, &cmd_error);
 
       /* Ignore error code 11601 as a workaround for SERVER-38335. */
       if (!cmd_ret && cmd_error.code != 11601) {
-         test_set_error (
-            error,
-            "Unexpected error running killAllSessions on primary: %s",
-            cmd_error.message);
+         test_set_error (error, "Unexpected error running killAllSessions on primary: %s", cmd_error.message);
          goto done;
       }
    }
@@ -363,8 +338,7 @@ test_runner_new (void)
    {
       mongoc_uri_t *const uri = test_framework_get_uri ();
 
-      test_runner->internal_client =
-         test_framework_client_new_from_uri (uri, NULL);
+      test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
 
       /* In load balanced mode, the internal client must use the
        * SINGLE_LB_MONGOS_URI. */
@@ -382,18 +356,15 @@ test_runner_new (void)
    {
       mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new ();
       mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
-      mongoc_client_set_apm_callbacks (
-         test_runner->internal_client, callbacks, test_runner);
+      mongoc_client_set_apm_callbacks (test_runner->internal_client, callbacks, test_runner);
       mongoc_apm_callbacks_destroy (callbacks);
    }
 
    test_framework_set_ssl_opts (test_runner->internal_client);
 
-   mongoc_client_set_error_api (test_runner->internal_client,
-                                MONGOC_ERROR_API_VERSION_2);
+   mongoc_client_set_error_api (test_runner->internal_client, MONGOC_ERROR_API_VERSION_2);
 
-   test_runner->topology_type =
-      get_topology_type (test_runner->internal_client);
+   test_runner->topology_type = get_topology_type (test_runner->internal_client);
    server_semver (test_runner->internal_client, &test_runner->server_version);
 
    test_runner->is_serverless = test_framework_is_serverless ();
@@ -406,15 +377,9 @@ test_runner_new (void)
    {
       bson_t reply;
       /* Cache server parameters to check runOnRequirements. */
-      if (!mongoc_client_command_simple (test_runner->internal_client,
-                                         "admin",
-                                         tmp_bson ("{'getParameter': '*'}"),
-                                         NULL,
-                                         &reply,
-                                         &error)) {
-         test_error ("error getting server parameters: %s, full reply: %s",
-                     error.message,
-                     tmp_json (&reply));
+      if (!mongoc_client_command_simple (
+             test_runner->internal_client, "admin", tmp_bson ("{'getParameter': '*'}"), NULL, &reply, &error)) {
+         test_error ("error getting server parameters: %s, full reply: %s", error.message, tmp_json (&reply));
       }
       test_runner->server_parameters = bson_copy (&reply);
       bson_destroy (&reply);
@@ -445,10 +410,8 @@ test_file_new (test_runner_t *test_runner, bson_t *bson)
    parser = bson_parser_new ();
    bson_parser_utf8 (parser, "description", &test_file->description);
    bson_parser_utf8 (parser, "schemaVersion", &schema_version);
-   bson_parser_array_optional (
-      parser, "runOnRequirements", &test_file->run_on_requirements);
-   bson_parser_array_optional (
-      parser, "createEntities", &test_file->create_entities);
+   bson_parser_array_optional (parser, "runOnRequirements", &test_file->run_on_requirements);
+   bson_parser_array_optional (parser, "createEntities", &test_file->create_entities);
    bson_parser_array_optional (parser, "initialData", &test_file->initial_data);
    bson_parser_doc_optional (parser, "_yamlAnchors", &test_file->yaml_anchors);
    bson_parser_array (parser, "tests", &test_file->tests);
@@ -482,8 +445,7 @@ test_new (test_file_t *test_file, bson_t *bson)
    test->test_file = test_file;
    parser = bson_parser_new ();
    bson_parser_utf8 (parser, "description", &test->description);
-   bson_parser_array_optional (
-      parser, "runOnRequirements", &test->run_on_requirements);
+   bson_parser_array_optional (parser, "runOnRequirements", &test->run_on_requirements);
    bson_parser_utf8_optional (parser, "skipReason", &test->skip_reason);
    bson_parser_array (parser, "operations", &test->operations);
    bson_parser_array_optional (parser, "expectEvents", &test->expect_events);
@@ -522,8 +484,7 @@ is_replset (bson_t *hello_reply)
       return true;
    }
 
-   if (bson_has_field (hello_reply, "isreplicaset") &&
-       bson_lookup_bool (hello_reply, "isreplicaset") == true) {
+   if (bson_has_field (hello_reply, "isreplicaset") && bson_lookup_bool (hello_reply, "isreplicaset") == true) {
       return true;
    }
 
@@ -560,17 +521,11 @@ get_topology_type (mongoc_client_t *client)
       return "load-balanced";
    }
 
-   ret = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'hello': 1}"), NULL, &reply, &error);
+   ret = mongoc_client_command_simple (client, "admin", tmp_bson ("{'hello': 1}"), NULL, &reply, &error);
    if (!ret) {
       bson_destroy (&reply);
       ret = mongoc_client_command_simple (
-         client,
-         "admin",
-         tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
-         NULL,
-         &reply,
-         &error);
+         client, "admin", tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"), NULL, &reply, &error);
    }
    ASSERT_OR_PRINT (ret, error);
 
@@ -586,13 +541,10 @@ get_topology_type (mongoc_client_t *client)
        * collection. */
       is_sharded_replset = true;
       config_shards = mongoc_client_get_collection (client, "config", "shards");
-      cursor = mongoc_collection_find_with_opts (config_shards,
-                                                 tmp_bson ("{}"),
-                                                 NULL /* opts */,
-                                                 NULL /* read prefs */);
+      cursor =
+         mongoc_collection_find_with_opts (config_shards, tmp_bson ("{}"), NULL /* opts */, NULL /* read prefs */);
       if (mongoc_cursor_error (cursor, &error)) {
-         test_error ("Attempting to query config.shards collection failed: %s",
-                     error.message);
+         test_error ("Attempting to query config.shards collection failed: %s", error.message);
       }
       while (mongoc_cursor_next (cursor, &shard_doc)) {
          const char *host = bson_lookup_utf8 (shard_doc, "host");
@@ -619,15 +571,12 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {
-      "1.8",  /* fully supported through this version */
-      "1.12", /* partially supported (expectedError.errorResponse assertions) */
-      "1.18" /* partially supported (additional properties in kmsProviders) */};
+   const char *supported_version_strs[] = {"1.8",  /* fully supported through this version */
+                                           "1.12", /* partially supported (expectedError.errorResponse assertions) */
+                                           "1.18" /* partially supported (additional properties in kmsProviders) */};
    int i;
 
-   for (i = 0; i < sizeof (supported_version_strs) /
-                      sizeof (supported_version_strs[0]);
-        i++) {
+   for (i = 0; i < sizeof (supported_version_strs) / sizeof (supported_version_strs[0]); i++) {
       semver_t supported_version;
 
       semver_parse (supported_version_strs[i], &supported_version);
@@ -643,8 +592,7 @@ check_schema_version (test_file_t *test_file)
       }
    }
 
-   test_error ("Unsupported schema version: %s",
-               semver_to_string (&test_file->schema_version));
+   test_error ("Unsupported schema version: %s", semver_to_string (&test_file->schema_version));
 }
 
 static bool
@@ -665,10 +613,9 @@ check_run_on_requirement (test_runner_t *test_runner,
 
          semver_parse (bson_iter_utf8 (&req_iter, NULL), &min_server_version);
          if (semver_cmp (server_version, &min_server_version) < 0) {
-            *fail_reason = bson_strdup_printf (
-               "Server version(%s) is lower than minServerVersion(%s)",
-               semver_to_string (server_version),
-               semver_to_string (&min_server_version));
+            *fail_reason = bson_strdup_printf ("Server version(%s) is lower than minServerVersion(%s)",
+                                               semver_to_string (server_version),
+                                               semver_to_string (&min_server_version));
             return false;
          }
          continue;
@@ -679,10 +626,9 @@ check_run_on_requirement (test_runner_t *test_runner,
 
          semver_parse (bson_iter_utf8 (&req_iter, NULL), &max_server_version);
          if (semver_cmp (server_version, &max_server_version) > 0) {
-            *fail_reason = bson_strdup_printf (
-               "Server version(%s) is higher than maxServerVersion (%s)",
-               semver_to_string (server_version),
-               semver_to_string (&max_server_version));
+            *fail_reason = bson_strdup_printf ("Server version(%s) is higher than maxServerVersion (%s)",
+                                               semver_to_string (server_version),
+                                               semver_to_string (&max_server_version));
             return false;
          }
          continue;
@@ -696,10 +642,8 @@ check_run_on_requirement (test_runner_t *test_runner,
          bson_iter_bson (&req_iter, &topologies);
          BSON_FOREACH (&topologies, topology_iter)
          {
-            const char *test_topology_type =
-               bson_iter_utf8 (&topology_iter, NULL);
-            if (is_topology_type_compatible (test_topology_type,
-                                             server_topology_type)) {
+            const char *test_topology_type = bson_iter_utf8 (&topology_iter, NULL);
+            if (is_topology_type_compatible (test_topology_type, server_topology_type)) {
                found = true;
                continue;
             }
@@ -707,9 +651,7 @@ check_run_on_requirement (test_runner_t *test_runner,
 
          if (!found) {
             *fail_reason = bson_strdup_printf (
-               "Topology (%s) was not found among listed topologies: %s",
-               server_topology_type,
-               tmp_json (&topologies));
+               "Topology (%s) was not found among listed topologies: %s", server_topology_type, tmp_json (&topologies));
             return false;
          }
          continue;
@@ -729,8 +671,7 @@ check_run_on_requirement (test_runner_t *test_runner,
          bson_val_destroy (actual_val);
          bson_val_destroy (expected_val);
          if (!matched) {
-            *fail_reason = bson_strdup_printf ("serverParameters mismatch: %s",
-                                               error.message);
+            *fail_reason = bson_strdup_printf ("serverParameters mismatch: %s", error.message);
             return false;
          }
          continue;
@@ -743,8 +684,7 @@ check_run_on_requirement (test_runner_t *test_runner,
             continue;
          } else if (0 == strcmp (serverless_mode, "require")) {
             if (!test_runner->is_serverless) {
-               *fail_reason =
-                  bson_strdup_printf ("Not running in serverless mode");
+               *fail_reason = bson_strdup_printf ("Not running in serverless mode");
                return false;
             }
 
@@ -770,9 +710,8 @@ check_run_on_requirement (test_runner_t *test_runner,
             continue;
          }
 
-         *fail_reason = bson_strdup_printf (
-            "Server does not match auth requirement, test %s authentication.",
-            auth_requirement ? "requires" : "forbids");
+         *fail_reason = bson_strdup_printf ("Server does not match auth requirement, test %s authentication.",
+                                            auth_requirement ? "requires" : "forbids");
 
          return false;
       }
@@ -784,11 +723,10 @@ check_run_on_requirement (test_runner_t *test_runner,
 
          semver_parse ("4.2.0", &min_server_version);
          if (semver_cmp (server_version, &min_server_version) < 0) {
-            *fail_reason =
-               bson_strdup_printf ("Server version %s is lower than "
-                                   "minServerVersion %s required by CSFLE",
-                                   semver_to_string (server_version),
-                                   semver_to_string (&min_server_version));
+            *fail_reason = bson_strdup_printf ("Server version %s is lower than "
+                                               "minServerVersion %s required by CSFLE",
+                                               semver_to_string (server_version),
+                                               semver_to_string (&min_server_version));
             return false;
          }
 
@@ -796,9 +734,8 @@ check_run_on_requirement (test_runner_t *test_runner,
             continue;
          }
 
-         *fail_reason =
-            bson_strdup_printf ("CSFLE is not allowed but libmongoc was built "
-                                "with MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
+         *fail_reason = bson_strdup_printf ("CSFLE is not allowed but libmongoc was built "
+                                            "with MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
 
          return false;
 #else
@@ -809,9 +746,8 @@ check_run_on_requirement (test_runner_t *test_runner,
             continue;
          }
 
-         *fail_reason = bson_strdup_printf (
-            "CSFLE is required but libmongoc was built "
-            "without MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
+         *fail_reason = bson_strdup_printf ("CSFLE is required but libmongoc was built "
+                                            "without MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
 
          return false;
 #endif /* !defined(MONGOC_CLIENT_SIDE_ENCRYPTION) */
@@ -823,9 +759,7 @@ check_run_on_requirement (test_runner_t *test_runner,
 }
 
 static bool
-check_run_on_requirements (test_runner_t *test_runner,
-                           bson_t *run_on_requirements,
-                           const char **reason)
+check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requirements, const char **reason)
 {
    bson_string_t *fail_reasons = NULL;
    bool requirements_satisfied = false;
@@ -848,17 +782,14 @@ check_run_on_requirements (test_runner_t *test_runner,
          break;
       }
 
-      bson_string_append_printf (fail_reasons,
-                                 "- Requirement %s failed because: %s\n",
-                                 bson_iter_key (&iter),
-                                 fail_reason);
+      bson_string_append_printf (
+         fail_reasons, "- Requirement %s failed because: %s\n", bson_iter_key (&iter), fail_reason);
       bson_free (fail_reason);
    }
 
    *reason = NULL;
    if (!requirements_satisfied) {
-      (*reason) =
-         tmp_str ("runOnRequirements not satisfied:\n%s", fail_reasons->str);
+      (*reason) = tmp_str ("runOnRequirements not satisfied:\n%s", fail_reasons->str);
    }
    bson_string_free (fail_reasons, true);
    return requirements_satisfied;
@@ -917,11 +848,9 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          create_opts = bson_new ();
          mongoc_write_concern_append (wc, create_opts);
       }
-      coll = mongoc_client_get_collection (
-         test_runner->internal_client, database_name, collection_name);
+      coll = mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name);
       if (!mongoc_collection_drop_with_opts (coll, drop_opts, error)) {
-         if (error->code != 26 &&
-             (NULL == strstr (error->message, "ns not found"))) {
+         if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
             /* This is not a "ns not found" error. Fail the test. */
             goto loopexit;
          }
@@ -933,8 +862,7 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       if (bson_count_keys (documents) > 0) {
          bson_iter_t documents_iter;
 
-         bulk_insert =
-            mongoc_collection_create_bulk_operation_with_opts (coll, bulk_opts);
+         bulk_insert = mongoc_collection_create_bulk_operation_with_opts (coll, bulk_opts);
 
          BSON_FOREACH (documents, documents_iter)
          {
@@ -950,10 +878,8 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       } else {
          mongoc_collection_t *new_coll = NULL;
          /* Test does not need data inserted, just create the collection. */
-         db = mongoc_client_get_database (test_runner->internal_client,
-                                          database_name);
-         new_coll = mongoc_database_create_collection (
-            db, collection_name, create_opts, error);
+         db = mongoc_client_get_database (test_runner->internal_client, database_name);
+         new_coll = mongoc_database_create_collection (db, collection_name, create_opts, error);
          if (!new_coll) {
             goto loopexit;
          }
@@ -1023,8 +949,7 @@ test_run_operations (test_t *test, bson_error_t *error)
       bson_iter_bson (&iter, &op_bson);
 
       if (!operation_run (test, &op_bson, error)) {
-         test_diagnostics_error_info ("running operation: %s",
-                                      tmp_json (&op_bson));
+         test_diagnostics_error_info ("running operation: %s", tmp_json (&op_bson));
          goto done;
       }
    }
@@ -1035,10 +960,7 @@ done:
 }
 
 static bool
-test_check_event (test_t *test,
-                  bson_t *expected,
-                  event_t *actual,
-                  bson_error_t *error)
+test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t *error)
 {
    bool ret = false;
    bson_iter_t iter;
@@ -1053,9 +975,7 @@ test_check_event (test_t *test,
    bool *expected_has_server_connection_id = NULL;
 
    if (bson_count_keys (expected) != 1) {
-      test_set_error (error,
-                      "expected 1 key in expected event, but got: %s",
-                      tmp_json (expected));
+      test_set_error (error, "expected 1 key in expected event, but got: %s", tmp_json (expected));
       goto done;
    }
 
@@ -1063,17 +983,12 @@ test_check_event (test_t *test,
    bson_iter_next (&iter);
    expected_event_type = bson_iter_key (&iter);
    if (0 != bson_strcasecmp (expected_event_type, actual->type)) {
-      test_set_error (error,
-                      "expected event type: %s, but got: %s",
-                      expected_event_type,
-                      actual->type);
+      test_set_error (error, "expected event type: %s, but got: %s", expected_event_type, actual->type);
       goto done;
    }
 
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      test_set_error (error,
-                      "unexpected non-document event assertion: %s",
-                      tmp_json (expected));
+      test_set_error (error, "unexpected non-document event assertion: %s", tmp_json (expected));
       goto done;
    }
    bson_iter_bson (&iter, &expected_bson);
@@ -1084,8 +999,7 @@ test_check_event (test_t *test,
    bson_parser_utf8_optional (bp, "databaseName", &expected_database_name);
    bson_parser_doc_optional (bp, "reply", &expected_reply);
    bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
-   bson_parser_bool_optional (
-      bp, "hasServerConnectionId", &expected_has_server_connection_id);
+   bson_parser_bool_optional (bp, "hasServerConnectionId", &expected_has_server_connection_id);
    if (!bson_parser_parse (bp, &expected_bson, error)) {
       goto done;
    }
@@ -1102,8 +1016,7 @@ test_check_event (test_t *test,
       expected_val = bson_val_from_bson (expected_command);
       actual_val = bson_val_from_bson (actual->command);
 
-      if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, false, error)) {
+      if (!entity_map_match (test->entity_map, expected_val, actual_val, false, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;
@@ -1112,29 +1025,20 @@ test_check_event (test_t *test,
       bson_val_destroy (actual_val);
    }
 
-   if (expected_command_name &&
-       0 != strcmp (expected_command_name, actual->command_name)) {
-      test_set_error (error,
-                      "expected commandName: %s, but got: %s",
-                      expected_command_name,
-                      actual->command_name);
+   if (expected_command_name && 0 != strcmp (expected_command_name, actual->command_name)) {
+      test_set_error (error, "expected commandName: %s, but got: %s", expected_command_name, actual->command_name);
       goto done;
    }
 
-   if (expected_database_name &&
-       0 != strcmp (expected_database_name, actual->database_name)) {
-      test_set_error (error,
-                      "expected databaseName: %s, but got: %s",
-                      expected_database_name,
-                      actual->database_name);
+   if (expected_database_name && 0 != strcmp (expected_database_name, actual->database_name)) {
+      test_set_error (error, "expected databaseName: %s, but got: %s", expected_database_name, actual->database_name);
       goto done;
    }
 
    if (expected_reply) {
       bson_val_t *expected_val = bson_val_from_bson (expected_reply);
       bson_val_t *actual_val = bson_val_from_bson (actual->reply);
-      if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, false, error)) {
+      if (!entity_map_match (test->entity_map, expected_val, actual_val, false, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;
@@ -1148,8 +1052,7 @@ test_check_event (test_t *test,
       bool has_service_id = false;
 
       bson_oid_to_string (&actual->service_id, oid_str);
-      has_service_id =
-         0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
+      has_service_id = 0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
 
       if (*expected_has_service_id && !has_service_id) {
          test_error ("expected serviceId, but got none");
@@ -1161,16 +1064,14 @@ test_check_event (test_t *test,
    }
 
    if (expected_has_server_connection_id) {
-      const bool has_server_connection_id =
-         actual->server_connection_id != MONGOC_NO_SERVER_CONNECTION_ID;
+      const bool has_server_connection_id = actual->server_connection_id != MONGOC_NO_SERVER_CONNECTION_ID;
 
       if (*expected_has_server_connection_id && !has_server_connection_id) {
          test_error ("expected server connectionId, but got none");
       }
 
       if (!*expected_has_server_connection_id && has_server_connection_id) {
-         test_error ("expected no server connectionId, but got %" PRId64,
-                     actual->server_connection_id);
+         test_error ("expected no server connectionId, but got %" PRId64, actual->server_connection_id);
       }
    }
 
@@ -1181,9 +1082,7 @@ done:
 }
 
 static bool
-test_check_expected_events_for_client (test_t *test,
-                                       bson_t *expected_events_for_client,
-                                       bson_error_t *error)
+test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for_client, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = NULL;
@@ -1221,10 +1120,7 @@ test_check_expected_events_for_client (test_t *test,
 
    entity = entity_map_get (test->entity_map, client_id, error);
    if (0 != strcmp (entity->type, "client")) {
-      test_set_error (error,
-                      "expected entity %s to be client, got: %s",
-                      entity->id,
-                      entity->type);
+      test_set_error (error, "expected entity %s to be client, got: %s", entity->id, entity->type);
       goto done;
    }
 
@@ -1238,10 +1134,8 @@ test_check_expected_events_for_client (test_t *test,
       }
       bool too_few_events = actual_num_events < expected_num_events;
       if (too_few_events || too_many_events) {
-         test_set_error (error,
-                         "expected: %" PRIu32 " events but got %" PRIu32,
-                         expected_num_events,
-                         actual_num_events);
+         test_set_error (
+            error, "expected: %" PRIu32 " events but got %" PRIu32, expected_num_events, actual_num_events);
          goto done;
       }
    }
@@ -1253,13 +1147,11 @@ test_check_expected_events_for_client (test_t *test,
 
       bson_iter_bson (&iter, &expected_event);
       if (!eiter) {
-         test_set_error (
-            error, "could not find event: %s", tmp_json (&expected_event));
+         test_set_error (error, "could not find event: %s", tmp_json (&expected_event));
          goto done;
       }
       if (!test_check_event (test, &expected_event, eiter, error)) {
-         test_diagnostics_error_info ("checking for expected event: %s",
-                                      tmp_json (&expected_event));
+         test_diagnostics_error_info ("checking for expected event: %s", tmp_json (&expected_event));
          goto done;
       }
       eiter = eiter->next;
@@ -1272,8 +1164,7 @@ done:
          char *event_list_string = NULL;
 
          event_list_string = event_list_to_string (entity->events);
-         test_diagnostics_error_info ("all captured events:\n%s",
-                                      event_list_string);
+         test_diagnostics_error_info ("all captured events:\n%s", event_list_string);
          bson_free (event_list_string);
       }
    }
@@ -1296,10 +1187,8 @@ test_check_expected_events (test_t *test, bson_error_t *error)
    {
       bson_t expected_events_for_client;
       bson_iter_bson (&iter, &expected_events_for_client);
-      if (!test_check_expected_events_for_client (
-             test, &expected_events_for_client, error)) {
-         test_diagnostics_error_info ("checking expectations: %s",
-                                      tmp_json (&expected_events_for_client));
+      if (!test_check_expected_events_for_client (test, &expected_events_for_client, error)) {
+         test_diagnostics_error_info ("checking expectations: %s", tmp_json (&expected_events_for_client));
          goto done;
       }
    }
@@ -1311,9 +1200,7 @@ done:
 }
 
 static bool
-test_check_outcome_collection (test_t *test,
-                               bson_t *collection_data,
-                               bson_error_t *error)
+test_check_outcome_collection (test_t *test, bson_t *collection_data, bson_error_t *error)
 {
    bool ret = false;
    bson_parser_t *bp = NULL;
@@ -1339,16 +1226,12 @@ test_check_outcome_collection (test_t *test,
       goto done;
    }
 
-   coll = mongoc_client_get_collection (
-      test->test_file->test_runner->internal_client,
-      database_name,
-      collection_name);
+   coll = mongoc_client_get_collection (test->test_file->test_runner->internal_client, database_name, collection_name);
    opts = BCON_NEW ("sort", "{", "_id", BCON_INT32 (1), "}");
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   cursor = mongoc_collection_find_with_opts (
-      coll, tmp_bson ("{}"), tmp_bson ("{'sort': {'_id': 1}}"), rp);
+   cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), tmp_bson ("{'sort': {'_id': 1}}"), rp);
    /* Read the full cursor into a BSON array so error messages can include the
     * full list of documents. */
    actual_data = bson_new ();
@@ -1394,10 +1277,7 @@ test_check_outcome_collection (test_t *test,
 
 
       if (!bson_equal (actual_sorted, expected_sorted)) {
-         test_set_error (error,
-                         "expected %s, but got %s",
-                         tmp_json (expected_sorted),
-                         tmp_json (actual_sorted));
+         test_set_error (error, "expected %s, but got %s", tmp_json (expected_sorted), tmp_json (actual_sorted));
          bson_destroy (actual_sorted);
          bson_destroy (expected_sorted);
          goto done;
@@ -1493,16 +1373,11 @@ test_generate_atlas_results (test_t *test, bson_error_t *error)
 
    MONGOC_DEBUG ("generating events.json and results.json files...");
 
-   size_t *const iterations =
-      entity_map_get_size_t (test->entity_map, "iterations", NULL);
-   size_t *const successes =
-      entity_map_get_size_t (test->entity_map, "successes", NULL);
-   mongoc_array_t *const errors =
-      entity_map_get_bson_array (test->entity_map, "errors", NULL);
-   mongoc_array_t *const failures =
-      entity_map_get_bson_array (test->entity_map, "failures", NULL);
-   mongoc_array_t *const events =
-      entity_map_get_bson_array (test->entity_map, "events", NULL);
+   size_t *const iterations = entity_map_get_size_t (test->entity_map, "iterations", NULL);
+   size_t *const successes = entity_map_get_size_t (test->entity_map, "successes", NULL);
+   mongoc_array_t *const errors = entity_map_get_bson_array (test->entity_map, "errors", NULL);
+   mongoc_array_t *const failures = entity_map_get_bson_array (test->entity_map, "failures", NULL);
+   mongoc_array_t *const events = entity_map_get_bson_array (test->entity_map, "events", NULL);
 
    bson_t events_doc = BSON_INITIALIZER;
    bson_t results_doc = BSON_INITIALIZER;
@@ -1522,12 +1397,12 @@ test_generate_atlas_results (test_t *test, bson_error_t *error)
    const int perms = S_IRWXU;
 #endif
 
-   mongoc_stream_t *const events_file = mongoc_stream_file_new_for_path (
-      "events.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
+   mongoc_stream_t *const events_file =
+      mongoc_stream_file_new_for_path ("events.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
    ASSERT_WITH_MSG (events_file, "could not open events.json");
 
-   mongoc_stream_t *const results_file = mongoc_stream_file_new_for_path (
-      "results.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
+   mongoc_stream_t *const results_file =
+      mongoc_stream_file_new_for_path ("results.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
    ASSERT_WITH_MSG (results_file, "could not open results.json");
 
    size_t events_json_len = 0u;
@@ -1535,16 +1410,12 @@ test_generate_atlas_results (test_t *test, bson_error_t *error)
    char *const events_json = bson_as_json (&events_doc, &events_json_len);
    char *const results_json = bson_as_json (&results_doc, &results_json_len);
 
-   ASSERT_WITH_MSG (events_json,
-                    "failed to convert events BSON document to JSON");
-   ASSERT_WITH_MSG (results_json,
-                    "failed to convert results BSON document to JSON");
+   ASSERT_WITH_MSG (events_json, "failed to convert events BSON document to JSON");
+   ASSERT_WITH_MSG (results_json, "failed to convert results BSON document to JSON");
 
-   ASSERT_WITH_MSG (
-      mongoc_stream_write (events_file, events_json, events_json_len, 500) > 0,
-      "failed to write events to events.json");
-   ASSERT_WITH_MSG (mongoc_stream_write (
-                       results_file, results_json, results_json_len, 500) > 0,
+   ASSERT_WITH_MSG (mongoc_stream_write (events_file, events_json, events_json_len, 500) > 0,
+                    "failed to write events to events.json");
+   ASSERT_WITH_MSG (mongoc_stream_write (results_file, results_json, results_json_len, 500) > 0,
                     "failed to write results to results.json");
 
    bson_free (events_json);
@@ -1562,10 +1433,7 @@ test_generate_atlas_results (test_t *test, bson_error_t *error)
 }
 
 static bool
-run_distinct_on_each_mongos (test_t *test,
-                             char *db_name,
-                             char *coll_name,
-                             bson_error_t *error)
+run_distinct_on_each_mongos (test_t *test, char *db_name, char *coll_name, bson_error_t *error)
 {
    bool ret = false;
    bson_t *cmd = NULL;
@@ -1574,16 +1442,14 @@ run_distinct_on_each_mongos (test_t *test,
    cmd = BCON_NEW ("distinct", coll_name, "key", "x", "query", "{", "}");
 
    for (size_t i = 0u; i < runner->server_ids.len; i++) {
-      const uint32_t server_id =
-         _mongoc_array_index (&runner->server_ids, uint32_t, i);
-      if (!mongoc_client_command_simple_with_server_id (
-             test->test_file->test_runner->internal_client,
-             db_name,
-             cmd,
-             NULL /* read prefs */,
-             server_id,
-             NULL /* reply */,
-             error)) {
+      const uint32_t server_id = _mongoc_array_index (&runner->server_ids, uint32_t, i);
+      if (!mongoc_client_command_simple_with_server_id (test->test_file->test_runner->internal_client,
+                                                        db_name,
+                                                        cmd,
+                                                        NULL /* read prefs */,
+                                                        server_id,
+                                                        NULL /* reply */,
+                                                        error)) {
          goto done;
       }
    }
@@ -1604,8 +1470,7 @@ test_run_distinct_workaround (test_t *test, bson_error_t *error)
    mongoc_collection_t *coll = NULL;
 
    if (0 != strcmp (test->test_file->test_runner->topology_type, "sharded") &&
-       0 != strcmp (test->test_file->test_runner->topology_type,
-                    "sharded-replicaset")) {
+       0 != strcmp (test->test_file->test_runner->topology_type, "sharded-replicaset")) {
       ret = true;
       goto done;
    }
@@ -1626,9 +1491,7 @@ test_run_distinct_workaround (test_t *test, bson_error_t *error)
       bson_iter_t entity_iter;
 
       if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         test_set_error (error,
-                         "unexpected non-document createEntity: %s",
-                         bson_iter_key (&iter));
+         test_set_error (error, "unexpected non-document createEntity: %s", bson_iter_key (&iter));
          goto done;
       }
 
@@ -1639,9 +1502,7 @@ test_run_distinct_workaround (test_t *test, bson_error_t *error)
       }
 
       if (!BSON_ITER_HOLDS_DOCUMENT (&entity_iter)) {
-         test_set_error (error,
-                         "unexpected non-document in iter: %s",
-                         bson_iter_key (&entity_iter));
+         test_set_error (error, "unexpected non-document in iter: %s", bson_iter_key (&entity_iter));
          goto done;
       }
 
@@ -1694,37 +1555,28 @@ test_run (test_t *test, bson_error_t *error)
    test_runner = test_file->test_runner;
 
    if (is_test_skipped (test)) {
-      MONGOC_DEBUG (
-         "SKIPPING test '%s'. Reason: 'explicitly skipped in runner.c'",
-         test->description);
+      MONGOC_DEBUG ("SKIPPING test '%s'. Reason: 'explicitly skipped in runner.c'", test->description);
       ret = true;
       goto done;
    }
 
    subtest_selector = _mongoc_getenv ("MONGOC_JSON_SUBTEST");
-   if (subtest_selector &&
-       NULL == strstr (test->description, subtest_selector)) {
-      MONGOC_DEBUG (
-         "SKIPPING test '%s'. Reason: 'skipped by MONGOC_JSON_SUBTEST'",
-         test->description);
+   if (subtest_selector && NULL == strstr (test->description, subtest_selector)) {
+      MONGOC_DEBUG ("SKIPPING test '%s'. Reason: 'skipped by MONGOC_JSON_SUBTEST'", test->description);
       ret = true;
       goto done;
    }
 
    if (test->skip_reason != NULL) {
-      MONGOC_DEBUG ("SKIPPING test '%s'. Reason: '%s'",
-                    test->description,
-                    test->skip_reason);
+      MONGOC_DEBUG ("SKIPPING test '%s'. Reason: '%s'", test->description, test->skip_reason);
       ret = true;
       goto done;
    }
 
    if (test->run_on_requirements) {
       const char *reason;
-      if (!check_run_on_requirements (
-             test_runner, test->run_on_requirements, &reason)) {
-         MONGOC_DEBUG (
-            "SKIPPING test '%s'. Reason: '%s'", test->description, reason);
+      if (!check_run_on_requirements (test_runner, test->run_on_requirements, &reason)) {
+         MONGOC_DEBUG ("SKIPPING test '%s'. Reason: '%s'", test->description, reason);
          ret = true;
          goto done;
       }
@@ -1774,10 +1626,8 @@ done:
       MONGOC_DEBUG ("error cleaning up failpoints: %s", nonfatal_error.message);
    }
    /* always terminate transactions, even on test failure. */
-   if (!test_runner_terminate_open_transactions (test_runner,
-                                                 &nonfatal_error)) {
-      MONGOC_DEBUG ("error terminating transactions: %s",
-                    nonfatal_error.message);
+   if (!test_runner_terminate_open_transactions (test_runner, &nonfatal_error)) {
+      MONGOC_DEBUG ("error terminating transactions: %s", nonfatal_error.message);
    }
    bson_free (subtest_selector);
    return ret;
@@ -1798,20 +1648,15 @@ run_one_test_file (bson_t *bson)
    test_diagnostics_test_info ("test file: %s", test_file->description);
 
    if (is_test_file_skipped (test_file)) {
-      MONGOC_DEBUG (
-         "SKIPPING test file '%s'. Reason: 'explicitly skipped in runner.c'",
-         test_file->description);
+      MONGOC_DEBUG ("SKIPPING test file '%s'. Reason: 'explicitly skipped in runner.c'", test_file->description);
       goto done;
    }
 
    check_schema_version (test_file);
    if (test_file->run_on_requirements) {
       const char *reason;
-      if (!check_run_on_requirements (
-             test_runner, test_file->run_on_requirements, &reason)) {
-         MONGOC_DEBUG ("SKIPPING test file (%s). Reason:\n%s",
-                       test_file->description,
-                       reason);
+      if (!check_run_on_requirements (test_runner, test_file->run_on_requirements, &reason)) {
+         MONGOC_DEBUG ("SKIPPING test file (%s). Reason:\n%s", test_file->description, reason);
          goto done;
       }
    }
@@ -1845,12 +1690,8 @@ done:
 void
 run_unified_tests (TestSuite *suite, const char *base, const char *subdir)
 {
-   install_json_test_suite_with_check (suite,
-                                       base,
-                                       subdir,
-                                       &run_one_test_file,
-                                       TestSuite_CheckLive,
-                                       test_framework_skip_if_no_crypto);
+   install_json_test_suite_with_check (
+      suite, base, subdir, &run_one_test_file, TestSuite_CheckLive, test_framework_skip_if_no_crypto);
 }
 
 void

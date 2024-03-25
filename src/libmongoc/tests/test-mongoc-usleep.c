@@ -40,8 +40,7 @@ test_mongoc_usleep_custom (void)
 
    mongoc_uri_t *uri = mongoc_uri_copy (mock_server_get_uri (server));
    // Tell single-threaded clients to reconnect if an error occcurs.
-   mongoc_uri_set_option_as_bool (
-      uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
 
    mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
    ASSERT (client);
@@ -56,12 +55,8 @@ test_mongoc_usleep_custom (void)
    mongoc_client_set_usleep_impl (client, custom_usleep_impl, &last_sleep_dur);
 
    bson_error_t error;
-   future_t *future = future_client_command_simple (client,
-                                                    "db",
-                                                    tmp_bson ("{'ping': 1}"),
-                                                    NULL /* read prefs */,
-                                                    NULL,
-                                                    &error);
+   future_t *future =
+      future_client_command_simple (client, "db", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL, &error);
 
    // Client sends initial `isMaster`.
    {
@@ -77,12 +72,11 @@ test_mongoc_usleep_custom (void)
    {
       request_t *req = mock_server_receives_any_hello (server);
       ASSERT (req);
-      reply_to_request_simple (
-         req,
-         tmp_str ("{ 'minWireVersion': %d, 'maxWireVersion' : %d, "
-                  "'isWritablePrimary': true}",
-                  WIRE_VERSION_MIN,
-                  WIRE_VERSION_MAX));
+      reply_to_request_simple (req,
+                               tmp_str ("{ 'minWireVersion': %d, 'maxWireVersion' : %d, "
+                                        "'isWritablePrimary': true}",
+                                        WIRE_VERSION_MIN,
+                                        WIRE_VERSION_MAX));
       request_destroy (req);
    }
 
@@ -91,8 +85,7 @@ test_mongoc_usleep_custom (void)
 
    // Client sends "ping".
    {
-      request_t *req = mock_server_receives_msg (
-         server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
+      request_t *req = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
       ASSERT (req);
       reply_to_request_with_ok_and_destroy (req);
    }
@@ -110,6 +103,5 @@ void
 test_usleep_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Sleep/basic", test_mongoc_usleep_basic);
-   TestSuite_AddMockServerTest (
-      suite, "/Sleep/custom", test_mongoc_usleep_custom);
+   TestSuite_AddMockServerTest (suite, "/Sleep/custom", test_mongoc_usleep_custom);
 }

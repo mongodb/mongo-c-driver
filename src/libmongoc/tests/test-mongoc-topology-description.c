@@ -43,8 +43,7 @@ _test_has_readable_writable_server (bool pooled)
       client = mongoc_client_pool_pop (pool);
    }
 
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    mc_tpld_renew_ref (&td, topology);
@@ -123,19 +122,11 @@ test_get_servers (void)
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host (tdmod.new_td, "a");
    mongoc_topology_description_handle_hello (
-      tdmod.new_td,
-      sd_a->id,
-      tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"),
-      100,
-      NULL);
+      tdmod.new_td, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sd_c = _sd_for_host (tdmod.new_td, "c");
    mongoc_topology_description_handle_hello (
-      tdmod.new_td,
-      sd_c->id,
-      tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"),
-      100,
-      NULL);
+      tdmod.new_td, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sds = mongoc_topology_description_get_servers (tdmod.new_td, &n);
    ASSERT_CMPSIZE_T ((size_t) 2, ==, n);
@@ -155,10 +146,8 @@ test_get_servers (void)
    mongoc_uri_destroy (uri);
 }
 
-#define TV_1 \
-   "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
-#define TV_2 \
-   "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }"
+#define TV_1 "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
+#define TV_2 "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }"
 
 void
 _topology_changed (const mongoc_apm_topology_changed_t *event)
@@ -186,27 +175,18 @@ test_topology_version_equal (void)
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, _topology_changed);
-   mongoc_topology_set_apm_callbacks (
-      topology, tdmod.new_td, callbacks, &num_calls);
+   mongoc_topology_set_apm_callbacks (topology, tdmod.new_td, callbacks, &num_calls);
 
    sd = _sd_for_host (tdmod.new_td, "host");
    mongoc_topology_description_handle_hello (
-      tdmod.new_td,
-      sd->id,
-      tmp_bson ("{'ok': 1, 'topologyVersion': " TV_2 " }"),
-      100,
-      NULL);
+      tdmod.new_td, sd->id, tmp_bson ("{'ok': 1, 'topologyVersion': " TV_2 " }"), 100, NULL);
 
    ASSERT_CMPINT (num_calls, ==, 1);
 
    /* The subsequent hello has a topologyVersion that compares less, so the
     * hello skips. */
    mongoc_topology_description_handle_hello (
-      tdmod.new_td,
-      sd->id,
-      tmp_bson ("{'ok': 1, 'topologyVersion': " TV_1 " }"),
-      100,
-      NULL);
+      tdmod.new_td, sd->id, tmp_bson ("{'ok': 1, 'topologyVersion': " TV_1 " }"), 100, NULL);
 
    ASSERT_CMPINT (num_calls, ==, 1);
 
@@ -237,19 +217,11 @@ test_topology_description_new_copy (void)
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host (tdmod.new_td, "a");
    mongoc_topology_description_handle_hello (
-      tdmod.new_td,
-      sd_a->id,
-      tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"),
-      100,
-      NULL);
+      tdmod.new_td, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sd_c = _sd_for_host (tdmod.new_td, "c");
    mongoc_topology_description_handle_hello (
-      tdmod.new_td,
-      sd_c->id,
-      tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"),
-      100,
-      NULL);
+      tdmod.new_td, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    /* td was copied before original was updated */
    sds = mongoc_topology_description_get_servers (td_copy, &n);
@@ -286,24 +258,11 @@ test_topology_pool_clear (void)
    topology = mongoc_topology_new (uri, true);
    tdmod = mc_tpld_modify_begin (topology);
 
-   ASSERT_CMPUINT32 (0,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        tdmod.new_td, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (0,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        tdmod.new_td, 2, &kZeroServiceId));
-   _mongoc_topology_description_clear_connection_pool (
-      tdmod.new_td, 1, &kZeroServiceId);
-   ASSERT_CMPUINT32 (1,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        tdmod.new_td, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (0,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        tdmod.new_td, 2, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroServiceId));
+   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, 1, &kZeroServiceId);
+   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroServiceId));
 
    mongoc_uri_destroy (uri);
    mc_tpld_modify_drop (tdmod);
@@ -326,23 +285,11 @@ test_topology_pool_clear_by_serviceid (void)
    bson_oid_init_from_string (&oid_b, "BBBBBBBBBBBBBBBBBBBBBBBB");
 
    tdmod = mc_tpld_modify_begin (topology);
-   ASSERT_CMPUINT32 (0,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        tdmod.new_td, 1, &oid_a));
-   ASSERT_CMPUINT32 (0,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        tdmod.new_td, 1, &oid_b));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &oid_a));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &oid_b));
    _mongoc_topology_description_clear_connection_pool (tdmod.new_td, 1, &oid_a);
-   ASSERT_CMPUINT32 (1,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        tdmod.new_td, 1, &oid_a));
-   ASSERT_CMPUINT32 (0,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        tdmod.new_td, 1, &oid_b));
+   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &oid_a));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &oid_b));
 
    mongoc_uri_destroy (uri);
    mc_tpld_modify_drop (tdmod);
@@ -352,22 +299,11 @@ test_topology_pool_clear_by_serviceid (void)
 void
 test_topology_description_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite,
-                      "/TopologyDescription/readable_writable/single",
-                      test_has_readable_writable_server_single);
-   TestSuite_AddLive (suite,
-                      "/TopologyDescription/readable_writable/pooled",
-                      test_has_readable_writable_server_pooled);
+   TestSuite_AddLive (suite, "/TopologyDescription/readable_writable/single", test_has_readable_writable_server_single);
+   TestSuite_AddLive (suite, "/TopologyDescription/readable_writable/pooled", test_has_readable_writable_server_pooled);
    TestSuite_Add (suite, "/TopologyDescription/get_servers", test_get_servers);
-   TestSuite_Add (suite,
-                  "/TopologyDescription/topology_version_equal",
-                  test_topology_version_equal);
-   TestSuite_Add (suite,
-                  "/TopologyDescription/new_copy",
-                  test_topology_description_new_copy);
-   TestSuite_Add (
-      suite, "/TopologyDescription/pool_clear", test_topology_pool_clear);
-   TestSuite_Add (suite,
-                  "/TopologyDescription/pool_clear_by_serviceid",
-                  test_topology_pool_clear_by_serviceid);
+   TestSuite_Add (suite, "/TopologyDescription/topology_version_equal", test_topology_version_equal);
+   TestSuite_Add (suite, "/TopologyDescription/new_copy", test_topology_description_new_copy);
+   TestSuite_Add (suite, "/TopologyDescription/pool_clear", test_topology_pool_clear);
+   TestSuite_Add (suite, "/TopologyDescription/pool_clear_by_serviceid", test_topology_pool_clear_by_serviceid);
 }

@@ -77,8 +77,7 @@ corpus_test (bson_t *scenario,
    BSON_ASSERT (bson_iter_init_find (&iter, scenario, "bson_type"));
    /* like "0x0C */
    if (sscanf (bson_iter_utf8 (&iter, NULL), "%i", (int *) &bson_type) != 1) {
-      fprintf (
-         stderr, "Couldn't parse bson_type %s\n", bson_iter_utf8 (&iter, NULL));
+      fprintf (stderr, "Couldn't parse bson_type %s\n", bson_iter_utf8 (&iter, NULL));
       abort ();
    }
 
@@ -136,8 +135,7 @@ corpus_test (bson_t *scenario,
       BSON_ASSERT (bson_iter_recurse (&iter, &inner_iter));
       while (bson_iter_next (&inner_iter)) {
          bson_iter_t test_iter;
-         test_bson_decode_error_type_t test = {
-            scenario_description, bson_type, NULL};
+         test_bson_decode_error_type_t test = {scenario_description, bson_type, NULL};
 
          BSON_ASSERT (bson_iter_recurse (&inner_iter, &test_iter));
          while (bson_iter_next (&test_iter)) {
@@ -163,8 +161,7 @@ corpus_test (bson_t *scenario,
       BSON_ASSERT (bson_iter_recurse (&iter, &inner_iter));
       while (bson_iter_next (&inner_iter)) {
          bson_iter_t test_iter;
-         test_bson_parse_error_type_t test = {
-            scenario_description, bson_type, NULL};
+         test_bson_parse_error_type_t test = {scenario_description, bson_type, NULL};
 
          BSON_ASSERT (bson_iter_recurse (&inner_iter, &test_iter));
          while (bson_iter_next (&test_iter)) {

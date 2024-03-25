@@ -28,9 +28,8 @@ test_sasl_properties (void)
    mongoc_uri_t *uri;
    mongoc_cyrus_t sasl;
 
-   uri = mongoc_uri_new (
-      "mongodb://user@host/?authMechanism=GSSAPI&"
-      "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:TrUe");
+   uri = mongoc_uri_new ("mongodb://user@host/?authMechanism=GSSAPI&"
+                         "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:TrUe");
 
    BSON_ASSERT (uri);
    memset (&sasl, 0, sizeof sasl);
@@ -43,15 +42,13 @@ test_sasl_properties (void)
 
    capture_logs (true);
    /* authMechanismProperties take precedence */
-   uri = mongoc_uri_new (
-      "mongodb://user@host/?authMechanism=GSSAPI&"
-      "canonicalizeHostname=true&gssapiServiceName=blah&"
-      "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:False");
+   uri = mongoc_uri_new ("mongodb://user@host/?authMechanism=GSSAPI&"
+                         "canonicalizeHostname=true&gssapiServiceName=blah&"
+                         "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:False");
 
-   ASSERT_CAPTURED_LOG (
-      "authMechanismProperties should overwrite gssapiServiceName",
-      MONGOC_LOG_LEVEL_WARNING,
-      "Overwriting previously provided value for 'authmechanismproperties'");
+   ASSERT_CAPTURED_LOG ("authMechanismProperties should overwrite gssapiServiceName",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Overwriting previously provided value for 'authmechanismproperties'");
 
    _mongoc_cyrus_destroy (&sasl);
    memset (&sasl, 0, sizeof sasl);
@@ -76,12 +73,10 @@ test_sasl_canonicalize_hostname (void *ctx)
    BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
-   ss = mongoc_cluster_stream_for_reads (
-      &client->cluster, NULL, NULL, NULL, NULL, &error);
+   ss = mongoc_cluster_stream_for_reads (&client->cluster, NULL, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (ss, error);
 
-   BSON_ASSERT (_mongoc_sasl_get_canonicalized_name (
-      ss->stream, real_name, sizeof real_name));
+   BSON_ASSERT (_mongoc_sasl_get_canonicalized_name (ss->stream, real_name, sizeof real_name));
 
    ASSERT_CMPSIZE_T (strlen (real_name), >, (size_t) 0);
 

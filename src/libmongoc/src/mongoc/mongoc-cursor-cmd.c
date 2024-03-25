@@ -70,13 +70,11 @@ _prime (mongoc_cursor_t *cursor)
 
    cursor->operation_id = ++cursor->client->cluster.operation_id;
    /* commands like agg have a cursor field, so copy opts without "batchSize" */
-   bson_copy_to_excluding_noinit (
-      &cursor->opts, &copied_opts, "batchSize", "tailable", NULL);
+   bson_copy_to_excluding_noinit (&cursor->opts, &copied_opts, "batchSize", "tailable", NULL);
 
    /* server replies to aggregate/listIndexes/listCollections with:
     * {cursor: {id: N, firstBatch: []}} */
-   _mongoc_cursor_response_refresh (
-      cursor, &data->cmd, &copied_opts, &data->response);
+   _mongoc_cursor_response_refresh (cursor, &data->cmd, &copied_opts, &data->response);
    data->reading_from = CMD_RESPONSE;
    bson_destroy (&copied_opts);
    return IN_BATCH;
@@ -118,8 +116,7 @@ _get_next_batch (mongoc_cursor_t *cursor)
    switch (getmore_type) {
    case GETMORE_CMD:
       _mongoc_cursor_prepare_getmore_command (cursor, &getmore_cmd);
-      _mongoc_cursor_response_refresh (
-         cursor, &getmore_cmd, NULL /* opts */, &data->response);
+      _mongoc_cursor_response_refresh (cursor, &getmore_cmd, NULL /* opts */, &data->response);
       bson_destroy (&getmore_cmd);
       data->reading_from = CMD_RESPONSE;
       return IN_BATCH;
@@ -171,8 +168,7 @@ _mongoc_cursor_cmd_new (mongoc_client_t *client,
    mongoc_cursor_t *cursor;
    data_cmd_t *data = BSON_ALIGNED_ALLOC0 (data_cmd_t);
 
-   cursor = _mongoc_cursor_new_with_opts (
-      client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
+   cursor = _mongoc_cursor_new_with_opts (client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
    _mongoc_cursor_response_legacy_init (&data->response_legacy);
    _mongoc_cursor_check_and_copy_to (cursor, "command", cmd, &data->cmd);
    bson_init (&data->response.reply);
@@ -187,15 +183,11 @@ _mongoc_cursor_cmd_new (mongoc_client_t *client,
 
 
 mongoc_cursor_t *
-_mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
-                                   const bson_t *cmd,
-                                   const bson_t *opts,
-                                   bson_t *reply)
+_mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client, const bson_t *cmd, const bson_t *opts, bson_t *reply)
 {
    BSON_ASSERT_PARAM (client);
 
-   mongoc_cursor_t *cursor =
-      _mongoc_cursor_cmd_new (client, NULL, cmd, opts, NULL, NULL, NULL);
+   mongoc_cursor_t *cursor = _mongoc_cursor_cmd_new (client, NULL, cmd, opts, NULL, NULL, NULL);
    data_cmd_t *data = (data_cmd_t *) cursor->impl.data;
 
    data->reading_from = CMD_RESPONSE;
@@ -208,10 +200,8 @@ _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
    }
 
    if (!_mongoc_cursor_start_reading_response (cursor, &data->response)) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_CURSOR,
-                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                      "Couldn't parse cursor document");
+      bson_set_error (
+         &cursor->error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Couldn't parse cursor document");
    }
 
    if (0 != cursor->cursor_id && 0 == cursor->server_id) {
@@ -220,15 +210,14 @@ _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
       // identifies the server with the cursor.
       // The server with the cursor is required to send a "getMore" or
       // "killCursors" command.
-      bson_set_error (
-         &cursor->error,
-         MONGOC_ERROR_CURSOR,
-         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-         "Expected `serverId` option to identify server with open cursor "
-         "(cursor ID is %" PRId64 "). "
-         "Consider using `mongoc_client_select_server` and using the "
-         "resulting server ID to create the cursor.",
-         cursor->cursor_id);
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "Expected `serverId` option to identify server with open cursor "
+                      "(cursor ID is %" PRId64 "). "
+                      "Consider using `mongoc_client_select_server` and using the "
+                      "resulting server ID to create the cursor.",
+                      cursor->cursor_id);
       // Reset cursor_id to 0 to avoid an assertion error in
       // `mongoc_cursor_destroy` when attempting to send "killCursors".
       cursor->cursor_id = 0;

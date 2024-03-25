@@ -49,11 +49,10 @@ main (int argc, char *argv[])
 
    bson_init (&query);
    collection = mongoc_client_get_collection (client, "test", collection_name);
-   cursor = mongoc_collection_find_with_opts (
-      collection,
-      &query,
-      NULL,  /* additional options */
-      NULL); /* read prefs, NULL for default */
+   cursor = mongoc_collection_find_with_opts (collection,
+                                              &query,
+                                              NULL,  /* additional options */
+                                              NULL); /* read prefs, NULL for default */
 
    while (mongoc_cursor_next (cursor, &doc)) {
       str = bson_as_canonical_extended_json (doc, NULL);

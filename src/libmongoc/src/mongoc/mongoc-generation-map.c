@@ -84,8 +84,7 @@ mongoc_generation_map_copy (const mongoc_generation_map_t *gm)
 }
 
 uint32_t
-mongoc_generation_map_get (const mongoc_generation_map_t *gm,
-                           const bson_oid_t *key)
+mongoc_generation_map_get (const mongoc_generation_map_t *gm, const bson_oid_t *key)
 {
    gm_node_t *iter = NULL;
 
@@ -107,8 +106,7 @@ mongoc_generation_map_get (const mongoc_generation_map_t *gm,
 }
 
 void
-mongoc_generation_map_increment (mongoc_generation_map_t *gm,
-                                 const bson_oid_t *key)
+mongoc_generation_map_increment (mongoc_generation_map_t *gm, const bson_oid_t *key)
 {
    gm_node_t *match;
    gm_node_t *iter = NULL;

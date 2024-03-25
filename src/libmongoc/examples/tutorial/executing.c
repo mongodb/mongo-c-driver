@@ -13,12 +13,10 @@ main (void)
 
    mongoc_init ();
 
-   client = mongoc_client_new (
-      "mongodb://localhost:27017/?appname=executing-example");
+   client = mongoc_client_new ("mongodb://localhost:27017/?appname=executing-example");
 
    command = BCON_NEW ("ping", BCON_INT32 (1));
-   if (mongoc_client_command_simple (
-          client, "mydb", command, NULL, &reply, &error)) {
+   if (mongoc_client_command_simple (client, "mydb", command, NULL, &reply, &error)) {
       str = bson_as_canonical_extended_json (&reply, NULL);
       printf ("%s\n", str);
       bson_free (str);

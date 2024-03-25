@@ -64,17 +64,9 @@ _mongoc_stream_debug_failed (mongoc_stream_t *stream)
 
 
 static int
-_mongoc_stream_debug_setsockopt (mongoc_stream_t *stream,
-                                 int level,
-                                 int optname,
-                                 void *optval,
-                                 mongoc_socklen_t optlen)
+_mongoc_stream_debug_setsockopt (mongoc_stream_t *stream, int level, int optname, void *optval, mongoc_socklen_t optlen)
 {
-   return mongoc_stream_setsockopt (((mongoc_stream_debug_t *) stream)->wrapped,
-                                    level,
-                                    optname,
-                                    optval,
-                                    optlen);
+   return mongoc_stream_setsockopt (((mongoc_stream_debug_t *) stream)->wrapped, level, optname, optval, optlen);
 }
 
 
@@ -86,36 +78,24 @@ _mongoc_stream_debug_flush (mongoc_stream_t *stream)
 
 
 static ssize_t
-_mongoc_stream_debug_readv (mongoc_stream_t *stream,
-                            mongoc_iovec_t *iov,
-                            size_t iovcnt,
-                            size_t min_bytes,
-                            int32_t timeout_msec)
+_mongoc_stream_debug_readv (
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
 {
-   return mongoc_stream_readv (((mongoc_stream_debug_t *) stream)->wrapped,
-                               iov,
-                               iovcnt,
-                               min_bytes,
-                               timeout_msec);
+   return mongoc_stream_readv (((mongoc_stream_debug_t *) stream)->wrapped, iov, iovcnt, min_bytes, timeout_msec);
 }
 
 
 static ssize_t
-_mongoc_stream_debug_writev (mongoc_stream_t *stream,
-                             mongoc_iovec_t *iov,
-                             size_t iovcnt,
-                             int32_t timeout_msec)
+_mongoc_stream_debug_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
-   return mongoc_stream_writev (
-      ((mongoc_stream_debug_t *) stream)->wrapped, iov, iovcnt, timeout_msec);
+   return mongoc_stream_writev (((mongoc_stream_debug_t *) stream)->wrapped, iov, iovcnt, timeout_msec);
 }
 
 
 static bool
 _mongoc_stream_debug_check_closed (mongoc_stream_t *stream)
 {
-   return mongoc_stream_check_closed (
-      ((mongoc_stream_debug_t *) stream)->wrapped);
+   return mongoc_stream_check_closed (((mongoc_stream_debug_t *) stream)->wrapped);
 }
 
 
@@ -129,8 +109,7 @@ _mongoc_stream_debug_timed_out (mongoc_stream_t *stream)
 static bool
 _mongoc_stream_debug_should_retry (mongoc_stream_t *stream)
 {
-   return mongoc_stream_should_retry (
-      ((mongoc_stream_debug_t *) stream)->wrapped);
+   return mongoc_stream_should_retry (((mongoc_stream_debug_t *) stream)->wrapped);
 }
 
 
@@ -181,26 +160,21 @@ debug_stream_new (mongoc_stream_t *stream, debug_stream_stats_t *stats)
 
 
 mongoc_stream_t *
-debug_stream_initiator (const mongoc_uri_t *uri,
-                        const mongoc_host_list_t *host,
-                        void *user_data,
-                        bson_error_t *error)
+debug_stream_initiator (const mongoc_uri_t *uri, const mongoc_host_list_t *host, void *user_data, bson_error_t *error)
 {
    debug_stream_stats_t *stats;
    mongoc_stream_t *default_stream;
 
    stats = (debug_stream_stats_t *) user_data;
 
-   default_stream =
-      mongoc_client_default_stream_initiator (uri, host, stats->client, error);
+   default_stream = mongoc_client_default_stream_initiator (uri, host, stats->client, error);
 
    return debug_stream_new (default_stream, stats);
 }
 
 
 void
-test_framework_set_debug_stream (mongoc_client_t *client,
-                                 debug_stream_stats_t *stats)
+test_framework_set_debug_stream (mongoc_client_t *client, debug_stream_stats_t *stats)
 {
    BSON_ASSERT_PARAM (client);
 

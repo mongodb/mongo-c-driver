@@ -22,11 +22,8 @@
 #define NSERVERS 10
 
 static void
-test_topology_scanner_helper (uint32_t id,
-                              const bson_t *bson,
-                              int64_t rtt_msec,
-                              void *data,
-                              const bson_error_t *error /* IN */)
+test_topology_scanner_helper (
+   uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
 {
    bson_iter_t iter;
    int *finished = (int *) data;
@@ -62,8 +59,7 @@ _test_topology_scanner (bool with_ssl)
    mongoc_ssl_opt_t copt = {0};
 #endif
 
-   topology_scanner = mongoc_topology_scanner_new (
-      NULL, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
+   topology_scanner = mongoc_topology_scanner_new (NULL, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
@@ -91,10 +87,7 @@ _test_topology_scanner (bool with_ssl)
       mock_server_run (servers[i]);
 
       mongoc_topology_scanner_add (
-         topology_scanner,
-         mongoc_uri_get_hosts (mock_server_get_uri (servers[i])),
-         (uint32_t) i,
-         false);
+         topology_scanner, mongoc_uri_get_hosts (mock_server_get_uri (servers[i])), (uint32_t) i, false);
    }
 
    for (i = 0; i < 3; i++) {
@@ -153,38 +146,34 @@ test_topology_scanner_discovery (void)
    mock_server_run (primary);
    mock_server_run (secondary);
 
-   primary_response =
-      bson_strdup_printf ("{'ok': 1, "
-                          " 'isWritablePrimary': true,"
-                          " 'setName': 'rs',"
-                          " 'minWireVersion': %d,"
-                          " 'maxWireVersion': %d,"
-                          " 'hosts': ['%s', '%s']}",
-                          WIRE_VERSION_MIN,
-                          WIRE_VERSION_MAX,
-                          mock_server_get_host_and_port (primary),
-                          mock_server_get_host_and_port (secondary));
+   primary_response = bson_strdup_printf ("{'ok': 1, "
+                                          " 'isWritablePrimary': true,"
+                                          " 'setName': 'rs',"
+                                          " 'minWireVersion': %d,"
+                                          " 'maxWireVersion': %d,"
+                                          " 'hosts': ['%s', '%s']}",
+                                          WIRE_VERSION_MIN,
+                                          WIRE_VERSION_MAX,
+                                          mock_server_get_host_and_port (primary),
+                                          mock_server_get_host_and_port (secondary));
 
-   secondary_response =
-      bson_strdup_printf ("{'ok': 1, "
-                          " 'isWritablePrimary': false,"
-                          " 'secondary': true,"
-                          " 'setName': 'rs',"
-                          " 'minWireVersion': %d,"
-                          " 'maxWireVersion': %d,"
-                          " 'hosts': ['%s', '%s']}",
-                          WIRE_VERSION_MIN,
-                          WIRE_VERSION_MAX,
-                          mock_server_get_host_and_port (primary),
-                          mock_server_get_host_and_port (secondary));
+   secondary_response = bson_strdup_printf ("{'ok': 1, "
+                                            " 'isWritablePrimary': false,"
+                                            " 'secondary': true,"
+                                            " 'setName': 'rs',"
+                                            " 'minWireVersion': %d,"
+                                            " 'maxWireVersion': %d,"
+                                            " 'hosts': ['%s', '%s']}",
+                                            WIRE_VERSION_MIN,
+                                            WIRE_VERSION_MAX,
+                                            mock_server_get_host_and_port (primary),
+                                            mock_server_get_host_and_port (secondary));
 
-   uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
-                                 mock_server_get_host_and_port (primary));
+   uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs", mock_server_get_host_and_port (primary));
    client = test_framework_client_new (uri_str, NULL);
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
-   future = future_topology_select (
-      client->topology, MONGOC_SS_READ, secondary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, secondary_pref, NULL, &error);
 
    /* a single scan discovers *and* checks the secondary */
    request = mock_server_receives_any_hello (primary);
@@ -199,11 +188,9 @@ test_topology_scanner_discovery (void)
    reply_to_request_simple (request, secondary_response);
 
    /* scan completes */
-   ASSERT_OR_PRINT ((sd = future_get_mongoc_server_description_ptr (future)),
-                    error);
+   ASSERT_OR_PRINT ((sd = future_get_mongoc_server_description_ptr (future)), error);
 
-   ASSERT_CMPSTR (sd->host.host_and_port,
-                  mock_server_get_host_and_port (secondary));
+   ASSERT_CMPSTR (sd->host.host_and_port, mock_server_get_host_and_port (secondary));
 
    mongoc_server_description_destroy (sd);
    future_destroy (future);
@@ -240,31 +227,27 @@ test_topology_scanner_oscillate (void)
    mock_server_run (server1);
 
    /* server 0 says it's primary, but only server 1 is in the set */
-   server0_response =
-      bson_strdup_printf ("{'ok': 1, "
-                          " 'isWritablePrimary': true,"
-                          " 'setName': 'rs',"
-                          " 'hosts': ['%s']}",
-                          mock_server_get_host_and_port (server1));
+   server0_response = bson_strdup_printf ("{'ok': 1, "
+                                          " 'isWritablePrimary': true,"
+                                          " 'setName': 'rs',"
+                                          " 'hosts': ['%s']}",
+                                          mock_server_get_host_and_port (server1));
 
    /* the opposite */
-   server1_response =
-      bson_strdup_printf ("{'ok': 1, "
-                          " 'isWritablePrimary': true,"
-                          " 'setName': 'rs',"
-                          " 'hosts': ['%s']}",
-                          mock_server_get_host_and_port (server0));
+   server1_response = bson_strdup_printf ("{'ok': 1, "
+                                          " 'isWritablePrimary': true,"
+                                          " 'setName': 'rs',"
+                                          " 'hosts': ['%s']}",
+                                          mock_server_get_host_and_port (server0));
 
    /* start with server 0 */
-   uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
-                                 mock_server_get_host_and_port (server0));
+   uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs", mock_server_get_host_and_port (server0));
    client = test_framework_client_new (uri_str, NULL);
    scanner = client->topology->scanner;
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    BSON_ASSERT (!scanner->async->ncmds);
-   future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
 
    /* a single scan discovers servers 0 and 1 */
    request = mock_server_receives_any_hello (server0);
@@ -304,8 +287,7 @@ test_topology_scanner_connection_error (void)
    /* assuming nothing is listening on this port */
    client = test_framework_client_new ("mongodb://localhost:9876", NULL);
 
-   ASSERT (!mongoc_client_command_simple (
-      client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, &error));
+   ASSERT (!mongoc_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, &error));
 
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
@@ -333,18 +315,13 @@ test_topology_scanner_socket_timeout (void)
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 10);
    client = test_framework_client_new_from_uri (uri, NULL);
 
-   ASSERT (!mongoc_client_command_simple (
-      client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, &error));
+   ASSERT (!mongoc_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, &error));
 
    /* the mock server did accept connection, but never replied */
    expected_msg =
-      bson_strdup_printf ("socket timeout calling hello on '%s'",
-                          mongoc_uri_get_hosts (uri)->host_and_port);
+      bson_strdup_printf ("socket timeout calling hello on '%s'", mongoc_uri_get_hosts (uri)->host_and_port);
 
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_SERVER_SELECTION,
-                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          expected_msg);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, expected_msg);
 
    bson_free (expected_msg);
    mongoc_client_destroy (client);
@@ -360,10 +337,7 @@ typedef struct {
 
 
 static mongoc_stream_t *
-slow_initiator (const mongoc_uri_t *uri,
-                const mongoc_host_list_t *host,
-                void *user_data,
-                bson_error_t *err)
+slow_initiator (const mongoc_uri_t *uri, const mongoc_host_list_t *host, void *user_data, bson_error_t *err)
 {
    initiator_data_t *data;
 
@@ -402,12 +376,7 @@ test_topology_scanner_blocking_initiator (void)
    mongoc_client_set_stream_initiator (client, slow_initiator, &data);
 
    ASSERT_OR_PRINT (mongoc_client_command_simple (
-                       client,
-                       "admin",
-                       tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
-                       NULL,
-                       NULL,
-                       &error),
+                       client, "admin", tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"), NULL, NULL, &error),
                     error);
 
    mongoc_client_destroy (client);
@@ -466,11 +435,8 @@ typedef struct dns_testcase {
 } dns_testcase_t;
 
 static void
-_test_topology_scanner_dns_helper (uint32_t id,
-                                   const bson_t *bson,
-                                   int64_t rtt_msec,
-                                   void *data,
-                                   const bson_error_t *error /* IN */)
+_test_topology_scanner_dns_helper (
+   uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
 {
    dns_testcase_t *testcase = (dns_testcase_t *) data;
 
@@ -482,10 +448,7 @@ _test_topology_scanner_dns_helper (uint32_t id,
       ASSERT_OR_PRINT (!error->code, (*error));
    } else {
       ASSERT (error->code);
-      ASSERT_ERROR_CONTAINS ((*error),
-                             MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_CONNECT,
-                             "connection refused");
+      ASSERT_ERROR_CONTAINS ((*error), MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "connection refused");
    }
 }
 
@@ -500,10 +463,8 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
    mongoc_topology_scanner_node_t *node;
 
    server = _mock_server_listening_on (testcase->server_bind_to);
-   ts = mongoc_topology_scanner_new (
-      NULL, NULL, &_test_topology_scanner_dns_helper, testcase, TIMEOUT);
-   host_str = bson_strdup_printf (
-      "%s:%d", testcase->client_hostname, mock_server_get_port (server));
+   ts = mongoc_topology_scanner_new (NULL, NULL, &_test_topology_scanner_dns_helper, testcase, TIMEOUT);
+   host_str = bson_strdup_printf ("%s:%d", testcase->client_hostname, mock_server_get_port (server));
    BSON_ASSERT (_mongoc_host_list_from_string (&host, host_str));
    /* we should only have one host. */
    BSON_ASSERT (!host.next);
@@ -518,16 +479,13 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
    /* check the socket that the scanner found. */
    if (testcase->should_succeed) {
       ASSERT (node->stream->type == MONGOC_STREAM_SOCKET);
-      sock = mongoc_stream_socket_get_socket (
-         (mongoc_stream_socket_t *) node->stream);
+      sock = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *) node->stream);
       if (strcmp ("ipv4", testcase->expected_client_bind_to) == 0) {
          ASSERT (sock->domain == AF_INET);
       } else if (strcmp ("ipv6", testcase->expected_client_bind_to) == 0) {
          ASSERT (sock->domain == AF_INET6);
       } else if (strcmp ("either", testcase->expected_client_bind_to) != 0) {
-         fprintf (stderr,
-                  "bad value for testcase->expected_client_bind_to=%s\n",
-                  testcase->expected_client_bind_to);
+         fprintf (stderr, "bad value for testcase->expected_client_bind_to=%s\n", testcase->expected_client_bind_to);
          ASSERT (false);
       }
    }
@@ -554,12 +512,10 @@ test_topology_scanner_dns (void)
    /* these tests require a hostname mapping to both IPv4 and IPv6 local.
     * this can be localhost normally, but some configurations may have localhost
     * only mapping to 127.0.0.1, not ::1. */
-   dns_testcase_t tests_with_ipv4_and_ipv6_uri[] = {
-      {"ipv4", "<placeholder>", true, 2, "ipv4"},
-      {"ipv6", "<placeholder>", true, 2, "ipv6"},
-      {"both", "<placeholder>", true, 2, "either"}};
-   char *ipv4_and_ipv6_host =
-      test_framework_getenv ("MONGOC_TEST_IPV4_AND_IPV6_HOST");
+   dns_testcase_t tests_with_ipv4_and_ipv6_uri[] = {{"ipv4", "<placeholder>", true, 2, "ipv4"},
+                                                    {"ipv6", "<placeholder>", true, 2, "ipv6"},
+                                                    {"both", "<placeholder>", true, 2, "either"}};
+   char *ipv4_and_ipv6_host = test_framework_getenv ("MONGOC_TEST_IPV4_AND_IPV6_HOST");
 
    ntests = sizeof (tests) / sizeof (dns_testcase_t);
    for (i = 0; i < ntests; ++i) {
@@ -577,11 +533,8 @@ test_topology_scanner_dns (void)
 }
 
 static void
-_retired_fails_to_initiate_cb (uint32_t id,
-                               const bson_t *bson,
-                               int64_t rtt_msec,
-                               void *data,
-                               const bson_error_t *error /* IN */)
+_retired_fails_to_initiate_cb (
+   uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
 {
    BSON_UNUSED (id);
    BSON_UNUSED (bson);
@@ -615,11 +568,9 @@ test_topology_retired_fails_to_initiate (void)
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
 
-   scanner = mongoc_topology_scanner_new (
-      NULL, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
+   scanner = mongoc_topology_scanner_new (NULL, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
 
-   BSON_ASSERT (_mongoc_host_list_from_string (
-      &host_list, mock_server_get_host_and_port (server)));
+   BSON_ASSERT (_mongoc_host_list_from_string (&host_list, mock_server_get_host_and_port (server)));
 
    mongoc_topology_scanner_add (scanner, &host_list, 1, false);
    mongoc_topology_scanner_start (scanner, false);
@@ -644,8 +595,7 @@ static void
 heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
 {
    bson_error_t error;
-   bool *failed =
-      (bool *) mongoc_apm_server_heartbeat_failed_get_context (event);
+   bool *failed = (bool *) mongoc_apm_server_heartbeat_failed_get_context (event);
 
    mongoc_apm_server_heartbeat_failed_get_error (event, &error);
 
@@ -688,14 +638,12 @@ _test_topology_scanner_does_not_renegotiate (bool pooled)
    }
 
    /* ensure connection */
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    _mongoc_usleep (1500 * 1000); /* 1.5 seconds */
 
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    /* no heartbeats failed */
@@ -731,32 +679,18 @@ test_topology_scanner_does_not_renegotiate_pooled (void *ctx)
 void
 test_topology_scanner_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (
-      suite, "/TOPOLOGY/scanner", test_topology_scanner);
+   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/scanner", test_topology_scanner);
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   TestSuite_AddMockServerTest (
-      suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
+   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
 #endif
+   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/scanner_discovery", test_topology_scanner_discovery);
+   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/scanner_oscillate", test_topology_scanner_oscillate);
+   TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_error", test_topology_scanner_connection_error);
+   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/scanner_socket_timeout", test_topology_scanner_socket_timeout);
+   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/blocking_initiator", test_topology_scanner_blocking_initiator);
    TestSuite_AddMockServerTest (
-      suite, "/TOPOLOGY/scanner_discovery", test_topology_scanner_discovery);
-   TestSuite_AddMockServerTest (
-      suite, "/TOPOLOGY/scanner_oscillate", test_topology_scanner_oscillate);
-   TestSuite_Add (suite,
-                  "/TOPOLOGY/scanner_connection_error",
-                  test_topology_scanner_connection_error);
-   TestSuite_AddMockServerTest (suite,
-                                "/TOPOLOGY/scanner_socket_timeout",
-                                test_topology_scanner_socket_timeout);
-   TestSuite_AddMockServerTest (suite,
-                                "/TOPOLOGY/blocking_initiator",
-                                test_topology_scanner_blocking_initiator);
-   TestSuite_AddMockServerTest (suite,
-                                "/TOPOLOGY/dns",
-                                test_topology_scanner_dns,
-                                test_framework_skip_if_no_dual_ip_hostname);
-   TestSuite_AddMockServerTest (suite,
-                                "/TOPOLOGY/retired_fails_to_initiate",
-                                test_topology_retired_fails_to_initiate);
+      suite, "/TOPOLOGY/dns", test_topology_scanner_dns, test_framework_skip_if_no_dual_ip_hostname);
+   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/retired_fails_to_initiate", test_topology_retired_fails_to_initiate);
    TestSuite_AddFull (suite,
                       "/TOPOLOGY/scanner/renegotiate/single",
                       test_topology_scanner_does_not_renegotiate_single,

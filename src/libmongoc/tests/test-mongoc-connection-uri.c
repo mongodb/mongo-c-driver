@@ -43,8 +43,7 @@ bson_contains_iter (const bson_t *haystack, bson_iter_t *needle)
       bson_contains_iter (haystack, needle);
       return;
    case BSON_TYPE_UTF8:
-      ASSERT (0 ==
-              strcmp (bson_iter_utf8 (needle, 0), bson_iter_utf8 (&iter, 0)));
+      ASSERT (0 == strcmp (bson_iter_utf8 (needle, 0), bson_iter_utf8 (&iter, 0)));
       bson_contains_iter (haystack, needle);
       return;
    case BSON_TYPE_DOUBLE:
@@ -63,11 +62,7 @@ bson_contains_iter (const bson_t *haystack, bson_iter_t *needle)
 }
 
 static void
-run_uri_test (const char *uri_string,
-              bool valid,
-              const bson_t *hosts,
-              const bson_t *auth,
-              const bson_t *options)
+run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bson_t *auth, const bson_t *options)
 {
    mongoc_uri_t *uri;
    bson_iter_t auth_iter;
@@ -79,16 +74,13 @@ run_uri_test (const char *uri_string,
    /* BEGIN Exceptions to test suite */
 
    /* some spec tests assume we allow DB names like "auth.foo" */
-   if ((bson_iter_init_find (&auth_iter, auth, "db") ||
-        bson_iter_init_find (&auth_iter, auth, "source")) &&
+   if ((bson_iter_init_find (&auth_iter, auth, "db") || bson_iter_init_find (&auth_iter, auth, "source")) &&
        BSON_ITER_HOLDS_UTF8 (&auth_iter)) {
       db = bson_iter_utf8 (&auth_iter, NULL);
       if (strchr (db, '.')) {
          BSON_ASSERT (!uri);
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_COMMAND,
-                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                "Invalid database name in URI");
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database name in URI");
          clear_captured_logs ();
          return;
       }
@@ -97,15 +89,11 @@ run_uri_test (const char *uri_string,
    if (valid && !uri && error.domain) {
       /* Eager failures which the spec expects to be warnings. */
       /* CDRIVER-3167 */
-      if (strstr (uri_string, "=invalid") ||
-          strstr (uri_string, "heartbeatFrequencyMS=-2") ||
+      if (strstr (uri_string, "=invalid") || strstr (uri_string, "heartbeatFrequencyMS=-2") ||
           strstr (uri_string, "w=-2") || strstr (uri_string, "wTimeoutMS=-2") ||
-          strstr (uri_string, "zlibCompressionLevel=-2") ||
-          strstr (uri_string, "zlibCompressionLevel=10") ||
-          (!strstr (uri_string, "mongodb+srv") &&
-           strstr (uri_string, "srvServiceName=customname")) ||
-          strstr (uri_string, "srvMaxHosts=-1") ||
-          strstr (uri_string, "srvMaxHosts=foo")) {
+          strstr (uri_string, "zlibCompressionLevel=-2") || strstr (uri_string, "zlibCompressionLevel=10") ||
+          (!strstr (uri_string, "mongodb+srv") && strstr (uri_string, "srvServiceName=customname")) ||
+          strstr (uri_string, "srvMaxHosts=-1") || strstr (uri_string, "srvMaxHosts=foo")) {
          MONGOC_WARNING ("Error parsing URI: '%s'", error.message);
          return;
       }
@@ -114,22 +102,16 @@ run_uri_test (const char *uri_string,
    if (uri) {
       /* mongoc does not warn on negative timeouts when it should. */
       /* CDRIVER-3167 */
-      if ((mongoc_uri_get_option_as_int32 (
-              uri, MONGOC_URI_CONNECTTIMEOUTMS, 0) < 0) ||
-          (mongoc_uri_get_option_as_int32 (
-              uri, MONGOC_URI_LOCALTHRESHOLDMS, 0) < 0) ||
-          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXIDLETIMEMS, 0) <
-           0) ||
-          (mongoc_uri_get_option_as_int32 (
-              uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 0) < 0) ||
-          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0) <
-           0)) {
+      if ((mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 0) < 0) ||
+          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 0) < 0) ||
+          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXIDLETIMEMS, 0) < 0) ||
+          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 0) < 0) ||
+          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0) < 0)) {
          MONGOC_WARNING ("Invalid negative timeout");
       }
 
       /* mongoc does not store lists the way the spec test expects. */
-      if (strstr (uri_string, "compressors=") ||
-          strstr (uri_string, "readPreferenceTags=")) {
+      if (strstr (uri_string, "compressors=") || strstr (uri_string, "readPreferenceTags=")) {
          options = NULL;
       }
 
@@ -141,8 +123,7 @@ run_uri_test (const char *uri_string,
 #endif
 
 #ifndef MONGOC_ENABLE_COMPRESSION_ZLIB
-      if (strstr (uri_string, "compressors=zlib") ||
-          strstr (uri_string, "compressors=snappy,zlib")) {
+      if (strstr (uri_string, "compressors=zlib") || strstr (uri_string, "compressors=snappy,zlib")) {
          clear_captured_logs ();
       }
 #endif
@@ -162,18 +143,15 @@ run_uri_test (const char *uri_string,
       bson_iter_t iter;
       bson_iter_t host_iter;
 
-      for (bson_iter_init (&iter, hosts);
-           bson_iter_next (&iter) && bson_iter_recurse (&iter, &host_iter);) {
+      for (bson_iter_init (&iter, hosts); bson_iter_next (&iter) && bson_iter_recurse (&iter, &host_iter);) {
          const char *host = "localhost";
          int64_t port = 27017;
          bool ok = false;
 
-         if (bson_iter_find (&host_iter, "host") &&
-             BSON_ITER_HOLDS_UTF8 (&host_iter)) {
+         if (bson_iter_find (&host_iter, "host") && BSON_ITER_HOLDS_UTF8 (&host_iter)) {
             host = bson_iter_utf8 (&host_iter, NULL);
          }
-         if (bson_iter_find (&host_iter, "port") &&
-             BSON_ITER_HOLDS_INT (&host_iter)) {
+         if (bson_iter_find (&host_iter, "port") && BSON_ITER_HOLDS_INT (&host_iter)) {
             port = bson_iter_as_int64 (&host_iter);
          }
 
@@ -185,11 +163,7 @@ run_uri_test (const char *uri_string,
          }
 
          if (!ok) {
-            fprintf (stderr,
-                     "Could not find '%s':%" PRId64 " in uri '%s'\n",
-                     host,
-                     port,
-                     mongoc_uri_get_string (uri));
+            fprintf (stderr, "Could not find '%s':%" PRId64 " in uri '%s'\n", host, port, mongoc_uri_get_string (uri));
             BSON_ASSERT (0);
          }
       }
@@ -201,18 +175,15 @@ run_uri_test (const char *uri_string,
       const char *password = mongoc_uri_get_password (uri);
       bson_iter_t iter;
 
-      if (bson_iter_init_find (&iter, auth, "username") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
+      if (bson_iter_init_find (&iter, auth, "username") && BSON_ITER_HOLDS_UTF8 (&iter)) {
          ASSERT_CMPSTR (username, bson_iter_utf8 (&iter, NULL));
       }
 
-      if (bson_iter_init_find (&iter, auth, "password") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
+      if (bson_iter_init_find (&iter, auth, "password") && BSON_ITER_HOLDS_UTF8 (&iter)) {
          ASSERT_CMPSTR (password, bson_iter_utf8 (&iter, NULL));
       }
 
-      if ((bson_iter_init_find (&iter, auth, "db") ||
-           bson_iter_init_find (&iter, auth, "source")) &&
+      if ((bson_iter_init_find (&iter, auth, "db") || bson_iter_init_find (&iter, auth, "source")) &&
           BSON_ITER_HOLDS_UTF8 (&iter)) {
          ASSERT_CMPSTR (auth_source, bson_iter_utf8 (&iter, NULL));
       }
@@ -229,34 +200,29 @@ run_uri_test (const char *uri_string,
 
       rc = mongoc_uri_get_read_concern (uri);
       if (!mongoc_read_concern_is_default (rc)) {
-         BSON_APPEND_UTF8 (&uri_options,
-                           "readconcernlevel",
-                           mongoc_read_concern_get_level (rc));
+         BSON_APPEND_UTF8 (&uri_options, "readconcernlevel", mongoc_read_concern_get_level (rc));
       }
 
-      bson_copy_to_excluding_noinit (
-         options,
-         &test_options,
-         "username", /* these 'auth' params may be included in 'options' */
-         "password",
-         "source",
-         "mechanism", /* renamed to 'authmechanism' for consistency */
-         "mechanism_properties", /* renamed to 'authmechanismproperties' for
-                                  * consistency */
-         NULL);
+      bson_copy_to_excluding_noinit (options,
+                                     &test_options,
+                                     "username", /* these 'auth' params may be included in 'options' */
+                                     "password",
+                                     "source",
+                                     "mechanism",            /* renamed to 'authmechanism' for consistency */
+                                     "mechanism_properties", /* renamed to 'authmechanismproperties' for
+                                                              * consistency */
+                                     NULL);
 
       if ((bson_iter_init_find (&iter, options, "mechanism") ||
            bson_iter_init_find (&iter, options, "authmechanism")) &&
           BSON_ITER_HOLDS_UTF8 (&iter)) {
-         BSON_APPEND_UTF8 (
-            &test_options, "authmechanism", bson_iter_utf8 (&iter, NULL));
+         BSON_APPEND_UTF8 (&test_options, "authmechanism", bson_iter_utf8 (&iter, NULL));
       }
 
       if ((bson_iter_init_find (&iter, options, "mechanism_properties") ||
            bson_iter_init_find (&iter, options, "authmechanismproperties")) &&
           BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         ASSERT (bson_append_iter (
-            &test_options, "authmechanismproperties", -1, &iter));
+         ASSERT (bson_append_iter (&test_options, "authmechanismproperties", -1, &iter));
       }
 
       bson_iter_init (&iter, &test_options);
@@ -304,9 +270,7 @@ test_connection_uri_cb (bson_t *scenario)
             const char *description = bson_iter_utf8 (&test_case_iter, NULL);
             ASSERT (bson_iter_find_case (&test_case_iter, "uri"));
 
-            printf ("  - %s: '%s'\n",
-                    description,
-                    bson_iter_utf8 (&test_case_iter, 0));
+            printf ("  - %s: '%s'\n", description, bson_iter_utf8 (&test_case_iter, 0));
             fflush (stdout);
          } else {
             fprintf (stderr, "Couldn't find `description` field in testcase\n");
@@ -338,8 +302,7 @@ test_connection_uri_cb (bson_t *scenario)
 
       bson_iter_init (&warning_iter, &test_case);
 
-      if (bson_iter_find_descendant (&warning_iter, "warning", &descendent) &&
-          BSON_ITER_HOLDS_BOOL (&descendent)) {
+      if (bson_iter_find_descendant (&warning_iter, "warning", &descendent) && BSON_ITER_HOLDS_BOOL (&descendent)) {
          if (bson_iter_as_bool (&descendent)) {
             ASSERT_CAPTURED_LOG ("mongoc_uri", MONGOC_LOG_LEVEL_WARNING, "");
          } else {
@@ -357,10 +320,8 @@ test_connection_uri_cb (bson_t *scenario)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   install_json_test_suite (
-      suite, JSON_DIR, "uri-options", &test_connection_uri_cb);
-   install_json_test_suite (
-      suite, JSON_DIR, "connection_uri", &test_connection_uri_cb);
+   install_json_test_suite (suite, JSON_DIR, "uri-options", &test_connection_uri_cb);
+   install_json_test_suite (suite, JSON_DIR, "connection_uri", &test_connection_uri_cb);
    install_json_test_suite (suite, JSON_DIR, "auth", &test_connection_uri_cb);
 }
 

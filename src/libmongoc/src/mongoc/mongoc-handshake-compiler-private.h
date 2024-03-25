@@ -46,10 +46,9 @@
 #define MONGOC_COMPILER_VERSION MONGOC_EVALUATE_STR (_MSC_VER)
 #elif defined(__PGI)
 #define MONGOC_COMPILER "Portland PGCC"
-#define MONGOC_COMPILER_VERSION                                     \
-   MONGOC_EVALUATE_STR (__PGIC__)                                   \
-   "." MONGOC_EVALUATE_STR (__PGIC_MINOR) "." MONGOC_EVALUATE_STR ( \
-      __PGIC_PATCHLEVEL__)
+#define MONGOC_COMPILER_VERSION   \
+   MONGOC_EVALUATE_STR (__PGIC__) \
+   "." MONGOC_EVALUATE_STR (__PGIC_MINOR) "." MONGOC_EVALUATE_STR (__PGIC_PATCHLEVEL__)
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #define MONGOC_COMPILER "Solaris Studio"
 #define MONGOC_COMPILER_VERSION MONGOC_EVALUATE_STR (__SUNPRO_C)

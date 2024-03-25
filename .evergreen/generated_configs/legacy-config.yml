@@ -886,6 +886,15 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
+        export IS_PATCH="${is_patch}"
+        sh .evergreen/scripts/check_rpm_spec.sh
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
         sh .evergreen/scripts/build_snapshot_rpm.sh
   - command: s3.put
     params:

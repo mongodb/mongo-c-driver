@@ -8,29 +8,19 @@
 
 
 static mongoc_stream_t *
-cannot_resolve (const mongoc_uri_t *uri,
-                const mongoc_host_list_t *host,
-                void *user_data,
-                bson_error_t *error)
+cannot_resolve (const mongoc_uri_t *uri, const mongoc_host_list_t *host, void *user_data, bson_error_t *error)
 {
    BSON_UNUSED (uri);
    BSON_UNUSED (user_data);
 
-   bson_set_error (error,
-                   MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                   "Fake error for '%s'",
-                   host->host);
+   bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Fake error for '%s'", host->host);
 
    return NULL;
 }
 
 
 static void
-server_selection_error_dns (const char *uri_str,
-                            const char *errmsg,
-                            bool expect_success,
-                            bool pooled)
+server_selection_error_dns (const char *uri_str, const char *errmsg, bool expect_success, bool pooled)
 {
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
@@ -66,8 +56,7 @@ server_selection_error_dns (const char *uri_str,
    collection = mongoc_client_get_collection (client, "test", "test");
 
    command = tmp_bson ("{'ping': 1}");
-   success = mongoc_collection_command_simple (
-      collection, command, NULL, &reply, &error);
+   success = mongoc_collection_command_simple (collection, command, NULL, &reply, &error);
    ASSERT_OR_PRINT (success == expect_success, error);
 
    if (!success && errmsg) {
@@ -90,12 +79,11 @@ server_selection_error_dns (const char *uri_str,
 static void
 test_server_selection_error_dns_direct_single (void)
 {
-   server_selection_error_dns (
-      "mongodb://example-localhost.invalid:27017/",
-      "No suitable servers found (`serverSelectionTryOnce` set): "
-      "[Fake error for 'example-localhost.invalid']",
-      false,
-      false);
+   server_selection_error_dns ("mongodb://example-localhost.invalid:27017/",
+                               "No suitable servers found (`serverSelectionTryOnce` set): "
+                               "[Fake error for 'example-localhost.invalid']",
+                               false,
+                               false);
 }
 
 static void
@@ -103,25 +91,23 @@ test_server_selection_error_dns_direct_pooled (void *ctx)
 {
    BSON_UNUSED (ctx);
 
-   server_selection_error_dns (
-      "mongodb://example-localhost.invalid:27017/",
-      "No suitable servers found: `serverSelectionTimeoutMS` expired: "
-      "[Fake error for 'example-localhost.invalid']",
-      false,
-      true);
+   server_selection_error_dns ("mongodb://example-localhost.invalid:27017/",
+                               "No suitable servers found: `serverSelectionTimeoutMS` expired: "
+                               "[Fake error for 'example-localhost.invalid']",
+                               false,
+                               true);
 }
 
 static void
 test_server_selection_error_dns_multi_fail_single (void)
 {
-   server_selection_error_dns (
-      "mongodb://"
-      "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
-      "No suitable servers found (`serverSelectionTryOnce` set):"
-      " [Fake error for 'example-localhost.invalid']"
-      " [Fake error for 'other-example-localhost.invalid']",
-      false,
-      false);
+   server_selection_error_dns ("mongodb://"
+                               "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
+                               "No suitable servers found (`serverSelectionTryOnce` set):"
+                               " [Fake error for 'example-localhost.invalid']"
+                               " [Fake error for 'other-example-localhost.invalid']",
+                               false,
+                               false);
 }
 
 static void
@@ -129,14 +115,13 @@ test_server_selection_error_dns_multi_fail_pooled (void *ctx)
 {
    BSON_UNUSED (ctx);
 
-   server_selection_error_dns (
-      "mongodb://"
-      "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
-      "No suitable servers found: `serverSelectionTimeoutMS` expired:"
-      " [Fake error for 'example-localhost.invalid']"
-      " [Fake error for 'other-example-localhost.invalid']",
-      false,
-      true);
+   server_selection_error_dns ("mongodb://"
+                               "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
+                               "No suitable servers found: `serverSelectionTimeoutMS` expired:"
+                               " [Fake error for 'example-localhost.invalid']"
+                               " [Fake error for 'other-example-localhost.invalid']",
+                               false,
+                               true);
 }
 
 static void
@@ -206,8 +191,7 @@ _test_server_selection_uds_auth_failure (bool pooled)
    capture_logs (true);
 
    ASSERT_OR_PRINT (
-      !mongoc_client_read_command_with_opts (
-         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
+      !mongoc_client_read_command_with_opts (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
       error);
 
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
@@ -270,8 +254,7 @@ _test_server_selection_uds_not_found (bool pooled)
    test_framework_set_ssl_opts (client);
 #endif
 
-   ASSERT (!mongoc_client_read_command_with_opts (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error));
+   ASSERT (!mongoc_client_read_command_with_opts (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error));
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
 
@@ -305,18 +288,15 @@ test_server_selection_uds_not_found_pooled (void *context)
 void
 test_server_selection_errors_install (TestSuite *suite)
 {
-   TestSuite_Add (suite,
-                  "/server_selection/errors/dns/direct/single",
-                  test_server_selection_error_dns_direct_single);
+   TestSuite_Add (suite, "/server_selection/errors/dns/direct/single", test_server_selection_error_dns_direct_single);
    TestSuite_AddFull (suite,
                       "/server_selection/errors/dns/direct/pooled",
                       test_server_selection_error_dns_direct_pooled,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_Add (suite,
-                  "/server_selection/errors/dns/multi/fail/single",
-                  test_server_selection_error_dns_multi_fail_single);
+   TestSuite_Add (
+      suite, "/server_selection/errors/dns/multi/fail/single", test_server_selection_error_dns_multi_fail_single);
    TestSuite_AddFull (suite,
                       "/server_selection/errors/dns/multi/fail/pooled",
                       test_server_selection_error_dns_multi_fail_pooled,

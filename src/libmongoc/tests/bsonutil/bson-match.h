@@ -22,10 +22,7 @@
 /* Matches bson values in accordance with the unified test format's "Evaluating
  * Matches" rules. */
 bool
-bson_match (const bson_val_t *expected,
-            const bson_val_t *actual,
-            bool array_of_root_docs,
-            bson_error_t *error);
+bson_match (const bson_val_t *expected, const bson_val_t *actual, bool array_of_root_docs, bson_error_t *error);
 
 /* A bson_matcher_t may be used to extend the default matching behavior. */
 typedef struct _bson_matcher_t bson_matcher_t;
@@ -48,10 +45,7 @@ typedef bool (*special_fn) (bson_matcher_t *matcher,
  * expectation.
  */
 void
-bson_matcher_add_special (bson_matcher_t *matcher,
-                          const char *keyword,
-                          special_fn special,
-                          void *ctx);
+bson_matcher_add_special (bson_matcher_t *matcher, const char *keyword, special_fn special, void *ctx);
 
 bool
 bson_matcher_match (bson_matcher_t *matcher,

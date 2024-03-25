@@ -16,8 +16,7 @@ insert_data (mongoc_collection_t *collection)
 
    docs[0] = BCON_NEW ("x", BCON_DOUBLE (1.0), "tags", "[", "dog", "cat", "]");
    docs[1] = BCON_NEW ("x", BCON_DOUBLE (2.0), "tags", "[", "cat", "]");
-   docs[2] = BCON_NEW (
-      "x", BCON_DOUBLE (2.0), "tags", "[", "mouse", "cat", "dog", "]");
+   docs[2] = BCON_NEW ("x", BCON_DOUBLE (2.0), "tags", "[", "mouse", "cat", "dog", "]");
    docs[3] = BCON_NEW ("x", BCON_DOUBLE (3.0), "tags", "[", "]");
 
    for (i = 0; i < ndocs; i++) {

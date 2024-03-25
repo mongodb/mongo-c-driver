@@ -20,14 +20,10 @@
 
 #define HOST "metadata.google.internal"
 
-static const char *const DEFAULT_METADATA_PATH =
-   "/computeMetadata/v1/instance/service-accounts/default/token";
+static const char *const DEFAULT_METADATA_PATH = "/computeMetadata/v1/instance/service-accounts/default/token";
 
 void
-gcp_request_init (gcp_request *req,
-                  const char *const opt_host,
-                  int opt_port,
-                  const char *const opt_extra_headers)
+gcp_request_init (gcp_request *req, const char *const opt_host, int opt_port, const char *const opt_extra_headers)
 {
    BSON_ASSERT_PARAM (req);
    _mongoc_http_request_init (&req->req);
@@ -47,8 +43,7 @@ gcp_request_init (gcp_request *req,
    req->req.method = "GET";
 
    req->req.extra_headers = req->_owned_headers =
-      bson_strdup_printf ("Metadata-Flavor: Google\r\n%s",
-                          opt_extra_headers ? opt_extra_headers : "");
+      bson_strdup_printf ("Metadata-Flavor: Google\r\n%s", opt_extra_headers ? opt_extra_headers : "");
 
    req->req.path = req->_owned_path = bson_strdup (DEFAULT_METADATA_PATH);
 }
@@ -78,10 +73,7 @@ gcp_access_token_destroy (gcp_service_account_token *token)
 }
 
 bool
-gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
-                                      const char *json,
-                                      int len,
-                                      bson_error_t *error)
+gcp_access_token_try_parse_from_json (gcp_service_account_token *out, const char *json, int len, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT_PARAM (json);
@@ -99,8 +91,7 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
    bson_iter_t iter;
    // access_token
    bool found = bson_iter_init_find (&iter, &bson, "access_token");
-   const char *const access_token =
-      !found ? NULL : bson_iter_utf8 (&iter, NULL);
+   const char *const access_token = !found ? NULL : bson_iter_utf8 (&iter, NULL);
    // token_type
    found = bson_iter_init_find (&iter, &bson, "token_type");
    const char *const token_type = !found ? NULL : bson_iter_utf8 (&iter, NULL);
@@ -167,8 +158,7 @@ gcp_access_token_from_gcp_server (gcp_service_account_token *out,
       goto fail;
    }
 
-   if (!gcp_access_token_try_parse_from_json (
-          out, resp.body, resp.body_len, error)) {
+   if (!gcp_access_token_try_parse_from_json (out, resp.body, resp.body_len, error)) {
       goto fail;
    }
 

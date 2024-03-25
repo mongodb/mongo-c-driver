@@ -35,24 +35,19 @@ mongoc_deprioritized_servers_destroy (mongoc_deprioritized_servers_t *ds)
 }
 
 void
-mongoc_deprioritized_servers_add (mongoc_deprioritized_servers_t *ds,
-                                  const mongoc_server_description_t *sd)
+mongoc_deprioritized_servers_add (mongoc_deprioritized_servers_t *ds, const mongoc_server_description_t *sd)
 {
    BSON_ASSERT_PARAM (ds);
    BSON_ASSERT_PARAM (sd);
 
-   mongoc_set_add (ds->ids,
-                   mongoc_server_description_id (sd),
-                   MONGOC_DEPRIORITIZED_SERVERS_ITEM_VALUE);
+   mongoc_set_add (ds->ids, mongoc_server_description_id (sd), MONGOC_DEPRIORITIZED_SERVERS_ITEM_VALUE);
 }
 
 bool
-mongoc_deprioritized_servers_contains (const mongoc_deprioritized_servers_t *ds,
-                                       const mongoc_server_description_t *sd)
+mongoc_deprioritized_servers_contains (const mongoc_deprioritized_servers_t *ds, const mongoc_server_description_t *sd)
 {
    BSON_ASSERT_PARAM (ds);
    BSON_ASSERT_PARAM (sd);
 
-   return mongoc_set_get_const (ds->ids, mongoc_server_description_id (sd)) ==
-          MONGOC_DEPRIORITIZED_SERVERS_ITEM_VALUE;
+   return mongoc_set_get_const (ds->ids, mongoc_server_description_id (sd)) == MONGOC_DEPRIORITIZED_SERVERS_ITEM_VALUE;
 }
