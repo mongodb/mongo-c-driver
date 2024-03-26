@@ -114,19 +114,11 @@ _oidc_sasl_one_step_conversation (
    bson_iter_t iter;
    int conv_id = 0;
 
-   char *json = NULL;
-
-   fprintf(stderr, "CALLING: _oidc_sasl_one_step_conversation\n");
-
    bson_append_utf8 (&jwt_step_request,
                      "jwt",
                      -1,
                      cluster->client->oidc_credential->access_token,
                      -1);
-
-   json = bson_as_json(&jwt_step_request, NULL);
-   fprintf(stderr, "SASL BSON: %s\n", json);
-   bson_free(json);
 
    BCON_APPEND (&client_command,
                 "saslStart",
@@ -136,18 +128,15 @@ _oidc_sasl_one_step_conversation (
                 "payload",
                 BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_step_request), jwt_step_request.len));
 
-   bson_destroy (&server_reply);
+   /* Send the authentication command to the server. */
    ok = _mongoc_sasl_run_command (cluster, stream, sd, &client_command, &server_reply, error);
-   json = bson_as_json(&server_reply, NULL);
-   fprintf(stderr, "SERVER REPLY> %s\n", json);
-   bson_free(json);
    if (!ok) {
       /* Try to get the server response, if we can't then return a generic error */
       if (!bson_iter_init (&iter, &server_reply)) {
          goto one_step_generic_error;
       }
 
-      /* If we found the 'errmsg', then provide it to the user in the error message */
+      /* If we find the 'errmsg', then provide it to the user in the error message */
       if (bson_iter_find (&iter, "errmsg") && BSON_ITER_HOLDS_UTF8 (&iter)) {
          const char *errmsg = bson_iter_utf8 (&iter, NULL);
          AUTH_ERROR_AND_FAIL ("failed to run OIDC SASL one-step conversation command: server reply: %s", errmsg);
@@ -162,28 +151,6 @@ one_step_generic_error:
       ok = false;
       AUTH_ERROR_AND_FAIL ("server reply did not contain conversationId for OIDC one-step SASL");
    }
-
-   ok = bson_iter_init (&iter, &server_reply);
-   if (!ok) {
-      AUTH_ERROR_AND_FAIL ("failed to initialize BSON iterator with OIDC one-step server response");
-   }
-
-   if (bson_iter_find (&iter, "ok") && BSON_ITER_HOLDS_DOUBLE (&iter)) {
-      double ok_value = bson_iter_double(&iter);
-      if (!ok_value) {
-         ok = false;
-         AUTH_ERROR_AND_FAIL ("received bad 'ok' value from server response during OIDC one-step conversation");
-      }
-   } else {
-      ok = false;
-      AUTH_ERROR_AND_FAIL ("did not find 'ok' value in server response during OIDC one-step conversation");
-   }
-
-   /*
-    * TODO:
-    * - check "ok" field
-    * - How should we handle an error? Where will the server error message be?
-    */
 
 fail:
    bson_destroy (&jwt_step_request);
