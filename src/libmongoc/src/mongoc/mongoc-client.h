@@ -284,6 +284,18 @@ MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_client_get_handshake_description (mongoc_client_t *client, uint32_t server_id, bson_t *opts, bson_error_t *error)
    BSON_GNUC_WARN_UNUSED_RESULT;
 
+MONGOC_EXPORT(int64_t)
+mongoc_oidc_callback_params_get_timeout_ms(const mongoc_oidc_callback_params_t *callback_params);
+
+MONGOC_EXPORT(int64_t)
+mongoc_oidc_callback_params_get_version(const mongoc_oidc_callback_params_t *callback_params);
+
+MONGOC_EXPORT(void)
+mongoc_oidc_credential_set_access_token(mongoc_oidc_credential_t *credential, char *access_token);
+
+MONGOC_EXPORT(void)
+mongoc_oidc_credential_set_expires_in_seconds(mongoc_oidc_credential_t *credential, int64_t expires_in_seconds);
+
 BSON_END_DECLS
 
 

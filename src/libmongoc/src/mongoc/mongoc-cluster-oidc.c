@@ -31,8 +31,17 @@ mongoc_oidc_credential_set_expires_in_seconds(mongoc_oidc_credential_t *credenti
    credential->expires_in_seconds = expires_in_seconds;
 }
 
+/*
+ * Populate the client with the OIDC authentication token. The user MUST
+ * implement a callback function which populates the mongoc_oidc_credential_t 
+ * object with the OIDC token and the token's timeout. The user can set the
+ * callback by using the function: `mongoc_client_set_oidc_callback`.
+ *
+ * Spec:
+ * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#one-step
+ */
 static bool
-_oidc_get_token (mongoc_client_t *client, bson_error_t *error)
+_oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
 {
 #undef MONGOC_MIN
 #define MONGOC_MIN(A, B) (((A) < (B)) ? (A) : (B))
@@ -41,6 +50,8 @@ _oidc_get_token (mongoc_client_t *client, bson_error_t *error)
    mongoc_oidc_callback_params_t params;
    mongoc_oidc_credential_t creds;
    char *prev_token = NULL;
+
+   fprintf(stderr, "CALLING: _oidc_set_client_token\n");
 
    params.version = 1;
    /*
@@ -53,11 +64,11 @@ _oidc_get_token (mongoc_client_t *client, bson_error_t *error)
    BSON_ASSERT (client->oidc_callback);
 
    /*
-    * 1) Call callback function with params.
+    * 1) Call the user provided callback function with params.
     */
    ok = client->oidc_callback (&params, &creds); /* TODO: Should this take an 'error' out parameter? */
    if (!ok) {
-      AUTH_ERROR_AND_FAIL ("error from user provided OIDC callback");
+      AUTH_ERROR_AND_FAIL ("error from within user provided OIDC callback");
    }
 
    /*
@@ -81,6 +92,10 @@ fail:
 }
 
 /*
+ * Authenticate with the server using the OIDC SASL One Step Conversation.
+ * Before calling this function, you must first populate the client with an OIDC
+ * token using the _oidc_set_client_token() function.
+ *
  * Spec:
  * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#one-step
  */
@@ -96,7 +111,12 @@ _oidc_sasl_one_step_conversation (
    bson_t jwt_step_request = BSON_INITIALIZER;
    bson_t client_command = BSON_INITIALIZER;
    bson_t server_reply = BSON_INITIALIZER;
+   bson_iter_t iter;
    int conv_id = 0;
+
+   char *json = NULL;
+
+   fprintf(stderr, "CALLING: _oidc_sasl_one_step_conversation\n");
 
    bson_append_utf8 (&jwt_step_request,
                      "jwt",
@@ -104,17 +124,36 @@ _oidc_sasl_one_step_conversation (
                      cluster->client->oidc_credential->access_token,
                      -1);
 
+   json = bson_as_json(&jwt_step_request, NULL);
+   fprintf(stderr, "SASL BSON: %s\n", json);
+   bson_free(json);
+
    BCON_APPEND (&client_command,
                 "saslStart",
                 BCON_INT32 (1),
                 "mechanism",
-                "MONGODB-AWS",
+                "MONGODB-OIDC",
                 "payload",
                 BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_step_request), jwt_step_request.len));
 
    bson_destroy (&server_reply);
    ok = _mongoc_sasl_run_command (cluster, stream, sd, &client_command, &server_reply, error);
+   json = bson_as_json(&server_reply, NULL);
+   fprintf(stderr, "SERVER REPLY> %s\n", json);
+   bson_free(json);
    if (!ok) {
+      /* Try to get the server response, if we can't then return a generic error */
+      if (!bson_iter_init (&iter, &server_reply)) {
+         goto one_step_generic_error;
+      }
+
+      /* If we found the 'errmsg', then provide it to the user in the error message */
+      if (bson_iter_find (&iter, "errmsg") && BSON_ITER_HOLDS_UTF8 (&iter)) {
+         const char *errmsg = bson_iter_utf8 (&iter, NULL);
+         AUTH_ERROR_AND_FAIL ("failed to run OIDC SASL one-step conversation command: server reply: %s", errmsg);
+      }
+
+one_step_generic_error:
       AUTH_ERROR_AND_FAIL ("failed to run OIDC SASL one-step conversation command");
    }
 
@@ -122,6 +161,22 @@ _oidc_sasl_one_step_conversation (
    if (!conv_id) {
       ok = false;
       AUTH_ERROR_AND_FAIL ("server reply did not contain conversationId for OIDC one-step SASL");
+   }
+
+   ok = bson_iter_init (&iter, &server_reply);
+   if (!ok) {
+      AUTH_ERROR_AND_FAIL ("failed to initialize BSON iterator with OIDC one-step server response");
+   }
+
+   if (bson_iter_find (&iter, "ok") && BSON_ITER_HOLDS_DOUBLE (&iter)) {
+      double ok_value = bson_iter_double(&iter);
+      if (!ok_value) {
+         ok = false;
+         AUTH_ERROR_AND_FAIL ("received bad 'ok' value from server response during OIDC one-step conversation");
+      }
+   } else {
+      ok = false;
+      AUTH_ERROR_AND_FAIL ("did not find 'ok' value in server response during OIDC one-step conversation");
    }
 
    /*
@@ -164,7 +219,7 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
     * Spec:
     * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#oidc-callback
     */
-   ok = _oidc_get_token (cluster->client, error);
+   ok = _oidc_set_client_token (cluster->client, error);
    if (!ok) {
       goto fail;
    }

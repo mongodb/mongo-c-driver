@@ -1630,6 +1630,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
    } else if (0 == strcasecmp (mechanism, "MONGODB-AWS")) {
       ret = _mongoc_cluster_auth_node_aws (cluster, stream, sd, error);
    } else if (0 == strcasecmp (mechanism, "MONGODB-OIDC")) {
+      fprintf(stderr, "CALLING: _mongoc_cluster_auth_node_oidc\n");
       ret = _mongoc_cluster_auth_node_oidc (cluster, stream, sd, error);
    } else {
       _mongoc_set_error (error,
