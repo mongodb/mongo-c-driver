@@ -1216,7 +1216,8 @@ test_oversize (void)
    r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
    ASSERT_CMPSSIZE_T (r, ==, (ssize_t) -1);
    BSON_ASSERT (mongoc_gridfs_file_error (file, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "corrupt chunk number 0: bad size");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "corrupt chunk number 0: greater than chunk size");
 
    mongoc_gridfs_file_destroy (file);
    ASSERT_OR_PRINT (mongoc_gridfs_drop (gridfs, &error), error);

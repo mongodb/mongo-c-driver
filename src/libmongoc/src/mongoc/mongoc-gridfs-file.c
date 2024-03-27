@@ -853,7 +853,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       bson_set_error (&file->error,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
-                      "corrupt chunk number %" PRId32,
+                      "corrupt chunk number %" PRId32 ": no data",
                       file->n);
       RETURN (0);
    }
@@ -862,8 +862,9 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       bson_set_error (&file->error,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "corrupt chunk number %" PRId32 ": bad size",
-                      file->n);
+                      "corrupt chunk number %" PRId32 ": greater than chunk size: %" PRId32,
+                      file->n,
+                      file->chunk_size);
       RETURN (0);
    }
 
