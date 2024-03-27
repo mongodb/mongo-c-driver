@@ -461,7 +461,7 @@ mongoc_gridfs_file_readv (
          } else if (file->length == file->pos) {
             /* we're at the end of the file.  So we're done */
             RETURN (bytes_read);
-         } else if (bytes_read >= min_bytes) {
+         } else if (bytes_read >= min_bytes && bytes_read > 0) {
             /* we need a new page, but we've read enough bytes to stop */
             RETURN (bytes_read);
          } else if (!_mongoc_gridfs_file_refresh_page (file)) {
