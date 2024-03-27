@@ -1494,7 +1494,7 @@ test_reading_multiple_chunks (void)
       // Write a file spanning two chunks.
       {
          mongoc_gridfs_file_opt_t opts = {.chunk_size = 4, .filename = "test_file"};
-         mongoc_iovec_t iov = {.iov_base = "foobar", .iov_len = 7};
+         mongoc_iovec_t iov = {.iov_base = (void *) "foobar", .iov_len = 7};
          mongoc_gridfs_file_t *file = mongoc_gridfs_create_file (gridfs, &opts);
          // First chunk is 4 bytes: "foob", second chunk is 3 bytes: "ar\0"
          ASSERT_CMPSSIZE_T (mongoc_gridfs_file_writev (file, &iov, 1, 0), ==, 7);
@@ -1506,7 +1506,7 @@ test_reading_multiple_chunks (void)
       {
          bson_string_t *str = bson_string_new ("");
          uint8_t buf[7] = {0};
-         mongoc_iovec_t iov = {.iov_base = buf, .iov_len = sizeof (buf)};
+         mongoc_iovec_t iov = {.iov_base = (void *) buf, .iov_len = sizeof (buf)};
          mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename (gridfs, "test_file", &error);
          ASSERT_OR_PRINT (file, error);
 
@@ -1549,7 +1549,7 @@ test_reading_multiple_chunks (void)
       // Write a file spanning two chunks.
       {
          mongoc_gridfs_file_opt_t opts = {.chunk_size = 4, .filename = "test_file"};
-         mongoc_iovec_t iov = {.iov_base = "foobar", .iov_len = 7};
+         mongoc_iovec_t iov = {.iov_base = (void *) "foobar", .iov_len = 7};
          mongoc_gridfs_file_t *file = mongoc_gridfs_create_file (gridfs, &opts);
          // First chunk is 4 bytes: "foob", second chunk is 3 bytes: "ar\0"
          ASSERT_CMPSSIZE_T (mongoc_gridfs_file_writev (file, &iov, 1, 0), ==, 7);
@@ -1577,7 +1577,7 @@ test_reading_multiple_chunks (void)
       // Attempt to read the entire file.
       {
          uint8_t buf[7] = {0};
-         mongoc_iovec_t iov = {.iov_base = buf, .iov_len = sizeof (buf)};
+         mongoc_iovec_t iov = {.iov_base = (void *) buf, .iov_len = sizeof (buf)};
          mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename (gridfs, "test_file", &error);
          ASSERT_OR_PRINT (file, error);
 
