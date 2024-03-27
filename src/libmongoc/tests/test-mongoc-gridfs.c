@@ -1216,7 +1216,8 @@ test_oversize (void)
    r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
    ASSERT_CMPSSIZE_T (r, ==, (ssize_t) -1);
    BSON_ASSERT (mongoc_gridfs_file_error (file, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "corrupt chunk number 0: bad size");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "corrupt chunk number 0: greater than chunk size");
 
    mongoc_gridfs_file_destroy (file);
    ASSERT_OR_PRINT (mongoc_gridfs_drop (gridfs, &error), error);
@@ -1476,6 +1477,131 @@ test_write_failure (void)
    mock_server_destroy (server);
 }
 
+static void
+test_reading_multiple_chunks (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   bson_error_t error;
+
+   // Test reading a file spanning two chunks.
+   {
+      mongoc_gridfs_t *gridfs = mongoc_client_get_gridfs (client, "test_reading_multiple_chunks", NULL, &error);
+
+      ASSERT_OR_PRINT (gridfs, error);
+      // Drop prior test data.
+      ASSERT_OR_PRINT (mongoc_gridfs_drop (gridfs, &error), error);
+
+      // Write a file spanning two chunks.
+      {
+         mongoc_gridfs_file_opt_t opts = {.chunk_size = 4, .filename = "test_file"};
+         mongoc_iovec_t iov = {.iov_base = (void *) "foobar", .iov_len = 7};
+         mongoc_gridfs_file_t *file = mongoc_gridfs_create_file (gridfs, &opts);
+         // First chunk is 4 bytes: "foob", second chunk is 3 bytes: "ar\0"
+         ASSERT_CMPSSIZE_T (mongoc_gridfs_file_writev (file, &iov, 1, 0), ==, 7);
+         BSON_ASSERT (mongoc_gridfs_file_save (file));
+         mongoc_gridfs_file_destroy (file);
+      }
+
+      // Read the entire file.
+      {
+         bson_string_t *str = bson_string_new ("");
+         uint8_t buf[7] = {0};
+         mongoc_iovec_t iov = {.iov_base = (void *) buf, .iov_len = sizeof (buf)};
+         mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename (gridfs, "test_file", &error);
+         ASSERT_OR_PRINT (file, error);
+
+         // First read gets first chunk.
+         {
+            ssize_t got =
+               mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
+            ASSERT_CMPSSIZE_T (got, >=, 0);
+            ASSERT (bson_in_range_int_signed (got));
+            bson_string_append_printf (str, "%.*s", (int) got, (char *) buf);
+            ASSERT_CMPSSIZE_T (got, ==, 4);
+         }
+
+         // Second read gets second chunk.
+         {
+            ssize_t got =
+               mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
+            ASSERT_CMPSSIZE_T (got, >=, 0);
+            ASSERT (bson_in_range_int_signed (got));
+            bson_string_append_printf (str, "%.*s", (int) got, (char *) buf);
+            ASSERT_CMPSSIZE_T (got, ==, 3);
+         }
+
+         ASSERT_CMPSTR (str->str, "foobar");
+         bson_string_free (str, true);
+         mongoc_gridfs_file_destroy (file);
+      }
+
+      mongoc_gridfs_destroy (gridfs);
+   }
+
+   // Test an error occurs if reading an incomplete chunk. This is a regression test for CDRIVER-5506.
+   {
+      mongoc_gridfs_t *gridfs = mongoc_client_get_gridfs (client, "test_reading_multiple_chunks", NULL, &error);
+
+      ASSERT_OR_PRINT (gridfs, error);
+      // Drop prior test data.
+      ASSERT_OR_PRINT (mongoc_gridfs_drop (gridfs, &error), error);
+
+      // Write a file spanning two chunks.
+      {
+         mongoc_gridfs_file_opt_t opts = {.chunk_size = 4, .filename = "test_file"};
+         mongoc_iovec_t iov = {.iov_base = (void *) "foobar", .iov_len = 7};
+         mongoc_gridfs_file_t *file = mongoc_gridfs_create_file (gridfs, &opts);
+         // First chunk is 4 bytes: "foob", second chunk is 3 bytes: "ar\0"
+         ASSERT_CMPSSIZE_T (mongoc_gridfs_file_writev (file, &iov, 1, 0), ==, 7);
+         BSON_ASSERT (mongoc_gridfs_file_save (file));
+         mongoc_gridfs_file_destroy (file);
+      }
+
+      // Manually remove data from the first chunk.
+      {
+         mongoc_collection_t *coll = mongoc_client_get_collection (client, "test_reading_multiple_chunks", "fs.chunks");
+         bson_t reply;
+         // Change the data of the first chunk from "foob" to "foo".
+         bool ok = mongoc_collection_update_one (
+            coll,
+            tmp_bson (BSON_STR ({"n" : 0})),
+            tmp_bson (BSON_STR ({"$set" : {"data" : {"$binary" : {"base64" : "Zm9v", "subType" : "0"}}}})),
+            NULL /* opts */,
+            &reply,
+            &error);
+         ASSERT_OR_PRINT (ok, error);
+         ASSERT_MATCH (&reply, BSON_STR ({"modifiedCount" : 1}));
+         mongoc_collection_destroy (coll);
+      }
+
+      // Attempt to read the entire file.
+      {
+         uint8_t buf[7] = {0};
+         mongoc_iovec_t iov = {.iov_base = (void *) buf, .iov_len = sizeof (buf)};
+         mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename (gridfs, "test_file", &error);
+         ASSERT_OR_PRINT (file, error);
+
+         // First read gets an error.
+         {
+            ssize_t got =
+               mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
+            ASSERT_CMPSSIZE_T (got, ==, -1);
+            ASSERT (mongoc_gridfs_file_error (file, &error));
+            ASSERT_ERROR_CONTAINS (error,
+                                   MONGOC_ERROR_GRIDFS,
+                                   MONGOC_ERROR_GRIDFS_CORRUPT,
+                                   "corrupt chunk number 0: not equal to chunk size: 4");
+         }
+
+         mongoc_gridfs_file_destroy (file);
+      }
+
+      mongoc_gridfs_destroy (gridfs);
+   }
+
+   mongoc_client_destroy (client);
+}
+
 
 void
 test_gridfs_install (TestSuite *suite)
@@ -1505,4 +1631,5 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/gridfs_old/file_set_id", test_set_id);
    TestSuite_AddMockServerTest (suite, "/gridfs_old/inherit_client_config", test_inherit_client_config);
    TestSuite_AddMockServerTest (suite, "/gridfs_old/write_failure", test_write_failure);
+   TestSuite_AddLive (suite, "/gridfs_old/reading_multiple_chunks", test_reading_multiple_chunks);
 }
