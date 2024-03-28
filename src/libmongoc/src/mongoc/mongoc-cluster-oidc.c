@@ -22,7 +22,7 @@ mongoc_oidc_callback_params_get_version(const mongoc_oidc_callback_params_t *cal
 void
 mongoc_oidc_credential_set_access_token(mongoc_oidc_credential_t *credential, char *access_token)
 {
-   credential->access_token = access_token;
+   credential->access_token = bson_strdup(access_token);
 }
 
 void
@@ -82,7 +82,7 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
    /*
     * 3) Store the resulting access token in the client.
     */
-   client->oidc_credential->access_token = bson_strdup (creds.access_token);
+   client->oidc_credential->access_token = creds.access_token;
    client->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
 
 fail:

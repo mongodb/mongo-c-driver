@@ -15,6 +15,18 @@ _run_ping (mongoc_database_t *db)
    return ok;
 }
 
+/* Remove all characters after a whitespce character */
+static void
+_truncate_on_whitespace(char *str)
+{
+   for (size_t i = 0; str[i] != '\0'; i++) {
+      if (isspace(str[i])) {
+         str[i] = '\0';
+         break;
+      }
+   }
+}
+
 static bool
 _oidc_callback(const mongoc_oidc_callback_params_t *params, mongoc_oidc_credential_t *cred /* OUT */) {
    int64_t timeout = 0;
@@ -64,6 +76,9 @@ _oidc_callback(const mongoc_oidc_callback_params_t *params, mongoc_oidc_credenti
    }
    token[size] = '\0';
 
+   /* The file might have trailing whitespaces such as "\n" or "\r\n"*/
+   _truncate_on_whitespace(token);
+
    timeout = mongoc_oidc_callback_params_get_timeout_ms(params);
    version = mongoc_oidc_callback_params_get_version(params);
 
@@ -105,7 +120,7 @@ connect_with_oidc()
       goto done;
    }
 
-   db = mongoc_client_get_database (client, "test");
+   db = mongoc_client_get_database (client, "testdb");
    if (!db) {
       fprintf (stderr, "Failed to get DB\n");
       ok = false;
@@ -119,7 +134,7 @@ connect_with_oidc()
       goto done;
    }
 
-   printf("hello world!\n");
+   fprintf(stderr, "Authentication was successful!\n");
 
 done:
     return ok;
@@ -130,7 +145,8 @@ int main(void) {
 
     bool ok = connect_with_oidc();
     if (!ok) {
-        rc = 1;
+       fprintf(stderr, "Authentication failed\n");
+       rc = 1;
     }
 
     return rc;
