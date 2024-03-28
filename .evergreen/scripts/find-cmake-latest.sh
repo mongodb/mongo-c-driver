@@ -9,5 +9,5 @@ find_cmake_latest() {
   # shellcheck source=.evergreen/scripts/find-cmake-version.sh
   . "${script_dir}/find-cmake-version.sh" || return
 
-  find_cmake_version 3 25 3
+  find_cmake_version 3 29 0
 }
