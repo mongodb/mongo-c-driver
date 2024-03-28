@@ -97,7 +97,7 @@ done:
 }
 
 bool
-connect_with_oidc()
+connect_with_oidc(void)
 {
    const char *uri_str = "mongodb://admin@localhost/?authMechanism=MONGODB-OIDC";
    mongoc_database_t *db = NULL;
