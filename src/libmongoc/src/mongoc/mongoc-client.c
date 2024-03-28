@@ -1094,6 +1094,21 @@ _mongoc_oidc_credential_new (char *access_token, int64_t expires_in_seconds)
    return cred;
 }
 
+void
+mongoc_client_oidc_credential_invalidate (mongoc_client_t *client, const char *access_token)
+{
+   BSON_ASSERT(access_token);
+
+   if (!client->oidc_credential->access_token) {
+      return;
+   }
+
+   if (!strcmp(access_token, client->oidc_credential->access_token)) {
+      bson_zero_free (client->oidc_credential->access_token, strlen(client->oidc_credential->access_token));
+      client->oidc_credential->access_token = NULL;
+   }
+}
+
 
 /* precondition: topology is valid */
 mongoc_client_t *

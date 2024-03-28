@@ -6,6 +6,7 @@
 #include "mongoc-cluster-sasl-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-client.h"
+#include "mongoc-util-private.h"
 
 int64_t
 mongoc_oidc_callback_params_get_timeout_ms(const mongoc_oidc_callback_params_t *callback_params)
@@ -31,6 +32,13 @@ mongoc_oidc_credential_set_expires_in_seconds(mongoc_oidc_credential_t *credenti
    credential->expires_in_seconds = expires_in_seconds;
 }
 
+/* Spec:
+ * "Drivers MUST ensure that only one call to the configured provider or OIDC callback can happen at a time."
+ * Presumably, this means that only a single callback GLOBALLY may be called at a time.
+ * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#credential-caching
+ */
+static pthread_mutex_t _oidc_callback_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * Populate the client with the OIDC authentication token. The user MUST
  * implement a callback function which populates the mongoc_oidc_credential_t 
@@ -51,7 +59,11 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
    mongoc_oidc_credential_t creds;
    char *prev_token = NULL;
 
-   fprintf(stderr, "CALLING: _oidc_set_client_token\n");
+   /* Check cache if we already have a token.
+    * Otherwise use the user's callback to get a new token */
+   if (client->oidc_credential->access_token) {
+      return true;
+   }
 
    params.version = 1;
    /*
@@ -62,6 +74,8 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
 
    BSON_ASSERT (client);
    BSON_ASSERT (client->oidc_callback);
+
+   pthread_mutex_lock(&_oidc_callback_mutex);
 
    /*
     * 1) Call the user provided callback function with params.
@@ -86,6 +100,7 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
    client->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
 
 fail:
+   pthread_mutex_unlock(&_oidc_callback_mutex);
    return ok;
 
 #undef MONGOC_MIN
@@ -171,6 +186,7 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
 
    bool ok = true;
+   bool first_time = true;
 
    /*
     * TODO:
@@ -179,6 +195,7 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
     * - token expiration
     */
 
+again:
    /*
     * Fetch an OIDC access token using the user's callback function.
     * Store the access token in the client.
@@ -201,6 +218,17 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
                                           stream,
                                           sd,
                                           error);
+   if (!ok && first_time) {
+      const char *cached_token = cluster->client->oidc_credential->access_token;
+      first_time = false;
+
+      /* Invalidate the token cache before retrying */
+      if (cached_token) {
+         mongoc_client_oidc_credential_invalidate (cluster->client, cached_token);
+      }
+      _mongoc_usleep (100);
+      goto again;
+   }
    if (!ok) {
       goto fail;
    }

@@ -296,6 +296,9 @@ mongoc_oidc_credential_set_access_token(mongoc_oidc_credential_t *credential, ch
 MONGOC_EXPORT(void)
 mongoc_oidc_credential_set_expires_in_seconds(mongoc_oidc_credential_t *credential, int64_t expires_in_seconds);
 
+MONGOC_EXPORT(void)
+mongoc_client_oidc_credential_invalidate (mongoc_client_t *client, const char *access_token);
+
 BSON_END_DECLS
 
 
