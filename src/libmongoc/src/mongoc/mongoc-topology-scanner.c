@@ -365,6 +365,8 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
    mongoc_topology_scanner_t *ts = node->ts;
    bson_t cmd;
 
+   fprintf(stderr, "BEGIN HELLO CMD\n");
+
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */
    const int32_t cmd_opcode = _should_use_op_msg (ts) ? MONGOC_OP_CODE_MSG : MONGOC_OP_CODE_QUERY;

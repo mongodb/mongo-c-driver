@@ -1078,6 +1078,7 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
    }
 
    client = _mongoc_client_new_from_topology (topology);
+   fprintf(stderr, "CREATED A CLIENT FROM TOPOLOGY\n");
    BSON_ASSERT (client);
 
    RETURN (client);
