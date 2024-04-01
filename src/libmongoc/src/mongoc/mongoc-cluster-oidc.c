@@ -57,7 +57,6 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
    bool ok = true;
    mongoc_oidc_callback_params_t params;
    mongoc_oidc_credential_t creds;
-   char *prev_token = NULL;
 
    /* Check cache if we already have a token.
     * Otherwise use the user's callback to get a new token */
@@ -77,25 +76,18 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
 
    pthread_mutex_lock(&_oidc_callback_mutex);
 
-   /*
-    * 1) Call the user provided callback function with params.
-    */
-   ok = client->oidc_callback (&params, &creds); /* TODO: Should this take an 'error' out parameter? */
+   /* Call the user provided callback function with params. */
+   ok = client->oidc_callback (&params, &creds);
    if (!ok) {
       AUTH_ERROR_AND_FAIL ("error from within user provided OIDC callback");
    }
 
-   /*
-    * 2) Zero out and free the previous token
-    */
-   prev_token = client->oidc_credential->access_token;
-   if (prev_token) {
-      bson_zero_free (prev_token, strlen (prev_token));
-   }
+   /* creds.access_token is a user provided string.
+    * If the user's function is successful, which is implied by a return value
+    * of 'true', then this string MUST NOT be NULL. */
+   BSON_ASSERT(creds.access_token);
 
-   /*
-    * 3) Store the resulting access token in the client.
-    */
+   /* Store the resulting access token in the client. */
    client->oidc_credential->access_token = creds.access_token;
    client->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
 
@@ -188,11 +180,11 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
    bool ok = true;
    bool first_time = true;
 
+   fprintf(stderr, "_mongoc_cluster_auth_node_oidc\n");
    /*
     * TODO:
-    * - token caching
-    * - token refresh
-    * - token expiration
+    * - Speculative Authentication
+    * - Reauthentication
     */
 
 again:
@@ -235,4 +227,21 @@ again:
 
 fail:
    return ok;
+}
+
+static bool
+_mongoc_cluster_oidc_speculative_auth(mongoc_cluster_t *cluster)
+{
+   const char *access_token = cluster->client->oidc_credential->access_token;
+   if (access_token) {
+      bson_t jwt_step_request = BSON_INITIALIZER;
+
+      bson_append_utf8 (&jwt_step_request,
+                        "jwt",
+                        -1,
+                        cluster->client->oidc_credential->access_token,
+                        -1);
+      // res = hello(cluster, jwt_step_request);
+   }
+   return true;
 }

@@ -177,6 +177,7 @@ _mongoc_topology_scanner_add_speculative_authentication (bson_t *cmd,
    bool has_auth = false;
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (uri);
 
+   fprintf(stderr, "BEGIN SPECULATIVE AUTH\n");
    if (!mechanism) {
       return;
    }
@@ -189,6 +190,13 @@ _mongoc_topology_scanner_add_speculative_authentication (bson_t *cmd,
          has_auth = true;
          BSON_APPEND_UTF8 (&auth_cmd, "db", "$external");
       }
+   }
+
+   if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
+      fprintf(stderr, "SPECULATIVE AUTH: MONGODB-OIDC\n");
+      /* TODO:
+       * Add {"jwt": access_token} to hello command
+       */
    }
 
 #ifdef MONGOC_ENABLE_CRYPTO

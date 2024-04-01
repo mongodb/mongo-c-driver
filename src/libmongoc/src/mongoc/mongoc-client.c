@@ -1094,6 +1094,14 @@ _mongoc_oidc_credential_new (char *access_token, int64_t expires_in_seconds)
    return cred;
 }
 
+/*
+ * Spec:
+ * Drivers MUST have a way to invalidate a specific access token from the
+ * Client Cache. Invalidation MUST only clear the cached access token if it is
+ * the same as the invalid access token.
+ *
+ * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#credential-caching
+ */
 void
 mongoc_client_oidc_credential_invalidate (mongoc_client_t *client, const char *access_token)
 {
