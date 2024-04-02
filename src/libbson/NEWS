@@ -1,3 +1,14 @@
+libbson 1.26.2
+==============
+
+Fixes:
+
+  * Fix iteration in `bson_strfreev`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+
 libbson 1.26.1
 ==============
 
