@@ -1,9 +1,18 @@
-libmongoc 1.26.2 (unreleased)
-=============================
+libmongoc 1.26.2
+================
 
 Cyrus SASL:
 
   * Disable plugin loading with Cyrus SASL on Windows by default. To re-enable, set the CMake option `CYRUS_PLUGIN_PATH_PREFIX` to the absolute path prefix of the Cyrus SASL plugins.
+
+Fixes:
+
+  * Fix possible hang if `mongoc_gridfs_file_readv` is called with a corrupt chunk with incomplete data.
+  * Fix assert with legacy exhaust cursor protocol when connected to server < 4.2.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
 
 libmongoc 1.26.1
 ================
