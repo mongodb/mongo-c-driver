@@ -131,9 +131,9 @@ if [[ "${ssl}" != "OFF" ]]; then
   HAS_CIPHERSUITES_FOR_SERVERLESS="YES"
   if [[ "${OSTYPE}" == "cygwin" ]]; then
     # Windows Server 2008 hosts do not appear to share TLS 1.2 cipher suites with Atlas Serverless.
-    WINDOWS_OSNAME=$(systeminfo | grep 'OS Name:' | awk -F ':' '{print $2}')
+    WINDOWS_OSNAME="$(systeminfo | grep 'OS Name:' | awk -F ':' '{print $2}')"
     if [[ "${WINDOWS_OSNAME}" == *"Windows Server 2008"* ]]; then
-        echo "Detected Windows Server 2008 ... skipping Atlas Serverless test due to no shared cipher suites.";
+        echo "Detected Windows Server 2008 ... skipping Atlas Serverless test due to no shared cipher suites."
         HAS_CIPHERSUITES_FOR_SERVERLESS="NO"
     fi
   fi
