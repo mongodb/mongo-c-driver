@@ -7515,29 +7515,29 @@ test_client_side_encryption_install (TestSuite *suite)
 
             // Skip DecimalNoPrecision if not a replica set.
             if (0 == strcmp (rangeType, "DecimalNoPrecision")) {
-               TestSuite_AddFull (
-                  suite,
-                  test_name,
-                  rc.fn,
-                  NULL /* dtor */,
-                  (void *) rangeTypes[i] /* ctx */,
-                  test_framework_skip_if_no_client_side_encryption,
-                  test_framework_skip_if_max_wire_version_less_than_21,
-                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                  test_framework_skip_if_serverless,
-                  test_framework_skip_if_not_replset);
+               TestSuite_AddFull (suite,
+                                  test_name,
+                                  rc.fn,
+                                  NULL /* dtor */,
+                                  (void *) rangeTypes[i] /* ctx */,
+                                  test_framework_skip_if_no_client_side_encryption,
+                                  test_framework_skip_if_max_wire_version_less_than_21,
+                                  test_framework_skip_if_max_wire_version_more_than_24 /* skip on MongoDB 8.0+ */,
+                                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+                                  test_framework_skip_if_serverless,
+                                  test_framework_skip_if_not_replset);
             } else {
-               TestSuite_AddFull (
-                  suite,
-                  test_name,
-                  rc.fn,
-                  NULL /* dtor */,
-                  (void *) rangeTypes[i] /* ctx */,
-                  test_framework_skip_if_no_client_side_encryption,
-                  test_framework_skip_if_max_wire_version_less_than_21,
-                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                  test_framework_skip_if_serverless,
-                  test_framework_skip_if_single);
+               TestSuite_AddFull (suite,
+                                  test_name,
+                                  rc.fn,
+                                  NULL /* dtor */,
+                                  (void *) rangeTypes[i] /* ctx */,
+                                  test_framework_skip_if_no_client_side_encryption,
+                                  test_framework_skip_if_max_wire_version_less_than_21,
+                                  test_framework_skip_if_max_wire_version_more_than_24 /* skip on MongoDB 8.0+ */,
+                                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+                                  test_framework_skip_if_serverless,
+                                  test_framework_skip_if_single);
             }
 
             bson_free (test_name);

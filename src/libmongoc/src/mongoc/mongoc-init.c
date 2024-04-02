@@ -53,6 +53,7 @@
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
+#include <mongoc-cyrus-private.h> // _mongoc_cyrus_verifyfile_cb
 
 static void *
 mongoc_cyrus_mutex_alloc (void)
@@ -113,7 +114,11 @@ static BSON_ONCE_FUN (_mongoc_do_init)
                    mongoc_cyrus_mutex_unlock,
                    mongoc_cyrus_mutex_free);
 
-   status = sasl_client_init (NULL);
+   sasl_callback_t callbacks[] = {// Include callback to disable loading plugins.
+                                  {SASL_CB_VERIFYFILE, SASL_CALLBACK_FN (_mongoc_cyrus_verifyfile_cb), NULL},
+                                  {SASL_CB_LIST_END}};
+
+   status = sasl_client_init (callbacks);
    BSON_ASSERT (status == SASL_OK);
 #endif
 
