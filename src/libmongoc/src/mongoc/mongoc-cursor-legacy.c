@@ -244,9 +244,14 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
 
    cursor->cursor_id = mcd_rpc_op_reply_get_cursor_id (response->rpc);
 
-   response->reader = bson_reader_new_from_data (
-      mcd_rpc_op_reply_get_documents (response->rpc),
-      mcd_rpc_op_reply_get_documents_len (response->rpc));
+   const void *documents = mcd_rpc_op_reply_get_documents (response->rpc);
+   if (documents == NULL) {
+      // Use a non-NULL pointer to satisfy precondition of
+      // `bson_reader_new_from_data`:
+      documents = "";
+   }
+
+   response->reader = bson_reader_new_from_data (documents, mcd_rpc_op_reply_get_documents_len (response->rpc));
 
    _mongoc_cursor_monitor_succeeded (cursor,
                                      response,
@@ -634,9 +639,14 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
 
    cursor->cursor_id = mcd_rpc_op_reply_get_cursor_id (response->rpc);
 
-   response->reader = bson_reader_new_from_data (
-      mcd_rpc_op_reply_get_documents (response->rpc),
-      mcd_rpc_op_reply_get_documents_len (response->rpc));
+   const void *documents = mcd_rpc_op_reply_get_documents (response->rpc);
+   if (documents == NULL) {
+      // Use a non-NULL pointer to satisfy precondition of
+      // `bson_reader_new_from_data`:
+      documents = "";
+   }
+
+   response->reader = bson_reader_new_from_data (documents, mcd_rpc_op_reply_get_documents_len (response->rpc));
 
    if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
       cursor->in_exhaust = true;
