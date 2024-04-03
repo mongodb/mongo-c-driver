@@ -1768,9 +1768,9 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
     * If so, then reauthenticate if MONGODB_OIDC is in use.
     * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#reauthentication-1
     */
-   if (_mongoc_error_is_reauthentication_required (&cmd_error)) {
-      /* TODO: Do reauthentication */
-   }
+   // if (_mongoc_error_is_reauthentication_required (&cmd_error)) {
+   //    /* TODO: Do reauthentication */
+   // }
 
    if (!_mongoc_error_is_state_change (&cmd_error)) {
       /* Not a "not primary" or "node is recovering" error. */

@@ -232,6 +232,20 @@ typedef struct _mongoc_topology_t {
    // DNS implementations are expected to try UDP first, then retry with TCP if the UDP response indicates truncation.
    // Some DNS servers truncate UDP responses without setting the truncated (TC) flag. This may result in no TCP retry.
    bool srv_prefer_tcp;
+
+   /* Spec:
+    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#oidc-callback
+    */
+   bool (*oidc_callback)(const mongoc_oidc_callback_params_t *, mongoc_oidc_credential_t * /* OUT */);
+
+   /* OIDC credential cache
+    *
+    * Spec:
+    * "Drivers MUST cache the most recent access token per MongoClient"
+    * "Drivers MAY store the Client Cache on the MongoClient object or any object that guarantees exactly 1 cached access token per MongoClient"
+    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#credential-caching
+    */
+   mongoc_oidc_credential_t *oidc_credential;
 } mongoc_topology_t;
 
 mongoc_topology_t *

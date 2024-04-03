@@ -60,7 +60,7 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
 
    /* Check cache if we already have a token.
     * Otherwise use the user's callback to get a new token */
-   if (client->oidc_credential->access_token) {
+   if (client->topology->oidc_credential->access_token) {
       return true;
    }
 
@@ -72,12 +72,13 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
    params.callback_timeout_ms = MONGOC_MIN (100, 200); /* placeholder */
 
    BSON_ASSERT (client);
-   BSON_ASSERT (client->oidc_callback);
+   BSON_ASSERT (client->topology);
+   BSON_ASSERT (client->topology->oidc_callback);
 
    pthread_mutex_lock(&_oidc_callback_mutex);
 
    /* Call the user provided callback function with params. */
-   ok = client->oidc_callback (&params, &creds);
+   ok = client->topology->oidc_callback (&params, &creds);
    if (!ok) {
       AUTH_ERROR_AND_FAIL ("error from within user provided OIDC callback");
    }
@@ -88,8 +89,8 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
    BSON_ASSERT(creds.access_token);
 
    /* Store the resulting access token in the client. */
-   client->oidc_credential->access_token = creds.access_token;
-   client->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
+   client->topology->oidc_credential->access_token = creds.access_token;
+   client->topology->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
 
 fail:
    pthread_mutex_unlock(&_oidc_callback_mutex);
@@ -124,7 +125,7 @@ _oidc_sasl_one_step_conversation (
    bson_append_utf8 (&jwt_step_request,
                      "jwt",
                      -1,
-                     cluster->client->oidc_credential->access_token,
+                     cluster->client->topology->oidc_credential->access_token,
                      -1);
 
    BCON_APPEND (&client_command,
@@ -211,7 +212,7 @@ again:
                                           sd,
                                           error);
    if (!ok && first_time) {
-      const char *cached_token = cluster->client->oidc_credential->access_token;
+      const char *cached_token = cluster->client->topology->oidc_credential->access_token;
       first_time = false;
 
       /* Invalidate the token cache before retrying */
@@ -229,19 +230,19 @@ fail:
    return ok;
 }
 
-static bool
-_mongoc_cluster_oidc_speculative_auth(mongoc_cluster_t *cluster)
-{
-   const char *access_token = cluster->client->oidc_credential->access_token;
-   if (access_token) {
-      bson_t jwt_step_request = BSON_INITIALIZER;
-
-      bson_append_utf8 (&jwt_step_request,
-                        "jwt",
-                        -1,
-                        cluster->client->oidc_credential->access_token,
-                        -1);
-      // res = hello(cluster, jwt_step_request);
-   }
-   return true;
-}
+// static bool
+// _mongoc_cluster_oidc_speculative_auth(mongoc_cluster_t *cluster)
+// {
+//    const char *access_token = cluster->client->oidc_credential->access_token;
+//    if (access_token) {
+//       bson_t jwt_step_request = BSON_INITIALIZER;
+// 
+//       bson_append_utf8 (&jwt_step_request,
+//                         "jwt",
+//                         -1,
+//                         cluster->client->oidc_credential->access_token,
+//                         -1);
+//       // res = hello(cluster, jwt_step_request);
+//    }
+//    return true;
+// }
