@@ -1,7 +1,8 @@
 echo on
 echo
 
-set CMAKE_FLAGS=-DENABLE_SSL=OPENSSL -DENABLE_SASL=CYRUS
+rem Use ENABLE_SSL=WINDOWS to link to Secure Channel. CMake is unable to locate OpenSSL installed on Windows hosts due to https://gitlab.kitware.com/cmake/cmake/-/issues/25859
+set CMAKE_FLAGS=-DENABLE_SSL=WINDOWS -DENABLE_SASL=CYRUS
 set TAR=C:\cygwin\bin\tar
 set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\mingw32-make.exe
 set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
