@@ -3228,6 +3228,72 @@ test_kms_tls_options_extra_rejected (void *unused)
    mongoc_client_destroy (keyvault_client);
 }
 
+static void
+test_kms_retry (void *unused)
+{
+   mongoc_client_t *keyvault_client = test_framework_new_default_client ();
+   mongoc_client_encryption_t *client_encryption =
+      _tls_test_make_client_encryption (keyvault_client, WITH_TLS);
+   bson_error_t error = {0};
+   bson_value_t keyid;
+   mongoc_client_encryption_datakey_opts_t *dkopts;
+   bool res;
+
+   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32,
+                              .value.v_int32 = 1};
+   bson_value_t encrypted_field = {0};
+   mongoc_client_encryption_encrypt_opts_t *encrypt_opts =
+      mongoc_client_encryption_encrypt_opts_new ();
+   mongoc_client_encryption_encrypt_opts_set_algorithm (
+      encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+
+   // AWS
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
+                "'127.0.0.1:9002' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption, "aws", dkopts, &keyid, &error);
+   ASSERT (res);
+
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (
+      client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT (res);
+
+   // Azure
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'keyVaultEndpoint': '127.0.0.1:9002', 'keyName': 'foo'}"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption, "azure", dkopts, &keyid, &error);
+   ASSERT (res);
+
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (
+      client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT (res);
+
+   // GCP
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
+                "'keyName': 'kn' , 'endpoint': '127.0.0.1:9002'}"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption, "gcp", dkopts, &keyid, &error);
+   ASSERT (res);
+
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (
+      client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT (res);
+}
+
 /* ee_fixture is a fixture for the Explicit Encryption prose test. */
 typedef struct {
    bson_value_t key1ID;
@@ -6279,6 +6345,12 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls_options/extra_rejected",
                       test_kms_tls_options_extra_rejected,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms_retry",
+                      test_kms_retry,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption);
