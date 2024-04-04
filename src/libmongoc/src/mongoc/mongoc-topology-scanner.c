@@ -177,7 +177,7 @@ _mongoc_topology_scanner_add_speculative_authentication (bson_t *cmd,
    bool has_auth = false;
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (uri);
 
-   fprintf(stderr, "BEGIN SPECULATIVE AUTH\n");
+   fprintf (stderr, "BEGIN SPECULATIVE AUTH\n");
    if (!mechanism) {
       return;
    }
@@ -193,7 +193,7 @@ _mongoc_topology_scanner_add_speculative_authentication (bson_t *cmd,
    }
 
    if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
-      fprintf(stderr, "SPECULATIVE AUTH: MONGODB-OIDC\n");
+      fprintf (stderr, "SPECULATIVE AUTH: MONGODB-OIDC\n");
       /* TODO:
        * Add {"jwt": access_token} to hello command
        */
@@ -365,7 +365,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
    mongoc_topology_scanner_t *ts = node->ts;
    bson_t cmd;
 
-   fprintf(stderr, "BEGIN HELLO CMD\n");
+   fprintf (stderr, "BEGIN HELLO CMD\n");
 
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */

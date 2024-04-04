@@ -1078,7 +1078,7 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
    }
 
    client = _mongoc_client_new_from_topology (topology);
-   fprintf(stderr, "CREATED A CLIENT FROM TOPOLOGY\n");
+   fprintf (stderr, "CREATED A CLIENT FROM TOPOLOGY\n");
    BSON_ASSERT (client);
 
    RETURN (client);
@@ -1106,14 +1106,15 @@ _mongoc_oidc_credential_new (char *access_token, int64_t expires_in_seconds)
 void
 mongoc_client_oidc_credential_invalidate (mongoc_client_t *client, const char *access_token)
 {
-   BSON_ASSERT(access_token);
+   BSON_ASSERT (access_token);
 
    if (!client->topology->oidc_credential->access_token) {
       return;
    }
 
-   if (!strcmp(access_token, client->topology->oidc_credential->access_token)) {
-      bson_zero_free (client->topology->oidc_credential->access_token, strlen(client->topology->oidc_credential->access_token));
+   if (!strcmp (access_token, client->topology->oidc_credential->access_token)) {
+      bson_zero_free (client->topology->oidc_credential->access_token,
+                      strlen (client->topology->oidc_credential->access_token));
       client->topology->oidc_credential->access_token = NULL;
    }
 }
@@ -1228,7 +1229,7 @@ mongoc_client_destroy (mongoc_client_t *client)
       mongoc_uri_destroy (client->uri);
       mongoc_set_destroy (client->client_sessions);
       mongoc_server_api_destroy (client->api);
-//      _mongoc_oidc_credential_destroy (client->oidc_credential); // TODO: Move this into topology
+      //      _mongoc_oidc_credential_destroy (client->oidc_credential); // TODO: Move this into topology
       client->topology->oidc_credential = NULL;
       client->topology->oidc_callback = NULL;
 
@@ -2704,7 +2705,9 @@ mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t
 }
 
 void
-mongoc_client_set_oidc_callback(mongoc_client_t *client,  bool (*oidc_callback)(const mongoc_oidc_callback_params_t *, mongoc_oidc_credential_t * /* OUT */))
+mongoc_client_set_oidc_callback (mongoc_client_t *client,
+                                 bool (*oidc_callback) (const mongoc_oidc_callback_params_t *,
+                                                        mongoc_oidc_credential_t * /* OUT */))
 {
    client->topology->oidc_callback = oidc_callback;
 }
