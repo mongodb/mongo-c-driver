@@ -2361,15 +2361,10 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
    if (has_ns) {
       if (res) {
          _mongoc_client_monitor_op_killcursors_succeeded (
-            cluster,
-            bson_get_monotonic_time () - started,
-            server_stream,
-            cursor_id,
-            operation_id,
-            db);
+            cluster, bson_get_monotonic_time () - started, server_stream, cursor_id, operation_id, db);
       } else {
          _mongoc_client_monitor_op_killcursors_failed (
-            cluster, bson_get_monotonic_time () - started, server_stream, cursor_id, operation_id, db);
+            cluster, bson_get_monotonic_time () - started, server_stream, &error, operation_id, db);
       }
    }
 
