@@ -28,6 +28,7 @@ class Variant(ConfigObject):
         expansions: Mapping[str, str] | None = None,
         tags: Iterable[str] = (),
         batchtime: int | None = None,
+        display_tasks: Iterable[ValueMapping] = None,
     ):
         super(Variant, self).__init__()
         self._variant_name = name
@@ -37,6 +38,7 @@ class Variant(ConfigObject):
         self.expansions = expansions
         self.tags = list(tags)
         self.batchtime = batchtime
+        self.display_tasks = display_tasks
 
     @property
     def name(self):
@@ -44,7 +46,7 @@ class Variant(ConfigObject):
 
     def to_dict(self):
         v = super(Variant, self).to_dict()
-        for i in "display_name", "expansions", "run_on", "tasks", "batchtime", "tags":
+        for i in "display_name", "expansions", "run_on", "tasks", "batchtime", "tags", "display_tasks":
             if getattr(self, i):
                 v[i] = getattr(self, i)
         return v

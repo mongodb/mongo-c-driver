@@ -41,28 +41,24 @@ test_obtain_credentials (void *unused)
    mongoc_uri_destroy (uri);
 
    /* A username specified with no password is an error. */
-   uri = mongoc_uri_new (
-      "mongodb://access_key_id:@localhost/?authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://access_key_id:@localhost/?authMechanism=MONGODB-AWS");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_CLIENT,
-      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-      "ACCESS_KEY_ID is set, but SECRET_ACCESS_KEY is missing");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "ACCESS_KEY_ID is set, but SECRET_ACCESS_KEY is missing");
    _mongoc_aws_credentials_cleanup (&creds);
    mongoc_uri_destroy (uri);
 
    /* Password not set at all (not empty string) */
-   uri = mongoc_uri_new (
-      "mongodb://access_key_id@localhost/?authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://access_key_id@localhost/?authMechanism=MONGODB-AWS");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_CLIENT,
-      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-      "ACCESS_KEY_ID is set, but SECRET_ACCESS_KEY is missing");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "ACCESS_KEY_ID is set, but SECRET_ACCESS_KEY is missing");
    _mongoc_aws_credentials_cleanup (&creds);
    mongoc_uri_destroy (uri);
 
@@ -128,11 +124,10 @@ test_obtain_credentials_from_env (void *unused)
    uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_CLIENT,
-      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-      "ACCESS_KEY_ID is set, but SECRET_ACCESS_KEY is missing");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "ACCESS_KEY_ID is set, but SECRET_ACCESS_KEY is missing");
    _mongoc_aws_credentials_cleanup (&creds);
    mongoc_uri_destroy (uri);
 
@@ -142,11 +137,10 @@ test_obtain_credentials_from_env (void *unused)
    uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_CLIENT,
-      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-      "SECRET_ACCESS_KEY is set, but ACCESS_KEY_ID is missing");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "SECRET_ACCESS_KEY is set, but ACCESS_KEY_ID is missing");
    _mongoc_aws_credentials_cleanup (&creds);
    mongoc_uri_destroy (uri);
 
@@ -196,76 +190,52 @@ test_derive_region (void *unused)
 
 #define WITH_LEN(s) s, strlen (s)
 
-   ret = _mongoc_validate_and_derive_region (
-      WITH_LEN ("abc..def"), &region, &error);
+   ret = _mongoc_validate_and_derive_region (WITH_LEN ("abc..def"), &region, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "Invalid STS host: empty part");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free (region);
 
    ret = _mongoc_validate_and_derive_region (WITH_LEN ("."), &region, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "Invalid STS host: empty part");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free (region);
 
    ret = _mongoc_validate_and_derive_region (WITH_LEN ("..."), &region, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "Invalid STS host: empty part");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free (region);
 
-   ret =
-      _mongoc_validate_and_derive_region (WITH_LEN ("first."), &region, &error);
+   ret = _mongoc_validate_and_derive_region (WITH_LEN ("first."), &region, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "Invalid STS host: empty part");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free (region);
 
-   ret = _mongoc_validate_and_derive_region (
-      WITH_LEN ("sts.amazonaws.com"), &region, &error);
+   ret = _mongoc_validate_and_derive_region (WITH_LEN ("sts.amazonaws.com"), &region, &error);
    BSON_ASSERT (ret);
    ASSERT_CMPSTR ("us-east-1", region);
    bson_free (region);
 
-   ret = _mongoc_validate_and_derive_region (
-      WITH_LEN ("first.second"), &region, &error);
+   ret = _mongoc_validate_and_derive_region (WITH_LEN ("first.second"), &region, &error);
    BSON_ASSERT (ret);
    ASSERT_CMPSTR ("second", region);
    bson_free (region);
 
-   ret =
-      _mongoc_validate_and_derive_region (WITH_LEN ("first"), &region, &error);
+   ret = _mongoc_validate_and_derive_region (WITH_LEN ("first"), &region, &error);
    BSON_ASSERT (ret);
    ASSERT_CMPSTR ("us-east-1", region);
    bson_free (region);
 
    ret = _mongoc_validate_and_derive_region (WITH_LEN (""), &region, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "Invalid STS host: empty");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty");
    bson_free (region);
 
    large = bson_malloc0 (257);
    memset (large, 'a', 256);
 
-   ret = _mongoc_validate_and_derive_region (
-      large, strlen (large), &region, &error);
+   ret = _mongoc_validate_and_derive_region (large, strlen (large), &region, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "Invalid STS host: too large");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: too large");
    bson_free (region);
    bson_free (large);
 
@@ -284,8 +254,7 @@ test_aws_cache (void *unused)
    valid_creds.session_token = bson_strdup ("session_token");
    // Set expiration to one minute from now.
    valid_creds.expiration.set = true;
-   valid_creds.expiration.value =
-      mcd_timer_expire_after (mcd_milliseconds (60 * 1000));
+   valid_creds.expiration.value = mcd_timer_expire_after (mcd_milliseconds (60 * 1000));
 
    _mongoc_aws_credentials_t expired_creds = MONGOC_AWS_CREDENTIALS_INIT;
    expired_creds.access_key_id = bson_strdup ("access_key_id");
@@ -293,8 +262,7 @@ test_aws_cache (void *unused)
    expired_creds.session_token = bson_strdup ("session_token");
    // Set expiration to one minute before.
    expired_creds.expiration.set = true;
-   expired_creds.expiration.value =
-      mcd_timer_expire_after (mcd_milliseconds (-60 * 1000));
+   expired_creds.expiration.value = mcd_timer_expire_after (mcd_milliseconds (-60 * 1000));
 
    _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
    _mongoc_aws_credentials_cache_clear ();
@@ -370,16 +338,8 @@ test_aws_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_aws,
                       test_framework_skip_if_no_setenv);
-   TestSuite_AddFull (suite,
-                      "/aws/derive_region",
-                      test_derive_region,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_aws);
-   TestSuite_AddFull (suite,
-                      "/aws/cache",
-                      test_aws_cache,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_aws);
+   TestSuite_AddFull (
+      suite, "/aws/derive_region", test_derive_region, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_no_aws);
+   TestSuite_AddFull (
+      suite, "/aws/cache", test_aws_cache, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_no_aws);
 }

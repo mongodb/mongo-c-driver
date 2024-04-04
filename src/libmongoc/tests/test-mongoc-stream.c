@@ -16,8 +16,7 @@ test_buffered_basic (void)
    ssize_t r;
    char buf[16236];
 
-   stream =
-      mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
    BSON_ASSERT (stream);
 
    /* buffered assumes ownership of stream */
@@ -30,11 +29,7 @@ test_buffered_basic (void)
    if (r != iov.iov_len) {
       char msg[100];
 
-      bson_snprintf (msg,
-                     100,
-                     "Expected %lld got %llu",
-                     (long long) r,
-                     (unsigned long long) iov.iov_len);
+      bson_snprintf (msg, 100, "Expected %lld got %llu", (long long) r, (unsigned long long) iov.iov_len);
       ASSERT_CMPSTR (msg, "failed");
    }
 
@@ -52,8 +47,7 @@ test_buffered_oversized (void)
    ssize_t r;
    char buf[16236];
 
-   stream =
-      mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
    BSON_ASSERT (stream);
 
    /* buffered assumes ownership of stream */
@@ -66,11 +60,7 @@ test_buffered_oversized (void)
    if (r != iov.iov_len) {
       char msg[100];
 
-      bson_snprintf (msg,
-                     100,
-                     "Expected %lld got %llu",
-                     (long long) r,
-                     (unsigned long long) iov.iov_len);
+      bson_snprintf (msg, 100, "Expected %lld got %llu", (long long) r, (unsigned long long) iov.iov_len);
       ASSERT_CMPSTR (msg, "failed");
    }
 
@@ -85,10 +75,7 @@ typedef struct {
 } failing_stream_t;
 
 static ssize_t
-failing_stream_writev (mongoc_stream_t *stream,
-                       mongoc_iovec_t *iov,
-                       size_t iovcnt,
-                       int32_t timeout_msec)
+failing_stream_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
    failing_stream_t *fstream = (failing_stream_t *) stream;
 
@@ -177,16 +164,12 @@ _writev_timeout_stream_destroy (mongoc_stream_t *stream)
 }
 
 static ssize_t
-_writev_timeout_stream_writev (mongoc_stream_t *stream_param,
-                               mongoc_iovec_t *iov,
-                               size_t iovcnt,
-                               int32_t timeout_msec)
+_writev_timeout_stream_writev (mongoc_stream_t *stream_param, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
    BSON_UNUSED (iov);
    BSON_UNUSED (iovcnt);
 
-   writev_timeout_stream_t *const stream =
-      (writev_timeout_stream_t *) stream_param;
+   writev_timeout_stream_t *const stream = (writev_timeout_stream_t *) stream_param;
 
    stream->is_set = true;
    stream->timeout_msec = timeout_msec;
@@ -197,8 +180,7 @@ _writev_timeout_stream_writev (mongoc_stream_t *stream_param,
 static writev_timeout_stream_t *
 _writev_timeout_stream_new (void)
 {
-   writev_timeout_stream_t *const stream =
-      bson_malloc (sizeof (writev_timeout_stream_t));
+   writev_timeout_stream_t *const stream = bson_malloc (sizeof (writev_timeout_stream_t));
 
    *stream = (writev_timeout_stream_t){
       .vtable =
@@ -227,17 +209,10 @@ test_stream_writev_timeout (void)
       writev_timeout_stream_t *const stream = _writev_timeout_stream_new ();
 
       ssize_t const res =
-         _mongoc_stream_writev_full ((mongoc_stream_t *) stream,
-                                     &iov,
-                                     1u,
-                                     MONGOC_DEFAULT_SOCKETTIMEOUTMS,
-                                     &error);
+         _mongoc_stream_writev_full ((mongoc_stream_t *) stream, &iov, 1u, MONGOC_DEFAULT_SOCKETTIMEOUTMS, &error);
       ASSERT_CMPSSIZE_T (res, ==, 0);
-      ASSERT_WITH_MSG (
-         stream->is_set,
-         "expected _writev_timeout_stream_writev() to be invoked");
-      ASSERT_CMPINT32 (
-         stream->timeout_msec, ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+      ASSERT_WITH_MSG (stream->is_set, "expected _writev_timeout_stream_writev() to be invoked");
+      ASSERT_CMPINT32 (stream->timeout_msec, ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 
       mongoc_stream_destroy ((mongoc_stream_t *) stream);
    }
@@ -246,12 +221,9 @@ test_stream_writev_timeout (void)
    {
       writev_timeout_stream_t *const stream = _writev_timeout_stream_new ();
 
-      ssize_t const res = _mongoc_stream_writev_full (
-         (mongoc_stream_t *) stream, &iov, 1u, 0, &error);
+      ssize_t const res = _mongoc_stream_writev_full ((mongoc_stream_t *) stream, &iov, 1u, 0, &error);
       ASSERT_CMPSSIZE_T (res, ==, 0);
-      ASSERT_WITH_MSG (
-         stream->is_set,
-         "expected _writev_timeout_stream_writev() to be invoked");
+      ASSERT_WITH_MSG (stream->is_set, "expected _writev_timeout_stream_writev() to be invoked");
       ASSERT_CMPINT32 (stream->timeout_msec, ==, 0);
 
       mongoc_stream_destroy ((mongoc_stream_t *) stream);
@@ -266,12 +238,9 @@ test_stream_writev_timeout (void)
 
       writev_timeout_stream_t *const stream = _writev_timeout_stream_new ();
 
-      ssize_t const res = _mongoc_stream_writev_full (
-         (mongoc_stream_t *) stream, &iov, 1u, -1, &error);
+      ssize_t const res = _mongoc_stream_writev_full ((mongoc_stream_t *) stream, &iov, 1u, -1, &error);
       ASSERT_CMPSSIZE_T (res, ==, 0);
-      ASSERT_WITH_MSG (
-         stream->is_set,
-         "expected _writev_timeout_stream_writev() to be invoked");
+      ASSERT_WITH_MSG (stream->is_set, "expected _writev_timeout_stream_writev() to be invoked");
       ASSERT_CMPINT32 (stream->timeout_msec, ==, default_timeout_msec);
 
       mongoc_stream_destroy ((mongoc_stream_t *) stream);

@@ -66,5 +66,6 @@ The format of ``masterkey`` for the KMS provider type ``kmip`` is as follows:
 
    {
       keyId: Optional<String>,
+      delegated: Optional<Boolean>, /* If true (recommended), the KMIP server must decrypt this key. Defaults to false. */
       endpoint: Optional<String> /* Host with optional port. */
    }

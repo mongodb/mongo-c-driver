@@ -7,7 +7,7 @@
  * Toggle this to enable/disable checks that all items are returned to the pool
  * before the pool is destroyed
  */
-enum { AUDIT_POOL_ENABLED = 0 };
+static const bool audit_pool_enabled = false;
 
 /**
  * To support correct alignment of the item allocated within pool_node::data,
@@ -31,8 +31,7 @@ typedef struct pool_node {
 } pool_node;
 
 // Flexible member array member should not contribute to sizeof result.
-BSON_STATIC_ASSERT2 (pool_node_size,
-                     sizeof (pool_node) == sizeof (void *) * 2u);
+BSON_STATIC_ASSERT2 (pool_node_size, sizeof (pool_node) == sizeof (void *) * 2u);
 
 struct mongoc_ts_pool {
    mongoc_ts_pool_params params;
@@ -41,7 +40,7 @@ struct mongoc_ts_pool {
    int32_t size;
    bson_mutex_t mtx;
    /* Number of elements that the pool has given to users.
-    * If AUDIT_POOL_ENABLED is zero, this member is unused */
+    * If audit_pool_enabled is zero, this member is unused */
    int32_t outstanding_items;
 };
 
@@ -75,16 +74,14 @@ _pool_node_new (const mongoc_ts_pool *pool)
 
    const size_t alignment = pool->params.element_alignment;
    const size_t size = pool->params.element_size;
-   const size_t minimum_size =
-      sizeof (pool_node) + _pool_node_data_offset (pool) + size;
+   const size_t minimum_size = sizeof (pool_node) + _pool_node_data_offset (pool) + size;
 
    if (alignment == 0) {
       return bson_malloc0 (minimum_size);
    }
 
    // aligned_alloc requires allocation size to be a multiple of the alignment.
-   const size_t required_size =
-      minimum_size + (alignment - (minimum_size % alignment));
+   const size_t required_size = minimum_size + (alignment - (minimum_size % alignment));
 
    return bson_aligned_alloc0 (alignment, required_size);
 }
@@ -115,8 +112,7 @@ _pool_node_get_data (pool_node *node)
 static pool_node *
 _pool_node_from_item (void *item, const mongoc_ts_pool *pool)
 {
-   return (void *) (((unsigned char *) item) - _pool_node_data_offset (pool) -
-                    offsetof (pool_node, data));
+   return (void *) (((unsigned char *) item) - _pool_node_data_offset (pool) - offsetof (pool_node, data));
 }
 
 /**
@@ -127,8 +123,7 @@ _should_prune (const pool_node *node)
 {
    mongoc_ts_pool *pool = node->owner_pool;
    return pool->params.prune_predicate &&
-          pool->params.prune_predicate (_pool_node_get_data_const (node),
-                                        pool->params.userdata);
+          pool->params.prune_predicate (_pool_node_get_data_const (node), pool->params.userdata);
 }
 
 /**
@@ -156,17 +151,15 @@ _new_item (mongoc_ts_pool *pool, bson_error_t *error)
       error->domain = 0;
       error->message[0] = 0;
       /* Construct the object */
-      pool->params.constructor (
-         _pool_node_get_data (node), pool->params.userdata, error);
+      pool->params.constructor (_pool_node_get_data (node), pool->params.userdata, error);
       if (error->code != 0) {
          /* Constructor reported an error. Deallocate and drop the node. */
          bson_free (node);
          node = NULL;
       }
    }
-   if (node && AUDIT_POOL_ENABLED) {
-      bson_atomic_int32_fetch_add (
-         &pool->outstanding_items, 1, bson_memory_order_relaxed);
+   if (node && audit_pool_enabled) {
+      bson_atomic_int32_fetch_add (&pool->outstanding_items, 1, bson_memory_order_relaxed);
    }
    return node;
 }
@@ -179,8 +172,7 @@ _delete_item (pool_node *node)
 {
    mongoc_ts_pool *pool = node->owner_pool;
    if (pool->params.destructor) {
-      pool->params.destructor (_pool_node_get_data (node),
-                               pool->params.userdata);
+      pool->params.destructor (_pool_node_get_data (node), pool->params.userdata);
    }
    bson_free (node);
 }
@@ -200,9 +192,8 @@ _try_get (mongoc_ts_pool *pool)
    bson_mutex_unlock (&pool->mtx);
    if (node) {
       bson_atomic_int32_fetch_sub (&pool->size, 1, bson_memory_order_relaxed);
-      if (AUDIT_POOL_ENABLED) {
-         bson_atomic_int32_fetch_add (
-            &pool->outstanding_items, 1, bson_memory_order_relaxed);
+      if (audit_pool_enabled) {
+         bson_atomic_int32_fetch_add (&pool->outstanding_items, 1, bson_memory_order_relaxed);
       }
    }
    return node;
@@ -215,7 +206,7 @@ mongoc_ts_pool_new (mongoc_ts_pool_params params)
    r->params = params;
    r->head = NULL;
    r->size = 0;
-   if (AUDIT_POOL_ENABLED) {
+   if (audit_pool_enabled) {
       r->outstanding_items = 0;
    }
    bson_mutex_init (&r->mtx);
@@ -235,10 +226,8 @@ mongoc_ts_pool_new (mongoc_ts_pool_params params)
 void
 mongoc_ts_pool_free (mongoc_ts_pool *pool)
 {
-   if (AUDIT_POOL_ENABLED) {
-      BSON_ASSERT (
-         pool->outstanding_items == 0 &&
-         "Pool was destroyed while there are still items checked out");
+   if (audit_pool_enabled) {
+      BSON_ASSERT (pool->outstanding_items == 0 && "Pool was destroyed while there are still items checked out");
    }
    mongoc_ts_pool_clear (pool);
    bson_mutex_destroy (&pool->mtx);
@@ -313,11 +302,9 @@ mongoc_ts_pool_return (mongoc_ts_pool *pool, void *item)
       node->next = pool->head;
       pool->head = node;
       bson_mutex_unlock (&pool->mtx);
-      bson_atomic_int32_fetch_add (
-         &node->owner_pool->size, 1, bson_memory_order_relaxed);
-      if (AUDIT_POOL_ENABLED) {
-         bson_atomic_int32_fetch_sub (
-            &node->owner_pool->outstanding_items, 1, bson_memory_order_relaxed);
+      bson_atomic_int32_fetch_add (&node->owner_pool->size, 1, bson_memory_order_relaxed);
+      if (audit_pool_enabled) {
+         bson_atomic_int32_fetch_sub (&node->owner_pool->outstanding_items, 1, bson_memory_order_relaxed);
       }
    }
 }
@@ -329,9 +316,8 @@ mongoc_ts_pool_drop (mongoc_ts_pool *pool, void *item)
 
    BSON_ASSERT (pool == node->owner_pool);
 
-   if (AUDIT_POOL_ENABLED) {
-      bson_atomic_int32_fetch_sub (
-         &node->owner_pool->outstanding_items, 1, bson_memory_order_relaxed);
+   if (audit_pool_enabled) {
+      bson_atomic_int32_fetch_sub (&node->owner_pool->outstanding_items, 1, bson_memory_order_relaxed);
    }
    _delete_item (node);
 }
@@ -351,9 +337,7 @@ mongoc_ts_pool_size (const mongoc_ts_pool *pool)
 void
 mongoc_ts_pool_visit_each (mongoc_ts_pool *pool,
                            void *visit_userdata,
-                           int (*visit) (void *item,
-                                         void *pool_userdata,
-                                         void *visit_userdata))
+                           int (*visit) (void *item, void *pool_userdata, void *visit_userdata))
 {
    /* Pointer to the pointer that must be updated in case of an item pruning */
    pool_node **node_ptrptr;
@@ -363,8 +347,7 @@ mongoc_ts_pool_visit_each (mongoc_ts_pool *pool,
    node_ptrptr = &pool->head;
    node = pool->head;
    while (node) {
-      const bool should_remove = visit (
-         _pool_node_get_data (node), pool->params.userdata, visit_userdata);
+      const bool should_remove = visit (_pool_node_get_data (node), pool->params.userdata, visit_userdata);
       pool_node *const next_node = node->next;
       if (!should_remove) {
          node_ptrptr = &node->next;

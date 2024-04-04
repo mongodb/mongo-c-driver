@@ -42,9 +42,7 @@ static BSON_ONCE_FUN (_init_mtx)
 }
 
 void
-mongoc_shared_ptr_reset (mongoc_shared_ptr *ptr,
-                         void *pointee,
-                         void (*deleter) (void *))
+mongoc_shared_ptr_reset (mongoc_shared_ptr *ptr, void *pointee, void (*deleter) (void *))
 {
    BSON_ASSERT_PARAM (ptr);
    if (!mongoc_shared_ptr_is_null (*ptr)) {
@@ -117,8 +115,7 @@ mongoc_shared_ptr_copy (mongoc_shared_ptr ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
-      bson_atomic_int_fetch_add (
-         &ret._aux->refcount, 1, bson_memory_order_acquire);
+      bson_atomic_int_fetch_add (&ret._aux->refcount, 1, bson_memory_order_acquire);
    }
    return ret;
 }
@@ -133,8 +130,7 @@ mongoc_shared_ptr_reset_null (mongoc_shared_ptr *ptr)
       return;
    }
    /* Decrement the reference count by one */
-   prevcount = bson_atomic_int_fetch_sub (
-      &ptr->_aux->refcount, 1, bson_memory_order_acq_rel);
+   prevcount = bson_atomic_int_fetch_sub (&ptr->_aux->refcount, 1, bson_memory_order_acq_rel);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
        * Release the managed data. */
@@ -147,9 +143,6 @@ mongoc_shared_ptr_reset_null (mongoc_shared_ptr *ptr)
 int
 mongoc_shared_ptr_use_count (mongoc_shared_ptr ptr)
 {
-   BSON_ASSERT (
-      !mongoc_shared_ptr_is_null (ptr) &&
-      "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_use_count");
-   return bson_atomic_int_fetch (&ptr._aux->refcount,
-                                 bson_memory_order_relaxed);
+   BSON_ASSERT (!mongoc_shared_ptr_is_null (ptr) && "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_use_count");
+   return bson_atomic_int_fetch (&ptr._aux->refcount, bson_memory_order_relaxed);
 }

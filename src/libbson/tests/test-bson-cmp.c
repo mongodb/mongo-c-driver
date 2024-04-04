@@ -303,7 +303,6 @@ test_bson_cmp_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/cmp/less", test_bson_cmp_less);
    TestSuite_Add (suite, "/bson/cmp/greater", test_bson_cmp_greater);
    TestSuite_Add (suite, "/bson/cmp/less_equal", test_bson_cmp_less_equal);
-   TestSuite_Add (
-      suite, "/bson/cmp/greater_equal", test_bson_cmp_greater_equal);
+   TestSuite_Add (suite, "/bson/cmp/greater_equal", test_bson_cmp_greater_equal);
    TestSuite_Add (suite, "/bson/cmp/in_range", test_bson_in_range);
 }

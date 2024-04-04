@@ -1,6 +1,0 @@
-usr/include/libbson*
-usr/lib/*/libbson*.a
-usr/lib/*/libbson*.so
-usr/lib/*/pkgconfig/libbson*
-usr/lib/*/cmake/libbson*
-usr/lib/*/cmake/bson*

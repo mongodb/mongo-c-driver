@@ -26,8 +26,7 @@ map_reduce_advanced (mongoc_database_t *database)
                        "}");
 
    read_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-   cursor = mongoc_database_command (
-      database, MONGOC_QUERY_NONE, 0, 0, 0, command, NULL, read_pref);
+   cursor = mongoc_database_command (database, MONGOC_QUERY_NONE, 0, 0, 0, command, NULL, read_pref);
 
    /* Do something with the results */
    while (mongoc_cursor_next (cursor, &doc)) {

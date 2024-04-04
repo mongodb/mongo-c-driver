@@ -63,8 +63,7 @@ main (int argc, char *argv[])
        * Initialize a new reader for this file descriptor.
        */
       if (!(reader = bson_reader_new_from_file (filename, &error))) {
-         fprintf (
-            stderr, "Failed to open \"%s\": %s\n", filename, error.message);
+         fprintf (stderr, "Failed to open \"%s\": %s\n", filename, error.message);
          continue;
       }
 
@@ -73,15 +72,8 @@ main (int argc, char *argv[])
        */
       while ((b = bson_reader_read (reader, NULL))) {
          docnum++;
-         if (!bson_validate (
-                b,
-                (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL),
-                &offset)) {
-            fprintf (stderr,
-                     "Document %u in \"%s\" is invalid at offset %u.\n",
-                     docnum,
-                     filename,
-                     (int) offset);
+         if (!bson_validate (b, (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL), &offset)) {
+            fprintf (stderr, "Document %u in \"%s\" is invalid at offset %u.\n", docnum, filename, (int) offset);
             bson_reader_destroy (reader);
             return 1;
          }

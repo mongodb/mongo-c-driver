@@ -38,15 +38,12 @@ check_operation_ids (const bson_t *events)
    while (bson_iter_next (&iter)) {
       bson_iter_bson (&iter, &event);
       if (!strcmp (first_key (&event), "command_started_event")) {
-         operation_id =
-            bson_lookup_int64 (&event, "command_started_event.operation_id");
+         operation_id = bson_lookup_int64 (&event, "command_started_event.operation_id");
 
          if (first_operation_id == -1) {
             first_operation_id = operation_id;
          } else if (operation_id != first_operation_id) {
-            test_error (
-               "%s sent wrong operation_id",
-               bson_lookup_utf8 (&event, "command_started_event.command_name"));
+            test_error ("%s sent wrong operation_id", bson_lookup_utf8 (&event, "command_started_event.command_name"));
          }
       }
    }
@@ -54,16 +51,13 @@ check_operation_ids (const bson_t *events)
 
 
 static bool
-command_monitoring_test_run_operation (json_test_ctx_t *ctx,
-                                       const bson_t *test,
-                                       const bson_t *operation)
+command_monitoring_test_run_operation (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
 {
    bson_t reply;
    bool res;
 
    /* Command Monitoring tests don't use explicit session */
-   res =
-      json_test_operation (ctx, test, operation, ctx->collection, NULL, &reply);
+   res = json_test_operation (ctx, test, operation, ctx->collection, NULL, &reply);
 
    bson_destroy (&reply);
 
@@ -104,10 +98,7 @@ static void
 test_all_spec_tests (TestSuite *suite)
 {
    run_unified_tests (suite, JSON_DIR, "command_monitoring/unified");
-   install_json_test_suite (suite,
-                            JSON_DIR,
-                            "command_monitoring/legacy",
-                            &test_command_monitoring_cb);
+   install_json_test_suite (suite, JSON_DIR, "command_monitoring/legacy", &test_command_monitoring_cb);
 }
 
 
@@ -134,15 +125,12 @@ test_get_error (void)
    server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_failed_cb (callbacks, test_get_error_failed_cb);
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &error);
-   future = future_client_command_simple (
-      client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, NULL);
-   request = mock_server_receives_msg (
-      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
+   future = future_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, NULL);
+   request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
    reply_to_request_simple (request, "{'ok': 0, 'errmsg': 'foo', 'code': 42}");
    ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_QUERY, 42, "foo");
@@ -240,8 +228,7 @@ test_change_callbacks (void)
    ASSERT_CMPINT (incremented, ==, 200);
 
    mongoc_client_set_apm_callbacks (client, dec_callbacks, &decremented);
-   cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, tmp_bson (NULL), NULL, NULL);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, tmp_bson (NULL), NULL, NULL);
 
    ASSERT (mongoc_cursor_next (cursor, &b));
    ASSERT_CMPINT (decremented, ==, -1);
@@ -289,21 +276,13 @@ test_reset_callbacks (void)
    insert_200_docs (collection);
 
    mongoc_client_set_apm_callbacks (client, inc_callbacks, &incremented);
-   cmd = tmp_bson ("{'aggregate': '%s', 'pipeline': [], 'cursor': {}}",
-                   collection->collection);
+   cmd = tmp_bson ("{'aggregate': '%s', 'pipeline': [], 'cursor': {}}", collection->collection);
 
-   sd =
-      mongoc_client_select_server (client, true /* for writes */, NULL, &error);
+   sd = mongoc_client_select_server (client, true /* for writes */, NULL, &error);
    ASSERT_OR_PRINT (sd, error);
 
    r = mongoc_client_read_command_with_opts (
-      client,
-      "test",
-      cmd,
-      NULL,
-      tmp_bson ("{'serverId': %d}", sd->id),
-      &cmd_reply,
-      &error);
+      client, "test", cmd, NULL, tmp_bson ("{'serverId': %d}", sd->id), &cmd_reply, &error);
 
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (incremented, ==, 1);
@@ -355,8 +334,7 @@ _test_set_callbacks (bool pooled, bool try_pop)
 
    if (pooled) {
       pool = test_framework_new_default_client_pool ();
-      ASSERT (mongoc_client_pool_set_apm_callbacks (
-         pool, callbacks, (void *) &n_calls));
+      ASSERT (mongoc_client_pool_set_apm_callbacks (pool, callbacks, (void *) &n_calls));
       if (try_pop) {
          client = mongoc_client_pool_try_pop (pool);
       } else {
@@ -364,31 +342,25 @@ _test_set_callbacks (bool pooled, bool try_pop)
       }
    } else {
       client = test_framework_new_default_client ();
-      ASSERT (mongoc_client_set_apm_callbacks (
-         client, callbacks, (void *) &n_calls));
+      ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &n_calls));
    }
 
    ASSERT_OR_PRINT (
-      mongoc_client_read_command_with_opts (
-         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
+      mongoc_client_read_command_with_opts (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
       error);
    ASSERT_CMPINT (1, ==, n_calls);
 
    capture_logs (true);
 
    if (pooled) {
-      ASSERT (
-         !mongoc_client_pool_set_apm_callbacks (pool, NULL, (void *) &n_calls));
-      ASSERT_CAPTURED_LOG ("mongoc_client_pool_set_apm_callbacks",
-                           MONGOC_LOG_LEVEL_ERROR,
-                           "Can only set callbacks once");
+      ASSERT (!mongoc_client_pool_set_apm_callbacks (pool, NULL, (void *) &n_calls));
+      ASSERT_CAPTURED_LOG (
+         "mongoc_client_pool_set_apm_callbacks", MONGOC_LOG_LEVEL_ERROR, "Can only set callbacks once");
 
       clear_captured_logs ();
-      ASSERT (
-         !mongoc_client_set_apm_callbacks (client, NULL, (void *) &n_calls));
-      ASSERT_CAPTURED_LOG ("mongoc_client_pool_set_apm_callbacks",
-                           MONGOC_LOG_LEVEL_ERROR,
-                           "Cannot set callbacks on a pooled client");
+      ASSERT (!mongoc_client_set_apm_callbacks (client, NULL, (void *) &n_calls));
+      ASSERT_CAPTURED_LOG (
+         "mongoc_client_pool_set_apm_callbacks", MONGOC_LOG_LEVEL_ERROR, "Cannot set callbacks on a pooled client");
    } else {
       /* repeated calls ok, null is ok */
       ASSERT (mongoc_client_set_apm_callbacks (client, NULL, NULL));
@@ -517,11 +489,9 @@ test_op_id_failed_cb (const mongoc_apm_command_failed_t *event)
 }
 
 
-#define REQUEST_ID(_event_type, _index) \
-   _mongoc_array_index (&test._event_type##_ids, ids_t, _index).request_id
+#define REQUEST_ID(_event_type, _index) _mongoc_array_index (&test._event_type##_ids, ids_t, _index).request_id
 
-#define OP_ID(_event_type, _index) \
-   _mongoc_array_index (&test._event_type##_ids, ids_t, _index).op_id
+#define OP_ID(_event_type, _index) _mongoc_array_index (&test._event_type##_ids, ids_t, _index).op_id
 
 static void
 _test_bulk_operation_id (bool pooled, bool use_bulk_operation_new)
@@ -545,13 +515,11 @@ _test_bulk_operation_id (bool pooled, bool use_bulk_operation_new)
 
    if (pooled) {
       pool = test_framework_new_default_client_pool ();
-      ASSERT (mongoc_client_pool_set_apm_callbacks (
-         pool, callbacks, (void *) &test));
+      ASSERT (mongoc_client_pool_set_apm_callbacks (pool, callbacks, (void *) &test));
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_new_default_client ();
-      ASSERT (
-         mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
+      ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
    }
 
    collection = get_test_collection (client, "test_bulk_operation_id");
@@ -562,13 +530,11 @@ _test_bulk_operation_id (bool pooled, bool use_bulk_operation_new)
       mongoc_bulk_operation_set_collection (bulk, collection->collection);
    } else {
       bson_append_bool (&opts, "ordered", 7, false);
-      bulk =
-         mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
+      bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    }
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
-   mongoc_bulk_operation_update_one (
-      bulk, tmp_bson ("{'_id': 1}"), tmp_bson ("{'$set': {'x': 1}}"), false);
+   mongoc_bulk_operation_update_one (bulk, tmp_bson ("{'_id': 1}"), tmp_bson ("{'$set': {'x': 1}}"), false);
    mongoc_bulk_operation_remove (bulk, tmp_bson ("{}"));
 
    /* ensure we monitor with bulk->operation_id, not cluster->operation_id */
@@ -671,21 +637,16 @@ _test_query_operation_id (bool pooled)
    mongoc_apm_set_command_failed_cb (callbacks, test_op_id_failed_cb);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (
-         mock_server_get_uri (server), NULL);
-      ASSERT (mongoc_client_pool_set_apm_callbacks (
-         pool, callbacks, (void *) &test));
+      pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (server), NULL);
+      ASSERT (mongoc_client_pool_set_apm_callbacks (pool, callbacks, (void *) &test));
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new_from_uri (mock_server_get_uri (server),
-                                                   NULL);
-      ASSERT (
-         mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
+      client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+      ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
    }
 
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -791,8 +752,7 @@ cmd_started_cb (const mongoc_apm_command_started_t *event)
 {
    cmd_test_t *test;
 
-   if (!strcmp (mongoc_apm_command_started_get_command_name (event),
-                "endSessions")) {
+   if (!strcmp (mongoc_apm_command_started_get_command_name (event), "endSessions")) {
       /* the test is ending */
       return;
    }
@@ -800,13 +760,9 @@ cmd_started_cb (const mongoc_apm_command_started_t *event)
    test = (cmd_test_t *) mongoc_apm_command_started_get_context (event);
    test->started_calls++;
    bson_destroy (&test->cmd);
-   bson_strncpy (test->db,
-                 mongoc_apm_command_started_get_database_name (event),
-                 sizeof (test->db));
+   bson_strncpy (test->db, mongoc_apm_command_started_get_database_name (event), sizeof (test->db));
    bson_copy_to (mongoc_apm_command_started_get_command (event), &test->cmd);
-   bson_strncpy (test->cmd_name,
-                 mongoc_apm_command_started_get_command_name (event),
-                 sizeof (test->cmd_name));
+   bson_strncpy (test->cmd_name, mongoc_apm_command_started_get_command_name (event), sizeof (test->cmd_name));
 }
 
 
@@ -816,15 +772,13 @@ cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
    cmd_test_t *test;
    int64_t duration;
 
-   if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event),
-                "endSessions")) {
+   if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event), "endSessions")) {
       return;
    }
 
    test = (cmd_test_t *) mongoc_apm_command_succeeded_get_context (event);
    test->succeeded_calls++;
-   ASSERT_CMPSTR (test->cmd_name,
-                  mongoc_apm_command_succeeded_get_command_name (event));
+   ASSERT_CMPSTR (test->cmd_name, mongoc_apm_command_succeeded_get_command_name (event));
 
    duration = mongoc_apm_command_succeeded_get_duration (event);
    ASSERT_CMPINT64 (duration, >=, (int64_t) 0);
@@ -840,8 +794,7 @@ cmd_failed_cb (const mongoc_apm_command_failed_t *event)
 
    test = (cmd_test_t *) mongoc_apm_command_failed_get_context (event);
    test->failed_calls++;
-   ASSERT_CMPSTR (test->cmd_name,
-                  mongoc_apm_command_failed_get_command_name (event));
+   ASSERT_CMPSTR (test->cmd_name, mongoc_apm_command_failed_get_command_name (event));
 
    duration = mongoc_apm_command_failed_get_duration (event);
    ASSERT_CMPINT64 (duration, >=, (int64_t) 0);
@@ -876,15 +829,8 @@ test_client_cmd (void)
    cmd_test_init (&test);
    client = test_framework_new_default_client ();
    set_cmd_test_callbacks (client, (void *) &test);
-   cursor = mongoc_client_command (client,
-                                   "admin",
-                                   MONGOC_QUERY_SECONDARY_OK,
-                                   0,
-                                   0,
-                                   0,
-                                   tmp_bson ("{'ping': 1}"),
-                                   NULL,
-                                   NULL);
+   cursor =
+      mongoc_client_command (client, "admin", MONGOC_QUERY_SECONDARY_OK, 0, 0, 0, tmp_bson ("{'ping': 1}"), NULL, NULL);
 
    ASSERT (mongoc_cursor_next (cursor, &reply));
    ASSERT_CMPSTR (test.cmd_name, "ping");
@@ -898,15 +844,8 @@ test_client_cmd (void)
    mongoc_cursor_destroy (cursor);
 
    cmd_test_init (&test);
-   cursor = mongoc_client_command (client,
-                                   "admin",
-                                   MONGOC_QUERY_SECONDARY_OK,
-                                   0,
-                                   0,
-                                   0,
-                                   tmp_bson ("{'foo': 1}"),
-                                   NULL,
-                                   NULL);
+   cursor =
+      mongoc_client_command (client, "admin", MONGOC_QUERY_SECONDARY_OK, 0, 0, 0, tmp_bson ("{'foo': 1}"), NULL, NULL);
 
    ASSERT (!mongoc_cursor_next (cursor, &reply));
    ASSERT_CMPSTR (test.cmd_name, "foo");
@@ -933,8 +872,7 @@ test_client_cmd_simple (void)
    cmd_test_init (&test);
    client = test_framework_new_default_client ();
    set_cmd_test_callbacks (client, (void *) &test);
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPSTR (test.cmd_name, "ping");
@@ -946,8 +884,7 @@ test_client_cmd_simple (void)
 
    cmd_test_cleanup (&test);
    cmd_test_init (&test);
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
    ASSERT (!r);
    ASSERT_CMPSTR (test.cmd_name, "foo");
@@ -982,8 +919,7 @@ test_client_cmd_op_ids (void)
    client = test_framework_new_default_client ();
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test);
 
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (1, ==, test.started_calls);
@@ -998,8 +934,7 @@ test_client_cmd_op_ids (void)
    op_id_test_init (&test);
 
    /* again. test that we use a new op_id. */
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (1, ==, test.started_calls);
@@ -1032,8 +967,7 @@ test_killcursors_deprecated (void *unused)
    client = test_framework_new_default_client ();
 
    /* connect */
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    set_cmd_test_callbacks (client, (void *) &test);
@@ -1075,13 +1009,11 @@ cmd_failed_reply_test_cleanup (cmd_failed_reply_test_t *test)
 
 
 static void
-command_failed_reply_command_failed_cb (
-   const mongoc_apm_command_failed_t *event)
+command_failed_reply_command_failed_cb (const mongoc_apm_command_failed_t *event)
 {
    cmd_failed_reply_test_t *test;
 
-   test =
-      (cmd_failed_reply_test_t *) mongoc_apm_command_failed_get_context (event);
+   test = (cmd_failed_reply_test_t *) mongoc_apm_command_failed_get_context (event);
    test->failed_calls++;
 
    bson_free (test->db);
@@ -1113,16 +1045,13 @@ test_command_failed_reply_mock (void)
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_command_failed_cb (callbacks,
-                                     command_failed_reply_command_failed_cb);
+   mongoc_apm_set_command_failed_cb (callbacks, command_failed_reply_command_failed_cb);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -1171,16 +1100,13 @@ test_command_failed_reply_hangup (void)
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_command_failed_cb (callbacks,
-                                     command_failed_reply_command_failed_cb);
+   mongoc_apm_set_command_failed_cb (callbacks, command_failed_reply_command_failed_cb);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db2", "collection");
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -1246,8 +1172,7 @@ service_id_cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
    service_id_test_t *test = mongoc_apm_command_succeeded_get_context (event);
 
    test->succeeded_calls++;
-   assert_service_id (test,
-                      mongoc_apm_command_succeeded_get_service_id (event));
+   assert_service_id (test, mongoc_apm_command_succeeded_get_service_id (event));
 }
 
 
@@ -1277,14 +1202,12 @@ _test_service_id (bool is_loadbalanced)
    mock_server_run (server);
    mock_server_auto_endsessions (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_bool (
-      uri, MONGOC_URI_LOADBALANCED, is_loadbalanced);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, is_loadbalanced);
    client = test_framework_client_new_from_uri (uri, NULL);
 
    if (is_loadbalanced) {
       context.has_service_id = true;
-      bson_oid_init_from_string (&context.expected_service_id,
-                                 "AAAAAAAAAAAAAAAAAAAAAAAA");
+      bson_oid_init_from_string (&context.expected_service_id, "AAAAAAAAAAAAAAAAAAAAAAAA");
    }
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -1294,30 +1217,22 @@ _test_service_id (bool is_loadbalanced)
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, &context));
    mongoc_apm_callbacks_destroy (callbacks);
 
-   future = future_client_command_simple (client,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
 
    if (is_loadbalanced) {
-      request = mock_server_receives_any_hello_with_match (
-         server, "{'loadBalanced': true}", "{'loadBalanced': true}");
-      reply_to_request_simple (
-         request,
-         tmp_str ("{'ismaster': true,"
-                  " 'minWireVersion': %d,"
-                  " 'maxWireVersion': %d,"
-                  " 'msg': 'isdbgrid',"
-                  " 'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}",
-                  WIRE_VERSION_MIN,
-                  WIRE_VERSION_5_0));
+      request = mock_server_receives_any_hello_with_match (server, "{'loadBalanced': true}", "{'loadBalanced': true}");
+      reply_to_request_simple (request,
+                               tmp_str ("{'ismaster': true,"
+                                        " 'minWireVersion': %d,"
+                                        " 'maxWireVersion': %d,"
+                                        " 'msg': 'isdbgrid',"
+                                        " 'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}",
+                                        WIRE_VERSION_MIN,
+                                        WIRE_VERSION_5_0));
    } else {
       request = mock_server_receives_any_hello_with_match (
-         server,
-         "{'loadBalanced': { '$exists': false }}",
-         "{'loadBalanced': { '$exists': false }}");
+         server, "{'loadBalanced': { '$exists': false }}", "{'loadBalanced': { '$exists': false }}");
       reply_to_request_simple (request,
                                tmp_str ("{'ismaster': true,"
                                         " 'minWireVersion': %d,"
@@ -1334,16 +1249,11 @@ _test_service_id (bool is_loadbalanced)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
-   future = future_client_command_simple (client,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
 
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
-   reply_to_request_simple (request,
-                            "{'ok': 0, 'code': 8, 'errmsg': 'UnknownError'}");
+   reply_to_request_simple (request, "{'ok': 0, 'code': 8, 'errmsg': 'UnknownError'}");
    request_destroy (request);
 
    ASSERT (!future_get_bool (future));
@@ -1377,64 +1287,33 @@ void
 test_command_monitoring_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_AddMockServerTest (
-      suite, "/command_monitoring/get_error", test_get_error);
-   TestSuite_AddLive (suite,
-                      "/command_monitoring/set_callbacks/single",
-                      test_set_callbacks_single);
-   TestSuite_AddLive (suite,
-                      "/command_monitoring/set_callbacks/pooled",
-                      test_set_callbacks_pooled);
-   TestSuite_AddLive (suite,
-                      "/command_monitoring/set_callbacks/pooled_try_pop",
-                      test_set_callbacks_pooled_try_pop);
+   TestSuite_AddMockServerTest (suite, "/command_monitoring/get_error", test_get_error);
+   TestSuite_AddLive (suite, "/command_monitoring/set_callbacks/single", test_set_callbacks_single);
+   TestSuite_AddLive (suite, "/command_monitoring/set_callbacks/pooled", test_set_callbacks_pooled);
+   TestSuite_AddLive (suite, "/command_monitoring/set_callbacks/pooled_try_pop", test_set_callbacks_pooled_try_pop);
    /* require aggregation cursor */
-   TestSuite_AddLive (
-      suite, "/command_monitoring/set_callbacks/change", test_change_callbacks);
-   TestSuite_AddLive (
-      suite, "/command_monitoring/set_callbacks/reset", test_reset_callbacks);
-   TestSuite_AddLive (suite,
-                      "/command_monitoring/operation_id/bulk/collection/single",
-                      test_collection_bulk_op_single);
-   TestSuite_AddLive (suite,
-                      "/command_monitoring/operation_id/bulk/collection/pooled",
-                      test_collection_bulk_op_pooled);
-   TestSuite_AddLive (suite,
-                      "/command_monitoring/operation_id/bulk/new/single",
-                      test_bulk_op_single);
-   TestSuite_AddLive (suite,
-                      "/command_monitoring/operation_id/bulk/new/pooled",
-                      test_bulk_op_pooled);
+   TestSuite_AddLive (suite, "/command_monitoring/set_callbacks/change", test_change_callbacks);
+   TestSuite_AddLive (suite, "/command_monitoring/set_callbacks/reset", test_reset_callbacks);
+   TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/collection/single", test_collection_bulk_op_single);
+   TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/collection/pooled", test_collection_bulk_op_pooled);
+   TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/new/single", test_bulk_op_single);
+   TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/new/pooled", test_bulk_op_pooled);
    TestSuite_AddMockServerTest (
-      suite,
-      "/command_monitoring/operation_id/query/single/cmd",
-      test_query_operation_id_single_cmd);
+      suite, "/command_monitoring/operation_id/query/single/cmd", test_query_operation_id_single_cmd);
    TestSuite_AddMockServerTest (
-      suite,
-      "/command_monitoring/operation_id/query/pooled/cmd",
-      test_query_operation_id_pooled_cmd);
+      suite, "/command_monitoring/operation_id/query/pooled/cmd", test_query_operation_id_pooled_cmd);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd", test_client_cmd);
-   TestSuite_AddLive (
-      suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);
-   TestSuite_AddLive (
-      suite, "/command_monitoring/client_cmd/op_ids", test_client_cmd_op_ids);
+   TestSuite_AddLive (suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);
+   TestSuite_AddLive (suite, "/command_monitoring/client_cmd/op_ids", test_client_cmd_op_ids);
    TestSuite_AddFull (suite,
                       "/command_monitoring/killcursors_deprecated",
                       test_killcursors_deprecated,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_legacy_opcodes);
-   TestSuite_AddMockServerTest (suite,
-                                "/command_monitoring/failed_reply_mock",
-                                test_command_failed_reply_mock);
-   TestSuite_AddMockServerTest (suite,
-                                "/command_monitoring/failed_reply_hangup",
-                                test_command_failed_reply_hangup);
-   TestSuite_AddMockServerTest (suite,
-                                "/command_monitoring/service_id/loadbalanced",
-                                test_service_id_loadbalanced);
+   TestSuite_AddMockServerTest (suite, "/command_monitoring/failed_reply_mock", test_command_failed_reply_mock);
+   TestSuite_AddMockServerTest (suite, "/command_monitoring/failed_reply_hangup", test_command_failed_reply_hangup);
+   TestSuite_AddMockServerTest (suite, "/command_monitoring/service_id/loadbalanced", test_service_id_loadbalanced);
    TestSuite_AddMockServerTest (
-      suite,
-      "/command_monitoring/service_id/not_loadbalanced",
-      test_service_id_not_loadbalanced);
+      suite, "/command_monitoring/service_id/not_loadbalanced", test_service_id_not_loadbalanced);
 }

@@ -28,10 +28,7 @@
 BSON_BEGIN_DECLS
 
 typedef struct _mongoc_crypto_t mongoc_crypto_t;
-typedef enum {
-   MONGOC_CRYPTO_ALGORITHM_SHA_1,
-   MONGOC_CRYPTO_ALGORITHM_SHA_256
-} mongoc_crypto_hash_algorithm_t;
+typedef enum { MONGOC_CRYPTO_ALGORITHM_SHA_1, MONGOC_CRYPTO_ALGORITHM_SHA_256 } mongoc_crypto_hash_algorithm_t;
 
 struct _mongoc_crypto_t {
    void (*hmac) (mongoc_crypto_t *crypto,
@@ -40,16 +37,12 @@ struct _mongoc_crypto_t {
                  const unsigned char *data,
                  int data_len,
                  unsigned char *hmac_out);
-   bool (*hash) (mongoc_crypto_t *crypto,
-                 const unsigned char *input,
-                 const size_t input_len,
-                 unsigned char *hash_out);
+   bool (*hash) (mongoc_crypto_t *crypto, const unsigned char *input, const size_t input_len, unsigned char *hash_out);
    mongoc_crypto_hash_algorithm_t algorithm;
 };
 
 void
-mongoc_crypto_init (mongoc_crypto_t *crypto,
-                    mongoc_crypto_hash_algorithm_t algo);
+mongoc_crypto_init (mongoc_crypto_t *crypto, mongoc_crypto_hash_algorithm_t algo);
 
 void
 mongoc_crypto_hmac (mongoc_crypto_t *crypto,

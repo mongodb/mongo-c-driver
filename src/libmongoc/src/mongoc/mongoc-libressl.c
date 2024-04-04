@@ -35,8 +35,7 @@
 
 
 bool
-mongoc_libressl_setup_certificate (mongoc_stream_tls_libressl_t *libressl,
-                                   mongoc_ssl_opt_t *opt)
+mongoc_libressl_setup_certificate (mongoc_stream_tls_libressl_t *libressl, mongoc_ssl_opt_t *opt)
 {
    uint8_t *file;
    size_t file_len;
@@ -51,8 +50,7 @@ mongoc_libressl_setup_certificate (mongoc_stream_tls_libressl_t *libressl,
       return false;
    }
 
-   if (tls_config_set_keypair_mem (
-          libressl->config, file, file_len, file, file_len) == -1) {
+   if (tls_config_set_keypair_mem (libressl->config, file, file_len, file, file_len) == -1) {
       MONGOC_ERROR ("%s", tls_config_error (libressl->config));
       return false;
    }
@@ -61,8 +59,7 @@ mongoc_libressl_setup_certificate (mongoc_stream_tls_libressl_t *libressl,
 }
 
 bool
-mongoc_libressl_setup_ca (mongoc_stream_tls_libressl_t *libressl,
-                          mongoc_ssl_opt_t *opt)
+mongoc_libressl_setup_ca (mongoc_stream_tls_libressl_t *libressl, mongoc_ssl_opt_t *opt)
 {
    if (opt->ca_file) {
       tls_config_set_ca_file (libressl->config, opt->ca_file);

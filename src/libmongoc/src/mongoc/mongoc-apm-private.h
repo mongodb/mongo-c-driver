@@ -223,8 +223,7 @@ mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event);
  * @param body The body of the command request, reply, or failure.
  */
 bool
-mongoc_apm_is_sensitive_command_message (const char *command_name,
-                                         const bson_t *body);
+mongoc_apm_is_sensitive_command_message (const char *command_name, const bson_t *body);
 
 BSON_END_DECLS
 

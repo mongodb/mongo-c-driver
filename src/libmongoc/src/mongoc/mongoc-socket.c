@@ -33,8 +33,7 @@
 #define MONGOC_LOG_DOMAIN "socket"
 
 
-#define OPERATION_EXPIRED(expire_at) \
-   ((expire_at >= 0) && (expire_at < (bson_get_monotonic_time ())))
+#define OPERATION_EXPIRED(expire_at) ((expire_at >= 0) && (expire_at < (bson_get_monotonic_time ())))
 
 
 /* either struct sockaddr or void, depending on platform */
@@ -203,8 +202,7 @@ _mongoc_socket_wait (mongoc_socket_t *sock, /* IN */
       } else {
          timeout_tv.tv_sec = timeout / 1000;
          timeout_tv.tv_usec = (timeout % 1000) * 1000;
-         ret = select (
-            0 /*unused*/, &read_fds, &write_fds, &error_fds, &timeout_tv);
+         ret = select (0 /*unused*/, &read_fds, &write_fds, &error_fds, &timeout_tv);
       }
       if (ret == SOCKET_ERROR) {
          _mongoc_socket_capture_errno (sock);
@@ -220,8 +218,7 @@ _mongoc_socket_wait (mongoc_socket_t *sock, /* IN */
       if (ret > 0) {
 /* Something happened, so return that */
 #ifdef _WIN32
-         return (FD_ISSET (sock->sd, &read_fds) ||
-                 FD_ISSET (sock->sd, &write_fds));
+         return (FD_ISSET (sock->sd, &read_fds) || FD_ISSET (sock->sd, &write_fds));
 #else
          RETURN (0 != (pfd.revents & events));
 #endif
@@ -371,8 +368,7 @@ _mongoc_socket_setkeepalive_windows (SOCKET sd)
    DWORD type;
    DWORD data;
    DWORD data_size = sizeof data;
-   const char *reg_key =
-      "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters";
+   const char *reg_key = "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters";
    keepalive.onoff = true;
    keepalive.keepalivetime = MONGODB_KEEPIDLE * 1000;
    keepalive.keepaliveinterval = MONGODB_KEEPALIVEINTVL * 1000;
@@ -388,16 +384,13 @@ _mongoc_socket_setkeepalive_windows (SOCKET sd)
     * change the default value by setting the registry values.
     */
 
-   if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, reg_key, 0, KEY_QUERY_VALUE, &hKey) ==
-       ERROR_SUCCESS) {
+   if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, reg_key, 0, KEY_QUERY_VALUE, &hKey) == ERROR_SUCCESS) {
       /* https://technet.microsoft.com/en-us/library/cc957549.aspx */
       DWORD default_keepalivetime = 7200000; /* 2 hours */
       /* https://technet.microsoft.com/en-us/library/cc957548.aspx */
       DWORD default_keepaliveinterval = 1000; /* 1 second */
 
-      if (RegQueryValueEx (
-             hKey, "KeepAliveTime", NULL, &type, (LPBYTE) &data, &data_size) ==
-          ERROR_SUCCESS) {
+      if (RegQueryValueEx (hKey, "KeepAliveTime", NULL, &type, (LPBYTE) &data, &data_size) == ERROR_SUCCESS) {
          if (type == REG_DWORD && data < keepalive.keepalivetime) {
             keepalive.keepalivetime = data;
          }
@@ -405,12 +398,7 @@ _mongoc_socket_setkeepalive_windows (SOCKET sd)
          keepalive.keepalivetime = default_keepalivetime;
       }
 
-      if (RegQueryValueEx (hKey,
-                           "KeepAliveInterval",
-                           NULL,
-                           &type,
-                           (LPBYTE) &data,
-                           &data_size) == ERROR_SUCCESS) {
+      if (RegQueryValueEx (hKey, "KeepAliveInterval", NULL, &type, (LPBYTE) &data, &data_size) == ERROR_SUCCESS) {
          if (type == REG_DWORD && data < keepalive.keepaliveinterval) {
             keepalive.keepaliveinterval = data;
          }
@@ -419,15 +407,8 @@ _mongoc_socket_setkeepalive_windows (SOCKET sd)
       }
       RegCloseKey (hKey);
    }
-   if (WSAIoctl (sd,
-                 SIO_KEEPALIVE_VALS,
-                 &keepalive,
-                 sizeof keepalive,
-                 NULL,
-                 0,
-                 &lpcbBytesReturned,
-                 NULL,
-                 NULL) == SOCKET_ERROR) {
+   if (WSAIoctl (sd, SIO_KEEPALIVE_VALS, &keepalive, sizeof keepalive, NULL, 0, &lpcbBytesReturned, NULL, NULL) ==
+       SOCKET_ERROR) {
       TRACE ("%s", "Could not set keepalive values");
    } else {
       TRACE ("%s", "KeepAlive values updated");
@@ -471,25 +452,15 @@ _mongoc_socket_set_sockopt_if_less (int sd, int name, int value)
 
    optlen = sizeof optval;
    if (getsockopt (sd, IPPROTO_TCP, name, (char *) &optval, &optlen)) {
-      TRACE ("Getting '%s' failed, errno: %d",
-             _mongoc_socket_sockopt_value_to_name (name),
-             errno);
+      TRACE ("Getting '%s' failed, errno: %d", _mongoc_socket_sockopt_value_to_name (name), errno);
    } else {
-      TRACE ("'%s' is %d, target value is %d",
-             _mongoc_socket_sockopt_value_to_name (name),
-             optval,
-             value);
+      TRACE ("'%s' is %d, target value is %d", _mongoc_socket_sockopt_value_to_name (name), optval, value);
       if (optval > value) {
          optval = value;
-         if (setsockopt (
-                sd, IPPROTO_TCP, name, (char *) &optval, sizeof optval)) {
-            TRACE ("Setting '%s' failed, errno: %d",
-                   _mongoc_socket_sockopt_value_to_name (name),
-                   errno);
+         if (setsockopt (sd, IPPROTO_TCP, name, (char *) &optval, sizeof optval)) {
+            TRACE ("Setting '%s' failed, errno: %d", _mongoc_socket_sockopt_value_to_name (name), errno);
          } else {
-            TRACE ("'%s' value changed to %d",
-                   _mongoc_socket_sockopt_value_to_name (name),
-                   optval);
+            TRACE ("'%s' value changed to %d", _mongoc_socket_sockopt_value_to_name (name), optval);
          }
       }
    }
@@ -507,8 +478,7 @@ _mongoc_socket_setkeepalive_nix (int sd)
 #endif
 
 #ifdef TCP_KEEPINTVL
-   _mongoc_socket_set_sockopt_if_less (
-      sd, TCP_KEEPINTVL, MONGODB_KEEPALIVEINTVL);
+   _mongoc_socket_set_sockopt_if_less (sd, TCP_KEEPINTVL, MONGODB_KEEPALIVEINTVL);
 #else
    TRACE ("%s", "TCP_KEEPINTVL not available");
 #endif
@@ -533,8 +503,7 @@ _mongoc_socket_setkeepalive (int sd) /* IN */
 
    ENTRY;
 #ifdef SO_KEEPALIVE
-   if (!setsockopt (
-          sd, SOL_SOCKET, SO_KEEPALIVE, (char *) &optval, sizeof optval)) {
+   if (!setsockopt (sd, SOL_SOCKET, SO_KEEPALIVE, (char *) &optval, sizeof optval)) {
       TRACE ("%s", "Setting SO_KEEPALIVE");
 #ifdef _WIN32
       _mongoc_socket_setkeepalive_windows (sd);
@@ -556,7 +525,7 @@ static bool
 #ifdef _WIN32
 _mongoc_socket_setnodelay (SOCKET sd) /* IN */
 #else
-_mongoc_socket_setnodelay (int sd)   /* IN */
+_mongoc_socket_setnodelay (int sd) /* IN */
 #endif
 {
 #ifdef _WIN32
@@ -569,8 +538,7 @@ _mongoc_socket_setnodelay (int sd)   /* IN */
    ENTRY;
 
    errno = 0;
-   ret = setsockopt (
-      sd, IPPROTO_TCP, TCP_NODELAY, (char *) &optval, sizeof optval);
+   ret = setsockopt (sd, IPPROTO_TCP, TCP_NODELAY, (char *) &optval, sizeof optval);
 
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
@@ -878,8 +846,7 @@ mongoc_socket_connect (mongoc_socket_t *sock,       /* IN */
    if (failed && try_again) {
       if (_mongoc_socket_wait (sock, POLLOUT, expire_at)) {
          optval = -1;
-         ret = getsockopt (
-            sock->sd, SOL_SOCKET, SO_ERROR, (char *) &optval, &optlen);
+         ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR, (char *) &optval, &optlen);
          if ((ret == 0) && (optval == 0)) {
             RETURN (0);
          } else {
@@ -1097,8 +1064,7 @@ again:
 #endif
    if (failed) {
       _mongoc_socket_capture_errno (sock);
-      if (_mongoc_socket_errno_is_again (sock) &&
-          _mongoc_socket_wait (sock, POLLIN, expire_at)) {
+      if (_mongoc_socket_errno_is_again (sock) && _mongoc_socket_wait (sock, POLLIN, expire_at)) {
          GOTO (again);
       }
    }
@@ -1291,17 +1257,8 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock, /* IN */
 
 #ifdef _WIN32
    BSON_ASSERT (bson_in_range_unsigned (unsigned_long, iovcnt));
-   ret = WSASend (sock->sd,
-                  (LPWSABUF) iov,
-                  (DWORD) iovcnt,
-                  &dwNumberofBytesSent,
-                  0,
-                  NULL,
-                  NULL);
-   TRACE ("WSASend sent: %ld (out of: %zu), ret: %d",
-          dwNumberofBytesSent,
-          iov->iov_len,
-          ret);
+   ret = WSASend (sock->sd, (LPWSABUF) iov, (DWORD) iovcnt, &dwNumberofBytesSent, 0, NULL, NULL);
+   TRACE ("WSASend sent: %ld (out of: %zu), ret: %d", dwNumberofBytesSent, iov->iov_len, ret);
 #else
    memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
@@ -1393,8 +1350,7 @@ mongoc_socket_sendv (mongoc_socket_t *sock,  /* IN */
 
    for (;;) {
       sent = _mongoc_socket_try_sendv (sock, &iov[cur], iovcnt - cur);
-      TRACE (
-         "Sent %zd (of %zu) out of iovcnt=%zu", sent, iov[cur].iov_len, iovcnt);
+      TRACE ("Sent %zd (of %zu) out of iovcnt=%zu", sent, iov[cur].iov_len, iovcnt);
 
       /*
        * If we failed with anything other than EAGAIN or EWOULDBLOCK,
@@ -1419,9 +1375,7 @@ mongoc_socket_sendv (mongoc_socket_t *sock,  /* IN */
           * Subtract the sent amount from what we still need to send.
           */
          while ((cur < iovcnt) && (sent >= (ssize_t) iov[cur].iov_len)) {
-            TRACE ("still got bytes left: sent -= iov_len: %zd -= %zu",
-                   sent,
-                   iov[cur].iov_len);
+            TRACE ("still got bytes left: sent -= iov_len: %zd -= %zu", sent, iov[cur].iov_len);
             sent -= iov[cur++].iov_len;
          }
 
@@ -1439,8 +1393,7 @@ mongoc_socket_sendv (mongoc_socket_t *sock,  /* IN */
           * the number of bytes to write.
           */
          TRACE ("Seeked io_base+%zd", sent);
-         TRACE (
-            "Subtracting iov_len -= sent; %zu -= %zd", iov[cur].iov_len, sent);
+         TRACE ("Subtracting iov_len -= sent; %zu -= %zd", iov[cur].iov_len, sent);
          iov[cur].iov_base = ((char *) iov[cur].iov_base) + sent;
          iov[cur].iov_len -= sent;
          TRACE ("iov_len remaining %zu", iov[cur].iov_len);
@@ -1505,8 +1458,7 @@ mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
       RETURN (NULL);
    }
 
-   if (getnameinfo (
-          (struct sockaddr *) &addr, len, host, sizeof host, NULL, 0, 0)) {
+   if (getnameinfo ((struct sockaddr *) &addr, len, host, sizeof host, NULL, 0, 0)) {
       RETURN (NULL);
    }
 

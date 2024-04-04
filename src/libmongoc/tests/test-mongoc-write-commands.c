@@ -47,32 +47,18 @@ test_split_insert (void)
 
    _mongoc_write_result_init (&result);
 
-   _mongoc_write_command_init_insert (
-      &command, docs[0], NULL, write_flags, ++client->cluster.operation_id);
+   _mongoc_write_command_init_insert (&command, docs[0], NULL, write_flags, ++client->cluster.operation_id);
 
    for (i = 1; i < 3000; i++) {
       _mongoc_write_command_insert_append (&command, docs[i]);
    }
 
-   server_stream =
-      mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
-   _mongoc_write_command_execute (&command,
-                                  client,
-                                  server_stream,
-                                  collection->db,
-                                  collection->collection,
-                                  NULL,
-                                  0,
-                                  NULL,
-                                  &result);
+   _mongoc_write_command_execute (
+      &command, client, server_stream, collection->db, collection->collection, NULL, 0, NULL, &result);
 
-   r = MONGOC_WRITE_RESULT_COMPLETE (&result,
-                                     2,
-                                     collection->write_concern,
-                                     (mongoc_error_domain_t) 0,
-                                     &reply,
-                                     &error);
+   r = MONGOC_WRITE_RESULT_COMPLETE (&result, 2, collection->write_concern, (mongoc_error_domain_t) 0, &reply, &error);
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (result.nInserted == 3000);
 
@@ -122,28 +108,14 @@ test_invalid_write_concern (void)
 
    doc = BCON_NEW ("_id", BCON_INT32 (0));
 
-   _mongoc_write_command_init_insert (
-      &command, doc, NULL, write_flags, ++client->cluster.operation_id);
+   _mongoc_write_command_init_insert (&command, doc, NULL, write_flags, ++client->cluster.operation_id);
    _mongoc_write_result_init (&result);
-   server_stream =
-      mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
-   _mongoc_write_command_execute (&command,
-                                  client,
-                                  server_stream,
-                                  collection->db,
-                                  collection->collection,
-                                  write_concern,
-                                  0,
-                                  NULL,
-                                  &result);
+   _mongoc_write_command_execute (
+      &command, client, server_stream, collection->db, collection->collection, write_concern, 0, NULL, &result);
 
-   r = MONGOC_WRITE_RESULT_COMPLETE (&result,
-                                     2,
-                                     collection->write_concern,
-                                     (mongoc_error_domain_t) 0,
-                                     &reply,
-                                     &error);
+   r = MONGOC_WRITE_RESULT_COMPLETE (&result, 2, collection->write_concern, (mongoc_error_domain_t) 0, &reply, &error);
 
    BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
@@ -188,10 +160,8 @@ test_bypass_validation (void *context)
    collection = mongoc_database_get_collection (database, collname);
    BSON_ASSERT (collection);
 
-   options = tmp_bson (
-      "{'validator': {'number': {'$gte': 5}}, 'validationAction': 'error'}");
-   collection2 =
-      mongoc_database_create_collection (database, collname, options, &error);
+   options = tmp_bson ("{'validator': {'number': {'$gte': 5}}, 'validationAction': 'error'}");
+   collection2 = mongoc_database_create_collection (database, collname, options, &error);
    ASSERT_OR_PRINT (collection2, error);
    mongoc_collection_destroy (collection2);
 
@@ -206,8 +176,7 @@ test_bypass_validation (void *context)
    bson_destroy (&reply);
    ASSERT (!r);
 
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, 121, "Document failed validation");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, 121, "Document failed validation");
    mongoc_bulk_operation_destroy (bulk);
    /* }}} */
 
@@ -223,8 +192,7 @@ test_bypass_validation (void *context)
    bson_destroy (&reply);
    ASSERT (!r);
 
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, 121, "Document failed validation");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, 121, "Document failed validation");
    mongoc_bulk_operation_destroy (bulk);
    /* }}} */
 
@@ -256,11 +224,10 @@ test_bypass_validation (void *context)
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
    bson_destroy (&reply);
    ASSERT_OR_PRINT (!r, error);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "Cannot set bypassDocumentValidation for unacknowledged writes");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Cannot set bypassDocumentValidation for unacknowledged writes");
    mongoc_bulk_operation_destroy (bulk);
    mongoc_write_concern_destroy (wr);
    /* }}} */
@@ -277,8 +244,7 @@ test_bypass_validation (void *context)
 static void
 test_bypass_command_started (const mongoc_apm_command_started_t *event)
 {
-   ASSERT_HAS_NOT_FIELD (mongoc_apm_command_started_get_command (event),
-                         "bypassDocumentValidation");
+   ASSERT_HAS_NOT_FIELD (mongoc_apm_command_started_get_command (event), "bypassDocumentValidation");
 }
 
 static void
@@ -340,8 +306,7 @@ test_bypass_not_sent (void)
    mongoc_find_and_modify_opts_set_update (opts, update);
    bson_destroy (update);
    query = BCON_NEW ("x", BCON_INT32 (31));
-   r = mongoc_collection_find_and_modify_with_opts (
-      collection, query, opts, &reply, &error);
+   r = mongoc_collection_find_and_modify_with_opts (collection, query, opts, &reply, &error);
    bson_destroy (&reply);
    ASSERT_OR_PRINT (r, error);
    bson_destroy (query);
@@ -352,8 +317,7 @@ test_bypass_not_sent (void)
 
    /* aggregate match */
    pipeline = BCON_NEW ("pipeline", "[", "]");
-   cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, pipeline, agg_opts, NULL);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, pipeline, agg_opts, NULL);
    bson_destroy (pipeline);
    bson_destroy (agg_opts);
 
@@ -403,13 +367,11 @@ test_disconnect_mid_batch (void)
       docs[i] = BCON_NEW ("_id", BCON_INT64 (i));
    }
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
 
-   future = future_collection_insert_many (
-      coll, (const bson_t **) docs, n_docs, NULL, NULL, &error);
+   future = future_collection_insert_many (coll, (const bson_t **) docs, n_docs, NULL, NULL, &error);
    /* Mock server recieves first insert. */
    request = mock_server_receives_request (server);
    BSON_ASSERT (request);
@@ -418,8 +380,7 @@ test_disconnect_mid_batch (void)
 
    BSON_ASSERT (!future_get_bool (future));
    future_destroy (future);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
 
    for (i = 0; i < n_docs; i++) {
       bson_destroy (docs[i]);
@@ -431,9 +392,7 @@ test_disconnect_mid_batch (void)
 }
 
 static void
-_configure_failpoint (mongoc_client_t *client,
-                      const char *mode,
-                      const char *data)
+_configure_failpoint (mongoc_client_t *client, const char *mode, const char *data)
 {
    bool ret;
    bson_error_t error;
@@ -443,9 +402,7 @@ _configure_failpoint (mongoc_client_t *client,
    ret = mongoc_client_command_simple (
       client,
       "admin",
-      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': %s, 'data': %s}",
-                mode,
-                data),
+      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': %s, 'data': %s}", mode, data),
       NULL,
       NULL,
       &error);
@@ -473,8 +430,7 @@ _test_invalid_wc_server_error (void *unused)
                          "'writeConcernError': {'code' : "
                          "91.0, 'errmsg': 'Replication is "
                          "being shut down' }}");
-   ret = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'x':1}"), NULL /* opts */, &reply, &error);
+   ret = mongoc_collection_insert_one (coll, tmp_bson ("{'x':1}"), NULL /* opts */, &reply, &error);
    BSON_ASSERT (!ret);
    ASSERT_MATCH (&reply,
                  "{'writeConcernErrors': [{'code': 91, 'errmsg': "
@@ -491,19 +447,11 @@ void
 test_write_command_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite, "/WriteCommand/split_insert", test_split_insert);
-   TestSuite_AddLive (
-      suite, "/WriteCommand/bypass_not_sent", test_bypass_not_sent);
-   TestSuite_AddLive (
-      suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
-   TestSuite_AddFull (suite,
-                      "/WriteCommand/bypass_validation",
-                      test_bypass_validation,
-                      NULL,
-                      NULL,
-                      TestSuite_CheckLive);
-   TestSuite_AddMockServerTest (suite,
-                                "/WriteCommand/insert_disconnect_mid_batch",
-                                test_disconnect_mid_batch);
+   TestSuite_AddLive (suite, "/WriteCommand/bypass_not_sent", test_bypass_not_sent);
+   TestSuite_AddLive (suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
+   TestSuite_AddFull (
+      suite, "/WriteCommand/bypass_validation", test_bypass_validation, NULL, NULL, TestSuite_CheckLive);
+   TestSuite_AddMockServerTest (suite, "/WriteCommand/insert_disconnect_mid_batch", test_disconnect_mid_batch);
    TestSuite_AddFull (suite,
                       "/WriteCommand/invalid_wc_server_error",
                       _test_invalid_wc_server_error,

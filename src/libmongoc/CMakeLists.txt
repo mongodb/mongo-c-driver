@@ -566,6 +566,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-deprioritized-servers.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-flags.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-generation-map.c
@@ -813,6 +814,12 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
 
+set_property(
+   SOURCE ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c
+   APPEND PROPERTY COMPILE_DEFINITIONS
+   "MONGOC_CYRUS_PLUGIN_PATH_PREFIX=$<IF:$<STREQUAL:${CYRUS_PLUGIN_PATH_PREFIX},>,NULL,\"${CYRUS_PLUGIN_PATH_PREFIX}\">"
+)
+
 if (ENABLE_SHARED)
    add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    if(WIN32)
@@ -1039,6 +1046,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryability-helpers.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sample-commands.c

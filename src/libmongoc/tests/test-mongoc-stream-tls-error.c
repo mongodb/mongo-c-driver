@@ -14,8 +14,7 @@
 
 #define TIMEOUT 10000 /* milliseconds */
 
-#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
-   !defined(MONGOC_ENABLE_SSL_LIBRESSL) &&        \
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL) && \
    !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 /** run as a child thread by test_mongoc_tls_hangup
  *
@@ -52,13 +51,11 @@ static BSON_THREAD_FUN (ssl_error_server, ptr)
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
    server_addr.sin_port = htons (0);
 
-   r = mongoc_socket_bind (
-      listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
+   r = mongoc_socket_bind (listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
    BSON_ASSERT (r == 0);
 
    sock_len = sizeof (server_addr);
-   r = mongoc_socket_getsockname (
-      listen_sock, (struct sockaddr *) &server_addr, &sock_len);
+   r = mongoc_socket_getsockname (listen_sock, (struct sockaddr *) &server_addr, &sock_len);
    BSON_ASSERT (r == 0);
 
    r = mongoc_socket_listen (listen_sock, 10);
@@ -75,8 +72,7 @@ static BSON_THREAD_FUN (ssl_error_server, ptr)
    sock_stream = mongoc_stream_socket_new (conn_sock);
    BSON_ASSERT (sock_stream);
 
-   ssl_stream = mongoc_stream_tls_new_with_hostname (
-      sock_stream, data->host, data->server, 0);
+   ssl_stream = mongoc_stream_tls_new_with_hostname (sock_stream, data->host, data->server, 0);
    BSON_ASSERT (ssl_stream);
 
    switch (data->behavior) {
@@ -84,8 +80,7 @@ static BSON_THREAD_FUN (ssl_error_server, ptr)
       _mongoc_usleep (data->handshake_stall_ms * 1000);
       break;
    case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
-      r = mongoc_stream_tls_handshake_block (
-         ssl_stream, data->host, TIMEOUT, &error);
+      r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
       BSON_ASSERT (r);
 
       r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
@@ -144,19 +139,16 @@ static BSON_THREAD_FUN (ssl_hangup_client, ptr)
    server_addr.sin_port = htons (data->server_port);
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
-   r = mongoc_socket_connect (
-      conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
+   r = mongoc_socket_connect (conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
    BSON_ASSERT (r == 0);
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
    BSON_ASSERT (sock_stream);
 
-   ssl_stream = mongoc_stream_tls_new_with_hostname (
-      sock_stream, data->host, data->client, 1);
+   ssl_stream = mongoc_stream_tls_new_with_hostname (sock_stream, data->host, data->client, 1);
    BSON_ASSERT (ssl_stream);
 
-   r = mongoc_stream_tls_handshake_block (
-      ssl_stream, data->host, TIMEOUT, &error);
+   r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
    BSON_ASSERT (r);
 
    wiov.iov_base = (void *) &buf;
@@ -268,20 +260,16 @@ static BSON_THREAD_FUN (handshake_stall_client, ptr)
 
    /* we should time out after about 200ms */
    start_time = bson_get_monotonic_time ();
-   mongoc_client_read_command_with_opts (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &reply, &error);
+   mongoc_client_read_command_with_opts (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &reply, &error);
 
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_SERVER_SELECTION,
-                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "socket timeout");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "socket timeout");
 
    /* time is in microseconds */
    duration_ms = (bson_get_monotonic_time () - start_time) / 1000;
 
    if (llabs (duration_ms - connect_timeout_ms) > 100) {
-      test_error ("expected timeout after about 200ms, not %" PRId64,
-                  duration_ms);
+      test_error ("expected timeout after about 200ms, not %" PRId64, duration_ms);
    }
 
    data->client_result->result = SSL_TEST_SUCCESS;
@@ -348,24 +336,22 @@ test_mongoc_tls_handshake_stall (void)
 /* TLS stream should be NULL and base stream should still be valid, and error
  * messages should be consistent across TLS libs. Until CDRIVER-2844, just
  * assert message includes the filename, and handle NULL or non-NULL return. */
-#define TLS_LOAD_ERR(_field)                                                  \
-   do {                                                                       \
-      (_field) = "badfile";                                                   \
-      capture_logs (true);                                                    \
-      base = mongoc_stream_socket_new (                                       \
-         mongoc_socket_new (AF_INET, SOCK_STREAM, 0));                        \
-      tls_stream = mongoc_stream_tls_new_with_hostname (base, NULL, &opt, 0); \
-                                                                              \
-      ASSERT_CAPTURED_LOG (                                                   \
-         "bad TLS config file", MONGOC_LOG_LEVEL_ERROR, "badfile");           \
-                                                                              \
-      if (tls_stream) {                                                       \
-         mongoc_stream_destroy (tls_stream);                                  \
-      } else {                                                                \
-         mongoc_stream_destroy (base);                                        \
-      }                                                                       \
-                                                                              \
-      opt.pem_file = opt.ca_file = opt.ca_dir = opt.crl_file = NULL;          \
+#define TLS_LOAD_ERR(_field)                                                          \
+   do {                                                                               \
+      (_field) = "badfile";                                                           \
+      capture_logs (true);                                                            \
+      base = mongoc_stream_socket_new (mongoc_socket_new (AF_INET, SOCK_STREAM, 0));  \
+      tls_stream = mongoc_stream_tls_new_with_hostname (base, NULL, &opt, 0);         \
+                                                                                      \
+      ASSERT_CAPTURED_LOG ("bad TLS config file", MONGOC_LOG_LEVEL_ERROR, "badfile"); \
+                                                                                      \
+      if (tls_stream) {                                                               \
+         mongoc_stream_destroy (tls_stream);                                          \
+      } else {                                                                        \
+         mongoc_stream_destroy (base);                                                \
+      }                                                                               \
+                                                                                      \
+      opt.pem_file = opt.ca_file = opt.ca_dir = opt.crl_file = NULL;                  \
    } while (0)
 
 static void
@@ -383,16 +369,14 @@ test_mongoc_tls_load_files (void)
 void
 test_stream_tls_error_install (TestSuite *suite)
 {
-#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
-   !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
 #if !defined(__APPLE__)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
 
 /* see CDRIVER-2222 this occasionally stalls for a few 100ms on Mac */
 #if !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-   TestSuite_Add (
-      suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);
+   TestSuite_Add (suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);
 #endif
 #endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
    TestSuite_Add (suite, "/TLS/load_files", test_mongoc_tls_load_files);

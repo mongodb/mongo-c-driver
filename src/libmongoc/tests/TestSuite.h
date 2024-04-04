@@ -66,9 +66,7 @@ bson_open (const char *filename, int flags, ...)
 {
    int fd = -1;
 
-   if (_sopen_s (
-          &fd, filename, flags | _O_BINARY, _SH_DENYNO, _S_IREAD | _S_IWRITE) ==
-       NO_ERROR) {
+   if (_sopen_s (&fd, filename, flags | _O_BINARY, _SH_DENYNO, _S_IREAD | _S_IWRITE) == NO_ERROR) {
       return fd;
    }
 
@@ -96,13 +94,12 @@ bson_open (const char *filename, int flags, ...)
 #define CERT_CRL CERT_TEST_DIR "/crl.pem"
 #define CERT_SERVER CERT_TEST_DIR "/server.pem" /* 127.0.0.1 & localhost */
 #define CERT_CLIENT CERT_TEST_DIR "/client.pem"
-#define CERT_ALTNAME                                                   \
-   CERT_TEST_DIR "/altname.pem"             /* alternative.mongodb.org \
-                                             */
-#define CERT_WILD CERT_TEST_DIR "/wild.pem" /* *.mongodb.org */
-#define CERT_COMMONNAME \
-   CERT_TEST_DIR "/commonName.pem"                /* 127.0.0.1 & localhost */
-#define CERT_EXPIRED CERT_TEST_DIR "/expired.pem" /* 127.0.0.1 & localhost */
+#define CERT_ALTNAME                                                               \
+   CERT_TEST_DIR "/altname.pem"                         /* alternative.mongodb.org \
+                                                         */
+#define CERT_WILD CERT_TEST_DIR "/wild.pem"             /* *.mongodb.org */
+#define CERT_COMMONNAME CERT_TEST_DIR "/commonName.pem" /* 127.0.0.1 & localhost */
+#define CERT_EXPIRED CERT_TEST_DIR "/expired.pem"       /* 127.0.0.1 & localhost */
 #define CERT_PASSWORD "qwerty"
 #define CERT_PASSWORD_PROTECTED CERT_TEST_DIR "/password_protected.pem"
 
@@ -120,74 +117,62 @@ bson_open (const char *filename, int flags, ...)
    } else                                    \
       ((void) 0)
 
-#define ASSERT(Cond)                                                           \
-   do {                                                                        \
-      if (!(Cond)) {                                                           \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", \
-                               __FILE__,                                       \
-                               __LINE__,                                       \
-                               BSON_FUNC,                                      \
-                               BSON_STR (Cond));                               \
-         abort ();                                                             \
-      }                                                                        \
+#define ASSERT(Cond)                                                                                         \
+   do {                                                                                                      \
+      if (!(Cond)) {                                                                                         \
+         MONGOC_STDERR_PRINTF (                                                                              \
+            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (Cond)); \
+         abort ();                                                                                           \
+      }                                                                                                      \
    } while (0)
 
 
 void
 _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
-#define test_error(...)                                                    \
-   if (1) {                                                                \
-      MONGOC_STDERR_PRINTF (                                               \
-         "test error in: %s %d:%s()\n", __FILE__, __LINE__, BSON_FUNC);    \
-      _test_error (__VA_ARGS__);                                           \
-      abort (); /* suppress missing return errors in non-void functions */ \
-   } else                                                                  \
+#define test_error(...)                                                                    \
+   if (1) {                                                                                \
+      MONGOC_STDERR_PRINTF ("test error in: %s %d:%s()\n", __FILE__, __LINE__, BSON_FUNC); \
+      _test_error (__VA_ARGS__);                                                           \
+      abort (); /* suppress missing return errors in non-void functions */                 \
+   } else                                                                                  \
       ((void) 0)
 
-#define bson_eq_bson(bson, expected)                                          \
-   do {                                                                       \
-      char *bson_json, *expected_json;                                        \
-      const uint8_t *bson_data = bson_get_data ((bson));                      \
-      const uint8_t *expected_data = bson_get_data ((expected));              \
-      int unequal;                                                            \
-      unsigned o;                                                             \
-      int off = -1;                                                           \
-      unequal = ((expected)->len != (bson)->len) ||                           \
-                memcmp (bson_get_data ((expected)),                           \
-                        bson_get_data ((bson)),                               \
-                        (expected)->len);                                     \
-      if (unequal) {                                                          \
-         bson_json = bson_as_canonical_extended_json (bson, NULL);            \
-         expected_json = bson_as_canonical_extended_json ((expected), NULL);  \
-         for (o = 0; o < (bson)->len && o < (expected)->len; o++) {           \
-            if (bson_data[o] != expected_data[o]) {                           \
-               off = o;                                                       \
-               break;                                                         \
-            }                                                                 \
-         }                                                                    \
-         if (off == -1) {                                                     \
-            off = BSON_MAX ((expected)->len, (bson)->len) - 1;                \
-         }                                                                    \
-         MONGOC_STDERR_PRINTF (                                               \
-            "bson objects unequal (byte %u):\n(%s)\n(%s)\n",                  \
-            off,                                                              \
-            bson_json,                                                        \
-            expected_json);                                                   \
-         {                                                                    \
-            int fd1 = bson_open ("failure.bad.bson", O_RDWR | O_CREAT, 0640); \
-            int fd2 =                                                         \
-               bson_open ("failure.expected.bson", O_RDWR | O_CREAT, 0640);   \
-            ASSERT (fd1 != -1);                                               \
-            ASSERT (fd2 != -1);                                               \
-            ASSERT ((bson)->len == bson_write (fd1, bson_data, (bson)->len)); \
-            ASSERT ((expected)->len ==                                        \
-                    bson_write (fd2, expected_data, (expected)->len));        \
-            bson_close (fd1);                                                 \
-            bson_close (fd2);                                                 \
-         }                                                                    \
-         abort ();                                                            \
-      }                                                                       \
+#define bson_eq_bson(bson, expected)                                                                            \
+   do {                                                                                                         \
+      char *bson_json, *expected_json;                                                                          \
+      const uint8_t *bson_data = bson_get_data ((bson));                                                        \
+      const uint8_t *expected_data = bson_get_data ((expected));                                                \
+      int unequal;                                                                                              \
+      unsigned o;                                                                                               \
+      int off = -1;                                                                                             \
+      unequal = ((expected)->len != (bson)->len) ||                                                             \
+                memcmp (bson_get_data ((expected)), bson_get_data ((bson)), (expected)->len);                   \
+      if (unequal) {                                                                                            \
+         bson_json = bson_as_canonical_extended_json (bson, NULL);                                              \
+         expected_json = bson_as_canonical_extended_json ((expected), NULL);                                    \
+         for (o = 0; o < (bson)->len && o < (expected)->len; o++) {                                             \
+            if (bson_data[o] != expected_data[o]) {                                                             \
+               off = o;                                                                                         \
+               break;                                                                                           \
+            }                                                                                                   \
+         }                                                                                                      \
+         if (off == -1) {                                                                                       \
+            off = BSON_MAX ((expected)->len, (bson)->len) - 1;                                                  \
+         }                                                                                                      \
+         MONGOC_STDERR_PRINTF ("bson objects unequal (byte %u):\n(%s)\n(%s)\n", off, bson_json, expected_json); \
+         {                                                                                                      \
+            int fd1 = bson_open ("failure.bad.bson", O_RDWR | O_CREAT, 0640);                                   \
+            int fd2 = bson_open ("failure.expected.bson", O_RDWR | O_CREAT, 0640);                              \
+            ASSERT (fd1 != -1);                                                                                 \
+            ASSERT (fd2 != -1);                                                                                 \
+            ASSERT ((bson)->len == bson_write (fd1, bson_data, (bson)->len));                                   \
+            ASSERT ((expected)->len == bson_write (fd2, expected_data, (expected)->len));                       \
+            bson_close (fd1);                                                                                   \
+            bson_close (fd2);                                                                                   \
+         }                                                                                                      \
+         abort ();                                                                                              \
+      }                                                                                                         \
    } while (0)
 
 
@@ -195,179 +180,141 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #undef ASSERT_OR_PRINT
 #endif
 
-#define ASSERT_OR_PRINT(_statement, _err)                          \
-   do {                                                            \
-      if (!(_statement)) {                                         \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n  %s\n\n", \
-                               __FILE__,                           \
-                               __LINE__,                           \
-                               BSON_FUNC,                          \
-                               BSON_STR (_statement),              \
-                               _err.message);                      \
-         abort ();                                                 \
-      }                                                            \
+#define ASSERT_OR_PRINT(_statement, _err)                                                                            \
+   do {                                                                                                              \
+      if (!(_statement)) {                                                                                           \
+         MONGOC_STDERR_PRINTF (                                                                                      \
+            "FAIL:%s:%d  %s()\n  %s\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (_statement), _err.message); \
+         abort ();                                                                                                   \
+      }                                                                                                              \
    } while (0)
 
-#define ASSERT_CURSOR_NEXT(_cursor, _doc)                       \
-   do {                                                         \
-      bson_error_t _err;                                        \
-      if (!mongoc_cursor_next ((_cursor), (_doc))) {            \
-         if (mongoc_cursor_error ((_cursor), &_err)) {          \
-            MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", \
-                                  __FILE__,                     \
-                                  __LINE__,                     \
-                                  BSON_FUNC,                    \
-                                  _err.message);                \
-         } else {                                               \
-            MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", \
-                                  __FILE__,                     \
-                                  __LINE__,                     \
-                                  BSON_FUNC,                    \
-                                  "empty cursor");              \
-         }                                                      \
-         abort ();                                              \
-      }                                                         \
+#define ASSERT_CURSOR_NEXT(_cursor, _doc)                                                                       \
+   do {                                                                                                         \
+      bson_error_t _err;                                                                                        \
+      if (!mongoc_cursor_next ((_cursor), (_doc))) {                                                            \
+         if (mongoc_cursor_error ((_cursor), &_err)) {                                                          \
+            MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, _err.message);   \
+         } else {                                                                                               \
+            MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, "empty cursor"); \
+         }                                                                                                      \
+         abort ();                                                                                              \
+      }                                                                                                         \
    } while (0)
 
 
-#define ASSERT_CURSOR_DONE(_cursor)                          \
-   do {                                                      \
-      bson_error_t _err;                                     \
-      const bson_t *_doc;                                    \
-      if (mongoc_cursor_next ((_cursor), &_doc)) {           \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", \
-                               __FILE__,                     \
-                               __LINE__,                     \
-                               BSON_FUNC,                    \
-                               "non-empty cursor");          \
-         abort ();                                           \
-      }                                                      \
-      if (mongoc_cursor_error ((_cursor), &_err)) {          \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", \
-                               __FILE__,                     \
-                               __LINE__,                     \
-                               BSON_FUNC,                    \
-                               _err.message);                \
-         abort ();                                           \
-      }                                                      \
+#define ASSERT_CURSOR_DONE(_cursor)                                                                              \
+   do {                                                                                                          \
+      bson_error_t _err;                                                                                         \
+      const bson_t *_doc;                                                                                        \
+      if (mongoc_cursor_next ((_cursor), &_doc)) {                                                               \
+         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, "non-empty cursor"); \
+         abort ();                                                                                               \
+      }                                                                                                          \
+      if (mongoc_cursor_error ((_cursor), &_err)) {                                                              \
+         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, _err.message);       \
+         abort ();                                                                                               \
+      }                                                                                                          \
    } while (0)
 
 
-#define ASSERT_CMPINT_HELPER(a, eq, b, fmt, type)                          \
-   do {                                                                    \
-      /* evaluate once */                                                  \
-      type _a = a;                                                         \
-      type _b = b;                                                         \
-      if (!((_a) eq (_b))) {                                               \
-         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: %" fmt " %s %" fmt \
-                               "\n"                                        \
-                               "%s:%d  %s()\n",                            \
-                               _a,                                         \
-                               BSON_STR (eq),                              \
-                               _b,                                         \
-                               __FILE__,                                   \
-                               __LINE__,                                   \
-                               BSON_FUNC);                                 \
-         abort ();                                                         \
-      }                                                                    \
+#define ASSERT_CMPINT_HELPER(a, eq, b, fmt, type)                               \
+   do {                                                                         \
+      /* evaluate once */                                                       \
+      type _a = a;                                                              \
+      type _b = b;                                                              \
+      if (!((_a) eq (_b))) {                                                    \
+         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: %" fmt " %s %" fmt "\n" \
+                               "%s:%d  %s()\n",                                 \
+                               _a,                                              \
+                               BSON_STR (eq),                                   \
+                               _b,                                              \
+                               __FILE__,                                        \
+                               __LINE__,                                        \
+                               BSON_FUNC);                                      \
+         abort ();                                                              \
+      }                                                                         \
    } while (0)
 
 
 #define ASSERT_CMPINT(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "d", int)
-#define ASSERT_CMPUINT(a, eq, b) \
-   ASSERT_CMPINT_HELPER (a, eq, b, "u", unsigned int)
+#define ASSERT_CMPUINT(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "u", unsigned int)
 #define ASSERT_CMPLONG(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "ld", long)
-#define ASSERT_CMPULONG(a, eq, b) \
-   ASSERT_CMPINT_HELPER (a, eq, b, "lu", unsigned long)
-#define ASSERT_CMPINT32(a, eq, b) \
-   ASSERT_CMPINT_HELPER (a, eq, b, PRId32, int32_t)
-#define ASSERT_CMPINT64(a, eq, b) \
-   ASSERT_CMPINT_HELPER (a, eq, b, PRId64, int64_t)
-#define ASSERT_CMPUINT16(a, eq, b) \
-   ASSERT_CMPINT_HELPER (a, eq, b, "hu", uint16_t)
-#define ASSERT_CMPUINT32(a, eq, b) \
-   ASSERT_CMPINT_HELPER (a, eq, b, PRIu32, uint32_t)
-#define ASSERT_CMPUINT64(a, eq, b) \
-   ASSERT_CMPINT_HELPER (a, eq, b, PRIu64, uint64_t)
+#define ASSERT_CMPULONG(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "lu", unsigned long)
+#define ASSERT_CMPINT32(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRId32, int32_t)
+#define ASSERT_CMPINT64(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRId64, int64_t)
+#define ASSERT_CMPUINT16(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "hu", uint16_t)
+#define ASSERT_CMPUINT32(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRIu32, uint32_t)
+#define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRIu64, uint64_t)
 #define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zu", size_t)
-#define ASSERT_CMPSSIZE_T(a, eq, b) \
-   ASSERT_CMPINT_HELPER (a, eq, b, "zd", ssize_t)
+#define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zd", ssize_t)
 #define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "f", double)
 #define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "p", void *)
 
-#define ASSERT_MEMCMP(a, b, n)                                 \
-   do {                                                        \
-      if (0 != memcmp (a, b, n)) {                             \
-         MONGOC_STDERR_PRINTF (                                \
-            "Failed comparing %d bytes: \"%.*s\" != \"%.*s\"", \
-            n,                                                 \
-            n,                                                 \
-            (char *) a,                                        \
-            n,                                                 \
-            (char *) b);                                       \
-         abort ();                                             \
-      }                                                        \
+#define ASSERT_MEMCMP(a, b, n)                                                                                      \
+   do {                                                                                                             \
+      if (0 != memcmp (a, b, n)) {                                                                                  \
+         MONGOC_STDERR_PRINTF ("Failed comparing %d bytes: \"%.*s\" != \"%.*s\"", n, n, (char *) a, n, (char *) b); \
+         abort ();                                                                                                  \
+      }                                                                                                             \
    } while (0)
 
 
 #ifdef ASSERT_ALMOST_EQUAL
 #undef ASSERT_ALMOST_EQUAL
 #endif
-#define ASSERT_ALMOST_EQUAL(a, b)                                  \
-   do {                                                            \
-      /* evaluate once */                                          \
-      int64_t _a = (a);                                            \
-      int64_t _b = (b);                                            \
-      if (!(_a > (_b * 2) / 3 && (_a < (_b * 3) / 2))) {           \
-         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: %" PRId64  \
-                               " not within 50%% of %" PRId64 "\n" \
-                               "%s:%d  %s()\n",                    \
-                               _a,                                 \
-                               _b,                                 \
-                               __FILE__,                           \
-                               __LINE__,                           \
-                               BSON_FUNC);                         \
-         abort ();                                                 \
-      }                                                            \
+#define ASSERT_ALMOST_EQUAL(a, b)                                                                     \
+   do {                                                                                               \
+      /* evaluate once */                                                                             \
+      int64_t _a = (a);                                                                               \
+      int64_t _b = (b);                                                                               \
+      if (!(_a > (_b * 2) / 3 && (_a < (_b * 3) / 2))) {                                              \
+         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: %" PRId64 " not within 50%% of %" PRId64 "\n" \
+                               "%s:%d  %s()\n",                                                       \
+                               _a,                                                                    \
+                               _b,                                                                    \
+                               __FILE__,                                                              \
+                               __LINE__,                                                              \
+                               BSON_FUNC);                                                            \
+         abort ();                                                                                    \
+      }                                                                                               \
    } while (0)
 
 #ifdef ASSERT_EQUAL_DOUBLE
 #undef ASSERT_EQUAL_DOUBLE
 #endif
-#define ASSERT_EQUAL_DOUBLE(a, b)                                \
-   do {                                                          \
-      double _a = fabs ((double) a);                             \
-      double _b = fabs ((double) b);                             \
-      if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) {         \
-         MONGOC_STDERR_PRINTF (                                  \
-            "FAIL\n\nAssert Failure: %f not within 20%% of %f\n" \
-            "%s:%d  %s()\n",                                     \
-            (double) a,                                          \
-            (double) b,                                          \
-            __FILE__,                                            \
-            __LINE__,                                            \
-            BSON_FUNC);                                          \
-         abort ();                                               \
-      }                                                          \
+#define ASSERT_EQUAL_DOUBLE(a, b)                                                   \
+   do {                                                                             \
+      double _a = fabs ((double) a);                                                \
+      double _b = fabs ((double) b);                                                \
+      if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) {                            \
+         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: %f not within 20%% of %f\n" \
+                               "%s:%d  %s()\n",                                     \
+                               (double) a,                                          \
+                               (double) b,                                          \
+                               __FILE__,                                            \
+                               __LINE__,                                            \
+                               BSON_FUNC);                                          \
+         abort ();                                                                  \
+      }                                                                             \
    } while (0)
 
 
-#define ASSERT_CMPSTR(a, b)                                              \
-   do {                                                                  \
-      /* evaluate once */                                                \
-      const char *_a = a;                                                \
-      const char *_b = b;                                                \
-      if ((_a != _b) && (!_a || !_b || (strcmp (_a, _b) != 0))) {        \
-         MONGOC_STDERR_PRINTF (                                          \
-            "FAIL\n\nAssert Failure:\n  \"%s\"\n  !=\n  \"%s\"\n %s:%d " \
-            " %s()\n",                                                   \
-            _a ? _a : "(null)",                                          \
-            _b ? _b : "(null)",                                          \
-            __FILE__,                                                    \
-            __LINE__,                                                    \
-            BSON_FUNC);                                                  \
-         abort ();                                                       \
-      }                                                                  \
+#define ASSERT_CMPSTR(a, b)                                                                 \
+   do {                                                                                     \
+      /* evaluate once */                                                                   \
+      const char *_a = a;                                                                   \
+      const char *_b = b;                                                                   \
+      if ((_a != _b) && (!_a || !_b || (strcmp (_a, _b) != 0))) {                           \
+         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure:\n  \"%s\"\n  !=\n  \"%s\"\n %s:%d " \
+                               " %s()\n",                                                   \
+                               _a ? _a : "(null)",                                          \
+                               _b ? _b : "(null)",                                          \
+                               __FILE__,                                                    \
+                               __LINE__,                                                    \
+                               BSON_FUNC);                                                  \
+         abort ();                                                                          \
+      }                                                                                     \
    } while (0)
 
 #define ASSERT_CMPJSON(_a, _b)                                              \
@@ -420,130 +367,108 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CONTAINS(a, b)                                              \
-   do {                                                                    \
-      char *_a_lower = bson_strdup (a);                                    \
-      char *_b_lower = bson_strdup (b);                                    \
-      mongoc_lowercase (_a_lower, _a_lower);                               \
-      mongoc_lowercase (_b_lower, _b_lower);                               \
-      if (NULL == strstr ((_a_lower), (_b_lower))) {                       \
-         MONGOC_STDERR_PRINTF ("%s:%d %s(): [%s] does not contain [%s]\n", \
-                               __FILE__,                                   \
-                               __LINE__,                                   \
-                               BSON_FUNC,                                  \
-                               a,                                          \
-                               b);                                         \
-         abort ();                                                         \
-      }                                                                    \
-      bson_free (_a_lower);                                                \
-      bson_free (_b_lower);                                                \
+#define ASSERT_CONTAINS(a, b)                                                                                    \
+   do {                                                                                                          \
+      char *_a_lower = bson_strdup (a);                                                                          \
+      char *_b_lower = bson_strdup (b);                                                                          \
+      mongoc_lowercase (_a_lower, _a_lower);                                                                     \
+      mongoc_lowercase (_b_lower, _b_lower);                                                                     \
+      if (NULL == strstr ((_a_lower), (_b_lower))) {                                                             \
+         MONGOC_STDERR_PRINTF ("%s:%d %s(): [%s] does not contain [%s]\n", __FILE__, __LINE__, BSON_FUNC, a, b); \
+         abort ();                                                                                               \
+      }                                                                                                          \
+      bson_free (_a_lower);                                                                                      \
+      bson_free (_b_lower);                                                                                      \
    } while (0)
 
-#define ASSERT_STARTSWITH(a, b)                              \
-   do {                                                      \
-      /* evaluate once */                                    \
-      const char *_a = a;                                    \
-      const char *_b = b;                                    \
-      if ((_a) != strstr ((_a), (_b))) {                     \
-         MONGOC_STDERR_PRINTF (                              \
-            "%s:%d %s(): : [%s] does not start with [%s]\n", \
-            __FILE__,                                        \
-            __LINE__,                                        \
-            BSON_FUNC,                                       \
-            _a,                                              \
-            _b);                                             \
-         abort ();                                           \
-      }                                                      \
+#define ASSERT_STARTSWITH(a, b)                                                                      \
+   do {                                                                                              \
+      /* evaluate once */                                                                            \
+      const char *_a = a;                                                                            \
+      const char *_b = b;                                                                            \
+      if ((_a) != strstr ((_a), (_b))) {                                                             \
+         MONGOC_STDERR_PRINTF (                                                                      \
+            "%s:%d %s(): : [%s] does not start with [%s]\n", __FILE__, __LINE__, BSON_FUNC, _a, _b); \
+         abort ();                                                                                   \
+      }                                                                                              \
    } while (0)
 
-#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)        \
-   do {                                                               \
-      if (error.domain != _domain) {                                  \
-         MONGOC_STDERR_PRINTF (                                       \
-            "%s:%d %s(): error domain %d doesn't match expected %d\n" \
-            "error: \"%s\"",                                          \
-            __FILE__,                                                 \
-            __LINE__,                                                 \
-            BSON_FUNC,                                                \
-            error.domain,                                             \
-            _domain,                                                  \
-            error.message);                                           \
-         abort ();                                                    \
-      };                                                              \
-      if (error.code != _code) {                                      \
-         MONGOC_STDERR_PRINTF (                                       \
-            "%s:%d %s(): error code %d doesn't match expected %d\n"   \
-            "error: \"%s\"",                                          \
-            __FILE__,                                                 \
-            __LINE__,                                                 \
-            BSON_FUNC,                                                \
-            error.code,                                               \
-            _code,                                                    \
-            error.message);                                           \
-         abort ();                                                    \
-      };                                                              \
-      ASSERT_CONTAINS (error.message, _message);                      \
-   } while (0);
-
-#define ASSERT_CAPTURED_LOG(_info, _level, _msg)                             \
-   do {                                                                      \
-      if (!has_captured_log (_level, _msg)) {                                \
-         MONGOC_STDERR_PRINTF ("%s:%d %s(): testing %s didn't log \"%s\"\n", \
-                               __FILE__,                                     \
-                               __LINE__,                                     \
-                               BSON_FUNC,                                    \
-                               _info,                                        \
-                               _msg);                                        \
-         print_captured_logs ("\t");                                         \
-         abort ();                                                           \
-      }                                                                      \
-   } while (0);
-
-#define ASSERT_NO_CAPTURED_LOGS(_info)                         \
-   do {                                                        \
-      if (has_captured_logs ()) {                              \
-         MONGOC_STDERR_PRINTF (                                \
-            "%s:%d %s(): testing %s shouldn't have logged:\n", \
-            __FILE__,                                          \
-            __LINE__,                                          \
-            BSON_FUNC,                                         \
-            _info);                                            \
-         print_captured_logs ("\t");                           \
-         abort ();                                             \
-      }                                                        \
-   } while (0);
-
-#define ASSERT_HAS_FIELD(_bson, _field)                            \
-   do {                                                            \
-      if (!bson_has_field ((_bson), (_field))) {                   \
-         MONGOC_STDERR_PRINTF (                                    \
-            "FAIL\n\nAssert Failure: No field \"%s\" in \"%s\"\n", \
-            (_field),                                              \
-            bson_as_canonical_extended_json (_bson, NULL));        \
-         abort ();                                                 \
-      }                                                            \
+#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)                           \
+   do {                                                                                  \
+      if (error.domain != _domain) {                                                     \
+         MONGOC_STDERR_PRINTF ("%s:%d %s(): error domain %d doesn't match expected %d\n" \
+                               "error: \"%s\"",                                          \
+                               __FILE__,                                                 \
+                               __LINE__,                                                 \
+                               BSON_FUNC,                                                \
+                               error.domain,                                             \
+                               _domain,                                                  \
+                               error.message);                                           \
+         abort ();                                                                       \
+      };                                                                                 \
+      if (error.code != _code) {                                                         \
+         MONGOC_STDERR_PRINTF ("%s:%d %s(): error code %d doesn't match expected %d\n"   \
+                               "error: \"%s\"",                                          \
+                               __FILE__,                                                 \
+                               __LINE__,                                                 \
+                               BSON_FUNC,                                                \
+                               error.code,                                               \
+                               _code,                                                    \
+                               error.message);                                           \
+         abort ();                                                                       \
+      };                                                                                 \
+      ASSERT_CONTAINS (error.message, _message);                                         \
    } while (0)
 
-#define ASSERT_HAS_NOT_FIELD(_bson, _field)                                \
-   do {                                                                    \
-      if (bson_has_field ((_bson), (_field))) {                            \
-         MONGOC_STDERR_PRINTF (                                            \
-            "FAIL\n\nAssert Failure: Unexpected field \"%s\" in \"%s\"\n", \
-            (_field),                                                      \
-            bson_as_canonical_extended_json (_bson, NULL));                \
-         abort ();                                                         \
-      }                                                                    \
+#define ASSERT_CAPTURED_LOG(_info, _level, _msg)                                                       \
+   do {                                                                                                \
+      if (!has_captured_log (_level, _msg)) {                                                          \
+         MONGOC_STDERR_PRINTF (                                                                        \
+            "%s:%d %s(): testing %s didn't log \"%s\"\n", __FILE__, __LINE__, BSON_FUNC, _info, _msg); \
+         print_captured_logs ("\t");                                                                   \
+         abort ();                                                                                     \
+      }                                                                                                \
    } while (0)
 
-#define ASSERT_CMPTIME(actual, maxduration)   \
-   do {                                       \
+#define ASSERT_NO_CAPTURED_LOGS(_info)                                                                \
+   do {                                                                                               \
+      if (has_captured_logs ()) {                                                                     \
+         MONGOC_STDERR_PRINTF (                                                                       \
+            "%s:%d %s(): testing %s shouldn't have logged:\n", __FILE__, __LINE__, BSON_FUNC, _info); \
+         print_captured_logs ("\t");                                                                  \
+         abort ();                                                                                    \
+      }                                                                                               \
+   } while (0)
+
+#define ASSERT_HAS_FIELD(_bson, _field)                                               \
+   do {                                                                               \
+      if (!bson_has_field ((_bson), (_field))) {                                      \
+         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: No field \"%s\" in \"%s\"\n", \
+                               (_field),                                              \
+                               bson_as_canonical_extended_json (_bson, NULL));        \
+         abort ();                                                                    \
+      }                                                                               \
+   } while (0)
+
+#define ASSERT_HAS_NOT_FIELD(_bson, _field)                                                   \
+   do {                                                                                       \
+      if (bson_has_field ((_bson), (_field))) {                                               \
+         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: Unexpected field \"%s\" in \"%s\"\n", \
+                               (_field),                                                      \
+                               bson_as_canonical_extended_json (_bson, NULL));                \
+         abort ();                                                                            \
+      }                                                                                       \
+   } while (0)
+
+#define ASSERT_CMPTIME(actual, maxduration)     \
+   do {                                         \
       ASSERT_CMPINT64 (actual, <, maxduration); \
    } while (0)
 
 #define ASSERT_WITHIN_TIME_INTERVAL(actual, minduration, maxduration) \
    do {                                                               \
-      ASSERT_CMPINT64 (actual, >=, minduration);                        \
-      ASSERT_CMPINT64 (actual, <, maxduration);                         \
+      ASSERT_CMPINT64 (actual, >=, minduration);                      \
+      ASSERT_CMPINT64 (actual, <, maxduration);                       \
    } while (0)
 
 #if defined(_WIN32) && !defined(__MINGW32__)
@@ -555,57 +480,53 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #define gettestpid getpid
 #endif
 
-#define ASSERT_OR_PRINT_ERRNO(_statement, _errcode)                          \
-   do {                                                                      \
-      if (!(_statement)) {                                                   \
-         MONGOC_STDERR_PRINTF (                                              \
-            "FAIL:%s:%d  %s()\n  %s\n  Failed with error code: %d (%s)\n\n", \
-            __FILE__,                                                        \
-            __LINE__,                                                        \
-            BSON_FUNC,                                                       \
-            BSON_STR (_statement),                                           \
-            _errcode,                                                        \
-            strerror (_errcode));                                            \
-         abort ();                                                           \
-      }                                                                      \
+#define ASSERT_OR_PRINT_ERRNO(_statement, _errcode)                                             \
+   do {                                                                                         \
+      if (!(_statement)) {                                                                      \
+         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n  Failed with error code: %d (%s)\n\n", \
+                               __FILE__,                                                        \
+                               __LINE__,                                                        \
+                               BSON_FUNC,                                                       \
+                               BSON_STR (_statement),                                           \
+                               _errcode,                                                        \
+                               strerror (_errcode));                                            \
+         abort ();                                                                              \
+      }                                                                                         \
    } while (0)
 
-#define ASSERT_COUNT(n, collection)                               \
-   do {                                                           \
-      int count = (int) mongoc_collection_count_documents (       \
-         collection, tmp_bson ("{}"), NULL, NULL, NULL, NULL);    \
-      if ((n) != count) {                                         \
-         MONGOC_STDERR_PRINTF (                                   \
-            "FAIL\n\nAssert Failure: count of %s is %d, not %d\n" \
-            "%s:%d  %s()\n",                                      \
-            mongoc_collection_get_name (collection),              \
-            count,                                                \
-            n,                                                    \
-            __FILE__,                                             \
-            __LINE__,                                             \
-            BSON_FUNC);                                           \
-         abort ();                                                \
-      }                                                           \
+#define ASSERT_COUNT(n, collection)                                                                              \
+   do {                                                                                                          \
+      int count = (int) mongoc_collection_count_documents (collection, tmp_bson ("{}"), NULL, NULL, NULL, NULL); \
+      if ((n) != count) {                                                                                        \
+         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: count of %s is %d, not %d\n"                             \
+                               "%s:%d  %s()\n",                                                                  \
+                               mongoc_collection_get_name (collection),                                          \
+                               count,                                                                            \
+                               n,                                                                                \
+                               __FILE__,                                                                         \
+                               __LINE__,                                                                         \
+                               BSON_FUNC);                                                                       \
+         abort ();                                                                                               \
+      }                                                                                                          \
    } while (0)
 
-#define ASSERT_CURSOR_COUNT(_n, _cursor)                           \
-   do {                                                            \
-      int _count = 0;                                              \
-      const bson_t *_doc;                                          \
-      while (mongoc_cursor_next (_cursor, &_doc)) {                \
-         _count++;                                                 \
-      }                                                            \
-      if ((_n) != _count) {                                        \
-         MONGOC_STDERR_PRINTF (                                    \
-            "FAIL\n\nAssert Failure: cursor count is %d, not %d\n" \
-            "%s:%d  %s()\n",                                       \
-            _count,                                                \
-            _n,                                                    \
-            __FILE__,                                              \
-            __LINE__,                                              \
-            BSON_FUNC);                                            \
-         abort ();                                                 \
-      }                                                            \
+#define ASSERT_CURSOR_COUNT(_n, _cursor)                                              \
+   do {                                                                               \
+      int _count = 0;                                                                 \
+      const bson_t *_doc;                                                             \
+      while (mongoc_cursor_next (_cursor, &_doc)) {                                   \
+         _count++;                                                                    \
+      }                                                                               \
+      if ((_n) != _count) {                                                           \
+         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: cursor count is %d, not %d\n" \
+                               "%s:%d  %s()\n",                                       \
+                               _count,                                                \
+                               _n,                                                    \
+                               __FILE__,                                              \
+                               __LINE__,                                              \
+                               BSON_FUNC);                                            \
+         abort ();                                                                    \
+      }                                                                               \
    } while (0)
 
 #define WAIT_UNTIL(_pred)                                              \
@@ -625,19 +546,15 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                \
    } while (0)
 
-#define ASSERT_WITH_MSG(_statement, ...)                     \
-   do {                                                      \
-      if (!(_statement)) {                                   \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", \
-                               __FILE__,                     \
-                               __LINE__,                     \
-                               BSON_FUNC,                    \
-                               BSON_STR (_statement));       \
-         fprintf (stderr, __VA_ARGS__);                      \
-         fprintf (stderr, "\n");                             \
-         fflush (stderr);                                    \
-         abort ();                                           \
-      }                                                      \
+#define ASSERT_WITH_MSG(_statement, ...)                                                                            \
+   do {                                                                                                             \
+      if (!(_statement)) {                                                                                          \
+         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (_statement)); \
+         fprintf (stderr, __VA_ARGS__);                                                                             \
+         fprintf (stderr, "\n");                                                                                    \
+         fflush (stderr);                                                                                           \
+         abort ();                                                                                                  \
+      }                                                                                                             \
    } while (0)
 
 // bson_value_to_str returns a string representation of a BSON value.
@@ -652,13 +569,12 @@ bson_value_eq (const bson_value_t *a, const bson_value_t *b);
 
 // ASSERT_BSONVALUE_EQ asserts that two const bson_value_t* contain equal
 // values.
-#define ASSERT_BSONVALUE_EQ(a, b)                                      \
-   if (1) {                                                            \
-      if (!bson_value_eq ((a), (b))) {                                 \
-         test_error (                                                  \
-            "%s != %s", bson_value_to_str (a), bson_value_to_str (b)); \
-      }                                                                \
-   } else                                                              \
+#define ASSERT_BSONVALUE_EQ(a, b)                                               \
+   if (1) {                                                                     \
+      if (!bson_value_eq ((a), (b))) {                                          \
+         test_error ("%s != %s", bson_value_to_str (a), bson_value_to_str (b)); \
+      }                                                                         \
+   } else                                                                       \
       (void) 0
 
 #define MAX_TEST_NAME_LENGTH 500
@@ -727,49 +643,24 @@ TestSuite_AddLive (TestSuite *suite, const char *name, TestFunc func);
 int
 TestSuite_CheckMockServerAllowed (void);
 void
-_TestSuite_AddMockServerTest (TestSuite *suite,
-                              const char *name,
-                              TestFunc func,
-                              ...);
-#define TestSuite_AddMockServerTest(_suite, _name, ...) \
-   _TestSuite_AddMockServerTest (_suite, _name, __VA_ARGS__, NULL)
+_TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func, ...);
+#define TestSuite_AddMockServerTest(_suite, _name, ...) _TestSuite_AddMockServerTest (_suite, _name, __VA_ARGS__, NULL)
 void
-TestSuite_AddWC (TestSuite *suite,
-                 const char *name,
-                 TestFuncWC func,
-                 TestFuncDtor dtor,
-                 void *ctx);
+TestSuite_AddWC (TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx);
 Test *
-_V_TestSuite_AddFull (TestSuite *suite,
-                      const char *name,
-                      TestFuncWC func,
-                      TestFuncDtor dtor,
-                      void *ctx,
-                      va_list ap);
+_V_TestSuite_AddFull (TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, va_list ap);
 void
-_TestSuite_AddFull (TestSuite *suite,
-                    const char *name,
-                    TestFuncWC func,
-                    TestFuncDtor dtor,
-                    void *ctx,
-                    ...);
+_TestSuite_AddFull (TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, ...);
 void
 _TestSuite_TestFnCtxDtor (void *ctx);
 #define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
    _TestSuite_AddFull (_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
-#define TestSuite_AddFullWithTestFn(                     \
-   _suite, _name, _func, _dtor, _test_fn, ...)           \
-   do {                                                  \
-      TestFnCtx *ctx = bson_malloc (sizeof (TestFnCtx)); \
-      ctx->test_fn = (TestFunc) (_test_fn);              \
-      ctx->dtor = _dtor;                                 \
-      _TestSuite_AddFull (_suite,                        \
-                          _name,                         \
-                          _func,                         \
-                          _TestSuite_TestFnCtxDtor,      \
-                          ctx,                           \
-                          __VA_ARGS__,                   \
-                          NULL);                         \
+#define TestSuite_AddFullWithTestFn(_suite, _name, _func, _dtor, _test_fn, ...)                    \
+   do {                                                                                            \
+      TestFnCtx *ctx = bson_malloc (sizeof (TestFnCtx));                                           \
+      ctx->test_fn = (TestFunc) (_test_fn);                                                        \
+      ctx->dtor = _dtor;                                                                           \
+      _TestSuite_AddFull (_suite, _name, _func, _TestSuite_TestFnCtxDtor, ctx, __VA_ARGS__, NULL); \
    } while (0)
 int
 TestSuite_Run (TestSuite *suite);
