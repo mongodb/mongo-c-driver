@@ -88,6 +88,9 @@ _oidc_callback(const mongoc_oidc_callback_params_t *params, mongoc_oidc_credenti
    mongoc_oidc_credential_set_access_token(cred, token);
    mongoc_oidc_credential_set_expires_in_seconds(cred, 200);
 
+   printf("version: %" PRId64 "\n", version);
+   printf("timeout: %" PRId64 "\n", timeout);
+
 done:
    if (token_file) {
       fclose(token_file);
