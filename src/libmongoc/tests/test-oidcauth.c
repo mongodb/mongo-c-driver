@@ -148,6 +148,8 @@ done:
 int
 main (void)
 {
+   mongoc_init();
+
    int rc = 0;
 
    bool ok = connect_with_oidc ();
@@ -156,5 +158,6 @@ main (void)
       rc = 1;
    }
 
+   mongoc_cleanup();
    return rc;
 }
