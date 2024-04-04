@@ -597,6 +597,11 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          uint32_t bytes_needed = mongocrypt_kms_ctx_bytes_needed (kms_ctx);
          ssize_t read_ret;
 
+         int64_t sleep_usec = mongocrypt_kms_ctx_usleep (kms_ctx);
+         if (sleep_usec > 0) {
+            _mongoc_usleep (sleep_usec);
+         }
+
          /* Cap the bytes requested at the buffer size. */
          if (bytes_needed > BUFFER_SIZE) {
             bytes_needed = BUFFER_SIZE;
