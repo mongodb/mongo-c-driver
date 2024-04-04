@@ -727,7 +727,6 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                            kv (first_batch ? "firstBatch" : "nextBatch", bsonArray (docs_array)))));
    char *db = bson_strndup (cursor->ns, cursor->dblen);
 
-
    bson_destroy (&docs_array);
 
    mongoc_apm_command_succeeded_init (&event,
