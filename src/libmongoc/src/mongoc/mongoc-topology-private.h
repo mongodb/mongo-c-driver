@@ -233,6 +233,8 @@ struct _mongoc_topology_t {
    // Some DNS servers truncate UDP responses without setting the truncated (TC) flag. This may result in no TCP retry.
    bool srv_prefer_tcp;
 
+   bson_mutex_t oidc_mtx;
+
    /* Spec:
     * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#oidc-callback
     */

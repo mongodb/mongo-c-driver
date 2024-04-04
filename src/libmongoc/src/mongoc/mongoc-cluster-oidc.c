@@ -37,7 +37,7 @@ mongoc_oidc_credential_set_expires_in_seconds (mongoc_oidc_credential_t *credent
  * Presumably, this means that only a single callback GLOBALLY may be called at a time.
  * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#credential-caching
  */
-static pthread_mutex_t _oidc_callback_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bson_mutex_t _oidc_callback_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * Populate the client with the OIDC authentication token. The user MUST
@@ -58,10 +58,15 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
    mongoc_oidc_callback_params_t params;
    mongoc_oidc_credential_t creds;
 
+   BSON_ASSERT (client);
+   BSON_ASSERT (client->topology);
+   BSON_ASSERT (client->topology->oidc_callback);
+
    /* Check cache if we already have a token.
     * Otherwise use the user's callback to get a new token */
+   bson_mutex_lock(&client->topology->oidc_mtx);
    if (client->topology->oidc_credential->access_token) {
-      return true;
+      goto done;
    }
 
    params.version = 1;
@@ -70,10 +75,6 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
     *     min(remaining connectTimeoutMS, remaining timeoutMS)
     */
    params.callback_timeout_ms = MONGOC_MIN (100, 200); /* placeholder */
-
-   BSON_ASSERT (client);
-   BSON_ASSERT (client->topology);
-   BSON_ASSERT (client->topology->oidc_callback);
 
    pthread_mutex_lock (&_oidc_callback_mutex);
 
@@ -94,6 +95,8 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
 
 fail:
    pthread_mutex_unlock (&_oidc_callback_mutex);
+done:
+   bson_mutex_unlock(&client->topology->oidc_mtx);
    return ok;
 
 #undef MONGOC_MIN
@@ -120,7 +123,9 @@ _oidc_sasl_one_step_conversation (mongoc_cluster_t *cluster,
    bson_iter_t iter;
    int conv_id = 0;
 
+   bson_mutex_lock(&cluster->client->topology->oidc_mtx);
    bson_append_utf8 (&jwt_step_request, "jwt", -1, cluster->client->topology->oidc_credential->access_token, -1);
+   bson_mutex_unlock(&cluster->client->topology->oidc_mtx);
 
    BCON_APPEND (&client_command,
                 "saslStart",
@@ -203,6 +208,7 @@ again:
     */
    ok = _oidc_sasl_one_step_conversation (cluster, stream, sd, error);
    if (!ok && first_time) {
+      bson_mutex_lock(&cluster->client->topology->oidc_mtx);
       const char *cached_token = cluster->client->topology->oidc_credential->access_token;
       first_time = false;
 
@@ -210,6 +216,7 @@ again:
       if (cached_token) {
          mongoc_client_oidc_credential_invalidate (cluster->client, cached_token);
       }
+      bson_mutex_unlock(&cluster->client->topology->oidc_mtx);
       _mongoc_usleep (100);
       goto again;
    }
