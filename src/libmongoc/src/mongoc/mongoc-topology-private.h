@@ -109,7 +109,7 @@ typedef union mc_shared_tpld {
 /** A null-pointer initializer for an `mc_shared_tpld` */
 #define MC_SHARED_TPLD_NULL ((mc_shared_tpld){._sptr_ = MONGOC_SHARED_PTR_NULL})
 
-typedef struct _mongoc_topology_t {
+struct _mongoc_topology_t {
    /**
     * @brief The topology description. Do not access directly. Instead, use
     * mc_tpld_take_ref()
@@ -246,7 +246,7 @@ typedef struct _mongoc_topology_t {
     * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#credential-caching
     */
    mongoc_oidc_credential_t *oidc_credential;
-} mongoc_topology_t;
+};
 
 mongoc_topology_t *
 mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded);
