@@ -910,7 +910,7 @@ mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
    td = mc_tpld_unsafe_get_mutable (topology);
    mongoc_topology_reconcile (topology, td);
 
-   mongoc_topology_scanner_start (topology->scanner, obey_cooldown);
+   mongoc_topology_scanner_start (topology, obey_cooldown);
    mongoc_topology_scanner_work (topology->scanner);
 
    _mongoc_topology_scanner_finish (topology->scanner);

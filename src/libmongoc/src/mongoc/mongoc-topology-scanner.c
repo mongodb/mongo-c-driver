@@ -1143,13 +1143,17 @@ mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts, int64_t when
  */
 
 void
-mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts, bool obey_cooldown)
+mongoc_topology_scanner_start (mongoc_topology_t *topology, bool obey_cooldown)
 {
+   mongoc_topology_scanner_t *ts = NULL;
    mongoc_topology_scanner_node_t *node, *tmp;
    bool skip;
    int64_t now;
 
-   BSON_ASSERT (ts);
+   BSON_ASSERT (topology);
+   BSON_ASSERT (topology->scanner);
+
+   ts = topology->scanner;
 
    _delete_retired_nodes (ts);
 

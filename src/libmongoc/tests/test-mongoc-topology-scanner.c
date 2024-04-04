@@ -47,6 +47,8 @@ static void
 _test_topology_scanner (bool with_ssl)
 {
    mock_server_t *servers[NSERVERS];
+   mongoc_topology_scanner_t *topology_scanner;
+   mongoc_topology_t topology;
    int i;
    bson_t q = BSON_INITIALIZER;
    int finished = NSERVERS * 3;
@@ -62,6 +64,8 @@ _test_topology_scanner (bool with_ssl)
    mongoc_log_and_monitor_instance_init (&log_and_monitor);
    mongoc_topology_scanner_t *topology_scanner = mongoc_topology_scanner_new (
       NULL, &topology_id, &log_and_monitor, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
+   topology_scanner = mongoc_topology_scanner_new (NULL, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
+   topology.scanner = topology_scanner;
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
@@ -93,7 +97,7 @@ _test_topology_scanner (bool with_ssl)
    }
 
    for (i = 0; i < 3; i++) {
-      mongoc_topology_scanner_start (topology_scanner, false);
+      mongoc_topology_scanner_start (&topology, false);
       mongoc_topology_scanner_work (topology_scanner);
    }
 
@@ -573,6 +577,7 @@ test_topology_retired_fails_to_initiate (void)
 {
    mock_server_t *server;
    mongoc_topology_scanner_t *scanner;
+   mongoc_topology_t topology;
    mongoc_async_cmd_t *acmd;
    mongoc_host_list_t host_list;
 
@@ -586,11 +591,13 @@ test_topology_retired_fails_to_initiate (void)
 
    scanner = mongoc_topology_scanner_new (
       NULL, &topology_id, &log_and_monitor, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
+   scanner = mongoc_topology_scanner_new (NULL, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
+   topology.scanner = scanner;
 
    BSON_ASSERT (_mongoc_host_list_from_string (&host_list, mock_server_get_host_and_port (server)));
 
    mongoc_topology_scanner_add (scanner, &host_list, 1, false);
-   mongoc_topology_scanner_start (scanner, false);
+   mongoc_topology_scanner_start (&topology, false);
    BSON_ASSERT (scanner->async->ncmds > 0);
    /* retire the node */
    scanner->nodes->retired = true;

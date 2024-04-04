@@ -45,6 +45,7 @@ typedef void (*mongoc_topology_scanner_cb_t) (
 
 struct mongoc_topology_scanner;
 struct mongoc_topology_scanner_node;
+typedef struct _mongoc_topology_t mongoc_topology_t;
 
 typedef struct mongoc_topology_scanner_node {
    uint32_t id;
@@ -183,7 +184,7 @@ bool
 mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts, int64_t when);
 
 void
-mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts, bool obey_cooldown);
+mongoc_topology_scanner_start (mongoc_topology_t *topology, bool obey_cooldown);
 
 void
 mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts);
