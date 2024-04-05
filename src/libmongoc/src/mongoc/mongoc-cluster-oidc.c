@@ -77,7 +77,7 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
     */
    params.callback_timeout_ms = MONGOC_MIN (100, 200); /* placeholder */
 
-   pthread_mutex_lock (&_oidc_callback_mutex);
+   bson_mutex_lock (&_oidc_callback_mutex);
 
    /* Call the user provided callback function with params. */
    ok = client->topology->oidc_callback (&params, &creds);
@@ -95,7 +95,7 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
    client->topology->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
 
 fail:
-   pthread_mutex_unlock (&_oidc_callback_mutex);
+   bson_mutex_unlock (&_oidc_callback_mutex);
 done:
    bson_mutex_unlock (&client->topology->oidc_mtx);
    return ok;
