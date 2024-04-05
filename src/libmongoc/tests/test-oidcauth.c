@@ -142,16 +142,16 @@ connect_with_oidc (void)
    fprintf (stderr, "Authentication was successful!\n");
 
 done:
-   mongoc_database_destroy(db);
-   mongoc_client_destroy(client);
-   mongoc_uri_destroy(uri);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
    return ok;
 }
 
 int
 main (void)
 {
-   mongoc_init();
+   mongoc_init ();
 
    int rc = 0;
 
@@ -161,6 +161,6 @@ main (void)
       rc = 1;
    }
 
-   mongoc_cleanup();
+   mongoc_cleanup ();
    return rc;
 }
