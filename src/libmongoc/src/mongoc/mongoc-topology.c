@@ -645,6 +645,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 static void
 _mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred)
 {
+   if (!cred) {
+      return;
+   }
+
    if (cred->access_token) {
       bson_zero_free (cred->access_token, strlen (cred->access_token));
       cred->access_token = NULL;
