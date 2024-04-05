@@ -208,15 +208,21 @@ again:
     */
    ok = _oidc_sasl_one_step_conversation (cluster, stream, sd, error);
    if (!ok && first_time) {
-      bson_mutex_lock(&cluster->client->topology->oidc_mtx);
-      const char *cached_token = cluster->client->topology->oidc_credential->access_token;
-      first_time = false;
+      char *cached_token = NULL;
 
+      bson_mutex_lock(&cluster->client->topology->oidc_mtx);
+      if (cluster->client->topology->oidc_credential->access_token) {
+         cached_token = bson_strdup(cluster->client->topology->oidc_credential->access_token);
+      }
+      bson_mutex_unlock(&cluster->client->topology->oidc_mtx);
+
+      first_time = false;
       /* Invalidate the token cache before retrying */
       if (cached_token) {
          mongoc_client_oidc_credential_invalidate (cluster->client, cached_token);
+         bson_free(cached_token);
       }
-      bson_mutex_unlock(&cluster->client->topology->oidc_mtx);
+
       _mongoc_usleep (100);
       goto again;
    }

@@ -142,6 +142,9 @@ connect_with_oidc (void)
    fprintf (stderr, "Authentication was successful!\n");
 
 done:
+   mongoc_database_destroy(db);
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
    return ok;
 }
 
