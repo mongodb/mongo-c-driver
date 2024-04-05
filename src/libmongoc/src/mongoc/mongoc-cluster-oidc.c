@@ -37,7 +37,8 @@ mongoc_oidc_credential_set_expires_in_seconds (mongoc_oidc_credential_t *credent
  * Presumably, this means that only a single callback GLOBALLY may be called at a time.
  * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#credential-caching
  */
-static bson_mutex_t _oidc_callback_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bson_mutex_t _oidc_callback_mutex;
+static bson_once_t _init_oidc_callback_mutex_once_control = BSON_ONCE_INIT;
 
 /*
  * Populate the client with the OIDC authentication token. The user MUST
@@ -166,6 +167,13 @@ fail:
    return ok;
 }
 
+static BSON_ONCE_FUN (_mongoc_init_oidc_callback_mutex)
+{
+   bson_mutex_init (&_oidc_callback_mutex);
+
+   BSON_ONCE_RETURN;
+}
+
 bool
 _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
                                 mongoc_stream_t *stream,
@@ -181,6 +189,8 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
    bool first_time = true;
 
    fprintf (stderr, "_mongoc_cluster_auth_node_oidc\n");
+
+   bson_once (&_init_oidc_callback_mutex_once_control, _mongoc_init_oidc_callback_mutex);
    /*
     * TODO:
     * - Speculative Authentication
