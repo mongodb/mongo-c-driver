@@ -392,47 +392,47 @@ test_topology_scanner_blocking_initiator (void)
    mock_rs_destroy (rs);
 }
 
-static mock_server_t *
-_mock_server_listening_on (char *server_bind_to)
-{
-   mock_server_t *mock_server;
-   mock_server_bind_opts_t opts = {0};
-   struct sockaddr_in ipv4_addr = {0};
-   struct sockaddr_in6 ipv6_addr = {0};
-
-   if (strcmp ("both", server_bind_to) == 0) {
-      opts.bind_addr_len = sizeof (ipv6_addr);
-      opts.family = AF_INET6;
-      opts.ipv6_only = 0;
-      ipv6_addr.sin6_family = AF_INET6;
-      ipv6_addr.sin6_port = htons (0);   /* any port */
-      ipv6_addr.sin6_addr = in6addr_any; /* either IPv4 or IPv6 */
-      opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
-   } else if (strcmp ("ipv4", server_bind_to) == 0) {
-      opts.bind_addr_len = sizeof (ipv4_addr);
-      opts.family = AF_INET;
-      opts.ipv6_only = 0;
-      ipv4_addr.sin_family = AF_INET;
-      ipv4_addr.sin_port = htons (0);
-      BSON_ASSERT (inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr));
-      opts.bind_addr = &ipv4_addr;
-   } else if (strcmp ("ipv6", server_bind_to) == 0) {
-      opts.bind_addr_len = sizeof (ipv6_addr);
-      opts.family = AF_INET6;
-      opts.ipv6_only = 1;
-      ipv6_addr.sin6_family = AF_INET6;
-      ipv6_addr.sin6_port = htons (0);
-      BSON_ASSERT (inet_pton (AF_INET6, "::1", &ipv6_addr.sin6_addr));
-      opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
-   } else {
-      fprintf (stderr, "bad value of server_bind_to=%s\n", server_bind_to);
-      ASSERT (false);
-   }
-   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
-   mock_server_set_bind_opts (mock_server, &opts);
-   mock_server_run (mock_server);
-   return mock_server;
-}
+// static mock_server_t *
+//_mock_server_listening_on (char *server_bind_to)
+//{
+//    mock_server_t *mock_server;
+//    mock_server_bind_opts_t opts = {0};
+//    struct sockaddr_in ipv4_addr = {0};
+//    struct sockaddr_in6 ipv6_addr = {0};
+//
+//    if (strcmp ("both", server_bind_to) == 0) {
+//       opts.bind_addr_len = sizeof (ipv6_addr);
+//       opts.family = AF_INET6;
+//       opts.ipv6_only = 0;
+//       ipv6_addr.sin6_family = AF_INET6;
+//       ipv6_addr.sin6_port = htons (0);   /* any port */
+//       ipv6_addr.sin6_addr = in6addr_any; /* either IPv4 or IPv6 */
+//       opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
+//    } else if (strcmp ("ipv4", server_bind_to) == 0) {
+//       opts.bind_addr_len = sizeof (ipv4_addr);
+//       opts.family = AF_INET;
+//       opts.ipv6_only = 0;
+//       ipv4_addr.sin_family = AF_INET;
+//       ipv4_addr.sin_port = htons (0);
+//       BSON_ASSERT (inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr));
+//       opts.bind_addr = &ipv4_addr;
+//    } else if (strcmp ("ipv6", server_bind_to) == 0) {
+//       opts.bind_addr_len = sizeof (ipv6_addr);
+//       opts.family = AF_INET6;
+//       opts.ipv6_only = 1;
+//       ipv6_addr.sin6_family = AF_INET6;
+//       ipv6_addr.sin6_port = htons (0);
+//       BSON_ASSERT (inet_pton (AF_INET6, "::1", &ipv6_addr.sin6_addr));
+//       opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
+//    } else {
+//       fprintf (stderr, "bad value of server_bind_to=%s\n", server_bind_to);
+//       ASSERT (false);
+//    }
+//    mock_server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
+//    mock_server_set_bind_opts (mock_server, &opts);
+//    mock_server_run (mock_server);
+//    return mock_server;
+// }
 
 typedef struct dns_testcase {
    char *server_bind_to;  /* ipv4, ipv6, or both */
