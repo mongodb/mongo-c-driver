@@ -262,7 +262,7 @@ void
 mongoc_topology_destroy (mongoc_topology_t *topology);
 
 void
-mongoc_topology_reconcile (const mongoc_topology_t *topology, mongoc_topology_description_t *td);
+mongoc_topology_reconcile (mongoc_topology_t *topology, mongoc_topology_description_t *td);
 
 bool
 mongoc_topology_compatible (const mongoc_topology_description_t *td,

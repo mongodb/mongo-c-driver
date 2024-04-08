@@ -44,7 +44,7 @@ static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
 
 static bool
-_mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd, const mongoc_topology_t *topology)
+_mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd, mongoc_topology_t *topology)
 {
    mongoc_topology_scanner_node_t *node;
 
@@ -67,7 +67,7 @@ _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd, const mon
  * Not called for multi threaded monitoring.
  */
 void
-mongoc_topology_reconcile (const mongoc_topology_t *topology, mongoc_topology_description_t *td)
+mongoc_topology_reconcile (mongoc_topology_t *topology, mongoc_topology_description_t *td)
 {
    mongoc_set_t *servers;
    mongoc_server_description_t *sd;
