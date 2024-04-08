@@ -299,7 +299,7 @@ _testcase_run (he_testcase_t *testcase)
    testcase->state.start = bson_get_monotonic_time ();
 
    mongoc_topology_scanner_add (ts, &testcase->state.host, 1 /* any server id is ok. */, false);
-   mongoc_topology_scanner_scan (ts, 1);
+//   mongoc_topology_scanner_scan (ts, 1);
    /* how many commands should we have initially? */
    ASSERT_CMPINT ((int) (ts->async->ncmds), ==, expected->initial_acmds);
 

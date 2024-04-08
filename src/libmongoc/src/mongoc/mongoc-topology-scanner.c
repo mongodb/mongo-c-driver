@@ -519,15 +519,16 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts, const mongoc_host_li
 }
 
 void
-mongoc_topology_scanner_scan (mongoc_topology_scanner_t *ts, uint32_t id)
+mongoc_topology_scanner_scan (const mongoc_topology_t *topology, uint32_t id)
 {
    mongoc_topology_scanner_node_t *node;
+   const mongoc_topology_scanner_t *ts = topology->scanner;
 
    node = mongoc_topology_scanner_get_node (ts, id);
 
    /* begin non-blocking connection, don't wait for success */
    if (node) {
-      mongoc_topology_scanner_node_setup (node, &node->last_error);
+      mongoc_topology_scanner_node_setup (topology, node, &node->last_error);
    }
 
    /* if setup fails the node stays in the scanner. destroyed after the scan. */
@@ -601,7 +602,7 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool
  *--------------------------------------------------------------------------
  */
 mongoc_topology_scanner_node_t *
-mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts, uint32_t id)
+mongoc_topology_scanner_get_node (const mongoc_topology_scanner_t *ts, uint32_t id)
 {
    mongoc_topology_scanner_node_t *ele, *tmp;
 
@@ -997,7 +998,9 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
  */
 
 void
-mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node, bson_error_t *error)
+mongoc_topology_scanner_node_setup (const mongoc_topology_t *topology,
+                                    mongoc_topology_scanner_node_t *node,
+                                    bson_error_t *error)
 {
    bool success = false;
    mongoc_stream_t *stream;
@@ -1164,7 +1167,7 @@ mongoc_topology_scanner_start (mongoc_topology_t *topology, bool obey_cooldown)
       skip = obey_cooldown && mongoc_topology_scanner_node_in_cooldown (node, now);
 
       if (!skip) {
-         mongoc_topology_scanner_node_setup (node, &node->last_error);
+         mongoc_topology_scanner_node_setup (topology, node, &node->last_error);
       }
    }
 }

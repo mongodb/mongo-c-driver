@@ -166,7 +166,7 @@ void
 mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts, const mongoc_host_list_t *host, uint32_t id, bool hello_ok);
 
 void
-mongoc_topology_scanner_scan (mongoc_topology_scanner_t *ts, uint32_t id);
+mongoc_topology_scanner_scan (const mongoc_topology_t *topology, uint32_t id);
 
 void
 mongoc_topology_scanner_disconnect (mongoc_topology_scanner_t *scanner);
@@ -199,10 +199,10 @@ void
 mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts);
 
 void
-mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node, bson_error_t *error);
+mongoc_topology_scanner_node_setup (const mongoc_topology_t *topology, mongoc_topology_scanner_node_t *node, bson_error_t *error);
 
 mongoc_topology_scanner_node_t *
-mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts, uint32_t id);
+mongoc_topology_scanner_get_node (const mongoc_topology_scanner_t *ts, uint32_t id);
 
 void
 _mongoc_topology_scanner_add_speculative_authentication (bson_t *cmd,

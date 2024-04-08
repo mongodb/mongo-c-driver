@@ -44,18 +44,18 @@ static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
 
 static bool
-_mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd, mongoc_topology_scanner_t *scanner)
+_mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd, const mongoc_topology_t *topology)
 {
    mongoc_topology_scanner_node_t *node;
 
    /* Search by ID and update hello_ok */
-   node = mongoc_topology_scanner_get_node (scanner, sd->id);
+   node = mongoc_topology_scanner_get_node (topology->scanner, sd->id);
    if (node) {
       node->hello_ok = sd->hello_ok;
-   } else if (!mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
+   } else if (!mongoc_topology_scanner_has_node_for_host (topology->scanner, &sd->host)) {
       /* A node for this host was retired in this scan. */
-      mongoc_topology_scanner_add (scanner, &sd->host, sd->id, sd->hello_ok);
-      mongoc_topology_scanner_scan (scanner, sd->id);
+      mongoc_topology_scanner_add (topology->scanner, &sd->host, sd->id, sd->hello_ok);
+      mongoc_topology_scanner_scan (topology, sd->id);
    }
 
    return true;
@@ -78,7 +78,7 @@ mongoc_topology_reconcile (const mongoc_topology_t *topology, mongoc_topology_de
    /* Add newly discovered nodes */
    for (size_t i = 0u; i < servers->items_len; i++) {
       sd = mongoc_set_get_item (servers, i);
-      _mongoc_topology_reconcile_add_nodes (sd, topology->scanner);
+      _mongoc_topology_reconcile_add_nodes (sd, topology);
    }
 
    /* Remove removed nodes */
@@ -186,7 +186,7 @@ _mongoc_topology_scanner_cb (
 
       /* add another hello call to the current scan - the scan continues
        * until all commands are done */
-      mongoc_topology_scanner_scan (topology->scanner, sd->id);
+      mongoc_topology_scanner_scan (topology, sd->id);
    } else {
       _mongoc_topology_update_no_lock (id, hello_response, rtt_msec, td, &topology->log_and_monitor, error);
 
