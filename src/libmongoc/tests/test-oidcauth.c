@@ -192,7 +192,7 @@ connect_with_oidc_pooled (void)
 
 done:
    mongoc_uri_destroy (uri);
-   mongoc_client_pool_destroy(pool);
+   mongoc_client_pool_destroy (pool);
    return ok;
 }
 
