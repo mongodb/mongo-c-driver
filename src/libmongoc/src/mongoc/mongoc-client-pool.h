@@ -41,6 +41,11 @@ typedef struct _mongoc_client_pool_t mongoc_client_pool_t;
 MONGOC_EXPORT (mongoc_client_pool_t *)
 mongoc_client_pool_new (const mongoc_uri_t *uri) BSON_GNUC_WARN_UNUSED_RESULT;
 
+MONGOC_EXPORT (void)
+mongoc_client_pool_set_oidc_callback (mongoc_client_pool_t *pool,
+                                      bool (*oidc_callback) (const mongoc_oidc_callback_params_t *,
+                                      mongoc_oidc_credential_t * /* OUT */));
+
 MONGOC_EXPORT (mongoc_client_pool_t *)
 mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 

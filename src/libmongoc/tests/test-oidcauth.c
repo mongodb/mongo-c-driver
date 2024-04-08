@@ -1,19 +1,30 @@
 #include <stdio.h>
+#include <pthread.h>
 
 #include <mongoc/mongoc.h>
 
-static bool
-_run_ping (mongoc_database_t *db)
+static void *
+_run_ping (void *data)
 {
+   mongoc_client_t *client = data;
+   mongoc_database_t *db = NULL;
    bson_error_t error;
    bson_t *ping = BCON_NEW ("ping", BCON_INT32 (1));
-   bool ok =
-      mongoc_database_command_with_opts (db, ping, NULL /* read_prefs */, NULL /* opts */, NULL /* reply */, &error);
+   bool ok = true;
+
+   db = mongoc_client_get_database (client, "testdb");
+   if (!db) {
+      fprintf (stderr, "Failed to get DB\n");
+      exit(EXIT_FAILURE);
+   }
+   ok = mongoc_database_command_with_opts (db, ping, NULL /* read_prefs */, NULL /* opts */, NULL /* reply */, &error);
    bson_destroy (ping);
    if (!ok) {
       fprintf (stderr, "ERROR MSG: %s\n", error.message);
+      exit(EXIT_FAILURE);
    }
-   return ok;
+   mongoc_database_destroy (db);
+   return NULL;
 }
 
 /* Remove all characters after a whitespce character */
@@ -105,7 +116,6 @@ bool
 connect_with_oidc (void)
 {
    const char *uri_str = "mongodb://admin@localhost/?authMechanism=MONGODB-OIDC";
-   mongoc_database_t *db = NULL;
    mongoc_client_t *client = NULL;
    bson_error_t error = {0};
    mongoc_uri_t *uri = NULL;
@@ -125,25 +135,63 @@ connect_with_oidc (void)
       goto done;
    }
 
-   db = mongoc_client_get_database (client, "testdb");
-   if (!db) {
-      fprintf (stderr, "Failed to get DB\n");
+   mongoc_client_set_oidc_callback (client, _oidc_callback);
+
+   _run_ping (client);
+
+   fprintf (stderr, "Authentication was successful!\n");
+
+done:
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   return ok;
+}
+
+enum {
+   NUM_THREADS = 100,
+};
+
+bool
+connect_with_oidc_pooled (void)
+{
+   const char *uri_str = "mongodb://admin@localhost/?authMechanism=MONGODB-OIDC";
+   mongoc_database_t *db = NULL;
+   mongoc_client_pool_t *pool = NULL;
+   bson_error_t error = {0};
+   mongoc_uri_t *uri = NULL;
+   pthread_t threads[NUM_THREADS];
+   bool ok = true;
+   mongoc_client_t *clients[NUM_THREADS];
+
+   uri = mongoc_uri_new_with_error (uri_str, &error);
+   if (!uri) {
+      fprintf (stderr, "Failed to create URI: '%s': %s\n", uri_str, error.message);
       ok = false;
       goto done;
    }
 
-   mongoc_client_set_oidc_callback (client, _oidc_callback);
-
-   ok = _run_ping (db);
-   if (!ok) {
+   pool = mongoc_client_pool_new(uri);
+   if (!pool) {
+      fprintf (stderr, "Failed to get client\n");
+      ok = false;
       goto done;
+   }
+
+   mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
+
+   for (size_t i = 0; i < NUM_THREADS; i++) {
+      clients[i] = mongoc_client_pool_pop(pool);
+      pthread_create (&threads[i], NULL, _run_ping, clients[i]);
+   }
+
+   for (size_t i = 0; i < NUM_THREADS; i++) {
+      pthread_join (threads[i], NULL);
+      mongoc_client_pool_push (pool, clients[i]);
    }
 
    fprintf (stderr, "Authentication was successful!\n");
 
 done:
-   mongoc_database_destroy (db);
-   mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
    return ok;
 }
@@ -154,13 +202,23 @@ main (void)
    mongoc_init ();
 
    int rc = 0;
+   bool ok = true;
 
-   bool ok = connect_with_oidc ();
+   ok = connect_with_oidc ();
    if (!ok) {
       fprintf (stderr, "Authentication failed\n");
       rc = 1;
+      goto done;
    }
 
+   //ok = connect_with_oidc_pooled ();
+   //if (!ok) {
+   //   fprintf (stderr, "Authentication failed\n");
+   //   rc = 1;
+   //   goto done;
+   //}
+
+done:
    mongoc_cleanup ();
    return rc;
 }

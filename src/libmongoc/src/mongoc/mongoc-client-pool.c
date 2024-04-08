@@ -121,6 +121,13 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    return pool;
 }
 
+void
+mongoc_client_pool_set_oidc_callback (mongoc_client_pool_t *pool,
+                                      bool (*oidc_callback) (const mongoc_oidc_callback_params_t *,
+                                      mongoc_oidc_credential_t * /* OUT */))
+{
+   pool->topology->oidc_callback = oidc_callback;
+}
 
 mongoc_client_pool_t *
 mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
