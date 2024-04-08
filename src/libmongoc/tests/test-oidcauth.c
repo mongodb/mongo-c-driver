@@ -155,7 +155,6 @@ bool
 connect_with_oidc_pooled (void)
 {
    const char *uri_str = "mongodb://admin@localhost/?authMechanism=MONGODB-OIDC";
-   mongoc_database_t *db = NULL;
    mongoc_client_pool_t *pool = NULL;
    bson_error_t error = {0};
    mongoc_uri_t *uri = NULL;
