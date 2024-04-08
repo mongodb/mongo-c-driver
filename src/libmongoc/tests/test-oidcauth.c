@@ -15,13 +15,13 @@ _run_ping (void *data)
    db = mongoc_client_get_database (client, "testdb");
    if (!db) {
       fprintf (stderr, "Failed to get DB\n");
-      exit(EXIT_FAILURE);
+      exit (EXIT_FAILURE);
    }
    ok = mongoc_database_command_with_opts (db, ping, NULL /* read_prefs */, NULL /* opts */, NULL /* reply */, &error);
    bson_destroy (ping);
    if (!ok) {
       fprintf (stderr, "ERROR MSG: %s\n", error.message);
-      exit(EXIT_FAILURE);
+      exit (EXIT_FAILURE);
    }
    mongoc_database_destroy (db);
    return NULL;
@@ -170,7 +170,7 @@ connect_with_oidc_pooled (void)
       goto done;
    }
 
-   pool = mongoc_client_pool_new(uri);
+   pool = mongoc_client_pool_new (uri);
    if (!pool) {
       fprintf (stderr, "Failed to get client\n");
       ok = false;
@@ -180,7 +180,7 @@ connect_with_oidc_pooled (void)
    mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
 
    for (size_t i = 0; i < NUM_THREADS; i++) {
-      clients[i] = mongoc_client_pool_pop(pool);
+      clients[i] = mongoc_client_pool_pop (pool);
       pthread_create (&threads[i], NULL, _run_ping, clients[i]);
    }
 
@@ -193,6 +193,7 @@ connect_with_oidc_pooled (void)
 
 done:
    mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy(pool);
    return ok;
 }
 
@@ -211,12 +212,12 @@ main (void)
       goto done;
    }
 
-   //ok = connect_with_oidc_pooled ();
-   //if (!ok) {
-   //   fprintf (stderr, "Authentication failed\n");
-   //   rc = 1;
-   //   goto done;
-   //}
+   ok = connect_with_oidc_pooled ();
+   if (!ok) {
+      fprintf (stderr, "Authentication failed\n");
+      rc = 1;
+      goto done;
+   }
 
 done:
    mongoc_cleanup ();

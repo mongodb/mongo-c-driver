@@ -1084,17 +1084,6 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
    RETURN (client);
 }
 
-static mongoc_oidc_credential_t *
-_mongoc_oidc_credential_new (char *access_token, int64_t expires_in_seconds)
-{
-   mongoc_oidc_credential_t *cred = bson_malloc (sizeof (*cred));
-
-   cred->access_token = access_token;
-   cred->expires_in_seconds = expires_in_seconds;
-
-   return cred;
-}
-
 /*
  * Spec:
  * Drivers MUST have a way to invalidate a specific access token from the
@@ -1150,11 +1139,6 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    client->error_api_set = false;
    client->client_sessions = mongoc_set_new (8, NULL, NULL);
    client->csid_rand_seed = (unsigned int) bson_get_monotonic_time ();
-
-   bson_mutex_lock (&client->topology->oidc_mtx);
-   client->topology->oidc_callback = NULL;
-   client->topology->oidc_credential = _mongoc_oidc_credential_new (NULL, 0);
-   bson_mutex_unlock (&client->topology->oidc_mtx);
 
    write_concern = mongoc_uri_get_write_concern (client->uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
