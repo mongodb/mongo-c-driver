@@ -442,23 +442,23 @@ typedef struct dns_testcase {
    char *expected_client_bind_to; /* ipv4, ipv6, or either */
 } dns_testcase_t;
 
-static void
-_test_topology_scanner_dns_helper (
-   uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
-{
-   dns_testcase_t *testcase = (dns_testcase_t *) data;
-
-   BSON_UNUSED (id);
-   BSON_UNUSED (bson);
-   BSON_UNUSED (rtt_msec);
-
-   if (testcase->should_succeed) {
-      ASSERT_OR_PRINT (!error->code, (*error));
-   } else {
-      ASSERT (error->code);
-      ASSERT_ERROR_CONTAINS ((*error), MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "connection refused");
-   }
-}
+// static void
+// _test_topology_scanner_dns_helper (
+//    uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
+// {
+//    dns_testcase_t *testcase = (dns_testcase_t *) data;
+//
+//    BSON_UNUSED (id);
+//    BSON_UNUSED (bson);
+//    BSON_UNUSED (rtt_msec);
+//
+//    if (testcase->should_succeed) {
+//       ASSERT_OR_PRINT (!error->code, (*error));
+//    } else {
+//       ASSERT (error->code);
+//       ASSERT_ERROR_CONTAINS ((*error), MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "connection refused");
+//    }
+// }
 
 static void
 test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
