@@ -666,6 +666,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-bulkwrite.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-change-stream.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
