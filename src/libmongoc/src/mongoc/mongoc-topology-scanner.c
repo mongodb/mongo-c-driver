@@ -167,19 +167,19 @@ _mongoc_topology_scanner_get_speculative_auth_mechanism (const mongoc_uri_t *uri
    return mechanism;
 }
 
-static void
+static bool
 _mongoc_oidc_add_speculative_auth(bson_t *auth_cmd, mongoc_topology_t *topology)
 {
+   bool has_auth = false;
+
    bson_mutex_lock (&topology->oidc_mtx);
    const char *access_token = topology->oidc_credential->access_token;
-   if (access_token) {
-      bson_append_utf8 (auth_cmd,
-                        "jwt",
-                        -1,
-                        access_token,
-                        -1);
+   if (access_token && strlen(access_token)) {
+      BSON_APPEND_UTF8 (auth_cmd, "jwt", access_token);
+      has_auth = true;
    }
    bson_mutex_unlock (&topology->oidc_mtx);
+   return has_auth;
 }
 
 void
@@ -188,7 +188,7 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
                                                          const mongoc_uri_t *uri,
                                                          mongoc_scram_t *scram /* OUT */)
 {
-   bson_t auth_cmd;
+   bson_t auth_cmd = BSON_INITIALIZER;
    bson_error_t error;
    bool has_auth = false;
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (uri);
@@ -207,14 +207,8 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
          has_auth = true;
          BSON_APPEND_UTF8 (&auth_cmd, "db", "$external");
       }
-   }
-
-   if (topology && strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
-      fprintf (stderr, "SPECULATIVE AUTH: MONGODB-OIDC\n");
-      _mongoc_oidc_add_speculative_auth (&auth_cmd, topology);
-      /* TODO:
-       * Add {"jwt": access_token} to hello command
-       */
+   } else if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
+      has_auth = _mongoc_oidc_add_speculative_auth (&auth_cmd, topology);
    }
 
 #ifdef MONGOC_ENABLE_CRYPTO
