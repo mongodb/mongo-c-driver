@@ -175,7 +175,6 @@ _mongoc_oidc_add_speculative_auth(bson_t *auth_cmd, mongoc_topology_t *topology)
    bson_mutex_lock (&topology->oidc_mtx);
    const char *access_token = topology->oidc_credential->access_token;
    if (access_token && strlen(access_token)) {
-      BSON_APPEND_UTF8 (auth_cmd, "jwt", access_token);
       has_auth = true;
    }
    bson_mutex_unlock (&topology->oidc_mtx);
@@ -208,7 +207,15 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
          BSON_APPEND_UTF8 (&auth_cmd, "db", "$external");
       }
    } else if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
-      has_auth = _mongoc_oidc_add_speculative_auth (&auth_cmd, topology);
+      bson_t jwt_doc = BSON_INITIALIZER;
+      has_auth = _mongoc_oidc_add_speculative_auth (&jwt_doc, topology);
+      BCON_APPEND (&auth_cmd,
+                   "saslStart",
+                   BCON_INT32 (1),
+                   "mechanism",
+                   "MONGODB-OIDC",
+                   "payload",
+                   BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_doc), jwt_doc.len));
    }
 
 #ifdef MONGOC_ENABLE_CRYPTO
