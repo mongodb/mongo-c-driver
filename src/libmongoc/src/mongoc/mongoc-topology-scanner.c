@@ -168,7 +168,7 @@ _mongoc_topology_scanner_get_speculative_auth_mechanism (const mongoc_uri_t *uri
 }
 
 static bool
-_mongoc_oidc_add_speculative_auth(bson_t *auth_cmd, mongoc_topology_t *topology)
+_mongoc_oidc_add_speculative_auth (bson_t *auth_cmd, mongoc_topology_t *topology)
 {
    bool has_auth = false;
    bson_t jwt_doc = BSON_INITIALIZER;
@@ -886,7 +886,9 @@ _mongoc_topology_scanner_tcp_initiate (mongoc_async_cmd_t *acmd)
  */
 
 bool
-mongoc_topology_scanner_node_setup_tcp (mongoc_topology_t *topology, mongoc_topology_scanner_node_t *node, bson_error_t *error)
+mongoc_topology_scanner_node_setup_tcp (mongoc_topology_t *topology,
+                                        mongoc_topology_scanner_node_t *node,
+                                        bson_error_t *error)
 {
    struct addrinfo hints;
    struct addrinfo *iter;
@@ -942,7 +944,8 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_t *topology, mongoc_topo
    } else {
       LL_FOREACH2 (node->dns_results, iter, ai_next)
       {
-         _begin_hello_cmd (topology, node, NULL /* stream */, false /* is_setup_done */, iter, delay, true /* use_handshake */);
+         _begin_hello_cmd (
+            topology, node, NULL /* stream */, false /* is_setup_done */, iter, delay, true /* use_handshake */);
          /* each subsequent DNS result will have an additional 250ms delay. */
          delay += HAPPY_EYEBALLS_DELAY_MS;
       }
@@ -952,7 +955,9 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_t *topology, mongoc_topo
 }
 
 bool
-mongoc_topology_scanner_node_connect_unix (mongoc_topology_t *topology, mongoc_topology_scanner_node_t *node, bson_error_t *error)
+mongoc_topology_scanner_node_connect_unix (mongoc_topology_t *topology,
+                                           mongoc_topology_scanner_node_t *node,
+                                           bson_error_t *error)
 {
 #ifdef _WIN32
    ENTRY;
@@ -1004,8 +1009,13 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_t *topology, mongoc_t
 
    stream = _mongoc_topology_scanner_node_setup_stream_for_tls (node, mongoc_stream_socket_new (sock));
    if (stream) {
-      _begin_hello_cmd (
-         topology, node, stream, false /* is_setup_done */, NULL /* dns result */, 0 /* delay */, true /* use_handshake */);
+      _begin_hello_cmd (topology,
+                        node,
+                        stream,
+                        false /* is_setup_done */,
+                        NULL /* dns result */,
+                        0 /* delay */,
+                        true /* use_handshake */);
       RETURN (true);
    }
    _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to create TLS stream");

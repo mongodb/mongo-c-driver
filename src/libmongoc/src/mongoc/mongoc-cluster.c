@@ -811,7 +811,8 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       ssl_opts = &cluster->client->ssl_opts;
 #endif
 
-      _mongoc_topology_scanner_add_speculative_authentication (topology, &handshake_command, cluster->uri, ssl_opts, scram);
+      _mongoc_topology_scanner_add_speculative_authentication (
+         topology, &handshake_command, cluster->uri, ssl_opts, scram);
    }
 
    if (negotiate_sasl_supported_mechs) {
@@ -1855,7 +1856,8 @@ _cluster_add_node (mongoc_cluster_t *cluster,
    /* take critical fields from a fresh hello */
    cluster_node = _mongoc_cluster_node_new (stream, host->host_and_port);
 
-   handshake_sd = _cluster_run_hello (cluster, topology, cluster_node, server_id, &scram, &speculative_auth_response, error);
+   handshake_sd =
+      _cluster_run_hello (cluster, topology, cluster_node, server_id, &scram, &speculative_auth_response, error);
    if (!handshake_sd) {
       GOTO (error);
    }

@@ -199,7 +199,9 @@ void
 mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts);
 
 void
-mongoc_topology_scanner_node_setup (mongoc_topology_t *topology, mongoc_topology_scanner_node_t *node, bson_error_t *error);
+mongoc_topology_scanner_node_setup (mongoc_topology_t *topology,
+                                    mongoc_topology_scanner_node_t *node,
+                                    bson_error_t *error);
 
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (const mongoc_topology_scanner_t *ts, uint32_t id);
