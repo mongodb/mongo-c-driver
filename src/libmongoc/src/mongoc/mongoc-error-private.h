@@ -84,6 +84,9 @@ bool
 _mongoc_error_is_not_primary (bson_error_t *error);
 
 bool
+_mongoc_error_is_reauthentication_required (const bson_error_t *error);
+
+bool
 _mongoc_error_is_state_change (bson_error_t *error);
 
 bool
