@@ -1,10 +1,11 @@
 #include <stdio.h>
-#include <pthread.h>
 
 #include <mongoc/mongoc.h>
 
-static void *
-_run_ping (void *data)
+#include "common-thread-private.h"
+
+static
+BSON_THREAD_FUN (_run_ping, data)
 {
    mongoc_client_t *client = data;
    mongoc_database_t *db = NULL;
@@ -24,7 +25,8 @@ _run_ping (void *data)
       exit (EXIT_FAILURE);
    }
    mongoc_database_destroy (db);
-   return NULL;
+
+   BSON_THREAD_RETURN;
 }
 
 /* Remove all characters after a whitespce character */
@@ -158,7 +160,7 @@ connect_with_oidc_pooled (void)
    mongoc_client_pool_t *pool = NULL;
    bson_error_t error = {0};
    mongoc_uri_t *uri = NULL;
-   pthread_t threads[NUM_THREADS];
+   bson_thread_t threads[NUM_THREADS];
    bool ok = true;
    mongoc_client_t *clients[NUM_THREADS];
 
@@ -180,11 +182,11 @@ connect_with_oidc_pooled (void)
 
    for (size_t i = 0; i < NUM_THREADS; i++) {
       clients[i] = mongoc_client_pool_pop (pool);
-      pthread_create (&threads[i], NULL, _run_ping, clients[i]);
+      mcommon_thread_create (&threads[i], _run_ping, clients[i]);
    }
 
    for (size_t i = 0; i < NUM_THREADS; i++) {
-      pthread_join (threads[i], NULL);
+      mcommon_thread_join (threads[i]);
       mongoc_client_pool_push (pool, clients[i]);
    }
 
