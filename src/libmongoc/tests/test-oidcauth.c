@@ -4,8 +4,7 @@
 
 #include "common-thread-private.h"
 
-static
-BSON_THREAD_FUN (_run_ping, data)
+static BSON_THREAD_FUN (_run_ping, data)
 {
    mongoc_client_t *client = data;
    mongoc_database_t *db = NULL;
