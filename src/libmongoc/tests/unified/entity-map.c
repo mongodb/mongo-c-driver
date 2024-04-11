@@ -77,6 +77,9 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
     * concern. Parse all options before setting the write concern on the URI. */
    wc = mongoc_write_concern_new ();
 
+   char *str = bson_as_json (opts, NULL);
+   fprintf(stderr, "BSON>\n%s\n", str);
+   free (str);
    BSON_FOREACH (opts, iter)
    {
       const char *key;
@@ -118,6 +121,16 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          mongoc_uri_set_appname (uri, bson_iter_utf8 (&iter, NULL));
       } else if (0 == bson_strcasecmp (MONGOC_URI_SERVERMONITORINGMODE, key)) {
          mongoc_uri_set_option_as_utf8 (uri, key, bson_iter_utf8 (&iter, NULL));
+      } else if (0 == strcmp ("authMechanism", key)) {
+         BSON_ASSERT (mongoc_uri_set_auth_mechanism (uri, bson_iter_utf8 (&iter, NULL)));
+      } else if (0 == strcmp ("authMechanismProperties", key)) {
+         bool ok = true;
+         bson_t properties_doc = BSON_INITIALIZER;
+         const uint8_t *data;
+         uint32_t len;
+         bson_iter_document (&iter, &len, &data);
+         BSON_ASSERT (bson_init_static (&properties_doc, data, len));
+         BSON_ASSERT (mongoc_uri_set_mechanism_properties (uri, &properties_doc));
       } else {
          test_set_error (error, "Unimplemented test runner support for URI option: %s", key);
          goto done;
