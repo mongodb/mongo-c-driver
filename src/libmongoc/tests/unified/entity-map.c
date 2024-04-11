@@ -77,9 +77,6 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
     * concern. Parse all options before setting the write concern on the URI. */
    wc = mongoc_write_concern_new ();
 
-   char *str = bson_as_json (opts, NULL);
-   fprintf(stderr, "BSON>\n%s\n", str);
-   free (str);
    BSON_FOREACH (opts, iter)
    {
       const char *key;
