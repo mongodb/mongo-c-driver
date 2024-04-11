@@ -1078,7 +1078,6 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
    }
 
    client = _mongoc_client_new_from_topology (topology);
-   fprintf (stderr, "CREATED A CLIENT FROM TOPOLOGY\n");
    BSON_ASSERT (client);
 
    RETURN (client);
@@ -1765,6 +1764,9 @@ mongoc_client_command_simple (mongoc_client_t *client,
    BSON_ASSERT_PARAM (client);
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
+
+   const char *uri_string = mongoc_uri_get_string (client->uri);
+   fprintf(stderr, "\n\nURI> '%s'\n\n", uri_string);
 
    if (!_mongoc_read_prefs_validate (read_prefs, error)) {
       RETURN (false);

@@ -202,8 +202,6 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
    bool has_auth = false;
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (uri);
 
-   fprintf (stderr, "BEGIN SPECULATIVE AUTH\n");
-
    if (!mechanism) {
       return;
    }
@@ -386,8 +384,6 @@ _begin_hello_cmd (mongoc_topology_t *topology,
 {
    mongoc_topology_scanner_t *ts = node->ts;
    bson_t cmd;
-
-   fprintf (stderr, "BEGIN HELLO CMD\n");
 
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */
