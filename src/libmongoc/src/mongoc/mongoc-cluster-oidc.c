@@ -61,7 +61,14 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
 
    BSON_ASSERT (client);
    BSON_ASSERT (client->topology);
-   BSON_ASSERT (client->topology->oidc_callback);
+
+   if (!client->topology->oidc_callback) {
+      MONGOC_ERROR ("An OIDC callback function MUST be set in order to use MONGODB-OIDC as an authMechanism. "
+                    "Use mongoc_client_set_oidc_callback to set the callback for single threaded clients, "
+                    "or use mongoc_client_pool_set_oidc_callback for client pools.");
+      ok = false;
+      goto done;
+   }
 
    /* Check cache if we already have a token.
     * Otherwise use the user's callback to get a new token */
