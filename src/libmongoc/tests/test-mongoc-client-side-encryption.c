@@ -3254,7 +3254,7 @@ test_kms_retry (void *unused)
       tmp_bson ("{ 'region': 'us-east-1', 'key': "
                 "'arn:aws:kms:us-east-1:579766882180:key/"
                 "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
-                "'127.0.0.1:9002' }"));
+                "'127.0.0.1:9003' }"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", dkopts, &keyid, &error);
    ASSERT (res);
@@ -3268,7 +3268,7 @@ test_kms_retry (void *unused)
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
-      tmp_bson ("{ 'keyVaultEndpoint': '127.0.0.1:9002', 'keyName': 'foo'}"));
+      tmp_bson ("{ 'keyVaultEndpoint': '127.0.0.1:9003', 'keyName': 'foo'}"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "azure", dkopts, &keyid, &error);
    ASSERT (res);
@@ -3283,7 +3283,7 @@ test_kms_retry (void *unused)
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
       tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
-                "'keyName': 'kn' , 'endpoint': '127.0.0.1:9002'}"));
+                "'keyName': 'kn' , 'endpoint': '127.0.0.1:9003'}"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "gcp", dkopts, &keyid, &error);
    ASSERT (res);
