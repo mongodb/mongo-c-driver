@@ -725,6 +725,91 @@ add_store_event (entity_t *entity, const char *type, const char *entity_id)
    _mongoc_array_append_val (&entity->store_events, event);
 }
 
+/* Remove all characters after a whitespce character */
+static void
+_truncate_on_whitespace (char *str)
+{
+   for (size_t i = 0; str[i] != '\0'; i++) {
+      if (isspace (str[i])) {
+         str[i] = '\0';
+         break;
+      }
+   }
+}
+
+static bool
+_oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credential_t *cred /* OUT */)
+{
+   int64_t timeout = 0;
+   int64_t version = 0;
+   long size = 0;
+   FILE *token_file = NULL;
+   int rc = 0;
+   char *token = NULL;
+   bool ok = true;
+   size_t nread = 0;
+
+   token_file = fopen ("/tmp/tokens/test_user1", "r");
+   if (!token_file) {
+      perror ("fopen");
+      ok = false;
+      goto done;
+   }
+
+   /* Get size of token file */
+   rc = fseek (token_file, 0, SEEK_END);
+   if (rc != 0) {
+      perror ("seek");
+      ok = false;
+      goto done;
+   }
+   size = ftell (token_file);
+   if (size < 0) {
+      perror ("ftell");
+      ok = false;
+      goto done;
+   }
+   rewind (token_file);
+
+   /* Allocate buffer for token string */
+   token = malloc (size + 1);
+   if (!token) {
+      ok = false;
+      goto done;
+   }
+
+   /* Read file into token buffer */
+   nread = fread (token, 1, size, token_file);
+   if (nread != size) {
+      perror ("fread");
+      ok = false;
+      goto done;
+   }
+   token[size] = '\0';
+
+   /* The file might have trailing whitespaces such as "\n" or "\r\n"*/
+   _truncate_on_whitespace (token);
+
+   timeout = mongoc_oidc_callback_params_get_timeout_ms (params);
+   version = mongoc_oidc_callback_params_get_version (params);
+
+   /* Provide your OIDC token to the MongoDB C Driver via the 'creds' out
+    * parameter. Remember to free your token string. The C driver stores its
+    * own copy */
+   mongoc_oidc_credential_set_access_token (cred, token);
+   mongoc_oidc_credential_set_expires_in_seconds (cred, 200);
+
+   printf ("version: %" PRId64 "\n", version);
+   printf ("timeout: %" PRId64 "\n", timeout);
+
+done:
+   if (token_file) {
+      fclose (token_file);
+   }
+   free (token);
+   return ok;
+}
+
 entity_t *
 entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 {
@@ -922,6 +1007,13 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
+   }
+
+   /* TODO: If authMechanism is MONGODB-OIDC, then set OIDC callback */
+   const char *auth_mechanism = mongoc_uri_get_auth_mechanism (uri);
+   BSON_ASSERT (auth_mechanism);
+   if (!bson_strcasecmp (auth_mechanism, "MONGODB-OIDC")) {
+      mongoc_client_set_oidc_callback (client, _oidc_callback);
    }
 
    ret = true;

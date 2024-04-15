@@ -82,7 +82,7 @@ _oidc_set_client_token (mongoc_client_t *client, bson_error_t *error)
     * TODO: set timeout to:
     *     min(remaining connectTimeoutMS, remaining timeoutMS)
     */
-   params.callback_timeout_ms = MONGOC_MIN (100, 200); /* placeholder */
+   params.callback_timeout_ms = MONGOC_MIN (100, client->topology->connect_timeout_msec); /* placeholder */
 
    bson_mutex_lock (&_oidc_callback_mutex);
 
