@@ -250,9 +250,7 @@ bool
 _mongoc_cluster_oidc_reauthenticate (mongoc_cluster_t *cluster,
                                      mongoc_stream_t *stream,
                                      mongoc_server_description_t *sd,
-                                     bson_error_t *error
-
-)
+                                     bson_error_t *error)
 {
    char *cached_token = NULL;
 

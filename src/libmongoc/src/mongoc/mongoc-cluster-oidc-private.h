@@ -30,4 +30,10 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
                                 mongoc_server_description_t *sd,
                                 bson_error_t *error);
 
+bool
+_mongoc_cluster_oidc_reauthenticate (mongoc_cluster_t *cluster,
+                                     mongoc_stream_t *stream,
+                                     mongoc_server_description_t *sd,
+                                     bson_error_t *error);
+
 #endif /* MONGOC_CLUSTER_OIDC_PRIVATE_H */

@@ -1804,7 +1804,6 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
    if (_mongoc_error_is_reauthentication_required (&cmd_error)) {
       /* TODO: Do reauthentication */
       fprintf (stderr, "\n\n\n\nNEED TO DO REAUTHENTICATION\n\n\n\n");
-      exit(19);
       /*
       bool ok = _mongoc_cluster_oidc_reauthenticate (cluster, stream, sd, error);
       */
