@@ -187,22 +187,17 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
                                 mongoc_server_description_t *sd,
                                 bson_error_t *error)
 {
+   bool ok = true;
+   bool first_time = true;
+
    BSON_ASSERT (sd);
    BSON_ASSERT (error);
    BSON_ASSERT (stream);
    BSON_ASSERT (cluster);
 
-   bool ok = true;
-   bool first_time = true;
-
    fprintf (stderr, "_mongoc_cluster_auth_node_oidc\n");
 
    bson_once (&_init_oidc_callback_mutex_once_control, _mongoc_init_oidc_callback_mutex);
-   /*
-    * TODO:
-    * - Speculative Authentication
-    * - Reauthentication
-    */
 
 again:
    /*
@@ -251,19 +246,20 @@ fail:
    return ok;
 }
 
-// static bool
-// _mongoc_cluster_oidc_speculative_auth(mongoc_cluster_t *cluster)
-// {
-//    const char *access_token = cluster->client->oidc_credential->access_token;
-//    if (access_token) {
-//       bson_t jwt_step_request = BSON_INITIALIZER;
-//
-//       bson_append_utf8 (&jwt_step_request,
-//                         "jwt",
-//                         -1,
-//                         cluster->client->oidc_credential->access_token,
-//                         -1);
-//       // res = hello(cluster, jwt_step_request);
-//    }
-//    return true;
-// }
+bool
+_mongoc_cluster_oidc_reauthenticate (mongoc_cluster_t *cluster,
+                                     mongoc_stream_t *stream,
+                                     mongoc_server_description_t *sd,
+                                     bson_error_t *error
+
+)
+{
+   char *cached_token = NULL;
+
+   bson_mutex_lock (&cluster->client->topology->oidc_mtx);
+   cached_token = bson_strdup (cluster->client->topology->oidc_credential->access_token);
+   bson_mutex_unlock (&cluster->client->topology->oidc_mtx);
+
+   mongoc_client_oidc_credential_invalidate (cluster->client, cached_token);
+   return _mongoc_cluster_auth_node_oidc (cluster, stream, sd, error);
+}

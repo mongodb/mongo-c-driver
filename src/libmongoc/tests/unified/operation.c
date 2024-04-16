@@ -27,6 +27,9 @@
 #include <common-bson-dsl-private.h>
 #include <mlib/cmp.h>
 
+#include "mongoc-error.h"
+#include "mongoc-error-private.h"
+
 typedef struct {
    char *name;
    char *object;
@@ -1320,6 +1323,11 @@ done:
    bson_destroy (&op_reply);
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (opts);
+
+   if (error->code == MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED) {
+      fprintf(stderr, "REAUTHENTICATION REQUIRED: %s\n", error->message ? error->message : "<NO MESSAGE>");
+      exit(44);
+   }
    return ret;
 }
 

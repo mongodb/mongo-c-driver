@@ -306,8 +306,8 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
          }
 
          memset (&err, 0, sizeof (bson_error_t));
-         _mongoc_topology_handle_app_error (
-            topology, sd->id, handshake_complete, type, &response, &err, max_wire_version, generation, &kZeroObjectId);
+         // _mongoc_topology_handle_app_error (
+         //    topology, sd->id, handshake_complete, type, &response, &err, max_wire_version, generation, &kZeroServiceId);
          mc_tpld_drop_ref (&td);
       }
    }

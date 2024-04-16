@@ -1149,6 +1149,11 @@ done:
    mongoc_read_prefs_destroy (prefs);
    bson_free (db);
 
+   if (cursor->error.code == MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED) {
+      fprintf(stderr, "REAUTH\n");
+      exit(45);
+   }
+
    return ret;
 }
 

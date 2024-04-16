@@ -1803,7 +1803,11 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
     */
    if (_mongoc_error_is_reauthentication_required (&cmd_error)) {
       /* TODO: Do reauthentication */
-      fprintf (stderr, "need to do reauthentication\n");
+      fprintf (stderr, "\n\n\n\nNEED TO DO REAUTHENTICATION\n\n\n\n");
+      exit(19);
+      /*
+      bool ok = _mongoc_cluster_oidc_reauthenticate (cluster, stream, sd, error);
+      */
    }
 
    if (!_mongoc_error_is_state_change (&cmd_error)) {
@@ -1905,7 +1909,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    const bson_t *reply,
                                    const bson_error_t *why,
                                    uint32_t max_wire_version,
-                                   uint32_t generation,
+                                   uint32_t generation,                                   
                                    const bson_oid_t *service_id)
 {
    bson_error_t server_selection_error;

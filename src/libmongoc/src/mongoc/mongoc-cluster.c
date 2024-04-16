@@ -117,21 +117,25 @@ _handle_not_primary_error (mongoc_cluster_t *cluster, const mongoc_server_stream
 static void
 _handle_network_error (mongoc_cluster_t *cluster, mongoc_server_stream_t *server_stream, const bson_error_t *why)
 {
-   mongoc_topology_t *topology;
    uint32_t server_id;
    _mongoc_sdam_app_error_type_t type;
 
    BSON_ASSERT (server_stream);
 
    ENTRY;
-   topology = cluster->client->topology;
+
+   if (_mongoc_error_is_reauthentication_required (why)) {
+      fprintf (stderr, "\n\n\n\nREAUTH ERROR\n\n\n\n");
+      exit(23);
+   }
+
    server_id = server_stream->sd->id;
    type = MONGOC_SDAM_APP_ERROR_NETWORK;
    if (mongoc_stream_timed_out (server_stream->stream)) {
       type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
    }
 
-   _mongoc_topology_handle_app_error (topology,
+   _mongoc_topology_handle_app_error (cluster->client->topology,
                                       server_id,
                                       true, // handshake_complete
                                       type,
@@ -503,6 +507,8 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    mongoc_cmd_t encrypted_cmd;
    bool is_redacted_by_apm = false;
 
+   fprintf(stderr, "RUNNING: %s\n", __FUNCTION__);
+
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
 
@@ -661,6 +667,10 @@ fail_no_events:
 
    _mongoc_topology_update_last_used (cluster->client->topology, server_id);
 
+   if (error->code == MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED) {
+      fprintf(stderr, "REAUTHENTICATION REQUIRED: %s\n", error->message ? error->message : "<NO MESSAGE>");
+      exit(43);
+   }
    return retval;
 }
 
@@ -727,6 +737,10 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
 
    _mongoc_topology_update_last_used (cluster->client->topology, server_stream->sd->id);
 
+   if (error->code == MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED) {
+      fprintf(stderr, "REAUTH REQUIRED\n");
+      exit(5);
+   }
    return retval;
 }
 
@@ -2621,6 +2635,16 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
 
    return _mongoc_cluster_stream_for_optype (
       cluster, MONGOC_SS_READ, log_context, prefs_override, cs, is_retryable, ds, reply, error);
+   mongoc_server_stream_t *stream = _mongoc_cluster_stream_for_optype (
+      cluster, MONGOC_SS_READ, prefs_override, cs, is_retryable, ds, reply, error);
+   if (error->code != 0) {
+      fprintf(stderr, "GOT ERROR CODE: %d: %s\n", error->code, error->message);
+   }
+   if (error->code == MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED) {
+      fprintf(stderr, "REAUTH GOT ERROR CODE: %s\n", error->message);
+      exit(123);
+   }
+   return stream;
 }
 
 mongoc_server_stream_t *
