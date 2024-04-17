@@ -669,9 +669,7 @@ fail_no_events:
       bool ok = _mongoc_cluster_oidc_reauthenticate (cluster, server_stream->stream, server_stream->sd, error);
       if (!ok) {
          MONGOC_ERROR ("failed to reauthenticate after receiving a ReauthenticationRequired error");
-         retval = false;
-      }
-      if (first_time) {
+      } else if (first_time) {
          first_time = false;
          goto again;
       }
