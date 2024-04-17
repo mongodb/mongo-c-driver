@@ -3294,6 +3294,9 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
       bson_iter_overwrite_int64 (&txn_number_iter, ++parts.assembled.session->server_session->txn_number);
    }
 
+   mongoc_cmd_t *cmd = &parts.assembled;
+   bool is_retryable_write = parts.is_retryable_write;
+
    // Store the original error and reply if needed.
    struct {
       bson_t reply;
@@ -3303,9 +3306,9 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
 
 retry:
    bson_destroy (reply);
-   ret = mongoc_cluster_run_command_monitored (cluster, &parts.assembled, reply, error);
+   ret = mongoc_cluster_run_command_monitored (cluster, cmd, reply, error);
 
-   if (parts.is_retryable_write) {
+   if (is_retryable_write) {
       _mongoc_write_error_handle_labels (ret, error, reply, server_stream->sd);
    }
 
@@ -3329,13 +3332,13 @@ retry:
          mongoc_deprioritized_servers_add_if_sharded (ds, server_stream->topology_type, server_stream->sd);
 
          retry_server_stream =
-            mongoc_cluster_stream_for_writes (cluster, parts.assembled.session, ds, NULL /* reply */, &ignored_error);
+            mongoc_cluster_stream_for_writes (cluster, cmd->session, ds, NULL /* reply */, &ignored_error);
 
          mongoc_deprioritized_servers_destroy (ds);
       }
 
       if (retry_server_stream) {
-         parts.assembled.server_stream = retry_server_stream;
+         cmd->server_stream = retry_server_stream;
          {
             // Store the original error and reply before retry.
             BSON_ASSERT (!original_error.set); // Retry only happens once.
