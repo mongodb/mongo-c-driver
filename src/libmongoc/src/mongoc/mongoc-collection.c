@@ -3309,7 +3309,7 @@ retry:
    ret = mongoc_cluster_run_command_monitored (cluster, cmd, reply, error);
 
    if (is_retryable_write) {
-      _mongoc_write_error_handle_labels (ret, error, reply, server_stream->sd);
+      _mongoc_write_error_handle_labels (ret, error, reply, cmd->server_stream->sd);
    }
 
    if (is_retryable) {
@@ -3329,7 +3329,7 @@ retry:
       {
          mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new ();
 
-         mongoc_deprioritized_servers_add_if_sharded (ds, server_stream->topology_type, server_stream->sd);
+         mongoc_deprioritized_servers_add_if_sharded (ds, cmd->server_stream->topology_type, cmd->server_stream->sd);
 
          retry_server_stream =
             mongoc_cluster_stream_for_writes (cluster, cmd->session, ds, NULL /* reply */, &ignored_error);
