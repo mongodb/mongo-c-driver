@@ -3135,8 +3135,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
    bson_iter_t inner;
    const char *name;
    bson_t ss_reply;
-   bson_t reply_local;
-   bson_t *reply_ptr;
+   bson_t reply_local = BSON_INITIALIZER;
    bool ret = false;
    bson_t command = BSON_INITIALIZER;
    mongoc_server_stream_t *server_stream = NULL;
@@ -3150,14 +3149,17 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
    BSON_ASSERT_PARAM (query);
    BSON_ASSERT_PARAM (opts);
 
-   reply_ptr = reply ? reply : &reply_local;
+   if (reply) {
+      bson_init (reply);
+   } else {
+      // Caller did not pass an output `reply`. Use a local `reply` to determine if a server error is retryable.
+      reply = &reply_local;
+   }
    cluster = &collection->client->cluster;
 
    mongoc_cmd_parts_init (&parts, collection->client, collection->db, MONGOC_QUERY_NONE, &command);
    parts.is_read_command = true;
    parts.is_write_command = true;
-
-   bson_init (reply_ptr);
 
    if (!_mongoc_find_and_modify_appended_opts_parse (cluster->client, &opts->extra, &appended_opts, error)) {
       GOTO (done);
@@ -3166,7 +3168,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
    server_stream = mongoc_cluster_stream_for_writes (cluster, appended_opts.client_session, NULL, &ss_reply, error);
 
    if (!server_stream) {
-      bson_concat (reply_ptr, &ss_reply);
+      bson_concat (reply, &ss_reply);
       bson_destroy (&ss_reply);
       GOTO (done);
    }
@@ -3300,22 +3302,22 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
    } original_error = {.reply = {0}, .error = {0}, .set = false};
 
 retry:
-   bson_destroy (reply_ptr);
-   ret = mongoc_cluster_run_command_monitored (cluster, &parts.assembled, reply_ptr, error);
+   bson_destroy (reply);
+   ret = mongoc_cluster_run_command_monitored (cluster, &parts.assembled, reply, error);
 
    if (parts.is_retryable_write) {
-      _mongoc_write_error_handle_labels (ret, error, reply_ptr, server_stream->sd);
+      _mongoc_write_error_handle_labels (ret, error, reply, server_stream->sd);
    }
 
    if (is_retryable) {
-      _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply_ptr);
+      _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply);
    }
 
    /* If a retryable error is encountered and the write is retryable, select
     * a new writable stream and retry. If server selection fails or the selected
     * server does not support retryable writes, fall through and allow the
     * original error to be reported. */
-   if (is_retryable && _mongoc_write_error_get_type (reply_ptr) == MONGOC_WRITE_ERR_RETRY) {
+   if (is_retryable && _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
@@ -3338,7 +3340,7 @@ retry:
             // Store the original error and reply before retry.
             BSON_ASSERT (!original_error.set); // Retry only happens once.
             original_error.set = true;
-            bson_copy_to (reply_ptr, &original_error.reply);
+            bson_copy_to (reply, &original_error.reply);
             if (error) {
                original_error.error = *error;
             }
@@ -3349,19 +3351,19 @@ retry:
 
    // If a retry attempt fails with an error labeled NoWritesPerformed,
    // drivers MUST return the original error.
-   if (original_error.set && mongoc_error_has_label (reply_ptr, "NoWritesPerformed")) {
+   if (original_error.set && mongoc_error_has_label (reply, "NoWritesPerformed")) {
       if (error) {
          *error = original_error.error;
       }
-      bson_destroy (reply_ptr);
-      bson_copy_to (&original_error.reply, reply_ptr);
+      bson_destroy (reply);
+      bson_copy_to (&original_error.reply, reply);
    }
 
    if (original_error.set) {
       bson_destroy (&original_error.reply);
    }
 
-   if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+   if (bson_iter_init_find (&iter, reply, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       const char *errmsg = NULL;
       int32_t code = 0;
 
@@ -3388,9 +3390,7 @@ done:
    }
    mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
-   if (&reply_local == reply_ptr) {
-      bson_destroy (&reply_local);
-   }
+   bson_destroy (&reply_local);
    _mongoc_find_and_modify_appended_opts_cleanup (&appended_opts);
    RETURN (ret);
 }
