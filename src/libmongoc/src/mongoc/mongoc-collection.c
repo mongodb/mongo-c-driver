@@ -3296,6 +3296,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
 
    mongoc_cmd_t *cmd = &parts.assembled;
    bool is_retryable_write = parts.is_retryable_write;
+   bson_destroy (reply);
 
    // Store the original error and reply if needed.
    struct {
@@ -3305,7 +3306,6 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
    } original_error = {.reply = {0}, .error = {0}, .set = false};
 
 retry:
-   bson_destroy (reply);
    ret = mongoc_cluster_run_command_monitored (cluster, cmd, reply, error);
 
    if (is_retryable_write) {
@@ -3348,6 +3348,7 @@ retry:
                original_error.error = *error;
             }
          }
+         bson_destroy (reply);
          GOTO (retry);
       }
    }
