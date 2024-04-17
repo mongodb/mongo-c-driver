@@ -3645,6 +3645,11 @@ mongoc_cluster_run_retryable_write (mongoc_cluster_t *cluster,
                                     bson_t *reply,
                                     bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT_PARAM (cmd);
+   BSON_ASSERT_PARAM (retry_server_stream);
+   BSON_ASSERT_PARAM (reply);
+
    bool ret;
    // `can_retry` is set to false on retry. A retry may only happen once.
    bool can_retry = is_retryable_write;
