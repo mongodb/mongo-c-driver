@@ -3646,7 +3646,8 @@ mongoc_cluster_run_retryable_write (mongoc_cluster_t *cluster,
                                     bson_error_t *error)
 {
    bool ret;
-   bool is_retryable = is_retryable_write;
+   // `can_retry` is set to false on retry. A retry may only happen once.
+   bool can_retry = is_retryable_write;
 
    /* increment the transaction number for the first attempt of each retryable
     * write command */
@@ -3670,7 +3671,7 @@ retry:
       _mongoc_write_error_handle_labels (ret, error, reply, cmd->server_stream->sd);
    }
 
-   if (is_retryable) {
+   if (can_retry) {
       _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply);
    }
 
@@ -3678,11 +3679,11 @@ retry:
     * a new writable stream and retry. If server selection fails or the selected
     * server does not support retryable writes, fall through and allow the
     * original error to be reported. */
-   if (is_retryable && _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
+   if (can_retry && _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
-      is_retryable = false;
+      can_retry = false;
 
       {
          mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new ();
