@@ -3236,7 +3236,7 @@ static void
 test_kms_retry (void *unused)
 {
    mongoc_client_t *keyvault_client = test_framework_new_default_client ();
-   mongoc_client_encryption_t *client_encryption = _tls_test_make_client_encryption (keyvault_client, WITH_TLS);
+   mongoc_client_encryption_t *client_encryption = _tls_test_make_client_encryption (keyvault_client, RETRY);
    bson_error_t error = {0};
    bson_value_t keyid;
    mongoc_client_encryption_datakey_opts_t *dkopts;
