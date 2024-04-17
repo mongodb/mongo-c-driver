@@ -3669,9 +3669,6 @@ retry:
 
    if (is_retryable_write) {
       _mongoc_write_error_handle_labels (ret, error, reply, cmd->server_stream->sd);
-   }
-
-   if (can_retry) {
       _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply);
    }
 
