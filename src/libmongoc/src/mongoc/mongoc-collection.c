@@ -3130,7 +3130,6 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
 {
    mongoc_cluster_t *cluster;
    mongoc_cmd_parts_t parts;
-   bool is_retryable;
    bson_iter_t iter;
    bson_iter_t inner;
    const char *name;
@@ -3284,88 +3283,9 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
       GOTO (done);
    }
 
-   is_retryable = parts.is_retryable_write;
-
-   /* increment the transaction number for the first attempt of each retryable
-    * write command */
-   if (is_retryable) {
-      bson_iter_t txn_number_iter;
-      BSON_ASSERT (bson_iter_init_find (&txn_number_iter, parts.assembled.command, "txnNumber"));
-      bson_iter_overwrite_int64 (&txn_number_iter, ++parts.assembled.session->server_session->txn_number);
-   }
-
-   mongoc_cmd_t *cmd = &parts.assembled;
-   bool is_retryable_write = parts.is_retryable_write;
    bson_destroy (reply);
-
-   // Store the original error and reply if needed.
-   struct {
-      bson_t reply;
-      bson_error_t error;
-      bool set;
-   } original_error = {.reply = {0}, .error = {0}, .set = false};
-
-retry:
-   ret = mongoc_cluster_run_command_monitored (cluster, cmd, reply, error);
-
-   if (is_retryable_write) {
-      _mongoc_write_error_handle_labels (ret, error, reply, cmd->server_stream->sd);
-   }
-
-   if (is_retryable) {
-      _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply);
-   }
-
-   /* If a retryable error is encountered and the write is retryable, select
-    * a new writable stream and retry. If server selection fails or the selected
-    * server does not support retryable writes, fall through and allow the
-    * original error to be reported. */
-   if (is_retryable && _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
-      bson_error_t ignored_error;
-
-      /* each write command may be retried at most once */
-      is_retryable = false;
-
-      {
-         mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new ();
-
-         mongoc_deprioritized_servers_add_if_sharded (ds, cmd->server_stream->topology_type, cmd->server_stream->sd);
-
-         retry_server_stream =
-            mongoc_cluster_stream_for_writes (cluster, cmd->session, ds, NULL /* reply */, &ignored_error);
-
-         mongoc_deprioritized_servers_destroy (ds);
-      }
-
-      if (retry_server_stream) {
-         cmd->server_stream = retry_server_stream;
-         {
-            // Store the original error and reply before retry.
-            BSON_ASSERT (!original_error.set); // Retry only happens once.
-            original_error.set = true;
-            bson_copy_to (reply, &original_error.reply);
-            if (error) {
-               original_error.error = *error;
-            }
-         }
-         bson_destroy (reply);
-         GOTO (retry);
-      }
-   }
-
-   // If a retry attempt fails with an error labeled NoWritesPerformed,
-   // drivers MUST return the original error.
-   if (original_error.set && mongoc_error_has_label (reply, "NoWritesPerformed")) {
-      if (error) {
-         *error = original_error.error;
-      }
-      bson_destroy (reply);
-      bson_copy_to (&original_error.reply, reply);
-   }
-
-   if (original_error.set) {
-      bson_destroy (&original_error.reply);
-   }
+   ret = mongoc_cluster_run_retryable_write (
+      cluster, &parts.assembled, parts.is_retryable_write, &retry_server_stream, reply, error);
 
    if (bson_iter_init_find (&iter, reply, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       const char *errmsg = NULL;
