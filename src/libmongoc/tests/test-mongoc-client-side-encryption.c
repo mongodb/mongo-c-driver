@@ -2596,7 +2596,7 @@ test_kms_tls_cert_wrong_host (void *unused)
    mongoc_client_destroy (client);
 }
 
-typedef enum { NO_CLIENT_CERT, WITH_TLS, INVALID_HOSTNAME, EXPIRED, WITH_NAMES } tls_test_ce_t;
+typedef enum { NO_CLIENT_CERT, WITH_TLS, INVALID_HOSTNAME, EXPIRED, WITH_NAMES, RETRY } tls_test_ce_t;
 
 static mongoc_client_encryption_t *
 _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_t test_ce)
@@ -2619,7 +2619,9 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_
    char *ca_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
    char *certificate_key_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
-   if (test_ce == WITH_TLS) {
+   if (test_ce == WITH_TLS || test_ce == RETRY) {
+      const char *port = test_ce == RETRY ? "9003" : "9002";
+
       kms_providers = tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' }}",
                                 mongoc_test_aws_access_key_id,
                                 mongoc_test_aws_secret_access_key);
@@ -2629,19 +2631,21 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_
       bson_concat (kms_providers,
                    tmp_bson ("{'azure': {'tenantId': '%s', 'clientId': '%s', "
                              "'clientSecret': '%s', "
-                             "'identityPlatformEndpoint': '127.0.0.1:9002' }}",
+                             "'identityPlatformEndpoint': '127.0.0.1:%s' }}",
                              mongoc_test_azure_tenant_id,
                              mongoc_test_azure_client_id,
-                             mongoc_test_azure_client_secret));
+                             mongoc_test_azure_client_secret,
+                             port));
       bson_concat (
          tls_opts,
          tmp_bson ("{'azure': {'tlsCaFile': '%s', 'tlsCertificateKeyFile': '%s' }}", ca_file, certificate_key_file));
 
       bson_concat (kms_providers,
                    tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
-                             "'endpoint': '127.0.0.1:9002' }}",
+                             "'endpoint': '127.0.0.1:%s' }}",
                              mongoc_test_gcp_email,
-                             mongoc_test_gcp_privatekey));
+                             mongoc_test_gcp_privatekey,
+                             port));
       bson_concat (
          tls_opts,
          tmp_bson ("{'gcp': {'tlsCaFile': '%s', 'tlsCertificateKeyFile': '%s' }}", ca_file, certificate_key_file));
@@ -3232,50 +3236,41 @@ static void
 test_kms_retry (void *unused)
 {
    mongoc_client_t *keyvault_client = test_framework_new_default_client ();
-   mongoc_client_encryption_t *client_encryption =
-      _tls_test_make_client_encryption (keyvault_client, WITH_TLS);
+   mongoc_client_encryption_t *client_encryption = _tls_test_make_client_encryption (keyvault_client, WITH_TLS);
    bson_error_t error = {0};
    bson_value_t keyid;
    mongoc_client_encryption_datakey_opts_t *dkopts;
    bool res;
 
-   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32,
-                              .value.v_int32 = 1};
+   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1};
    bson_value_t encrypted_field = {0};
-   mongoc_client_encryption_encrypt_opts_t *encrypt_opts =
-      mongoc_client_encryption_encrypt_opts_new ();
-   mongoc_client_encryption_encrypt_opts_set_algorithm (
-      encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+   mongoc_client_encryption_encrypt_opts_t *encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
+   mongoc_client_encryption_encrypt_opts_set_algorithm (encrypt_opts,
+                                                        MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
 
    // AWS
    dkopts = mongoc_client_encryption_datakey_opts_new ();
-   mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts,
-      tmp_bson ("{ 'region': 'us-east-1', 'key': "
-                "'arn:aws:kms:us-east-1:579766882180:key/"
-                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
-                "'127.0.0.1:9003' }"));
-   res = mongoc_client_encryption_create_datakey (
-      client_encryption, "aws", dkopts, &keyid, &error);
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
+                                                        tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                                                                  "'arn:aws:kms:us-east-1:579766882180:key/"
+                                                                  "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
+                                                                  "'127.0.0.1:9003' }"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", dkopts, &keyid, &error);
    ASSERT (res);
 
    mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
    ASSERT (res);
 
    // Azure
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts,
-      tmp_bson ("{ 'keyVaultEndpoint': '127.0.0.1:9003', 'keyName': 'foo'}"));
-   res = mongoc_client_encryption_create_datakey (
-      client_encryption, "azure", dkopts, &keyid, &error);
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': '127.0.0.1:9003', 'keyName': 'foo'}"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "azure", dkopts, &keyid, &error);
    ASSERT (res);
 
    mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
    ASSERT (res);
 
    // GCP
@@ -3284,18 +3279,15 @@ test_kms_retry (void *unused)
       dkopts,
       tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
                 "'keyName': 'kn' , 'endpoint': '127.0.0.1:9003'}"));
-   res = mongoc_client_encryption_create_datakey (
-      client_encryption, "gcp", dkopts, &keyid, &error);
+   res = mongoc_client_encryption_create_datakey (client_encryption, "gcp", dkopts, &keyid, &error);
    ASSERT (res);
 
    mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
    ASSERT (res);
 
    // Erase the datakeys
-   mongoc_collection_t *keyvault_coll =
-      mongoc_client_get_collection (keyvault_client, "keyvault", "datakeys");
+   mongoc_collection_t *keyvault_coll = mongoc_client_get_collection (keyvault_client, "keyvault", "datakeys");
    ASSERT (mongoc_collection_drop (keyvault_coll, &error));
    mongoc_collection_destroy (keyvault_coll);
 }
