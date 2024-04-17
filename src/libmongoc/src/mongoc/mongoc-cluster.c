@@ -3682,6 +3682,7 @@ retry:
       /* each write command may be retried at most once */
       can_retry = false;
 
+      // If talking to a sharded cluster, deprioritize the just-used mongos to prefer a new mongos for the retry.
       {
          mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new ();
 
