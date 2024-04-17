@@ -452,7 +452,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    const bson_t *reply,
                                    const bson_error_t *why,
                                    uint32_t max_wire_version,
-                                   uint32_t generation,                                   
+                                   uint32_t generation,
                                    const bson_oid_t *service_id);
 
 void

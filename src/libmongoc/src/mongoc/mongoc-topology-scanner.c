@@ -186,6 +186,9 @@ _mongoc_oidc_add_speculative_auth (bson_t *auth_cmd, mongoc_topology_t *topology
                    BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_doc), jwt_doc.len));
       bson_destroy (&jwt_doc);
       has_auth = true;
+      fprintf(stderr, "FINISHED OIDC SPECULATIVE AUTH\n");
+   } else {
+      fprintf(stderr, "NO CACHED TOKEN FOR OIDC SPECULATIVE AUTH\n\n\n");
    }
    bson_mutex_unlock (&topology->oidc_mtx);
    return has_auth;
@@ -202,9 +205,13 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
    bool has_auth = false;
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (uri);
 
+   fprintf(stderr, "RUNNING> %s\n", __FUNCTION__);
+
    if (!mechanism) {
       return;
    }
+
+   fprintf(stderr, "mechanism: %s\n", mechanism);
 
    if (strcasecmp (mechanism, "MONGODB-X509") == 0) {
       /* Ignore errors while building authentication document: we proceed with
@@ -215,6 +222,7 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
          BSON_APPEND_UTF8 (&auth_cmd, "db", "$external");
       }
    } else if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
+      fprintf(stderr, "WILL APPLY OIDC SPEC AUTH\n");
       has_auth = _mongoc_oidc_add_speculative_auth (&auth_cmd, topology);
    }
 
