@@ -43,20 +43,6 @@
 #define MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED 60000
 #define MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS 60000
 
-typedef struct _mongoc_cluster_t {
-   int64_t operation_id;
-   int32_t request_id;
-   int32_t sockettimeoutms;
-   int32_t socketcheckintervalms;
-   mongoc_uri_t *uri;
-   unsigned requires_auth : 1;
-
-   mongoc_client_t *client;
-
-   mongoc_set_t *nodes;
-   mongoc_array_t iov;
-} mongoc_cluster_t;
-
 typedef enum {
    MONGOC_TOPOLOGY_SCANNER_OFF,
    MONGOC_TOPOLOGY_SCANNER_BG_RUNNING,

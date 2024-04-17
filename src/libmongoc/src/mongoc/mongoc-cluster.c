@@ -117,20 +117,21 @@ _handle_not_primary_error (mongoc_cluster_t *cluster, const mongoc_server_stream
 static void
 _handle_network_error (mongoc_cluster_t *cluster, mongoc_server_stream_t *server_stream, const bson_error_t *why)
 {
+   mongoc_topology_t *topology;
    uint32_t server_id;
    _mongoc_sdam_app_error_type_t type;
 
    BSON_ASSERT (server_stream);
 
    ENTRY;
-
+   topology = cluster->client->topology;
    server_id = server_stream->sd->id;
    type = MONGOC_SDAM_APP_ERROR_NETWORK;
    if (mongoc_stream_timed_out (server_stream->stream)) {
       type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
    }
 
-   _mongoc_topology_handle_app_error (cluster->client->topology,
+   _mongoc_topology_handle_app_error (topology,
                                       server_id,
                                       true, // handshake_complete
                                       type,
@@ -505,8 +506,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
 again:
    int64_t started = bson_get_monotonic_time ();
 
-   fprintf(stderr, "RUNNING: %s\n", __FUNCTION__);
-
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
 
@@ -665,6 +664,8 @@ fail_no_events:
 
    _mongoc_topology_update_last_used (cluster->client->topology, server_id);
 
+   /* Spec:
+    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#reauthentication-1 */
    if (!retval && _mongoc_error_is_reauthentication_required (error)) {
       bool ok = _mongoc_cluster_oidc_reauthenticate (cluster, server_stream->stream, server_stream->sd, error);
       if (!ok) {
@@ -715,7 +716,6 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
    bson_t reply_local;
    bson_error_t error_local;
 
-   fprintf (stderr, "RUNNING: %s\n", __FUNCTION__);
    if (!error) {
       error = &error_local;
    }
@@ -1654,7 +1654,6 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
    } else if (0 == strcasecmp (mechanism, "MONGODB-AWS")) {
       ret = _mongoc_cluster_auth_node_aws (cluster, stream, sd, error);
    } else if (0 == strcasecmp (mechanism, "MONGODB-OIDC")) {
-      fprintf (stderr, "CALLING: _mongoc_cluster_auth_node_oidc\n");
       ret = _mongoc_cluster_auth_node_oidc (cluster, stream, sd, error);
    } else {
       _mongoc_set_error (error,

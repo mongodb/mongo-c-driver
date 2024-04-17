@@ -1765,9 +1765,6 @@ mongoc_client_command_simple (mongoc_client_t *client,
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
 
-   const char *uri_string = mongoc_uri_get_string (client->uri);
-   fprintf(stderr, "\n\nURI> '%s'\n\n", uri_string);
-
    if (!_mongoc_read_prefs_validate (read_prefs, error)) {
       RETURN (false);
    }
@@ -1982,10 +1979,6 @@ done:
    mongoc_cmd_parts_cleanup (&parts);
    _mongoc_read_write_opts_cleanup (&read_write_opts);
 
-   if (error->code == MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED) {
-      fprintf(stderr, "REAUTH\n");
-      exit(6);
-   }
    RETURN (ret);
 }
 

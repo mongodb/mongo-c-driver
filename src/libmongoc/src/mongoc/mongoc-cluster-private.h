@@ -51,6 +51,19 @@ typedef struct _mongoc_cluster_node_t {
    mongoc_server_description_t *handshake_sd;
 } mongoc_cluster_node_t;
 
+typedef struct _mongoc_cluster_t {
+   int64_t operation_id;
+   int32_t request_id;
+   int32_t sockettimeoutms;
+   int32_t socketcheckintervalms;
+   mongoc_uri_t *uri;
+   unsigned requires_auth : 1;
+
+   mongoc_client_t *client;
+
+   mongoc_set_t *nodes;
+   mongoc_array_t iov;
+} mongoc_cluster_t;
 
 void
 mongoc_cluster_init (mongoc_cluster_t *cluster, const mongoc_uri_t *uri, void *client);

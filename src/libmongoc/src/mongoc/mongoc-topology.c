@@ -1796,19 +1796,6 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
       return false;
    }
 
-   /*
-    * TODO: Check if the error is ReauthenticationRequired (error code 391)
-    * If so, then reauthenticate if MONGODB_OIDC is in use.
-    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#reauthentication-1
-    */
-   if (_mongoc_error_is_reauthentication_required (&cmd_error)) {
-      /* TODO: Do reauthentication */
-      fprintf (stderr, "\n\n\n\nNEED TO DO REAUTHENTICATION\n\n\n\n");
-      /*
-      bool ok = _mongoc_cluster_oidc_reauthenticate (cluster, stream, sd, error);
-      */
-   }
-
    if (!_mongoc_error_is_state_change (&cmd_error)) {
       /* Not a "not primary" or "node is recovering" error. */
       return false;
@@ -1908,7 +1895,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    const bson_t *reply,
                                    const bson_error_t *why,
                                    uint32_t max_wire_version,
-                                   uint32_t generation,                                   
+                                   uint32_t generation,
                                    const bson_oid_t *service_id)
 {
    bson_error_t server_selection_error;
