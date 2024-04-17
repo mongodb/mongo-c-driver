@@ -492,7 +492,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    mongoc_apm_command_started_t started_event;
    mongoc_apm_command_succeeded_t succeeded_event;
    mongoc_apm_command_failed_t failed_event;
-   int64_t started = bson_get_monotonic_time ();
    const mongoc_server_stream_t *server_stream;
    bson_t reply_local;
    bson_error_t error_local;
@@ -501,6 +500,10 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    bson_t decrypted = BSON_INITIALIZER;
    mongoc_cmd_t encrypted_cmd;
    bool is_redacted_by_apm = false;
+   bool first_time = true;
+
+again:
+   int64_t started = bson_get_monotonic_time ();
 
    fprintf(stderr, "RUNNING: %s\n", __FUNCTION__);
 
@@ -662,14 +665,17 @@ fail_no_events:
 
    _mongoc_topology_update_last_used (cluster->client->topology, server_id);
 
-   if (_mongoc_error_is_reauthentication_required (error)) {
-      fprintf (stderr, "\n\n\n\nWILL REAUTHENTICATE\n\n\n\n");
+   if (!retval && _mongoc_error_is_reauthentication_required (error)) {
       bool ok = _mongoc_cluster_oidc_reauthenticate (cluster, server_stream->stream, server_stream->sd, error);
       if (!ok) {
-         fprintf (stderr, "\n\n\n\nERROR WHILE REAUTHENTICATING\n\n\n\n");
-         exit(7);
+         MONGOC_ERROR ("failed to reauthenticate after receiving a ReauthenticationRequired error");
+         retval = false;
       }
-      fprintf (stderr, "\n\n\n\nDONE REAUTHENTICATE\n\n\n\n");
+      if (first_time) {
+         first_time = false;
+         goto again;
+      }
+      retval = false;
    }
    return retval;
 }
@@ -712,6 +718,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
    bson_t reply_local;
    bson_error_t error_local;
 
+   fprintf (stderr, "RUNNING: %s\n", __FUNCTION__);
    if (!error) {
       error = &error_local;
    }
