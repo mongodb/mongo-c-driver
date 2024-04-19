@@ -1574,6 +1574,7 @@ _mongoc_client_retryable_write_command_with_stream (mongoc_client_t *client,
 
    if (retry_server_stream) {
       mongoc_server_stream_cleanup (retry_server_stream);
+      parts->assembled.server_stream = NULL;
    }
 
    RETURN (ret);
