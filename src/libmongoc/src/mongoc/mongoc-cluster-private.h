@@ -187,6 +187,7 @@ bool
 mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error);
 
 // `mongoc_cluster_run_retryable_write` executes a write command and may apply retryable writes behavior.
+// `cmd->server_stream` is expected to be non-owning and is overwritten on retry.
 // `*retry_server_stream` is set to a new stream on retry. The caller must call `mongoc_server_stream_cleanup`.
 bool
 mongoc_cluster_run_retryable_write (mongoc_cluster_t *cluster,
