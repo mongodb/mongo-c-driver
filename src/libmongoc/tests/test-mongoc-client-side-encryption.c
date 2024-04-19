@@ -3282,11 +3282,6 @@ test_kms_retry (void *unused)
    mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
    res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
    ASSERT (res);
-
-   // Erase the datakeys
-   mongoc_collection_t *keyvault_coll = mongoc_client_get_collection (keyvault_client, "keyvault", "datakeys");
-   ASSERT (mongoc_collection_drop (keyvault_coll, &error));
-   mongoc_collection_destroy (keyvault_coll);
 }
 
 /* ee_fixture is a fixture for the Explicit Encryption prose test. */
