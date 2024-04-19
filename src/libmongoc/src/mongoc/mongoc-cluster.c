@@ -3670,6 +3670,9 @@ mongoc_cluster_run_retryable_write (mongoc_cluster_t *cluster,
       bool set;
    } original_error = {.reply = {0}, .error = {0}, .set = false};
 
+   // Ensure `*retry_server_stream` is always valid or null.
+   *retry_server_stream = NULL;
+
 retry:
    ret = mongoc_cluster_run_command_monitored (cluster, cmd, reply, error);
 
