@@ -3655,8 +3655,7 @@ mongoc_cluster_run_retryable_write (mongoc_cluster_t *cluster,
    // `can_retry` is set to false on retry. A retry may only happen once.
    bool can_retry = is_retryable_write;
 
-   /* increment the transaction number for the first attempt of each retryable
-    * write command */
+   // Increment the transaction number for the first attempt of each retryable write command.
    if (is_retryable_write) {
       bson_iter_t txn_number_iter;
       BSON_ASSERT (bson_iter_init_find (&txn_number_iter, cmd->command, "txnNumber"));
@@ -3681,20 +3680,19 @@ retry:
       _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply);
    }
 
-   /* If a retryable error is encountered and the write is retryable, select
-    * a new writable stream and retry. If server selection fails or the selected
-    * server does not support retryable writes, fall through and allow the
-    * original error to be reported. */
+   // If a retryable error is encountered and the write is retryable, select a new writable stream and retry. If server
+   // selection fails or the selected server does not support retryable writes, fall through and allow the original
+   // error to be reported.
    if (can_retry && _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
       bson_error_t ignored_error;
 
-      /* each write command may be retried at most once */
-      can_retry = false;
+      can_retry = false; // Only retry once.
 
-      // If talking to a sharded cluster, deprioritize the just-used mongos to prefer a new mongos for the retry.
+      // Select a server.
       {
          mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new ();
 
+         // If talking to a sharded cluster, deprioritize the just-used mongos to prefer a new mongos for the retry.
          mongoc_deprioritized_servers_add_if_sharded (ds, cmd->server_stream->topology_type, cmd->server_stream->sd);
 
          *retry_server_stream =
@@ -3719,8 +3717,7 @@ retry:
       }
    }
 
-   // If a retry attempt fails with an error labeled NoWritesPerformed,
-   // drivers MUST return the original error.
+   // If a retry attempt fails with an error labeled NoWritesPerformed, drivers MUST return the original error.
    if (original_error.set && mongoc_error_has_label (reply, "NoWritesPerformed")) {
       if (error) {
          *error = original_error.error;
