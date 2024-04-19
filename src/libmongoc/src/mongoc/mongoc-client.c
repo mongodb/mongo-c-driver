@@ -1557,7 +1557,6 @@ mongoc_client_command (mongoc_client_t *client,
 static bool
 _mongoc_client_retryable_write_command_with_stream (mongoc_client_t *client,
                                                     mongoc_cmd_parts_t *parts,
-                                                    mongoc_server_stream_t *server_stream,
                                                     bson_t *reply,
                                                     bson_error_t *error)
 {
@@ -1674,7 +1673,7 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
    }
 
    if (parts->is_retryable_write) {
-      RETURN (_mongoc_client_retryable_write_command_with_stream (client, parts, server_stream, reply, error));
+      RETURN (_mongoc_client_retryable_write_command_with_stream (client, parts, reply, error));
    }
 
    if (parts->is_retryable_read) {
