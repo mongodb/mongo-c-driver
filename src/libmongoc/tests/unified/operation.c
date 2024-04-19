@@ -4359,7 +4359,6 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
    }
 
    for (i = 0; i < num_ops; i++) {
-      fprintf(stderr, "RUNNING OP> %s\n", op->name);
       if (0 == strcmp (op->name, op_to_fn_map[i].op)) {
          if (!op_to_fn_map[i].fn (test, op, result, error)) {
             goto done;

@@ -183,7 +183,9 @@ _mongoc_oidc_add_speculative_auth (bson_t *auth_cmd, mongoc_topology_t *topology
                    "mechanism",
                    "MONGODB-OIDC",
                    "payload",
-                   BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_doc), jwt_doc.len));
+                   BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_doc), jwt_doc.len),
+                   "db",
+                   "$external");
       bson_destroy (&jwt_doc);
       has_auth = true;
       fprintf(stderr, "FINISHED OIDC SPECULATIVE AUTH\n");
@@ -205,8 +207,6 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
    bool has_auth = false;
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (uri);
 
-   fprintf(stderr, "RUNNING> %s\n", __FUNCTION__);
-
    if (!mechanism) {
       return;
    }
@@ -221,7 +221,7 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
          has_auth = true;
          BSON_APPEND_UTF8 (&auth_cmd, "db", "$external");
       }
-   } else if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
+   } else if ((strcasecmp (mechanism, "MONGODB-OIDC") == 0)) {
       fprintf(stderr, "WILL APPLY OIDC SPEC AUTH\n");
       has_auth = _mongoc_oidc_add_speculative_auth (&auth_cmd, topology);
    }
@@ -393,6 +393,8 @@ _begin_hello_cmd (mongoc_topology_t *topology,
    mongoc_topology_scanner_t *ts = node->ts;
    bson_t cmd;
 
+   fprintf (stderr, "\n\n\n\n\n\n\n\n\n\n\n>>>>BEGIN HELLO\n");
+
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */
    const int32_t cmd_opcode = _should_use_op_msg (ts) ? MONGOC_OP_CODE_MSG : MONGOC_OP_CODE_QUERY;
@@ -408,9 +410,17 @@ _begin_hello_cmd (mongoc_topology_t *topology,
       _mongoc_handshake_append_sasl_supported_mechs (ts->uri, &cmd);
    }
 
+   fprintf(stderr, "%d %d %d %d cache: %d\n",
+      node->ts->speculative_authentication,
+      !node->has_auth,
+      bson_empty (&node->speculative_auth_response),
+      node->scram.step == 0,
+      !!topology->oidc_credential->access_token
+   );
+
+   const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (ts->uri);
    if (node->ts->speculative_authentication && !node->has_auth && bson_empty (&node->speculative_auth_response) &&
-       node->scram.step == 0) {
-      _mongoc_topology_scanner_add_speculative_authentication (&cmd, ts->uri, &node->scram);
+      ((node->scram.step == 0) || (!strcasecmp (mechanism, "MONGODB-OIDC")))) {
       mongoc_ssl_opt_t *ssl_opts = NULL;
 
 #ifdef MONGOC_ENABLE_SSL
@@ -423,6 +433,10 @@ _begin_hello_cmd (mongoc_topology_t *topology,
    if (!bson_empty (&ts->cluster_time)) {
       bson_append_document (&cmd, "$clusterTime", 12, &ts->cluster_time);
    }
+
+   char *s = bson_as_json (&cmd, NULL);
+   fprintf(stderr, "HELLO CMD>\n%s\n", s);
+   bson_free(s);
 
    /* if the node should connect with a TCP socket, stream will be null, and
     * dns_result will be set. The async loop is responsible for calling the
