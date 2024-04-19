@@ -1555,32 +1555,6 @@ mongoc_client_command (mongoc_client_t *client,
 
 
 static bool
-_mongoc_client_retryable_write_command_with_stream (mongoc_client_t *client,
-                                                    mongoc_cmd_parts_t *parts,
-                                                    bson_t *reply,
-                                                    bson_error_t *error)
-{
-   mongoc_server_stream_t *retry_server_stream = NULL;
-   bool ret;
-
-   ENTRY;
-
-   BSON_ASSERT_PARAM (client);
-   BSON_ASSERT (parts->is_retryable_write);
-
-   ret = mongoc_cluster_run_retryable_write (
-      &client->cluster, &parts->assembled, true /* is_retryable */, &retry_server_stream, reply, error);
-
-   if (retry_server_stream) {
-      mongoc_server_stream_cleanup (retry_server_stream);
-      parts->assembled.server_stream = NULL;
-   }
-
-   RETURN (ret);
-}
-
-
-static bool
 _mongoc_client_retryable_read_command_with_stream (mongoc_client_t *client,
                                                    mongoc_cmd_parts_t *parts,
                                                    mongoc_server_stream_t *server_stream,
@@ -1673,7 +1647,17 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
    }
 
    if (parts->is_retryable_write) {
-      RETURN (_mongoc_client_retryable_write_command_with_stream (client, parts, reply, error));
+      mongoc_server_stream_t *retry_server_stream = NULL;
+
+      bool ret = mongoc_cluster_run_retryable_write (
+         &client->cluster, &parts->assembled, true /* is_retryable */, &retry_server_stream, reply, error);
+
+      if (retry_server_stream) {
+         mongoc_server_stream_cleanup (retry_server_stream);
+         parts->assembled.server_stream = NULL;
+      }
+
+      RETURN (ret);
    }
 
    if (parts->is_retryable_read) {
