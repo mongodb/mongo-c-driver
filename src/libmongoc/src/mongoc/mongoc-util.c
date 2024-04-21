@@ -179,6 +179,10 @@ _mongoc_get_documents_field_name (const char *command_name)
       return "deletes";
    }
 
+   if (!strcmp (command_name, "bulkWrite")) {
+      return "ops";
+   }
+
    return NULL;
 }
 
