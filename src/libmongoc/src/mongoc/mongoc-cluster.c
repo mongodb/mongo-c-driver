@@ -1774,6 +1774,13 @@ _mongoc_cluster_finish_speculative_auth (mongoc_cluster_t *cluster,
       return false;
    }
 
+   if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
+      /* For X509, a successful hello with speculativeAuthenticate field
+       * indicates successful auth */
+      ret = true;
+      auth_handled = true;
+   }
+
 #ifdef MONGOC_ENABLE_SSL
    if (strcasecmp (mechanism, "MONGODB-X509") == 0) {
       /* For X509, a successful hello with speculativeAuthenticate field
