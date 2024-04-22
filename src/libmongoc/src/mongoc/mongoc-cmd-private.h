@@ -56,12 +56,14 @@ typedef struct _mongoc_cmd_t {
    mongoc_query_flags_t query_flags;
    const bson_t *command;
    const char *command_name;
-   const uint8_t *payload;
-   int32_t payload_size;
-   const char *payload_identifier;
-   const uint8_t *payload2;
-   int32_t payload2_size;
-   const char *payload2_identifier;
+   // `payloads` is an array of document sequences (OP_MSG Section with payloadType=1).
+   // Increase array size to support more document sequences.
+   struct {
+      int32_t size;
+      const char *identifier;
+      const uint8_t *documents;
+   } payloads[2];
+   size_t payloads_count;
    mongoc_server_stream_t *server_stream;
    int64_t operation_id;
    mongoc_client_session_t *session;

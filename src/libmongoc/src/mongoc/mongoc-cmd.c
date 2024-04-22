@@ -55,10 +55,8 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->assembled.command = NULL;
    parts->assembled.query_flags = MONGOC_QUERY_NONE;
    parts->assembled.op_msg_is_exhaust = false;
-   parts->assembled.payload_identifier = NULL;
-   parts->assembled.payload = NULL;
-   parts->assembled.payload2_identifier = NULL;
-   parts->assembled.payload2 = NULL;
+   parts->assembled.payloads_count = 0;
+   memset (parts->assembled.payloads, 0, sizeof (parts->assembled.payloads));
    parts->assembled.session = NULL;
    parts->assembled.is_acknowledged = true;
    parts->assembled.is_txn_finish = false;
@@ -992,34 +990,17 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
    const char *field_name;
    bson_array_builder_t *bson;
 
-   BSON_ASSERT (cmd->payload && cmd->payload_size);
+   for (size_t i = 0; i < cmd->payloads_count; i++) {
+      BSON_ASSERT (cmd->payloads[i].documents && cmd->payloads[i].size);
 
-   /* make array from outgoing OP_MSG payload type 1 on an "insert",
-    * "update", or "delete" command. */
-   field_name = cmd->payload_identifier;
-   BSON_ASSERT (field_name);
-   BSON_ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (out, field_name, &bson));
-
-   pos = cmd->payload;
-   while (pos < cmd->payload + cmd->payload_size) {
-      memcpy (&doc_len, pos, sizeof (doc_len));
-      doc_len = BSON_UINT32_FROM_LE (doc_len);
-      BSON_ASSERT (bson_init_static (&doc, pos, (size_t) doc_len));
-      bson_array_builder_append_document (bson, &doc);
-
-      pos += doc_len;
-   }
-
-   bson_append_array_builder_end (out, bson);
-
-   // Check if there is another payload to append.
-   if (cmd->payload2) {
-      field_name = cmd->payload2_identifier;
+      /* make array from outgoing OP_MSG payload type 1 on an "insert",
+       * "update", or "delete" command. */
+      field_name = cmd->payloads[i].identifier;
       BSON_ASSERT (field_name);
       BSON_ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (out, field_name, &bson));
 
-      pos = cmd->payload2;
-      while (pos < cmd->payload2 + cmd->payload2_size) {
+      pos = cmd->payloads[i].documents;
+      while (pos < cmd->payloads[i].documents + cmd->payloads[i].size) {
          memcpy (&doc_len, pos, sizeof (doc_len));
          doc_len = BSON_UINT32_FROM_LE (doc_len);
          BSON_ASSERT (bson_init_static (&doc, pos, (size_t) doc_len));

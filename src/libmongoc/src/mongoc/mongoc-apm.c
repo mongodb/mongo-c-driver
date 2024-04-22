@@ -31,7 +31,8 @@ static bson_oid_t kObjectIdZero = {{0}};
 static void
 append_documents_from_cmd (const mongoc_cmd_t *cmd, mongoc_apm_command_started_t *event)
 {
-   if (!cmd->payload || !cmd->payload_size) {
+   // If there are no document sequences (OP_MSG Section with payloadType=1), return the command unchanged.
+   if (cmd->payloads_count == 0) {
       return;
    }
 

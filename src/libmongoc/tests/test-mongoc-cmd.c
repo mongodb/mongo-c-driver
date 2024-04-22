@@ -111,15 +111,17 @@ test_cmd_with_two_payload1 (void *ctx)
    bool ok = mongoc_cmd_parts_assemble (&parts, server_stream, &error);
    ASSERT_OR_PRINT (ok, error);
 
+   parts.assembled.payloads_count = 2;
+
    // Set `ops` as a payload1 (of one document)
-   parts.assembled.payload_identifier = "ops";
-   parts.assembled.payload = bson_get_data (op);
-   parts.assembled.payload_size = op->len;
+   parts.assembled.payloads[0].identifier = "ops";
+   parts.assembled.payloads[0].documents = bson_get_data (op);
+   parts.assembled.payloads[0].size = op->len;
 
    // Set `nsInfo` as a payload1 (of one document)
-   parts.assembled.payload2_identifier = "nsInfo";
-   parts.assembled.payload2 = bson_get_data (nsInfo);
-   parts.assembled.payload2_size = nsInfo->len;
+   parts.assembled.payloads[1].identifier = "nsInfo";
+   parts.assembled.payloads[1].documents = bson_get_data (nsInfo);
+   parts.assembled.payloads[1].size = nsInfo->len;
 
    // Run the command.
    bson_t reply;
