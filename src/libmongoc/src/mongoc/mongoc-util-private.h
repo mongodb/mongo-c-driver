@@ -82,9 +82,6 @@ _mongoc_get_real_time_ms (void);
 const char *
 _mongoc_get_command_name (const bson_t *command);
 
-const char *
-_mongoc_get_documents_field_name (const char *command_name);
-
 bool
 _mongoc_lookup_bool (const bson_t *bson, const char *key, bool default_value);
 

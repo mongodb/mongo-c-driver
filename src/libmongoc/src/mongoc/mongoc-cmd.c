@@ -996,7 +996,7 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
 
    /* make array from outgoing OP_MSG payload type 1 on an "insert",
     * "update", or "delete" command. */
-   field_name = _mongoc_get_documents_field_name (cmd->command_name);
+   field_name = cmd->payload_identifier;
    BSON_ASSERT (field_name);
    BSON_ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (out, field_name, &bson));
 
