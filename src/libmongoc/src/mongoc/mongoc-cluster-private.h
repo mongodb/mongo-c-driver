@@ -186,6 +186,18 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster, mongoc_server_stream_t *
 bool
 mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error);
 
+// `mongoc_cluster_run_retryable_write` executes a write command and may apply retryable writes behavior.
+// `cmd->server_stream` is set to `*retry_server_stream` on retry. Otherwise, it is unmodified.
+// `*retry_server_stream` is set to a new stream on retry. The caller must call `mongoc_server_stream_cleanup`.
+// `*reply` must be uninitialized and is always initialized upon return. The caller must call `bson_destroy`.
+bool
+mongoc_cluster_run_retryable_write (mongoc_cluster_t *cluster,
+                                    mongoc_cmd_t *cmd,
+                                    bool is_retryable_write,
+                                    mongoc_server_stream_t **retry_server_stream,
+                                    bson_t *reply,
+                                    bson_error_t *error);
+
 bool
 mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
                                   mongoc_server_stream_t *server_stream,
