@@ -3702,7 +3702,7 @@ retry:
       }
 
       if (*retry_server_stream) {
-         cmd->server_stream = *retry_server_stream;
+         cmd->server_stream = *retry_server_stream; // Non-owning.
          {
             // Store the original error and reply before retry.
             BSON_ASSERT (!original_error.set); // Retry only happens once.
