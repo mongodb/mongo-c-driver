@@ -1775,7 +1775,7 @@ _mongoc_cluster_finish_speculative_auth (mongoc_cluster_t *cluster,
    }
 
    if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
-      /* For X509, a successful hello with speculativeAuthenticate field
+      /* For OIDC, a successful hello with speculativeAuthenticate field
        * indicates successful auth */
       ret = true;
       auth_handled = true;
