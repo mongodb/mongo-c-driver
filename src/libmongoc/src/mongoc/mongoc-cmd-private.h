@@ -57,7 +57,7 @@ typedef struct _mongoc_cmd_t {
    const bson_t *command;
    const char *command_name;
    // `payloads` is an array of document sequences (OP_MSG Section with payloadType=1).
-   // Increase array size to support more document sequences.
+   // OP_MSG supports any number of document sequences. Increase array size to support more document sequences.
    struct {
       int32_t size;
       const char *identifier;

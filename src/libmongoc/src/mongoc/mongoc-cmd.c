@@ -960,27 +960,11 @@ mongoc_cmd_is_compressible (mongoc_cmd_t *cmd)
           !!strcasecmp (cmd->command_name, "createuser") && !!strcasecmp (cmd->command_name, "updateuser");
 }
 
-/*--------------------------------------------------------------------------
- *
- * _mongoc_cmd_append_payload_as_array --
- *    Append a write command payload as an array in a BSON document.
- *    Used by APM and Client-Side Encryption
- *
- * Arguments:
- *    cmd The mongoc_cmd_t, which may contain a payload to be appended.
- *    out A bson_t, which will be appended to if @cmd->payload is set.
- *
- * Pre-conditions:
- *    - @out is initialized.
- *    - cmd has a payload (i.e. is a write command).
- *
- * Post-conditions:
- *    - If @cmd->payload is set, then @out is appended to with the payload
- *      field's name ("documents" if insert, "updates" if update,
- *      "deletes" if delete) an the payload as a BSON array.
- *
- *--------------------------------------------------------------------------
- */
+
+//`_mongoc_cmd_append_payload_as_array` appends document seqence payloads as BSON arrays.
+// `cmd` must contain one or more document sequence payloads (`cmd->payloads_count` > 0).
+// `out` must be initialized by the caller.
+// Used by APM and In-Use Encryption (document sequences are not supported for auto encryption).
 void
 _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
 {
@@ -990,11 +974,12 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
    const char *field_name;
    bson_array_builder_t *bson;
 
+   BSON_ASSERT (cmd->payloads_count > 0);
+
    for (size_t i = 0; i < cmd->payloads_count; i++) {
       BSON_ASSERT (cmd->payloads[i].documents && cmd->payloads[i].size);
 
-      /* make array from outgoing OP_MSG payload type 1 on an "insert",
-       * "update", or "delete" command. */
+      // Create a BSON array from a document sequence (OP_MSG Section with payloadType=1).
       field_name = cmd->payloads[i].identifier;
       BSON_ASSERT (field_name);
       BSON_ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (out, field_name, &bson));
