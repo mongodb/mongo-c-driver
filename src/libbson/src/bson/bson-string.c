@@ -269,23 +269,6 @@ bson_string_append_printf (bson_string_t *string, const char *format, ...)
    bson_free (ret);
 }
 
-bson_string_t *
-bson_string_new_printf (const char *format, ...)
-{
-   va_list args;
-   char *s;
-
-   BSON_ASSERT (format);
-
-   va_start (args, format);
-   s = bson_strdupv_printf (format, args);
-   va_end (args);
-
-   bson_string_t *ret = bson_string_new (s);
-   bson_free (s);
-   return ret;
-}
-
 
 /*
  *--------------------------------------------------------------------------
