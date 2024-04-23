@@ -502,9 +502,10 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    mongoc_cmd_t encrypted_cmd;
    bool is_redacted_by_apm = false;
    bool first_time = true;
+   int64_t started;
 
 again:
-   int64_t started = bson_get_monotonic_time ();
+   started = bson_get_monotonic_time ();
 
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
@@ -2639,10 +2640,8 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    const bool is_retryable =
       mongoc_uri_get_option_as_bool (cluster->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
 
-   return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_READ, log_context, prefs_override, cs, is_retryable, ds, reply, error);
-   mongoc_server_stream_t *stream = _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_READ, prefs_override, cs, is_retryable, ds, reply, error);
+   mongoc_server_stream_t *stream =
+      _mongoc_cluster_stream_for_optype (cluster, MONGOC_SS_READ, log_context, prefs_override, cs, is_retryable, ds, reply, error);
    return stream;
 }
 

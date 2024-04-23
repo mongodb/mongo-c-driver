@@ -67,7 +67,7 @@ _oidc_set_client_token (mongoc_client_t *client, bool *is_cache, bson_error_t *e
                     "Use mongoc_client_set_oidc_callback to set the callback for single threaded clients, "
                     "or use mongoc_client_pool_set_oidc_callback for client pools.");
       ok = false;
-      goto done;
+      goto unlock_oidc_mutex;
    }
 
    /* Check cache if we already have a token.
@@ -76,7 +76,7 @@ _oidc_set_client_token (mongoc_client_t *client, bool *is_cache, bson_error_t *e
    if (client->topology->oidc_credential->access_token) {
       fprintf (stderr, "HAS CACHED TOKEN\n");
       *is_cache = true;
-      goto done;
+      goto unlock_oidc_mutex;
    }
 
    params.version = 1;
@@ -92,7 +92,7 @@ _oidc_set_client_token (mongoc_client_t *client, bool *is_cache, bson_error_t *e
    ok = client->topology->oidc_callback (&params, &creds);
    if (!ok) {
       MONGOC_ERROR ("error from within user provided OIDC callback");
-      goto fail;
+      goto unlock_callback_mutex;
    }
 
    /* creds.access_token is a user provided string.
@@ -104,9 +104,9 @@ _oidc_set_client_token (mongoc_client_t *client, bool *is_cache, bson_error_t *e
    client->topology->oidc_credential->access_token = creds.access_token;
    client->topology->oidc_credential->expires_in_seconds = creds.expires_in_seconds;
 
-fail:
+unlock_callback_mutex:
    bson_mutex_unlock (&_oidc_callback_mutex);
-done:
+unlock_oidc_mutex:
    bson_mutex_unlock (&client->topology->oidc_mtx);
    return ok;
 
@@ -146,9 +146,9 @@ _oidc_sasl_one_step_conversation (mongoc_cluster_t *cluster,
                 "payload",
                 BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_step_request), jwt_step_request.len));
 
-   char *s = bson_as_json(&client_command, NULL);
-   fprintf(stderr, "SASL CMD>\n%s\n", s);
-   bson_free(s);
+   char *s = bson_as_json (&client_command, NULL);
+   fprintf (stderr, "SASL CMD>\n%s\n", s);
+   bson_free (s);
    /* Send the authentication command to the server. */
    ok = _mongoc_sasl_run_command (cluster, stream, sd, &client_command, &server_reply, error);
    if (!ok) {
@@ -254,7 +254,7 @@ again:
       }
 
       _mongoc_usleep (100);
-      fprintf(stderr, "RETRYING\n");
+      fprintf (stderr, "RETRYING\n");
       goto again;
    }
    if (!ok) {
