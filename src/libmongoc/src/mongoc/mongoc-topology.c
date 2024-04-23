@@ -1099,8 +1099,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    mc_shared_tpld td = mc_tpld_take_ref (topology);
 
    bson_string_t *topology_type = bson_string_new (". Topology type: ");
-   bson_string_append (topology_type,
-                       mongoc_topology_description_type (td.ptr));
+   bson_string_append (topology_type, mongoc_topology_description_type (td.ptr));
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
