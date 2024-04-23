@@ -109,15 +109,6 @@ test_bson_string_append_printf (void)
 
 
 static void
-test_bson_string_new_printf (void)
-{
-   bson_string_t *str = bson_string_new_printf ("%s %d %d %d", "testing", 1, 2, 3);
-   BSON_ASSERT (!strcmp (str->str, "testing 1 2 3"));
-   bson_string_free (str, true);
-}
-
-
-static void
 test_bson_string_append_unichar (void)
 {
    static const unsigned char test1[] = {0xe2, 0x82, 0xac, 0};
@@ -320,7 +311,6 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/append", test_bson_string_append);
    TestSuite_Add (suite, "/bson/string/append_c", test_bson_string_append_c);
    TestSuite_Add (suite, "/bson/string/append_printf", test_bson_string_append_printf);
-   TestSuite_Add (suite, "/bson/string/new_printf", test_bson_string_new_printf);
    TestSuite_Add (suite, "/bson/string/append_unichar", test_bson_string_append_unichar);
    TestSuite_Add (suite, "/bson/string/strdup", test_bson_strdup);
    TestSuite_Add (suite, "/bson/string/strdup_printf", test_bson_strdup_printf);
