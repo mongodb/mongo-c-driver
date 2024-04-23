@@ -22,22 +22,19 @@ _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_aggregate (
-      collection, flag, tmp_bson ("{'pipeline': []}"), opt, NULL);
+   cursor = mongoc_collection_aggregate (collection, flag, tmp_bson ("{'pipeline': []}"), opt, NULL);
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    /* "aggregate" command */
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_msg (server,
-                                MONGOC_QUERY_NONE,
-                                tmp_bson ("{'aggregate': 'collection',"
-                                          " 'pipeline': [ ],"
-                                          " 'tailable': {'$exists': false}}"));
+   request = mock_server_receives_msg (server,
+                                       MONGOC_QUERY_NONE,
+                                       tmp_bson ("{'aggregate': 'collection',"
+                                                 " 'pipeline': [ ],"
+                                                 " 'tailable': {'$exists': false}}"));
    ASSERT (request);
    reply_to_request_simple (request,
                             "{'ok': 1,"
@@ -51,12 +48,11 @@ _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
 
    /* "getMore" command */
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_msg (server,
-                                MONGOC_QUERY_NONE,
-                                tmp_bson ("{'getMore': {'$numberLong': '123'},"
-                                          " 'collection': 'collection',"
-                                          " 'tailable': {'$exists': false}}"));
+   request = mock_server_receives_msg (server,
+                                       MONGOC_QUERY_NONE,
+                                       tmp_bson ("{'getMore': {'$numberLong': '123'},"
+                                                 " 'collection': 'collection',"
+                                                 " 'tailable': {'$exists': false}}"));
    ASSERT (request);
    reply_to_request_simple (request,
                             "{'ok': 1,"
@@ -87,8 +83,7 @@ test_query_flags (void)
 
    flag_and_opt_t flags_and_opts[] = {
       {MONGOC_QUERY_TAILABLE_CURSOR, tmp_bson ("{'tailable': true}")},
-      {MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA,
-       tmp_bson ("{'tailable': true, 'awaitData': true}")}};
+      {MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA, tmp_bson ("{'tailable': true, 'awaitData': true}")}};
 
    /* test with both flag and opt */
    for (i = 0; i < (sizeof flags_and_opts) / (sizeof (flag_and_opt_t)); i++) {
@@ -100,6 +95,5 @@ test_query_flags (void)
 void
 test_aggregate_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (
-      suite, "/Aggregate/query_flags", test_query_flags);
+   TestSuite_AddMockServerTest (suite, "/Aggregate/query_flags", test_query_flags);
 }

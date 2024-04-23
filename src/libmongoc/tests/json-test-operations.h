@@ -83,9 +83,7 @@ json_test_ctx_end_sessions (json_test_ctx_t *ctx);
 void
 json_test_ctx_cleanup (json_test_ctx_t *ctx);
 
-typedef bool (*json_test_operation_cb_t) (json_test_ctx_t *ctx,
-                                          const bson_t *test,
-                                          const bson_t *operation);
+typedef bool (*json_test_operation_cb_t) (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation);
 
 typedef void (*json_test_cb_t) (json_test_ctx_t *ctx, const bson_t *test);
 
@@ -101,11 +99,8 @@ void
 json_test_operations (json_test_ctx_t *ctx, const bson_t *test);
 
 void
-check_result (const bson_t *test,
-              const bson_t *operation,
-              bool succeeded,
-              const bson_value_t *result,
-              const bson_error_t *error);
+check_result (
+   const bson_t *test, const bson_t *operation, bool succeeded, const bson_value_t *result, const bson_error_t *error);
 
 json_test_worker_thread_t *
 worker_thread_new (json_test_ctx_t *ctx);

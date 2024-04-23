@@ -886,6 +886,15 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
+        export IS_PATCH="${is_patch}"
+        sh .evergreen/scripts/check_rpm_spec.sh
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
         sh .evergreen/scripts/build_snapshot_rpm.sh
   - command: s3.put
     params:
@@ -1002,8 +1011,8 @@ tasks:
   commands:
   - command: s3.get
     params:
-      aws_key: ${toolchain_aws_key}
-      aws_secret: ${toolchain_aws_secret}
+      aws_key: ${aws_key}
+      aws_secret: ${aws_secret}
       remote_file: mongo-c-toolchain/${distro_id}/2023/06/07/mongo-c-toolchain.tar.gz
       bucket: mongo-c-toolchain
       local_file: mongo-c-toolchain.tar.gz
@@ -1784,6 +1793,10 @@ tasks:
         export distro_id='${distro_id}' # Required by find_cmake_latest.
         . .evergreen/scripts/find-cmake-latest.sh
         cmake_binary="$(find_cmake_latest)"
+        # Allow reuse of ccache compilation results between different build directories.
+        export CCACHE_BASEDIR CCACHE_NOHASHDIR
+        CCACHE_BASEDIR="$(pwd)"
+        CCACHE_NOHASHDIR=1
         # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
         export CC='${CC}'
         "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
@@ -14443,6 +14456,19 @@ buildvariants:
   - name: debug-compile-nosasl-openssl-1.0.1
   - name: .ocsp-openssl-1.0.1
   batchtime: 10080
+  display_tasks:
+  - execution_tasks:
+    - .ocsp-openssl
+    name: ocsp-openssl
+  - execution_tasks:
+    - .ocsp-darwinssl
+    name: ocsp-darwinssl
+  - execution_tasks:
+    - .ocsp-winssl
+    name: ocsp-winssl
+  - execution_tasks:
+    - .ocsp-openssl-1.0.1
+    name: ocsp-openssl-1.0.1
 - name: packaging
   display_name: Linux Distro Packaging
   run_on: ubuntu1804-test

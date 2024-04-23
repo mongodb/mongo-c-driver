@@ -27,8 +27,7 @@
 #include "mongoc-ssl.h"
 #include "mongoc-stream-tls-openssl-private.h"
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10001000L) && !defined(OPENSSL_NO_OCSP) && \
-   !defined(LIBRESSL_VERSION_NUMBER)
+#if (OPENSSL_VERSION_NUMBER >= 0x10001000L) && !defined(OPENSSL_NO_OCSP) && !defined(LIBRESSL_VERSION_NUMBER)
 #define MONGOC_ENABLE_OCSP_OPENSSL
 #endif
 
@@ -36,9 +35,7 @@
 BSON_BEGIN_DECLS
 
 bool
-_mongoc_openssl_check_peer_hostname (SSL *ssl,
-                                     const char *host,
-                                     bool allow_invalid_hostname);
+_mongoc_openssl_check_peer_hostname (SSL *ssl, const char *host, bool allow_invalid_hostname);
 SSL_CTX *
 _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt);
 char *

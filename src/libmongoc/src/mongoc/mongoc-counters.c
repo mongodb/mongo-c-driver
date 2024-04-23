@@ -71,8 +71,7 @@ BSON_STATIC_ASSERT2 (counters_t, sizeof (mongoc_counters_t) == 64);
  * for whether or not initiating the shared memory segment succeeded. */
 static void *gCounterFallback = NULL;
 
-#define COUNTER(ident, Category, Name, Description) \
-   mongoc_counter_t __mongoc_counter_##ident;
+#define COUNTER(ident, Category, Name, Description) mongoc_counter_t __mongoc_counter_##ident;
 #include "mongoc-counters.defs"
 #undef COUNTER
 
@@ -107,8 +106,7 @@ mongoc_counters_calc_size (void)
 
    n_cpu = _mongoc_get_cpu_count ();
    n_groups = (LAST_COUNTER / SLOTS_PER_CACHELINE) + 1;
-   size = (sizeof (mongoc_counters_t) +
-           (LAST_COUNTER * sizeof (mongoc_counter_info_t)) +
+   size = (sizeof (mongoc_counters_t) + (LAST_COUNTER * sizeof (mongoc_counter_info_t)) +
            (n_cpu * n_groups * sizeof (mongoc_counter_slots_t)));
 
 #ifdef BSON_OS_UNIX
@@ -175,9 +173,7 @@ mongoc_counters_alloc (size_t size)
 #ifndef O_NOFOLLOW
 #define O_NOFOLLOW 0
 #endif
-   if (-1 == (fd = shm_open (name,
-                             O_CREAT | O_EXCL | O_RDWR,
-                             S_IRUSR | S_IWUSR | O_NOFOLLOW))) {
+   if (-1 == (fd = shm_open (name, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | O_NOFOLLOW))) {
       goto fail_noclean;
    }
 
@@ -234,11 +230,8 @@ skip_shm:
  * Returns: The offset to the data for the counters values.
  */
 static size_t
-mongoc_counters_register (mongoc_counters_t *counters,
-                          uint32_t num,
-                          const char *category,
-                          const char *name,
-                          const char *description)
+mongoc_counters_register (
+   mongoc_counters_t *counters, uint32_t num, const char *category, const char *name, const char *description)
 {
    mongoc_counter_info_t *infos;
    char *segment;
@@ -263,9 +256,7 @@ mongoc_counters_register (mongoc_counters_t *counters,
    infos = (mongoc_counter_info_t *) (segment + counters->infos_offset);
    infos = &infos[counters->n_counters];
    infos->slot = num % SLOTS_PER_CACHELINE;
-   infos->offset =
-      (counters->values_offset +
-       ((num / SLOTS_PER_CACHELINE) * n_cpu * sizeof (mongoc_counter_slots_t)));
+   infos->offset = (counters->values_offset + ((num / SLOTS_PER_CACHELINE) * n_cpu * sizeof (mongoc_counter_slots_t)));
 
    bson_strncpy (infos->category, category, sizeof infos->category);
    bson_strncpy (infos->name, name, sizeof infos->name);
@@ -308,9 +299,8 @@ _mongoc_counters_init (void)
 
    BSON_ASSERT ((counters->values_offset % 64) == 0);
 
-#define COUNTER(ident, Category, Name, Desc)            \
-   off = mongoc_counters_register (                     \
-      counters, COUNTER_##ident, Category, Name, Desc); \
+#define COUNTER(ident, Category, Name, Desc)                                         \
+   off = mongoc_counters_register (counters, COUNTER_##ident, Category, Name, Desc); \
    __mongoc_counter_##ident.cpus = (mongoc_counter_slots_t *) (segment + off);
 #include "mongoc-counters.defs"
 #undef COUNTER

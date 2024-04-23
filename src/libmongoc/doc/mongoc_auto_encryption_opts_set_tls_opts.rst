@@ -17,19 +17,19 @@ Parameters
 ----------
 
 * ``opts``: The :symbol:`mongoc_auto_encryption_opts_t`
-* ``tls_opts``: A :symbol:`bson_t` mapping a Key Management Service (KMS) provider name to a BSON document with TLS options.
+* ``tls_opts``: A :symbol:`bson_t` mapping a Key Management Service (KMS) provider to a BSON document with TLS options.
 
 ``tls_opts`` is a BSON document of the following form:
 
 .. code-block:: javascript
 
-   <KMS provider name>: {
+   <KMS provider>: {
       tlsCaFile: Optional<String>
       tlsCertificateKeyFile: Optional<String>
       tlsCertificateKeyFilePassword: Optional<String>
    }
 
-The KMS providers ``aws``, ``azure``, ``gcp``, and ``kmip`` are supported as keys in the ``tls_opts`` document.
+The KMS providers ``aws``, ``azure``, ``gcp``, and ``kmip`` are supported as keys in the ``tls_opts`` document. They may include an optional name suffix separated with a colon. Example: ``aws:name2``.
 
 ``tls_opts`` maps the KMS provider name to a BSON document for TLS options.
 

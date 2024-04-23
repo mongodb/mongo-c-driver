@@ -50,13 +50,11 @@ static BSON_THREAD_FUN (socket_test_server, data_)
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
    server_addr.sin_port = htons (0);
 
-   r = mongoc_socket_bind (
-      listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
+   r = mongoc_socket_bind (listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
    BSON_ASSERT (r == 0);
 
    sock_len = sizeof (server_addr);
-   r = mongoc_socket_getsockname (
-      listen_sock, (struct sockaddr *) &server_addr, &sock_len);
+   r = mongoc_socket_getsockname (listen_sock, (struct sockaddr *) &server_addr, &sock_len);
    BSON_ASSERT (r == 0);
 
    r = mongoc_socket_listen (listen_sock, 10);
@@ -128,8 +126,7 @@ static BSON_THREAD_FUN (socket_test_client, data_)
    server_addr.sin_port = htons (data->server_port);
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
-   r = mongoc_socket_connect (
-      conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
+   r = mongoc_socket_connect (conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
    BSON_ASSERT (r == 0);
 
    stream = mongoc_stream_socket_new (conn_sock);
@@ -197,15 +194,13 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
    server_addr.sin_port = htons (0);
 
    {
-      const int r = mongoc_socket_bind (
-         listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
+      const int r = mongoc_socket_bind (listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
       ASSERT_CMPINT (r, ==, 0);
    }
 
    {
       mongoc_socklen_t sock_len = (mongoc_socklen_t) sizeof (server_addr);
-      const int r = mongoc_socket_getsockname (
-         listen_sock, (struct sockaddr *) &server_addr, &sock_len);
+      const int r = mongoc_socket_getsockname (listen_sock, (struct sockaddr *) &server_addr, &sock_len);
       ASSERT_CMPINT (r, ==, 0);
    }
 
@@ -237,8 +232,7 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
    /* Start reading everything off the socket to unblock the client */
    do {
       ASSERT (bson_in_range_signed (size_t, amount));
-      const ssize_t r =
-         mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
+      const ssize_t r = mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
       if (r > 0) {
          ASSERT (bson_in_range_signed (int, r));
          amount -= (int) r;
@@ -258,8 +252,7 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
 
    do {
       ASSERT (bson_in_range_signed (size_t, amount));
-      const ssize_t r =
-         mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
+      const ssize_t r = mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
       if (r > 0) {
          ASSERT (bson_in_range_signed (int, r));
          amount -= (int) r;
@@ -305,8 +298,7 @@ static BSON_THREAD_FUN (sendv_test_client, data_)
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
    {
-      const ssize_t r = mongoc_socket_connect (
-         conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
+      const ssize_t r = mongoc_socket_connect (conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
       ASSERT_CMPSSIZE_T (r, ==, 0);
    }
 
@@ -434,8 +426,7 @@ test_mongoc_socket_poll_refusal (void *ctx)
    /* create a new non-blocking socket. */
    sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
 
-   (void) mongoc_socket_connect (
-      sock, (struct sockaddr *) &ipv4_addr, sizeof (ipv4_addr), 0);
+   (void) mongoc_socket_connect (sock, (struct sockaddr *) &ipv4_addr, sizeof (ipv4_addr), 0);
 
    start = bson_get_monotonic_time ();
 
@@ -457,35 +448,19 @@ test_mongoc_socket_poll_refusal (void *ctx)
    bson_free (poller);
 
 #ifdef _WIN32
-   ASSERT_WITHIN_TIME_INTERVAL (
-      (int) (bson_get_monotonic_time () - start), 1000 * 500, 1500 * 1000);
+   ASSERT_WITHIN_TIME_INTERVAL ((int) (bson_get_monotonic_time () - start), 1000 * 500, 1500 * 1000);
 #else
-   ASSERT_WITHIN_TIME_INTERVAL (
-      (int) (bson_get_monotonic_time () - start), 0, 500);
+   ASSERT_WITHIN_TIME_INTERVAL ((int) (bson_get_monotonic_time () - start), 0, 500);
 #endif
 }
 
 void
 test_socket_install (TestSuite *suite)
 {
-   TestSuite_Add (
-      suite, "/Socket/check_closed", test_mongoc_socket_check_closed);
-   TestSuite_AddFull (suite,
-                      "/Socket/timed_out",
-                      test_mongoc_socket_timed_out,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_slow);
-   TestSuite_AddFull (suite,
-                      "/Socket/sendv",
-                      test_mongoc_socket_sendv,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_slow);
-   TestSuite_AddFull (suite,
-                      "/Socket/connect_refusal",
-                      test_mongoc_socket_poll_refusal,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_slow);
+   TestSuite_Add (suite, "/Socket/check_closed", test_mongoc_socket_check_closed);
+   TestSuite_AddFull (
+      suite, "/Socket/timed_out", test_mongoc_socket_timed_out, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Socket/sendv", test_mongoc_socket_sendv, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (
+      suite, "/Socket/connect_refusal", test_mongoc_socket_poll_refusal, NULL, NULL, test_framework_skip_if_slow);
 }

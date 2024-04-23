@@ -41,9 +41,7 @@ _mongoc_list_prepend (mongoc_list_t *list, void *data);
 mongoc_list_t *
 _mongoc_list_remove (mongoc_list_t *list, void *data);
 void
-_mongoc_list_foreach (mongoc_list_t *list,
-                      void (*func) (void *data, void *user_data),
-                      void *user_data);
+_mongoc_list_foreach (mongoc_list_t *list, void (*func) (void *data, void *user_data), void *user_data);
 void
 _mongoc_list_destroy (mongoc_list_t *list);
 

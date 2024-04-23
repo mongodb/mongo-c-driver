@@ -91,8 +91,7 @@ static void
 _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_channel);
@@ -112,47 +111,40 @@ _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
       SecBufferDesc outbuf_desc;
       DWORD dwshut = SCHANNEL_SHUTDOWN;
 
-      _mongoc_secure_channel_init_sec_buffer (
-         &Buffer, SECBUFFER_TOKEN, &dwshut, sizeof (dwshut));
+      _mongoc_secure_channel_init_sec_buffer (&Buffer, SECBUFFER_TOKEN, &dwshut, sizeof (dwshut));
       _mongoc_secure_channel_init_sec_buffer_desc (&BuffDesc, &Buffer, 1);
 
-      sspi_status =
-         ApplyControlToken (&secure_channel->ctxt->ctxt_handle, &BuffDesc);
+      sspi_status = ApplyControlToken (&secure_channel->ctxt->ctxt_handle, &BuffDesc);
 
       if (sspi_status != SEC_E_OK) {
          MONGOC_ERROR ("ApplyControlToken failure: %ld", sspi_status);
       }
 
       /* setup output buffer */
-      _mongoc_secure_channel_init_sec_buffer (
-         &outbuf, SECBUFFER_EMPTY, NULL, 0);
+      _mongoc_secure_channel_init_sec_buffer (&outbuf, SECBUFFER_EMPTY, NULL, 0);
       _mongoc_secure_channel_init_sec_buffer_desc (&outbuf_desc, &outbuf, 1);
 
-      sspi_status =
-         InitializeSecurityContext (&secure_channel->cred->cred_handle,
-                                    &secure_channel->ctxt->ctxt_handle,
-                                    /*tls->hostname*/ NULL,
-                                    secure_channel->req_flags,
-                                    0,
-                                    0,
-                                    NULL,
-                                    0,
-                                    &secure_channel->ctxt->ctxt_handle,
-                                    &outbuf_desc,
-                                    &secure_channel->ret_flags,
-                                    &secure_channel->ctxt->time_stamp);
+      sspi_status = InitializeSecurityContext (&secure_channel->cred->cred_handle,
+                                               &secure_channel->ctxt->ctxt_handle,
+                                               /*tls->hostname*/ NULL,
+                                               secure_channel->req_flags,
+                                               0,
+                                               0,
+                                               NULL,
+                                               0,
+                                               &secure_channel->ctxt->ctxt_handle,
+                                               &outbuf_desc,
+                                               &secure_channel->ret_flags,
+                                               &secure_channel->ctxt->time_stamp);
 
       if ((sspi_status == SEC_E_OK) || (sspi_status == SEC_I_CONTEXT_EXPIRED)) {
          /* send close message which is in output buffer */
-         ssize_t written =
-            mongoc_secure_channel_write (tls, outbuf.pvBuffer, outbuf.cbBuffer);
+         ssize_t written = mongoc_secure_channel_write (tls, outbuf.pvBuffer, outbuf.cbBuffer);
 
          FreeContextBuffer (outbuf.pvBuffer);
 
          if (outbuf.cbBuffer != (size_t) written) {
-            TRACE ("failed to send close msg (wrote %zd out of %lu)",
-                   written,
-                   outbuf.cbBuffer);
+            TRACE ("failed to send close msg (wrote %zd out of %lu)", written, outbuf.cbBuffer);
          }
       }
    }
@@ -210,8 +202,7 @@ _mongoc_stream_tls_secure_channel_close (mongoc_stream_t *stream)
 {
    int ret = 0;
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_channel);
@@ -224,8 +215,7 @@ static int
 _mongoc_stream_tls_secure_channel_flush (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_channel);
@@ -233,13 +223,10 @@ _mongoc_stream_tls_secure_channel_flush (mongoc_stream_t *stream)
 }
 
 static ssize_t
-_mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream,
-                                         char *buf,
-                                         size_t buf_len)
+_mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream, char *buf, size_t buf_len)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
    ssize_t written = -1;
    size_t data_len = 0;
    unsigned char *data = NULL;
@@ -254,9 +241,8 @@ _mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream,
 
    /* check if the maximum stream sizes were queried */
    if (secure_channel->stream_sizes.cbMaximumMessage == 0) {
-      sspi_status = QueryContextAttributes (&secure_channel->ctxt->ctxt_handle,
-                                            SECPKG_ATTR_STREAM_SIZES,
-                                            &secure_channel->stream_sizes);
+      sspi_status = QueryContextAttributes (
+         &secure_channel->ctxt->ctxt_handle, SECPKG_ATTR_STREAM_SIZES, &secure_channel->stream_sizes);
 
       if (sspi_status != SEC_E_OK) {
          TRACE ("failing here: %d", __LINE__);
@@ -266,43 +252,33 @@ _mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream,
 
    /* check if the buffer is longer than the maximum message length */
    if (buf_len > secure_channel->stream_sizes.cbMaximumMessage) {
-      TRACE ("SHRINKING buf_len from %zu to %lu",
-             buf_len,
-             secure_channel->stream_sizes.cbMaximumMessage);
+      TRACE ("SHRINKING buf_len from %zu to %lu", buf_len, secure_channel->stream_sizes.cbMaximumMessage);
       buf_len = secure_channel->stream_sizes.cbMaximumMessage;
    }
 
    /* calculate the complete message length and allocate a buffer for it */
-   data_len = secure_channel->stream_sizes.cbHeader + buf_len +
-              secure_channel->stream_sizes.cbTrailer;
+   data_len = secure_channel->stream_sizes.cbHeader + buf_len + secure_channel->stream_sizes.cbTrailer;
    data = (unsigned char *) bson_malloc (data_len);
 
    /* setup output buffers (header, data, trailer, empty) */
    _mongoc_secure_channel_init_sec_buffer (
-      &outbuf[0],
-      SECBUFFER_STREAM_HEADER,
-      data,
-      secure_channel->stream_sizes.cbHeader);
-   _mongoc_secure_channel_init_sec_buffer (
-      &outbuf[1],
-      SECBUFFER_DATA,
-      data + secure_channel->stream_sizes.cbHeader,
-      (unsigned long) (buf_len & (size_t) 0xFFFFFFFFUL));
-   _mongoc_secure_channel_init_sec_buffer (
-      &outbuf[2],
-      SECBUFFER_STREAM_TRAILER,
-      data + secure_channel->stream_sizes.cbHeader + buf_len,
-      secure_channel->stream_sizes.cbTrailer);
-   _mongoc_secure_channel_init_sec_buffer (
-      &outbuf[3], SECBUFFER_EMPTY, NULL, 0);
+      &outbuf[0], SECBUFFER_STREAM_HEADER, data, secure_channel->stream_sizes.cbHeader);
+   _mongoc_secure_channel_init_sec_buffer (&outbuf[1],
+                                           SECBUFFER_DATA,
+                                           data + secure_channel->stream_sizes.cbHeader,
+                                           (unsigned long) (buf_len & (size_t) 0xFFFFFFFFUL));
+   _mongoc_secure_channel_init_sec_buffer (&outbuf[2],
+                                           SECBUFFER_STREAM_TRAILER,
+                                           data + secure_channel->stream_sizes.cbHeader + buf_len,
+                                           secure_channel->stream_sizes.cbTrailer);
+   _mongoc_secure_channel_init_sec_buffer (&outbuf[3], SECBUFFER_EMPTY, NULL, 0);
    _mongoc_secure_channel_init_sec_buffer_desc (&outbuf_desc, outbuf, 4);
 
    /* copy data into output buffer */
    memcpy (outbuf[1].pvBuffer, buf, buf_len);
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375390.aspx */
-   sspi_status =
-      EncryptMessage (&secure_channel->ctxt->ctxt_handle, 0, &outbuf_desc, 0);
+   sspi_status = EncryptMessage (&secure_channel->ctxt->ctxt_handle, 0, &outbuf_desc, 0);
 
    /* check if the message was encrypted */
    if (sspi_status == SEC_E_OK) {
@@ -335,8 +311,7 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
                                           int32_t timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
    char buf[MONGOC_STREAM_TLS_BUFFER_SIZE];
    ssize_t ret = 0;
    ssize_t child_ret;
@@ -379,9 +354,7 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
          BSON_ASSERT (buf_end >= buf_tail);
          const size_t buf_remaining = (size_t) (buf_end - buf_tail);
 
-         if (buf_head != buf_tail ||
-             ((i + 1u < iovcnt) &&
-              (buf_remaining > (iov[i].iov_len - iov_pos)))) {
+         if (buf_head != buf_tail || ((i + 1u < iovcnt) && (buf_remaining > (iov[i].iov_len - iov_pos)))) {
             /* If we have either of:
              *   - buffered bytes already
              *   - another iovec to send after this one and we don't have more
@@ -416,11 +389,8 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
             /* We get here if we buffered some bytes and filled the buffer, or
              * if we didn't buffer and have to send out of the iovec */
 
-            child_ret = _mongoc_stream_tls_secure_channel_write (
-               stream, to_write, to_write_len);
-            TRACE ("Child0wrote: %zd, was supposed to write: %zu",
-                   child_ret,
-                   to_write_len);
+            child_ret = _mongoc_stream_tls_secure_channel_write (stream, to_write, to_write_len);
+            TRACE ("Child0wrote: %zd, was supposed to write: %zu", child_ret, to_write_len);
 
             if (child_ret < 0) {
                RETURN (ret);
@@ -438,11 +408,8 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
    if (buf_head != buf_tail) {
       /* If we have any bytes buffered, send */
 
-      child_ret = _mongoc_stream_tls_secure_channel_write (
-         stream, buf_head, buf_tail - buf_head);
-      TRACE ("Child1wrote: %zd, was supposed to write: %td",
-             child_ret,
-             buf_tail - buf_head);
+      child_ret = _mongoc_stream_tls_secure_channel_write (stream, buf_head, buf_tail - buf_head);
+      TRACE ("Child1wrote: %zd, was supposed to write: %td", child_ret, buf_tail - buf_head);
 
       if (child_ret < 0) {
          RETURN (child_ret);
@@ -462,14 +429,11 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
 
 /* move up to "len" decrypted bytes to buf, return number of bytes */
 static ssize_t
-_mongoc_stream_tls_secure_channel_debuf (
-   mongoc_stream_tls_secure_channel_t *secure_channel, char *buf, size_t size)
+_mongoc_stream_tls_secure_channel_debuf (mongoc_stream_tls_secure_channel_t *secure_channel, char *buf, size_t size)
 {
    size_t s = BSON_MIN (size, secure_channel->decdata_offset);
    memcpy (buf, secure_channel->decdata_buffer, s);
-   memmove (secure_channel->decdata_buffer,
-            secure_channel->decdata_buffer + s,
-            secure_channel->decdata_offset - s);
+   memmove (secure_channel->decdata_buffer, secure_channel->decdata_buffer + s, secure_channel->decdata_offset - s);
 
    secure_channel->decdata_offset -= s;
 
@@ -484,8 +448,7 @@ _mongoc_stream_tls_secure_channel_debuf (
 
 /* decrypt as many received bytes as possible to secure_channel.decdata_buf */
 static void
-_mongoc_stream_tls_secure_channel_decrypt (
-   mongoc_stream_tls_secure_channel_t *secure_channel)
+_mongoc_stream_tls_secure_channel_decrypt (mongoc_stream_tls_secure_channel_t *secure_channel)
 {
    size_t size = 0;
    size_t remaining;
@@ -500,53 +463,40 @@ _mongoc_stream_tls_secure_channel_decrypt (
    /* decrypt loop */
    while (secure_channel->encdata_offset > 0 && sspi_status == SEC_E_OK) {
       /* prepare data buffer for DecryptMessage call */
-      _mongoc_secure_channel_init_sec_buffer (
-         &inbuf[0],
-         SECBUFFER_DATA,
-         secure_channel->encdata_buffer,
-         (unsigned long) (secure_channel->encdata_offset &
-                          (size_t) 0xFFFFFFFFUL));
+      _mongoc_secure_channel_init_sec_buffer (&inbuf[0],
+                                              SECBUFFER_DATA,
+                                              secure_channel->encdata_buffer,
+                                              (unsigned long) (secure_channel->encdata_offset & (size_t) 0xFFFFFFFFUL));
 
       /* we need 3 more empty input buffers for possible output */
-      _mongoc_secure_channel_init_sec_buffer (
-         &inbuf[1], SECBUFFER_EMPTY, NULL, 0);
-      _mongoc_secure_channel_init_sec_buffer (
-         &inbuf[2], SECBUFFER_EMPTY, NULL, 0);
-      _mongoc_secure_channel_init_sec_buffer (
-         &inbuf[3], SECBUFFER_EMPTY, NULL, 0);
+      _mongoc_secure_channel_init_sec_buffer (&inbuf[1], SECBUFFER_EMPTY, NULL, 0);
+      _mongoc_secure_channel_init_sec_buffer (&inbuf[2], SECBUFFER_EMPTY, NULL, 0);
+      _mongoc_secure_channel_init_sec_buffer (&inbuf[3], SECBUFFER_EMPTY, NULL, 0);
       _mongoc_secure_channel_init_sec_buffer_desc (&inbuf_desc, inbuf, 4);
 
       /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375348.aspx
        */
-      sspi_status = DecryptMessage (
-         &secure_channel->ctxt->ctxt_handle, &inbuf_desc, 0, NULL);
+      sspi_status = DecryptMessage (&secure_channel->ctxt->ctxt_handle, &inbuf_desc, 0, NULL);
 
       /* check if everything went fine (server may want to renegotiate
        * or shutdown the connection context) */
-      if (sspi_status == SEC_E_OK || sspi_status == SEC_I_RENEGOTIATE ||
-          sspi_status == SEC_I_CONTEXT_EXPIRED) {
+      if (sspi_status == SEC_E_OK || sspi_status == SEC_I_RENEGOTIATE || sspi_status == SEC_I_CONTEXT_EXPIRED) {
          /* check for successfully decrypted data, even before actual
           * renegotiation or shutdown of the connection context */
          if (inbuf[1].BufferType == SECBUFFER_DATA) {
             TRACE ("decrypted data length: %lu", inbuf[1].cbBuffer);
 
             size = inbuf[1].cbBuffer;
-            remaining =
-               secure_channel->decdata_length - secure_channel->decdata_offset;
+            remaining = secure_channel->decdata_length - secure_channel->decdata_offset;
 
             if (remaining < size) {
                mongoc_secure_channel_realloc_buf (
-                  &secure_channel->decdata_length,
-                  &secure_channel->decdata_buffer,
-                  size);
+                  &secure_channel->decdata_length, &secure_channel->decdata_buffer, size);
             }
 
             /* copy decrypted data to internal buffer */
             if (size) {
-               memcpy (secure_channel->decdata_buffer +
-                          secure_channel->decdata_offset,
-                       inbuf[1].pvBuffer,
-                       size);
+               memcpy (secure_channel->decdata_buffer + secure_channel->decdata_offset, inbuf[1].pvBuffer, size);
                secure_channel->decdata_offset += size;
             }
 
@@ -567,9 +517,7 @@ _mongoc_stream_tls_secure_channel_decrypt (
                /* move remaining encrypted data forward to the beginning of
                 * buffer */
                memmove (secure_channel->encdata_buffer,
-                        (secure_channel->encdata_buffer +
-                         secure_channel->encdata_offset) -
-                           inbuf[3].cbBuffer,
+                        (secure_channel->encdata_buffer + secure_channel->encdata_offset) - inbuf[3].cbBuffer,
                         inbuf[3].cbBuffer);
                secure_channel->encdata_offset = inbuf[3].cbBuffer;
             }
@@ -617,13 +565,10 @@ _mongoc_stream_tls_secure_channel_decrypt (
 
 
 static ssize_t
-_mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
-                                        char *buf,
-                                        size_t len)
+_mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream, char *buf, size_t len)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
    ssize_t size = 0;
    ssize_t nread;
 
@@ -645,8 +590,7 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
    if (secure_channel->encdata_offset) {
       _mongoc_stream_tls_secure_channel_decrypt (secure_channel);
       if (secure_channel->decdata_offset) {
-         return _mongoc_stream_tls_secure_channel_debuf (
-            secure_channel, buf, len);
+         return _mongoc_stream_tls_secure_channel_debuf (secure_channel, buf, len);
       }
    }
 
@@ -669,11 +613,8 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
    size = secure_channel->encdata_length - secure_channel->encdata_offset;
 
    /* read encrypted data from socket. returns 0 on shutdown or error */
-   nread =
-      mongoc_secure_channel_read (tls,
-                                  (char *) (secure_channel->encdata_buffer +
-                                            secure_channel->encdata_offset),
-                                  (size_t) size);
+   nread = mongoc_secure_channel_read (
+      tls, (char *) (secure_channel->encdata_buffer + secure_channel->encdata_offset), (size_t) size);
 
    if (!nread) {
       if (MONGOC_ERRNO_IS_AGAIN (errno)) {
@@ -696,15 +637,11 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
 
 /* This function is copypasta of _mongoc_stream_tls_openssl_readv */
 static ssize_t
-_mongoc_stream_tls_secure_channel_readv (mongoc_stream_t *stream,
-                                         mongoc_iovec_t *iov,
-                                         size_t iovcnt,
-                                         size_t min_bytes,
-                                         int32_t timeout_msec)
+_mongoc_stream_tls_secure_channel_readv (
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
    ssize_t ret = 0;
    size_t i;
    size_t iov_pos = 0;
@@ -727,9 +664,7 @@ _mongoc_stream_tls_secure_channel_readv (mongoc_stream_t *stream,
 
       while (iov_pos < iov[i].iov_len) {
          ssize_t read_ret = _mongoc_stream_tls_secure_channel_read (
-            stream,
-            (char *) iov[i].iov_base + iov_pos,
-            (int) (iov[i].iov_len - iov_pos));
+            stream, (char *) iov[i].iov_base + iov_pos, (int) (iov[i].iov_len - iov_pos));
 
          if (read_ret < 0) {
             RETURN (-1);
@@ -770,28 +705,22 @@ _mongoc_stream_tls_secure_channel_readv (mongoc_stream_t *stream,
 }
 
 static int
-_mongoc_stream_tls_secure_channel_setsockopt (mongoc_stream_t *stream,
-                                              int level,
-                                              int optname,
-                                              void *optval,
-                                              mongoc_socklen_t optlen)
+_mongoc_stream_tls_secure_channel_setsockopt (
+   mongoc_stream_t *stream, int level, int optname, void *optval, mongoc_socklen_t optlen)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_channel);
-   RETURN (mongoc_stream_setsockopt (
-      tls->base_stream, level, optname, optval, optlen));
+   RETURN (mongoc_stream_setsockopt (tls->base_stream, level, optname, optval, optlen));
 }
 
 static mongoc_stream_t *
 _mongoc_stream_tls_secure_channel_get_base_stream (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_channel);
@@ -800,12 +729,10 @@ _mongoc_stream_tls_secure_channel_get_base_stream (mongoc_stream_t *stream)
 
 
 static bool
-_mongoc_stream_tls_secure_channel_check_closed (
-   mongoc_stream_t *stream) /* IN */
+_mongoc_stream_tls_secure_channel_check_closed (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_channel);
@@ -813,14 +740,10 @@ _mongoc_stream_tls_secure_channel_check_closed (
 }
 
 bool
-mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
-                                            const char *host,
-                                            int *events,
-                                            bson_error_t *error)
+mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream, const char *host, int *events, bson_error_t *error)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_channel);
@@ -829,9 +752,7 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
       error->code = 0;
    }
 
-   TRACE ("Getting ready for state: %d, timeout is %" PRId64,
-          secure_channel->connecting_state + 1,
-          tls->timeout_msec);
+   TRACE ("Getting ready for state: %d, timeout is %" PRId64, secure_channel->connecting_state + 1, tls->timeout_msec);
 
    switch (secure_channel->connecting_state) {
    case ssl_connect_1:
@@ -888,10 +809,7 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
    *events = 0;
 
    if (error && !error->code) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "TLS handshake failed");
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed");
    }
 
    RETURN (false);
@@ -918,10 +836,7 @@ _mongoc_stream_tls_secure_channel_should_retry (mongoc_stream_t *stream)
 }
 
 mongoc_stream_t *
-mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
-                                      const char *host,
-                                      mongoc_ssl_opt_t *opt,
-                                      int client)
+mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
 {
    SECURITY_STATUS sspi_status = SEC_E_OK;
    SCHANNEL_CRED schannel_cred;
@@ -934,14 +849,11 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    BSON_ASSERT (opt);
 
 
-   secure_channel = (mongoc_stream_tls_secure_channel_t *) bson_malloc0 (
-      sizeof *secure_channel);
+   secure_channel = (mongoc_stream_tls_secure_channel_t *) bson_malloc0 (sizeof *secure_channel);
 
-   secure_channel->decdata_buffer =
-      bson_malloc (MONGOC_SCHANNEL_BUFFER_INIT_SIZE);
+   secure_channel->decdata_buffer = bson_malloc (MONGOC_SCHANNEL_BUFFER_INIT_SIZE);
    secure_channel->decdata_length = MONGOC_SCHANNEL_BUFFER_INIT_SIZE;
-   secure_channel->encdata_buffer =
-      bson_malloc (MONGOC_SCHANNEL_BUFFER_INIT_SIZE);
+   secure_channel->encdata_buffer = bson_malloc (MONGOC_SCHANNEL_BUFFER_INIT_SIZE);
    secure_channel->encdata_length = MONGOC_SCHANNEL_BUFFER_INIT_SIZE;
 
    tls = (mongoc_stream_tls_t *) bson_malloc0 (sizeof *tls);
@@ -953,8 +865,7 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    tls->parent.writev = _mongoc_stream_tls_secure_channel_writev;
    tls->parent.readv = _mongoc_stream_tls_secure_channel_readv;
    tls->parent.setsockopt = _mongoc_stream_tls_secure_channel_setsockopt;
-   tls->parent.get_base_stream =
-      _mongoc_stream_tls_secure_channel_get_base_stream;
+   tls->parent.get_base_stream = _mongoc_stream_tls_secure_channel_get_base_stream;
    tls->parent.check_closed = _mongoc_stream_tls_secure_channel_check_closed;
    tls->parent.timed_out = _mongoc_stream_tls_secure_channel_timed_out;
    tls->parent.should_retry = _mongoc_stream_tls_secure_channel_should_retry;
@@ -1016,44 +927,38 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    }
 
 
-   schannel_cred.grbitEnabledProtocols =
-      SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
+   schannel_cred.grbitEnabledProtocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
 
-   secure_channel->cred = (mongoc_secure_channel_cred *) bson_malloc0 (
-      sizeof (mongoc_secure_channel_cred));
+   secure_channel->cred = (mongoc_secure_channel_cred *) bson_malloc0 (sizeof (mongoc_secure_channel_cred));
 
    /* Example:
     *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa375454%28v=vs.85%29.aspx
     * AcquireCredentialsHandle:
     *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa374716.aspx
     */
-   sspi_status = AcquireCredentialsHandle (
-      NULL,                 /* principal */
-      UNISP_NAME,           /* security package */
-      SECPKG_CRED_OUTBOUND, /* we are preparing outbound connection */
-      NULL,                 /*  Optional logon */
-      &schannel_cred,       /* TLS "configuration", "auth data" */
-      NULL,                 /* unused */
-      NULL,                 /* unused */
-      &secure_channel->cred->cred_handle, /* credential OUT param */
-      &secure_channel->cred->time_stamp); /* certificate expiration time */
+   sspi_status = AcquireCredentialsHandle (NULL,                 /* principal */
+                                           UNISP_NAME,           /* security package */
+                                           SECPKG_CRED_OUTBOUND, /* we are preparing outbound connection */
+                                           NULL,                 /*  Optional logon */
+                                           &schannel_cred,       /* TLS "configuration", "auth data" */
+                                           NULL,                 /* unused */
+                                           NULL,                 /* unused */
+                                           &secure_channel->cred->cred_handle, /* credential OUT param */
+                                           &secure_channel->cred->time_stamp); /* certificate expiration time */
 
    if (sspi_status != SEC_E_OK) {
       LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                        FORMAT_MESSAGE_FROM_SYSTEM |
-                        FORMAT_MESSAGE_ARGUMENT_ARRAY,
+      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
                      NULL,
                      GetLastError (),
                      LANG_NEUTRAL,
                      (LPTSTR) &msg,
                      0,
                      NULL);
-      MONGOC_ERROR (
-         "Failed to initialize security context, error code: 0x%04X%04X: '%s'",
-         (unsigned int) (sspi_status >> 16) & 0xffff,
-         (unsigned int) sspi_status & 0xffff,
-         msg);
+      MONGOC_ERROR ("Failed to initialize security context, error code: 0x%04X%04X: '%s'",
+                    (unsigned int) (sspi_status >> 16) & 0xffff,
+                    (unsigned int) sspi_status & 0xffff,
+                    msg);
       LocalFree (msg);
       RETURN (NULL);
    }

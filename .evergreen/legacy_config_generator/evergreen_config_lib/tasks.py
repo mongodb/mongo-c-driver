@@ -328,6 +328,7 @@ all_tasks = [
     NamedTask(
         "rpm-package-build",
         commands=[
+            shell_mongoc('export IS_PATCH="${is_patch}"\n' "sh .evergreen/scripts/check_rpm_spec.sh"),
             shell_mongoc("sh .evergreen/scripts/build_snapshot_rpm.sh"),
             s3_put(
                 local_file="rpm.tar.gz",
@@ -407,8 +408,8 @@ all_tasks = [
                         "params",
                         OD(
                             [
-                                ("aws_key", "${toolchain_aws_key}"),
-                                ("aws_secret", "${toolchain_aws_secret}"),
+                                ("aws_key", "${aws_key}"),
+                                ("aws_secret", "${aws_secret}"),
                                 ("remote_file", "mongo-c-toolchain/${distro_id}/2023/06/07/mongo-c-toolchain.tar.gz"),
                                 ("bucket", "mongo-c-toolchain"),
                                 ("local_file", "mongo-c-toolchain.tar.gz"),

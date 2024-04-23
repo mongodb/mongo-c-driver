@@ -111,10 +111,8 @@ main (void)
    database = mongoc_client_get_database (client, "testasdf");
 
    /* Create schema validator */
-   options = BCON_NEW (
-      "validator", "{", "number", "{", "$gte", BCON_INT32 (5), "}", "}");
-   collection =
-      mongoc_database_create_collection (database, "collname", options, &error);
+   options = BCON_NEW ("validator", "{", "number", "{", "$gte", BCON_INT32 (5), "}", "}");
+   collection = mongoc_database_create_collection (database, "collname", options, &error);
 
    if (collection) {
       bulk5_fail (collection);

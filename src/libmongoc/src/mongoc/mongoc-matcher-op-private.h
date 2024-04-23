@@ -103,13 +103,9 @@ union _mongoc_matcher_op_t {
 
 
 mongoc_matcher_op_t *
-_mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opcode,
-                                mongoc_matcher_op_t *left,
-                                mongoc_matcher_op_t *right);
+_mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opcode, mongoc_matcher_op_t *left, mongoc_matcher_op_t *right);
 mongoc_matcher_op_t *
-_mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t opcode,
-                                const char *path,
-                                const bson_iter_t *iter);
+_mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t opcode, const char *path, const bson_iter_t *iter);
 mongoc_matcher_op_t *
 _mongoc_matcher_op_exists_new (const char *path, bool exists);
 mongoc_matcher_op_t *

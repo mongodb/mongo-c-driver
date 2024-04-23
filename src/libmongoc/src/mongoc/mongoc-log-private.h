@@ -32,8 +32,6 @@ void
 mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l);
 
 void
-mongoc_log_trace_iovec (const char *domain,
-                        const mongoc_iovec_t *_iov,
-                        size_t _iovcnt);
+mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _iovcnt);
 
 #endif /* MONGOC_LOG_PRIVATE_H */

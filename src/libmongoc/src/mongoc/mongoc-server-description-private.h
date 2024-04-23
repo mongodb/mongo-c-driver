@@ -147,8 +147,7 @@ mc_tpl_sd_generation_map_const (const mongoc_server_description_t *sd)
  * service ID.
  */
 static BSON_INLINE void
-mc_tpl_sd_increment_generation (mongoc_server_description_t *sd,
-                                const bson_oid_t *service_id)
+mc_tpl_sd_increment_generation (mongoc_server_description_t *sd, const bson_oid_t *service_id)
 {
    mongoc_generation_map_increment (mc_tpl_sd_generation_map (sd), service_id);
 }
@@ -158,29 +157,22 @@ mc_tpl_sd_increment_generation (mongoc_server_description_t *sd,
  * associated service ID.
  */
 static BSON_INLINE uint32_t
-mc_tpl_sd_get_generation (const mongoc_server_description_t *sd,
-                          const bson_oid_t *service_id)
+mc_tpl_sd_get_generation (const mongoc_server_description_t *sd, const bson_oid_t *service_id)
 {
-   return mongoc_generation_map_get (mc_tpl_sd_generation_map_const (sd),
-                                     service_id);
+   return mongoc_generation_map_get (mc_tpl_sd_generation_map_const (sd), service_id);
 }
 
 void
-mongoc_server_description_init (mongoc_server_description_t *sd,
-                                const char *address,
-                                uint32_t id);
+mongoc_server_description_init (mongoc_server_description_t *sd, const char *address, uint32_t id);
 bool
-mongoc_server_description_has_rs_member (
-   const mongoc_server_description_t *description, const char *address);
+mongoc_server_description_has_rs_member (const mongoc_server_description_t *description, const char *address);
 
 
 bool
-mongoc_server_description_has_set_version (
-   const mongoc_server_description_t *description);
+mongoc_server_description_has_set_version (const mongoc_server_description_t *description);
 
 bool
-mongoc_server_description_has_election_id (
-   const mongoc_server_description_t *description);
+mongoc_server_description_has_election_id (const mongoc_server_description_t *description);
 
 void
 mongoc_server_description_cleanup (mongoc_server_description_t *sd);
@@ -189,17 +181,13 @@ void
 mongoc_server_description_reset (mongoc_server_description_t *sd);
 
 void
-mongoc_server_description_set_state (mongoc_server_description_t *description,
-                                     mongoc_server_description_type_t type);
+mongoc_server_description_set_state (mongoc_server_description_t *description, mongoc_server_description_type_t type);
 void
-mongoc_server_description_set_set_version (
-   mongoc_server_description_t *description, int64_t set_version);
+mongoc_server_description_set_set_version (mongoc_server_description_t *description, int64_t set_version);
 void
-mongoc_server_description_set_election_id (
-   mongoc_server_description_t *description, const bson_oid_t *election_id);
+mongoc_server_description_set_election_id (mongoc_server_description_t *description, const bson_oid_t *election_id);
 void
-mongoc_server_description_update_rtt (mongoc_server_description_t *server,
-                                      int64_t rtt_msec);
+mongoc_server_description_update_rtt (mongoc_server_description_t *server, int64_t rtt_msec);
 
 void
 mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
@@ -208,37 +196,31 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
                                         const bson_error_t *error /* IN */);
 
 void
-mongoc_server_description_filter_stale (
-   const mongoc_server_description_t **sds,
-   size_t sds_len,
-   const mongoc_server_description_t *primary,
-   int64_t heartbeat_frequency_ms,
-   const mongoc_read_prefs_t *read_prefs);
+mongoc_server_description_filter_stale (const mongoc_server_description_t **sds,
+                                        size_t sds_len,
+                                        const mongoc_server_description_t *primary,
+                                        int64_t heartbeat_frequency_ms,
+                                        const mongoc_read_prefs_t *read_prefs);
 
 void
-mongoc_server_description_filter_tags (
-   const mongoc_server_description_t **descriptions,
-   size_t description_len,
-   const mongoc_read_prefs_t *read_prefs);
+mongoc_server_description_filter_tags (const mongoc_server_description_t **descriptions,
+                                       size_t description_len,
+                                       const mongoc_read_prefs_t *read_prefs);
 
 /* Compares server descriptions following the "Server Description Equality"
  * rules. Not all fields are considered. */
 bool
-_mongoc_server_description_equal (mongoc_server_description_t *sd1,
-                                  mongoc_server_description_t *sd2);
+_mongoc_server_description_equal (mongoc_server_description_t *sd1, mongoc_server_description_t *sd2);
 
 int
-mongoc_server_description_topology_version_cmp (const bson_t *tv1,
-                                                const bson_t *tv2);
+mongoc_server_description_topology_version_cmp (const bson_t *tv1, const bson_t *tv2);
 
 void
-mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
-                                                const bson_t *tv);
+mongoc_server_description_set_topology_version (mongoc_server_description_t *sd, const bson_t *tv);
 
 extern const bson_oid_t kZeroServiceId;
 
 bool
-mongoc_server_description_has_service_id (
-   const mongoc_server_description_t *description);
+mongoc_server_description_has_service_id (const mongoc_server_description_t *description);
 
 #endif

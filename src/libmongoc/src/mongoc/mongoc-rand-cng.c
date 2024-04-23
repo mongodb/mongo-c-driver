@@ -37,8 +37,7 @@ _mongoc_rand_bytes (uint8_t *buf, int num)
    NTSTATUS status = 0;
 
    if (!algorithm) {
-      status = BCryptOpenAlgorithmProvider (
-         &algorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
+      status = BCryptOpenAlgorithmProvider (&algorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
       if (!NT_SUCCESS (status)) {
          MONGOC_ERROR ("BCryptOpenAlgorithmProvider(): %ld", status);
          return 0;

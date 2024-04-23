@@ -33,16 +33,13 @@
 #include "mongoc-sleep.h"
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-   BSON_VALIDATE_EMPTY_KEYS;
+   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
 
 const bson_validate_flags_t _mongoc_default_replace_vflags =
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-   BSON_VALIDATE_EMPTY_KEYS;
+   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
 
 const bson_validate_flags_t _mongoc_default_update_vflags =
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-   BSON_VALIDATE_EMPTY_KEYS;
+   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
 
 int
 _mongoc_rand_simple (unsigned int *seed)
@@ -73,8 +70,7 @@ _mongoc_hex_md5 (const char *input)
    int i;
 
    mcommon_md5_init (&md5);
-   mcommon_md5_append (
-      &md5, (const uint8_t *) input, (uint32_t) strlen (input));
+   mcommon_md5_append (&md5, (const uint8_t *) input, (uint32_t) strlen (input));
    mcommon_md5_finish (&md5, digest);
 
    for (i = 0; i < sizeof digest; i++) {
@@ -86,9 +82,7 @@ _mongoc_hex_md5 (const char *input)
 }
 
 void
-mongoc_client_set_usleep_impl (mongoc_client_t *client,
-                               mongoc_usleep_func_t usleep_func,
-                               void *user_data)
+mongoc_client_set_usleep_impl (mongoc_client_t *client, mongoc_usleep_func_t usleep_func, void *user_data)
 {
    client->topology->usleep_fn = usleep_func;
    client->topology->usleep_data = user_data;
@@ -161,9 +155,8 @@ _mongoc_get_command_name (const bson_t *command)
       wrapper_name = "query";
    }
 
-   if (wrapper_name && bson_iter_init_find (&iter, command, wrapper_name) &&
-       BSON_ITER_HOLDS_DOCUMENT (&iter) && bson_iter_recurse (&iter, &child) &&
-       bson_iter_next (&child)) {
+   if (wrapper_name && bson_iter_init_find (&iter, command, wrapper_name) && BSON_ITER_HOLDS_DOCUMENT (&iter) &&
+       bson_iter_recurse (&iter, &child) && bson_iter_next (&child)) {
       name = bson_iter_key (&child);
    }
 
@@ -341,11 +334,8 @@ _mongoc_wire_version_to_server_version (int32_t version)
  * if absent. On error, fills out *error with domain and code and return false.
  */
 bool
-_mongoc_get_server_id_from_opts (const bson_t *opts,
-                                 mongoc_error_domain_t domain,
-                                 mongoc_error_code_t code,
-                                 uint32_t *server_id,
-                                 bson_error_t *error)
+_mongoc_get_server_id_from_opts (
+   const bson_t *opts, mongoc_error_domain_t domain, mongoc_error_code_t code, uint32_t *server_id, bson_error_t *error)
 {
    bson_iter_t iter;
 
@@ -360,8 +350,7 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
    }
 
    if (!BSON_ITER_HOLDS_INT (&iter)) {
-      bson_set_error (
-         error, domain, code, "The serverId option must be an integer");
+      bson_set_error (error, domain, code, "The serverId option must be an integer");
       RETURN (false);
    }
 
@@ -377,9 +366,7 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
 
 
 bool
-_mongoc_validate_new_document (const bson_t *doc,
-                               bson_validate_flags_t vflags,
-                               bson_error_t *error)
+_mongoc_validate_new_document (const bson_t *doc, bson_validate_flags_t vflags, bson_error_t *error)
 {
    bson_error_t validate_err;
 
@@ -401,9 +388,7 @@ _mongoc_validate_new_document (const bson_t *doc,
 
 
 bool
-_mongoc_validate_replace (const bson_t *doc,
-                          bson_validate_flags_t vflags,
-                          bson_error_t *error)
+_mongoc_validate_replace (const bson_t *doc, bson_validate_flags_t vflags, bson_error_t *error)
 {
    bson_error_t validate_err;
    bson_iter_t iter;
@@ -423,10 +408,7 @@ _mongoc_validate_replace (const bson_t *doc,
    }
 
    if (!bson_iter_init (&iter, doc)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "replace document is corrupt");
+      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "replace document is corrupt");
       return false;
    }
 
@@ -448,9 +430,7 @@ _mongoc_validate_replace (const bson_t *doc,
 
 
 bool
-_mongoc_validate_update (const bson_t *update,
-                         bson_validate_flags_t vflags,
-                         bson_error_t *error)
+_mongoc_validate_update (const bson_t *update, bson_validate_flags_t vflags, bson_error_t *error)
 {
    bson_error_t validate_err;
    bson_iter_t iter;
@@ -474,10 +454,7 @@ _mongoc_validate_update (const bson_t *update,
    }
 
    if (!bson_iter_init (&iter, update)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "update document is corrupt");
+      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "update document is corrupt");
       return false;
    }
 
@@ -522,10 +499,7 @@ should_include (const char *first_include, va_list args, const char *name)
 
 
 void
-bson_copy_to_including_noinit_va (const bson_t *src,
-                                  bson_t *dst,
-                                  const char *first_include,
-                                  va_list args)
+bson_copy_to_including_noinit_va (const bson_t *src, bson_t *dst, const char *first_include, va_list args)
 {
    BSON_ASSERT_PARAM (src);
    BSON_ASSERT_PARAM (dst);
@@ -549,10 +523,7 @@ bson_copy_to_including_noinit_va (const bson_t *src,
 }
 
 void
-bson_copy_to_including_noinit (const bson_t *src,
-                               bson_t *dst,
-                               const char *first_include,
-                               ...)
+bson_copy_to_including_noinit (const bson_t *src, bson_t *dst, const char *first_include, ...)
 {
    BSON_ASSERT_PARAM (src);
    BSON_ASSERT_PARAM (dst);
@@ -706,8 +677,7 @@ _mongoc_bson_array_copy_labels_to (const bson_t *reply, bson_t *dst)
  */
 
 void
-_mongoc_add_transient_txn_error (const mongoc_client_session_t *cs,
-                                 bson_t *reply)
+_mongoc_add_transient_txn_error (const mongoc_client_session_t *cs, bson_t *reply)
 {
    if (!reply) {
       return;
@@ -916,8 +886,7 @@ _mongoc_simple_rand_uint32_t (void)
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint32_t) rand () & 0x7FFFu) << 0u) |
-          (((uint32_t) rand () & 0x7FFFu) << 15u) |
+   return (((uint32_t) rand () & 0x7FFFu) << 0u) | (((uint32_t) rand () & 0x7FFFu) << 15u) |
           (((uint32_t) rand () & 0x0003u) << 30u);
 }
 
@@ -928,10 +897,8 @@ _mongoc_simple_rand_uint64_t (void)
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint64_t) rand () & 0x7FFFu) << 0u) |
-          (((uint64_t) rand () & 0x7FFFu) << 15u) |
-          (((uint64_t) rand () & 0x7FFFu) << 30u) |
-          (((uint64_t) rand () & 0x7FFFu) << 45u) |
+   return (((uint64_t) rand () & 0x7FFFu) << 0u) | (((uint64_t) rand () & 0x7FFFu) << 15u) |
+          (((uint64_t) rand () & 0x7FFFu) << 30u) | (((uint64_t) rand () & 0x7FFFu) << 45u) |
           (((uint64_t) rand () & 0x0003u) << 60u);
 }
 
@@ -955,8 +922,7 @@ _mongoc_rand_uint64_t (uint64_t min, uint64_t max, uint64_t (*rand) (void))
 
 #if SIZE_MAX == UINT64_MAX
 
-BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t,
-                     sizeof (size_t) == sizeof (uint64_t));
+BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t, sizeof (size_t) == sizeof (uint64_t));
 
 size_t
 _mongoc_simple_rand_size_t (void)
@@ -970,14 +936,12 @@ _mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void))
    BSON_ASSERT (min <= max);
    BSON_ASSERT (min != 0u || max != UINT64_MAX);
 
-   return _mongoc_rand_java64 (max - min + 1u, (uint64_t (*) (void)) rand) +
-          min;
+   return _mongoc_rand_java64 (max - min + 1u, (uint64_t (*) (void)) rand) + min;
 }
 
 #elif SIZE_MAX == UINT32_MAX
 
-BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t,
-                     sizeof (size_t) == sizeof (uint32_t));
+BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t, sizeof (size_t) == sizeof (uint32_t));
 
 size_t
 _mongoc_simple_rand_size_t (void)
@@ -991,21 +955,17 @@ _mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void))
    BSON_ASSERT (min <= max);
    BSON_ASSERT (min != 0u || max != UINT32_MAX);
 
-   return _mongoc_rand_nduid32 (max - min + 1u, (uint32_t (*) (void)) rand) +
-          min;
+   return _mongoc_rand_nduid32 (max - min + 1u, (uint32_t (*) (void)) rand) + min;
 }
 
 #else
 
-#error \
-   "Implementation of _mongoc_simple_rand_size_t() requires size_t be exactly 32-bit or 64-bit"
+#error "Implementation of _mongoc_simple_rand_size_t() requires size_t be exactly 32-bit or 64-bit"
 
 #endif
 
 bool
-_mongoc_iter_document_as_bson (const bson_iter_t *iter,
-                               bson_t *bson,
-                               bson_error_t *error)
+_mongoc_iter_document_as_bson (const bson_iter_t *iter, bson_t *bson, bson_error_t *error)
 {
    uint32_t len;
    const uint8_t *data;

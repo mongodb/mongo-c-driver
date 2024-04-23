@@ -23,8 +23,7 @@ test_rtt_calculation_cb (bson_t *test)
 
    BSON_ASSERT (test);
 
-   description =
-      (mongoc_server_description_t *) bson_malloc0 (sizeof *description);
+   description = (mongoc_server_description_t *) bson_malloc0 (sizeof *description);
    mongoc_server_description_init (description, "localhost:27017", 1);
 
    /* parse RTT into server description */
@@ -54,14 +53,10 @@ static void
 test_all_spec_tests (TestSuite *suite)
 {
    /* RTT calculation */
-   install_json_test_suite (
-      suite, JSON_DIR, "server_selection/rtt", &test_rtt_calculation_cb);
+   install_json_test_suite (suite, JSON_DIR, "server_selection/rtt", &test_rtt_calculation_cb);
 
    /* SS logic */
-   install_json_test_suite (suite,
-                            JSON_DIR,
-                            "server_selection/server_selection",
-                            &test_server_selection_logic_cb);
+   install_json_test_suite (suite, JSON_DIR, "server_selection/server_selection", &test_server_selection_logic_cb);
 }
 
 void

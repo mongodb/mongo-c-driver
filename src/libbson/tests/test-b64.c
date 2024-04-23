@@ -20,10 +20,7 @@
 #include "common-b64-private.h"
 
 static void
-_test_encode_helper (char *input,
-                     size_t input_len,
-                     char *expected_output,
-                     int expected_output_len)
+_test_encode_helper (char *input, size_t input_len, char *expected_output, int expected_output_len)
 {
    char *output;
    size_t target_size;
@@ -76,10 +73,7 @@ test_bson_b64_encode (void)
 }
 
 static void
-_test_decode_helper (char *input,
-                     char *expected_output,
-                     int expected_calculated_target_size,
-                     int expected_output_len)
+_test_decode_helper (char *input, char *expected_output, int expected_calculated_target_size, int expected_output_len)
 {
    uint8_t *output;
    size_t target_size;

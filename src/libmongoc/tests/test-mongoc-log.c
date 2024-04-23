@@ -57,10 +57,7 @@ struct log_func_data {
 
 
 void
-log_func (mongoc_log_level_t log_level,
-          const char *log_domain,
-          const char *message,
-          void *user_data)
+log_func (mongoc_log_level_t log_level, const char *log_domain, const char *message, void *user_data)
 {
    struct log_func_data *data = (struct log_func_data *) user_data;
 
@@ -187,17 +184,8 @@ void
 test_log_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Log/basic", test_mongoc_log_handler);
-   TestSuite_AddFull (suite,
-                      "/Log/trace/enabled",
-                      test_mongoc_log_trace_enabled,
-                      NULL,
-                      NULL,
-                      should_run_trace_tests);
-   TestSuite_AddFull (suite,
-                      "/Log/trace/disabled",
-                      test_mongoc_log_trace_disabled,
-                      NULL,
-                      NULL,
-                      should_not_run_trace_tests);
+   TestSuite_AddFull (suite, "/Log/trace/enabled", test_mongoc_log_trace_enabled, NULL, NULL, should_run_trace_tests);
+   TestSuite_AddFull (
+      suite, "/Log/trace/disabled", test_mongoc_log_trace_disabled, NULL, NULL, should_not_run_trace_tests);
    TestSuite_Add (suite, "/Log/null", test_mongoc_log_null);
 }

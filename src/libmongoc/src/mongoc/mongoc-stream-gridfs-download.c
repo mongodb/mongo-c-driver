@@ -26,8 +26,7 @@
 static void
 _mongoc_download_stream_gridfs_destroy (mongoc_stream_t *stream)
 {
-   mongoc_gridfs_download_stream_t *gridfs =
-      (mongoc_gridfs_download_stream_t *) stream;
+   mongoc_gridfs_download_stream_t *gridfs = (mongoc_gridfs_download_stream_t *) stream;
 
    ENTRY;
 
@@ -57,8 +56,7 @@ _mongoc_download_stream_gridfs_failed (mongoc_stream_t *stream)
 static int
 _mongoc_download_stream_gridfs_close (mongoc_stream_t *stream)
 {
-   mongoc_gridfs_download_stream_t *gridfs =
-      (mongoc_gridfs_download_stream_t *) stream;
+   mongoc_gridfs_download_stream_t *gridfs = (mongoc_gridfs_download_stream_t *) stream;
    int ret = 0;
 
    ENTRY;
@@ -71,14 +69,10 @@ _mongoc_download_stream_gridfs_close (mongoc_stream_t *stream)
 }
 
 static ssize_t
-_mongoc_download_stream_gridfs_readv (mongoc_stream_t *stream,
-                                      mongoc_iovec_t *iov,
-                                      size_t iovcnt,
-                                      size_t min_bytes,
-                                      int32_t timeout_msec)
+_mongoc_download_stream_gridfs_readv (
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
 {
-   mongoc_gridfs_download_stream_t *gridfs =
-      (mongoc_gridfs_download_stream_t *) stream;
+   mongoc_gridfs_download_stream_t *gridfs = (mongoc_gridfs_download_stream_t *) stream;
    ssize_t ret = 0;
 
    ENTRY;
@@ -102,8 +96,7 @@ _mongoc_download_stream_gridfs_readv (mongoc_stream_t *stream,
 static bool
 _mongoc_download_stream_gridfs_check_closed (mongoc_stream_t *stream) /* IN */
 {
-   mongoc_gridfs_download_stream_t *gridfs =
-      (mongoc_gridfs_download_stream_t *) stream;
+   mongoc_gridfs_download_stream_t *gridfs = (mongoc_gridfs_download_stream_t *) stream;
 
    ENTRY;
 

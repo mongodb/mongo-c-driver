@@ -309,24 +309,22 @@
 // clang-format on
 
 
-#define ASSERT_RPC_MESSAGE_RESULT(rpc, data_begin, data_end, data_len)        \
-   if (1) {                                                                   \
-      const size_t parsed_len =                                               \
-         (size_t) ((const uint8_t *) data_end - data_begin);                  \
-      if (rpc) {                                                              \
-         ASSERT_WITH_MSG (                                                    \
-            parsed_len == data_len,                                           \
-            "converted only %zu bytes despite %zu bytes of valid input data", \
-            parsed_len,                                                       \
-            data_len);                                                        \
-      } else {                                                                \
-         ASSERT_WITH_MSG (rpc,                                                \
-                          "failed to convert valid input data into an RPC "   \
-                          "message due to byte %zu of %zu",                   \
-                          parsed_len,                                         \
-                          data_len);                                          \
-      }                                                                       \
-   } else                                                                     \
+#define ASSERT_RPC_MESSAGE_RESULT(rpc, data_begin, data_end, data_len)                      \
+   if (1) {                                                                                 \
+      const size_t parsed_len = (size_t) ((const uint8_t *) data_end - data_begin);         \
+      if (rpc) {                                                                            \
+         ASSERT_WITH_MSG (parsed_len == data_len,                                           \
+                          "converted only %zu bytes despite %zu bytes of valid input data", \
+                          parsed_len,                                                       \
+                          data_len);                                                        \
+      } else {                                                                              \
+         ASSERT_WITH_MSG (rpc,                                                              \
+                          "failed to convert valid input data into an RPC "                 \
+                          "message due to byte %zu of %zu",                                 \
+                          parsed_len,                                                       \
+                          data_len);                                                        \
+      }                                                                                     \
+   } else                                                                                   \
       (void) 0
 
 
@@ -354,35 +352,25 @@ test_rpc_message_from_data_op_compressed_valid (void)
    // Valid test input data.
    {
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
       ASSERT (bson_in_range_unsigned (int32_t, data_len));
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_COMPRESSED);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_COMPRESSED);
 
-      ASSERT_CMPINT32 (mcd_rpc_op_compressed_get_original_opcode (rpc),
-                       ==,
-                       MONGOC_OP_CODE_MSG);
+      ASSERT_CMPINT32 (mcd_rpc_op_compressed_get_original_opcode (rpc), ==, MONGOC_OP_CODE_MSG);
 
-      ASSERT_CMPINT32 (
-         mcd_rpc_op_compressed_get_uncompressed_size (rpc), ==, 20);
+      ASSERT_CMPINT32 (mcd_rpc_op_compressed_get_uncompressed_size (rpc), ==, 20);
 
-      ASSERT_CMPUINT (mcd_rpc_op_compressed_get_compressor_id (rpc),
-                      ==,
-                      MONGOC_OP_COMPRESSED_COMPRESSOR_ID_NOOP);
+      ASSERT_CMPUINT (mcd_rpc_op_compressed_get_compressor_id (rpc), ==, MONGOC_OP_COMPRESSED_COMPRESSOR_ID_NOOP);
 
-      const uint8_t *const compressed_message =
-         mcd_rpc_op_compressed_get_compressed_message (rpc);
+      const uint8_t *const compressed_message = mcd_rpc_op_compressed_get_compressed_message (rpc);
       ASSERT_CMPSIZE_T ((size_t) (compressed_message - data), ==, 25u);
 
-      ASSERT_CMPSIZE_T (
-         mcd_rpc_op_compressed_get_compressed_message_length (rpc), ==, 20u);
+      ASSERT_CMPSIZE_T (mcd_rpc_op_compressed_get_compressed_message_length (rpc), ==, 20u);
 
       mcd_rpc_message_destroy (rpc);
    }
@@ -391,12 +379,9 @@ test_rpc_message_from_data_op_compressed_valid (void)
    {
       data[24] = MONGOC_OP_COMPRESSED_COMPRESSOR_ID_SNAPPY;
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
-      ASSERT_CMPUINT (mcd_rpc_op_compressed_get_compressor_id (rpc),
-                      ==,
-                      MONGOC_OP_COMPRESSED_COMPRESSOR_ID_SNAPPY);
+      ASSERT_CMPUINT (mcd_rpc_op_compressed_get_compressor_id (rpc), ==, MONGOC_OP_COMPRESSED_COMPRESSOR_ID_SNAPPY);
       mcd_rpc_message_destroy (rpc);
 
       data[24] = MONGOC_OP_COMPRESSED_COMPRESSOR_ID_NOOP;
@@ -407,13 +392,10 @@ test_rpc_message_from_data_op_compressed_valid (void)
 static void
 _test_rpc_message_from_data_op_msg_valid (uint8_t *data,
                                           size_t data_len,
-                                          void (*test) (const uint8_t *data,
-                                                        size_t data_len,
-                                                        bool with_checksum))
+                                          void (*test) (const uint8_t *data, size_t data_len, bool with_checksum))
 {
-   ASSERT_WITH_MSG (
-      (data[16] & MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT) != 0,
-      "test input data did not set MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT");
+   ASSERT_WITH_MSG ((data[16] & MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT) != 0,
+                    "test input data did not set MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT");
 
    // Test with and without the optional checksum by temporarily modifying the
    // data and data length accordingly.
@@ -431,29 +413,22 @@ _test_rpc_message_from_data_op_msg_valid (uint8_t *data,
 }
 
 static void
-_test_rpc_message_from_data_op_msg_valid_kind_0 (const uint8_t *data,
-                                                 size_t data_len,
-                                                 bool with_checksum)
+_test_rpc_message_from_data_op_msg_valid_kind_0 (const uint8_t *data, size_t data_len, bool with_checksum)
 {
    const void *data_end = NULL;
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, data_len, &data_end);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
    ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
    ASSERT (bson_in_range_unsigned (int32_t, data_len));
-   ASSERT_CMPINT32 (
-      mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+   ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
    ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
    ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
    ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_MSG);
 
    if (with_checksum) {
-      ASSERT_CMPUINT32 (mcd_rpc_op_msg_get_flag_bits (rpc),
-                        ==,
-                        MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT);
+      ASSERT_CMPUINT32 (mcd_rpc_op_msg_get_flag_bits (rpc), ==, MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT);
    } else {
-      ASSERT_CMPUINT32 (
-         mcd_rpc_op_msg_get_flag_bits (rpc), ==, MONGOC_OP_MSG_FLAG_NONE);
+      ASSERT_CMPUINT32 (mcd_rpc_op_msg_get_flag_bits (rpc), ==, MONGOC_OP_MSG_FLAG_NONE);
    }
 
    ASSERT_CMPSIZE_T (mcd_rpc_op_msg_get_sections_count (rpc), ==, 1u);
@@ -484,34 +459,26 @@ test_rpc_message_from_data_op_msg_valid_kind_0 (void)
 {
    uint8_t data[] = {TEST_DATA_OP_MSG_KIND_0};
 
-   _test_rpc_message_from_data_op_msg_valid (
-      data, sizeof (data), _test_rpc_message_from_data_op_msg_valid_kind_0);
+   _test_rpc_message_from_data_op_msg_valid (data, sizeof (data), _test_rpc_message_from_data_op_msg_valid_kind_0);
 }
 
 static void
-_test_rpc_message_from_data_op_msg_valid_kind_1_single (const uint8_t *data,
-                                                        size_t data_len,
-                                                        bool with_checksum)
+_test_rpc_message_from_data_op_msg_valid_kind_1_single (const uint8_t *data, size_t data_len, bool with_checksum)
 {
    const void *data_end = NULL;
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, data_len, &data_end);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
    ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
    ASSERT (bson_in_range_unsigned (int32_t, data_len));
-   ASSERT_CMPINT32 (
-      mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+   ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
    ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
    ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
    ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_MSG);
 
    if (with_checksum) {
-      ASSERT_CMPUINT32 (mcd_rpc_op_msg_get_flag_bits (rpc),
-                        ==,
-                        MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT);
+      ASSERT_CMPUINT32 (mcd_rpc_op_msg_get_flag_bits (rpc), ==, MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT);
    } else {
-      ASSERT_CMPUINT32 (
-         mcd_rpc_op_msg_get_flag_bits (rpc), ==, MONGOC_OP_MSG_FLAG_NONE);
+      ASSERT_CMPUINT32 (mcd_rpc_op_msg_get_flag_bits (rpc), ==, MONGOC_OP_MSG_FLAG_NONE);
    }
 
    ASSERT_CMPSIZE_T (mcd_rpc_op_msg_get_sections_count (rpc), ==, 2u);
@@ -535,13 +502,9 @@ _test_rpc_message_from_data_op_msg_valid_kind_1_single (const uint8_t *data,
       const int32_t section_len = mcd_rpc_op_msg_section_get_length (rpc, 1u);
       ASSERT_CMPINT32 (section_len, ==, 26);
       ASSERT_CMPSTR (mcd_rpc_op_msg_section_get_identifier (rpc, 1u), "single");
-      const void *const sequence =
-         mcd_rpc_op_msg_section_get_document_sequence (rpc, 1u);
+      const void *const sequence = mcd_rpc_op_msg_section_get_document_sequence (rpc, 1u);
       ASSERT (sequence);
-      ASSERT_CMPSIZE_T (
-         mcd_rpc_op_msg_section_get_document_sequence_length (rpc, 1u),
-         ==,
-         15u);
+      ASSERT_CMPSIZE_T (mcd_rpc_op_msg_section_get_document_sequence_length (rpc, 1u), ==, 15u);
 
       const int32_t bson_len = _int32_from_le (sequence);
       ASSERT_CMPINT32 (bson_len, ==, 15);
@@ -568,35 +531,26 @@ test_rpc_message_from_data_op_msg_valid_kind_1_single (void)
    uint8_t data[] = {TEST_DATA_OP_MSG_KIND_1_SINGLE};
 
    _test_rpc_message_from_data_op_msg_valid (
-      data,
-      sizeof (data),
-      _test_rpc_message_from_data_op_msg_valid_kind_1_single);
+      data, sizeof (data), _test_rpc_message_from_data_op_msg_valid_kind_1_single);
 }
 
 static void
-_test_rpc_message_from_data_op_msg_valid_kind_1_multiple (const uint8_t *data,
-                                                          size_t data_len,
-                                                          bool with_checksum)
+_test_rpc_message_from_data_op_msg_valid_kind_1_multiple (const uint8_t *data, size_t data_len, bool with_checksum)
 {
    const void *data_end = NULL;
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, data_len, &data_end);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
    ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
    ASSERT (bson_in_range_unsigned (int32_t, data_len));
-   ASSERT_CMPINT32 (
-      mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+   ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
    ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
    ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
    ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_MSG);
 
    if (with_checksum) {
-      ASSERT_CMPUINT32 (mcd_rpc_op_msg_get_flag_bits (rpc),
-                        ==,
-                        MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT);
+      ASSERT_CMPUINT32 (mcd_rpc_op_msg_get_flag_bits (rpc), ==, MONGOC_OP_MSG_FLAG_CHECKSUM_PRESENT);
    } else {
-      ASSERT_CMPUINT32 (
-         mcd_rpc_op_msg_get_flag_bits (rpc), ==, MONGOC_OP_MSG_FLAG_NONE);
+      ASSERT_CMPUINT32 (mcd_rpc_op_msg_get_flag_bits (rpc), ==, MONGOC_OP_MSG_FLAG_NONE);
    }
 
    ASSERT_CMPSIZE_T (mcd_rpc_op_msg_get_sections_count (rpc), ==, 3u);
@@ -620,8 +574,7 @@ _test_rpc_message_from_data_op_msg_valid_kind_1_multiple (const uint8_t *data,
       const int32_t section_len = mcd_rpc_op_msg_section_get_length (rpc, 1u);
       ASSERT_CMPINT32 (section_len, ==, 25);
       ASSERT_CMPSTR (mcd_rpc_op_msg_section_get_identifier (rpc, 1u), "first");
-      const void *const sequence =
-         mcd_rpc_op_msg_section_get_document_sequence (rpc, 1u);
+      const void *const sequence = mcd_rpc_op_msg_section_get_document_sequence (rpc, 1u);
       ASSERT (sequence);
 
       const int32_t bson_len = _int32_from_le (sequence);
@@ -638,8 +591,7 @@ _test_rpc_message_from_data_op_msg_valid_kind_1_multiple (const uint8_t *data,
       const int32_t section_len = mcd_rpc_op_msg_section_get_length (rpc, 2u);
       ASSERT_CMPINT32 (section_len, ==, 43);
       ASSERT_CMPSTR (mcd_rpc_op_msg_section_get_identifier (rpc, 2u), "second");
-      const uint8_t *const sequence =
-         mcd_rpc_op_msg_section_get_document_sequence (rpc, 2u);
+      const uint8_t *const sequence = mcd_rpc_op_msg_section_get_document_sequence (rpc, 2u);
       ASSERT (sequence);
 
       // BSON objects, index 0.
@@ -684,9 +636,7 @@ test_rpc_message_from_data_op_msg_valid_kind_1_multiple (void)
    uint8_t data[] = {TEST_DATA_OP_MSG_KIND_1_MULTIPLE};
 
    _test_rpc_message_from_data_op_msg_valid (
-      data,
-      sizeof (data),
-      _test_rpc_message_from_data_op_msg_valid_kind_1_multiple);
+      data, sizeof (data), _test_rpc_message_from_data_op_msg_valid_kind_1_multiple);
 }
 
 static void
@@ -705,24 +655,18 @@ test_rpc_message_from_data_op_reply_valid (void)
 
    {
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
       ASSERT (bson_in_range_unsigned (int32_t, data_len));
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_REPLY);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_REPLY);
 
-      ASSERT_CMPINT32 (mcd_rpc_op_reply_get_response_flags (rpc),
-                       ==,
-                       MONGOC_OP_REPLY_RESPONSE_FLAG_NONE);
+      ASSERT_CMPINT32 (mcd_rpc_op_reply_get_response_flags (rpc), ==, MONGOC_OP_REPLY_RESPONSE_FLAG_NONE);
 
-      ASSERT_CMPINT64 (
-         mcd_rpc_op_reply_get_cursor_id (rpc), ==, 1234605616436508552);
+      ASSERT_CMPINT64 (mcd_rpc_op_reply_get_cursor_id (rpc), ==, 1234605616436508552);
 
       ASSERT_CMPINT32 (mcd_rpc_op_reply_get_starting_from (rpc), ==, 0);
 
@@ -764,12 +708,9 @@ test_rpc_message_from_data_op_reply_valid (void)
    {
       data[16] = MONGOC_OP_REPLY_RESPONSE_FLAG_CURSOR_NOT_FOUND;
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
-      ASSERT_CMPINT32 (mcd_rpc_op_reply_get_response_flags (rpc),
-                       ==,
-                       MONGOC_OP_REPLY_RESPONSE_FLAG_CURSOR_NOT_FOUND);
+      ASSERT_CMPINT32 (mcd_rpc_op_reply_get_response_flags (rpc), ==, MONGOC_OP_REPLY_RESPONSE_FLAG_CURSOR_NOT_FOUND);
       mcd_rpc_message_destroy (rpc);
 
       data[16] = MONGOC_OP_REPLY_RESPONSE_FLAG_NONE;
@@ -779,8 +720,7 @@ test_rpc_message_from_data_op_reply_valid (void)
    {
       data[28] = 1u;
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
       ASSERT_CMPINT32 (mcd_rpc_op_reply_get_starting_from (rpc), ==, 1);
       mcd_rpc_message_destroy (rpc);
@@ -794,8 +734,7 @@ test_rpc_message_from_data_op_reply_valid (void)
       data[32] = 0x00u;                    // Set numberReturned to 0.
 
       {
-         mcd_rpc_message *const rpc =
-            mcd_rpc_message_from_data (data, data_len, NULL);
+         mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
          ASSERT (rpc);
          ASSERT_CMPINT32 (mcd_rpc_op_reply_get_number_returned (rpc), ==, 0);
          ASSERT_CMPSIZE_T (mcd_rpc_op_reply_get_documents_len (rpc), ==, 0u);
@@ -816,23 +755,18 @@ test_rpc_message_from_data_op_update_valid (void)
 
    {
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
       ASSERT (bson_in_range_unsigned (int32_t, data_len));
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_UPDATE);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_UPDATE);
 
-      ASSERT_CMPSTR (mcd_rpc_op_update_get_full_collection_name (rpc),
-                     "db.coll");
+      ASSERT_CMPSTR (mcd_rpc_op_update_get_full_collection_name (rpc), "db.coll");
 
-      ASSERT_CMPINT32 (
-         mcd_rpc_op_update_get_flags (rpc), ==, MONGOC_OP_UPDATE_FLAG_NONE);
+      ASSERT_CMPINT32 (mcd_rpc_op_update_get_flags (rpc), ==, MONGOC_OP_UPDATE_FLAG_NONE);
 
       {
          const uint8_t *const selector = mcd_rpc_op_update_get_selector (rpc);
@@ -867,11 +801,9 @@ test_rpc_message_from_data_op_update_valid (void)
    {
       data[28] = MONGOC_OP_UPDATE_FLAG_UPSERT;
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
-      ASSERT_CMPINT32 (
-         mcd_rpc_op_update_get_flags (rpc), ==, MONGOC_OP_UPDATE_FLAG_UPSERT);
+      ASSERT_CMPINT32 (mcd_rpc_op_update_get_flags (rpc), ==, MONGOC_OP_UPDATE_FLAG_UPSERT);
       mcd_rpc_message_destroy (rpc);
 
       data[28] = MONGOC_OP_UPDATE_FLAG_NONE;
@@ -886,23 +818,18 @@ test_rpc_message_from_data_op_insert_valid (void)
 
    {
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
       ASSERT (bson_in_range_unsigned (int32_t, data_len));
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_INSERT);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_INSERT);
 
-      ASSERT_CMPINT32 (
-         mcd_rpc_op_insert_get_flags (rpc), ==, MONGOC_OP_INSERT_FLAG_NONE);
+      ASSERT_CMPINT32 (mcd_rpc_op_insert_get_flags (rpc), ==, MONGOC_OP_INSERT_FLAG_NONE);
 
-      ASSERT_CMPSTR (mcd_rpc_op_insert_get_full_collection_name (rpc),
-                     "db.coll");
+      ASSERT_CMPSTR (mcd_rpc_op_insert_get_full_collection_name (rpc), "db.coll");
 
       const uint8_t *const documents = mcd_rpc_op_insert_get_documents (rpc);
       ASSERT (documents);
@@ -939,12 +866,9 @@ test_rpc_message_from_data_op_insert_valid (void)
    {
       data[16] = MONGOC_OP_INSERT_FLAG_CONTINUE_ON_ERROR;
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
-      ASSERT_CMPINT32 (mcd_rpc_op_insert_get_flags (rpc),
-                       ==,
-                       MONGOC_OP_INSERT_FLAG_CONTINUE_ON_ERROR);
+      ASSERT_CMPINT32 (mcd_rpc_op_insert_get_flags (rpc), ==, MONGOC_OP_INSERT_FLAG_CONTINUE_ON_ERROR);
       mcd_rpc_message_destroy (rpc);
 
       data[16] = MONGOC_OP_INSERT_FLAG_NONE;
@@ -955,8 +879,7 @@ test_rpc_message_from_data_op_insert_valid (void)
       data[0] = (uint8_t) (data[0] - 16u); // Exclude document 1.
 
       {
-         mcd_rpc_message *const rpc =
-            mcd_rpc_message_from_data (data, data_len, NULL);
+         mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
          ASSERT (rpc);
          ASSERT_CMPSIZE_T (mcd_rpc_op_insert_get_documents_len (rpc), ==, 16u);
          mcd_rpc_message_destroy (rpc);
@@ -974,23 +897,18 @@ test_rpc_message_from_data_op_query_valid (void)
 
    {
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
       ASSERT (bson_in_range_unsigned (int32_t, data_len));
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_QUERY);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_QUERY);
 
-      ASSERT_CMPINT32 (
-         mcd_rpc_op_query_get_flags (rpc), ==, MONGOC_OP_QUERY_FLAG_NONE);
+      ASSERT_CMPINT32 (mcd_rpc_op_query_get_flags (rpc), ==, MONGOC_OP_QUERY_FLAG_NONE);
 
-      ASSERT_CMPSTR (mcd_rpc_op_query_get_full_collection_name (rpc),
-                     "db.coll");
+      ASSERT_CMPSTR (mcd_rpc_op_query_get_full_collection_name (rpc), "db.coll");
 
       ASSERT_CMPINT32 (mcd_rpc_op_query_get_number_to_skip (rpc), ==, 0);
 
@@ -1010,8 +928,7 @@ test_rpc_message_from_data_op_query_valid (void)
       }
 
       {
-         const uint8_t *const selector =
-            mcd_rpc_op_query_get_return_fields_selector (rpc);
+         const uint8_t *const selector = mcd_rpc_op_query_get_return_fields_selector (rpc);
          ASSERT_CMPSIZE_T ((size_t) (selector - data), ==, 49u);
 
          const int32_t selector_len = _int32_from_le (selector);
@@ -1030,12 +947,9 @@ test_rpc_message_from_data_op_query_valid (void)
    {
       data[16] = MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR;
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
-      ASSERT_CMPINT32 (mcd_rpc_op_query_get_flags (rpc),
-                       ==,
-                       MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
+      ASSERT_CMPINT32 (mcd_rpc_op_query_get_flags (rpc), ==, MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
       mcd_rpc_message_destroy (rpc);
 
       data[16] = MONGOC_OP_QUERY_FLAG_NONE;
@@ -1045,8 +959,7 @@ test_rpc_message_from_data_op_query_valid (void)
    {
       data[28] = 1; // Set numberToSkip to 1.
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
       ASSERT_CMPINT32 (mcd_rpc_op_query_get_number_to_skip (rpc), ==, 1);
       mcd_rpc_message_destroy (rpc);
@@ -1058,8 +971,7 @@ test_rpc_message_from_data_op_query_valid (void)
    {
       data[32] = 1; // Set numberToReturn to 1.
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
       ASSERT_CMPINT32 (mcd_rpc_op_query_get_number_to_return (rpc), ==, 1);
       mcd_rpc_message_destroy (rpc);
@@ -1071,8 +983,7 @@ test_rpc_message_from_data_op_query_valid (void)
    {
       data[0] = (uint8_t) (data[0] - 16u); // Omit returnFieldSelector.
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
       ASSERT (!mcd_rpc_op_query_get_return_fields_selector (rpc));
       mcd_rpc_message_destroy (rpc);
@@ -1090,25 +1001,20 @@ test_rpc_message_from_data_op_get_more_valid (void)
    // Valid test input data.
    {
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
       ASSERT (bson_in_range_unsigned (int32_t, data_len));
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_GET_MORE);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_GET_MORE);
 
-      ASSERT_CMPSTR (mcd_rpc_op_get_more_get_full_collection_name (rpc),
-                     "db.coll");
+      ASSERT_CMPSTR (mcd_rpc_op_get_more_get_full_collection_name (rpc), "db.coll");
 
       ASSERT_CMPINT32 (mcd_rpc_op_get_more_get_number_to_return (rpc), ==, 0);
 
-      ASSERT_CMPINT64 (
-         mcd_rpc_op_get_more_get_cursor_id (rpc), ==, 1234605616436508552);
+      ASSERT_CMPINT64 (mcd_rpc_op_get_more_get_cursor_id (rpc), ==, 1234605616436508552);
 
       mcd_rpc_message_destroy (rpc);
    }
@@ -1123,23 +1029,18 @@ test_rpc_message_from_data_op_delete_valid (void)
    // Valid test input data.
    {
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
       ASSERT (bson_in_range_unsigned (int32_t, data_len));
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_DELETE);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_DELETE);
 
-      ASSERT_CMPSTR (mcd_rpc_op_delete_get_full_collection_name (rpc),
-                     "db.coll");
+      ASSERT_CMPSTR (mcd_rpc_op_delete_get_full_collection_name (rpc), "db.coll");
 
-      ASSERT_CMPINT32 (
-         mcd_rpc_op_delete_get_flags (rpc), ==, MONGOC_OP_DELETE_FLAG_NONE);
+      ASSERT_CMPINT32 (mcd_rpc_op_delete_get_flags (rpc), ==, MONGOC_OP_DELETE_FLAG_NONE);
 
       {
          const uint8_t *const selector = mcd_rpc_op_delete_get_selector (rpc);
@@ -1167,23 +1068,18 @@ test_rpc_message_from_data_op_kill_cursors_valid (void)
    // Valid test input data.
    {
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
       ASSERT (bson_in_range_unsigned (int32_t, data_len));
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
-      ASSERT_CMPINT32 (
-         mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_KILL_CURSORS);
+      ASSERT_CMPINT32 (mcd_rpc_header_get_op_code (rpc), ==, MONGOC_OP_CODE_KILL_CURSORS);
 
-      ASSERT_CMPINT32 (
-         mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (rpc), ==, 2);
+      ASSERT_CMPINT32 (mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (rpc), ==, 2);
 
-      const int64_t *const cursor_ids =
-         mcd_rpc_op_kill_cursors_get_cursor_ids (rpc);
+      const int64_t *const cursor_ids = mcd_rpc_op_kill_cursors_get_cursor_ids (rpc);
 
       ASSERT_CMPINT64 (cursor_ids[0], ==, 1230066625199609624);
       ASSERT_CMPINT64 (cursor_ids[1], ==, 2387509390608836392);
@@ -1196,14 +1092,10 @@ test_rpc_message_from_data_op_kill_cursors_valid (void)
       data[0] = (uint8_t) (data[0] - 8u);   // Truncate cursorID 1.
       data[20] = (uint8_t) (data[20] - 1u); // Set numberOfCursorIds to 1.
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
-      ASSERT_CMPINT32 (
-         mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (rpc), ==, 1);
-      ASSERT_CMPINT64 (mcd_rpc_op_kill_cursors_get_cursor_ids (rpc)[0],
-                       ==,
-                       1230066625199609624);
+      ASSERT_CMPINT32 (mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (rpc), ==, 1);
+      ASSERT_CMPINT64 (mcd_rpc_op_kill_cursors_get_cursor_ids (rpc)[0], ==, 1230066625199609624);
       mcd_rpc_message_destroy (rpc);
 
       data[20] = (uint8_t) (data[20] + 1u); // Restore numberOfCursorIds.
@@ -1215,11 +1107,9 @@ test_rpc_message_from_data_op_kill_cursors_valid (void)
       data[0] = (uint8_t) (data[0] - 16u);  // Exclude cursorIDs.
       data[20] = (uint8_t) (data[20] - 2u); // Set numberOfCursorIds to 0.
 
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, NULL);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, NULL);
       ASSERT (rpc);
-      ASSERT_CMPINT32 (
-         mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (rpc), ==, 0);
+      ASSERT_CMPINT32 (mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (rpc), ==, 0);
       ASSERT (mcd_rpc_op_kill_cursors_get_cursor_ids (rpc) == NULL);
       mcd_rpc_message_destroy (rpc);
 
@@ -1239,46 +1129,23 @@ _test_from_data_invalid_decr (const char *file,
                               size_t max,
                               size_t bytes_parsed_expected)
 {
-   ASSERT_WITH_MSG (
-      min <= max,
-      "%s:%d: min (%zu) should be less than or equal to max (%zu)",
-      file,
-      line,
-      min,
-      max);
-   ASSERT_WITH_MSG (max < data_len,
-                    "%s:%d: max byte %zu exceeds input data length %zu",
-                    file,
-                    line,
-                    max,
-                    data_len);
+   ASSERT_WITH_MSG (min <= max, "%s:%d: min (%zu) should be less than or equal to max (%zu)", file, line, min, max);
+   ASSERT_WITH_MSG (max < data_len, "%s:%d: max byte %zu exceeds input data length %zu", file, line, max, data_len);
 
    for (size_t i = min; i <= max; ++i) {
       data[i] = (uint8_t) (data[i] - 1u); // Set to original value - 1.
 
       {
          const void *data_end = NULL;
-         mcd_rpc_message *rpc =
-            mcd_rpc_message_from_data (data, data_len, &data_end);
+         mcd_rpc_message *rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
          if (expect_success) {
-            ASSERT_WITH_MSG (
-               rpc,
-               "%s:%d: byte %zu: expected decrement to still succeed",
-               file,
-               line,
-               i);
+            ASSERT_WITH_MSG (rpc, "%s:%d: byte %zu: expected decrement to still succeed", file, line, i);
          } else {
-            ASSERT_WITH_MSG (
-               !rpc,
-               "%s:%d: byte %zu: expected decrement to trigger failure",
-               file,
-               line,
-               i);
+            ASSERT_WITH_MSG (!rpc, "%s:%d: byte %zu: expected decrement to trigger failure", file, line, i);
          }
 
-         const size_t bytes_parsed_actual =
-            (size_t) ((const uint8_t *) data_end - data);
+         const size_t bytes_parsed_actual = (size_t) ((const uint8_t *) data_end - data);
 
          ASSERT_WITH_MSG (bytes_parsed_expected == bytes_parsed_actual,
                           "%s:%d: byte %zu: expected decrement to cause "
@@ -1306,39 +1173,22 @@ _test_from_data_invalid_incr (const char *file,
                               size_t max,
                               size_t bytes_parsed_expected)
 {
-   ASSERT_WITH_MSG (max < data_len,
-                    "%s:%d: max byte %zu exceeds input data length %zu",
-                    file,
-                    line,
-                    max,
-                    data_len);
+   ASSERT_WITH_MSG (max < data_len, "%s:%d: max byte %zu exceeds input data length %zu", file, line, max, data_len);
 
    for (size_t i = min; i <= max; ++i) {
       data[i] = (uint8_t) (data[i] + 1u); // Set to original value + 1.
 
       {
          const void *data_end = NULL;
-         mcd_rpc_message *rpc =
-            mcd_rpc_message_from_data (data, data_len, &data_end);
+         mcd_rpc_message *rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
          if (expect_success) {
-            ASSERT_WITH_MSG (
-               rpc,
-               "%s:%d: byte %zu: expected increment to still succeed",
-               file,
-               line,
-               i);
+            ASSERT_WITH_MSG (rpc, "%s:%d: byte %zu: expected increment to still succeed", file, line, i);
          } else {
-            ASSERT_WITH_MSG (
-               !rpc,
-               "%s:%d: byte %zu: expected increment to trigger failure",
-               file,
-               line,
-               i);
+            ASSERT_WITH_MSG (!rpc, "%s:%d: byte %zu: expected increment to trigger failure", file, line, i);
          }
 
-         const size_t bytes_parsed_actual =
-            (size_t) ((const uint8_t *) data_end - data);
+         const size_t bytes_parsed_actual = (size_t) ((const uint8_t *) data_end - data);
 
          ASSERT_WITH_MSG (bytes_parsed_expected == bytes_parsed_actual,
                           "%s:%d: byte %zu: expected increment to cause "
@@ -1377,10 +1227,8 @@ _test_from_data_input_bounds (const uint8_t *data, size_t data_len)
    // It is NOT an error for data length to be greater than messageLength.
    {
       const void *data_end = NULL;
-      mcd_rpc_message *rpc =
-         mcd_rpc_message_from_data (data, data_len + 1u, &data_end);
-      ASSERT_CMPSIZE_T (
-         (size_t) ((const uint8_t *) data_end - data), ==, data_len);
+      mcd_rpc_message *rpc = mcd_rpc_message_from_data (data, data_len + 1u, &data_end);
+      ASSERT_CMPSIZE_T ((size_t) ((const uint8_t *) data_end - data), ==, data_len);
       ASSERT_WITH_MSG (rpc, "expected extra bytes to remain unparsed");
       ASSERT_CMPUINT (*(const uint8_t *) data_end, ==, 0xFF);
       mcd_rpc_message_destroy (rpc);
@@ -1389,17 +1237,13 @@ _test_from_data_input_bounds (const uint8_t *data, size_t data_len)
 
 
 #define EXPECT_DECR_FAILURE(min, max, end) \
-   _test_from_data_invalid_decr (          \
-      __FILE__, __LINE__, data, data_len, false, min, max, end)
+   _test_from_data_invalid_decr (__FILE__, __LINE__, data, data_len, false, min, max, end)
 #define EXPECT_DECR_SUCCESS(min, max, end) \
-   _test_from_data_invalid_decr (          \
-      __FILE__, __LINE__, data, data_len, true, min, max, end)
+   _test_from_data_invalid_decr (__FILE__, __LINE__, data, data_len, true, min, max, end)
 #define EXPECT_INCR_FAILURE(min, max, end) \
-   _test_from_data_invalid_incr (          \
-      __FILE__, __LINE__, data, data_len, false, min, max, end)
+   _test_from_data_invalid_incr (__FILE__, __LINE__, data, data_len, false, min, max, end)
 #define EXPECT_INCR_SUCCESS(min, max, end) \
-   _test_from_data_invalid_incr (          \
-      __FILE__, __LINE__, data, data_len, true, min, max, end)
+   _test_from_data_invalid_incr (__FILE__, __LINE__, data, data_len, true, min, max, end)
 #define EXPECT_DECR_IGNORED(min, max, end)
 #define EXPECT_INCR_IGNORED(min, max, end)
 
@@ -1731,17 +1575,15 @@ test_rpc_message_from_data_op_insert_invalid (void)
       data[0] = (uint8_t) (data[0] - 32u); // Exclude both documents.
 
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
       const size_t parsed_len = (size_t) ((const uint8_t *) data_end - data);
       const size_t expected_len = 28u;
 
       ASSERT_WITH_MSG (!rpc, "OP_INSERT requires at least one document");
-      ASSERT_WITH_MSG (
-         parsed_len == expected_len,
-         "expected %zu bytes to be parsed before error, but parsed %zu bytes",
-         expected_len,
-         parsed_len);
+      ASSERT_WITH_MSG (parsed_len == expected_len,
+                       "expected %zu bytes to be parsed before error, but parsed %zu bytes",
+                       expected_len,
+                       parsed_len);
 
       mcd_rpc_message_destroy (rpc);
 
@@ -1796,17 +1638,15 @@ test_rpc_message_from_data_op_query_invalid (void)
                                            // returnFieldsSelector documents.
 
       const void *data_end = NULL;
-      mcd_rpc_message *const rpc =
-         mcd_rpc_message_from_data (data, data_len, &data_end);
+      mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
       const size_t parsed_len = (size_t) ((const uint8_t *) data_end - data);
       const size_t expected_len = 36u;
 
       ASSERT_WITH_MSG (!rpc, "OP_QUERY requires a query document");
-      ASSERT_WITH_MSG (
-         parsed_len == expected_len,
-         "expected %zu bytes to be parsed before error, but parsed %zu bytes",
-         expected_len,
-         parsed_len);
+      ASSERT_WITH_MSG (parsed_len == expected_len,
+                       "expected %zu bytes to be parsed before error, but parsed %zu bytes",
+                       expected_len,
+                       parsed_len);
 
       mcd_rpc_message_destroy (rpc);
 
@@ -1916,56 +1756,47 @@ test_rpc_message_from_data_op_kill_cursors_invalid (void)
 }
 
 
-#define ASSERT_IOVEC_VALUE(index, expected, type, raw_type, from_le, spec)  \
-   if (1) {                                                                 \
-      const type _expected = expected;                                      \
-      const mongoc_iovec_t iovec = iovecs[index];                           \
-      const size_t len = sizeof (type);                                     \
-      ASSERT_WITH_MSG (iovec.iov_len == sizeof (type),                      \
-                       "expected iov_len to be %zu, but got %zu",           \
-                       len,                                                 \
-                       iovec.iov_len);                                      \
-      raw_type storage;                                                     \
-      memcpy (&storage, iovec.iov_base, sizeof (type));                     \
-      storage = from_le (storage);                                          \
-      type value;                                                           \
-      memcpy (&value, &storage, sizeof (type));                             \
-      ASSERT_WITH_MSG (value == _expected,                                  \
-                       "expected iov_base to point to %s with value %" spec \
-                       ", but got %" spec,                                  \
-                       #type,                                               \
-                       _expected,                                           \
-                       value);                                              \
-   } else                                                                   \
+#define ASSERT_IOVEC_VALUE(index, expected, type, raw_type, from_le, spec)                                             \
+   if (1) {                                                                                                            \
+      const type _expected = expected;                                                                                 \
+      const mongoc_iovec_t iovec = iovecs[index];                                                                      \
+      const size_t len = sizeof (type);                                                                                \
+      ASSERT_WITH_MSG (iovec.iov_len == sizeof (type), "expected iov_len to be %zu, but got %zu", len, iovec.iov_len); \
+      raw_type storage;                                                                                                \
+      memcpy (&storage, iovec.iov_base, sizeof (type));                                                                \
+      storage = from_le (storage);                                                                                     \
+      type value;                                                                                                      \
+      memcpy (&value, &storage, sizeof (type));                                                                        \
+      ASSERT_WITH_MSG (value == _expected,                                                                             \
+                       "expected iov_base to point to %s with value %" spec ", but got %" spec,                        \
+                       #type,                                                                                          \
+                       _expected,                                                                                      \
+                       value);                                                                                         \
+   } else                                                                                                              \
       (void) 0
 
-#define ASSERT_IOVEC_UINT8(index, expected) \
-   ASSERT_IOVEC_VALUE (index, expected, uint8_t, uint8_t, (uint8_t), PRIu8)
+#define ASSERT_IOVEC_UINT8(index, expected) ASSERT_IOVEC_VALUE (index, expected, uint8_t, uint8_t, (uint8_t), PRIu8)
 #define ASSERT_IOVEC_INT32(index, expected) \
-   ASSERT_IOVEC_VALUE (                     \
-      index, expected, int32_t, uint32_t, BSON_UINT32_FROM_LE, PRId32)
+   ASSERT_IOVEC_VALUE (index, expected, int32_t, uint32_t, BSON_UINT32_FROM_LE, PRId32)
 #define ASSERT_IOVEC_UINT32(index, expected) \
-   ASSERT_IOVEC_VALUE (                      \
-      index, expected, uint32_t, uint32_t, BSON_UINT32_FROM_LE, PRIu32)
+   ASSERT_IOVEC_VALUE (index, expected, uint32_t, uint32_t, BSON_UINT32_FROM_LE, PRIu32)
 #define ASSERT_IOVEC_INT64(index, expected) \
-   ASSERT_IOVEC_VALUE (                     \
-      index, expected, int64_t, uint64_t, BSON_UINT64_FROM_LE, PRId64)
+   ASSERT_IOVEC_VALUE (index, expected, int64_t, uint64_t, BSON_UINT64_FROM_LE, PRId64)
 
-#define ASSERT_IOVEC_BYTES(index, expected_base_index, expected_len)           \
-   if (1) {                                                                    \
-      const mongoc_iovec_t iovec = iovecs[index];                              \
-      ASSERT_WITH_MSG (iovec.iov_len == expected_len,                          \
-                       "expected iov_len to be %zu, but got %zu",              \
-                       (size_t) expected_len,                                  \
-                       iovec.iov_len);                                         \
-      ASSERT_WITH_MSG (                                                        \
-         (const uint8_t *) iovec.iov_base == (data + expected_base_index),     \
-         "expected iov_base to point to byte %zu (%p), but got byte %zu (%p)", \
-         (size_t) (expected_base_index),                                       \
-         (void *) (data + expected_base_index),                                \
-         (size_t) ((const uint8_t *) iovec.iov_base - data),                   \
-         iovec.iov_base);                                                      \
-   } else                                                                      \
+#define ASSERT_IOVEC_BYTES(index, expected_base_index, expected_len)                         \
+   if (1) {                                                                                  \
+      const mongoc_iovec_t iovec = iovecs[index];                                            \
+      ASSERT_WITH_MSG (iovec.iov_len == expected_len,                                        \
+                       "expected iov_len to be %zu, but got %zu",                            \
+                       (size_t) expected_len,                                                \
+                       iovec.iov_len);                                                       \
+      ASSERT_WITH_MSG ((const uint8_t *) iovec.iov_base == (data + expected_base_index),     \
+                       "expected iov_base to point to byte %zu (%p), but got byte %zu (%p)", \
+                       (size_t) (expected_base_index),                                       \
+                       (void *) (data + expected_base_index),                                \
+                       (size_t) ((const uint8_t *) iovec.iov_base - data),                   \
+                       iovec.iov_base);                                                      \
+   } else                                                                                    \
       (void) 0
 
 
@@ -1974,8 +1805,7 @@ test_rpc_message_to_iovecs_op_compressed (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_COMPRESSED};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2000,8 +1830,7 @@ test_rpc_message_to_iovecs_op_msg_kind_0 (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_MSG_KIND_0};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2026,8 +1855,7 @@ test_rpc_message_to_iovecs_op_msg_kind_1_single (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_MSG_KIND_1_SINGLE};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2056,8 +1884,7 @@ test_rpc_message_to_iovecs_op_msg_kind_1_multiple (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_MSG_KIND_1_MULTIPLE};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2098,8 +1925,7 @@ test_rpc_message_to_iovecs_op_reply (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_REPLY};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2125,8 +1951,7 @@ test_rpc_message_to_iovecs_op_update (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_UPDATE};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2152,8 +1977,7 @@ test_rpc_message_to_iovecs_op_insert (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_INSERT};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2177,8 +2001,7 @@ test_rpc_message_to_iovecs_op_query (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_QUERY};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2205,8 +2028,7 @@ test_rpc_message_to_iovecs_op_get_more (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_GET_MORE};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2231,8 +2053,7 @@ test_rpc_message_to_iovecs_op_delete (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_DELETE};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2257,8 +2078,7 @@ test_rpc_message_to_iovecs_op_kill_cursors (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_KILL_CURSORS};
 
-   mcd_rpc_message *const rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
 
    size_t num_iovecs;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
@@ -2293,61 +2113,52 @@ test_rpc_message_to_iovecs_op_kill_cursors (void)
 }
 
 
-#define ASSERT_CMPIOVEC_VALUE(index, type, raw_type, from_le, spec)         \
-   if (1) {                                                                 \
-      const mongoc_iovec_t _actual = iovecs[index];                         \
-      const mongoc_iovec_t _expected = expected_iovecs[index];              \
-      ASSERT_WITH_MSG (                                                     \
-         _expected.iov_len == sizeof (type),                                \
-         "expected iov_len does not match expected type length");           \
-      ASSERT_WITH_MSG (_actual.iov_len == _expected.iov_len,                \
-                       "expected iov_len to be %zu, but got %zu",           \
-                       _expected.iov_len,                                   \
-                       _actual.iov_len);                                    \
-      raw_type storage;                                                     \
-      type actual_value;                                                    \
-      type expected_value;                                                  \
-      memcpy (&storage, _actual.iov_base, sizeof (type));                   \
-      storage = from_le (storage);                                          \
-      memcpy (&actual_value, &storage, sizeof (type));                      \
-      memcpy (&storage, _expected.iov_base, sizeof (type));                 \
-      storage = from_le (storage);                                          \
-      memcpy (&expected_value, &storage, sizeof (type));                    \
-      ASSERT_WITH_MSG (actual_value == expected_value,                      \
-                       "expected iov_base to point to %s with value %" spec \
-                       ", but got %" spec,                                  \
-                       #type,                                               \
-                       expected_value,                                      \
-                       actual_value);                                       \
-   } else                                                                   \
+#define ASSERT_CMPIOVEC_VALUE(index, type, raw_type, from_le, spec)                                                 \
+   if (1) {                                                                                                         \
+      const mongoc_iovec_t _actual = iovecs[index];                                                                 \
+      const mongoc_iovec_t _expected = expected_iovecs[index];                                                      \
+      ASSERT_WITH_MSG (_expected.iov_len == sizeof (type), "expected iov_len does not match expected type length"); \
+      ASSERT_WITH_MSG (_actual.iov_len == _expected.iov_len,                                                        \
+                       "expected iov_len to be %zu, but got %zu",                                                   \
+                       _expected.iov_len,                                                                           \
+                       _actual.iov_len);                                                                            \
+      raw_type storage;                                                                                             \
+      type actual_value;                                                                                            \
+      type expected_value;                                                                                          \
+      memcpy (&storage, _actual.iov_base, sizeof (type));                                                           \
+      storage = from_le (storage);                                                                                  \
+      memcpy (&actual_value, &storage, sizeof (type));                                                              \
+      memcpy (&storage, _expected.iov_base, sizeof (type));                                                         \
+      storage = from_le (storage);                                                                                  \
+      memcpy (&expected_value, &storage, sizeof (type));                                                            \
+      ASSERT_WITH_MSG (actual_value == expected_value,                                                              \
+                       "expected iov_base to point to %s with value %" spec ", but got %" spec,                     \
+                       #type,                                                                                       \
+                       expected_value,                                                                              \
+                       actual_value);                                                                               \
+   } else                                                                                                           \
       (void) 0
 
-#define ASSERT_CMPIOVEC_UINT8(index) \
-   ASSERT_CMPIOVEC_VALUE (index, uint8_t, uint8_t, (uint8_t), PRIu8)
-#define ASSERT_CMPIOVEC_INT32(index) \
-   ASSERT_CMPIOVEC_VALUE (index, int32_t, uint32_t, BSON_UINT32_FROM_LE, PRId32)
-#define ASSERT_CMPIOVEC_UINT32(index) \
-   ASSERT_CMPIOVEC_VALUE (            \
-      index, uint32_t, uint32_t, BSON_UINT32_FROM_LE, PRIu32)
-#define ASSERT_CMPIOVEC_INT64(index) \
-   ASSERT_CMPIOVEC_VALUE (index, int64_t, uint64_t, BSON_UINT64_FROM_LE, PRId64)
+#define ASSERT_CMPIOVEC_UINT8(index) ASSERT_CMPIOVEC_VALUE (index, uint8_t, uint8_t, (uint8_t), PRIu8)
+#define ASSERT_CMPIOVEC_INT32(index) ASSERT_CMPIOVEC_VALUE (index, int32_t, uint32_t, BSON_UINT32_FROM_LE, PRId32)
+#define ASSERT_CMPIOVEC_UINT32(index) ASSERT_CMPIOVEC_VALUE (index, uint32_t, uint32_t, BSON_UINT32_FROM_LE, PRIu32)
+#define ASSERT_CMPIOVEC_INT64(index) ASSERT_CMPIOVEC_VALUE (index, int64_t, uint64_t, BSON_UINT64_FROM_LE, PRId64)
 
-#define ASSERT_CMPIOVEC_BYTES(index)                                           \
-   if (1) {                                                                    \
-      const mongoc_iovec_t _actual = iovecs[index];                            \
-      const mongoc_iovec_t _expected = expected_iovecs[index];                 \
-      ASSERT_WITH_MSG (_actual.iov_len == _expected.iov_len,                   \
-                       "expected iov_len to be %zu, but got %zu",              \
-                       _expected.iov_len,                                      \
-                       _actual.iov_len);                                       \
-      ASSERT_WITH_MSG (                                                        \
-         _actual.iov_base == _expected.iov_base,                               \
-         "expected iov_base to point to byte %zu (%p), but got byte %zu (%p)", \
-         (size_t) ((const uint8_t *) _expected.iov_base - data),               \
-         _expected.iov_base,                                                   \
-         (size_t) ((const uint8_t *) _actual.iov_base - data),                 \
-         _actual.iov_base);                                                    \
-   } else                                                                      \
+#define ASSERT_CMPIOVEC_BYTES(index)                                                         \
+   if (1) {                                                                                  \
+      const mongoc_iovec_t _actual = iovecs[index];                                          \
+      const mongoc_iovec_t _expected = expected_iovecs[index];                               \
+      ASSERT_WITH_MSG (_actual.iov_len == _expected.iov_len,                                 \
+                       "expected iov_len to be %zu, but got %zu",                            \
+                       _expected.iov_len,                                                    \
+                       _actual.iov_len);                                                     \
+      ASSERT_WITH_MSG (_actual.iov_base == _expected.iov_base,                               \
+                       "expected iov_base to point to byte %zu (%p), but got byte %zu (%p)", \
+                       (size_t) ((const uint8_t *) _expected.iov_base - data),               \
+                       _expected.iov_base,                                                   \
+                       (size_t) ((const uint8_t *) _actual.iov_base - data),                 \
+                       _actual.iov_base);                                                    \
+   } else                                                                                    \
       (void) 0
 
 
@@ -2356,13 +2167,11 @@ test_rpc_message_setters_op_compressed (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_COMPRESSED};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2405,13 +2214,11 @@ test_rpc_message_setters_op_msg_kind_0 (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_MSG_KIND_0};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2455,13 +2262,11 @@ test_rpc_message_setters_op_msg_kind_1_single (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_MSG_KIND_1_SINGLE};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2513,13 +2318,11 @@ test_rpc_message_setters_op_msg_kind_1_multiple (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_MSG_KIND_1_MULTIPLE};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2587,13 +2390,11 @@ test_rpc_message_setters_op_reply (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_REPLY};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2638,13 +2439,11 @@ test_rpc_message_setters_op_update (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_UPDATE};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2688,13 +2487,11 @@ test_rpc_message_setters_op_insert (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_INSERT};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2735,13 +2532,11 @@ test_rpc_message_setters_op_query (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_QUERY};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2788,13 +2583,11 @@ test_rpc_message_setters_op_get_more (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_GET_MORE};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2836,13 +2629,11 @@ test_rpc_message_setters_op_delete (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_DELETE};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -2884,13 +2675,11 @@ test_rpc_message_setters_op_kill_cursors (void)
 {
    const uint8_t data[] = {TEST_DATA_OP_KILL_CURSORS};
 
-   mcd_rpc_message *const expected_rpc =
-      mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   mcd_rpc_message *const expected_rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
    ASSERT (expected_rpc);
 
    size_t expected_num_iovecs;
-   mongoc_iovec_t *const expected_iovecs =
-      mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
+   mongoc_iovec_t *const expected_iovecs = mcd_rpc_message_to_iovecs (expected_rpc, &expected_num_iovecs);
    ASSERT (expected_iovecs);
 
    const int64_t cursor_ids[] = {1230066625199609624, 2387509390608836392};
@@ -2925,9 +2714,7 @@ test_rpc_message_setters_op_kill_cursors (void)
       const mongoc_iovec_t *const expected_iovec = expected_iovecs + 6;
 
       ASSERT_CMPSIZE_T (iovec->iov_len, ==, expected_iovec->iov_len);
-      ASSERT (memcmp (iovec->iov_base,
-                      expected_iovec->iov_base,
-                      expected_iovec->iov_len) == 0);
+      ASSERT (memcmp (iovec->iov_base, expected_iovec->iov_base, expected_iovec->iov_len) == 0);
    }
 
    bson_free (iovecs);
@@ -2944,8 +2731,7 @@ test_rpc_message_from_data_in_place (void)
    const uint8_t data_op_compressed[] = {TEST_DATA_OP_COMPRESSED};
    const uint8_t data_op_msg_kind_0[] = {TEST_DATA_OP_MSG_KIND_0};
    const uint8_t data_op_msg_kind_1_single[] = {TEST_DATA_OP_MSG_KIND_1_SINGLE};
-   const uint8_t data_op_msg_kind_1_multiple[] = {
-      TEST_DATA_OP_MSG_KIND_1_MULTIPLE};
+   const uint8_t data_op_msg_kind_1_multiple[] = {TEST_DATA_OP_MSG_KIND_1_MULTIPLE};
    const uint8_t data_op_reply[] = {TEST_DATA_OP_REPLY};
    const uint8_t data_op_update[] = {TEST_DATA_OP_UPDATE};
    const uint8_t data_op_insert[] = {TEST_DATA_OP_INSERT};
@@ -3014,8 +2800,7 @@ test_rpc_message_from_data_in_place (void)
       ASSERT_RPC_MESSAGE_RESULT (res, data, data_end, data_len);
 
       size_t num_iovecs;
-      mongoc_iovec_t *const iovecs =
-         mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
+      mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
       ASSERT (iovecs && num_iovecs > 0u);
       bson_free (iovecs);
 
@@ -3032,8 +2817,7 @@ test_rpc_message_from_data_in_place (void)
       ASSERT_RPC_MESSAGE_RESULT (res, data, data_end, data_len);
 
       size_t num_iovecs;
-      mongoc_iovec_t *const iovecs =
-         mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
+      mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
       ASSERT (iovecs && num_iovecs > 0u);
       bson_free (iovecs);
 
@@ -3047,119 +2831,49 @@ test_rpc_message_from_data_in_place (void)
 void
 test_mcd_rpc_install (TestSuite *suite)
 {
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_compressed/valid",
-                  test_rpc_message_from_data_op_compressed_valid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_msg/valid",
-                  test_rpc_message_from_data_op_msg_valid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_reply/valid",
-                  test_rpc_message_from_data_op_reply_valid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_update/valid",
-                  test_rpc_message_from_data_op_update_valid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_insert/valid",
-                  test_rpc_message_from_data_op_insert_valid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_query/valid",
-                  test_rpc_message_from_data_op_query_valid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_get_more/valid",
-                  test_rpc_message_from_data_op_get_more_valid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_delete/valid",
-                  test_rpc_message_from_data_op_delete_valid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_kill_cursors/valid",
-                  test_rpc_message_from_data_op_kill_cursors_valid);
-
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_compressed/invalid",
-                  test_rpc_message_from_data_op_compressed_invalid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_msg/invalid",
-                  test_rpc_message_from_data_op_msg_invalid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_reply/invalid",
-                  test_rpc_message_from_data_op_reply_invalid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_update/invalid",
-                  test_rpc_message_from_data_op_update_invalid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_insert/invalid",
-                  test_rpc_message_from_data_op_insert_invalid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_query/invalid",
-                  test_rpc_message_from_data_op_query_invalid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_get_more/invalid",
-                  test_rpc_message_from_data_op_get_more_invalid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_delete/invalid",
-                  test_rpc_message_from_data_op_delete_invalid);
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/op_kill_cursors/invalid",
-                  test_rpc_message_from_data_op_kill_cursors_invalid);
-
-   TestSuite_Add (suite,
-                  "/rpc_message/to_iovecs/op_compressed",
-                  test_rpc_message_to_iovecs_op_compressed);
-   TestSuite_Add (suite,
-                  "/rpc_message/to_iovecs/op_msg",
-                  test_rpc_message_to_iovecs_op_msg);
-   TestSuite_Add (suite,
-                  "/rpc_message/to_iovecs/op_reply",
-                  test_rpc_message_to_iovecs_op_reply);
-   TestSuite_Add (suite,
-                  "/rpc_message/to_iovecs/op_update",
-                  test_rpc_message_to_iovecs_op_update);
-   TestSuite_Add (suite,
-                  "/rpc_message/to_iovecs/op_insert",
-                  test_rpc_message_to_iovecs_op_insert);
-   TestSuite_Add (suite,
-                  "/rpc_message/to_iovecs/op_query",
-                  test_rpc_message_to_iovecs_op_query);
-   TestSuite_Add (suite,
-                  "/rpc_message/to_iovecs/op_get_more",
-                  test_rpc_message_to_iovecs_op_get_more);
-   TestSuite_Add (suite,
-                  "/rpc_message/to_iovecs/op_delete",
-                  test_rpc_message_to_iovecs_op_delete);
-   TestSuite_Add (suite,
-                  "/rpc_message/to_iovecs/op_kill_cursors",
-                  test_rpc_message_to_iovecs_op_kill_cursors);
-
-   TestSuite_Add (suite,
-                  "/rpc_message/setters/op_compressed",
-                  test_rpc_message_setters_op_compressed);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_compressed/valid", test_rpc_message_from_data_op_compressed_valid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_msg/valid", test_rpc_message_from_data_op_msg_valid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_reply/valid", test_rpc_message_from_data_op_reply_valid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_update/valid", test_rpc_message_from_data_op_update_valid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_insert/valid", test_rpc_message_from_data_op_insert_valid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_query/valid", test_rpc_message_from_data_op_query_valid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_get_more/valid", test_rpc_message_from_data_op_get_more_valid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_delete/valid", test_rpc_message_from_data_op_delete_valid);
    TestSuite_Add (
-      suite, "/rpc_message/setters/op_msg", test_rpc_message_setters_op_msg);
-   TestSuite_Add (suite,
-                  "/rpc_message/setters/op_reply",
-                  test_rpc_message_setters_op_reply);
-   TestSuite_Add (suite,
-                  "/rpc_message/setters/op_update",
-                  test_rpc_message_setters_op_update);
-   TestSuite_Add (suite,
-                  "/rpc_message/setters/op_insert",
-                  test_rpc_message_setters_op_insert);
-   TestSuite_Add (suite,
-                  "/rpc_message/setters/op_query",
-                  test_rpc_message_setters_op_query);
-   TestSuite_Add (suite,
-                  "/rpc_message/setters/op_get_more",
-                  test_rpc_message_setters_op_get_more);
-   TestSuite_Add (suite,
-                  "/rpc_message/setters/op_delete",
-                  test_rpc_message_setters_op_delete);
-   TestSuite_Add (suite,
-                  "/rpc_message/setters/op_kill_cursors",
-                  test_rpc_message_setters_op_kill_cursors);
+      suite, "/rpc_message/from_data/op_kill_cursors/valid", test_rpc_message_from_data_op_kill_cursors_valid);
+
+   TestSuite_Add (
+      suite, "/rpc_message/from_data/op_compressed/invalid", test_rpc_message_from_data_op_compressed_invalid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_msg/invalid", test_rpc_message_from_data_op_msg_invalid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_reply/invalid", test_rpc_message_from_data_op_reply_invalid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_update/invalid", test_rpc_message_from_data_op_update_invalid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_insert/invalid", test_rpc_message_from_data_op_insert_invalid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_query/invalid", test_rpc_message_from_data_op_query_invalid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_get_more/invalid", test_rpc_message_from_data_op_get_more_invalid);
+   TestSuite_Add (suite, "/rpc_message/from_data/op_delete/invalid", test_rpc_message_from_data_op_delete_invalid);
+   TestSuite_Add (
+      suite, "/rpc_message/from_data/op_kill_cursors/invalid", test_rpc_message_from_data_op_kill_cursors_invalid);
+
+   TestSuite_Add (suite, "/rpc_message/to_iovecs/op_compressed", test_rpc_message_to_iovecs_op_compressed);
+   TestSuite_Add (suite, "/rpc_message/to_iovecs/op_msg", test_rpc_message_to_iovecs_op_msg);
+   TestSuite_Add (suite, "/rpc_message/to_iovecs/op_reply", test_rpc_message_to_iovecs_op_reply);
+   TestSuite_Add (suite, "/rpc_message/to_iovecs/op_update", test_rpc_message_to_iovecs_op_update);
+   TestSuite_Add (suite, "/rpc_message/to_iovecs/op_insert", test_rpc_message_to_iovecs_op_insert);
+   TestSuite_Add (suite, "/rpc_message/to_iovecs/op_query", test_rpc_message_to_iovecs_op_query);
+   TestSuite_Add (suite, "/rpc_message/to_iovecs/op_get_more", test_rpc_message_to_iovecs_op_get_more);
+   TestSuite_Add (suite, "/rpc_message/to_iovecs/op_delete", test_rpc_message_to_iovecs_op_delete);
+   TestSuite_Add (suite, "/rpc_message/to_iovecs/op_kill_cursors", test_rpc_message_to_iovecs_op_kill_cursors);
+
+   TestSuite_Add (suite, "/rpc_message/setters/op_compressed", test_rpc_message_setters_op_compressed);
+   TestSuite_Add (suite, "/rpc_message/setters/op_msg", test_rpc_message_setters_op_msg);
+   TestSuite_Add (suite, "/rpc_message/setters/op_reply", test_rpc_message_setters_op_reply);
+   TestSuite_Add (suite, "/rpc_message/setters/op_update", test_rpc_message_setters_op_update);
+   TestSuite_Add (suite, "/rpc_message/setters/op_insert", test_rpc_message_setters_op_insert);
+   TestSuite_Add (suite, "/rpc_message/setters/op_query", test_rpc_message_setters_op_query);
+   TestSuite_Add (suite, "/rpc_message/setters/op_get_more", test_rpc_message_setters_op_get_more);
+   TestSuite_Add (suite, "/rpc_message/setters/op_delete", test_rpc_message_setters_op_delete);
+   TestSuite_Add (suite, "/rpc_message/setters/op_kill_cursors", test_rpc_message_setters_op_kill_cursors);
 
 
-   TestSuite_Add (suite,
-                  "/rpc_message/from_data/in_place",
-                  test_rpc_message_from_data_in_place);
+   TestSuite_Add (suite, "/rpc_message/from_data/in_place", test_rpc_message_from_data_in_place);
 }

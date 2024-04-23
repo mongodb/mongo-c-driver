@@ -56,9 +56,7 @@ typedef struct he_testcase {
    he_testcase_state_t state;
 } he_testcase_t;
 
-typedef ssize_t (*poll_fn_t) (mongoc_stream_poll_t *streams,
-                              size_t nstreams,
-                              int32_t timeout);
+typedef ssize_t (*poll_fn_t) (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout);
 
 static poll_fn_t gOriginalPoll;
 static he_testcase_t *gCurrentTestCase;
@@ -66,13 +64,11 @@ static he_testcase_t *gCurrentTestCase;
 /* if the server testcase specifies a delay or hangup, overwrite the poll
  * response. */
 static int
-_override_poll_response (he_testcase_server_t *server,
-                         mongoc_stream_poll_t *poller)
+_override_poll_response (he_testcase_server_t *server, mongoc_stream_poll_t *poller)
 {
    if (server->listen_delay_ms) {
       int64_t now = bson_get_monotonic_time ();
-      if (gCurrentTestCase->state.start + server->listen_delay_ms * 1000 >
-          now) {
+      if (gCurrentTestCase->state.start + server->listen_delay_ms * 1000 > now) {
          /* should still "sleep". */
          int delta = 0;
          if (poller->revents) {
@@ -130,8 +126,7 @@ _mock_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
 
    /* check if any of the poll responses need to be overwritten. */
    for (size_t i = 0u; i < nstreams; i++) {
-      mongoc_stream_t *stream =
-         mongoc_stream_get_root_stream (streams[i].stream);
+      mongoc_stream_t *stream = mongoc_stream_get_root_stream (streams[i].stream);
       he_testcase_server_t *server = _server_for_client (stream);
 
       if (server) {
@@ -158,11 +153,8 @@ _mock_initiator (mongoc_async_cmd_t *acmd)
 }
 
 static void
-_test_scanner_callback (uint32_t id,
-                        const bson_t *bson,
-                        int64_t rtt_msec,
-                        void *data,
-                        const bson_error_t *error /* IN */)
+_test_scanner_callback (
+   uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
 {
    he_testcase_t *testcase = (he_testcase_t *) data;
    int should_succeed = strcmp (testcase->expected.conn_succeeds_to, "neither");
@@ -174,10 +166,7 @@ _test_scanner_callback (uint32_t id,
    if (should_succeed) {
       ASSERT_OR_PRINT (!error->code, (*error));
    } else {
-      ASSERT_ERROR_CONTAINS ((*error),
-                             MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_CONNECT,
-                             "connection refused");
+      ASSERT_ERROR_CONTAINS ((*error), MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "connection refused");
    }
 }
 
@@ -255,18 +244,14 @@ _testcase_setup (he_testcase_t *testcase)
    mock_server_set_bind_opts (mock_server, &opts);
    mock_server_run (mock_server);
 
-   _init_host (&testcase->state.host,
-               mock_server_get_port (mock_server),
-               testcase->client.type);
+   _init_host (&testcase->state.host, mock_server_get_port (mock_server), testcase->client.type);
 
-   testcase->state.ts = mongoc_topology_scanner_new (
-      NULL, NULL, &_test_scanner_callback, testcase, TIMEOUT);
+   testcase->state.ts = mongoc_topology_scanner_new (NULL, NULL, &_test_scanner_callback, testcase, TIMEOUT);
 
    testcase->state.mock_server = mock_server;
 
    if (testcase->client.dns_cache_timeout_ms > 0) {
-      _mongoc_topology_scanner_set_dns_cache_timeout (
-         testcase->state.ts, testcase->client.dns_cache_timeout_ms);
+      _mongoc_topology_scanner_set_dns_cache_timeout (testcase->state.ts, testcase->client.dns_cache_timeout_ms);
    }
 }
 
@@ -283,16 +268,12 @@ _check_stream (mongoc_stream_t *stream, const char *expected, char *message)
    /* check the socket that the scanner found. */
    char *actual = "neither";
    if (stream) {
-      mongoc_socket_t *sock =
-         mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *) stream);
+      mongoc_socket_t *sock = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *) stream);
       actual = (sock->domain == AF_INET) ? "ipv4" : "ipv6";
    }
 
-   ASSERT_WITH_MSG (strcmp (expected, actual) == 0,
-                    "%s: expected %s stream but got %s stream\n",
-                    message,
-                    expected,
-                    actual);
+   ASSERT_WITH_MSG (
+      strcmp (expected, actual) == 0, "%s: expected %s stream but got %s stream\n", message, expected, actual);
 }
 
 static void
@@ -310,8 +291,7 @@ _testcase_run (he_testcase_t *testcase)
    gCurrentTestCase = testcase;
    testcase->state.start = bson_get_monotonic_time ();
 
-   mongoc_topology_scanner_add (
-      ts, &testcase->state.host, 1 /* any server id is ok. */, false);
+   mongoc_topology_scanner_add (ts, &testcase->state.host, 1 /* any server id is ok. */, false);
    mongoc_topology_scanner_scan (ts, 1);
    /* how many commands should we have initially? */
    ASSERT_CMPINT ((int) (ts->async->ncmds), ==, expected->initial_acmds);
@@ -333,8 +313,7 @@ _testcase_run (he_testcase_t *testcase)
 
    {
       bool within_expected_duration =
-         duration_ms >= expected->duration_min_ms &&
-         duration_ms < expected->duration_max_ms;
+         duration_ms >= expected->duration_min_ms && duration_ms < expected->duration_max_ms;
       if (!within_expected_duration) {
          /* this is a timing failure, this may have been a fluke, retry once. */
          ASSERT_WITH_MSG (!testcase->state.last_duration,
@@ -353,9 +332,7 @@ _testcase_run (he_testcase_t *testcase)
 #endif
 
    node = mongoc_topology_scanner_get_node (ts, 1);
-   _check_stream (node->stream,
-                  expected->conn_succeeds_to,
-                  "checking client's final connection");
+   _check_stream (node->stream, expected->conn_succeeds_to, "checking client's final connection");
 }
 
 #define CLIENT(client) \
@@ -536,41 +513,35 @@ test_happy_eyeballs_install (TestSuite *suite)
          fails} */
       {
          CLIENT (both),
-         SERVERS (DELAYED_SERVER (ipv4, LISTEN, DELAY_MS (2 * HE)),
-                  DELAYED_SERVER (ipv6, LISTEN, HE)),
+         SERVERS (DELAYED_SERVER (ipv4, LISTEN, DELAY_MS (2 * HE)), DELAYED_SERVER (ipv6, LISTEN, HE)),
          EXPECT (ipv6, NCMDS (2), DURATION_MS (HE, HE + E)),
       },
       {
          CLIENT (both),
-         SERVERS (DELAYED_SERVER (ipv4, LISTEN, DELAY_MS (2 * HE)),
-                  DELAYED_SERVER (ipv6, HANGUP, DELAY_MS (HE))),
+         SERVERS (DELAYED_SERVER (ipv4, LISTEN, DELAY_MS (2 * HE)), DELAYED_SERVER (ipv6, HANGUP, DELAY_MS (HE))),
          EXPECT (ipv4, NCMDS (2), DURATION_MS (2 * HE, 2 * HE + E)),
       },
       {
          CLIENT (both),
-         SERVERS (DELAYED_SERVER (ipv4, HANGUP, DELAY_MS (2 * HE)),
-                  DELAYED_SERVER (ipv6, HANGUP, DELAY_MS (HE))),
+         SERVERS (DELAYED_SERVER (ipv4, HANGUP, DELAY_MS (2 * HE)), DELAYED_SERVER (ipv6, HANGUP, DELAY_MS (HE))),
          EXPECT (neither, NCMDS (2), DURATION_MS (2 * HE, 2 * HE + E)),
       },
       /* ipv4 {succeeds,fails} after ipv6 {succeeds, fails}. */
       {
          CLIENT (both),
-         SERVERS (SERVER (ipv4, LISTEN),
-                  DELAYED_SERVER (ipv6, LISTEN, DELAY_MS (HE + E))),
+         SERVERS (SERVER (ipv4, LISTEN), DELAYED_SERVER (ipv6, LISTEN, DELAY_MS (HE + E))),
          /* ipv6 is delayed too long, ipv4 succeeds. */
          EXPECT (ipv4, NCMDS (2), DURATION_MS (HE, HE + E)),
       },
       {
          CLIENT (both),
-         SERVERS (SERVER (ipv4, HANGUP),
-                  DELAYED_SERVER (ipv6, LISTEN, DELAY_MS (HE + E))),
+         SERVERS (SERVER (ipv4, HANGUP), DELAYED_SERVER (ipv6, LISTEN, DELAY_MS (HE + E))),
          /* ipv6 is delayed, but ipv4 fails. */
          EXPECT (ipv6, NCMDS (2), DURATION_MS (HE + E, HE + 2 * E)),
       },
       {
          CLIENT (both),
-         SERVERS (SERVER (ipv4, HANGUP),
-                  DELAYED_SERVER (ipv6, HANGUP, DELAY_MS (HE + E))),
+         SERVERS (SERVER (ipv4, HANGUP), DELAYED_SERVER (ipv6, HANGUP, DELAY_MS (HE + E))),
          EXPECT (neither, NCMDS (2), DURATION_MS (HE + E, HE + 2 * E)),
       },
    };

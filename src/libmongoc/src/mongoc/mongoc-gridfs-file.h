@@ -38,8 +38,7 @@ BSON_BEGIN_DECLS
    MONGOC_EXPORT (const bson_t *)                              \
    mongoc_gridfs_file_get_##name (mongoc_gridfs_file_t *file); \
    MONGOC_EXPORT (void)                                        \
-   mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t *file,  \
-                                  const bson_t *bson);
+   mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t *file, const bson_t *bson);
 
 
 typedef struct _mongoc_gridfs_file_t mongoc_gridfs_file_t;
@@ -76,16 +75,10 @@ MONGOC_EXPORT (int64_t)
 mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file);
 
 MONGOC_EXPORT (ssize_t)
-mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
-                           const mongoc_iovec_t *iov,
-                           size_t iovcnt,
-                           uint32_t timeout_msec);
+mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file, const mongoc_iovec_t *iov, size_t iovcnt, uint32_t timeout_msec);
 MONGOC_EXPORT (ssize_t)
-mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
-                          mongoc_iovec_t *iov,
-                          size_t iovcnt,
-                          size_t min_bytes,
-                          uint32_t timeout_msec);
+mongoc_gridfs_file_readv (
+   mongoc_gridfs_file_t *file, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, uint32_t timeout_msec);
 MONGOC_EXPORT (int)
 mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence);
 
@@ -93,9 +86,7 @@ MONGOC_EXPORT (uint64_t)
 mongoc_gridfs_file_tell (mongoc_gridfs_file_t *file);
 
 MONGOC_EXPORT (bool)
-mongoc_gridfs_file_set_id (mongoc_gridfs_file_t *file,
-                           const bson_value_t *id,
-                           bson_error_t *error);
+mongoc_gridfs_file_set_id (mongoc_gridfs_file_t *file, const bson_value_t *id, bson_error_t *error);
 
 MONGOC_EXPORT (bool)
 mongoc_gridfs_file_save (mongoc_gridfs_file_t *file);

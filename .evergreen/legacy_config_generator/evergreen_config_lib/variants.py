@@ -464,6 +464,24 @@ all_variants = [
         ],
         {},
         batchtime=days(7),
+        display_tasks=[
+            {
+                "name": "ocsp-openssl",
+                "execution_tasks": [".ocsp-openssl"],
+            },
+            {
+                "name": "ocsp-darwinssl",
+                "execution_tasks": [".ocsp-darwinssl"],
+            },
+            {
+                "name": "ocsp-winssl",
+                "execution_tasks": [".ocsp-winssl"],
+            },
+            {
+                "name": "ocsp-openssl-1.0.1",
+                "execution_tasks": [".ocsp-openssl-1.0.1"],
+            },
+        ]
     ),
     Variant(
         "packaging",
