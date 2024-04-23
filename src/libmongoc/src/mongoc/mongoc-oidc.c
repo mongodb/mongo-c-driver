@@ -91,8 +91,8 @@ _oidc_set_client_token (mongoc_client_t *client, bool *is_cache, bson_error_t *e
    /* Call the user provided callback function with params. */
    ok = client->topology->oidc_callback (&params, &creds);
    if (!ok) {
-      fprintf (stderr, "FAILURE IN USER OIDC CALLBACK\n");
-      AUTH_ERROR_AND_FAIL ("error from within user provided OIDC callback");
+      MONGOC_ERROR ("error from within user provided OIDC callback");
+      goto fail;
    }
 
    /* creds.access_token is a user provided string.
@@ -152,6 +152,7 @@ _oidc_sasl_one_step_conversation (mongoc_cluster_t *cluster,
    /* Send the authentication command to the server. */
    ok = _mongoc_sasl_run_command (cluster, stream, sd, &client_command, &server_reply, error);
    if (!ok) {
+      fprintf (stderr, ">>> 1 GOT ERROR CODE FROM SERVER: %d MESSAGE: %s\n", error->code, error->message);
       /* Try to get the server response, if we can't then return a generic error */
       if (!bson_iter_init (&iter, &server_reply)) {
          goto one_step_generic_error;
@@ -160,24 +161,27 @@ _oidc_sasl_one_step_conversation (mongoc_cluster_t *cluster,
       /* If we find the 'errmsg', then provide it to the user in the error message */
       if (bson_iter_find (&iter, "errmsg") && BSON_ITER_HOLDS_UTF8 (&iter)) {
          const char *errmsg = bson_iter_utf8 (&iter, NULL);
-         AUTH_ERROR_AND_FAIL ("failed to run OIDC SASL one-step conversation command: server reply: %s", errmsg);
+         MONGOC_ERROR ("failed to run OIDC SASL one-step conversation command: server reply: %s", errmsg);
+         goto done;
       }
 
    one_step_generic_error:
-      AUTH_ERROR_AND_FAIL ("failed to run OIDC SASL one-step conversation command");
+      MONGOC_ERROR ("failed to run OIDC SASL one-step conversation command");
+      goto done;
    }
 
    conv_id = _mongoc_cluster_get_conversation_id (&server_reply);
    if (!conv_id) {
       ok = false;
-      AUTH_ERROR_AND_FAIL ("server reply did not contain conversationId for OIDC one-step SASL");
+      MONGOC_ERROR ("server reply did not contain conversationId for OIDC one-step SASL");
+      goto done;
    }
 
-   fprintf (stderr, "SUCCESSFULLY GOT TOKEN\n");
-fail:
+done:
    bson_destroy (&jwt_step_request);
    bson_destroy (&client_command);
    bson_destroy (&server_reply);
+   fprintf (stderr, ">>> 5 GOT ERROR CODE FROM SERVER: %d MESSAGE: %s\n", error->code, error->message);
    return ok;
 }
 
@@ -229,6 +233,7 @@ again:
     */
    ok = _oidc_sasl_one_step_conversation (cluster, stream, sd, error);
    if (!ok) {
+      fprintf (stderr, ">>> 2 GOT ERROR CODE FROM SERVER: %d MESSAGE: %s\n", error->code, error->message);
       fprintf (stderr, "ERROR FROM ONE STEP CONVERSATION, first time? %d: %s\n", first_time, error->message);
    }
    if (!ok && is_cache && first_time) {
@@ -274,5 +279,7 @@ _mongoc_cluster_oidc_reauthenticate (mongoc_cluster_t *cluster,
 
    fprintf (stderr, "INVALIDATING TOKEN FROM RE-AUTH FUNCTION\n");
    mongoc_client_oidc_credential_invalidate (cluster->client, cached_token);
-   return _mongoc_cluster_auth_node_oidc (cluster, stream, sd, error);
+   bool ok = _mongoc_cluster_auth_node_oidc (cluster, stream, sd, error);
+   fprintf (stderr, ">>> 3 GOT ERROR CODE FROM SERVER: %d MESSAGE: %s\n", error->code, error->message);
+   return ok;
 }

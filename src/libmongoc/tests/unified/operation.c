@@ -2236,6 +2236,9 @@ operation_insert_one (test_t *test, operation_t *op, result_t *result, bson_erro
 
    bson_destroy (&op_reply);
    mongoc_collection_insert_one (coll, document, opts, &op_reply, &op_error);
+   if (op_error.code) {
+      fprintf(stderr, "\nCODE: %d MESSAGE: %s\n", op_error.code, op_error.message);
+   }
    result_from_insert_one (result, &op_reply, &op_error);
 
 
@@ -4363,6 +4366,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
          if (!op_to_fn_map[i].fn (test, op, result, error)) {
             goto done;
          }
+
          if (check_result && !result_check (result, test->entity_map, op->expect_result, op->expect_error, error)) {
             test_diagnostics_error_info ("checking for result (%s) / error (%s)",
                                          bson_val_to_json (op->expect_result),
