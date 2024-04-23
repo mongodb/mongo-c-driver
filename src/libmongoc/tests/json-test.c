@@ -239,10 +239,10 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
       bson_iter_init (&app_error_iter, &app_errors);
 
       while (bson_iter_next (&app_error_iter)) {
-         uint32_t generation = 0;
-         uint32_t max_wire_version = 0;
+         // uint32_t generation = 0;
+         // uint32_t max_wire_version = 0;
          const char *when_str;
-         bool handshake_complete = false;
+         // bool handshake_complete = false;
          const char *type_str;
          _mongoc_sdam_app_error_type_t type = 0;
          bson_t response;
@@ -265,23 +265,23 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          if (bson_iter_init_find (&app_error_field_iter, &app_error, "generation")) {
             BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&app_error_field_iter));
-            generation = bson_iter_int32 (&app_error_field_iter);
+            // generation = bson_iter_int32 (&app_error_field_iter);
          } else {
             /* Default to the current generation. */
-            generation = mc_tpl_sd_get_generation (sd, &kZeroObjectId);
+            // generation = mc_tpl_sd_get_generation (sd, &kZeroObjectId);
          }
 
          BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "maxWireVersion"));
          BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&app_error_field_iter));
-         max_wire_version = bson_iter_int32 (&app_error_field_iter);
+         // max_wire_version = bson_iter_int32 (&app_error_field_iter);
 
          BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "when"));
          BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&app_error_field_iter));
          when_str = bson_iter_utf8 (&app_error_field_iter, 0);
          if (0 == strcmp (when_str, "beforeHandshakeCompletes")) {
-            handshake_complete = false;
+            // handshake_complete = false;
          } else if (0 == strcmp (when_str, "afterHandshakeCompletes")) {
-            handshake_complete = true;
+            // handshake_complete = true;
          } else {
             test_error ("unexpected 'when' value: %s", when_str);
          }
