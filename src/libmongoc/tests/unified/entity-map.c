@@ -121,7 +121,6 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
       } else if (0 == strcmp ("authMechanism", key)) {
          BSON_ASSERT (mongoc_uri_set_auth_mechanism (uri, bson_iter_utf8 (&iter, NULL)));
       } else if (0 == strcmp ("authMechanismProperties", key)) {
-         bool ok = true;
          bson_t properties_doc = BSON_INITIALIZER;
          const uint8_t *data;
          uint32_t len;
