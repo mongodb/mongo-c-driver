@@ -429,8 +429,7 @@ mongoc_apm_command_succeeded_get_command_name (const mongoc_apm_command_succeede
 }
 
 const char *
-mongoc_apm_command_succeeded_get_database_name (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_database_name (const mongoc_apm_command_succeeded_t *event)
 {
    return event->database_name;
 }
@@ -600,8 +599,7 @@ mongoc_apm_command_failed_get_context (const mongoc_apm_command_failed_t *event)
 
 
 const char *
-mongoc_apm_command_failed_get_database_name (
-   const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_database_name (const mongoc_apm_command_failed_t *event)
 {
    return event->database_name;
 }

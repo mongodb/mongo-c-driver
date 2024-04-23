@@ -309,9 +309,7 @@ store_event_serialize_failed (bson_t *doc, const mongoc_apm_command_failed_t *ap
 
    BSON_APPEND_UTF8 (doc, "commandName", mongoc_apm_command_failed_get_command_name (apm_command));
 
-   BSON_APPEND_UTF8 (doc,
-                     "databaseName",
-                     mongoc_apm_command_failed_get_database_name (apm_command));
+   BSON_APPEND_UTF8 (doc, "databaseName", mongoc_apm_command_failed_get_database_name (apm_command));
 
    {
       bson_error_t error;

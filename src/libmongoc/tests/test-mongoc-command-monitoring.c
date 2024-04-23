@@ -480,7 +480,7 @@ test_op_id_failed_cb (const mongoc_apm_command_failed_t *event)
    ids.request_id = mongoc_apm_command_failed_get_request_id (event);
    ids.op_id = mongoc_apm_command_failed_get_operation_id (event);
 
-   bson_free(test->db);
+   bson_free (test->db);
    test->db = bson_strdup (mongoc_apm_command_failed_get_database_name (event));
 
    _mongoc_array_append_val (&test->failed_ids, ids);
