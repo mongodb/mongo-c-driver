@@ -665,11 +665,12 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
 
       if (ship_it) {
          parts.assembled.payloads_count = 1;
+         mongoc_cmd_payload_t *const payload = &parts.assembled.payloads[0];
          /* Seek past the document offset we have already sent */
-         parts.assembled.payloads[0].documents = command->payload.data + payload_total_offset;
+         payload->documents = command->payload.data + payload_total_offset;
          /* Only send the documents up to this size */
-         parts.assembled.payloads[0].size = payload_batch_size;
-         parts.assembled.payloads[0].identifier = gCommandFields[command->type];
+         payload->size = payload_batch_size;
+         payload->identifier = gCommandFields[command->type];
 
 
          mongoc_server_stream_t *new_retry_server_stream = NULL;

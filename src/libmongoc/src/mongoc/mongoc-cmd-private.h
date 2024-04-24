@@ -51,6 +51,13 @@ typedef enum {
    MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO
 } mongoc_cmd_parts_allow_txn_number_t;
 
+// `mongoc_cmd_payload_t` represents a document sequence (OP_MSG Section with payloadType=1).
+typedef struct {
+   int32_t size;
+   const char *identifier;
+   const uint8_t *documents;
+} mongoc_cmd_payload_t;
+
 typedef struct _mongoc_cmd_t {
    const char *db_name;
    mongoc_query_flags_t query_flags;
@@ -58,11 +65,7 @@ typedef struct _mongoc_cmd_t {
    const char *command_name;
    // `payloads` is an array of document sequences (OP_MSG Section with payloadType=1).
    // OP_MSG supports any number of document sequences. Increase array size to support more document sequences.
-   struct {
-      int32_t size;
-      const char *identifier;
-      const uint8_t *documents;
-   } payloads[2];
+   mongoc_cmd_payload_t payloads[2];
    size_t payloads_count;
    mongoc_server_stream_t *server_stream;
    int64_t operation_id;
