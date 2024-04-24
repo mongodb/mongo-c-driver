@@ -48,7 +48,6 @@ _test_topology_scanner (bool with_ssl)
 {
    mock_server_t *servers[NSERVERS];
    mongoc_topology_scanner_t *topology_scanner;
-   mongoc_topology_t topology;
    int i;
    bson_t q = BSON_INITIALIZER;
    int finished = NSERVERS * 3;
@@ -65,7 +64,6 @@ _test_topology_scanner (bool with_ssl)
    mongoc_topology_scanner_t *topology_scanner = mongoc_topology_scanner_new (
       NULL, &topology_id, &log_and_monitor, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
    topology_scanner = mongoc_topology_scanner_new (NULL, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
-   topology.scanner = topology_scanner;
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
@@ -97,6 +95,8 @@ _test_topology_scanner (bool with_ssl)
    }
 
    for (i = 0; i < 3; i++) {
+      mongoc_topology_t topology = {0};
+      topology.scanner = topology_scanner;
       mongoc_topology_scanner_start (&topology, false);
       mongoc_topology_scanner_work (topology_scanner);
    }
@@ -392,47 +392,47 @@ test_topology_scanner_blocking_initiator (void)
    mock_rs_destroy (rs);
 }
 
-// static mock_server_t *
-//_mock_server_listening_on (char *server_bind_to)
-//{
-//    mock_server_t *mock_server;
-//    mock_server_bind_opts_t opts = {0};
-//    struct sockaddr_in ipv4_addr = {0};
-//    struct sockaddr_in6 ipv6_addr = {0};
-//
-//    if (strcmp ("both", server_bind_to) == 0) {
-//       opts.bind_addr_len = sizeof (ipv6_addr);
-//       opts.family = AF_INET6;
-//       opts.ipv6_only = 0;
-//       ipv6_addr.sin6_family = AF_INET6;
-//       ipv6_addr.sin6_port = htons (0);   /* any port */
-//       ipv6_addr.sin6_addr = in6addr_any; /* either IPv4 or IPv6 */
-//       opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
-//    } else if (strcmp ("ipv4", server_bind_to) == 0) {
-//       opts.bind_addr_len = sizeof (ipv4_addr);
-//       opts.family = AF_INET;
-//       opts.ipv6_only = 0;
-//       ipv4_addr.sin_family = AF_INET;
-//       ipv4_addr.sin_port = htons (0);
-//       BSON_ASSERT (inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr));
-//       opts.bind_addr = &ipv4_addr;
-//    } else if (strcmp ("ipv6", server_bind_to) == 0) {
-//       opts.bind_addr_len = sizeof (ipv6_addr);
-//       opts.family = AF_INET6;
-//       opts.ipv6_only = 1;
-//       ipv6_addr.sin6_family = AF_INET6;
-//       ipv6_addr.sin6_port = htons (0);
-//       BSON_ASSERT (inet_pton (AF_INET6, "::1", &ipv6_addr.sin6_addr));
-//       opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
-//    } else {
-//       fprintf (stderr, "bad value of server_bind_to=%s\n", server_bind_to);
-//       ASSERT (false);
-//    }
-//    mock_server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
-//    mock_server_set_bind_opts (mock_server, &opts);
-//    mock_server_run (mock_server);
-//    return mock_server;
-// }
+static mock_server_t *
+_mock_server_listening_on (char *server_bind_to)
+{
+   mock_server_t *mock_server;
+   mock_server_bind_opts_t opts = {0};
+   struct sockaddr_in ipv4_addr = {0};
+   struct sockaddr_in6 ipv6_addr = {0};
+
+   if (strcmp ("both", server_bind_to) == 0) {
+      opts.bind_addr_len = sizeof (ipv6_addr);
+      opts.family = AF_INET6;
+      opts.ipv6_only = 0;
+      ipv6_addr.sin6_family = AF_INET6;
+      ipv6_addr.sin6_port = htons (0);   /* any port */
+      ipv6_addr.sin6_addr = in6addr_any; /* either IPv4 or IPv6 */
+      opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
+   } else if (strcmp ("ipv4", server_bind_to) == 0) {
+      opts.bind_addr_len = sizeof (ipv4_addr);
+      opts.family = AF_INET;
+      opts.ipv6_only = 0;
+      ipv4_addr.sin_family = AF_INET;
+      ipv4_addr.sin_port = htons (0);
+      BSON_ASSERT (inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr));
+      opts.bind_addr = &ipv4_addr;
+   } else if (strcmp ("ipv6", server_bind_to) == 0) {
+      opts.bind_addr_len = sizeof (ipv6_addr);
+      opts.family = AF_INET6;
+      opts.ipv6_only = 1;
+      ipv6_addr.sin6_family = AF_INET6;
+      ipv6_addr.sin6_port = htons (0);
+      BSON_ASSERT (inet_pton (AF_INET6, "::1", &ipv6_addr.sin6_addr));
+      opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
+   } else {
+      fprintf (stderr, "bad value of server_bind_to=%s\n", server_bind_to);
+      ASSERT (false);
+   }
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
+   mock_server_set_bind_opts (mock_server, &opts);
+   mock_server_run (mock_server);
+   return mock_server;
+}
 
 typedef struct dns_testcase {
    char *server_bind_to;  /* ipv4, ipv6, or both */
@@ -442,34 +442,33 @@ typedef struct dns_testcase {
    char *expected_client_bind_to; /* ipv4, ipv6, or either */
 } dns_testcase_t;
 
-// static void
-// _test_topology_scanner_dns_helper (
-//    uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
-// {
-//    dns_testcase_t *testcase = (dns_testcase_t *) data;
-//
-//    BSON_UNUSED (id);
-//    BSON_UNUSED (bson);
-//    BSON_UNUSED (rtt_msec);
-//
-//    if (testcase->should_succeed) {
-//       ASSERT_OR_PRINT (!error->code, (*error));
-//    } else {
-//       ASSERT (error->code);
-//       ASSERT_ERROR_CONTAINS ((*error), MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "connection refused");
-//    }
-// }
+static void
+_test_topology_scanner_dns_helper (
+   uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
+{
+   dns_testcase_t *testcase = (dns_testcase_t *) data;
+
+   BSON_UNUSED (id);
+   BSON_UNUSED (bson);
+   BSON_UNUSED (rtt_msec);
+
+   if (testcase->should_succeed) {
+      ASSERT_OR_PRINT (!error->code, (*error));
+   } else {
+      ASSERT (error->code);
+      ASSERT_ERROR_CONTAINS ((*error), MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "connection refused");
+   }
+}
 
 static void
 test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
 {
-   return;
-   // mongoc_host_list_t host;
-   // mock_server_t *server;
-   // mongoc_topology_scanner_t *ts;
-   // char *host_str;
-   // mongoc_socket_t *sock;
-   // mongoc_topology_scanner_node_t *node;
+   mongoc_host_list_t host;
+   mock_server_t *server;
+   mongoc_topology_scanner_t *ts;
+   char *host_str;
+   mongoc_socket_t *sock;
+   mongoc_topology_scanner_node_t *node;
 
    bson_oid_t topology_id;
    mcommon_oid_set_zero (&topology_id);
@@ -484,39 +483,32 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
    /* we should only have one host. */
    BSON_ASSERT (!host.next);
    bson_free (host_str);
-   // server = _mock_server_listening_on (testcase->server_bind_to);
-   // ts = mongoc_topology_scanner_new (NULL, NULL, &_test_topology_scanner_dns_helper, testcase, TIMEOUT);
-   // host_str = bson_strdup_printf ("%s:%d", testcase->client_hostname, mock_server_get_port (server));
-   // BSON_ASSERT (_mongoc_host_list_from_string (&host, host_str));
-   // /* we should only have one host. */
-   // BSON_ASSERT (!host.next);
-   // bson_free (host_str);
 
-   // mongoc_topology_scanner_add (ts, &host, 1, false);
-   // mongoc_topology_scanner_scan (ts, 1 /* any server id is ok. */);
-   // ASSERT_CMPINT ((int) (ts->async->ncmds), ==, testcase->expected_ncmds);
-   // mongoc_topology_scanner_work (ts);
-   // node = mongoc_topology_scanner_get_node (ts, 1);
+   mongoc_topology_scanner_add (ts, &host, 1, false);
+   mongoc_topology_t topology = {0};
+   topology.scanner = ts;
+   mongoc_topology_scanner_scan (&topology, 1 /* any server id is ok. */);
+   ASSERT_CMPINT ((int) (ts->async->ncmds), ==, testcase->expected_ncmds);
+   mongoc_topology_scanner_work (ts);
+   node = mongoc_topology_scanner_get_node (ts, 1);
 
-   // /* check the socket that the scanner found. */
-   // if (testcase->should_succeed) {
-   //    ASSERT (node->stream->type == MONGOC_STREAM_SOCKET);
-   //    sock = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *) node->stream);
-   //    if (strcmp ("ipv4", testcase->expected_client_bind_to) == 0) {
-   //       ASSERT (sock->domain == AF_INET);
-   //    } else if (strcmp ("ipv6", testcase->expected_client_bind_to) == 0) {
-   //       ASSERT (sock->domain == AF_INET6);
-   //    } else if (strcmp ("either", testcase->expected_client_bind_to) != 0) {
-   //       fprintf (stderr, "bad value for testcase->expected_client_bind_to=%s\n", testcase->expected_client_bind_to);
-   //       ASSERT (false);
-   //    }
-   // }
+   /* check the socket that the scanner found. */
+   if (testcase->should_succeed) {
+      ASSERT (node->stream->type == MONGOC_STREAM_SOCKET);
+      sock = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *) node->stream);
+      if (strcmp ("ipv4", testcase->expected_client_bind_to) == 0) {
+         ASSERT (sock->domain == AF_INET);
+      } else if (strcmp ("ipv6", testcase->expected_client_bind_to) == 0) {
+         ASSERT (sock->domain == AF_INET6);
+      } else if (strcmp ("either", testcase->expected_client_bind_to) != 0) {
+         fprintf (stderr, "bad value for testcase->expected_client_bind_to=%s\n", testcase->expected_client_bind_to);
+         ASSERT (false);
+      }
+   }
 
    mongoc_topology_scanner_destroy (ts);
    mock_server_destroy (server);
    mongoc_log_and_monitor_instance_destroy_contents (&log_and_monitor);
-   // mongoc_topology_scanner_destroy (ts);
-   // mock_server_destroy (server);
 }
 
 /* test when clients try connecting to servers varying the DNS results of the
@@ -587,7 +579,6 @@ test_topology_retired_fails_to_initiate (void)
 {
    mock_server_t *server;
    mongoc_topology_scanner_t *scanner;
-   mongoc_topology_t topology;
    mongoc_async_cmd_t *acmd;
    mongoc_host_list_t host_list;
 
@@ -602,11 +593,12 @@ test_topology_retired_fails_to_initiate (void)
    scanner = mongoc_topology_scanner_new (
       NULL, &topology_id, &log_and_monitor, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
    scanner = mongoc_topology_scanner_new (NULL, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
-   topology.scanner = scanner;
 
    BSON_ASSERT (_mongoc_host_list_from_string (&host_list, mock_server_get_host_and_port (server)));
 
    mongoc_topology_scanner_add (scanner, &host_list, 1, false);
+   mongoc_topology_t topology = {0};
+   topology.scanner = scanner;
    mongoc_topology_scanner_start (&topology, false);
    BSON_ASSERT (scanner->async->ncmds > 0);
    /* retire the node */
