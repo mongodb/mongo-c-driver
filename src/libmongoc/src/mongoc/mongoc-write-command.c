@@ -619,7 +619,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    mongoc_cmd_parts_t parts;
    bson_iter_t iter;
    bson_t cmd;
-   bson_t reply = BSON_INITIALIZER;
+   bson_t reply;
    bool ret = false;
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
@@ -780,8 +780,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       /* if a retry succeeded, clear the initial error */
       memset (&result->error, 0, sizeof (bson_error_t));
    }
-
-   bson_destroy (&reply);
 
    EXIT;
 }
