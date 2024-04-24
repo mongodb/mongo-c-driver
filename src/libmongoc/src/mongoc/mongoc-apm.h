@@ -108,6 +108,8 @@ MONGOC_EXPORT (const bson_t *)
 mongoc_apm_command_succeeded_get_reply (const mongoc_apm_command_succeeded_t *event);
 MONGOC_EXPORT (const char *)
 mongoc_apm_command_succeeded_get_command_name (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT (const char *)
+mongoc_apm_command_succeeded_get_database_name (const mongoc_apm_command_succeeded_t *event);
 MONGOC_EXPORT (int64_t)
 mongoc_apm_command_succeeded_get_request_id (const mongoc_apm_command_succeeded_t *event);
 MONGOC_EXPORT (int64_t)
@@ -132,6 +134,8 @@ MONGOC_EXPORT (int64_t)
 mongoc_apm_command_failed_get_duration (const mongoc_apm_command_failed_t *event);
 MONGOC_EXPORT (const char *)
 mongoc_apm_command_failed_get_command_name (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT (const char *)
+mongoc_apm_command_failed_get_database_name (const mongoc_apm_command_failed_t *event);
 /* retrieve the error by filling out the passed-in "error" struct */
 MONGOC_EXPORT (void)
 mongoc_apm_command_failed_get_error (const mongoc_apm_command_failed_t *event, bson_error_t *error);

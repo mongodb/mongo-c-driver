@@ -309,6 +309,8 @@ store_event_serialize_failed (bson_t *doc, const mongoc_apm_command_failed_t *ap
 
    BSON_APPEND_UTF8 (doc, "commandName", mongoc_apm_command_failed_get_command_name (apm_command));
 
+   BSON_APPEND_UTF8 (doc, "databaseName", mongoc_apm_command_failed_get_database_name (apm_command));
+
    {
       bson_error_t error;
       mongoc_apm_command_failed_get_error (apm_command, &error);
@@ -345,6 +347,8 @@ store_event_serialize_succeeded (bson_t *doc, const mongoc_apm_command_succeeded
    //    doc, "reply", mongoc_apm_command_succeeded_get_reply (apm_command));
 
    BSON_APPEND_UTF8 (doc, "commandName", mongoc_apm_command_succeeded_get_command_name (apm_command));
+
+   BSON_APPEND_UTF8 (doc, "databaseName", mongoc_apm_command_succeeded_get_database_name (apm_command));
 
    BSON_APPEND_INT64 (doc, "requestId", mongoc_apm_command_succeeded_get_request_id (apm_command));
 
@@ -448,7 +452,7 @@ command_failed (const mongoc_apm_command_failed_t *failed)
       .get_command = NULL,
       .get_reply = (apm_func_bson_t) mongoc_apm_command_failed_get_reply,
       .get_command_name = (apm_func_utf8_t) mongoc_apm_command_failed_get_command_name,
-      .get_database_name = NULL,
+      .get_database_name = (apm_func_utf8_t) mongoc_apm_command_failed_get_database_name,
       .get_request_id = (apm_func_int64_t) mongoc_apm_command_failed_get_request_id,
       .get_operation_id = (apm_func_int64_t) mongoc_apm_command_failed_get_operation_id,
       .get_service_id = (apm_func_bson_oid_t) mongoc_apm_command_failed_get_service_id,
@@ -468,7 +472,7 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
       .get_command = NULL,
       .get_reply = (apm_func_bson_t) mongoc_apm_command_succeeded_get_reply,
       .get_command_name = (apm_func_utf8_t) mongoc_apm_command_succeeded_get_command_name,
-      .get_database_name = NULL,
+      .get_database_name = (apm_func_utf8_t) mongoc_apm_command_succeeded_get_database_name,
       .get_request_id = (apm_func_int64_t) mongoc_apm_command_succeeded_get_request_id,
       .get_operation_id = (apm_func_int64_t) mongoc_apm_command_succeeded_get_operation_id,
       .get_service_id = (apm_func_bson_oid_t) mongoc_apm_command_succeeded_get_service_id,
