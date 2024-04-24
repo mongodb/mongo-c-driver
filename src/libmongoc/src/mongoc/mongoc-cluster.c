@@ -3225,6 +3225,7 @@ _mongoc_cluster_run_opmsg_send (
       message_length += mcd_rpc_header_set_response_to (rpc, 0);
       message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_MSG);
 
+      // Reserve one section for the body (kind 0).
       BSON_ASSERT (cmd->payloads_count <= SIZE_MAX - 1u);
       mcd_rpc_op_msg_set_sections_count (rpc, 1u + cmd->payloads_count);
 
