@@ -975,6 +975,7 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
    bson_array_builder_t *bson;
 
    BSON_ASSERT (cmd->payloads_count > 0);
+   BSON_ASSERT (cmd->payloads_count <= MONGOC_CMD_PAYLOADS_COUNT_MAX);
 
    for (size_t i = 0; i < cmd->payloads_count; i++) {
       BSON_ASSERT (cmd->payloads[i].documents && cmd->payloads[i].size);

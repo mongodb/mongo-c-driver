@@ -58,14 +58,15 @@ typedef struct {
    const uint8_t *documents;
 } mongoc_cmd_payload_t;
 
+// OP_MSG supports any number of document sequences. Increase array size to support more document sequences.
+#define MONGOC_CMD_PAYLOADS_COUNT_MAX 2
+
 typedef struct _mongoc_cmd_t {
    const char *db_name;
    mongoc_query_flags_t query_flags;
    const bson_t *command;
    const char *command_name;
-   // `payloads` is an array of document sequences (OP_MSG Section with payloadType=1).
-   // OP_MSG supports any number of document sequences. Increase array size to support more document sequences.
-   mongoc_cmd_payload_t payloads[2];
+   mongoc_cmd_payload_t payloads[MONGOC_CMD_PAYLOADS_COUNT_MAX];
    size_t payloads_count;
    mongoc_server_stream_t *server_stream;
    int64_t operation_id;
