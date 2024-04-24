@@ -1,7 +1,7 @@
 :man_page: mongoc_apm_command_succeeded_get_database_name
 
 mongoc_apm_command_succeeded_get_database_name()
-==============================================
+================================================
 
 Synopsis
 --------
