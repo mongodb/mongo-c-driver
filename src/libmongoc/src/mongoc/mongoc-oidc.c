@@ -258,13 +258,13 @@ _mongoc_cluster_oidc_reauthenticate (mongoc_cluster_t *cluster,
                                      mongoc_server_description_t *sd,
                                      bson_error_t *error)
 {
-   const char *cached_token = NULL;
+   char *cached_token = NULL;
 
    bson_mutex_lock (&cluster->client->topology->oidc_mtx);
    cached_token = bson_strdup (cluster->client->topology->oidc_credential->access_token);
    bson_mutex_unlock (&cluster->client->topology->oidc_mtx);
 
    mongoc_client_oidc_credential_invalidate (cluster->client, cached_token);
-   bool ok = _mongoc_cluster_auth_node_oidc (cluster, stream, sd, error);
-   return ok;
+   bson_free (cached_token);
+   return _mongoc_cluster_auth_node_oidc (cluster, stream, sd, error);
 }
