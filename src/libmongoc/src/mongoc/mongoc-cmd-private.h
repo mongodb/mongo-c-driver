@@ -66,8 +66,9 @@ typedef struct _mongoc_cmd_t {
    mongoc_query_flags_t query_flags;
    const bson_t *command;
    const char *command_name;
-   mongoc_cmd_payload_t payloads[MONGOC_CMD_PAYLOADS_COUNT_MAX];
    size_t payloads_count;
+   // `payloads[i]` may be read only when `0 <= i < payloads_count`.
+   mongoc_cmd_payload_t payloads[MONGOC_CMD_PAYLOADS_COUNT_MAX];
    mongoc_server_stream_t *server_stream;
    int64_t operation_id;
    mongoc_client_session_t *session;
