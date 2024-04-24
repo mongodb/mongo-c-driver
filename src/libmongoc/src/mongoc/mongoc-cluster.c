@@ -3234,19 +3234,19 @@ _mongoc_cluster_run_opmsg_send (
       message_length += mcd_rpc_op_msg_section_set_body (rpc, 0u, bson_get_data (cmd->command));
 
       for (size_t i = 0; i < cmd->payloads_count; i++) {
-         const mongoc_cmd_payload_t *const payload = &cmd->payloads[i];
+         const mongoc_cmd_payload_t payload = cmd->payloads[i];
 
-         BSON_ASSERT (bson_in_range_signed (size_t, payload->size));
+         BSON_ASSERT (bson_in_range_signed (size_t, payload.size));
 
-         const size_t section_length = sizeof (int32_t) + strlen (payload->identifier) + 1u + (size_t) payload->size;
+         const size_t section_length = sizeof (int32_t) + strlen (payload.identifier) + 1u + (size_t) payload.size;
          BSON_ASSERT (bson_in_range_unsigned (int32_t, section_length));
 
          size_t section_idx = 1u + i;
          message_length += mcd_rpc_op_msg_section_set_kind (rpc, section_idx, 1);
          message_length += mcd_rpc_op_msg_section_set_length (rpc, section_idx, (int32_t) section_length);
-         message_length += mcd_rpc_op_msg_section_set_identifier (rpc, section_idx, payload->identifier);
+         message_length += mcd_rpc_op_msg_section_set_identifier (rpc, section_idx, payload.identifier);
          message_length +=
-            mcd_rpc_op_msg_section_set_document_sequence (rpc, section_idx, payload->documents, (size_t) payload->size);
+            mcd_rpc_op_msg_section_set_document_sequence (rpc, section_idx, payload.documents, (size_t) payload.size);
       }
 
       mcd_rpc_message_set_length (rpc, message_length);
