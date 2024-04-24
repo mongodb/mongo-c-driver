@@ -2236,9 +2236,6 @@ operation_insert_one (test_t *test, operation_t *op, result_t *result, bson_erro
 
    bson_destroy (&op_reply);
    mongoc_collection_insert_one (coll, document, opts, &op_reply, &op_error);
-   if (op_error.code) {
-      fprintf (stderr, "\nCODE: %d MESSAGE: %s\n", op_error.code, op_error.message);
-   }
    result_from_insert_one (result, &op_reply, &op_error);
 
 

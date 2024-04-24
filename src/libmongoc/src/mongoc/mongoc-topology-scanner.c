@@ -186,10 +186,10 @@ _mongoc_oidc_add_speculative_auth (bson_t *auth_cmd, mongoc_topology_t *topology
                    BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_doc), jwt_doc.len),
                    "db",
                    "$external");
-      bson_destroy (&jwt_doc);
       has_auth = true;
    }
    bson_mutex_unlock (&topology->oidc_mtx);
+   bson_destroy (&jwt_doc);
    return has_auth;
 }
 

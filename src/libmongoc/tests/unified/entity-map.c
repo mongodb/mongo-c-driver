@@ -127,6 +127,7 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          bson_iter_document (&iter, &len, &data);
          BSON_ASSERT (bson_init_static (&properties_doc, data, len));
          BSON_ASSERT (mongoc_uri_set_mechanism_properties (uri, &properties_doc));
+         bson_destroy (&properties_doc);
       } else {
          test_set_error (error, "Unimplemented test runner support for URI option: %s", key);
          goto done;

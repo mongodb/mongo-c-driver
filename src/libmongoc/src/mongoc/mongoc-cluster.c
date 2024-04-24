@@ -3207,6 +3207,7 @@ _mongoc_cluster_run_opmsg_recv (
    BSON_ASSERT_PARAM (error);
 
    bool ret = false;
+   bson_t body = BSON_INITIALIZER;
 
    mongoc_server_stream_t *const server_stream = cmd->server_stream;
 
@@ -3312,9 +3313,9 @@ _mongoc_cluster_run_opmsg_recv (
    }
 
    bson_copy_to (&body, reply);
-   bson_destroy (&body);
 
 done:
+   bson_destroy (&body);
    _mongoc_buffer_destroy (&buffer);
 
    return ret;
