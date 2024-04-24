@@ -1106,7 +1106,6 @@ mongoc_client_oidc_credential_invalidate (mongoc_client_t *client, const char *a
    }
 
    if (!strcmp (access_token, client->topology->oidc_credential->access_token)) {
-      fprintf (stderr, "INVALIDATED TOKEN\n");
       bson_zero_free (client->topology->oidc_credential->access_token,
                       strlen (client->topology->oidc_credential->access_token));
       client->topology->oidc_credential->access_token = NULL;

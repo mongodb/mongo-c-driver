@@ -188,9 +188,6 @@ _mongoc_oidc_add_speculative_auth (bson_t *auth_cmd, mongoc_topology_t *topology
                    "$external");
       bson_destroy (&jwt_doc);
       has_auth = true;
-      fprintf (stderr, "FINISHED OIDC SPECULATIVE AUTH\n");
-   } else {
-      fprintf (stderr, "NO CACHED TOKEN FOR OIDC SPECULATIVE AUTH\n\n\n");
    }
    bson_mutex_unlock (&topology->oidc_mtx);
    return has_auth;
@@ -211,8 +208,6 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
       return;
    }
 
-   fprintf (stderr, "mechanism: %s\n", mechanism);
-
    if (strcasecmp (mechanism, "MONGODB-X509") == 0) {
       /* Ignore errors while building authentication document: we proceed with
        * the handshake as usual and let the subsequent authenticate command
@@ -222,7 +217,6 @@ _mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topo
          BSON_APPEND_UTF8 (&auth_cmd, "db", "$external");
       }
    } else if ((strcasecmp (mechanism, "MONGODB-OIDC") == 0)) {
-      fprintf (stderr, "WILL APPLY OIDC SPEC AUTH\n");
       has_auth = _mongoc_oidc_add_speculative_auth (&auth_cmd, topology);
    }
 
@@ -393,8 +387,6 @@ _begin_hello_cmd (mongoc_topology_t *topology,
    mongoc_topology_scanner_t *ts = node->ts;
    bson_t cmd;
 
-   fprintf (stderr, "\n\n\n\n\n\n\n\n\n\n\n>>>>BEGIN HELLO\n");
-
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */
    const int32_t cmd_opcode = _should_use_op_msg (ts) ? MONGOC_OP_CODE_MSG : MONGOC_OP_CODE_QUERY;
@@ -409,14 +401,6 @@ _begin_hello_cmd (mongoc_topology_t *topology,
    if (node->ts->negotiate_sasl_supported_mechs && !node->negotiated_sasl_supported_mechs) {
       _mongoc_handshake_append_sasl_supported_mechs (ts->uri, &cmd);
    }
-
-   fprintf (stderr,
-            "%d %d %d %d cache: %d\n",
-            node->ts->speculative_authentication,
-            !node->has_auth,
-            bson_empty (&node->speculative_auth_response),
-            node->scram.step == 0,
-            !!topology->oidc_credential->access_token);
 
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (ts->uri);
    if (node->ts->speculative_authentication && !node->has_auth && bson_empty (&node->speculative_auth_response) &&

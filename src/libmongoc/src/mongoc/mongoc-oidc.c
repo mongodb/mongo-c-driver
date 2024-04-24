@@ -74,7 +74,6 @@ _oidc_set_client_token (mongoc_client_t *client, bool *is_cache, bson_error_t *e
     * Otherwise use the user's callback to get a new token */
    bson_mutex_lock (&client->topology->oidc_mtx);
    if (client->topology->oidc_credential->access_token) {
-      fprintf (stderr, "HAS CACHED TOKEN\n");
       *is_cache = true;
       goto unlock_oidc_mutex;
    }
@@ -147,12 +146,10 @@ _oidc_sasl_one_step_conversation (mongoc_cluster_t *cluster,
                 BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_step_request), jwt_step_request.len));
 
    char *s = bson_as_json (&client_command, NULL);
-   fprintf (stderr, "SASL CMD>\n%s\n", s);
    bson_free (s);
    /* Send the authentication command to the server. */
    ok = _mongoc_sasl_run_command (cluster, stream, sd, &client_command, &server_reply, error);
    if (!ok) {
-      fprintf (stderr, ">>> 1 GOT ERROR CODE FROM SERVER: %d MESSAGE: %s\n", error->code, error->message);
       /* Try to get the server response, if we can't then return a generic error */
       if (!bson_iter_init (&iter, &server_reply)) {
          goto one_step_generic_error;
@@ -181,7 +178,6 @@ done:
    bson_destroy (&jwt_step_request);
    bson_destroy (&client_command);
    bson_destroy (&server_reply);
-   fprintf (stderr, ">>> 5 GOT ERROR CODE FROM SERVER: %d MESSAGE: %s\n", error->code, error->message);
    return ok;
 }
 
@@ -207,8 +203,6 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
    BSON_ASSERT (stream);
    BSON_ASSERT (cluster);
 
-   fprintf (stderr, "_mongoc_cluster_auth_node_oidc\n");
-
    bson_once (&_init_oidc_callback_mutex_once_control, _mongoc_init_oidc_callback_mutex);
 
    /*
@@ -220,7 +214,6 @@ _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,
     */
    ok = _oidc_set_client_token (cluster->client, &is_cache, error);
    if (!ok) {
-      fprintf (stderr, "ERROR FROM SET CLIENT TOKEN, first time? %d: %s\n", first_time, error->message);
       goto fail;
    }
 
@@ -232,10 +225,6 @@ again:
     * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#conversation-6
     */
    ok = _oidc_sasl_one_step_conversation (cluster, stream, sd, error);
-   if (!ok) {
-      fprintf (stderr, ">>> 2 GOT ERROR CODE FROM SERVER: %d MESSAGE: %s\n", error->code, error->message);
-      fprintf (stderr, "ERROR FROM ONE STEP CONVERSATION, first time? %d: %s\n", first_time, error->message);
-   }
    if (!ok && is_cache && first_time) {
       char *cached_token = NULL;
 
@@ -248,13 +237,11 @@ again:
       first_time = false;
       /* Invalidate the token cache before retrying */
       if (cached_token) {
-         fprintf (stderr, "INVALIDATING TOKEN FROM AUTH FUNCTION\n");
          mongoc_client_oidc_credential_invalidate (cluster->client, cached_token);
          bson_free (cached_token);
       }
 
       _mongoc_usleep (100);
-      fprintf (stderr, "RETRYING\n");
       goto again;
    }
    if (!ok) {
@@ -277,9 +264,7 @@ _mongoc_cluster_oidc_reauthenticate (mongoc_cluster_t *cluster,
    cached_token = bson_strdup (cluster->client->topology->oidc_credential->access_token);
    bson_mutex_unlock (&cluster->client->topology->oidc_mtx);
 
-   fprintf (stderr, "INVALIDATING TOKEN FROM RE-AUTH FUNCTION\n");
    mongoc_client_oidc_credential_invalidate (cluster->client, cached_token);
    bool ok = _mongoc_cluster_auth_node_oidc (cluster, stream, sd, error);
-   fprintf (stderr, ">>> 3 GOT ERROR CODE FROM SERVER: %d MESSAGE: %s\n", error->code, error->message);
    return ok;
 }
