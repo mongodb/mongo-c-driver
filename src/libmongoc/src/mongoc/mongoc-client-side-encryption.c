@@ -1010,8 +1010,8 @@ append_bson_range_opts (bson_t *bson_range_opts, const mongoc_client_encryption_
 static void
 _prep_for_auto_encryption (const mongoc_cmd_t *cmd, bson_t *out)
 {
-   /* If there is no type=1 payload, return the command unchanged. */
-   if (!cmd->payload || !cmd->payload_size) {
+   // If there are no document sequences (OP_MSG Section with payloadType=1), return the command unchanged.
+   if (cmd->payloads_count == 0) {
       BSON_ASSERT (bson_init_static (out, bson_get_data (cmd->command), cmd->command->len));
       return;
    }
@@ -1226,10 +1226,9 @@ retry:
 
    /* Create the modified cmd_t. */
    memcpy (encrypted_cmd, cmd, sizeof (mongoc_cmd_t));
-   /* Modify the mongoc_cmd_t and clear the payload, since
-    * _mongoc_cse_auto_encrypt converted the payload into an embedded array. */
-   encrypted_cmd->payload = NULL;
-   encrypted_cmd->payload_size = 0;
+   /* Modify the mongoc_cmd_t and clear the payloads, since
+    * _mongoc_cse_auto_encrypt converted the payloads into an embedded array. */
+   encrypted_cmd->payloads_count = 0;
    encrypted_cmd->command = encrypted;
 
    ret = true;

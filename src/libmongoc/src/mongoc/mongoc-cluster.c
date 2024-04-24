@@ -3227,24 +3227,28 @@ _mongoc_cluster_run_opmsg_send (
       message_length += mcd_rpc_header_set_response_to (rpc, 0);
       message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_MSG);
 
-      mcd_rpc_op_msg_set_sections_count (rpc, cmd->payload ? 2u : 1u);
+      BSON_ASSERT (cmd->payloads_count <= MONGOC_CMD_PAYLOADS_COUNT_MAX);
+      // Reserve one section for the body (kind 0) and any needed sections for document sequences (kind 1)
+      mcd_rpc_op_msg_set_sections_count (rpc, 1u + cmd->payloads_count);
 
       message_length += mcd_rpc_op_msg_set_flag_bits (rpc, flags);
       message_length += mcd_rpc_op_msg_section_set_kind (rpc, 0u, 0);
       message_length += mcd_rpc_op_msg_section_set_body (rpc, 0u, bson_get_data (cmd->command));
 
-      if (cmd->payload) {
-         BSON_ASSERT (bson_in_range_signed (size_t, cmd->payload_size));
+      for (size_t i = 0; i < cmd->payloads_count; i++) {
+         const mongoc_cmd_payload_t payload = cmd->payloads[i];
 
-         const size_t section_length =
-            sizeof (int32_t) + strlen (cmd->payload_identifier) + 1u + (size_t) cmd->payload_size;
+         BSON_ASSERT (bson_in_range_signed (size_t, payload.size));
+
+         const size_t section_length = sizeof (int32_t) + strlen (payload.identifier) + 1u + (size_t) payload.size;
          BSON_ASSERT (bson_in_range_unsigned (int32_t, section_length));
 
-         message_length += mcd_rpc_op_msg_section_set_kind (rpc, 1u, 1);
-         message_length += mcd_rpc_op_msg_section_set_length (rpc, 1u, (int32_t) section_length);
-         message_length += mcd_rpc_op_msg_section_set_identifier (rpc, 1u, cmd->payload_identifier);
+         size_t section_idx = 1u + i;
+         message_length += mcd_rpc_op_msg_section_set_kind (rpc, section_idx, 1);
+         message_length += mcd_rpc_op_msg_section_set_length (rpc, section_idx, (int32_t) section_length);
+         message_length += mcd_rpc_op_msg_section_set_identifier (rpc, section_idx, payload.identifier);
          message_length +=
-            mcd_rpc_op_msg_section_set_document_sequence (rpc, 1u, cmd->payload, (size_t) cmd->payload_size);
+            mcd_rpc_op_msg_section_set_document_sequence (rpc, section_idx, payload.documents, (size_t) payload.size);
       }
 
       mcd_rpc_message_set_length (rpc, message_length);
