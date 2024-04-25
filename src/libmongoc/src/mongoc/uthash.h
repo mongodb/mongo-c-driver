@@ -24,6 +24,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef UTHASH_H
 #define UTHASH_H
 
+// libmongoc specific code ... begin
+// clang-format off
+#include <mongoc-prelude.h>
+#include <bson/bson.h>
+// Use libbson's malloc/free functions in uthash.
+#define uthash_malloc(sz) bson_malloc (sz)
+#define uthash_free(ptr, sz) bson_free (ptr)
+// libmongoc specific code ... end
+
 #define UTHASH_VERSION 2.3.0
 
 #include <string.h>   /* memcmp, memset, strlen */
