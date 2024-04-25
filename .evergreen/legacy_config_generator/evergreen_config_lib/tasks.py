@@ -340,6 +340,8 @@ all_tasks = [
                 remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz",
                 content_type="${content_type|application/x-gzip}",
             ),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
         ],
     ),
     NamedTask(
