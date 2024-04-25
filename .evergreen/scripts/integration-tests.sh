@@ -38,10 +38,25 @@ export DRIVERS_TOOLS
 DRIVERS_TOOLS="$(cd ../drivers-evergreen-tools && pwd)" # ./mongoc -> ./drivers-evergreen-tools
 if [[ "${OSTYPE:?}" == cygwin ]]; then
    DRIVERS_TOOLS="$(cygpath -m "${DRIVERS_TOOLS:?}")"
-# Setup OIDC token in /tmp/tokens/
-export AWS_PROFILE="drivers-test-secrets-role-857654397073"
-$DIR/../../../drivers-evergreen-tools/.evergreen/auth_oidc/oidc_get_tokens.sh
-./setup-oidc-tokens.sh
+fi
+
+# Because drivers-evergreen-tools refers to python3 as python, we must be sure
+# that we both have a python3 interpreter installed and also ensure that
+# invoking 'python' will use a Python 3 interpreter.
+if [[ "$(python3 --version)" =~ "Python 3" ]]; then
+    echo "Python 3 is installed"
+    python3 --version
+    virtualenv venv -p `which python3`
+    . venv/bin/activate
+
+    # Setup OIDC token in /tmp/tokens/
+    export AWS_PROFILE="drivers-test-secrets-role-857654397073"
+    $DIR/../../../drivers-evergreen-tools/.evergreen/auth_oidc/oidc_get_tokens.sh
+
+    deactivate
+fi
+    echo "Python 3 is NOT installed"
+else
 
 get_distro
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
