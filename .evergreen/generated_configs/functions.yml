@@ -748,7 +748,7 @@ functions:
              echo "This platform does not support the oidc auth test, skipping..."
              exit 0
           fi
-          cd .evergreen/auth_oidc
+          cd drivers-evergreen-tools/.evergreen/auth_oidc
           export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
           export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
           export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
