@@ -735,7 +735,7 @@ functions:
     - command: shell.exec
       type: test
       params:
-        working_dir: "src"
+        working_dir: "mongoc"
         shell: bash
         script: |
           set -x
