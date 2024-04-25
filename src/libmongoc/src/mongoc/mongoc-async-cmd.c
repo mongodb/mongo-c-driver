@@ -453,9 +453,6 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
          return MONGOC_ASYNC_CMD_ERROR;
       }
 
-      char *s = bson_as_json (&acmd->reply, NULL);
-      fprintf (stderr, "SERVER REPLY>\n%s\n", s);
-      bson_free (s);
       acmd->reply_needs_cleanup = true;
 
       return MONGOC_ASYNC_CMD_SUCCESS;

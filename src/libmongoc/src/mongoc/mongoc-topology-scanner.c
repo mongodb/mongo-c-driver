@@ -418,10 +418,6 @@ _begin_hello_cmd (mongoc_topology_t *topology,
       bson_append_document (&cmd, "$clusterTime", 12, &ts->cluster_time);
    }
 
-   char *s = bson_as_json (&cmd, NULL);
-   fprintf (stderr, "HELLO CMD>\n%s\n", s);
-   bson_free (s);
-
    /* if the node should connect with a TCP socket, stream will be null, and
     * dns_result will be set. The async loop is responsible for calling the
     * _tcp_initiator to construct TCP sockets. */
