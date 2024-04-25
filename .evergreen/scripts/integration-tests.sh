@@ -50,7 +50,8 @@ if [[ "$(python3 --version)" =~ "Python 3" ]]; then
     . venv/bin/activate
 
     # Setup OIDC token in /tmp/tokens/
-    export AWS_PROFILE="drivers-test-secrets-role-857654397073"
+    #export AWS_PROFILE="drivers-test-secrets-role-857654397073"
+    #aws configure sso
     $DIR/../../../drivers-evergreen-tools/.evergreen/auth_oidc/oidc_get_tokens.sh
 
     deactivate
