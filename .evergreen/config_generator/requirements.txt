@@ -2,7 +2,7 @@
 git-url-parse==1.2.2
 packaging==23.1
 pbr==5.11.1
-pydantic==1.10.4
+pydantic==1.10.13
 PyYAML==5.4.1
 shrub.py==3.0.4
 typing_extensions==4.4.0
