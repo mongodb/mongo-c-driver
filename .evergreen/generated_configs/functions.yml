@@ -738,6 +738,8 @@ functions:
         working_dir: "src"
         shell: bash
         script: |
+          set -x
+          echo "RUNNING BOOTSTRAP OIDC"
           ${PREPARE_SHELL}
           if [ "${skip_EC2_auth_test}" = "true" ]; then
              echo "This platform does not support the oidc auth test, skipping..."
