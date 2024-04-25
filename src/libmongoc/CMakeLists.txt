@@ -535,6 +535,7 @@ endif ()
 
 set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-nsinfo.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
@@ -1083,6 +1084,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
    ${PROJECT_SOURCE_DIR}/tests/test-service-gcp.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-integer.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-nsinfo.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
    ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
