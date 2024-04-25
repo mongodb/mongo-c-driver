@@ -735,11 +735,14 @@ functions:
     - command: shell.exec
       type: test
       params:
-        working_dir: "drivers-evergreen-tools"
+        working_dir: "mongoc"
         shell: bash
         script: |
           set -x
           echo "RUNNING BOOTSTRAP OIDC"
+          if [[ ! -d drivers-evergreen-tools ]]; then
+              git clone --depth=1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+          fi
           ${PREPARE_SHELL}
           if [ "${skip_EC2_auth_test}" = "true" ]; then
              echo "This platform does not support the oidc auth test, skipping..."

@@ -28,7 +28,6 @@ timeout:
 # Use sparingly and ensure they are error-proof.
 pre:
   - func: fetch-source
-  - func: fetch-det
   - func: bootstrap-oidc
 
 # Commands run after all tasks (excluding those in task groups).
