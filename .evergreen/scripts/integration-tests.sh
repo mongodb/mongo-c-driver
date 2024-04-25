@@ -38,6 +38,45 @@ export DRIVERS_TOOLS
 DRIVERS_TOOLS="$(cd ../drivers-evergreen-tools && pwd)" # ./mongoc -> ./drivers-evergreen-tools
 if [[ "${OSTYPE:?}" == cygwin ]]; then
    DRIVERS_TOOLS="$(cygpath -m "${DRIVERS_TOOLS:?}")"
+# Setup OIDC token in /tmp/tokens/
+export AWS_PROFILE="drivers-test-secrets-role-857654397073"
+$DIR/../../../drivers-evergreen-tools/.evergreen/auth_oidc/oidc_get_tokens.sh
+
+get_distro
+get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
+DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT" "$MONGOSH_DOWNLOAD_URL" "$EXTRACT_MONGOSH"
+
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+AUTH=${AUTH:-noauth}
+SSL=${SSL:-nossl}
+TOPOLOGY=${TOPOLOGY:-server}
+OCSP=${OCSP:-off}
+REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
+
+# If caller of script specifies an ORCHESTRATION_FILE, do not attempt to modify it. Otherwise construct it.
+if [ -z "$ORCHESTRATION_FILE" ]; then
+   ORCHESTRATION_FILE="basic"
+
+   if [ "$AUTH" = "auth" ]; then
+      ORCHESTRATION_FILE="auth"
+   fi
+
+   if [ "$IPV4_ONLY" = "on" ]; then
+      ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-ipv4-only"
+   fi
+
+   if [ -n "$AUTHSOURCE" ]; then
+      ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-${AUTHSOURCE}"
+   fi
+
+   if [ "$SSL" != "nossl" ]; then
+      ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-ssl"
+   fi
+
+   if [ "$LOAD_BALANCER" = "on" ]; then
+      ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-load-balancer"
+   fi
 fi
 
 export MONGO_ORCHESTRATION_HOME="${DRIVERS_TOOLS:?}/.evergreen/orchestration"
