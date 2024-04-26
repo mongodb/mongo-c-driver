@@ -995,7 +995,7 @@ bool
 _mongoc_sasl_prep_required (const char *str)
 {
    unsigned char c;
-   while (*str) {
+   while (str != NULL && *str) {
       c = (unsigned char) *str;
       /* characters below 32 contain all of the control characters.
        * characters above 127 are multibyte UTF-8 characters.
