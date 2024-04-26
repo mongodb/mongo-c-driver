@@ -65,7 +65,7 @@ mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error)
    BSON_ASSERT_PARAM (ns);
    BSON_ASSERT (error || true);
 
-   int32_t ns_index = self->count;
+   const int32_t ns_index = self->count;
    if (self->count == INT32_MAX) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
