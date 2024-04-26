@@ -31,6 +31,7 @@ void
 mcd_nsinfo_destroy (mcd_nsinfo_t *self);
 
 // `mcd_nsinfo_append` adds `ns`. It is the callers responsibility to ensure duplicates are not inserted.
+// Namespaces are assigned indexes in order of insertion, starting at 0.
 // Returns the resulting non-negative index on success. Returns -1 on error.
 int32_t
 mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error);
