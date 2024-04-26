@@ -46,10 +46,10 @@ test_nsinfo_handles_100k_namespaces (void)
 {
    // Test repeated finding and adding 100,000 unique namespaces.
    // A `bulkWrite` command supports a maximum of maxWriteBatchSize unique namespaces (currently 100,000).
-
+   const size_t ns_count = 100000;
    bson_error_t error;
    mcd_nsinfo_t *nsinfo = mcd_nsinfo_new ();
-   for (size_t i = 0; i < 100000; i++) {
+   for (size_t i = 0; i < ns_count; i++) {
       char *ns = bson_strdup_printf ("db.coll%zu", i);
       ASSERT_CMPINT32 (-1, ==, mcd_nsinfo_find (nsinfo, ns));
       ASSERT_OR_PRINT (0 <= mcd_nsinfo_append (nsinfo, ns, &error), error);
@@ -71,7 +71,7 @@ test_nsinfo_handles_100k_namespaces (void)
          }
          count++;
       }
-      ASSERT_CMPSIZE_T (count, ==, 100000);
+      ASSERT_CMPSIZE_T (count, ==, ns_count);
       bson_reader_destroy (reader);
    }
 
