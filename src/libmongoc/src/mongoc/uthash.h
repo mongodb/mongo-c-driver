@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_UTLIST_H
-#define MONGOC_UTLIST_H
+#ifndef MONGOC_UTHASH_H
+#define MONGOC_UTHASH_H
 
 #include <mongoc-prelude.h>
+#include <bson/bson.h>
 
-#include <uthash-2.3.0/utlist.h>
+#define uthash_malloc(sz) bson_malloc (sz)
+#define uthash_free(ptr, sz) bson_free (ptr)
 
-#endif // MONGOC_UTLIST_H
+#include <uthash-2.3.0/uthash.h>
+
+#endif // MONGOC_UTHASH_H
