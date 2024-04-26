@@ -821,6 +821,11 @@ set_property(
    "MONGOC_CYRUS_PLUGIN_PATH_PREFIX=$<IF:$<STREQUAL:${CYRUS_PLUGIN_PATH_PREFIX},>,NULL,\"${CYRUS_PLUGIN_PATH_PREFIX}\">"
 )
 
+set (
+   UTHASH_INCLUDE_DIR
+   "${SOURCE_DIR}/src/uthash-2.3.0"
+)
+
 if (ENABLE_SHARED)
    add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    if(WIN32)
@@ -833,6 +838,7 @@ if (ENABLE_SHARED)
    target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
+   target_include_directories (mongoc_shared PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
       if (APPLE)
@@ -917,6 +923,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
+   target_include_directories (mongoc_static PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
    endif ()
