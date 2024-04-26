@@ -537,6 +537,9 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    mongocrypt_binary_t *http_reply = NULL;
    const char *endpoint;
    const int32_t sockettimeout = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
+   static const int max_tcp_retries = 10;
+   int retry_count = 0;
+
    kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
    while (kms_ctx) {
       mongoc_iovec_t iov;
@@ -591,6 +594,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       }
 
       /* Read and feed reply. */
+      retry_count = 0;
       while (mongocrypt_kms_ctx_bytes_needed (kms_ctx) > 0) {
 #define BUFFER_SIZE 1024
          uint8_t buf[BUFFER_SIZE];
@@ -608,17 +612,34 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          }
 
          read_ret = mongoc_stream_read (tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
-         if (read_ret == -1) {
-            bson_set_error (
-               error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "failed to read from KMS stream: %d", errno);
-            goto fail;
-         }
+         if (read_ret <= 0) {
+            if (retry_count < max_tcp_retries) {
+               retry_count++;
+               mongoc_stream_destroy (tls_stream);
+               tls_stream = _get_stream (endpoint, sockettimeout, ssl_opt, error);
+               if (!tls_stream) {
+                  goto fail;
+               }
 
-         if (read_ret == 0) {
-            bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "unexpected EOF from KMS stream");
-            goto fail;
-         }
+               mongocrypt_kms_ctx_reset (kms_ctx);
+               continue;
+            } else {
+               if (read_ret == -1) {
+                  bson_set_error (error,
+                                  MONGOC_ERROR_STREAM,
+                                  MONGOC_ERROR_STREAM_SOCKET,
+                                  "failed to read from KMS stream: %d",
+                                  errno);
+                  goto fail;
+               }
 
+               if (read_ret == 0) {
+                  bson_set_error (
+                     error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "unexpected EOF from KMS stream");
+                  goto fail;
+               }
+            }
+         }
          mongocrypt_binary_destroy (http_reply);
 
          BSON_ASSERT (bson_in_range_signed (uint32_t, read_ret));
