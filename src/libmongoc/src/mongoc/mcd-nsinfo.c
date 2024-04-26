@@ -78,7 +78,7 @@ mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error)
 
    // Add to hash table.
    ns_to_index_t *entry = bson_malloc (sizeof (*entry));
-   *entry = (ns_to_index_t){.index = ns_index, .ns = bson_strdup (ns)};
+   *entry = (ns_to_index_t){.index = ns_index, .ns = bson_strdup (ns), .hh = {0}};
    HASH_ADD_KEYPTR (hh, self->n2i, entry->ns, strlen (entry->ns), entry);
 
    // Append to buffer.
