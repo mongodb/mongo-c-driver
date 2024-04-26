@@ -823,7 +823,7 @@ set_property(
 
 set (
    UTHASH_INCLUDE_DIR
-   "${SOURCE_DIR}/src/uthash-2.3.0"
+   "${SOURCE_DIR}/src/uthash"
 )
 
 if (ENABLE_SHARED)

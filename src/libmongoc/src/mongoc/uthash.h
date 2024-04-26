@@ -23,6 +23,6 @@
 #define uthash_malloc(sz) bson_malloc (sz)
 #define uthash_free(ptr, sz) bson_free (ptr)
 
-#include <uthash.h>
+#include <uthash-2.3.0/uthash.h>
 
 #endif // MONGOC_UTHASH_H
