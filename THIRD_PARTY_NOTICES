@@ -1,6 +1,6 @@
 The MongoDB C Driver uses third-party code distributed under different licenses.
 
-License notice for uthash.h
+License notice for uthash
 -------------------------------------------------------------------------------
 
 Copyright (c) 2003-2021, Troy D. Hanson     http://troydhanson.github.com/uthash/

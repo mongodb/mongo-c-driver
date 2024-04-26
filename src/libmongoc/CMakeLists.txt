@@ -1137,6 +1137,7 @@ if (ENABLE_TESTS)
       PRIVATE
          ${PROJECT_SOURCE_DIR}/tests
          ${BSON_STATIC_INCLUDE_DIRS}
+         ${UTHASH_INCLUDE_DIR}
    )
    target_compile_definitions (test-libmongoc-lib
       PUBLIC
