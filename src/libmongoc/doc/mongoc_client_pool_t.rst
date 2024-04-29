@@ -44,4 +44,5 @@ Example
     mongoc_client_pool_set_server_api
     mongoc_client_pool_set_ssl_opts
     mongoc_client_pool_try_pop
+    mongoc_client_pool_warmup
 
