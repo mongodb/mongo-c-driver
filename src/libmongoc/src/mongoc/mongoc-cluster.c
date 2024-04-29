@@ -2513,8 +2513,7 @@ mongoc_cluster_init (mongoc_cluster_t *cluster, const mongoc_uri_t *uri, void *c
    cluster->client = (mongoc_client_t *) client;
    cluster->requires_auth = (mongoc_uri_get_username (uri) || mongoc_uri_get_auth_mechanism (uri));
 
-   cluster->sockettimeoutms =
-      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+   mongoc_cluster_reset_sockettimeoutms (cluster);
 
    cluster->socketcheckintervalms =
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETCHECKINTERVALMS, MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS);
@@ -2560,6 +2559,21 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
    _mongoc_array_destroy (&cluster->iov);
 
    EXIT;
+}
+
+void
+mongoc_cluster_set_sockettimeoutms (mongoc_cluster_t *cluster, int32_t timeoutms)
+{
+   BSON_ASSERT_PARAM (cluster);
+   cluster->sockettimeoutms = timeoutms;
+}
+
+void
+mongoc_cluster_reset_sockettimeoutms (mongoc_cluster_t *cluster)
+{
+   BSON_ASSERT_PARAM (cluster);
+   cluster->sockettimeoutms =
+      mongoc_uri_get_option_as_int32 (cluster->uri, MONGOC_URI_SOCKETTIMEOUTMS, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 }
 
 static uint32_t
