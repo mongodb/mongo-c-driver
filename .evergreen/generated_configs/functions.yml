@@ -754,8 +754,14 @@ functions:
           export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
           export OIDC_TOKEN_DIR=/tmp/tokens
           . ./activate-authoidcvenv.sh
-          python oidc_write_orchestration.py
-          python oidc_get_tokens.py
+          # The OIDC scripts require at least Python version 3.6 in order to function.
+          if python -c "import sys; sys.exit(0 if sys.version_info >= (3, 6) else 1)"; then
+              echo "Python version is 3.6 or greater, will run OIDC setup scripts"
+              python oidc_write_orchestration.py
+              python oidc_get_tokens.py
+          else
+              echo "Python version is less than 3.6, cannot use OIDC setup scripts"
+          fi
   upload-mo-artifacts:
     - command: subprocess.exec
       params:
