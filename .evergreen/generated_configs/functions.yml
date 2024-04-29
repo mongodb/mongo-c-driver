@@ -753,7 +753,18 @@ functions:
           export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
           export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
           export OIDC_TOKEN_DIR=/tmp/tokens
+
           . ./activate-authoidcvenv.sh
+
+          # Z Series fails with the following error messages:
+          # error: can't find Rust compiler
+          # ModuleNotFoundError: No module named 'jwkest'
+          # We will skip this test on Z Series.
+          if [[ `uname -m` == "s390x" ]]; then
+              echo "OIDC Setup scripts do not work on Z Series, skipping."
+              exit 0
+          fi
+
           # The OIDC scripts require at least Python version 3.6 in order to function.
           if python -c "import sys; sys.exit(0 if sys.version_info >= (3, 6) else 1)"; then
               echo "Python version is 3.6 or greater, will run OIDC setup scripts"
