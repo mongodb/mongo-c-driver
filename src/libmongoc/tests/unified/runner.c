@@ -571,9 +571,13 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.8",  /* fully supported through this version */
-                                           "1.12", /* partially supported (expectedError.errorResponse assertions) */
-                                           "1.18" /* partially supported (additional properties in kmsProviders) */};
+   const char *supported_version_strs[] = {
+      "1.8",  /* fully supported through this version */
+      "1.12", /* partially supported (expectedError.errorResponse assertions) */
+      "1.18"  /* partially supported (additional properties in kmsProviders) */
+      "1.20"  /* partially supported (expectedError.writeErrors and
+                 expectedError.writeConcernErrors) */
+   };
    int i;
 
    for (i = 0; i < sizeof (supported_version_strs) / sizeof (supported_version_strs[0]); i++) {
@@ -1718,4 +1722,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "retryable_writes/unified");
 
    run_unified_tests (suite, JSON_DIR, "index-management");
+
+   run_unified_tests (suite, JSON_DIR, "command-logging-and-monitoring/monitoring");
 }
