@@ -621,8 +621,8 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    /*
     * OP_MSG header == 16 byte
     * + 4 bytes flagBits
+    * + 1 byte payload type = 0
     * + 1 byte payload type = 1
-    * + 1 byte payload type = 2
     * + 4 byte size of payload
     * == 26 bytes opcode overhead
     * + X Full command document {insert: "test", writeConcern: {...}}
