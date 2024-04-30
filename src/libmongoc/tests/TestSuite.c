@@ -1226,3 +1226,22 @@ bson_value_eq (const bson_value_t *a, const bson_value_t *b)
    bson_destroy (tmp_a);
    return ret;
 }
+
+const char *
+test_bulkwriteexception_str (const mongoc_bulkwriteexception_t *bwe)
+{
+   bson_error_t _error;
+   const char *_msg = "(none)";
+   if (mongoc_bulkwriteexception_error (bwe, &_error)) {
+      _msg = _error.message;
+   }
+   return tmp_str ("Bulk Write Exception:\n"
+                   "  Error                 : %s\n"
+                   "  Write Errors          : %s\n"
+                   "  Write Concern Errors  : %s\n"
+                   "  Error Reply           : %s",
+                   _msg,
+                   tmp_json (mongoc_bulkwriteexception_writeerrors (bwe)),
+                   tmp_json (mongoc_bulkwriteexception_writeconcernerrors (bwe)),
+                   tmp_json (mongoc_bulkwriteexception_errorreply (bwe)));
+}

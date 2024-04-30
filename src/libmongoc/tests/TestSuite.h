@@ -577,6 +577,18 @@ bson_value_eq (const bson_value_t *a, const bson_value_t *b);
    } else                                                                       \
       (void) 0
 
+// `test_bulkwriteexception_tostring` returns a temporary string that does not need to be freed.
+const char *
+test_bulkwriteexception_str (const mongoc_bulkwriteexception_t *bwe);
+
+#define ASSERT_NO_BULKWRITEEXCEPTION(bwr)                                  \
+   if (bwr.exc) {                                                          \
+      const char *_str = test_bulkwriteexception_str (bwr.exc);            \
+      test_error ("Expected no bulk write exception, but got:\n%s", _str); \
+   } else                                                                  \
+      (void) 0
+
+
 #define MAX_TEST_NAME_LENGTH 500
 #define MAX_TEST_CHECK_FUNCS 10
 
