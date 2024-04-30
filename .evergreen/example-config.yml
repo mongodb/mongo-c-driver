@@ -16,7 +16,7 @@ tasks:
 task_groups:
   - name: testoidc_task_group
     setup_group:
-      - func: "fetch-det" # Fetch drivers-evergreen-tools
+      - func: fetch source
       - func: "assume ec2 role" # Get necessary AWS credentials
       - command: subprocess.exec
         params:
