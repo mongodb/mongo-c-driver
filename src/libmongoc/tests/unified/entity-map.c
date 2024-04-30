@@ -87,8 +87,23 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          mongoc_uri_set_read_concern (uri, rc);
          mongoc_read_concern_destroy (rc);
       } else if (0 == strcmp ("w", key)) {
+         if (BSON_ITER_HOLDS_UTF8 (&iter)) {
+            // Write concern may be string "majority".
+            const char *w = bson_iter_utf8 (&iter, NULL);
+            if (0 == strcmp (w, "majority")) {
+               mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+            } else {
+               test_set_error (error, "Unrecognized string value for 'w' URI option: %s", w);
+            }
+         } else if (BSON_ITER_HOLDS_INT32 (&iter)) {
+            mongoc_write_concern_set_w (wc, bson_iter_int32 (&iter));
+         } else {
+            test_set_error (error,
+                            "Expected int32 or string for 'w' URI option, got: %s",
+                            _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+         }
+
          wcSet = true;
-         mongoc_write_concern_set_w (wc, bson_iter_int32 (&iter));
       } else if (mongoc_uri_option_is_int32 (key)) {
          mongoc_uri_set_option_as_int32 (uri, key, bson_iter_int32 (&iter));
       } else if (mongoc_uri_option_is_int64 (key)) {
