@@ -737,10 +737,10 @@ match_json (const bson_t *doc,
    if (!matches) {
       char *as_string = doc ? bson_as_canonical_extended_json (doc, NULL) : NULL;
       fprintf (stderr,
-               "ASSERT_MATCH failed with document:\n\n"
-               "%s\n"
-               "pattern:\n%s\n"
-               "%s\n"
+               "ASSERT_MATCH failed:\n"
+               "document: %s\n"
+               "pattern : %s\n"
+               "error   : %s\n"
                "%s:%d %s()\n",
                as_string ? as_string : "{}",
                double_quoted,
