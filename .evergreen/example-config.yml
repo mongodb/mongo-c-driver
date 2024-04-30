@@ -1,0 +1,42 @@
+# The following task can be run with the `evergreen` CLI as follows:
+#   evergreen patch --project=mongo-c-driver \
+#     --description="Run example-task" \
+#     --yes --finalize \
+#      -v example-variant -t example-task
+
+tasks:
+  - name: example-task
+    run_on: ubuntu2204-small
+    commands:
+    - command: shell.exec
+      params:
+        shell: bash
+        script: |-
+          echo "Hello from example-task!"
+task_groups:
+  - name: testoidc_task_group
+    setup_group:
+      - func: "fetch-det" # Fetch drivers-evergreen-tools
+      - func: "assume ec2 role" # Get necessary AWS credentials
+      - command: subprocess.exec
+        params:
+          binary: bash
+          include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
+          args:
+            - drivers-evergreen-tools/.evergreen/auth_oidc/setup.sh
+    teardown_task:
+      - command: subprocess.exec
+        params:
+          binary: bash
+          args:
+            - drivers-evergreen-tools/.evergreen/auth_oidc/teardown.sh
+    setup_group_can_fail_task: true
+    setup_group_timeout_secs: 1800
+    tasks:
+      - example-task
+
+buildvariants:
+  - name: example-variant
+    display_name: Example Variant
+    tasks:
+    - name: testoidc_task_group
