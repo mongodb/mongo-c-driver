@@ -773,13 +773,16 @@ functions:
               exit 0
           fi
 
-          #export TOPOLOGY=replica_set
-          #export ORCHESTRATION_FILE=auth-oidc.json
-          #echo "RUNNING OIDC SETUP"
-          #./setup.sh
+          export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+          export TOPOLOGY=replica_set
+          export ORCHESTRATION_FILE=auth-oidc.json
+          echo "RUNNING OIDC SETUP"
+          ./setup.sh
 
-          python oidc_write_orchestration.py
-          python oidc_get_tokens.py
+          #python oidc_write_orchestration.py
+          #python oidc_get_tokens.py
   upload-mo-artifacts:
     - command: subprocess.exec
       params:
