@@ -773,8 +773,8 @@ functions:
               exit 0
           fi
 
-          #export TOPOLOGY=replica_set
-          #export ORCHESTRATION_FILE=auth-oidc.json
+          export TOPOLOGY=replica_set
+          export ORCHESTRATION_FILE=auth-oidc.json
           echo "RUNNING OIDC SETUP"
           ./setup.sh
 
