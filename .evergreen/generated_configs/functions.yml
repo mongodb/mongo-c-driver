@@ -776,7 +776,7 @@ functions:
           #export TOPOLOGY=replica_set
           #export ORCHESTRATION_FILE=auth-oidc.json
           echo "RUNNING OIDC SETUP"
-          ./drivers-evergreen-tools/.evergreen/auth_oidc/setup.sh
+          ./setup.sh
 
           #python oidc_write_orchestration.py
           #python oidc_get_tokens.py
