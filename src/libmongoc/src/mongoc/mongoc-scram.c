@@ -341,6 +341,11 @@ _mongoc_scram_start (
       goto FAIL;
    }
 
+   if (!scram->pass) {
+      // Apply an empty string as a default.
+      scram->pass = bson_strdup ("");
+   }
+
    /* auth message is as big as the outbuf just because */
    scram->auth_message = (uint8_t *) bson_malloc (outbufmax);
    scram->auth_messagemax = outbufmax;
@@ -994,6 +999,7 @@ _mongoc_scram_step (mongoc_scram_t *scram,
 bool
 _mongoc_sasl_prep_required (const char *str)
 {
+   BSON_ASSERT_PARAM (str);
    unsigned char c;
    while (*str) {
       c = (unsigned char) *str;
