@@ -23,14 +23,11 @@ test_mongoc_scram_step_username_not_set (void)
    _mongoc_scram_init (&scram, MONGOC_CRYPTO_ALGORITHM_SHA_1);
    _mongoc_scram_set_pass (&scram, "password");
 
-   success = _mongoc_scram_step (
-      &scram, buf, buflen, buf, sizeof buf, &buflen, &error);
+   success = _mongoc_scram_step (&scram, buf, buflen, buf, sizeof buf, &buflen, &error);
 
    ASSERT (!success);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_SCRAM,
-                          MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                          "SCRAM Failure: username is not set");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: username is not set");
 
    _mongoc_scram_destroy (&scram);
 }
@@ -56,13 +53,11 @@ test_iteration_count (int count, bool should_succeed)
    char *server_response;
    bool success;
 
-   server_response = bson_strdup_printf (
-      "r=YWJjZA==YWJjZA==,s=r6+P1iLmSJvhrRyuFi6Wsg==,i=%d", count);
+   server_response = bson_strdup_printf ("r=YWJjZA==YWJjZA==,s=r6+P1iLmSJvhrRyuFi6Wsg==,i=%d", count);
    /* set up the scram state to immediately test step 2. */
    _mongoc_scram_init (&scram, MONGOC_CRYPTO_ALGORITHM_SHA_1);
    _mongoc_scram_set_pass (&scram, "password");
-   bson_strncpy (
-      scram.encoded_nonce, client_nonce, sizeof (scram.encoded_nonce));
+   bson_strncpy (scram.encoded_nonce, client_nonce, sizeof (scram.encoded_nonce));
    scram.encoded_nonce_len = (int32_t) strlen (client_nonce);
    scram.auth_message = bson_malloc0 (4096);
    scram.auth_messagemax = 4096;
@@ -70,8 +65,7 @@ test_iteration_count (int count, bool should_succeed)
    memcpy (buf, server_response, strlen (server_response) + 1);
    buflen = (int32_t) strlen (server_response);
    scram.step = 1;
-   success = _mongoc_scram_step (
-      &scram, buf, buflen, buf, sizeof buf, &buflen, &error);
+   success = _mongoc_scram_step (&scram, buf, buflen, buf, sizeof buf, &buflen, &error);
    if (should_succeed) {
       ASSERT_OR_PRINT (success, error);
    } else {
@@ -101,35 +95,32 @@ test_mongoc_scram_sasl_prep (void)
    char *normalized;
    bson_error_t err;
    /* examples from RFC 4013 section 3. */
-   sasl_prep_testcase_t tests[] = {
-      // normalization
-      {"\x65\xCC\x81", "\xC3\xA9", true, true},
-      {"\xC2\xAA", "a", true, true},
-      {"Henry \xE2\x85\xA3", "Henry IV", true, true},
-      {"A\xEF\xAC\x83n", "Affin", true, true},
-      // mapped to nothing character (Table B.1)
-      {"I\xC2\xADX", "IX", true, true},
-      // mapped to nothing character (Table C.1.2)
-      {"I\xE2\x80\x80\xC2\xA0X", "I  X", true, true},
-      // prohibited character
-      {"banana \x07 apple", "(invalid)", true, false},
-      // unassigned codepoint (Table A.1)
-      {"banana \xe0\xAA\xBA apple", "(invalid)", true, false},
-      // bidi: RandALCat but not RandALCat at beginning and end
-      {"\xD8\xA7\x31", "(invalid)", true, false},
-      // bidi: RandALCat and LCat characters
-      {"\xFB\x1D apple \x09\xA8", "(invalid)", true, false},
-      // bidi: RandALCat with RandALCat at beginning and end
-      {"\xD8\xA1 \xDC\x92", "\xD8\xA1 \xDC\x92", true, true},
-      // normalization and mapped to nothing
-      {"I\xE2\x80\x80\xC2\xA0X \xE2\x85\xA3", "I  X IV", true, true},
-      {"user", "user", false, true},
-      {"USER", "USER", false, true}};
+   sasl_prep_testcase_t tests[] = {// normalization
+                                   {"\x65\xCC\x81", "\xC3\xA9", true, true},
+                                   {"\xC2\xAA", "a", true, true},
+                                   {"Henry \xE2\x85\xA3", "Henry IV", true, true},
+                                   {"A\xEF\xAC\x83n", "Affin", true, true},
+                                   // mapped to nothing character (Table B.1)
+                                   {"I\xC2\xADX", "IX", true, true},
+                                   // mapped to nothing character (Table C.1.2)
+                                   {"I\xE2\x80\x80\xC2\xA0X", "I  X", true, true},
+                                   // prohibited character
+                                   {"banana \x07 apple", "(invalid)", true, false},
+                                   // unassigned codepoint (Table A.1)
+                                   {"banana \xe0\xAA\xBA apple", "(invalid)", true, false},
+                                   // bidi: RandALCat but not RandALCat at beginning and end
+                                   {"\xD8\xA7\x31", "(invalid)", true, false},
+                                   // bidi: RandALCat and LCat characters
+                                   {"\xFB\x1D apple \x09\xA8", "(invalid)", true, false},
+                                   // bidi: RandALCat with RandALCat at beginning and end
+                                   {"\xD8\xA1 \xDC\x92", "\xD8\xA1 \xDC\x92", true, true},
+                                   // normalization and mapped to nothing
+                                   {"I\xE2\x80\x80\xC2\xA0X \xE2\x85\xA3", "I  X IV", true, true},
+                                   {"user", "user", false, true},
+                                   {"USER", "USER", false, true}};
    ntests = sizeof (tests) / sizeof (sasl_prep_testcase_t);
    for (i = 0; i < ntests; i++) {
-      ASSERT_CMPINT (tests[i].should_be_required,
-                     ==,
-                     _mongoc_sasl_prep_required (tests[i].original));
+      ASSERT_CMPINT (tests[i].should_be_required, ==, _mongoc_sasl_prep_required (tests[i].original));
       memset (&err, 0, sizeof (err));
       normalized = _mongoc_sasl_prep (tests[i].original, &err);
       if (tests[i].should_succeed) {
@@ -159,8 +150,7 @@ test_mongoc_utf8_string_length (void)
    ASSERT_CMPSIZE_T (_mongoc_utf8_string_length (",ase"), ==, 4u);
    ASSERT_CMPSIZE_T (_mongoc_utf8_string_length ("ɸɴ"), ==, 2u);
    ASSERT_CMPSIZE_T (_mongoc_utf8_string_length ("ྡྷ🌂e4🌕"), ==, 5u);
-   ASSERT_CMPSIZE_T (
-      _mongoc_utf8_string_length ("no special characters"), ==, 21u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length ("no special characters"), ==, 21u);
 }
 
 static void
@@ -189,13 +179,11 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
    bson_error_t error;
 
    const char *password = "mypass";
-   char *username =
-      bson_strdup_printf ("cachetestuser%dX", *(int *) username_number_ptr);
+   char *username = bson_strdup_printf ("cachetestuser%dX", *(int *) username_number_ptr);
    bson_free (username_number_ptr);
 
    const char *uri_str = _scram_cache_invalidation_uri_str;
-   char *cache_test_user_uri =
-      test_framework_add_user_password (uri_str, username, password);
+   char *cache_test_user_uri = test_framework_add_user_password (uri_str, username, password);
    BSON_ASSERT (cache_test_user_uri);
 
    mongoc_uri_t *cache_test_uri = mongoc_uri_new (cache_test_user_uri);
@@ -203,23 +191,19 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
 
    // Set serverSelectionTryOnce=false so a single failed connection attempt
    // does not result in an error.
-   mongoc_uri_set_option_as_bool (
-      cache_test_uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
+   mongoc_uri_set_option_as_bool (cache_test_uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
 
-   mongoc_client_t *client =
-      test_framework_client_new_from_uri (cache_test_uri, NULL /* api */);
+   mongoc_client_t *client = test_framework_client_new_from_uri (cache_test_uri, NULL /* api */);
    BSON_ASSERT (client);
 
    test_framework_set_ssl_opts (client);
    BSON_ASSERT (client);
 
-   mongoc_collection_t *collection =
-      mongoc_client_get_collection (client, "admin", "testcache");
+   mongoc_collection_t *collection = mongoc_client_get_collection (client, "admin", "testcache");
    BSON_ASSERT (collection);
 
    bson_t insert = BSON_INITIALIZER;
-   bool ok =
-      mongoc_collection_insert_one (collection, &insert, NULL, NULL, &error);
+   bool ok = mongoc_collection_insert_one (collection, &insert, NULL, NULL, &error);
    ASSERT_OR_PRINT (ok, error);
 
    mongoc_collection_destroy (collection);
@@ -234,6 +218,8 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
 static void
 test_mongoc_scram_cache_invalidation (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    bson_error_t error;
    mongoc_uri_t *const uri = test_framework_get_uri ();
    BSON_ASSERT (uri);
@@ -246,8 +232,7 @@ test_mongoc_scram_cache_invalidation (void *ctx)
 
    bson_t *roles = tmp_bson ("[{'role': 'readWrite', 'db': 'admin'}]");
 
-   _scram_cache_invalidation_uri_str =
-      test_framework_get_uri_str_no_auth ("admin");
+   _scram_cache_invalidation_uri_str = test_framework_get_uri_str_no_auth ("admin");
 
    /* Remove cache test users if they already exist.
     * Create more test users than could exist in cache. */
@@ -256,8 +241,7 @@ test_mongoc_scram_cache_invalidation (void *ctx)
       char *username = bson_strdup_printf ("cachetestuser%dX", i);
 
       mongoc_database_remove_user (db, username, &error);
-      bool ok =
-         mongoc_database_add_user (db, username, password, roles, NULL, &error);
+      bool ok = mongoc_database_add_user (db, username, password, roles, NULL, &error);
       ASSERT_OR_PRINT (ok, error);
       bson_free (username);
    }
@@ -266,8 +250,7 @@ test_mongoc_scram_cache_invalidation (void *ctx)
    for (int i = 0; i < NUM_CACHE_TEST_THREADS; i++) {
       int *username_number_ptr = bson_malloc (sizeof (*username_number_ptr));
       *username_number_ptr = i % NUM_CACHE_TEST_USERS;
-      int rc = mcommon_thread_create (
-         &threads[i], _scram_cache_invalidation_thread, username_number_ptr);
+      int rc = mcommon_thread_create (&threads[i], _scram_cache_invalidation_thread, username_number_ptr);
       BSON_ASSERT (rc == 0);
    }
 
@@ -304,32 +287,29 @@ _create_scram_users (void)
    bool res;
    bson_error_t error;
    client = test_framework_new_default_client ();
-   res = mongoc_client_command_simple (
-      client,
-      "admin",
-      tmp_bson ("{'createUser': 'sha1', 'pwd': 'sha1', 'roles': ['root'], "
-                "'mechanisms': ['SCRAM-SHA-1']}"),
-      NULL /* read_prefs */,
-      NULL /* reply */,
-      &error);
+   res = mongoc_client_command_simple (client,
+                                       "admin",
+                                       tmp_bson ("{'createUser': 'sha1', 'pwd': 'sha1', 'roles': ['root'], "
+                                                 "'mechanisms': ['SCRAM-SHA-1']}"),
+                                       NULL /* read_prefs */,
+                                       NULL /* reply */,
+                                       &error);
    ASSERT_OR_PRINT (res, error);
-   res = mongoc_client_command_simple (
-      client,
-      "admin",
-      tmp_bson ("{'createUser': 'sha256', 'pwd': 'sha256', 'roles': ['root'], "
-                "'mechanisms': ['SCRAM-SHA-256']}"),
-      NULL /* read_prefs */,
-      NULL /* reply */,
-      &error);
+   res = mongoc_client_command_simple (client,
+                                       "admin",
+                                       tmp_bson ("{'createUser': 'sha256', 'pwd': 'sha256', 'roles': ['root'], "
+                                                 "'mechanisms': ['SCRAM-SHA-256']}"),
+                                       NULL /* read_prefs */,
+                                       NULL /* reply */,
+                                       &error);
    ASSERT_OR_PRINT (res, error);
-   res = mongoc_client_command_simple (
-      client,
-      "admin",
-      tmp_bson ("{'createUser': 'both', 'pwd': 'both', 'roles': ['root'], "
-                "'mechanisms': ['SCRAM-SHA-1', 'SCRAM-SHA-256']}"),
-      NULL /* read_prefs */,
-      NULL /* reply */,
-      &error);
+   res = mongoc_client_command_simple (client,
+                                       "admin",
+                                       tmp_bson ("{'createUser': 'both', 'pwd': 'both', 'roles': ['root'], "
+                                                 "'mechanisms': ['SCRAM-SHA-1', 'SCRAM-SHA-256']}"),
+                                       NULL /* read_prefs */,
+                                       NULL /* reply */,
+                                       &error);
    ASSERT_OR_PRINT (res, error);
    mongoc_client_destroy (client);
 }
@@ -354,10 +334,7 @@ _drop_scram_users (void)
 }
 
 static void
-_check_mechanism (bool pooled,
-                  const char *client_mech,
-                  const char *server_mechs,
-                  const char *expected_used_mech)
+_check_mechanism (bool pooled, const char *client_mech, const char *server_mechs, const char *expected_used_mech)
 {
    mock_server_t *server;
    mongoc_client_pool_t *client_pool = NULL;
@@ -395,14 +372,9 @@ _check_mechanism (bool pooled,
    } else {
       client = test_framework_client_new_from_uri (uri, NULL);
    }
-   future = future_client_command_simple (client,
-                                          "admin",
-                                          tmp_bson ("{'dbstats': 1}"),
-                                          NULL /* read_prefs. */,
-                                          NULL /* reply. */,
-                                          NULL /* error. */);
-   request =
-      mock_server_receives_msg (server, MONGOC_QUERY_NONE, tmp_bson ("{}"));
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'dbstats': 1}"), NULL /* read_prefs. */, NULL /* reply. */, NULL /* error. */);
+   request = mock_server_receives_msg (server, MONGOC_QUERY_NONE, tmp_bson ("{}"));
    sasl_doc = request_get_doc (request, 0);
    used_mech = bson_lookup_utf8 (sasl_doc, "mechanism");
    ASSERT_CMPSTR (used_mech, expected_used_mech);
@@ -422,11 +394,7 @@ _check_mechanism (bool pooled,
    mock_server_destroy (server);
 }
 
-typedef enum {
-   MONGOC_TEST_NO_ERROR,
-   MONGOC_TEST_USER_NOT_FOUND_ERROR,
-   MONGOC_TEST_AUTH_ERROR
-} test_error_t;
+typedef enum { MONGOC_TEST_NO_ERROR, MONGOC_TEST_USER_NOT_FOUND_ERROR, MONGOC_TEST_AUTH_ERROR } test_error_t;
 
 void
 _check_error (const bson_error_t *error, test_error_t expected_error)
@@ -443,10 +411,8 @@ _check_error (const bson_error_t *error, test_error_t expected_error)
       ASSERT_CMPUINT32 (error->code, ==, code);
       const char *const a = "Authentication failed";
       const char *const b = "Unable to use";
-      const bool found =
-         strstr (error->message, a) || strstr (error->message, b);
-      ASSERT_WITH_MSG (
-         found, "[%s] does not contain [%s] or [%s]", error->message, a, b);
+      const bool found = strstr (error->message, a) || strstr (error->message, b);
+      ASSERT_WITH_MSG (found, "[%s] does not contain [%s] or [%s]", error->message, a, b);
       break;
    }
    case MONGOC_TEST_USER_NOT_FOUND_ERROR:
@@ -485,8 +451,7 @@ _try_auth_from_uri (bool pooled, mongoc_uri_t *uri, test_error_t expected_error)
       test_framework_set_ssl_opts (client);
    }
    coll = get_test_collection (client, "try_auth");
-   res = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error);
+   res = mongoc_collection_insert_one (coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error);
 
    if (expected_error == MONGOC_TEST_NO_ERROR) {
       ASSERT_OR_PRINT (res, error);
@@ -508,11 +473,7 @@ _try_auth_from_uri (bool pooled, mongoc_uri_t *uri, test_error_t expected_error)
 
 /* if auth is expected to succeed, expected_error is zero'd out. */
 static void
-_try_auth (bool pooled,
-           const char *user,
-           const char *pwd,
-           const char *mechanism,
-           test_error_t expected_error)
+_try_auth (bool pooled, const char *user, const char *pwd, const char *mechanism, test_error_t expected_error)
 {
    mongoc_uri_t *uri;
 
@@ -537,8 +498,7 @@ _test_mongoc_scram_auth (bool pooled)
    _try_auth (pooled, "sha1", "sha1", NULL, MONGOC_TEST_NO_ERROR);
    _try_auth (pooled, "sha1", "sha1", "SCRAM-SHA-1", MONGOC_TEST_NO_ERROR);
    _try_auth (pooled, "sha256", "sha256", NULL, MONGOC_TEST_NO_ERROR);
-   _try_auth (
-      pooled, "sha256", "sha256", "SCRAM-SHA-256", MONGOC_TEST_NO_ERROR);
+   _try_auth (pooled, "sha256", "sha256", "SCRAM-SHA-256", MONGOC_TEST_NO_ERROR);
    _try_auth (pooled, "both", "both", NULL, MONGOC_TEST_NO_ERROR);
    _try_auth (pooled, "both", "both", "SCRAM-SHA-1", MONGOC_TEST_NO_ERROR);
    _try_auth (pooled, "both", "both", "SCRAM-SHA-256", MONGOC_TEST_NO_ERROR);
@@ -546,23 +506,17 @@ _test_mongoc_scram_auth (bool pooled)
    _check_mechanism (pooled, NULL, NULL, "SCRAM-SHA-1");
    _check_mechanism (pooled, NULL, "'SCRAM-SHA-1'", "SCRAM-SHA-1");
    _check_mechanism (pooled, NULL, "'SCRAM-SHA-256'", "SCRAM-SHA-256");
-   _check_mechanism (
-      pooled, NULL, "'SCRAM-SHA-1','SCRAM-SHA-256'", "SCRAM-SHA-256");
+   _check_mechanism (pooled, NULL, "'SCRAM-SHA-1','SCRAM-SHA-256'", "SCRAM-SHA-256");
 
    _check_mechanism (pooled, "SCRAM-SHA-1", NULL, "SCRAM-SHA-1");
    _check_mechanism (pooled, "SCRAM-SHA-1", "'SCRAM-SHA-1'", "SCRAM-SHA-1");
    _check_mechanism (pooled, "SCRAM-SHA-1", "'SCRAM-SHA-256'", "SCRAM-SHA-1");
-   _check_mechanism (
-      pooled, "SCRAM-SHA-1", "'SCRAM-SHA-1','SCRAM-SHA-256'", "SCRAM-SHA-1");
+   _check_mechanism (pooled, "SCRAM-SHA-1", "'SCRAM-SHA-1','SCRAM-SHA-256'", "SCRAM-SHA-1");
 
    _check_mechanism (pooled, "SCRAM-SHA-256", NULL, "SCRAM-SHA-256");
    _check_mechanism (pooled, "SCRAM-SHA-256", "'SCRAM-SHA-1'", "SCRAM-SHA-256");
-   _check_mechanism (
-      pooled, "SCRAM-SHA-256", "'SCRAM-SHA-256'", "SCRAM-SHA-256");
-   _check_mechanism (pooled,
-                     "SCRAM-SHA-256",
-                     "'SCRAM-SHA-1','SCRAM-SHA-256'",
-                     "SCRAM-SHA-256");
+   _check_mechanism (pooled, "SCRAM-SHA-256", "'SCRAM-SHA-256'", "SCRAM-SHA-256");
+   _check_mechanism (pooled, "SCRAM-SHA-256", "'SCRAM-SHA-1','SCRAM-SHA-256'", "SCRAM-SHA-256");
 
    /* Test some failure auths. */
    _try_auth (pooled, "sha1", "bad", NULL, MONGOC_TEST_AUTH_ERROR);
@@ -604,14 +558,13 @@ _skip_if_no_sha256 (void)
 
    /* Check if SCRAM-SHA-256 is a supported auth mechanism by attempting to
     * create a new user with it. */
-   res = mongoc_client_command_simple (
-      client,
-      "admin",
-      tmp_bson ("{'createUser': 'temp', 'pwd': 'sha256', 'roles': ['root'], "
-                "'mechanisms': ['SCRAM-SHA-256']}"),
-      NULL /* read_prefs */,
-      NULL /* reply */,
-      &error);
+   res = mongoc_client_command_simple (client,
+                                       "admin",
+                                       tmp_bson ("{'createUser': 'temp', 'pwd': 'sha256', 'roles': ['root'], "
+                                                 "'mechanisms': ['SCRAM-SHA-256']}"),
+                                       NULL /* read_prefs */,
+                                       NULL /* reply */,
+                                       &error);
 
    if (res) {
       mongoc_database_t *db;
@@ -648,24 +601,21 @@ _create_saslprep_users (void)
    bool res;
    bson_error_t error;
    client = test_framework_new_default_client ();
-   res = mongoc_client_command_simple (
-      client,
-      "admin",
-      tmp_bson ("{'createUser': 'IX', 'pwd': 'IX', 'roles': ['root'], "
-                "'mechanisms': ['SCRAM-SHA-256']}"),
-      NULL /* read_prefs */,
-      NULL /* reply */,
-      &error);
+   res = mongoc_client_command_simple (client,
+                                       "admin",
+                                       tmp_bson ("{'createUser': 'IX', 'pwd': 'IX', 'roles': ['root'], "
+                                                 "'mechanisms': ['SCRAM-SHA-256']}"),
+                                       NULL /* read_prefs */,
+                                       NULL /* reply */,
+                                       &error);
    ASSERT_OR_PRINT (res, error);
-   res = mongoc_client_command_simple (
-      client,
-      "admin",
-      tmp_bson ("{'createUser': '" ROMAN_NUMERAL_NINE
-                "', 'pwd': '" ROMAN_NUMERAL_FOUR
-                "', 'roles': ['root'], 'mechanisms': ['SCRAM-SHA-256']}"),
-      NULL /* read_prefs */,
-      NULL /* reply */,
-      &error);
+   res = mongoc_client_command_simple (client,
+                                       "admin",
+                                       tmp_bson ("{'createUser': '" ROMAN_NUMERAL_NINE "', 'pwd': '" ROMAN_NUMERAL_FOUR
+                                                 "', 'roles': ['root'], 'mechanisms': ['SCRAM-SHA-256']}"),
+                                       NULL /* read_prefs */,
+                                       NULL /* reply */,
+                                       &error);
    ASSERT_OR_PRINT (res, error);
    mongoc_client_destroy (client);
 }
@@ -752,11 +702,7 @@ _test_mongoc_scram_saslprep_auth (bool pooled)
    _try_auth (pooled, "IX", "IX", NULL, MONGOC_TEST_NO_ERROR);
    _try_auth (pooled, "IX", ROMAN_NUMERAL_NINE, NULL, MONGOC_TEST_NO_ERROR);
    _try_auth (pooled, ROMAN_NUMERAL_NINE, "IV", NULL, MONGOC_TEST_NO_ERROR);
-   _try_auth (pooled,
-              ROMAN_NUMERAL_NINE,
-              ROMAN_NUMERAL_FOUR,
-              NULL,
-              MONGOC_TEST_NO_ERROR);
+   _try_auth (pooled, ROMAN_NUMERAL_NINE, ROMAN_NUMERAL_FOUR, NULL, MONGOC_TEST_NO_ERROR);
 }
 
 
@@ -772,20 +718,34 @@ test_mongoc_saslprep_auth (void *ctx)
    _drop_saslprep_users ();
 }
 
+// `test_mongoc_scram_empty_password` is a regression test for CDRIVER-5550.
+static void
+test_mongoc_scram_empty_password (void *ctx)
+{
+   BSON_UNUSED (ctx);
+   char *user = test_framework_get_admin_user ();
+   char *uri_str = test_framework_get_uri_str_no_auth ("admin");
+   mongoc_uri_t *uri = mongoc_uri_new (uri_str);
+   mongoc_uri_set_username (uri, user);
+
+   // Expect an auth failure (not a crash):
+   _try_auth_from_uri (false /* pooled */, uri, MONGOC_TEST_AUTH_ERROR);
+   _try_auth_from_uri (true /* pooled */, uri, MONGOC_TEST_AUTH_ERROR);
+
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+   bson_free (user);
+}
+
 void
 test_scram_install (TestSuite *suite)
 {
 #ifdef MONGOC_ENABLE_SSL
-   TestSuite_Add (suite,
-                  "/scram/username_not_set",
-                  test_mongoc_scram_step_username_not_set);
+   TestSuite_Add (suite, "/scram/username_not_set", test_mongoc_scram_step_username_not_set);
    TestSuite_Add (suite, "/scram/sasl_prep", test_mongoc_scram_sasl_prep);
-   TestSuite_Add (
-      suite, "/scram/iteration_count", test_mongoc_scram_iteration_count);
-   TestSuite_Add (
-      suite, "/scram/utf8_char_length", test_mongoc_utf8_char_length);
-   TestSuite_Add (
-      suite, "/scram/utf8_string_length", test_mongoc_utf8_string_length);
+   TestSuite_Add (suite, "/scram/iteration_count", test_mongoc_scram_iteration_count);
+   TestSuite_Add (suite, "/scram/utf8_char_length", test_mongoc_utf8_char_length);
+   TestSuite_Add (suite, "/scram/utf8_string_length", test_mongoc_utf8_string_length);
    TestSuite_Add (suite, "/scram/utf8_to_unicode", test_mongoc_utf8_to_unicode);
 #endif
    TestSuite_AddFull (suite,
@@ -805,6 +765,14 @@ test_scram_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/scram/saslprep_auth",
                       test_mongoc_saslprep_auth,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_auth,
+                      _skip_if_no_sha256,
+                      TestSuite_CheckLive);
+   TestSuite_AddFull (suite,
+                      "/scram/empty_password",
+                      test_mongoc_scram_empty_password,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,

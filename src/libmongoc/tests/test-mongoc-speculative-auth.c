@@ -46,8 +46,7 @@ _force_hello_with_ping (mongoc_client_t *client)
    ASSERT (client);
 
    /* Send a ping */
-   future = future_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
+   future = future_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
 
    ASSERT (future);
    return future;
@@ -69,8 +68,7 @@ _respond_to_ping (future_t *future, mock_server_t *server, bool expect_ping)
       return;
    }
 
-   request = mock_server_receives_msg (
-      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
+   request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
 
    ASSERT (request);
 
@@ -91,13 +89,11 @@ _auto_hello_without_speculative_auth (request_t *request, void *data)
       return false;
    }
 
-   if (strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) &&
-       strcmp (request->command_name, "hello")) {
+   if (strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) && strcmp (request->command_name, "hello")) {
       return false;
    }
 
-   if (bson_has_field (request_get_doc (request, 0),
-                       "speculativeAuthenticate")) {
+   if (bson_has_field (request_get_doc (request, 0), "speculativeAuthenticate")) {
       return false;
    }
 
@@ -219,8 +215,7 @@ _test_mongoc_speculative_auth (bool pooled,
                            BCON_INT32 (WIRE_VERSION_MAX));
 
       if (speculative_auth_response) {
-         BSON_APPEND_DOCUMENT (
-            response, "speculativeAuthenticate", speculative_auth_response);
+         BSON_APPEND_DOCUMENT (response, "speculativeAuthenticate", speculative_auth_response);
       }
 
       str = bson_as_canonical_extended_json (response, NULL);
@@ -273,8 +268,7 @@ _post_hello_scram_invalid_auth_response (mock_server_t *srv)
    request_t *request;
    const bson_t *request_doc;
 
-   request = mock_server_receives_msg (
-      srv, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin'}"));
+   request = mock_server_receives_msg (srv, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin'}"));
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
@@ -287,8 +281,7 @@ _post_hello_scram_invalid_auth_response (mock_server_t *srv)
 
    /* Let authentication fail directly since we won't be able to continue the
     * scram conversation. */
-   reply_to_request_simple (
-      request, "{ 'ok': 1, 'errmsg': 'Cannot mock scram auth conversation' }");
+   reply_to_request_simple (request, "{ 'ok': 1, 'errmsg': 'Cannot mock scram auth conversation' }");
 
    request_destroy (request);
 }
@@ -296,46 +289,39 @@ _post_hello_scram_invalid_auth_response (mock_server_t *srv)
 static void
 test_mongoc_speculative_auth_request_none (void)
 {
-   _test_mongoc_speculative_auth (
-      false, false, NULL, false, NULL, NULL, NULL, true);
+   _test_mongoc_speculative_auth (false, false, NULL, false, NULL, NULL, NULL, true);
 }
 
 static void
 test_mongoc_speculative_auth_request_none_pool (void)
 {
-   _test_mongoc_speculative_auth (
-      true, false, NULL, false, NULL, NULL, NULL, true);
+   _test_mongoc_speculative_auth (true, false, NULL, false, NULL, NULL, NULL, true);
 }
 
 
-#if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
-   defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 static void
 _setup_speculative_auth_x_509 (mongoc_uri_t *uri)
 {
    mongoc_uri_set_auth_mechanism (uri, "MONGODB-X509");
-   mongoc_uri_set_username (
-      uri,
-      "CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry");
+   mongoc_uri_set_username (uri, "CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry");
 }
 
 static void
 _compare_auth_cmd_x509 (bson_t *auth_cmd)
 {
-   bson_t *expected_auth_cmd = BCON_NEW (
-      "authenticate",
-      BCON_INT32 (1),
-      "mechanism",
-      BCON_UTF8 ("MONGODB-X509"),
-      "user",
-      BCON_UTF8 (
-         "CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry"),
-      "db",
-      BCON_UTF8 ("$external"));
+   bson_t *expected_auth_cmd =
+      BCON_NEW ("authenticate",
+                BCON_INT32 (1),
+                "mechanism",
+                BCON_UTF8 ("MONGODB-X509"),
+                "user",
+                BCON_UTF8 ("CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry"),
+                "db",
+                BCON_UTF8 ("$external"));
 
    char *auth_cmd_str = bson_as_canonical_extended_json (auth_cmd, NULL);
-   char *expected_auth_cmd_str =
-      bson_as_canonical_extended_json (expected_auth_cmd, NULL);
+   char *expected_auth_cmd_str = bson_as_canonical_extended_json (expected_auth_cmd, NULL);
 
    ASSERT_CMPSTR (auth_cmd_str, expected_auth_cmd_str);
 
@@ -347,21 +333,14 @@ _compare_auth_cmd_x509 (bson_t *auth_cmd)
 static void
 test_mongoc_speculative_auth_request_x509 (void)
 {
-   bson_t *response =
-      BCON_NEW ("dbname",
-                BCON_UTF8 ("$external"),
-                "user",
-                BCON_UTF8 ("CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST="
-                           "myState,C=myCountry"));
+   bson_t *response = BCON_NEW ("dbname",
+                                BCON_UTF8 ("$external"),
+                                "user",
+                                BCON_UTF8 ("CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST="
+                                           "myState,C=myCountry"));
 
-   _test_mongoc_speculative_auth (false,
-                                  true,
-                                  _setup_speculative_auth_x_509,
-                                  true,
-                                  _compare_auth_cmd_x509,
-                                  response,
-                                  NULL,
-                                  true);
+   _test_mongoc_speculative_auth (
+      false, true, _setup_speculative_auth_x_509, true, _compare_auth_cmd_x509, response, NULL, true);
 
    bson_destroy (response);
 }
@@ -369,21 +348,14 @@ test_mongoc_speculative_auth_request_x509 (void)
 static void
 test_mongoc_speculative_auth_request_x509_pool (void)
 {
-   bson_t *response =
-      BCON_NEW ("dbname",
-                BCON_UTF8 ("$external"),
-                "user",
-                BCON_UTF8 ("CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST="
-                           "myState,C=myCountry"));
+   bson_t *response = BCON_NEW ("dbname",
+                                BCON_UTF8 ("$external"),
+                                "user",
+                                BCON_UTF8 ("CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST="
+                                           "myState,C=myCountry"));
 
-   _test_mongoc_speculative_auth (true,
-                                  true,
-                                  _setup_speculative_auth_x_509,
-                                  true,
-                                  _compare_auth_cmd_x509,
-                                  response,
-                                  NULL,
-                                  true);
+   _test_mongoc_speculative_auth (
+      true, true, _setup_speculative_auth_x_509, true, _compare_auth_cmd_x509, response, NULL, true);
 
    bson_destroy (response);
 }
@@ -408,8 +380,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
    mongoc_uri_t *uri;
    {
       uri = mongoc_uri_copy (mock_server_get_uri (server));
-      mongoc_uri_set_option_as_int32 (
-         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 15000);
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 15000);
       _setup_speculative_auth_x_509 (uri);
    }
 
@@ -429,8 +400,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
       bson_error_t error;
 
       // Send ping.
-      future_t *future = future_client_command_simple (
-         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+      future_t *future = future_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
       // Expect a hello including speculativeAuthenticate field.
       {
@@ -438,12 +408,10 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
          ASSERT (request);
          const bson_t *request_doc = request_get_doc (request, 0);
          ASSERT (request_doc);
-         char *request_str =
-            bson_as_canonical_extended_json (request_doc, NULL);
-         ASSERT_WITH_MSG (
-            bson_has_field (request_doc, "speculativeAuthenticate"),
-            "expected hello to contain 'speculativeAuthenticate', got: %s",
-            request_str);
+         char *request_str = bson_as_canonical_extended_json (request_doc, NULL);
+         ASSERT_WITH_MSG (bson_has_field (request_doc, "speculativeAuthenticate"),
+                          "expected hello to contain 'speculativeAuthenticate', got: %s",
+                          request_str);
          // Respond with a non-empty document "speculativeAuthenticate" field.
          // The C driver will interpret this as a successful X509
          // authentication.
@@ -471,8 +439,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
 
       // Expect a ping command. Respond with a network error.
       {
-         request_t *request = mock_server_receives_msg (
-            server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
+         request_t *request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
          ASSERT (request);
          // Cause a network error.
          reply_to_request_with_hang_up (request);
@@ -481,10 +448,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
 
       // Expect error.
       ASSERT (!future_get_bool (future));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_SOCKET,
-                             "socket error");
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
       future_destroy (future);
    }
 
@@ -493,8 +457,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
       bson_error_t error;
 
       // Send ping.
-      future_t *future = future_client_command_simple (
-         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+      future_t *future = future_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
       // Expect a hello including speculativeAuthenticate field.
       {
@@ -502,12 +465,10 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
          ASSERT (request);
          const bson_t *request_doc = request_get_doc (request, 0);
          ASSERT (request_doc);
-         char *request_str =
-            bson_as_canonical_extended_json (request_doc, NULL);
-         ASSERT_WITH_MSG (
-            bson_has_field (request_doc, "speculativeAuthenticate"),
-            "expected hello to contain 'speculativeAuthenticate', got: %s",
-            request_str);
+         char *request_str = bson_as_canonical_extended_json (request_doc, NULL);
+         ASSERT_WITH_MSG (bson_has_field (request_doc, "speculativeAuthenticate"),
+                          "expected hello to contain 'speculativeAuthenticate', got: %s",
+                          request_str);
          // Respond with a non-empty document "speculativeAuthenticate" field.
          // The C driver will interpret this as a successful X509
          // authentication.
@@ -535,8 +496,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
 
       // Expect a ping command. Respond with {"ok": 1}.
       {
-         request_t *request = mock_server_receives_msg (
-            server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
+         request_t *request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
          ASSERT (request);
          reply_to_request_with_ok_and_destroy (request);
       }
@@ -558,11 +518,10 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
 static void
 test_mongoc_speculative_auth_request_scram (void)
 {
-   bson_t *response = BCON_NEW (
-      "conversationId",
-      BCON_INT32 (15081984),
-      "payload",
-      BCON_BIN (BSON_SUBTYPE_BINARY, (const uint8_t *) "deadbeef", 8));
+   bson_t *response = BCON_NEW ("conversationId",
+                                BCON_INT32 (15081984),
+                                "payload",
+                                BCON_BIN (BSON_SUBTYPE_BINARY, (const uint8_t *) "deadbeef", 8));
 
    _test_mongoc_speculative_auth (false,
                                   false,
@@ -579,11 +538,10 @@ test_mongoc_speculative_auth_request_scram (void)
 static void
 test_mongoc_speculative_auth_request_scram_pool (void)
 {
-   bson_t *response = BCON_NEW (
-      "conversationId",
-      BCON_INT32 (15081984),
-      "payload",
-      BCON_BIN (BSON_SUBTYPE_BINARY, (const uint8_t *) "deadbeef", 8));
+   bson_t *response = BCON_NEW ("conversationId",
+                                BCON_INT32 (15081984),
+                                "payload",
+                                BCON_BIN (BSON_SUBTYPE_BINARY, (const uint8_t *) "deadbeef", 8));
 
    _test_mongoc_speculative_auth (true,
                                   false,
@@ -602,31 +560,18 @@ void
 test_speculative_auth_install (TestSuite *suite)
 {
 #ifdef MONGOC_ENABLE_CRYPTO
-   TestSuite_AddMockServerTest (suite,
-                                "/speculative_auth/request_none",
-                                test_mongoc_speculative_auth_request_none);
-   TestSuite_AddMockServerTest (suite,
-                                "/speculative_auth/request_scram",
-                                test_mongoc_speculative_auth_request_scram);
-   TestSuite_AddMockServerTest (suite,
-                                "/speculative_auth_pool/request_none",
-                                test_mongoc_speculative_auth_request_none_pool);
-#if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
-   defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-   TestSuite_AddMockServerTest (suite,
-                                "/speculative_auth/request_x509",
-                                test_mongoc_speculative_auth_request_x509);
-   TestSuite_AddMockServerTest (suite,
-                                "/speculative_auth_pool/request_x509",
-                                test_mongoc_speculative_auth_request_x509_pool);
+   TestSuite_AddMockServerTest (suite, "/speculative_auth/request_none", test_mongoc_speculative_auth_request_none);
+   TestSuite_AddMockServerTest (suite, "/speculative_auth/request_scram", test_mongoc_speculative_auth_request_scram);
    TestSuite_AddMockServerTest (
-      suite,
-      "/speculative_auth/request_x509/network_error",
-      test_mongoc_speculative_auth_request_x509_network_error);
+      suite, "/speculative_auth_pool/request_none", test_mongoc_speculative_auth_request_none_pool);
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+   TestSuite_AddMockServerTest (suite, "/speculative_auth/request_x509", test_mongoc_speculative_auth_request_x509);
+   TestSuite_AddMockServerTest (
+      suite, "/speculative_auth_pool/request_x509", test_mongoc_speculative_auth_request_x509_pool);
+   TestSuite_AddMockServerTest (
+      suite, "/speculative_auth/request_x509/network_error", test_mongoc_speculative_auth_request_x509_network_error);
 #endif /* MONGOC_ENABLE_SSL_* */
    TestSuite_AddMockServerTest (
-      suite,
-      "/speculative_auth_pool/request_scram",
-      test_mongoc_speculative_auth_request_scram_pool);
+      suite, "/speculative_auth_pool/request_scram", test_mongoc_speculative_auth_request_scram_pool);
 #endif /* MONGOC_ENABLE_CRYPTO */
 }

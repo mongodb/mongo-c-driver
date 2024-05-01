@@ -43,7 +43,7 @@ struct _mongoc_cyrus_t {
 
 
 #ifndef SASL_CALLBACK_FN
-#define SASL_CALLBACK_FN(_f) ((int (*) (void)) (_f))
+#define SASL_CALLBACK_FN(_f) ((int (*) (void)) ((void (*) (void)) (_f)))
 #endif
 
 int
@@ -51,11 +51,8 @@ _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t
 void
 _mongoc_cyrus_init (mongoc_cyrus_t *sasl);
 bool
-_mongoc_cyrus_new_from_cluster (mongoc_cyrus_t *sasl,
-                                mongoc_cluster_t *cluster,
-                                mongoc_stream_t *stream,
-                                const char *hostname,
-                                bson_error_t *error);
+_mongoc_cyrus_new_from_cluster (
+   mongoc_cyrus_t *sasl, mongoc_cluster_t *cluster, mongoc_stream_t *stream, const char *hostname, bson_error_t *error);
 int
 _mongoc_cyrus_log (mongoc_cyrus_t *sasl, int level, const char *message);
 void

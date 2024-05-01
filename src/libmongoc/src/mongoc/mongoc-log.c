@@ -91,10 +91,7 @@ _mongoc_log_get_handler (mongoc_log_func_t *log_func, void **user_data)
 
 
 void
-mongoc_log (mongoc_log_level_t log_level,
-            const char *log_domain,
-            const char *format,
-            ...)
+mongoc_log (mongoc_log_level_t log_level, const char *log_domain, const char *format, ...)
 {
    va_list args;
    char *message;
@@ -103,8 +100,7 @@ mongoc_log (mongoc_log_level_t log_level,
    bson_once (&once, &_mongoc_ensure_mutex_once);
 
    stop_logging = !gLogFunc;
-   stop_logging = stop_logging || (log_level == MONGOC_LOG_LEVEL_TRACE &&
-                                   !_mongoc_log_trace_is_enabled ());
+   stop_logging = stop_logging || (log_level == MONGOC_LOG_LEVEL_TRACE && !_mongoc_log_trace_is_enabled ());
    if (stop_logging) {
       return;
    }
@@ -148,10 +144,7 @@ mongoc_log_level_str (mongoc_log_level_t log_level)
 
 
 void
-mongoc_log_default_handler (mongoc_log_level_t log_level,
-                            const char *log_domain,
-                            const char *message,
-                            void *user_data)
+mongoc_log_default_handler (mongoc_log_level_t log_level, const char *log_domain, const char *message, void *user_data)
 {
    struct timeval tv;
    struct tm tt;
@@ -248,8 +241,7 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
       }
 
       if (rem == 15u) {
-         mongoc_log (
-            MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
          bson_string_truncate (str, 0);
          bson_string_truncate (astr, 0);
       } else if (rem == 7u) {
@@ -259,8 +251,7 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
    }
 
    if (_i != 16u) {
-      mongoc_log (
-         MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
+      mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
    }
 
    bson_string_free (str, true);
@@ -268,9 +259,7 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
 }
 
 void
-mongoc_log_trace_iovec (const char *domain,
-                        const mongoc_iovec_t *_iov,
-                        size_t _iovcnt)
+mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _iovcnt)
 {
    bson_string_t *str, *astr;
    const char *_b;
@@ -310,8 +299,7 @@ mongoc_log_trace_iovec (const char *domain,
          }
 
          if ((_i % 16) == 15) {
-            mongoc_log (
-               MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
+            mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
             bson_string_truncate (str, 0);
             bson_string_truncate (astr, 0);
          } else if ((_i % 16) == 7) {
@@ -322,8 +310,7 @@ mongoc_log_trace_iovec (const char *domain,
    }
 
    if (_i != 16) {
-      mongoc_log (
-         MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
+      mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
    }
 
    bson_string_free (str, true);

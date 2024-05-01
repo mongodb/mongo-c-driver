@@ -70,9 +70,7 @@ mongoc_get_version (void)
  * version.
  */
 bool
-mongoc_check_version (int required_major,
-                      int required_minor,
-                      int required_micro)
+mongoc_check_version (int required_major, int required_minor, int required_micro)
 {
    return MONGOC_CHECK_VERSION (required_major, required_minor, required_micro);
 }

@@ -59,9 +59,7 @@ test_mongoc_timeout_new (void)
 }
 
 void
-_test_mongoc_timeout_set_failure (mongoc_timeout_t *timeout,
-                                  int64_t try,
-                                  const char *err_msg)
+_test_mongoc_timeout_set_failure (mongoc_timeout_t *timeout, int64_t try, const char *err_msg)
 {
    capture_logs (true);
    BSON_ASSERT (!mongoc_timeout_set_timeout_ms (timeout, try));
@@ -87,10 +85,8 @@ test_mongoc_timeout_set (void)
    timeout = mongoc_timeout_new ();
    BSON_ASSERT (!mongoc_timeout_is_set (timeout));
 
-   _test_mongoc_timeout_set_failure (
-      timeout, -1, "timeout must not be negative");
-   _test_mongoc_timeout_set_failure (
-      timeout, INT64_MIN, "timeout must not be negative");
+   _test_mongoc_timeout_set_failure (timeout, -1, "timeout must not be negative");
+   _test_mongoc_timeout_set_failure (timeout, INT64_MIN, "timeout must not be negative");
 
    _test_mongoc_timeout_set_success (timeout, 0);
    _test_mongoc_timeout_set_success (timeout, 1);
@@ -124,12 +120,10 @@ _test_mongoc_timeout_copy (mongoc_timeout_t *expected)
    /* assert different memory addresses */
    BSON_ASSERT (expected != actual);
 
-   BSON_ASSERT (mongoc_timeout_is_set (actual) ==
-                mongoc_timeout_is_set (expected));
+   BSON_ASSERT (mongoc_timeout_is_set (actual) == mongoc_timeout_is_set (expected));
 
    if (mongoc_timeout_is_set (actual)) {
-      BSON_ASSERT (mongoc_timeout_get_timeout_ms (actual) ==
-                   mongoc_timeout_get_timeout_ms (expected));
+      BSON_ASSERT (mongoc_timeout_get_timeout_ms (actual) == mongoc_timeout_get_timeout_ms (expected));
    }
 
    mongoc_timeout_destroy (actual);

@@ -135,8 +135,7 @@ bson_string_append (bson_string_t *string, /* IN */
    if ((string->alloc - string->len - 1) < len) {
       string->alloc += len;
       if (!bson_is_power_of_two (string->alloc)) {
-         string->alloc =
-            (uint32_t) bson_next_power_of_two ((size_t) string->alloc);
+         string->alloc = (uint32_t) bson_next_power_of_two ((size_t) string->alloc);
       }
       string->str = bson_realloc (string->str, string->alloc);
    }
@@ -728,8 +727,7 @@ bson_ascii_strtoll (const char *s, char **e, int base)
    }
 
    /* from here down, inspired by NetBSD's strtoll */
-   if ((base == 0 || base == 16) && c == '0' &&
-       (tok[1] == 'x' || tok[1] == 'X')) {
+   if ((base == 0 || base == 16) && c == '0' && (tok[1] == 'x' || tok[1] == 'X')) {
       tok += 2;
       c = *tok;
       base = 16;

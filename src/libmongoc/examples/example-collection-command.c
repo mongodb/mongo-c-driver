@@ -13,8 +13,7 @@ do_ping (mongoc_collection_t *collection)
 
    cmd = BCON_NEW ("ping", BCON_INT32 (1));
 
-   if (mongoc_collection_command_simple (
-          collection, cmd, NULL, &reply, &error)) {
+   if (mongoc_collection_command_simple (collection, cmd, NULL, &reply, &error)) {
       str = bson_as_canonical_extended_json (&reply, NULL);
       printf ("Got reply: %s\n", str);
       bson_free (str);
@@ -49,8 +48,7 @@ main (int argc, char **argv)
    uri_string = argv[1];
    uri = mongoc_uri_new_with_error (uri_string, &error);
    if (!uri) {
-      MONGOC_ERROR (
-         "failed to parse URI: %s\nError: %s", uri_string, error.message);
+      MONGOC_ERROR ("failed to parse URI: %s\nError: %s", uri_string, error.message);
       return EXIT_FAILURE;
    }
 

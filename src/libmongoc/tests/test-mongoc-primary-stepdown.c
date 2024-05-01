@@ -81,13 +81,11 @@ _connection_count (mongoc_client_t *client, uint32_t server_id)
 
    BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
 
-   res = mongoc_client_command_simple_with_server_id (
-      client, "admin", &cmd, NULL, server_id, &reply, &error);
+   res = mongoc_client_command_simple_with_server_id (client, "admin", &cmd, NULL, server_id, &reply, &error);
    ASSERT_OR_PRINT (res, error);
 
    ASSERT (bson_iter_init (&iter, &reply));
-   ASSERT (
-      bson_iter_find_descendant (&iter, "connections.totalCreated", &child));
+   ASSERT (bson_iter_find_descendant (&iter, "connections.totalCreated", &child));
    conns = bson_iter_int32 (&child);
 
    bson_destroy (&cmd);
@@ -160,13 +158,12 @@ test_getmore_iteration (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id =
-      mongoc_topology_select_server_id (client->topology,
-                                        MONGOC_SS_WRITE,
-                                        NULL /* read prefs */,
-                                        NULL /* chosen read mode */,
-                                        NULL /* deprioritized servers */,
-                                        &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  NULL /* deprioritized servers */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
 
@@ -181,20 +178,14 @@ test_getmore_iteration (mongoc_client_t *client)
    }
 
    /* Retrieve the first batch of 2 documents */
-   cursor =
-      mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL, NULL);
 
    ASSERT (cursor);
    ASSERT (mongoc_cursor_next (cursor, &doc));
    ASSERT (mongoc_cursor_next (cursor, &doc));
 
    /* Send a stepdown to the primary, ensure it succeeds */
-   res = mongoc_database_command_simple (
-      db,
-      tmp_bson ("{ 'replSetStepDown': 5, 'force': true}"),
-      NULL,
-      NULL,
-      &error);
+   res = mongoc_database_command_simple (db, tmp_bson ("{ 'replSetStepDown': 5, 'force': true}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
    /* Retrieve the next results from the cursor,
@@ -243,23 +234,21 @@ test_not_primary_keep_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id =
-      mongoc_topology_select_server_id (client->topology,
-                                        MONGOC_SS_WRITE,
-                                        NULL /* read prefs */,
-                                        NULL /* chosen read mode */,
-                                        NULL /* deprioritized servers */,
-                                        &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  NULL /* deprioritized servers */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
-   res = mongoc_database_command_simple (
-      db,
-      tmp_bson ("{'configureFailPoint': 'failCommand', "
-                "'mode': {'times': 1}, "
-                "'data': {'failCommands': ['insert'], 'errorCode': 10107}}"),
-      NULL,
-      NULL,
-      &error);
+   res = mongoc_database_command_simple (db,
+                                         tmp_bson ("{'configureFailPoint': 'failCommand', "
+                                                   "'mode': {'times': 1}, "
+                                                   "'data': {'failCommands': ['insert'], 'errorCode': 10107}}"),
+                                         NULL,
+                                         NULL,
+                                         &error);
    ASSERT_OR_PRINT (res, error);
 
    /* Capture logs to swallow warnings about endSessions */
@@ -268,15 +257,13 @@ test_not_primary_keep_pool (mongoc_client_t *client)
    coll = mongoc_client_get_collection (client, "step-down", "step-down");
 
    /* Execute an insert, verify that it fails with 10107 */
-   res = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
    ASSERT_CMPINT (error.code, ==, 10107);
    ASSERT_CONTAINS (error.message, "failpoint");
 
    /* Execute a second insert, verify that it succeeds */
-   res = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (res);
 
    /* Verify that the connection pool has not been cleared */
@@ -318,23 +305,21 @@ test_not_primary_reset_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id =
-      mongoc_topology_select_server_id (client->topology,
-                                        MONGOC_SS_WRITE,
-                                        NULL /* read prefs */,
-                                        NULL /* chosen read mode */,
-                                        NULL /* deprioritized servers */,
-                                        &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  NULL /* deprioritized servers */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
-   res = mongoc_database_command_simple (
-      db,
-      tmp_bson ("{'configureFailPoint': 'failCommand', "
-                "'mode': {'times': 1}, "
-                "'data': {'failCommands': ['insert'], 'errorCode': 10107}}"),
-      read_prefs,
-      NULL,
-      &error);
+   res = mongoc_database_command_simple (db,
+                                         tmp_bson ("{'configureFailPoint': 'failCommand', "
+                                                   "'mode': {'times': 1}, "
+                                                   "'data': {'failCommands': ['insert'], 'errorCode': 10107}}"),
+                                         read_prefs,
+                                         NULL,
+                                         &error);
    ASSERT_OR_PRINT (res, error);
 
    /* Capture logs to swallow warnings about endSessions */
@@ -343,8 +328,7 @@ test_not_primary_reset_pool (mongoc_client_t *client)
    coll = mongoc_client_get_collection (client, "step-down", "step-down");
 
    /* Execute an insert, verify that it fails with 10107 */
-   res = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
    ASSERT_CMPINT (error.code, ==, 10107);
    ASSERT_CONTAINS (error.message, "failpoint");
@@ -353,8 +337,7 @@ test_not_primary_reset_pool (mongoc_client_t *client)
    ASSERT_CMPINT ((conn_count + 1), ==, _connection_count (client, primary_id));
 
    /* Execute an insert into the test collection and verify it succeeds */
-   res = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
    mongoc_read_prefs_destroy (read_prefs);
@@ -397,30 +380,27 @@ test_shutdown_reset_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id =
-      mongoc_topology_select_server_id (client->topology,
-                                        MONGOC_SS_WRITE,
-                                        NULL /* read prefs */,
-                                        NULL /* chosen read mode */,
-                                        NULL /* deprioritized servers */,
-                                        &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  NULL /* deprioritized servers */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
-   res = mongoc_database_command_simple (
-      db,
-      tmp_bson ("{'configureFailPoint': 'failCommand', "
-                "'mode': {'times': 1}, "
-                "'data': {'failCommands': ['insert'], 'errorCode': 91}}"),
-      read_prefs,
-      NULL,
-      &error);
+   res = mongoc_database_command_simple (db,
+                                         tmp_bson ("{'configureFailPoint': 'failCommand', "
+                                                   "'mode': {'times': 1}, "
+                                                   "'data': {'failCommands': ['insert'], 'errorCode': 91}}"),
+                                         read_prefs,
+                                         NULL,
+                                         &error);
    ASSERT_OR_PRINT (res, error);
 
    coll = mongoc_client_get_collection (client, "step-down", "step-down");
 
    /* Execute an insert, verify that it fails with 91 */
-   res = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
    ASSERT_CMPINT (error.code, ==, 91);
    ASSERT_CONTAINS (error.message, "failpoint");
@@ -429,8 +409,7 @@ test_shutdown_reset_pool (mongoc_client_t *client)
    ASSERT_CMPINT ((conn_count + 1), ==, _connection_count (client, primary_id));
 
    /* Execute an insert into the test collection and verify it succeeds */
-   res = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
    mongoc_read_prefs_destroy (read_prefs);
@@ -470,30 +449,27 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id =
-      mongoc_topology_select_server_id (client->topology,
-                                        MONGOC_SS_WRITE,
-                                        NULL /* read prefs */,
-                                        NULL /* chosen read mode */,
-                                        NULL /* deprioritized servers */,
-                                        &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  NULL /* deprioritized servers */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
-   res = mongoc_database_command_simple (
-      db,
-      tmp_bson ("{'configureFailPoint': 'failCommand', "
-                "'mode': {'times': 1}, "
-                "'data': {'failCommands': ['insert'], 'errorCode': 11600}}"),
-      read_prefs,
-      NULL,
-      &error);
+   res = mongoc_database_command_simple (db,
+                                         tmp_bson ("{'configureFailPoint': 'failCommand', "
+                                                   "'mode': {'times': 1}, "
+                                                   "'data': {'failCommands': ['insert'], 'errorCode': 11600}}"),
+                                         read_prefs,
+                                         NULL,
+                                         &error);
    ASSERT_OR_PRINT (res, error);
 
    coll = mongoc_client_get_collection (client, "step-down", "step-down");
 
    /* Execute an insert, verify that it fails with 11600 */
-   res = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
    ASSERT_CMPINT (error.code, ==, 11600);
    ASSERT_CONTAINS (error.message, "failpoint");
@@ -502,8 +478,7 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
    ASSERT_CMPINT ((conn_count + 1), ==, _connection_count (client, primary_id));
 
    /* Execute an insert into the test collection and verify it succeeds */
-   res = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
    mongoc_read_prefs_destroy (read_prefs);
@@ -521,8 +496,7 @@ test_interrupted_shutdown_reset_pool_runner (void *ctx_void)
       return;
    }
 
-   _run_test_single_or_pooled (test_interrupted_shutdown_reset_pool,
-                               ctx->use_pooled);
+   _run_test_single_or_pooled (test_interrupted_shutdown_reset_pool, ctx->use_pooled);
 }
 
 void
@@ -531,29 +505,28 @@ test_primary_stepdown_install (TestSuite *suite)
    test_ctx_t single_ctx = {.use_pooled = false};
    test_ctx_t pooled_ctx = {.use_pooled = true};
 
-#define TestPooledAndSingle(name, fn)                      \
-   TestSuite_AddFull (suite,                               \
-                      name "/single",                      \
-                      fn,                                  \
-                      NULL,                                \
-                      &single_ctx,                         \
-                      test_framework_skip_if_auth,         \
-                      test_framework_skip_if_not_replset); \
-   TestSuite_AddFull (suite,                               \
-                      name "/pooled",                      \
-                      fn,                                  \
-                      NULL,                                \
-                      &pooled_ctx,                         \
-                      test_framework_skip_if_auth,         \
-                      test_framework_skip_if_not_replset);
+#define TestPooledAndSingle(name, fn)                         \
+   if (1) {                                                   \
+      TestSuite_AddFull (suite,                               \
+                         name "/single",                      \
+                         fn,                                  \
+                         NULL,                                \
+                         &single_ctx,                         \
+                         test_framework_skip_if_auth,         \
+                         test_framework_skip_if_not_replset); \
+      TestSuite_AddFull (suite,                               \
+                         name "/pooled",                      \
+                         fn,                                  \
+                         NULL,                                \
+                         &pooled_ctx,                         \
+                         test_framework_skip_if_auth,         \
+                         test_framework_skip_if_not_replset); \
+   } else                                                     \
+      (void) 0
 
    TestPooledAndSingle ("/Stepdown/getmore", test_getmore_iteration_runner);
-   TestPooledAndSingle ("/Stepdown/not_primary_keep",
-                        test_not_primary_keep_pool_runner);
-   TestPooledAndSingle ("/Stepdown/not_primary_reset",
-                        test_not_primary_reset_pool_runner);
-   TestPooledAndSingle ("/Stepdown/shutdown_reset_pool",
-                        test_shutdown_reset_pool_runner);
-   TestPooledAndSingle ("/Stepdown/interrupt_shutdown",
-                        test_interrupted_shutdown_reset_pool_runner);
+   TestPooledAndSingle ("/Stepdown/not_primary_keep", test_not_primary_keep_pool_runner);
+   TestPooledAndSingle ("/Stepdown/not_primary_reset", test_not_primary_reset_pool_runner);
+   TestPooledAndSingle ("/Stepdown/shutdown_reset_pool", test_shutdown_reset_pool_runner);
+   TestPooledAndSingle ("/Stepdown/interrupt_shutdown", test_interrupted_shutdown_reset_pool_runner);
 }

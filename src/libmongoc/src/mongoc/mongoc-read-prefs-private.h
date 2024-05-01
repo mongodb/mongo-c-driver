@@ -61,11 +61,9 @@ void
 assemble_query_result_cleanup (mongoc_assemble_query_result_t *result);
 
 bool
-_mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs,
-                             bson_error_t *error);
+_mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs, bson_error_t *error);
 
-#define IS_PREF_PRIMARY(_pref) \
-   (!(_pref) || ((_pref)->mode == MONGOC_READ_PRIMARY))
+#define IS_PREF_PRIMARY(_pref) (!(_pref) || ((_pref)->mode == MONGOC_READ_PRIMARY))
 
 BSON_END_DECLS
 

@@ -914,6 +914,26 @@ tasks:
       permissions: public-read
       local_file: rpm.tar.gz
       content_type: ${content_type|application/x-gzip}
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        sudo rm -rf ../build ../mock-result ../rpm.tar.gz
+        export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64
+        sh -x .evergreen/scripts/build_snapshot_rpm.sh
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        sudo rm -rf ../build ../mock-result ../rpm.tar.gz
+        export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64
+        sh -x .evergreen/scripts/build_snapshot_rpm.sh
 - name: install-uninstall-check-mingw
   commands:
   - command: shell.exec
@@ -14456,6 +14476,19 @@ buildvariants:
   - name: debug-compile-nosasl-openssl-1.0.1
   - name: .ocsp-openssl-1.0.1
   batchtime: 10080
+  display_tasks:
+  - execution_tasks:
+    - .ocsp-openssl
+    name: ocsp-openssl
+  - execution_tasks:
+    - .ocsp-darwinssl
+    name: ocsp-darwinssl
+  - execution_tasks:
+    - .ocsp-winssl
+    name: ocsp-winssl
+  - execution_tasks:
+    - .ocsp-openssl-1.0.1
+    name: ocsp-openssl-1.0.1
 - name: packaging
   display_name: Linux Distro Packaging
   run_on: ubuntu1804-test

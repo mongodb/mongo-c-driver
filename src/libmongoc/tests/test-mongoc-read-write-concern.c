@@ -10,8 +10,7 @@
 
 
 static void
-compare_write_concern (const mongoc_write_concern_t *wc_correct,
-                       const mongoc_write_concern_t *wc)
+compare_write_concern (const mongoc_write_concern_t *wc_correct, const mongoc_write_concern_t *wc)
 {
    ASSERT_CMPINT32 (wc_correct->w, ==, wc->w);
    ASSERT_CMPINT64 (wc_correct->wtimeout, ==, wc->wtimeout);
@@ -20,8 +19,7 @@ compare_write_concern (const mongoc_write_concern_t *wc_correct,
 
 
 static void
-compare_read_concern (const mongoc_read_concern_t *rc_correct,
-                      const mongoc_read_concern_t *rc)
+compare_read_concern (const mongoc_read_concern_t *rc_correct, const mongoc_read_concern_t *rc)
 {
    ASSERT_CMPSTR (rc_correct->level, rc->level);
 }
@@ -44,8 +42,7 @@ convert_write_concern (const bson_t *wc_doc)
             if (strcmp (bson_lookup_utf8 (wc_doc, "w"), "majority") == 0) {
                mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
             } else {
-               mongoc_write_concern_set_wtag (wc,
-                                              bson_lookup_utf8 (wc_doc, "w"));
+               mongoc_write_concern_set_wtag (wc, bson_lookup_utf8 (wc_doc, "w"));
             }
          } else {
             if (bson_lookup_int32 (wc_doc, "w") < 0) {
@@ -57,11 +54,9 @@ convert_write_concern (const bson_t *wc_doc)
          if (bson_lookup_int32 (wc_doc, "wtimeoutMS") < 0) {
             goto invalid;
          }
-         mongoc_write_concern_set_wtimeout_int64 (
-            wc, bson_lookup_int32 (wc_doc, "wtimeoutMS"));
+         mongoc_write_concern_set_wtimeout_int64 (wc, bson_lookup_int32 (wc_doc, "wtimeoutMS"));
       } else if (strcmp (key, "journal") == 0) {
-         mongoc_write_concern_set_journal (
-            wc, bson_iter_value (&iter)->value.v_bool);
+         mongoc_write_concern_set_journal (wc, bson_iter_value (&iter)->value.v_bool);
       }
    }
 
@@ -91,8 +86,7 @@ convert_read_concern (const bson_t *rc_doc)
 
       if (strcmp (key, "level") == 0) {
          if (BSON_ITER_HOLDS_UTF8 (&iter)) {
-            mongoc_read_concern_set_level (rc,
-                                           bson_lookup_utf8 (rc_doc, "level"));
+            mongoc_read_concern_set_level (rc, bson_lookup_utf8 (rc_doc, "level"));
          } else {
             goto invalid;
          }
@@ -136,8 +130,7 @@ test_rw_concern_uri (bson_t *scenario)
       valid = _mongoc_lookup_bool (&test, "valid", true);
 
       if (_mongoc_lookup_bool (&test, "warning", false)) {
-         test_error ("update the \"%s\" test to handle warning: true",
-                     description);
+         test_error ("update the \"%s\" test to handle warning: true", description);
       }
 
       uri = mongoc_uri_new_with_error (uri_str, NULL);
@@ -232,12 +225,6 @@ test_rw_concern_document (bson_t *scenario)
 void
 test_read_write_concern_install (TestSuite *suite)
 {
-   install_json_test_suite (suite,
-                            JSON_DIR,
-                            "read_write_concern/connection-string",
-                            &test_rw_concern_uri);
-   install_json_test_suite (suite,
-                            JSON_DIR,
-                            "read_write_concern/document",
-                            &test_rw_concern_document);
+   install_json_test_suite (suite, JSON_DIR, "read_write_concern/connection-string", &test_rw_concern_uri);
+   install_json_test_suite (suite, JSON_DIR, "read_write_concern/document", &test_rw_concern_document);
 }

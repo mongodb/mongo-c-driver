@@ -27,9 +27,7 @@
 
 
 static mongoc_sspi_client_state_t *
-_mongoc_cluster_sspi_new (mongoc_uri_t *uri,
-                          mongoc_stream_t *stream,
-                          const char *hostname)
+_mongoc_cluster_sspi_new (mongoc_uri_t *uri, mongoc_stream_t *stream, const char *hostname)
 {
    WCHAR *service; /* L"serviceName@hostname@REALM" */
    const char *service_name = "mongodb";
@@ -53,18 +51,15 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri,
    _mongoc_sasl_set_properties (&state->sasl, uri);
 
    if (state->sasl.canonicalize_host_name &&
-       _mongoc_sasl_get_canonicalized_name (
-          stream, real_name, sizeof real_name)) {
+       _mongoc_sasl_get_canonicalized_name (stream, real_name, sizeof real_name)) {
       hostname = real_name;
    }
 
    /* service realm is an SSPI-specific feature */
    if (mongoc_uri_get_mechanism_properties (uri, &properties) &&
-       bson_iter_init_find_case (&iter, &properties, "SERVICE_REALM") &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
+       bson_iter_init_find_case (&iter, &properties, "SERVICE_REALM") && BSON_ITER_HOLDS_UTF8 (&iter)) {
       service_realm = bson_iter_utf8 (&iter, NULL);
-      service_ascii =
-         bson_strdup_printf ("%s@%s@%s", service_name, hostname, service_realm);
+      service_ascii = bson_strdup_printf ("%s@%s@%s", service_name, hostname, service_realm);
    } else {
       service_ascii = bson_strdup_printf ("%s@%s", service_name, hostname);
    }
@@ -72,12 +67,8 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri,
 
    /* this is donated to the sspi */
    service = bson_malloc0 ((service_ascii_len + 1) * sizeof (WCHAR));
-   service_len = MultiByteToWideChar (CP_UTF8,
-                                      0,
-                                      service_ascii,
-                                      (int) service_ascii_len,
-                                      service,
-                                      (int) service_ascii_len);
+   service_len =
+      MultiByteToWideChar (CP_UTF8, 0, service_ascii, (int) service_ascii_len, service, (int) service_ascii_len);
    service[service_len] = L'\0';
    bson_free (service_ascii);
 
@@ -86,12 +77,7 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri,
 
       /* this is donated to the sspi */
       pass = bson_malloc0 ((tmp_creds_len + 1) * sizeof (WCHAR));
-      pass_len = MultiByteToWideChar (CP_UTF8,
-                                      0,
-                                      state->sasl.pass,
-                                      (int) tmp_creds_len,
-                                      pass,
-                                      (int) tmp_creds_len);
+      pass_len = MultiByteToWideChar (CP_UTF8, 0, state->sasl.pass, (int) tmp_creds_len, pass, (int) tmp_creds_len);
       pass[pass_len] = L'\0';
    }
 
@@ -100,24 +86,12 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri,
 
       /* this is donated to the sspi */
       user = bson_malloc0 ((tmp_creds_len + 1) * sizeof (WCHAR));
-      user_len = MultiByteToWideChar (CP_UTF8,
-                                      0,
-                                      state->sasl.user,
-                                      (int) tmp_creds_len,
-                                      user,
-                                      (int) tmp_creds_len);
+      user_len = MultiByteToWideChar (CP_UTF8, 0, state->sasl.user, (int) tmp_creds_len, user, (int) tmp_creds_len);
       user[user_len] = L'\0';
    }
 
-   res = _mongoc_sspi_auth_sspi_client_init (service,
-                                             flags,
-                                             user,
-                                             (ULONG) user_len,
-                                             NULL,
-                                             0,
-                                             pass,
-                                             (ULONG) pass_len,
-                                             state);
+   res = _mongoc_sspi_auth_sspi_client_init (
+      service, flags, user, (ULONG) user_len, NULL, 0, pass, (ULONG) pass_len, state);
 
    if (res != MONGOC_SSPI_AUTH_GSS_ERROR) {
       return state;
@@ -166,16 +140,13 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    state = _mongoc_cluster_sspi_new (cluster->uri, stream, sd->host.host);
 
    if (!state) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "Couldn't initialize SSPI service.");
+      bson_set_error (
+         error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Couldn't initialize SSPI service.");
       goto failure;
    }
 
    for (step = 0;; step++) {
-      mongoc_cmd_parts_init (
-         &parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &cmd);
+      mongoc_cmd_parts_init (&parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &cmd);
       parts.prohibit_lsid = true;
       bson_init (&cmd);
 
@@ -187,19 +158,12 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
          res = _mongoc_sspi_auth_sspi_client_unwrap (state, buf);
          response = bson_strdup (state->response);
-         _mongoc_sspi_auth_sspi_client_wrap (state,
-                                             response,
-                                             (SEC_CHAR *) state->sasl.user,
-                                             (ULONG) tmp_creds_len,
-                                             0);
+         _mongoc_sspi_auth_sspi_client_wrap (state, response, (SEC_CHAR *) state->sasl.user, (ULONG) tmp_creds_len, 0);
          bson_free (response);
       }
 
       if (res == MONGOC_SSPI_AUTH_GSS_ERROR) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "Received invalid SSPI data.");
+         bson_set_error (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Received invalid SSPI data.");
 
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
@@ -207,17 +171,10 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       }
 
       if (step == 0) {
-         _mongoc_cluster_build_sasl_start (&cmd,
-                                           "GSSAPI",
-                                           state->response,
-                                           (uint32_t) strlen (state->response));
+         _mongoc_cluster_build_sasl_start (&cmd, "GSSAPI", state->response, (uint32_t) strlen (state->response));
       } else {
          if (state->response) {
-            _mongoc_cluster_build_sasl_continue (
-               &cmd,
-               conv_id,
-               state->response,
-               (uint32_t) strlen (state->response));
+            _mongoc_cluster_build_sasl_continue (&cmd, conv_id, state->response, (uint32_t) strlen (state->response));
          } else {
             _mongoc_cluster_build_sasl_continue (&cmd, conv_id, "", 0);
          }
@@ -233,8 +190,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          goto failure;
       }
 
-      if (!mongoc_cluster_run_command_private (
-             cluster, &parts.assembled, &reply, error)) {
+      if (!mongoc_cluster_run_command_private (cluster, &parts.assembled, &reply, error)) {
          mongoc_server_stream_cleanup (server_stream);
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
@@ -246,16 +202,14 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       mongoc_cmd_parts_cleanup (&parts);
       bson_destroy (&cmd);
 
-      if (bson_iter_init_find (&iter, &reply, "done") &&
-          bson_iter_as_bool (&iter)) {
+      if (bson_iter_init_find (&iter, &reply, "done") && bson_iter_as_bool (&iter)) {
          bson_destroy (&reply);
          break;
       }
 
       conv_id = _mongoc_cluster_get_conversation_id (&reply);
 
-      if (!bson_iter_init_find (&iter, &reply, "payload") ||
-          !BSON_ITER_HOLDS_UTF8 (&iter)) {
+      if (!bson_iter_init_find (&iter, &reply, "payload") || !BSON_ITER_HOLDS_UTF8 (&iter)) {
          bson_destroy (&reply);
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,

@@ -84,6 +84,8 @@ IPv4 and IPv6
 
 .. include:: includes/ipv4-and-ipv6.txt
 
+.. _connection_options:
+
 Connection Options
 ------------------
 

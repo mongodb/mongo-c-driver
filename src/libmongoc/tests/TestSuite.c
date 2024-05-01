@@ -131,14 +131,11 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    for (i = 1; i < argc; i++) {
       if (0 == strcmp ("-d", argv[i])) {
          suite->flags |= TEST_DEBUGOUTPUT;
-      } else if ((0 == strcmp ("-f", argv[i])) ||
-                 (0 == strcmp ("--no-fork", argv[i]))) {
+      } else if ((0 == strcmp ("-f", argv[i])) || (0 == strcmp ("--no-fork", argv[i]))) {
          suite->flags |= TEST_NOFORK;
-      } else if ((0 == strcmp ("-t", argv[i])) ||
-                 (0 == strcmp ("--trace", argv[i]))) {
+      } else if ((0 == strcmp ("-t", argv[i])) || (0 == strcmp ("--trace", argv[i]))) {
          if (!MONGOC_TRACE_ENABLED) {
-            test_error (
-               "-t requires mongoc compiled with -DENABLE_TRACING=ON.");
+            test_error ("-t requires mongoc compiled with -DENABLE_TRACING=ON.");
          }
          suite->flags |= TEST_TRACE;
       } else if (0 == strcmp ("-F", argv[i])) {
@@ -158,13 +155,11 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
                test_error ("Failed to open log file: %s", filename);
             }
          }
-      } else if ((0 == strcmp ("-h", argv[i])) ||
-                 (0 == strcmp ("--help", argv[i]))) {
+      } else if ((0 == strcmp ("-h", argv[i])) || (0 == strcmp ("--help", argv[i]))) {
          suite->flags |= TEST_HELPTEXT;
       } else if (0 == strcmp ("--list-tests", argv[i])) {
          suite->flags |= TEST_LISTTESTS;
-      } else if ((0 == strcmp ("-s", argv[i])) ||
-                 (0 == strcmp ("--silent", argv[i]))) {
+      } else if ((0 == strcmp ("-s", argv[i])) || (0 == strcmp ("--silent", argv[i]))) {
          suite->silent = true;
       } else if ((0 == strcmp ("--ctest-run", argv[i]))) {
          if (suite->ctest_run) {
@@ -176,8 +171,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          suite->flags |= TEST_NOFORK;
          suite->silent = true;
          suite->ctest_run = bson_strdup (argv[++i]);
-      } else if ((0 == strcmp ("-l", argv[i])) ||
-                 (0 == strcmp ("--match", argv[i]))) {
+      } else if ((0 == strcmp ("-l", argv[i])) || (0 == strcmp ("--match", argv[i]))) {
          char *val;
          if (argc - 1 == i) {
             test_error ("%s requires an argument.", argv[i]);
@@ -210,8 +204,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       } else if (!strcmp (mock_server_log, "json")) {
          suite->mock_server_log_buf = bson_string_new (NULL);
       } else {
-         test_error ("Unrecognized option: MONGOC_TEST_SERVER_LOG=%s",
-                     mock_server_log);
+         test_error ("Unrecognized option: MONGOC_TEST_SERVER_LOG=%s", mock_server_log);
       }
 
       bson_free (mock_server_log);
@@ -266,8 +259,7 @@ TestSuite_Add (TestSuite *suite, /* IN */
                const char *name, /* IN */
                TestFunc func)    /* IN */
 {
-   TestSuite_AddFullWithTestFn (
-      suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
+   TestSuite_AddFullWithTestFn (suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
 }
 
 
@@ -276,8 +268,7 @@ TestSuite_AddLive (TestSuite *suite, /* IN */
                    const char *name, /* IN */
                    TestFunc func)    /* IN */
 {
-   TestSuite_AddFullWithTestFn (
-      suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
+   TestSuite_AddFullWithTestFn (suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
 }
 
 
@@ -286,23 +277,17 @@ _TestSuite_AddCheck (Test *test, CheckFunc check, const char *name)
 {
    test->checks[test->num_checks] = check;
    if (++test->num_checks > MAX_TEST_CHECK_FUNCS) {
-      MONGOC_STDERR_PRINTF (
-         "Too many check funcs for %s, increase MAX_TEST_CHECK_FUNCS "
-         "to more than %d\n",
-         name,
-         MAX_TEST_CHECK_FUNCS);
+      MONGOC_STDERR_PRINTF ("Too many check funcs for %s, increase MAX_TEST_CHECK_FUNCS "
+                            "to more than %d\n",
+                            name,
+                            MAX_TEST_CHECK_FUNCS);
       abort ();
    }
 }
 
 
 Test *
-_V_TestSuite_AddFull (TestSuite *suite,
-                      const char *name,
-                      TestFuncWC func,
-                      TestFuncDtor dtor,
-                      void *ctx,
-                      va_list ap)
+_V_TestSuite_AddFull (TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, va_list ap)
 {
    CheckFunc check;
    Test *test;
@@ -343,10 +328,7 @@ _V_TestSuite_AddFull (TestSuite *suite,
 
 
 void
-_TestSuite_AddMockServerTest (TestSuite *suite,
-                              const char *name,
-                              TestFunc func,
-                              ...)
+_TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func, ...)
 {
    Test *test;
    va_list ap;
@@ -405,8 +387,7 @@ _print_getlasterror_win (const char *msg)
 {
    LPTSTR err_msg;
 
-   FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-                     FORMAT_MESSAGE_IGNORE_INSERTS,
+   FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                   NULL,
                   GetLastError (),
                   MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -434,8 +415,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
    si.cb = sizeof (si);
    ZeroMemory (&pi, sizeof (pi));
 
-   cmdline = bson_strdup_printf (
-      "%s --silent --no-fork -l %s", suite->prgname, test->name);
+   cmdline = bson_strdup_printf ("%s --silent --no-fork -l %s", suite->prgname, test->name);
 
    if (!CreateProcess (NULL,
                        cmdline,
@@ -509,26 +489,14 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
          dup2 (pipefd[1], STDOUT_FILENO);
          close (pipefd[0]);
          close (pipefd[1]);
-         execle (suite->prgname,
-                 suite->prgname,
-                 "--no-fork",
-                 "--silent",
-                 "-l",
-                 test->name,
-                 (char *) 0,
-                 envp);
+         execle (suite->prgname, suite->prgname, "--no-fork", "--silent", "-l", test->name, (char *) 0, envp);
       } else {
          /* suppress child output */
          fd = open ("/dev/null", O_WRONLY);
          dup2 (fd, STDOUT_FILENO);
          close (fd);
 
-         execl (suite->prgname,
-                suite->prgname,
-                "--no-fork",
-                "-l",
-                test->name,
-                (char *) 0);
+         execl (suite->prgname, suite->prgname, "--no-fork", "-l", test->name, (char *) 0);
       }
 
       exit (-1);
@@ -583,21 +551,19 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    }
 
    for (i = 0; i < suite->failing_flaky_skips.len; i++) {
-      TestSkip *skip =
-         _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, i);
+      TestSkip *skip = _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, i);
       if (0 == strcmp (name, skip->test_name) && skip->subtest_desc == NULL) {
          if (suite->ctest_run) {
             /* Write a marker that tells CTest that we are skipping this test */
             test_msg ("@@ctest-skipped@@");
          }
          if (!suite->silent) {
-            bson_string_append_printf (
-               buf,
-               "    { \"status\": \"skip\", \"test_file\": \"%s\","
-               " \"reason\": \"%s\" }%s",
-               test->name,
-               skip->reason,
-               ((*count) == 1) ? "" : ",");
+            bson_string_append_printf (buf,
+                                       "    { \"status\": \"skip\", \"test_file\": \"%s\","
+                                       " \"reason\": \"%s\" }%s",
+                                       test->name,
+                                       skip->reason,
+                                       ((*count) == 1) ? "" : ",");
             test_msg ("%s", buf->str);
             if (suite->outfile) {
                fprintf (suite->outfile, "%s", buf->str);
@@ -617,10 +583,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
          }
          if (!suite->silent) {
             bson_string_append_printf (
-               buf,
-               "    { \"status\": \"skip\", \"test_file\": \"%s\" }%s",
-               test->name,
-               ((*count) == 1) ? "" : ",");
+               buf, "    { \"status\": \"skip\", \"test_file\": \"%s\" }%s", test->name, ((*count) == 1) ? "" : ",");
             test_msg ("%s", buf->str);
             if (suite->outfile) {
                fprintf (suite->outfile, "%s", buf->str);
@@ -711,26 +674,25 @@ done:
 static void
 TestSuite_PrintHelp (TestSuite *suite) /* IN */
 {
-   printf (
-      "usage: %s [OPTIONS]\n"
-      "\n"
-      "Options:\n"
-      "    -h, --help            Show this help menu.\n"
-      "    --list-tests          Print list of available tests.\n"
-      "    -f, --no-fork         Do not spawn a process per test (abort on "
-      "first error).\n"
-      "    -l, --match PATTERN   Run test by name, e.g. \"/Client/command\" or "
-      "\"/Client/*\". May be repeated.\n"
-      "    --ctest-run TEST      Run only the named TEST for CTest\n"
-      "                          integration.\n"
-      "    -s, --silent          Suppress all output.\n"
-      "    -F FILENAME           Write test results (JSON) to FILENAME.\n"
-      "    -d                    Print debug output (useful if a test hangs).\n"
-      "    --skip-tests FILE     Skip known failing or flaky tests.\n"
-      "    -t, --trace           Enable mongoc tracing (useful to debug "
-      "tests).\n"
-      "\n",
-      suite->prgname);
+   printf ("usage: %s [OPTIONS]\n"
+           "\n"
+           "Options:\n"
+           "    -h, --help            Show this help menu.\n"
+           "    --list-tests          Print list of available tests.\n"
+           "    -f, --no-fork         Do not spawn a process per test (abort on "
+           "first error).\n"
+           "    -l, --match PATTERN   Run test by name, e.g. \"/Client/command\" or "
+           "\"/Client/*\". May be repeated.\n"
+           "    --ctest-run TEST      Run only the named TEST for CTest\n"
+           "                          integration.\n"
+           "    -s, --silent          Suppress all output.\n"
+           "    -F FILENAME           Write test results (JSON) to FILENAME.\n"
+           "    -d                    Print debug output (useful if a test hangs).\n"
+           "    --skip-tests FILE     Skip known failing or flaky tests.\n"
+           "    -t, --trace           Enable mongoc tracing (useful to debug "
+           "tests).\n"
+           "\n",
+           suite->prgname);
 }
 
 
@@ -884,9 +846,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             udspath,
             egetenv ("MONGOC_TEST_COMPRESSORS"),
             ssl ? "true" : "false",
-            test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION")
-               ? "true"
-               : "false",
+            test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION") ? "true" : "false",
             egetenv ("MONGOC_TEST_SSL_PEM_FILE"),
             egetenv ("MONGOC_TEST_SSL_PEM_PWD"),
             egetenv ("MONGOC_TEST_SSL_CA_FILE"),
@@ -895,11 +855,8 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             getenv ("MONGOC_TEST_MONITORING_VERBOSE") ? "true" : "false",
             egetenv ("MONGOC_TEST_SERVER_LOG"),
             get_future_timeout_ms (),
-            test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN")
-               ? "true"
-               : "false",
-            test_framework_getenv_bool ("MONGOC_TEST_SKIP_LIVE") ? "true"
-                                                                 : "false",
+            test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN") ? "true" : "false",
+            test_framework_getenv_bool ("MONGOC_TEST_SKIP_LIVE") ? "true" : "false",
             test_framework_getenv_bool ("MONGOC_CHECK_IPV6") ? "true" : "false",
             (suite->flags & TEST_NOFORK) ? "false" : "true",
             (suite->flags & TEST_TRACE) ? "true" : "false",
@@ -920,9 +877,7 @@ TestSuite_PrintJsonFooter (FILE *stream) /* IN */
 }
 
 static bool
-TestSuite_TestMatchesName (const TestSuite *suite,
-                           const Test *test,
-                           const char *testname)
+TestSuite_TestMatchesName (const TestSuite *suite, const Test *test, const char *testname)
 {
    char name[128];
    bool star = strlen (testname) && testname[strlen (testname) - 1] == '*';
@@ -1014,13 +969,11 @@ _process_skip_file (const char *filename, mongoc_array_t *skips)
       if (comment_char) {
          test_name_end = comment_char;
          comment_text = comment_char;
-         while (comment_text[0] == '#' || comment_text[0] == ' ' ||
-                comment_text[0] == '\t') {
+         while (comment_text[0] == '#' || comment_text[0] == ' ' || comment_text[0] == '\t') {
             if (++comment_text >= (buffer + buflen))
                break;
          }
-         skip->reason =
-            bson_strndup (comment_text, buflen - (comment_text - buffer));
+         skip->reason = bson_strndup (comment_text, buflen - (comment_text - buffer));
          comment_len = buflen - (comment_char - buffer);
       } else {
          skip->reason = NULL;
@@ -1034,8 +987,7 @@ _process_skip_file (const char *filename, mongoc_array_t *skips)
          subtest_start++;
          /* find the second '"' that marks end of subtest name */
          subtest_end = subtest_start + 1;
-         while (subtest_end[0] != '\0' && subtest_end[0] != '"' &&
-                (subtest_end < buffer + new_buflen)) {
+         while (subtest_end[0] != '\0' && subtest_end[0] != '"' && (subtest_end < buffer + new_buflen)) {
             subtest_end++;
          }
          /* 'subtest_start + 1' to trim leading and trailing '"' */
@@ -1143,8 +1095,7 @@ TestSuite_Run (TestSuite *suite) /* IN */
          TestSuite_PrintJsonFooter (suite->outfile);
       }
    }
-   MONGOC_DEBUG ("Duration of all tests (s): %" PRId64,
-                 (bson_get_monotonic_time () - start_us) / (1000 * 1000));
+   MONGOC_DEBUG ("Duration of all tests (s): %" PRId64, (bson_get_monotonic_time () - start_us) / (1000 * 1000));
 
    return failures;
 }
@@ -1189,8 +1140,7 @@ TestSuite_Destroy (TestSuite *suite)
    _mongoc_array_destroy (&suite->match_patterns);
 
    for (size_t i = 0u; i < suite->failing_flaky_skips.len; i++) {
-      TestSkip *val =
-         _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, i);
+      TestSkip *val = _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, i);
       bson_free (val->test_name);
       bson_free (val->subtest_desc);
       bson_free (val->reason);
@@ -1229,8 +1179,7 @@ test_suite_mock_server_log (const char *msg, ...)
       va_end (ap);
 
       if (gTestSuite->mock_server_log_buf) {
-         bson_string_append_printf (
-            gTestSuite->mock_server_log_buf, "%s\n", formatted_msg);
+         bson_string_append_printf (gTestSuite->mock_server_log_buf, "%s\n", formatted_msg);
       } else {
          fprintf (gTestSuite->mock_server_log, "%s\n", formatted_msg);
          fflush (gTestSuite->mock_server_log);

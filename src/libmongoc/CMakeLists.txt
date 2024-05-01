@@ -484,9 +484,9 @@ endif ()
 
 if (NOT MONGOC_ENABLE_SSL)
    if (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
-      message (FATAL_ERROR "SSL disabled, but is required for Client-Side Field Level Encryption support.")
+      message (FATAL_ERROR "SSL disabled, but is required for In-Use Encryption support.")
    elseif (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL AUTO)
-      message (STATUS "SSL disabled. Configuring without Client-Side Field Level Encryption support.")
+      message (STATUS "SSL disabled. Configuring without In-Use Encryption support.")
    endif ()
 elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
    message (STATUS "Searching for libmongocrypt")
@@ -497,10 +497,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.8.0)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.10.0)
       message (STATUS "  libmongocrypt found at ${mongocrypt_DIR}")
       message (STATUS "  libmongocrypt version ${mongocrypt_VERSION} found")
-      message (STATUS "  libmongocrypt version 1.8.0 is required to enable Client-Side Field Level Encryption Support.")
+      message (STATUS "  libmongocrypt version 1.10.0 is required to enable In-Use Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -521,7 +521,7 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
    elseif (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
       message (FATAL_ERROR "Required library (libmongocrypt) not found.")
    else ()
-      message (STATUS "libmongocrypt not found. Configuring without Client-Side Field Level Encryption support.")
+      message (STATUS "libmongocrypt not found. Configuring without In-Use Encryption support.")
    endif ()
 endif ()
 
@@ -535,6 +535,7 @@ endif ()
 
 set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-nsinfo.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
@@ -820,6 +821,11 @@ set_property(
    "MONGOC_CYRUS_PLUGIN_PATH_PREFIX=$<IF:$<STREQUAL:${CYRUS_PLUGIN_PATH_PREFIX},>,NULL,\"${CYRUS_PLUGIN_PATH_PREFIX}\">"
 )
 
+set (
+   UTHASH_INCLUDE_DIR
+   "${SOURCE_DIR}/src/uthash"
+)
+
 if (ENABLE_SHARED)
    add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    if(WIN32)
@@ -832,6 +838,7 @@ if (ENABLE_SHARED)
    target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
+   target_include_directories (mongoc_shared PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
       if (APPLE)
@@ -916,6 +923,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
+   target_include_directories (mongoc_static PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
    endif ()
@@ -1083,6 +1091,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
    ${PROJECT_SOURCE_DIR}/tests/test-service-gcp.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-integer.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-nsinfo.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
    ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
@@ -1128,6 +1137,7 @@ if (ENABLE_TESTS)
       PRIVATE
          ${PROJECT_SOURCE_DIR}/tests
          ${BSON_STATIC_INCLUDE_DIRS}
+         ${UTHASH_INCLUDE_DIR}
    )
    target_compile_definitions (test-libmongoc-lib
       PUBLIC

@@ -33,9 +33,7 @@ _mongoc_array_init (mongoc_array_t *array, size_t element_size)
 
 
 void
-_mongoc_array_aligned_init (mongoc_array_t *array,
-                            size_t element_alignment,
-                            size_t element_size)
+_mongoc_array_aligned_init (mongoc_array_t *array, size_t element_alignment, size_t element_size)
 {
    BSON_ASSERT_PARAM (array);
    BSON_ASSERT (element_alignment > 0);
@@ -93,9 +91,7 @@ _mongoc_array_destroy (mongoc_array_t *array)
 
 
 void
-_mongoc_array_append_vals (mongoc_array_t *array,
-                           const void *data,
-                           uint32_t n_elements)
+_mongoc_array_append_vals (mongoc_array_t *array, const void *data, uint32_t n_elements)
 {
    size_t len;
    size_t off;

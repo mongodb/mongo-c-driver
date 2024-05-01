@@ -25,15 +25,11 @@ create_schema_file (bson_t *kms_providers,
    bool ret = false;
 
    client_encryption_opts = mongoc_client_encryption_opts_new ();
-   mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
-                                                    kms_providers);
-   mongoc_client_encryption_opts_set_keyvault_namespace (
-      client_encryption_opts, keyvault_db, keyvault_coll);
-   mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
-                                                      keyvault_client);
+   mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts, kms_providers);
+   mongoc_client_encryption_opts_set_keyvault_namespace (client_encryption_opts, keyvault_db, keyvault_coll);
+   mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts, keyvault_client);
 
-   client_encryption =
-      mongoc_client_encryption_new (client_encryption_opts, error);
+   client_encryption = mongoc_client_encryption_new (client_encryption_opts, error);
    if (!client_encryption) {
       goto fail;
    }
@@ -42,36 +38,33 @@ create_schema_file (bson_t *kms_providers,
     * https://dochub.mongodb.org/core/client-side-field-level-encryption-automatic-encryption-rules
     */
    datakey_opts = mongoc_client_encryption_datakey_opts_new ();
-   mongoc_client_encryption_datakey_opts_set_keyaltnames (
-      datakey_opts, keyaltnames, 1);
-   if (!mongoc_client_encryption_create_datakey (
-          client_encryption, "local", datakey_opts, &datakey_id, error)) {
+   mongoc_client_encryption_datakey_opts_set_keyaltnames (datakey_opts, keyaltnames, 1);
+   if (!mongoc_client_encryption_create_datakey (client_encryption, "local", datakey_opts, &datakey_id, error)) {
       goto fail;
    }
 
    /* Create a schema describing that "encryptedField" is a string encrypted
     * with the newly created data key using deterministic encryption. */
-   schema = BCON_NEW ("properties",
-                      "{",
-                      "encryptedField",
-                      "{",
-                      "encrypt",
-                      "{",
-                      "keyId",
-                      "[",
-                      BCON_BIN (datakey_id.value.v_binary.subtype,
-                                datakey_id.value.v_binary.data,
-                                datakey_id.value.v_binary.data_len),
-                      "]",
-                      "bsonType",
-                      "string",
-                      "algorithm",
-                      MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC,
-                      "}",
-                      "}",
-                      "}",
-                      "bsonType",
-                      "object");
+   schema = BCON_NEW (
+      "properties",
+      "{",
+      "encryptedField",
+      "{",
+      "encrypt",
+      "{",
+      "keyId",
+      "[",
+      BCON_BIN (datakey_id.value.v_binary.subtype, datakey_id.value.v_binary.data, datakey_id.value.v_binary.data_len),
+      "]",
+      "bsonType",
+      "string",
+      "algorithm",
+      MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC,
+      "}",
+      "}",
+      "}",
+      "bsonType",
+      "object");
 
    /* Use canonical JSON so that other drivers and tools will be
     * able to parse the MongoDB extended JSON file. */
@@ -135,8 +128,7 @@ main (void)
 
    /* Configure the master key. This must be the same master key that was used
     * to create the encryption key. */
-   local_masterkey =
-      hex_to_bin (getenv ("LOCAL_MASTERKEY"), &local_masterkey_len);
+   local_masterkey = hex_to_bin (getenv ("LOCAL_MASTERKEY"), &local_masterkey_len);
    if (!local_masterkey || local_masterkey_len != 96) {
       fprintf (stderr,
                "Specify LOCAL_MASTERKEY environment variable as a "
@@ -144,19 +136,13 @@ main (void)
       goto fail;
    }
 
-   kms_providers = BCON_NEW ("local",
-                             "{",
-                             "key",
-                             BCON_BIN (0, local_masterkey, local_masterkey_len),
-                             "}");
+   kms_providers = BCON_NEW ("local", "{", "key", BCON_BIN (0, local_masterkey, local_masterkey_len), "}");
 
    /* Set up the key vault for this example. */
-   keyvault_client = mongoc_client_new (
-      "mongodb://localhost/?appname=client-side-encryption-keyvault");
+   keyvault_client = mongoc_client_new ("mongodb://localhost/?appname=client-side-encryption-keyvault");
    BSON_ASSERT (keyvault_client);
 
-   keyvault_coll = mongoc_client_get_collection (
-      keyvault_client, KEYVAULT_DB, KEYVAULT_COLL);
+   keyvault_coll = mongoc_client_get_collection (keyvault_client, KEYVAULT_DB, KEYVAULT_COLL);
    mongoc_collection_drop (keyvault_coll, NULL);
 
    /* Create a unique index to ensure that two data keys cannot share the same
@@ -173,12 +159,8 @@ main (void)
                           "}",
                           "}");
    index_model = mongoc_index_model_new (index_keys, index_opts);
-   ret = mongoc_collection_create_indexes_with_opts (keyvault_coll,
-                                                     &index_model,
-                                                     1,
-                                                     NULL /* opts */,
-                                                     NULL /* reply */,
-                                                     &error);
+   ret = mongoc_collection_create_indexes_with_opts (
+      keyvault_coll, &index_model, 1, NULL /* opts */, NULL /* reply */, &error);
 
    if (!ret) {
       goto fail;
@@ -186,8 +168,7 @@ main (void)
 
    /* Create a new data key and a schema using it for encryption. Save the
     * schema to the file jsonSchema.json */
-   ret = create_schema_file (
-      kms_providers, KEYVAULT_DB, KEYVAULT_COLL, keyvault_client, &error);
+   ret = create_schema_file (kms_providers, KEYVAULT_DB, KEYVAULT_COLL, keyvault_client, &error);
 
    if (!ret) {
       goto fail;
@@ -203,28 +184,21 @@ main (void)
 
    /* Construct the schema map, mapping the namespace of the collection to the
     * schema describing encryption. */
-   schema_map =
-      BCON_NEW (ENCRYPTED_DB "." ENCRYPTED_COLL, BCON_DOCUMENT (&schema));
+   schema_map = BCON_NEW (ENCRYPTED_DB "." ENCRYPTED_COLL, BCON_DOCUMENT (&schema));
 
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
-   mongoc_auto_encryption_opts_set_keyvault_client (auto_encryption_opts,
-                                                    keyvault_client);
-   mongoc_auto_encryption_opts_set_keyvault_namespace (
-      auto_encryption_opts, KEYVAULT_DB, KEYVAULT_COLL);
-   mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
-                                                  kms_providers);
-   mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts,
-                                               schema_map);
+   mongoc_auto_encryption_opts_set_keyvault_client (auto_encryption_opts, keyvault_client);
+   mongoc_auto_encryption_opts_set_keyvault_namespace (auto_encryption_opts, KEYVAULT_DB, KEYVAULT_COLL);
+   mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts, kms_providers);
+   mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts, schema_map);
 
-   client =
-      mongoc_client_new ("mongodb://localhost/?appname=client-side-encryption");
+   client = mongoc_client_new ("mongodb://localhost/?appname=client-side-encryption");
    BSON_ASSERT (client);
 
    /* Enable automatic encryption. It will determine that encryption is
     * necessary from the schema map instead of relying on the server to provide
     * a schema. */
-   ret = mongoc_client_enable_auto_encryption (
-      client, auto_encryption_opts, &error);
+   ret = mongoc_client_enable_auto_encryption (client, auto_encryption_opts, &error);
    if (!ret) {
       goto fail;
    }
@@ -235,8 +209,7 @@ main (void)
    mongoc_collection_drop (coll, NULL);
 
    to_insert = BCON_NEW ("encryptedField", "123456789");
-   ret = mongoc_collection_insert_one (
-      coll, to_insert, NULL /* opts */, NULL /* reply */, &error);
+   ret = mongoc_collection_insert_one (coll, to_insert, NULL /* opts */, NULL /* reply */, &error);
    if (!ret) {
       goto fail;
    }
@@ -246,12 +219,10 @@ main (void)
    }
    printf ("\n");
 
-   unencrypted_client = mongoc_client_new (
-      "mongodb://localhost/?appname=client-side-encryption-unencrypted");
+   unencrypted_client = mongoc_client_new ("mongodb://localhost/?appname=client-side-encryption-unencrypted");
    BSON_ASSERT (unencrypted_client);
 
-   unencrypted_coll = mongoc_client_get_collection (
-      unencrypted_client, ENCRYPTED_DB, ENCRYPTED_COLL);
+   unencrypted_coll = mongoc_client_get_collection (unencrypted_client, ENCRYPTED_DB, ENCRYPTED_COLL);
    printf ("encrypted document: ");
    if (!print_one_document (unencrypted_coll, &error)) {
       goto fail;

@@ -2485,9 +2485,7 @@ insert_pet (mongoc_collection_t *collection, bool is_adoptable)
 
    rc = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
    if (!rc) {
-      MONGOC_ERROR ("insert into pets.%s failed: %s",
-                    mongoc_collection_get_name (collection),
-                    error.message);
+      MONGOC_ERROR ("insert into pets.%s failed: %s", mongoc_collection_get_name (collection), error.message);
       goto cleanup;
    }
 
@@ -2498,8 +2496,7 @@ cleanup:
 
 
 static bool
-pet_setup (mongoc_collection_t *cats_collection,
-           mongoc_collection_t *dogs_collection)
+pet_setup (mongoc_collection_t *cats_collection, mongoc_collection_t *dogs_collection)
 {
    bool ok = true;
 
@@ -2563,8 +2560,7 @@ accumulate_adoptable_count (const mongoc_client_session_t *cs,
                         "}",
                         "]");
 
-   cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
    bson_destroy (&opts);
 
    rc = mongoc_cursor_next (cursor, &doc);
@@ -2600,6 +2596,8 @@ cleanup:
 static void
 test_example_59 (mongoc_database_t *db)
 {
+   BSON_UNUSED (db);
+
    if (!test_framework_skip_if_no_txns ()) {
       return;
    }
@@ -2663,9 +2661,7 @@ test_example_59 (mongoc_database_t *db)
    /* End Snapshot Query Example 1 */
 
    if (adoptable_pets_count != 2) {
-      MONGOC_ERROR (
-         "there should be exatly 2 adoptable_pets_count, found: %" PRId64,
-         adoptable_pets_count);
+      MONGOC_ERROR ("there should be exatly 2 adoptable_pets_count, found: %" PRId64, adoptable_pets_count);
    }
 
    /* Start Snapshot Query Example 1 Post */
@@ -2694,15 +2690,10 @@ retail_setup (mongoc_collection_t *sales_collection)
 
    mongoc_collection_drop (sales_collection, NULL);
 
-   doc = BCON_NEW ("shoeType",
-                   BCON_UTF8 ("boot"),
-                   "price",
-                   BCON_INT64 (30),
-                   "saleDate",
-                   BCON_DATE_TIME (unix_time_now));
+   doc =
+      BCON_NEW ("shoeType", BCON_UTF8 ("boot"), "price", BCON_INT64 (30), "saleDate", BCON_DATE_TIME (unix_time_now));
 
-   ok =
-      mongoc_collection_insert_one (sales_collection, doc, NULL, NULL, &error);
+   ok = mongoc_collection_insert_one (sales_collection, doc, NULL, NULL, &error);
    if (!ok) {
       MONGOC_ERROR ("insert into retail.sales failed: %s", error.message);
       goto cleanup;
@@ -2717,6 +2708,8 @@ cleanup:
 static void
 test_example_60 (mongoc_database_t *db)
 {
+   BSON_UNUSED (db);
+
    if (!test_framework_skip_if_no_txns ()) {
       return;
    }
@@ -2790,8 +2783,7 @@ test_example_60 (mongoc_database_t *db)
                         "}",
                         "]");
 
-   cursor = mongoc_collection_aggregate (
-      sales_collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
+   cursor = mongoc_collection_aggregate (sales_collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
    bson_destroy (&opts);
 
    ok = mongoc_cursor_next (cursor, &doc);
@@ -2817,8 +2809,7 @@ test_example_60 (mongoc_database_t *db)
    /* End Snapshot Query Example 2 */
 
    if (total_sales != 1) {
-      MONGOC_ERROR ("there should be exactly 1 total_sales, found: %" PRId64,
-                    total_sales);
+      MONGOC_ERROR ("there should be exactly 1 total_sales, found: %" PRId64, total_sales);
    }
 
    /* Start Snapshot Query Example 2 Post */
@@ -2862,8 +2853,6 @@ BSON_THREAD_FUN (insert_docs, p)
       bson_mutex_unlock (&ctx->lock);
       _mongoc_usleep (100 * 1000);  /* 100 ms */
    }
-   bson_destroy (&doc);
-   BSON_THREAD_RETURN;
 }
 
 
@@ -3559,16 +3548,12 @@ insert_employee (mongoc_client_t *client, int employee)
 /* clang-format on */
 /* Start Transactions Retry Example 3 */
 /* takes a session, an out-param for server reply, and out-param for error. */
-typedef bool (*txn_func_t) (mongoc_client_session_t *,
-                            bson_t *,
-                            bson_error_t *);
+typedef bool (*txn_func_t) (mongoc_client_session_t *, bson_t *, bson_error_t *);
 
 
 /* runs transactions with retry logic */
 bool
-run_transaction_with_retry (txn_func_t txn_func,
-                            mongoc_client_session_t *cs,
-                            bson_error_t *error)
+run_transaction_with_retry (txn_func_t txn_func, mongoc_client_session_t *cs, bson_error_t *error)
 {
    bson_t reply;
    bool r;
@@ -3631,9 +3616,7 @@ commit_with_retry (mongoc_client_session_t *cs, bson_error_t *error)
 
 /* updates two collections in a transaction and calls commit_with_retry */
 bool
-update_employee_info (mongoc_client_session_t *cs,
-                      bson_t *reply,
-                      bson_error_t *error)
+update_employee_info (mongoc_client_session_t *cs, bson_t *reply, bson_error_t *error)
 {
    mongoc_client_t *client;
    mongoc_collection_t *employees;
@@ -3675,8 +3658,7 @@ update_employee_info (mongoc_client_session_t *cs,
    update = BCON_NEW ("$set", "{", "status", "Inactive", "}");
    /* mongoc_collection_update_one will reinitialize reply */
    bson_destroy (reply);
-   r = mongoc_collection_update_one (
-      employees, filter, update, &opts, reply, error);
+   r = mongoc_collection_update_one (employees, filter, update, &opts, reply, error);
 
    if (!r) {
       goto abort;
@@ -3731,8 +3713,7 @@ example_func (mongoc_client_t *client)
 
    r = run_transaction_with_retry (update_employee_info, cs, &error);
    if (!r) {
-      MONGOC_ERROR ("Could not update employee, permanent error: %s",
-                    error.message);
+      MONGOC_ERROR ("Could not update employee, permanent error: %s", error.message);
    }
 
    mongoc_client_session_destroy (cs);
@@ -3789,10 +3770,7 @@ get_client_for_version_api_example (void)
 }
 
 static bool
-callback (mongoc_client_session_t *session,
-          void *ctx,
-          bson_t **reply,
-          bson_error_t *error);
+callback (mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error_t *error);
 
 /* See additional usage of mongoc_client_session_with_transaction at
  * https://www.mongoc.org/libmongoc/1.15.3/mongoc_client_session_with_transaction.html
@@ -3833,8 +3811,7 @@ with_transaction_example (bson_error_t *error)
    mongoc_write_concern_append (wc, insert_opts);
    coll = mongoc_client_get_collection (client, "mydb1", "foo");
    doc = BCON_NEW ("abc", BCON_INT32 (0));
-   ret = mongoc_collection_insert_one (
-      coll, doc, insert_opts, NULL /* reply */, error);
+   ret = mongoc_collection_insert_one (coll, doc, insert_opts, NULL /* reply */, error);
    if (!ret) {
       goto fail;
    }
@@ -3842,8 +3819,7 @@ with_transaction_example (bson_error_t *error)
    mongoc_collection_destroy (coll);
    coll = mongoc_client_get_collection (client, "mydb2", "bar");
    doc = BCON_NEW ("xyz", BCON_INT32 (0));
-   ret = mongoc_collection_insert_one (
-      coll, doc, insert_opts, NULL /* reply */, error);
+   ret = mongoc_collection_insert_one (coll, doc, insert_opts, NULL /* reply */, error);
    if (!ret) {
       goto fail;
    }
@@ -3865,8 +3841,7 @@ with_transaction_example (bson_error_t *error)
 
    /* Step 3: Use mongoc_client_session_with_transaction to start a transaction,
     * execute the callback, and commit (or abort on error). */
-   ret = mongoc_client_session_with_transaction (
-      session, callback, txn_opts, NULL /* ctx */, NULL /* reply */, error);
+   ret = mongoc_client_session_with_transaction (session, callback, txn_opts, NULL /* ctx */, NULL /* reply */, error);
    if (!ret) {
       goto fail;
    }
@@ -3888,10 +3863,7 @@ fail:
 /* Define the callback that specifies the sequence of operations to perform
  * inside the transactions. */
 static bool
-callback (mongoc_client_session_t *session,
-          void *ctx,
-          bson_t **reply,
-          bson_error_t *error)
+callback (mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error_t *error)
 {
    mongoc_client_t *client = NULL;
    mongoc_collection_t *coll = NULL;
@@ -3904,8 +3876,7 @@ callback (mongoc_client_session_t *session,
    client = mongoc_client_session_get_client (session);
    coll = mongoc_client_get_collection (client, "mydb1", "foo");
    doc = BCON_NEW ("abc", BCON_INT32 (1));
-   ret =
-      mongoc_collection_insert_one (coll, doc, NULL /* opts */, *reply, error);
+   ret = mongoc_collection_insert_one (coll, doc, NULL /* opts */, *reply, error);
    if (!ret) {
       goto fail;
    }
@@ -3913,8 +3884,7 @@ callback (mongoc_client_session_t *session,
    mongoc_collection_destroy (coll);
    coll = mongoc_client_get_collection (client, "mydb2", "bar");
    doc = BCON_NEW ("xyz", BCON_INT32 (999));
-   ret =
-      mongoc_collection_insert_one (coll, doc, NULL /* opts */, *reply, error);
+   ret = mongoc_collection_insert_one (coll, doc, NULL /* opts */, *reply, error);
    if (!ret) {
       goto fail;
    }
@@ -4196,8 +4166,7 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
                        BCON_INT32 (5),
                        "date",
                        BCON_DATE_TIME (iso_to_unix ("2021-03-16T20:20:13Z")));
-   ok = mongoc_collection_insert_many (
-      sales, (const bson_t **) docs, N_DOCS, NULL /* opts */, &reply, &error);
+   ok = mongoc_collection_insert_many (sales, (const bson_t **) docs, N_DOCS, NULL /* opts */, &reply, &error);
    /* End Versioned API Example 5 */
    ASSERT_OR_PRINT (ok, error);
    bson_destroy (&reply);
@@ -4209,21 +4178,18 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
       // and 5.3.2 (see SERVER-63850 and DRIVERS-2228). This test assumes count
       // command is not in API version 1. Skip until examples are updated
       // accordingly (see DRIVERS-1846).
-      const bool should_skip =
-         (version >= 106100100) ||                        // [6.0.0, inf)
-         (version >= 105103102 && version < 106100100) || // [5.3.2, 6.0.0)
-         (version >= 105100109 && version < 105101100);   // [5.0.9, 5.1.0)
+      const bool should_skip = (version >= 106100100) ||                        // [6.0.0, inf)
+                               (version >= 105103102 && version < 106100100) || // [5.3.2, 6.0.0)
+                               (version >= 105100109 && version < 105101100);   // [5.0.9, 5.1.0)
 
       if (!should_skip) {
          bson_t *cmd = BCON_NEW ("count", "sales");
-         ok = mongoc_database_command_simple (
-            db, cmd, NULL /* read_prefs */, &reply, &error);
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_SERVER,
-            323,
-            "Provided apiStrict:true, but the command count "
-            "is not in API Version 1");
+         ok = mongoc_database_command_simple (db, cmd, NULL /* read_prefs */, &reply, &error);
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_SERVER,
+                                323,
+                                "Provided apiStrict:true, but the command count "
+                                "is not in API Version 1");
          ASSERT (!ok);
          bson_destroy (&reply);
          bson_destroy (cmd);
@@ -4243,8 +4209,7 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
 
    /* Start Versioned API Example 7 */
    filter = bson_new ();
-   count = mongoc_collection_count_documents (
-      sales, filter, NULL /* opts */, NULL /* read_prefs */, &reply, &error);
+   count = mongoc_collection_count_documents (sales, filter, NULL /* opts */, NULL /* read_prefs */, &reply, &error);
    /* End Versioned API Example 7 */
    if (N_DOCS != count) {
       test_error ("expected %d documents, got %" PRId64, N_DOCS, count);
@@ -4377,10 +4342,5 @@ void
 test_samples_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite, "/Samples", test_sample_commands);
-   TestSuite_AddFull (suite,
-                      "/Samples/with_txn",
-                      test_with_txn_example,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_txns);
+   TestSuite_AddFull (suite, "/Samples/with_txn", test_with_txn_example, NULL, NULL, test_framework_skip_if_no_txns);
 }

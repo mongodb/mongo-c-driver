@@ -1,3 +1,29 @@
+libmongoc 1.27.0
+================
+
+Notes:
+
+  * Raise required version of libmongocrypt to 1.10.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+  * A future minor release plans to raise the minimum supported MongoDB Server version from 3.6 to 4.0. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
+
+Fixes:
+
+  * Fix possible crash when client is configured with empty password.
+
+New Features:
+
+  * Add database name to command events: `mongoc_apm_command_failed_get_database_name` and `mongoc_apm_command_succeeded_get_database_name`.
+  * Support delegated KMIP protocol for In-Use Encryption.
+  * Enable setting socket timeout per client.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Adrian Dole
+  * Ezra Chung
+  * Roberto C. Sánchez
+  * Scott Hunt
+
 libmongoc 1.26.2
 ================
 

@@ -20,6 +20,7 @@ An event notification sent when the driver fails to execute a MongoDB command.
     :maxdepth: 1
 
     mongoc_apm_command_failed_get_command_name
+    mongoc_apm_command_failed_get_database_name
     mongoc_apm_command_failed_get_context
     mongoc_apm_command_failed_get_duration
     mongoc_apm_command_failed_get_error

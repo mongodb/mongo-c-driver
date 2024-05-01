@@ -29,10 +29,10 @@ static bson_oid_t kObjectIdZero = {{0}};
  */
 
 static void
-append_documents_from_cmd (const mongoc_cmd_t *cmd,
-                           mongoc_apm_command_started_t *event)
+append_documents_from_cmd (const mongoc_cmd_t *cmd, mongoc_apm_command_started_t *event)
 {
-   if (!cmd->payload || !cmd->payload_size) {
+   // If there are no document sequences (OP_MSG Section with payloadType=1), return the command unchanged.
+   if (cmd->payloads_count == 0) {
       return;
    }
 
@@ -95,8 +95,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
     * events.
     */
    if (bson_has_field (command, "$readPreference")) {
-      if (bson_iter_init_find (&iter, command, "$query") &&
-          BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      if (bson_iter_init_find (&iter, command, "$query") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          bson_iter_document (&iter, &len, &data);
          event->command = bson_new_from_data (data, len);
          event->command_owned = true;
@@ -158,19 +157,18 @@ mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
                                           bool *is_redacted, /* out */
                                           void *context)
 {
-   mongoc_apm_command_started_init (
-      event,
-      cmd->command,
-      cmd->db_name,
-      cmd->command_name,
-      request_id,
-      cmd->operation_id,
-      &cmd->server_stream->sd->host,
-      cmd->server_stream->sd->id,
-      &cmd->server_stream->sd->service_id,
-      cmd->server_stream->sd->server_connection_id,
-      is_redacted,
-      context);
+   mongoc_apm_command_started_init (event,
+                                    cmd->command,
+                                    cmd->db_name,
+                                    cmd->command_name,
+                                    request_id,
+                                    cmd->operation_id,
+                                    &cmd->server_stream->sd->host,
+                                    cmd->server_stream->sd->id,
+                                    &cmd->server_stream->sd->service_id,
+                                    cmd->server_stream->sd->server_connection_id,
+                                    is_redacted,
+                                    context);
 
    /* OP_MSG document sequence for insert, update, or delete? */
    append_documents_from_cmd (cmd, event);
@@ -203,6 +201,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    int64_t duration,
                                    const bson_t *reply,
                                    const char *command_name,
+                                   const char *database_name,
                                    int64_t request_id,
                                    int64_t operation_id,
                                    const mongoc_host_list_t *host,
@@ -214,8 +213,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
 {
    BSON_ASSERT (reply);
 
-   if (force_redaction ||
-       mongoc_apm_is_sensitive_command_message (command_name, reply)) {
+   if (force_redaction || mongoc_apm_is_sensitive_command_message (command_name, reply)) {
       event->reply = bson_copy (reply);
       event->reply_owned = true;
 
@@ -228,6 +226,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
 
    event->duration = duration;
    event->command_name = command_name;
+   event->database_name = database_name;
    event->request_id = request_id;
    event->operation_id = operation_id;
    event->host = host;
@@ -264,6 +263,7 @@ void
 mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t duration,
                                 const char *command_name,
+                                const char *database_name,
                                 const bson_error_t *error,
                                 const bson_t *reply,
                                 int64_t request_id,
@@ -277,8 +277,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
 {
    BSON_ASSERT (reply);
 
-   if (force_redaction ||
-       mongoc_apm_is_sensitive_command_message (command_name, reply)) {
+   if (force_redaction || mongoc_apm_is_sensitive_command_message (command_name, reply)) {
       event->reply = bson_copy (reply);
       event->reply_owned = true;
 
@@ -291,6 +290,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
 
    event->duration = duration;
    event->command_name = command_name;
+   event->database_name = database_name;
    event->error = error;
    event->request_id = request_id;
    event->operation_id = operation_id;
@@ -319,40 +319,35 @@ mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event)
 /* command-started event fields */
 
 const bson_t *
-mongoc_apm_command_started_get_command (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_command (const mongoc_apm_command_started_t *event)
 {
    return event->command;
 }
 
 
 const char *
-mongoc_apm_command_started_get_database_name (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_database_name (const mongoc_apm_command_started_t *event)
 {
    return event->database_name;
 }
 
 
 const char *
-mongoc_apm_command_started_get_command_name (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_command_name (const mongoc_apm_command_started_t *event)
 {
    return event->command_name;
 }
 
 
 int64_t
-mongoc_apm_command_started_get_request_id (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_request_id (const mongoc_apm_command_started_t *event)
 {
    return event->request_id;
 }
 
 
 int64_t
-mongoc_apm_command_started_get_operation_id (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_operation_id (const mongoc_apm_command_started_t *event)
 {
    return event->operation_id;
 }
@@ -366,16 +361,14 @@ mongoc_apm_command_started_get_host (const mongoc_apm_command_started_t *event)
 
 
 uint32_t
-mongoc_apm_command_started_get_server_id (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_server_id (const mongoc_apm_command_started_t *event)
 {
    return event->server_id;
 }
 
 
 const bson_oid_t *
-mongoc_apm_command_started_get_service_id (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_service_id (const mongoc_apm_command_started_t *event)
 {
    if (0 == bson_oid_compare (&event->service_id, &kObjectIdZero)) {
       /* serviceId is unset. */
@@ -387,16 +380,12 @@ mongoc_apm_command_started_get_service_id (
 
 
 int32_t
-mongoc_apm_command_started_get_server_connection_id (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_server_connection_id (const mongoc_apm_command_started_t *event)
 {
-   if (event->server_connection_id > INT32_MAX ||
-       event->server_connection_id < INT32_MIN) {
-      MONGOC_WARNING (
-         "Server connection ID %" PRId64
-         " is outside of int32 range. Returning -1. Use "
-         "mongoc_apm_command_started_get_server_connection_id_int64.",
-         event->server_connection_id);
+   if (event->server_connection_id > INT32_MAX || event->server_connection_id < INT32_MIN) {
+      MONGOC_WARNING ("Server connection ID %" PRId64 " is outside of int32 range. Returning -1. Use "
+                      "mongoc_apm_command_started_get_server_connection_id_int64.",
+                      event->server_connection_id);
       return MONGOC_NO_SERVER_CONNECTION_ID;
    }
 
@@ -405,16 +394,14 @@ mongoc_apm_command_started_get_server_connection_id (
 
 
 int64_t
-mongoc_apm_command_started_get_server_connection_id_int64 (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_server_connection_id_int64 (const mongoc_apm_command_started_t *event)
 {
    return event->server_connection_id;
 }
 
 
 void *
-mongoc_apm_command_started_get_context (
-   const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_context (const mongoc_apm_command_started_t *event)
 {
    return event->context;
 }
@@ -423,64 +410,61 @@ mongoc_apm_command_started_get_context (
 /* command-succeeded event fields */
 
 int64_t
-mongoc_apm_command_succeeded_get_duration (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_duration (const mongoc_apm_command_succeeded_t *event)
 {
    return event->duration;
 }
 
 
 const bson_t *
-mongoc_apm_command_succeeded_get_reply (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_reply (const mongoc_apm_command_succeeded_t *event)
 {
    return event->reply;
 }
 
 
 const char *
-mongoc_apm_command_succeeded_get_command_name (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_command_name (const mongoc_apm_command_succeeded_t *event)
 {
    return event->command_name;
 }
 
+const char *
+mongoc_apm_command_succeeded_get_database_name (const mongoc_apm_command_succeeded_t *event)
+{
+   return event->database_name;
+}
 
 int64_t
-mongoc_apm_command_succeeded_get_request_id (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_request_id (const mongoc_apm_command_succeeded_t *event)
 {
    return event->request_id;
 }
 
 
 int64_t
-mongoc_apm_command_succeeded_get_operation_id (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_operation_id (const mongoc_apm_command_succeeded_t *event)
 {
    return event->operation_id;
 }
 
 
 const mongoc_host_list_t *
-mongoc_apm_command_succeeded_get_host (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_host (const mongoc_apm_command_succeeded_t *event)
 {
    return event->host;
 }
 
 
 uint32_t
-mongoc_apm_command_succeeded_get_server_id (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_server_id (const mongoc_apm_command_succeeded_t *event)
 {
    return event->server_id;
 }
 
 
 const bson_oid_t *
-mongoc_apm_command_succeeded_get_service_id (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_service_id (const mongoc_apm_command_succeeded_t *event)
 {
    if (0 == bson_oid_compare (&event->service_id, &kObjectIdZero)) {
       /* serviceId is unset. */
@@ -492,16 +476,12 @@ mongoc_apm_command_succeeded_get_service_id (
 
 
 int32_t
-mongoc_apm_command_succeeded_get_server_connection_id (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_server_connection_id (const mongoc_apm_command_succeeded_t *event)
 {
-   if (event->server_connection_id > INT32_MAX ||
-       event->server_connection_id < INT32_MIN) {
-      MONGOC_WARNING (
-         "Server connection ID %" PRId64
-         " is outside of int32 range. Returning -1. Use "
-         "mongoc_apm_command_succeeded_get_server_connection_id_int64.",
-         event->server_connection_id);
+   if (event->server_connection_id > INT32_MAX || event->server_connection_id < INT32_MIN) {
+      MONGOC_WARNING ("Server connection ID %" PRId64 " is outside of int32 range. Returning -1. Use "
+                      "mongoc_apm_command_succeeded_get_server_connection_id_int64.",
+                      event->server_connection_id);
       return MONGOC_NO_SERVER_CONNECTION_ID;
    }
 
@@ -510,16 +490,14 @@ mongoc_apm_command_succeeded_get_server_connection_id (
 
 
 int64_t
-mongoc_apm_command_succeeded_get_server_connection_id_int64 (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_server_connection_id_int64 (const mongoc_apm_command_succeeded_t *event)
 {
    return event->server_connection_id;
 }
 
 
 void *
-mongoc_apm_command_succeeded_get_context (
-   const mongoc_apm_command_succeeded_t *event)
+mongoc_apm_command_succeeded_get_context (const mongoc_apm_command_succeeded_t *event)
 {
    return event->context;
 }
@@ -528,24 +506,21 @@ mongoc_apm_command_succeeded_get_context (
 /* command-failed event fields */
 
 int64_t
-mongoc_apm_command_failed_get_duration (
-   const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_duration (const mongoc_apm_command_failed_t *event)
 {
    return event->duration;
 }
 
 
 const char *
-mongoc_apm_command_failed_get_command_name (
-   const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_command_name (const mongoc_apm_command_failed_t *event)
 {
    return event->command_name;
 }
 
 
 void
-mongoc_apm_command_failed_get_error (const mongoc_apm_command_failed_t *event,
-                                     bson_error_t *error)
+mongoc_apm_command_failed_get_error (const mongoc_apm_command_failed_t *event, bson_error_t *error)
 {
    memcpy (error, event->error, sizeof *event->error);
 }
@@ -557,16 +532,14 @@ mongoc_apm_command_failed_get_reply (const mongoc_apm_command_failed_t *event)
 }
 
 int64_t
-mongoc_apm_command_failed_get_request_id (
-   const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_request_id (const mongoc_apm_command_failed_t *event)
 {
    return event->request_id;
 }
 
 
 int64_t
-mongoc_apm_command_failed_get_operation_id (
-   const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_operation_id (const mongoc_apm_command_failed_t *event)
 {
    return event->operation_id;
 }
@@ -580,16 +553,14 @@ mongoc_apm_command_failed_get_host (const mongoc_apm_command_failed_t *event)
 
 
 uint32_t
-mongoc_apm_command_failed_get_server_id (
-   const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_server_id (const mongoc_apm_command_failed_t *event)
 {
    return event->server_id;
 }
 
 
 const bson_oid_t *
-mongoc_apm_command_failed_get_service_id (
-   const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_service_id (const mongoc_apm_command_failed_t *event)
 {
    if (0 == bson_oid_compare (&event->service_id, &kObjectIdZero)) {
       /* serviceId is unset. */
@@ -601,16 +572,12 @@ mongoc_apm_command_failed_get_service_id (
 
 
 int32_t
-mongoc_apm_command_failed_get_server_connection_id (
-   const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_server_connection_id (const mongoc_apm_command_failed_t *event)
 {
-   if (event->server_connection_id > INT32_MAX ||
-       event->server_connection_id < INT32_MIN) {
-      MONGOC_WARNING (
-         "Server connection ID %" PRId64
-         " is outside of int32 range. Returning -1. Use "
-         "mongoc_apm_command_failed_get_server_connection_id_int64.",
-         event->server_connection_id);
+   if (event->server_connection_id > INT32_MAX || event->server_connection_id < INT32_MIN) {
+      MONGOC_WARNING ("Server connection ID %" PRId64 " is outside of int32 range. Returning -1. Use "
+                      "mongoc_apm_command_failed_get_server_connection_id_int64.",
+                      event->server_connection_id);
       return MONGOC_NO_SERVER_CONNECTION_ID;
    }
 
@@ -619,8 +586,7 @@ mongoc_apm_command_failed_get_server_connection_id (
 
 
 int64_t
-mongoc_apm_command_failed_get_server_connection_id_int64 (
-   const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_server_connection_id_int64 (const mongoc_apm_command_failed_t *event)
 {
    return event->server_connection_id;
 }
@@ -630,6 +596,13 @@ void *
 mongoc_apm_command_failed_get_context (const mongoc_apm_command_failed_t *event)
 {
    return event->context;
+}
+
+
+const char *
+mongoc_apm_command_failed_get_database_name (const mongoc_apm_command_failed_t *event)
+{
+   return event->database_name;
 }
 
 
@@ -643,24 +616,21 @@ mongoc_apm_server_changed_get_host (const mongoc_apm_server_changed_t *event)
 
 
 void
-mongoc_apm_server_changed_get_topology_id (
-   const mongoc_apm_server_changed_t *event, bson_oid_t *topology_id)
+mongoc_apm_server_changed_get_topology_id (const mongoc_apm_server_changed_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
 
 
 const mongoc_server_description_t *
-mongoc_apm_server_changed_get_previous_description (
-   const mongoc_apm_server_changed_t *event)
+mongoc_apm_server_changed_get_previous_description (const mongoc_apm_server_changed_t *event)
 {
    return event->previous_description;
 }
 
 
 const mongoc_server_description_t *
-mongoc_apm_server_changed_get_new_description (
-   const mongoc_apm_server_changed_t *event)
+mongoc_apm_server_changed_get_new_description (const mongoc_apm_server_changed_t *event)
 {
    return event->new_description;
 }
@@ -683,8 +653,7 @@ mongoc_apm_server_opening_get_host (const mongoc_apm_server_opening_t *event)
 
 
 void
-mongoc_apm_server_opening_get_topology_id (
-   const mongoc_apm_server_opening_t *event, bson_oid_t *topology_id)
+mongoc_apm_server_opening_get_topology_id (const mongoc_apm_server_opening_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
@@ -707,8 +676,7 @@ mongoc_apm_server_closed_get_host (const mongoc_apm_server_closed_t *event)
 
 
 void
-mongoc_apm_server_closed_get_topology_id (
-   const mongoc_apm_server_closed_t *event, bson_oid_t *topology_id)
+mongoc_apm_server_closed_get_topology_id (const mongoc_apm_server_closed_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
@@ -724,32 +692,28 @@ mongoc_apm_server_closed_get_context (const mongoc_apm_server_closed_t *event)
 /* topology-changed event fields */
 
 void
-mongoc_apm_topology_changed_get_topology_id (
-   const mongoc_apm_topology_changed_t *event, bson_oid_t *topology_id)
+mongoc_apm_topology_changed_get_topology_id (const mongoc_apm_topology_changed_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
 
 
 const mongoc_topology_description_t *
-mongoc_apm_topology_changed_get_previous_description (
-   const mongoc_apm_topology_changed_t *event)
+mongoc_apm_topology_changed_get_previous_description (const mongoc_apm_topology_changed_t *event)
 {
    return event->previous_description;
 }
 
 
 const mongoc_topology_description_t *
-mongoc_apm_topology_changed_get_new_description (
-   const mongoc_apm_topology_changed_t *event)
+mongoc_apm_topology_changed_get_new_description (const mongoc_apm_topology_changed_t *event)
 {
    return event->new_description;
 }
 
 
 void *
-mongoc_apm_topology_changed_get_context (
-   const mongoc_apm_topology_changed_t *event)
+mongoc_apm_topology_changed_get_context (const mongoc_apm_topology_changed_t *event)
 {
    return event->context;
 }
@@ -758,16 +722,14 @@ mongoc_apm_topology_changed_get_context (
 /* topology-opening event field */
 
 void
-mongoc_apm_topology_opening_get_topology_id (
-   const mongoc_apm_topology_opening_t *event, bson_oid_t *topology_id)
+mongoc_apm_topology_opening_get_topology_id (const mongoc_apm_topology_opening_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
 
 
 void *
-mongoc_apm_topology_opening_get_context (
-   const mongoc_apm_topology_opening_t *event)
+mongoc_apm_topology_opening_get_context (const mongoc_apm_topology_opening_t *event)
 {
    return event->context;
 }
@@ -776,16 +738,14 @@ mongoc_apm_topology_opening_get_context (
 /* topology-closed event field */
 
 void
-mongoc_apm_topology_closed_get_topology_id (
-   const mongoc_apm_topology_closed_t *event, bson_oid_t *topology_id)
+mongoc_apm_topology_closed_get_topology_id (const mongoc_apm_topology_closed_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
 
 
 void *
-mongoc_apm_topology_closed_get_context (
-   const mongoc_apm_topology_closed_t *event)
+mongoc_apm_topology_closed_get_context (const mongoc_apm_topology_closed_t *event)
 {
    return event->context;
 }
@@ -794,23 +754,20 @@ mongoc_apm_topology_closed_get_context (
 /* heartbeat-started event field */
 
 const mongoc_host_list_t *
-mongoc_apm_server_heartbeat_started_get_host (
-   const mongoc_apm_server_heartbeat_started_t *event)
+mongoc_apm_server_heartbeat_started_get_host (const mongoc_apm_server_heartbeat_started_t *event)
 {
    return event->host;
 }
 
 
 void *
-mongoc_apm_server_heartbeat_started_get_context (
-   const mongoc_apm_server_heartbeat_started_t *event)
+mongoc_apm_server_heartbeat_started_get_context (const mongoc_apm_server_heartbeat_started_t *event)
 {
    return event->context;
 }
 
 bool
-mongoc_apm_server_heartbeat_started_get_awaited (
-   const mongoc_apm_server_heartbeat_started_t *event)
+mongoc_apm_server_heartbeat_started_get_awaited (const mongoc_apm_server_heartbeat_started_t *event)
 {
    return event->awaited;
 }
@@ -819,39 +776,34 @@ mongoc_apm_server_heartbeat_started_get_awaited (
 /* heartbeat-succeeded event fields */
 
 int64_t
-mongoc_apm_server_heartbeat_succeeded_get_duration (
-   const mongoc_apm_server_heartbeat_succeeded_t *event)
+mongoc_apm_server_heartbeat_succeeded_get_duration (const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    return event->duration_usec;
 }
 
 
 const bson_t *
-mongoc_apm_server_heartbeat_succeeded_get_reply (
-   const mongoc_apm_server_heartbeat_succeeded_t *event)
+mongoc_apm_server_heartbeat_succeeded_get_reply (const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    return event->reply;
 }
 
 
 const mongoc_host_list_t *
-mongoc_apm_server_heartbeat_succeeded_get_host (
-   const mongoc_apm_server_heartbeat_succeeded_t *event)
+mongoc_apm_server_heartbeat_succeeded_get_host (const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    return event->host;
 }
 
 
 void *
-mongoc_apm_server_heartbeat_succeeded_get_context (
-   const mongoc_apm_server_heartbeat_succeeded_t *event)
+mongoc_apm_server_heartbeat_succeeded_get_context (const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    return event->context;
 }
 
 bool
-mongoc_apm_server_heartbeat_succeeded_get_awaited (
-   const mongoc_apm_server_heartbeat_succeeded_t *event)
+mongoc_apm_server_heartbeat_succeeded_get_awaited (const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    return event->awaited;
 }
@@ -860,39 +812,34 @@ mongoc_apm_server_heartbeat_succeeded_get_awaited (
 /* heartbeat-failed event fields */
 
 int64_t
-mongoc_apm_server_heartbeat_failed_get_duration (
-   const mongoc_apm_server_heartbeat_failed_t *event)
+mongoc_apm_server_heartbeat_failed_get_duration (const mongoc_apm_server_heartbeat_failed_t *event)
 {
    return event->duration_usec;
 }
 
 
 void
-mongoc_apm_server_heartbeat_failed_get_error (
-   const mongoc_apm_server_heartbeat_failed_t *event, bson_error_t *error)
+mongoc_apm_server_heartbeat_failed_get_error (const mongoc_apm_server_heartbeat_failed_t *event, bson_error_t *error)
 {
    memcpy (error, event->error, sizeof *event->error);
 }
 
 
 const mongoc_host_list_t *
-mongoc_apm_server_heartbeat_failed_get_host (
-   const mongoc_apm_server_heartbeat_failed_t *event)
+mongoc_apm_server_heartbeat_failed_get_host (const mongoc_apm_server_heartbeat_failed_t *event)
 {
    return event->host;
 }
 
 
 void *
-mongoc_apm_server_heartbeat_failed_get_context (
-   const mongoc_apm_server_heartbeat_failed_t *event)
+mongoc_apm_server_heartbeat_failed_get_context (const mongoc_apm_server_heartbeat_failed_t *event)
 {
    return event->context;
 }
 
 bool
-mongoc_apm_server_heartbeat_failed_get_awaited (
-   const mongoc_apm_server_heartbeat_failed_t *event)
+mongoc_apm_server_heartbeat_failed_get_awaited (const mongoc_apm_server_heartbeat_failed_t *event)
 {
    return event->awaited;
 }
@@ -918,98 +865,86 @@ mongoc_apm_callbacks_destroy (mongoc_apm_callbacks_t *callbacks)
 
 
 void
-mongoc_apm_set_command_started_cb (mongoc_apm_callbacks_t *callbacks,
-                                   mongoc_apm_command_started_cb_t cb)
+mongoc_apm_set_command_started_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_command_started_cb_t cb)
 {
    callbacks->started = cb;
 }
 
 
 void
-mongoc_apm_set_command_succeeded_cb (mongoc_apm_callbacks_t *callbacks,
-                                     mongoc_apm_command_succeeded_cb_t cb)
+mongoc_apm_set_command_succeeded_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_command_succeeded_cb_t cb)
 {
    callbacks->succeeded = cb;
 }
 
 
 void
-mongoc_apm_set_command_failed_cb (mongoc_apm_callbacks_t *callbacks,
-                                  mongoc_apm_command_failed_cb_t cb)
+mongoc_apm_set_command_failed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_command_failed_cb_t cb)
 {
    callbacks->failed = cb;
 }
 
 void
-mongoc_apm_set_server_changed_cb (mongoc_apm_callbacks_t *callbacks,
-                                  mongoc_apm_server_changed_cb_t cb)
+mongoc_apm_set_server_changed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_server_changed_cb_t cb)
 {
    callbacks->server_changed = cb;
 }
 
 
 void
-mongoc_apm_set_server_opening_cb (mongoc_apm_callbacks_t *callbacks,
-                                  mongoc_apm_server_opening_cb_t cb)
+mongoc_apm_set_server_opening_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_server_opening_cb_t cb)
 {
    callbacks->server_opening = cb;
 }
 
 
 void
-mongoc_apm_set_server_closed_cb (mongoc_apm_callbacks_t *callbacks,
-                                 mongoc_apm_server_closed_cb_t cb)
+mongoc_apm_set_server_closed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_server_closed_cb_t cb)
 {
    callbacks->server_closed = cb;
 }
 
 
 void
-mongoc_apm_set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks,
-                                    mongoc_apm_topology_changed_cb_t cb)
+mongoc_apm_set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_topology_changed_cb_t cb)
 {
    callbacks->topology_changed = cb;
 }
 
 
 void
-mongoc_apm_set_topology_opening_cb (mongoc_apm_callbacks_t *callbacks,
-                                    mongoc_apm_topology_opening_cb_t cb)
+mongoc_apm_set_topology_opening_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_topology_opening_cb_t cb)
 {
    callbacks->topology_opening = cb;
 }
 
 
 void
-mongoc_apm_set_topology_closed_cb (mongoc_apm_callbacks_t *callbacks,
-                                   mongoc_apm_topology_closed_cb_t cb)
+mongoc_apm_set_topology_closed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_topology_closed_cb_t cb)
 {
    callbacks->topology_closed = cb;
 }
 
 
 void
-mongoc_apm_set_server_heartbeat_started_cb (
-   mongoc_apm_callbacks_t *callbacks,
-   mongoc_apm_server_heartbeat_started_cb_t cb)
+mongoc_apm_set_server_heartbeat_started_cb (mongoc_apm_callbacks_t *callbacks,
+                                            mongoc_apm_server_heartbeat_started_cb_t cb)
 {
    callbacks->server_heartbeat_started = cb;
 }
 
 
 void
-mongoc_apm_set_server_heartbeat_succeeded_cb (
-   mongoc_apm_callbacks_t *callbacks,
-   mongoc_apm_server_heartbeat_succeeded_cb_t cb)
+mongoc_apm_set_server_heartbeat_succeeded_cb (mongoc_apm_callbacks_t *callbacks,
+                                              mongoc_apm_server_heartbeat_succeeded_cb_t cb)
 {
    callbacks->server_heartbeat_succeeded = cb;
 }
 
 
 void
-mongoc_apm_set_server_heartbeat_failed_cb (
-   mongoc_apm_callbacks_t *callbacks,
-   mongoc_apm_server_heartbeat_failed_cb_t cb)
+mongoc_apm_set_server_heartbeat_failed_cb (mongoc_apm_callbacks_t *callbacks,
+                                           mongoc_apm_server_heartbeat_failed_cb_t cb)
 {
    callbacks->server_heartbeat_failed = cb;
 }
@@ -1017,24 +952,18 @@ mongoc_apm_set_server_heartbeat_failed_cb (
 static bool
 _mongoc_apm_is_sensitive_command_name (const char *command_name)
 {
-   return 0 == strcasecmp (command_name, "authenticate") ||
-          0 == strcasecmp (command_name, "saslStart") ||
-          0 == strcasecmp (command_name, "saslContinue") ||
-          0 == strcasecmp (command_name, "getnonce") ||
-          0 == strcasecmp (command_name, "createUser") ||
-          0 == strcasecmp (command_name, "updateUser") ||
-          0 == strcasecmp (command_name, "copydbgetnonce") ||
-          0 == strcasecmp (command_name, "copydbsaslstart") ||
+   return 0 == strcasecmp (command_name, "authenticate") || 0 == strcasecmp (command_name, "saslStart") ||
+          0 == strcasecmp (command_name, "saslContinue") || 0 == strcasecmp (command_name, "getnonce") ||
+          0 == strcasecmp (command_name, "createUser") || 0 == strcasecmp (command_name, "updateUser") ||
+          0 == strcasecmp (command_name, "copydbgetnonce") || 0 == strcasecmp (command_name, "copydbsaslstart") ||
           0 == strcasecmp (command_name, "copydb");
 }
 
 static bool
-_mongoc_apm_is_sensitive_hello_message (const char *command_name,
-                                        const bson_t *body)
+_mongoc_apm_is_sensitive_hello_message (const char *command_name, const bson_t *body)
 {
    const bool is_hello =
-      (0 == strcasecmp (command_name, "hello") ||
-       0 == strcasecmp (command_name, HANDSHAKE_CMD_LEGACY_HELLO));
+      (0 == strcasecmp (command_name, "hello") || 0 == strcasecmp (command_name, HANDSHAKE_CMD_LEGACY_HELLO));
 
    if (!is_hello) {
       return false;
@@ -1053,8 +982,7 @@ _mongoc_apm_is_sensitive_hello_message (const char *command_name,
 }
 
 bool
-mongoc_apm_is_sensitive_command_message (const char *command_name,
-                                         const bson_t *body)
+mongoc_apm_is_sensitive_command_message (const char *command_name, const bson_t *body)
 {
    BSON_ASSERT (body);
 

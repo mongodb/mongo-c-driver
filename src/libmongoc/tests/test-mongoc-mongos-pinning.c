@@ -28,10 +28,8 @@ add_multiple_mongoses (mongoc_uri_t *uri)
    bson_error_t error;
 
    /* TODO CDRIVER-3285, fix this to be dynamic */
-   ASSERT_OR_PRINT (
-      mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error), error);
-   ASSERT_OR_PRINT (
-      mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error), error);
+   ASSERT_OR_PRINT (mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error), error);
+   ASSERT_OR_PRINT (mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error), error);
 }
 
 static void
@@ -60,25 +58,18 @@ test_new_transaction_unpins (void *ctx)
 
    /* Create a collection. */
    coll = mongoc_client_get_collection (client, "test", "test");
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &error), error);
 
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session != NULL, error);
 
    opts = bson_new ();
-   ASSERT_OR_PRINT (mongoc_client_session_append (session, opts, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_client_session_append (session, opts, &error), error);
 
    /* Under one transaction, insert a document. */
-   ASSERT_OR_PRINT (
-      mongoc_client_session_start_transaction (session, NULL, &error), error);
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (coll, tmp_bson ("{}"), opts, NULL, &error),
-      error);
-   ASSERT_OR_PRINT (
-      mongoc_client_session_commit_transaction (session, NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_client_session_start_transaction (session, NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{}"), opts, NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_client_session_commit_transaction (session, NULL, &error), error);
 
    /* Then, 50 times, start new transactions. Each time we start a new
       transaction, the session should be un-pinned, so by statistics,
@@ -87,19 +78,14 @@ test_new_transaction_unpins (void *ctx)
       mongoc_host_list_t cursor_host;
       const bson_t *doc;
 
-      ASSERT_OR_PRINT (
-         mongoc_client_session_start_transaction (session, NULL, &error),
-         error);
+      ASSERT_OR_PRINT (mongoc_client_session_start_transaction (session, NULL, &error), error);
 
-      cursor =
-         mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), opts, NULL);
+      cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), opts, NULL);
       ASSERT (mongoc_cursor_next (cursor, &doc));
       mongoc_cursor_get_host (cursor, &cursor_host);
       _mongoc_host_list_upsert (&servers, &cursor_host);
 
-      ASSERT_OR_PRINT (
-         mongoc_client_session_commit_transaction (session, NULL, &error),
-         error);
+      ASSERT_OR_PRINT (mongoc_client_session_commit_transaction (session, NULL, &error), error);
 
       mongoc_cursor_destroy (cursor);
    }
@@ -140,25 +126,18 @@ test_non_transaction_unpins (void *ctx)
 
    /* Create a collection. */
    coll = mongoc_client_get_collection (client, "test", "test");
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &error), error);
 
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session != NULL, error);
 
    opts = bson_new ();
-   ASSERT_OR_PRINT (mongoc_client_session_append (session, opts, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_client_session_append (session, opts, &error), error);
 
    /* Under one transaction, insert a document. */
-   ASSERT_OR_PRINT (
-      mongoc_client_session_start_transaction (session, NULL, &error), error);
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (coll, tmp_bson ("{}"), opts, NULL, &error),
-      error);
-   ASSERT_OR_PRINT (
-      mongoc_client_session_commit_transaction (session, NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_client_session_start_transaction (session, NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{}"), opts, NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_client_session_commit_transaction (session, NULL, &error), error);
 
    /* After our initial transaction, the session should become un-pinned
       if we run further operations on the session. By statistics,
@@ -167,8 +146,7 @@ test_non_transaction_unpins (void *ctx)
       mongoc_host_list_t cursor_host;
       const bson_t *doc;
 
-      cursor =
-         mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), opts, NULL);
+      cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), opts, NULL);
       ASSERT (mongoc_cursor_next (cursor, &doc));
       mongoc_cursor_get_host (cursor, &cursor_host);
       _mongoc_host_list_upsert (&servers, &cursor_host);

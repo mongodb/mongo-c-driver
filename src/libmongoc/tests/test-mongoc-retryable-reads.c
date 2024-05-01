@@ -11,9 +11,7 @@
 #include "test-mongoc-retryability-helpers.h"
 
 static bool
-retryable_reads_test_run_operation (json_test_ctx_t *ctx,
-                                    const bson_t *test,
-                                    const bson_t *operation)
+retryable_reads_test_run_operation (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
 {
    bool *explicit_session = (bool *) ctx->config->ctx;
    bson_t reply;
@@ -24,18 +22,13 @@ retryable_reads_test_run_operation (json_test_ctx_t *ctx,
 
    bson_iter_init_find (&iter, operation, "name");
    op_name = bson_iter_utf8 (&iter, &op_len);
-   if (strcmp (op_name, "estimatedDocumentCount") == 0 ||
-       strcmp (op_name, "count") == 0) {
+   if (strcmp (op_name, "estimatedDocumentCount") == 0 || strcmp (op_name, "count") == 0) {
       /* CDRIVER-3612: mongoc_collection_estimated_document_count does not
        * support explicit sessions */
       *explicit_session = false;
    }
-   res = json_test_operation (ctx,
-                              test,
-                              operation,
-                              ctx->collection,
-                              *explicit_session ? ctx->sessions[0] : NULL,
-                              &reply);
+   res =
+      json_test_operation (ctx, test, operation, ctx->collection, *explicit_session ? ctx->sessions[0] : NULL, &reply);
 
    bson_destroy (&reply);
 
@@ -66,16 +59,13 @@ static void
 _set_failpoint (mongoc_client_t *client)
 {
    bson_error_t error;
-   bson_t *cmd =
-      tmp_bson ("{'configureFailPoint': 'failCommand',"
-                " 'mode': {'times': 1},"
-                " 'data': {'errorCode': 10107, 'failCommands': ['count']}}");
+   bson_t *cmd = tmp_bson ("{'configureFailPoint': 'failCommand',"
+                           " 'mode': {'times': 1},"
+                           " 'data': {'errorCode': 10107, 'failCommands': ['count']}}");
 
    ASSERT (client);
 
-   ASSERT_OR_PRINT (
-      mongoc_client_command_simple (client, "admin", cmd, NULL, NULL, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_client_command_simple (client, "admin", cmd, NULL, NULL, &error), error);
 }
 /* Test code paths for all command helpers */
 static void
@@ -104,8 +94,7 @@ test_cmd_helpers (void *ctx)
    mongoc_uri_destroy (uri);
 
    /* clean up in case a previous test aborted */
-   server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 
@@ -119,36 +108,26 @@ test_cmd_helpers (void *ctx)
       }
    }
 
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (
-                       collection, tmp_bson ("{'_id': 0}"), NULL, NULL, &error),
-                    error);
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (
-                       collection, tmp_bson ("{'_id': 1}"), NULL, NULL, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (collection, tmp_bson ("{'_id': 0}"), NULL, NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (collection, tmp_bson ("{'_id': 1}"), NULL, NULL, &error), error);
 
    cmd = tmp_bson ("{'count': '%s'}", collection->collection);
 
    /* read helpers must retry. */
    _set_failpoint (client);
-   ASSERT_OR_PRINT (mongoc_client_read_command_with_opts (
-                       client, "test", cmd, NULL, NULL, &reply, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_client_read_command_with_opts (client, "test", cmd, NULL, NULL, &reply, &error), error);
    bson_iter_init_find (&iter, &reply, "n");
    ASSERT (bson_iter_as_int64 (&iter) == 2);
    bson_destroy (&reply);
 
    _set_failpoint (client);
-   ASSERT_OR_PRINT (mongoc_database_read_command_with_opts (
-                       database, cmd, NULL, NULL, &reply, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_database_read_command_with_opts (database, cmd, NULL, NULL, &reply, &error), error);
    bson_iter_init_find (&iter, &reply, "n");
    ASSERT (bson_iter_as_int64 (&iter) == 2);
    bson_destroy (&reply);
 
    _set_failpoint (client);
-   ASSERT_OR_PRINT (mongoc_collection_read_command_with_opts (
-                       collection, cmd, NULL, NULL, &reply, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_collection_read_command_with_opts (collection, cmd, NULL, NULL, &reply, &error), error);
    bson_iter_init_find (&iter, &reply, "n");
    ASSERT (bson_iter_as_int64 (&iter) == 2);
    bson_destroy (&reply);
@@ -157,8 +136,7 @@ test_cmd_helpers (void *ctx)
 
    /* read/write agnostic command_simple helpers must not retry. */
    _set_failpoint (client);
-   ASSERT (
-      !mongoc_client_command_simple (client, "test", cmd, NULL, NULL, &error));
+   ASSERT (!mongoc_client_command_simple (client, "test", cmd, NULL, NULL, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
 
    _set_failpoint (client);
@@ -166,59 +144,50 @@ test_cmd_helpers (void *ctx)
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
 
    _set_failpoint (client);
-   ASSERT (
-      !mongoc_collection_command_simple (collection, cmd, NULL, NULL, &error));
+   ASSERT (!mongoc_collection_command_simple (collection, cmd, NULL, NULL, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
 
 
    /* read/write agnostic command_with_opts helpers must not retry. */
    _set_failpoint (client);
-   ASSERT (!mongoc_client_command_with_opts (
-      client, "test", cmd, NULL, NULL, NULL, &error));
+   ASSERT (!mongoc_client_command_with_opts (client, "test", cmd, NULL, NULL, NULL, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
 
    _set_failpoint (client);
-   ASSERT (!mongoc_database_command_with_opts (
-      database, cmd, NULL, NULL, NULL, &error));
+   ASSERT (!mongoc_database_command_with_opts (database, cmd, NULL, NULL, NULL, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
 
    _set_failpoint (client);
-   ASSERT (!mongoc_collection_command_with_opts (
-      collection, cmd, NULL, NULL, NULL, &error));
+   ASSERT (!mongoc_collection_command_with_opts (collection, cmd, NULL, NULL, NULL, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
 
    /* read/write agnostic command_simple_with_server_id helper must not retry.
     */
-   server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    _set_failpoint (client);
-   ASSERT (!mongoc_client_command_simple_with_server_id (
-      client, "test", cmd, NULL, server_id, NULL, &error));
+   ASSERT (!mongoc_client_command_simple_with_server_id (client, "test", cmd, NULL, server_id, NULL, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
 
 
    /* deprecated command helpers (which goes through cursor logic) function must
     * not retry. */
    _set_failpoint (client);
-   cursor = mongoc_client_command (
-      client, "test", MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
+   cursor = mongoc_client_command (client, "test", MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
    ASSERT (!mongoc_cursor_next (cursor, &doc));
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
    mongoc_cursor_destroy (cursor);
 
    _set_failpoint (client);
-   cursor = mongoc_database_command (
-      database, MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
+   cursor = mongoc_database_command (database, MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
    ASSERT (!mongoc_cursor_next (cursor, &doc));
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
    mongoc_cursor_destroy (cursor);
 
    _set_failpoint (client);
-   cursor = mongoc_collection_command (
-      collection, MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
+   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
    ASSERT (!mongoc_cursor_next (cursor, &doc));
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
@@ -251,8 +220,7 @@ test_retry_reads_off (void *ctx)
    test_framework_set_ssl_opts (client);
 
    /* clean up in case a previous test aborted */
-   server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 
@@ -261,14 +229,12 @@ test_retry_reads_off (void *ctx)
    cmd = tmp_bson ("{'configureFailPoint': 'failCommand',"
                    " 'mode': {'times': 1},"
                    " 'data': {'errorCode': 10107, 'failCommands': ['count']}}");
-   ASSERT_OR_PRINT (mongoc_client_command_simple_with_server_id (
-                       client, "admin", cmd, NULL, server_id, NULL, &error),
+   ASSERT_OR_PRINT (mongoc_client_command_simple_with_server_id (client, "admin", cmd, NULL, server_id, NULL, &error),
                     error);
 
    cmd = tmp_bson ("{'count': 'coll'}", collection->collection);
 
-   res = mongoc_collection_read_command_with_opts (
-      collection, cmd, NULL, NULL, NULL, &error);
+   res = mongoc_collection_read_command_with_opts (collection, cmd, NULL, NULL, NULL, &error);
    ASSERT (!res);
    ASSERT_CONTAINS (error.message, "failpoint");
 
@@ -285,21 +251,17 @@ typedef struct _test_retry_reads_sharded_on_other_mongos_ctx {
 } test_retry_reads_sharded_on_other_mongos_ctx;
 
 static void
-_test_retry_reads_sharded_on_other_mongos_cb (
-   const mongoc_apm_command_failed_t *event)
+_test_retry_reads_sharded_on_other_mongos_cb (const mongoc_apm_command_failed_t *event)
 {
    BSON_ASSERT_PARAM (event);
 
    test_retry_reads_sharded_on_other_mongos_ctx *const ctx =
-      (test_retry_reads_sharded_on_other_mongos_ctx *)
-         mongoc_apm_command_failed_get_context (event);
+      (test_retry_reads_sharded_on_other_mongos_ctx *) mongoc_apm_command_failed_get_context (event);
    BSON_ASSERT (ctx);
 
-   ASSERT_WITH_MSG (ctx->count < 2,
-                    "expected at most two failpoints to trigger");
+   ASSERT_WITH_MSG (ctx->count < 2, "expected at most two failpoints to trigger");
 
-   const mongoc_host_list_t *const host =
-      mongoc_apm_command_failed_get_host (event);
+   const mongoc_host_list_t *const host = mongoc_apm_command_failed_get_host (event);
    BSON_ASSERT (host);
    BSON_ASSERT (!host->next);
    ctx->ports[ctx->count++] = host->port;
@@ -319,10 +281,8 @@ test_retry_reads_sharded_on_other_mongos (void *_ctx)
    const size_t num_ports = sizeof (ports) / sizeof (*ports);
    mongoc_array_t clients = _test_get_mongos_clients (ports, num_ports);
    BSON_ASSERT (clients.len == 2u);
-   mongoc_client_t *const s0 =
-      _mongoc_array_index (&clients, mongoc_client_t *, 0u);
-   mongoc_client_t *const s1 =
-      _mongoc_array_index (&clients, mongoc_client_t *, 1u);
+   mongoc_client_t *const s0 = _mongoc_array_index (&clients, mongoc_client_t *, 0u);
+   mongoc_client_t *const s1 = _mongoc_array_index (&clients, mongoc_client_t *, 1u);
    BSON_ASSERT (s0 && s1);
 
    // Deprioritization cannot be deterministically asserted by this test due to
@@ -331,22 +291,17 @@ test_retry_reads_sharded_on_other_mongos (void *_ctx)
    for (int i = 0; i < 10; ++i) {
       // Configure the following fail point for both s0 and s1:
       {
-         bson_t *const command =
-            tmp_bson ("{"
-                      "  'configureFailPoint': 'failCommand',"
-                      "  'mode': { 'times': 1 },"
-                      "  'data': {"
-                      "    'failCommands': ['find'],"
-                      "    'errorCode': 6"
-                      "  }"
-                      "}");
+         bson_t *const command = tmp_bson ("{"
+                                           "  'configureFailPoint': 'failCommand',"
+                                           "  'mode': { 'times': 1 },"
+                                           "  'data': {"
+                                           "    'failCommands': ['find'],"
+                                           "    'errorCode': 6"
+                                           "  }"
+                                           "}");
 
-         ASSERT_OR_PRINT (mongoc_client_command_simple (
-                             s0, "admin", command, NULL, NULL, &error),
-                          error);
-         ASSERT_OR_PRINT (mongoc_client_command_simple (
-                             s1, "admin", command, NULL, NULL, &error),
-                          error);
+         ASSERT_OR_PRINT (mongoc_client_command_simple (s0, "admin", command, NULL, NULL, &error), error);
+         ASSERT_OR_PRINT (mongoc_client_command_simple (s1, "admin", command, NULL, NULL, &error), error);
       }
 
       // Create a client client with `retryReads=true` that connects to the
@@ -354,10 +309,8 @@ test_retry_reads_sharded_on_other_mongos (void *_ctx)
       // list.
       mongoc_client_t *client = NULL;
       {
-         const char *const host_and_port =
-            "mongodb://localhost:27017,localhost:27018/?retryReads=true";
-         char *const uri_str =
-            test_framework_add_user_password_from_env (host_and_port);
+         const char *const host_and_port = "mongodb://localhost:27017,localhost:27018/?retryReads=true";
+         char *const uri_str = test_framework_add_user_password_from_env (host_and_port);
          mongoc_uri_t *const uri = mongoc_uri_new (uri_str);
 
          client = mongoc_client_new_from_uri_with_error (uri, &error);
@@ -374,10 +327,8 @@ test_retry_reads_sharded_on_other_mongos (void *_ctx)
 
          // Enable failed command event monitoring for client.
          {
-            mongoc_apm_callbacks_t *const callbacks =
-               mongoc_apm_callbacks_new ();
-            mongoc_apm_set_command_failed_cb (
-               callbacks, _test_retry_reads_sharded_on_other_mongos_cb);
+            mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new ();
+            mongoc_apm_set_command_failed_cb (callbacks, _test_retry_reads_sharded_on_other_mongos_cb);
             mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
             mongoc_apm_callbacks_destroy (callbacks);
          }
@@ -385,17 +336,12 @@ test_retry_reads_sharded_on_other_mongos (void *_ctx)
          // Execute a `find` command with `client`. Assert that the command
          // failed.
          {
-            mongoc_database_t *const db =
-               mongoc_client_get_database (client, "db");
-            mongoc_collection_t *const coll =
-               mongoc_database_get_collection (db, "test");
-            mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts (
-               coll, tmp_bson ("{}"), NULL, NULL);
+            mongoc_database_t *const db = mongoc_client_get_database (client, "db");
+            mongoc_collection_t *const coll = mongoc_database_get_collection (db, "test");
+            mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL, NULL);
             const bson_t *reply = NULL;
-            ASSERT_WITH_MSG (!mongoc_cursor_next (cursor, &reply),
-                             "expected find command to fail");
-            ASSERT_WITH_MSG (mongoc_cursor_error (cursor, &error),
-                             "expected find command to fail");
+            ASSERT_WITH_MSG (!mongoc_cursor_next (cursor, &reply), "expected find command to fail");
+            ASSERT_WITH_MSG (mongoc_cursor_error (cursor, &error), "expected find command to fail");
             mongoc_cursor_destroy (cursor);
             mongoc_collection_destroy (coll);
             mongoc_database_destroy (db);
@@ -410,8 +356,7 @@ test_retry_reads_sharded_on_other_mongos (void *_ctx)
 
          // Assert that both events occurred on different mongoses.
          ASSERT_WITH_MSG ((ctx.ports[0] == 27017 || ctx.ports[0] == 27018) &&
-                             (ctx.ports[1] == 27017 || ctx.ports[1] == 27018) &&
-                             (ctx.ports[0] != ctx.ports[1]),
+                             (ctx.ports[1] == 27017 || ctx.ports[1] == 27018) && (ctx.ports[0] != ctx.ports[1]),
                           "expected failpoints to trigger once on each mongos, "
                           "but observed failures on %d and %d",
                           ctx.ports[0],
@@ -422,18 +367,13 @@ test_retry_reads_sharded_on_other_mongos (void *_ctx)
 
       // Disable the fail point on both s0 and s1.
       {
-         bson_t *const command =
-            tmp_bson ("{"
-                      "  'configureFailPoint': 'failCommand',"
-                      "  'mode': 'off'"
-                      "}");
+         bson_t *const command = tmp_bson ("{"
+                                           "  'configureFailPoint': 'failCommand',"
+                                           "  'mode': 'off'"
+                                           "}");
 
-         ASSERT_OR_PRINT (mongoc_client_command_simple (
-                             s0, "admin", command, NULL, NULL, &error),
-                          error);
-         ASSERT_OR_PRINT (mongoc_client_command_simple (
-                             s1, "admin", command, NULL, NULL, &error),
-                          error);
+         ASSERT_OR_PRINT (mongoc_client_command_simple (s0, "admin", command, NULL, NULL, &error), error);
+         ASSERT_OR_PRINT (mongoc_client_command_simple (s1, "admin", command, NULL, NULL, &error), error);
       }
    }
 
@@ -450,26 +390,23 @@ typedef struct _test_retry_reads_sharded_on_same_mongos_ctx {
 } test_retry_reads_sharded_on_same_mongos_ctx;
 
 static void
-_test_retry_reads_sharded_on_same_mongos_cb (
-   test_retry_reads_sharded_on_same_mongos_ctx *ctx,
-   const mongoc_apm_command_failed_t *failed,
-   const mongoc_apm_command_succeeded_t *succeeded)
+_test_retry_reads_sharded_on_same_mongos_cb (test_retry_reads_sharded_on_same_mongos_ctx *ctx,
+                                             const mongoc_apm_command_failed_t *failed,
+                                             const mongoc_apm_command_succeeded_t *succeeded)
 {
    BSON_ASSERT_PARAM (ctx);
    BSON_ASSERT (failed || true);
    BSON_ASSERT (succeeded || true);
 
-   ASSERT_WITH_MSG (
-      ctx->failed_count + ctx->succeeded_count < 2,
-      "expected at most two events, but observed %d failed and %d succeeded",
-      ctx->failed_count,
-      ctx->succeeded_count);
+   ASSERT_WITH_MSG (ctx->failed_count + ctx->succeeded_count < 2,
+                    "expected at most two events, but observed %d failed and %d succeeded",
+                    ctx->failed_count,
+                    ctx->succeeded_count);
 
    if (failed) {
       ctx->failed_count += 1;
 
-      const mongoc_host_list_t *const host =
-         mongoc_apm_command_failed_get_host (failed);
+      const mongoc_host_list_t *const host = mongoc_apm_command_failed_get_host (failed);
       BSON_ASSERT (host);
       BSON_ASSERT (!host->next);
       ctx->failed_port = host->port;
@@ -478,8 +415,7 @@ _test_retry_reads_sharded_on_same_mongos_cb (
    if (succeeded) {
       ctx->succeeded_count += 1;
 
-      const mongoc_host_list_t *const host =
-         mongoc_apm_command_succeeded_get_host (succeeded);
+      const mongoc_host_list_t *const host = mongoc_apm_command_succeeded_get_host (succeeded);
       BSON_ASSERT (host);
       BSON_ASSERT (!host->next);
       ctx->succeeded_port = host->port;
@@ -487,19 +423,15 @@ _test_retry_reads_sharded_on_same_mongos_cb (
 }
 
 static void
-_test_retry_reads_sharded_on_same_mongos_failed_cb (
-   const mongoc_apm_command_failed_t *event)
+_test_retry_reads_sharded_on_same_mongos_failed_cb (const mongoc_apm_command_failed_t *event)
 {
-   _test_retry_reads_sharded_on_same_mongos_cb (
-      mongoc_apm_command_failed_get_context (event), event, NULL);
+   _test_retry_reads_sharded_on_same_mongos_cb (mongoc_apm_command_failed_get_context (event), event, NULL);
 }
 
 static void
-_test_retry_reads_sharded_on_same_mongos_succeeded_cb (
-   const mongoc_apm_command_succeeded_t *event)
+_test_retry_reads_sharded_on_same_mongos_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 {
-   _test_retry_reads_sharded_on_same_mongos_cb (
-      mongoc_apm_command_succeeded_get_context (event), NULL, event);
+   _test_retry_reads_sharded_on_same_mongos_cb (mongoc_apm_command_succeeded_get_context (event), NULL, event);
 }
 
 // Retryable Reads Are Retried on the Same mongos if No Others are Available
@@ -515,25 +447,23 @@ test_retry_reads_sharded_on_same_mongos (void *_ctx)
    const size_t num_ports = sizeof (ports) / sizeof (*ports);
    mongoc_array_t clients = _test_get_mongos_clients (ports, num_ports);
    BSON_ASSERT (clients.len == 1u);
-   mongoc_client_t *const s0 =
-      _mongoc_array_index (&clients, mongoc_client_t *, 0u);
+   mongoc_client_t *const s0 = _mongoc_array_index (&clients, mongoc_client_t *, 0u);
    BSON_ASSERT (s0);
 
    // Configure the following fail point for `s0`:
-   ASSERT_OR_PRINT (mongoc_client_command_simple (
-                       s0,
-                       "admin",
-                       tmp_bson ("{"
-                                 "  'configureFailPoint': 'failCommand',"
-                                 "  'mode': { 'times': 1 },"
-                                 "  'data': {"
-                                 "    'failCommands': ['find'],"
-                                 "    'errorCode': 6"
-                                 "  }"
-                                 "}"),
-                       NULL,
-                       NULL,
-                       &error),
+   ASSERT_OR_PRINT (mongoc_client_command_simple (s0,
+                                                  "admin",
+                                                  tmp_bson ("{"
+                                                            "  'configureFailPoint': 'failCommand',"
+                                                            "  'mode': { 'times': 1 },"
+                                                            "  'data': {"
+                                                            "    'failCommands': ['find'],"
+                                                            "    'errorCode': 6"
+                                                            "  }"
+                                                            "}"),
+                                                  NULL,
+                                                  NULL,
+                                                  &error),
                     error);
 
    // Create a client client with `directConnection=false` (when not set by
@@ -541,10 +471,8 @@ test_retry_reads_sharded_on_same_mongos (void *_ctx)
    // single mongos as `s0`.
    mongoc_client_t *client = NULL;
    {
-      const char *const host_and_port =
-         "mongodb://localhost:27017/?retryReads=true&directConnection=false";
-      char *const uri_str =
-         test_framework_add_user_password_from_env (host_and_port);
+      const char *const host_and_port = "mongodb://localhost:27017/?retryReads=true&directConnection=false";
+      char *const uri_str = test_framework_add_user_password_from_env (host_and_port);
       mongoc_uri_t *const uri = mongoc_uri_new (uri_str);
 
       client = mongoc_client_new_from_uri_with_error (uri, &error);
@@ -565,10 +493,8 @@ test_retry_reads_sharded_on_same_mongos (void *_ctx)
       // Enable succeeded and failed command event monitoring for `client`.
       {
          mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new ();
-         mongoc_apm_set_command_failed_cb (
-            callbacks, _test_retry_reads_sharded_on_same_mongos_failed_cb);
-         mongoc_apm_set_command_succeeded_cb (
-            callbacks, _test_retry_reads_sharded_on_same_mongos_succeeded_cb);
+         mongoc_apm_set_command_failed_cb (callbacks, _test_retry_reads_sharded_on_same_mongos_failed_cb);
+         mongoc_apm_set_command_succeeded_cb (callbacks, _test_retry_reads_sharded_on_same_mongos_succeeded_cb);
          mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
          mongoc_apm_callbacks_destroy (callbacks);
       }
@@ -576,26 +502,21 @@ test_retry_reads_sharded_on_same_mongos (void *_ctx)
       // Execute a `find` command with `client`. Assert that the command
       // succeeded.
       {
-         mongoc_database_t *const db =
-            mongoc_client_get_database (client, "db");
-         mongoc_collection_t *const coll =
-            mongoc_database_get_collection (db, "test");
+         mongoc_database_t *const db = mongoc_client_get_database (client, "db");
+         mongoc_collection_t *const coll = mongoc_database_get_collection (db, "test");
          bson_t opts = BSON_INITIALIZER;
          {
             // Ensure drop from earlier is observed.
             mongoc_read_concern_t *const rc = mongoc_read_concern_new ();
-            mongoc_read_concern_set_level (rc,
-                                           MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+            mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
             mongoc_read_concern_append (rc, &opts);
             mongoc_read_concern_destroy (rc);
          }
-         mongoc_cursor_t *const cursor =
-            mongoc_collection_find_with_opts (coll, &opts, NULL, NULL);
+         mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts (coll, &opts, NULL, NULL);
          const bson_t *reply = NULL;
          (void) mongoc_cursor_next (cursor, &reply);
-         ASSERT_WITH_MSG (!mongoc_cursor_error (cursor, &error),
-                          "expecting find to succeed, but observed error: %s",
-                          error.message);
+         ASSERT_WITH_MSG (
+            !mongoc_cursor_error (cursor, &error), "expecting find to succeed, but observed error: %s", error.message);
          mongoc_cursor_destroy (cursor);
          bson_destroy (&opts);
          mongoc_collection_destroy (coll);
@@ -607,36 +528,33 @@ test_retry_reads_sharded_on_same_mongos (void *_ctx)
 
       // Assert that exactly one failed command event and one succeeded command
       // event occurred.
-      ASSERT_WITH_MSG (
-         ctx.failed_count == 1 && ctx.succeeded_count == 1,
-         "expected exactly one failed event and one succeeded "
-         "event, but observed %d failures and %d successes with error: %s",
-         ctx.failed_count,
-         ctx.succeeded_count,
-         ctx.succeeded_count > 1 ? "none" : error.message);
+      ASSERT_WITH_MSG (ctx.failed_count == 1 && ctx.succeeded_count == 1,
+                       "expected exactly one failed event and one succeeded "
+                       "event, but observed %d failures and %d successes with error: %s",
+                       ctx.failed_count,
+                       ctx.succeeded_count,
+                       ctx.succeeded_count > 1 ? "none" : error.message);
 
       //  Assert that both events occurred on the same mongos.
-      ASSERT_WITH_MSG (
-         ctx.failed_port == ctx.succeeded_port,
-         "expected failed and succeeded events on the same mongos, but "
-         "instead observed port %d (failed) and port %d (succeeded)",
-         ctx.failed_port,
-         ctx.succeeded_port);
+      ASSERT_WITH_MSG (ctx.failed_port == ctx.succeeded_port,
+                       "expected failed and succeeded events on the same mongos, but "
+                       "instead observed port %d (failed) and port %d (succeeded)",
+                       ctx.failed_port,
+                       ctx.succeeded_port);
 
       mongoc_client_destroy (client);
    }
 
    // Disable the fail point on s0.
-   ASSERT_OR_PRINT (mongoc_client_command_simple (
-                       s0,
-                       "admin",
-                       tmp_bson ("{"
-                                 "  'configureFailPoint': 'failCommand',"
-                                 "  'mode': 'off'"
-                                 "}"),
-                       NULL,
-                       NULL,
-                       &error),
+   ASSERT_OR_PRINT (mongoc_client_command_simple (s0,
+                                                  "admin",
+                                                  tmp_bson ("{"
+                                                            "  'configureFailPoint': 'failCommand',"
+                                                            "  'mode': 'off'"
+                                                            "}"),
+                                                  NULL,
+                                                  NULL,
+                                                  &error),
                     error);
 
    mongoc_client_destroy (s0);
