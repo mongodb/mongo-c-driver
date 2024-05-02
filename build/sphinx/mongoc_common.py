@@ -1,19 +1,22 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Sequence, Union, List, Tuple, Dict
 
 from docutils import nodes
 from docutils.nodes import Node, document
 
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log
-from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+try:
+    from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+except ImportError:
+    # Try importing from older Sphinx version path.
+    from sphinx.builders.html import DirectoryHTMLBuilder
 from sphinx.config import Config
-from sphinx.project import Project
-from sphinx.util.docutils import SphinxDirective
+from docutils.parsers.rst import Directive
 
-needs_sphinx = "5.0"
+needs_sphinx = "1.7" # Do not require newer sphinx. EPEL packages build man pages with Sphinx 1.7.6. Refer: CDRIVER-4767
 author = "MongoDB, Inc"
 
 # -- Options for HTML output ----------------------------------------------
@@ -26,7 +29,7 @@ html_show_sourcelink = False
 html_copy_source = False
 
 
-def _file_man_page_name(fpath: Path) -> str | None:
+def _file_man_page_name(fpath: Path) -> Union[str, None]:
     "Given an rST file input, find the :man_page: frontmatter value, if present"
     lines = fpath.read_text().splitlines()
     for line in lines:
@@ -35,12 +38,9 @@ def _file_man_page_name(fpath: Path) -> str | None:
             continue
         return mat[1]
 
-
-def _collect_man(app: Sphinx, config: Config) -> None:
-    "Populate the man_pages value from the given source directory input"
+def _collect_man (app: Sphinx):
     # Note: 'app' is partially-formed, as this is called from the Sphinx.__init__
     docdir = Path(app.srcdir)
-    proj = Project(app.srcdir, config.source_suffix)
     # Find everything:
     children = docdir.rglob("*")
     # Find only regular files:
@@ -53,15 +53,18 @@ def _collect_man(app: Sphinx, config: Config) -> None:
     pairs: Iterable[tuple[Path, str]] = ((f, m) for f, m in with_man_name if m)
     # Populate the man_pages:
     for filepath, man_name in pairs:
-        docname = proj.path2doc(str(filepath))
+        # Generate the docname.
+        relative_path = filepath.relative_to(app.srcdir)
+        # The docname is relative to the source directory, and excludes the suffix.
+        docname = str(relative_path.parent / filepath.stem)
+
         assert docname, filepath
         man_pages.append((docname, man_name, "", [author], 3))
 
-
 # -- Options for manual page output ---------------------------------------
 
-# NOTE: This starts empty, but we populate it during "config-inited" in _collect_man() (see above)
-man_pages: list[tuple[str, str, str, list[str], int]] = []
+# NOTE: This starts empty, but we populate it in `setup` in _collect_man() (see above)
+man_pages: List[Tuple[str, str, str, List[str], int]] = []
 
 # If true, show URL addresses after external links.
 #
@@ -70,7 +73,7 @@ man_pages: list[tuple[str, str, str, list[str], int]] = []
 # -- Sphinx customization ---------------------------------------
 
 
-def add_ga_javascript(app: Sphinx, pagename: str, templatename: str, context: dict[str, Any], doctree: document):
+def add_ga_javascript(app: Sphinx, pagename: str, templatename: str, context: Dict[str, Any], doctree: document):
     if not app.env.config.analytics:
         return
 
@@ -97,7 +100,7 @@ def add_ga_javascript(app: Sphinx, pagename: str, templatename: str, context: di
     )
 
 
-class VersionList(SphinxDirective):
+class VersionList(Directive):
     """Custom directive to generate the version list from an environment variable"""
 
     option_spec = {}
@@ -137,13 +140,13 @@ class VersionList(SphinxDirective):
         return [header, blist]
 
 
-def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: dict[str, Any], doctree: Any) -> None:
+def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: Dict[str, Any], doctree: Any) -> None:
     builder = app.builder
     if not isinstance(builder, DirectoryHTMLBuilder) or "writing-redirect" in context:
         return
     if page == "index" or page.endswith(".index"):
         return
-    path = app.project.doc2path(page, basedir=False)
+    path = app.project.doc2path(page, absolute=True)
     out_index_html = Path(builder.get_outfilename(page))
     slug = out_index_html.parent.name
     redirect_file = out_index_html.parent.parent / f"{slug}.html"
@@ -162,9 +165,8 @@ def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: dic
     builder.css_files[:] = prev_css
     sphinx_log.debug("Wrote redirect: %r -> %r", path, page)
 
-
 def mongoc_common_setup(app: Sphinx):
-    app.connect("config-inited", _collect_man)
+    _collect_man(app)
     app.connect("html-page-context", generate_html_redirs)
     app.connect("html-page-context", add_ga_javascript)
     # Run sphinx-build -D analytics=1 to enable Google Analytics.

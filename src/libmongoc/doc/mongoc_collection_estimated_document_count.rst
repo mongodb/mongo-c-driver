@@ -21,7 +21,7 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``opts``: A :symbol:`bson:bson_t`, ``NULL`` to ignore.
 * ``read_prefs``: A :symbol:`mongoc_read_prefs_t` or ``NULL``.
-* ``reply``: A location for an uninitialized :symbol:`bson:bson_t` to store the command reply, ``NULL`` to ignore. If not ``NULL``, ``reply`` will be initialized.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. |opts-source| replace:: ``collection``

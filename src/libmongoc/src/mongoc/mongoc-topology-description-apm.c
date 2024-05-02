@@ -26,8 +26,8 @@ https://github.com/mongodb/specifications/blob/master/source/server-discovery-an
 
 /* ServerOpeningEvent */
 void
-_mongoc_topology_description_monitor_server_opening (
-   const mongoc_topology_description_t *td, mongoc_server_description_t *sd)
+_mongoc_topology_description_monitor_server_opening (const mongoc_topology_description_t *td,
+                                                     mongoc_server_description_t *sd)
 {
    if (td->apm_callbacks.server_opening && !sd->opened) {
       mongoc_apm_server_opening_t event;
@@ -42,10 +42,9 @@ _mongoc_topology_description_monitor_server_opening (
 
 /* ServerDescriptionChangedEvent */
 void
-_mongoc_topology_description_monitor_server_changed (
-   const mongoc_topology_description_t *td,
-   const mongoc_server_description_t *prev_sd,
-   const mongoc_server_description_t *new_sd)
+_mongoc_topology_description_monitor_server_changed (const mongoc_topology_description_t *td,
+                                                     const mongoc_server_description_t *prev_sd,
+                                                     const mongoc_server_description_t *new_sd)
 {
    if (td->apm_callbacks.server_changed) {
       mongoc_apm_server_changed_t event;
@@ -62,9 +61,8 @@ _mongoc_topology_description_monitor_server_changed (
 
 /* ServerClosedEvent */
 void
-_mongoc_topology_description_monitor_server_closed (
-   const mongoc_topology_description_t *td,
-   const mongoc_server_description_t *sd)
+_mongoc_topology_description_monitor_server_closed (const mongoc_topology_description_t *td,
+                                                    const mongoc_server_description_t *sd)
 {
    if (td->apm_callbacks.server_closed) {
       mongoc_apm_server_closed_t event;
@@ -149,9 +147,8 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
 
 /* TopologyDescriptionChangedEvent */
 void
-_mongoc_topology_description_monitor_changed (
-   const mongoc_topology_description_t *prev_td,
-   const mongoc_topology_description_t *new_td)
+_mongoc_topology_description_monitor_changed (const mongoc_topology_description_t *prev_td,
+                                              const mongoc_topology_description_t *new_td)
 {
    if (new_td->apm_callbacks.topology_changed) {
       mongoc_apm_topology_changed_t event;
@@ -168,8 +165,7 @@ _mongoc_topology_description_monitor_changed (
 
 /* TopologyClosedEvent */
 void
-_mongoc_topology_description_monitor_closed (
-   const mongoc_topology_description_t *td)
+_mongoc_topology_description_monitor_closed (const mongoc_topology_description_t *td)
 {
    if (td->apm_callbacks.topology_closed) {
       mongoc_apm_topology_closed_t event;

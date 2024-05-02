@@ -85,10 +85,8 @@ _test_mongoc_server_api_client (void)
 
    /* Cannot change server API once it is set */
    ASSERT (!mongoc_client_set_server_api (client, api, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_API_ALREADY_SET,
-                          "Cannot set server api more than once");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_API_ALREADY_SET, "Cannot set server api more than once");
 
    /* client gets its own internal copy */
    mongoc_server_api_destroy (api);
@@ -111,15 +109,12 @@ _test_mongoc_server_api_client_pool (void)
 
    api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
 
-   ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error), error);
 
    /* Cannot change server API once it is set */
    ASSERT (!mongoc_client_pool_set_server_api (pool, api, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_POOL,
-                          MONGOC_ERROR_POOL_API_ALREADY_SET,
-                          "Cannot set server api more than once");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_POOL, MONGOC_ERROR_POOL_API_ALREADY_SET, "Cannot set server api more than once");
 
    /* Clients popped from pool have matching API */
    client = mongoc_client_pool_pop (pool);
@@ -127,11 +122,10 @@ _test_mongoc_server_api_client_pool (void)
    BSON_ASSERT (client->api->version == MONGOC_SERVER_API_V1);
 
    ASSERT (!mongoc_client_set_server_api (client, api, &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_CLIENT,
-      MONGOC_ERROR_CLIENT_API_FROM_POOL,
-      "Cannot set server api on a client checked out from a pool");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_API_FROM_POOL,
+                          "Cannot set server api on a client checked out from a pool");
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -158,18 +152,16 @@ _test_mongoc_server_api_client_pool_once (void)
 
    /* Cannot change server API once a client has been popped. */
    ASSERT (!mongoc_client_pool_set_server_api (pool, api, &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_POOL,
-      MONGOC_ERROR_POOL_API_TOO_LATE,
-      "Cannot set server api after a client has been created");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_POOL,
+                          MONGOC_ERROR_POOL_API_TOO_LATE,
+                          "Cannot set server api after a client has been created");
 
    ASSERT (!mongoc_client_set_server_api (client, api, &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_CLIENT,
-      MONGOC_ERROR_CLIENT_API_FROM_POOL,
-      "Cannot set server api on a client checked out from a pool");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_API_FROM_POOL,
+                          "Cannot set server api on a client checked out from a pool");
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -217,17 +209,10 @@ test_client_versioned_api_install (TestSuite *suite)
 {
    run_unified_tests (suite, JSON_DIR, "versioned_api");
 
-   TestSuite_Add (
-      suite, "/VersionedApi/client", _test_mongoc_server_api_client);
-   TestSuite_Add (
-      suite, "/VersionedApi/client_pool", _test_mongoc_server_api_client_pool);
-   TestSuite_Add (suite,
-                  "/VersionedApi/client_pool_once",
-                  _test_mongoc_server_api_client_pool_once);
+   TestSuite_Add (suite, "/VersionedApi/client", _test_mongoc_server_api_client);
+   TestSuite_Add (suite, "/VersionedApi/client_pool", _test_mongoc_server_api_client_pool);
+   TestSuite_Add (suite, "/VersionedApi/client_pool_once", _test_mongoc_server_api_client_pool_once);
    TestSuite_Add (suite, "/VersionedApi/copy", _test_mongoc_server_api_copy);
-   TestSuite_Add (
-      suite, "/VersionedApi/setters", _test_mongoc_server_api_setters);
-   TestSuite_Add (suite,
-                  "/VersionedApi/private/client_uses_server_api",
-                  _test_mongoc_client_uses_server_api);
+   TestSuite_Add (suite, "/VersionedApi/setters", _test_mongoc_server_api_setters);
+   TestSuite_Add (suite, "/VersionedApi/private/client_uses_server_api", _test_mongoc_client_uses_server_api);
 }

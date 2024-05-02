@@ -76,7 +76,6 @@ parser_type_to_string (bson_parser_type_t ptype)
    default:
       return "INVALID";
    }
-   return "INVALID";
 }
 
 static mongoc_write_concern_t *
@@ -104,14 +103,11 @@ bson_to_write_concern (bson_t *bson, bson_error_t *error)
 
    if (w_val) {
       if (bson_val_is_numeric (w_val)) {
-         mongoc_write_concern_set_w (out,
-                                     (int32_t) bson_val_convert_int64 (w_val));
-      } else if (bson_val_type (w_val) == BSON_TYPE_UTF8 &&
-                 0 == strcmp (bson_val_to_utf8 (w_val), "majority")) {
+         mongoc_write_concern_set_w (out, (int32_t) bson_val_convert_int64 (w_val));
+      } else if (bson_val_type (w_val) == BSON_TYPE_UTF8 && 0 == strcmp (bson_val_to_utf8 (w_val), "majority")) {
          mongoc_write_concern_set_w (out, MONGOC_WRITE_CONCERN_W_MAJORITY);
       } else {
-         test_set_error (
-            error, "unrecognized value for 'w': %s", bson_val_to_json (w_val));
+         test_set_error (error, "unrecognized value for 'w': %s", bson_val_to_json (w_val));
       }
    }
 
@@ -182,8 +178,7 @@ bson_to_read_prefs (bson_t *bson, bson_error_t *error)
    parser = bson_parser_new ();
    bson_parser_utf8 (parser, "mode", &mode_string);
    bson_parser_array_optional (parser, "tagSets", &tag_sets);
-   bson_parser_int_optional (
-      parser, "maxStalenessSeconds", &max_staleness_seconds);
+   bson_parser_int_optional (parser, "maxStalenessSeconds", &max_staleness_seconds);
    bson_parser_doc_optional (parser, "hedge", &hedge);
 
    if (!bson_parser_parse (parser, bson, error)) {
@@ -242,8 +237,7 @@ static void
 bson_parser_entry_destroy (bson_parser_entry_t *entry, bool with_parsed_fields)
 {
    if (with_parsed_fields) {
-      if (entry->ptype == BSON_PARSER_DOC ||
-          entry->ptype == BSON_PARSER_ARRAY ||
+      if (entry->ptype == BSON_PARSER_DOC || entry->ptype == BSON_PARSER_ARRAY ||
           entry->ptype == BSON_PARSER_ARRAY_OR_DOC) {
          bson_t **out;
 
@@ -329,11 +323,7 @@ bson_parser_destroy_with_parsed_fields (bson_parser_t *parser)
 }
 
 static void
-bson_parser_add_entry (bson_parser_t *parser,
-                       const char *key,
-                       void *out,
-                       bson_parser_type_t ptype,
-                       bool optional)
+bson_parser_add_entry (bson_parser_t *parser, const char *key, void *out, bson_parser_type_t ptype, bool optional)
 {
    bson_parser_entry_t *e = NULL;
    bson_parser_entry_t *match = NULL;
@@ -395,9 +385,7 @@ bson_parser_array (bson_parser_t *parser, const char *key, bson_t **out)
    bson_parser_add_entry (parser, key, (void *) out, BSON_PARSER_ARRAY, false);
 }
 void
-bson_parser_array_optional (bson_parser_t *parser,
-                            const char *key,
-                            bson_t **out)
+bson_parser_array_optional (bson_parser_t *parser, const char *key, bson_t **out)
 {
    *out = NULL;
    bson_parser_add_entry (parser, key, (void *) out, BSON_PARSER_ARRAY, true);
@@ -407,17 +395,13 @@ void
 bson_parser_array_or_doc (bson_parser_t *parser, const char *key, bson_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (
-      parser, key, (void *) out, BSON_PARSER_ARRAY_OR_DOC, false);
+   bson_parser_add_entry (parser, key, (void *) out, BSON_PARSER_ARRAY_OR_DOC, false);
 }
 void
-bson_parser_array_or_doc_optional (bson_parser_t *parser,
-                                   const char *key,
-                                   bson_t **out)
+bson_parser_array_or_doc_optional (bson_parser_t *parser, const char *key, bson_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (
-      parser, key, (void *) out, BSON_PARSER_ARRAY_OR_DOC, true);
+   bson_parser_add_entry (parser, key, (void *) out, BSON_PARSER_ARRAY_OR_DOC, true);
 }
 
 void
@@ -466,69 +450,53 @@ void
 bson_parser_write_concern (bson_parser_t *bp, mongoc_write_concern_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (
-      bp, "writeConcern", (void *) out, BSON_PARSER_WRITE_CONCERN, false);
+   bson_parser_add_entry (bp, "writeConcern", (void *) out, BSON_PARSER_WRITE_CONCERN, false);
 }
 
 void
-bson_parser_write_concern_optional (bson_parser_t *bp,
-                                    mongoc_write_concern_t **out)
+bson_parser_write_concern_optional (bson_parser_t *bp, mongoc_write_concern_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (
-      bp, "writeConcern", (void *) out, BSON_PARSER_WRITE_CONCERN, true);
+   bson_parser_add_entry (bp, "writeConcern", (void *) out, BSON_PARSER_WRITE_CONCERN, true);
 }
 
 void
 bson_parser_read_concern (bson_parser_t *bp, mongoc_read_concern_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (
-      bp, "readConcern", (void *) out, BSON_PARSER_READ_CONCERN, false);
+   bson_parser_add_entry (bp, "readConcern", (void *) out, BSON_PARSER_READ_CONCERN, false);
 }
 
 void
-bson_parser_read_concern_optional (bson_parser_t *bp,
-                                   mongoc_read_concern_t **out)
+bson_parser_read_concern_optional (bson_parser_t *bp, mongoc_read_concern_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (
-      bp, "readConcern", (void *) out, BSON_PARSER_READ_CONCERN, true);
+   bson_parser_add_entry (bp, "readConcern", (void *) out, BSON_PARSER_READ_CONCERN, true);
 }
 
 void
 bson_parser_read_prefs (bson_parser_t *bp, mongoc_read_prefs_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (
-      bp, "readPreference", (void *) out, BSON_PARSER_READ_PREFS, false);
+   bson_parser_add_entry (bp, "readPreference", (void *) out, BSON_PARSER_READ_PREFS, false);
 }
 
 void
 bson_parser_read_prefs_optional (bson_parser_t *bp, mongoc_read_prefs_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (
-      bp, "readPreference", (void *) out, BSON_PARSER_READ_PREFS, true);
+   bson_parser_add_entry (bp, "readPreference", (void *) out, BSON_PARSER_READ_PREFS, true);
 }
 
 void
-marshal_error (const char *key,
-               bson_type_t btype,
-               bson_parser_type_t ptype,
-               bson_error_t *error)
+marshal_error (const char *key, bson_type_t btype, bson_parser_type_t ptype, bson_error_t *error)
 {
-   test_set_error (error,
-                   "expecting %s for '%s' but got: %s",
-                   parser_type_to_string (ptype),
-                   key,
-                   bson_type_to_string (btype));
+   test_set_error (
+      error, "expecting %s for '%s' but got: %s", parser_type_to_string (ptype), key, bson_type_to_string (btype));
 }
 
 bool
-entry_marshal (bson_parser_entry_t *entry,
-               bson_iter_t *iter,
-               bson_error_t *error)
+entry_marshal (bson_parser_entry_t *entry, bson_iter_t *iter, bson_error_t *error)
 {
    bool ret = false;
    const char *key;
@@ -656,8 +624,7 @@ entry_marshal (bson_parser_entry_t *entry,
       bson_iter_bson (iter, &tmp);
       *out = bson_to_read_prefs (&tmp, error);
    } else {
-      test_set_error (
-         error, "unimplemented parser type: %s", parser_type_to_string (ptype));
+      test_set_error (error, "unimplemented parser type: %s", parser_type_to_string (ptype));
       goto done;
    }
 
@@ -695,8 +662,7 @@ bson_parser_parse (bson_parser_t *parser, bson_t *in, bson_error_t *error)
          } else if (parser->allow_extra) {
             BSON_APPEND_VALUE (parser->extra, key, bson_iter_value (&iter));
          } else {
-            test_set_error (
-               error, "Extra field '%s' found parsing: %s", key, tmp_json (in));
+            test_set_error (error, "Extra field '%s' found parsing: %s", key, tmp_json (in));
             return false;
          }
       }
@@ -707,10 +673,7 @@ bson_parser_parse (bson_parser_t *parser, bson_t *in, bson_error_t *error)
    LL_FOREACH (parser->entries, entry)
    {
       if (!entry->optional && !entry->set) {
-         test_set_error (error,
-                         "Required field '%s' was not found parsing: %s",
-                         entry->key,
-                         tmp_json (in));
+         test_set_error (error, "Required field '%s' was not found parsing: %s", entry->key, tmp_json (in));
          return false;
       }
    }

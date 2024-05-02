@@ -61,8 +61,7 @@ main (int argc, char *argv[])
          reader = bson_json_reader_new_from_fd (STDIN_FILENO, false);
       } else {
          if (!(reader = bson_json_reader_new_from_file (filename, &error))) {
-            fprintf (
-               stderr, "Failed to open \"%s\": %s\n", filename, error.message);
+            fprintf (stderr, "Failed to open \"%s\": %s\n", filename, error.message);
             continue;
          }
       }

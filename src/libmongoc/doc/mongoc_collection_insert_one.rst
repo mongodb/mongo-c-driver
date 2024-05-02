@@ -20,7 +20,7 @@ Parameters
 
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``document``: A :symbol:`bson:bson_t`.
-* ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the insert result, or ``NULL``.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. |opts-source| replace:: ``collection``

@@ -1,6 +1,6 @@
 # remirepo/fedora spec file for mongo-c-driver
 #
-# Copyright (c) 2015-2023 Remi Collet
+# Copyright (c) 2015-2024 Remi Collet
 # License: CC-BY-SA-4.0
 # http://creativecommons.org/licenses/by-sa/4.0/
 #
@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.24.1
+%global up_version   1.26.2
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -26,7 +26,7 @@ Release:   1%{?dist}
 License:   Apache-2.0 AND ISC AND MIT AND Zlib
 URL:       https://github.com/%{gh_owner}/%{gh_project}
 
-Source0:   https://github.com/%{gh_owner}/%{gh_project}/releases/download/%{up_version}%{?up_prever:-%{up_prever}}/%{gh_project}-%{up_version}%{?up_prever:-%{up_prever}}.tar.gz
+Source0:   https://github.com/%{gh_owner}/%{gh_project}/archive/refs/tags/%{up_version}%{?up_prever:-%{up_prever}}.tar.gz
 
 BuildRequires: cmake >= 3.15
 BuildRequires: gcc
@@ -37,19 +37,20 @@ BuildRequires: openssl-devel
 BuildRequires: pkgconfig(libsasl2)
 BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(snappy)
-BuildRequires: pkgconfig(icu-uc)
-BuildRequires: pkgconfig(libzstd)
+BuildRequires: pkgconfig(libutf8proc)
+BuildRequires: pkgconfig(libzstd) >= 0.8.0
 %if %{with tests}
 BuildRequires: mongodb-server
 BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
-BuildRequires: cmake(mongocrypt) >= 1.5.2
+# grep VERSION_LESS src/*/CMakeLists.txt
+BuildRequires: cmake(mongocrypt) >= 1.8.0
 %endif
 BuildRequires: perl-interpreter
 # From man pages
 BuildRequires: python3
-BuildRequires: /usr/bin/sphinx-build
+BuildRequires: python3-sphinx >= 5.0
 
 Requires:   %{name}-libs%{?_isa} = %{version}-%{release}
 # Sub package removed
@@ -118,15 +119,16 @@ Documentation: http://mongoc.org/libbson/%{version}/
 
 %build
 %cmake \
+    -DBUILD_VERSION=%{up_version}%{?up_prever:-%{up_prever}} \
     -DENABLE_MONGOC:BOOL=ON \
     -DENABLE_SHM_COUNTERS:BOOL=ON \
     -DENABLE_SSL:STRING=OPENSSL \
     -DENABLE_SASL:STRING=CYRUS \
     -DENABLE_MONGODB_AWS_AUTH:STRING=ON \
-    -DENABLE_ICU:STRING=ON \
     -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
     -DENABLE_CRYPTO_SYSTEM_PROFILE:BOOL=ON \
     -DENABLE_MAN_PAGES:BOOL=ON \
+    -DENABLE_SHARED:BOOL=ON \
     -DENABLE_STATIC:STRING=OFF \
     -DENABLE_ZLIB:STRING=SYSTEM \
     -DENABLE_ZSTD:STRING=ON \
@@ -144,6 +146,9 @@ Documentation: http://mongoc.org/libbson/%{version}/
     -DENABLE_CLIENT_SIDE_ENCRYPTION:BOOL=OFF \
 %endif
     -DCMAKE_SKIP_RPATH:BOOL=ON \
+    -DUSE_BUNDLED_UTF8PROC:BOOL=OFF \
+    -DENABLE_SRV:BOOL=ON \
+    -DENABLE_MONGODB_AWS_AUTH:STRING=ON \
     -S .
 
 %if 0%{?cmake_build:1}
@@ -238,6 +243,58 @@ exit $ret
 
 
 %changelog
+* Wed Apr  3 2024 Remi Collet <remi@remirepo.net> - 1.26.2-1
+- update to 1.26.2
+
+* Wed Mar  6 2024 Remi Collet <remi@remirepo.net> - 1.26.1-1
+- update to 1.26.1
+
+* Fri Feb 16 2024 Remi Collet <remi@remirepo.net> - 1.26.0-1
+- update to 1.26.0
+- raise dependency to libmongocrypt 1.8.0
+
+* Thu Jan 25 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.25.4-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
+* Sun Jan 21 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.25.4-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
+* Wed Jan  3 2024 Remi Collet <remi@remirepo.net> - 1.25.4-1
+- update to 1.25.4
+
+* Wed Dec 13 2023 Remi Collet <remi@remirepo.net> - 1.25.3-1
+- update to 1.25.3
+
+* Wed Dec  6 2023 Remi Collet <remi@remirepo.net> - 1.25.2-1
+- update to 1.25.2
+
+* Wed Nov  8 2023 Remi Collet <remi@remirepo.net> - 1.25.1-1
+- update to 1.25.1
+
+* Mon Nov  6 2023 Remi Collet <remi@remirepo.net> - 1.25.0-1
+- update to 1.25.0
+- drop dependency on libicu
+- add dependency on libutf8proc
+- open https://jira.mongodb.org/browse/CDRIVER-4767 unusable archive
+
+* Wed Sep  6 2023 Remi Collet <remi@remirepo.net> - 1.24.4-1
+- update to 1.24.4 (no change)
+
+* Thu Aug 17 2023 Remi Collet <remi@remirepo.net> - 1.24.3-1
+- update to 1.24.3
+
+* Thu Jul 20 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.24.2-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_39_Mass_Rebuild
+
+* Thu Jul 13 2023 František Zatloukal <fzatlouk@redhat.com> - 1.24.2-2
+- Rebuilt for ICU 73.2
+
+* Thu Jul 13 2023 Remi Collet <remi@remirepo.net> - 1.24.2-1
+- update to 1.24.2
+
+* Tue Jul 11 2023 František Zatloukal <fzatlouk@redhat.com> - 1.24.1-2
+- Rebuilt for ICU 73.2
+
 * Wed Jun 21 2023 Remi Collet <remi@remirepo.net> - 1.24.1-1
 - update to 1.24.1
 

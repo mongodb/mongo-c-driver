@@ -46,41 +46,43 @@ BSON_BEGIN_DECLS
 
 /* When adding a new field to mongoc-config.h.in, update this! */
 typedef enum {
-   /* The bit position (from the RHS) of each config flag. Do not reorder. */
+   /* The bit position (from the RHS) of each config flag. Do not reorder or
+      change values. */
    MONGOC_MD_FLAG_ENABLE_CRYPTO = 0,
-   MONGOC_MD_FLAG_ENABLE_CRYPTO_CNG,
-   MONGOC_MD_FLAG_ENABLE_CRYPTO_COMMON_CRYPTO,
-   MONGOC_MD_FLAG_ENABLE_CRYPTO_LIBCRYPTO,
-   MONGOC_MD_FLAG_ENABLE_CRYPTO_SYSTEM_PROFILE,
-   MONGOC_MD_FLAG_ENABLE_SASL,
-   MONGOC_MD_FLAG_ENABLE_SSL,
-   MONGOC_MD_FLAG_ENABLE_SSL_OPENSSL,
-   MONGOC_MD_FLAG_ENABLE_SSL_SECURE_CHANNEL,
-   MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT,
-   MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES,
-   MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE,
-   MONGOC_MD_FLAG_HAVE_WEAK_SYMBOLS,
-   MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS,
-   MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL,
-   MONGOC_MD_FLAG_ENABLE_SASL_CYRUS,
-   MONGOC_MD_FLAG_ENABLE_SASL_SSPI,
-   MONGOC_MD_FLAG_HAVE_SOCKLEN,
-   MONGOC_MD_FLAG_ENABLE_COMPRESSION,
-   MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY,
-   MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB,
-   MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI_UNUSED, /* CDRIVER-2654 removed this . */
-   MONGOC_MD_FLAG_ENABLE_RES_NSEARCH,
-   MONGOC_MD_FLAG_ENABLE_RES_NDESTROY,
-   MONGOC_MD_FLAG_ENABLE_RES_NCLOSE,
-   MONGOC_MD_FLAG_ENABLE_RES_SEARCH,
-   MONGOC_MD_FLAG_ENABLE_DNSAPI,
-   MONGOC_MD_FLAG_ENABLE_RDTSCP,
-   MONGOC_MD_FLAG_HAVE_SCHED_GETCPU,
-   MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS,
-   MONGOC_MD_FLAG_TRACE,
-   MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION,
-   MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH,
-   MONGOC_MD_FLAG_ENABLE_SRV,
+   MONGOC_MD_FLAG_ENABLE_CRYPTO_CNG = 1,
+   MONGOC_MD_FLAG_ENABLE_CRYPTO_COMMON_CRYPTO = 2,
+   MONGOC_MD_FLAG_ENABLE_CRYPTO_LIBCRYPTO = 3,
+   MONGOC_MD_FLAG_ENABLE_CRYPTO_SYSTEM_PROFILE = 4,
+   MONGOC_MD_FLAG_ENABLE_SASL = 5,
+   MONGOC_MD_FLAG_ENABLE_SSL = 6,
+   MONGOC_MD_FLAG_ENABLE_SSL_OPENSSL = 7,
+   MONGOC_MD_FLAG_ENABLE_SSL_SECURE_CHANNEL = 8,
+   MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT = 9,
+   MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES = 10,
+   MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE = 11,
+   MONGOC_MD_FLAG_HAVE_WEAK_SYMBOLS = 12,
+   MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS = 13,
+   MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL = 14,
+   MONGOC_MD_FLAG_ENABLE_SASL_CYRUS = 15,
+   MONGOC_MD_FLAG_ENABLE_SASL_SSPI = 16,
+   MONGOC_MD_FLAG_HAVE_SOCKLEN = 17,
+   MONGOC_MD_FLAG_ENABLE_COMPRESSION = 18,
+   MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY = 19,
+   MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB = 20,
+   MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI_UNUSED = 21, /* CDRIVER-2654 removed this . */
+   MONGOC_MD_FLAG_ENABLE_RES_NSEARCH = 22,
+   MONGOC_MD_FLAG_ENABLE_RES_NDESTROY = 23,
+   MONGOC_MD_FLAG_ENABLE_RES_NCLOSE = 24,
+   MONGOC_MD_FLAG_ENABLE_RES_SEARCH = 25,
+   MONGOC_MD_FLAG_ENABLE_DNSAPI = 26,
+   MONGOC_MD_FLAG_ENABLE_RDTSCP = 27,
+   MONGOC_MD_FLAG_HAVE_SCHED_GETCPU = 28,
+   MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS = 29,
+   MONGOC_MD_FLAG_TRACE = 30,
+   MONGOC_MD_FLAG_ENABLE_ICU_UNUSED = 31,
+   MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION = 32,
+   MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH = 33,
+   MONGOC_MD_FLAG_ENABLE_SRV = 34,
    /* Add additional config flags here, above LAST_MONGOC_MD_FLAG. */
    LAST_MONGOC_MD_FLAG
 } mongoc_handshake_config_flag_bit_t;
@@ -109,7 +111,7 @@ typedef struct _mongoc_handshake_t {
    char *platform;
    char *compiler_info;
    char *flags;
-   
+
    mongoc_handshake_env_t env;
    optional_int32 env_timeout_sec;
    optional_int32 env_memory_mb;
@@ -125,8 +127,7 @@ void
 _mongoc_handshake_cleanup (void);
 
 bson_t *
-_mongoc_handshake_build_doc_with_application (
-                                              const char *application);
+_mongoc_handshake_build_doc_with_application (const char *application);
 
 void
 _mongoc_handshake_freeze (void);
@@ -143,13 +144,11 @@ typedef struct {
 } mongoc_handshake_sasl_supported_mechs_t;
 
 void
-_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri,
-                                               bson_t *hello);
+_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri, bson_t *hello);
 
 void
-_mongoc_handshake_parse_sasl_supported_mechs (
-   const bson_t *hello,
-   mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
+_mongoc_handshake_parse_sasl_supported_mechs (const bson_t *hello,
+                                              mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
 
 BSON_END_DECLS
 

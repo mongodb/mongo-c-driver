@@ -12,9 +12,16 @@ class FetchDET(Function):
             command_type=EvgCommandType.SETUP,
             script='''\
                 if [[ ! -d drivers-evergreen-tools ]]; then
-                    git clone --depth=1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+                    git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
                 fi
             ''',
+        ),
+
+        # Make shell scripts executable.
+        bash_exec(
+            command_type=EvgCommandType.SETUP,
+            working_dir="drivers-evergreen-tools",
+            script='find .evergreen -type f -name "*.sh" -exec chmod +rx "{}" \;',
         ),
 
         # python is used frequently enough by many tasks that it is worth

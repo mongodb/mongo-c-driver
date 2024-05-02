@@ -202,61 +202,60 @@ test_bson_ascii_strtoll (void)
    int64_t rv;
    int i;
    char *endptr;
-   strtoll_test tests[] = {
-      /* input, base, expected output, # of chars parsed, expected errno */
-      {"1", 10, 1, END, 0},
-      {"+1", 10, 1, END, 0},
-      {"-1", 10, -1, END, 0},
-      {"0", 10, 0, END, 0},
-      {"0 ", 10, 0, " ", 0},
-      {" 0 ", 10, 0, " ", 0},
-      {" 0", 10, 0, END, 0},
-      {" 0\"", 10, 0, "\"", 0},
-      {"0l", 10, 0, "l", 0},
-      {"0l ", 10, 0, "l ", 0},
-      {"0u", 10, 0, "u", 0},
-      {"0u ", 10, 0, "u ", 0},
-      {"0L", 10, 0, "L", 0},
-      {"0L ", 10, 0, "L ", 0},
-      {"0U", 10, 0, "U", 0},
-      {"0U ", 10, 0, "U ", 0},
-      {"-0", 10, 0, END, 0},
-      {"+0", 10, 0, END, 0},
-      {"010", 8, 8, END, 0},
-      /* stroll "takes as many characters as possible to form a valid base-n
-       * integer", so it ignores "8" and returns 0 */
-      {"08", 0, 0, "8", 0},
-      {"010", 10, 10, END, 0},
-      {"010", 8, 8, END, 0},
-      {"010", 0, 8, END, 0},
-      {"68719476736", 10, 68719476736, END, 0},
-      {"-68719476736", 10, -68719476736, END, 0},
-      {"+68719476736", 10, 68719476736, END, 0},
-      {"   68719476736  ", 10, 68719476736, "  ", 0},
-      {"   68719476736  ", 0, 68719476736, "  ", 0},
-      {"   -68719476736  ", 10, -68719476736, "  ", 0},
-      {"   -68719476736  ", 0, -68719476736, "  ", 0},
-      {"   4611686018427387904LL", 10, 4611686018427387904LL, "LL", 0},
-      {" -4611686018427387904LL ", 10, -4611686018427387904LL, "LL ", 0},
-      {"0x1000000000", 16, 68719476736, END, 0},
-      {"0x1000000000", 0, 68719476736, END, 0},
-      {"-0x1000000000", 16, -68719476736, END, 0},
-      {"-0x1000000000", 0, -68719476736, END, 0},
-      {"+0x1000000000", 16, 68719476736, END, 0},
-      {"+0x1000000000", 0, 68719476736, END, 0},
-      {"01234", 8, 668, END, 0},
-      {"01234", 0, 668, END, 0},
-      {"-01234", 8, -668, END, 0},
-      {"-01234", 0, -668, END, 0},
-      {"+01234", 8, 668, END, 0},
-      {"+01234", 0, 668, END, 0},
-      {"9223372036854775807", 10, INT64_MAX, END, 0},
-      {"-9223372036854775808", 10, INT64_MIN, END, 0},
-      {"9223372036854775808", 10, INT64_MAX, "8", ERANGE},   /* LLONG_MAX+1   */
-      {"-9223372036854775809", 10, INT64_MIN, "9", ERANGE},  /* LLONG_MIN-1   */
-      {"18446744073709551615", 10, INT64_MAX, "5", ERANGE},  /* 2*LLONG_MAX+1 */
-      {"-18446744073709551618", 10, INT64_MIN, "8", ERANGE}, /* 2*LLONG_MIN-1 */
-      {NULL}};
+   strtoll_test tests[] = {/* input, base, expected output, # of chars parsed, expected errno */
+                           {"1", 10, 1, END, 0},
+                           {"+1", 10, 1, END, 0},
+                           {"-1", 10, -1, END, 0},
+                           {"0", 10, 0, END, 0},
+                           {"0 ", 10, 0, " ", 0},
+                           {" 0 ", 10, 0, " ", 0},
+                           {" 0", 10, 0, END, 0},
+                           {" 0\"", 10, 0, "\"", 0},
+                           {"0l", 10, 0, "l", 0},
+                           {"0l ", 10, 0, "l ", 0},
+                           {"0u", 10, 0, "u", 0},
+                           {"0u ", 10, 0, "u ", 0},
+                           {"0L", 10, 0, "L", 0},
+                           {"0L ", 10, 0, "L ", 0},
+                           {"0U", 10, 0, "U", 0},
+                           {"0U ", 10, 0, "U ", 0},
+                           {"-0", 10, 0, END, 0},
+                           {"+0", 10, 0, END, 0},
+                           {"010", 8, 8, END, 0},
+                           /* stroll "takes as many characters as possible to form a valid base-n
+                            * integer", so it ignores "8" and returns 0 */
+                           {"08", 0, 0, "8", 0},
+                           {"010", 10, 10, END, 0},
+                           {"010", 8, 8, END, 0},
+                           {"010", 0, 8, END, 0},
+                           {"68719476736", 10, 68719476736, END, 0},
+                           {"-68719476736", 10, -68719476736, END, 0},
+                           {"+68719476736", 10, 68719476736, END, 0},
+                           {"   68719476736  ", 10, 68719476736, "  ", 0},
+                           {"   68719476736  ", 0, 68719476736, "  ", 0},
+                           {"   -68719476736  ", 10, -68719476736, "  ", 0},
+                           {"   -68719476736  ", 0, -68719476736, "  ", 0},
+                           {"   4611686018427387904LL", 10, 4611686018427387904LL, "LL", 0},
+                           {" -4611686018427387904LL ", 10, -4611686018427387904LL, "LL ", 0},
+                           {"0x1000000000", 16, 68719476736, END, 0},
+                           {"0x1000000000", 0, 68719476736, END, 0},
+                           {"-0x1000000000", 16, -68719476736, END, 0},
+                           {"-0x1000000000", 0, -68719476736, END, 0},
+                           {"+0x1000000000", 16, 68719476736, END, 0},
+                           {"+0x1000000000", 0, 68719476736, END, 0},
+                           {"01234", 8, 668, END, 0},
+                           {"01234", 0, 668, END, 0},
+                           {"-01234", 8, -668, END, 0},
+                           {"-01234", 0, -668, END, 0},
+                           {"+01234", 8, 668, END, 0},
+                           {"+01234", 0, 668, END, 0},
+                           {"9223372036854775807", 10, INT64_MAX, END, 0},
+                           {"-9223372036854775808", 10, INT64_MIN, END, 0},
+                           {"9223372036854775808", 10, INT64_MAX, "8", ERANGE},   /* LLONG_MAX+1   */
+                           {"-9223372036854775809", 10, INT64_MIN, "9", ERANGE},  /* LLONG_MIN-1   */
+                           {"18446744073709551615", 10, INT64_MAX, "5", ERANGE},  /* 2*LLONG_MAX+1 */
+                           {"-18446744073709551618", 10, INT64_MIN, "8", ERANGE}, /* 2*LLONG_MIN-1 */
+                           {NULL}};
 
    for (i = 0; tests[i].str; i++) {
       errno = 0;
@@ -311,10 +310,8 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/new", test_bson_string_new);
    TestSuite_Add (suite, "/bson/string/append", test_bson_string_append);
    TestSuite_Add (suite, "/bson/string/append_c", test_bson_string_append_c);
-   TestSuite_Add (
-      suite, "/bson/string/append_printf", test_bson_string_append_printf);
-   TestSuite_Add (
-      suite, "/bson/string/append_unichar", test_bson_string_append_unichar);
+   TestSuite_Add (suite, "/bson/string/append_printf", test_bson_string_append_printf);
+   TestSuite_Add (suite, "/bson/string/append_unichar", test_bson_string_append_unichar);
    TestSuite_Add (suite, "/bson/string/strdup", test_bson_strdup);
    TestSuite_Add (suite, "/bson/string/strdup_printf", test_bson_strdup_printf);
    TestSuite_Add (suite, "/bson/string/strndup", test_bson_strndup);

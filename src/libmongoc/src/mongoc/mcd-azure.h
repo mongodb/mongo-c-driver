@@ -58,8 +58,7 @@ bool
 mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
                                                const char *json,
                                                int len,
-                                               bson_error_t *error)
-   BSON_GNUC_WARN_UNUSED_RESULT;
+                                               bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 
 /**
  * @brief Destroy and zero-fill an access token object
@@ -80,11 +79,10 @@ typedef struct mcd_azure_imds_request {
    char *_owned_headers;
 } mcd_azure_imds_request;
 
-#define MCD_AZURE_IMDS_REQUEST_INIT                         \
-   (mcd_azure_imds_request)                                 \
-   {                                                        \
-      .req = {0}, ._owned_path = NULL, ._owned_host = NULL, \
-      ._owned_headers = NULL,                               \
+#define MCD_AZURE_IMDS_REQUEST_INIT                                                 \
+   (mcd_azure_imds_request)                                                         \
+   {                                                                                \
+      .req = {0}, ._owned_path = NULL, ._owned_host = NULL, ._owned_headers = NULL, \
    }
 
 /**

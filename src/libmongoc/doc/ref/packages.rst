@@ -21,6 +21,10 @@ Package Names and Availability
 
 This table details the names and usage notes of such packages.
 
+.. note::
+  
+  The development packages (ending in ``-dev`` or ``-devel``) include files required to build applications using |libbson| and |libmongoc|.
+
 .. seealso::
 
   For a step-by-step tutorial on installing packages, refer to
@@ -59,7 +63,7 @@ This table details the names and usage notes of such packages.
   - - :index:`APK <!pair: APK; package names>`
     - :index:`Alpine Linux <!pair: Alpine Linux; package names>`
     - ``libbson``, ``libbson-dev``, ``libbson-static``
-    - ``libmongoc``, ``libmongoc-dev``, ``libmongoc-static``
+    - ``mongo-c-driver``, ``mongo-c-driver-dev``, ``mongo-c-driver-static``
     - .. empty cell
 
   - - :index:`pacman <!pair: package names; pacman>`

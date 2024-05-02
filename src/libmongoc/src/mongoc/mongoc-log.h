@@ -31,18 +31,12 @@ BSON_BEGIN_DECLS
 #endif
 
 
-#define MONGOC_ERROR(...) \
-   mongoc_log (MONGOC_LOG_LEVEL_ERROR, MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_CRITICAL(...) \
-   mongoc_log (MONGOC_LOG_LEVEL_CRITICAL, MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_WARNING(...) \
-   mongoc_log (MONGOC_LOG_LEVEL_WARNING, MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_MESSAGE(...) \
-   mongoc_log (MONGOC_LOG_LEVEL_MESSAGE, MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_INFO(...) \
-   mongoc_log (MONGOC_LOG_LEVEL_INFO, MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_DEBUG(...) \
-   mongoc_log (MONGOC_LOG_LEVEL_DEBUG, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_ERROR(...) mongoc_log (MONGOC_LOG_LEVEL_ERROR, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_CRITICAL(...) mongoc_log (MONGOC_LOG_LEVEL_CRITICAL, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_WARNING(...) mongoc_log (MONGOC_LOG_LEVEL_WARNING, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_MESSAGE(...) mongoc_log (MONGOC_LOG_LEVEL_MESSAGE, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_INFO(...) mongoc_log (MONGOC_LOG_LEVEL_INFO, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_DEBUG(...) mongoc_log (MONGOC_LOG_LEVEL_DEBUG, MONGOC_LOG_DOMAIN, __VA_ARGS__)
 
 
 typedef enum {
@@ -98,17 +92,11 @@ mongoc_log_set_handler (mongoc_log_func_t log_func, void *user_data);
  *
  */
 MONGOC_EXPORT (void)
-mongoc_log (mongoc_log_level_t log_level,
-            const char *log_domain,
-            const char *format,
-            ...) BSON_GNUC_PRINTF (3, 4);
+mongoc_log (mongoc_log_level_t log_level, const char *log_domain, const char *format, ...) BSON_GNUC_PRINTF (3, 4);
 
 
 MONGOC_EXPORT (void)
-mongoc_log_default_handler (mongoc_log_level_t log_level,
-                            const char *log_domain,
-                            const char *message,
-                            void *user_data);
+mongoc_log_default_handler (mongoc_log_level_t log_level, const char *log_domain, const char *message, void *user_data);
 
 
 /**

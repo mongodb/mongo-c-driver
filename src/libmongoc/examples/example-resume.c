@@ -1,13 +1,13 @@
 #include <mongoc/mongoc.h>
 
 /* An example implementation of custom resume logic in a change stream.
-* example-resume starts a client-wide change stream and persists the resume
-* token in a file "resume-token.json". On restart, if "resume-token.json"
-* exists, the change stream starts watching after the persisted resume token.
-*
-* This behavior allows a user to exit example-resume, and restart it later
-* without missing any change events.
-*/
+ * example-resume starts a client-wide change stream and persists the resume
+ * token in a file "resume-token.json". On restart, if "resume-token.json"
+ * exists, the change stream starts watching after the persisted resume token.
+ *
+ * This behavior allows a user to exit example-resume, and restart it later
+ * without missing any change events.
+ */
 #include <unistd.h>
 
 static const char *RESUME_TOKEN_PATH = "resume-token.json";
@@ -41,10 +41,7 @@ _save_resume_token (const bson_t *doc)
    bson_destroy (&resume_token_doc);
    n_written = 0;
    while (n_written < as_json_len) {
-      r = fwrite ((void *) (as_json + n_written),
-                  sizeof (char),
-                  as_json_len - n_written,
-                  file_stream);
+      r = fwrite ((void *) (as_json + n_written), sizeof (char), as_json_len - n_written, file_stream);
       if (r == -1) {
          fprintf (stderr, "failed to write to %s\n", RESUME_TOKEN_PATH);
          bson_free (as_json);
@@ -72,10 +69,7 @@ _load_resume_token (bson_t *opts)
    }
    reader = bson_json_reader_new_from_file (RESUME_TOKEN_PATH, &error);
    if (!reader) {
-      fprintf (stderr,
-               "failed to open %s for reading: %s\n",
-               RESUME_TOKEN_PATH,
-               error.message);
+      fprintf (stderr, "failed to open %s for reading: %s\n", RESUME_TOKEN_PATH, error.message);
       return false;
    }
 
@@ -87,8 +81,7 @@ _load_resume_token (bson_t *opts)
       return false;
    }
 
-   printf ("found cached resume token in %s, resuming change stream.\n",
-           RESUME_TOKEN_PATH);
+   printf ("found cached resume token in %s, resuming change stream.\n", RESUME_TOKEN_PATH);
 
    bson_concat (opts, &doc);
    bson_destroy (&doc);

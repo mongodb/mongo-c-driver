@@ -36,13 +36,10 @@ BSON_BEGIN_DECLS
 struct _mongoc_stream_tls_t {
    mongoc_stream_t parent;       /* The TLS stream wrapper */
    mongoc_stream_t *base_stream; /* The underlying actual stream */
-   void *ctx; /* TLS lib specific configuration or wrappers */
+   void *ctx;                    /* TLS lib specific configuration or wrappers */
    int64_t timeout_msec;
    mongoc_ssl_opt_t ssl_opts;
-   bool (*handshake) (mongoc_stream_t *stream,
-                      const char *host,
-                      int *events /* OUT*/,
-                      bson_error_t *error);
+   bool (*handshake) (mongoc_stream_t *stream, const char *host, int *events /* OUT*/, bson_error_t *error);
 };
 
 

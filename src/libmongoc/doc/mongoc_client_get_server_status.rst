@@ -30,7 +30,7 @@ Parameters
 
 * ``client``: A :symbol:`mongoc_client_t`.
 * ``read_prefs``: A :symbol:`mongoc_read_prefs_t`.
-* ``reply``: A location for the result :symbol:`bson:bson_t`.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Errors

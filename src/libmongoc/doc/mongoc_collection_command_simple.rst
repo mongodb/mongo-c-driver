@@ -21,7 +21,7 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``command``: A :symbol:`bson:bson_t` containing the command to execute.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
-* ``reply``: A location to initialize a :symbol:`bson:bson_t`. This should be on the stack.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

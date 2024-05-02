@@ -101,10 +101,9 @@ fi
 
 if [[ "${ssl}" != "OFF" ]]; then
   # FIXME: CDRIVER-2008 for the cygwin check
-  # FIXME: BUILD-18145/CDRIVER-4746 for the darwin check
-  if [[ "${OSTYPE}" != "cygwin" && ! ( "${OSTYPE}" =~ "darwin" ) ]]; then
+  if [[ "${OSTYPE}" != "cygwin" ]]; then
     echo "Authenticating using X.509"
-    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${c_timeout}"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout}"
   fi
 
   echo "Connecting to Atlas Free Tier"
@@ -129,10 +128,21 @@ if [[ "${ssl}" != "OFF" ]]; then
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_tls12:?}&${c_timeout}"
   echo "Connecting to Atlas with only TLS 1.2 enabled with SRV"
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_tls12_srv:?}${c_timeout}"
-  echo "Connecting to Atlas Serverless with SRV"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless_srv:?}/?${c_timeout}"
-  echo "Connecting to Atlas Serverless"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless:?}&${c_timeout}"
+  HAS_CIPHERSUITES_FOR_SERVERLESS="YES"
+  if [[ "${OSTYPE}" == "cygwin" ]]; then
+    # Windows Server 2008 hosts do not appear to share TLS 1.2 cipher suites with Atlas Serverless.
+    WINDOWS_OSNAME="$(systeminfo | grep 'OS Name:' | awk -F ':' '{print $2}')"
+    if [[ "${WINDOWS_OSNAME}" == *"Windows Server 2008"* ]]; then
+        echo "Detected Windows Server 2008 ... skipping Atlas Serverless test due to no shared cipher suites."
+        HAS_CIPHERSUITES_FOR_SERVERLESS="NO"
+    fi
+  fi
+  if [[ "${HAS_CIPHERSUITES_FOR_SERVERLESS}" == "YES" ]]; then
+    echo "Connecting to Atlas Serverless with SRV"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless_srv:?}/?${c_timeout}"
+    echo "Connecting to Atlas Serverless"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless:?}&${c_timeout}"
+  fi
 fi
 
 echo "Authenticating using PLAIN"

@@ -68,12 +68,9 @@ test_mongoc_handshake_appname_in_uri (void)
 
    /* Shouldn't be able to set with appname really long */
    capture_logs (true);
-   uri_str = bson_strdup_printf ("mongodb://a/?" MONGOC_URI_APPNAME "=%s",
-                                 long_string);
+   uri_str = bson_strdup_printf ("mongodb://a/?" MONGOC_URI_APPNAME "=%s", long_string);
    ASSERT (!test_framework_client_new (uri_str, NULL));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_WARNING,
-                        "Unsupported value");
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname", MONGOC_LOG_LEVEL_WARNING, "Unsupported value");
    capture_logs (false);
 
    uri = mongoc_uri_new (good_uri);
@@ -106,9 +103,8 @@ test_mongoc_handshake_appname_frozen_single (void)
    /* Shouldn't be able to set appname again */
    capture_logs (true);
    ASSERT (!mongoc_client_set_appname (client, "a"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set appname more than once");
+   ASSERT_CAPTURED_LOG (
+      "_mongoc_topology_scanner_set_appname", MONGOC_LOG_LEVEL_ERROR, "Cannot set appname more than once");
    capture_logs (false);
 
    mongoc_client_destroy (client);
@@ -126,9 +122,8 @@ test_mongoc_handshake_appname_frozen_pooled (void)
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
    capture_logs (true);
    ASSERT (!mongoc_client_pool_set_appname (pool, "test"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set appname more than once");
+   ASSERT_CAPTURED_LOG (
+      "_mongoc_topology_scanner_set_appname", MONGOC_LOG_LEVEL_ERROR, "Cannot set appname more than once");
    capture_logs (false);
 
    mongoc_client_pool_destroy (pool);
@@ -237,10 +232,7 @@ _handshake_check_os (bson_t *doc)
 }
 
 static void
-_handshake_check_env (bson_t *doc,
-                      int expected_memory_mb,
-                      int expected_timeout_sec,
-                      const char *expected_region)
+_handshake_check_env (bson_t *doc, int expected_memory_mb, int expected_timeout_sec, const char *expected_region)
 {
    bson_iter_t md_iter;
    bson_iter_t inner_iter;
@@ -286,8 +278,7 @@ _handshake_check_platform (bson_t *doc)
    ASSERT (BSON_ITER_HOLDS_UTF8 (&md_iter));
    val = bson_iter_utf8 (&md_iter, NULL);
    ASSERT (val);
-   if (strlen (val) <
-       250) { /* standard val are < 100, may be truncated on some platform */
+   if (strlen (val) < 250) { /* standard val are < 100, may be truncated on some platform */
       ASSERT (strstr (val, default_platform) != NULL);
    }
 }
@@ -332,8 +323,7 @@ _get_handshake_document (bool default_append)
 
    /* Make sure setting the handshake works */
    if (default_append) {
-      ASSERT (mongoc_handshake_data_append (
-         default_driver_name, default_driver_version, default_platform));
+      ASSERT (mongoc_handshake_data_append (default_driver_name, default_driver_version, default_platform));
    }
 
    server = mock_server_new ();
@@ -533,8 +523,7 @@ test_valid_gcp (void *test_ctx)
    _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
-   _handshake_check_env (
-      doc, default_memory_mb, default_timeout_sec, "us-central1");
+   _handshake_check_env (doc, default_memory_mb, default_timeout_sec, "us-central1");
    _handshake_check_env_name (doc, "gcp.func");
 
    bson_destroy (doc);
@@ -851,8 +840,7 @@ test_mongoc_handshake_too_big (void)
    ASSERT (mongoc_client_set_appname (client, "my app"));
 
    /* Send a ping, mock server deals with it */
-   future = future_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
+   future = future_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
    request = mock_server_receives_any_hello (server);
 
    /* Make sure the hello request has a handshake field, and it's not huge */
@@ -870,14 +858,10 @@ test_mongoc_handshake_too_big (void)
    ASSERT (len == HANDSHAKE_MAX_SIZE);
 
    reply_to_request_simple (
-      request,
-      tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
-               WIRE_VERSION_MIN,
-               WIRE_VERSION_MAX));
+      request, tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}", WIRE_VERSION_MIN, WIRE_VERSION_MAX));
    request_destroy (request);
 
-   request = mock_server_receives_msg (
-      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
+   request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
 
    reply_to_request_simple (request, "{'ok': 1}");
    ASSERT (future_get_bool (future));
@@ -938,10 +922,8 @@ test_mongoc_platform_truncate (int drop)
    bson_free (md->os_version);
    md->os_version = big_string;
 
-   bson_t *handshake_no_platform =
-      _mongoc_handshake_build_doc_with_application (default_appname);
-   size_t handshake_remaining_space =
-      HANDSHAKE_MAX_SIZE - handshake_no_platform->len;
+   bson_t *handshake_no_platform = _mongoc_handshake_build_doc_with_application (default_appname);
+   size_t handshake_remaining_space = HANDSHAKE_MAX_SIZE - handshake_no_platform->len;
    bson_destroy (handshake_no_platform);
 
    md->os_version = bson_strdup ("test_c");
@@ -958,8 +940,7 @@ test_mongoc_platform_truncate (int drop)
       handshake_remaining_space -= strlen (md->compiler_info);
       undropped = bson_strdup_printf ("%s", md->compiler_info);
    } else {
-      handshake_remaining_space -=
-         strlen (md->flags) + strlen (md->compiler_info);
+      handshake_remaining_space -= strlen (md->flags) + strlen (md->compiler_info);
       undropped = bson_strdup_printf ("%s%s", md->compiler_info, md->flags);
    }
 
@@ -967,8 +948,7 @@ test_mongoc_platform_truncate (int drop)
    ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
 
    bson_t *doc;
-   ASSERT (doc =
-              _mongoc_handshake_build_doc_with_application (default_appname));
+   ASSERT (doc = _mongoc_handshake_build_doc_with_application (default_appname));
 
    /* doc.len being strictly less than HANDSHAKE_MAX_SIZE proves that we have
     * dropped the flags correctly, instead of truncating anything
@@ -1119,13 +1099,11 @@ test_handshake_platform_config (void)
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
-   BSON_ASSERT (
-      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT));
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT));
 #endif
 
 #ifdef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
-   BSON_ASSERT (
-      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CRYPTO_COMMON_CRYPTO));
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CRYPTO_COMMON_CRYPTO));
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
@@ -1145,8 +1123,7 @@ test_handshake_platform_config (void)
 #endif
 
 #ifdef MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE
-   BSON_ASSERT (
-      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CRYPTO_SYSTEM_PROFILE));
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CRYPTO_SYSTEM_PROFILE));
 #endif
 
 #ifdef MONGOC_ENABLE_SASL
@@ -1186,8 +1163,7 @@ test_handshake_platform_config (void)
 #endif
 
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-   BSON_ASSERT (
-      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY));
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY));
 #endif
 
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
@@ -1226,8 +1202,7 @@ test_handshake_platform_config (void)
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_HAVE_SCHED_GETCPU));
 #endif
 
-   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SRV) ==
-                MONGOC_SRV_ENABLED);
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SRV) == MONGOC_SRV_ENABLED);
 
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS));
@@ -1237,9 +1212,12 @@ test_handshake_platform_config (void)
       BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
    }
 
+   // Check that `MONGOC_MD_FLAG_ENABLE_ICU` is always unset. libicu dependency
+   // was removed in CDRIVER-4680.
+   BSON_ASSERT (!_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_ICU_UNUSED));
+
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
-   BSON_ASSERT (
-      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION));
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION));
 #endif
 
 #ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH
@@ -1258,8 +1236,7 @@ static BSON_THREAD_FUN (handshake_append_worker, data)
 {
    BSON_UNUSED (data);
 
-   mongoc_handshake_data_append (
-      default_driver_name, default_driver_version, default_platform);
+   mongoc_handshake_data_append (default_driver_name, default_driver_version, default_platform);
 
    BSON_THREAD_RETURN;
 }
@@ -1275,8 +1252,7 @@ test_mongoc_handshake_race_condition (void)
       _reset_handshake ();
 
       for (j = 0; j < 4; ++j) {
-         BSON_ASSERT (!mcommon_thread_create (
-            &threads[j], &handshake_append_worker, NULL /* args */));
+         BSON_ASSERT (!mcommon_thread_create (&threads[j], &handshake_append_worker, NULL /* args */));
       }
       for (j = 0; j < 4; ++j) {
          mcommon_thread_join (threads[j]);
@@ -1289,44 +1265,20 @@ test_mongoc_handshake_race_condition (void)
 void
 test_handshake_install (TestSuite *suite)
 {
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/appname_in_uri",
-                  test_mongoc_handshake_appname_in_uri);
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/appname_frozen_single",
-                  test_mongoc_handshake_appname_frozen_single);
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/appname_frozen_pooled",
-                  test_mongoc_handshake_appname_frozen_pooled);
+   TestSuite_Add (suite, "/MongoDB/handshake/appname_in_uri", test_mongoc_handshake_appname_in_uri);
+   TestSuite_Add (suite, "/MongoDB/handshake/appname_frozen_single", test_mongoc_handshake_appname_frozen_single);
+   TestSuite_Add (suite, "/MongoDB/handshake/appname_frozen_pooled", test_mongoc_handshake_appname_frozen_pooled);
 
-   TestSuite_AddMockServerTest (suite,
-                                "/MongoDB/handshake/success",
-                                test_mongoc_handshake_data_append_success);
-   TestSuite_AddMockServerTest (suite,
-                                "/MongoDB/handshake/null_args",
-                                test_mongoc_handshake_data_append_null_args);
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/big_platform",
-                  test_mongoc_handshake_big_platform);
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/oversized_platform",
-                  test_mongoc_handshake_oversized_platform);
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/failure",
-                  test_mongoc_handshake_data_append_after_cmd);
-   TestSuite_AddMockServerTest (
-      suite, "/MongoDB/handshake/too_big", test_mongoc_handshake_too_big);
-   TestSuite_Add (
-      suite, "/MongoDB/handshake/oversized_flags", test_mongoc_oversized_flags);
-   TestSuite_AddMockServerTest (suite,
-                                "/MongoDB/handshake/cannot_send",
-                                test_mongoc_handshake_cannot_send);
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/platform_config",
-                  test_handshake_platform_config);
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/race_condition",
-                  test_mongoc_handshake_race_condition);
+   TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/success", test_mongoc_handshake_data_append_success);
+   TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/null_args", test_mongoc_handshake_data_append_null_args);
+   TestSuite_Add (suite, "/MongoDB/handshake/big_platform", test_mongoc_handshake_big_platform);
+   TestSuite_Add (suite, "/MongoDB/handshake/oversized_platform", test_mongoc_handshake_oversized_platform);
+   TestSuite_Add (suite, "/MongoDB/handshake/failure", test_mongoc_handshake_data_append_after_cmd);
+   TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/too_big", test_mongoc_handshake_too_big);
+   TestSuite_Add (suite, "/MongoDB/handshake/oversized_flags", test_mongoc_oversized_flags);
+   TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/cannot_send", test_mongoc_handshake_cannot_send);
+   TestSuite_Add (suite, "/MongoDB/handshake/platform_config", test_handshake_platform_config);
+   TestSuite_Add (suite, "/MongoDB/handshake/race_condition", test_mongoc_handshake_race_condition);
    TestSuite_AddFull (suite,
                       "/MongoDB/handshake/faas/valid_aws",
                       test_valid_aws,

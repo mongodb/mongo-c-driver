@@ -484,9 +484,9 @@ endif ()
 
 if (NOT MONGOC_ENABLE_SSL)
    if (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
-      message (FATAL_ERROR "SSL disabled, but is required for Client-Side Field Level Encryption support.")
+      message (FATAL_ERROR "SSL disabled, but is required for In-Use Encryption support.")
    elseif (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL AUTO)
-      message (STATUS "SSL disabled. Configuring without Client-Side Field Level Encryption support.")
+      message (STATUS "SSL disabled. Configuring without In-Use Encryption support.")
    endif ()
 elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
    message (STATUS "Searching for libmongocrypt")
@@ -497,10 +497,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.8.0)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.10.0)
       message (STATUS "  libmongocrypt found at ${mongocrypt_DIR}")
       message (STATUS "  libmongocrypt version ${mongocrypt_VERSION} found")
-      message (STATUS "  libmongocrypt version 1.8.0 is required to enable Client-Side Field Level Encryption Support.")
+      message (STATUS "  libmongocrypt version 1.10.0 is required to enable In-Use Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -521,7 +521,7 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
    elseif (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
       message (FATAL_ERROR "Required library (libmongocrypt) not found.")
    else ()
-      message (STATUS "libmongocrypt not found. Configuring without Client-Side Field Level Encryption support.")
+      message (STATUS "libmongocrypt not found. Configuring without In-Use Encryption support.")
    endif ()
 endif ()
 
@@ -535,6 +535,7 @@ endif ()
 
 set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-nsinfo.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
@@ -566,6 +567,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-deprioritized-servers.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-flags.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-generation-map.c
@@ -695,6 +697,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-api.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-session.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sleep.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
@@ -903,6 +906,149 @@ if (BUILD_STATIC_LIBS)
           MONGOC_COMPILATION
           ${KMS_MSG_DEFINITIONS}
           MCOMMON_NAME_PREFIX=_mongoc_mcommon
+
+set_property(
+   SOURCE ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c
+   APPEND PROPERTY COMPILE_DEFINITIONS
+   "MONGOC_CYRUS_PLUGIN_PATH_PREFIX=$<IF:$<STREQUAL:${CYRUS_PLUGIN_PATH_PREFIX},>,NULL,\"${CYRUS_PLUGIN_PATH_PREFIX}\">"
+)
+
+set (
+   UTHASH_INCLUDE_DIR
+   "${SOURCE_DIR}/src/uthash"
+)
+
+if (ENABLE_SHARED)
+   add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+   if(WIN32)
+      # Add resource-definition script for Windows shared library (.dll).
+      configure_file(libmongoc.rc.in libmongoc.rc)
+      target_sources(mongoc_shared PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libmongoc.rc)
+   endif()
+   set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
+   target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
+   target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
+   target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
+   target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
+   target_include_directories (mongoc_shared PRIVATE ${UTHASH_INCLUDE_DIR})
+   if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
+      target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
+      if (APPLE)
+         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,\"${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.txt\"")
+      elseif (UNIX)
+         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.map\"")
+      endif ()
+
+   endif ()
+   target_compile_definitions (mongoc_shared
+      PRIVATE
+         MONGOC_COMPILATION
+         ${KMS_MSG_DEFINITIONS}
+         MCOMMON_NAME_PREFIX=_mongoc_mcommon
+   )
+
+   if (USE_BUNDLED_UTF8PROC)
+      target_compile_definitions (mongoc_shared PRIVATE UTF8PROC_STATIC)
+   endif ()
+
+   # Several directories in the source and build trees contain headers we would like
+   # include via relative reference, but they all end up in the same install path
+   target_include_directories (
+      mongoc_shared
+      PUBLIC
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+   )
+
+   set_target_properties (mongoc_shared PROPERTIES
+      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}"
+      VERSION 0.0.0
+      SOVERSION 0
+      pkg_config_REQUIRES "libbson-1.0"
+      )
+   mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VERSION}.pc)
+
+   if (ENABLE_APPLE_FRAMEWORK)
+      set_target_properties (mongoc_shared PROPERTIES
+         FRAMEWORK TRUE
+         MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION}
+         MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${MONGOC_VERSION}
+         MACOSX_FRAMEWORK_IDENTIFIER org.mongodb.mongoc
+         OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}"
+         PUBLIC_HEADER "${HEADERS}"
+      )
+   endif () # ENABLE_APPLE_FRAMEWORK
+
+   add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
+   target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
+
+   # mongoc-stat works if shared memory performance counters are enabled.
+   if (ENABLE_SHM_COUNTERS)
+      install (TARGETS mongoc-stat
+               EXPORT mongoc_targets
+               RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+   endif () # ENABLE_SHM_COUNTERS
+
+endif () # ENABLE_SHARED
+
+if (MONGOC_ENABLE_STATIC_BUILD)
+   add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
+   if (NOT WIN32 AND ENABLE_PIC)
+      target_compile_options (mongoc_static PUBLIC -fPIC)
+      message (STATUS "Adding -fPIC to compilation of mongoc_static components")
+   endif ()
+   if(ENABLE_SRV AND RESOLVE_LIB_NAME)
+      # The static library needs to link to the resolver in pkg-config:
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-l${RESOLVE_LIB_NAME}")
+   endif()
+   if(SASL_BACKEND STREQUAL "Cyrus")
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lsasl2")
+   endif()
+
+   set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${${TLS_BACKEND}/pkg_config_LIBS})
+   target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
+   target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
+   target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
+   target_include_directories (mongoc_static PRIVATE ${UTHASH_INCLUDE_DIR})
+   if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
+      target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
+   endif ()
+   target_compile_definitions (mongoc_static
+      PUBLIC
+         MONGOC_STATIC
+         ${BSON_STATIC_PUBLIC_DEFINITIONS}
+      PRIVATE
+         MONGOC_COMPILATION
+         ${KMS_MSG_DEFINITIONS}
+         MCOMMON_NAME_PREFIX=_mongoc_mcommon
+   )
+   if (USE_BUNDLED_UTF8PROC)
+      target_compile_definitions (mongoc_static PRIVATE UTF8PROC_STATIC)
+   endif ()
+   # Several directories in the source and build trees contain headers we would like
+   # include via relative reference, but they all end up in the same install path
+   target_include_directories (
+      mongoc_static
+      PUBLIC
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+   )
+   set_target_properties (mongoc_static PROPERTIES
+      VERSION 0.0.0
+      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}"
+      pkg_config_REQUIRES "libbson-static-1.0"
+>>>>>>> master
       )
       if (USE_BUNDLED_UTF8PROC)
        target_compile_definitions (mongoc_static PRIVATE UTF8PROC_STATIC)
@@ -1052,6 +1198,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryability-helpers.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sample-commands.c
@@ -1088,6 +1235,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
    ${PROJECT_SOURCE_DIR}/tests/test-service-gcp.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-integer.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-nsinfo.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
    ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
@@ -1133,6 +1281,7 @@ if (ENABLE_TESTS)
       PRIVATE
          ${PROJECT_SOURCE_DIR}/tests
          ${BSON_STATIC_INCLUDE_DIRS}
+         ${UTHASH_INCLUDE_DIR}
    )
    target_compile_definitions (test-libmongoc-lib
       PUBLIC
@@ -1184,7 +1333,7 @@ if (ENABLE_TESTS)
    )
 endif ()
 
-if (ENABLE_EXAMPLES)
+if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    function (mongoc_add_example example)
       add_executable (${example} ${ARGN})
       target_link_libraries (${example} mongoc_shared ${LIBRARIES})
@@ -1261,10 +1410,16 @@ file (COPY ${PROJECT_SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/te
 file (COPY ${PROJECT_SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/release_files DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
+set (TARGETS_TO_INSTALL)
+
 if (MONGOC_ENABLE_STATIC_INSTALL)
    set (TARGETS_TO_INSTALL mongoc_static)
-else ()
+   list (APPEND TARGETS_TO_INSTALL mongoc_static)
+endif ()
+
+if (ENABLE_SHARED)
    set (TARGETS_TO_INSTALL mongoc_shared)
+   list (APPEND TARGETS_TO_INSTALL mongoc_shared)
 endif ()
 
 set (MONGOC_HEADER_INSTALL_DIR

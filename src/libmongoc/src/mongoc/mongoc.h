@@ -47,6 +47,7 @@
 #include "mongoc-handshake.h"
 #include "mongoc-opcode.h"
 #include "mongoc-log.h"
+#include "mongoc-sleep.h"
 #include "mongoc-socket.h"
 #include "mongoc-client-session.h"
 #include "mongoc-stream.h"

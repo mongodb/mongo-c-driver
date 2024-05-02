@@ -31,7 +31,7 @@ Parameters
 * ``_remove``: If the matching documents should be removed.
 * ``upsert``: If an upsert should be performed.
 * ``_new``: If the new version of the document should be returned.
-* ``reply``: Optional pointer to an *uninitialized* :symbol:`bson:bson_t` that will be initialized with the result.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

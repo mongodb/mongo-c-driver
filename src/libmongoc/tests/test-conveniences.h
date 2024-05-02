@@ -78,8 +78,7 @@ json_with_all_types (void);
 #endif
 
 #ifdef _WIN32
-#define realpath(path, expanded) \
-   GetFullPathName (path, PATH_MAX, expanded, NULL)
+#define realpath(path, expanded) GetFullPathName (path, PATH_MAX, expanded, NULL)
 #endif
 
 const char *
@@ -119,14 +118,10 @@ mongoc_read_prefs_t *
 bson_lookup_read_prefs (const bson_t *b, const char *key);
 
 void
-bson_lookup_database_opts (const bson_t *b,
-                           const char *key,
-                           mongoc_database_t *database);
+bson_lookup_database_opts (const bson_t *b, const char *key, mongoc_database_t *database);
 
 void
-bson_lookup_collection_opts (const bson_t *b,
-                             const char *key,
-                             mongoc_collection_t *collection);
+bson_lookup_collection_opts (const bson_t *b, const char *key, mongoc_collection_t *collection);
 
 mongoc_transaction_opt_t *
 bson_lookup_txn_opts (const bson_t *b, const char *key);
@@ -152,9 +147,7 @@ typedef enum {
 
 struct _match_ctx_t;
 /* doc_iter may be null if the pattern field is not found. */
-typedef match_action_t (*match_visitor_fn) (struct _match_ctx_t *ctx,
-                                            bson_iter_t *pattern_iter,
-                                            bson_iter_t *doc_iter);
+typedef match_action_t (*match_visitor_fn) (struct _match_ctx_t *ctx, bson_iter_t *pattern_iter, bson_iter_t *doc_iter);
 
 typedef struct _match_ctx_t {
    char errmsg[1000];
@@ -175,18 +168,17 @@ typedef struct _match_ctx_t {
    bool is_command;
 } match_ctx_t;
 
-#define assert_match_bson(doc, pattern, _is_command)                  \
-   if (1) {                                                           \
-      match_ctx_t _ctx = {.strict_numeric_types = true,               \
-                          .is_command = _is_command};                 \
-                                                                      \
-      if (!match_bson_with_ctx (doc, pattern, &_ctx)) {               \
-         test_error ("Expected: %s\n, Got: %s\n, %s\n",               \
-                     bson_as_canonical_extended_json (pattern, NULL), \
-                     bson_as_canonical_extended_json (doc, NULL),     \
-                     _ctx.errmsg);                                    \
-      }                                                               \
-   } else                                                             \
+#define assert_match_bson(doc, pattern, _is_command)                                \
+   if (1) {                                                                         \
+      match_ctx_t _ctx = {.strict_numeric_types = true, .is_command = _is_command}; \
+                                                                                    \
+      if (!match_bson_with_ctx (doc, pattern, &_ctx)) {                             \
+         test_error ("Expected: %s\n, Got: %s\n, %s\n",                             \
+                     bson_as_canonical_extended_json (pattern, NULL),               \
+                     bson_as_canonical_extended_json (doc, NULL),                   \
+                     _ctx.errmsg);                                                  \
+      }                                                                             \
+   } else                                                                           \
       (void) 0
 
 bool
@@ -196,14 +188,10 @@ int64_t
 bson_value_as_int64 (const bson_value_t *value);
 
 bool
-match_bson_value (const bson_value_t *doc,
-                  const bson_value_t *pattern,
-                  match_ctx_t *ctx);
+match_bson_value (const bson_value_t *doc, const bson_value_t *pattern, match_ctx_t *ctx);
 
 bool
-match_bson_with_ctx (const bson_t *doc,
-                     const bson_t *pattern,
-                     match_ctx_t *ctx);
+match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx);
 
 bool
 match_json (const bson_t *doc,
@@ -214,15 +202,13 @@ match_json (const bson_t *doc,
             const char *json_pattern,
             ...);
 
-#define ASSERT_MATCH(doc, ...)                                                 \
-   do {                                                                        \
-      BSON_ASSERT (                                                            \
-         match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)); \
+#define ASSERT_MATCH(doc, ...)                                                           \
+   do {                                                                                  \
+      BSON_ASSERT (match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)); \
    } while (0)
 
 bool
-mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,
-                                 bson_t *command);
+mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern, bson_t *command);
 
 #define FOUR_MB 1024 * 1024 * 4
 
@@ -283,13 +269,11 @@ semver_to_string (semver_t *str);
  *    printf ("%d: %s", bson_iter_key (&iter), tmp_json (&el));
  * }
  */
-#define BSON_FOREACH(bson, iter_varname)          \
-   for (bson_iter_init (&(iter_varname), (bson)); \
-        bson_iter_next (&(iter_varname));)
+#define BSON_FOREACH(bson, iter_varname) \
+   for (bson_iter_init (&(iter_varname), (bson)); bson_iter_next (&(iter_varname));)
 
 #define TEST_ERROR_DOMAIN 123456
 #define TEST_ERROR_CODE 654321
-#define test_set_error(error, ...) \
-   bson_set_error (error, TEST_ERROR_DOMAIN, TEST_ERROR_CODE, __VA_ARGS__)
+#define test_set_error(error, ...) bson_set_error (error, TEST_ERROR_DOMAIN, TEST_ERROR_CODE, __VA_ARGS__)
 
 #endif /* TEST_CONVENIENCES_H */

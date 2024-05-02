@@ -19,19 +19,16 @@ main (void)
    mongoc_client_t *keyvault_client = mongoc_client_new (mongodb_uri);
    MONGOC_DEBUG ("libmongoc version: %s", mongoc_get_version ());
 
-   mongoc_client_encryption_opts_t *ceopts =
-      mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_t *ceopts = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_keyvault_client (ceopts, keyvault_client);
-   mongoc_client_encryption_opts_set_keyvault_namespace (
-      ceopts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_namespace (ceopts, "keyvault", "datakeys");
 
    bson_t *kms_providers = BCON_NEW ("azure", "{", "}");
 
    mongoc_client_encryption_opts_set_kms_providers (ceopts, kms_providers);
 
    bson_error_t error;
-   mongoc_client_encryption_t *ce =
-      mongoc_client_encryption_new (ceopts, &error);
+   mongoc_client_encryption_t *ce = mongoc_client_encryption_new (ceopts, &error);
    if (!ce) {
       MONGOC_ERROR ("Error in mongoc_client_encryption_new: %s", error.message);
       return EXIT_FAILURE;
@@ -39,32 +36,24 @@ main (void)
 
    mongoc_client_encryption_datakey_opts_t *dkopts;
    dkopts = mongoc_client_encryption_datakey_opts_new ();
-   bson_t *masterkey = BCON_NEW ("keyVaultEndpoint",
-                                 BCON_UTF8 (keyVaultEndpoint),
-                                 "keyName",
-                                 BCON_UTF8 (keyName));
+   bson_t *masterkey = BCON_NEW ("keyVaultEndpoint", BCON_UTF8 (keyVaultEndpoint), "keyName", BCON_UTF8 (keyName));
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
 
    bson_value_t keyid;
-   bool got = mongoc_client_encryption_create_datakey (
-      ce, "azure", dkopts, &keyid, &error);
+   bool got = mongoc_client_encryption_create_datakey (ce, "azure", dkopts, &keyid, &error);
 
    if (NULL != expect_error) {
       if (got) {
-         MONGOC_ERROR ("Expected error to contain %s, but got success",
-                       expect_error);
+         MONGOC_ERROR ("Expected error to contain %s, but got success", expect_error);
          return EXIT_FAILURE;
       }
       if (NULL == strstr (error.message, expect_error)) {
-         MONGOC_ERROR ("Expected error to contain %s, but got: %s",
-                       expect_error,
-                       error.message);
+         MONGOC_ERROR ("Expected error to contain %s, but got: %s", expect_error, error.message);
          return EXIT_FAILURE;
       }
    } else {
       if (!got) {
-         MONGOC_ERROR ("Expected to create data key, but got error: %s",
-                       error.message);
+         MONGOC_ERROR ("Expected to create data key, but got error: %s", error.message);
          return EXIT_FAILURE;
       }
       MONGOC_DEBUG ("Created key\n");

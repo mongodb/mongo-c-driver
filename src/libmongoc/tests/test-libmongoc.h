@@ -25,10 +25,7 @@ struct _server_version_t;
 
 
 void
-test_libmongoc_init (struct _TestSuite *suite,
-                     const char *name,
-                     int argc,
-                     char **argv);
+test_libmongoc_init (struct _TestSuite *suite, const char *name, int argc, char **argv);
 void
 test_libmongoc_destroy (struct _TestSuite *suite);
 
@@ -74,9 +71,7 @@ test_framework_get_admin_password (void);
 bool
 test_framework_get_ssl (void);
 char *
-test_framework_add_user_password (const char *uri_str,
-                                  const char *user,
-                                  const char *password);
+test_framework_add_user_password (const char *uri_str, const char *user, const char *password);
 char *
 test_framework_add_user_password_from_env (const char *uri_str);
 char *
@@ -92,9 +87,7 @@ test_framework_get_uri (void);
 mongoc_uri_t *
 test_framework_get_uri_multi_mongos_loadbalanced (void);
 bool
-test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri,
-                                       bool use_multi,
-                                       bson_error_t *error);
+test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri, bool use_multi, bson_error_t *error);
 size_t
 test_framework_mongos_count (void);
 char *
@@ -125,22 +118,24 @@ test_framework_client_new_no_server_api (void);
 mongoc_client_t *
 test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api);
 mongoc_client_t *
-test_framework_client_new_from_uri (const mongoc_uri_t *uri,
-                                    const mongoc_server_api_t *api);
+test_framework_client_new_from_uri (const mongoc_uri_t *uri, const mongoc_server_api_t *api);
 
 mongoc_client_pool_t *
 test_framework_new_default_client_pool (void);
 mongoc_client_pool_t *
-test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri,
-                                         const mongoc_server_api_t *api);
+test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri, const mongoc_server_api_t *api);
 
 bool
 test_framework_is_mongos (void);
 bool
 test_framework_is_replset (void);
+// `test_framework_is_mongohouse` returns true if configured to test
+// mongohoused (used for Atlas Data Lake).
+// See: "Atlas Data Lake Tests" in the MongoDB Specifications.
 bool
-test_framework_server_is_secondary (mongoc_client_t *client,
-                                    uint32_t server_id);
+test_framework_is_mongohouse (void);
+bool
+test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id);
 int64_t
 test_framework_session_timeout_minutes (void);
 void
@@ -214,6 +209,12 @@ WIRE_VERSION_CHECK_DECLS (19)
 WIRE_VERSION_CHECK_DECLS (21)
 /* wire version 22 begins with the 7.1 release. */
 WIRE_VERSION_CHECK_DECLS (22)
+/* wire version 23 begins with the 7.2 release. */
+WIRE_VERSION_CHECK_DECLS (23)
+/* wire version 24 begins with the 7.3 release. */
+WIRE_VERSION_CHECK_DECLS (24)
+/* wire version 25 begins with the 8.0 release. */
+WIRE_VERSION_CHECK_DECLS (25)
 
 #undef WIRE_VERSION_CHECK_DECLS
 
@@ -224,8 +225,7 @@ typedef struct _debug_stream_stats_t {
 } debug_stream_stats_t;
 
 void
-test_framework_set_debug_stream (mongoc_client_t *client,
-                                 debug_stream_stats_t *stats);
+test_framework_set_debug_stream (mongoc_client_t *client, debug_stream_stats_t *stats);
 
 typedef int64_t server_version_t;
 

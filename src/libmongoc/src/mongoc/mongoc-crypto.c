@@ -29,8 +29,7 @@
 #endif
 
 void
-mongoc_crypto_init (mongoc_crypto_t *crypto,
-                    mongoc_crypto_hash_algorithm_t algo)
+mongoc_crypto_init (mongoc_crypto_t *crypto, mongoc_crypto_hash_algorithm_t algo)
 {
    crypto->hmac = NULL;
    crypto->hash = NULL;
@@ -74,10 +73,7 @@ mongoc_crypto_hmac (mongoc_crypto_t *crypto,
 }
 
 bool
-mongoc_crypto_hash (mongoc_crypto_t *crypto,
-                    const unsigned char *input,
-                    const size_t input_len,
-                    unsigned char *output)
+mongoc_crypto_hash (mongoc_crypto_t *crypto, const unsigned char *input, const size_t input_len, unsigned char *output)
 {
    return crypto->hash (crypto, input, input_len, output);
 }

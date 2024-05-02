@@ -82,8 +82,7 @@ main (void)
    bson_t *bson;
    char *json;
 
-   bson = COL_VIEW_CREATE (
-      SORT ("a", BCON_INT32 (1)), QUERY ("hello", "world"), LIMIT (10));
+   bson = COL_VIEW_CREATE (SORT ("a", BCON_INT32 (1)), QUERY ("hello", "world"), LIMIT (10));
 
    json = bson_as_canonical_extended_json (bson, NULL);
    printf ("%s\n", json);

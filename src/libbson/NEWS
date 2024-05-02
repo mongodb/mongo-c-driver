@@ -1,3 +1,72 @@
+libbson 1.26.2
+==============
+
+Fixes:
+
+  * Fix iteration in `bson_strfreev`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+
+libbson 1.26.1
+==============
+
+Fixes:
+
+  * Use aligned alloc for `bson_array_builder_t`
+
+Thanks to everyone who contributed to the development of this release.
+
+  * 0x1 Louis
+
+libbson 1.26.0
+==============
+
+No changes since 1.25.4. Version incremented to match the libmongoc version.
+
+libbson 1.25.4
+==============
+
+Fixes:
+
+  * Restore support for Sphinx 1.7.6 for man page build.
+
+
+libbson 1.25.3
+==============
+
+No changes since 1.25.2. Version incremented to match the libmongoc version.
+
+libbson 1.25.2
+==============
+
+Fixes:
+
+  * Fix conversion warning with GCC 12.
+  * Include -pthread in pkg-config Libs.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Calvin Buckley
+  * Kevin Albertson
+  * Roland Hieber
+
+libbson 1.25.1
+==============
+
+Fixes:
+
+  * The `BUILD_VERSION` CMake option was restored.
+  * Fixes to some format strings in trace logs.
+  * Allow mongoc_buffer_t to be larger than INT_MAX.
+
+Thanks to everyone who contributed to the development of this release:
+
+  * Adrian Dole
+  * Kevin Albertson
+  * Roberto C. Sánchez
+
 libbson 1.25.0
 ==============
 

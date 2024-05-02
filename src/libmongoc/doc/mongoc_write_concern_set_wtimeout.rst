@@ -31,4 +31,3 @@ instead of altering the write concern.
 .. seealso::
 
   | :symbol:`mongoc_write_concern_get_wtimeout` and :symbol:`mongoc_write_concern_set_wtimeout_int64`.
-

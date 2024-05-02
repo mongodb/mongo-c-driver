@@ -29,6 +29,7 @@
 #include "mongoc-crypt-private.h"
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
+#include "mongoc-sleep.h"
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -72,14 +73,13 @@ typedef struct _mongoc_rr_data_t {
 
 struct _mongoc_topology_t;
 
-MONGOC_DECL_SPECIAL_TS_POOL (
-   mongoc_server_session_t,
-   mongoc_server_session_pool,
-   struct _mongoc_topology_t,
-   /* ctor/dtor/prune are defined in the new_with_params call */
-   NULL,
-   NULL,
-   NULL)
+MONGOC_DECL_SPECIAL_TS_POOL (mongoc_server_session_t,
+                             mongoc_server_session_pool,
+                             struct _mongoc_topology_t,
+                             /* ctor/dtor/prune are defined in the new_with_params call */
+                             NULL,
+                             NULL,
+                             NULL)
 
 typedef bool (*_mongoc_rr_resolver_fn) (const char *hostname,
                                         mongoc_rr_type_t rr_type,
@@ -212,6 +212,11 @@ typedef struct _mongoc_topology_t {
     * topology. This could occur if the URI is invalid.
     * An invalid topology does not monitor servers. */
    bool valid;
+
+   // `usleep_fn` and `usleep_data` may be overridden by
+   // `mongoc_client_set_usleep_impl`.
+   mongoc_usleep_func_t usleep_fn;
+   void *usleep_data;
 } mongoc_topology_t;
 
 mongoc_topology_t *
@@ -227,8 +232,7 @@ void
 mongoc_topology_destroy (mongoc_topology_t *topology);
 
 void
-mongoc_topology_reconcile (const mongoc_topology_t *topology,
-                           mongoc_topology_description_t *td);
+mongoc_topology_reconcile (const mongoc_topology_t *topology, mongoc_topology_description_t *td);
 
 bool
 mongoc_topology_compatible (const mongoc_topology_description_t *td,
@@ -278,6 +282,8 @@ mongoc_topology_select (mongoc_topology_t *topology,
  * @param must_use_primary An optional output parameter. Server selection might
  * need to override the caller's read preferences' read mode to 'primary'.
  * Whether or not that takes place will be set through this pointer.
+ * @param ds A list of servers that should be selected only if there are no
+ * other suitable servers.
  * @param error An output parameter for any error information.
  * @return uint32_t A non-zero integer ID of the server description. In case of
  * error, sets `error` and returns zero.
@@ -289,6 +295,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bool *must_use_primary,
+                                  const mongoc_deprioritized_servers_t *ds,
                                   bson_error_t *error);
 
 /**
@@ -304,9 +311,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
  * `_mongoc_host_list_destroy_all()`
  */
 mongoc_host_list_t *
-_mongoc_topology_host_by_id (const mongoc_topology_description_t *topology,
-                             uint32_t id,
-                             bson_error_t *error);
+_mongoc_topology_host_by_id (const mongoc_topology_description_t *topology, uint32_t id, bson_error_t *error);
 
 /**
  * @brief Update the topology from the response to a handshake on a new
@@ -321,12 +326,10 @@ _mongoc_topology_host_by_id (const mongoc_topology_description_t *topology,
  * @return false If the server was already removed from the topology.
  */
 bool
-_mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
-                                        const mongoc_server_description_t *sd);
+_mongoc_topology_update_from_handshake (mongoc_topology_t *topology, const mongoc_server_description_t *sd);
 
 void
-_mongoc_topology_update_last_used (mongoc_topology_t *topology,
-                                   uint32_t server_id);
+_mongoc_topology_update_last_used (mongoc_topology_t *topology, uint32_t server_id);
 
 int64_t
 mongoc_topology_server_timestamp (mongoc_topology_t *topology, uint32_t id);
@@ -341,23 +344,19 @@ bool
 _mongoc_topology_set_appname (mongoc_topology_t *topology, const char *appname);
 
 void
-_mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
-                                      const bson_t *reply);
+_mongoc_topology_update_cluster_time (mongoc_topology_t *topology, const bson_t *reply);
 
 mongoc_server_session_t *
-_mongoc_topology_pop_server_session (mongoc_topology_t *topology,
-                                     bson_error_t *error);
+_mongoc_topology_pop_server_session (mongoc_topology_t *topology, bson_error_t *error);
 
 void
-_mongoc_topology_push_server_session (mongoc_topology_t *topology,
-                                      mongoc_server_session_t *server_session);
+_mongoc_topology_push_server_session (mongoc_topology_t *topology, mongoc_server_session_t *server_session);
 
 bool
 _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd);
 
 void
-_mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
-                                   bson_error_t *error);
+_mongoc_topology_do_blocking_scan (mongoc_topology_t *topology, bson_error_t *error);
 
 /**
  * @brief Duplicate the handshake command of the topology scanner.
@@ -374,8 +373,7 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
  * node in _mongoc_stream_run_hello.
  */
 void
-_mongoc_topology_dup_handshake_cmd (const mongoc_topology_t *topology,
-                                    bson_t *copy_into);
+_mongoc_topology_dup_handshake_cmd (const mongoc_topology_t *topology, bson_t *copy_into);
 void
 _mongoc_topology_request_scan (mongoc_topology_t *topology);
 
@@ -434,16 +432,14 @@ mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
  * Callers should call this before monitoring starts.
  */
 void
-_mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
-                                  _mongoc_rr_resolver_fn rr_resolver);
+_mongoc_topology_set_rr_resolver (mongoc_topology_t *topology, _mongoc_rr_resolver_fn rr_resolver);
 
 /* _mongoc_topology_set_srv_polling_rescan_interval_ms is called by tests to
  * shorten the rescan interval.
  * Callers should call this before monitoring starts.
  */
 void
-_mongoc_topology_set_srv_polling_rescan_interval_ms (
-   mongoc_topology_t *topology, int64_t val);
+_mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val);
 
 /**
  * @brief Return the latest connection generation for the server_id and/or
@@ -459,10 +455,9 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (
  * server does not exist in the topology.
  */
 uint32_t
-_mongoc_topology_get_connection_pool_generation (
-   const mongoc_topology_description_t *td,
-   uint32_t server_id,
-   const bson_oid_t *service_id);
+_mongoc_topology_get_connection_pool_generation (const mongoc_topology_description_t *td,
+                                                 uint32_t server_id,
+                                                 const bson_oid_t *service_id);
 
 /**
  * @brief Obtain a reference to the current topology description for the given
@@ -475,8 +470,7 @@ _mongoc_topology_get_connection_pool_generation (
 static BSON_INLINE mc_shared_tpld
 mc_tpld_take_ref (const mongoc_topology_t *tpl)
 {
-   return (mc_shared_tpld){
-      ._sptr_ = mongoc_atomic_shared_ptr_load (&tpl->_shared_descr_._sptr_)};
+   return (mc_shared_tpld){._sptr_ = mongoc_atomic_shared_ptr_load (&tpl->_shared_descr_._sptr_)};
 }
 
 /**
@@ -602,10 +596,8 @@ _mongoc_topology_invalidate_server (mongoc_topology_t *td, uint32_t server_id)
 {
    bson_error_t error;
    mc_tpld_modification tdmod = mc_tpld_modify_begin (td);
-   bson_set_error (
-      &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
-   mongoc_topology_description_invalidate_server (
-      tdmod.new_td, server_id, &error);
+   bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
+   mongoc_topology_description_invalidate_server (tdmod.new_td, server_id, &error);
    mc_tpld_modify_commit (tdmod);
 }
 
@@ -617,9 +609,7 @@ _mongoc_topology_invalidate_server (mongoc_topology_t *td, uint32_t server_id)
  * array must not be freed, as they are still owned by `hl`.
  */
 const mongoc_host_list_t **
-_mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
-                             size_t max_hosts,
-                             size_t *hl_array_size);
+_mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl, size_t max_hosts, size_t *hl_array_size);
 
 
 /* Returns true if a versioned server API has been selected, otherwise returns

@@ -58,19 +58,8 @@ main (int argc, char *argv[])
 
    for (i = 0; i < n; i++) {
       if (bcon) {
-         BCON_APPEND (&bson,
-                      "foo",
-                      "{",
-                      "bar",
-                      "{",
-                      "baz",
-                      "[",
-                      BCON_INT32 (1),
-                      BCON_INT32 (2),
-                      BCON_INT32 (3),
-                      "]",
-                      "}",
-                      "}");
+         BCON_APPEND (
+            &bson, "foo", "{", "bar", "{", "baz", "[", BCON_INT32 (1), BCON_INT32 (2), BCON_INT32 (3), "]", "}", "}");
       } else {
          bson_append_document_begin (&bson, "foo", -1, &foo);
          bson_append_document_begin (&foo, "bar", -1, &bar);

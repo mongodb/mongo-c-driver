@@ -76,11 +76,17 @@ build_dir=$(basename $(pwd))
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --clean
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --init
 mock_root=$(sudo mock -r ${config} --use-bootstrap-image --isolation=simple --print-root-path)
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdevtools git rpm-build cmake python python3-sphinx gcc openssl-devel
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdevtools git rpm-build cmake python3.11 gcc openssl-devel
+
+# This step is needed to avoid the following error on rocky+epel8:
+# Problem: conflicting requests
+#  - package utf8proc-devel-2.6.1-3.module+el8.7.0+1065+42200b2e.aarch64 from powertools is filtered out by modular filtering
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --dnf-cmd --setopt=powertools.module_hotfixes=true install utf8proc-devel
+
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-  python build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
-  python build/calc_release_version.py -p > VERSION_RELEASED
+  python3.11 build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
+  python3.11 build/calc_release_version.py -p > VERSION_RELEASED
   )"
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/VERSION_CURRENT" "/tmp/${build_dir}/VERSION_RELEASED" .
 
@@ -110,6 +116,9 @@ tar_filename=$tar_filestem.tar
 tar_filepath="/tmp/$tar_filename"
 tgz_filepath="$HOME/rpmbuild/SOURCES/$expect_filename"
 echo "Creating source archive [$tgz_filepath]"
+# If Evergreen is running a patch build, changes have been git applied to the index.
+# Commit the changes to include them in the tarball.
+git commit -m "Include applied changes from a patch build" || true
 git archive --format=tar --output="$tar_filepath" --prefix="$tar_filestem/" HEAD
 mkdir -p "$tar_filestem"
 cp VERSION_CURRENT "$tar_filestem/."

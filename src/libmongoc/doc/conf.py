@@ -4,13 +4,28 @@ import os.path
 import sys
 import urllib.request
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
-from docutils.parsers.rst import directives
+try:
+    from sphinx.builders.dirhtml import DirectoryHTMLBuilder
+except ImportError:
+    # Try importing from older Sphinx version path.
+    from sphinx.builders.html import DirectoryHTMLBuilder
+
+from docutils.parsers.rst import directives, Directive
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log
 from sphinx.config import Config
-from sphinx_design.dropdown import DropdownDirective
+
+has_sphinx_design = False
+try:
+    # Try to import sphinx-design to include directives for HTML pages (e.g. tabs and dropdowns).
+    # sphinx-design is not required for building man pages.
+    # python-sphinx-design is not currently available on EPEL. The package for EPEL includes man pages.
+    from sphinx_design.dropdown import DropdownDirective
+    has_sphinx_design = True
+except ImportError:
+    pass
 
 # Ensure we can import "mongoc" extension module.
 this_path = os.path.dirname(__file__)
@@ -29,9 +44,11 @@ extensions = [
     # package building.
     # "sphinxcontrib.moderncmakedomain",
     "cmakerefdomain",
-    "sphinx_design",
     "sphinx.ext.mathjax",
 ]
+
+if has_sphinx_design:
+    extensions.append("sphinx_design")
 
 # General information about the project.
 project = "libmongoc"
@@ -65,7 +82,7 @@ intersphinx_mapping = {
 _UPDATE_KEY = "update_external_inventories"
 
 
-def _maybe_update_inventories(app: Sphinx, config: Config):
+def _maybe_update_inventories(app: Sphinx):
     """
     We save Sphinx inventories for external projects saved within our own project
     so that we can support fully-offline builds. This is a convenience function
@@ -75,6 +92,7 @@ def _maybe_update_inventories(app: Sphinx, config: Config):
     value is defined.
     """
     prefix = "[libmongoc/doc/conf.py]"
+    config = app.config
     if not config[_UPDATE_KEY]:
         sphinx_log.info(
             "%s Using existing intersphinx inventories. Refresh by running with ‘-D %s=1’",
@@ -91,8 +109,10 @@ def _maybe_update_inventories(app: Sphinx, config: Config):
             dest = Path(app.srcdir) / filename
             sphinx_log.info("%s Saving inventory [%s] to file [%s]", prefix, url, dest)
             with dest.open("wb") as out:
-                while buf := req.read(1024 * 4):
+                buf = req.read(1024 * 4)
+                while buf:
                     out.write(buf)
+                    buf = req.read(1024 * 4)
         sphinx_log.info(
             "%s Inventory file [%s] was updated. Commit the result to save it for subsequent builds.",
             prefix,
@@ -156,43 +176,73 @@ rst_prolog = rf"""
    Offer these substitutions for simpler variable references:
 
 .. |cmvar:CMAKE_BUILD_TYPE| replace::
-    :external+cmake:cmake:variable:`CMAKE_BUILD_TYPE <variable:CMAKE_BUILD_TYPE>`
+    :cmake:variable:`CMAKE_BUILD_TYPE <variable:CMAKE_BUILD_TYPE>`
 
 .. |cmvar:CMAKE_INSTALL_PREFIX| replace::
-    :external+cmake:cmake:variable:`CMAKE_INSTALL_PREFIX <variable:CMAKE_INSTALL_PREFIX>`
+    :cmake:variable:`CMAKE_INSTALL_PREFIX <variable:CMAKE_INSTALL_PREFIX>`
 
 .. |cmvar:CMAKE_PREFIX_PATH| replace::
-    :external+cmake:cmake:variable:`CMAKE_PREFIX_PATH <variable:CMAKE_PREFIX_PATH>`
+    :cmake:variable:`CMAKE_PREFIX_PATH <variable:CMAKE_PREFIX_PATH>`
 
 .. |cmcmd:find_package| replace::
-    :external+cmake:cmake:command:`find_package() <command:find_package>`
+    :cmake:command:`find_package() <command:find_package>`
+
+.. |bson_t-storage-ptr| replace::
+    non-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
+
+.. |bson_t-opt-storage-ptr| replace::
+    maybe-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
 
 """
 
 
-def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: dict[str, Any], doctree: Any):
+def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: Dict[str, Any], doctree: Any):
     link = f'<link rel="canonical" href="https://www.mongoc.org/libmongoc/current/{pagename}/"/>'
 
     context["metatags"] = context.get("metatags", "") + link
 
 
-class AdDropdown(DropdownDirective):
-    """A sphinx-design dropdown that can also be an admonition."""
+if has_sphinx_design:
+    class AdDropdown(DropdownDirective):
+        """A sphinx-design dropdown that can also be an admonition."""
 
-    option_spec = DropdownDirective.option_spec | {"admonition": directives.unchanged_required}
+        option_spec = DropdownDirective.option_spec | {"admonition": directives.unchanged_required}
 
-    def run(self):
-        adm = self.options.get("admonition")
-        if adm is not None:
-            self.options.setdefault("class-container", []).extend(("admonition", adm))
-            self.options.setdefault("class-title", []).append(f"admonition-title")
-        return super().run()
-
+        def run(self):
+            adm = self.options.get("admonition")
+            if adm is not None:
+                self.options.setdefault("class-container", []).extend(("admonition", adm))
+                self.options.setdefault("class-title", []).append(f"admonition-title")
+            return super().run()
+else:
+    class EmptyDirective(Directive):
+        has_content = True
+        def run(self):
+            return []
+        
+has_add_css_file = True
+        
+def check_html_builder_requirements (app):
+    if isinstance(app.builder, DirectoryHTMLBuilder):
+        if not has_sphinx_design:
+            raise RuntimeError("The sphinx-design package is required to build HTML documentation but was not detected. Install sphinx-design.")
+        if not has_add_css_file:
+            raise RuntimeError("A newer version of Sphinx is required to build HTML documentation with CSS files. Upgrade Sphinx to v3.5.0 or newer")
 
 def setup(app: Sphinx):
     mongoc_common_setup(app)
-    app.add_directive("ad-dropdown", AdDropdown)
+    app.connect("builder-inited", check_html_builder_requirements)
+    if has_sphinx_design:
+        app.add_directive("ad-dropdown", AdDropdown)
+    else:
+        app.add_directive("ad-dropdown", EmptyDirective)
+        app.add_directive("tab-set", EmptyDirective)
     app.connect("html-page-context", add_canonical_link)
-    app.add_css_file("styles.css")
-    app.connect("config-inited", _maybe_update_inventories)
+    if hasattr(app, "add_css_file"):
+        app.add_css_file("styles.css")
+    else:
+        global has_add_css_file
+        has_add_css_file = False
+        
+    app.connect("builder-inited", _maybe_update_inventories)
     app.add_config_value(_UPDATE_KEY, default=False, rebuild=True, types=[bool])

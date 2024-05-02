@@ -241,12 +241,14 @@ The mock server timeout threshold for future functions can be set with:
 
 This is useful for debugging, so future calls don't timeout when stepping through code.
 
-Tests of Client-Side Field Level Encryption require credentials to external KMS providers.
+Tests of In-Use Encryption require credentials to external KMS providers.
 
 For AWS:
 
 * `MONGOC_TEST_AWS_SECRET_ACCESS_KEY=<string>`
 * `MONGOC_TEST_AWS_ACCESS_KEY_ID=<string>`
+* `MONGOC_TEST_AWSNAME2_SECRET_ACCESS_KEY=<string>`
+* `MONGOC_TEST_AWSNAME2_ACCESS_KEY_ID=<string>`
 
 An Azure:
 
@@ -259,7 +261,7 @@ For GCP:
 * `MONGOC_TEST_GCP_EMAIL=<string>`
 * `MONGOC_TEST_GCP_PRIVATEKEY=<string>`
 
-Tests of Client-Side Field Level Encryption also require temporary credentials to external KMS providers.
+Tests of In-Use Encryption also require temporary credentials to external KMS providers.
 
 For AWS:
 
@@ -267,12 +269,12 @@ For AWS:
 * `MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID=<string>`
 * `MONGOC_TEST_AWS_TEMP_SESSION_TOKEN=<string>`
 
-Tests of Client-Side Field Level Encryption spawn an extra process, "mongocryptd", by default. To bypass this spawning,
+Tests of In-Use Encryption spawn an extra process, "mongocryptd", by default. To bypass this spawning,
 start mongocryptd on port 27020 and set the following:
 
 * `MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN=on`
 
-KMS TLS tests for Client-Side Field Level Encryption require mock KMS servers to be running in the background.
+KMS TLS tests for In-Use Encryption require mock KMS servers to be running in the background.
 
 The [Setup instructions](https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#setup-3) given in the Client Side Encryption Tests specification provide additional information.
 

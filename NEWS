@@ -1,3 +1,107 @@
+libmongoc 1.27.0 (Unreleased)
+=============================
+
+Notes:
+
+  * Raise required version of libmongocrypt to 1.10.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+  * A future minor release plans to raise the minimum supported MongoDB Server version from 3.6 to 4.0. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
+
+libmongoc 1.26.2
+================
+
+Cyrus SASL:
+
+  * Disable plugin loading with Cyrus SASL on Windows by default. To re-enable, set the CMake option `CYRUS_PLUGIN_PATH_PREFIX` to the absolute path prefix of the Cyrus SASL plugins.
+
+Fixes:
+
+  * Fix possible hang if `mongoc_gridfs_file_readv` is called with a corrupt chunk with incomplete data.
+  * Fix assert with legacy exhaust cursor protocol when connected to server < 4.2.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 1.26.1
+================
+
+Fixes:
+
+  * Fix 32-bit compile with 64-bit `time_t`
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roberto C. Sánchez
+
+
+
+libmongoc 1.26.0
+================
+
+New Features:
+
+  * Support named KMS providers.
+  * Redirect retries in sharded clusters to another mongos if possible.
+
+Improvements:
+
+  * Add `VERSION_CURRENT` file in source to ease building.
+  * Consider more errors retryable.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Jeremy Mikola
+  * Adrian Dole
+  * Kyle Kloberdanz
+  * Ezra Chung
+  * MongoCaleb
+  * Roberto C. Sánchez
+  * itrofimow
+
+
+
+libmongoc 1.25.4
+================
+
+Fixes:
+
+  * Restore support for Sphinx 1.7.6 for man page build.
+
+libmongoc 1.25.3
+================
+
+Fixes:
+
+  * Disable shared libmongoc targets if `ENABLE_SHARED=OFF`
+  * Fix documentation build with Python 3.9.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 1.25.2
+================
+
+Fixes:
+
+  * Fix data race in `mongoc_cursor_get_host`.
+  * Accept discouraged timeout values for backwards compatibility.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Kyle Kloberdanz
+  * Roberto C. Sánchez
+
+libmongoc 1.25.1
+================
+
+Fixes:
+
+  * Add back support for `BUILD_VERSION` CMake option. `BUILD_VERSION` was unintentionally removed in 1.25.0.
+
 libmongoc 1.25.0
 ================
 

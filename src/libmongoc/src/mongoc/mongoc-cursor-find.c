@@ -49,8 +49,7 @@ _prime (mongoc_cursor_t *cursor)
    if (_mongoc_cursor_use_op_msg (cursor, wire_version)) {
       _mongoc_cursor_impl_find_cmd_init (cursor, &data->filter /* stolen */);
    } else {
-      _mongoc_cursor_impl_find_opquery_init (cursor,
-                                             &data->filter /* stolen */);
+      _mongoc_cursor_impl_find_opquery_init (cursor, &data->filter /* stolen */);
    }
    /* destroy this impl data since impl functions have been replaced. */
    bson_free (data);
@@ -91,8 +90,7 @@ _mongoc_cursor_find_new (mongoc_client_t *client,
 
    mongoc_cursor_t *cursor;
    data_find_t *data = BSON_ALIGNED_ALLOC0 (data_find_t);
-   cursor = _mongoc_cursor_new_with_opts (
-      client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
+   cursor = _mongoc_cursor_new_with_opts (client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
    _mongoc_cursor_check_and_copy_to (cursor, "filter", filter, &data->filter);
    cursor->impl.prime = _prime;
    cursor->impl.clone = _clone;

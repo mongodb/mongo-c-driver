@@ -6,8 +6,7 @@
 int
 main (int argc, char *argv[])
 {
-   const char *uri_string =
-      "mongodb://localhost:27017/?appname=new-gridfs-example";
+   const char *uri_string = "mongodb://localhost:27017/?appname=new-gridfs-example";
    mongoc_client_t *client;
    mongoc_database_t *db;
    mongoc_stream_t *file_stream;
@@ -37,8 +36,7 @@ main (int argc, char *argv[])
 
    /* 2. Insert a file.  */
    file_stream = mongoc_stream_file_new_for_path (argv[1], O_RDONLY, 0);
-   res = mongoc_gridfs_bucket_upload_from_stream (
-      bucket, "my-file", file_stream, NULL, &file_id, &error);
+   res = mongoc_gridfs_bucket_upload_from_stream (bucket, "my-file", file_stream, NULL, &file_id, &error);
    if (!res) {
       printf ("Error uploading file: %s\n", error.message);
       return EXIT_FAILURE;
@@ -54,8 +52,7 @@ main (int argc, char *argv[])
       return EXIT_FAILURE;
    }
 
-   res = mongoc_gridfs_bucket_download_to_stream (
-      bucket, &file_id, file_stream, &error);
+   res = mongoc_gridfs_bucket_download_to_stream (bucket, &file_id, file_stream, &error);
    if (!res) {
       printf ("Error downloading file to stream: %s\n", error.message);
       return EXIT_FAILURE;

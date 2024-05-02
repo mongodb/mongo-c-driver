@@ -313,11 +313,22 @@ all_tasks = [
                 remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz",
                 content_type="${content_type|application/x-gzip}",
             ),
+            s3_put(
+                local_file="deb-i386.tar.gz",
+                remote_file="${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz",
+                content_type="${content_type|application/x-gzip}",
+            ),
+            s3_put(
+                local_file="deb-i386.tar.gz",
+                remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz",
+                content_type="${content_type|application/x-gzip}",
+            ),
         ],
     ),
     NamedTask(
         "rpm-package-build",
         commands=[
+            shell_mongoc('export IS_PATCH="${is_patch}"\n' "sh .evergreen/scripts/check_rpm_spec.sh"),
             shell_mongoc("sh .evergreen/scripts/build_snapshot_rpm.sh"),
             s3_put(
                 local_file="rpm.tar.gz",
@@ -329,6 +340,8 @@ all_tasks = [
                 remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz",
                 content_type="${content_type|application/x-gzip}",
             ),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
         ],
     ),
     NamedTask(
@@ -397,8 +410,8 @@ all_tasks = [
                         "params",
                         OD(
                             [
-                                ("aws_key", "${toolchain_aws_key}"),
-                                ("aws_secret", "${toolchain_aws_secret}"),
+                                ("aws_key", "${aws_key}"),
+                                ("aws_secret", "${aws_secret}"),
                                 ("remote_file", "mongo-c-toolchain/${distro_id}/2023/06/07/mongo-c-toolchain.tar.gz"),
                                 ("bucket", "mongo-c-toolchain"),
                                 ("local_file", "mongo-c-toolchain.tar.gz"),
@@ -916,9 +929,15 @@ aws_compile_task = NamedTask(
             export distro_id='${distro_id}' # Required by find_cmake_latest.
             . .evergreen/scripts/find-cmake-latest.sh
             cmake_binary="$(find_cmake_latest)"
-            # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
+
+            # Allow reuse of ccache compilation results between different build directories.
+            export CCACHE_BASEDIR CCACHE_NOHASHDIR
+            CCACHE_BASEDIR="$(pwd)"
+            CCACHE_NOHASHDIR=1
+
+            # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
             export CC='${CC}'
-            "$cmake_binary" -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+            "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
             "$cmake_binary" --build . --target test-awsauth
             """
         ),

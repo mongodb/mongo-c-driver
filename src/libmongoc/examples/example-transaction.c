@@ -57,8 +57,7 @@ main (int argc, char *argv[])
 
    /* inserting into a nonexistent collection normally creates it, but a
     * collection can't be created in a transaction; create it now */
-   collection =
-      mongoc_database_create_collection (database, "collection", NULL, &error);
+   collection = mongoc_database_create_collection (database, "collection", NULL, &error);
 
    if (!collection) {
       /* code 48 is NamespaceExists, see error_codes.err in mongodb source */
@@ -79,8 +78,7 @@ main (int argc, char *argv[])
    mongoc_read_concern_set_level (read_concern, "snapshot");
    mongoc_transaction_opts_set_read_concern (default_txn_opts, read_concern);
    session_opts = mongoc_session_opts_new ();
-   mongoc_session_opts_set_default_transaction_opts (session_opts,
-                                                     default_txn_opts);
+   mongoc_session_opts_set_default_transaction_opts (session_opts, default_txn_opts);
 
    session = mongoc_client_start_session (client, session_opts, &error);
    if (!session) {
@@ -111,8 +109,7 @@ retry_transaction:
    for (i = 0; i < 2; i++) {
       doc = BCON_NEW ("_id", BCON_INT32 (i));
       bson_destroy (&reply);
-      r = mongoc_collection_insert_one (
-         collection, doc, insert_opts, &reply, &error);
+      r = mongoc_collection_insert_one (collection, doc, insert_opts, &reply, &error);
 
       bson_destroy (doc);
 
@@ -148,8 +145,7 @@ retry_transaction:
          MONGOC_ERROR ("Warning: commit failed: %s", error.message);
          if (mongoc_error_has_label (&reply, "TransientTransactionError")) {
             goto retry_transaction;
-         } else if (mongoc_error_has_label (&reply,
-                                            "UnknownTransactionCommitResult")) {
+         } else if (mongoc_error_has_label (&reply, "UnknownTransactionCommitResult")) {
             /* try again to commit */
             continue;
          }

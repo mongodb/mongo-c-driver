@@ -101,8 +101,7 @@ mongoc_read_concern_get_level (const mongoc_read_concern_t *read_concern)
  * See the MongoDB docs for more information on readConcernLevel
  */
 bool
-mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern,
-                               const char *level)
+mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern, const char *level)
 {
    BSON_ASSERT (read_concern);
 
@@ -125,8 +124,7 @@ mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern,
  *
  */
 bool
-mongoc_read_concern_append (mongoc_read_concern_t *read_concern,
-                            bson_t *command)
+mongoc_read_concern_append (mongoc_read_concern_t *read_concern, bson_t *command)
 {
    BSON_ASSERT (read_concern);
 
@@ -134,10 +132,7 @@ mongoc_read_concern_append (mongoc_read_concern_t *read_concern,
       return true;
    }
 
-   if (!bson_append_document (command,
-                              "readConcern",
-                              11,
-                              _mongoc_read_concern_get_bson (read_concern))) {
+   if (!bson_append_document (command, "readConcern", 11, _mongoc_read_concern_get_bson (read_concern))) {
       MONGOC_ERROR ("Could not append readConcern to command.");
       return false;
    }
@@ -189,8 +184,7 @@ _mongoc_read_concern_get_bson (mongoc_read_concern_t *read_concern)
  *    with mongoc_read_concern_destroy().
  */
 mongoc_read_concern_t *
-_mongoc_read_concern_new_from_iter (const bson_iter_t *iter,
-                                    bson_error_t *error)
+_mongoc_read_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *error)
 {
    bson_iter_t inner;
    mongoc_read_concern_t *read_concern;
@@ -212,10 +206,7 @@ _mongoc_read_concern_new_from_iter (const bson_iter_t *iter,
    return read_concern;
 
 fail:
-   bson_set_error (error,
-                   MONGOC_ERROR_COMMAND,
-                   MONGOC_ERROR_COMMAND_INVALID_ARG,
-                   "Invalid readConcern");
+   bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid readConcern");
 
    mongoc_read_concern_destroy (read_concern);
    return NULL;

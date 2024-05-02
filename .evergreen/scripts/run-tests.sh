@@ -95,6 +95,8 @@ if [[ -n "${CLIENT_SIDE_ENCRYPTION}" ]]; then
     export MONGOC_TEST_AWS_TEMP_SESSION_TOKEN="${CSFLE_AWS_TEMP_SESSION_TOKEN:?}"
     export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
     export MONGOC_TEST_AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+    export MONGOC_TEST_AWSNAME2_SECRET_ACCESS_KEY="${client_side_encryption_awsname2_secret_access_key}"
+    export MONGOC_TEST_AWSNAME2_ACCESS_KEY_ID="${client_side_encryption_awsname2_access_key_id}"
     export MONGOC_TEST_AZURE_TENANT_ID="${client_side_encryption_azure_tenant_id:?}"
     export MONGOC_TEST_AZURE_CLIENT_ID="${client_side_encryption_azure_client_id:?}"
     export MONGOC_TEST_AZURE_CLIENT_SECRET="${client_side_encryption_azure_client_secret:?}"

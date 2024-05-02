@@ -84,6 +84,8 @@ IPv4 and IPv6
 
 .. include:: includes/ipv4-and-ipv6.txt
 
+.. _connection_options:
+
 Connection Options
 ------------------
 
@@ -104,7 +106,12 @@ MONGOC_URI_LOADBALANCED                    loadbalanced                      fal
 MONGOC_URI_SRVMAXHOSTS                     srvmaxhosts                       0                                 If zero, the number of hosts in DNS results is unlimited. If greater than zero, the number of hosts in DNS results is limited to being less than or equal to the given value.
 ========================================== ================================= ================================= ============================================================================================================================================================================================================================================
 
-Setting any of the \*timeoutMS options above to ``0`` will be interpreted as "use the default value".
+.. warning::
+
+  Setting any of the \*timeoutMS options above to either ``0`` or a negative value is discouraged due to unspecified and inconsistent behavior.
+  The "default value" historically specified as a fallback for ``0`` or a negative value is NOT related to the default values for the \*timeoutMS options documented above.
+  The meaning of a timeout of ``0`` or a negative value may vary depending on the operation being executed, even when specified by the same URI option.
+  To specify the documented default value for a \*timeoutMS option, use the `MONGOC_DEFAULT_*` constants defined in ``mongoc-client.h`` instead.
 
 Authentication Options
 ----------------------
@@ -330,4 +337,3 @@ MONGOC_URI_SAFE                            safe                              {tr
     mongoc_uri_set_username
     mongoc_uri_set_write_concern
     mongoc_uri_unescape
-

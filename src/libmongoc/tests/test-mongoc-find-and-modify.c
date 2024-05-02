@@ -52,12 +52,10 @@ test_find_and_modify_bypass (bool bypass)
    server = mock_server_new ();
    mock_server_run (server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (client);
 
-   collection =
-      mongoc_client_get_collection (client, "test", "test_find_and_modify");
+   collection = mongoc_client_get_collection (client, "test", "test_find_and_modify");
 
    auto_hello (server,
                WIRE_VERSION_MIN, /* max_wire_version */
@@ -71,35 +69,29 @@ test_find_and_modify_bypass (bool bypass)
 
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_set_bypass_document_validation (opts, bypass);
-   BSON_ASSERT (
-      bypass ==
-      mongoc_find_and_modify_opts_get_bypass_document_validation (opts));
+   BSON_ASSERT (bypass == mongoc_find_and_modify_opts_get_bypass_document_validation (opts));
    mongoc_find_and_modify_opts_set_update (opts, update);
-   mongoc_find_and_modify_opts_set_flags (opts,
-                                          MONGOC_FIND_AND_MODIFY_RETURN_NEW);
+   mongoc_find_and_modify_opts_set_flags (opts, MONGOC_FIND_AND_MODIFY_RETURN_NEW);
 
-   future = future_collection_find_and_modify_with_opts (
-      collection, &doc, opts, &reply, &error);
+   future = future_collection_find_and_modify_with_opts (collection, &doc, opts, &reply, &error);
 
    if (bypass) {
-      request = mock_server_receives_msg (
-         server,
-         MONGOC_MSG_NONE,
-         tmp_bson ("{'$db': 'test',"
-                   " 'findAndModify': 'test_find_and_modify',"
-                   " 'query': {'superduper': 77889},"
-                   " 'update': {'$set': {'superduper': 1234}},"
-                   " 'new': true,"
-                   " 'bypassDocumentValidation': true}"));
+      request = mock_server_receives_msg (server,
+                                          MONGOC_MSG_NONE,
+                                          tmp_bson ("{'$db': 'test',"
+                                                    " 'findAndModify': 'test_find_and_modify',"
+                                                    " 'query': {'superduper': 77889},"
+                                                    " 'update': {'$set': {'superduper': 1234}},"
+                                                    " 'new': true,"
+                                                    " 'bypassDocumentValidation': true}"));
    } else {
-      request = mock_server_receives_msg (
-         server,
-         MONGOC_MSG_NONE,
-         tmp_bson ("{'$db': 'test',"
-                   " 'findAndModify': 'test_find_and_modify', "
-                   "'query': {'superduper': 77889},"
-                   "'update': {'$set': {'superduper': 1234}},"
-                   "'new': true }"));
+      request = mock_server_receives_msg (server,
+                                          MONGOC_MSG_NONE,
+                                          tmp_bson ("{'$db': 'test',"
+                                                    " 'findAndModify': 'test_find_and_modify', "
+                                                    "'query': {'superduper': 77889},"
+                                                    "'update': {'$set': {'superduper': 1234}},"
+                                                    "'new': true }"));
    }
 
    reply_to_request_simple (request, "{ 'value' : null, 'ok' : 1 }");
@@ -148,12 +140,10 @@ test_find_and_modify_write_concern (void)
    server = mock_server_new ();
    mock_server_run (server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (client);
 
-   collection =
-      mongoc_client_get_collection (client, "test", "test_find_and_modify");
+   collection = mongoc_client_get_collection (client, "test", "test_find_and_modify");
 
    auto_hello (server,
                WIRE_VERSION_MIN, /* max_wire_version */
@@ -170,21 +160,18 @@ test_find_and_modify_write_concern (void)
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_collection_set_write_concern (collection, write_concern);
    mongoc_find_and_modify_opts_set_update (opts, update);
-   mongoc_find_and_modify_opts_set_flags (opts,
-                                          MONGOC_FIND_AND_MODIFY_RETURN_NEW);
+   mongoc_find_and_modify_opts_set_flags (opts, MONGOC_FIND_AND_MODIFY_RETURN_NEW);
 
-   future = future_collection_find_and_modify_with_opts (
-      collection, &doc, opts, &reply, &error);
+   future = future_collection_find_and_modify_with_opts (collection, &doc, opts, &reply, &error);
 
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'test',"
-                " 'findAndModify': 'test_find_and_modify', "
-                " 'query': {'superduper': 77889 },"
-                " 'update': {'$set': {'superduper': 1234}},"
-                " 'new': true,"
-                " 'writeConcern': {'w': 42}}"));
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'test',"
+                                                 " 'findAndModify': 'test_find_and_modify', "
+                                                 " 'query': {'superduper': 77889 },"
+                                                 " 'update': {'$set': {'superduper': 1234}},"
+                                                 " 'new': true,"
+                                                 " 'writeConcern': {'w': 42}}"));
 
    reply_to_request_simple (request, "{ 'value' : null, 'ok' : 1 }");
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -230,8 +217,7 @@ test_find_and_modify_write_concern_failure (void *context)
    BSON_APPEND_UTF8 (&query, "lastname", "Ibrahimovic");
    BSON_APPEND_UTF8 (&query, "profession", "Football player");
    BSON_APPEND_INT32 (&query, "age", 34);
-   BSON_APPEND_INT32 (
-      &query, "goals", (16 + 35 + 23 + 57 + 16 + 14 + 28 + 84) + (1 + 6 + 62));
+   BSON_APPEND_INT32 (&query, "goals", (16 + 35 + 23 + 57 + 16 + 14 + 28 + 84) + (1 + 6 + 62));
 
    /* Add his football position */
    update = BCON_NEW ("$set", "{", "position", BCON_UTF8 ("striker"), "}");
@@ -241,15 +227,12 @@ test_find_and_modify_write_concern_failure (void *context)
    mongoc_find_and_modify_opts_set_update (opts, update);
 
    /* Create the document if it didn't exist, and return the updated document */
-   mongoc_find_and_modify_opts_set_flags (
-      opts, MONGOC_FIND_AND_MODIFY_UPSERT | MONGOC_FIND_AND_MODIFY_RETURN_NEW);
+   mongoc_find_and_modify_opts_set_flags (opts, MONGOC_FIND_AND_MODIFY_UPSERT | MONGOC_FIND_AND_MODIFY_RETURN_NEW);
 
-   success = mongoc_collection_find_and_modify_with_opts (
-      collection, &query, opts, &reply, &error);
+   success = mongoc_collection_find_and_modify_with_opts (collection, &query, opts, &reply, &error);
 
    ASSERT (!success);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
 
    bson_destroy (&reply);
    bson_destroy (update);
@@ -283,9 +266,7 @@ test_find_and_modify (void)
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (collection, &doc, NULL, NULL, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (collection, &doc, NULL, NULL, &error), error);
 
    update = BCON_NEW ("$set", "{", "superduper", BCON_INT32 (1234), "}");
 
@@ -294,8 +275,7 @@ test_find_and_modify (void)
    mongoc_find_and_modify_opts_get_update (opts, &tmp);
    assert_match_bson (&tmp, update, false);
    bson_destroy (&tmp);
-   mongoc_find_and_modify_opts_set_fields (opts,
-                                           tmp_bson ("{'superduper': 1}"));
+   mongoc_find_and_modify_opts_set_fields (opts, tmp_bson ("{'superduper': 1}"));
    mongoc_find_and_modify_opts_get_fields (opts, &tmp);
    assert_match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false);
    bson_destroy (&tmp);
@@ -303,14 +283,10 @@ test_find_and_modify (void)
    mongoc_find_and_modify_opts_get_sort (opts, &tmp);
    assert_match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false);
    bson_destroy (&tmp);
-   mongoc_find_and_modify_opts_set_flags (opts,
-                                          MONGOC_FIND_AND_MODIFY_RETURN_NEW);
-   BSON_ASSERT (MONGOC_FIND_AND_MODIFY_RETURN_NEW ==
-                mongoc_find_and_modify_opts_get_flags (opts));
+   mongoc_find_and_modify_opts_set_flags (opts, MONGOC_FIND_AND_MODIFY_RETURN_NEW);
+   BSON_ASSERT (MONGOC_FIND_AND_MODIFY_RETURN_NEW == mongoc_find_and_modify_opts_get_flags (opts));
 
-   ASSERT_OR_PRINT (mongoc_collection_find_and_modify_with_opts (
-                       collection, &doc, opts, &reply, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_collection_find_and_modify_with_opts (collection, &doc, opts, &reply, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &reply, "value"));
    BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
@@ -353,29 +329,24 @@ test_find_and_modify_opts (void)
    server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    opts = mongoc_find_and_modify_opts_new ();
    BSON_ASSERT (mongoc_find_and_modify_opts_set_max_time_ms (opts, 42));
-   ASSERT_CMPUINT32 (
-      42, ==, mongoc_find_and_modify_opts_get_max_time_ms (opts));
-   BSON_ASSERT (
-      mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'foo': 1}")));
+   ASSERT_CMPUINT32 (42, ==, mongoc_find_and_modify_opts_get_max_time_ms (opts));
+   BSON_ASSERT (mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'foo': 1}")));
    mongoc_find_and_modify_opts_get_extra (opts, &extra);
    assert_match_bson (&extra, tmp_bson ("{'foo': 1}"), false);
    bson_destroy (&extra);
 
-   future = future_collection_find_and_modify_with_opts (
-      collection, tmp_bson ("{}"), opts, NULL, &error);
-   request =
-      mock_server_receives_msg (server,
-                                MONGOC_MSG_NONE,
-                                tmp_bson ("{'$db': 'db',"
-                                          " 'findAndModify': 'collection',"
-                                          " 'maxTimeMS': 42,"
-                                          " 'foo': 1}"));
+   future = future_collection_find_and_modify_with_opts (collection, tmp_bson ("{}"), opts, NULL, &error);
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " 'findAndModify': 'collection',"
+                                                 " 'maxTimeMS': 42,"
+                                                 " 'foo': 1}"));
    reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
@@ -409,8 +380,7 @@ test_find_and_modify_opts_write_concern (void)
    server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    opts = mongoc_find_and_modify_opts_new ();
@@ -418,30 +388,26 @@ test_find_and_modify_opts_write_concern (void)
    BSON_ASSERT (mongoc_find_and_modify_opts_append (opts, &extra));
    bson_destroy (&extra);
 
-   future = future_collection_find_and_modify_with_opts (
-      collection, tmp_bson ("{}"), opts, NULL, &error);
-   request =
-      mock_server_receives_msg (server,
-                                MONGOC_MSG_NONE,
-                                tmp_bson ("{'$db': 'db',"
-                                          " 'findAndModify': 'collection',"
-                                          " 'writeConcern': {'w': 2}}"));
+   future = future_collection_find_and_modify_with_opts (collection, tmp_bson ("{}"), opts, NULL, &error);
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " 'findAndModify': 'collection',"
+                                                 " 'writeConcern': {'w': 2}}"));
    reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
    /* opts overrides collection */
    mongoc_collection_set_write_concern (collection, w3);
-   future = future_collection_find_and_modify_with_opts (
-      collection, tmp_bson ("{}"), opts, NULL, &error);
+   future = future_collection_find_and_modify_with_opts (collection, tmp_bson ("{}"), opts, NULL, &error);
 
    /* still w: 2 */
-   request =
-      mock_server_receives_msg (server,
-                                MONGOC_MSG_NONE,
-                                tmp_bson ("{'$db': 'db',"
-                                          " 'findAndModify': 'collection',"
-                                          " 'writeConcern': {'w': 2}}"));
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " 'findAndModify': 'collection',"
+                                                 " 'writeConcern': {'w': 2}}"));
    reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
@@ -470,30 +436,21 @@ test_find_and_modify_collation (void)
    server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
 
-   collation = BCON_NEW ("collation",
-                         "{",
-                         "locale",
-                         BCON_UTF8 ("en_US"),
-                         "caseFirst",
-                         BCON_UTF8 ("lower"),
-                         "}");
+   collation = BCON_NEW ("collation", "{", "locale", BCON_UTF8 ("en_US"), "caseFirst", BCON_UTF8 ("lower"), "}");
    opts = mongoc_find_and_modify_opts_new ();
    BSON_ASSERT (mongoc_find_and_modify_opts_append (opts, collation));
 
-   future = future_collection_find_and_modify_with_opts (
-      collection, tmp_bson ("{}"), opts, NULL, &error);
+   future = future_collection_find_and_modify_with_opts (collection, tmp_bson ("{}"), opts, NULL, &error);
 
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db',"
-                " 'findAndModify': 'collection',"
-                " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'}}"));
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " 'findAndModify': 'collection',"
+                                                 " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'}}"));
    reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
@@ -523,23 +480,19 @@ test_find_and_modify_hint (void)
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'hint': 'abc'}"));
    mongoc_find_and_modify_opts_set_update (opts, tmp_bson ("{}"));
-   ret = mongoc_collection_find_and_modify_with_opts (
-      coll, tmp_bson ("{}"), opts, NULL /* reply */, &error);
-   if (test_framework_max_wire_version_at_least (
-          WIRE_VERSION_FIND_AND_MODIFY_HINT)) {
+   ret = mongoc_collection_find_and_modify_with_opts (coll, tmp_bson ("{}"), opts, NULL /* reply */, &error);
+   if (test_framework_max_wire_version_at_least (WIRE_VERSION_FIND_AND_MODIFY_HINT)) {
       ASSERT_OR_PRINT (ret, error);
-   } else if (test_framework_max_wire_version_at_least (
-                 WIRE_VERSION_FIND_AND_MODIFY_HINT_SERVER_SIDE_ERROR)) {
+   } else if (test_framework_max_wire_version_at_least (WIRE_VERSION_FIND_AND_MODIFY_HINT_SERVER_SIDE_ERROR)) {
       BSON_ASSERT (!ret);
       BSON_ASSERT (error.domain == MONGOC_ERROR_SERVER);
       /* server error. */
    } else {
       BSON_ASSERT (!ret);
-      ASSERT_ERROR_CONTAINS (
-         error,
-         MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-         "The selected server does not support hint for findAndModify");
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                             "The selected server does not support hint for findAndModify");
    }
 
    mongoc_find_and_modify_opts_destroy (opts);
@@ -550,31 +503,21 @@ test_find_and_modify_hint (void)
 void
 test_find_and_modify_install (TestSuite *suite)
 {
-   TestSuite_AddLive (
-      suite, "/find_and_modify/find_and_modify", test_find_and_modify);
-   TestSuite_AddMockServerTest (suite,
-                                "/find_and_modify/find_and_modify/bypass/true",
-                                test_find_and_modify_bypass_true);
-   TestSuite_AddMockServerTest (suite,
-                                "/find_and_modify/find_and_modify/bypass/false",
-                                test_find_and_modify_bypass_false);
+   TestSuite_AddLive (suite, "/find_and_modify/find_and_modify", test_find_and_modify);
    TestSuite_AddMockServerTest (
-      suite,
-      "/find_and_modify/find_and_modify/write_concern",
-      test_find_and_modify_write_concern);
+      suite, "/find_and_modify/find_and_modify/bypass/true", test_find_and_modify_bypass_true);
+   TestSuite_AddMockServerTest (
+      suite, "/find_and_modify/find_and_modify/bypass/false", test_find_and_modify_bypass_false);
+   TestSuite_AddMockServerTest (
+      suite, "/find_and_modify/find_and_modify/write_concern", test_find_and_modify_write_concern);
    TestSuite_AddFull (suite,
                       "/find_and_modify/find_and_modify/write_concern_failure",
                       test_find_and_modify_write_concern_failure,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_replset);
-   TestSuite_AddMockServerTest (
-      suite, "/find_and_modify/opts", test_find_and_modify_opts);
-   TestSuite_AddMockServerTest (suite,
-                                "/find_and_modify/opts/write_concern",
-                                test_find_and_modify_opts_write_concern);
-   TestSuite_AddMockServerTest (
-      suite, "/find_and_modify/collation", test_find_and_modify_collation);
-   TestSuite_AddLive (
-      suite, "/find_and_modify/hint", test_find_and_modify_hint);
+   TestSuite_AddMockServerTest (suite, "/find_and_modify/opts", test_find_and_modify_opts);
+   TestSuite_AddMockServerTest (suite, "/find_and_modify/opts/write_concern", test_find_and_modify_opts_write_concern);
+   TestSuite_AddMockServerTest (suite, "/find_and_modify/collation", test_find_and_modify_collation);
+   TestSuite_AddLive (suite, "/find_and_modify/hint", test_find_and_modify_hint);
 }

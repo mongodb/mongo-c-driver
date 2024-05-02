@@ -65,6 +65,7 @@ struct _mongoc_apm_command_succeeded_t {
    bson_t *reply;
    bool reply_owned;
    const char *command_name;
+   const char *database_name;
    int64_t request_id;
    int64_t operation_id;
    const mongoc_host_list_t *host;
@@ -77,6 +78,7 @@ struct _mongoc_apm_command_succeeded_t {
 struct _mongoc_apm_command_failed_t {
    int64_t duration;
    const char *command_name;
+   const char *database_name;
    const bson_error_t *error;
    bson_t *reply;
    bool reply_owned;
@@ -181,6 +183,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    int64_t duration,
                                    const bson_t *reply,
                                    const char *command_name,
+                                   const char *database_name,
                                    int64_t request_id,
                                    int64_t operation_id,
                                    const mongoc_host_list_t *host,
@@ -197,6 +200,7 @@ void
 mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t duration,
                                 const char *command_name,
+                                const char *database_name,
                                 const bson_error_t *error,
                                 const bson_t *reply,
                                 int64_t request_id,
@@ -219,8 +223,7 @@ mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event);
  * @param body The body of the command request, reply, or failure.
  */
 bool
-mongoc_apm_is_sensitive_command_message (const char *command_name,
-                                         const bson_t *body);
+mongoc_apm_is_sensitive_command_message (const char *command_name, const bson_t *body);
 
 BSON_END_DECLS
 

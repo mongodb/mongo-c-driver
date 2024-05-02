@@ -170,6 +170,11 @@ mongo_setting(
    ]]
 )
 
+mongo_setting(CYRUS_PLUGIN_PATH_PREFIX "An absolute path prefix to enable loading Cyrus SASL plugins on Windows"
+   TYPE STRING
+   VISIBLE_IF [[ENABLE_SASL STREQUAL "CYRUS" AND WIN32]]
+)
+
 mongo_setting(ENABLE_CLIENT_SIDE_ENCRYPTION "Enable In-Use Encryption support. Requires additional support libraries."
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)
@@ -247,6 +252,8 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 mongo_platform_use_target(Threads::Threads)
+
+set_property(DIRECTORY APPEND PROPERTY pkg_config_LIBS ${CMAKE_THREAD_LIBS_INIT})
 
 if(WIN32)
    # Required for gethostbyname on Windows:

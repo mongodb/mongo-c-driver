@@ -20,7 +20,7 @@ Parameters
 ----------
 
 * ``session``: A :symbol:`mongoc_client_session_t`.
-* ``reply``: An optional uninitialized :symbol:`bson:bson_t` to receive the server reply, or ``NULL``.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Return

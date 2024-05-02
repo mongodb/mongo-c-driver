@@ -88,7 +88,7 @@ main (int argc, char *argv[])
       fprintf (stderr, "Auth error: %s\n", error.message);
       goto CLEANUP;
    }
-   
+
    exit_code = EXIT_SUCCESS;
 
 CLEANUP:

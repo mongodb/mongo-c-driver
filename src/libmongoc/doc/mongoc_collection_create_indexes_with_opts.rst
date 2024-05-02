@@ -30,7 +30,7 @@ Parameters
 * ``models``: An array of ``mongoc_index_model_t *``.
 * ``n_models``: The number of ``models``.
 * ``opts``: Optional options.
-* ``reply``: An optional location for the server reply to the ``createIndexes`` command.
+* ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. |opts-source| replace:: ``collection``

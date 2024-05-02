@@ -32,43 +32,34 @@
    } else                                    \
       ((void) 0)
 
-#define ASSERT(Cond)                                                           \
-   if (1) {                                                                    \
-      if (!(Cond)) {                                                           \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", \
-                               __FILE__,                                       \
-                               __LINE__,                                       \
-                               BSON_FUNC,                                      \
-                               BSON_STR (Cond));                               \
-         abort ();                                                             \
-      }                                                                        \
-   } else                                                                      \
+#define ASSERT(Cond)                                                                                         \
+   if (1) {                                                                                                  \
+      if (!(Cond)) {                                                                                         \
+         MONGOC_STDERR_PRINTF (                                                                              \
+            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (Cond)); \
+         abort ();                                                                                           \
+      }                                                                                                      \
+   } else                                                                                                    \
       ((void) 0)
 
-#define ASSERTF(Cond, Fmt, ...)                                                \
-   if (1) {                                                                    \
-      if (!(Cond)) {                                                           \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", \
-                               __FILE__,                                       \
-                               __LINE__,                                       \
-                               BSON_FUNC,                                      \
-                               BSON_STR (Cond));                               \
-         MONGOC_STDERR_PRINTF ("MESSAGE: " Fmt "\n", __VA_ARGS__);             \
-         abort ();                                                             \
-      }                                                                        \
-   } else                                                                      \
+#define ASSERTF(Cond, Fmt, ...)                                                                              \
+   if (1) {                                                                                                  \
+      if (!(Cond)) {                                                                                         \
+         MONGOC_STDERR_PRINTF (                                                                              \
+            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (Cond)); \
+         MONGOC_STDERR_PRINTF ("MESSAGE: " Fmt "\n", __VA_ARGS__);                                           \
+         abort ();                                                                                           \
+      }                                                                                                      \
+   } else                                                                                                    \
       ((void) 0)
 
-#define FAILF(Fmt, ...)                                                     \
-   if (1) {                                                                 \
-      MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", \
-                            __FILE__,                                       \
-                            __LINE__,                                       \
-                            BSON_FUNC,                                      \
-                            BSON_STR (Cond));                               \
-      MONGOC_STDERR_PRINTF ("MESSAGE: " Fmt "\n", __VA_ARGS__);             \
-      abort ();                                                             \
-   } else                                                                   \
+#define FAILF(Fmt, ...)                                                                                   \
+   if (1) {                                                                                               \
+      MONGOC_STDERR_PRINTF (                                                                              \
+         "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (Cond)); \
+      MONGOC_STDERR_PRINTF ("MESSAGE: " Fmt "\n", __VA_ARGS__);                                           \
+      abort ();                                                                                           \
+   } else                                                                                                 \
       ((void) 0)
 
 static void
@@ -76,12 +67,8 @@ test_auth (mongoc_database_t *db, bool expect_failure)
 {
    bson_error_t error;
    bson_t *ping = BCON_NEW ("ping", BCON_INT32 (1));
-   bool ok = mongoc_database_command_with_opts (db,
-                                                ping,
-                                                NULL /* read_prefs */,
-                                                NULL /* opts */,
-                                                NULL /* reply */,
-                                                &error);
+   bool ok =
+      mongoc_database_command_with_opts (db, ping, NULL /* read_prefs */, NULL /* opts */, NULL /* reply */, &error);
    if (expect_failure) {
       ASSERTF (!ok, "%s", "Expected auth failure, but got success");
    } else {
@@ -110,8 +97,7 @@ creds_eq (_mongoc_aws_credentials_t *a, _mongoc_aws_credentials_t *b)
       return false;
    }
    if (a->expiration.set) {
-      if (mcd_time_compare (a->expiration.value.expire_at,
-                            b->expiration.value.expire_at) != 0) {
+      if (mcd_time_compare (a->expiration.value.expire_at, b->expiration.value.expire_at) != 0) {
          return false;
       }
    }
@@ -155,10 +141,8 @@ do_find (mongoc_client_t *client, bson_error_t *error)
    ASSERT (client);
 
    bson_t *filter = bson_new ();
-   mongoc_collection_t *coll =
-      mongoc_client_get_collection (client, "aws", "coll");
-   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
-      coll, filter, NULL /* opts */, NULL /* read prefs */);
+   mongoc_collection_t *coll = mongoc_client_get_collection (client, "aws", "coll");
+   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (coll, filter, NULL /* opts */, NULL /* read prefs */);
    const bson_t *doc;
    while (mongoc_cursor_next (cursor, &doc))
       ;
@@ -190,8 +174,7 @@ test_cache (const mongoc_uri_t *uri)
       ASSERT (client);
 
       // Ensure that a ``find`` operation adds credentials to the cache.
-      ASSERTF (
-         do_find (client, &error), "expected success, got: %s", error.message);
+      ASSERTF (do_find (client, &error), "expected success, got: %s", error.message);
       bool found = _mongoc_aws_credentials_cache_get (&creds);
       ASSERT (found);
       _mongoc_aws_credentials_cleanup (&creds);
@@ -204,10 +187,8 @@ test_cache (const mongoc_uri_t *uri)
       ASSERT (mongoc_aws_credentials_cache.cached.set);
       mongoc_aws_credentials_cache.cached.value.expiration.set = true;
       mongoc_aws_credentials_cache.cached.value.expiration.value =
-         mcd_timer_expire_after (mcd_milliseconds (
-            60 * 1000 - MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS));
-      _mongoc_aws_credentials_copy_to (
-         &mongoc_aws_credentials_cache.cached.value, &first_cached);
+         mcd_timer_expire_after (mcd_milliseconds (60 * 1000 - MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS));
+      _mongoc_aws_credentials_copy_to (&mongoc_aws_credentials_cache.cached.value, &first_cached);
    }
 
    // Create a new client.
@@ -216,14 +197,12 @@ test_cache (const mongoc_uri_t *uri)
       mongoc_client_t *client = mongoc_client_new_from_uri (uri);
       ASSERT (client);
       // Ensure that a ``find`` operation updates the credentials in the cache.
-      ASSERTF (
-         do_find (client, &error), "expected success, got: %s", error.message);
+      ASSERTF (do_find (client, &error), "expected success, got: %s", error.message);
       bool found = _mongoc_aws_credentials_cache_get (&creds);
       ASSERT (found);
-      ASSERTF (
-         !creds_eq (&first_cached, &mongoc_aws_credentials_cache.cached.value),
-         "%s",
-         "expected unequal credentials, got equal");
+      ASSERTF (!creds_eq (&first_cached, &mongoc_aws_credentials_cache.cached.value),
+               "%s",
+               "expected unequal credentials, got equal");
       _mongoc_aws_credentials_cleanup (&creds);
       mongoc_client_destroy (client);
    }
@@ -233,8 +212,7 @@ test_cache (const mongoc_uri_t *uri)
    {
       ASSERT (mongoc_aws_credentials_cache.cached.set);
       bson_free (mongoc_aws_credentials_cache.cached.value.access_key_id);
-      mongoc_aws_credentials_cache.cached.value.access_key_id =
-         bson_strdup ("invalid");
+      mongoc_aws_credentials_cache.cached.value.access_key_id = bson_strdup ("invalid");
    }
 
    // Create a new client.
@@ -256,8 +234,7 @@ test_cache (const mongoc_uri_t *uri)
       _mongoc_aws_credentials_cleanup (&creds);
 
       // Ensure that a subsequent ``find`` operation succeeds.
-      ASSERTF (
-         do_find (client, &error), "expected success, got: %s", error.message);
+      ASSERTF (do_find (client, &error), "expected success, got: %s", error.message);
 
       // Ensure that the cache has been set.
       found = _mongoc_aws_credentials_cache_get (&creds);
@@ -289,22 +266,15 @@ test_cache_with_env (const mongoc_uri_t *uri)
       ASSERT (client);
 
       // Ensure that a ``find`` operation adds credentials to the cache.
-      ASSERTF (
-         do_find (client, &error), "expected success, got: %s", error.message);
+      ASSERTF (do_find (client, &error), "expected success, got: %s", error.message);
       bool found = _mongoc_aws_credentials_cache_get (&creds);
       ASSERT (found);
       _mongoc_aws_credentials_cleanup (&creds);
 
       // Set the AWS environment variables based on the cached credentials.
-      ASSERT (_mongoc_setenv (
-         "AWS_ACCESS_KEY_ID",
-         mongoc_aws_credentials_cache.cached.value.access_key_id));
-      ASSERT (_mongoc_setenv (
-         "AWS_SECRET_ACCESS_KEY",
-         mongoc_aws_credentials_cache.cached.value.secret_access_key));
-      ASSERT (_mongoc_setenv (
-         "AWS_SESSION_TOKEN",
-         mongoc_aws_credentials_cache.cached.value.session_token));
+      ASSERT (_mongoc_setenv ("AWS_ACCESS_KEY_ID", mongoc_aws_credentials_cache.cached.value.access_key_id));
+      ASSERT (_mongoc_setenv ("AWS_SECRET_ACCESS_KEY", mongoc_aws_credentials_cache.cached.value.secret_access_key));
+      ASSERT (_mongoc_setenv ("AWS_SESSION_TOKEN", mongoc_aws_credentials_cache.cached.value.session_token));
 
       // Clear the cache.
       _mongoc_aws_credentials_cache_clear ();
@@ -318,8 +288,7 @@ test_cache_with_env (const mongoc_uri_t *uri)
       ASSERT (client);
       // Ensure that a ``find`` operation succeeds and does not add credentials
       // to the cache.
-      ASSERTF (
-         do_find (client, &error), "expected success, got: %s", error.message);
+      ASSERTF (do_find (client, &error), "expected success, got: %s", error.message);
       bool found = _mongoc_aws_credentials_cache_get (&creds);
       ASSERT (!found);
       _mongoc_aws_credentials_cleanup (&creds);
@@ -355,8 +324,7 @@ test_cache_with_env (const mongoc_uri_t *uri)
       ASSERT (client);
 
       // Ensure that a ``find`` operation adds credentials to the cache.
-      ASSERTF (
-         do_find (client, &error), "expected success, got: %s", error.message);
+      ASSERTF (do_find (client, &error), "expected success, got: %s", error.message);
       bool found = _mongoc_aws_credentials_cache_get (&creds);
       ASSERT (found);
       _mongoc_aws_credentials_cleanup (&creds);
@@ -373,8 +341,7 @@ test_cache_with_env (const mongoc_uri_t *uri)
       ASSERT (client);
 
       // Ensure that a ``find`` operation succeeds.
-      ASSERTF (
-         do_find (client, &error), "expected success, got: %s", error.message);
+      ASSERTF (do_find (client, &error), "expected success, got: %s", error.message);
       bool found = _mongoc_aws_credentials_cache_get (&creds);
       ASSERT (found);
       _mongoc_aws_credentials_cleanup (&creds);
@@ -394,8 +361,7 @@ BSON_THREAD_FUN (auth_fn, uri_void)
    ASSERT (client);
 
    // Ensure that a ``find`` operation succeeds.
-   ASSERTF (
-      do_find (client, &error), "expected success, got: %s", error.message);
+   ASSERTF (do_find (client, &error), "expected success, got: %s", error.message);
    mongoc_client_destroy (client);
 
    BSON_THREAD_RETURN;
@@ -424,6 +390,22 @@ test_multithreaded (const mongoc_uri_t *uri)
    }
 }
 
+static void
+log_func (mongoc_log_level_t log_level, const char *log_domain, const char *message, void *user_data)
+{
+   if (log_level != MONGOC_LOG_LEVEL_TRACE) {
+      mongoc_log_default_handler (log_level, log_domain, message, user_data);
+      return;
+   }
+
+   // Only log trace messages from AWS auth.
+   if (0 == strcmp (log_domain, "aws_auth")) {
+      mongoc_log_default_handler (log_level, log_domain, message, user_data);
+   }
+
+   // Do not print other trace logs to reduce verbosity.
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -437,6 +419,10 @@ main (int argc, char *argv[])
       FAILF ("usage: %s URI [EXPECT_SUCCESS|EXPECT_FAILURE]\n", argv[0]);
    }
 
+   // Set a custom log callback to only print trace messages related to fetching
+   // AWS credentials.
+   mongoc_log_set_handler (log_func, NULL /* user_data */);
+
    mongoc_init ();
 
    uri = mongoc_uri_new_with_error (argv[1], &error);
@@ -447,9 +433,7 @@ main (int argc, char *argv[])
    } else if (0 == strcmp (argv[2], "EXPECT_SUCCESS")) {
       expect_failure = false;
    } else {
-      FAILF (
-         "Expected 'EXPECT_FAILURE' or 'EXPECT_SUCCESS' for argument. Got: %s",
-         argv[2]);
+      FAILF ("Expected 'EXPECT_FAILURE' or 'EXPECT_SUCCESS' for argument. Got: %s", argv[2]);
    }
 
    client = mongoc_client_new_from_uri (uri);

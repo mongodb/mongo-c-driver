@@ -1,7 +1,7 @@
 #include <bson/bson.h>
 
 int
-main (int argc, char *argv[])
+main (void)
 {
    struct tm born = {0};
    struct tm died = {0};

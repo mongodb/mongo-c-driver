@@ -30,8 +30,7 @@ mongoc_server_api_version_to_string (mongoc_server_api_version_t version)
 }
 
 bool
-mongoc_server_api_version_from_string (const char *version,
-                                       mongoc_server_api_version_t *out)
+mongoc_server_api_version_from_string (const char *version, mongoc_server_api_version_t *out)
 {
    if (strcmp (version, "1") == 0) {
       *out = MONGOC_SERVER_API_V1;
@@ -89,8 +88,7 @@ mongoc_server_api_strict (mongoc_server_api_t *api, bool strict)
 }
 
 void
-mongoc_server_api_deprecation_errors (mongoc_server_api_t *api,
-                                      bool deprecation_errors)
+mongoc_server_api_deprecation_errors (mongoc_server_api_t *api, bool deprecation_errors)
 {
    BSON_ASSERT (api);
    mongoc_optional_set_value (&api->deprecation_errors, deprecation_errors);

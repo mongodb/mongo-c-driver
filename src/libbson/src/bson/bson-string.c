@@ -77,7 +77,6 @@ bson_string_new (const char *str) /* IN */
    if (str) {
       memcpy (ret->str, str, ret->len);
    }
-   ret->str[ret->len] = '\0';
 
    ret->str[ret->len] = '\0';
 
@@ -136,8 +135,7 @@ bson_string_append (bson_string_t *string, /* IN */
    if ((string->alloc - string->len - 1) < len) {
       string->alloc += len;
       if (!bson_is_power_of_two (string->alloc)) {
-         string->alloc =
-            (uint32_t) bson_next_power_of_two ((size_t) string->alloc);
+         string->alloc = (uint32_t) bson_next_power_of_two ((size_t) string->alloc);
       }
       string->str = bson_realloc (string->str, string->alloc);
    }
@@ -474,11 +472,11 @@ bson_strndup (const char *str, /* IN */
 void
 bson_strfreev (char **str) /* IN */
 {
-   int i;
-
    if (str) {
-      for (i = 0; str[i]; i++)
-         bson_free (str[i]);
+      for (char **ptr = str; *ptr != NULL; ++ptr) {
+         bson_free (*ptr);
+      }
+
       bson_free (str);
    }
 }
@@ -729,8 +727,7 @@ bson_ascii_strtoll (const char *s, char **e, int base)
    }
 
    /* from here down, inspired by NetBSD's strtoll */
-   if ((base == 0 || base == 16) && c == '0' &&
-       (tok[1] == 'x' || tok[1] == 'X')) {
+   if ((base == 0 || base == 16) && c == '0' && (tok[1] == 'x' || tok[1] == 'X')) {
       tok += 2;
       c = *tok;
       base = 16;

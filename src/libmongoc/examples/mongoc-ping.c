@@ -42,8 +42,7 @@ main (int argc, char *argv[])
 
    port = (argc == 3) ? atoi (argv[2]) : 27017;
 
-   if (!strncmp (argv[1], "mongodb://", 10) ||
-       !strncmp (argv[1], "mongodb+srv://", 14)) {
+   if (!strncmp (argv[1], "mongodb://", 10) || !strncmp (argv[1], "mongodb+srv://", 14)) {
       host_and_port = bson_strdup (argv[1]);
    } else {
       host_and_port = bson_strdup_printf ("mongodb://%s:%hu", argv[1], port);
@@ -70,8 +69,7 @@ main (int argc, char *argv[])
    bson_init (&ping);
    bson_append_int32 (&ping, "ping", 4, 1);
    database = mongoc_client_get_database (client, "test");
-   r = mongoc_database_command_with_opts (
-      database, &ping, NULL, NULL, &reply, &error);
+   r = mongoc_database_command_with_opts (database, &ping, NULL, NULL, &reply, &error);
 
    if (r) {
       str = bson_as_canonical_extended_json (&reply, NULL);
