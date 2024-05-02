@@ -22,8 +22,13 @@ task_groups:
         params:
           binary: bash
           include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
-          args:
-            - ${DRIVERS_TOOLS}/.evergreen/auth_oidc/setup.sh
+          script: |
+            echo "FINDING SETUP"
+            find . -name "setup.sh"
+            echo "FINDING OIDC"
+            find . -name "auth_oidc"
+#          args:
+#            - ${DRIVERS_TOOLS}/.evergreen/auth_oidc/setup.sh
     setup_group_can_fail_task: true
     setup_group_timeout_secs: 1800
     tasks:
