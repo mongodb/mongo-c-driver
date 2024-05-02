@@ -13,6 +13,10 @@ tasks:
         shell: bash
         script: |-
           echo "Hello from example-task!"
+  - name: run-tests-task
+    run_on: ubuntu2204-small
+    commands:
+    - func: run-tests
 task_groups:
   - name: testoidc_task_group
     setup_group:
@@ -36,7 +40,7 @@ task_groups:
     setup_group_timeout_secs: 1800
     tasks:
       - example-task
-      - run-tests
+      - run-tests-task
 
 buildvariants:
   - name: example-variant
