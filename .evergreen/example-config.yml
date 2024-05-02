@@ -21,7 +21,7 @@ task_groups:
       - command: subprocess.exec
         params:
           binary: bash
-          include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "DRIVERS_TOOLS"]
+          include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
           args:
             - ${DRIVERS_TOOLS}/.evergreen/auth_oidc/setup.sh
     setup_group_can_fail_task: true
