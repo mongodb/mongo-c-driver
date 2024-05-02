@@ -16,19 +16,14 @@ tasks:
 task_groups:
   - name: testoidc_task_group
     setup_group:
-      - func: fetch source
+      - func: fetch-det
       - func: "assume ec2 role" # Get necessary AWS credentials
       - command: subprocess.exec
         params:
           binary: bash
           include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
-          script: |
-            echo "FINDING SETUP"
-            find . -name "setup.sh"
-            echo "FINDING OIDC"
-            find . -name "auth_oidc"
-#          args:
-#            - ${DRIVERS_TOOLS}/.evergreen/auth_oidc/setup.sh
+          args:
+            - ./drivers-evergreen-tools/.evergreen/auth_oidc/setup.sh
     setup_group_can_fail_task: true
     setup_group_timeout_secs: 1800
     tasks:
