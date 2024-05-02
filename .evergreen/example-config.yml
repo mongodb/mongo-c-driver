@@ -24,8 +24,6 @@ task_groups:
           include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
           args:
             - ./drivers-evergreen-tools/.evergreen/auth_oidc/setup.sh
-    tests:
-      - func: run-tests
     teardown_task:
       - func: fetch-det
       - func: "assume ec2 role" # Get necessary AWS credentials
@@ -38,6 +36,7 @@ task_groups:
     setup_group_timeout_secs: 1800
     tasks:
       - example-task
+      - run-tests
 
 buildvariants:
   - name: example-variant
