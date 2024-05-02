@@ -728,6 +728,10 @@ functions:
         local_file: mongoc/mongoc-man-pages.html
         permissions: public-read
         remote_file: ${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html
+  "assume ec2 role":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_test_secrets_role}
   "fetch source":
     # Executes clone and applies the submitted patch, if any
     - command: git.get_project
