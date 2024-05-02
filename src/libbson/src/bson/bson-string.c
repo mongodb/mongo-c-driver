@@ -67,7 +67,7 @@ bson_string_new (const char *str) /* IN */
    ret = bson_malloc0 (sizeof *ret);
    if (str) {
       len_sz = strlen (str);
-      BSON_ASSERT (bson_in_range_unsigned (uint32_t, len_sz + 1));
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, len_sz));
       ret->len = (uint32_t) len_sz;
    } else {
       ret->len = 0;
@@ -140,14 +140,16 @@ bson_string_append (bson_string_t *string, /* IN */
    BSON_ASSERT (str);
 
    len_sz = strlen (str);
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len_sz));
+   BSON_ASSERT (bson_in_range_unsigned (int32_t, len_sz));
    len = (uint32_t) len_sz;
 
    if ((string->alloc - string->len - 1) < len) {
-      BSON_ASSERT (bson_in_range_unsigned (uint32_t, string->alloc + len));
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, string->alloc + len));
       string->alloc += len;
       if (!bson_is_power_of_two (string->alloc)) {
-         string->alloc = (uint32_t) bson_next_power_of_two ((size_t) string->alloc);
+         len_sz = bson_next_power_of_two ((size_t) string->alloc);
+         BSON_ASSERT (bson_in_range_unsigned (uint32_t, len_sz));
+         string->alloc = (uint32_t) len_sz;
       }
       BSON_ASSERT (string->alloc >= string->len + len);
       string->str = bson_realloc (string->str, string->alloc);
