@@ -176,8 +176,6 @@ multibuild:
 #
 # This target will update the existing etc/cyclonedx.sbom.json file in-place based
 # on the content of etc/purls.txt.
-#
-# NOTE: Executing this target requires prior authentication with Artifactory!
 sbom-generate:
     FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
     # Alias the silkbom executable to a simpler name:
