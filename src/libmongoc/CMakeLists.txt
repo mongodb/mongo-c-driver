@@ -1071,25 +1071,16 @@ if (BUILD_SHARED_LIBS)
           PUBLIC_HEADER "${HEADERS}"
        )
     endif ()
-endif () # BUILD_SHARED_LIBS
-
-add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
-
-if (BUILD_SHARED_LIBS)
+    add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
     target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
-endif ()
-
-if (BUILD_STATIC_LIBS)
-    target_link_libraries (mongoc-stat mongoc_static ${LIBRARIES})
-endif ()
-
-# mongoc-stat works if shared memory performance counters are enabled.
-if (ENABLE_SHM_COUNTERS)
-   install (TARGETS mongoc-stat
-            EXPORT mongoc_targets
-            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-   )
-endif ()
+    # mongoc-stat works if shared memory performance counters are enabled.
+    if (ENABLE_SHM_COUNTERS)
+       install (TARGETS mongoc-stat
+               EXPORT mongoc_targets
+               RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+       )
+    endif ()
+endif () # BUILD_SHARED_LIBS
 
 set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.c
