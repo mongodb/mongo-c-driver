@@ -1,0 +1,134 @@
+{
+  "components": [
+    {
+      "bom-ref": "pkg:github/juliastrings/utf8proc@2.8.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/juliastrings/utf8proc/archive/refs/tags/2.8.0.tar.gz"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/juliastrings/utf8proc/tree/2.8.0"
+        }
+      ],
+      "group": "juliastrings",
+      "name": "utf8proc",
+      "purl": "pkg:github/juliastrings/utf8proc@2.8.0",
+      "type": "library",
+      "version": "2.8.0"
+    },
+    {
+      "bom-ref": "pkg:github/madler/zlib@v1.2.13",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/madler/zlib/archive/refs/tags/v1.2.13.tar.gz"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/madler/zlib/tree/v1.2.13"
+        }
+      ],
+      "group": "madler",
+      "name": "zlib",
+      "purl": "pkg:github/madler/zlib@v1.2.13",
+      "type": "library",
+      "version": "v1.2.13"
+    },
+    {
+      "bom-ref": "pkg:github/mnunberg/jsonsl",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/mnunberg/jsonsl"
+        }
+      ],
+      "group": "mnunberg",
+      "name": "jsonsl",
+      "purl": "pkg:github/mnunberg/jsonsl",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:github/troydhanson/uthash@v2.3.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/troydhanson/uthash/archive/refs/tags/v2.3.0.tar.gz"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/troydhanson/uthash/tree/v2.3.0"
+        }
+      ],
+      "group": "troydhanson",
+      "name": "uthash",
+      "purl": "pkg:github/troydhanson/uthash@v2.3.0",
+      "type": "library",
+      "version": "v2.3.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:github/juliastrings/utf8proc@2.8.0"
+    },
+    {
+      "ref": "pkg:github/madler/zlib@v1.2.13"
+    },
+    {
+      "ref": "pkg:github/mnunberg/jsonsl"
+    },
+    {
+      "ref": "pkg:github/troydhanson/uthash@v2.3.0"
+    }
+  ],
+  "metadata": {
+    "timestamp": "2024-05-03T19:02:40.015183+00:00",
+    "tools": [
+      {
+        "externalReferences": [
+          {
+            "type": "build-system",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/actions"
+          },
+          {
+            "type": "distribution",
+            "url": "https://pypi.org/project/cyclonedx-python-lib/"
+          },
+          {
+            "type": "documentation",
+            "url": "https://cyclonedx-python-library.readthedocs.io/"
+          },
+          {
+            "type": "issue-tracker",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/issues"
+          },
+          {
+            "type": "license",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/LICENSE"
+          },
+          {
+            "type": "release-notes",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/CHANGELOG.md"
+          },
+          {
+            "type": "vcs",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib"
+          },
+          {
+            "type": "website",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/#readme"
+          }
+        ],
+        "name": "cyclonedx-python-lib",
+        "vendor": "CycloneDX",
+        "version": "6.4.4"
+      }
+    ]
+  },
+  "serialNumber": "urn:uuid:e5a75bd1-68a4-499e-81c6-64a8785adaae",
+  "version": 1,
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5"
+}

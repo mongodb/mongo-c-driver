@@ -171,6 +171,26 @@ multibuild:
         --c_compiler=gcc --c_compiler=clang \
         --test_mongocxx_ref=master
 
+# sbom-generate :
+#   Generate/update the etc/cyclonedx.sbom.json file from the etc/purls.txt file.
+#
+# This target will update the existing etc/cyclonedx.sbom.json file in-place based
+# on the content of etc/purls.txt.
+sbom-generate:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
+    # Alias the silkbom executable to a simpler name:
+    RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Update the SBOM file:
+    RUN silkbomb update \
+        --purls purls.txt \
+        --sbom-in cyclonedx.sbom.json \
+        --sbom-out cyclonedx.sbom.json
+    # Save the result back to the host:
+    SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
+
 # test-vcpkg-classic :
 #   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and
 #   install a mongo-c-driver build in "classic mode". *Does not* use the local
