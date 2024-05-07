@@ -1,8 +1,8 @@
-mongo-c-driver (1.27.1-1) UNRELEASED; urgency=medium
+mongo-c-driver (1.27.1-1) unstable; urgency=medium
 
   * New upstream release
 
- -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Tue, 07 May 2024 09:07:59 -0500
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Tue, 07 May 2024 09:23:12 -0500
 
 mongo-c-driver (1.27.0-1) unstable; urgency=medium
 
