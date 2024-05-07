@@ -374,7 +374,7 @@ functions:
             python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000 &
             python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001 &
             python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --require_client_cert --port 9002 &
-            python -u kms_http_retry.py --port 9003 &
+            python -u kms_failpoint_server.py --port 9003 &
             python -u kms_kmip_server.py &
             deactivate
             echo "Starting mock KMS TLS servers... done."
