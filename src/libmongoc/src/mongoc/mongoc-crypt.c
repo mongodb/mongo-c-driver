@@ -574,82 +574,91 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          goto fail;
       }
 
-      mongoc_stream_destroy (tls_stream);
-      tls_stream = _get_stream (endpoint, sockettimeout, ssl_opt, error);
-#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
-      /* Retry once with schannel as a workaround for CDRIVER-3566. */
-      if (!tls_stream) {
+   retry:
+      while (retry_count < max_tcp_retries) {
+         mongoc_stream_destroy (tls_stream);
          tls_stream = _get_stream (endpoint, sockettimeout, ssl_opt, error);
-      }
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+         /* Retry once with schannel as a workaround for CDRIVER-3566. */
+         if (!tls_stream) {
+            tls_stream = _get_stream (endpoint, sockettimeout, ssl_opt, error);
+         }
 #endif
-      if (!tls_stream) {
-         goto fail;
-      }
-
-      iov.iov_base = (char *) mongocrypt_binary_data (http_req);
-      iov.iov_len = mongocrypt_binary_len (http_req);
-
-      if (!_mongoc_stream_writev_full (tls_stream, &iov, 1, sockettimeout, error)) {
-         goto fail;
-      }
-
-      /* Read and feed reply. */
-      retry_count = 0;
-      while (mongocrypt_kms_ctx_bytes_needed (kms_ctx) > 0) {
-#define BUFFER_SIZE 1024
-         uint8_t buf[BUFFER_SIZE];
-         uint32_t bytes_needed = mongocrypt_kms_ctx_bytes_needed (kms_ctx);
-         ssize_t read_ret;
-
-         int64_t sleep_usec = mongocrypt_kms_ctx_usleep (kms_ctx);
-         if (sleep_usec > 0) {
-            _mongoc_usleep (sleep_usec);
-         }
-
-         /* Cap the bytes requested at the buffer size. */
-         if (bytes_needed > BUFFER_SIZE) {
-            bytes_needed = BUFFER_SIZE;
-         }
-
-         read_ret = mongoc_stream_read (tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
-         if (read_ret <= 0) {
+         if (!tls_stream) {
             if (retry_count < max_tcp_retries) {
                retry_count++;
-               mongoc_stream_destroy (tls_stream);
-               tls_stream = _get_stream (endpoint, sockettimeout, ssl_opt, error);
-               if (!tls_stream) {
-                  goto fail;
-               }
-
-               mongocrypt_kms_ctx_reset (kms_ctx);
+               /* Always safe to retry stream creation. */
                continue;
             } else {
-               if (read_ret == -1) {
-                  bson_set_error (error,
-                                  MONGOC_ERROR_STREAM,
-                                  MONGOC_ERROR_STREAM_SOCKET,
-                                  "failed to read from KMS stream: %d",
-                                  errno);
-                  goto fail;
-               }
-
-               if (read_ret == 0) {
-                  bson_set_error (
-                     error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "unexpected EOF from KMS stream");
-                  goto fail;
-               }
+               goto fail;
             }
          }
-         mongocrypt_binary_destroy (http_reply);
 
-         BSON_ASSERT (bson_in_range_signed (uint32_t, read_ret));
-         http_reply = mongocrypt_binary_new_from_data (buf, (uint32_t) read_ret);
-         if (!mongocrypt_kms_ctx_feed (kms_ctx, http_reply)) {
-            _kms_ctx_check_error (kms_ctx, error, true);
-            goto fail;
+         iov.iov_base = (char *) mongocrypt_binary_data (http_req);
+         iov.iov_len = mongocrypt_binary_len (http_req);
+
+         if (!_mongoc_stream_writev_full (tls_stream, &iov, 1, sockettimeout, error)) {
+            if (retry_count < max_tcp_retries) {
+               retry_count++;
+               /* Always safe to retry unsuccessful writes. */
+               continue;
+            } else {
+               goto fail;
+            }
          }
+
+         /* Read and feed reply. */
+         retry_count = 0;
+         while (mongocrypt_kms_ctx_bytes_needed (kms_ctx) > 0) {
+#define BUFFER_SIZE 1024
+            uint8_t buf[BUFFER_SIZE];
+            uint32_t bytes_needed = mongocrypt_kms_ctx_bytes_needed (kms_ctx);
+            ssize_t read_ret;
+
+            int64_t sleep_usec = mongocrypt_kms_ctx_usleep (kms_ctx);
+            if (sleep_usec > 0) {
+               _mongoc_usleep (sleep_usec);
+            }
+
+            /* Cap the bytes requested at the buffer size. */
+            if (bytes_needed > BUFFER_SIZE) {
+               bytes_needed = BUFFER_SIZE;
+            }
+
+            read_ret = mongoc_stream_read (tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
+            if (read_ret <= 0) {
+               if (retry_count < max_tcp_retries && mongocrypt_kms_ctx_fail (kms_ctx)) {
+                  retry_count++;
+                  goto retry;
+               } else {
+                  if (read_ret == -1) {
+                     bson_set_error (error,
+                                     MONGOC_ERROR_STREAM,
+                                     MONGOC_ERROR_STREAM_SOCKET,
+                                     "failed to read from KMS stream: %d",
+                                     errno);
+                     goto fail;
+                  }
+
+                  if (read_ret == 0) {
+                     bson_set_error (
+                        error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "unexpected EOF from KMS stream");
+                     goto fail;
+                  }
+               }
+            }
+            mongocrypt_binary_destroy (http_reply);
+
+            BSON_ASSERT (bson_in_range_signed (uint32_t, read_ret));
+            http_reply = mongocrypt_binary_new_from_data (buf, (uint32_t) read_ret);
+            if (!mongocrypt_kms_ctx_feed (kms_ctx, http_reply)) {
+               _kms_ctx_check_error (kms_ctx, error, true);
+               goto fail;
+            }
+         }
+         kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
+         break;
       }
-      kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
    }
    /* When NULL is returned by mongocrypt_ctx_next_kms_ctx, this can either be
     * an error or end-of-list. */
@@ -1387,6 +1396,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    crypt = bson_malloc0 (sizeof (*crypt));
    crypt->kmsid_to_tlsopts = mcd_mapof_kmsid_to_tlsopts_new ();
    crypt->handle = mongocrypt_new ();
+   mongocrypt_setopt_retry (crypt->handle, true);
 
    // Stash away a copy of the user's kmsProviders in case we need to lazily
    // load credentials.
