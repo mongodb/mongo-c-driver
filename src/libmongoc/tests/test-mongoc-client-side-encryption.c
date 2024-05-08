@@ -3234,7 +3234,7 @@ test_kms_tls_options_extra_rejected (void *unused)
 }
 
 static mongoc_ssl_opt_t
-make_csfle_ssl_opts ()
+make_csfle_ssl_opts (void)
 {
    /* The failpoint server is pretending to be a KMS server and uses the same certs */
    mongoc_ssl_opt_t ssl_opts = {0};
