@@ -16,11 +16,11 @@ tasks:
   - name: run-tests-task
     run_on: ubuntu2204-small
     commands:
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
-      - func: run-tests
+    - func: fetch-det
+    - func: bootstrap-mongo-orchestration
+    - func: run-simple-http-server
+    - func: run-mock-kms-servers
+    - func: run-tests
     - func: run-tests
 task_groups:
   - name: testoidc_task_group
