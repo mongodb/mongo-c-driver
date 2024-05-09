@@ -16,10 +16,8 @@ tasks:
   - name: run-tests-task
     run_on: ubuntu2204-small
     commands:
-    - func: fetch-build
-      vars:
-        BUILD_NAME: sasl-cyrus-openssl-ubuntu2004-gcc-compile
     - func: fetch-det
+    - func: fetch-source
     - func: bootstrap-mongo-orchestration
     - func: run-simple-http-server
     - func: run-mock-kms-servers
