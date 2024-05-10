@@ -290,13 +290,15 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
 
 
 static bool
-validate_update (const bson_t *update, bson_error_t *error)
+validate_update (const bson_t *update, bool *is_pipeline, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (update);
+   BSON_ASSERT_PARAM (is_pipeline);
    BSON_ASSERT (error || true);
 
    bson_iter_t iter;
-   if (_mongoc_document_is_pipeline (update)) {
+   *is_pipeline = _mongoc_document_is_pipeline (update);
+   if (*is_pipeline) {
       return true;
    }
 
@@ -393,14 +395,15 @@ mongoc_bulkwrite_append_updateone (mongoc_bulkwrite_t *self,
       opts = &defaults;
    }
 
-   if (!validate_update (update, error)) {
+   bool is_pipeline = false;
+   if (!validate_update (update, &is_pipeline, error)) {
       return false;
    }
 
    bson_t op = BSON_INITIALIZER;
    BSON_ASSERT (BSON_APPEND_INT32 (&op, "update", -1)); // Append -1 as a placeholder. Will be overwritten later.
    BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "filter", filter));
-   if (_mongoc_document_is_pipeline (update)) {
+   if (is_pipeline) {
       BSON_ASSERT (BSON_APPEND_ARRAY (&op, "updateMods", update));
    } else {
       BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "updateMods", update));
@@ -636,14 +639,15 @@ mongoc_bulkwrite_append_updatemany (mongoc_bulkwrite_t *self,
       opts = &defaults;
    }
 
-   if (!validate_update (update, error)) {
+   bool is_pipeline = false;
+   if (!validate_update (update, &is_pipeline, error)) {
       return false;
    }
 
    bson_t op = BSON_INITIALIZER;
    BSON_ASSERT (BSON_APPEND_INT32 (&op, "update", -1)); // Append -1 as a placeholder. Will be overwritten later.
    BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "filter", filter));
-   if (_mongoc_document_is_pipeline (update)) {
+   if (is_pipeline) {
       BSON_ASSERT (BSON_APPEND_ARRAY (&op, "updateMods", update));
    } else {
       BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "updateMods", update));
