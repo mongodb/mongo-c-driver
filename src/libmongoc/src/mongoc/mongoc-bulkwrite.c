@@ -235,7 +235,7 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
    ERROR_IF_EXECUTED;
 
    bson_t op = BSON_INITIALIZER;
-   BSON_ASSERT (bson_append_int32 (&op, "insert", 6, -1)); // Append -1 as a placeholder. Will be overwritten later.
+   BSON_ASSERT (BSON_APPEND_INT32 (&op, "insert", -1)); // Append -1 as a placeholder. Will be overwritten later.
 
    // If `document` does not contain `_id`, add one in the beginning.
    bson_iter_t id_iter;
@@ -245,11 +245,11 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
       bson_oid_init (&oid, NULL);
       BSON_ASSERT (BSON_APPEND_OID (&tmp, "_id", &oid));
       BSON_ASSERT (bson_concat (&tmp, document));
-      BSON_ASSERT (bson_append_document (&op, "document", 8, &tmp));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "document", &tmp));
       self->max_insert_len = BSON_MAX (self->max_insert_len, tmp.len);
       bson_destroy (&tmp);
    } else {
-      BSON_ASSERT (bson_append_document (&op, "document", 8, document));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "document", document));
       self->max_insert_len = BSON_MAX (self->max_insert_len, document->len);
    }
 
@@ -382,25 +382,25 @@ mongoc_bulkwrite_append_updateone (mongoc_bulkwrite_t *self,
    }
 
    bson_t op = BSON_INITIALIZER;
-   BSON_ASSERT (bson_append_int32 (&op, "update", 6, -1)); // Append -1 as a placeholder. Will be overwritten later.
-   BSON_ASSERT (bson_append_document (&op, "filter", 6, filter));
+   BSON_ASSERT (BSON_APPEND_INT32 (&op, "update", -1)); // Append -1 as a placeholder. Will be overwritten later.
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "filter", filter));
    if (_mongoc_document_is_pipeline (update)) {
-      BSON_ASSERT (bson_append_array (&op, "updateMods", 10, update));
+      BSON_ASSERT (BSON_APPEND_ARRAY (&op, "updateMods", update));
    } else {
-      BSON_ASSERT (bson_append_document (&op, "updateMods", 10, update));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "updateMods", update));
    }
-   BSON_ASSERT (bson_append_bool (&op, "multi", 5, false));
+   BSON_ASSERT (BSON_APPEND_BOOL (&op, "multi", false));
    if (opts->arrayfilters) {
-      BSON_ASSERT (bson_append_array (&op, "arrayFilters", 12, opts->arrayfilters));
+      BSON_ASSERT (BSON_APPEND_ARRAY (&op, "arrayFilters", opts->arrayfilters));
    }
    if (opts->collation) {
-      BSON_ASSERT (bson_append_document (&op, "collation", 9, opts->collation));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "collation", opts->collation));
    }
    if (opts->hint.value_type != BSON_TYPE_EOD) {
-      BSON_ASSERT (bson_append_value (&op, "hint", 4, &opts->hint));
+      BSON_ASSERT (BSON_APPEND_VALUE (&op, "hint", &opts->hint));
    }
    if (mongoc_optional_is_set (&opts->upsert)) {
-      BSON_ASSERT (bson_append_bool (&op, "upsert", 6, mongoc_optional_value (&opts->upsert)));
+      BSON_ASSERT (BSON_APPEND_BOOL (&op, "upsert", mongoc_optional_value (&opts->upsert)));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -518,21 +518,21 @@ mongoc_bulkwrite_append_replaceone (mongoc_bulkwrite_t *self,
    }
 
    bson_t op = BSON_INITIALIZER;
-   BSON_ASSERT (bson_append_int32 (&op, "update", 6, -1)); // Append -1 as a placeholder. Will be overwritten later.
-   BSON_ASSERT (bson_append_document (&op, "filter", 6, filter));
-   BSON_ASSERT (bson_append_document (&op, "updateMods", 10, replacement));
-   BSON_ASSERT (bson_append_bool (&op, "multi", 5, false));
+   BSON_ASSERT (BSON_APPEND_INT32 (&op, "update", -1)); // Append -1 as a placeholder. Will be overwritten later.
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "filter", filter));
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "updateMods", replacement));
+   BSON_ASSERT (BSON_APPEND_BOOL (&op, "multi", false));
    if (opts->arrayfilters) {
-      BSON_ASSERT (bson_append_array (&op, "arrayFilters", 12, opts->arrayfilters));
+      BSON_ASSERT (BSON_APPEND_ARRAY (&op, "arrayFilters", opts->arrayfilters));
    }
    if (opts->collation) {
-      BSON_ASSERT (bson_append_document (&op, "collation", 9, opts->collation));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "collation", opts->collation));
    }
    if (opts->hint.value_type != BSON_TYPE_EOD) {
-      BSON_ASSERT (bson_append_value (&op, "hint", 4, &opts->hint));
+      BSON_ASSERT (BSON_APPEND_VALUE (&op, "hint", &opts->hint));
    }
    if (mongoc_optional_is_set (&opts->upsert)) {
-      BSON_ASSERT (bson_append_bool (&op, "upsert", 6, mongoc_optional_value (&opts->upsert)));
+      BSON_ASSERT (BSON_APPEND_BOOL (&op, "upsert", mongoc_optional_value (&opts->upsert)));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -625,25 +625,25 @@ mongoc_bulkwrite_append_updatemany (mongoc_bulkwrite_t *self,
    }
 
    bson_t op = BSON_INITIALIZER;
-   BSON_ASSERT (bson_append_int32 (&op, "update", 6, -1)); // Append -1 as a placeholder. Will be overwritten later.
-   BSON_ASSERT (bson_append_document (&op, "filter", 6, filter));
+   BSON_ASSERT (BSON_APPEND_INT32 (&op, "update", -1)); // Append -1 as a placeholder. Will be overwritten later.
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "filter", filter));
    if (_mongoc_document_is_pipeline (update)) {
-      BSON_ASSERT (bson_append_array (&op, "updateMods", 10, update));
+      BSON_ASSERT (BSON_APPEND_ARRAY (&op, "updateMods", update));
    } else {
-      BSON_ASSERT (bson_append_document (&op, "updateMods", 10, update));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "updateMods", update));
    }
-   BSON_ASSERT (bson_append_bool (&op, "multi", 5, true));
+   BSON_ASSERT (BSON_APPEND_BOOL (&op, "multi", true));
    if (opts->arrayfilters) {
-      BSON_ASSERT (bson_append_array (&op, "arrayFilters", 12, opts->arrayfilters));
+      BSON_ASSERT (BSON_APPEND_ARRAY (&op, "arrayFilters", opts->arrayfilters));
    }
    if (opts->collation) {
-      BSON_ASSERT (bson_append_document (&op, "collation", 9, opts->collation));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "collation", opts->collation));
    }
    if (opts->hint.value_type != BSON_TYPE_EOD) {
-      BSON_ASSERT (bson_append_value (&op, "hint", 4, &opts->hint));
+      BSON_ASSERT (BSON_APPEND_VALUE (&op, "hint", &opts->hint));
    }
    if (mongoc_optional_is_set (&opts->upsert)) {
-      BSON_ASSERT (bson_append_bool (&op, "upsert", 6, mongoc_optional_value (&opts->upsert)));
+      BSON_ASSERT (BSON_APPEND_BOOL (&op, "upsert", mongoc_optional_value (&opts->upsert)));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -713,14 +713,14 @@ mongoc_bulkwrite_append_deleteone (mongoc_bulkwrite_t *self,
    }
 
    bson_t op = BSON_INITIALIZER;
-   BSON_ASSERT (bson_append_int32 (&op, "delete", 6, -1)); // Append -1 as a placeholder. Will be overwritten later.
-   BSON_ASSERT (bson_append_document (&op, "filter", 6, filter));
-   BSON_ASSERT (bson_append_bool (&op, "multi", 5, false));
+   BSON_ASSERT (BSON_APPEND_INT32 (&op, "delete", -1)); // Append -1 as a placeholder. Will be overwritten later.
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "filter", filter));
+   BSON_ASSERT (BSON_APPEND_BOOL (&op, "multi", false));
    if (opts->collation) {
-      BSON_ASSERT (bson_append_document (&op, "collation", 9, opts->collation));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "collation", opts->collation));
    }
    if (opts->hint.value_type != BSON_TYPE_EOD) {
-      BSON_ASSERT (bson_append_value (&op, "hint", 4, &opts->hint));
+      BSON_ASSERT (BSON_APPEND_VALUE (&op, "hint", &opts->hint));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -787,14 +787,14 @@ mongoc_bulkwrite_append_deletemany (mongoc_bulkwrite_t *self,
    }
 
    bson_t op = BSON_INITIALIZER;
-   BSON_ASSERT (bson_append_int32 (&op, "delete", 6, -1)); // Append -1 as a placeholder. Will be overwritten later.
-   BSON_ASSERT (bson_append_document (&op, "filter", 6, filter));
-   BSON_ASSERT (bson_append_bool (&op, "multi", 5, true));
+   BSON_ASSERT (BSON_APPEND_INT32 (&op, "delete", -1)); // Append -1 as a placeholder. Will be overwritten later.
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "filter", filter));
+   BSON_ASSERT (BSON_APPEND_BOOL (&op, "multi", true));
    if (opts->collation) {
-      BSON_ASSERT (bson_append_document (&op, "collation", 9, opts->collation));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "collation", opts->collation));
    }
    if (opts->hint.value_type != BSON_TYPE_EOD) {
-      BSON_ASSERT (bson_append_value (&op, "hint", 4, &opts->hint));
+      BSON_ASSERT (BSON_APPEND_VALUE (&op, "hint", &opts->hint));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -937,10 +937,10 @@ _bulkwriteresult_set_updateresult (
       bson_free (key);
    }
 
-   BSON_ASSERT (bson_append_int32 (&updateresult, "matchedCount", 12, n));
-   BSON_ASSERT (bson_append_int32 (&updateresult, "modifiedCount", 13, nModified));
+   BSON_ASSERT (BSON_APPEND_INT32 (&updateresult, "matchedCount", n));
+   BSON_ASSERT (BSON_APPEND_INT32 (&updateresult, "modifiedCount", nModified));
    if (upserted_id) {
-      BSON_ASSERT (bson_append_value (&updateresult, "upsertedId", 10, upserted_id));
+      BSON_ASSERT (BSON_APPEND_VALUE (&updateresult, "upsertedId", upserted_id));
    }
    BSON_ASSERT (bson_append_document_end (&self->updateresults, &updateresult));
 }
@@ -957,7 +957,7 @@ _bulkwriteresult_set_deleteresult (mongoc_bulkwriteresult_t *self, int32_t n, si
       bson_free (key);
    }
 
-   BSON_ASSERT (bson_append_int32 (&deleteresult, "deletedCount", 12, n));
+   BSON_ASSERT (BSON_APPEND_INT32 (&deleteresult, "deletedCount", n));
    BSON_ASSERT (bson_append_document_end (&self->deleteresults, &deleteresult));
 }
 
@@ -974,7 +974,7 @@ _bulkwriteresult_set_insertresult (mongoc_bulkwriteresult_t *self, const bson_it
       bson_free (key);
    }
 
-   BSON_ASSERT (bson_append_iter (&insertresult, "insertedId", 10, id_iter));
+   BSON_ASSERT (BSON_APPEND_ITER (&insertresult, "insertedId", id_iter));
    BSON_ASSERT (bson_append_document_end (&self->insertresults, &insertresult));
 }
 
@@ -1080,10 +1080,10 @@ _bulkwriteexception_append_writeconcernerror (mongoc_bulkwriteexception_t *self,
    self->write_concern_errors_len++;
 
    bson_t write_concern_error;
-   BSON_ASSERT (bson_append_document_begin (&self->write_concern_errors, key, -1, &write_concern_error));
-   BSON_ASSERT (bson_append_int32 (&write_concern_error, "code", 4, code));
-   BSON_ASSERT (bson_append_utf8 (&write_concern_error, "message", 7, errmsg, -1));
-   BSON_ASSERT (bson_append_document (&write_concern_error, "details", 7, errInfo));
+   BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (&self->write_concern_errors, key, &write_concern_error));
+   BSON_ASSERT (BSON_APPEND_INT32 (&write_concern_error, "code", code));
+   BSON_ASSERT (BSON_APPEND_UTF8 (&write_concern_error, "message", errmsg));
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (&write_concern_error, "details", errInfo));
    BSON_ASSERT (bson_append_document_end (&self->write_concern_errors, &write_concern_error));
    self->has_any_error = true;
    bson_free (key);
@@ -1104,9 +1104,9 @@ _bulkwriteexception_set_writeerror (
       bson_free (key);
    }
 
-   BSON_ASSERT (bson_append_int32 (&write_error, "code", 4, code));
-   BSON_ASSERT (bson_append_utf8 (&write_error, "message", 7, errmsg, -1));
-   BSON_ASSERT (bson_append_document (&write_error, "details", 7, errInfo));
+   BSON_ASSERT (BSON_APPEND_INT32 (&write_error, "code", code));
+   BSON_ASSERT (BSON_APPEND_UTF8 (&write_error, "message", errmsg));
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (&write_error, "details", errInfo));
    BSON_ASSERT (bson_append_document_end (&self->write_errors, &write_error));
    self->has_any_error = true;
 }
@@ -1294,27 +1294,24 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    int32_t maxBsonObjectSize = mongoc_server_stream_max_bson_obj_size (ss);
    // Create the payload 0.
    {
-      BSON_ASSERT (bson_append_int32 (&cmd, "bulkWrite", 9, 1));
+      BSON_ASSERT (BSON_APPEND_INT32 (&cmd, "bulkWrite", 1));
       // errorsOnly is default true. Set to false if verboseResults requested.
-      BSON_ASSERT (bson_append_bool (&cmd, "errorsOnly", 10, !verboseresults));
+      BSON_ASSERT (BSON_APPEND_BOOL (&cmd, "errorsOnly", !verboseresults));
       // ordered is default true.
-      BSON_ASSERT (
-         bson_append_bool (&cmd,
-                           "ordered",
-                           7,
-                           (mongoc_optional_is_set (&opts->ordered)) ? mongoc_optional_value (&opts->ordered) : true));
+      BSON_ASSERT (BSON_APPEND_BOOL (
+         &cmd, "ordered", (mongoc_optional_is_set (&opts->ordered)) ? mongoc_optional_value (&opts->ordered) : true));
 
       if (opts->comment) {
-         BSON_ASSERT (bson_append_document (&cmd, "comment", 7, opts->comment));
+         BSON_ASSERT (BSON_APPEND_DOCUMENT (&cmd, "comment", opts->comment));
       }
 
       if (mongoc_optional_is_set (&opts->bypassdocumentvalidation)) {
-         BSON_ASSERT (bson_append_bool (
-            &cmd, "bypassDocumentValidation", 24, mongoc_optional_value (&opts->bypassdocumentvalidation)));
+         BSON_ASSERT (BSON_APPEND_BOOL (
+            &cmd, "bypassDocumentValidation", mongoc_optional_value (&opts->bypassdocumentvalidation)));
       }
 
       if (opts->let) {
-         BSON_ASSERT (bson_append_document (&cmd, "let", 3, opts->let));
+         BSON_ASSERT (BSON_APPEND_DOCUMENT (&cmd, "let", opts->let));
       }
 
       // Add optional extra fields.
@@ -1606,7 +1603,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                   uint32_t serverid = parts.assembled.server_stream->sd->id;
                   BSON_ASSERT (bson_in_range_int32_t_unsigned (serverid));
                   int32_t serverid_i32 = (int32_t) serverid;
-                  BSON_ASSERT (bson_append_int32 (&cursor_opts, "serverId", 8, serverid_i32));
+                  BSON_ASSERT (BSON_APPEND_INT32 (&cursor_opts, "serverId", serverid_i32));
                   // Use same session if one was applied.
                   if (parts.assembled.session &&
                       !mongoc_client_session_append (parts.assembled.session, &cursor_opts, &error)) {
