@@ -570,7 +570,7 @@ result_check (result_t *result, entity_map_t *em, bson_val_t *expect_result, bso
       }
 
       if (write_errors) {
-         if (write_errors && !result->write_errors) {
+         if (!result->write_errors) {
             test_set_error (error, "Expected writeErrors but got none");
             goto done;
          }
