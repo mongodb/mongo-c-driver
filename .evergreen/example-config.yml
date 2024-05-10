@@ -13,7 +13,7 @@ tasks:
         shell: bash
         script: |-
           echo "Hello from example-task!"
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+  - name: test-asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-asan, compile, ubuntu2004, clang, cse, asan, sasl-cyrus]
     commands:
@@ -23,11 +23,11 @@ tasks:
       - func: upload-build
   - name: run-tests-task
     run_on: ubuntu2004-small
-    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    depends_on: [{ name: test-asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+          BUILD_NAME: test-asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
       - command: expansions.update
         params:
           updates:
