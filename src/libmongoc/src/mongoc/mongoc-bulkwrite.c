@@ -237,9 +237,21 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
    bson_t op = BSON_INITIALIZER;
    BSON_ASSERT (BSON_APPEND_INT32 (&op, "insert", -1)); // Append -1 as a placeholder. Will be overwritten later.
 
+   // `persisted_id_offset` is the byte offset the `_id` in `op`.
+   uint32_t persisted_id_offset = 0;
+   {
+      // Refer: bsonspec.org for BSON format.
+      persisted_id_offset += 4;                       // Document length.
+      persisted_id_offset += 1;                       // BSON type for int32.
+      persisted_id_offset += strlen ("insert") + 1;   // Key + 1 for NULL byte.
+      persisted_id_offset += 4;                       // int32 value.
+      persisted_id_offset += 1;                       // BSON type for document.
+      persisted_id_offset += strlen ("document") + 1; // Key + 1 for NULL byte.
+   }
+
    // If `document` does not contain `_id`, add one in the beginning.
-   bson_iter_t id_iter;
-   if (!bson_iter_init_find (&id_iter, document, "_id")) {
+   bson_iter_t existing_id_iter;
+   if (!bson_iter_init_find (&existing_id_iter, document, "_id")) {
       bson_t tmp = BSON_INITIALIZER;
       bson_oid_t oid;
       bson_oid_init (&oid, NULL);
@@ -248,25 +260,29 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
       BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "document", &tmp));
       self->max_insert_len = BSON_MAX (self->max_insert_len, tmp.len);
       bson_destroy (&tmp);
+      persisted_id_offset += 4; // Document length.
    } else {
       BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "document", document));
       self->max_insert_len = BSON_MAX (self->max_insert_len, document->len);
+      // `existing_id_offset` is offset of `_id` in the input `document`.
+      const uint32_t existing_id_offset = bson_iter_offset (&existing_id_iter);
+      BSON_ASSERT (persisted_id_offset <= UINT32_MAX - existing_id_offset);
+      persisted_id_offset += existing_id_offset;
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
 
    // Store an iterator to the document's `_id` in the persisted payload:
+   bson_iter_t persisted_id_iter;
    {
       BSON_ASSERT (bson_in_range_size_t_unsigned (op.len));
       size_t start = self->ops.len - (size_t) op.len;
-      bson_t doc_view;
-      BSON_ASSERT (bson_init_static (&doc_view, self->ops.data + start, (size_t) op.len));
-      BSON_ASSERT (bson_iter_init (&id_iter, &doc_view));
-      BSON_ASSERT (bson_iter_find_descendant (&id_iter, "document._id", &id_iter));
+      BSON_ASSERT (bson_iter_init_from_data_at_offset (
+         &persisted_id_iter, self->ops.data + start, (size_t) op.len, persisted_id_offset, strlen ("_id")));
    }
 
    self->n_ops++;
-   modeldata_t md = {.op = MODEL_OP_INSERT, .id_iter = id_iter, .ns = bson_strdup (ns)};
+   modeldata_t md = {.op = MODEL_OP_INSERT, .id_iter = persisted_id_iter, .ns = bson_strdup (ns)};
    _mongoc_array_append_val (&self->arrayof_modeldata, md);
    bson_destroy (&op);
    return true;
