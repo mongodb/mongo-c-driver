@@ -14,15 +14,26 @@ tasks:
         script: |-
           echo "Hello from example-task!"
   - name: run-tests-task
-    run_on: ubuntu2204-small
+    run_on: ubuntu2004-small
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
     commands:
-    - func: fetch-det
-    - func: fetch-source
-    - func: bootstrap-mongo-orchestration
-    - func: run-simple-http-server
-    - func: run-mock-kms-servers
-    - func: run-tests
-    - func: run-tests
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
 task_groups:
   - name: testoidc_task_group
     setup_group:
