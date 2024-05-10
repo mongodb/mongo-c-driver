@@ -27,20 +27,16 @@
 #include <mongoc/mongoc-error-private.h> // _mongoc_write_error_handle_labels
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-util-private.h> // _mongoc_iter_document_as_bson
+#include <mongoc/mongoc-optional.h>
 
 MC_ENABLE_CONVERSION_WARNING_BEGIN
 
-typedef struct {
-   bool isset;
-   bool val;
-} mongoc_opt_bool_t;
-
 struct _mongoc_bulkwriteopts_t {
-   mongoc_opt_bool_t ordered;
-   mongoc_opt_bool_t bypassdocumentvalidation;
+   mongoc_optional_t ordered;
+   mongoc_optional_t bypassdocumentvalidation;
    bson_t *let;
    mongoc_write_concern_t *writeconcern;
-   mongoc_opt_bool_t verboseresults;
+   mongoc_optional_t verboseresults;
    bson_t *comment;
    bson_t *extra;
    uint32_t serverid;
@@ -78,13 +74,13 @@ void
 mongoc_bulkwriteopts_set_ordered (mongoc_bulkwriteopts_t *self, bool ordered)
 {
    BSON_ASSERT_PARAM (self);
-   self->ordered = (mongoc_opt_bool_t){.isset = true, .val = ordered};
+   mongoc_optional_set_value (&self->ordered, ordered);
 }
 void
 mongoc_bulkwriteopts_set_bypassdocumentvalidation (mongoc_bulkwriteopts_t *self, bool bypassdocumentvalidation)
 {
    BSON_ASSERT_PARAM (self);
-   self->bypassdocumentvalidation = (mongoc_opt_bool_t){.isset = true, .val = bypassdocumentvalidation};
+   mongoc_optional_set_value (&self->bypassdocumentvalidation, bypassdocumentvalidation);
 }
 void
 mongoc_bulkwriteopts_set_let (mongoc_bulkwriteopts_t *self, const bson_t *let)
@@ -105,7 +101,7 @@ void
 mongoc_bulkwriteopts_set_verboseresults (mongoc_bulkwriteopts_t *self, bool verboseresults)
 {
    BSON_ASSERT_PARAM (self);
-   self->verboseresults = (mongoc_opt_bool_t){.isset = true, .val = verboseresults};
+   mongoc_optional_set_value (&self->verboseresults, verboseresults);
 }
 void
 mongoc_bulkwriteopts_set_comment (mongoc_bulkwriteopts_t *self, const bson_t *comment)
@@ -306,7 +302,7 @@ struct _mongoc_bulkwrite_updateoneopts_t {
    bson_t *arrayfilters;
    bson_t *collation;
    bson_value_t hint;
-   mongoc_opt_bool_t upsert;
+   mongoc_optional_t upsert;
 };
 
 mongoc_bulkwrite_updateoneopts_t *
@@ -339,7 +335,7 @@ void
 mongoc_bulkwrite_updateoneopts_set_upsert (mongoc_bulkwrite_updateoneopts_t *self, bool upsert)
 {
    BSON_ASSERT_PARAM (self);
-   self->upsert = (mongoc_opt_bool_t){.isset = true, .val = upsert};
+   mongoc_optional_set_value (&self->upsert, upsert);
 }
 void
 mongoc_bulkwrite_updateoneopts_destroy (mongoc_bulkwrite_updateoneopts_t *self)
@@ -402,8 +398,8 @@ mongoc_bulkwrite_append_updateone (mongoc_bulkwrite_t *self,
    if (opts->hint.value_type != BSON_TYPE_EOD) {
       BSON_ASSERT (bson_append_value (&op, "hint", 4, &opts->hint));
    }
-   if (opts->upsert.isset) {
-      BSON_ASSERT (bson_append_bool (&op, "upsert", 6, opts->upsert.val));
+   if (mongoc_optional_is_set (&opts->upsert)) {
+      BSON_ASSERT (bson_append_bool (&op, "upsert", 6, mongoc_optional_value (&opts->upsert)));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -419,7 +415,7 @@ struct _mongoc_bulkwrite_replaceoneopts_t {
    bson_t *arrayfilters;
    bson_t *collation;
    bson_value_t hint;
-   mongoc_opt_bool_t upsert;
+   mongoc_optional_t upsert;
 };
 
 mongoc_bulkwrite_replaceoneopts_t *
@@ -452,7 +448,7 @@ void
 mongoc_bulkwrite_replaceoneopts_set_upsert (mongoc_bulkwrite_replaceoneopts_t *self, bool upsert)
 {
    BSON_ASSERT_PARAM (self);
-   self->upsert = (mongoc_opt_bool_t){.isset = true, .val = upsert};
+   mongoc_optional_set_value (&self->upsert, upsert);
 }
 void
 mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self)
@@ -537,8 +533,8 @@ mongoc_bulkwrite_append_replaceone (mongoc_bulkwrite_t *self,
    if (opts->hint.value_type != BSON_TYPE_EOD) {
       BSON_ASSERT (bson_append_value (&op, "hint", 4, &opts->hint));
    }
-   if (opts->upsert.isset) {
-      BSON_ASSERT (bson_append_bool (&op, "upsert", 6, opts->upsert.val));
+   if (mongoc_optional_is_set (&opts->upsert)) {
+      BSON_ASSERT (bson_append_bool (&op, "upsert", 6, mongoc_optional_value (&opts->upsert)));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -555,7 +551,7 @@ struct _mongoc_bulkwrite_updatemanyopts_t {
    bson_t *arrayfilters;
    bson_t *collation;
    bson_value_t hint;
-   mongoc_opt_bool_t upsert;
+   mongoc_optional_t upsert;
 };
 
 mongoc_bulkwrite_updatemanyopts_t *
@@ -588,7 +584,7 @@ void
 mongoc_bulkwrite_updatemanyopts_set_upsert (mongoc_bulkwrite_updatemanyopts_t *self, bool upsert)
 {
    BSON_ASSERT_PARAM (self);
-   self->upsert = (mongoc_opt_bool_t){.isset = true, .val = upsert};
+   mongoc_optional_set_value (&self->upsert, upsert);
 }
 void
 mongoc_bulkwrite_updatemanyopts_destroy (mongoc_bulkwrite_updatemanyopts_t *self)
@@ -651,8 +647,8 @@ mongoc_bulkwrite_append_updatemany (mongoc_bulkwrite_t *self,
    if (opts->hint.value_type != BSON_TYPE_EOD) {
       BSON_ASSERT (bson_append_value (&op, "hint", 4, &opts->hint));
    }
-   if (opts->upsert.isset) {
-      BSON_ASSERT (bson_append_bool (&op, "upsert", 6, opts->upsert.val));
+   if (mongoc_optional_is_set (&opts->upsert)) {
+      BSON_ASSERT (bson_append_bool (&op, "upsert", 6, mongoc_optional_value (&opts->upsert)));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -1302,7 +1298,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       }
    }
 
-   bool verboseresults = (opts->verboseresults.isset) ? opts->verboseresults.val : false;
+   bool verboseresults =
+      mongoc_optional_is_set (&opts->verboseresults) ? mongoc_optional_value (&opts->verboseresults) : false;
    ret.res->verboseresults = verboseresults;
 
    int32_t maxBsonObjectSize = mongoc_server_stream_max_bson_obj_size (ss);
@@ -1312,14 +1309,19 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       // errorsOnly is default true. Set to false if verboseResults requested.
       BSON_ASSERT (bson_append_bool (&cmd, "errorsOnly", 10, !verboseresults));
       // ordered is default true.
-      BSON_ASSERT (bson_append_bool (&cmd, "ordered", 7, (opts->ordered.isset) ? opts->ordered.val : true));
+      BSON_ASSERT (
+         bson_append_bool (&cmd,
+                           "ordered",
+                           7,
+                           (mongoc_optional_is_set (&opts->ordered)) ? mongoc_optional_value (&opts->ordered) : true));
 
       if (opts->comment) {
          BSON_ASSERT (bson_append_document (&cmd, "comment", 7, opts->comment));
       }
 
-      if (opts->bypassdocumentvalidation.isset) {
-         BSON_ASSERT (bson_append_bool (&cmd, "bypassDocumentValidation", 24, opts->bypassdocumentvalidation.val));
+      if (mongoc_optional_is_set (&opts->bypassdocumentvalidation)) {
+         BSON_ASSERT (bson_append_bool (
+            &cmd, "bypassDocumentValidation", 24, mongoc_optional_value (&opts->bypassdocumentvalidation)));
       }
 
       if (opts->let) {
@@ -1804,7 +1806,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       if (!batch_ok) {
          goto fail;
       }
-      bool is_ordered = opts->ordered.isset ? opts->ordered.val : true; // default.
+      bool is_ordered =
+         mongoc_optional_is_set (&opts->ordered) ? mongoc_optional_value (&opts->ordered) : true; // default.
       if (has_write_errors && is_ordered) {
          // Ordered writes must not continue to send batches once an error is
          // occurred. An individual write error is not a top-level error.
