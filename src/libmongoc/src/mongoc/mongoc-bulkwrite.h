@@ -187,8 +187,6 @@ typedef struct _mongoc_bulkwrite_replaceoneopts_t mongoc_bulkwrite_replaceoneopt
 MONGOC_EXPORT (mongoc_bulkwrite_replaceoneopts_t *)
 mongoc_bulkwrite_replaceoneopts_new (void);
 MONGOC_EXPORT (void)
-mongoc_bulkwrite_replaceoneopts_set_arrayfilters (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *arrayfilters);
-MONGOC_EXPORT (void)
 mongoc_bulkwrite_replaceoneopts_set_collation (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *collation);
 MONGOC_EXPORT (void)
 mongoc_bulkwrite_replaceoneopts_set_hint (mongoc_bulkwrite_replaceoneopts_t *self, const bson_value_t *hint);

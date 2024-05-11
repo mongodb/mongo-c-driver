@@ -376,7 +376,6 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
       }
 
       mongoc_bulkwrite_replaceoneopts_t *opts = mongoc_bulkwrite_replaceoneopts_new ();
-      mongoc_bulkwrite_replaceoneopts_set_arrayfilters (opts, arrayFilters);
       mongoc_bulkwrite_replaceoneopts_set_collation (opts, collation);
       if (hint) {
          mongoc_bulkwrite_replaceoneopts_set_hint (opts, bson_val_to_value (hint));

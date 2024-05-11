@@ -432,7 +432,6 @@ mongoc_bulkwrite_append_updateone (mongoc_bulkwrite_t *self,
 }
 
 struct _mongoc_bulkwrite_replaceoneopts_t {
-   bson_t *arrayfilters;
    bson_t *collation;
    bson_value_t hint;
    mongoc_optional_t upsert;
@@ -442,13 +441,6 @@ mongoc_bulkwrite_replaceoneopts_t *
 mongoc_bulkwrite_replaceoneopts_new (void)
 {
    return bson_malloc0 (sizeof (mongoc_bulkwrite_replaceoneopts_t));
-}
-void
-mongoc_bulkwrite_replaceoneopts_set_arrayfilters (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *arrayfilters)
-{
-   BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (arrayfilters || true);
-   set_bson_opt (&self->arrayfilters, arrayfilters);
 }
 void
 mongoc_bulkwrite_replaceoneopts_set_collation (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *collation)
@@ -476,7 +468,6 @@ mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self
    if (!self) {
       return;
    }
-   bson_destroy (self->arrayfilters);
    bson_destroy (self->collation);
    bson_value_destroy (&self->hint);
    bson_free (self);
@@ -541,9 +532,6 @@ mongoc_bulkwrite_append_replaceone (mongoc_bulkwrite_t *self,
    BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "filter", filter));
    BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "updateMods", replacement));
    BSON_ASSERT (BSON_APPEND_BOOL (&op, "multi", false));
-   if (opts->arrayfilters) {
-      BSON_ASSERT (BSON_APPEND_ARRAY (&op, "arrayFilters", opts->arrayfilters));
-   }
    if (opts->collation) {
       BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "collation", opts->collation));
    }
