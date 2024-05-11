@@ -51,8 +51,6 @@ MONGOC_EXPORT (void)
 mongoc_bulkwriteopts_destroy (mongoc_bulkwriteopts_t *self);
 
 typedef struct _mongoc_bulkwriteresult_t mongoc_bulkwriteresult_t;
-MONGOC_EXPORT (bool)
-mongoc_bulkwriteresult_acknowledged (const mongoc_bulkwriteresult_t *self);
 MONGOC_EXPORT (int64_t)
 mongoc_bulkwriteresult_insertedcount (const mongoc_bulkwriteresult_t *self);
 MONGOC_EXPORT (int64_t)

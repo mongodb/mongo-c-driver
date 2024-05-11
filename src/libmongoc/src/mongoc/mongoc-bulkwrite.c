@@ -817,7 +817,6 @@ mongoc_bulkwrite_append_deletemany (mongoc_bulkwrite_t *self,
 
 
 struct _mongoc_bulkwriteresult_t {
-   int64_t acknowledged;
    int64_t insertedcount;
    int64_t upsertedcount;
    int64_t matchedcount;
@@ -829,13 +828,6 @@ struct _mongoc_bulkwriteresult_t {
    bson_t deleteresults;
    bool verboseresults;
 };
-
-bool
-mongoc_bulkwriteresult_acknowledged (const mongoc_bulkwriteresult_t *self)
-{
-   BSON_ASSERT_PARAM (self);
-   return self->acknowledged;
-}
 
 int64_t
 mongoc_bulkwriteresult_insertedcount (const mongoc_bulkwriteresult_t *self)
