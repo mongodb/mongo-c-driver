@@ -1513,6 +1513,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
 
             if (ss) {
                parts.assembled.server_stream = ss;
+               ret.res->serverid = ss->sd->id;
             } else {
                _bulkwriteexception_set_error (ret.exc, &error);
                goto batch_fail;
