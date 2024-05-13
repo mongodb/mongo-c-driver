@@ -1240,7 +1240,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    // Create empty result and exception to collect results/errors from batches.
    ret.res = _bulkwriteresult_new ();
    ret.exc = _bulkwriteexception_new ();
-   ret.res->serverid = opts->serverid;
 
    if (self->executed) {
       bson_set_error (&error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "bulk write already executed");
