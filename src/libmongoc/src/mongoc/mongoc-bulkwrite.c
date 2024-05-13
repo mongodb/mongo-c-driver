@@ -1500,8 +1500,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             payload->size = (int32_t) ops_byte_len;
          }
 
-         // Check if stream is valid. `mongoc_cluster_run_retryable_write` may have invalidated stream (e.g. due to
-         // processing an error). If invalid, select a new stream before processing more batches.
+         // Check if stream is valid. A previous call to `mongoc_cluster_run_retryable_write` may have invalidated
+         // stream (e.g. due to processing an error). If invalid, select a new stream before processing more batches.
          if (!mongoc_cluster_stream_valid (&self->client->cluster, parts.assembled.server_stream)) {
             bson_t reply;
             // Select a server and create a stream again.
@@ -1513,6 +1513,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                parts.assembled.server_stream = ss;
             } else {
                _bulkwriteexception_set_error (ret.exc, &error);
+               _bulkwriteexception_set_error_reply (ret.exc, &reply);
+               bson_destroy (&reply);
                goto batch_fail;
             }
          }
