@@ -1281,8 +1281,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
          _bulkwriteexception_set_error_reply (ret.exc, &reply);
          bson_destroy (&reply);
          goto fail;
-      } else {
-         ret.res->serverid = ss->sd->id;
       }
    }
 
@@ -1513,7 +1511,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
 
             if (ss) {
                parts.assembled.server_stream = ss;
-               ret.res->serverid = ss->sd->id;
             } else {
                _bulkwriteexception_set_error (ret.exc, &error);
                goto batch_fail;
@@ -1530,7 +1527,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                mongoc_server_stream_cleanup (ss);
                ss = new_ss;
                parts.assembled.server_stream = ss;
-               ret.res->serverid = new_ss->sd->id;
             }
 
             // Check for a command ('ok': 0) error.
@@ -1812,6 +1808,10 @@ fail:
       mongoc_cmd_parts_cleanup (&parts);
    }
    bson_destroy (&cmd);
+   if (ret.res && ss) {
+      // Set the returned server ID to the most recently selected server.
+      ret.res->serverid = ss->sd->id;
+   }
    mongoc_server_stream_cleanup (ss);
    if (!ret.exc->has_any_error) {
       mongoc_bulkwriteexception_destroy (ret.exc);
