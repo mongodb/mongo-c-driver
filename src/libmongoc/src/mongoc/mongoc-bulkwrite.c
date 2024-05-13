@@ -1003,7 +1003,7 @@ bool
 mongoc_bulkwriteexception_error (const mongoc_bulkwriteexception_t *self, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (error || true);
+   BSON_ASSERT_PARAM (error);
 
    if (self->error.code != 0) {
       memcpy (error, &self->error, sizeof (*error));
