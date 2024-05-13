@@ -1502,6 +1502,23 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             payload->size = (int32_t) ops_byte_len;
          }
 
+         // Check if stream is valid. `mongoc_cluster_run_retryable_write` may have invalidated stream (e.g. due to
+         // processing an error). If invalid, select a new stream before processing more batches.
+         if (!mongoc_cluster_stream_valid (&self->client->cluster, parts.assembled.server_stream)) {
+            bson_t reply;
+            // Select a server and create a stream again.
+            mongoc_server_stream_cleanup (ss);
+            ss = mongoc_cluster_stream_for_writes (
+               &self->client->cluster, NULL /* session */, NULL /* deprioritized servers */, &reply, &error);
+
+            if (ss) {
+               parts.assembled.server_stream = ss;
+            } else {
+               _bulkwriteexception_set_error (ret.exc, &error);
+               goto batch_fail;
+            }
+         }
+
          // Send command.
          {
             mongoc_server_stream_t *new_ss = NULL;
@@ -1761,23 +1778,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                      goto batch_fail;
                   }
                }
-            }
-         }
-
-         // Check if stream is valid. `mongoc_cluster_run_retryable_write` may have invalidated stream (e.g. due to
-         // processing an error). If invalid, select a new stream before processing more batches.
-         if (!mongoc_cluster_stream_valid (&self->client->cluster, parts.assembled.server_stream)) {
-            bson_t reply;
-            // Select a server and create a stream again.
-            mongoc_server_stream_cleanup (ss);
-            ss = mongoc_cluster_stream_for_writes (
-               &self->client->cluster, NULL /* session */, NULL /* deprioritized servers */, &reply, &error);
-
-            if (ss) {
-               parts.assembled.server_stream = ss;
-            } else {
-               _bulkwriteexception_set_error (ret.exc, &error);
-               goto batch_fail;
             }
          }
       }
