@@ -69,6 +69,52 @@ test_bulkwrite_insert (void *unused)
 }
 
 static void
+test_bulkwrite_upsert_with_null (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   bson_error_t error;
+   bool ok;
+   mongoc_client_t *client = test_framework_new_default_client ();
+
+   // Drop prior data.
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_collection_drop (coll, NULL); // Ignore return.
+      mongoc_collection_destroy (coll);
+   }
+
+   // Upsert document with an `_id` of null.
+   mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
+   mongoc_bulkwrite_replaceoneopts_t *roo = mongoc_bulkwrite_replaceoneopts_new ();
+   mongoc_bulkwrite_replaceoneopts_set_upsert (roo, true);
+   ok = mongoc_bulkwrite_append_replaceone (bw, "db.coll", tmp_bson ("{}"), tmp_bson ("{'_id': null}"), roo, &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   // Do the bulk write.
+   mongoc_bulkwriteopts_t *opts = mongoc_bulkwriteopts_new ();
+   mongoc_bulkwriteopts_set_verboseresults (opts, true);
+   mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, opts);
+
+   ASSERT_NO_BULKWRITEEXCEPTION (bwr);
+
+   // Ensure results report null ID inserted.
+   {
+      ASSERT (bwr.res);
+      const bson_t *updateResults = mongoc_bulkwriteresult_updateresults (bwr.res);
+      ASSERT (updateResults);
+      ASSERT_MATCH (updateResults, BSON_STR ({"0" : {"matchedCount" : 1, "modifiedCount" : 0, "upsertedId" : null}}));
+   }
+
+   mongoc_bulkwriteexception_destroy (bwr.exc);
+   mongoc_bulkwriteresult_destroy (bwr.res);
+   mongoc_bulkwrite_destroy (bw);
+   mongoc_bulkwriteopts_destroy (opts);
+   mongoc_bulkwrite_replaceoneopts_destroy (roo);
+   mongoc_client_destroy (client);
+}
+
+static void
 test_bulkwrite_writeError (void *unused)
 {
    BSON_UNUSED (unused);
@@ -551,6 +597,14 @@ test_bulkwrite_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/bulkwrite/insert",
                       test_bulkwrite_insert,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
+   );
+
+   TestSuite_AddFull (suite,
+                      "/bulkwrite/upsert_with_null",
+                      test_bulkwrite_upsert_with_null,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
