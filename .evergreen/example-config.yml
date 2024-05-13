@@ -57,6 +57,7 @@ task_groups:
     setup_group_timeout_secs: 1800
     tasks:
       - example-task
+      - test-asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
       - run-tests-task
 
 buildvariants:
