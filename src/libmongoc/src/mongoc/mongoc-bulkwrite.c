@@ -1512,6 +1512,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                mongoc_server_stream_cleanup (ss);
                ss = new_ss;
                parts.assembled.server_stream = ss;
+               ret.res->serverid = new_ss->sd->id;
             }
 
             // Check for a command ('ok': 0) error.

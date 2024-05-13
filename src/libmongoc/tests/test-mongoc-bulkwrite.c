@@ -279,6 +279,78 @@ test_bulkwrite_serverid (void *ctx)
 }
 
 static void
+test_bulkwrite_serverid_on_retry (void *ctx)
+{
+   BSON_UNUSED (ctx);
+   bool ok;
+   bson_error_t error;
+
+   mongoc_uri_t *uri = test_framework_get_uri ();
+   ASSERT_OR_PRINT (test_framework_uri_apply_multi_mongos (uri, true, &error), error);
+   mongoc_client_t *client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
+
+   // Get a server ID
+   uint32_t selected_serverid;
+   {
+      mongoc_server_description_t *sd = mongoc_client_select_server (client, true /* for_writes */, NULL, &error);
+      ASSERT_OR_PRINT (sd, error);
+      selected_serverid = mongoc_server_description_id (sd);
+      mongoc_server_description_destroy (sd);
+   }
+
+   // Set failpoint on selected server.
+   {
+      bool ret = mongoc_client_command_simple_with_server_id (
+         client,
+         "admin",
+         tmp_bson (BSON_STR ({
+            "configureFailPoint" : "failCommand",
+            "mode" : {"times" : 1},
+            "data" : {"failCommands" : ["bulkWrite"], "closeConnection" : true}
+         })),
+         NULL,
+         selected_serverid,
+         NULL,
+         &error);
+      ASSERT_OR_PRINT (ret, error);
+   }
+
+   uint32_t last_captured = 0;
+   // Set callback to capture the serverid used for the last `bulkWrite` command.
+   {
+      mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new ();
+      mongoc_apm_set_command_started_cb (cbs, capture_last_bulkWrite_serverid);
+      mongoc_client_set_apm_callbacks (client, cbs, &last_captured);
+      mongoc_apm_callbacks_destroy (cbs);
+   }
+
+   mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
+   mongoc_bulkwriteopts_t *bwo = mongoc_bulkwriteopts_new ();
+   mongoc_bulkwriteopts_set_serverid (bwo, selected_serverid);
+
+   ok = mongoc_bulkwrite_append_insertone (bw, "db.coll", tmp_bson ("{}"), NULL, &error);
+   ASSERT_OR_PRINT (ok, error);
+   // Execute.
+   {
+      mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bwo);
+      ASSERT_NO_BULKWRITEEXCEPTION (bwr);
+      // Expect a different server was used due to retry.
+      uint32_t used_serverid = mongoc_bulkwriteresult_serverid (bwr.res);
+      ASSERT_CMPUINT32 (selected_serverid, !=, used_serverid);
+      mongoc_bulkwriteresult_destroy (bwr.res);
+      mongoc_bulkwriteexception_destroy (bwr.exc);
+      // Expect the used server was reported in command monitoring.
+      ASSERT_CMPUINT32 (last_captured, ==, used_serverid);
+   }
+
+   mongoc_uri_destroy (uri);
+   mongoc_bulkwriteopts_destroy (bwo);
+   mongoc_bulkwrite_destroy (bw);
+   mongoc_client_destroy (client);
+}
+
+static void
 capture_last_bulkWrite_command (const mongoc_apm_command_started_t *event)
 {
    if (0 == strcmp (mongoc_apm_command_started_get_command_name (event), "bulkWrite")) {
@@ -514,6 +586,15 @@ test_bulkwrite_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
+   );
+
+   TestSuite_AddFull (suite,
+                      "/bulkwrite/server_id/on_retry",
+                      test_bulkwrite_serverid_on_retry,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
+                      test_framework_skip_if_not_mongos // Requires multiple hosts that can accept writes.
    );
 
    TestSuite_AddFull (suite,
