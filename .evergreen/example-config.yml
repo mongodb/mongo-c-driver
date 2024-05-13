@@ -17,6 +17,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-asan, compile, ubuntu2004, clang, cse, asan, sasl-cyrus]
     commands:
+      - func: fetch-source
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
