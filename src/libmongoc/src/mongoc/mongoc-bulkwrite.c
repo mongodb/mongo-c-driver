@@ -1180,39 +1180,6 @@ lookup_as_int64 (
 }
 
 static bool
-lookup_double (const bson_t *bson, const char *key, double *out, const char *source, mongoc_bulkwriteexception_t *exc)
-{
-   BSON_ASSERT_PARAM (bson);
-   BSON_ASSERT_PARAM (key);
-   BSON_ASSERT_PARAM (out);
-   BSON_ASSERT (source || true);
-   BSON_ASSERT_PARAM (exc);
-
-   bson_iter_t iter;
-   if (bson_iter_init_find (&iter, bson, key) && BSON_ITER_HOLDS_DOUBLE (&iter)) {
-      *out = bson_iter_double (&iter);
-      return true;
-   }
-   bson_error_t error;
-   if (source) {
-      bson_set_error (&error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "expected to find double `%s` in %s, but did not",
-                      key,
-                      source);
-   } else {
-      bson_set_error (&error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "expected to find double `%s`, but did not",
-                      key);
-   }
-   _bulkwriteexception_set_error (exc, &error);
-   return false;
-}
-
-static bool
 lookup_string (
    const bson_t *bson, const char *key, const char **out, const char *source, mongoc_bulkwriteexception_t *exc)
 {
@@ -1688,8 +1655,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                const bson_t *result;
                while (mongoc_cursor_next (reply_cursor, &result)) {
                   // Parse for `ok`.
-                  double ok;
-                  if (!lookup_double (result, "ok", &ok, "result", ret.exc)) {
+                  int64_t ok;
+                  if (!lookup_as_int64 (result, "ok", &ok, "result", ret.exc)) {
                      goto batch_fail;
                   }
 
