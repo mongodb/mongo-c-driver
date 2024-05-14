@@ -114,3 +114,54 @@ wait_for_mongo_orchestration() {
 }
 wait_for_mongo_orchestration 8889
 echo "Waiting for mongo-orchestration to start... done."
+
+find . -name "curl_mo.txt"
+find . -name "curl_mo.txt" | xargs cat
+
+python -m json.tool curl_mo.txt
+sleep 5
+pwd
+curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" 1>|curl_mo.txt
+python -m json.tool curl_mo.txt
+sleep 15
+
+if [ "$AUTH" = "auth" ]; then
+  MONGO_SHELL_CONNECTION_FLAGS="--username bob --password pwd123"
+fi
+
+if [ -n "$AUTHSOURCE" ]; then
+   MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --authenticationDatabase ${AUTHSOURCE}"
+fi
+
+if [ "$OCSP" != "off" ]; then
+   MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --host localhost --tls --tlsAllowInvalidCertificates"
+elif [ "$SSL" != "nossl" ]; then
+   MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --host localhost --ssl --sslCAFile=$MONGO_ORCHESTRATION_HOME/lib/ca.pem --sslPEMKeyFile=$MONGO_ORCHESTRATION_HOME/lib/client.pem"
+fi
+
+if [ ! -z "$REQUIRE_API_VERSION" ]; then
+  MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --apiVersion=1"
+  # Set the requireApiVersion parameter.
+  ./mongodb/bin/mongosh $MONGO_SHELL_CONNECTION_FLAGS $DIR/../etc/require-api-version.js
+fi
+
+echo $MONGO_SHELL_CONNECTION_FLAGS
+
+# Create mo-expansion.yml. expansions.update expects the file to exist.
+touch mo-expansion.yml
+
+if [ -z "$MONGO_CRYPT_SHARED_DOWNLOAD_URL" ]; then
+  echo "There is no crypt_shared library for distro='$DISTRO' and version='$MONGODB_VERSION'".
+else
+  echo "Downloading crypt_shared package from $MONGO_CRYPT_SHARED_DOWNLOAD_URL"
+  download_and_extract_crypt_shared "$MONGO_CRYPT_SHARED_DOWNLOAD_URL" "$EXTRACT" "CRYPT_SHARED_LIB_PATH"
+  echo "CRYPT_SHARED_LIB_PATH: $CRYPT_SHARED_LIB_PATH"
+  if [ -z "$CRYPT_SHARED_LIB_PATH" ]; then
+    echo "CRYPT_SHARED_LIB_PATH must be assigned, but wasn't" 1>&2 # write to stderr"
+    exit 1
+  fi
+cat >>mo-expansion.yml <<EOT
+CRYPT_SHARED_LIB_PATH: "$CRYPT_SHARED_LIB_PATH"
+EOT
+
+fi
