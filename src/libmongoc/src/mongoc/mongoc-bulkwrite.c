@@ -1213,6 +1213,85 @@ lookup_string (
    return false;
 }
 
+// `_bulkwritereturn_apply_reply` applies the top-level fields of a server reply to the returned results.
+static bool
+_bulkwritereturn_apply_reply (mongoc_bulkwritereturn_t *self, const bson_t *cmd_reply)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (cmd_reply);
+
+   // Parse top-level fields.
+   // These fields are expected to be int32 as of server 8.0. However, drivers return the values as int64.
+   // Use `lookup_as_int64` to support other numeric types to future-proof.
+   int64_t nInserted;
+   if (!lookup_as_int64 (cmd_reply, "nInserted", &nInserted, NULL, self->exc)) {
+      return false;
+   }
+   self->res->insertedcount += nInserted;
+
+   int64_t nMatched;
+   if (!lookup_as_int64 (cmd_reply, "nMatched", &nMatched, NULL, self->exc)) {
+      return false;
+   }
+   self->res->matchedcount += nMatched;
+
+   int64_t nModified;
+   if (!lookup_as_int64 (cmd_reply, "nModified", &nModified, NULL, self->exc)) {
+      return false;
+   }
+   self->res->modifiedcount += nModified;
+
+   int64_t nDeleted;
+   if (!lookup_as_int64 (cmd_reply, "nDeleted", &nDeleted, NULL, self->exc)) {
+      return false;
+   }
+   self->res->deletedcount += nDeleted;
+
+   int64_t nUpserted;
+   if (!lookup_as_int64 (cmd_reply, "nUpserted", &nUpserted, NULL, self->exc)) {
+      return false;
+   }
+   self->res->upsertedcount += nUpserted;
+
+   bson_error_t error;
+   bson_iter_t iter;
+   if (bson_iter_init_find (&iter, cmd_reply, "writeConcernError")) {
+      bson_iter_t wce_iter;
+      bson_t wce_bson;
+
+      if (!_mongoc_iter_document_as_bson (&iter, &wce_bson, &error)) {
+         _bulkwriteexception_set_error (self->exc, &error);
+         _bulkwriteexception_set_error_reply (self->exc, cmd_reply);
+         return false;
+      }
+
+      // Parse `code`.
+      int32_t code;
+      if (!lookup_int32 (&wce_bson, "code", &code, "writeConcernError", self->exc)) {
+         return false;
+      }
+
+      // Parse `errmsg`.
+      const char *errmsg;
+      if (!lookup_string (&wce_bson, "errmsg", &errmsg, "writeConcernError", self->exc)) {
+         return false;
+      }
+
+      // Parse optional `errInfo`.
+      bson_t errInfo = BSON_INITIALIZER;
+      if (bson_iter_init_find (&wce_iter, &wce_bson, "errInfo")) {
+         if (!_mongoc_iter_document_as_bson (&wce_iter, &errInfo, &error)) {
+            _bulkwriteexception_set_error (self->exc, &error);
+            _bulkwriteexception_set_error_reply (self->exc, cmd_reply);
+         }
+      }
+
+      _bulkwriteexception_append_writeconcernerror (self->exc, code, errmsg, &errInfo);
+   }
+
+   return true;
+}
+
 BSON_EXPORT (void)
 mongoc_bulkwrite_set_session (mongoc_bulkwrite_t *self, mongoc_client_session_t *session)
 {
@@ -1546,77 +1625,12 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
 
          // Add to result and/or exception.
          if (is_acknowledged) {
-            bson_iter_t iter;
-
             // Parse top-level fields.
-            {
-               // These fields are expected to be int32 as of server 8.0. However, drivers return the values as int64.
-               // Use `lookup_as_int64` to support other numeric types to future-proof.
-               int64_t nInserted;
-               if (!lookup_as_int64 (&cmd_reply, "nInserted", &nInserted, NULL, ret.exc)) {
-                  goto batch_fail;
-               }
-               ret.res->insertedcount += nInserted;
-
-               int64_t nMatched;
-               if (!lookup_as_int64 (&cmd_reply, "nMatched", &nMatched, NULL, ret.exc)) {
-                  goto batch_fail;
-               }
-               ret.res->matchedcount += nMatched;
-
-               int64_t nModified;
-               if (!lookup_as_int64 (&cmd_reply, "nModified", &nModified, NULL, ret.exc)) {
-                  goto batch_fail;
-               }
-               ret.res->modifiedcount += nModified;
-
-               int64_t nDeleted;
-               if (!lookup_as_int64 (&cmd_reply, "nDeleted", &nDeleted, NULL, ret.exc)) {
-                  goto batch_fail;
-               }
-               ret.res->deletedcount += nDeleted;
-
-               int64_t nUpserted;
-               if (!lookup_as_int64 (&cmd_reply, "nUpserted", &nUpserted, NULL, ret.exc)) {
-                  goto batch_fail;
-               }
-               ret.res->upsertedcount += nUpserted;
+            if (!_bulkwritereturn_apply_reply (&ret, &cmd_reply)) {
+               goto batch_fail;
             }
 
-            if (bson_iter_init_find (&iter, &cmd_reply, "writeConcernError")) {
-               bson_iter_t wce_iter;
-               bson_t wce_bson;
-
-               if (!_mongoc_iter_document_as_bson (&iter, &wce_bson, &error)) {
-                  _bulkwriteexception_set_error (ret.exc, &error);
-                  _bulkwriteexception_set_error_reply (ret.exc, &cmd_reply);
-                  goto batch_fail;
-               }
-
-               // Parse `code`.
-               int32_t code;
-               if (!lookup_int32 (&wce_bson, "code", &code, "writeConcernError", ret.exc)) {
-                  goto batch_fail;
-               }
-
-               // Parse `errmsg`.
-               const char *errmsg;
-               if (!lookup_string (&wce_bson, "errmsg", &errmsg, "writeConcernError", ret.exc)) {
-                  goto batch_fail;
-               }
-
-               // Parse optional `errInfo`.
-               bson_t errInfo = BSON_INITIALIZER;
-               if (bson_iter_init_find (&wce_iter, &wce_bson, "errInfo")) {
-                  if (!_mongoc_iter_document_as_bson (&wce_iter, &errInfo, &error)) {
-                     _bulkwriteexception_set_error (ret.exc, &error);
-                     _bulkwriteexception_set_error_reply (ret.exc, &cmd_reply);
-                  }
-               }
-
-               _bulkwriteexception_append_writeconcernerror (ret.exc, code, errmsg, &errInfo);
-            }
-
+            // Construct reply cursor and read individual results.
             {
                bson_t cursor_opts = BSON_INITIALIZER;
                {
