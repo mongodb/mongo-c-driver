@@ -925,7 +925,7 @@ _bulkwriteresult_new (void)
 
 static void
 _bulkwriteresult_set_updateresult (
-   mongoc_bulkwriteresult_t *self, int32_t n, int32_t nModified, const bson_value_t *upserted_id, size_t models_idx)
+   mongoc_bulkwriteresult_t *self, int64_t n, int64_t nModified, const bson_value_t *upserted_id, size_t models_idx)
 {
    BSON_ASSERT_PARAM (self);
    BSON_ASSERT (upserted_id || true);
@@ -937,8 +937,8 @@ _bulkwriteresult_set_updateresult (
       bson_free (key);
    }
 
-   BSON_ASSERT (BSON_APPEND_INT32 (&updateresult, "matchedCount", n));
-   BSON_ASSERT (BSON_APPEND_INT32 (&updateresult, "modifiedCount", nModified));
+   BSON_ASSERT (BSON_APPEND_INT64 (&updateresult, "matchedCount", n));
+   BSON_ASSERT (BSON_APPEND_INT64 (&updateresult, "modifiedCount", nModified));
    if (upserted_id) {
       BSON_ASSERT (BSON_APPEND_VALUE (&updateresult, "upsertedId", upserted_id));
    }
@@ -946,7 +946,7 @@ _bulkwriteresult_set_updateresult (
 }
 
 static void
-_bulkwriteresult_set_deleteresult (mongoc_bulkwriteresult_t *self, int32_t n, size_t models_idx)
+_bulkwriteresult_set_deleteresult (mongoc_bulkwriteresult_t *self, int64_t n, size_t models_idx)
 {
    BSON_ASSERT_PARAM (self);
 
@@ -957,7 +957,7 @@ _bulkwriteresult_set_deleteresult (mongoc_bulkwriteresult_t *self, int32_t n, si
       bson_free (key);
    }
 
-   BSON_ASSERT (BSON_APPEND_INT32 (&deleteresult, "deletedCount", n));
+   BSON_ASSERT (BSON_APPEND_INT64 (&deleteresult, "deletedCount", n));
    BSON_ASSERT (bson_append_document_end (&self->deleteresults, &deleteresult));
 }
 
@@ -1138,6 +1138,41 @@ lookup_int32 (const bson_t *bson, const char *key, int32_t *out, const char *sou
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "expected to find int32 `%s`, but did not",
+                      key);
+   }
+   _bulkwriteexception_set_error (exc, &error);
+   return false;
+}
+
+// `lookup_as_int64` looks for `key` as a BSON int32, int64, or double and returns as an int64_t. Doubles are truncated.
+static int64_t
+lookup_as_int64 (
+   const bson_t *bson, const char *key, int64_t *out, const char *source, mongoc_bulkwriteexception_t *exc)
+{
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT (source || true);
+   BSON_ASSERT_PARAM (exc);
+
+   bson_iter_t iter;
+   if (bson_iter_init_find (&iter, bson, key) && BSON_ITER_HOLDS_NUMBER (&iter)) {
+      *out = bson_iter_as_int64 (&iter);
+      return true;
+   }
+   bson_error_t error;
+   if (source) {
+      bson_set_error (&error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "expected to find int32, int64, or double `%s` in %s, but did not",
+                      key,
+                      source);
+   } else {
+      bson_set_error (&error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "expected to find int32, int64, or double `%s`, but did not",
                       key);
    }
    _bulkwriteexception_set_error (exc, &error);
@@ -1548,35 +1583,37 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
 
             // Parse top-level fields.
             {
-               int32_t nInserted;
-               if (!lookup_int32 (&cmd_reply, "nInserted", &nInserted, NULL, ret.exc)) {
+               // These fields are expected to be int32 as of server 8.0. However, drivers return the values as int64.
+               // Use `lookup_as_int64` to support other numeric types to future-proof.
+               int64_t nInserted;
+               if (!lookup_as_int64 (&cmd_reply, "nInserted", &nInserted, NULL, ret.exc)) {
                   goto batch_fail;
                }
-               ret.res->insertedcount += (int64_t) nInserted;
+               ret.res->insertedcount += nInserted;
 
-               int32_t nMatched;
-               if (!lookup_int32 (&cmd_reply, "nMatched", &nMatched, NULL, ret.exc)) {
+               int64_t nMatched;
+               if (!lookup_as_int64 (&cmd_reply, "nMatched", &nMatched, NULL, ret.exc)) {
                   goto batch_fail;
                }
-               ret.res->matchedcount += (int64_t) nMatched;
+               ret.res->matchedcount += nMatched;
 
-               int32_t nModified;
-               if (!lookup_int32 (&cmd_reply, "nModified", &nModified, NULL, ret.exc)) {
+               int64_t nModified;
+               if (!lookup_as_int64 (&cmd_reply, "nModified", &nModified, NULL, ret.exc)) {
                   goto batch_fail;
                }
-               ret.res->modifiedcount += (int64_t) nModified;
+               ret.res->modifiedcount += nModified;
 
-               int32_t nDeleted;
-               if (!lookup_int32 (&cmd_reply, "nDeleted", &nDeleted, NULL, ret.exc)) {
+               int64_t nDeleted;
+               if (!lookup_as_int64 (&cmd_reply, "nDeleted", &nDeleted, NULL, ret.exc)) {
                   goto batch_fail;
                }
-               ret.res->deletedcount += (int64_t) nDeleted;
+               ret.res->deletedcount += nDeleted;
 
-               int32_t nUpserted;
-               if (!lookup_int32 (&cmd_reply, "nUpserted", &nUpserted, NULL, ret.exc)) {
+               int64_t nUpserted;
+               if (!lookup_as_int64 (&cmd_reply, "nUpserted", &nUpserted, NULL, ret.exc)) {
                   goto batch_fail;
                }
-               ret.res->upsertedcount += (int64_t) nUpserted;
+               ret.res->upsertedcount += nUpserted;
             }
 
             if (bson_iter_init_find (&iter, &cmd_reply, "writeConcernError")) {
@@ -1657,16 +1694,16 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                   }
 
                   // Parse `idx`.
-                  int32_t idx;
+                  int64_t idx;
                   {
-                     if (!lookup_int32 (result, "idx", &idx, "result", ret.exc)) {
+                     if (!lookup_as_int64 (result, "idx", &idx, "result", ret.exc)) {
                         goto batch_fail;
                      }
                      if (idx < 0) {
                         bson_set_error (&error,
                                         MONGOC_ERROR_COMMAND,
                                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                        "expected to find non-negative int32 `idx` in "
+                                        "expected to find non-negative int64 `idx` in "
                                         "result, but did not");
                         _bulkwriteexception_set_error (ret.exc, &error);
                         goto batch_fail;
@@ -1715,14 +1752,14 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                      case MODEL_OP_UPDATE: {
                         bson_iter_t result_iter;
                         // Parse `n`.
-                        int32_t n;
-                        if (!lookup_int32 (result, "n", &n, "result", ret.exc)) {
+                        int64_t n;
+                        if (!lookup_as_int64 (result, "n", &n, "result", ret.exc)) {
                            goto batch_fail;
                         }
 
                         // Parse `nModified`.
-                        int32_t nModified;
-                        if (!lookup_int32 (result, "nModified", &nModified, "result", ret.exc)) {
+                        int64_t nModified;
+                        if (!lookup_as_int64 (result, "nModified", &nModified, "result", ret.exc)) {
                            goto batch_fail;
                         }
 
@@ -1748,8 +1785,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                      }
                      case MODEL_OP_DELETE: {
                         // Parse `n`.
-                        int32_t n;
-                        if (!lookup_int32 (result, "n", &n, "result", ret.exc)) {
+                        int64_t n;
+                        if (!lookup_as_int64 (result, "n", &n, "result", ret.exc)) {
                            goto batch_fail;
                         }
 
