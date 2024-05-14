@@ -958,6 +958,7 @@ prose_test_11_fixture_new (void)
    tf->maxMessageSizeBytes = sl.maxMessageSizeBytes;
    tf->maxBsonObjectSize = sl.maxBsonObjectSize;
 
+   // See CRUD prose test 12 description for the calculation of these values.
    const int32_t opsBytes = tf->maxMessageSizeBytes - 1122;
    tf->numModels = opsBytes / tf->maxBsonObjectSize;
    const int32_t remainderBytes = opsBytes % tf->maxBsonObjectSize;
