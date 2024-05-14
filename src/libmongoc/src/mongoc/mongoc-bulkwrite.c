@@ -1581,9 +1581,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       }
    }
 
-
-   // Send one or more `bulkWrite` commands. Split input payload if necessary to
-   // satisfy server size limits.
    int32_t maxWriteBatchSize = mongoc_server_stream_max_write_batch_size (ss);
    int32_t maxMessageSizeBytes = mongoc_server_stream_max_msg_size (ss);
    // `ops_doc_offset` is an offset into the `ops` document sequence. Counts the number of documents sent.
@@ -1599,6 +1596,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       opmsg_overhead += cmd.len;
    }
 
+   // Send one or more `bulkWrite` commands. Split input payload if necessary to satisfy server size limits.
    while (true) {
       bool has_write_errors = false;
       bool batch_ok = false;
