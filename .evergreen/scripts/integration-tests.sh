@@ -16,6 +16,7 @@
 # This script may be run locally.
 #
 
+set -x
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
