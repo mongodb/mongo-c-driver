@@ -570,7 +570,9 @@ test_match (void)
                          {"$$type array match", "{'a': {'$$type': ['string', 'int']}}", "{'a': 1}", true},
                          {"$$type array mismatch", "{'a': {'$$type': ['string', 'int']}}", "{'a': 1.2}", false},
                          {"extra keys in root ok", "{'a': 1}", "{'a': 1, 'b': 2}", true},
-                         {"extra keys in subdoc not ok", "{'a': {'b': 1}}", "{'a': {'b': 1, 'c': 2}}", false}};
+                         {"extra keys in subdoc not ok", "{'a': {'b': 1}}", "{'a': {'b': 1, 'c': 2}}", false},
+                         {"numeric type mismatch is ok", "{'a': 1}", "{'a': 1.0}", true},
+                         {"comparing number to string is an error", "{'a': 1}", "{'a': 'foo'}", false}};
    int i;
 
    for (i = 0; i < sizeof (tests) / sizeof (testcase_t); i++) {
