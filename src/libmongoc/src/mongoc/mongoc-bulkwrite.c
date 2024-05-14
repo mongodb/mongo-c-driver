@@ -1292,6 +1292,136 @@ _bulkwritereturn_apply_reply (mongoc_bulkwritereturn_t *self, const bson_t *cmd_
    return true;
 }
 
+// `_bulkwritereturn_apply_result` applies an individual cursor result to the returned results.
+static bool
+_bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
+                               const bson_t *result,
+                               size_t ops_doc_offset,
+                               const mongoc_array_t *arrayof_modeldata)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (result);
+   BSON_ASSERT_PARAM (arrayof_modeldata);
+
+   bson_error_t error;
+
+   // Parse for `ok`.
+   int64_t ok;
+   if (!lookup_as_int64 (result, "ok", &ok, "result", self->exc)) {
+      return false;
+   }
+
+   // Parse `idx`.
+   int64_t idx;
+   {
+      if (!lookup_as_int64 (result, "idx", &idx, "result", self->exc)) {
+         return false;
+      }
+      if (idx < 0) {
+         bson_set_error (&error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "expected to find non-negative int64 `idx` in "
+                         "result, but did not");
+         _bulkwriteexception_set_error (self->exc, &error);
+         return false;
+      }
+   }
+
+   BSON_ASSERT (bson_in_range_size_t_signed (idx));
+   // `models_idx` is the index of the model that produced this result.
+   size_t models_idx = (size_t) idx + ops_doc_offset;
+   if (ok == 0) {
+      bson_iter_t result_iter;
+
+      // Parse `code`.
+      int32_t code;
+      if (!lookup_int32 (result, "code", &code, "result", self->exc)) {
+         return false;
+      }
+
+      // Parse `errmsg`.
+      const char *errmsg;
+      if (!lookup_string (result, "errmsg", &errmsg, "result", self->exc)) {
+         return false;
+      }
+
+      // Parse optional `errInfo`.
+      bson_t errInfo = BSON_INITIALIZER;
+      if (bson_iter_init_find (&result_iter, result, "errInfo")) {
+         if (!_mongoc_iter_document_as_bson (&result_iter, &errInfo, &error)) {
+            _bulkwriteexception_set_error (self->exc, &error);
+            return false;
+         }
+      }
+
+      // Store a copy of the write error.
+      _bulkwriteexception_set_writeerror (self->exc, code, errmsg, &errInfo, models_idx);
+   } else {
+      // This is a successful result of an individual operation.
+      // Server only reports successful results of individual
+      // operations when verbose results are requested
+      // (`errorsOnly: false` is sent).
+
+      modeldata_t *md = &_mongoc_array_index (arrayof_modeldata, modeldata_t, models_idx);
+      // Check if model is an update.
+      switch (md->op) {
+      case MODEL_OP_UPDATE: {
+         bson_iter_t result_iter;
+         // Parse `n`.
+         int64_t n;
+         if (!lookup_as_int64 (result, "n", &n, "result", self->exc)) {
+            return false;
+         }
+
+         // Parse `nModified`.
+         int64_t nModified;
+         if (!lookup_as_int64 (result, "nModified", &nModified, "result", self->exc)) {
+            return false;
+         }
+
+         // Check for an optional `upserted._id`.
+         const bson_value_t *upserted_id = NULL;
+         bson_iter_t id_iter;
+         if (bson_iter_init_find (&result_iter, result, "upserted")) {
+            BSON_ASSERT (bson_iter_init (&result_iter, result));
+            if (!bson_iter_find_descendant (&result_iter, "upserted._id", &id_iter)) {
+               bson_set_error (&error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "expected `upserted` to be a document "
+                               "containing `_id`, but did not find `_id`");
+               _bulkwriteexception_set_error (self->exc, &error);
+               return false;
+            }
+            upserted_id = bson_iter_value (&id_iter);
+         }
+
+         _bulkwriteresult_set_updateresult (self->res, n, nModified, upserted_id, models_idx);
+         break;
+      }
+      case MODEL_OP_DELETE: {
+         // Parse `n`.
+         int64_t n;
+         if (!lookup_as_int64 (result, "n", &n, "result", self->exc)) {
+            return false;
+         }
+
+         _bulkwriteresult_set_deleteresult (self->res, n, models_idx);
+         break;
+      }
+      case MODEL_OP_INSERT: {
+         _bulkwriteresult_set_insertresult (self->res, &md->id_iter, models_idx);
+         break;
+      }
+      default:
+         // Add an unreachable default case to silence `switch-default` warnings.
+         BSON_UNREACHABLE ("unexpected default");
+      }
+   }
+   return true;
+}
+
 BSON_EXPORT (void)
 mongoc_bulkwrite_set_session (mongoc_bulkwrite_t *self, mongoc_client_session_t *session)
 {
@@ -1665,125 +1795,14 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                   }
                }
 
-               // Iterate.
+               // Iterate over cursor results.
                const bson_t *result;
                while (mongoc_cursor_next (reply_cursor, &result)) {
-                  // Parse for `ok`.
-                  int64_t ok;
-                  if (!lookup_as_int64 (result, "ok", &ok, "result", ret.exc)) {
+                  if (!_bulkwritereturn_apply_result (&ret, result, ops_doc_offset, &self->arrayof_modeldata)) {
                      goto batch_fail;
                   }
-
-                  // Parse `idx`.
-                  int64_t idx;
-                  {
-                     if (!lookup_as_int64 (result, "idx", &idx, "result", ret.exc)) {
-                        goto batch_fail;
-                     }
-                     if (idx < 0) {
-                        bson_set_error (&error,
-                                        MONGOC_ERROR_COMMAND,
-                                        MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                        "expected to find non-negative int64 `idx` in "
-                                        "result, but did not");
-                        _bulkwriteexception_set_error (ret.exc, &error);
-                        goto batch_fail;
-                     }
-                  }
-
-                  BSON_ASSERT (bson_in_range_size_t_signed (idx));
-                  // `models_idx` is the index of the model that produced this result.
-                  size_t models_idx = (size_t) idx + ops_doc_offset;
-                  if (ok == 0) {
-                     bson_iter_t result_iter;
-                     has_write_errors = true;
-
-                     // Parse `code`.
-                     int32_t code;
-                     if (!lookup_int32 (result, "code", &code, "result", ret.exc)) {
-                        goto batch_fail;
-                     }
-
-                     // Parse `errmsg`.
-                     const char *errmsg;
-                     if (!lookup_string (result, "errmsg", &errmsg, "result", ret.exc)) {
-                        goto batch_fail;
-                     }
-
-                     // Parse optional `errInfo`.
-                     bson_t errInfo = BSON_INITIALIZER;
-                     if (bson_iter_init_find (&result_iter, result, "errInfo")) {
-                        if (!_mongoc_iter_document_as_bson (&result_iter, &errInfo, &error)) {
-                           _bulkwriteexception_set_error (ret.exc, &error);
-                           goto batch_fail;
-                        }
-                     }
-
-                     // Store a copy of the write error.
-                     _bulkwriteexception_set_writeerror (ret.exc, code, errmsg, &errInfo, models_idx);
-                  } else {
-                     // This is a successful result of an individual operation.
-                     // Server only reports successful results of individual
-                     // operations when verbose results are requested
-                     // (`errorsOnly: false` is sent).
-
-                     modeldata_t *md = &_mongoc_array_index (&self->arrayof_modeldata, modeldata_t, models_idx);
-                     // Check if model is an update.
-                     switch (md->op) {
-                     case MODEL_OP_UPDATE: {
-                        bson_iter_t result_iter;
-                        // Parse `n`.
-                        int64_t n;
-                        if (!lookup_as_int64 (result, "n", &n, "result", ret.exc)) {
-                           goto batch_fail;
-                        }
-
-                        // Parse `nModified`.
-                        int64_t nModified;
-                        if (!lookup_as_int64 (result, "nModified", &nModified, "result", ret.exc)) {
-                           goto batch_fail;
-                        }
-
-                        // Check for an optional `upserted._id`.
-                        const bson_value_t *upserted_id = NULL;
-                        bson_iter_t id_iter;
-                        if (bson_iter_init_find (&result_iter, result, "upserted")) {
-                           BSON_ASSERT (bson_iter_init (&result_iter, result));
-                           if (!bson_iter_find_descendant (&result_iter, "upserted._id", &id_iter)) {
-                              bson_set_error (&error,
-                                              MONGOC_ERROR_COMMAND,
-                                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                              "expected `upserted` to be a document "
-                                              "containing `_id`, but did not find `_id`");
-                              _bulkwriteexception_set_error (ret.exc, &error);
-                              goto batch_fail;
-                           }
-                           upserted_id = bson_iter_value (&id_iter);
-                        }
-
-                        _bulkwriteresult_set_updateresult (ret.res, n, nModified, upserted_id, models_idx);
-                        break;
-                     }
-                     case MODEL_OP_DELETE: {
-                        // Parse `n`.
-                        int64_t n;
-                        if (!lookup_as_int64 (result, "n", &n, "result", ret.exc)) {
-                           goto batch_fail;
-                        }
-
-                        _bulkwriteresult_set_deleteresult (ret.res, n, models_idx);
-                        break;
-                     }
-                     case MODEL_OP_INSERT: {
-                        _bulkwriteresult_set_insertresult (ret.res, &md->id_iter, models_idx);
-                        break;
-                     }
-                     default:
-                        // Add an unreachable default case to silence `switch-default` warnings.
-                        BSON_UNREACHABLE ("unexpected default");
-                     }
-                  }
                }
+               has_write_errors = !bson_empty (&ret.exc->write_errors);
                // Ensure iterating cursor did not error.
                {
                   const bson_t *error_document;
