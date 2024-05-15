@@ -39,6 +39,8 @@ rst_prolog = rf"""
 
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 
+.. _errors: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/tutorials/errors/
+
 """
 
 
