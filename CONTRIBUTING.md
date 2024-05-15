@@ -15,7 +15,7 @@ The mongo-c-driver has a few guidelines that help direct the process.
 ### Portability
 
 mongo-c-driver is portable software. It needs to run on a multitude of
-[Supported Platforms](https://mongoc.org/libmongoc/current/installing.html#supported-platforms).
+[Supported Platforms](https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/ref/platforms/).
 
 
 ### Licensing
