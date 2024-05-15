@@ -209,6 +209,8 @@ rst_prolog = rf"""
 
 .. _in-use-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/in-use-encryption/
 
+.. _manage-collection-indexes: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/manage-collection-indexes/
+
 """
 
 
