@@ -35,6 +35,12 @@ html_sidebars = {}
 
 html_use_index = False
 
+rst_prolog = rf"""
+
+.. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
+
+"""
+
 
 def add_canonical_link(app, pagename, templatename, context, doctree):
     link = f'<link rel="canonical" href="https://www.mongoc.org/libbson/current/{pagename}"/>'
