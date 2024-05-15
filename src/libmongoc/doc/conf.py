@@ -219,6 +219,8 @@ rst_prolog = rf"""
 
 .. _cursors_tailable: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/cursors/#tailable-cursors
 
+.. _bson_errors: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/tutorials/errors/
+
 """
 
 
