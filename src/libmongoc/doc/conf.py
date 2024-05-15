@@ -201,6 +201,8 @@ rst_prolog = rf"""
 
 .. _bulk: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/
 
+.. _client-side-field-level-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/client-side-field-level-encryption/
+
 """
 
 

@@ -21,7 +21,7 @@ Parameters
 
 Supplying a schema map provides more security than relying on JSON Schemas obtained from the server. It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.
 
-Schemas supplied in the schema map only apply to configuring automatic encryption for :doc:`Client-Side Field Level Encryption </client-side-field-level-encryption>`. Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
+Schemas supplied in the schema map only apply to configuring automatic encryption for `Client-Side Field Level Encryption <client-side-field-level-encryption_>`_. Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
 
 The following is an example of a schema map which configures automatic encryption for the collection ``db.coll``:
 
