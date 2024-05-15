@@ -199,6 +199,8 @@ rst_prolog = rf"""
 
 .. _authentication: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/authentication/
 
+.. _bulk: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/
+
 """
 
 

@@ -51,7 +51,7 @@ A write concern timeout or write concern error is considered a failure.
 Basic Write Operations
 ----------------------
 
-Do not use this function to call the basic write commands "insert", "update", and "delete". Those commands require special logic not implemented in ``mongoc_collection_write_command_with_opts``. For basic write operations use CRUD functions such as :symbol:`mongoc_collection_insert_one` and the others described in :ref:`the CRUD tutorial <tutorial_crud_operations>`, or use the :doc:`Bulk API <bulk>`.
+Do not use this function to call the basic write commands "insert", "update", and "delete". Those commands require special logic not implemented in ``mongoc_collection_write_command_with_opts``. For basic write operations use CRUD functions such as :symbol:`mongoc_collection_insert_one` and the others described in :ref:`the CRUD tutorial <tutorial_crud_operations>`, or use the `Bulk API <bulk_>`_.
 
 Example
 -------
