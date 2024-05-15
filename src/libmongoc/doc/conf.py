@@ -211,6 +211,8 @@ rst_prolog = rf"""
 
 .. _manage-collection-indexes: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/manage-collection-indexes/
 
+.. _setting_collation_order: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/#setting-collation-order
+
 """
 
 
