@@ -213,6 +213,8 @@ rst_prolog = rf"""
 
 .. _setting_collation_order: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/#setting-collation-order
 
+.. _tutorial_crud_operations: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/tutorial/#basic-crud-operations
+
 """
 
 
