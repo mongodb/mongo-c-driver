@@ -10,21 +10,6 @@ libbson builds, parses, and iterates `BSON <http://bsonspec.org>`_ documents, th
 
 .. toctree::
   :titlesonly:
-
-  tutorial
-
-.. toctree::
-  :titlesonly:
-
-  guides
-
-.. toctree::
-  :titlesonly:
-
-  cross-platform-notes
-
-.. toctree::
-  :titlesonly:
   :maxdepth: 2
 
   api
