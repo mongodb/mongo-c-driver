@@ -73,7 +73,7 @@ information:
 
   Can you tell me what I need to install? Thanks!
 
-.. _MongoDB Community Forums: https://community.mongodb.com/tags/c/drivers-odms-connectors/7/c-driver
+.. _MongoDB Community Forums: https://www.mongodb.com/community/forums/tags/c/data/drivers/7/c-driver
 
 Security Vulnerabilities
 ------------------------
