@@ -1,7 +1,9 @@
-libmongoc
-=========
+libmongoc - API
+===============
 
 A Cross Platform MongoDB Client Library for C
+
+This site documents API. For tutorials, guides, and explainers, see `MongoDB C Driver <mongodb_docs_cdriver_>`_.
 
 Introduction
 ------------
@@ -10,7 +12,6 @@ The MongoDB C Driver, also known as "libmongoc", is a library for using MongoDB 
 
 It depends on :doc:`libbson <bson:index>` to generate and parse BSON documents, the native data format of MongoDB.
 
-This site documents API. For tutorials, guides, and explainers, see `MongoDB with C <https://www.mongodb.com/docs/languages/c/>`_.
 
 .. toctree::
    :maxdepth: 2

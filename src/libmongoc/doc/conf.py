@@ -193,6 +193,7 @@ rst_prolog = rf"""
 .. |bson_t-opt-storage-ptr| replace::
     maybe-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
 
+.. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 """
 
 
