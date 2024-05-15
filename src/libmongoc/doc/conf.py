@@ -131,7 +131,7 @@ rst_prolog = rf"""
 .. |qenc:is-experimental| replace::
 
     is part of the experimental
-    :doc:`Queryable Encryption </queryable-encryption>` API and may be subject
+    `Queryable Encryption <queryable-encryption_>`_ API and may be subject
     to breaking changes in future releases.
 
 .. |qenc:opt-is-experimental| replace::
@@ -194,6 +194,9 @@ rst_prolog = rf"""
     maybe-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
 
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
+
+.. _queryable-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/queryable-encryption/
+
 """
 
 

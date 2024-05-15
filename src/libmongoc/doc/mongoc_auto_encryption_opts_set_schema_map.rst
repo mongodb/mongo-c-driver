@@ -49,7 +49,7 @@ The following is an example of a schema map which configures automatic encryptio
         }
     }
 
-The schema map does not apply to collections encrypted with: :doc:`Queryable Encryption </queryable-encryption>`. Use :symbol:`mongoc_auto_encryption_opts_set_encrypted_fields_map()` instead.
+The schema map does not apply to collections encrypted with: `Queryable Encryption <queryable-encryption_>`_. Use :symbol:`mongoc_auto_encryption_opts_set_encrypted_fields_map()` instead.
 
 .. seealso::
 

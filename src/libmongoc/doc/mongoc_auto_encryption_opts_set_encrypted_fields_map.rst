@@ -22,7 +22,7 @@ Parameters
 
 Supplying an ``encrypted_fields_map`` provides more security than relying on an ``encryptedFields`` obtained from the server. It protects against a malicious server advertising a false ``encryptedFields``.
 
-The schema map does not apply to collections encrypted with: :doc:`Queryable Encryption </queryable-encryption>`. See :symbol:`mongoc_auto_encryption_opts_set_schema_map()` instead.
+The schema map does not apply to collections encrypted with: `Queryable Encryption <queryable-encryption_>`_. See :symbol:`mongoc_auto_encryption_opts_set_schema_map()` instead.
 
 .. seealso::
 
