@@ -28,5 +28,5 @@ The schema map does not apply to collections encrypted with: `Queryable Encrypti
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | :doc:`in-use-encryption`
+  | `In-Use Encryption <in-use-encryption_>`_
 

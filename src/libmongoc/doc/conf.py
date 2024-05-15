@@ -207,6 +207,8 @@ rst_prolog = rf"""
 
 .. _connection-pooling: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/connection-pooling/
 
+.. _in-use-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/in-use-encryption/
+
 """
 
 

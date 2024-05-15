@@ -50,5 +50,5 @@ See `Configuring TLS <configuring_tls_>`_ for a description of the behavior of t
 
 .. seealso::
 
-  | :doc:`in-use-encryption`
+  | `In-Use Encryption <in-use-encryption_>`_
 

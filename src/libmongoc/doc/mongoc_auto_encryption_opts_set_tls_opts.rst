@@ -51,5 +51,5 @@ See `Configuring TLS <configuring_tls_>`_ for a description of the behavior of t
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | :doc:`in-use-encryption`
+  | `In-Use Encryption <in-use-encryption_>`_
 

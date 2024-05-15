@@ -87,5 +87,5 @@ KMS providers may include an optional name suffix separate with a colon. This en
 
   | :symbol:`mongoc_client_encryption_new()`
 
-  | :doc:`in-use-encryption`
+  | `In-Use Encryption <in-use-encryption_>`_
 
