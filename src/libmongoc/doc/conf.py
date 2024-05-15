@@ -197,6 +197,8 @@ rst_prolog = rf"""
 
 .. _queryable-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/queryable-encryption/
 
+.. _authentication: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/authentication/
+
 """
 
 
