@@ -217,6 +217,8 @@ rst_prolog = rf"""
 
 .. _bulk_operation_bypassing_document_validation: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/#bulk-operation-bypassing-document-validation
 
+.. _cursors_tailable: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/cursors/#tailable-cursors
+
 """
 
 
