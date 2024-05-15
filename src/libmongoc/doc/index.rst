@@ -18,5 +18,3 @@ This site documents API. For tutorials, guides, and explainers, see `MongoDB wit
    api
    application-performance-monitoring
 
-
-* :ref:`genindex`
