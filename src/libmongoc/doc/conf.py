@@ -203,6 +203,8 @@ rst_prolog = rf"""
 
 .. _client-side-field-level-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/client-side-field-level-encryption/
 
+.. _configuring_tls: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/configuring_tls/
+
 """
 
 

@@ -142,7 +142,7 @@ TLS Options
 
 .. include:: includes/tls-options.txt
 
-See :doc:`configuring_tls` for details about these options and about building libmongoc with TLS support.
+See `Configuring TLS <configuring_tls_>`_ for details about these options and about building libmongoc with TLS support.
 
 Deprecated SSL Options
 ----------------------
