@@ -3,7 +3,7 @@ libmongoc - API
 
 A Cross Platform MongoDB Client Library for C
 
-This site documents API. For tutorials, guides, and explainers, see `MongoDB C Driver <mongodb_docs_cdriver_>`_.
+This site documents the API. For tutorials, guides, and explainers, see `MongoDB C Driver <mongodb_docs_cdriver_>`_.
 
 Introduction
 ------------

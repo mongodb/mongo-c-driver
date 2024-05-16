@@ -7,7 +7,7 @@ The MongoDB C Driver, also known as "libmongoc", is a library for using MongoDB 
 
 It depends on `libbson <libbson/current/index.html>`_ to generate and parse BSON documents, the native data format of MongoDB.
 
-This site documents API. For tutorials, guides, and explainers, see `MongoDB C Driver <mongodb_docs_cdriver_>`_.
+This site documents the API. For tutorials, guides, and explainers, see `MongoDB C Driver <mongodb_docs_cdriver_>`_.
 
 Download
 --------
