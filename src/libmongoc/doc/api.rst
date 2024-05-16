@@ -12,6 +12,7 @@ API Reference
    gridfs
    mongoc_auto_encryption_opts_t
    mongoc_bulkwriteopts_t
+   mongoc_bulkwriteresult_t
    mongoc_bulk_operation_t
    mongoc_change_stream_t
    mongoc_client_encryption_t
