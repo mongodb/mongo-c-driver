@@ -1455,9 +1455,37 @@ mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id)
    return true;
 }
 
+bool
+mongoc_cursor_set_server_id (mongoc_cursor_t *cursor, uint32_t server_id)
+{
+   BSON_ASSERT (cursor);
+
+   if (cursor->server_id) {
+      MONGOC_ERROR ("mongoc_cursor_set_server_id: server_id already set");
+      return false;
+   }
+
+   if (!server_id) {
+      MONGOC_ERROR ("mongoc_cursor_set_server_id: cannot set server_id to 0");
+      return false;
+   }
+
+   cursor->server_id = server_id;
+
+   return true;
+}
+
 
 uint32_t
 mongoc_cursor_get_hint (const mongoc_cursor_t *cursor)
+{
+   BSON_ASSERT (cursor);
+
+   return cursor->server_id;
+}
+
+uint32_t
+mongoc_cursor_get_server_id (const mongoc_cursor_t *cursor)
 {
    BSON_ASSERT (cursor);
 

@@ -131,12 +131,18 @@ mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk, void *client);
 MONGOC_EXPORT (void)
 mongoc_bulk_operation_set_client_session (mongoc_bulk_operation_t *bulk,
                                           struct _mongoc_client_session_t *client_session);
-/* These names include the term "hint" for backward compatibility, should be
- * mongoc_bulk_operation_get_server_id, mongoc_bulk_operation_set_server_id. */
+// `mongoc_bulk_operation_set_hint` is deprecated for the more aptly named `mongoc_bulk_operation_set_server_id`.
 MONGOC_EXPORT (void)
-mongoc_bulk_operation_set_hint (mongoc_bulk_operation_t *bulk, uint32_t server_id);
+mongoc_bulk_operation_set_hint (mongoc_bulk_operation_t *bulk, uint32_t server_id)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_bulk_operation_set_server_id);
+MONGOC_EXPORT (void)
+mongoc_bulk_operation_set_server_id (mongoc_bulk_operation_t *bulk, uint32_t server_id);
+// `mongoc_bulk_operation_get_hint` is deprecated for the more aptly named `mongoc_bulk_operation_get_server_id`.
 MONGOC_EXPORT (uint32_t)
-mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk);
+mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_bulk_operation_get_server_id);
+MONGOC_EXPORT (uint32_t)
+mongoc_bulk_operation_get_server_id (const mongoc_bulk_operation_t *bulk);
 MONGOC_EXPORT (const mongoc_write_concern_t *)
 mongoc_bulk_operation_get_write_concern (const mongoc_bulk_operation_t *bulk);
 BSON_END_DECLS
