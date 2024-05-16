@@ -23,7 +23,7 @@ _mongoc_insert_one_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_insert_one_opts->crud.writeConcern = NULL;
    mongoc_insert_one_opts->crud.write_concern_owned = false;
@@ -130,7 +130,7 @@ _mongoc_insert_many_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_insert_many_opts->crud.writeConcern = NULL;
    mongoc_insert_many_opts->crud.write_concern_owned = false;
@@ -247,7 +247,7 @@ _mongoc_delete_one_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_delete_one_opts->delete.crud.writeConcern = NULL;
    mongoc_delete_one_opts->delete.crud.write_concern_owned = false;
@@ -377,7 +377,7 @@ _mongoc_delete_many_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_delete_many_opts->delete.crud.writeConcern = NULL;
    mongoc_delete_many_opts->delete.crud.write_concern_owned = false;
@@ -507,7 +507,7 @@ _mongoc_update_one_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_update_one_opts->update.crud.writeConcern = NULL;
    mongoc_update_one_opts->update.crud.write_concern_owned = false;
@@ -668,7 +668,7 @@ _mongoc_update_many_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_update_many_opts->update.crud.writeConcern = NULL;
    mongoc_update_many_opts->update.crud.write_concern_owned = false;
@@ -829,7 +829,7 @@ _mongoc_replace_one_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_replace_one_opts->update.crud.writeConcern = NULL;
    mongoc_replace_one_opts->update.crud.write_concern_owned = false;
@@ -979,7 +979,7 @@ _mongoc_bulk_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_bulk_opts->writeConcern = NULL;
    mongoc_bulk_opts->write_concern_owned = false;
@@ -1082,7 +1082,7 @@ _mongoc_bulk_insert_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_bulk_insert_opts->validate = _mongoc_default_insert_vflags;
    bson_init (&mongoc_bulk_insert_opts->extra);
@@ -1137,7 +1137,7 @@ _mongoc_bulk_update_one_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_bulk_update_one_opts->update.validate = _mongoc_default_update_vflags;
    bson_init (&mongoc_bulk_update_one_opts->update.collation);
@@ -1245,7 +1245,7 @@ _mongoc_bulk_update_many_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_bulk_update_many_opts->update.validate = _mongoc_default_update_vflags;
    bson_init (&mongoc_bulk_update_many_opts->update.collation);
@@ -1353,7 +1353,7 @@ _mongoc_bulk_replace_one_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_bulk_replace_one_opts->update.validate = _mongoc_default_replace_vflags;
    bson_init (&mongoc_bulk_replace_one_opts->update.collation);
@@ -1450,7 +1450,7 @@ _mongoc_bulk_remove_one_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    bson_init (&mongoc_bulk_remove_one_opts->remove.collation);
    memset (&mongoc_bulk_remove_one_opts->remove.hint, 0, sizeof (bson_value_t));
@@ -1527,7 +1527,7 @@ _mongoc_bulk_remove_many_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    bson_init (&mongoc_bulk_remove_many_opts->remove.collation);
    memset (&mongoc_bulk_remove_many_opts->remove.hint, 0, sizeof (bson_value_t));
@@ -1604,7 +1604,7 @@ _mongoc_change_stream_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_change_stream_opts->batchSize = 0;
    bson_init (&mongoc_change_stream_opts->resumeAfter);
@@ -1747,7 +1747,7 @@ _mongoc_create_index_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_create_index_opts->writeConcern = NULL;
    mongoc_create_index_opts->write_concern_owned = false;
@@ -1823,7 +1823,7 @@ _mongoc_read_write_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    bson_init (&mongoc_read_write_opts->readConcern);
    mongoc_read_write_opts->writeConcern = NULL;
@@ -1931,7 +1931,7 @@ _mongoc_gridfs_bucket_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_gridfs_bucket_opts->bucketName = "fs";
    mongoc_gridfs_bucket_opts->chunkSizeBytes = 261120;
@@ -2028,7 +2028,7 @@ _mongoc_gridfs_bucket_upload_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_gridfs_bucket_upload_opts->chunkSizeBytes = 0;
    bson_init (&mongoc_gridfs_bucket_upload_opts->metadata);
@@ -2099,7 +2099,7 @@ _mongoc_aggregate_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_aggregate_opts->readConcern = NULL;
    mongoc_aggregate_opts->writeConcern = NULL;
@@ -2263,7 +2263,7 @@ _mongoc_find_and_modify_appended_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    mongoc_find_and_modify_appended_opts->writeConcern = NULL;
    mongoc_find_and_modify_appended_opts->write_concern_owned = false;
@@ -2372,7 +2372,7 @@ _mongoc_count_document_opts_parse (
 {
    bson_iter_t iter;
 
-   BSON_ASSERT (client || true); // client may be NULL.
+   BSON_OPTIONAL_PARAM (client); // client may be NULL.
 
    bson_init (&mongoc_count_document_opts->readConcern);
    mongoc_count_document_opts->client_session = NULL;

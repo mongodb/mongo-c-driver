@@ -2223,9 +2223,9 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                   bson_error_t *error)
 {
    BSON_ASSERT_PARAM (cluster);
-   BSON_ASSERT (cs || true);
-   BSON_ASSERT (reply || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (cs);
+   BSON_OPTIONAL_PARAM (reply);
+   BSON_OPTIONAL_PARAM (error);
 
    ENTRY;
 
@@ -2585,11 +2585,11 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
                                   const mongoc_deprioritized_servers_t *ds,
                                   bson_error_t *error)
 {
-   BSON_ASSERT (cs || true);
+   BSON_OPTIONAL_PARAM (cs);
    BSON_ASSERT_PARAM (topology);
-   BSON_ASSERT (read_prefs || true);
+   BSON_OPTIONAL_PARAM (read_prefs);
    BSON_ASSERT_PARAM (must_use_primary);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    uint32_t server_id;
 
@@ -2643,10 +2643,10 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
                                    bson_error_t *error)
 {
    BSON_ASSERT_PARAM (cluster);
-   BSON_ASSERT (read_prefs || true);
-   BSON_ASSERT (cs || true);
-   BSON_ASSERT (reply || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (read_prefs);
+   BSON_OPTIONAL_PARAM (cs);
+   BSON_OPTIONAL_PARAM (reply);
+   BSON_OPTIONAL_PARAM (error);
 
    mongoc_server_stream_t *server_stream;
    uint32_t server_id;
@@ -3669,7 +3669,7 @@ mongoc_cluster_run_retryable_write (mongoc_cluster_t *cluster,
    BSON_ASSERT_PARAM (cmd);
    BSON_ASSERT_PARAM (retry_server_stream);
    BSON_ASSERT_PARAM (reply);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    bool ret;
    // `can_retry` is set to false on retry. A retry may only happen once.

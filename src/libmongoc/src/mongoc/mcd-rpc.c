@@ -270,7 +270,7 @@ _consume_bson_objects (const uint8_t **ptr, size_t *remaining_bytes, int32_t *nu
 {
    BSON_ASSERT_PARAM (ptr);
    BSON_ASSERT_PARAM (remaining_bytes);
-   BSON_ASSERT (num_parsed || true);
+   BSON_OPTIONAL_PARAM (num_parsed);
 
    int32_t count = 0;
 
@@ -814,7 +814,7 @@ mcd_rpc_message *
 mcd_rpc_message_from_data (const void *data, size_t length, const void **data_end)
 {
    BSON_ASSERT_PARAM (data);
-   BSON_ASSERT (data_end || true);
+   BSON_OPTIONAL_PARAM (data_end);
 
    mcd_rpc_message *rpc = bson_malloc (sizeof (mcd_rpc_message));
    mcd_rpc_message *ret = NULL;
@@ -838,7 +838,7 @@ mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc, const void *data, size
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT_PARAM (data);
-   BSON_ASSERT (data_end || true);
+   BSON_OPTIONAL_PARAM (data_end);
 
    bool ret = false;
 

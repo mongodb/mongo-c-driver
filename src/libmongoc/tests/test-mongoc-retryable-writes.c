@@ -1070,8 +1070,8 @@ _test_retry_writes_sharded_on_same_mongos_cb (test_retry_writes_sharded_on_same_
                                               const mongoc_apm_command_succeeded_t *succeeded)
 {
    BSON_ASSERT_PARAM (ctx);
-   BSON_ASSERT (failed || true);
-   BSON_ASSERT (succeeded || true);
+   BSON_OPTIONAL_PARAM (failed);
+   BSON_OPTIONAL_PARAM (succeeded);
 
    ASSERT_WITH_MSG (ctx->failed_count + ctx->succeeded_count < 2,
                     "expected at most two events, but observed %d failed and %d succeeded",

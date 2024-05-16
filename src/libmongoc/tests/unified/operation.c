@@ -3289,8 +3289,8 @@ static bool
 create_loop_bson_array_entity (entity_map_t *em, const char *id, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (em);
-   BSON_ASSERT (id || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (id);
+   BSON_OPTIONAL_PARAM (error);
 
    if (!id) {
       // Nothing to do.
@@ -3323,8 +3323,8 @@ static bool
 create_loop_size_t_entity (entity_map_t *em, const char *id, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (em);
-   BSON_ASSERT (id || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (id);
+   BSON_OPTIONAL_PARAM (error);
 
    if (!id) {
       return true;
@@ -3346,7 +3346,7 @@ static void
 increment_loop_counter (entity_map_t *em, const char *id)
 {
    BSON_ASSERT_PARAM (em);
-   BSON_ASSERT (id || true);
+   BSON_OPTIONAL_PARAM (id);
 
    if (id) {
       bson_error_t error = {0};
@@ -3363,9 +3363,9 @@ static bool
 append_loop_error (entity_map_t *em, const char *id, bson_error_t *op_error, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (em);
-   BSON_ASSERT (id || true);
+   BSON_OPTIONAL_PARAM (id);
    BSON_ASSERT_PARAM (op_error);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    if (!id) {
       return true;

@@ -1339,7 +1339,7 @@ static void
 append_bson_array (bson_t *doc, const char *key, const mongoc_array_t *array)
 {
    BSON_ASSERT_PARAM (key);
-   BSON_ASSERT (array || true);
+   BSON_OPTIONAL_PARAM (array);
 
    if (!array) {
       bson_t empty = BSON_INITIALIZER;

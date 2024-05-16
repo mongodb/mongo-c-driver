@@ -86,14 +86,14 @@ void
 mongoc_bulkwriteopts_set_let (mongoc_bulkwriteopts_t *self, const bson_t *let)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (let || true);
+   BSON_OPTIONAL_PARAM (let);
    set_bson_opt (&self->let, let);
 }
 void
 mongoc_bulkwriteopts_set_writeconcern (mongoc_bulkwriteopts_t *self, const mongoc_write_concern_t *writeconcern)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (writeconcern || true);
+   BSON_OPTIONAL_PARAM (writeconcern);
    mongoc_write_concern_destroy (self->writeconcern);
    self->writeconcern = mongoc_write_concern_copy (writeconcern);
 }
@@ -107,14 +107,14 @@ void
 mongoc_bulkwriteopts_set_comment (mongoc_bulkwriteopts_t *self, const bson_t *comment)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (comment || true);
+   BSON_OPTIONAL_PARAM (comment);
    set_bson_opt (&self->comment, comment);
 }
 void
 mongoc_bulkwriteopts_set_extra (mongoc_bulkwriteopts_t *self, const bson_t *extra)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (extra || true);
+   BSON_OPTIONAL_PARAM (extra);
    set_bson_opt (&self->extra, extra);
 }
 void
@@ -229,8 +229,8 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
    BSON_ASSERT_PARAM (ns);
    BSON_ASSERT_PARAM (document);
    BSON_ASSERT (document->len >= 5);
-   BSON_ASSERT (opts || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (opts);
+   BSON_OPTIONAL_PARAM (error);
 
    ERROR_IF_EXECUTED;
 
@@ -294,7 +294,7 @@ validate_update (const bson_t *update, bool *is_pipeline, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (update);
    BSON_ASSERT_PARAM (is_pipeline);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    bson_iter_t iter;
    *is_pipeline = _mongoc_document_is_pipeline (update);
@@ -336,21 +336,21 @@ void
 mongoc_bulkwrite_updateoneopts_set_arrayfilters (mongoc_bulkwrite_updateoneopts_t *self, const bson_t *arrayfilters)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (arrayfilters || true);
+   BSON_OPTIONAL_PARAM (arrayfilters);
    set_bson_opt (&self->arrayfilters, arrayfilters);
 }
 void
 mongoc_bulkwrite_updateoneopts_set_collation (mongoc_bulkwrite_updateoneopts_t *self, const bson_t *collation)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (collation || true);
+   BSON_OPTIONAL_PARAM (collation);
    set_bson_opt (&self->collation, collation);
 }
 void
 mongoc_bulkwrite_updateoneopts_set_hint (mongoc_bulkwrite_updateoneopts_t *self, const bson_value_t *hint)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (hint || true);
+   BSON_OPTIONAL_PARAM (hint);
    set_hint_opt (&self->hint, hint);
 }
 void
@@ -385,8 +385,8 @@ mongoc_bulkwrite_append_updateone (mongoc_bulkwrite_t *self,
    BSON_ASSERT (filter->len >= 5);
    BSON_ASSERT_PARAM (update);
    BSON_ASSERT (update->len >= 5);
-   BSON_ASSERT (opts || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (opts);
+   BSON_OPTIONAL_PARAM (error);
 
    ERROR_IF_EXECUTED;
 
@@ -446,14 +446,14 @@ void
 mongoc_bulkwrite_replaceoneopts_set_collation (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *collation)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (collation || true);
+   BSON_OPTIONAL_PARAM (collation);
    set_bson_opt (&self->collation, collation);
 }
 void
 mongoc_bulkwrite_replaceoneopts_set_hint (mongoc_bulkwrite_replaceoneopts_t *self, const bson_value_t *hint)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (hint || true);
+   BSON_OPTIONAL_PARAM (hint);
    set_hint_opt (&self->hint, hint);
 }
 void
@@ -476,8 +476,8 @@ mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self
 bool
 validate_replace (const bson_t *doc, bson_error_t *error)
 {
-   BSON_ASSERT (doc || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (doc);
+   BSON_OPTIONAL_PARAM (error);
 
    bson_iter_t iter;
 
@@ -513,8 +513,8 @@ mongoc_bulkwrite_append_replaceone (mongoc_bulkwrite_t *self,
    BSON_ASSERT (filter->len >= 5);
    BSON_ASSERT_PARAM (replacement);
    BSON_ASSERT (replacement->len >= 5);
-   BSON_ASSERT (opts || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (opts);
+   BSON_OPTIONAL_PARAM (error);
 
    ERROR_IF_EXECUTED;
 
@@ -568,21 +568,21 @@ void
 mongoc_bulkwrite_updatemanyopts_set_arrayfilters (mongoc_bulkwrite_updatemanyopts_t *self, const bson_t *arrayfilters)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (arrayfilters || true);
+   BSON_OPTIONAL_PARAM (arrayfilters);
    set_bson_opt (&self->arrayfilters, arrayfilters);
 }
 void
 mongoc_bulkwrite_updatemanyopts_set_collation (mongoc_bulkwrite_updatemanyopts_t *self, const bson_t *collation)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (collation || true);
+   BSON_OPTIONAL_PARAM (collation);
    set_bson_opt (&self->collation, collation);
 }
 void
 mongoc_bulkwrite_updatemanyopts_set_hint (mongoc_bulkwrite_updatemanyopts_t *self, const bson_value_t *hint)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (hint || true);
+   BSON_OPTIONAL_PARAM (hint);
    set_hint_opt (&self->hint, hint);
 }
 void
@@ -617,8 +617,8 @@ mongoc_bulkwrite_append_updatemany (mongoc_bulkwrite_t *self,
    BSON_ASSERT (filter->len >= 5);
    BSON_ASSERT_PARAM (update);
    BSON_ASSERT (update->len >= 5);
-   BSON_ASSERT (opts || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (opts);
+   BSON_OPTIONAL_PARAM (error);
 
    ERROR_IF_EXECUTED;
 
@@ -678,14 +678,14 @@ void
 mongoc_bulkwrite_deleteoneopts_set_collation (mongoc_bulkwrite_deleteoneopts_t *self, const bson_t *collation)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (collation || true);
+   BSON_OPTIONAL_PARAM (collation);
    set_bson_opt (&self->collation, collation);
 }
 void
 mongoc_bulkwrite_deleteoneopts_set_hint (mongoc_bulkwrite_deleteoneopts_t *self, const bson_value_t *hint)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (hint || true);
+   BSON_OPTIONAL_PARAM (hint);
    set_hint_opt (&self->hint, hint);
 }
 void
@@ -710,8 +710,8 @@ mongoc_bulkwrite_append_deleteone (mongoc_bulkwrite_t *self,
    BSON_ASSERT_PARAM (ns);
    BSON_ASSERT_PARAM (filter);
    BSON_ASSERT (filter->len >= 5);
-   BSON_ASSERT (opts || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (opts);
+   BSON_OPTIONAL_PARAM (error);
 
    ERROR_IF_EXECUTED;
 
@@ -784,8 +784,8 @@ mongoc_bulkwrite_append_deletemany (mongoc_bulkwrite_t *self,
    BSON_ASSERT_PARAM (ns);
    BSON_ASSERT_PARAM (filter);
    BSON_ASSERT (filter->len >= 5);
-   BSON_ASSERT (opts || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (opts);
+   BSON_OPTIONAL_PARAM (error);
 
    ERROR_IF_EXECUTED;
 
@@ -928,7 +928,7 @@ _bulkwriteresult_set_updateresult (
    mongoc_bulkwriteresult_t *self, int64_t n, int64_t nModified, const bson_value_t *upserted_id, size_t models_idx)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (upserted_id || true);
+   BSON_OPTIONAL_PARAM (upserted_id);
 
    bson_t updateresult;
    {
@@ -1117,7 +1117,7 @@ lookup_int32 (const bson_t *bson, const char *key, int32_t *out, const char *sou
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT (source || true);
+   BSON_OPTIONAL_PARAM (source);
    BSON_ASSERT_PARAM (exc);
 
    bson_iter_t iter;
@@ -1152,7 +1152,7 @@ lookup_as_int64 (
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT (source || true);
+   BSON_OPTIONAL_PARAM (source);
    BSON_ASSERT_PARAM (exc);
 
    bson_iter_t iter;
@@ -1186,7 +1186,7 @@ lookup_string (
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT (source || true);
+   BSON_OPTIONAL_PARAM (source);
    BSON_ASSERT_PARAM (exc);
 
    bson_iter_t iter;
@@ -1426,7 +1426,7 @@ BSON_EXPORT (void)
 mongoc_bulkwrite_set_session (mongoc_bulkwrite_t *self, mongoc_client_session_t *session)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (session || true);
+   BSON_OPTIONAL_PARAM (session);
 
    self->session = session;
 }
@@ -1435,7 +1435,7 @@ mongoc_bulkwritereturn_t
 mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t *opts)
 {
    BSON_ASSERT_PARAM (self);
-   BSON_ASSERT (opts || true);
+   BSON_OPTIONAL_PARAM (opts);
 
    mongoc_bulkwritereturn_t ret = {0};
    bson_error_t error = {0};

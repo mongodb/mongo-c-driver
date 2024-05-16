@@ -2243,8 +2243,8 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
 {
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (server_stream);
-   BSON_ASSERT (db || true);
-   BSON_ASSERT (collection || true);
+   BSON_OPTIONAL_PARAM (db);
+   BSON_OPTIONAL_PARAM (collection);
 
    const bool has_ns = db && collection;
    const int64_t started = bson_get_monotonic_time ();
