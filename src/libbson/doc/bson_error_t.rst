@@ -23,7 +23,7 @@ Description
 
 The :symbol:`bson_error_t` structure is used as an out-parameter to pass error information to the caller. It should be stack-allocated and does not requiring freeing.
 
-See :doc:`Handling Errors <errors>`.
+See `Handling Errors <errors_>`_.
 
 .. only:: html
 

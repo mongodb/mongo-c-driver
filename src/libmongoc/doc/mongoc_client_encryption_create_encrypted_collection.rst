@@ -20,7 +20,7 @@ Synopsis
         bson_error_t *error)
     BSON_GNUC_WARN_UNUSED_RESULT;
 
-Create a new collection with :doc:`Queryable Encryption </queryable-encryption>`
+Create a new collection with `Queryable Encryption <queryable-encryption_>`_
 enabled. Requires a valid :symbol:`mongoc_client_encryption_t` object to
 operate.
 

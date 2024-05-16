@@ -3,7 +3,7 @@
 mongoc_client_t
 ===============
 
-A single-threaded MongoDB connection. See :doc:`connection-pooling`.
+A single-threaded MongoDB connection. See `Connection Pooling <connection-pooling_>`_.
 
 Synopsis
 --------

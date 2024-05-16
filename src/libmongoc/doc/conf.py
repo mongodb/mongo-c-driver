@@ -131,7 +131,7 @@ rst_prolog = rf"""
 .. |qenc:is-experimental| replace::
 
     is part of the experimental
-    :doc:`Queryable Encryption </queryable-encryption>` API and may be subject
+    `Queryable Encryption <queryable-encryption_>`_ API and may be subject
     to breaking changes in future releases.
 
 .. |qenc:opt-is-experimental| replace::
@@ -188,10 +188,40 @@ rst_prolog = rf"""
     :cmake:command:`find_package() <command:find_package>`
 
 .. |bson_t-storage-ptr| replace::
-    non-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
+    non-``NULL`` pointer to `overwritable storage <bson_lifetimes_>`_ for a :symbol:`bson_t`
 
 .. |bson_t-opt-storage-ptr| replace::
-    maybe-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
+    maybe-``NULL`` pointer to `overwritable storage <bson_lifetimes_>`_ for a :symbol:`bson_t`
+
+.. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
+
+.. _queryable-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/queryable-encryption/
+
+.. _authentication: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/authentication/
+
+.. _bulk: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/
+
+.. _client-side-field-level-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/client-side-field-level-encryption/
+
+.. _configuring_tls: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/configuring_tls/
+
+.. _connection-pooling: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/connection-pooling/
+
+.. _in-use-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/in-use-encryption/
+
+.. _manage-collection-indexes: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/manage-collection-indexes/
+
+.. _setting_collation_order: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/#setting-collation-order
+
+.. _tutorial_crud_operations: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/tutorial/#basic-crud-operations
+
+.. _bulk_operation_bypassing_document_validation: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/#bulk-operation-bypassing-document-validation
+
+.. _cursors_tailable: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/cursors/#tailable-cursors
+
+.. _bson_errors: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/tutorials/errors/
+
+.. _bson_lifetimes: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/guides/lifetimes/
 
 """
 

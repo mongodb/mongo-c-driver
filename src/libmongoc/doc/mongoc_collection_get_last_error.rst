@@ -19,7 +19,7 @@ Parameters
 Description
 -----------
 
-The mongoc_collection_get_last_error() function returns a bulk result. See :doc:`Bulk Write Operations <bulk>` for examples of bulk results.
+The mongoc_collection_get_last_error() function returns a bulk result. See `Bulk Write Operations <bulk_>`_ for examples of bulk results.
 
 A write_concern must be at least ``MONGOC_WRITE_CONCERN_W_DEFAULT`` in last command execution for this to be available.
 

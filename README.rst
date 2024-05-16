@@ -73,7 +73,7 @@ information:
 
   Can you tell me what I need to install? Thanks!
 
-.. _MongoDB Community Forums: https://community.mongodb.com/tags/c/drivers-odms-connectors/7/c-driver
+.. _MongoDB Community Forums: https://www.mongodb.com/community/forums/tags/c/data/drivers/7/c-driver
 
 Security Vulnerabilities
 ------------------------
@@ -87,12 +87,12 @@ Installation
 ============
 
 Detailed installation instructions are in the manual:
-https://www.mongoc.org/libmongoc/current/installing.html
+https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/tutorials/obtaining-libraries/
 
 
 Resources
 ============
 
-* `Getting Started Tutorial <https://mongoc.org/libmongoc/current/tutorial.html>`_.
+* `Getting Started Tutorial <https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/tutorial>`_.
 * `MongoDB C Driver Examples <https://github.com/mongodb/mongo-c-driver/tree/master/src/libmongoc/examples>`_.
 * Tutorials, videos, and code examples using the MongoDB C Driver can also be found in the `MongoDB Developer Center <https://www.mongodb.com/developer/languages/c/>`_.

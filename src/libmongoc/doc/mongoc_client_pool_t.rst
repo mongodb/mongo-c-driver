@@ -3,7 +3,7 @@
 mongoc_client_pool_t
 ====================
 
-A connection pool for multi-threaded programs. See :doc:`connection-pooling`.
+A connection pool for multi-threaded programs. See `Connection Pooling <connection-pooling_>`_.
 
 Synopsis
 --------
