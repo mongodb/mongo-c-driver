@@ -55,7 +55,7 @@ set_bson_opt (bson_t **dst, const bson_t *src)
 }
 
 static void
-set_hint_opt (bson_value_t *dst, const bson_value_t *src)
+set_bson_value_opt (bson_value_t *dst, const bson_value_t *src)
 {
    BSON_ASSERT_PARAM (dst);
    bson_value_destroy (dst);
@@ -351,7 +351,7 @@ mongoc_bulkwrite_updateoneopts_set_hint (mongoc_bulkwrite_updateoneopts_t *self,
 {
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (hint);
-   set_hint_opt (&self->hint, hint);
+   set_bson_value_opt (&self->hint, hint);
 }
 void
 mongoc_bulkwrite_updateoneopts_set_upsert (mongoc_bulkwrite_updateoneopts_t *self, bool upsert)
@@ -454,7 +454,7 @@ mongoc_bulkwrite_replaceoneopts_set_hint (mongoc_bulkwrite_replaceoneopts_t *sel
 {
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (hint);
-   set_hint_opt (&self->hint, hint);
+   set_bson_value_opt (&self->hint, hint);
 }
 void
 mongoc_bulkwrite_replaceoneopts_set_upsert (mongoc_bulkwrite_replaceoneopts_t *self, bool upsert)
@@ -583,7 +583,7 @@ mongoc_bulkwrite_updatemanyopts_set_hint (mongoc_bulkwrite_updatemanyopts_t *sel
 {
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (hint);
-   set_hint_opt (&self->hint, hint);
+   set_bson_value_opt (&self->hint, hint);
 }
 void
 mongoc_bulkwrite_updatemanyopts_set_upsert (mongoc_bulkwrite_updatemanyopts_t *self, bool upsert)
@@ -686,7 +686,7 @@ mongoc_bulkwrite_deleteoneopts_set_hint (mongoc_bulkwrite_deleteoneopts_t *self,
 {
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (hint);
-   set_hint_opt (&self->hint, hint);
+   set_bson_value_opt (&self->hint, hint);
 }
 void
 mongoc_bulkwrite_deleteoneopts_destroy (mongoc_bulkwrite_deleteoneopts_t *self)
@@ -760,7 +760,7 @@ void
 mongoc_bulkwrite_deletemanyopts_set_hint (mongoc_bulkwrite_deletemanyopts_t *self, const bson_value_t *hint)
 {
    BSON_ASSERT_PARAM (self);
-   set_hint_opt (&self->hint, hint);
+   set_bson_value_opt (&self->hint, hint);
 }
 void
 mongoc_bulkwrite_deletemanyopts_destroy (mongoc_bulkwrite_deletemanyopts_t *self)
