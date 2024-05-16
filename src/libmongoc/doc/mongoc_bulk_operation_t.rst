@@ -12,9 +12,13 @@ Synopsis
 
   typedef struct _mongoc_bulk_operation_t mongoc_bulk_operation_t;
 
-The opaque type ``mongoc_bulk_operation_t`` provides an abstraction for submitting multiple write operations as a single batch.
+Description
+-----------
 
-After adding all of the write operations to the ``mongoc_bulk_operation_t``, call :symbol:`mongoc_bulk_operation_execute()` to execute the operation.
+:symbol:`mongoc_bulk_operation_t` provides an abstraction for submitting multiple write operations as a single batch.
+
+After adding all of the write operations to the :symbol:`mongoc_bulk_operation_t`, call
+:symbol:`mongoc_bulk_operation_execute()` to execute the operation.
 
 .. warning::
 
