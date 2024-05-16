@@ -4151,7 +4151,7 @@ test_aggregate_secondary (void *ctx)
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    if (test_framework_is_replset ()) {
-      ASSERT (test_framework_server_is_secondary (client, mongoc_cursor_get_hint (cursor)));
+      ASSERT (test_framework_server_is_secondary (client, mongoc_cursor_get_server_id (cursor)));
    }
 
    mongoc_read_prefs_destroy (pref);

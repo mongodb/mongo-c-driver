@@ -250,8 +250,8 @@ _test_common_server_hint (void *ctx)
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_client_set_apm_callbacks (client, callbacks, &test_ctx);
    mongoc_apm_callbacks_destroy (callbacks);
-   BSON_ASSERT (mongoc_cursor_set_hint (cursor, sd->id));
-   ASSERT_CMPUINT32 (mongoc_cursor_get_hint (cursor), ==, sd->id);
+   BSON_ASSERT (mongoc_cursor_set_server_id (cursor, sd->id));
+   ASSERT_CMPUINT32 (mongoc_cursor_get_server_id (cursor), ==, sd->id);
    mongoc_server_description_destroy (sd);
 
    BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
@@ -280,8 +280,8 @@ _test_common_opts (void *ctx)
    ASSERT_OR_PRINT (sd, err);
    cursor = ctor (coll);
    /* check that we get what we set. */
-   BSON_ASSERT (mongoc_cursor_set_hint (cursor, sd->id));
-   ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
+   BSON_ASSERT (mongoc_cursor_set_server_id (cursor, sd->id));
+   ASSERT_CMPINT (mongoc_cursor_get_server_id (cursor), ==, sd->id);
 
    /* listDatabases and hello prohibits limit and batchSize */
    if (ctor != _make_array_cursor && ctor != _make_cmd_deprecated_cursor) {
@@ -296,7 +296,7 @@ _test_common_opts (void *ctx)
    /* prime the cursor. */
    ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), cursor->error);
    /* options should be unchanged. */
-   ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
+   ASSERT_CMPINT (mongoc_cursor_get_server_id (cursor), ==, sd->id);
    if (ctor != _make_array_cursor && ctor != _make_cmd_deprecated_cursor) {
       ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
       ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
@@ -308,9 +308,9 @@ _test_common_opts (void *ctx)
    ASSERT_CMPINT (mongoc_cursor_get_max_await_time_ms (cursor), ==, 3);
    /* trying to set hint again logs an error. */
    capture_logs (true);
-   BSON_ASSERT (!mongoc_cursor_set_hint (cursor, 123));
+   BSON_ASSERT (!mongoc_cursor_set_server_id (cursor, 123));
    capture_logs (false);
-   ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
+   ASSERT_CMPINT (mongoc_cursor_get_server_id (cursor), ==, sd->id);
    /* batch size can be set again without issue. */
    mongoc_cursor_set_batch_size (cursor, 4);
    ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 4);
@@ -336,9 +336,9 @@ _test_common_opts_after_prime (void *ctx)
    cursor = ctor (coll);
    /* trying to set hint logs an error. */
    capture_logs (true);
-   BSON_ASSERT (!mongoc_cursor_set_hint (cursor, 123));
+   BSON_ASSERT (!mongoc_cursor_set_server_id (cursor, 123));
    capture_logs (false);
-   ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), !=, 0);
+   ASSERT_CMPINT (mongoc_cursor_get_server_id (cursor), !=, 0);
    /* batch size can be set again without issue. */
    mongoc_cursor_set_batch_size (cursor, 4);
    ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 4);
@@ -366,9 +366,9 @@ _test_common_opts_agg (void *ctx)
    cursor = ctor (coll);
    /* trying to set hint logs an error. */
    capture_logs (true);
-   BSON_ASSERT (!mongoc_cursor_set_hint (cursor, 123));
+   BSON_ASSERT (!mongoc_cursor_set_server_id (cursor, 123));
    capture_logs (false);
-   ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), !=, 0);
+   ASSERT_CMPINT (mongoc_cursor_get_server_id (cursor), !=, 0);
    /* batch size can be set again without issue. */
    mongoc_cursor_set_batch_size (cursor, 4);
    ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 4);
@@ -913,7 +913,7 @@ _test_cursor_new_from_command (const char *cmd_json, const char *collection_name
    cmd_cursor =
       mongoc_cursor_new_from_command_reply_with_opts (client, &reply, tmp_bson ("{'serverId': %d}", server_id));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cmd_cursor, &error), error);
-   ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cmd_cursor));
+   ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_server_id (cmd_cursor));
    ASSERT_CMPINT (count_docs (cmd_cursor), ==, 2);
 
    mongoc_cursor_destroy (cmd_cursor);
@@ -1319,18 +1319,18 @@ test_cursor_hint_errors (void)
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
 
    capture_logs (true);
-   ASSERT (!mongoc_cursor_set_hint (cursor, 0));
-   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint", MONGOC_LOG_LEVEL_ERROR, "cannot set server_id to 0");
+   ASSERT (!mongoc_cursor_set_server_id (cursor, 0));
+   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_server_id", MONGOC_LOG_LEVEL_ERROR, "cannot set server_id to 0");
 
    capture_logs (true); /* clear logs */
-   ASSERT (mongoc_cursor_set_hint (cursor, 123));
-   ASSERT_CMPUINT32 ((uint32_t) 123, ==, mongoc_cursor_get_hint (cursor));
-   ASSERT_NO_CAPTURED_LOGS ("mongoc_cursor_set_hint");
-   ASSERT (!mongoc_cursor_set_hint (cursor, 42));
-   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint", MONGOC_LOG_LEVEL_ERROR, "server_id already set");
+   ASSERT (mongoc_cursor_set_server_id (cursor, 123));
+   ASSERT_CMPUINT32 ((uint32_t) 123, ==, mongoc_cursor_get_server_id (cursor));
+   ASSERT_NO_CAPTURED_LOGS ("mongoc_cursor_set_server_id");
+   ASSERT (!mongoc_cursor_set_server_id (cursor, 42));
+   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_server_id", MONGOC_LOG_LEVEL_ERROR, "server_id already set");
 
    /* last set_hint had no effect */
-   ASSERT_CMPUINT32 ((uint32_t) 123, ==, mongoc_cursor_get_hint (cursor));
+   ASSERT_CMPUINT32 ((uint32_t) 123, ==, mongoc_cursor_get_server_id (cursor));
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
@@ -1389,7 +1389,7 @@ _test_cursor_hint (bool pooled, bool use_primary)
    collection = mongoc_client_get_collection (client, "test", "test");
 
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, q, NULL, NULL);
-   ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
+   ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_server_id (cursor));
 
    if (use_primary) {
       server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
@@ -1397,8 +1397,8 @@ _test_cursor_hint (bool pooled, bool use_primary)
       server_id = server_id_for_read_mode (client, MONGOC_READ_SECONDARY);
    }
 
-   ASSERT (mongoc_cursor_set_hint (cursor, server_id));
-   ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cursor));
+   ASSERT (mongoc_cursor_set_server_id (cursor, server_id));
+   ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_server_id (cursor));
 
    future = future_cursor_next (cursor, &doc);
    request =
@@ -1478,7 +1478,7 @@ mongoc_query_flags_t expected_flag[] = {
    MONGOC_QUERY_SECONDARY_OK,
 };
 
-/* test that mongoc_cursor_set_hint sets secondaryOk for mongos only if read
+/* test that mongoc_cursor_set_server_id sets secondaryOk for mongos only if read
  * pref is secondaryPreferred. */
 static void
 test_cursor_hint_mongos (void)
@@ -1503,9 +1503,9 @@ test_cursor_hint_mongos (void)
       prefs = mongoc_read_prefs_new (modes[i]);
       cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson (NULL), NULL, prefs);
 
-      ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
-      ASSERT (mongoc_cursor_set_hint (cursor, 1));
-      ASSERT_CMPUINT32 ((uint32_t) 1, ==, mongoc_cursor_get_hint (cursor));
+      ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_server_id (cursor));
+      ASSERT (mongoc_cursor_set_server_id (cursor, 1));
+      ASSERT_CMPUINT32 ((uint32_t) 1, ==, mongoc_cursor_get_server_id (cursor));
 
       future = future_cursor_next (cursor, &doc);
 
@@ -1554,9 +1554,9 @@ test_cursor_hint_mongos_cmd (void)
       prefs = mongoc_read_prefs_new (modes[i]);
       cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson (NULL), NULL, prefs);
 
-      ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
-      ASSERT (mongoc_cursor_set_hint (cursor, 1));
-      ASSERT_CMPUINT32 ((uint32_t) 1, ==, mongoc_cursor_get_hint (cursor));
+      ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_server_id (cursor));
+      ASSERT (mongoc_cursor_set_server_id (cursor, 1));
+      ASSERT_CMPUINT32 ((uint32_t) 1, ==, mongoc_cursor_get_server_id (cursor));
 
       future = future_cursor_next (cursor, &doc);
 
@@ -1609,8 +1609,8 @@ _test_cursor_hint_no_warmup (bool pooled)
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, q, NULL, NULL);
 
    /* no chance for topology scan, no server selection */
-   ASSERT (mongoc_cursor_set_hint (cursor, 1));
-   ASSERT_CMPUINT32 (1, ==, mongoc_cursor_get_hint (cursor));
+   ASSERT (mongoc_cursor_set_server_id (cursor, 1));
+   ASSERT_CMPUINT32 (1, ==, mongoc_cursor_get_server_id (cursor));
 
    mongoc_cursor_next (cursor, &doc);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);

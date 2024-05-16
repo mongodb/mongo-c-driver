@@ -291,7 +291,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       }
 
       if (server_id) {
-         (void) mongoc_cursor_set_hint (cursor, server_id);
+         (void) mongoc_cursor_set_server_id (cursor, server_id);
       }
 
       // Selectively copy the options:

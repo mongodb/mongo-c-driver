@@ -3928,15 +3928,15 @@ _test_bulk_hint (bool pooled, bool use_primary)
 
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
-   ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_bulk_operation_get_hint (bulk));
+   ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_bulk_operation_get_server_id (bulk));
    if (use_primary) {
       server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
    } else {
       server_id = server_id_for_read_mode (client, MONGOC_READ_SECONDARY);
    }
 
-   mongoc_bulk_operation_set_hint (bulk, server_id);
-   ASSERT_CMPUINT32 (server_id, ==, mongoc_bulk_operation_get_hint (bulk));
+   mongoc_bulk_operation_set_server_id (bulk, server_id);
+   ASSERT_CMPUINT32 (server_id, ==, mongoc_bulk_operation_get_server_id (bulk));
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
