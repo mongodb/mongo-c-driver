@@ -66,4 +66,4 @@ Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there ar
 
 .. seealso::
 
-  | :doc:`manage-collection-indexes`.
+  | `Manage Collection Indexes <manage-collection-indexes_>`_.

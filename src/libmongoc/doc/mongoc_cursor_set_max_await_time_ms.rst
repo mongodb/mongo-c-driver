@@ -31,5 +31,5 @@ Note: although ``max_await_time_ms`` is a uint32_t, it is possible to set it as 
 
 .. seealso::
 
-  | :ref:`Tailable Cursors. <cursors_tailable>`
+  | `Tailable Cursors. <cursors_tailable_>`_
 

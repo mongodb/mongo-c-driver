@@ -6,7 +6,7 @@ mongoc_collection_ensure_index()
 .. warning::
    .. deprecated:: 1.8.0
 
-      This function is deprecated and should not be used in new code. See :doc:`manage-collection-indexes`.
+      This function is deprecated and should not be used in new code. See `Manage Collection Indexes <manage-collection-indexes_>`_.
 
 Synopsis
 --------

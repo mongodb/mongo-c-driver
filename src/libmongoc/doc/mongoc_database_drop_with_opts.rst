@@ -30,7 +30,7 @@ This function attempts to drop a database on the MongoDB server.
 
 If no write concern is provided in ``opts``, the database's write concern is used.
 
-The ``encryptedFields`` document in ``opts`` may be used to drop a collection used for :doc:`Queryable Encryption </queryable-encryption>`.
+The ``encryptedFields`` document in ``opts`` may be used to drop a collection used for `Queryable Encryption <queryable-encryption_>`_.
 
 Errors
 ------
