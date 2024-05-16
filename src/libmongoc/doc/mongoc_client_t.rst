@@ -52,6 +52,7 @@ Example
     :titlesonly:
     :maxdepth: 1
 
+    mongoc_client_bulkwrite_new
     mongoc_client_command
     mongoc_client_command_simple
     mongoc_client_command_simple_with_server_id
@@ -95,5 +96,3 @@ Example
     mongoc_client_watch
     mongoc_client_write_command_with_opts
     mongoc_handshake_data_append
-
-
