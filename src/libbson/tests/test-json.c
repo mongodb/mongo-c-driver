@@ -2319,7 +2319,7 @@ test_bson_json_date (void)
    test_bson_json_date_check ("{ \"dt\" : { \"$date\" : \"1970-01-01T00:00:00.000Z\" } }", 0);
    test_bson_json_date_check ("{ \"dt\" : { \"$date\" : \"1969-12-31T16:00:00.000-0800\" } }", 0);
 
-   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+01:00\" } }", "Could not parse");
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+01:00\" } }", 0);
    test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:30:\" } }",
                               "reached end of date while looking for seconds");
    test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:+01:00\" } }", "seconds is required");
