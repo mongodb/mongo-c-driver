@@ -1,3 +1,14 @@
+libmongoc 1.28.0 (unreleased)
+=============================
+
+Deprecated:
+
+  * Use of `*_hint` functions is deprecated in favor of more aptly named `*_server_id` functions:
+    * `mongoc_bulk_operation_set_hint` is deprecated for `mongoc_bulk_operation_set_server_id`
+    * `mongoc_bulk_operation_get_hint` is deprecated for `mongoc_bulk_operation_get_server_id`
+    * `mongoc_cursor_set_hint` is deprecated for `mongoc_cursor_set_server_id`
+    * `mongoc_cursor_get_hint` is deprecated for `mongoc_cursor_get_server_id`
+
 libmongoc 1.27.1
 ================
 
