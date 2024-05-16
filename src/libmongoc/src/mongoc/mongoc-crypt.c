@@ -1576,12 +1576,12 @@ _create_explicit_state_machine (_mongoc_crypt_t *crypt,
 {
    BSON_ASSERT_PARAM (crypt);
    BSON_ASSERT_PARAM (keyvault_coll);
-   BSON_ASSERT (algorithm || true);
-   BSON_ASSERT (keyid || true);
-   BSON_ASSERT (keyaltname || true);
-   BSON_ASSERT (query_type || true);
-   BSON_ASSERT (range_opts || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (algorithm);
+   BSON_OPTIONAL_PARAM (keyid);
+   BSON_OPTIONAL_PARAM (keyaltname);
+   BSON_OPTIONAL_PARAM (query_type);
+   BSON_OPTIONAL_PARAM (range_opts);
+   BSON_OPTIONAL_PARAM (error);
 
    _state_machine_t *state_machine = NULL;
    bool ok = false;
@@ -1685,14 +1685,14 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
 {
    BSON_ASSERT_PARAM (crypt);
    BSON_ASSERT_PARAM (keyvault_coll);
-   BSON_ASSERT (algorithm || true);
-   BSON_ASSERT (keyid || true);
-   BSON_ASSERT (keyaltname || true);
-   BSON_ASSERT (query_type || true);
-   BSON_ASSERT (range_opts || true);
+   BSON_OPTIONAL_PARAM (algorithm);
+   BSON_OPTIONAL_PARAM (keyid);
+   BSON_OPTIONAL_PARAM (keyaltname);
+   BSON_OPTIONAL_PARAM (query_type);
+   BSON_OPTIONAL_PARAM (range_opts);
    BSON_ASSERT_PARAM (value_in);
    BSON_ASSERT_PARAM (value_out);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    _state_machine_t *state_machine = NULL;
    bson_t *to_encrypt_doc = NULL;
@@ -1760,14 +1760,14 @@ _mongoc_crypt_explicit_encrypt_expression (_mongoc_crypt_t *crypt,
 {
    BSON_ASSERT_PARAM (crypt);
    BSON_ASSERT_PARAM (keyvault_coll);
-   BSON_ASSERT (algorithm || true);
-   BSON_ASSERT (keyid || true);
-   BSON_ASSERT (keyaltname || true);
-   BSON_ASSERT (query_type || true);
-   BSON_ASSERT (range_opts || true);
+   BSON_OPTIONAL_PARAM (algorithm);
+   BSON_OPTIONAL_PARAM (keyid);
+   BSON_OPTIONAL_PARAM (keyaltname);
+   BSON_OPTIONAL_PARAM (query_type);
+   BSON_OPTIONAL_PARAM (range_opts);
    BSON_ASSERT_PARAM (expr_in);
    BSON_ASSERT_PARAM (expr_out);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    _state_machine_t *state_machine = NULL;
    bson_t *to_encrypt_doc = NULL;

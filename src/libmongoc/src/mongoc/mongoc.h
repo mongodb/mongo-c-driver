@@ -25,6 +25,7 @@
 #include "mongoc-macros.h"
 #include "mongoc-apm.h"
 #include "mongoc-bulk-operation.h"
+#include "mongoc-bulkwrite.h"
 #include "mongoc-change-stream.h"
 #include "mongoc-client.h"
 #include "mongoc-client-pool.h"

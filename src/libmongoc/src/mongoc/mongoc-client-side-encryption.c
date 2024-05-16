@@ -915,7 +915,7 @@ mongoc_client_encryption_encrypt_expression (mongoc_client_encryption_t *client_
    BSON_ASSERT_PARAM (expr);
    BSON_ASSERT_PARAM (opts);
    BSON_ASSERT_PARAM (expr_encrypted);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    bson_init (expr_encrypted);
 
@@ -2661,7 +2661,7 @@ mongoc_client_encryption_encrypt_expression (mongoc_client_encryption_t *client_
    BSON_ASSERT_PARAM (expr);
    BSON_ASSERT_PARAM (opts);
    BSON_ASSERT_PARAM (expr_out);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    bson_init (expr_out);
 
@@ -2774,9 +2774,9 @@ mongoc_client_encryption_create_encrypted_collection (mongoc_client_encryption_t
    BSON_ASSERT_PARAM (database);
    BSON_ASSERT_PARAM (name);
    BSON_ASSERT_PARAM (in_options);
-   BSON_ASSERT (opt_out_options || true);
+   BSON_OPTIONAL_PARAM (opt_out_options);
    BSON_ASSERT_PARAM (kms_provider);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    mongoc_collection_t *ret = NULL;
 
@@ -2889,8 +2889,8 @@ _init_1_encryptedField (
    BSON_ASSERT_PARAM (out_field);
    BSON_ASSERT_PARAM (in_field);
    BSON_ASSERT_PARAM (fac);
-   BSON_ASSERT (fac_userdata || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (fac_userdata);
+   BSON_OPTIONAL_PARAM (error);
    bsonVisitEach (*in_field,
                   // If it is not a "keyId":null element, just copy it to the output.
                   if (not(keyWithType ("keyId", null)), then (appendTo (*out_field), continue)),
@@ -2922,8 +2922,8 @@ _init_encryptedFields (
    BSON_ASSERT_PARAM (out_fields);
    BSON_ASSERT_PARAM (in_fields);
    BSON_ASSERT_PARAM (fac);
-   BSON_ASSERT (fac_userdata || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (fac_userdata);
+   BSON_OPTIONAL_PARAM (error);
    // Ref to one encyrptedField
    bson_t cur_field;
    bsonVisitEach (

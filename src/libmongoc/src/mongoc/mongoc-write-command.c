@@ -561,7 +561,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    int32_t max_document_count;
-   uint32_t header;
    uint32_t payload_batch_size = 0;
    uint32_t payload_total_offset = 0;
    bool ship_it = false;
@@ -618,18 +617,18 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       EXIT;
    }
 
-   /*
-    * OP_MSG header == 16 byte
-    * + 4 bytes flagBits
-    * + 1 byte payload type = 1
-    * + 1 byte payload type = 2
-    * + 4 byte size of payload
-    * == 26 bytes opcode overhead
-    * + X Full command document {insert: "test", writeConcern: {...}}
-    * + Y command identifier ("documents", "deletes", "updates") ( + \0)
-    */
-
-   header = 26 + parts.assembled.command->len + gCommandFieldLens[command->type] + 1;
+   // Calculate overhead of OP_MSG data. See OP_MSG spec for description of fields.
+   uint32_t opmsg_overhead = 0;
+   {
+      opmsg_overhead += 16;                                   // OP_MSG.MsgHeader
+      opmsg_overhead += 4;                                    // OP_MSG.flagBits
+      opmsg_overhead += 1;                                    // OP_MSG.Section[0].payloadType (0)
+      opmsg_overhead += parts.assembled.command->len;         // OP_MSG.Section[0].payload.document
+      opmsg_overhead += 1;                                    // OP_MSG.Section[1].payloadType (1)
+      opmsg_overhead += 4;                                    // OP_MSG.Section[1].payload.size
+      opmsg_overhead += gCommandFieldLens[command->type] + 1; // OP_MSG.Section[1].payload.identifier
+      // OP_MSG.Section[1].payload.documents is omitted. Calculated below with remaining size.
+   }
 
    do {
       uint32_t ulen;
@@ -646,7 +645,8 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          result->failed = true;
          break;
 
-      } else if (bson_cmp_less_equal_us (payload_batch_size + header + ulen, max_msg_size) || document_count == 0) {
+      } else if (bson_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
+                 document_count == 0) {
          /* The current batch is still under max batch size in bytes */
          payload_batch_size += ulen;
 

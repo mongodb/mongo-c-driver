@@ -658,6 +658,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-openssl.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ocsp-cache.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-bulkwrite.c
 )
 
 set (HEADERS
@@ -666,6 +667,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-bulkwrite.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-change-stream.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
@@ -713,6 +715,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ssl.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-bulkwrite.h
 )
 
 set (HEADERS_FORWARDING
@@ -1012,6 +1015,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-background-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-buffer.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-bulk.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-bulkwrite.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-change-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-pool.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-session.c
@@ -1226,6 +1230,7 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    mongoc_add_example (mongoc-ping ${PROJECT_SOURCE_DIR}/examples/mongoc-ping.c)
    mongoc_add_example (mongoc-tail ${PROJECT_SOURCE_DIR}/examples/mongoc-tail.c)
    mongoc_add_example (example-collection-command ${PROJECT_SOURCE_DIR}/examples/example-collection-command.c)
+   mongoc_add_example (example-bulkwrite ${PROJECT_SOURCE_DIR}/examples/example-bulkwrite.c)
 
    # examples/aggregation/
    mongoc_add_example (aggregation1 ${PROJECT_SOURCE_DIR}/examples/aggregation/aggregation1.c)

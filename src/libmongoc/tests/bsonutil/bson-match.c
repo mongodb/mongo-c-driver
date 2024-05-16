@@ -32,7 +32,7 @@ struct _bson_matcher_t {
    special_functor_t *specials;
 };
 
-#define MATCH_ERR(format, ...) test_set_error (error, "match error at '%s': " format, path, __VA_ARGS__)
+#define MATCH_ERR(format, ...) test_set_error (error, "match error at path: '%s': " format, path, __VA_ARGS__)
 
 static char *
 get_first_key (const bson_t *bson)
@@ -425,7 +425,7 @@ bson_matcher_match (bson_matcher_t *matcher,
          }
 
          if (NULL == actual_val) {
-            MATCH_ERR ("key %s is not present", key);
+            MATCH_ERR ("key '%s' is not present", key);
             bson_val_destroy (expected_val);
             bson_val_destroy (actual_val);
             goto done;
@@ -570,7 +570,9 @@ test_match (void)
                          {"$$type array match", "{'a': {'$$type': ['string', 'int']}}", "{'a': 1}", true},
                          {"$$type array mismatch", "{'a': {'$$type': ['string', 'int']}}", "{'a': 1.2}", false},
                          {"extra keys in root ok", "{'a': 1}", "{'a': 1, 'b': 2}", true},
-                         {"extra keys in subdoc not ok", "{'a': {'b': 1}}", "{'a': {'b': 1, 'c': 2}}", false}};
+                         {"extra keys in subdoc not ok", "{'a': {'b': 1}}", "{'a': {'b': 1, 'c': 2}}", false},
+                         {"numeric type mismatch is ok", "{'a': 1}", "{'a': 1.0}", true},
+                         {"comparing number to string is an error", "{'a': 1}", "{'a': 'foo'}", false}};
    int i;
 
    for (i = 0; i < sizeof (tests) / sizeof (testcase_t); i++) {
