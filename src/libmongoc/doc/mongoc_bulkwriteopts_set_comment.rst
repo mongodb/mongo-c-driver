@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
    void
-   mongoc_bulkwriteopts_set_comment (mongoc_bulkwriteopts_t *self, const bson_t *comment);
+   mongoc_bulkwriteopts_set_comment (mongoc_bulkwriteopts_t *self, const bson_value_t *comment);
 
 Description
 -----------

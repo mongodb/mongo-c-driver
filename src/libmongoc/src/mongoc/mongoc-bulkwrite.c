@@ -37,7 +37,7 @@ struct _mongoc_bulkwriteopts_t {
    bson_t *let;
    mongoc_write_concern_t *writeconcern;
    mongoc_optional_t verboseresults;
-   bson_t *comment;
+   bson_value_t comment;
    bson_t *extra;
    uint32_t serverid;
 };
@@ -104,11 +104,11 @@ mongoc_bulkwriteopts_set_verboseresults (mongoc_bulkwriteopts_t *self, bool verb
    mongoc_optional_set_value (&self->verboseresults, verboseresults);
 }
 void
-mongoc_bulkwriteopts_set_comment (mongoc_bulkwriteopts_t *self, const bson_t *comment)
+mongoc_bulkwriteopts_set_comment (mongoc_bulkwriteopts_t *self, const bson_value_t *comment)
 {
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (comment);
-   set_bson_opt (&self->comment, comment);
+   set_bson_value_opt (&self->comment, comment);
 }
 void
 mongoc_bulkwriteopts_set_extra (mongoc_bulkwriteopts_t *self, const bson_t *extra)
@@ -130,7 +130,7 @@ mongoc_bulkwriteopts_destroy (mongoc_bulkwriteopts_t *self)
       return;
    }
    bson_destroy (self->extra);
-   bson_destroy (self->comment);
+   bson_value_destroy (&self->comment);
    mongoc_write_concern_destroy (self->writeconcern);
    bson_destroy (self->let);
    bson_free (self);
@@ -1509,8 +1509,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       BSON_ASSERT (BSON_APPEND_BOOL (
          &cmd, "ordered", (mongoc_optional_is_set (&opts->ordered)) ? mongoc_optional_value (&opts->ordered) : true));
 
-      if (opts->comment) {
-         BSON_ASSERT (BSON_APPEND_DOCUMENT (&cmd, "comment", opts->comment));
+      if (opts->comment.value_type != BSON_TYPE_EOD) {
+         BSON_ASSERT (BSON_APPEND_VALUE (&cmd, "comment", &opts->comment));
       }
 
       if (mongoc_optional_is_set (&opts->bypassdocumentvalidation)) {

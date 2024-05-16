@@ -36,7 +36,7 @@ mongoc_bulkwriteopts_set_let (mongoc_bulkwriteopts_t *self, const bson_t *let);
 MONGOC_EXPORT (void)
 mongoc_bulkwriteopts_set_writeconcern (mongoc_bulkwriteopts_t *self, const mongoc_write_concern_t *writeconcern);
 MONGOC_EXPORT (void)
-mongoc_bulkwriteopts_set_comment (mongoc_bulkwriteopts_t *self, const bson_t *comment);
+mongoc_bulkwriteopts_set_comment (mongoc_bulkwriteopts_t *self, const bson_value_t *comment);
 MONGOC_EXPORT (void)
 mongoc_bulkwriteopts_set_verboseresults (mongoc_bulkwriteopts_t *self, bool verboseresults);
 // `mongoc_bulkwriteopts_set_extra` appends `extra` to bulkWrite command.

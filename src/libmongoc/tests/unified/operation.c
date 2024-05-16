@@ -421,7 +421,7 @@ operation_client_bulkwrite (test_t *test, operation_t *op, result_t *result, bso
       bson_t *args_models = NULL;
       bool *args_verboseResults = NULL;
       bool *args_ordered = NULL;
-      bson_t *args_comment = NULL;
+      bson_val_t *args_comment = NULL;
       bool *args_bypassDocumentValidation = NULL;
       bson_t *args_let = NULL;
       mongoc_write_concern_t *args_wc = NULL;
@@ -430,7 +430,7 @@ operation_client_bulkwrite (test_t *test, operation_t *op, result_t *result, bso
       bson_parser_array (parser, "models", &args_models);
       bson_parser_bool_optional (parser, "verboseResults", &args_verboseResults);
       bson_parser_bool_optional (parser, "ordered", &args_ordered);
-      bson_parser_doc_optional (parser, "comment", &args_comment);
+      bson_parser_any_optional (parser, "comment", &args_comment);
       bson_parser_bool_optional (parser, "bypassDocumentValidation", &args_bypassDocumentValidation);
       bson_parser_doc_optional (parser, "let", &args_let);
       bson_parser_write_concern_optional (parser, &args_wc);
@@ -444,7 +444,7 @@ operation_client_bulkwrite (test_t *test, operation_t *op, result_t *result, bso
          mongoc_bulkwriteopts_set_ordered (opts, *args_ordered);
       }
       if (args_comment) {
-         mongoc_bulkwriteopts_set_comment (opts, args_comment);
+         mongoc_bulkwriteopts_set_comment (opts, bson_val_to_value (args_comment));
       }
       if (args_bypassDocumentValidation) {
          mongoc_bulkwriteopts_set_bypassdocumentvalidation (opts, *args_bypassDocumentValidation);
