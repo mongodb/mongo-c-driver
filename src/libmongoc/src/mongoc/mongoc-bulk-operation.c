@@ -914,9 +914,7 @@ mongoc_bulk_operation_set_client_session (mongoc_bulk_operation_t *bulk,
 uint32_t
 mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk)
 {
-   BSON_ASSERT_PARAM (bulk);
-
-   return bulk->server_id;
+   return mongoc_bulk_operation_get_server_id (bulk);
 }
 
 uint32_t
@@ -930,9 +928,7 @@ mongoc_bulk_operation_get_server_id (const mongoc_bulk_operation_t *bulk)
 void
 mongoc_bulk_operation_set_hint (mongoc_bulk_operation_t *bulk, uint32_t server_id)
 {
-   BSON_ASSERT_PARAM (bulk);
-
-   bulk->server_id = server_id;
+   mongoc_bulk_operation_set_server_id (bulk, server_id);
 }
 
 void
