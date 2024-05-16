@@ -23,6 +23,11 @@ After adding all of the write operations to the ``mongoc_bulk_operation_t``, cal
 .. seealso::
 
   | `Bulk Write Operations <bulk_>`_
+  | :symbol:`mongoc_bulkwrite_t`
+
+.. note::
+
+  .. include:: includes/bulkwrite-vs-bulk_operation.txt
 
 .. only:: html
 
