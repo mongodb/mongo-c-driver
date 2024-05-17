@@ -25,11 +25,11 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', '6.0', '7.0', 'latest']),
+    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    ('windows-vsCurrent', 'mingw',     None, 'sspi',  ['auth'], ['server'], ['latest']),
-    ('windows-vsCurrent', 'vs2017x64', None, 'sspi',  ['auth'], ['server'], ['latest']),
-    ('windows-vsCurrent', 'vs2017x86', None, 'sspi',  ['auth'], ['server'], ['latest']),
+    ('windows-vsCurrent', 'mingw',     None, 'sspi',  ['auth'], ['server'], ['8.0', 'latest']),
+    ('windows-vsCurrent', 'vs2017x64', None, 'sspi',  ['auth'], ['server'], ['8.0', 'latest']),
+    ('windows-vsCurrent', 'vs2017x86', None, 'sspi',  ['auth'], ['server'], ['8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

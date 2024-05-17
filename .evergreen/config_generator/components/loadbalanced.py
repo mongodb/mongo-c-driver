@@ -98,7 +98,7 @@ def tasks():
     # > MUST add two Evergreen tasks: one with a sharded cluster with both
     # > authentication and TLS enabled and one with a sharded cluster with
     # > authentication and TLS disabled.
-    server_versions = ['5.0', '6.0', '7.0', 'latest']
+    server_versions = ['5.0', '6.0', '7.0', '8.0', 'latest']
     for server_version in server_versions:
         yield make_test_task(auth=False, ssl=False, server_version=server_version)
         yield make_test_task(auth=True, ssl=True, server_version=server_version)

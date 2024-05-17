@@ -648,7 +648,8 @@ test_bulkwrite_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
-                      test_framework_skip_if_not_mongos // Requires multiple hosts that can accept writes.
+                      test_framework_skip_if_not_mongos, // Requires multiple hosts that can accept writes.
+                      test_framework_skip_if_no_crypto   // Require crypto for retryable writes.
    );
 
    TestSuite_AddFull (suite,

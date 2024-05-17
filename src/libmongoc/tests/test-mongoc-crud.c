@@ -398,6 +398,11 @@ prose_test_5 (void *ctx)
       mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, false);
       client = mongoc_client_new_from_uri (uri);
       test_framework_set_ssl_opts (client);
+      // Check if test runner is configured with a server API version:
+      mongoc_server_api_t *api = test_framework_get_default_server_api ();
+      if (api) {
+         ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error), error);
+      }
       mongoc_uri_destroy (uri);
    }
 
