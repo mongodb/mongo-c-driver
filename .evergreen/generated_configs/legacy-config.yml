@@ -923,7 +923,7 @@ tasks:
         set -o errexit
         sudo rm -rf ../build ../mock-result ../rpm.tar.gz
         export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64
-        sh -x .evergreen/scripts/build_snapshot_rpm.sh
+        sh .evergreen/scripts/build_snapshot_rpm.sh
   - command: shell.exec
     type: test
     params:
@@ -933,7 +933,7 @@ tasks:
         set -o errexit
         sudo rm -rf ../build ../mock-result ../rpm.tar.gz
         export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64
-        sh -x .evergreen/scripts/build_snapshot_rpm.sh
+        sh .evergreen/scripts/build_snapshot_rpm.sh
 - name: install-uninstall-check-mingw
   commands:
   - command: shell.exec
