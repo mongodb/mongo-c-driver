@@ -127,7 +127,7 @@ documentation to be generated:
 ./tools/poetry.sh run sphinx-build -WEn -bhtml src/libmongoc/doc/ src/libmongoc/doc/html
 ```
 
-`sphinx-autobuild` can be used to serve docs locally. This can be convienient when editing. Files are rebuilt
+`sphinx-autobuild` can be used to serve docs locally. This can be convenient when editing. Files are rebuilt
 when changes are detected:
 
 ```sh
