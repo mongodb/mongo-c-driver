@@ -864,7 +864,7 @@ test_bulk_retry_tracks_new_server (void *unused)
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    sd = mongoc_client_select_server (client, false /* for_writes */, read_prefs, &error);
    ASSERT_OR_PRINT (sd, error);
-   mongoc_bulk_operation_set_hint (bulk, mongoc_server_description_id (sd));
+   mongoc_bulk_operation_set_server_id (bulk, mongoc_server_description_id (sd));
    ret = mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
@@ -874,7 +874,7 @@ test_bulk_retry_tracks_new_server (void *unused)
     * the first try. */
    ASSERT_CMPINT (counters.num_inserts, ==, 2);
    ASSERT_CMPINT (counters.num_updates, ==, 1);
-   ASSERT_CMPINT (mongoc_bulk_operation_get_hint (bulk), !=, mongoc_server_description_id (sd));
+   ASSERT_CMPINT (mongoc_bulk_operation_get_server_id (bulk), !=, mongoc_server_description_id (sd));
 
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_server_description_destroy (sd);

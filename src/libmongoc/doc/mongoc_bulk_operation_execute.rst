@@ -46,5 +46,5 @@ The ``reply`` document counts operations and collects error information. See `Bu
 
   | `Bulk Write Operations <bulk_>`_
 
-  | :symbol:`mongoc_bulk_operation_get_hint`, which gets the id of the server used even if the operation failed.
+  | :symbol:`mongoc_bulk_operation_get_server_id`, which gets the id of the server used even if the operation failed.
 

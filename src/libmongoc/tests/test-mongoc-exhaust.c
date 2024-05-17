@@ -76,7 +76,7 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
 
    mc_shared_tpld td = mc_tpld_take_ref (client->topology);
 
-   server_id = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_server_id (cursor);
 
    sd = mongoc_topology_description_server_by_id_const (td.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
@@ -535,7 +535,7 @@ _check_error (mongoc_client_t *client, mongoc_cursor_t *cursor, exhaust_error_ty
 
    ASSERT (client);
 
-   server_id = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_server_id (cursor);
    ASSERT (server_id);
    ASSERT (mongoc_cursor_error (cursor, &error));
 
@@ -705,7 +705,7 @@ test_exhaust_in_child (void)
       mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), tmp_bson ("{'exhaust': true }"), NULL /* read prefs */);
    BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
    BSON_ASSERT (client->in_exhaust);
-   server_id = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_server_id (cursor);
 
    pid = fork ();
    if (pid == 0) {

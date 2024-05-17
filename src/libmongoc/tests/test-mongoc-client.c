@@ -587,7 +587,7 @@ test_mongoc_client_authenticate_cached (bool pooled)
       r = mongoc_cursor_next (cursor, &doc);
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
       ASSERT (r);
-      server_id = mongoc_cursor_get_hint (cursor);
+      server_id = mongoc_cursor_get_server_id (cursor);
       mongoc_cursor_destroy (cursor);
 
       if (pooled) {
@@ -911,7 +911,7 @@ test_mongoc_client_command_secondary (void)
    mongoc_cursor_next (cursor, &reply);
 
    if (test_framework_is_replset ()) {
-      BSON_ASSERT (test_framework_server_is_secondary (client, mongoc_cursor_get_hint (cursor)));
+      BSON_ASSERT (test_framework_server_is_secondary (client, mongoc_cursor_get_server_id (cursor)));
    }
 
    mongoc_read_prefs_destroy (read_prefs);
@@ -2256,7 +2256,7 @@ _test_mongoc_client_get_description (bool pooled)
    collection = get_test_collection (client, "test_mongoc_client_description");
    cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
    ASSERT (!mongoc_cursor_next (cursor, &doc));
-   server_id = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_server_id (cursor);
    ASSERT (0 != server_id);
    sd = mongoc_client_get_server_description (client, server_id);
    ASSERT (sd);
