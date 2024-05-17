@@ -241,6 +241,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    cursor->state = UNPRIMED;
    cursor->client_generation = client->generation;
    cursor->is_aggr_with_write_stage = false;
+   cursor->batch_num = -1;
 
    bson_init (&cursor->opts);
    bson_init (&cursor->error_doc);
@@ -1132,12 +1133,14 @@ _call_transition (mongoc_cursor_t *cursor)
    _mongoc_cursor_impl_transition_t fn = NULL;
    switch (state) {
    case UNPRIMED:
+      cursor->batch_num = 0;
       fn = cursor->impl.prime;
       break;
    case IN_BATCH:
       fn = cursor->impl.pop_from_batch;
       break;
    case END_OF_BATCH:
+      ++cursor->batch_num;
       fn = cursor->impl.get_next_batch;
       break;
    case DONE:
@@ -1395,6 +1398,15 @@ mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor)
    BSON_ASSERT (cursor);
 
    return (uint32_t) _mongoc_cursor_get_opt_int64 (cursor, MONGOC_CURSOR_BATCH_SIZE, 0);
+}
+
+
+int64_t
+mongoc_cursor_get_batch_num (const mongoc_cursor_t *cursor)
+{
+   BSON_ASSERT (cursor);
+
+   return cursor->batch_num;
 }
 
 
@@ -1704,5 +1716,6 @@ _mongoc_cursor_set_empty (mongoc_cursor_t *cursor)
 void
 _mongoc_cursor_prime (mongoc_cursor_t *cursor)
 {
+   cursor->batch_num = 0;
    cursor->state = cursor->impl.prime (cursor);
 }

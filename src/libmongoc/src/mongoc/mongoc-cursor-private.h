@@ -159,6 +159,7 @@ struct _mongoc_cursor_t {
 
    int64_t operation_id;
    int64_t cursor_id;
+   int64_t batch_num;
 };
 
 int32_t
