@@ -104,8 +104,11 @@ wait_for_mongo_orchestration() {
          curl -s --max-time 1 "localhost:${port:?}" >/dev/null
          test $? -ne 7
       then
+      if curl -s "localhost:$1" 1>|curl_mo.txt; test $? -ne 7; then
+         echo "CURL SUCCESSFUL"
          return 0
       else
+         echo "CURL FAILED, RETRYING"
          sleep 1
       fi
    done
