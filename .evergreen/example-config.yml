@@ -39,7 +39,6 @@ tasks:
             - { key: SSL, value: openssl }
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
-      - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
