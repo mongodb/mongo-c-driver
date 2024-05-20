@@ -3267,68 +3267,6 @@ set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network)
    _mongoc_http_response_cleanup (&res);
 }
 
-/* Prose test 23: KMS Retry Tests */
-static void
-test_kms_retry (void *unused)
-{
-   mongoc_client_t *keyvault_client = test_framework_new_default_client ();
-   mongoc_client_encryption_t *client_encryption = _tls_test_make_client_encryption (keyvault_client, RETRY);
-   bson_error_t error = {0};
-   bson_value_t keyid;
-   mongoc_client_encryption_datakey_opts_t *dkopts;
-   mongoc_ssl_opt_t ssl_opts = make_csfle_ssl_opts ();
-   bool res;
-
-   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1};
-   bson_value_t encrypted_field = {0};
-   mongoc_client_encryption_encrypt_opts_t *encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
-   mongoc_client_encryption_encrypt_opts_set_algorithm (encrypt_opts,
-                                                        MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
-   // AWS
-   dkopts = mongoc_client_encryption_datakey_opts_new ();
-   mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson (BSON_STR ({"region" : "r", "key" : "k", "endpoint" : "127.0.0.1:9003"})));
-   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", dkopts, &keyid, &error);
-   ASSERT (res);
-
-   set_retry_failpoint (&ssl_opts, false);
-   set_retry_failpoint (&ssl_opts, true);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
-   ASSERT (res);
-
-   // Azure
-   dkopts = mongoc_client_encryption_datakey_opts_new ();
-   mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson (BSON_STR ({"keyVaultEndpoint" : "127.0.0.1:9003", "keyName" : "foo"})));
-   res = mongoc_client_encryption_create_datakey (client_encryption, "azure", dkopts, &keyid, &error);
-   ASSERT (res);
-
-   set_retry_failpoint (&ssl_opts, false);
-   set_retry_failpoint (&ssl_opts, true);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
-   ASSERT (res);
-
-   // GCP
-   dkopts = mongoc_client_encryption_datakey_opts_new ();
-   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson (BSON_STR ({
-                                                           "projectId" : "foo",
-                                                           "location" : "bar",
-                                                           "keyRing" : "baz",
-                                                           "keyName" : "qux",
-                                                           "endpoint" : "127.0.0.1:9003"
-                                                        })));
-   res = mongoc_client_encryption_create_datakey (client_encryption, "gcp", dkopts, &keyid, &error);
-   ASSERT (res);
-
-   set_retry_failpoint (&ssl_opts, false);
-   set_retry_failpoint (&ssl_opts, true);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
-   ASSERT (res);
-}
-
 /* ee_fixture is a fixture for the Explicit Encryption prose test. */
 typedef struct {
    bson_value_t key1ID;
@@ -6201,6 +6139,68 @@ test_bypass_mongocryptd_shared_library (void *unused)
    mongoc_database_destroy (db);
    mongoc_client_destroy (client_encrypted);
    bson_free (args);
+}
+
+/* Prose test 23: KMS Retry Tests */
+static void
+test_kms_retry (void *unused)
+{
+   mongoc_client_t *keyvault_client = test_framework_new_default_client ();
+   mongoc_client_encryption_t *client_encryption = _tls_test_make_client_encryption (keyvault_client, RETRY);
+   bson_error_t error = {0};
+   bson_value_t keyid;
+   mongoc_client_encryption_datakey_opts_t *dkopts;
+   mongoc_ssl_opt_t ssl_opts = make_csfle_ssl_opts ();
+   bool res;
+
+   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1};
+   bson_value_t encrypted_field = {0};
+   mongoc_client_encryption_encrypt_opts_t *encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
+   mongoc_client_encryption_encrypt_opts_set_algorithm (encrypt_opts,
+                                                        MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+   // AWS
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts, tmp_bson (BSON_STR ({"region" : "r", "key" : "k", "endpoint" : "127.0.0.1:9003"})));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", dkopts, &keyid, &error);
+   ASSERT (res);
+
+   set_retry_failpoint (&ssl_opts, false);
+   set_retry_failpoint (&ssl_opts, true);
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT (res);
+
+   // Azure
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts, tmp_bson (BSON_STR ({"keyVaultEndpoint" : "127.0.0.1:9003", "keyName" : "foo"})));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "azure", dkopts, &keyid, &error);
+   ASSERT (res);
+
+   set_retry_failpoint (&ssl_opts, false);
+   set_retry_failpoint (&ssl_opts, true);
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT (res);
+
+   // GCP
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson (BSON_STR ({
+                                                           "projectId" : "foo",
+                                                           "location" : "bar",
+                                                           "keyRing" : "baz",
+                                                           "keyName" : "qux",
+                                                           "endpoint" : "127.0.0.1:9003"
+                                                        })));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "gcp", dkopts, &keyid, &error);
+   ASSERT (res);
+
+   set_retry_failpoint (&ssl_opts, false);
+   set_retry_failpoint (&ssl_opts, true);
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT (res);
 }
 
 void
