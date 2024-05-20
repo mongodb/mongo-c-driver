@@ -486,7 +486,7 @@ all_variants = [
     Variant(
         "packaging",
         "Linux Distro Packaging",
-        "ubuntu1804-test",
+        "debian12-latest-small",
         [
             "debian-package-build",
             OD([("name", "rpm-package-build"), ("distros", ["rhel90-arm64-small"])]),
