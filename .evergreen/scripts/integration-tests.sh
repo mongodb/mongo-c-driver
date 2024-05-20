@@ -127,6 +127,7 @@ find . -name "curl_mo.txt"
 echo "CATTING curl_mo.txt"
 cat curl_mo.txt
 ls -l curl_mo.txt
+grep 'mongo_orchestration.errors.TimeoutError: Could not start Server' curl_mo.txt | sed 's/ /\n/g' | grep '\/data\/mci' | xargs cat
 
 python -m json.tool curl_mo.txt
 sleep 15
