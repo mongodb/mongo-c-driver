@@ -39,7 +39,7 @@ done
 
 package=mongo-c-driver
 spec_file=../mongo-c-driver.spec
-config=${MOCK_TARGET_CONFIG:=fedora-38-aarch64}
+config=${MOCK_TARGET_CONFIG:=fedora-40-aarch64}
 
 if [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/rpmspec ]; then
   echo "Missing the rpmbuild or rpmspec utility from the rpm-build package"
