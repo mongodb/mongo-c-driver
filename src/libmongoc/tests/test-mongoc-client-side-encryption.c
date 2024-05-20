@@ -3267,6 +3267,7 @@ set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network)
    _mongoc_http_response_cleanup (&res);
 }
 
+/* Prose test 23: KMS Retry Tests */
 static void
 test_kms_retry (void *unused)
 {
@@ -3311,10 +3312,13 @@ test_kms_retry (void *unused)
 
    // GCP
    dkopts = mongoc_client_encryption_datakey_opts_new ();
-   mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts,
-      tmp_bson (BSON_STR (
-         {"projectId" : "pid", "location" : "l", "keyRing" : "kr", "keyName" : "kn", "endpoint" : "127.0.0.1:9003"})));
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson (BSON_STR ({
+                                                           "projectId" : "foo",
+                                                           "location" : "bar",
+                                                           "keyRing" : "baz",
+                                                           "keyName" : "qux",
+                                                           "endpoint" : "127.0.0.1:9003"
+                                                        })));
    res = mongoc_client_encryption_create_datakey (client_encryption, "gcp", dkopts, &keyid, &error);
    ASSERT (res);
 
