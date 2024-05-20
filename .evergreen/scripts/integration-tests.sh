@@ -121,6 +121,7 @@ echo "Waiting for mongo-orchestration to start... done."
 find . -name "curl_mo.txt"
 echo "CATTING curl_mo.txt"
 cat curl_mo.txt
+ls -l curl_mo.txt
 
 python -m json.tool curl_mo.txt
 sleep 5
