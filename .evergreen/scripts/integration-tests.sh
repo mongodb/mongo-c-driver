@@ -118,15 +118,16 @@ wait_for_mongo_orchestration() {
 wait_for_mongo_orchestration 8889
 echo "Waiting for mongo-orchestration to start... done."
 
+python -m json.tool curl_mo.txt
+sleep 5
+pwd
+curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" 1>|curl_mo.txt
+
 find . -name "curl_mo.txt"
 echo "CATTING curl_mo.txt"
 cat curl_mo.txt
 ls -l curl_mo.txt
 
-python -m json.tool curl_mo.txt
-sleep 5
-pwd
-curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" 1>|curl_mo.txt
 python -m json.tool curl_mo.txt
 sleep 15
 
