@@ -682,7 +682,6 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       }
       kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
       retry_count = 0;
-      break;
    }
    /* When NULL is returned by mongocrypt_ctx_next_kms_ctx, this can either be
     * an error or end-of-list. */
