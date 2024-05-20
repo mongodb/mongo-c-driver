@@ -119,7 +119,8 @@ wait_for_mongo_orchestration 8889
 echo "Waiting for mongo-orchestration to start... done."
 
 find . -name "curl_mo.txt"
-find . -name "curl_mo.txt" | xargs cat
+echo "CATTING curl_mo.txt"
+cat curl_mo.txt
 
 python -m json.tool curl_mo.txt
 sleep 5
