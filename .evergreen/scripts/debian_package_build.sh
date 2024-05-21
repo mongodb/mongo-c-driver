@@ -20,6 +20,9 @@ on_exit () {
 }
 trap on_exit EXIT
 
+git config user.email "evergreen-build@example.com"
+git config user.name "Evergreen Build"
+
 if [ "${IS_PATCH}" = "true" ]; then
   git diff HEAD > ../upstream.patch
   git clean -fdx
@@ -31,8 +34,6 @@ if [ "${IS_PATCH}" = "true" ]; then
   git checkout ${CURRENT_BRANCH}
   git checkout upstream/debian/unstable -- ./debian/
   if [ -s ../upstream.patch ]; then
-     git config user.email "evergreen-patch-build@example.com"
-     git config user.name "Evergreen Patch Build"
     [ -d debian/patches ] || mkdir debian/patches
     mv ../upstream.patch debian/patches/
     echo upstream.patch >> debian/patches/series
