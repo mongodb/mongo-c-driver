@@ -247,7 +247,7 @@ fi
 if [[ "${OIDC}" == "oidc" ]]; then
   test_args+=("-l" "/unified/mongodb-oidc-no-retry")
   echo "TESTING OIDC"
-  netstat | grep 27017
+  ps aux | grep mongod
 fi
 
 if [[ ! "${test_args[*]}" =~ "-l" ]]; then
