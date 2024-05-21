@@ -16,7 +16,7 @@ tasks:
   - name: test-asan-sasl-openssl-ubuntu2204-clang-compile
     run_on: ubuntu2204-large
     commands:
-      - func: sasl-openssl-compile
+      - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
       - func: upload-build
