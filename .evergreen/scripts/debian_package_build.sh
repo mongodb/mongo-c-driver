@@ -54,10 +54,6 @@ sudo chroot ./unstable-chroot /bin/bash -c '(\
   cd /tmp/mongoc && \
   git clean -fdx && \
   git reset --hard HEAD && \
-  python3 build/calc_release_version.py > VERSION_CURRENT && \
-  python3 build/calc_release_version.py -p > VERSION_RELEASED && \
-  git add --force VERSION_CURRENT VERSION_RELEASED && \
-  git commit VERSION_CURRENT VERSION_RELEASED -m "Set current/released versions" && \
   git remote remove upstream || true && \
   git remote add upstream https://github.com/mongodb/mongo-c-driver && \
   git fetch upstream && \
@@ -90,10 +86,6 @@ sudo chroot ./unstable-i386-chroot /bin/bash -c '(\
   cd /tmp/mongoc && \
   git clean -fdx && \
   git reset --hard HEAD && \
-  python3 build/calc_release_version.py > VERSION_CURRENT && \
-  python3 build/calc_release_version.py -p > VERSION_RELEASED && \
-  git add --force VERSION_CURRENT VERSION_RELEASED && \
-  git commit VERSION_CURRENT VERSION_RELEASED -m "Set current/released versions" && \
   git remote remove upstream || true && \
   git remote add upstream https://github.com/mongodb/mongo-c-driver && \
   git fetch upstream && \
