@@ -16,6 +16,7 @@ tasks:
   - name: test-asan-sasl-openssl-ubuntu2204-clang-compile
     run_on: ubuntu2204-large
     commands:
+      - func: fetch-source
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -36,7 +37,6 @@ tasks:
             - { key: MONGODB_VERSION, value: "latest" }
             - { key: TOPOLOGY, value: replica_set }
             - { key: SSL, value: openssl }
-      - func: fetch-det
       - func: run-tests
 task_groups:
   - name: testoidc_task_group
