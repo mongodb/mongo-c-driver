@@ -18,8 +18,6 @@ tasks:
     commands:
       - func: fetch-source
       - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
       - func: upload-build
   - name: run-tests-task
     run_on: ubuntu2204-small
