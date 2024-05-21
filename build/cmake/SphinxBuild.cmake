@@ -87,13 +87,6 @@ function (sphinx_build_html target_name doc_dir)
       DESTINATION
       ${CMAKE_INSTALL_DOCDIR}/${doc_dir}/html
    )
-   if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/static)
-      install (DIRECTORY
-         ${SPHINX_HTML_DIR}/_images
-         DESTINATION
-         ${CMAKE_INSTALL_DOCDIR}/${doc_dir}/html
-      )
-   endif ()
 
    add_custom_target (${target_name} DEPENDS ${doc_htmls})
 endfunction ()
