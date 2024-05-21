@@ -244,6 +244,11 @@ if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then
   test_args+=("-l" "/command_monitoring/unified/*")
 fi
 
+if [[ "${OIDC}" == "oidc" ]]; then
+  test_args+=("-l" "/unified/mongodb-oidc-no-retry")
+  echo "TESTING OIDC"
+fi
+
 if [[ ! "${test_args[*]}" =~ "-l" ]]; then
   # /http tests are only run if the set of tests to execute were not limited.
   echo "Waiting for simple HTTP server to start..."

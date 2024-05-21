@@ -13,34 +13,29 @@ tasks:
         shell: bash
         script: |-
           echo "Hello from example-task!"
-  - name: test-asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
-    run_on: ubuntu2004-large
-    tags: [sanitizers-matrix-asan, compile, ubuntu2004, clang, cse, asan, sasl-cyrus]
+  - name: test-asan-sasl-openssl-ubuntu2204-clang-compile
+    run_on: ubuntu2204-large
     commands:
-      - func: fetch-source
-      - func: cse-sasl-cyrus-openssl-compile
+      - func: sasl-openssl-compile
         vars:
           CC: clang
       - func: upload-build
   - name: run-tests-task
-    run_on: ubuntu2004-small
-    depends_on: [{ name: test-asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    run_on: ubuntu2204-small
+    depends_on: [{ name: test-asan-sasl-openssl-ubuntu2204-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: test-asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+          BUILD_NAME: test-asan-sasl-openssl-ubuntu2204-clang-compile
       - command: expansions.update
         params:
           updates:
             - { key: CC, value: clang }
             - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: OIDC, value: oidc }
+            - { key: MONGODB_VERSION, value: "latest" }
             - { key: TOPOLOGY, value: replica_set }
             - { key: SSL, value: openssl }
-            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
-      - func: fetch-det
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
       - func: run-tests
 task_groups:
   - name: testoidc_task_group
@@ -57,7 +52,7 @@ task_groups:
     setup_group_timeout_secs: 1800
     tasks:
       - example-task
-      - test-asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - test-asan-sasl-openssl-ubuntu2204-clang-compile
       - run-tests-task
 
 buildvariants:
