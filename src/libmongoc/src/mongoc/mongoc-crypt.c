@@ -1419,6 +1419,11 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    // Enable the NEEDS_CREDENTIALS state for on-demand credential loading
    mongocrypt_setopt_use_need_kms_credentials_state (crypt->handle);
 
+   if (!mongocrypt_setopt_use_range_v2 (crypt->handle)) {
+      _crypt_check_error (crypt->handle, error, true);
+      goto fail;
+   }
+
    if (!mongocrypt_init (crypt->handle)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;
