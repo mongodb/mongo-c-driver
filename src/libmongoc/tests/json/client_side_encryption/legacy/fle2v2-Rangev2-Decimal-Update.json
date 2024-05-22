@@ -27,6 +27,9 @@
           "contention": {
             "$numberLong": "0"
           },
+          "trimFactor": {
+            "$numberLong": "1"
+          },
           "sparsity": {
             "$numberLong": "1"
           }
@@ -210,6 +213,9 @@
                           "contention": {
                             "$numberLong": "0"
                           },
+                          "trimFactor": {
+                            "$numberLong": "1"
+                          },
                           "sparsity": {
                             "$numberLong": "1"
                           }
@@ -256,6 +262,9 @@
                           "queryType": "range",
                           "contention": {
                             "$numberLong": "0"
+                          },
+                          "trimFactor": {
+                            "$numberLong": "1"
                           },
                           "sparsity": {
                             "$numberLong": "1"
@@ -318,6 +327,9 @@
                           "contention": {
                             "$numberLong": "0"
                           },
+                          "trimFactor": {
+                            "$numberLong": "1"
+                          },
                           "sparsity": {
                             "$numberLong": "1"
                           }
@@ -343,12 +355,6 @@
                 "$$type": "binData"
               },
               "__safeContent__": [
-                {
-                  "$binary": {
-                    "base64": "5nRutVIyq7URVOVtbE4vM01APSIajAVnsShMwjBlzkM=",
-                    "subType": "00"
-                  }
-                },
                 {
                   "$binary": {
                     "base64": "rbf3AeBEv4wWFAKknqDxRW5cLNkFvbIs6iJjc6LShQY=",
@@ -1127,12 +1133,6 @@
                 "$$type": "binData"
               },
               "__safeContent__": [
-                {
-                  "$binary": {
-                    "base64": "DLCAJs+W2PL2DV5YChCL6dYrQNr+j4p3L7xhVaub4ic=",
-                    "subType": "00"
-                  }
-                },
                 {
                   "$binary": {
                     "base64": "Mr/laWHUijZT5VT3x2a7crb7wgd/UXOGz8jr8BVqBpM=",
