@@ -3254,14 +3254,19 @@ set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network)
    _mongoc_http_request_init (&req);
    _mongoc_http_response_init (&res);
 
-   req.method = "GET";
+   req.method = "POST";
    req.host = "127.0.0.1";
    req.port = 9003;
    if (network) {
-      req.path = "/set_failpoint/network/1";
+      req.path = "/set_failpoint/network";
    } else {
-      req.path = "/set_failpoint/http/1";
+      req.path = "/set_failpoint/http";
    }
+   req.extra_headers = "Content-Type: application/json\r\n";
+   const char *count_json = "{ \"count\": 1 }";
+   req.body = count_json;
+   req.body_len = strlen (count_json);
+
    r = _mongoc_http_send (&req, 10000, true, ssl_opts, &res, &error);
    ASSERT_OR_PRINT (r, error);
    _mongoc_http_response_cleanup (&res);
