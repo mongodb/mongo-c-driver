@@ -378,7 +378,7 @@ server_id_cmp (const void *a_, const void *b_)
       return 0;
    }
 
-   return a < b ? -1 : 1;
+   return *a < *b ? -1 : 1;
 }
 
 static bool
