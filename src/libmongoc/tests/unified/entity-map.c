@@ -751,6 +751,7 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    bool ok = true;
    size_t nread = 0;
 
+   fprintf (stderr, "OPENING TOKEN FILE\n");
    token_file = fopen ("/tmp/tokens/test_user1", "r");
    if (!token_file) {
       perror ("fopen");
@@ -803,6 +804,8 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
 
    printf ("version: %" PRId64 "\n", version);
    printf ("timeout: %" PRId64 "\n", timeout);
+
+   fprintf (stderr, "GOT TOKEN FROM FILE\n");
 
 done:
    if (token_file) {
