@@ -34,7 +34,6 @@ tasks:
             - { key: OIDC, value: oidc }
             - { key: MONGODB_VERSION, value: "latest" }
             - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
       - func: run-tests
 task_groups:
   - name: testoidc_task_group
