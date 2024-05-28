@@ -449,33 +449,29 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)
    // Check if `last_known_server_ids` needs update.
    bool serverids_have_changed = false;
    {
-      mc_shared_tpld td = mc_tpld_take_ref (pool->topology);
-      const mongoc_set_t *servers = mc_tpld_servers_const (td.ptr);
+      mongoc_array_t current_serverids;
+      _mongoc_array_init (&current_serverids, sizeof (uint32_t));
 
-      if (pool->last_known_serverids.len != servers->items_len) {
-         serverids_have_changed = true;
-      } else {
-         // Check if any server IDs have changed.
+      {
+         mc_shared_tpld td = mc_tpld_take_ref (pool->topology);
+         const mongoc_set_t *servers = mc_tpld_servers_const (td.ptr);
          for (size_t i = 0; i < servers->items_len; i++) {
-            // Compare in order. Both lists are sorted.
-            uint32_t last_known = _mongoc_array_index (&pool->last_known_serverids, uint32_t, i);
-            uint32_t actual = servers->items[i].id;
-            if (last_known != actual) {
-               serverids_have_changed = true;
-               break;
-            }
+            _mongoc_array_append_val (&current_serverids, servers->items[i].id);
          }
+         mc_tpld_drop_ref (&td);
       }
+
+      serverids_have_changed = (current_serverids.len != pool->last_known_serverids.len) ||
+                               memcmp (current_serverids.data,
+                                       pool->last_known_serverids.data,
+                                       current_serverids.len * current_serverids.element_size) != 0;
 
       if (serverids_have_changed) {
-         // Store new set of server IDs.
          _mongoc_array_destroy (&pool->last_known_serverids);
-         _mongoc_array_init (&pool->last_known_serverids, sizeof (uint32_t));
-         for (size_t i = 0; i < servers->items_len; i++) {
-            _mongoc_array_append_val (&pool->last_known_serverids, servers->items[i].id);
-         }
+         pool->last_known_serverids = current_serverids; // Ownership transfer.
+      } else {
+         _mongoc_array_destroy (&current_serverids);
       }
-      mc_tpld_drop_ref (&td);
    }
 
    // Check if pooled clients need to be pruned.
