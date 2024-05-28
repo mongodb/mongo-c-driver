@@ -527,27 +527,6 @@ fail:
    return tls_stream;
 }
 
-static int64_t
-backoff_time_usec (int64_t attempts)
-{
-   static bool seeded = false;
-   if (!seeded) {
-      srand ((uint32_t) time (NULL));
-      seeded = true;
-   }
-
-   /* Exponential backoff with jitter. */
-   const int64_t base = 200000;  /* 0.2 seconds */
-   const int64_t max = 20000000; /* 20 seconds */
-   int64_t backoff = base * (1LL << (attempts - 1));
-   if (backoff > max) {
-      backoff = max;
-   }
-
-   /* Full jitter: between 1 and current max */
-   return (int64_t) ((double) rand () / (double) RAND_MAX * (double) backoff) + 1;
-}
-
 static bool
 _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
 {
@@ -558,7 +537,6 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    mongocrypt_binary_t *http_reply = NULL;
    const char *endpoint;
    const int32_t sockettimeout = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
-   static const int max_tcp_retries = 10;
    int64_t sleep_usec = 0;
 
    kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
@@ -638,7 +616,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          uint32_t bytes_needed = mongocrypt_kms_ctx_bytes_needed (kms_ctx);
          ssize_t read_ret;
 
-         int64_t sleep_usec = mongocrypt_kms_ctx_usleep (kms_ctx);
+         sleep_usec = mongocrypt_kms_ctx_usleep (kms_ctx);
          if (sleep_usec > 0) {
             _mongoc_usleep (sleep_usec);
          }
