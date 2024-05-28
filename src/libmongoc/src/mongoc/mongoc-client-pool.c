@@ -17,6 +17,7 @@
 
 #include "mongoc.h"
 #include "mongoc-apm-private.h"
+#include "mongoc-array-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-client-pool-private.h"
 #include "mongoc-client-pool.h"
