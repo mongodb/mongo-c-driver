@@ -248,7 +248,7 @@ if [[ "${OIDC}" == "oidc" ]]; then
   test_args+=("-l" "/unified/mongodb-oidc-no-retry")
   echo "TESTING OIDC"
   ps aux | grep mongod
-  find /data/mci/ -name "mongo-*"
+  find /data/mci/ -name "mongo-*" | xargs cat
 fi
 
 if [[ ! "${test_args[*]}" =~ "-l" ]]; then
