@@ -559,7 +559,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    const char *endpoint;
    const int32_t sockettimeout = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
    static const int max_tcp_retries = 10;
-   int retry_count = 0;
+   int64_t sleep_usec = 0;
 
    kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
    while (kms_ctx) {
@@ -596,8 +596,8 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       }
 
    retry:
-      if (retry_count > 0) {
-         int64_t sleep_usec = backoff_time_usec (retry_count);
+      sleep_usec = mongocrypt_kms_ctx_usleep (kms_ctx);
+      if (sleep_usec > 0) {
          _mongoc_usleep (sleep_usec);
       }
 
@@ -610,9 +610,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       }
 #endif
       if (!tls_stream) {
-         retry_count++;
-         if (retry_count < max_tcp_retries) {
-            /* Always safe to retry stream creation. */
+         if (mongocrypt_kms_ctx_fail (kms_ctx)) {
             goto retry;
          } else {
             /* TLS errors are set in _get_stream */
@@ -624,8 +622,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       iov.iov_len = mongocrypt_binary_len (http_req);
 
       if (!_mongoc_stream_writev_full (tls_stream, &iov, 1, sockettimeout, error)) {
-         retry_count++;
-         if (retry_count < max_tcp_retries && mongocrypt_kms_ctx_fail (kms_ctx)) {
+         if (mongocrypt_kms_ctx_fail (kms_ctx)) {
             goto retry;
          } else {
             bson_set_error (
@@ -653,8 +650,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
 
          read_ret = mongoc_stream_read (tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
          if (read_ret <= 0) {
-            retry_count++;
-            if (retry_count < max_tcp_retries && mongocrypt_kms_ctx_fail (kms_ctx)) {
+            if (mongocrypt_kms_ctx_fail (kms_ctx)) {
                goto retry;
             } else {
                if (read_ret == -1) {
@@ -681,7 +677,6 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          }
       }
       kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
-      retry_count = 0;
    }
    /* When NULL is returned by mongocrypt_ctx_next_kms_ctx, this can either be
     * an error or end-of-list. */
@@ -1419,7 +1414,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    crypt = bson_malloc0 (sizeof (*crypt));
    crypt->kmsid_to_tlsopts = mcd_mapof_kmsid_to_tlsopts_new ();
    crypt->handle = mongocrypt_new ();
-   mongocrypt_setopt_retry (crypt->handle, true);
+   mongocrypt_setopt_retry_kms (crypt->handle, true);
 
    // Stash away a copy of the user's kmsProviders in case we need to lazily
    // load credentials.

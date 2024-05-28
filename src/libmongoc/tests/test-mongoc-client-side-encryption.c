@@ -3258,9 +3258,9 @@ set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network)
    req.host = "127.0.0.1";
    req.port = 9003;
    if (network) {
-      req.path = "/set_failpoint/network/2";
+      req.path = "/set_failpoint/network/1";
    } else {
-      req.path = "/set_failpoint/http/2";
+      req.path = "/set_failpoint/http/1";
    }
    r = _mongoc_http_send (&req, 10000, true, ssl_opts, &res, &error);
    ASSERT_OR_PRINT (r, error);
