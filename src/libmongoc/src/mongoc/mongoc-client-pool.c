@@ -370,8 +370,8 @@ typedef struct {
 static int
 server_id_cmp (const void *a_, const void *b_)
 {
-   uint32_t *a = (uint32_t *) a_;
-   uint32_t *b = (uint32_t *) b_;
+   const uint32_t *const a = (const uint32_t *) a_;
+   const uint32_t *const b = (const uint32_t *) b_;
 
    if (*a == *b) {
       return 0;
