@@ -67,6 +67,7 @@ def parse_argv(argv: Sequence[str]) -> CommandParams:
     )
     parser.add_argument(
         "--asset-id",
+        metavar="<name>",
         help='The asset ID to be created (Default is "<project>-<branch>")',
     )
     parser.add_argument(
@@ -94,6 +95,7 @@ def parse_argv(argv: Sequence[str]) -> CommandParams:
     )
     parser.add_argument(
         "--silk-endpoint",
+        metavar="<url>",
         help="The base API URL for Silk access",
         default="https://silkapi.us1.app.silk.security/api/v1",
     )
@@ -128,12 +130,15 @@ class SimpleSilkClient:
         try:
             with urllib.request.urlopen(req) as resp:
                 resp_json = json.loads(resp.read())
-                assert "token" in resp_json, f"Weird response from Silk? {resp_json=}"
-                return SimpleSilkClient(api_ep, resp_json["token"])
         except urllib.error.HTTPError as err:
             raise RuntimeError(
                 f"Attempting to authenticate with Silk failed (see context)"
             ) from err
+        match resp_json:
+            case {"token": str(tk)}:
+                return SimpleSilkClient(api_ep, tk)
+            case _:
+                assert False, f"Abnormal authentication response from Silk {resp_json=}"
 
     def create_asset_group(
         self,
@@ -163,11 +168,11 @@ class SimpleSilkClient:
                     "asset_id": asset_id,
                 }
             ).encode(),
-            headers={**JSON_HEADERS, "Authorization": self.auth_token},
+            headers=JSON_HEADERS | {"Authorization": self.auth_token},
         )
         try:
-            with urllib.request.urlopen(req):
-                pass
+            with urllib.request.urlopen(req) as resp:
+                json.loads(resp.read())  # No-op, but validates that JSON was returned
         except urllib.error.HTTPError as err:
             if err.status == 409 and exist_ok:
                 # 409: Conflict
