@@ -364,7 +364,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 }
 
 typedef struct {
-   mongoc_array_t *server_ids;
+   mongoc_array_t *known_server_ids;
    mongoc_cluster_t *cluster;
 } prune_ctx;
 
@@ -381,14 +381,18 @@ server_id_cmp (const void *a_, const void *b_)
    return *a < *b ? -1 : 1;
 }
 
+// `maybe_prune` removes a `mongoc_cluster_node_t` if the node refers to a removed server.
 static bool
 maybe_prune (void *item, void *ctx_)
 {
    mongoc_cluster_node_t *cn = (mongoc_cluster_node_t *) item;
    prune_ctx *ctx = (prune_ctx *) ctx_;
+   // Get the server ID from the cluster node.
    uint32_t server_id = cn->handshake_sd->id;
 
-   if (!bsearch (&server_id, ctx->server_ids->data, ctx->server_ids->len, sizeof (uint32_t), server_id_cmp)) {
+   // Check if the cluster node's server ID references a removed server.
+   if (!bsearch (
+          &server_id, ctx->known_server_ids->data, ctx->known_server_ids->len, sizeof (uint32_t), server_id_cmp)) {
       mongoc_cluster_disconnect_node (ctx->cluster, server_id);
    }
    return true;
@@ -429,7 +433,7 @@ prune_client (mongoc_client_t *client, mongoc_array_t *known_server_ids)
       return;
    }
 
-   prune_ctx ctx = {.cluster = cluster, .server_ids = known_server_ids};
+   prune_ctx ctx = {.cluster = cluster, .known_server_ids = known_server_ids};
    mongoc_set_for_each (cluster->nodes, maybe_prune, &ctx);
 }
 
