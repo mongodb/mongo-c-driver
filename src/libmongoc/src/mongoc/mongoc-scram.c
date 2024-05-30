@@ -1038,8 +1038,7 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    }
 
    /* convert to unicode. */
-   BSON_ASSERT (num_chars < SSIZE_MAX);
-   BSON_ASSERT ((num_chars + 1) <= SIZE_MAX / sizeof (uint32_t));
+   BSON_ASSERT (bson_cmp_less_equal_su (num_chars, SIZE_MAX / sizeof (uint32_t) - 1u));
    utf8_codepoints = bson_malloc (sizeof (uint32_t) * (num_chars + 1)); /* add one for trailing 0 value. */
    const char *c = in_utf8;
 
