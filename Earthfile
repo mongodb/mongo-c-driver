@@ -197,7 +197,7 @@ sbom-generate:
 # Requires credentials for Silk access.
 #
 # If --branch is not specified, it will be inferred from the current Git branch
-silk-create-asset-group:
+create-silk-asset-group:
     ARG branch
     # Get a default value for $branch
     FROM alpine:3.19

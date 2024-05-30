@@ -1319,6 +1319,30 @@ tasks:
     tags: [clang-format]
     commands:
       - func: clang-format
+  - name: create-silk-asset-group
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [misc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          env:
+            EARTHLY_SECRETS: SILK_CLIENT_ID=${silk_client_id},SILK_CLIENT_SECRET=${silk_client_secret}
+          args:
+            - tools/earthly.sh
+            - +create-silk-asset-group
+            - --branch=${branch_name}
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
     run_on: macos-1100
     tags: [cse-matrix-darwinssl, compile, macos-1100, clang, cse, sasl-cyrus]
