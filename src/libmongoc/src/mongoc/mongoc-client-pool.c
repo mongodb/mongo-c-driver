@@ -17,6 +17,7 @@
 
 #include "mongoc.h"
 #include "mongoc-apm-private.h"
+#include "mongoc-array-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-client-pool-private.h"
 #include "mongoc-client-pool.h"
@@ -52,6 +53,8 @@ struct _mongoc_client_pool_t {
    bool error_api_set;
    mongoc_server_api_t *api;
    bool client_initialized;
+   // `last_known_serverids` is a sorted array of uint32_t.
+   mongoc_array_t last_known_serverids;
 };
 
 
@@ -146,6 +149,7 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
    }
 
    pool = (mongoc_client_pool_t *) bson_malloc0 (sizeof *pool);
+   _mongoc_array_init (&pool->last_known_serverids, sizeof (uint32_t));
    bson_mutex_init (&pool->mutex);
    mongoc_cond_init (&pool->cond);
    _mongoc_queue_init (&pool->queue);
@@ -228,6 +232,8 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 #ifdef MONGOC_ENABLE_SSL
    _mongoc_ssl_opts_cleanup (&pool->ssl_opts, true);
 #endif
+
+   _mongoc_array_destroy (&pool->last_known_serverids);
 
    bson_free (pool);
 
@@ -357,6 +363,53 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
    RETURN (client);
 }
 
+typedef struct {
+   mongoc_array_t *known_server_ids;
+   mongoc_cluster_t *cluster;
+} prune_ctx;
+
+static int
+server_id_cmp (const void *a_, const void *b_)
+{
+   const uint32_t *const a = (const uint32_t *) a_;
+   const uint32_t *const b = (const uint32_t *) b_;
+
+   if (*a == *b) {
+      return 0;
+   }
+
+   return *a < *b ? -1 : 1;
+}
+
+// `maybe_prune` removes a `mongoc_cluster_node_t` if the node refers to a removed server.
+static bool
+maybe_prune (void *item, void *ctx_)
+{
+   mongoc_cluster_node_t *cn = (mongoc_cluster_node_t *) item;
+   prune_ctx *ctx = (prune_ctx *) ctx_;
+   // Get the server ID from the cluster node.
+   uint32_t server_id = cn->handshake_sd->id;
+
+   // Check if the cluster node's server ID references a removed server.
+   if (!bsearch (
+          &server_id, ctx->known_server_ids->data, ctx->known_server_ids->len, sizeof (uint32_t), server_id_cmp)) {
+      mongoc_cluster_disconnect_node (ctx->cluster, server_id);
+   }
+   return true;
+}
+
+// `prune_client` closes connections from `client` to servers not contained in `known_server_ids`.
+static void
+prune_client (mongoc_client_t *client, mongoc_array_t *known_server_ids)
+{
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (known_server_ids);
+
+   mongoc_cluster_t *cluster = &client->cluster;
+   prune_ctx ctx = {.cluster = cluster, .known_server_ids = known_server_ids};
+   mongoc_set_for_each (cluster->nodes, maybe_prune, &ctx);
+}
+
 
 void
 mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)
@@ -370,6 +423,48 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)
    mongoc_cluster_reset_sockettimeoutms (&client->cluster);
 
    bson_mutex_lock (&pool->mutex);
+   // Check if `last_known_server_ids` needs update.
+   bool serverids_have_changed = false;
+   {
+      mongoc_array_t current_serverids;
+      _mongoc_array_init (&current_serverids, sizeof (uint32_t));
+
+      {
+         mc_shared_tpld td = mc_tpld_take_ref (pool->topology);
+         const mongoc_set_t *servers = mc_tpld_servers_const (td.ptr);
+         for (size_t i = 0; i < servers->items_len; i++) {
+            _mongoc_array_append_val (&current_serverids, servers->items[i].id);
+         }
+         mc_tpld_drop_ref (&td);
+      }
+
+      serverids_have_changed = (current_serverids.len != pool->last_known_serverids.len) ||
+                               memcmp (current_serverids.data,
+                                       pool->last_known_serverids.data,
+                                       current_serverids.len * current_serverids.element_size) != 0;
+
+      if (serverids_have_changed) {
+         _mongoc_array_destroy (&pool->last_known_serverids);
+         pool->last_known_serverids = current_serverids; // Ownership transfer.
+      } else {
+         _mongoc_array_destroy (&current_serverids);
+      }
+   }
+
+   // Check if pooled clients need to be pruned.
+   if (serverids_have_changed) {
+      // The set of last known server IDs has changed. Prune all clients in pool.
+      mongoc_queue_item_t *ptr = pool->queue.head;
+      while (ptr != NULL) {
+         prune_client ((mongoc_client_t *) ptr->data, &pool->last_known_serverids);
+         ptr = ptr->next;
+      }
+   }
+
+   // Always prune incoming client. The topology may have changed while client was checked out.
+   prune_client (client, &pool->last_known_serverids);
+
+   // Push client back into pool.
    _mongoc_queue_push_head (&pool->queue, client);
 
    if (pool->min_pool_size && _mongoc_queue_get_length (&pool->queue) > pool->min_pool_size) {
