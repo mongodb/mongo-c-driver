@@ -406,33 +406,6 @@ prune_client (mongoc_client_t *client, mongoc_array_t *known_server_ids)
    BSON_ASSERT_PARAM (known_server_ids);
 
    mongoc_cluster_t *cluster = &client->cluster;
-
-   bool needs_prune = false;
-   // Do a fast initial check to see if a prune is needed.
-   size_t idx1 = 0;
-   size_t idx2 = 0;
-   for (; idx1 < cluster->nodes->items_len; idx1++) {
-      // Compare both sorted lists in order. `cluster->nodes` may be a smaller list if not all servers were used.
-      mongoc_set_item_t *cn = &cluster->nodes->items[idx1];
-      bool found = false;
-      for (; idx2 < known_server_ids->len; idx2++) {
-         uint32_t last_known = _mongoc_array_index (known_server_ids, uint32_t, idx2);
-         if (cn->id == last_known) {
-            found = true;
-            break;
-         }
-      }
-      if (!found) {
-         // A server in the cluster is not in the last known server ids. Prune it.
-         needs_prune = true;
-         break;
-      }
-   }
-
-   if (!needs_prune) {
-      return;
-   }
-
    prune_ctx ctx = {.cluster = cluster, .known_server_ids = known_server_ids};
    mongoc_set_for_each (cluster->nodes, maybe_prune, &ctx);
 }
