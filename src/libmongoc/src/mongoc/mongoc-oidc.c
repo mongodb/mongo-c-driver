@@ -162,6 +162,7 @@ _oidc_sasl_one_step_conversation (mongoc_cluster_t *cluster,
       if (bson_iter_find (&iter, "errmsg") && BSON_ITER_HOLDS_UTF8 (&iter)) {
          const char *errmsg = bson_iter_utf8 (&iter, NULL);
          MONGOC_ERROR ("failed to run OIDC SASL one-step conversation command: server reply: %s", errmsg);
+         fprintf (stderr, "ERROR: %s\n", error->message);
          goto done;
       }
 
