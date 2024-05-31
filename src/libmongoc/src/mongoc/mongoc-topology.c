@@ -1301,8 +1301,11 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    }
 
 done:
-   if (error) {
-      _mongoc_error_append (error, topology_type->str);
+   if (error && server_id == 0) {
+      /* server_id set to zero indicates that an error has occured and that `error` is initialized */
+      if (error->domain == MONGOC_ERROR_SERVER_SELECTION) {
+         _mongoc_error_append (error, topology_type->str);
+      }
    }
    bson_string_free (topology_type, true);
    mc_tpld_drop_ref (&td);
