@@ -1856,7 +1856,7 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
          if (error_message->len > 0) {
             bson_string_append_c (error_message, ' ');
          }
-         bson_string_append_printf (error_message, "[%s (SERVER TYPE)]", server_description->error.message);
+         bson_string_append_printf (error_message, "[%s]", server_description->error.message);
          /* The last error's code and domain wins. */
          error_out->code = error->code;
          error_out->domain = error->domain;
