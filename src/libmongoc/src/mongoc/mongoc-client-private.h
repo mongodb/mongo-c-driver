@@ -146,6 +146,7 @@ _mongoc_client_get_rr (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        size_t initial_buffer_size,
+                       bool prefer_tcp,
                        bson_error_t *error);
 
 mongoc_client_t *

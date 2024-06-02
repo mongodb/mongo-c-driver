@@ -599,9 +599,9 @@ test_small_initial_buffer (void *unused)
    BSON_UNUSED (unused);
 
    memset (&rr_data, 0, sizeof (rr_data));
-   ASSERT_OR_PRINT (
-      _mongoc_client_get_rr ("_mongodb._tcp.test1.test.build.10gen.cc", rr_type, &rr_data, small_buffer_size, &error),
-      error);
+   ASSERT_OR_PRINT (_mongoc_client_get_rr (
+                       "_mongodb._tcp.test1.test.build.10gen.cc", rr_type, &rr_data, small_buffer_size, false, &error),
+                    error);
    ASSERT_CMPINT (rr_data.count, ==, 2);
    bson_free (rr_data.txt_record_opts);
    _mongoc_host_list_destroy_all (rr_data.hosts);
@@ -612,12 +612,14 @@ _mock_rr_resolver_prose_test_9 (const char *service,
                                 mongoc_rr_type_t rr_type,
                                 mongoc_rr_data_t *rr_data,
                                 size_t initial_buffer_size,
+                                bool prefer_tcp,
                                 bson_error_t *error)
 {
    BSON_UNUSED (service);
    BSON_UNUSED (rr_type);
    BSON_UNUSED (rr_data);
    BSON_UNUSED (initial_buffer_size);
+   BSON_UNUSED (prefer_tcp);
    BSON_UNUSED (error);
 
    test_error ("Expected mock resolver to not be called");
@@ -853,12 +855,14 @@ _mock_rr_resolver_prose_test_10 (const char *service,
                                  mongoc_rr_type_t rr_type,
                                  mongoc_rr_data_t *rr_data,
                                  size_t initial_buffer_size,
+                                 bool prefer_tcp,
                                  bson_error_t *error)
 {
    BSON_UNUSED (initial_buffer_size);
 
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
+   BSON_UNUSED (prefer_tcp);
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
@@ -953,12 +957,14 @@ _mock_rr_resolver_prose_test_11 (const char *service,
                                  mongoc_rr_type_t rr_type,
                                  mongoc_rr_data_t *rr_data,
                                  size_t initial_buffer_size,
+                                 bool prefer_tcp,
                                  bson_error_t *error)
 {
    BSON_UNUSED (initial_buffer_size);
 
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
+   BSON_UNUSED (prefer_tcp);
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
@@ -1050,12 +1056,14 @@ _mock_rr_resolver_prose_test_12 (const char *service,
                                  mongoc_rr_type_t rr_type,
                                  mongoc_rr_data_t *rr_data,
                                  size_t initial_buffer_size,
+                                 bool prefer_tcp,
                                  bson_error_t *error)
 {
    BSON_UNUSED (initial_buffer_size);
 
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
+   BSON_UNUSED (prefer_tcp);
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
@@ -1198,12 +1206,14 @@ _mock_rr_resolver_with_override (const char *service,
                                  mongoc_rr_type_t rr_type,
                                  mongoc_rr_data_t *rr_data,
                                  size_t initial_buffer_size,
+                                 bool prefer_tcp,
                                  bson_error_t *error)
 {
    BSON_UNUSED (initial_buffer_size);
 
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
+   BSON_UNUSED (prefer_tcp);
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
