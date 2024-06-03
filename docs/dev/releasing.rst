@@ -142,13 +142,13 @@ Clone the Driver Tools
 **********************
 
 Clone the driver tools repository into a new directory, the path to which will be
-called `$DRIVER_TOOLS`::
+called `$CDRIVER_TOOLS`::
 
-   $ git clone "git@github.com:10gen/mongo-c-driver-tools.git" $DRIVER_TOOLS
+   $ git clone "git@github.com:10gen/mongo-c-driver-tools.git" $CDRIVER_TOOLS
 
 Install the Python requirements for the driver tools::
 
-   $ pip install -r $DRIVER_TOOLS/requirements.txt
+   $ pip install -r $CDRIVER_TOOLS/requirements.txt
 
 
 Create a New Clone of ``mongo-c-driver``
@@ -208,7 +208,7 @@ Start running the release script:
 2. Let `$NEW_VERSION` be the ``x.y.z`` version that we are releasing.
 3. Run the Python script::
 
-      $ python $DRIVER_TOOLS/release.py release $PREVIOUS_VERSION $NEW_VERSION
+      $ python $CDRIVER_TOOLS/release.py release $PREVIOUS_VERSION $NEW_VERSION
 
 
 Fixup the ``NEWS`` Pages
@@ -225,7 +225,7 @@ Sign & Upload the Release
 
 Run the ``release.py`` script to sign the release objects::
 
-   $ python $DRIVER_TOOLS/release.py sign
+   $ python $CDRIVER_TOOLS/release.py sign
 
 Let `$GITHUB_TOKEN` be the personal access token that was obtained from the
 :ref:`release.github-token` step above. Use the token with the ``upload`` subcommand
@@ -237,11 +237,11 @@ to post the release to GitHub:
 
 ::
 
-   $ python $DRIVER_TOOLS/release.py upload $GITHUB_TOKEN
+   $ python $CDRIVER_TOOLS/release.py upload $GITHUB_TOKEN
 
 Update the ``VERSION_CURRENT`` file on the release branch::
 
-   $ python $DRIVER_TOOLS/release.py post_release_bump
+   $ python $CDRIVER_TOOLS/release.py post_release_bump
 
 
 Publish Documentation
@@ -250,7 +250,7 @@ Publish Documentation
 **If this is a stable release** (not a pre-release), publish the documentation
 with the following command::
 
-   $ python $DRIVER_TOOLS/release.py docs $NEW_VERSION
+   $ python $CDRIVER_TOOLS/release.py docs $NEW_VERSION
 
 
 Announce the Release on the Community Forums
@@ -263,7 +263,7 @@ __ https://www.mongodb.com/community/forums/c/announcements/35
 
 To generate the release template text, use the following::
 
-   $ python $DRIVER_TOOLS/release.py announce -t community $NEW_VERSION
+   $ python $CDRIVER_TOOLS/release.py announce -t community $NEW_VERSION
 
 Update/fix-up the generated text for the new release and publish the new post.
 
