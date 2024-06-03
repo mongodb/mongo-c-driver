@@ -1098,6 +1098,9 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    uint32_t server_id;
    mc_shared_tpld td = mc_tpld_take_ref (topology);
 
+   bson_string_t *topology_type = bson_string_new (". Topology type: ");
+   bson_string_append (topology_type, mongoc_topology_description_type (td.ptr));
+
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
    int64_t loop_end;    /* when we last completed a loop (single-threaded) */
@@ -1153,10 +1156,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
             if (scan_ready > expire_at && !try_once) {
                /* selection timeout will expire before min heartbeat passes */
-               _mongoc_server_selection_error ("No suitable servers found: "
-                                               "`serverselectiontimeoutms` timed out",
-                                               &scanner_error,
-                                               error);
+               _mongoc_server_selection_error (timeout_msg, &scanner_error, error);
 
                server_id = 0;
                goto done;
@@ -1301,6 +1301,13 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    }
 
 done:
+   if (error && server_id == 0) {
+      /* server_id set to zero indicates that an error has occured and that `error` is initialized */
+      if (error->domain == MONGOC_ERROR_SERVER_SELECTION) {
+         _mongoc_error_append (error, topology_type->str);
+      }
+   }
+   bson_string_free (topology_type, true);
    mc_tpld_drop_ref (&td);
    return server_id;
 }
