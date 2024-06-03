@@ -171,15 +171,19 @@ multibuild:
         --c_compiler=gcc --c_compiler=clang \
         --test_mongocxx_ref=master
 
+# This target is simply an environment in which the SilkBomb executable is available.
+silkbomb:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
+    # Alias the silkbom executable to a simpler name:
+    RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
+
 # sbom-generate :
 #   Generate/update the etc/cyclonedx.sbom.json file from the etc/purls.txt file.
 #
 # This target will update the existing etc/cyclonedx.sbom.json file in-place based
 # on the content of etc/purls.txt.
 sbom-generate:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
-    # Alias the silkbom executable to a simpler name:
-    RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
+    FROM +silkbomb
     # Copy in the relevant files:
     WORKDIR /s
     COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
@@ -190,6 +194,29 @@ sbom-generate:
         --sbom-out cyclonedx.sbom.json
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
+
+# sbom-download :
+#   Download an augmented SBOM from the Silk server. The `--out` argument will be
+#   the destination (on the host) where the augmented SBOM file will be written.
+#
+# Requires credentials for silk access.
+#
+# If --branch is not specified, it will be inferred from the current Git branch
+sbom-download:
+    FROM alpine:3.20
+    # ARG --required out
+    ARG --required branch
+    # Run the SilkBomb tool to download the artifact that matches the current branch
+    FROM +silkbomb
+    LET date_cachebust=$(date +%F)
+    RUN --secret SILK_CLIENT_ID \
+        --secret SILK_CLIENT_SECRET \
+        env date_cachebust=${date_cachebust} \
+        silkbomb download \
+            --sbom-out augmented-sbom.json \
+            --silk-asset-group mongo-c-driver-${branch}
+    # Copy the downloaded file onto the host
+    SAVE ARTIFACT augmented-sbom.json
 
 # create-silk-asset-group :
 #   Create an asset group in Silk for the Git branch if one is not already defined.
