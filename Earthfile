@@ -191,7 +191,7 @@ sbom-generate:
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
 
-# silk-create-asset-group :
+# create-silk-asset-group :
 #   Create an asset group in Silk for the Git branch if one is not already defined.
 #
 # Requires credentials for Silk access.
