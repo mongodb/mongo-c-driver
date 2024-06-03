@@ -1330,7 +1330,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [misc]
+    tags: [misc, pr-merge-gate]
     commands:
       - command: subprocess.exec
         type: setup

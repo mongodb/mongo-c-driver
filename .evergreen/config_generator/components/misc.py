@@ -24,7 +24,7 @@ def tasks() -> Iterable[Task]:
             )
         ],
         run_on=earthly.CONTAINER_RUN_DISTROS,
-        tags=["misc"],
+        tags=["misc", "pr-merge-gate"],
     )
 
 
