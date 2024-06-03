@@ -124,8 +124,8 @@ separate repository.
 
 .. hint::
 
-   It may be useful (but is not required) perform the following steps within a
-   new Python `virtual environment`__ dedicated to the process.
+   It may be useful (but is not required) to perform the following steps within
+   a new Python `virtual environment`__ dedicated to the process.
 
 __ https://docs.python.org/3/library/venv.html
 
@@ -178,8 +178,8 @@ Switch to a branch that corresponds to the release version:
 
 - **If performing a patch release (x.y.z)**, there should already exist a
   release branch corresponding to the major+minor version of the patch. For
-  example, if we are releasing patch version `7.8.9`, then there should already
-  exist a branch ``r7.8``. Switch to that branch now::
+  example, if we are releasing patch version ``7.8.9``, then there should
+  already exist a branch ``r7.8``. Switch to that branch now::
 
       $ git checkout --track origin/r7.8
 
