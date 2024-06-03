@@ -2526,6 +2526,7 @@ _mongoc_topology_description_clear_connection_pool (mongoc_topology_description_
    mc_tpl_sd_increment_generation (sd, service_id);
 }
 
+
 void
 mongoc_deprioritized_servers_add_if_sharded (mongoc_deprioritized_servers_t *ds,
                                              mongoc_topology_description_type_t topology_type,
