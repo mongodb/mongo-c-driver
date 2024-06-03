@@ -75,7 +75,7 @@ _mongoc_get_cpu_count (void)
    }
 
    return len;
-#elif defined(__APPLE__) || defined(__sun) || defined(_AIX)
+#elif defined(__APPLE__) || defined(_AIX)
    int ncpu;
 
    ncpu = (int) sysconf (_SC_NPROCESSORS_ONLN);
