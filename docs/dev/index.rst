@@ -17,6 +17,10 @@ the mongo-c-driver project directory:
 - :doc:`Releasing the MongoDB C Driver <releasing>` - Instructions on performing
   a release of the C driver libaries.
 
+.. toctree::
+
+   debian
+
 .. Add the `releasing` page to a hidden toctree. We don't want to include it
    directly in a visible toctree because the top-level sections would render inline
    as top-level links, which we do not want.
