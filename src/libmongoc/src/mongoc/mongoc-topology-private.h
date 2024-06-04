@@ -85,6 +85,7 @@ typedef bool (*_mongoc_rr_resolver_fn) (const char *hostname,
                                         mongoc_rr_type_t rr_type,
                                         mongoc_rr_data_t *rr_data,
                                         size_t initial_buffer_size,
+                                        bool prefer_tcp,
                                         bson_error_t *error);
 
 /**
@@ -217,6 +218,11 @@ typedef struct _mongoc_topology_t {
    // `mongoc_client_set_usleep_impl`.
    mongoc_usleep_func_t usleep_fn;
    void *usleep_data;
+
+   // `srv_prefer_tcp` determines if DNS lookup for SRV tries TCP first instead of UDP.
+   // DNS implementations are expected to try UDP first, then retry with TCP if the UDP response indicates truncation.
+   // Some DNS servers truncate UDP responses without setting the truncated (TC) flag. This may result in no TCP retry.
+   bool srv_prefer_tcp;
 } mongoc_topology_t;
 
 mongoc_topology_t *
