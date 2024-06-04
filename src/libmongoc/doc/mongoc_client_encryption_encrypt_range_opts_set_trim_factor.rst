@@ -12,7 +12,7 @@ Synopsis
     mongoc_client_encryption_encrypt_range_opts_set_trim_factor (
          mongoc_client_encryption_encrypt_range_opts_t *range_opts, int32_t trim_factor);
 
-.. versionadded:: 1.24.0
+.. versionadded:: 1.28.0
 
 Sets trim factor for explicit encryption. Trim factor is required for explicit encryption of range indexes.
 Only applies when the algorithm set by :symbol:`mongoc_client_encryption_encrypt_opts_set_algorithm()` is "Range".
