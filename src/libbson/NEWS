@@ -1,3 +1,18 @@
+libbson 1.27.2
+==============
+
+Fixes:
+
+  * Fix parsing of colon in timezone.
+  * Error on failure to init subdocument in `bson_iter_visit_all`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roman-Koshelev
+  * Kevin Albertson
+
+
+
 libbson 1.27.1
 ==============
 

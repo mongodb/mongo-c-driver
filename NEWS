@@ -1,3 +1,16 @@
+libmongoc 1.27.2
+================
+
+Fixes:
+
+  * Close leftover connections to removed servers.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libmongoc 1.27.1
 ================
 
