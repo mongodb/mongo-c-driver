@@ -3576,6 +3576,7 @@ range_explicit_encryption_setup (const char *typeStr)
    {
       reef->ro = mongoc_client_encryption_encrypt_range_opts_new ();
       mongoc_client_encryption_encrypt_range_opts_set_sparsity (reef->ro, 1);
+      mongoc_client_encryption_encrypt_range_opts_set_trim_factor (reef->ro, 1);
       if (0 == strcmp ("DoubleNoPrecision", typeStr) || 0 == strcmp ("DecimalNoPrecision", typeStr)) {
          // DoubleNoPrecision does not need more range options.
       } else if (0 == strcmp ("DoublePrecision", typeStr) || 0 == strcmp ("DecimalPrecision", typeStr)) {
@@ -3598,7 +3599,7 @@ range_explicit_encryption_setup (const char *typeStr)
 
       eo = mongoc_client_encryption_encrypt_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGE);
       mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
       mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
 
@@ -3700,7 +3701,7 @@ test_range_explicit_encryption_case1 (void *ctx)
 
    eo = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
-   mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+   mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGE);
    mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
    mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
 
@@ -3733,8 +3734,8 @@ test_range_explicit_encryption_case2 (void *ctx)
    {
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
-      mongoc_client_encryption_encrypt_opts_set_query_type (eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGE);
+      mongoc_client_encryption_encrypt_opts_set_query_type (eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGE);
       mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
       mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
 
@@ -3779,8 +3780,8 @@ test_range_explicit_encryption_case3 (void *ctx)
    {
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
-      mongoc_client_encryption_encrypt_opts_set_query_type (eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGE);
+      mongoc_client_encryption_encrypt_opts_set_query_type (eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGE);
       mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
       mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
 
@@ -3824,8 +3825,8 @@ test_range_explicit_encryption_case4 (void *ctx)
    {
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
-      mongoc_client_encryption_encrypt_opts_set_query_type (eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGE);
+      mongoc_client_encryption_encrypt_opts_set_query_type (eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGE);
       mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
       mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
 
@@ -3869,8 +3870,8 @@ test_range_explicit_encryption_case5 (void *ctx)
    {
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
-      mongoc_client_encryption_encrypt_opts_set_query_type (eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGE);
+      mongoc_client_encryption_encrypt_opts_set_query_type (eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGE);
       mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
       mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
       char *fieldPath = bson_strdup_printf ("$%s", reef->fieldName);
@@ -3927,7 +3928,7 @@ test_range_explicit_encryption_case6 (void *ctx)
    {
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGE);
       mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
       mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
 
@@ -3962,7 +3963,7 @@ test_range_explicit_encryption_case7 (void *ctx)
    {
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGE);
       mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
       mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
 
@@ -4008,7 +4009,7 @@ test_range_explicit_encryption_case8 (void *ctx)
    {
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eo, MONGOC_ENCRYPT_ALGORITHM_RANGE);
       mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
       mongoc_client_encryption_encrypt_range_opts_set_precision (reef->ro, 2);
       mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
@@ -6508,29 +6509,29 @@ test_client_side_encryption_install (TestSuite *suite)
 
             // Skip DecimalNoPrecision if not a replica set.
             if (0 == strcmp (rangeType, "DecimalNoPrecision")) {
-               TestSuite_AddFull (suite,
-                                  test_name,
-                                  rc.fn,
-                                  NULL /* dtor */,
-                                  (void *) rangeTypes[i] /* ctx */,
-                                  test_framework_skip_if_no_client_side_encryption,
-                                  test_framework_skip_if_max_wire_version_less_than_21,
-                                  test_framework_skip_if_max_wire_version_more_than_24 /* skip on MongoDB 8.0+ */,
-                                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                                  test_framework_skip_if_serverless,
-                                  test_framework_skip_if_not_replset);
+               TestSuite_AddFull (
+                  suite,
+                  test_name,
+                  rc.fn,
+                  NULL /* dtor */,
+                  (void *) rangeTypes[i] /* ctx */,
+                  test_framework_skip_if_no_client_side_encryption,
+                  test_framework_skip_if_max_wire_version_less_than_25, /* range queries require MongoDB 8.0+ */
+                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+                  test_framework_skip_if_serverless,
+                  test_framework_skip_if_not_replset);
             } else {
-               TestSuite_AddFull (suite,
-                                  test_name,
-                                  rc.fn,
-                                  NULL /* dtor */,
-                                  (void *) rangeTypes[i] /* ctx */,
-                                  test_framework_skip_if_no_client_side_encryption,
-                                  test_framework_skip_if_max_wire_version_less_than_21,
-                                  test_framework_skip_if_max_wire_version_more_than_24 /* skip on MongoDB 8.0+ */,
-                                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                                  test_framework_skip_if_serverless,
-                                  test_framework_skip_if_single);
+               TestSuite_AddFull (
+                  suite,
+                  test_name,
+                  rc.fn,
+                  NULL /* dtor */,
+                  (void *) rangeTypes[i] /* ctx */,
+                  test_framework_skip_if_no_client_side_encryption,
+                  test_framework_skip_if_max_wire_version_less_than_25, /* range queries require MongoDB 8.0+ */
+                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+                  test_framework_skip_if_serverless,
+                  test_framework_skip_if_single);
             }
 
             bson_free (test_name);
