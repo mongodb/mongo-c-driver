@@ -29,5 +29,5 @@ Errors are propagated via :symbol:`mongoc_bulk_operation_execute()`.
 
 .. seealso::
 
-  | :doc:`bulk`
+  | `Bulk Write Operations <bulk_>`_
 

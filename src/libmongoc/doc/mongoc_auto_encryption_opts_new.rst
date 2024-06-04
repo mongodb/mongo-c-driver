@@ -39,5 +39,5 @@ A new :symbol:`mongoc_auto_encryption_opts_t`, which must be destroyed with :sym
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | :doc:`in-use-encryption`
+  | `In-Use Encryption <in-use-encryption_>`_
 

@@ -32,5 +32,5 @@ true if the cursor has locally-buffered documents, or if a round-trip to the ser
 
 .. seealso::
 
-  | :ref:`Tailable Cursor Example <cursors_tailable>`
+  | `Tailable Cursor Example <cursors_tailable_>`_
 

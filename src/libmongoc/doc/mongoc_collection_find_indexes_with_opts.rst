@@ -45,4 +45,4 @@ The cursor functions :symbol:`mongoc_cursor_set_limit`, :symbol:`mongoc_cursor_s
 
 .. seealso::
 
-  | :doc:`manage-collection-indexes`.
+  | `Manage Collection Indexes <manage-collection-indexes_>`_.

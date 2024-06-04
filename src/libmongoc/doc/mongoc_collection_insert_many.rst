@@ -38,7 +38,7 @@ To insert a single document, see :symbol:`mongoc_collection_insert_one`.
 
 For any document that does not have an "_id" field, a :symbol:`bson:bson_oid_t` will be generated locally and added to the document. If you must know the inserted document's ``_id``, generate it in your code and include it in the ``document``. The ``_id`` you generate can be a :symbol:`bson:bson_oid_t` or any other non-array BSON type.
 
-If you pass a non-NULL ``reply``, it is filled out with an "insertedCount" field. If there is a server error then ``reply`` may contain a "writeErrors" array and/or a "writeConcernErrors" array (see :doc:`Bulk Write Operations <bulk>` for examples). The reply must be freed with :symbol:`bson:bson_destroy`.
+If you pass a non-NULL ``reply``, it is filled out with an "insertedCount" field. If there is a server error then ``reply`` may contain a "writeErrors" array and/or a "writeConcernErrors" array (see `Bulk Write Operations <bulk_>`_ for examples). The reply must be freed with :symbol:`bson:bson_destroy`.
 
 Errors
 ------

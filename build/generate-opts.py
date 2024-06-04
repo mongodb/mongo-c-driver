@@ -120,7 +120,7 @@ validate_option = ('validate', {
 
 collation_option = ('collation', {
     'type': 'document',
-    'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://www.mongodb.com/docs/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.'
+    'help': 'Configure textual comparisons. See `Setting Collation Order <setting_collation_order_>`_, and `the MongoDB Manual entry on Collation <https://www.mongodb.com/docs/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.'
 })
 
 array_filters_option = ('arrayFilters', {

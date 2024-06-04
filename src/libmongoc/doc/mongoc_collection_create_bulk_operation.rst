@@ -58,7 +58,7 @@ A newly allocated :symbol:`mongoc_bulk_operation_t` that should be freed with :s
 
 .. seealso::
 
-  | :symbol:`Bulk Write Operations <bulk>`
+  | `Bulk Write Operations <bulk_>`_
 
   :symbol:`mongoc_bulk_operation_t`
 

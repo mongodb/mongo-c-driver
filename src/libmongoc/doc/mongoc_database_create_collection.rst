@@ -30,7 +30,7 @@ This function creates a :symbol:`mongoc_collection_t` from the given :symbol:`mo
 
 If no write concern is provided in ``opts``, the database's write concern is used.
 
-The ``encryptedFields`` document in ``opts`` may be used to create a collection used for :doc:`Queryable Encryption </queryable-encryption>`.
+The ``encryptedFields`` document in ``opts`` may be used to create a collection used for `Queryable Encryption <queryable-encryption_>`_.
 
 For a list of all options, see `the MongoDB Manual entry on the create command <https://www.mongodb.com/docs/manual/reference/command/create/>`_.
 

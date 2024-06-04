@@ -599,9 +599,9 @@ test_small_initial_buffer (void *unused)
    BSON_UNUSED (unused);
 
    memset (&rr_data, 0, sizeof (rr_data));
-   ASSERT_OR_PRINT (
-      _mongoc_client_get_rr ("_mongodb._tcp.test1.test.build.10gen.cc", rr_type, &rr_data, small_buffer_size, &error),
-      error);
+   ASSERT_OR_PRINT (_mongoc_client_get_rr (
+                       "_mongodb._tcp.test1.test.build.10gen.cc", rr_type, &rr_data, small_buffer_size, false, &error),
+                    error);
    ASSERT_CMPINT (rr_data.count, ==, 2);
    bson_free (rr_data.txt_record_opts);
    _mongoc_host_list_destroy_all (rr_data.hosts);
@@ -612,12 +612,14 @@ _mock_rr_resolver_prose_test_9 (const char *service,
                                 mongoc_rr_type_t rr_type,
                                 mongoc_rr_data_t *rr_data,
                                 size_t initial_buffer_size,
+                                bool prefer_tcp,
                                 bson_error_t *error)
 {
    BSON_UNUSED (service);
    BSON_UNUSED (rr_type);
    BSON_UNUSED (rr_data);
    BSON_UNUSED (initial_buffer_size);
+   BSON_UNUSED (prefer_tcp);
    BSON_UNUSED (error);
 
    test_error ("Expected mock resolver to not be called");
@@ -853,12 +855,14 @@ _mock_rr_resolver_prose_test_10 (const char *service,
                                  mongoc_rr_type_t rr_type,
                                  mongoc_rr_data_t *rr_data,
                                  size_t initial_buffer_size,
+                                 bool prefer_tcp,
                                  bson_error_t *error)
 {
    BSON_UNUSED (initial_buffer_size);
 
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
+   BSON_UNUSED (prefer_tcp);
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
@@ -953,12 +957,14 @@ _mock_rr_resolver_prose_test_11 (const char *service,
                                  mongoc_rr_type_t rr_type,
                                  mongoc_rr_data_t *rr_data,
                                  size_t initial_buffer_size,
+                                 bool prefer_tcp,
                                  bson_error_t *error)
 {
    BSON_UNUSED (initial_buffer_size);
 
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
+   BSON_UNUSED (prefer_tcp);
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
@@ -1050,12 +1056,14 @@ _mock_rr_resolver_prose_test_12 (const char *service,
                                  mongoc_rr_type_t rr_type,
                                  mongoc_rr_data_t *rr_data,
                                  size_t initial_buffer_size,
+                                 bool prefer_tcp,
                                  bson_error_t *error)
 {
    BSON_UNUSED (initial_buffer_size);
 
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
+   BSON_UNUSED (prefer_tcp);
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
@@ -1185,6 +1193,130 @@ prose_test_12_pooled (void *unused)
    _prose_test_12 (&_prose_test_pooled_fns);
 }
 
+typedef struct {
+   bson_mutex_t lock;
+   mongoc_host_list_t *hosts;
+} rr_override_t;
+
+rr_override_t rr_override;
+
+// `_mock_rr_resolver_with_override` allows setting a custom list of hosts with the global override.
+static bool
+_mock_rr_resolver_with_override (const char *service,
+                                 mongoc_rr_type_t rr_type,
+                                 mongoc_rr_data_t *rr_data,
+                                 size_t initial_buffer_size,
+                                 bool prefer_tcp,
+                                 bson_error_t *error)
+{
+   BSON_UNUSED (initial_buffer_size);
+
+   BSON_ASSERT_PARAM (service);
+   BSON_ASSERT_PARAM (rr_data);
+   BSON_UNUSED (prefer_tcp);
+   BSON_ASSERT_PARAM (error);
+
+   if (rr_type == MONGOC_RR_SRV) {
+      bson_mutex_lock (&rr_override.lock);
+      const size_t count = _mongoc_host_list_length (rr_override.hosts);
+      BSON_ASSERT (bson_in_range_unsigned (uint32_t, count));
+      rr_data->hosts = _mongoc_host_list_copy_all (rr_override.hosts);
+      rr_data->count = (uint32_t) count;
+      rr_data->txt_record_opts = NULL;
+      bson_mutex_unlock (&rr_override.lock);
+   }
+
+   error->code = 0u;
+
+   return true;
+}
+
+// Test that after a server is removed from SRV records, all connections are closed.
+static void
+test_removing_servers_closes_connections (void *unused)
+{
+   BSON_UNUSED (unused);
+   bson_error_t error;
+   bool ok;
+   bson_t *ping = BCON_NEW ("ping", BCON_INT32 (1));
+
+   // Create a client pool to mongodb+srv://test1.test.build.10gen.cc. The URI resolves to two SRV records:
+   // - localhost.test.build.10gen.cc:27017
+   // - localhost.test.build.10gen.cc:27018
+   mongoc_client_pool_t *pool;
+   {
+      mongoc_uri_t *uri = mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+      // Set a short heartbeat so server monitors get quick responses.
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+      pool = mongoc_client_pool_new (uri);
+#if defined(MONGOC_ENABLE_SSL)
+      mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
+      ssl_opts.allow_invalid_hostname = true;
+      mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+#endif /* defined(MONGOC_ENABLE_SSL) */
+      // Override the SRV polling callback:
+      mongoc_topology_t *topology = _mongoc_client_pool_get_topology (pool);
+      bson_mutex_init (&rr_override.lock);
+      rr_override.hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017", "localhost.test.build.10gen.cc:27018");
+      _mongoc_topology_set_rr_resolver (topology, _mock_rr_resolver_with_override);
+      // Set a shorter SRV rescan interval.
+      _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, RESCAN_INTERVAL_MS);
+      mongoc_uri_destroy (uri);
+   }
+
+   // Count connections to both servers.
+   int32_t conns_27017_before = get_current_connection_count ("localhost:27017");
+   int32_t conns_27018_before = get_current_connection_count ("localhost:27018");
+
+   // Pop (and push) a client to start background monitoring.
+   {
+      mongoc_client_t *client = mongoc_client_pool_pop (pool);
+      mongoc_client_pool_push (pool, client);
+      // Wait for monitoring connections to be created.
+      // Expect two monitoring connections per server to be created in background.
+      ASSERT_EVENTUAL_CONN_COUNT ("localhost:27017", conns_27017_before + 2);
+      ASSERT_EVENTUAL_CONN_COUNT ("localhost:27018", conns_27018_before + 2);
+   }
+
+   // Send 'ping' commands on a client to each server to create operation connections.
+   {
+      mongoc_client_t *client = mongoc_client_pool_pop (pool);
+      ok = mongoc_client_command_simple_with_server_id (client, "admin", ping, NULL, 1 /* server ID */, NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+      ok = mongoc_client_command_simple_with_server_id (client, "admin", ping, NULL, 2 /* server ID */, NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+      mongoc_client_pool_push (pool, client);
+      // Expect an operation connection is created.
+      ASSERT_CONN_COUNT ("localhost:27017", conns_27017_before + 2 + 1);
+      ASSERT_CONN_COUNT ("localhost:27018", conns_27018_before + 2 + 1);
+   }
+
+   // Mock removal of localhost:27018.
+   {
+      bson_mutex_lock (&rr_override.lock);
+      _mongoc_host_list_destroy_all (rr_override.hosts);
+      rr_override.hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
+      bson_mutex_unlock (&rr_override.lock);
+   }
+
+   // Expect connections are closed to removed server.
+   {
+      // Expect monitoring connections to be closed in background.
+      ASSERT_EVENTUAL_CONN_COUNT ("localhost:27017", conns_27017_before + 2 + 1);
+      ASSERT_EVENTUAL_CONN_COUNT ("localhost:27018", conns_27018_before + 1);
+
+      // Pop and push the client to "prune" the stale operation connections.
+      mongoc_client_t *client = mongoc_client_pool_pop (pool);
+      mongoc_client_pool_push (pool, client);
+      ASSERT_CONN_COUNT ("localhost:27017", conns_27017_before + 2 + 1);
+      ASSERT_CONN_COUNT ("localhost:27018", conns_27018_before);
+   }
+
+   mongoc_client_pool_destroy (pool);
+   bson_mutex_destroy (&rr_override.lock);
+   bson_destroy (ping);
+}
+
 void
 test_dns_install (TestSuite *suite)
 {
@@ -1257,4 +1389,13 @@ test_dns_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/removing_servers_closes_connections",
+      test_removing_servers_closes_connections,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling,
+      test_framework_skip_if_max_wire_version_less_than_9 /* require server 4.4+ for streaming monitoring protocol */);
 }

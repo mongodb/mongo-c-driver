@@ -1,6 +1,6 @@
 .. seealso::
 
-  | :symbol:`authentication`
+  | `Authentication <authentication_>`_
 
   | :symbol:`mongoc_uri_get_auth_mechanism()`
 

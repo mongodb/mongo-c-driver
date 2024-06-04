@@ -14491,7 +14491,7 @@ buildvariants:
     name: ocsp-openssl-1.0.1
 - name: packaging
   display_name: Linux Distro Packaging
-  run_on: ubuntu1804-test
+  run_on: debian12-latest-small
   tasks:
   - debian-package-build
   - name: rpm-package-build

@@ -383,6 +383,14 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 #endif
 
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
+   // Check if requested to use TCP for SRV lookup.
+   {
+      char *srv_prefer_tcp = _mongoc_getenv ("MONGOC_EXPERIMENTAL_SRV_PREFER_TCP");
+      if (srv_prefer_tcp) {
+         topology->srv_prefer_tcp = true;
+      }
+      bson_free (srv_prefer_tcp);
+   }
    topology->usleep_fn = mongoc_usleep_default_impl;
    topology->session_pool = mongoc_server_session_pool_new_with_params (
       _server_session_init, _server_session_destroy, _server_session_should_prune, topology);
@@ -476,16 +484,24 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
       prefixed_hostname = bson_strdup_printf ("_%s._tcp.%s", mongoc_uri_get_srv_service_name (uri), srv_hostname);
-      if (!topology->rr_resolver (
-             prefixed_hostname, MONGOC_RR_SRV, &rr_data, MONGOC_RR_DEFAULT_BUFFER_SIZE, &topology->scanner->error)) {
+      if (!topology->rr_resolver (prefixed_hostname,
+                                  MONGOC_RR_SRV,
+                                  &rr_data,
+                                  MONGOC_RR_DEFAULT_BUFFER_SIZE,
+                                  topology->srv_prefer_tcp,
+                                  &topology->scanner->error)) {
          GOTO (srv_fail);
       }
 
       /* Failure to find TXT records will not return an error (since it is only
        * for options). But _mongoc_client_get_rr may return an error if
        * there is more than one TXT record returned. */
-      if (!topology->rr_resolver (
-             srv_hostname, MONGOC_RR_TXT, &rr_data, MONGOC_RR_DEFAULT_BUFFER_SIZE, &topology->scanner->error)) {
+      if (!topology->rr_resolver (srv_hostname,
+                                  MONGOC_RR_TXT,
+                                  &rr_data,
+                                  MONGOC_RR_DEFAULT_BUFFER_SIZE,
+                                  topology->srv_prefer_tcp,
+                                  &topology->scanner->error)) {
          GOTO (srv_fail);
       }
 
@@ -812,8 +828,12 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    prefixed_hostname =
       bson_strdup_printf ("_%s._tcp.%s", mongoc_uri_get_srv_service_name (topology->uri), srv_hostname);
 
-   ret = topology->rr_resolver (
-      prefixed_hostname, MONGOC_RR_SRV, &rr_data, MONGOC_RR_DEFAULT_BUFFER_SIZE, &topology->scanner->error);
+   ret = topology->rr_resolver (prefixed_hostname,
+                                MONGOC_RR_SRV,
+                                &rr_data,
+                                MONGOC_RR_DEFAULT_BUFFER_SIZE,
+                                topology->srv_prefer_tcp,
+                                &topology->scanner->error);
 
    td = mc_tpld_take_ref (topology);
    topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
