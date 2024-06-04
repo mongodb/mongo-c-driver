@@ -385,11 +385,11 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
    // Check if requested to use TCP for SRV lookup.
    {
-      char *MONGOC_EXPERIMENTAL_SRV_PREFER_TCP = _mongoc_getenv ("MONGOC_EXPERIMENTAL_SRV_PREFER_TCP");
-      if (MONGOC_EXPERIMENTAL_SRV_PREFER_TCP) {
+      char *srv_prefer_tcp = _mongoc_getenv ("MONGOC_EXPERIMENTAL_SRV_PREFER_TCP");
+      if (srv_prefer_tcp) {
          topology->srv_prefer_tcp = true;
       }
-      bson_free (MONGOC_EXPERIMENTAL_SRV_PREFER_TCP);
+      bson_free (srv_prefer_tcp);
    }
    topology->usleep_fn = mongoc_usleep_default_impl;
    topology->session_pool = mongoc_server_session_pool_new_with_params (
