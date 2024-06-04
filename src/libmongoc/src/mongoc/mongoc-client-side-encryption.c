@@ -424,6 +424,7 @@ struct _mongoc_client_encryption_encrypt_range_opts_t {
       bson_value_t value;
       bool set;
    } max;
+   int32_t trim_factor;
    int64_t sparsity;
    struct {
       int32_t value;
@@ -550,6 +551,14 @@ mongoc_client_encryption_encrypt_range_opts_new (void)
 }
 
 void
+mongoc_client_encryption_encrypt_range_opts_set_trim_factor (mongoc_client_encryption_encrypt_range_opts_t *range_opts,
+                                                             int32_t trim_factor)
+{
+   BSON_ASSERT_PARAM (range_opts);
+   range_opts->trim_factor = trim_factor;
+}
+
+void
 mongoc_client_encryption_encrypt_range_opts_set_sparsity (mongoc_client_encryption_encrypt_range_opts_t *range_opts,
                                                           int64_t sparsity)
 {
@@ -612,6 +621,7 @@ copy_range_opts (const mongoc_client_encryption_encrypt_range_opts_t *opts)
       opts_new->precision.set = true;
    }
    opts_new->sparsity = opts->sparsity;
+   opts_new->trim_factor = opts->trim_factor;
    return opts_new;
 }
 
@@ -990,6 +1000,9 @@ append_bson_range_opts (bson_t *bson_range_opts, const mongoc_client_encryption_
    }
    if (opts->range_opts->sparsity) {
       BSON_ASSERT (BSON_APPEND_INT64 (bson_range_opts, "sparsity", opts->range_opts->sparsity));
+   }
+   if (opts->range_opts->trim_factor) {
+      BSON_ASSERT (BSON_APPEND_INT32 (bson_range_opts, "trimFactor", opts->range_opts->trim_factor));
    }
 }
 
