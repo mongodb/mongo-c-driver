@@ -36,12 +36,10 @@ Identifies the algorithm to use for encryption. Valid values of ``algorithm`` ar
 
    for unindexed encryption. Specific to the `Queryable Encryption <queryable-encryption_>`_ feature.
 
-``"RangePreview"``
+``"Range"``
 
    for range encryption. Specific to the `Queryable Encryption <queryable-encryption_>`_ feature.
    
-   .. note:: The |qenc:range-is-experimental| |qenc:opt-is-experimental|
-
 Parameters
 ----------
 

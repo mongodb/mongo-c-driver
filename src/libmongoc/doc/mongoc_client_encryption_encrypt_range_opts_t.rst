@@ -10,10 +10,9 @@ Synopsis
 
   typedef struct _mongoc_client_encryption_encrypt_range_opts_t mongoc_client_encryption_encrypt_range_opts_t;
 
-.. important:: The |qenc:range-is-experimental| |qenc:api-is-experimental|
 .. versionadded:: 1.24.0
 
-RangeOpts specifies index options for a Queryable Encryption field supporting "rangePreview" queries. Used to set options for :symbol:`mongoc_client_encryption_encrypt()`.
+RangeOpts specifies index options for a Queryable Encryption field supporting "range" queries. Used to set options for :symbol:`mongoc_client_encryption_encrypt()`.
 
 The options min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
 
