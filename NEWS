@@ -9,6 +9,23 @@ Deprecated:
     * `mongoc_cursor_set_hint` is deprecated for `mongoc_cursor_set_server_id`
     * `mongoc_cursor_get_hint` is deprecated for `mongoc_cursor_get_server_id`
 
+libmongoc 1.27.2
+================
+
+Fixes:
+
+  * Close leftover connections to removed servers.
+
+New features:
+
+  * Check environment variable `MONGOC_EXPERIMENTAL_SRV_PREFER_TCP` to prefer TCP for SRV lookup.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libmongoc 1.27.1
 ================
 
