@@ -101,7 +101,7 @@ static BSON_THREAD_FUN (ssl_error_server, ptr)
 }
 
 
-#if !defined(__sun) && !defined(__APPLE__)
+#if !defined(__APPLE__)
 /** run as a child thread by test_mongoc_tls_hangup
  *
  * It:
