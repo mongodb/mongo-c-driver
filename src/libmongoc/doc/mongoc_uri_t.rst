@@ -79,7 +79,7 @@ The driver prefixes the service name with "_mongodb._tcp.", then performs a DNS 
 
 On Unix, the MongoDB C Driver relies on libresolv to look up SRV and TXT records. If libresolv is unavailable, then using a "mongodb+srv" URI will cause an error. If your libresolv lacks ``res_nsearch`` then the driver will fall back to ``res_search``, which is not thread-safe.
 
-Set the environment variable `MONGOC_SRV_PREFER_TCP=ON` to prefer TCP for the initial queries. The environment variable is ignored for ``res_search``. Large DNS responses over UDP may be truncated due to UDP size limitations. DNS resolvers are expected to retry over TCP if the UDP response indicates truncation. Some observed DNS environments do not set the truncation flag (TC), preventing the TCP retry.
+Set the environment variable ``MONGOC_SRV_PREFER_TCP=ON`` to prefer TCP for the initial queries. The environment variable is ignored for ``res_search``. Large DNS responses over UDP may be truncated due to UDP size limitations. DNS resolvers are expected to retry over TCP if the UDP response indicates truncation. Some observed DNS environments do not set the truncation flag (TC), preventing the TCP retry.
 
 IPv4 and IPv6
 -------------
