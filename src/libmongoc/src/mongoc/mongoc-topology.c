@@ -386,7 +386,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    // Check if requested to use TCP for SRV lookup.
    {
       char *MONGOC_EXPERIMENTAL_SRV_PREFER_TCP = _mongoc_getenv ("MONGOC_EXPERIMENTAL_SRV_PREFER_TCP");
-      if (MONGOC_EXPERIMENTAL_SRV_PREFER_TCP && 0 == strcmp (MONGOC_EXPERIMENTAL_SRV_PREFER_TCP, "ON")) {
+      if (MONGOC_EXPERIMENTAL_SRV_PREFER_TCP) {
          topology->srv_prefer_tcp = true;
       }
       bson_free (MONGOC_EXPERIMENTAL_SRV_PREFER_TCP);
