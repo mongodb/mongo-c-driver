@@ -4,8 +4,7 @@
       "minServerVersion": "8.0.0",
       "topology": [
         "replicaset"
-      ],
-      "maxServerVersion": "8.99.99"
+      ]
     }
   ],
   "database_name": "default",
