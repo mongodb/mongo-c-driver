@@ -28,7 +28,7 @@
             "$numberLong": "0"
           },
           "trimFactor": {
-            "$numberLong": "1"
+            "$numberInt": "1"
           },
           "sparsity": {
             "$numberLong": "1"
@@ -216,7 +216,7 @@
                             "$numberLong": "0"
                           },
                           "trimFactor": {
-                            "$numberLong": "1"
+                            "$numberInt": "1"
                           },
                           "sparsity": {
                             "$numberLong": "1"
@@ -266,7 +266,7 @@
                             "$numberLong": "0"
                           },
                           "trimFactor": {
-                            "$numberLong": "1"
+                            "$numberInt": "1"
                           },
                           "sparsity": {
                             "$numberLong": "1"
@@ -324,7 +324,7 @@
                             "$numberLong": "0"
                           },
                           "trimFactor": {
-                            "$numberLong": "1"
+                            "$numberInt": "1"
                           },
                           "sparsity": {
                             "$numberLong": "1"
