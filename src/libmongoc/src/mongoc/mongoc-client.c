@@ -170,7 +170,8 @@ txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data,
  */
 
 static bool
-_mongoc_get_rr_dnsapi (const char *hostname, mongoc_rr_type_t rr_type, mongoc_rr_data_t *rr_data, bson_error_t *error)
+_mongoc_get_rr_dnsapi (
+   const char *hostname, mongoc_rr_type_t rr_type, mongoc_rr_data_t *rr_data, bool prefer_tcp, bson_error_t *error)
 {
    const char *rr_type_name;
    WORD nst;
@@ -198,7 +199,11 @@ _mongoc_get_rr_dnsapi (const char *hostname, mongoc_rr_type_t rr_type, mongoc_rr
       callback = txt_callback;
    }
 
-   res = DnsQuery_UTF8 (hostname, nst, DNS_QUERY_BYPASS_CACHE, NULL /* IP Address */, &pdns, 0 /* reserved */);
+   DWORD options = DNS_QUERY_BYPASS_CACHE;
+   if (prefer_tcp) {
+      options |= DNS_QUERY_USE_TCP_ONLY;
+   }
+   res = DnsQuery_UTF8 (hostname, nst, options, NULL /* IP Address */, &pdns, 0 /* reserved */);
 
    if (res) {
       DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
@@ -386,6 +391,7 @@ _mongoc_get_rr_search (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        size_t initial_buffer_size,
+                       bool prefer_tcp,
                        bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_RES_NSEARCH
@@ -438,6 +444,9 @@ _mongoc_get_rr_search (const char *hostname,
 #ifdef MONGOC_HAVE_RES_NSEARCH
       /* thread-safe */
       res_ninit (&state);
+      if (prefer_tcp) {
+         state.options |= RES_USEVC;
+      }
       size = res_nsearch (&state, hostname, ns_c_in, nst, search_buf, buffer_size);
 #elif defined(MONGOC_HAVE_RES_SEARCH)
       size = res_search (hostname, ns_c_in, nst, search_buf, buffer_size);
@@ -551,6 +560,7 @@ _mongoc_client_get_rr (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        size_t initial_buffer_size,
+                       bool prefer_tcp,
                        bson_error_t *error)
 {
    BSON_ASSERT (rr_data);
@@ -563,9 +573,9 @@ _mongoc_client_get_rr (const char *hostname,
                    "libresolv unavailable, cannot use mongodb+srv URI");
    return false;
 #elif defined(MONGOC_HAVE_DNSAPI)
-   return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, error);
+   return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, prefer_tcp, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
-   return _mongoc_get_rr_search (hostname, rr_type, rr_data, initial_buffer_size, error);
+   return _mongoc_get_rr_search (hostname, rr_type, rr_data, initial_buffer_size, prefer_tcp, error);
 #else
 #error No SRV library is available, but ENABLE_SRV is true!
 #endif
