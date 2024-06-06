@@ -196,26 +196,24 @@ sbom-generate:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
 
 # sbom-download :
-#   Download an augmented SBOM from the Silk server. The `--out` argument will be
-#   the destination (on the host) where the augmented SBOM file will be written.
+#   Download an augmented SBOM from the Silk server for the given branch. Exports
+#   the artifact as /augmented-sbom.json
 #
 # Requires credentials for silk access.
-#
-# If --branch is not specified, it will be inferred from the current Git branch
 sbom-download:
     FROM alpine:3.20
     # ARG --required out
     ARG --required branch
-    # Run the SilkBomb tool to download the artifact that matches the current branch
+    # Run the SilkBomb tool to download the artifact that matches the requested branch
     FROM +silkbomb
-    LET date_cachebust=$(date +%F)
-    RUN --secret SILK_CLIENT_ID \
+    # Set --no-cache, because the remote artifact could change arbitrarily over time
+    RUN --no-cache \
+        --secret SILK_CLIENT_ID \
         --secret SILK_CLIENT_SECRET \
-        env date_cachebust=${date_cachebust} \
         silkbomb download \
             --sbom-out augmented-sbom.json \
             --silk-asset-group mongo-c-driver-${branch}
-    # Copy the downloaded file onto the host
+    # Export as /augmented-sbom.json
     SAVE ARTIFACT augmented-sbom.json
 
 # create-silk-asset-group :
