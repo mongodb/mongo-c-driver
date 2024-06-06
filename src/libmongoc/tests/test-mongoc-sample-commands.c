@@ -3639,7 +3639,7 @@ update_employee_info (mongoc_client_session_t *cs, bson_t *reply, bson_error_t *
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_SNAPSHOT);
    wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY); /* Atlas connection strings include majority by default*/
    txn_opts = mongoc_transaction_opts_new ();
    mongoc_transaction_opts_set_read_concern (txn_opts, rc);
    mongoc_transaction_opts_set_write_concern (txn_opts, wc);
@@ -3781,8 +3781,6 @@ with_transaction_example (bson_error_t *error)
 {
    mongoc_client_t *client = NULL;
    mongoc_write_concern_t *wc = NULL;
-   mongoc_read_concern_t *rc = NULL;
-   mongoc_read_prefs_t *rp = NULL;
    mongoc_collection_t *coll = NULL;
    bool success = false;
    bool ret = false;
@@ -3804,9 +3802,11 @@ with_transaction_example (bson_error_t *error)
 
    client = get_client ();
 
-   /* Prereq: Create collections. */
+   /* Prereq: Create collections. Note Atlas connection strings include a majority write
+    * concern by default.
+    */
    wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_wmajority (wc, 0);
    insert_opts = bson_new ();
    mongoc_write_concern_append (wc, insert_opts);
    coll = mongoc_client_get_collection (client, "mydb1", "foo");
@@ -3832,11 +3832,6 @@ with_transaction_example (bson_error_t *error)
 
    /* Step 2: Optional. Define options to use for the transaction. */
    txn_opts = mongoc_transaction_opts_new ();
-   rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   rc = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
-   mongoc_transaction_opts_set_read_prefs (txn_opts, rp);
-   mongoc_transaction_opts_set_read_concern (txn_opts, rc);
    mongoc_transaction_opts_set_write_concern (txn_opts, wc);
 
    /* Step 3: Use mongoc_client_session_with_transaction to start a transaction,
@@ -3851,8 +3846,6 @@ fail:
    bson_destroy (doc);
    mongoc_collection_destroy (coll);
    bson_destroy (insert_opts);
-   mongoc_read_concern_destroy (rc);
-   mongoc_read_prefs_destroy (rp);
    mongoc_write_concern_destroy (wc);
    mongoc_transaction_opts_destroy (txn_opts);
    mongoc_client_session_destroy (session);
