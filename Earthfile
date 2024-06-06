@@ -202,7 +202,6 @@ sbom-generate:
 # Requires credentials for silk access.
 sbom-download:
     FROM alpine:3.20
-    # ARG --required out
     ARG --required branch
     # Run the SilkBomb tool to download the artifact that matches the requested branch
     FROM +silkbomb
