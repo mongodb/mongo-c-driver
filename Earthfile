@@ -171,6 +171,82 @@ multibuild:
         --c_compiler=gcc --c_compiler=clang \
         --test_mongocxx_ref=master
 
+# release-archive :
+#   Create a release archive of the source tree. (Refer to dev docs)
+release-archive:
+    FROM alpine:3.20
+    RUN apk add git
+    ARG --required branch
+    ARG --required prefix
+    WORKDIR /s
+    COPY --dir .git .
+    COPY (+sbom-download/augmented-sbom.json --branch=$branch) cyclonedx.sbom.json
+    RUN git archive -o release.tar.gz \
+        --verbose \
+        --prefix="$prefix/" \ # Set the archive path prefix
+        "$branch" \ # Add the source tree
+        --add-file cyclonedx.sbom.json  # Add the SBOM
+    SAVE ARTIFACT release.tar.gz
+
+# Obtain the signing public key. Exported as an artifact /c-driver.pub
+signing-pubkey:
+    FROM alpine:3.20
+    RUN apk add curl
+    RUN curl --location --silent --fail "https://pgp.mongodb.com/c-driver.pub" -o /c-driver.pub
+    SAVE ARTIFACT /c-driver.pub
+
+# sign-file :
+#   Sign an arbitrary file. This uses internal MongoDB tools and requires authentication
+#   to be used access them. (Refer to dev docs)
+sign-file:
+    # Pull from Garasign:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-gpg
+    # Copy the file to be signed
+    ARG --required file
+    COPY $file /s/file
+    # Run the GPG signing command. Requires secrets!
+    RUN --secret GRS_CONFIG_USER1_USERNAME --secret GRS_CONFIG_USER1_PASSWORD \
+        gpgloader && \
+        gpg --yes --verbose --armor --detach-sign --output=/s/signature.asc /s/file
+    # Export the detatched signature
+    SAVE ARTIFACT /s/signature.asc /
+    # Verify the file signature against the public key
+    COPY +signing-pubkey/c-driver.pub /s/
+    RUN touch /keyring && \
+        gpg --no-default-keyring --keyring /keyring --import /s/c-driver.pub && \
+        gpgv --keyring=/keyring /s/signature.asc /s/file
+
+# signed-release :
+#   Generate a signed release artifact. Refer to the "Earthly" page of our dev docs for more information.
+#   (Refer to dev docs)
+signed-release:
+    FROM alpine:3.20
+    RUN apk add git
+    # We need to know which branch to archive
+    ARG --required branch
+    # The version of the release. This only affects file paths, not the actual result
+    ARG --required version
+    # File stem and archive prefix:
+    LET stem="mongo-c-driver-$version"
+    WORKDIR /s
+    # Run the commands "locally" so that the files can be transferred between the
+    # targets via the host filesystem.
+    LOCALLY
+    # Clean out a scratch space for us to work with
+    LET rel_dir = ".scratch/release"
+    RUN rm -rf -- "$rel_dir"
+    # Primary artifact files
+    LET rel_tgz = "$rel_dir/$stem.tar.gz"
+    LET rel_asc = "$rel_dir/$stem.tar.gz.asc"
+    # Make the release archive:
+    COPY (+release-archive/release.tar.gz --branch=$branch --prefix=$stem) $rel_tgz
+    # Sign the release archive:
+    COPY (+sign-file/signature.asc --file $rel_tgz) $rel_asc
+    # Save them as an artifact.
+    SAVE ARTIFACT $rel_dir /dist
+    # Remove our scratch space from the host. Getting at the artifacts requires `earthly --artifact`
+    RUN rm -rf -- "$rel_dir"
+
 # This target is simply an environment in which the SilkBomb executable is available.
 silkbomb:
     FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
