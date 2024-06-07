@@ -3639,7 +3639,8 @@ update_employee_info (mongoc_client_session_t *cs, bson_t *reply, bson_error_t *
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_SNAPSHOT);
    wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY); /* Atlas connection strings include majority by default*/
+   mongoc_write_concern_set_w (
+      wc, MONGOC_WRITE_CONCERN_W_MAJORITY); /* Atlas connection strings include majority by default*/
    txn_opts = mongoc_transaction_opts_new ();
    mongoc_transaction_opts_set_read_concern (txn_opts, rc);
    mongoc_transaction_opts_set_write_concern (txn_opts, wc);
