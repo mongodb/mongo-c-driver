@@ -3383,6 +3383,76 @@ test_sample_aggregation (mongoc_database_t *db)
 }
 
 static void
+test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
+{
+   /* Start Aggregation Projection Example 1 */
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_4)) {
+      return;
+   }
+
+   mongoc_collection_t *collection;
+   bson_t *filter;
+   bson_t *opts;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+
+   collection = mongoc_database_get_collection (db, "inventory");
+   filter = BCON_NEW (NULL);
+   opts = BCON_NEW ("projection", "{",
+                     "_id", BCON_INT32(0),
+                     "item", BCON_INT32(1),
+                     "status", "{", 
+                           "$switch", "{", 
+                              "branches", "[", 
+                                 "{",
+                                       "case", "{",
+                                          "$eq", "[", 
+                                             "$status", BCON_UTF8("A"),
+                                          "]",
+                                       "}",
+                                       "then", BCON_UTF8("Available"),
+                                 "}",
+                                 "{",
+                                       "case", "{",
+                                          "$eq", "[", 
+                                             "$status", BCON_UTF8("D"),
+                                          "]",
+                                       "}",
+                                       "then", BCON_UTF8("Discontinued"),
+                                 "}",
+                              "]",
+                              "default", BCON_UTF8("No status found"),
+                           "}",
+                     "}",
+                     "area", "{", 
+                           "$concat", "[", 
+                              "{", 
+                                 "$toString", "{", 
+                                       "$multiply", "[", 
+                                          BCON_UTF8("$size.h"),
+                                          BCON_UTF8("$size.w"),
+                                       "]",
+                                 "}",
+                              "}",
+                              BCON_UTF8(" "),
+                              BCON_UTF8("$size.uom"),
+                           "]",
+                     "}",
+                     "reportNumber", "{", 
+                           "$literal", BCON_INT32(1),
+                     "}",
+                  "}");
+
+
+   cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
+   /* End Aggregation Projection Example 1 */
+
+   ASSERT_NO_CAPTURED_LOGS ("sample projection with aggregation expressions examples");
+}
+
+
+static void
 test_sample_run_command (mongoc_database_t *db)
 {
    /* Start runCommand Example 1 */
@@ -4312,6 +4382,7 @@ test_sample_commands (void)
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
+   test_sample_projection_with_aggregation_expressions (db);
    test_sample_indexes (db);
    test_sample_run_command (db);
    test_sample_txn_commands (client);
