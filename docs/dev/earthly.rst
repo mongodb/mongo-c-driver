@@ -227,7 +227,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 .. _earthly.secrets:
 
 Setting Earthly Secrets
-=======================
+***********************
 
 Some of the above targets require defining `earthly secrets`_\
 [#creds]_.
