@@ -271,9 +271,8 @@ running :any:`+signed-release`, one will need to set up some environment that is
 required for it to succeed:
 
 1. :ref:`Authenticate with Artifactory <earthly.artifactory-auth>`
-2. Set the following Earthly secrets: :envvar:`GRS_CONFIG_USER1_PASSWORD`,
-   :envvar:`GRS_CONFIG_USER1_USERNAME`, :envvar:`SILK_CLIENT_ID`, and
-   :envvar:`SILK_CLIENT_SECRET`.
+2. Set the Earthly secrets required for the :any:`+sign-file` and
+   :any:`+sbom-download` targets.
 
 Once these prerequesites are met, creating the release archive can be done using
 the :any:`+signed-release` target. Let `$BRANCH` be the name of the Git branch
@@ -282,10 +281,11 @@ from which the release is being made::
    $ ./tools/earthly.sh --artifact +signed-release/dist dist --branch=$BRANCH --version=$NEW_VERSION
 
 The above command will create a `dist/` directory in the working directory that
-contains the release artifacts for specified branch. The generated filenames are
-based on the `--version` argument. The detached PGP signature is the file with
-the `.asc` extension and corresponds to the archive file with the same name
-without the `.asc` suffix.
+contains the release artifacts for specified branch from the
+:any:`+signed-release/dist/` directory artifact. The generated filenames are
+based on the :any:`+signed-release --version` argument. The detached PGP
+signature is the file with the `.asc` extension and corresponds to the archive
+file with the same name without the `.asc` suffix.
 
 .. code-block::
    :caption: Example :any:`+signed-release` output with `$NEW_VERSION="1.27.2"`
@@ -305,7 +305,7 @@ Attach the Release Artifacts
 
 In the :ref:`do.upload` step, a GitHub release was created. Navigate to that
 GitHub release and edit the release to attach additional artifacts. Attach the
-created ``.tar.gz`` and ``.tar.gz.asc`` files to the newly created release.
+files from :any:`+signed-release/dist/` to the newly created release.
 
 
 Publish Documentation

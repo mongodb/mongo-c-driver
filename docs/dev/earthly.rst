@@ -96,7 +96,8 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. option:: --version <version>
 
-      Forwarded to `+release-archive --version`. Only affects output filenames.
+      Forwarded to `+release-archive --version` and used to name the artifact
+      files in `+signed-release/dist/`.
 
    .. rubric:: Secrets
 
