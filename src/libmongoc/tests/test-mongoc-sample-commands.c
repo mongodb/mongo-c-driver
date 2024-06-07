@@ -3446,6 +3446,20 @@ test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
 
 
    cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      /* Do something with each doc here */
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   bson_destroy (filter);
+   bson_destroy (opts);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
    /* End Aggregation Projection Example 1 */
 
    ASSERT_NO_CAPTURED_LOGS ("sample projection with aggregation expressions examples");
