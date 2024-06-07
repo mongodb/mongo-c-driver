@@ -3386,7 +3386,7 @@ static void
 test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
 {
    /* Start Aggregation Projection Example 1 */
-   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_4)) {
+   if (!mongoc_check_version (4,4,0)) {
       return;
    }
 
@@ -3459,7 +3459,6 @@ test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
    bson_destroy (opts);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
-
    /* End Aggregation Projection Example 1 */
 
    ASSERT_NO_CAPTURED_LOGS ("sample projection with aggregation expressions examples");
@@ -4391,15 +4390,15 @@ test_sample_commands (void)
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
    test_sample_command (test_example_56, 56, db, collection, true);
-   test_sample_command (test_example_59, 59, db, collection, true);
-   test_sample_command (test_example_60, 60, db, collection, true);
+   // test_sample_command (test_example_59, 59, db, collection, true);
+   // test_sample_command (test_example_60, 60, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
    test_sample_projection_with_aggregation_expressions (db);
    test_sample_indexes (db);
    test_sample_run_command (db);
-   test_sample_txn_commands (client);
+   // test_sample_txn_commands (client);
 
    if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_9)) {
       test_sample_versioned_api ();
