@@ -3385,11 +3385,11 @@ test_sample_aggregation (mongoc_database_t *db)
 static void
 test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
 {
-   /* Start Aggregation Projection Example 1 */
-   if (!mongoc_check_version (4,4,0)) {
+   if (test_framework_get_server_version() < test_framework_str_to_version ("4.4")) {
       return;
    }
 
+   /* Start Aggregation Projection Example 1 */
    mongoc_collection_t *collection;
    bson_t *filter;
    bson_t *opts;
