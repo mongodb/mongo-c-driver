@@ -152,7 +152,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    .. option:: --branch <branch>
 
       **Required**. Specifies the branch of the repository from which we are
-      requested an SBOM.
+      requesting an SBOM.
 
       .. note::
 
@@ -183,7 +183,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    .. option:: --file <filepath>
 
       **Required**. Specify a path to a file (on the host) to be signed. This
-      file must be a descendent of the directory that contains the ``Earthfile``
+      file must be a descendant of the directory that contains the ``Earthfile``
       and must not be excluded by an ``.earthlyignore`` file (it is copied
       into the container using the COPY__ command.)
 

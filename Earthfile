@@ -197,7 +197,7 @@ signing-pubkey:
 
 # sign-file :
 #   Sign an arbitrary file. This uses internal MongoDB tools and requires authentication
-#   to be used access them. (Refer to dev docs)
+#   to be used to access them. (Refer to dev docs)
 sign-file:
     # Pull from Garasign:
     FROM artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-gpg
