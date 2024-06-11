@@ -116,10 +116,26 @@ _mongoc_gridfs_new (mongoc_client_t *client, const char *db, const char *prefix,
 
    gridfs->client = client;
 
-   bson_snprintf (buf, sizeof (buf), "%s.chunks", prefix);
+   int req = bson_snprintf (buf, sizeof (buf), "%s.chunks", prefix);
+   if (bson_in_range_size_t_signed (req) ||(size_t) req < sizeof (buf)) {
+         bson_set_error (error,
+                     MONGOC_ERROR_COMMAND,
+                     MONGOC_ERROR_COMMAND_INVALID_ARG,
+                     "prefix \"%s\" must have fewer than %d characters",
+                     prefix,
+                     (int) (sizeof (buf) - (strlen (".chunks") + 1)));
+   }
    gridfs->chunks = mongoc_client_get_collection (client, db, buf);
 
-   bson_snprintf (buf, sizeof (buf), "%s.files", prefix);
+   req = bson_snprintf (buf, sizeof (buf), "%s.files", prefix);
+   if (bson_in_range_size_t_signed (req) ||(size_t) req < sizeof (buf)) {
+         bson_set_error (error,
+                     MONGOC_ERROR_COMMAND,
+                     MONGOC_ERROR_COMMAND_INVALID_ARG,
+                     "prefix \"%s\" must have fewer than %d characters",
+                     prefix,
+                     (int) (sizeof (buf) - (strlen (".files") + 1)));
+   }
    gridfs->files = mongoc_client_get_collection (client, db, buf);
 
    r = _mongoc_gridfs_ensure_index (gridfs, error);
