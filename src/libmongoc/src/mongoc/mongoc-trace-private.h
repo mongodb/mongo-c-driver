@@ -31,43 +31,46 @@
 
 BSON_BEGIN_DECLS
 
+// `gLogTrace` determines if tracing is enabled at runtime.
+extern bool gLogTrace;
+
 #define TRACE(msg, ...)                                                                                          \
    do {                                                                                                          \
-      if (MONGOC_TRACE_ENABLED) {                                                                                \
+      if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                                   \
          mongoc_log (                                                                                            \
             MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, "TRACE: %s():%d " msg, BSON_FUNC, __LINE__, __VA_ARGS__); \
       }                                                                                                          \
    } while (0)
 #define ENTRY                                                                                           \
    do {                                                                                                 \
-      if (MONGOC_TRACE_ENABLED) {                                                                       \
+      if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                          \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, "ENTRY: %s():%d", BSON_FUNC, __LINE__); \
       }                                                                                                 \
    } while (0)
 #define EXIT                                                                                            \
    do {                                                                                                 \
-      if (MONGOC_TRACE_ENABLED) {                                                                       \
+      if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                          \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, __LINE__); \
       }                                                                                                 \
       return;                                                                                           \
    } while (0)
 #define RETURN(ret)                                                                                     \
    do {                                                                                                 \
-      if (MONGOC_TRACE_ENABLED) {                                                                       \
+      if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                          \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, __LINE__); \
       }                                                                                                 \
       return ret;                                                                                       \
    } while (0)
 #define GOTO(label)                                                                                                \
    do {                                                                                                            \
-      if (MONGOC_TRACE_ENABLED) {                                                                                  \
+      if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                                     \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " GOTO: %s():%d %s", BSON_FUNC, __LINE__, #label); \
       }                                                                                                            \
       goto label;                                                                                                  \
    } while (0)
 #define DUMP_BYTES(_n, _b, _l)                               \
    do {                                                      \
-      if (MONGOC_TRACE_ENABLED) {                            \
+      if (MONGOC_TRACE_ENABLED && gLogTrace) {               \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE,                 \
                      MONGOC_LOG_DOMAIN,                      \
                      "TRACE: %s():%d %s = %p [%d]",          \
@@ -81,7 +84,7 @@ BSON_BEGIN_DECLS
    } while (0)
 #define DUMP_BSON(_bson)                                               \
    do {                                                                \
-      if (MONGOC_TRACE_ENABLED) {                                      \
+      if (MONGOC_TRACE_ENABLED && gLogTrace) {                         \
          char *_bson_str;                                              \
          if (_bson) {                                                  \
             _bson_str = bson_as_canonical_extended_json (_bson, NULL); \
@@ -100,7 +103,7 @@ BSON_BEGIN_DECLS
    } while (0)
 #define DUMP_IOVEC(_n, _iov, _iovcnt)                               \
    do {                                                             \
-      if (MONGOC_TRACE_ENABLED) {                                   \
+      if (MONGOC_TRACE_ENABLED && gLogTrace) {                      \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE,                        \
                      MONGOC_LOG_DOMAIN,                             \
                      "TRACE: %s():%d %s = %p [%d]",                 \
