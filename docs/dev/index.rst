@@ -21,6 +21,7 @@ the mongo-c-driver project directory:
 
    debian
    earthly
+   deps
 
 .. Add the `releasing` page to a hidden toctree. We don't want to include it
    directly in a visible toctree because the top-level sections would render inline

@@ -98,3 +98,9 @@ def setup(app: Sphinx):
         indextemplate="pair: earthly artifact; %s",
         parse_node=parse_earthly_artifact,
     )
+    app.add_object_type(  # type: ignore
+        "file",
+        "file",
+        indextemplate="repository file; %s",
+        parse_node=annotator("repository file"),
+    )
