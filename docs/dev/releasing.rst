@@ -220,6 +220,8 @@ yet: That step will be handled automatically by the release script in the next
 steps.
 
 
+.. _do.upload:
+
 Sign & Upload the Release
 *************************
 
@@ -242,6 +244,69 @@ to post the release to GitHub:
 Update the ``VERSION_CURRENT`` file on the release branch::
 
    $ python $CDRIVER_TOOLS/release.py post_release_bump
+
+
+Publish Additional Artifacts
+****************************
+
+.. note::
+
+   This is currently a manual additional process, but may be automated to be
+   part of the release scripts in the future.
+
+We publish a release archive that contains a snapshot of the repository and some
+additional metadata, along with an OpenPGP signature of that archive. This
+archive is created using scripts in the C driver repository itself, not in
+`$CDRIVER_TOOLS`.
+
+
+.. _releasing.gen-archive:
+
+Generate the Release Artifacts
+==============================
+
+The release artifacts are generated using :doc:`Earthly <earthly>`.
+Specifically, it is generated using the :any:`+signed-release` target. Before
+running :any:`+signed-release`, one will need to set up some environment that is
+required for it to succeed:
+
+1. :ref:`Authenticate with Artifactory <earthly.artifactory-auth>`
+2. Set the Earthly secrets required for the :any:`+sign-file` and
+   :any:`+sbom-download` targets.
+
+Once these prerequesites are met, creating the release archive can be done using
+the :any:`+signed-release` target. Let `$BRANCH` be the name of the Git branch
+from which the release is being made::
+
+   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$BRANCH --version=$NEW_VERSION
+
+The above command will create a `dist/` directory in the working directory that
+contains the release artifacts from the :any:`+signed-release/dist/` directory
+artifact. The generated filenames are based on the
+:any:`+signed-release --version` argument. The archive contenst come from the
+Git tag corresponding to the specified version. The detached PGP signature is
+the file with the `.asc` extension and corresponds to the archive file with the
+same name without the `.asc` suffix.
+
+.. code-block::
+   :caption: Example :any:`+signed-release` output with `$NEW_VERSION="1.27.2"`
+
+   $ ls dist/
+   mongo-c-driver-1.27.2.tar.gz
+   mongo-c-driver-1.27.2.tar.gz.asc
+
+.. note::
+
+   The public key that corresponds to the signature is available at
+   https://pgp.mongodb.com/c-driver.pub
+
+
+Attach the Release Artifacts
+============================
+
+In the :ref:`do.upload` step, a GitHub release was created. Navigate to that
+GitHub release and edit the release to attach additional artifacts. Attach the
+files from :any:`+signed-release/dist/` to the newly created release.
 
 
 Publish Documentation
@@ -281,7 +346,7 @@ Create a new branch from the C driver ``master`` branch, which will be used to
 publish a PR to merge the updates to the release files back into ``master``::
 
    $ git checkout master
-   $ git checkout post-release-merge
+   $ git checkout -b post-release-merge
 
 (Here we have named the branch ``post-release-merge``, but the branch name is
 arbitrary.)
