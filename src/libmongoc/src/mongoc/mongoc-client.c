@@ -716,7 +716,7 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
    saddr.sun_family = AF_UNIX;
    int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
 
-   if (bson_in_range_size_t_signed (req) || (size_t) req < sizeof saddr.sun_path - 1) {
+   if (!bson_in_range_size_t_signed (req) || (size_t) req >= sizeof saddr.sun_path - 1) {
       bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
       RETURN (false);
    }
