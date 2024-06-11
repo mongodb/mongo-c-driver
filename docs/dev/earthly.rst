@@ -90,14 +90,20 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       are based on the `--version` argument.
 
    .. rubric:: Parameters
-   .. option:: --branch <branch>
+   .. option:: --sbom_branch <branch>
 
-      Forwarded to `+release-archive --branch` and `+sbom-download --branch`
+      Forwarded to `+release-archive --sbom_branch`
 
    .. option:: --version <version>
 
-      Forwarded to `+release-archive --version` and used to name the artifact
-      files in `+signed-release/dist/`.
+      Affects the output filename and archive prefix paths in
+      `+signed-release/dist/` and sets the default value for `--ref`.
+
+   .. option:: --ref <git-ref>
+
+      Specify the git revision to be archived. Forwarded to
+      `+release-archive --ref`. If unspecified, archives the Git tag
+      corresponding to `--version`.
 
    .. rubric:: Secrets
 
@@ -119,7 +125,11 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       `+sbom-download/augmented-sbom.json` artifact.
 
    .. rubric:: Parameters
-   .. option:: --branch <branch>
+   .. option:: --sbom_branch <branch>
+
+      Forwarded as `+sbom-download --branch` to download the augmented SBOM.
+
+   .. option:: --ref <git-ref>
 
       Specifies the Git revision that is used when we use ``git archive`` to
       generate the repository archive snapshot. Use of ``git archive`` ensures
@@ -127,14 +137,11 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       include local changes and ignored files). This also allows a release
       snapshot to be taken for a non-active branch.
 
-      Forwarded as `+sbom-download --branch` to download the augmented
-      SBOM.
+   .. option:: --prefix <path>
 
-   .. option:: --version <version>
-
-      Specify a version number to appear in the generated filepaths. This has no
-      effect on the files archived, which is selected by
-      `+release-archive --branch`.
+      Specify a filepath prefix to appear in the generated filepaths. This has
+      no effect on the files archived, which is selected by
+      `+release-archive --ref`.
 
 
 .. program:: +sbom-download

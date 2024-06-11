@@ -176,15 +176,16 @@ multibuild:
 release-archive:
     FROM alpine:3.20
     RUN apk add git
-    ARG --required branch
+    ARG --required sbom_branch
     ARG --required prefix
+    ARG --required ref
     WORKDIR /s
     COPY --dir .git .
-    COPY (+sbom-download/augmented-sbom.json --branch=$branch) cyclonedx.sbom.json
+    COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
     RUN git archive -o release.tar.gz \
         --verbose \
         --prefix="$prefix/" \ # Set the archive path prefix
-        "$branch" \ # Add the source tree
+        "$ref" \ # Add the source tree
         --add-file cyclonedx.sbom.json  # Add the SBOM
     SAVE ARTIFACT release.tar.gz
 
@@ -222,10 +223,12 @@ sign-file:
 signed-release:
     FROM alpine:3.20
     RUN apk add git
-    # We need to know which branch to archive
-    ARG --required branch
-    # The version of the release. This only affects file paths, not the actual result
+    # We need to know which branch to get the SBOM from
+    ARG --required sbom_branch
+    # The version of the release. This affects the filepaths of the output and is the default for --ref
     ARG --required version
+    # The Git revision of the repository to be archived. By default, archives the tag of the given version
+    ARG ref=refs/tags/$version
     # File stem and archive prefix:
     LET stem="mongo-c-driver-$version"
     WORKDIR /s
@@ -239,7 +242,7 @@ signed-release:
     LET rel_tgz = "$rel_dir/$stem.tar.gz"
     LET rel_asc = "$rel_dir/$stem.tar.gz.asc"
     # Make the release archive:
-    COPY (+release-archive/release.tar.gz --branch=$branch --prefix=$stem) $rel_tgz
+    COPY (+release-archive/release.tar.gz --branch=$sbom_branch --prefix=$stem --ref=$ref) $rel_tgz
     # Sign the release archive:
     COPY (+sign-file/signature.asc --file $rel_tgz) $rel_asc
     # Save them as an artifact.
