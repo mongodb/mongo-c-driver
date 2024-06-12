@@ -246,6 +246,7 @@ fi
 
 if [[ "${OIDC}" == "oidc" ]]; then
   test_args+=("-l" "/unified/mongodb-oidc-no-retry")
+  test_args+=("-l" "/unified/runOnRequirement-authMechanism-type.json")
   echo "TESTING OIDC"
 fi
 
