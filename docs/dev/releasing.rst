@@ -17,11 +17,24 @@ MongoDB C driver library. The release includes the following steps:
 .. _evg-release-settings: https://spruce.mongodb.com/project/mongo-c-driver-latest-release/settings/general
 
 
+Check Static Analysis
+#####################
+
+Check Coverity, fix high-impact issues, and generate a static analysis report.
+`Follow the process outlined in this document`__ for the *C Driver* project in
+Coverity.
+
+__ https://docs.google.com/document/d/1rkFL8ymbkc0k8Apky9w5pTPbvKRm68wj17mPJt2_0yo
+
+.. note::
+
+   This step may require additional code changes that can delay the release!
+
+
 Check that Tests Are Passing
 ############################
 
-Before releasing, ensure that the latest commits on the branch are successful in
-CI.
+Ensure that the latest commits on the branch are successful in CI.
 
 - For minor releases, `refer to the tests in the latest build <latest-build_>`_
 - For patch releases, `refer to the latest runs for the branch project <evg-release_>`_.
