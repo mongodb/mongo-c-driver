@@ -128,8 +128,10 @@ typedef struct _mongoc_topology_t {
    int64_t min_heartbeat_frequency_msec;
 
    /* Minimum of SRV record TTLs, but no lower than 60 seconds.
-    * May be zero for non-SRV/non-MongoS topology. */
-   int64_t srv_polling_rescan_interval_ms;
+    * May be zero for non-SRV/non-MongoS topology.
+    * DO NOT access directly: use the accessor methods to get/set the value.
+    */
+   int64_t _atomic_srv_polling_rescan_interval_ms;
    int64_t srv_polling_last_scan_ms;
    /* For multi-threaded, srv polling occurs in a separate thread. */
    bson_thread_t srv_polling_thread;
@@ -440,12 +442,23 @@ mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
 void
 _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology, _mongoc_rr_resolver_fn rr_resolver);
 
-/* _mongoc_topology_set_srv_polling_rescan_interval_ms is called by tests to
- * shorten the rescan interval.
- * Callers should call this before monitoring starts.
+/**
+ * @brief Thread-safe update the SRV polling rescan interval on the given topology
  */
-void
-_mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val);
+static inline void
+_mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val)
+{
+   bson_atomic_int64_exchange (&topology->_atomic_srv_polling_rescan_interval_ms, val, bson_memory_order_seq_cst);
+}
+
+/**
+ * @brief Thread-safe get the SRV polling interval
+ */
+static inline int64_t
+_mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *topology)
+{
+   return bson_atomic_int64_fetch (&topology->_atomic_srv_polling_rescan_interval_ms, bson_memory_order_seq_cst);
+}
 
 /**
  * @brief Return the latest connection generation for the server_id and/or
