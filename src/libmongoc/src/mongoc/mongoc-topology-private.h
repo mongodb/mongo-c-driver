@@ -233,7 +233,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded);
 void
 mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
                                    mongoc_topology_description_t *td,
-                                   mongoc_apm_callbacks_t *callbacks,
+                                   mongoc_apm_callbacks_t const *callbacks,
                                    void *context);
 
 void

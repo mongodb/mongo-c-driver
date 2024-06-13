@@ -568,25 +568,30 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool, mongoc_apm_cal
    BSON_ASSERT_PARAM (pool);
 
    mongoc_topology_t *const topology = BSON_ASSERT_PTR_INLINE (pool)->topology;
-   mc_tpld_modification tdmod;
+   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
 
+   // Prevent setting callbacks more than once
    if (pool->apm_callbacks_set) {
+      mc_tpld_modify_drop (tdmod);
       MONGOC_ERROR ("Can only set callbacks once");
       return false;
    }
 
-   tdmod = mc_tpld_modify_begin (topology);
-
+   // Update callbacks on the pool
    if (callbacks) {
-      memcpy (&tdmod.new_td->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
-      memcpy (&pool->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
+      pool->apm_callbacks = *callbacks;
+   } else {
+      pool->apm_callbacks = (mongoc_apm_callbacks_t){0};
    }
-
-   mongoc_topology_set_apm_callbacks (topology, tdmod.new_td, callbacks, context);
-   tdmod.new_td->apm_context = context;
    pool->apm_context = context;
+
+   // Update callbacks on the topology
+   mongoc_topology_set_apm_callbacks (topology, tdmod.new_td, callbacks, context);
+
+   // Signal that we have already set the callbacks
    pool->apm_callbacks_set = true;
 
+   // Save our updated topology
    mc_tpld_modify_commit (tdmod);
 
    return true;
