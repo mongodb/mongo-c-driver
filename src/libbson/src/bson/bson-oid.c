@@ -93,9 +93,10 @@ _oid_init (bson_oid_t *oid, bson_context_t *context, bool add_random)
    // Maybe add randomness if the caller wants it
    if (add_random) {
       _bson_context_set_oid_rand (context, oid);
+      _bson_context_set_oid_seq32 (context, oid);
+   } else {
+      _bson_context_set_oid_seq64 (context, oid);
    }
-   // Init the sequence counter
-   _bson_context_set_oid_seq32 (context, oid);
 }
 
 void
