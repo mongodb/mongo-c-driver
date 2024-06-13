@@ -640,15 +640,15 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 void
 mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
                                    mongoc_topology_description_t *td,
-                                   mongoc_apm_callbacks_t *callbacks,
+                                   mongoc_apm_callbacks_t const *callbacks,
                                    void *context)
 {
    if (callbacks) {
-      memcpy (&td->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
-      memcpy (&topology->scanner->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
+      td->apm_callbacks = *callbacks;
+      topology->scanner->apm_callbacks = *callbacks;
    } else {
-      memset (&td->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
-      memset (&topology->scanner->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
+      td->apm_callbacks = (mongoc_apm_callbacks_t){0};
+      topology->scanner->apm_callbacks = (mongoc_apm_callbacks_t){0};
    }
 
    td->apm_context = context;
