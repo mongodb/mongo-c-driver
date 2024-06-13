@@ -84,7 +84,7 @@ _cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
                               bson_error_t *error);
 
 static bool
-mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error);
+mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error);
 
 static void
 _bson_error_message_printf (bson_error_t *error, const char *format, ...) BSON_GNUC_PRINTF (2, 3);
@@ -235,7 +235,7 @@ static const int32_t message_header_length = 4u * sizeof (int32_t);
 
 static bool
 _mongoc_cluster_run_command_opquery_send (
-   mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, int32_t compressor_id, mcd_rpc_message *rpc, bson_error_t *error)
+   mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, int32_t compressor_id, mcd_rpc_message *rpc, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (cmd);
@@ -319,7 +319,7 @@ done:
 
 static bool
 _mongoc_cluster_run_command_opquery_recv (
-   mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
+   mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (cmd);
@@ -398,7 +398,7 @@ done:
 
 static bool
 mongoc_cluster_run_command_opquery (
-   mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, int32_t compressor_id, bson_t *reply, bson_error_t *error)
+   mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, int32_t compressor_id, bson_t *reply, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (cmd);
@@ -657,7 +657,10 @@ _should_use_op_msg (const mongoc_cluster_t *cluster)
  */
 
 bool
-mongoc_cluster_run_command_private (mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
+mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
+                                    const mongoc_cmd_t *cmd,
+                                    bson_t *reply,
+                                    bson_error_t *error)
 {
    bool retval;
    const mongoc_server_stream_t *server_stream;
@@ -757,24 +760,16 @@ _stream_run_hello (mongoc_cluster_t *cluster,
                    bson_t *speculative_auth_response /* OUT */,
                    bson_error_t *error)
 {
-   bson_t handshake_command; /* Initialized by dup_handshake below */
-   mongoc_cmd_t hello_cmd;
-   bson_t reply;
-   int64_t start;
-   int64_t rtt_msec;
-   mongoc_server_description_t empty_sd;
-   mongoc_server_description_t *ret_handshake_sd;
-   mongoc_server_stream_t *server_stream;
-   bool r;
-   mongoc_ssl_opt_t *ssl_opts = NULL;
    mc_shared_tpld td = mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
 
    ENTRY;
 
    BSON_ASSERT (stream);
 
+   bson_t handshake_command;
    _mongoc_topology_dup_handshake_cmd (cluster->client->topology, &handshake_command);
 
+   mongoc_ssl_opt_t *ssl_opts = NULL;
    if (cluster->requires_auth && speculative_auth_response) {
 #ifdef MONGOC_ENABLE_SSL
       ssl_opts = &cluster->client->ssl_opts;
@@ -787,7 +782,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       _mongoc_handshake_append_sasl_supported_mechs (cluster->uri, &handshake_command);
    }
 
-   start = bson_get_monotonic_time ();
+   const int64_t start = bson_get_monotonic_time ();
    /* TODO CDRIVER-3654: do not use a mongoc_server_stream here.
     * Instead, use a plain stream. If a network error occurs, check the cluster
     * node's generation (which is the generation of the created connection) to
@@ -798,33 +793,40 @@ _stream_run_hello (mongoc_cluster_t *cluster,
     * Then _mongoc_cluster_stream_for_server also handles the error, and
     * invalidates again.
     */
+   mongoc_server_description_t empty_sd;
    mongoc_server_description_init (&empty_sd, address, server_id);
-   server_stream = _mongoc_cluster_create_server_stream (td.ptr, &empty_sd, stream);
-
+   mongoc_server_stream_t *const server_stream = _mongoc_cluster_create_server_stream (td.ptr, &empty_sd, stream);
    mongoc_server_description_cleanup (&empty_sd);
 
-   /* Set up the shared parts of the mongo_cmd_t, which will later be converted
-   to either an op_msg or op_query: */
-   memset (&hello_cmd, 0, sizeof (hello_cmd));
-
+   mongoc_query_flags_t query_flags = MONGOC_QUERY_NONE;
    /* Use OP_QUERY for the handshake, unless the user has specified an
     * API version; the correct hello_cmd has already been selected: */
    if (!_should_use_op_msg (cluster)) {
       /* Complete OPCODE_QUERY setup: */
-      hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
+      query_flags |= MONGOC_QUERY_SECONDARY_OK;
    } else {
       /* We're using OP_MSG, and require some additional doctoring: */
       bson_append_utf8 (&handshake_command, "$db", 3, "admin", 5);
    }
 
-   hello_cmd.db_name = "admin";
-   hello_cmd.command = &handshake_command;
-   hello_cmd.command_name = _mongoc_get_command_name (&handshake_command);
-   hello_cmd.server_stream = server_stream;
-   hello_cmd.is_acknowledged = true;
+   /* Set up the shared parts of the mongo_cmd_t, which will later be converted
+   to either an op_msg or op_query: */
+   const mongoc_cmd_t hello_cmd = {
+      .db_name = "admin",
+      .command = &handshake_command,
+      .command_name = _mongoc_get_command_name (&handshake_command),
+      .server_stream = server_stream,
+      .is_acknowledged = true,
+      .query_flags = query_flags,
+   };
 
+   bson_t reply;
+   // The final resulting server description
+   mongoc_server_description_t *ret_handshake_sd = NULL;
    if (!mongoc_cluster_run_command_private (cluster, &hello_cmd, &reply, error)) {
+      // Command execution failed.
       if (negotiate_sasl_supported_mechs) {
+         // Negotiating a new SASL mechanism
          bsonParse (reply,
                     find (allOf (key ("ok"), isFalse), //
                           do ({
@@ -836,39 +838,35 @@ _stream_run_hello (mongoc_cluster_t *cluster,
                              error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
                           })));
       }
+   } else {
+      // "hello" succeeded
 
-      mongoc_server_stream_cleanup (server_stream);
-      ret_handshake_sd = NULL;
-      goto done;
-   }
+      // Round-trip time for the hello command
+      const int64_t rtt_msec = (bson_get_monotonic_time () - start) / 1000;
 
-   rtt_msec = (bson_get_monotonic_time () - start) / 1000;
+      ret_handshake_sd = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
+      mongoc_server_description_init (ret_handshake_sd, address, server_id);
+      /* send the error from run_command IN to handle_hello */
+      mongoc_server_description_handle_hello (ret_handshake_sd, &reply, rtt_msec, error);
 
-   ret_handshake_sd = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
+      if (cluster->requires_auth && speculative_auth_response) {
+         _mongoc_topology_scanner_parse_speculative_authentication (&reply, speculative_auth_response);
+      }
 
-   mongoc_server_description_init (ret_handshake_sd, address, server_id);
-   /* send the error from run_command IN to handle_hello */
-   mongoc_server_description_handle_hello (ret_handshake_sd, &reply, rtt_msec, error);
-
-   if (cluster->requires_auth && speculative_auth_response) {
-      _mongoc_topology_scanner_parse_speculative_authentication (&reply, speculative_auth_response);
-   }
-
-   /* Note: This call will render our copy of the topology description to be
-    * stale */
-   r = _mongoc_topology_update_from_handshake (cluster->client->topology, ret_handshake_sd);
-   if (!r) {
-      mongoc_server_description_reset (ret_handshake_sd);
-      bson_set_error (&ret_handshake_sd->error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                      "\"%s\" removed from topology",
-                      address);
+      /* Note: This call will render our copy of the topology description to be
+       * stale */
+      const bool update_okay = _mongoc_topology_update_from_handshake (cluster->client->topology, ret_handshake_sd);
+      if (!update_okay) {
+         mongoc_server_description_reset (ret_handshake_sd);
+         bson_set_error (&ret_handshake_sd->error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                         "\"%s\" removed from topology",
+                         address);
+      }
    }
 
    mongoc_server_stream_cleanup (server_stream);
-
-done:
    bson_destroy (&handshake_command);
    bson_destroy (&reply);
    mc_tpld_drop_ref (&td);
@@ -3179,7 +3177,7 @@ done:
 
 
 static void
-network_error_reply (bson_t *reply, mongoc_cmd_t *cmd)
+network_error_reply (bson_t *reply, const mongoc_cmd_t *cmd)
 {
    bson_array_builder_t *labels;
 
@@ -3220,7 +3218,7 @@ network_error_reply (bson_t *reply, mongoc_cmd_t *cmd)
 
 static bool
 _mongoc_cluster_run_opmsg_send (
-   mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
+   mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (cmd);
@@ -3313,7 +3311,7 @@ _mongoc_cluster_run_opmsg_send (
 
 static bool
 _mongoc_cluster_run_opmsg_recv (
-   mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
+   mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (cmd);
@@ -3421,7 +3419,7 @@ done:
 }
 
 static bool
-mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
+mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (cmd);
