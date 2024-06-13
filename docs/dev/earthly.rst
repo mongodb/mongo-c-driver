@@ -147,13 +147,13 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 .. program:: +sbom-download
 .. earthly-target:: +sbom-download
 
-   Download an augmented SBOM from Silk for a given project branch. This target
+   Download an `augmented SBOM <augmented-sbom>` from Silk for a given project branch. This target
    explicitly disables caching, because the upstream SBOM file can change
    arbitrarily.
 
    .. earthly-artifact:: +sbom-download/augmented-sbom.json
 
-      The augmented SBOM downloaded from Silk for the requested branch.
+      The `augmented SBOM <augmented-sbom>` downloaded from Silk for the requested branch.
 
    .. rubric:: Parameters
    .. option:: --branch <branch>
@@ -230,6 +230,17 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    .. earthly-artifact:: +version-current/VERSION_CURRENT
 
       A plaintext file containing the current version number.
+
+.. earthly-target:: +sbom-generate
+
+   Updates the `etc/cyclonedx.sbom.json` file **in-place** based on the contents
+   of `etc/purls.txt` and the existing `etc/cyclonedx.sbom.json`.
+
+   After running this target, the contents of the `etc/cyclonedx.sbom.json` file
+   may change.
+
+   .. seealso:: `sbom-lite` and `sbom-lite-updating`
+
 
 .. _earthly.secrets:
 

@@ -36,6 +36,14 @@ If the project health page displays task failures, ensure that they are not
 unexpected by the changes introduced in the new release.
 
 
+Check and Update the SBOM Lite and `etc/purls.txt`
+##################################################
+
+Check that the `etc/purls.txt` file is up-to-date with the set of
+:term:`vendored dependencies <vendored dependency>`. If any items need to be
+updated, refer to `sbom-lite-updating`.
+
+
 Validate that New APIs Are Documented
 #####################################
 
