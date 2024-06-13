@@ -303,7 +303,10 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
                                           bson_error_t *error)
 {
    size_t host_len = strlen (host);
-   link_->port = port;
+   *link_ = (mongoc_host_list_t){
+      .next = NULL,
+      .port = port,
+   };
 
    if (host_len == 0) {
       bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Empty hostname in URI");
@@ -357,7 +360,6 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
    }
 
-   link_->next = NULL;
    return true;
 }
 
