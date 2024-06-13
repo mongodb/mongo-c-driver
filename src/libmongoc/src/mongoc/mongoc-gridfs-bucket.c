@@ -108,7 +108,7 @@ mongoc_gridfs_bucket_new (mongoc_database_t *db,
 
    int req = bson_snprintf (buf, sizeof (buf), "%s.chunks", gridfs_opts.bucketName);
    if (!bson_in_range_size_t_signed (req) || (size_t) req >= sizeof (buf)) {
-            bson_set_error (error,
+      bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "bucketName \"%s\" must have fewer than %d characters",
@@ -119,12 +119,12 @@ mongoc_gridfs_bucket_new (mongoc_database_t *db,
 
    req = bson_snprintf (buf, sizeof (buf), "%s.files", gridfs_opts.bucketName);
    if (!bson_in_range_size_t_signed (req) || (size_t) req >= sizeof (buf)) {
-         bson_set_error (error,
-                     MONGOC_ERROR_COMMAND,
-                     MONGOC_ERROR_COMMAND_INVALID_ARG,
-                     "bucketName \"%s\" must have fewer than %d characters",
-                     gridfs_opts.bucketName,
-                     (int) (sizeof (buf) - (strlen (".files") + 1)));
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "bucketName \"%s\" must have fewer than %d characters",
+                      gridfs_opts.bucketName,
+                      (int) (sizeof (buf) - (strlen (".files") + 1)));
    }
    bucket->files = mongoc_database_get_collection (db, buf);
 

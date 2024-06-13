@@ -88,7 +88,7 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs, const bson_t *tag)
    int req = bson_snprintf (str, sizeof str, "%d", key);
    BSON_ASSERT (bson_in_range_size_t_signed (req));
    BSON_ASSERT ((size_t) req < sizeof str);
-   
+
    if (tag) {
       bson_append_document (&read_prefs->tags, str, -1, tag);
    } else {
