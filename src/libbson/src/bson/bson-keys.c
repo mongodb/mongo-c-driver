@@ -143,7 +143,7 @@ bson_uint32_to_string (uint32_t value,      /* IN */
    *strptr = str;
 
    int ret = bson_snprintf (str, size, "%u", value);
-   // Truncation is OK. 
+   // Truncation is OK.
    BSON_ASSERT (ret > 0);
    BSON_ASSERT (bson_in_range_size_t_signed (ret));
    return (size_t) ret;

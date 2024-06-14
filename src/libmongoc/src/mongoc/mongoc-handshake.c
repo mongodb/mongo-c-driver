@@ -301,7 +301,7 @@ _get_os_version (void)
 #endif
 
    if (res) {
-      // Truncation is OK. 
+      // Truncation is OK.
       int req = bson_snprintf (
          ret, HANDSHAKE_OS_VERSION_MAX, "%lu.%lu (%lu)", osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
       BSON_ASSERT (req > 0);
