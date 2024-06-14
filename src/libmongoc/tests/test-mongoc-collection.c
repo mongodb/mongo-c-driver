@@ -5630,6 +5630,160 @@ test_create_indexes_with_opts_commitQuorum_post44 (void *unused)
    mongoc_client_destroy (client);
 }
 
+void
+test_insert_reports_id (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = get_test_collection (client, "test_insert_reports_id");
+   bson_error_t error;
+   bool ok;
+
+   // Test inserting one document reports the inserted ID.
+   {
+      bson_t *doc = BCON_NEW ("foo", BCON_UTF8 ("bar"));
+      bson_t reply;
+      ok = mongoc_collection_insert_one (coll, doc, NULL /* opts */, &reply, &error);
+      ASSERT_OR_PRINT (ok, error);
+      // Check that `reply` contains the inserted ID in an array `ids`.
+      // Since the driver creates a random ID, only assert it exists.
+      ASSERT_MATCH (&reply, "{'insertedIds': {'$exists': true}}");
+      bson_destroy (&reply);
+      bson_destroy (doc);
+   }
+
+   // Test inserting multiple documents reports the inserted IDs.
+   {
+      bson_t *docs[2] = {
+         BCON_NEW ("foo1", BCON_UTF8 ("bar1")),
+         BCON_NEW ("foo2", BCON_UTF8 ("bar2")),
+      };
+      bson_t reply;
+
+      ok = mongoc_collection_insert_many (coll, (const bson_t **) docs, 2, NULL /* opts */, &reply, &error);
+      ASSERT_OR_PRINT (ok, error);
+      // Check that `reply` contains the inserted IDs in an array `ids`.
+      // Since the driver creates a random ID, only assert it exists.
+      ASSERT_MATCH (&reply, "{ 'insertedIds': { '0' : {'$exists' : true}, '1': { '$exists' : true } } }");
+      bson_destroy (&reply);
+      bson_destroy (docs[0]);
+      bson_destroy (docs[1]);
+   }
+
+   // Test inserting multiple documents (one with _id provided) reports the inserted IDs.
+   {
+      bson_t *docs[2] = {
+         BCON_NEW ("foo1", BCON_UTF8 ("bar1")),
+         BCON_NEW ("_id", BCON_UTF8 ("bar2")),
+      };
+      bson_t reply;
+
+      ok = mongoc_collection_insert_many (coll, (const bson_t **) docs, 2, NULL /* opts */, &reply, &error);
+      ASSERT_OR_PRINT (ok, error);
+      // Check that `reply` contains the inserted IDs in an array `ids`.
+      // Since the driver creates a random ID, only assert it exists.
+      ASSERT_MATCH (&reply, "{ 'insertedIds': { '0' : {'$exists' : true}, '1': 'bar2' } }");
+      bson_destroy (&reply);
+      bson_destroy (docs[0]);
+      bson_destroy (docs[1]);
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+void
+test_insert_reports_id_with_errors (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = get_test_collection (client, "test_insert_reports_id");
+   bson_error_t error;
+   bool ok;
+
+   // Test inserting one document with a duplicate ID doesn't report the ID.
+   {
+      bson_t *doc1 = BCON_NEW ("_id", BCON_UTF8 ("foo"));
+      bson_t reply1;
+      ok = mongoc_collection_insert_one (coll, doc1, NULL /* opts */, &reply1, &error);
+      ASSERT_OR_PRINT (ok, error);
+      // Check that `reply` contains the inserted ID in an array `ids`.
+      // Since the driver creates a random ID, only assert it exists.
+      ASSERT_MATCH (&reply1, "{'insertedIds': {'$exists': true}}");
+
+      // Insert the duplicate document.
+      bson_t *doc2 = BCON_NEW ("_id", BCON_UTF8 ("foo"));
+      bson_t reply2;
+      ok = mongoc_collection_insert_one (coll, doc2, NULL /* opts */, &reply2, &error);
+      ASSERT_OR_PRINT (!ok, error);
+      ASSERT_MATCH (&reply2, "{'insertedIds': {'$exists': false}}");
+
+      bson_destroy (&reply1);
+      bson_destroy (doc1);
+      bson_destroy (&reply2);
+      bson_destroy (doc2);
+   }
+
+   // Test inserting multiple documents with duplicate _ids.
+   {
+      bson_t *docs[2] = {
+         BCON_NEW ("_id", BCON_UTF8 ("foo")),
+         BCON_NEW ("_id", BCON_UTF8 ("foo")),
+      };
+      bson_t reply;
+
+      ok = mongoc_collection_insert_many (coll, (const bson_t **) docs, 2, NULL /* opts */, &reply, &error);
+      ASSERT_OR_PRINT (!ok, error);
+      // Check that `reply` contains only the _id of the first document
+      ASSERT_MATCH (&reply, "{'insertedIds': {'$exists': false}}");
+      bson_destroy (&reply);
+      bson_destroy (docs[0]);
+      bson_destroy (docs[1]);
+   }
+
+   // Test inserting multiple documents with a duplicate _id.
+   {
+      bson_t *docs[4] = {
+         BCON_NEW ("_id", BCON_UTF8 ("foo1")),
+         BCON_NEW ("_id", BCON_UTF8 ("foo2")),
+         BCON_NEW ("_id", BCON_UTF8 ("foo3")),
+         BCON_NEW ("_id", BCON_UTF8 ("foo1")),
+      };
+      bson_t reply;
+
+      ok = mongoc_collection_insert_many (coll, (const bson_t **) docs, 4, NULL /* opts */, &reply, &error);
+      ASSERT_OR_PRINT (!ok, error);
+      ASSERT_MATCH (&reply, "{ 'insertedIds': { '0' : {'$exists' : true}, '1': {'$exists' : true}, '2': {'$exists' : true}, '3': {'$exists' : false} } }");
+      bson_destroy (&reply);
+      bson_destroy (docs[0]);
+      bson_destroy (docs[1]);
+      bson_destroy (docs[2]);
+      bson_destroy (docs[3]);
+   }
+
+   // Test insertion where ordered is set to false.
+   {
+       bson_t *docs[4] = {
+         BCON_NEW ("_id", BCON_UTF8 ("foo")),
+         BCON_NEW ("_id", BCON_UTF8 ("bar")),
+         BCON_NEW ("_id", BCON_UTF8 ("foo")),
+         BCON_NEW ("_id", BCON_UTF8 ("foobar")),
+      };
+      bson_t *opts = BCON_NEW("ordered", BCON_BOOL(false));
+      bson_t reply;
+
+      ok = mongoc_collection_insert_many (coll, (const bson_t **) docs, 4, opts, &reply, &error);
+      ASSERT_OR_PRINT (!ok, error);
+      ASSERT_MATCH (&reply, "{ 'insertedIds': { '0' : {'$exists' : false}, '1': {'$exists' : true}, '2': {'$exists' : false}, '3': {'$exists' : true} } }");
+      bson_destroy (&reply);
+      bson_destroy (docs[0]);
+      bson_destroy (docs[1]);
+      bson_destroy (docs[2]);
+      bson_destroy (docs[3]);
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
 #undef ASSERT_INDEX_EXISTS
 
 void
@@ -5790,4 +5944,10 @@ test_collection_install (TestSuite *suite)
                       NULL /* _ctx */,
                       // requires failpoint
                       test_framework_skip_if_no_failpoint);
+   TestSuite_AddLive(suite,
+                     "/Collection/insert_reports_id",
+                     test_insert_reports_id);
+   TestSuite_AddLive(suite,
+                     "/Collection/insert_reports_id_with_errors",
+                     test_insert_reports_id_with_errors);
 }

@@ -62,6 +62,7 @@ typedef struct {
    mongoc_bulk_write_flags_t flags;
    int64_t operation_id;
    bson_t cmd_opts;
+   bson_t insertIds; /* Map of the index of the document to be inserted to its _id */
 } mongoc_write_command_t;
 
 
