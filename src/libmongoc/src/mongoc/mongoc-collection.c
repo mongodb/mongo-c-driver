@@ -1929,12 +1929,12 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
 
    // Builds document of insertedIds.
    bson_iter_t insertIds_iter;
-   int curr_idx;
+   int ins_idx; /* Index into insertIds */
    uint32_t ids_count = 0; /* Number of _ids added to insertedIds */
    bson_t insertedIds;
    bson_t writeErrors = result.writeErrors;
    bson_iter_t writeErrors_iter;
-   int32_t index = -1;
+   int32_t err_idx = -1; /* Current index field in writeErrors */
 
    // No documents were inserted, so skip the steps to build insertedIds.
    if (result.nInserted == 0) {
@@ -1959,21 +1959,21 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
          bson_iter_t child;
          if (BSON_ITER_HOLDS_DOCUMENT (&writeErrors_iter) && bson_iter_recurse (&writeErrors_iter, &child)) {
             if (bson_iter_find (&child, "index")) {
-               index = bson_iter_int32 (&child);
+               err_idx = bson_iter_int32 (&child);
             }
          }
 
          // Append any _ids of documents inserted up until this writeError.
          while (bson_iter_next (&insertIds_iter)) {
-            const char *str_idx = bson_iter_key (&insertIds_iter);
-            curr_idx = atoi (bson_iter_key (&insertIds_iter));
+            const char *ins_idx_str = bson_iter_key (&insertIds_iter);
+            ins_idx = atoi (bson_iter_key (&insertIds_iter));
 
-            if (curr_idx == index) {
+            if (ins_idx == err_idx) {
                break;
             }
 
             else {
-               BSON_APPEND_VALUE (&insertedIds, str_idx, bson_iter_value (&insertIds_iter));
+               BSON_APPEND_VALUE (&insertedIds, ins_idx_str, bson_iter_value (&insertIds_iter));
                ids_count++;
             }
          }
@@ -1981,9 +1981,8 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
 
       // Append any _ids of documents inserted after last writeError.
       while (bson_iter_next (&insertIds_iter)) {
-         const char *str_idx = bson_iter_key (&insertIds_iter);
-         curr_idx = atoi (bson_iter_key (&insertIds_iter));
-         BSON_APPEND_VALUE (&insertedIds, str_idx, bson_iter_value (&insertIds_iter));
+         const char *ins_idx_str = bson_iter_key (&insertIds_iter);
+         BSON_APPEND_VALUE (&insertedIds, ins_idx_str, bson_iter_value (&insertIds_iter));
          ids_count++;
       }
    }
