@@ -302,6 +302,8 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
                                           uint16_t port,
                                           bson_error_t *error)
 {
+   BSON_ASSERT (host);
+   BSON_ASSERT (link_);
    size_t host_len = strlen (host);
    *link_ = (mongoc_host_list_t){
       .next = NULL,
