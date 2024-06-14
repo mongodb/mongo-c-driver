@@ -86,7 +86,7 @@ typedef struct {
  *
  *--------------------------------------------------------------------------
  */
-mongoc_host_list_t *
+static mongoc_host_list_t *
 _mongoc_host_list_push (const char *host, uint16_t port, int family, mongoc_host_list_t *next)
 {
    mongoc_host_list_t *h;

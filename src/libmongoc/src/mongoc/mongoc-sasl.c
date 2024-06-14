@@ -165,7 +165,7 @@ _mongoc_sasl_get_canonicalized_name (mongoc_stream_t *node_stream, /* IN */
       if (sock) {
          canonicalized = mongoc_socket_getnameinfo (sock);
          if (canonicalized) {
-            // Truncation is OK. Assert no error occurred.
+            // Truncation is OK. 
             int req = bson_snprintf (name, namelen, "%s", canonicalized);
             BSON_ASSERT (req > 0);
             bson_free (canonicalized);
