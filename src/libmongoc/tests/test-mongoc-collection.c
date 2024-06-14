@@ -5751,7 +5751,9 @@ test_insert_reports_id_with_errors (void)
 
       ok = mongoc_collection_insert_many (coll, (const bson_t **) docs, 4, NULL /* opts */, &reply, &error);
       ASSERT_OR_PRINT (!ok, error);
-      ASSERT_MATCH (&reply, "{ 'insertedIds': { '0' : {'$exists' : true}, '1': {'$exists' : true}, '2': {'$exists' : true}, '3': {'$exists' : false} } }");
+      ASSERT_MATCH (&reply,
+                    "{ 'insertedIds': { '0' : {'$exists' : true}, '1': {'$exists' : true}, '2': {'$exists' : true}, "
+                    "'3': {'$exists' : false} } }");
       bson_destroy (&reply);
       bson_destroy (docs[0]);
       bson_destroy (docs[1]);
@@ -5761,18 +5763,20 @@ test_insert_reports_id_with_errors (void)
 
    // Test insertion where ordered is set to false.
    {
-       bson_t *docs[4] = {
+      bson_t *docs[4] = {
          BCON_NEW ("_id", BCON_UTF8 ("foo")),
          BCON_NEW ("_id", BCON_UTF8 ("bar")),
          BCON_NEW ("_id", BCON_UTF8 ("foo")),
          BCON_NEW ("_id", BCON_UTF8 ("foobar")),
       };
-      bson_t *opts = BCON_NEW("ordered", BCON_BOOL(false));
+      bson_t *opts = BCON_NEW ("ordered", BCON_BOOL (false));
       bson_t reply;
 
       ok = mongoc_collection_insert_many (coll, (const bson_t **) docs, 4, opts, &reply, &error);
       ASSERT_OR_PRINT (!ok, error);
-      ASSERT_MATCH (&reply, "{ 'insertedIds': { '0' : {'$exists' : false}, '1': {'$exists' : true}, '2': {'$exists' : false}, '3': {'$exists' : true} } }");
+      ASSERT_MATCH (&reply,
+                    "{ 'insertedIds': { '0' : {'$exists' : false}, '1': {'$exists' : true}, '2': {'$exists' : false}, "
+                    "'3': {'$exists' : true} } }");
       bson_destroy (&reply);
       bson_destroy (docs[0]);
       bson_destroy (docs[1]);
@@ -5944,10 +5948,6 @@ test_collection_install (TestSuite *suite)
                       NULL /* _ctx */,
                       // requires failpoint
                       test_framework_skip_if_no_failpoint);
-   TestSuite_AddLive(suite,
-                     "/Collection/insert_reports_id",
-                     test_insert_reports_id);
-   TestSuite_AddLive(suite,
-                     "/Collection/insert_reports_id_with_errors",
-                     test_insert_reports_id_with_errors);
+   TestSuite_AddLive (suite, "/Collection/insert_reports_id", test_insert_reports_id);
+   TestSuite_AddLive (suite, "/Collection/insert_reports_id_with_errors", test_insert_reports_id_with_errors);
 }

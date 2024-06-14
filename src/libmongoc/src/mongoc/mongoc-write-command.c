@@ -49,9 +49,10 @@ _mongoc_write_command_insert_append (mongoc_write_command_t *command, const bson
    BSON_ASSERT (document);
    BSON_ASSERT (document->len >= 5);
 
-   // Index of current document in command is the number of documents to be inserted before it 
+   // Index of current document in command is the number of documents to be inserted before it
    uint32_t idx = command->n_documents;
-   size_t buf_len = (idx == 0) ? 1 : 1 + (int)log10(idx); /* Calculates number of base10 digits needed to store idx in a string */
+   size_t buf_len =
+      (idx == 0) ? 1 : 1 + (int) log10 (idx); /* Calculates number of base10 digits needed to store idx in a string */
    char buf[buf_len];
    const char *key;
 
@@ -160,7 +161,7 @@ _mongoc_write_command_init_bulk (
    _mongoc_buffer_init (&command->payload, NULL, 0, NULL, NULL);
    command->n_documents = 0;
 
-   bson_init(&command->insertIds);
+   bson_init (&command->insertIds);
 
    EXIT;
 }
