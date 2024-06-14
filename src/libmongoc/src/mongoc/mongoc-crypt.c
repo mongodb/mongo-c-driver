@@ -166,6 +166,7 @@ _prefix_mongocryptd_error (bson_error_t *error)
 {
    char buf[sizeof (error->message)];
 
+   // Truncation is OK. Assert no error occurred. Not harmful to truncate.
    int req = bson_snprintf (buf, sizeof (buf), "mongocryptd error: %s:", error->message);
    BSON_ASSERT (req > 0);
    memcpy (error->message, buf, sizeof (buf));
@@ -176,6 +177,7 @@ _prefix_keyvault_error (bson_error_t *error)
 {
    char buf[sizeof (error->message)];
 
+   // Truncation is OK. Assert no error occurred. Not harmful to truncate.
    int req = bson_snprintf (buf, sizeof (buf), "key vault error: %s:", error->message);
    BSON_ASSERT (req > 0);
    memcpy (error->message, buf, sizeof (buf));

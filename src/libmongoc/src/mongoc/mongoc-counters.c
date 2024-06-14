@@ -136,6 +136,7 @@ _mongoc_counters_cleanup (void)
       int pid;
 
       pid = getpid ();
+      // Truncation is OK. Assert no error occurred. Not harmful to truncate.
       int req = bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
       BSON_ASSERT (req > 0);
       shm_unlink (name);
@@ -169,6 +170,7 @@ mongoc_counters_alloc (size_t size)
    }
 
    pid = getpid ();
+   // Truncation is OK. Assert no error occurred. Not harmful to truncate.
    int req = bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
    BSON_ASSERT (req > 0);
 

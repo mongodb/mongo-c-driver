@@ -301,6 +301,8 @@ _get_os_version (void)
 #endif
 
    if (res) {
+      // Truncation is OK. Assert no error occurred.
+      // Truncation not harmful. Handshake platform field is already truncated as needed.
       int req = bson_snprintf (
          ret, HANDSHAKE_OS_VERSION_MAX, "%lu.%lu (%lu)", osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
       BSON_ASSERT (req > 0);
