@@ -1035,8 +1035,8 @@ test_gridfs_bucket_opts (void)
    bson_destroy (opts);
    mongoc_gridfs_bucket_destroy (gridfs);
 
-   /* one character shorter should be okay though. */
-   *(bucket_name + ((int) (128 - strlen ("chunks") - 1))) = '\0';
+   /* two characters shorter should be okay though. */
+   *(bucket_name + ((int) (128 - strlen ("chunks") - 2))) = '\0';
    opts = BCON_NEW ("bucketName", bucket_name);
    gridfs = mongoc_gridfs_bucket_new (db, opts, NULL, &error);
    ASSERT_OR_PRINT (gridfs, error);

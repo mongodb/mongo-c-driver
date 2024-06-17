@@ -618,7 +618,9 @@ mongoc_client_connect_tcp (int32_t connecttimeoutms, const mongoc_host_list_t *h
    BSON_ASSERT (connecttimeoutms);
    BSON_ASSERT (host);
 
-   bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
+   // Expect no truncation.
+   int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
+   BSON_ASSERT (bson_cmp_less_su (req, sizeof portstr));
 
    memset (&hints, 0, sizeof hints);
    hints.ai_family = host->family;
@@ -712,7 +714,13 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
 
    memset (&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
-   bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
+   // Expect no truncation.
+   int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
+
+   if (bson_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
+      RETURN (NULL);
+   }
 
    sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
 

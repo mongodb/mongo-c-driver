@@ -24,9 +24,6 @@
 
 BSON_BEGIN_DECLS
 
-mongoc_host_list_t *
-_mongoc_host_list_push (const char *host, uint16_t port, int family, mongoc_host_list_t *next);
-
 void
 _mongoc_host_list_upsert (mongoc_host_list_t **list, const mongoc_host_list_t *new_host);
 
