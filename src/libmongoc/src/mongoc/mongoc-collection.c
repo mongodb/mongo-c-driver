@@ -1783,6 +1783,7 @@ mongoc_collection_insert_one (
    mongoc_insert_one_opts_t insert_one_opts;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
+   bson_t insert_id;
    bson_t cmd_opts = BSON_INITIALIZER;
    bool ret = false;
 
@@ -1810,7 +1811,7 @@ mongoc_collection_insert_one (
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert_idl (&command, document, &cmd_opts, ++collection->client->cluster.operation_id);
+   _mongoc_write_command_init_insert_one_idl (&command, document, &cmd_opts, &insert_id, ++collection->client->cluster.operation_id);
 
    command.flags.bypass_document_validation = insert_one_opts.bypass;
    _mongoc_collection_write_command_execute_idl (&command, collection, &insert_one_opts.crud, &result);
@@ -1823,10 +1824,10 @@ mongoc_collection_insert_one (
                                        reply,
                                        error,
                                        "insertedCount");
-
+   
    // Only record _id of document if it was actually inserted.
    if (result.nInserted > 0) {
-      BSON_APPEND_DOCUMENT (reply, "insertedIds", &command.insertIds);
+      bson_concat(reply, &insert_id); 
    }
 
    _mongoc_write_result_destroy (&result);
@@ -1926,68 +1927,6 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
                                        reply,
                                        error,
                                        "insertedCount");
-
-   // Builds document of insertedIds.
-   bson_iter_t insertIds_iter;
-   int ins_idx; /* Index into insertIds */
-   uint32_t ids_count = 0; /* Number of _ids added to insertedIds */
-   bson_t insertedIds;
-   bson_t writeErrors = result.writeErrors;
-   bson_iter_t writeErrors_iter;
-   int32_t err_idx = -1; /* Current index field in writeErrors */
-
-   // No documents were inserted, so skip the steps to build insertedIds.
-   if (result.nInserted == 0) {
-      goto done;
-   }
-
-   // All documents were inserted successfully.
-   if (result.nInserted == n_documents) {
-      BSON_APPEND_DOCUMENT (reply, "insertedIds", &command.insertIds);
-      goto done;
-   }
-
-   if (!bson_iter_init (&insertIds_iter, &command.insertIds) || !bson_iter_init (&writeErrors_iter, &writeErrors)) {
-      goto done;
-   }
-
-   bson_init (&insertedIds);
-
-   // Trim insertedIds to the first nInserted _ids after filtering out those which encountered a write error.
-   while (ids_count < result.nInserted) {
-      while (bson_iter_next (&writeErrors_iter)) {
-         bson_iter_t child;
-         if (BSON_ITER_HOLDS_DOCUMENT (&writeErrors_iter) && bson_iter_recurse (&writeErrors_iter, &child)) {
-            if (bson_iter_find (&child, "index")) {
-               err_idx = bson_iter_int32 (&child);
-            }
-         }
-
-         // Append any _ids of documents inserted up until this writeError.
-         while (bson_iter_next (&insertIds_iter)) {
-            const char *ins_idx_str = bson_iter_key (&insertIds_iter);
-            ins_idx = atoi (bson_iter_key (&insertIds_iter));
-
-            if (ins_idx == err_idx) {
-               break;
-            }
-
-            else {
-               BSON_APPEND_VALUE (&insertedIds, ins_idx_str, bson_iter_value (&insertIds_iter));
-               ids_count++;
-            }
-         }
-      }
-
-      // Append any _ids of documents inserted after last writeError.
-      while (bson_iter_next (&insertIds_iter)) {
-         const char *ins_idx_str = bson_iter_key (&insertIds_iter);
-         BSON_APPEND_VALUE (&insertedIds, ins_idx_str, bson_iter_value (&insertIds_iter));
-         ids_count++;
-      }
-   }
-
-   BSON_APPEND_DOCUMENT (reply, "insertedIds", &insertedIds);
 
 done:
    _mongoc_write_result_destroy (&result);

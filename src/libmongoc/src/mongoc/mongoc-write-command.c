@@ -49,15 +49,6 @@ _mongoc_write_command_insert_append (mongoc_write_command_t *command, const bson
    BSON_ASSERT (document);
    BSON_ASSERT (document->len >= 5);
 
-   // Index of current document in command is the number of documents to be inserted before it
-   uint32_t idx = command->n_documents;
-   size_t buf_len =
-      (idx == 0) ? 1 : 1 + (int) log10 (idx); /* Calculates number of base10 digits needed to store idx in a string */
-   char buf[buf_len];
-   const char *key;
-
-   bson_uint32_to_string (idx, &key, buf, sizeof buf);
-
    /*
     * If the document does not contain an "_id" field, we need to generate
     * a new oid for "_id".
@@ -68,12 +59,10 @@ _mongoc_write_command_insert_append (mongoc_write_command_t *command, const bson
       BSON_APPEND_OID (&tmp, "_id", &oid);
       bson_concat (&tmp, document);
       _mongoc_buffer_append (&command->payload, bson_get_data (&tmp), tmp.len);
-      BSON_APPEND_OID (&command->insertIds, key, &oid);
       bson_destroy (&tmp);
 
    } else {
       _mongoc_buffer_append (&command->payload, bson_get_data (document), document->len);
-      BSON_APPEND_VALUE (&command->insertIds, key, bson_iter_value (&iter));
    }
 
    command->n_documents++;
@@ -161,8 +150,6 @@ _mongoc_write_command_init_bulk (
    _mongoc_buffer_init (&command->payload, NULL, 0, NULL, NULL);
    command->n_documents = 0;
 
-   bson_init (&command->insertIds);
-
    EXIT;
 }
 
@@ -183,6 +170,61 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
    /* must handle NULL document from mongoc_collection_insert_bulk */
    if (document) {
       _mongoc_write_command_insert_append (command, document);
+   }
+
+   EXIT;
+}
+
+
+// `_mongoc_write_command_init_insert_one_idl` returns the inserted ID in `inserted_id`.
+// Only called by mongoc_collection_insert_one.
+void
+_mongoc_write_command_init_insert_one_idl (mongoc_write_command_t *command,
+                                           const bson_t *document,
+                                           const bson_t *cmd_opts,
+                                           bson_t *insert_id,
+                                           int64_t operation_id)
+{
+   mongoc_bulk_write_flags_t flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+
+   ENTRY;
+
+   BSON_ASSERT (command);
+
+   _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
+   bson_init(insert_id);
+
+   /* must handle NULL document from mongoc_collection_insert_bulk */
+   /* near identical to _mongoc_write_command_insert_append but additionally records the inserted id */
+   if (document) {
+      BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
+      BSON_ASSERT (document);
+      BSON_ASSERT (document->len >= 5);
+
+      bson_iter_t iter;
+      bson_oid_t oid;
+      bson_t tmp;
+
+      /*
+      * If the document does not contain an "_id" field, we need to generate
+      * a new oid for "_id".
+      */
+      if (!bson_iter_init_find (&iter, document, "_id")) {
+         bson_init (&tmp);
+         bson_oid_init (&oid, NULL);
+         BSON_APPEND_OID (&tmp, "_id", &oid);
+         bson_concat (&tmp, document);
+         _mongoc_buffer_append (&command->payload, bson_get_data (&tmp), tmp.len);
+         
+         BSON_APPEND_OID (insert_id, "insertedId", &oid);
+         bson_destroy (&tmp);
+
+      } else {
+         _mongoc_buffer_append (&command->payload, bson_get_data (document), document->len);
+         BSON_APPEND_VALUE (insert_id, "insertedId", bson_iter_value (&iter));
+      }
+
+      command->n_documents++;
    }
 
    EXIT;
