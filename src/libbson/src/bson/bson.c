@@ -1492,6 +1492,7 @@ bson_append_utf8 (bson_t *bson, const char *key, int key_length, const char *val
 {
    static const uint8_t type = BSON_TYPE_UTF8;
    uint32_t length_le;
+   size_t len_sz;
 
    BSON_ASSERT (bson);
    BSON_ASSERT (key);
@@ -1503,14 +1504,26 @@ bson_append_utf8 (bson_t *bson, const char *key, int key_length, const char *val
    HANDLE_KEY_LENGTH (key, key_length);
 
    if (BSON_UNLIKELY (length < 0)) {
-      length = (int) strlen (value);
+      len_sz = strlen (value);
+      if (len_sz > (size_t) INT_MAX) {
+         /* The return of 'false' would allow for possible overflow later on */
+         return bson_append_null (bson, key, key_length);
+      }
+      length = (int) len_sz;
    }
 
-   length_le = BSON_UINT32_TO_LE (length + 1);
+   if (!bson_cmp_less_su (length, UINT32_MAX)) {
+      return false;
+   }
+   length_le = BSON_UINT32_TO_LE ((uint32_t) length + 1u);
+
+   if ((uint32_t) key_length > UINT32_MAX - 1u - 1u - 4u - (uint32_t) length - 1u) {
+      return false;
+   }
 
    return _bson_append (bson,
                         6,
-                        (1 + key_length + 1 + 4 + length + 1),
+                        (1u + (uint32_t) key_length + 1u + 4u + (uint32_t) length + 1u),
                         1,
                         &type,
                         key_length,
