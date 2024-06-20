@@ -5644,7 +5644,7 @@ test_insert_one_reports_id (void)
       bson_t reply;
       ok = mongoc_collection_insert_one (coll, doc, NULL /* opts */, &reply, &error);
       ASSERT_OR_PRINT (ok, error);
-      // Check that `reply` contains the inserted ID in an array `ids`.
+      // Check that `reply` contains the inserted ID
       ASSERT_MATCH (&reply, "{'insertedId': 'foo'}");
       bson_destroy (&reply);
    }
@@ -5655,7 +5655,7 @@ test_insert_one_reports_id (void)
       bson_t reply;
       ok = mongoc_collection_insert_one (coll, doc, NULL /* opts */, &reply, &error);
       ASSERT_OR_PRINT (ok, error);
-      // Check that `reply` contains the inserted ID in an array `ids`.
+      // Check that `reply` contains the inserted ID
       // Since the driver creates a random ID, only assert it exists.
       ASSERT_MATCH (&reply, "{'insertedId': {'$exists': true}}");
       bson_destroy (&reply);
@@ -5680,6 +5680,22 @@ test_insert_one_reports_id (void)
 
       bson_destroy (&reply1);
       bson_destroy (&reply2);
+   }
+
+   // Test inserting one document with a large ID
+   {
+      // Create a large string of repeating 'A' characters.
+      char *large_str = bson_malloc (128);
+      memset (large_str, 'A', 128);
+      large_str[127] = '\0'; // NULL terminate string.
+      bson_t *doc = tmp_bson ("{'_id': '%s'}", large_str);
+      bson_t reply;
+      ok = mongoc_collection_insert_one (coll, doc, NULL /* opts */, &reply, &error);
+      ASSERT_OR_PRINT (ok, error);
+      // Check that `reply` contains the inserted ID.
+      ASSERT_MATCH (&reply, "{'insertedId': '%s'}", large_str);
+      bson_destroy (&reply);
+      bson_free (large_str);
    }
 
    mongoc_collection_destroy (coll);

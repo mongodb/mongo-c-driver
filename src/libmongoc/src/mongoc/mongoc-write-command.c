@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <math.h>
 #include <bson/bson.h>
 
 #include "mongoc-client-private.h"
@@ -189,44 +188,41 @@ _mongoc_write_command_init_insert_one_idl (mongoc_write_command_t *command,
 
    ENTRY;
 
-   BSON_ASSERT (command);
+   BSON_ASSERT_PARAM (command);
+   BSON_ASSERT_PARAM (document);
+   BSON_ASSERT_PARAM (cmd_opts);
+   BSON_ASSERT_PARAM (insert_id);
 
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
-   bson_init(insert_id);
 
-   /* must handle NULL document from mongoc_collection_insert_bulk */
    /* near identical to _mongoc_write_command_insert_append but additionally records the inserted id */
-   if (document) {
-      BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
-      BSON_ASSERT (document);
-      BSON_ASSERT (document->len >= 5);
+   /* no need to handle NULL document from mongoc_collection_insert_bulk since only called by insert_one */
+   BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
+   BSON_ASSERT (document->len >= 5);
 
-      bson_iter_t iter;
-      bson_oid_t oid;
-      bson_t tmp;
+   bson_iter_t iter;
+   bson_oid_t oid;
+   bson_t tmp;
 
-      /*
-      * If the document does not contain an "_id" field, we need to generate
-      * a new oid for "_id".
-      */
-      if (!bson_iter_init_find (&iter, document, "_id")) {
-         bson_init (&tmp);
-         bson_oid_init (&oid, NULL);
-         BSON_APPEND_OID (&tmp, "_id", &oid);
-         bson_concat (&tmp, document);
-         _mongoc_buffer_append (&command->payload, bson_get_data (&tmp), tmp.len);
-         
-         BSON_APPEND_OID (insert_id, "insertedId", &oid);
-         bson_destroy (&tmp);
+   /*
+    * If the document does not contain an "_id" field, we need to generate
+    * a new oid for "_id".
+    */
+   if (!bson_iter_init_find (&iter, document, "_id")) {
+      bson_init (&tmp);
+      bson_oid_init (&oid, NULL);
+      BSON_APPEND_OID (&tmp, "_id", &oid);
+      bson_concat (&tmp, document);
+      _mongoc_buffer_append (&command->payload, bson_get_data (&tmp), tmp.len);
 
-      } else {
-         _mongoc_buffer_append (&command->payload, bson_get_data (document), document->len);
-         BSON_APPEND_VALUE (insert_id, "insertedId", bson_iter_value (&iter));
-      }
-
-      command->n_documents++;
+      BSON_APPEND_OID (insert_id, "insertedId", &oid);
+      bson_destroy (&tmp);
+   } else {
+      _mongoc_buffer_append (&command->payload, bson_get_data (document), document->len);
+      BSON_APPEND_VALUE (insert_id, "insertedId", bson_iter_value (&iter));
    }
 
+   command->n_documents++;
    EXIT;
 }
 
