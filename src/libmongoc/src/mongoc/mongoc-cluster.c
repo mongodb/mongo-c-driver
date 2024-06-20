@@ -3390,10 +3390,7 @@ _mongoc_cluster_run_opmsg_recv (
 
    bson_t body;
 
-   uint32_t op_msg_flags = mcd_rpc_op_msg_get_flag_bits (rpc);
-   cluster->client->in_exhaust = op_msg_flags & MONGOC_OP_MSG_FLAG_MORE_TO_COME;
-
-   if (!mcd_rpc_message_get_body (rpc, &body)) {
+   if ((mcd_rpc_header_get_op_code (rpc) != MONGOC_OP_CODE_MSG) || !mcd_rpc_message_get_body (rpc, &body)) {
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");
       _handle_network_error (cluster, server_stream, error);
       server_stream->stream = NULL;
@@ -3401,6 +3398,7 @@ _mongoc_cluster_run_opmsg_recv (
       goto done;
    }
 
+   cluster->client->in_exhaust = (mcd_rpc_op_msg_get_flag_bits (rpc) & MONGOC_OP_MSG_FLAG_MORE_TO_COME) != 0u;
    _mongoc_topology_update_cluster_time (cluster->client->topology, &body);
 
    ret = _mongoc_cmd_check_ok (&body, cluster->client->error_api_version, error);
