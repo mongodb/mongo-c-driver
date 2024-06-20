@@ -26,25 +26,6 @@ def tasks() -> Iterable[Task]:
         run_on=earthly.CONTAINER_RUN_DISTROS,
         tags=["misc", "pr-merge-gate"],
     )
-    yield Task(
-        name="snyk-monitor-snapshot",
-        commands=[
-            earthly.earthly_exec(
-                kind="setup",
-                target="snyk-monitor-snapshot",
-                args={
-                    "branch": r"${branch_name}",
-                    "remote": "local",
-                },
-                secrets={
-                    "SNYK_TOKEN": r"${snyk_token}",
-                    "SNYK_ORGANIZATION": r"${snyk_organization}",
-                },
-            )
-        ],
-        run_on=earthly.CONTAINER_RUN_DISTROS,
-        tags=["misc"],
-    )
 
 
 def variants() -> Iterable[BuildVariant]:
