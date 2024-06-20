@@ -57,6 +57,51 @@ Check that the `etc/purls.txt` file is up-to-date with the set of
 updated, refer to `sbom-lite-updating`.
 
 
+.. _releasing.snyk:
+
+Check the Generated Vulnerabilities Report
+##########################################
+
+A generated report of third-party package vulnerabilities will be included in
+the final release. This report is generated using data from Snyk_ and collected
+into a Markdown document to be added as a release artifact.
+
+.. _snyk: https://app.snyk.io
+
+.. seealso:: `snyk scanning` contains additional details
+
+.. note:: Running the following steps will require providing Earthly secrets. See: `earthly.secrets`
+
+To generate the vulnerability report for review, execute the `+vuln-report-md`
+Earthly target and extract the `+vuln-report-md/report.md` artifact::
+
+   $ tools/earthly.sh --artifact +vuln-report-md/report.md vuln-report.md
+
+   [... snip ...]
+
+   Local Output Summary 🎁 (single artifact)
+   ————————————————————————————————————————————————————————————————————————————————
+
+   Artifact +vuln-report-md/report.md output as vuln-report.md
+
+Open the exported vulnerability report document and validate the content
+therein. For each entry within the **Vulnerabilities** section, check that the
+named **package** and its **bundled version** corresponds to a correct entry
+within the `SBOM lite <sbom-lite>` file `etc/cyclonedx.sbom.json`.
+
+.. note:: If there are no vulnerabilities in the report, then this step can be skipped
+
+If any vulnerability entries in the generated report appear to be erroneous or
+invalid, **take note of their CVE ID** for use with
+`+vuln-report-md --cve_exclude`. You will also need this value for the
+`releasing.gen-archive` step below.
+
+If any CVEs need to be excluded, re-generate the report with the
+`--cve_exclude <+vuln-report-md --cve_exclude>` argument set so that the
+resulting report looks correct.
+
+
+
 Validate that New APIs Are Documented
 #####################################
 
@@ -300,6 +345,12 @@ the :any:`+signed-release` target. Let `$BRANCH` be the name of the Git branch
 from which the release is being made::
 
    $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$BRANCH --version=$NEW_VERSION
+
+.. important::
+
+   If you needed to exclude any vulnerabilities in the :ref:`releasing.snyk`
+   step, pass the same :option:`--cve_exclude <+signed-release --cve_exclude>`
+   argument to the above command.
 
 The above command will create a `dist/` directory in the working directory that
 contains the release artifacts from the :any:`+signed-release/dist/` directory

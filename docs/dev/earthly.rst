@@ -99,6 +99,10 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       Affects the output filename and archive prefix paths in
       `+signed-release/dist/` and sets the default value for `--ref`.
 
+   .. option:: --cve_exclude <id-list>
+
+      Forwarded to `tools/snyk-vulns.py --cve-exclude`
+
    .. option:: --ref <git-ref>
 
       Specify the git revision to be archived. Forwarded to
@@ -107,15 +111,15 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. rubric:: Secrets
 
-   Secrets for the `+sbom-download` and `+sign-file` targets are required for
-   this target.
+   Secrets for the `+sbom-download`, `+snyk-test`, and `+sign-file` targets are
+   required for this target.
 
 
 .. program:: +release-archive
 .. earthly-target:: +release-archive
 
    Generate a source release archive of the repository at a specifiy branch.
-   Requires the secrets for `+sbom-download`.
+   Requires the secrets for `+sbom-download` and `+snyk-test`.
 
    .. earthly-artifact:: +release-archive/release.tar.gz
 
@@ -128,6 +132,10 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    .. option:: --sbom_branch <branch>
 
       Forwarded as `+sbom-download --branch` to download the augmented SBOM.
+
+   .. option:: --cve_exclude <id-list>
+
+      Forwarded to `tools/snyk-vulns.py --cve-exclude`
 
    .. option:: --ref <git-ref>
 
@@ -147,9 +155,9 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 .. program:: +sbom-download
 .. earthly-target:: +sbom-download
 
-   Download an `augmented SBOM <augmented-sbom>` from Silk for a given project branch. This target
-   explicitly disables caching, because the upstream SBOM file can change
-   arbitrarily.
+   Download an `augmented SBOM <augmented-sbom>` from Silk for a given project
+   branch. This target explicitly disables caching, because the upstream SBOM
+   file can change arbitrarily.
 
    .. earthly-artifact:: +sbom-download/augmented-sbom.json
 
@@ -163,8 +171,9 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
       .. note::
 
-         It is *required* that the Silk asset group has been created for the
-         given branch before the `+sbom-download` target can succeed.
+         It is *required* that the `Silk asset group <silk-asset-group>` has
+         been created for the given branch before the `+sbom-download` target
+         can succeed. See: `+create-silk-asset-group`
 
    .. rubric:: Secrets
    .. envvar::
@@ -240,6 +249,85 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    may change.
 
    .. seealso:: `sbom-lite` and `sbom-lite-updating`
+
+
+.. program:: +create-silk-asset-group
+.. earthly-target:: +create-silk-asset-group
+
+   Creates a new `Silk asset group <silk-asset-group>` for a branch in the
+   repository. This target executes the `tools/create-silk-asset-group.py`
+   script with the appropriate arguments.
+
+   .. note:: For branches that execute in CI, running this target manually is
+      not necessary, as it is run automatically for every build.
+
+   .. rubric:: Parameters
+   .. option:: --branch <branch>
+
+      The repository branch for which to create the new asset group. If not
+      specified, the branch name will be inferred by asking Git.
+
+   .. rubric:: Secrets
+   .. envvar::
+         SILK_CLIENT_ID
+         SILK_CLIENT_SECRET
+      :noindex:
+
+      **Required**. [#creds]_
+
+      .. seealso:: `earthly.secrets`
+
+
+.. program:: +snyk-test
+.. earthly-target:: +snyk-test
+
+   Execute `snyk test`__ on the a project. This target specifically avoids an
+   issue outlined in `snyk scanning` (See "Caveats").
+
+   __ https://docs.snyk.io/snyk-cli/commands/test
+
+   .. earthly-artifact:: +snyk-test/snyk.json
+
+      The Snyk JSON data result of the scan.
+
+   .. rubric:: Secrets
+   .. envvar:: SNYK_ORGANIZATION
+
+      The API ID of the Snyk_ organization that owns the Snyk target. For the C
+      driver, this secret must be set to the value for the organization ID of
+      the MongoDB **dev-prod** Snyk organization.
+
+      **Do not** use the organization ID of **mongodb-default**.
+
+      .. _snyk: https://app.snyk.io
+
+   .. envvar:: SNYK_TOKEN
+
+      Set this to the value of an API token for accessing Snyk in the given
+      `SNYK_ORGANIZATION`. [#creds]_
+
+
+.. program:: +vuln-report-md
+.. earthly-target:: +vuln-report-md
+
+   Generate a third-party-package vulnerability report based on data from Snyk_.
+   Executes the `tools/snyk-vulns.py` script with the data from `+snyk-test`.
+
+   .. earthly-artifact:: +vuln-report-md/report.md
+
+      The generated vulnerability report document.
+
+   .. rubric:: Parameters
+   .. option:: --cve_exclude <id-list>
+
+      Forwarded to `tools/snyk-vulns.py --cve-exclude`
+
+      This argument is also exposed through `+release-archive` and
+      `+signed-release`.
+
+   .. rubric:: Secrets
+
+   Requires the secrets for `+snyk-test`: `SNYK_ORGANIZATION` and `SNYK_TOKEN`
 
 
 .. _earthly.secrets:
