@@ -182,11 +182,12 @@ release-archive:
     WORKDIR /s
     COPY --dir .git .
     COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
+    COPY +vuln-report-md/report.md third_party_vulnerabilities.md
     RUN git archive -o release.tar.gz \
-        --verbose \
         --prefix="$prefix/" \ # Set the archive path prefix
         "$ref" \ # Add the source tree
-        --add-file cyclonedx.sbom.json  # Add the SBOM
+        --add-file cyclonedx.sbom.json \  # Add the SBOM
+        --add-file third_party_vulnerabilities.md  # Add the vulnerability report
     SAVE ARTIFACT release.tar.gz
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
@@ -332,32 +333,28 @@ snyk:
     RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
     RUN chmod a+x /usr/local/bin/snyk
 
-# snyk-monitor-snapshot :
-#   Post a crafted snapshot of the repository to Snyk for monitoring. Refer to "Snyk Scanning"
-#   in the dev docs for more details.
-snyk-monitor-snapshot:
+snyk-test:
     FROM +snyk
     WORKDIR /s
-    ARG remote="https://github.com/mongodb/mongo-c-driver.git"
-    ARG --required branch
-    IF test "$remote" = "local"
-        COPY --dir src .
-    ELSE
-        GIT CLONE --branch $branch $remote clone
-        RUN mv clone/src .
-    END
     # Take the scan from within the `src/` directory. This seems to help Snyk
     # actually find the external dependencies that live there.
+    COPY --dir src .
     WORKDIR src/
     # Snaptshot the repository and run the scan
-    RUN --no-cache --secret SNYK_TOKEN --secret SNYK_ORGANIZATION \
-        snyk monitor \
-            --org=$SNYK_ORGANIZATION \
-            --target-reference=$branch \
-            --unmanaged \
-            --print-deps \
-            --project-name=mongo-c-driver \
-            --remote-repo-url=https://github.com/mongodb/mongo-c-driver
+    RUN --no-cache --secret SNYK_TOKEN \
+        snyk test --unmanaged --json > snyk.json
+    SAVE ARTIFACT snyk.json
+
+# vuln-report-md :
+#   Generate a vulnerability report page from Snyk dependency data.
+vuln-report-md:
+    FROM alpine:3.20
+    RUN apk add python3
+    COPY +snyk-test/snyk.json snyk.json
+    ARG cve_exclude
+    COPY tools/snyk-vulns.py vulns.py
+    RUN python vulns.py --cve-exclude=$cve_exclude < snyk.json > report.md
+    SAVE ARTIFACT report.md
 
 # test-vcpkg-classic :
 #   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and
