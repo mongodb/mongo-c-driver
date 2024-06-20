@@ -1338,9 +1338,12 @@ tasks:
           binary: bash
           working_dir: mongoc
           env:
-            EARTHLY_SECRETS: SILK_CLIENT_ID=${silk_client_id},SILK_CLIENT_SECRET=${silk_client_secret}
+            SILK_CLIENT_ID: ${silk_client_id}
+            SILK_CLIENT_SECRET: ${silk_client_secret}
           args:
             - tools/earthly.sh
+            - --secret=SILK_CLIENT_ID
+            - --secret=SILK_CLIENT_SECRET
             - +create-silk-asset-group
             - --branch=${branch_name}
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
@@ -5017,6 +5020,34 @@ tasks:
           CC: clang
           MARCH: i686
       - func: upload scan artifacts
+  - name: snyk-monitor-snapshot
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [misc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          env:
+            SNYK_ORGANIZATION: ${snyk_organization}
+            SNYK_TOKEN: ${snyk_token}
+          args:
+            - tools/earthly.sh
+            - --secret=SNYK_TOKEN
+            - --secret=SNYK_ORGANIZATION
+            - +snyk-monitor-snapshot
+            - --branch=${branch_name}
+            - --remote=local
   - name: std-c11-debian10-clang-compile
     run_on: debian10-large
     tags: [std-matrix, debian10, clang, compile, std-c11]
