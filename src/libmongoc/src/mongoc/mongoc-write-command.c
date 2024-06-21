@@ -59,7 +59,6 @@ _mongoc_write_command_insert_append (mongoc_write_command_t *command, const bson
       bson_concat (&tmp, document);
       _mongoc_buffer_append (&command->payload, bson_get_data (&tmp), tmp.len);
       bson_destroy (&tmp);
-
    } else {
       _mongoc_buffer_append (&command->payload, bson_get_data (document), document->len);
    }
