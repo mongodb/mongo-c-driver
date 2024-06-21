@@ -1328,8 +1328,9 @@ test_handshake_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/too_big", test_mongoc_handshake_too_big);
    TestSuite_Add (suite, "/MongoDB/handshake/oversized_flags", test_mongoc_oversized_flags);
    TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/cannot_send", test_mongoc_handshake_cannot_send);
-   TestSuite_AddMockServerTest (
-      suite, "/MongoDB/handshake/no_validation_for_sasl_supported_mech", test_mongoc_handshake_no_validation_for_sasl_supported_mech);
+   TestSuite_AddMockServerTest (suite,
+                                "/MongoDB/handshake/no_validation_for_sasl_supported_mech",
+                                test_mongoc_handshake_no_validation_for_sasl_supported_mech);
    TestSuite_Add (suite, "/MongoDB/handshake/platform_config", test_handshake_platform_config);
    TestSuite_Add (suite, "/MongoDB/handshake/race_condition", test_mongoc_handshake_race_condition);
    TestSuite_AddFull (suite,
