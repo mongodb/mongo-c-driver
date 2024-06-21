@@ -25,8 +25,7 @@ FULL_TEMPLATE = string.Template(
 # Thirty-Party Vulnerabilities
 
 This document lists known vulnerabilities in third-party dependencies that are
-directly bundled with standard release product for the MongoDB C Driver and
-libbson libraries.
+directly bundled with standard release product for the MongoDB C Driver.
 
 This document was created on **$today** using data from
 [Snyk Security](https://security.snyk.io), and the details herein reflect

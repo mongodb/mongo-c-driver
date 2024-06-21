@@ -153,7 +153,7 @@ detect the other dependencies within the project. The `+snyk-test` Earthly
 target is written to avoid this issue and allow Snyk to accurately detect other
 dependencies within the project.
 
-Due to difficultry coordinating the behavior of Snyk and Silk at time of
+Due to difficulty coordinating the behavior of Snyk and Silk at time of
 writing, vulnerability collection is partially a manual process. This is
 especially viable as the native code contains a very small number of
 dependencies and it is trivial to validate the output of Snyk by hand.
