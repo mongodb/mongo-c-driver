@@ -454,21 +454,21 @@ if (ENABLE_MONGOC)
    )
 
    set (ZLIB_SOURCES
-      ${SOURCE_DIR}/src/zlib-1.2.13/adler32.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/crc32.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/deflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/infback.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/inffast.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/inflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/inftrees.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/trees.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/zutil.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/compress.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/uncompr.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/gzclose.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/gzlib.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/gzread.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/gzwrite.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/adler32.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/crc32.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/deflate.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/infback.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/inffast.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/inflate.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/inftrees.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/trees.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/zutil.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/compress.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/uncompr.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/gzclose.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/gzlib.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/gzread.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/gzwrite.c
    )
 
    set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
