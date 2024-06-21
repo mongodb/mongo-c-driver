@@ -1055,7 +1055,7 @@ test_mongoc_handshake_cannot_send (void)
 /* Test the case where the driver does not raise an error if saslSupportedMechs attribute
 of the initial handshake reply contains an unknown mechanism. */
 static void
-test_mongoc_handshake_sasl_supported_mech_is_unknown (void)
+test_mongoc_handshake_no_validation_for_sasl_supported_mech (void)
 {
    mongoc_client_t *client;
    mock_server_t *server;
@@ -1075,7 +1075,8 @@ test_mongoc_handshake_sasl_supported_mech_is_unknown (void)
    ASSERT (mongoc_client_set_appname (client, "my app"));
 
    /* Send a ping where 'saslSupportedMechs' contains an arbitrary string  */
-   future = future_client_command_simple (client, "admin", tmp_bson ("{'ping': 1, 'saslSupportedMechs': 'unknownMechanism'}"), NULL, NULL, NULL);
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1, 'saslSupportedMechs': 'unknownMechanism'}"), NULL, NULL, NULL);
    ASSERT (future);
    request = mock_server_receives_any_hello (server);
    ASSERT (request);
@@ -1086,11 +1087,10 @@ test_mongoc_handshake_sasl_supported_mech_is_unknown (void)
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
 
    ASSERT (request);
-   doc = request_get_doc (request, 0); 
+   doc = request_get_doc (request, 0);
    ASSERT (doc);
    ASSERT (bson_has_field (doc, "saslSupportedMechs"));
-   ASSERT_NO_CAPTURED_LOGS("mongoc_handshake_sasl_supported_mechs_validation");
-   
+
    reply_to_request_simple (request, "{'ok': 1}");
    ASSERT (future_get_bool (future));
 
@@ -1099,6 +1099,8 @@ test_mongoc_handshake_sasl_supported_mech_is_unknown (void)
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
+
+   ASSERT_NO_CAPTURED_LOGS ("mongoc_handshake_no_validation_for_sasl_supported_mechs");
 }
 
 extern char *
@@ -1326,7 +1328,8 @@ test_handshake_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/too_big", test_mongoc_handshake_too_big);
    TestSuite_Add (suite, "/MongoDB/handshake/oversized_flags", test_mongoc_oversized_flags);
    TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/cannot_send", test_mongoc_handshake_cannot_send);
-   TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/sasl_supported_mech_is_unknown", test_mongoc_handshake_sasl_supported_mech_is_unknown);
+   TestSuite_AddMockServerTest (
+      suite, "/MongoDB/handshake/no_validation_for_sasl_supported_mech", test_mongoc_handshake_no_validation_for_sasl_supported_mech);
    TestSuite_Add (suite, "/MongoDB/handshake/platform_config", test_handshake_platform_config);
    TestSuite_Add (suite, "/MongoDB/handshake/race_condition", test_mongoc_handshake_race_condition);
    TestSuite_AddFull (suite,
