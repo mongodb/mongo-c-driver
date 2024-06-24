@@ -137,9 +137,6 @@ _oidc_sasl_one_step_conversation (mongoc_cluster_t *cluster,
    bson_append_utf8 (&jwt_step_request, "jwt", -1, cluster->client->topology->oidc_credential->access_token, -1);
    bson_mutex_unlock (&cluster->client->topology->oidc_mtx);
 
-   char *json = bson_as_json(&jwt_step_request, NULL);
-   fprintf(stderr, "JWT STEP REQUEST:\n%s\n", json);
-   bson_free(json);
    BCON_APPEND (&client_command,
                 "saslStart",
                 BCON_INT32 (1),

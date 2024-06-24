@@ -2691,7 +2691,7 @@ mongoc_client_set_oidc_callback (mongoc_client_t *client,
                                                         mongoc_oidc_credential_t * /* OUT */))
 {
    if (!client->topology->single_threaded) {
-      MONGOC_ERROR ("mongoc_client_set_oidc_callback must only be used for single threaded clients."
+      MONGOC_ERROR ("mongoc_client_set_oidc_callback must only be used for single threaded clients. "
                     "For client pools, use mongoc_client_pool_set_oidc_callback instead.");
       return;
    }
