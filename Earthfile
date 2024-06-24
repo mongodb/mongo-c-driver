@@ -182,12 +182,10 @@ release-archive:
     WORKDIR /s
     COPY --dir .git .
     COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
-    COPY +vuln-report-md/report.md third_party_vulnerabilities.md
     RUN git archive -o release.tar.gz \
         --prefix="$prefix/" \ # Set the archive path prefix
         "$ref" \ # Add the source tree
-        --add-file cyclonedx.sbom.json \  # Add the SBOM
-        --add-file third_party_vulnerabilities.md  # Add the vulnerability report
+        --add-file cyclonedx.sbom.json  # Add the SBOM
     SAVE ARTIFACT release.tar.gz
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
@@ -344,17 +342,6 @@ snyk-test:
     RUN --no-cache --secret SNYK_TOKEN \
         snyk test --unmanaged --json > snyk.json
     SAVE ARTIFACT snyk.json
-
-# vuln-report-md :
-#   Generate a vulnerability report page from Snyk dependency data.
-vuln-report-md:
-    FROM alpine:3.20
-    RUN apk add python3
-    COPY +snyk-test/snyk.json snyk.json
-    ARG cve_exclude
-    COPY tools/snyk-vulns.py vulns.py
-    RUN python vulns.py --cve-exclude=$cve_exclude < snyk.json > report.md
-    SAVE ARTIFACT report.md
 
 # snyk-monitor-snapshot :
 #   Post a crafted snapshot of the repository to Snyk for monitoring. Refer to "Snyk Scanning"

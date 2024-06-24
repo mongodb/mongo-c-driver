@@ -10,11 +10,13 @@ This page documents the process required for releasing a new version of the
 MongoDB C driver library. The release includes the following steps:
 
 .. sectnum::
+   :prefix: Step #
 .. contents:: Release Process
 
 .. _latest-build: https://spruce.mongodb.com/commits/mongo-c-driver
 .. _evg-release: https://spruce.mongodb.com/commits/mongo-c-driver-latest-release
 .. _evg-release-settings: https://spruce.mongodb.com/project/mongo-c-driver-latest-release/settings/general
+.. _snyk: https://app.snyk.io
 
 
 Check Static Analysis
@@ -48,6 +50,8 @@ Ensure that the latest commits on the branch are successful in CI.
 If the project health page displays task failures, ensure that they are not
 unexpected by the changes introduced in the new release.
 
+
+.. _releasing.sbom:
 
 Check and Update the SBOM Lite and `etc/purls.txt`
 ##################################################
@@ -85,47 +89,24 @@ release version that we are posting:
    If any subsequent step requires modifying the repository on that branch,
    re-run the `+snyk-monitor-snapshot` command to renew the Snyk monitor.
 
-Check the Generated Vulnerabilities Report
-##########################################
+.. _releasing.vuln-report:
 
-A generated report of third-party package vulnerabilities will be included in
-the final release. This report is generated using data from Snyk_ and collected
-into a Markdown document to be added as a release artifact.
+Address and Report Vulnerabilities in Dependencies
+##################################################
 
-.. _snyk: https://app.snyk.io
+Update the `etc/third_party_vulnerabilities.md` file according to the details
+currently available in the Snyk web UI for the C driver target. See
+`vuln-reporting` for more information on this process.
 
-.. seealso:: `snyk scanning` contains additional details
+If there are new unaddressed vulnerabilities for the pending release, *and* an
+upstream fix is available, *and* performing an upgrade is a simple enough
+option, create a new changeset that will upgrade that dependency so that a fix
+is available for the release.
 
-.. note:: Running the following steps will require providing Earthly secrets. See: `earthly.secrets`
+.. important::
 
-To generate the vulnerability report for review, execute the `+vuln-report-md`
-Earthly target and extract the `+vuln-report-md/report.md` artifact::
-
-   $ tools/earthly.sh --artifact +vuln-report-md/report.md vuln-report.md
-
-   [... snip ...]
-
-   Local Output Summary 🎁 (single artifact)
-   ————————————————————————————————————————————————————————————————————————————————
-
-   Artifact +vuln-report-md/report.md output as vuln-report.md
-
-Open the exported vulnerability report document and validate the content
-therein. For each entry within the **Vulnerabilities** section, check that the
-named **package** and its **bundled version** corresponds to a correct entry
-within the `SBOM lite <sbom-lite>` file `etc/cyclonedx.sbom.json`.
-
-.. note:: If there are no vulnerabilities in the report, then this step can be skipped
-
-If any vulnerability entries in the generated report appear to be erroneous or
-invalid, **take note of their CVE ID** for use with
-`+vuln-report-md --cve_exclude`. You will also need this value for the
-`releasing.gen-archive` step below.
-
-If any CVEs need to be excluded, re-generate the report with the
-`--cve_exclude <+vuln-report-md --cve_exclude>` argument set so that the
-resulting report looks correct.
-
+   If any dependency was upgraded to remove vulnerabilities, return to
+   `releasing.sbom`.
 
 
 Validate that New APIs Are Documented
@@ -371,12 +352,6 @@ the :any:`+signed-release` target. Let `$BRANCH` be the name of the Git branch
 from which the release is being made::
 
    $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$BRANCH --version=$NEW_VERSION
-
-.. important::
-
-   If you needed to exclude any vulnerabilities in the :ref:`releasing.snyk`
-   step, pass the same :option:`--cve_exclude <+signed-release --cve_exclude>`
-   argument to the above command.
 
 The above command will create a `dist/` directory in the working directory that
 contains the release artifacts from the :any:`+signed-release/dist/` directory

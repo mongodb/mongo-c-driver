@@ -99,10 +99,6 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       Affects the output filename and archive prefix paths in
       `+signed-release/dist/` and sets the default value for `--ref`.
 
-   .. option:: --cve_exclude <id-list>
-
-      Forwarded to `tools/snyk-vulns.py --cve-exclude`
-
    .. option:: --ref <git-ref>
 
       Specify the git revision to be archived. Forwarded to
@@ -132,10 +128,6 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    .. option:: --sbom_branch <branch>
 
       Forwarded as `+sbom-download --branch` to download the augmented SBOM.
-
-   .. option:: --cve_exclude <id-list>
-
-      Forwarded to `tools/snyk-vulns.py --cve-exclude`
 
    .. option:: --ref <git-ref>
 
@@ -328,7 +320,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 .. earthly-target:: +snyk-test
 
    Execute `snyk test`__ on the local copy. This target specifically avoids an
-   issue outlined in `snyk scanning` (See "Caveats").
+   issue outlined in `Snyk Scanning > Caveats <snyk caveats>`.
 
    __ https://docs.snyk.io/snyk-cli/commands/test
 
@@ -341,29 +333,6 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       :noindex:
 
       See: `SNYK_TOKEN`
-
-
-.. program:: +vuln-report-md
-.. earthly-target:: +vuln-report-md
-
-   Generate a third-party-package vulnerability report based on data from Snyk_.
-   Executes the `tools/snyk-vulns.py` script with the data from `+snyk-test`.
-
-   .. earthly-artifact:: +vuln-report-md/report.md
-
-      The generated vulnerability report document.
-
-   .. rubric:: Parameters
-   .. option:: --cve_exclude <id-list>
-
-      Forwarded to `tools/snyk-vulns.py --cve-exclude`
-
-      This argument is also exposed through `+release-archive` and
-      `+signed-release`.
-
-   .. rubric:: Secrets
-
-   Requires the secrets for `+snyk-test`: `SNYK_ORGANIZATION` and `SNYK_TOKEN`
 
 
 .. _earthly.secrets:
