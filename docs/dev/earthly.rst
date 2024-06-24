@@ -292,9 +292,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    .. rubric:: Parameters
    .. option:: --branch <branch>
 
-      **Required**. The name of the branch to be snapshot. The branch name is
-      also used to create/update the Snyk reference target in the monitoring
-      system.
+      **Required**. The name of the branch or tag to be snapshot.
 
    .. option:: --name <name>
 
