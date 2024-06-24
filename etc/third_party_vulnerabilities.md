@@ -30,8 +30,6 @@ information that was available at that time.
 > Details on packages that are not tracked tracked by Snyk Security will not
 > appear in this document.
 
-# Packages
-
 ## `Zlib`
 
 ### CVE-2023-45853 - Integer Overflow or Wraparound
