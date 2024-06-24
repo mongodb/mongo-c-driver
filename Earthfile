@@ -356,6 +356,34 @@ vuln-report-md:
     RUN python vulns.py --cve-exclude=$cve_exclude < snyk.json > report.md
     SAVE ARTIFACT report.md
 
+# snyk-monitor-snapshot :
+#   Post a crafted snapshot of the repository to Snyk for monitoring. Refer to "Snyk Scanning"
+#   in the dev docs for more details.
+snyk-monitor-snapshot:
+    FROM +snyk
+    WORKDIR /s
+    ARG remote="https://github.com/mongodb/mongo-c-driver.git"
+    ARG --required branch
+    ARG --required name
+    IF test "$remote" = "local"
+        COPY --dir src .
+    ELSE
+        GIT CLONE --branch $branch $remote clone
+        RUN mv clone/src .
+    END
+    # Take the scan from within the `src/` directory. This seems to help Snyk
+    # actually find the external dependencies that live there.
+    WORKDIR src/
+    # Snaptshot the repository and run the scan
+    RUN --no-cache --secret SNYK_TOKEN --secret SNYK_ORGANIZATION \
+        snyk monitor \
+            --org=$SNYK_ORGANIZATION \
+            --target-reference=$name \
+            --unmanaged \
+            --print-deps \
+            --project-name=mongo-c-driver \
+            --remote-repo-url=https://github.com/mongodb/mongo-c-driver
+
 # test-vcpkg-classic :
 #   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and
 #   install a mongo-c-driver build in "classic mode". *Does not* use the local

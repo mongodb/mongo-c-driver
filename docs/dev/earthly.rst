@@ -277,18 +277,38 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
       .. seealso:: `earthly.secrets`
 
+.. program:: +snyk-monitor-snapshot
+.. earthly-target:: +snyk-monitor-snapshot
 
-.. program:: +snyk-test
-.. earthly-target:: +snyk-test
+   Executes `snyk monitor`__ on a crafted snapshot of the remote repository.
+   This target specifically avoids an issue outlined in `snyk scanning` (See
+   "Caveats"). Clones the repository at the given `--branch` for the snapshot
+   being taken.
 
-   Execute `snyk test`__ on the a project. This target specifically avoids an
-   issue outlined in `snyk scanning` (See "Caveats").
+   __ https://docs.snyk.io/snyk-cli/commands/monitor
 
-   __ https://docs.snyk.io/snyk-cli/commands/test
+   .. seealso:: Release process step: `releasing.snyk`
 
-   .. earthly-artifact:: +snyk-test/snyk.json
+   .. rubric:: Parameters
+   .. option:: --branch <branch>
 
-      The Snyk JSON data result of the scan.
+      **Required**. The name of the branch to be snapshot. The branch name is
+      also used to create/update the Snyk reference target in the monitoring
+      system.
+
+   .. option:: --name <name>
+
+      **Required**. The name for the monitored snapshot ("target reference") to
+      be stored in the Snyk server.
+
+      .. note:: If a target with this name already exists in the Snyk server,
+         then executing `+snyk-monitor-snapshot` will replace that target.
+
+   .. option:: --remote <url | "local">
+
+      The repository to be snapshot and posted to Snyk for monitoring. Defaults
+      to the upstream repository URL. Use ``"local"`` to snapshot the repository
+      in the working directory (not recommended except for testing).
 
    .. rubric:: Secrets
    .. envvar:: SNYK_ORGANIZATION
@@ -305,6 +325,24 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
       Set this to the value of an API token for accessing Snyk in the given
       `SNYK_ORGANIZATION`. [#creds]_
+
+.. program:: +snyk-test
+.. earthly-target:: +snyk-test
+
+   Execute `snyk test`__ on the local copy. This target specifically avoids an
+   issue outlined in `snyk scanning` (See "Caveats").
+
+   __ https://docs.snyk.io/snyk-cli/commands/test
+
+   .. earthly-artifact:: +snyk-test/snyk.json
+
+      The Snyk JSON data result of the scan.
+
+   .. rubric:: Secrets
+   .. envvar:: SNYK_TOKEN
+      :noindex:
+
+      See: `SNYK_TOKEN`
 
 
 .. program:: +vuln-report-md

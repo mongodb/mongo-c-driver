@@ -56,8 +56,34 @@ Check that the `etc/purls.txt` file is up-to-date with the set of
 :term:`vendored dependencies <vendored dependency>`. If any items need to be
 updated, refer to `sbom-lite-updating`.
 
-
 .. _releasing.snyk:
+
+Start Snyk Monitoring
+#####################
+
+We wish to track vulnerability information within bundled dependencies for
+releases until such releases are no longer supported. We use Snyk_ to perform
+this monitoring.
+
+.. seealso:: `snyk scanning` for information on how Snyk is used
+
+.. program:: +snyk-monitor-snapshot
+
+To enable Snyk monitoring for a release, execute the `+snyk-monitor-snapshot`
+Earthly target for the release branch to be monitored. Be sure to specify the
+correct branch name with `--branch`, and use `--name` to identify the snapshot
+as belonging to the new release version. Let ``$RELEASE_BRANCH`` being the name
+of the branch from which we are releasing, and let ``$NEW_VERSION`` be the new
+release version that we are posting:
+
+.. code-block:: console
+
+   $ tools/earthly.sh +snyk-monitor-snapshot --branch "$RELEASE_BRANCH" --name="release-$NEW_VERSION"
+
+.. note::
+
+   If any subsequent step requires modifying the repository on that branch,
+   re-run the `+snyk-monitor-snapshot` command to renew the Snyk monitor.
 
 Check the Generated Vulnerabilities Report
 ##########################################
