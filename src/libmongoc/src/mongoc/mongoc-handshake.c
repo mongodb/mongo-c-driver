@@ -301,8 +301,10 @@ _get_os_version (void)
 #endif
 
    if (res) {
-      bson_snprintf (
+      // Truncation is OK.
+      int req = bson_snprintf (
          ret, HANDSHAKE_OS_VERSION_MAX, "%lu.%lu (%lu)", osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
+      BSON_ASSERT (req > 0);
       found = true;
    } else {
       MONGOC_WARNING ("Error with GetVersionEx(): %lu", GetLastError ());

@@ -19,6 +19,7 @@
 
 #include <bson/bson-keys.h>
 #include <bson/bson-string.h>
+#include <bson/bson-cmp.h>
 
 
 static const char *gUint32Strs[] = {
@@ -141,5 +142,9 @@ bson_uint32_to_string (uint32_t value,      /* IN */
 
    *strptr = str;
 
-   return bson_snprintf (str, size, "%u", value);
+   int ret = bson_snprintf (str, size, "%u", value);
+   // Truncation is OK.
+   BSON_ASSERT (ret > 0);
+   BSON_ASSERT (bson_in_range_size_t_signed (ret));
+   return (size_t) ret;
 }

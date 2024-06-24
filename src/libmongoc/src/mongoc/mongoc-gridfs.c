@@ -116,10 +116,13 @@ _mongoc_gridfs_new (mongoc_client_t *client, const char *db, const char *prefix,
 
    gridfs->client = client;
 
-   bson_snprintf (buf, sizeof (buf), "%s.chunks", prefix);
+   // Expect no truncation from above, checking no error occurred.
+   int req = bson_snprintf (buf, sizeof (buf), "%s.chunks", prefix);
+   BSON_ASSERT (req > 0);
    gridfs->chunks = mongoc_client_get_collection (client, db, buf);
 
-   bson_snprintf (buf, sizeof (buf), "%s.files", prefix);
+   req = bson_snprintf (buf, sizeof (buf), "%s.files", prefix);
+   BSON_ASSERT (req > 0);
    gridfs->files = mongoc_client_get_collection (client, db, buf);
 
    r = _mongoc_gridfs_ensure_index (gridfs, error);

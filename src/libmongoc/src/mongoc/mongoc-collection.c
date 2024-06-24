@@ -1776,6 +1776,7 @@ mongoc_collection_insert_one (
    mongoc_insert_one_opts_t insert_one_opts;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
+   bson_t insert_id = BSON_INITIALIZER;
    bson_t cmd_opts = BSON_INITIALIZER;
    bool ret = false;
 
@@ -1803,7 +1804,8 @@ mongoc_collection_insert_one (
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert_idl (&command, document, &cmd_opts, ++collection->client->cluster.operation_id);
+   _mongoc_write_command_init_insert_one_idl (
+      &command, document, &cmd_opts, &insert_id, ++collection->client->cluster.operation_id);
 
    command.flags.bypass_document_validation = insert_one_opts.bypass;
    _mongoc_collection_write_command_execute_idl (&command, collection, &insert_one_opts.crud, &result);
@@ -1817,11 +1819,17 @@ mongoc_collection_insert_one (
                                        error,
                                        "insertedCount");
 
+   // Only record _id of document if it was actually inserted and reply is non-NULL.
+   if (reply && result.nInserted > 0) {
+      bson_concat (reply, &insert_id);
+   }
+
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
 
 done:
    _mongoc_insert_one_opts_cleanup (&insert_one_opts);
+   bson_destroy (&insert_id);
    bson_destroy (&cmd_opts);
 
    RETURN (ret);

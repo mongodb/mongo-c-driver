@@ -74,6 +74,36 @@ typedef struct {
 } context_t;
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_host_list_push --
+ *
+ *       Add a host to the front of the list and return it.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+static mongoc_host_list_t *
+_mongoc_host_list_push (const char *host, uint16_t port, int family, mongoc_host_list_t *next)
+{
+   mongoc_host_list_t *h;
+
+   BSON_ASSERT (host);
+
+   h = bson_malloc0 (sizeof (mongoc_host_list_t));
+   bson_strncpy (h->host, host, sizeof h->host);
+   h->port = port;
+   bson_snprintf (h->host_and_port, sizeof h->host_and_port, "%s:%hu", host, port);
+
+   h->family = family;
+   h->next = next;
+
+   return h;
+}
+
 static void
 topology_changed (const mongoc_apm_topology_changed_t *event)
 {
