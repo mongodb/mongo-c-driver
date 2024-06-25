@@ -182,10 +182,12 @@ release-archive:
     WORKDIR /s
     COPY --dir .git .
     COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
+    COPY etc/ssdlc.md ssldc_compliance_report.md
     RUN git archive -o release.tar.gz \
         --prefix="$prefix/" \ # Set the archive path prefix
         "$ref" \ # Add the source tree
-        --add-file cyclonedx.sbom.json  # Add the SBOM
+        --add-file cyclonedx.sbom.json \ # Add the SBOM
+        --add-file ssldc_compliance_report.md
     SAVE ARTIFACT release.tar.gz
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
