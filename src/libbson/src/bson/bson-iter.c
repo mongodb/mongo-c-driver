@@ -1357,8 +1357,8 @@ bson_iter_dup_utf8 (const bson_iter_t *iter, /* IN */
    BSON_ASSERT (iter);
 
    if ((str = bson_iter_utf8 (iter, &local_length))) {
-      if (!bson_cmp_less_uu (local_length, SIZE_MAX)) {
-         return ret;
+      if (bson_cmp_greater_equal_uu (local_length, SIZE_MAX)) {
+         return NULL;
       }
       ret = bson_malloc0 ((size_t) local_length + 1u);
       memcpy (ret, str, (size_t) local_length);

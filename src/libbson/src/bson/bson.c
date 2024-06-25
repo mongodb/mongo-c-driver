@@ -1505,7 +1505,7 @@ bson_append_utf8 (bson_t *bson, const char *key, int key_length, const char *val
 
    if (BSON_UNLIKELY (length < 0)) {
       len_sz = strlen (value);
-      if (len_sz > (size_t) INT_MAX) {
+      if (bson_cmp_greater_us (len_sz, INT_MAX)) {
          /* The return of 'false' would allow for possible overflow later on */
          return bson_append_null (bson, key, key_length);
       }
