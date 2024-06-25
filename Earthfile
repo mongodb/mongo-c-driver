@@ -179,13 +179,32 @@ release-archive:
     ARG --required sbom_branch
     ARG --required prefix
     ARG --required ref
+
+    # Pick the waterfall project based on the tag
+    COPY tools+tools-dir/__str /usr/local/bin/__str
+    IF __str test "$ref" -matches ".*\.0"
+        # This is a minor release. Link to the build on the main project.
+        LET base = "mongo_c_driver"
+    ELSE
+        # This is (probably) a patch release. Link to the build on the release branch.
+        LET base = "mongo_c_driver_latest_release"
+    END
+
     WORKDIR /s
     COPY --dir .git .
     COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
+
+    # Get the commit hash that we are archiving. Use ^{commit} to "dereference" tag objects
+    LET revision = $(git rev-parse "$ref^{commit}")
+    # The full link to the build for this commit
+    LET waterfall_url = "https://spruce.mongodb.com/version/${base}_${revision}"
+    # Insert the URL into the SSDLC report
     COPY etc/ssdlc.md ssldc_compliance_report.md
+    RUN sed -i "s|@waterfall_url@|$waterfall_url|g" ssldc_compliance_report.md
+    # Generate the archive
     RUN git archive -o release.tar.gz \
         --prefix="$prefix/" \ # Set the archive path prefix
-        "$ref" \ # Add the source tree
+        "$revision" \ # Add the source tree
         --add-file cyclonedx.sbom.json \ # Add the SBOM
         --add-file ssldc_compliance_report.md
     SAVE ARTIFACT release.tar.gz

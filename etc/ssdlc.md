@@ -37,6 +37,9 @@ Refer to the
 [Driver Security Testing Summary](https://docs.google.com/document/d/1y2K_RY4GZVXpQvv4JH_35mSzFRTawNJ3mibpvSBU8H0)
 document (internal). Available as-needed from the MongoDB C Driver team.
 
+<!--  The below URL is inserted as part of the Earthfile+release-archive target. -->
+Refer to the [Evergreen waterfall build](@waterfall_url@) (internal) for test results.
+
 ## Release Signature Information
 
 The generated release archive is signed. The detached signature is available

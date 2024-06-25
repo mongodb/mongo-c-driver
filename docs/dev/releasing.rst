@@ -353,10 +353,12 @@ from which the release is being made::
 
    $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$BRANCH --version=$NEW_VERSION
 
+.. note:: `$NEW_VERSION` must correspond to the Git tag created by the release.
+
 The above command will create a `dist/` directory in the working directory that
 contains the release artifacts from the :any:`+signed-release/dist/` directory
 artifact. The generated filenames are based on the
-:any:`+signed-release --version` argument. The archive contenst come from the
+:any:`+signed-release --version` argument. The archive contents come from the
 Git tag corresponding to the specified version. The detached PGP signature is
 the file with the `.asc` extension and corresponds to the archive file with the
 same name without the `.asc` suffix.
