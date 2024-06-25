@@ -1,4 +1,4 @@
-# MongoDB C Driver SSDLC Compliance Report
+# MongoDB C Driver SSDLC Compliance Report (@version@)
 
 <!--
 This document is intended for distribution with release archives of the MongoDB

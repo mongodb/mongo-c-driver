@@ -196,11 +196,16 @@ release-archive:
 
     # Get the commit hash that we are archiving. Use ^{commit} to "dereference" tag objects
     LET revision = $(git rev-parse "$ref^{commit}")
+    RUN git restore --quiet --source=$revision -- VERSION_CURRENT
+    LET version=$(cat VERSION_CURRENT)
     # The full link to the build for this commit
     LET waterfall_url = "https://spruce.mongodb.com/version/${base}_${revision}"
     # Insert the URL into the SSDLC report
     COPY etc/ssdlc.md ssldc_compliance_report.md
-    RUN sed -i "s|@waterfall_url@|$waterfall_url|g" ssldc_compliance_report.md
+    RUN sed -i "
+        s|@waterfall_url@|$waterfall_url|g
+        s|@version@|$version|g
+    " ssldc_compliance_report.md
     # Generate the archive
     RUN git archive -o release.tar.gz \
         --prefix="$prefix/" \ # Set the archive path prefix
@@ -208,6 +213,7 @@ release-archive:
         --add-file cyclonedx.sbom.json \ # Add the SBOM
         --add-file ssldc_compliance_report.md
     SAVE ARTIFACT release.tar.gz
+    SAVE ARTIFACT ssldc_compliance_report.md
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:
@@ -262,7 +268,8 @@ signed-release:
     LET rel_tgz = "$rel_dir/$stem.tar.gz"
     LET rel_asc = "$rel_dir/$stem.tar.gz.asc"
     # Make the release archive:
-    COPY (+release-archive/release.tar.gz --branch=$sbom_branch --prefix=$stem --ref=$ref) $rel_tgz
+    COPY (+release-archive/ --branch=$sbom_branch --prefix=$stem --ref=$ref) $rel_dir/
+    RUN mv $rel_dir/release.tar.gz $rel_tgz
     # Sign the release archive:
     COPY (+sign-file/signature.asc --file $rel_tgz) $rel_asc
     # Save them as an artifact.

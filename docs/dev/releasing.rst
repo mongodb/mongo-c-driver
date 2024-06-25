@@ -369,6 +369,7 @@ same name without the `.asc` suffix.
    $ ls dist/
    mongo-c-driver-1.27.2.tar.gz
    mongo-c-driver-1.27.2.tar.gz.asc
+   ssdlc_compliance_report.md
 
 .. note::
 
