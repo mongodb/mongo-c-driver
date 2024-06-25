@@ -29,6 +29,8 @@ mongoc_oidc_credential_set_access_token (mongoc_oidc_credential_t *credential, c
 void
 mongoc_oidc_credential_set_expires_in_seconds (mongoc_oidc_credential_t *credential, int64_t expires_in_seconds)
 {
+   /* Drivers MUST error if a negative value is returned. */
+   BSON_ASSERT (expires_in_seconds >= 0);
    credential->expires_in_seconds = expires_in_seconds;
 }
 
@@ -78,12 +80,16 @@ _oidc_set_client_token (mongoc_client_t *client, bool *is_cache, bson_error_t *e
       goto unlock_oidc_mutex;
    }
 
-   params.version = 1;
    /*
-    * TODO: set timeout to:
-    *     min(remaining connectTimeoutMS, remaining timeoutMS)
+    * From the spec:
+    * The timeout value MUST be min(remaining connectTimeoutMS, remaining timeoutMS)
+    * as described in the Server Selection section of the CSOT spec. If CSOT is
+    * not applied, then the driver MUST use 1 minute as the timeout.
+    *
+    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#oidc-callback
     */
-   params.callback_timeout_ms = MONGOC_MIN (100, client->topology->connect_timeout_msec); /* placeholder */
+   params.callback_timeout_ms = 60 * 1000;
+   params.version = 1;
 
    bson_mutex_lock (&_oidc_callback_mutex);
 

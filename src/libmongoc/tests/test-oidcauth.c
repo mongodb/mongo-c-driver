@@ -1,3 +1,8 @@
+/*
+ * OIDC Prose tests, see specification here:
+ * https://github.com/mongodb/specifications/blob/474ddfcc335225df4410986be2b10ae41a736d20/source/auth/tests/mongodb-oidc.rst#1callback-driven-auth
+ */
+
 #include <stdio.h>
 
 #include <mongoc/mongoc.h>
@@ -5,6 +10,12 @@
 #include "common-thread-private.h"
 
 static char *username = "test_user1";
+static bson_mutex_t _callback_counter_mtx;
+static size_t callback_counter = 0;
+
+enum {
+   NUM_THREADS = 10
+};
 
 static BSON_THREAD_FUN (_run_ping, data)
 {
@@ -55,6 +66,10 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    size_t nread = 0;
    char *token_file_path = NULL;
 
+   bson_mutex_lock (&_callback_counter_mtx);
+   callback_counter++;
+   bson_mutex_unlock (&_callback_counter_mtx);
+
    token_file_path = bson_strdup_printf ("/tmp/tokens/%s", username);
 
    token_file = fopen (token_file_path, "r");
@@ -80,7 +95,7 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    rewind (token_file);
 
    /* Allocate buffer for token string */
-   token = malloc (size + 1);
+   token = bson_malloc (size + 1);
    if (!token) {
       ok = false;
       goto done;
@@ -98,8 +113,11 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    /* The file might have trailing whitespaces such as "\n" or "\r\n" */
    _truncate_on_whitespace (token);
 
-   timeout = mongoc_oidc_callback_params_get_timeout_ms (params);
    version = mongoc_oidc_callback_params_get_version (params);
+   timeout = mongoc_oidc_callback_params_get_timeout_ms (params);
+
+   BSON_ASSERT (version == 1);
+   BSON_ASSERT (timeout == 60000);
 
    /* Provide your OIDC token to the MongoDB C Driver via the 'creds' out
     * parameter. Remember to free your token string. The C driver stores its
@@ -107,15 +125,12 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    mongoc_oidc_credential_set_access_token (cred, token);
    mongoc_oidc_credential_set_expires_in_seconds (cred, 200);
 
-   (void)version;
-   (void)timeout;
-
 done:
    if (token_file) {
       fclose (token_file);
    }
    bson_free (token_file_path);
-   free (token);
+   bson_free (token);
    return ok;
 }
 
@@ -151,10 +166,6 @@ done:
    mongoc_uri_destroy (uri);
    return ok;
 }
-
-enum {
-   NUM_THREADS = 10,
-};
 
 bool
 connect_with_oidc_pooled (void)
@@ -196,7 +207,6 @@ connect_with_oidc_pooled (void)
 
 done:
    mongoc_uri_destroy (uri);
-   mongoc_client_pool_destroy (pool);
    return ok;
 }
 
@@ -221,23 +231,170 @@ done:
    return ok;
 }
 
-/*
- * https://github.com/mongodb/specifications/blob/474ddfcc335225df4410986be2b10ae41a736d20/source/auth/tests/mongodb-oidc.rst#1callback-driven-auth
- */
+/* (1) Callback Authentication */
 
 /*
- * 1.1 Single Principal Implicit Username
- * - Clear the cache.
- * - Create a request callback returns a valid token.
- * - Create a client that uses the default OIDC url and the request callback.
- * - Perform a find operation. that succeeds.
+ * 1.1 Callback is called during authentication
+ * - Create an OIDC configured client.
+ * - Perform a find operation that succeeds.
+ * - Assert that the callback was called 1 time.
  * - Close the client.
  */
 static bool
-single_principal_implicit_username (bool pooled)
+callback_is_called_during_authentication (void)
 {
    mongoc_client_t *client = NULL;
+   mongoc_collection_t *coll = NULL;
+   bson_t *query = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   const bson_t *doc;
+   const bson_t *reply;
+   const char *uri_str = "mongodb://localhost:27017/?authMechanism=MONGODB-OIDC";
+   mongoc_uri_t *uri = NULL;
+   bson_error_t error;
+   bool ok = true;
+
+   callback_counter = 0;
+
+   uri = mongoc_uri_new_with_error (uri_str, &error);
+   if (!uri) {
+      fprintf (stderr, "Failed to create URI: '%s': %s\n", uri_str, error.message);
+      ok = false;
+      goto done;
+   }
+
+   client = mongoc_client_new_from_uri (uri);
+   mongoc_client_set_oidc_callback (client, _oidc_callback);
+
+   coll = mongoc_client_get_collection(client, "test", "test");
+   query = bson_new ();
+   cursor = mongoc_collection_find_with_opts(coll, query, NULL, NULL);
+
+   while (mongoc_cursor_next(cursor, &doc)) {
+      ;
+   }
+
+   ok = !mongoc_cursor_error_document (cursor, &error, &reply);
+   if (!ok) {
+      char *json = bson_as_json (reply, NULL);
+      fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, json);
+      bson_free (json);
+      goto done;
+   }
+
+   BSON_ASSERT (callback_counter == 1);
+
+done:
+   mongoc_cursor_destroy(cursor);
+   bson_destroy(query);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+
+   return ok;
+}
+
+static void *
+multiple_connections_thread_func (void *data)
+{
+   mongoc_collection_t *coll = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   bson_t *query = NULL;
+   const bson_t *reply;
+   bson_error_t error;
+   const bson_t *doc;
+   bool ok;
+
+   mongoc_client_t *client = data;
+
+   for (size_t i = 0; i < 100; i++) {
+      coll = mongoc_client_get_collection(client, "test", "test");
+      query = bson_new ();
+      cursor = mongoc_collection_find_with_opts(coll, query, NULL, NULL);
+
+      while (mongoc_cursor_next(cursor, &doc)) {
+         ;
+      }
+
+      ok = !mongoc_cursor_error_document (cursor, &error, &reply);
+      if (!ok) {
+         char *json = bson_as_json (reply, NULL);
+         fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, json);
+         bson_free (json);
+         BSON_ASSERT (ok);
+      }
+
+      mongoc_cursor_destroy(cursor);
+      bson_destroy(query);
+      mongoc_collection_destroy(coll);
+   }
+
+   return NULL;
+}
+
+/*
+ * 1.2 Callback is called once for multiple connections
+ * - Create an OIDC configured client.
+ * - Start 10 threads and run 100 find operations in each thread that all succeed.
+ * - Assert that the callback was called 1 time.
+ * - Close the client.
+ */
+static bool
+callback_is_called_once_for_multiple_connections (void)
+{
    mongoc_client_pool_t *pool = NULL;
+   bson_error_t error;
+   const char *uri_str = "mongodb://localhost:27017/?authMechanism=MONGODB-OIDC";
+   mongoc_uri_t *uri = NULL;
+   bool ok = true;
+   pthread_t threads[NUM_THREADS] = {0};
+   mongoc_client_t *clients[NUM_THREADS];
+
+   callback_counter = 0;
+
+   uri = mongoc_uri_new_with_error (uri_str, &error);
+   if (!uri) {
+      fprintf (stderr, "Failed to create URI: '%s': %s\n", uri_str, error.message);
+      ok = false;
+      goto done;
+   }
+
+   pool = mongoc_client_pool_new (uri);
+   mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
+
+   for (size_t i = 0; i < NUM_THREADS; i++) {
+      clients[i] = mongoc_client_pool_pop (pool);
+      BSON_ASSERT (clients[i]);
+      mcommon_thread_create (&threads[i], multiple_connections_thread_func, clients[i]);
+   }
+
+   for (size_t i = 0; i < NUM_THREADS; i++) {
+      mcommon_thread_join (threads[i]);
+      mongoc_client_pool_push (pool, clients[i]);
+   }
+
+   BSON_ASSERT (callback_counter == 1);
+
+done:
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+
+   return ok;
+}
+
+/* (2) OIDC Callback Validation */
+
+/*
+ * 2.1 Valid Callback Inputs
+ * - Create an OIDC configured client with an OIDC callback that validates its inputs and returns a valid access token.
+ * - Perform a find operation that succeeds.
+ * - Assert that the OIDC callback was called with the appropriate inputs, including the timeout parameter if possible.
+ * - Close the client.
+ */
+static bool
+valid_callback_inputs (void)
+{
+   mongoc_client_t *client = NULL;
    mongoc_collection_t *coll = NULL;
    bson_t *query = NULL;
    mongoc_cursor_t *cursor = NULL;
@@ -255,14 +412,8 @@ single_principal_implicit_username (bool pooled)
       goto done;
    }
 
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-      mongoc_client_set_oidc_callback (client, _oidc_callback);
-   }
+   client = mongoc_client_new_from_uri (uri);
+   mongoc_client_set_oidc_callback (client, _oidc_callback);
 
    coll = mongoc_client_get_collection(client, "test", "test");
    query = bson_new ();
@@ -281,33 +432,42 @@ single_principal_implicit_username (bool pooled)
    }
 
 done:
-   mongoc_client_pool_destroy (pool);
-   if (!pooled) {
-      mongoc_client_destroy (client);
-   }
+   mongoc_cursor_destroy(cursor);
+   bson_destroy(query);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
 
    return ok;
 }
 
+static bool
+_oidc_failing_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credential_t *cred /* OUT */)
+{
+   BSON_ASSERT (params);
+   BSON_ASSERT (cred);
+
+   mongoc_oidc_credential_set_access_token (cred, NULL);
+   return false;
+}
+
 /*
- * 1.2 Single Principal Explicit Username
- * - Clear the cache.
- * - Create a request callback that returns a valid token.
- * - Create a client with a url of the form mongodb://test_user1@localhost/?authMechanism=MONGODB-OIDC and the OIDC request callback.
- * - Perform a find operation that succeeds.
+ * 2.2 OIDC Callback Returns Null
+ *
+ * - Create an OIDC configured client with an OIDC callback that returns null.
+ * - Perform a find operation that fails.
  * - Close the client.
  */
 static bool
-single_principal_explicit_username (bool pooled)
+oidc_callback_returns_null (void)
 {
    mongoc_client_t *client = NULL;
-   mongoc_client_pool_t *pool = NULL;
    mongoc_collection_t *coll = NULL;
    bson_t *query = NULL;
    mongoc_cursor_t *cursor = NULL;
    const bson_t *doc;
    const bson_t *reply;
-   const char *uri_str = "mongodb://test_user1@localhost/?authMechanism=MONGODB-OIDC";
+   const char *uri_str = "mongodb://localhost:27017/?authMechanism=MONGODB-OIDC";
    mongoc_uri_t *uri = NULL;
    bson_error_t error;
    bool ok = true;
@@ -319,14 +479,10 @@ single_principal_explicit_username (bool pooled)
       goto done;
    }
 
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-      mongoc_client_set_oidc_callback (client, _oidc_callback);
-   }
+   client = mongoc_client_new_from_uri (uri);
+
+   /* Set the callback to a callback that errors and sets the token to NULL. */
+   mongoc_client_set_oidc_callback (client, _oidc_failing_callback);
 
    coll = mongoc_client_get_collection(client, "test", "test");
    query = bson_new ();
@@ -336,236 +492,32 @@ single_principal_explicit_username (bool pooled)
       ;
    }
 
-   ok = !mongoc_cursor_error_document (cursor, &error, &reply);
-   if (!ok) {
-      char *json = bson_as_json (reply, NULL);
-      fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, json);
-      bson_free (json);
-      goto done;
-   }
+   /* Assert that the 'find' operation fails. */
+   BSON_ASSERT (!mongoc_cursor_error_document (cursor, &error, &reply));
 
 done:
-   mongoc_client_pool_destroy (pool);
-   if (!pooled) {
-      mongoc_client_destroy (client);
-   }
+   mongoc_cursor_destroy(cursor);
+   bson_destroy(query);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
 
    return ok;
-}
-
-/*
- * 1.3 Multiple Principal User 1
- * - Clear the cache.
- * - Create a request callback that returns a valid token.
- * - Create a client with a url of the form mongodb://test_user1@localhost:27018/?authMechanism=MONGODB-OIDC&directConnection=true&readPreference=secondaryPreferred and a valid OIDC request callback.
- * - Perform a find operation that succeeds.
- * - Close the client.
- */
-static bool
-multiple_principal_user_1 (bool pooled)
-{
-   mongoc_client_t *client = NULL;
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_collection_t *coll = NULL;
-   bson_t *query = NULL;
-   mongoc_cursor_t *cursor = NULL;
-   const bson_t *doc;
-   const bson_t *reply;
-   const char *uri_str = "mongodb://test_user1@localhost:27018/?authMechanism=MONGODB-OIDC&directConnection=true&readPreference=secondaryPreferred";
-   mongoc_uri_t *uri = NULL;
-   bson_error_t error;
-   bool ok = true;
-
-   uri = mongoc_uri_new_with_error (uri_str, &error);
-   if (!uri) {
-      fprintf (stderr, "Failed to create URI: '%s': %s\n", uri_str, error.message);
-      ok = false;
-      goto done;
-   }
-
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-      mongoc_client_set_oidc_callback (client, _oidc_callback);
-   }
-
-   coll = mongoc_client_get_collection(client, "test", "test");
-   query = bson_new ();
-   cursor = mongoc_collection_find_with_opts(coll, query, NULL, NULL);
-
-   while (mongoc_cursor_next(cursor, &doc)) {
-      ;
-   }
-
-   ok = !mongoc_cursor_error_document (cursor, &error, &reply);
-   if (!ok) {
-      char *json = bson_as_json (reply, NULL);
-      fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, json);
-      bson_free (json);
-      goto done;
-   }
-
-done:
-   mongoc_client_pool_destroy (pool);
-   if (!pooled) {
-      mongoc_client_destroy (client);
-   }
-
-   return ok;
-}
-
-/*
- * 1.4 Multiple Principal User 2
- * _ Clear the cache.
- * _ Create a request callback that reads in the generated test_user2 token file.
- * _ Create a client with a url of the form mongodb://test_user2@localhost:27018/?authMechanism=MONGODB-OIDC&directConnection=true&readPreference=secondaryPreferred and a valid OIDC request callback.
- * _ Perform a find operation that succeeds.
- * _ Close the client.
-*/
-static bool
-multiple_principal_user_2 (bool pooled)
-{
-   mongoc_client_t *client = NULL;
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_collection_t *coll = NULL;
-   bson_t *query = NULL;
-   mongoc_cursor_t *cursor = NULL;
-   const bson_t *doc;
-   const bson_t *reply;
-   const char *uri_str = "mongodb://test_user2@localhost:27018/?authMechanism=MONGODB-OIDC&directConnection=true&readPreference=secondaryPreferred";
-   mongoc_uri_t *uri = NULL;
-   bson_error_t error;
-   bool ok = true;
-
-   username = "test_user2";
-
-   uri = mongoc_uri_new_with_error (uri_str, &error);
-   if (!uri) {
-      fprintf (stderr, "Failed to create URI: '%s': %s\n", uri_str, error.message);
-      ok = false;
-      goto done;
-   }
-
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-      mongoc_client_set_oidc_callback (client, _oidc_callback);
-   }
-
-   coll = mongoc_client_get_collection(client, "test", "test");
-   query = bson_new ();
-   cursor = mongoc_collection_find_with_opts(coll, query, NULL, NULL);
-
-   while (mongoc_cursor_next(cursor, &doc)) {
-      ;
-   }
-
-   ok = !mongoc_cursor_error_document (cursor, &error, &reply);
-   if (!ok) {
-      char *json = bson_as_json (reply, NULL);
-      fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, json);
-      bson_free (json);
-      goto done;
-   }
-
-done:
-   mongoc_client_pool_destroy (pool);
-   if (!pooled) {
-      mongoc_client_destroy (client);
-   }
-
-   return ok;
-}
-
-/*
- * 1.5 Multiple Principal No User
- * - Clear the cache.
- * - Create a client with a url of the form mongodb://localhost:27018/?authMechanism=MONGODB-OIDC&directConnection=true&readPreference=secondaryPreferred and a valid OIDC request callback.
- * - Assert that a find operation fails.
- * - Close the client.
-*/
-static bool
-multiple_principal_no_user (bool pooled)
-{
-   mongoc_client_t *client = NULL;
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_collection_t *coll = NULL;
-   bson_t *query = NULL;
-   mongoc_cursor_t *cursor = NULL;
-   const bson_t *doc;
-   const bson_t *reply;
-   const char *uri_str = "mongodb://localhost:27018/?authMechanism=MONGODB-OIDC&directConnection=true&readPreference=secondaryPreferred";
-   mongoc_uri_t *uri = NULL;
-   bson_error_t error;
-   bool ok = true;
-
-   uri = mongoc_uri_new_with_error (uri_str, &error);
-   if (!uri) {
-      fprintf (stderr, "Failed to create URI: '%s': %s\n", uri_str, error.message);
-      ok = false;
-      goto done;
-   }
-
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-      mongoc_client_set_oidc_callback (client, _oidc_callback);
-   }
-
-   coll = mongoc_client_get_collection(client, "test", "test");
-   query = bson_new ();
-   cursor = mongoc_collection_find_with_opts(coll, query, NULL, NULL);
-
-   while (mongoc_cursor_next(cursor, &doc)) {
-      ;
-   }
-
-   ok = !mongoc_cursor_error_document (cursor, &error, &reply);
-   if (!ok) {
-      char *json = bson_as_json (reply, NULL);
-      fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, json);
-      bson_free (json);
-      goto done;
-   }
-
-done:
-   mongoc_client_pool_destroy (pool);
-   if (!pooled) {
-      mongoc_client_destroy (client);
-   }
-
-   return ok;
-}
-
-void
-run_tests (bool pooled)
-{
-   BSON_ASSERT (single_principal_implicit_username (pooled));
-   BSON_ASSERT (single_principal_explicit_username (pooled));
-   BSON_ASSERT (multiple_principal_user_1 (pooled));
-   BSON_ASSERT (multiple_principal_user_1 (pooled));
-   BSON_ASSERT (multiple_principal_user_2 (pooled));
-   BSON_ASSERT (multiple_principal_no_user (pooled));
 }
 
 int
 main (void)
 {
    mongoc_init ();
+   bson_mutex_init (&_callback_counter_mtx);
 
-   run_tests (false);
-   run_tests (true);
+   BSON_ASSERT (callback_is_called_during_authentication ());
+   BSON_ASSERT (callback_is_called_once_for_multiple_connections ());
+   BSON_ASSERT (valid_callback_inputs ());
+   BSON_ASSERT (oidc_callback_returns_null ());
 
 done:
+   bson_mutex_destroy (&_callback_counter_mtx);
    mongoc_cleanup ();
    return 0;
 }
