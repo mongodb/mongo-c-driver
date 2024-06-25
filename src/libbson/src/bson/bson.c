@@ -1517,25 +1517,14 @@ bson_append_utf8 (bson_t *bson, const char *key, int key_length, const char *val
    }
    length_le = BSON_UINT32_TO_LE ((uint32_t) length + 1u);
 
-   if ((uint32_t) key_length > UINT32_MAX - 1u - 1u - 4u - (uint32_t) length - 1u) {
+   const int64_t num_bytes = INT64_C (1) + key_length + INT64_C (1) + INT64_C (4) + length + INT64_C (1);
+
+   if (bson_cmp_less_us (UINT32_MAX, num_bytes)) {
       return false;
    }
 
-   return _bson_append (bson,
-                        6,
-                        (1u + (uint32_t) key_length + 1u + 4u + (uint32_t) length + 1u),
-                        1,
-                        &type,
-                        key_length,
-                        key,
-                        1,
-                        &gZero,
-                        4,
-                        &length_le,
-                        length,
-                        value,
-                        1,
-                        &gZero);
+   return _bson_append (
+      bson, 6, (uint32_t) num_bytes, 1, &type, key_length, key, 1, &gZero, 4, &length_le, length, value, 1, &gZero);
 }
 
 
