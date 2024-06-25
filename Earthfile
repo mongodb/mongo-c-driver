@@ -180,9 +180,17 @@ release-archive:
     ARG --required prefix
     ARG --required ref
 
+    WORKDIR /s
+    COPY --dir .git .
+
+    # Get the commit hash that we are archiving. Use ^{commit} to "dereference" tag objects
+    LET revision = $(git rev-parse "$ref^{commit}")
+    RUN git restore --quiet --source=$revision -- VERSION_CURRENT
+    LET version = $(cat VERSION_CURRENT)
+
     # Pick the waterfall project based on the tag
     COPY tools+tools-dir/__str /usr/local/bin/__str
-    IF __str test "$ref" -matches ".*\.0"
+    IF __str test "$version" -matches ".*\.0\$"
         # This is a minor release. Link to the build on the main project.
         LET base = "mongo_c_driver"
     ELSE
@@ -190,14 +198,8 @@ release-archive:
         LET base = "mongo_c_driver_latest_release"
     END
 
-    WORKDIR /s
-    COPY --dir .git .
     COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
 
-    # Get the commit hash that we are archiving. Use ^{commit} to "dereference" tag objects
-    LET revision = $(git rev-parse "$ref^{commit}")
-    RUN git restore --quiet --source=$revision -- VERSION_CURRENT
-    LET version=$(cat VERSION_CURRENT)
     # The full link to the build for this commit
     LET waterfall_url = "https://spruce.mongodb.com/version/${base}_${revision}"
     # Insert the URL into the SSDLC report
