@@ -85,9 +85,10 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. earthly-artifact:: +signed-release/dist/
 
-      A directory artifact that contains the `+release-archive/release.tar.gz`
-      and `+sign-file/signature.asc` for the release. The exported filenames
-      are based on the `--version` argument.
+      A directory artifact that contains the `+release-archive/release.tar.gz`,
+      `+release-archive/ssdlc_compliance_report.md`, and
+      `+sign-file/signature.asc` for the release. The exported filenames are
+      based on the `--version` argument.
 
    .. rubric:: Parameters
    .. option:: --sbom_branch <branch>
@@ -123,6 +124,12 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       generated archive includes the source tree, but also includes other
       release artifacts that are generated on-the-fly when invoked e.g. the
       `+sbom-download/augmented-sbom.json` artifact.
+
+   .. earthly-artifact:: +release-archive/ssdlc_compliance_report.md
+
+      The SSDLC compliance report for the release. This file is based on the
+      content of ``etc/ssdlc.md``, which has certain substrings replaced based
+      on attributes of the release.
 
    .. rubric:: Parameters
    .. option:: --sbom_branch <branch>
