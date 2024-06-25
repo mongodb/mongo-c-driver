@@ -1338,9 +1338,12 @@ tasks:
           binary: bash
           working_dir: mongoc
           env:
-            EARTHLY_SECRETS: SILK_CLIENT_ID=${silk_client_id},SILK_CLIENT_SECRET=${silk_client_secret}
+            SILK_CLIENT_ID: ${silk_client_id}
+            SILK_CLIENT_SECRET: ${silk_client_secret}
           args:
             - tools/earthly.sh
+            - --secret=SILK_CLIENT_ID
+            - --secret=SILK_CLIENT_SECRET
             - +create-silk-asset-group
             - --branch=${branch_name}
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile

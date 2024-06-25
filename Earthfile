@@ -183,7 +183,6 @@ release-archive:
     COPY --dir .git .
     COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
     RUN git archive -o release.tar.gz \
-        --verbose \
         --prefix="$prefix/" \ # Set the archive path prefix
         "$ref" \ # Add the source tree
         --add-file cyclonedx.sbom.json  # Add the SBOM
@@ -324,6 +323,53 @@ create-silk-asset-group:
             --code-repo-url=https://github.com/mongodb/mongo-c-driver \
             --sbom-lite-path=etc/cyclonedx.sbom.json \
             --exist-ok
+
+
+snyk:
+    FROM ubuntu:24.04
+    RUN apt-get update && apt-get -y install curl
+    RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
+    RUN chmod a+x /usr/local/bin/snyk
+
+snyk-test:
+    FROM +snyk
+    WORKDIR /s
+    # Take the scan from within the `src/` directory. This seems to help Snyk
+    # actually find the external dependencies that live there.
+    COPY --dir src .
+    WORKDIR src/
+    # Snaptshot the repository and run the scan
+    RUN --no-cache --secret SNYK_TOKEN \
+        snyk test --unmanaged --json > snyk.json
+    SAVE ARTIFACT snyk.json
+
+# snyk-monitor-snapshot :
+#   Post a crafted snapshot of the repository to Snyk for monitoring. Refer to "Snyk Scanning"
+#   in the dev docs for more details.
+snyk-monitor-snapshot:
+    FROM +snyk
+    WORKDIR /s
+    ARG remote="https://github.com/mongodb/mongo-c-driver.git"
+    ARG --required branch
+    ARG --required name
+    IF test "$remote" = "local"
+        COPY --dir src .
+    ELSE
+        GIT CLONE --branch $branch $remote clone
+        RUN mv clone/src .
+    END
+    # Take the scan from within the `src/` directory. This seems to help Snyk
+    # actually find the external dependencies that live there.
+    WORKDIR src/
+    # Snaptshot the repository and run the scan
+    RUN --no-cache --secret SNYK_TOKEN --secret SNYK_ORGANIZATION \
+        snyk monitor \
+            --org=$SNYK_ORGANIZATION \
+            --target-reference=$name \
+            --unmanaged \
+            --print-deps \
+            --project-name=mongo-c-driver \
+            --remote-repo-url=https://github.com/mongodb/mongo-c-driver
 
 # test-vcpkg-classic :
 #   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and

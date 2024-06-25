@@ -10,11 +10,13 @@ This page documents the process required for releasing a new version of the
 MongoDB C driver library. The release includes the following steps:
 
 .. sectnum::
+   :prefix: Step #
 .. contents:: Release Process
 
 .. _latest-build: https://spruce.mongodb.com/commits/mongo-c-driver
 .. _evg-release: https://spruce.mongodb.com/commits/mongo-c-driver-latest-release
 .. _evg-release-settings: https://spruce.mongodb.com/project/mongo-c-driver-latest-release/settings/general
+.. _snyk: https://app.snyk.io
 
 
 Check Static Analysis
@@ -49,12 +51,62 @@ If the project health page displays task failures, ensure that they are not
 unexpected by the changes introduced in the new release.
 
 
+.. _releasing.sbom:
+
 Check and Update the SBOM Lite and `etc/purls.txt`
 ##################################################
 
 Check that the `etc/purls.txt` file is up-to-date with the set of
 :term:`vendored dependencies <vendored dependency>`. If any items need to be
 updated, refer to `sbom-lite-updating`.
+
+.. _releasing.snyk:
+
+Start Snyk Monitoring
+#####################
+
+We wish to track vulnerability information within bundled dependencies for
+releases until such releases are no longer supported. We use Snyk_ to perform
+this monitoring.
+
+.. seealso:: `snyk scanning` for information on how Snyk is used
+
+.. program:: +snyk-monitor-snapshot
+
+To enable Snyk monitoring for a release, execute the `+snyk-monitor-snapshot`
+Earthly target for the release branch to be monitored. Be sure to specify the
+correct branch name with `--branch`, and use `--name` to identify the snapshot
+as belonging to the new release version. Let ``$RELEASE_BRANCH`` being the name
+of the branch from which we are releasing, and let ``$NEW_VERSION`` be the new
+release version that we are posting:
+
+.. code-block:: console
+
+   $ tools/earthly.sh +snyk-monitor-snapshot --branch "$RELEASE_BRANCH" --name="release-$NEW_VERSION"
+
+.. note::
+
+   If any subsequent step requires modifying the repository on that branch,
+   re-run the `+snyk-monitor-snapshot` command to renew the Snyk monitor.
+
+.. _releasing.vuln-report:
+
+Address and Report Vulnerabilities in Dependencies
+##################################################
+
+Update the `etc/third_party_vulnerabilities.md` file according to the details
+currently available in the Snyk web UI for the C driver target. See
+`vuln-reporting` for more information on this process.
+
+If there are new unaddressed vulnerabilities for the pending release, *and* an
+upstream fix is available, *and* performing an upgrade is a simple enough
+option, create a new changeset that will upgrade that dependency so that a fix
+is available for the release.
+
+.. important::
+
+   If any dependency was upgraded to remove vulnerabilities, return to
+   `releasing.sbom`.
 
 
 Validate that New APIs Are Documented

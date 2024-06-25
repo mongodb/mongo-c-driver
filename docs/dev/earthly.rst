@@ -107,15 +107,15 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. rubric:: Secrets
 
-   Secrets for the `+sbom-download` and `+sign-file` targets are required for
-   this target.
+   Secrets for the `+sbom-download`, `+snyk-test`, and `+sign-file` targets are
+   required for this target.
 
 
 .. program:: +release-archive
 .. earthly-target:: +release-archive
 
    Generate a source release archive of the repository at a specifiy branch.
-   Requires the secrets for `+sbom-download`.
+   Requires the secrets for `+sbom-download` and `+snyk-test`.
 
    .. earthly-artifact:: +release-archive/release.tar.gz
 
@@ -147,9 +147,9 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 .. program:: +sbom-download
 .. earthly-target:: +sbom-download
 
-   Download an `augmented SBOM <augmented-sbom>` from Silk for a given project branch. This target
-   explicitly disables caching, because the upstream SBOM file can change
-   arbitrarily.
+   Download an `augmented SBOM <augmented-sbom>` from Silk for a given project
+   branch. This target explicitly disables caching, because the upstream SBOM
+   file can change arbitrarily.
 
    .. earthly-artifact:: +sbom-download/augmented-sbom.json
 
@@ -163,8 +163,9 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
       .. note::
 
-         It is *required* that the Silk asset group has been created for the
-         given branch before the `+sbom-download` target can succeed.
+         It is *required* that the `Silk asset group <silk-asset-group>` has
+         been created for the given branch before the `+sbom-download` target
+         can succeed. See: `+create-silk-asset-group`
 
    .. rubric:: Secrets
    .. envvar::
@@ -240,6 +241,98 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    may change.
 
    .. seealso:: `sbom-lite` and `sbom-lite-updating`
+
+
+.. program:: +create-silk-asset-group
+.. earthly-target:: +create-silk-asset-group
+
+   Creates a new `Silk asset group <silk-asset-group>` for a branch in the
+   repository. This target executes the `tools/create-silk-asset-group.py`
+   script with the appropriate arguments.
+
+   .. note:: For branches that execute in CI, running this target manually is
+      not necessary, as it is run automatically for every build.
+
+   .. rubric:: Parameters
+   .. option:: --branch <branch>
+
+      The repository branch for which to create the new asset group. If not
+      specified, the branch name will be inferred by asking Git.
+
+   .. rubric:: Secrets
+   .. envvar::
+         SILK_CLIENT_ID
+         SILK_CLIENT_SECRET
+      :noindex:
+
+      **Required**. [#creds]_
+
+      .. seealso:: `earthly.secrets`
+
+.. program:: +snyk-monitor-snapshot
+.. earthly-target:: +snyk-monitor-snapshot
+
+   Executes `snyk monitor`__ on a crafted snapshot of the remote repository.
+   This target specifically avoids an issue outlined in `snyk scanning` (See
+   "Caveats"). Clones the repository at the given `--branch` for the snapshot
+   being taken.
+
+   __ https://docs.snyk.io/snyk-cli/commands/monitor
+
+   .. seealso:: Release process step: `releasing.snyk`
+
+   .. rubric:: Parameters
+   .. option:: --branch <branch>
+
+      **Required**. The name of the branch or tag to be snapshot.
+
+   .. option:: --name <name>
+
+      **Required**. The name for the monitored snapshot ("target reference") to
+      be stored in the Snyk server.
+
+      .. note:: If a target with this name already exists in the Snyk server,
+         then executing `+snyk-monitor-snapshot` will replace that target.
+
+   .. option:: --remote <url | "local">
+
+      The repository to be snapshot and posted to Snyk for monitoring. Defaults
+      to the upstream repository URL. Use ``"local"`` to snapshot the repository
+      in the working directory (not recommended except for testing).
+
+   .. rubric:: Secrets
+   .. envvar:: SNYK_ORGANIZATION
+
+      The API ID of the Snyk_ organization that owns the Snyk target. For the C
+      driver, this secret must be set to the value for the organization ID of
+      the MongoDB **dev-prod** Snyk organization.
+
+      **Do not** use the organization ID of **mongodb-default**.
+
+      .. _snyk: https://app.snyk.io
+
+   .. envvar:: SNYK_TOKEN
+
+      Set this to the value of an API token for accessing Snyk in the given
+      `SNYK_ORGANIZATION`. [#creds]_
+
+.. program:: +snyk-test
+.. earthly-target:: +snyk-test
+
+   Execute `snyk test`__ on the local copy. This target specifically avoids an
+   issue outlined in `Snyk Scanning > Caveats <snyk caveats>`.
+
+   __ https://docs.snyk.io/snyk-cli/commands/test
+
+   .. earthly-artifact:: +snyk-test/snyk.json
+
+      The Snyk JSON data result of the scan.
+
+   .. rubric:: Secrets
+   .. envvar:: SNYK_TOKEN
+      :noindex:
+
+      See: `SNYK_TOKEN`
 
 
 .. _earthly.secrets:
