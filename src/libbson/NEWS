@@ -1,3 +1,18 @@
+libbson 1.27.3
+==============
+
+Notes:
+
+  * This patch release introduces changes surrounding the development processes,
+    including new code signing and dependency tracking. There are no behavioral
+    or API changes.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Colby Pike
+
+
+
 libbson 1.27.2
 ==============
 
@@ -132,7 +147,7 @@ Fixes:
 Thanks to everyone who contributed to the development of this release.
 
   * Kevin Albertson
-  
+
 libbson 1.24.3
 ==============
 
