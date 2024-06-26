@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -463,4 +463,3 @@ kms_kmip_request_decrypt_new (void *reserved, const char* unique_identifer, cons
    */
    return kmip_encrypt_decrypt(unique_identifer, ciphertext, len, iv_data, iv_len, false);
 }
-
