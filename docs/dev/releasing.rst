@@ -18,6 +18,42 @@ MongoDB C driver library. The release includes the following steps:
 .. _evg-release-settings: https://spruce.mongodb.com/project/mongo-c-driver-latest-release/settings/general
 .. _snyk: https://app.snyk.io
 
+.. rubric:: Checklist Form
+
+The following Markdown text can be copied as a step-by-step checklist for this
+process.
+
+.. code-block:: markdown
+
+   - [ ] Check Static Analysis
+   - [ ] Check that Tests Are Passing
+   - [ ] Check and Update the SBOM Lite
+   - [ ] Start Snyk Monitoring
+   - [ ] Address and Report Vulnerabilities
+   - [ ] Validate API Documentation
+   - [ ] Notify the PHP Driver Team
+   - [ ] Get a GitHub API Token
+   - [ ] Do the Release:
+       - [ ] Start a Release Stopwatch (start time: HH:MM)
+       - [ ] Clone the Driver Tools
+       - [ ] Create a new **mongo-c-driver** clone
+       - [ ] If patch release: Check consistency with [the Jira release](https://jira.mongodb.org/projects/CDRIVER/versions/XXXXXX)
+       - [ ] Run the Release Script
+       - [ ] Fixup the `NEWS` Pages
+       - [ ] Signed & Upload the Release
+       - [ ] Publish Release Artifacts
+       - [ ] Publish Documentation
+       - [ ] Announce the Release on the Community Forums
+       - [ ] Copy the Release Updates to the ``master`` Branch
+       - [ ] Close the Jira Release
+       - [ ] Comment on the Generated DOCSP Ticket
+       - [ ] Update the EVG Project
+       - [ ] Stop the Release Stopwatch (end time: HH:MM)
+       - [ ] Record the Release
+   - [ ] Homebrew Release
+   - [ ] vcpkg
+   - [ ] Conan
+
 
 Check Static Analysis
 #####################
@@ -103,6 +139,11 @@ upstream fix is available, *and* performing an upgrade is a simple enough
 option, create a new changeset that will upgrade that dependency so that a fix
 is available for the release.
 
+.. note::
+
+   This action must be performed on the branch from which the release will be
+   created.
+
 .. important::
 
    If any dependency was upgraded to remove vulnerabilities, return to
@@ -155,9 +196,11 @@ To get an access token, perform the following:
    but is useful when reviewing the token later.
 4. Set the expiration to the minimum (we only need the token for the duration of
    this release).
-5. In the scopes, enable the ``public_repo`` scope.
+5. In the scopes, enable the ``public_repo`` and ``repo_deployment`` scopes.
 6. Generate the new token. Be sure to copy the access token a save it for later,
-   as it won't be recoverable once the page is unloaded.
+   as it won't be recoverable once the page is unloaded!
+7. Grant the token access to the ``mongodb`` organization using the "Configure
+   SSO" dropdown.
 
 __ https://github.com/settings/tokens
 
@@ -327,6 +370,11 @@ Publish Additional Artifacts
    This is currently a manual additional process, but may be automated to be
    part of the release scripts in the future.
 
+
+.. warning::
+   The below steps should be run using the ``master`` branch, regardless of
+   which branch is used for the release.
+
 We publish a release archive that contains a snapshot of the repository and some
 additional metadata, along with an OpenPGP signature of that archive. This
 archive is created using scripts in the C driver repository itself, not in
@@ -400,7 +448,7 @@ Announce the Release on the Community Forums
 Open the `MongoDB Developer Community / Product & Driver Announcments`__ page on
 the Community Forums and prepare a new post for the release.
 
-__ https://www.mongodb.com/community/forums/c/announcements/35
+__ https://www.mongodb.com/community/forums/c/announcements/driver-releases/110
 
 To generate the release template text, use the following::
 
@@ -427,9 +475,9 @@ publish a PR to merge the updates to the release files back into ``master``::
 (Here we have named the branch ``post-release-merge``, but the branch name is
 arbitrary.)
 
-Manually update the ``NEWS``, ``src/libbson/NEWS``, and ``VERSION_CURRENT``
-files with the content from the release branch that we just published. Commit
-these changes to the new branch.
+Manually update the ``NEWS`` and ``src/libbson/NEWS`` files with the content
+from the release branch that we just published. Commit these changes to the new
+branch.
 
 Push this branch to your fork of the repository::
 
