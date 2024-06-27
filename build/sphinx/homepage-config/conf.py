@@ -20,7 +20,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'mongoc.org'
-copyright = u'2017, MongoDB, Inc'
+copyright = u'2009-present, MongoDB, Inc.'
 author = u'MongoDB, Inc'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
