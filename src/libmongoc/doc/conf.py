@@ -52,7 +52,7 @@ if has_sphinx_design:
 
 # General information about the project.
 project = "libmongoc"
-copyright = "2009-present, MongoDB, Inc."
+copyright = "2017-present, MongoDB, Inc"
 author = "MongoDB, Inc"
 
 version_path = os.path.join(os.path.dirname(__file__), "../../..", "VERSION_CURRENT")
