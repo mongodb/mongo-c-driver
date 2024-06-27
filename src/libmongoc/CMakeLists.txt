@@ -75,8 +75,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
       BEFORE PUBLIC
-      "${SOURCE_DIR}/src/zlib-1.2.13"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.13"
+      "${SOURCE_DIR}/src/zlib-1.3.1"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
    )
    # Disable all warnings for compiling Zlib
    target_compile_options (zlib_obj PRIVATE -w)
@@ -84,8 +84,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.2.13"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.13"
+      "${SOURCE_DIR}/src/zlib-1.3.1"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
    )
 endif ()
 

@@ -480,7 +480,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
        * lookup fails, SRV polling will still start when background monitoring
        * starts. */
       topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
-      topology->srv_polling_rescan_interval_ms = MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS;
+      _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
 
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
       prefixed_hostname = bson_strdup_printf ("_%s._tcp.%s", mongoc_uri_get_srv_service_name (uri), srv_hostname);
@@ -518,8 +518,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
       /* TODO (CDRIVER-4047) use BSON_MIN */
-      topology->srv_polling_rescan_interval_ms =
-         BSON_MAX (rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+      int64_t new_iv = BSON_MAX (rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+      _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, new_iv);
 
       topology->valid = true;
    srv_fail:
@@ -640,15 +640,15 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 void
 mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
                                    mongoc_topology_description_t *td,
-                                   mongoc_apm_callbacks_t *callbacks,
+                                   mongoc_apm_callbacks_t const *callbacks,
                                    void *context)
 {
    if (callbacks) {
-      memcpy (&td->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
-      memcpy (&topology->scanner->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
+      td->apm_callbacks = *callbacks;
+      topology->scanner->apm_callbacks = *callbacks;
    } else {
-      memset (&td->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
-      memset (&topology->scanner->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
+      td->apm_callbacks = (mongoc_apm_callbacks_t){0};
+      topology->scanner->apm_callbacks = (mongoc_apm_callbacks_t){0};
    }
 
    td->apm_context = context;
@@ -816,7 +816,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    BSON_ASSERT (mongoc_topology_should_rescan_srv (topology));
 
    srv_hostname = mongoc_uri_get_srv_hostname (topology->uri);
-   scan_time_ms = topology->srv_polling_last_scan_ms + topology->srv_polling_rescan_interval_ms;
+   scan_time_ms = topology->srv_polling_last_scan_ms + _mongoc_topology_get_srv_polling_rescan_interval_ms (topology);
    if (bson_get_monotonic_time () / 1000 < scan_time_ms) {
       /* Query SRV no more frequently than srv_polling_rescan_interval_ms. */
       return;
@@ -839,14 +839,14 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
    if (!ret) {
       /* Failed querying, soldier on and try again next time. */
-      topology->srv_polling_rescan_interval_ms = td.ptr->heartbeat_msec;
+      _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, td.ptr->heartbeat_msec);
       MONGOC_ERROR ("SRV polling error: %s", topology->scanner->error.message);
       GOTO (done);
    }
 
    /* TODO (CDRIVER-4047) use BSON_MIN */
-   topology->srv_polling_rescan_interval_ms =
-      BSON_MAX (rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+   const int64_t new_iv = BSON_MAX (rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, new_iv);
 
    tdmod = mc_tpld_modify_begin (topology);
    if (!mongoc_topology_apply_scanned_srv_hosts (
@@ -861,7 +861,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
        * to heartbeatFrequencyMS until at least one verified SRV record is
        * obtained."
        */
-      topology->srv_polling_rescan_interval_ms = td.ptr->heartbeat_msec;
+      _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, td.ptr->heartbeat_msec);
    }
    mc_tpld_modify_commit (tdmod);
 
@@ -1887,12 +1887,6 @@ void
 _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology, _mongoc_rr_resolver_fn rr_resolver)
 {
    topology->rr_resolver = rr_resolver;
-}
-
-void
-_mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val)
-{
-   topology->srv_polling_rescan_interval_ms = val;
 }
 
 uint32_t
