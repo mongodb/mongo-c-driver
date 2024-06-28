@@ -3388,9 +3388,25 @@ _mongoc_cluster_run_opmsg_recv (
       _mongoc_buffer_init (&buffer, decompressed_data, decompressed_data_len, NULL, NULL);
    }
 
+   // CDRIVER-5584
+   {
+      const int32_t op_code = mcd_rpc_header_get_op_code (rpc);
+
+      if (op_code != MONGOC_OP_CODE_MSG) {
+         RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "malformed message from server: expected opCode 2013, got %" PRId32,
+                      op_code);
+         _handle_network_error (cluster, server_stream, error);
+         server_stream->stream = NULL;
+         network_error_reply (reply, cmd);
+         goto done;
+      }
+   }
+
    bson_t body;
 
-   if ((mcd_rpc_header_get_op_code (rpc) != MONGOC_OP_CODE_MSG) || !mcd_rpc_message_get_body (rpc, &body)) {
+   if (!mcd_rpc_message_get_body (rpc, &body)) {
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");
       _handle_network_error (cluster, server_stream, error);
       server_stream->stream = NULL;
