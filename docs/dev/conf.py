@@ -19,7 +19,7 @@ THIS_DIR = THIS_FILE.parent
 REPO_ROOT = THIS_DIR.parent.parent
 
 project = "MongoDB C Driver Development"
-copyright = "2024, MongoDB Inc"
+copyright = "2009-present, MongoDB, Inc."
 author = "MongoDB, Inc"
 release = (REPO_ROOT / "VERSION_CURRENT").read_text().strip()
 
