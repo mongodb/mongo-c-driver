@@ -3395,7 +3395,8 @@ _mongoc_cluster_run_opmsg_recv (
       if (op_code != MONGOC_OP_CODE_MSG) {
          RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "malformed message from server: expected opCode 2013, got %" PRId32,
+                      "malformed message from server: expected opCode %" PRId32 ", got %" PRId32,
+                      MONGOC_OP_CODE_MSG,
                       op_code);
          _handle_network_error (cluster, server_stream, error);
          server_stream->stream = NULL;
