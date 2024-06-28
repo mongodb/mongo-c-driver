@@ -3388,10 +3388,24 @@ _mongoc_cluster_run_opmsg_recv (
       _mongoc_buffer_init (&buffer, decompressed_data, decompressed_data_len, NULL, NULL);
    }
 
-   bson_t body;
+   // CDRIVER-5584
+   {
+      const int32_t op_code = mcd_rpc_header_get_op_code (rpc);
 
-   uint32_t op_msg_flags = mcd_rpc_op_msg_get_flag_bits (rpc);
-   cluster->client->in_exhaust = op_msg_flags & MONGOC_OP_MSG_FLAG_MORE_TO_COME;
+      if (op_code != MONGOC_OP_CODE_MSG) {
+         RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "malformed message from server: expected opCode %" PRId32 ", got %" PRId32,
+                      MONGOC_OP_CODE_MSG,
+                      op_code);
+         _handle_network_error (cluster, server_stream, error);
+         server_stream->stream = NULL;
+         network_error_reply (reply, cmd);
+         goto done;
+      }
+   }
+
+   bson_t body;
 
    if (!mcd_rpc_message_get_body (rpc, &body)) {
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");
@@ -3401,6 +3415,7 @@ _mongoc_cluster_run_opmsg_recv (
       goto done;
    }
 
+   cluster->client->in_exhaust = (mcd_rpc_op_msg_get_flag_bits (rpc) & MONGOC_OP_MSG_FLAG_MORE_TO_COME) != 0u;
    _mongoc_topology_update_cluster_time (cluster->client->topology, &body);
 
    ret = _mongoc_cmd_check_ok (&body, cluster->client->error_api_version, error);
