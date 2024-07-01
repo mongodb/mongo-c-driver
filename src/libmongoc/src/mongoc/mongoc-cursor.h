@@ -55,6 +55,8 @@ MONGOC_EXPORT (void)
 mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor, uint32_t batch_size);
 MONGOC_EXPORT (uint32_t)
 mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor);
+MONGOC_EXPORT (int64_t)
+mongoc_cursor_get_batch_num (const mongoc_cursor_t *cursor);
 MONGOC_EXPORT (bool)
 mongoc_cursor_set_limit (mongoc_cursor_t *cursor, int64_t limit);
 MONGOC_EXPORT (int64_t)
