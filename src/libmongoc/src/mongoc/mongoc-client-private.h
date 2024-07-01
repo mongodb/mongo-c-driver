@@ -41,8 +41,6 @@
 
 BSON_BEGIN_DECLS
 
-/* version corresponding to server 3.6 release */
-#define WIRE_VERSION_3_6 6
 /* version corresponding to server 4.0 release */
 #define WIRE_VERSION_4_0 7
 /* first version to support hint for "update" command */
@@ -83,7 +81,7 @@ BSON_BEGIN_DECLS
 /* Range of wire protocol versions this driver supports. Bumping
  * WIRE_VERSION_MAX must be accompanied by an update to
  * `_mongoc_wire_version_to_server_version`. */
-#define WIRE_VERSION_MIN WIRE_VERSION_3_6 /* a.k.a. minWireVersion */
+#define WIRE_VERSION_MIN WIRE_VERSION_4_0 /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX WIRE_VERSION_7_0 /* a.k.a. maxWireVersion */
 
 struct _mongoc_collection_t;
