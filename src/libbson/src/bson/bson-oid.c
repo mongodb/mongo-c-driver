@@ -76,7 +76,7 @@ BSON_MAYBE_UNUSED static const uint16_t gHexCharPairs[] = {
 #endif
 };
 
-static inline void
+static BSON_INLINE void
 _oid_init (bson_oid_t *oid, bson_context_t *context, bool add_random)
 {
    BSON_ASSERT (oid);

@@ -445,7 +445,7 @@ _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology, _mongoc_rr_resolv
 /**
  * @brief Thread-safe update the SRV polling rescan interval on the given topology
  */
-static inline void
+static BSON_INLINE void
 _mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val)
 {
    bson_atomic_int64_exchange (&topology->_atomic_srv_polling_rescan_interval_ms, val, bson_memory_order_seq_cst);
@@ -454,7 +454,7 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology
 /**
  * @brief Thread-safe get the SRV polling interval
  */
-static inline int64_t
+static BSON_INLINE int64_t
 _mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *topology)
 {
    return bson_atomic_int64_fetch (&topology->_atomic_srv_polling_rescan_interval_ms, bson_memory_order_seq_cst);
