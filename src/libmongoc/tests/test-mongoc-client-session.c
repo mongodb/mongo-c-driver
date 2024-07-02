@@ -1565,10 +1565,15 @@ _run_session_test (session_test_fn_t test_fn, bool allow_read_concern)
 }
 
 
+typedef struct {
+   session_test_fn_t test_fn;
+} session_test_helper_t;
+
+
 static void
 run_session_test (void *ctx)
 {
-   _run_session_test ((session_test_fn_t) ((TestFnCtx *) ctx)->test_fn, true);
+   _run_session_test (((session_test_helper_t *) ctx)->test_fn, true);
 }
 
 
@@ -1576,7 +1581,7 @@ run_session_test (void *ctx)
 static void
 run_session_test_no_rc (void *ctx)
 {
-   _run_session_test ((session_test_fn_t) ((TestFnCtx *) ctx)->test_fn, false);
+   _run_session_test (((session_test_helper_t *) ctx)->test_fn, false);
 }
 
 
@@ -1584,7 +1589,7 @@ run_session_test_no_rc (void *ctx)
 static void
 run_session_test_bulk_operation (void *ctx)
 {
-   session_test_fn_t test_fn = (session_test_fn_t) ((TestFnCtx *) ctx)->test_fn;
+   session_test_fn_t const test_fn = ((session_test_helper_t *) ctx)->test_fn;
    _test_explicit_session_lsid (test_fn);
    _test_implicit_session_lsid (test_fn);
    _test_causal_consistency (test_fn, false /* read concern */);
@@ -1596,7 +1601,7 @@ run_count_test (void *ctx)
 {
    /* CDRIVER-3612: mongoc_collection_estimated_document_count does not support
     * explicit sessions */
-   _test_implicit_session_lsid ((session_test_fn_t) ((TestFnCtx *) ctx)->test_fn);
+   _test_implicit_session_lsid (((session_test_helper_t *) ctx)->test_fn);
 }
 
 
@@ -2370,61 +2375,76 @@ _test_unacknowledged (session_test_fn_t test_fn, bool explicit_cs, bool inherit_
 static void
 test_unacknowledged_explicit_cs_inherit_wc (void *ctx)
 {
-   _test_unacknowledged ((session_test_fn_t) ((TestFnCtx *) ctx)->test_fn, true, true);
+   _test_unacknowledged (((session_test_helper_t *) ctx)->test_fn, true, true);
 }
 
 
 static void
 test_unacknowledged_implicit_cs_explicit_wc (void *ctx)
 {
-   _test_unacknowledged ((session_test_fn_t) ((TestFnCtx *) ctx)->test_fn, true, false);
+   _test_unacknowledged (((session_test_helper_t *) ctx)->test_fn, true, false);
 }
 
 
 static void
 test_unacknowledged_implicit_cs_inherit_wc (void *ctx)
 {
-   _test_unacknowledged ((session_test_fn_t) ((TestFnCtx *) ctx)->test_fn, false, true);
+   _test_unacknowledged (((session_test_helper_t *) ctx)->test_fn, false, true);
 }
 
 
 static void
 test_unacknowledged_explicit_cs_explicit_wc (void *ctx)
 {
-   _test_unacknowledged ((session_test_fn_t) ((TestFnCtx *) ctx)->test_fn, false, false);
+   _test_unacknowledged (((session_test_helper_t *) ctx)->test_fn, false, false);
 }
 
 
-#define add_session_test(_suite, _name, _test_fn, _allow_read_concern)                             \
-   TestSuite_AddFullWithTestFn (_suite,                                                            \
-                                _name,                                                             \
-                                (_allow_read_concern) ? run_session_test : run_session_test_no_rc, \
-                                NULL,                                                              \
-                                _test_fn,                                                          \
-                                test_framework_skip_if_no_cluster_time,                            \
-                                test_framework_skip_if_no_crypto)
+#define add_session_test(_suite, _name, _test_fn, _allow_read_concern)                      \
+   if (1) {                                                                                 \
+      session_test_helper_t *const helper = bson_malloc (sizeof (*helper));                 \
+      *helper = (session_test_helper_t){.test_fn = (_test_fn)};                             \
+      TestSuite_AddFull (_suite,                                                            \
+                         _name,                                                             \
+                         (_allow_read_concern) ? run_session_test : run_session_test_no_rc, \
+                         &bson_free,                                                        \
+                         helper,                                                            \
+                         test_framework_skip_if_no_cluster_time,                            \
+                         test_framework_skip_if_no_crypto);                                 \
+   } else                                                                                   \
+      ((void) 0)
 
-#define add_session_test_wc(_suite, _name, _test_fn, _allow_read_concern, ...)                     \
-   TestSuite_AddFullWithTestFn (_suite,                                                            \
-                                _name,                                                             \
-                                (_allow_read_concern) ? run_session_test : run_session_test_no_rc, \
-                                NULL,                                                              \
-                                _test_fn,                                                          \
-                                test_framework_skip_if_no_cluster_time,                            \
-                                test_framework_skip_if_no_crypto,                                  \
-                                __VA_ARGS__)
+#define add_session_test_wc(_suite, _name, _test_fn, _allow_read_concern, ...)              \
+   if (1) {                                                                                 \
+      session_test_helper_t *const helper = bson_malloc (sizeof (*helper));                 \
+      *helper = (session_test_helper_t){.test_fn = (_test_fn)};                             \
+      TestSuite_AddFull (_suite,                                                            \
+                         _name,                                                             \
+                         (_allow_read_concern) ? run_session_test : run_session_test_no_rc, \
+                         &bson_free,                                                        \
+                         helper,                                                            \
+                         test_framework_skip_if_no_cluster_time,                            \
+                         test_framework_skip_if_no_crypto,                                  \
+                         __VA_ARGS__);                                                      \
+   } else                                                                                   \
+      ((void) 0)
 
-#define add_unacknowledged_test(_suite, _name, _test_fn, _explicit_cs, _inherit_wc)                                  \
-   TestSuite_AddFullWithTestFn (                                                                                     \
-      _suite,                                                                                                        \
-      _name,                                                                                                         \
-      (_explicit_cs)                                                                                                 \
-         ? (_inherit_wc ? test_unacknowledged_explicit_cs_inherit_wc : test_unacknowledged_implicit_cs_explicit_wc)  \
-         : (_inherit_wc ? test_unacknowledged_implicit_cs_inherit_wc : test_unacknowledged_explicit_cs_explicit_wc), \
-      NULL,                                                                                                          \
-      _test_fn,                                                                                                      \
-      test_framework_skip_if_no_cluster_time,                                                                        \
-      test_framework_skip_if_no_crypto)
+#define add_unacknowledged_test(_suite, _name, _test_fn, _explicit_cs, _inherit_wc)                    \
+   if (1) {                                                                                            \
+      session_test_helper_t *const helper = bson_malloc (sizeof (*helper));                            \
+      *helper = (session_test_helper_t){.test_fn = (_test_fn)};                                        \
+      TestSuite_AddFull (_suite,                                                                       \
+                         _name,                                                                        \
+                         (_explicit_cs) ? (_inherit_wc ? test_unacknowledged_explicit_cs_inherit_wc    \
+                                                       : test_unacknowledged_implicit_cs_explicit_wc)  \
+                                        : (_inherit_wc ? test_unacknowledged_implicit_cs_inherit_wc    \
+                                                       : test_unacknowledged_explicit_cs_explicit_wc), \
+                         &bson_free,                                                                   \
+                         helper,                                                                       \
+                         test_framework_skip_if_no_cluster_time,                                       \
+                         test_framework_skip_if_no_crypto);                                            \
+   } else                                                                                              \
+      ((void) 0)
 
 
 static bool
@@ -2723,13 +2743,17 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/write_cmd", test_write_cmd, false);
    add_session_test (suite, "/Session/read_write_cmd", test_read_write_cmd, true);
    add_session_test (suite, "/Session/db_cmd", test_db_cmd, false);
-   TestSuite_AddFullWithTestFn (suite,
-                                "/Session/count",
-                                (TestFuncWC) run_count_test,
-                                NULL,
-                                test_count,
-                                test_framework_skip_if_no_cluster_time,
-                                test_framework_skip_if_no_crypto);
+   {
+      session_test_helper_t *const helper = bson_malloc (sizeof (*helper));
+      *helper = (session_test_helper_t){.test_fn = test_count};
+      TestSuite_AddFull (suite,
+                         "/Session/count",
+                         run_count_test,
+                         bson_free,
+                         helper,
+                         test_framework_skip_if_no_cluster_time,
+                         test_framework_skip_if_no_crypto);
+   }
    add_session_test (suite, "/Session/cursor", test_cursor, true);
    add_session_test (suite, "/Session/drop", test_drop, false);
    add_session_test (suite, "/Session/drop_index", test_drop_index, false);
@@ -2755,20 +2779,28 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/collection_names", test_collection_names, true);
    add_session_test (suite, "/Session/bulk", test_bulk, false);
    add_session_test (suite, "/Session/find_indexes", test_find_indexes, true);
-   TestSuite_AddFullWithTestFn (suite,
-                                "/Session/bulk_set_session",
-                                run_session_test_bulk_operation,
-                                NULL,
-                                test_bulk_set_session,
-                                test_framework_skip_if_no_cluster_time,
-                                test_framework_skip_if_no_crypto);
-   TestSuite_AddFullWithTestFn (suite,
-                                "/Session/bulk_set_client",
-                                run_session_test_bulk_operation,
-                                NULL,
-                                test_bulk_set_client,
-                                test_framework_skip_if_no_cluster_time,
-                                test_framework_skip_if_no_crypto);
+   {
+      session_test_helper_t *const helper = bson_malloc (sizeof (*helper));
+      *helper = (session_test_helper_t){.test_fn = test_bulk_set_session};
+      TestSuite_AddFull (suite,
+                         "/Session/bulk_set_session",
+                         run_session_test_bulk_operation,
+                         &bson_free,
+                         helper,
+                         test_framework_skip_if_no_cluster_time,
+                         test_framework_skip_if_no_crypto);
+   }
+   {
+      session_test_helper_t *const helper = bson_malloc (sizeof (*helper));
+      *helper = (session_test_helper_t){.test_fn = test_bulk_set_client};
+      TestSuite_AddFull (suite,
+                         "/Session/bulk_set_client",
+                         run_session_test_bulk_operation,
+                         &bson_free,
+                         helper,
+                         test_framework_skip_if_no_cluster_time,
+                         test_framework_skip_if_no_crypto);
+   }
    TestSuite_AddFull (suite,
                       "/Session/cursor_implicit_session",
                       test_cursor_implicit_session,
