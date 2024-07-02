@@ -1863,6 +1863,12 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
    return original;
 }
 
+static void
+bson_destroy_vp (void *vp)
+{
+   bson_destroy ((bson_t *) vp);
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -1947,7 +1953,7 @@ _install_json_test_suite_with_check (TestSuite *suite, const char *base, const c
       }
       /* list of "check" functions that decide whether to skip the test */
       va_start (ap, callback);
-      _V_TestSuite_AddFull (suite, skip_json, (void (*) (void *)) callback, (void (*) (void *)) bson_destroy, test, ap);
+      _V_TestSuite_AddFull (suite, skip_json, (void (*) (void *)) callback, &bson_destroy_vp, test, ap);
 
       va_end (ap);
    }
