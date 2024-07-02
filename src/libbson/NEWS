@@ -9,6 +9,19 @@ Build Configuration:
 
 
 
+libbson 1.27.4
+==============
+
+Fixes:
+
+  * Fix build with Visual Studio 2013.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libbson 1.27.3
 ==============
 
