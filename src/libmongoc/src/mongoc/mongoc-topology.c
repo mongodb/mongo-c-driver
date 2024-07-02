@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -383,6 +383,14 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 #endif
 
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
+   // Check if requested to use TCP for SRV lookup.
+   {
+      char *srv_prefer_tcp = _mongoc_getenv ("MONGOC_EXPERIMENTAL_SRV_PREFER_TCP");
+      if (srv_prefer_tcp) {
+         topology->srv_prefer_tcp = true;
+      }
+      bson_free (srv_prefer_tcp);
+   }
    topology->usleep_fn = mongoc_usleep_default_impl;
    topology->session_pool = mongoc_server_session_pool_new_with_params (
       _server_session_init, _server_session_destroy, _server_session_should_prune, topology);
@@ -472,20 +480,28 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
        * lookup fails, SRV polling will still start when background monitoring
        * starts. */
       topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
-      topology->srv_polling_rescan_interval_ms = MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS;
+      _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
 
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
       prefixed_hostname = bson_strdup_printf ("_%s._tcp.%s", mongoc_uri_get_srv_service_name (uri), srv_hostname);
-      if (!topology->rr_resolver (
-             prefixed_hostname, MONGOC_RR_SRV, &rr_data, MONGOC_RR_DEFAULT_BUFFER_SIZE, &topology->scanner->error)) {
+      if (!topology->rr_resolver (prefixed_hostname,
+                                  MONGOC_RR_SRV,
+                                  &rr_data,
+                                  MONGOC_RR_DEFAULT_BUFFER_SIZE,
+                                  topology->srv_prefer_tcp,
+                                  &topology->scanner->error)) {
          GOTO (srv_fail);
       }
 
       /* Failure to find TXT records will not return an error (since it is only
        * for options). But _mongoc_client_get_rr may return an error if
        * there is more than one TXT record returned. */
-      if (!topology->rr_resolver (
-             srv_hostname, MONGOC_RR_TXT, &rr_data, MONGOC_RR_DEFAULT_BUFFER_SIZE, &topology->scanner->error)) {
+      if (!topology->rr_resolver (srv_hostname,
+                                  MONGOC_RR_TXT,
+                                  &rr_data,
+                                  MONGOC_RR_DEFAULT_BUFFER_SIZE,
+                                  topology->srv_prefer_tcp,
+                                  &topology->scanner->error)) {
          GOTO (srv_fail);
       }
 
@@ -502,8 +518,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
       /* TODO (CDRIVER-4047) use BSON_MIN */
-      topology->srv_polling_rescan_interval_ms =
-         BSON_MAX (rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+      int64_t new_iv = BSON_MAX (rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+      _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, new_iv);
 
       topology->valid = true;
    srv_fail:
@@ -624,15 +640,15 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 void
 mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
                                    mongoc_topology_description_t *td,
-                                   mongoc_apm_callbacks_t *callbacks,
+                                   mongoc_apm_callbacks_t const *callbacks,
                                    void *context)
 {
    if (callbacks) {
-      memcpy (&td->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
-      memcpy (&topology->scanner->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
+      td->apm_callbacks = *callbacks;
+      topology->scanner->apm_callbacks = *callbacks;
    } else {
-      memset (&td->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
-      memset (&topology->scanner->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
+      td->apm_callbacks = (mongoc_apm_callbacks_t){0};
+      topology->scanner->apm_callbacks = (mongoc_apm_callbacks_t){0};
    }
 
    td->apm_context = context;
@@ -800,7 +816,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    BSON_ASSERT (mongoc_topology_should_rescan_srv (topology));
 
    srv_hostname = mongoc_uri_get_srv_hostname (topology->uri);
-   scan_time_ms = topology->srv_polling_last_scan_ms + topology->srv_polling_rescan_interval_ms;
+   scan_time_ms = topology->srv_polling_last_scan_ms + _mongoc_topology_get_srv_polling_rescan_interval_ms (topology);
    if (bson_get_monotonic_time () / 1000 < scan_time_ms) {
       /* Query SRV no more frequently than srv_polling_rescan_interval_ms. */
       return;
@@ -812,21 +828,25 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    prefixed_hostname =
       bson_strdup_printf ("_%s._tcp.%s", mongoc_uri_get_srv_service_name (topology->uri), srv_hostname);
 
-   ret = topology->rr_resolver (
-      prefixed_hostname, MONGOC_RR_SRV, &rr_data, MONGOC_RR_DEFAULT_BUFFER_SIZE, &topology->scanner->error);
+   ret = topology->rr_resolver (prefixed_hostname,
+                                MONGOC_RR_SRV,
+                                &rr_data,
+                                MONGOC_RR_DEFAULT_BUFFER_SIZE,
+                                topology->srv_prefer_tcp,
+                                &topology->scanner->error);
 
    td = mc_tpld_take_ref (topology);
    topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
    if (!ret) {
       /* Failed querying, soldier on and try again next time. */
-      topology->srv_polling_rescan_interval_ms = td.ptr->heartbeat_msec;
+      _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, td.ptr->heartbeat_msec);
       MONGOC_ERROR ("SRV polling error: %s", topology->scanner->error.message);
       GOTO (done);
    }
 
    /* TODO (CDRIVER-4047) use BSON_MIN */
-   topology->srv_polling_rescan_interval_ms =
-      BSON_MAX (rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+   const int64_t new_iv = BSON_MAX (rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, new_iv);
 
    tdmod = mc_tpld_modify_begin (topology);
    if (!mongoc_topology_apply_scanned_srv_hosts (
@@ -841,7 +861,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
        * to heartbeatFrequencyMS until at least one verified SRV record is
        * obtained."
        */
-      topology->srv_polling_rescan_interval_ms = td.ptr->heartbeat_msec;
+      _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, td.ptr->heartbeat_msec);
    }
    mc_tpld_modify_commit (tdmod);
 
@@ -1098,6 +1118,9 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    uint32_t server_id;
    mc_shared_tpld td = mc_tpld_take_ref (topology);
 
+   bson_string_t *topology_type = bson_string_new (". Topology type: ");
+   bson_string_append (topology_type, mongoc_topology_description_type (td.ptr));
+
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
    int64_t loop_end;    /* when we last completed a loop (single-threaded) */
@@ -1153,10 +1176,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
             if (scan_ready > expire_at && !try_once) {
                /* selection timeout will expire before min heartbeat passes */
-               _mongoc_server_selection_error ("No suitable servers found: "
-                                               "`serverselectiontimeoutms` timed out",
-                                               &scanner_error,
-                                               error);
+               _mongoc_server_selection_error (timeout_msg, &scanner_error, error);
 
                server_id = 0;
                goto done;
@@ -1301,6 +1321,13 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    }
 
 done:
+   if (error && server_id == 0) {
+      /* server_id set to zero indicates that an error has occured and that `error` is initialized */
+      if (error->domain == MONGOC_ERROR_SERVER_SELECTION) {
+         _mongoc_error_append (error, topology_type->str);
+      }
+   }
+   bson_string_free (topology_type, true);
    mc_tpld_drop_ref (&td);
    return server_id;
 }
@@ -1867,12 +1894,6 @@ void
 _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology, _mongoc_rr_resolver_fn rr_resolver)
 {
    topology->rr_resolver = rr_resolver;
-}
-
-void
-_mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val)
-{
-   topology->srv_polling_rescan_interval_ms = val;
 }
 
 uint32_t

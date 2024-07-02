@@ -742,6 +742,46 @@ retryable_writes_original_error_general_command (void *ctx)
    bson_destroy (cmd);
 }
 
+static void
+retryable_writes_original_error_bulkwrite (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_error_t error = {0};
+   mongoc_apm_callbacks_t *callbacks = {0};
+   prose_test_3_apm_ctx_t apm_ctx = {0};
+
+   BSON_UNUSED (ctx);
+
+   // setting up the client
+   client = test_framework_new_default_client ();
+   coll = get_test_collection (client, "retryable_writes");
+   callbacks = mongoc_apm_callbacks_new ();
+
+   // setup test
+   const uint32_t server_id = set_up_original_error_test (callbacks, &apm_ctx, "bulkWrite", client);
+
+   mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
+   bool ok = mongoc_bulkwrite_append_insertone (bw, "db.coll", tmp_bson ("{}"), NULL, &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+   ASSERT (bwr.exc);
+   // Expect no top-level error (only a write concern error):
+   ASSERT_OR_PRINT (!mongoc_bulkwriteexception_error (bwr.exc, &error), error);
+   // Expect the original write concern error is returned:
+   const bson_t *reply = mongoc_bulkwriteexception_errorreply (bwr.exc);
+   ASSERT_MATCH (reply,
+                 "{'writeConcernError' : { 'code' : { '$numberInt' : '91' } }, "
+                 "'errorLabels' : [ 'RetryableWriteError' ], 'ok': { "
+                 "'$numberDouble' : '1.0' }}");
+
+   cleanup_original_error_test (client, server_id, NULL, coll, callbacks);
+   mongoc_bulkwriteresult_destroy (bwr.res);
+   mongoc_bulkwriteexception_destroy (bwr.exc);
+   mongoc_bulkwrite_destroy (bw);
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -824,7 +864,7 @@ test_bulk_retry_tracks_new_server (void *unused)
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    sd = mongoc_client_select_server (client, false /* for_writes */, read_prefs, &error);
    ASSERT_OR_PRINT (sd, error);
-   mongoc_bulk_operation_set_hint (bulk, mongoc_server_description_id (sd));
+   mongoc_bulk_operation_set_server_id (bulk, mongoc_server_description_id (sd));
    ret = mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
@@ -834,7 +874,7 @@ test_bulk_retry_tracks_new_server (void *unused)
     * the first try. */
    ASSERT_CMPINT (counters.num_inserts, ==, 2);
    ASSERT_CMPINT (counters.num_updates, ==, 1);
-   ASSERT_CMPINT (mongoc_bulk_operation_get_hint (bulk), !=, mongoc_server_description_id (sd));
+   ASSERT_CMPINT (mongoc_bulk_operation_get_server_id (bulk), !=, mongoc_server_description_id (sd));
 
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_server_description_destroy (sd);
@@ -866,13 +906,13 @@ _test_retry_writes_sharded_on_other_mongos_cb (const mongoc_apm_command_failed_t
    ctx->ports[ctx->count++] = host->port;
 }
 
+typedef bool (*cmd_fn) (mongoc_client_t *client, bson_error_t *error);
+
 // Test that in a sharded cluster writes are retried on a different mongos when
 // one is available.
 static void
-retryable_writes_sharded_on_other_mongos (void *_ctx)
+retryable_writes_sharded_on_other_mongos_impl (const char *cmd_name, cmd_fn cmd_func)
 {
-   BSON_UNUSED (_ctx);
-
    bson_error_t error = {0};
 
    // Create two clients `s0` and `s1` that each connect to a single mongos from
@@ -895,11 +935,12 @@ retryable_writes_sharded_on_other_mongos (void *_ctx)
                                            "  'configureFailPoint': 'failCommand',"
                                            "  'mode': { 'times': 1 },"
                                            "  'data': {"
-                                           "    'failCommands': ['insert'],"
+                                           "    'failCommands': ['%s'],"
                                            "    'errorCode': 6,"
                                            "    'errorLabels': ['RetryableWriteError']"
                                            "  }"
-                                           "}");
+                                           "}",
+                                           cmd_name);
 
          ASSERT_OR_PRINT (mongoc_client_command_simple (s0, "admin", command, NULL, NULL, &error), error);
          ASSERT_OR_PRINT (mongoc_client_command_simple (s1, "admin", command, NULL, NULL, &error), error);
@@ -934,17 +975,9 @@ retryable_writes_sharded_on_other_mongos (void *_ctx)
             mongoc_apm_callbacks_destroy (callbacks);
          }
 
-         // Execute an `insert` command with `client`. Assert that the command
+         // Execute the target command with `client`. Assert that the command
          // failed.
-         {
-            mongoc_database_t *const db = mongoc_client_get_database (client, "db");
-            mongoc_collection_t *const coll = mongoc_database_get_collection (db, "test");
-            ASSERT_WITH_MSG (!mongoc_collection_insert_one (coll, tmp_bson ("{'x': 1}"), NULL, NULL, &error),
-                             "expected insert command to fail");
-            MONGOC_DEBUG ("insert error: %s", error.message);
-            mongoc_collection_destroy (coll);
-            mongoc_database_destroy (db);
-         }
+         ASSERT_WITH_MSG (!cmd_func (client, &error), "expected command '%s' to fail", cmd_name);
 
          // Assert that two failed command events occurred.
          ASSERT_WITH_MSG (ctx.count == 2,
@@ -982,6 +1015,48 @@ retryable_writes_sharded_on_other_mongos (void *_ctx)
    _mongoc_array_destroy (&clients);
 }
 
+static bool
+cmd_insert (mongoc_client_t *client, bson_error_t *error)
+{
+   mongoc_database_t *const db = mongoc_client_get_database (client, "db");
+   mongoc_collection_t *const coll = mongoc_database_get_collection (db, "test");
+   bool ok = mongoc_collection_insert_one (coll, tmp_bson ("{'x': 1}"), NULL, NULL, error);
+   mongoc_collection_destroy (coll);
+   mongoc_database_destroy (db);
+   return ok;
+}
+
+static void
+retryable_writes_sharded_on_other_mongos_insert (void *_ctx)
+{
+   BSON_UNUSED (_ctx);
+   retryable_writes_sharded_on_other_mongos_impl ("insert", cmd_insert);
+}
+
+static bool
+cmd_bulkWrite (mongoc_client_t *client, bson_error_t *error)
+{
+   mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
+   bool ok = mongoc_bulkwrite_append_insertone (bw, "db.coll", tmp_bson ("{}"), NULL, error);
+   ASSERT_OR_PRINT (ok, (*error));
+   mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+   if (bwr.exc) {
+      ok = false;
+      mongoc_bulkwriteexception_error (bwr.exc, error);
+   }
+   mongoc_bulkwriteexception_destroy (bwr.exc);
+   mongoc_bulkwriteresult_destroy (bwr.res);
+   mongoc_bulkwrite_destroy (bw);
+   return ok;
+}
+
+static void
+retryable_writes_sharded_on_other_mongos_bulkWrite (void *_ctx)
+{
+   BSON_UNUSED (_ctx);
+   retryable_writes_sharded_on_other_mongos_impl ("bulkWrite", cmd_bulkWrite);
+}
+
 typedef struct _test_retry_writes_sharded_on_same_mongos_ctx {
    int failed_count;
    int succeeded_count;
@@ -995,8 +1070,8 @@ _test_retry_writes_sharded_on_same_mongos_cb (test_retry_writes_sharded_on_same_
                                               const mongoc_apm_command_succeeded_t *succeeded)
 {
    BSON_ASSERT_PARAM (ctx);
-   BSON_ASSERT (failed || true);
-   BSON_ASSERT (succeeded || true);
+   BSON_OPTIONAL_PARAM (failed);
+   BSON_OPTIONAL_PARAM (succeeded);
 
    ASSERT_WITH_MSG (ctx->failed_count + ctx->succeeded_count < 2,
                     "expected at most two events, but observed %d failed and %d succeeded",
@@ -1221,14 +1296,31 @@ test_retryable_writes_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
-                      "/retryable_writes/prose_test_4",
-                      retryable_writes_sharded_on_other_mongos,
+                      "/retryable_writes/prose_test_3/bulkwrite",
+                      retryable_writes_original_error_bulkwrite,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset,
+                      test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/retryable_writes/prose_test_4/insert",
+                      retryable_writes_sharded_on_other_mongos_insert,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_mongos,
                       test_framework_skip_if_no_failpoint,
                       // `errorLabels` is a 4.3.1+ feature.
                       test_framework_skip_if_max_wire_version_less_than_9,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/retryable_writes/prose_test_4/bulkwrite",
+                      retryable_writes_sharded_on_other_mongos_bulkWrite,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_mongos,
+                      test_framework_skip_if_no_failpoint,
+                      test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/prose_test_5",

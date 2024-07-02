@@ -40,11 +40,11 @@ On success, returns the server id used. On failure, returns 0 and sets ``error``
 
 A write concern timeout or write concern error is considered a failure.
 
-The ``reply`` document counts operations and collects error information. See :doc:`Bulk Write Operations <bulk>` for examples.
+The ``reply`` document counts operations and collects error information. See `Bulk Write Operations <bulk_>`_ for examples.
 
 .. seealso::
 
-  | :symbol:`Bulk Write Operations <bulk>`
+  | `Bulk Write Operations <bulk_>`_
 
-  | :symbol:`mongoc_bulk_operation_get_hint`, which gets the id of the server used even if the operation failed.
+  | :symbol:`mongoc_bulk_operation_get_server_id`, which gets the id of the server used even if the operation failed.
 

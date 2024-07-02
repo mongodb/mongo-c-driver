@@ -59,7 +59,7 @@ If the collection does not exist, the server responds with an "ns not found" err
 
 In MongoDB 3.0 and older, the "ns not found" error code is the generic MONGOC_ERROR_QUERY_FAILURE; in this case check whether the error message is equal to the string "ns not found".
 
-The ``encryptedFields`` document in ``opts`` may be used to drop a collection for :doc:`Queryable Encryption </queryable-encryption>`. If ``encryptedFields`` is specified, the "ns not found" error is not returned.
+The ``encryptedFields`` document in ``opts`` may be used to drop a collection for `Queryable Encryption <queryable-encryption_>`_. If ``encryptedFields`` is specified, the "ns not found" error is not returned.
 
 Errors
 ------

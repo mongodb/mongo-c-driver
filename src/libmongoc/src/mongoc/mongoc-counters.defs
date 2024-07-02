@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,4 +58,3 @@ COUNTER(auth_success,           "Auth",         "Success",             "The numb
 
 COUNTER(dns_failure,            "DNS",          "Failure",             "The number of failed DNS requests.")
 COUNTER(dns_success,            "DNS",          "Success",             "The number of successful DNS requests.")
-

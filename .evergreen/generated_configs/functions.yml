@@ -141,15 +141,6 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-  early-termination:
-    - command: subprocess.exec
-      params:
-        binary: bash
-        args:
-          - -c
-          - |
-            echo 'EVERGREEN HOST WAS UNEXPECTEDLY TERMINATED!!!' 1>&2
-            echo 'Restart this Evergreen task and try again!' 1>&2
   fetch-build:
     - command: subprocess.exec
       type: setup
@@ -190,7 +181,7 @@ functions:
           - -c
           - |
             if [[ ! -d drivers-evergreen-tools ]]; then
-                git clone --depth=1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+                git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
             fi
     - command: subprocess.exec
       type: setup

@@ -4151,7 +4151,7 @@ test_aggregate_secondary (void *ctx)
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    if (test_framework_is_replset ()) {
-      ASSERT (test_framework_server_is_secondary (client, mongoc_cursor_get_hint (cursor)));
+      ASSERT (test_framework_server_is_secondary (client, mongoc_cursor_get_server_id (cursor)));
    }
 
    mongoc_read_prefs_destroy (pref);
@@ -5630,6 +5630,78 @@ test_create_indexes_with_opts_commitQuorum_post44 (void *unused)
    mongoc_client_destroy (client);
 }
 
+void
+test_insert_one_reports_id (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = get_test_collection (client, "test_insert_reports_id");
+   bson_error_t error;
+   bool ok;
+
+   // Test inserting one document reports the inserted ID.
+   {
+      bson_t *doc = tmp_bson ("{'_id': 'foo'}");
+      bson_t reply;
+      ok = mongoc_collection_insert_one (coll, doc, NULL /* opts */, &reply, &error);
+      ASSERT_OR_PRINT (ok, error);
+      // Check that `reply` contains the inserted ID
+      ASSERT_MATCH (&reply, "{'insertedId': 'foo'}");
+      bson_destroy (&reply);
+   }
+
+   // Test inserting one document reports the generated inserted ID.
+   {
+      bson_t *doc = tmp_bson ("{'foo': 'bar'}");
+      bson_t reply;
+      ok = mongoc_collection_insert_one (coll, doc, NULL /* opts */, &reply, &error);
+      ASSERT_OR_PRINT (ok, error);
+      // Check that `reply` contains the inserted ID
+      // Since the driver creates a random ID, only assert it exists.
+      ASSERT_MATCH (&reply, "{'insertedId': {'$exists': true}}");
+      bson_destroy (&reply);
+   }
+
+   // Test inserting one document with a duplicate ID doesn't report the ID.
+   {
+      bson_t *doc1 = tmp_bson ("{'_id': 'baz'}");
+      bson_t reply1;
+      ok = mongoc_collection_insert_one (coll, doc1, NULL /* opts */, &reply1, &error);
+      ASSERT_OR_PRINT (ok, error);
+      // Check that `reply` contains the inserted ID
+      // Since the driver creates a random ID, only assert it exists.
+      ASSERT_MATCH (&reply1, "{'insertedId': 'baz'}");
+
+      // Insert the duplicate document.
+      bson_t *doc2 = tmp_bson ("{'_id': 'baz'}");
+      bson_t reply2;
+      ok = mongoc_collection_insert_one (coll, doc2, NULL /* opts */, &reply2, &error);
+      ASSERT_OR_PRINT (!ok, error);
+      ASSERT_MATCH (&reply2, "{'insertedId': {'$exists': false}}");
+
+      bson_destroy (&reply1);
+      bson_destroy (&reply2);
+   }
+
+   // Test inserting one document with a large ID
+   {
+      // Create a large string of repeating 'A' characters.
+      char *large_str = bson_malloc (128);
+      memset (large_str, 'A', 128);
+      large_str[127] = '\0'; // NULL terminate string.
+      bson_t *doc = tmp_bson ("{'_id': '%s'}", large_str);
+      bson_t reply;
+      ok = mongoc_collection_insert_one (coll, doc, NULL /* opts */, &reply, &error);
+      ASSERT_OR_PRINT (ok, error);
+      // Check that `reply` contains the inserted ID.
+      ASSERT_MATCH (&reply, "{'insertedId': '%s'}", large_str);
+      bson_destroy (&reply);
+      bson_free (large_str);
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
 #undef ASSERT_INDEX_EXISTS
 
 void
@@ -5790,4 +5862,5 @@ test_collection_install (TestSuite *suite)
                       NULL /* _ctx */,
                       // requires failpoint
                       test_framework_skip_if_no_failpoint);
+   TestSuite_AddLive (suite, "/Collection/insert_one_reports_id", test_insert_one_reports_id);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,14 +51,24 @@ typedef enum {
    MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO
 } mongoc_cmd_parts_allow_txn_number_t;
 
+// `mongoc_cmd_payload_t` represents a document sequence (OP_MSG Section with payloadType=1).
+typedef struct {
+   int32_t size;
+   const char *identifier;
+   const uint8_t *documents;
+} mongoc_cmd_payload_t;
+
+// OP_MSG supports any number of document sequences. Increase array size to support more document sequences.
+#define MONGOC_CMD_PAYLOADS_COUNT_MAX 2
+
 typedef struct _mongoc_cmd_t {
    const char *db_name;
    mongoc_query_flags_t query_flags;
    const bson_t *command;
    const char *command_name;
-   const uint8_t *payload;
-   int32_t payload_size;
-   const char *payload_identifier;
+   size_t payloads_count;
+   // `payloads[i]` may be read only when `0 <= i < payloads_count`.
+   mongoc_cmd_payload_t payloads[MONGOC_CMD_PAYLOADS_COUNT_MAX];
    mongoc_server_stream_t *server_stream;
    int64_t operation_id;
    mongoc_client_session_t *session;
@@ -119,7 +129,7 @@ bool
 mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts, mongoc_server_stream_t *server_stream, bson_error_t *error);
 
 bool
-mongoc_cmd_is_compressible (mongoc_cmd_t *cmd);
+mongoc_cmd_is_compressible (const mongoc_cmd_t *cmd);
 
 void
 mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *op);

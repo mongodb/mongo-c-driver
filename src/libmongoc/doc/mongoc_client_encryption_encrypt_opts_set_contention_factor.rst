@@ -15,8 +15,8 @@ Synopsis
 .. versionadded:: 1.22.0
 
 Sets a contention factor for explicit encryption.
-Only applies when the algorithm set by :symbol:`mongoc_client_encryption_encrypt_opts_set_algorithm()` is "Indexed" or "RangePreview".
-It is an error to set the contention factor when algorithm is not "Indexed" or "RangePreview". **Note** that the |qenc:range-is-experimental|
+Only applies when the algorithm set by :symbol:`mongoc_client_encryption_encrypt_opts_set_algorithm()` is "Indexed" or "Range".
+It is an error to set the contention factor when algorithm is not "Indexed" or "Range".
 If contention factor is not supplied, it defaults to a value of 0.
 
 Parameters

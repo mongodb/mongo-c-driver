@@ -79,10 +79,14 @@ The driver prefixes the service name with "_mongodb._tcp.", then performs a DNS 
 
 On Unix, the MongoDB C Driver relies on libresolv to look up SRV and TXT records. If libresolv is unavailable, then using a "mongodb+srv" URI will cause an error. If your libresolv lacks ``res_nsearch`` then the driver will fall back to ``res_search``, which is not thread-safe.
 
+Set the environment variable ``MONGOC_EXPERIMENTAL_SRV_PREFER_TCP`` to prefer TCP for the initial queries. The environment variable is ignored for ``res_search``. Large DNS responses over UDP may be truncated due to UDP size limitations. DNS resolvers are expected to retry over TCP if the UDP response indicates truncation. Some observed DNS environments do not set the truncation flag (TC), preventing the TCP retry. This environment variable is currently experimental and subject to change.
+
 IPv4 and IPv6
 -------------
 
 .. include:: includes/ipv4-and-ipv6.txt
+
+.. _connection_options:
 
 Connection Options
 ------------------
@@ -117,7 +121,7 @@ Authentication Options
 ========================================== ================================= =========================================================================================================================================================================================================================
 Constant                                   Key                               Description
 ========================================== ================================= =========================================================================================================================================================================================================================
-MONGOC_URI_AUTHMECHANISM                   authmechanism                     Specifies the mechanism to use when authenticating as the provided user. See :doc:`Authentication <authentication>` for supported values.
+MONGOC_URI_AUTHMECHANISM                   authmechanism                     Specifies the mechanism to use when authenticating as the provided user. See `Authentication <authentication_>`_ for supported values.
 MONGOC_URI_AUTHMECHANISMPROPERTIES         authmechanismproperties           Certain authentication mechanisms have additional options that can be configured. These options should be provided as comma separated option_key:option_value pair and provided as authMechanismProperties. Specifying the same option_key multiple times has undefined behavior.
 MONGOC_URI_AUTHSOURCE                      authsource                        The authSource defines the database that should be used to authenticate to. It is unnecessary to provide this option the database name is the same as the database used in the URI.
 ========================================== ================================= =========================================================================================================================================================================================================================
@@ -140,7 +144,7 @@ TLS Options
 
 .. include:: includes/tls-options.txt
 
-See :doc:`configuring_tls` for details about these options and about building libmongoc with TLS support.
+See `Configuring TLS <configuring_tls_>`_ for details about these options and about building libmongoc with TLS support.
 
 Deprecated SSL Options
 ----------------------

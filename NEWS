@@ -1,4 +1,4 @@
-libmongoc 1.27.0 (Unreleased)
+libmongoc 1.28.0 (Unreleased)
 =============================
 
 Build Configuration:
@@ -7,7 +7,98 @@ Build Configuration:
       * Set [`CMAKE_<LANG>_COMPILER_LAUNCHER`](https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html) to build with ccache.
   * Remove `MONGO_USE_CCACHE` (no longer applicable; see above).
 
+Deprecated:
 
+  * Use of `*_hint` functions is deprecated in favor of more aptly named `*_server_id` functions:
+    * `mongoc_bulk_operation_set_hint` is deprecated for `mongoc_bulk_operation_set_server_id`
+    * `mongoc_bulk_operation_get_hint` is deprecated for `mongoc_bulk_operation_get_server_id`
+    * `mongoc_cursor_set_hint` is deprecated for `mongoc_cursor_set_server_id`
+    * `mongoc_cursor_get_hint` is deprecated for `mongoc_cursor_get_server_id`
+
+
+
+libmongoc 1.27.3
+================
+
+Notes:
+
+  * This patch release introduces changes surrounding the development processes,
+    including new code signing and dependency tracking. There are no behavioral
+    or API changes.
+
+Fixes:
+
+  * Upgraded bundled Zlib from 1.2.3 to 1.3.1
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Colby Pike
+
+
+
+libmongoc 1.27.2
+================
+
+Fixes:
+
+  * Close leftover connections to removed servers.
+
+New features:
+
+  * Check environment variable `MONGOC_EXPERIMENTAL_SRV_PREFER_TCP` to prefer TCP for SRV lookup.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
+libmongoc 1.27.1
+================
+
+No changes since 1.27.0. Version incremented to match the libbson version.
+
+libmongoc 1.27.0
+================
+
+Notes:
+
+  * Raise required version of libmongocrypt to 1.10.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+  * A future minor release plans to raise the minimum supported MongoDB Server version from 3.6 to 4.0. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
+
+Fixes:
+
+  * Fix possible crash when client is configured with empty password.
+
+New Features:
+
+  * Add database name to command events: `mongoc_apm_command_failed_get_database_name` and `mongoc_apm_command_succeeded_get_database_name`.
+  * Support delegated KMIP protocol for In-Use Encryption.
+  * Enable setting socket timeout per client.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Adrian Dole
+  * Ezra Chung
+  * Roberto C. Sánchez
+  * Scott Hunt
+
+libmongoc 1.26.2
+================
+
+Cyrus SASL:
+
+  * Disable plugin loading with Cyrus SASL on Windows by default. To re-enable, set the CMake option `CYRUS_PLUGIN_PATH_PREFIX` to the absolute path prefix of the Cyrus SASL plugins.
+
+Fixes:
+
+  * Fix possible hang if `mongoc_gridfs_file_readv` is called with a corrupt chunk with incomplete data.
+  * Fix assert with legacy exhaust cursor protocol when connected to server < 4.2.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
 
 libmongoc 1.26.1
 ================

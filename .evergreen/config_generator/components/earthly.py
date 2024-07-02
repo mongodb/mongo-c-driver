@@ -1,38 +1,118 @@
 from __future__ import annotations
 
 import functools
-import itertools
-from typing import Any, Iterable, Literal, TypeVar, get_args, NamedTuple, get_type_hints
+import re
+from typing import Iterable, Literal, Mapping, NamedTuple, TypeVar
+
 from shrub.v3.evg_build_variant import BuildVariant
+from shrub.v3.evg_command import BuiltInCommand, EvgCommandType, subprocess_exec
 from shrub.v3.evg_task import EvgTaskRef
-from ..etc.utils import Task
-from shrub.v3.evg_command import subprocess_exec, EvgCommandType
+
+from ..etc.utils import Task, all_possible
 
 T = TypeVar("T")
 
 _ENV_PARAM_NAME = "MONGOC_EARTHLY_ENV"
-"The name of the EVG expansion parameter used to key the Earthly build env"
+_CC_PARAM_NAME = "MONGOC_EARTHLY_C_COMPILER"
+"The name of the EVG expansion for the Earthly c_compiler argument"
 
-EnvKey = Literal["u22", "alpine3.18", "archlinux"]
-"Identifiers for environments. These correspond to special '*-env' targets in the Earthfile."
 
-_ENV_NAMES: dict[EnvKey, str] = {
-    "u22": "Ubuntu 22.04",
-    "alpine3.18": "Alpine 3.18",
-    "archlinux": "Arch Linux",
-}
-"A mapping from environment keys to 'pretty' environment names"
+EnvKey = Literal[
+    "u18",
+    "u20",
+    "u22",
+    "alpine3.16",
+    "alpine3.17",
+    "alpine3.18",
+    "alpine3.19",
+    "archlinux",
+]
+"Identifiers for environments. These correspond to special 'env.*' targets in the Earthfile."
+CompilerName = Literal["gcc", "clang"]
+"The name of the compiler program that is used for the build. Passed via --c_compiler to Earthly."
 
 # Other options: SSPI (Windows only), AUTO (not reliably test-able without more environments)
 SASLOption = Literal["Cyrus", "off"]
 "Valid options for the SASL configuration parameter"
 TLSOption = Literal["LibreSSL", "OpenSSL", "off"]
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["master", "r3.8.0"]
+CxxVersion = Literal["r3.8.0", "r3.9.0"]
 "C++ driver refs that are under CI test"
 
-# A Unicode non-breaking space character
-_BULLET = "\N{Bullet}"
+# A separator character, since we cannot use whitespace
+_SEPARATOR = "\N{no-break space}\N{bullet}\N{no-break space}"
+
+
+def os_split(env: EnvKey) -> tuple[str, None | str]:
+    """Convert the environment key into a pretty name+version pair"""
+    match env:
+        # match 'alpine3.18' 'alpine53.123' etc.
+        case alp if mat := re.match(r"alpine(\d+\.\d+)", alp):
+            return ("Alpine", mat[1])
+        case "archlinux":
+            return "ArchLinux", None
+        # Match 'u22', 'u20', 'u71' etc.
+        case ubu if mat := re.match(r"u(\d\d)", ubu):
+            return "Ubuntu", f"{mat[1]}.04"
+        case _:
+            raise ValueError(
+                f"Failed to split OS env key {env=} into a name+version pair (unrecognized)"
+            )
+
+
+class EarthlyVariant(NamedTuple):
+    """
+    Define a "variant" that runs under a set of Earthly parameters. These are
+    turned into real EVG variants later on. The Earthly arguments are passed via
+    expansion parameters.
+    """
+
+    env: EnvKey
+    c_compiler: CompilerName
+
+    @property
+    def display_name(self) -> str:
+        """The pretty name for this variant"""
+        base: str
+        match os_split(self.env):
+            case name, None:
+                base = name
+            case name, version:
+                base = f"{name} {version}"
+        toolchain: str
+        match self.c_compiler:
+            case "clang":
+                toolchain = "LLVM/Clang"
+            case "gcc":
+                toolchain = "GCC"
+        return f"{base} ({toolchain})"
+
+    @property
+    def task_selector_tag(self) -> str:
+        """
+        The task tag that is used to select the tasks that want to run on this
+        variant.
+        """
+        return f"{self.env}-{self.c_compiler}"
+
+    @property
+    def expansions(self) -> Mapping[str, str]:
+        """
+        Expansion values that are defined for the build variant that is generated
+        from this object.
+        """
+        return {
+            _CC_PARAM_NAME: self.c_compiler,
+            _ENV_PARAM_NAME: self.env,
+        }
+
+    def as_evg_variant(self) -> BuildVariant:
+        return BuildVariant(
+            name=f"{self.task_selector_tag}",
+            tasks=[EvgTaskRef(name=f".{self.task_selector_tag}")],
+            display_name=self.display_name,
+            expansions=dict(self.expansions),
+        )
 
 
 class Configuration(NamedTuple):
@@ -42,65 +122,69 @@ class Configuration(NamedTuple):
 
     Adding/removing fields will add/remove dimensions on the task matrix.
 
-    The 'env' parameter is not encoded here, but is managed separately.
-
-    Keep this in sync with the 'PartialConfiguration' class defined below!
+    Some Earthly parameters are not encoded here, but are rather part of the variant (EarthlyVariant).
     """
 
     sasl: SASLOption
     tls: TLSOption
     test_mongocxx_ref: CxxVersion
 
-    @classmethod
-    def all(cls) -> Iterable[Configuration]:
-        """
-        Generate all configurations for all options of our parameters.
-        """
-        # Iter each configuration parameter:
-        fields: Iterable[tuple[str, type]] = get_type_hints(Configuration).items()
-        # Generate lists of pairs of parameter names their options:
-        all_pairs: Iterable[Iterable[tuple[str, str]]] = (
-            # Generate a (key, opt) pair for each option in parameter 'key'
-            [(key, opt) for opt in get_args(typ)]
-            # Over each parameter and type thereof:
-            for key, typ in fields
-        )
-        # Now generate the cross product of all alternative for all options:
-        matrix: Iterable[dict[str, Any]] = map(dict, itertools.product(*all_pairs))
-        for items in matrix:
-            # Convert each item to a Configuration:
-            yield Configuration(**items)
-
     @property
     def suffix(self) -> str:
-        return f"{_BULLET}".join(f"{k}={v}" for k, v in self._asdict().items())
+        return f"{_SEPARATOR}".join(f"{k}={v}" for k, v in self._asdict().items())
 
 
-def task_filter(env: EnvKey, conf: Configuration) -> bool:
+def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
     """
     Control which tasks are actually defined by matching on the platform and
     configuration values.
     """
     match env, conf:
         # We only need one task with "sasl=off"
-        case "u22", ("off", "OpenSSL", "master"):
+        case ["u22", "gcc"], ("off", "OpenSSL", "r3.8.0"):
             return True
+        # The Ubuntu 18.04 GCC has a bug that fails to build the 3.8.0 C++ driver
+        case ["u18", "gcc"], [_, _, "r3.8.0"]:
+            return False
         # Other sasl=off tasks we'll just ignore:
         case _, ("off", _tls, _cxx):
             return False
         # Ubuntu does not ship with a LibreSSL package:
-        case e, (_sasl, "LibreSSL", _cxx) if _ENV_NAMES[e].startswith("Ubuntu"):
+        case e, (_sasl, "LibreSSL", _cxx) if e.display_name.startswith("Ubuntu"):
             return False
         # Anything else: Allow it to run:
         case _:
             return True
 
 
-def envs_for(config: Configuration) -> Iterable[EnvKey]:
-    """Get all environment keys that are not excluded for the given configuration"""
-    all_envs: tuple[EnvKey, ...] = get_args(EnvKey)
+def variants_for(config: Configuration) -> Iterable[EarthlyVariant]:
+    """Get all Earthly variants that are not excluded for the given build configuration"""
+    all_envs = all_possible(EarthlyVariant)
     allow_env_for_config = functools.partial(task_filter, conf=config)
     return filter(allow_env_for_config, all_envs)
+
+
+def earthly_exec(
+    *,
+    kind: Literal["test", "setup", "system"],
+    target: str,
+    secrets: Mapping[str, str] | None = None,
+    args: Mapping[str, str] | None = None,
+) -> BuiltInCommand:
+    """Create a subprocess_exec command that runs Earthly with the given arguments"""
+    env: dict[str, str] = {k: v for k, v in (secrets or {}).items()}
+    return subprocess_exec(
+        "bash",
+        args=[
+            "tools/earthly.sh",
+            *(f"--secret={k}" for k in (secrets or ())),
+            f"+{target}",
+            *(f"--{arg}={val}" for arg, val in (args or {}).items()),
+        ],
+        command_type=EvgCommandType(kind),
+        env=env if env else None,
+        working_dir="mongoc",
+    )
 
 
 def earthly_task(
@@ -109,16 +193,26 @@ def earthly_task(
     targets: Iterable[str],
     config: Configuration,
 ) -> Task | None:
-    # Attach "earthly-xyz" tags to the task to allow build variants to select
+    """
+    Create an EVG task which executes earthly using the given parameters. If this
+    function returns `None`, then the task configuration is excluded from executing
+    and no task should be defined.
+    """
+    # Attach tags to the task to allow build variants to select
     # these tasks by the environment of that variant.
-    env_tags = sorted(f"earthly-{e}" for e in sorted(envs_for(config)))
+    env_tags = sorted(e.task_selector_tag for e in sorted(variants_for(config)))
     if not env_tags:
         # All environments have been excluded for this configuration. This means
         # the task itself should not be run:
         return
     # Generate the build-arg arguments based on the configuration options. The
     # NamedTuple field names must match with the ARG keys in the Earthfile!
-    earthly_args = [f"--{key}={val}" for key, val in config._asdict().items()]
+    earthly_args = config._asdict()
+    earthly_args |= {
+        # Add arguments that come from parameter expansions defined in the build variant
+        "env": f"${{{_ENV_PARAM_NAME}}}",
+        "c_compiler": f"${{{_CC_PARAM_NAME}}}",
+    }
     return Task(
         name=name,
         commands=[
@@ -126,29 +220,17 @@ def earthly_task(
             # This won't generate any output, but allows EVG to track it as a separate build step
             # for timing and logging purposes. The subequent build step will cache-hit the
             # warmed-up build environments.
-            subprocess_exec(
-                "bash",
-                args=[
-                    "tools/earthly.sh",
-                    "+env-warmup",
-                    f"--env=${{{_ENV_PARAM_NAME}}}",
-                    *earthly_args,
-                ],
-                working_dir="mongoc",
-                command_type=EvgCommandType.SETUP,
+            earthly_exec(
+                kind="setup",
+                target="env-warmup",
+                args=earthly_args,
             ),
             # Now execute the main tasks:
-            subprocess_exec(
-                "bash",
-                args=[
-                    "tools/earthly.sh",
-                    "+run",
-                    f"--targets={' '.join(targets)}",
-                    f"--env=${{{_ENV_PARAM_NAME}}}",
-                    *earthly_args,
-                ],
-                working_dir="mongoc",
-                command_type=EvgCommandType.TEST,
+            earthly_exec(
+                kind="test",
+                target="run",
+                # The "targets" arg is for +run to specify which targets to run
+                args={"targets": " ".join(targets)} | earthly_args,
             ),
         ],
         tags=[f"earthly", "pr-merge-gate", *env_tags],
@@ -170,7 +252,7 @@ CONTAINER_RUN_DISTROS = [
 
 
 def tasks() -> Iterable[Task]:
-    for conf in Configuration.all():
+    for conf in all_possible(Configuration):
         task = earthly_task(
             name=f"check:{conf.suffix}",
             targets=("test-example", "test-cxx-driver"),
@@ -180,16 +262,5 @@ def tasks() -> Iterable[Task]:
             yield task
 
 
-def variants() -> list[BuildVariant]:
-    envs: tuple[EnvKey, ...] = get_args(EnvKey)
-    return [
-        BuildVariant(
-            name=f"earthly-{env}",
-            tasks=[EvgTaskRef(name=f".earthly-{env}")],
-            display_name=_ENV_NAMES[env],
-            expansions={
-                _ENV_PARAM_NAME: env,
-            },
-        )
-        for env in envs
-    ]
+def variants() -> Iterable[BuildVariant]:
+    yield from (ev.as_evg_variant() for ev in all_possible(EarthlyVariant))

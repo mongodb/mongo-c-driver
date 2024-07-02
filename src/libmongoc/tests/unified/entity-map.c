@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,8 +87,23 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          mongoc_uri_set_read_concern (uri, rc);
          mongoc_read_concern_destroy (rc);
       } else if (0 == strcmp ("w", key)) {
+         if (BSON_ITER_HOLDS_UTF8 (&iter)) {
+            // Write concern may be string "majority".
+            const char *w = bson_iter_utf8 (&iter, NULL);
+            if (0 == strcmp (w, "majority")) {
+               mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+            } else {
+               test_set_error (error, "Unrecognized string value for 'w' URI option: %s", w);
+            }
+         } else if (BSON_ITER_HOLDS_INT32 (&iter)) {
+            mongoc_write_concern_set_w (wc, bson_iter_int32 (&iter));
+         } else {
+            test_set_error (error,
+                            "Expected int32 or string for 'w' URI option, got: %s",
+                            _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+         }
+
          wcSet = true;
-         mongoc_write_concern_set_w (wc, bson_iter_int32 (&iter));
       } else if (mongoc_uri_option_is_int32 (key)) {
          mongoc_uri_set_option_as_int32 (uri, key, bson_iter_int32 (&iter));
       } else if (mongoc_uri_option_is_int64 (key)) {
@@ -309,6 +324,8 @@ store_event_serialize_failed (bson_t *doc, const mongoc_apm_command_failed_t *ap
 
    BSON_APPEND_UTF8 (doc, "commandName", mongoc_apm_command_failed_get_command_name (apm_command));
 
+   BSON_APPEND_UTF8 (doc, "databaseName", mongoc_apm_command_failed_get_database_name (apm_command));
+
    {
       bson_error_t error;
       mongoc_apm_command_failed_get_error (apm_command, &error);
@@ -345,6 +362,8 @@ store_event_serialize_succeeded (bson_t *doc, const mongoc_apm_command_succeeded
    //    doc, "reply", mongoc_apm_command_succeeded_get_reply (apm_command));
 
    BSON_APPEND_UTF8 (doc, "commandName", mongoc_apm_command_succeeded_get_command_name (apm_command));
+
+   BSON_APPEND_UTF8 (doc, "databaseName", mongoc_apm_command_succeeded_get_database_name (apm_command));
 
    BSON_APPEND_INT64 (doc, "requestId", mongoc_apm_command_succeeded_get_request_id (apm_command));
 
@@ -448,7 +467,7 @@ command_failed (const mongoc_apm_command_failed_t *failed)
       .get_command = NULL,
       .get_reply = (apm_func_bson_t) mongoc_apm_command_failed_get_reply,
       .get_command_name = (apm_func_utf8_t) mongoc_apm_command_failed_get_command_name,
-      .get_database_name = NULL,
+      .get_database_name = (apm_func_utf8_t) mongoc_apm_command_failed_get_database_name,
       .get_request_id = (apm_func_int64_t) mongoc_apm_command_failed_get_request_id,
       .get_operation_id = (apm_func_int64_t) mongoc_apm_command_failed_get_operation_id,
       .get_service_id = (apm_func_bson_oid_t) mongoc_apm_command_failed_get_service_id,
@@ -468,7 +487,7 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
       .get_command = NULL,
       .get_reply = (apm_func_bson_t) mongoc_apm_command_succeeded_get_reply,
       .get_command_name = (apm_func_utf8_t) mongoc_apm_command_succeeded_get_command_name,
-      .get_database_name = NULL,
+      .get_database_name = (apm_func_utf8_t) mongoc_apm_command_succeeded_get_database_name,
       .get_request_id = (apm_func_int64_t) mongoc_apm_command_succeeded_get_request_id,
       .get_operation_id = (apm_func_int64_t) mongoc_apm_command_succeeded_get_operation_id,
       .get_service_id = (apm_func_bson_oid_t) mongoc_apm_command_succeeded_get_service_id,

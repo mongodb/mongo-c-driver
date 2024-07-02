@@ -1,4 +1,4 @@
-libbson 1.27.0 (Unreleased)
+libbson 1.28.0 (Unreleased)
 =============================
 
 Build Configuration:
@@ -6,6 +6,67 @@ Build Configuration:
   * Remove automatic ccache detection and usage (CCache.cmake).
       * Set [`CMAKE_<LANG>_COMPILER_LAUNCHER`](https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html) to build with ccache.
   * Remove `MONGO_USE_CCACHE` (no longer applicable; see above).
+
+
+
+libbson 1.27.3
+==============
+
+Notes:
+
+  * This patch release introduces changes surrounding the development processes,
+    including new code signing and dependency tracking. There are no behavioral
+    or API changes.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Colby Pike
+
+
+
+libbson 1.27.2
+==============
+
+Fixes:
+
+  * Fix parsing of colon in timezone.
+  * Error on failure to init subdocument in `bson_iter_visit_all`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roman-Koshelev
+  * Kevin Albertson
+
+
+
+libbson 1.27.1
+==============
+
+Fixes:
+
+  * Fix string handling in `bson_string_new` and `bson_string_append`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roberto C. Sánchez
+
+
+
+libbson 1.27.0
+==============
+
+No changes since 1.26.2. Version incremented to match the libmongoc version.
+
+libbson 1.26.2
+==============
+
+Fixes:
+
+  * Fix iteration in `bson_strfreev`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
 
 libbson 1.26.1
 ==============
@@ -97,7 +158,7 @@ Fixes:
 Thanks to everyone who contributed to the development of this release.
 
   * Kevin Albertson
-  
+
 libbson 1.24.3
 ==============
 

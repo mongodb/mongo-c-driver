@@ -1,0 +1,10 @@
+If using MongoDB server 8.0+, prefer :symbol:`mongoc_bulkwrite_t` over :symbol:`mongoc_bulk_operation_t` to reduce
+network round trips.
+
+:symbol:`mongoc_bulkwrite_t` uses the ``bulkWrite`` server command introduced in MongoDB server 8.0. ``bulkWrite``
+command supports insert, update, and delete operations in the same payload. ``bulkWrite`` supports use of multiple
+collection namespaces in the same payload.
+
+:symbol:`mongoc_bulk_operation_t` uses the ``insert``, ``update`` and ``delete`` server commands available in all
+current MongoDB server versions. Write operations are grouped by type (insert, update, delete) and sent in separate
+commands. Only one collection may be specified per bulk write.

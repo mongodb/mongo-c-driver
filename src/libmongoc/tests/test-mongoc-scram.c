@@ -718,6 +718,25 @@ test_mongoc_saslprep_auth (void *ctx)
    _drop_saslprep_users ();
 }
 
+// `test_mongoc_scram_empty_password` is a regression test for CDRIVER-5550.
+static void
+test_mongoc_scram_empty_password (void *ctx)
+{
+   BSON_UNUSED (ctx);
+   char *user = test_framework_get_admin_user ();
+   char *uri_str = test_framework_get_uri_str_no_auth ("admin");
+   mongoc_uri_t *uri = mongoc_uri_new (uri_str);
+   mongoc_uri_set_username (uri, user);
+
+   // Expect an auth failure (not a crash):
+   _try_auth_from_uri (false /* pooled */, uri, MONGOC_TEST_AUTH_ERROR);
+   _try_auth_from_uri (true /* pooled */, uri, MONGOC_TEST_AUTH_ERROR);
+
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+   bson_free (user);
+}
+
 void
 test_scram_install (TestSuite *suite)
 {
@@ -746,6 +765,14 @@ test_scram_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/scram/saslprep_auth",
                       test_mongoc_saslprep_auth,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_auth,
+                      _skip_if_no_sha256,
+                      TestSuite_CheckLive);
+   TestSuite_AddFull (suite,
+                      "/scram/empty_password",
+                      test_mongoc_scram_empty_password,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,

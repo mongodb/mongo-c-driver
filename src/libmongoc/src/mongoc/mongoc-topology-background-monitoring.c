@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
       /* Unlock and sleep until next scan is due, or until shutdown signalled.
        */
       now_ms = bson_get_monotonic_time () / 1000;
-      scan_due_ms = topology->srv_polling_last_scan_ms + topology->srv_polling_rescan_interval_ms;
+      scan_due_ms = topology->srv_polling_last_scan_ms + _mongoc_topology_get_srv_polling_rescan_interval_ms (topology);
       sleep_duration_ms = scan_due_ms - now_ms;
 
       if (sleep_duration_ms > 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,11 @@ struct _mongoc_database_t;
 #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
 #define MONGOC_ENCRYPT_ALGORITHM_INDEXED "Indexed"
 #define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
+#define MONGOC_ENCRYPT_ALGORITHM_RANGE "Range"
 #define MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW "RangePreview"
 
 #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
+#define MONGOC_ENCRYPT_QUERY_TYPE_RANGE "range"
 #define MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW "rangePreview"
 
 
@@ -246,6 +248,10 @@ mongoc_client_encryption_encrypt_range_opts_new (void);
 
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_range_opts_destroy (mongoc_client_encryption_encrypt_range_opts_t *range_opts);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_range_opts_set_trim_factor (mongoc_client_encryption_encrypt_range_opts_t *range_opts,
+                                                             int32_t trim_factor);
 
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_range_opts_set_sparsity (mongoc_client_encryption_encrypt_range_opts_t *range_opts,

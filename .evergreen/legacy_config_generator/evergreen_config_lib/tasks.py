@@ -1,4 +1,4 @@
-# Copyright 2018-present MongoDB, Inc.
+# Copyright 2009-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -340,6 +340,8 @@ all_tasks = [
                 remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz",
                 content_type="${content_type|application/x-gzip}",
             ),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
         ],
     ),
     NamedTask(
@@ -746,7 +748,7 @@ all_tasks = chain(
 )
 
 # Add API version tasks.
-for server_version in [ "7.0", "6.0", "5.0"]:
+for server_version in [ "8.0", "7.0", "6.0", "5.0"]:
     all_tasks = chain(
         all_tasks,
         [
@@ -949,7 +951,7 @@ class AWSTestTask(MatrixTask):
     axes = OD(
         [
             ("testcase", ["regular", "ec2", "ecs", "lambda", "assume_role", "assume_role_with_web_identity"]),
-            ("version", ["latest", "7.0", "6.0", "5.0", "4.4"]),
+            ("version", ["latest", "8.0", "7.0", "6.0", "5.0", "4.4"]),
         ]
     )
 
@@ -1004,7 +1006,7 @@ class OCSPTask(MatrixTask):
             ("delegate", ["delegate", "nodelegate"]),
             ("cert", ["rsa", "ecdsa"]),
             ("ssl", ["openssl", "openssl-1.0.1", "darwinssl", "winssl"]),
-            ("version", ["latest", "7.0", "6.0", "5.0", "4.4"]),
+            ("version", ["latest", "8.0", "7.0", "6.0", "5.0", "4.4"]),
         ]
     )
 

@@ -128,10 +128,21 @@ if [[ "${ssl}" != "OFF" ]]; then
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_tls12:?}&${c_timeout}"
   echo "Connecting to Atlas with only TLS 1.2 enabled with SRV"
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_tls12_srv:?}${c_timeout}"
-  echo "Connecting to Atlas Serverless with SRV"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless_srv:?}/?${c_timeout}"
-  echo "Connecting to Atlas Serverless"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless:?}&${c_timeout}"
+  HAS_CIPHERSUITES_FOR_SERVERLESS="YES"
+  if [[ "${OSTYPE}" == "cygwin" ]]; then
+    # Windows Server 2008 hosts do not appear to share TLS 1.2 cipher suites with Atlas Serverless.
+    WINDOWS_OSNAME="$(systeminfo | grep 'OS Name:' | awk -F ':' '{print $2}')"
+    if [[ "${WINDOWS_OSNAME}" == *"Windows Server 2008"* ]]; then
+        echo "Detected Windows Server 2008 ... skipping Atlas Serverless test due to no shared cipher suites."
+        HAS_CIPHERSUITES_FOR_SERVERLESS="NO"
+    fi
+  fi
+  if [[ "${HAS_CIPHERSUITES_FOR_SERVERLESS}" == "YES" ]]; then
+    echo "Connecting to Atlas Serverless with SRV"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless_srv:?}/?${c_timeout}"
+    echo "Connecting to Atlas Serverless"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless:?}&${c_timeout}"
+  fi
 fi
 
 echo "Authenticating using PLAIN"

@@ -45,11 +45,11 @@ The BSON document for TLS options may contain the following keys:
    :end-before: END:mongoc_auto_encryption_opts_set_tls_opts
    :dedent: 6
 
-See :doc:`configuring_tls` for a description of the behavior of these options.
+See `Configuring TLS <configuring_tls_>`_ for a description of the behavior of these options.
 
 .. seealso::
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | :doc:`in-use-encryption`
+  | `In-Use Encryption <in-use-encryption_>`_
 

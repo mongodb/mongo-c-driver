@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -424,6 +424,7 @@ struct _mongoc_client_encryption_encrypt_range_opts_t {
       bson_value_t value;
       bool set;
    } max;
+   int32_t trim_factor;
    int64_t sparsity;
    struct {
       int32_t value;
@@ -550,6 +551,14 @@ mongoc_client_encryption_encrypt_range_opts_new (void)
 }
 
 void
+mongoc_client_encryption_encrypt_range_opts_set_trim_factor (mongoc_client_encryption_encrypt_range_opts_t *range_opts,
+                                                             int32_t trim_factor)
+{
+   BSON_ASSERT_PARAM (range_opts);
+   range_opts->trim_factor = trim_factor;
+}
+
+void
 mongoc_client_encryption_encrypt_range_opts_set_sparsity (mongoc_client_encryption_encrypt_range_opts_t *range_opts,
                                                           int64_t sparsity)
 {
@@ -612,6 +621,7 @@ copy_range_opts (const mongoc_client_encryption_encrypt_range_opts_t *opts)
       opts_new->precision.set = true;
    }
    opts_new->sparsity = opts->sparsity;
+   opts_new->trim_factor = opts->trim_factor;
    return opts_new;
 }
 
@@ -915,7 +925,7 @@ mongoc_client_encryption_encrypt_expression (mongoc_client_encryption_t *client_
    BSON_ASSERT_PARAM (expr);
    BSON_ASSERT_PARAM (opts);
    BSON_ASSERT_PARAM (expr_encrypted);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    bson_init (expr_encrypted);
 
@@ -991,6 +1001,9 @@ append_bson_range_opts (bson_t *bson_range_opts, const mongoc_client_encryption_
    if (opts->range_opts->sparsity) {
       BSON_ASSERT (BSON_APPEND_INT64 (bson_range_opts, "sparsity", opts->range_opts->sparsity));
    }
+   if (opts->range_opts->trim_factor) {
+      BSON_ASSERT (BSON_APPEND_INT32 (bson_range_opts, "trimFactor", opts->range_opts->trim_factor));
+   }
 }
 
 /*--------------------------------------------------------------------------
@@ -1010,8 +1023,8 @@ append_bson_range_opts (bson_t *bson_range_opts, const mongoc_client_encryption_
 static void
 _prep_for_auto_encryption (const mongoc_cmd_t *cmd, bson_t *out)
 {
-   /* If there is no type=1 payload, return the command unchanged. */
-   if (!cmd->payload || !cmd->payload_size) {
+   // If there are no document sequences (OP_MSG Section with payloadType=1), return the command unchanged.
+   if (cmd->payloads_count == 0) {
       BSON_ASSERT (bson_init_static (out, bson_get_data (cmd->command), cmd->command->len));
       return;
    }
@@ -1226,10 +1239,9 @@ retry:
 
    /* Create the modified cmd_t. */
    memcpy (encrypted_cmd, cmd, sizeof (mongoc_cmd_t));
-   /* Modify the mongoc_cmd_t and clear the payload, since
-    * _mongoc_cse_auto_encrypt converted the payload into an embedded array. */
-   encrypted_cmd->payload = NULL;
-   encrypted_cmd->payload_size = 0;
+   /* Modify the mongoc_cmd_t and clear the payloads, since
+    * _mongoc_cse_auto_encrypt converted the payloads into an embedded array. */
+   encrypted_cmd->payloads_count = 0;
    encrypted_cmd->command = encrypted;
 
    ret = true;
@@ -2662,7 +2674,7 @@ mongoc_client_encryption_encrypt_expression (mongoc_client_encryption_t *client_
    BSON_ASSERT_PARAM (expr);
    BSON_ASSERT_PARAM (opts);
    BSON_ASSERT_PARAM (expr_out);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    bson_init (expr_out);
 
@@ -2775,9 +2787,9 @@ mongoc_client_encryption_create_encrypted_collection (mongoc_client_encryption_t
    BSON_ASSERT_PARAM (database);
    BSON_ASSERT_PARAM (name);
    BSON_ASSERT_PARAM (in_options);
-   BSON_ASSERT (opt_out_options || true);
+   BSON_OPTIONAL_PARAM (opt_out_options);
    BSON_ASSERT_PARAM (kms_provider);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    mongoc_collection_t *ret = NULL;
 
@@ -2890,8 +2902,8 @@ _init_1_encryptedField (
    BSON_ASSERT_PARAM (out_field);
    BSON_ASSERT_PARAM (in_field);
    BSON_ASSERT_PARAM (fac);
-   BSON_ASSERT (fac_userdata || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (fac_userdata);
+   BSON_OPTIONAL_PARAM (error);
    bsonVisitEach (*in_field,
                   // If it is not a "keyId":null element, just copy it to the output.
                   if (not(keyWithType ("keyId", null)), then (appendTo (*out_field), continue)),
@@ -2923,8 +2935,8 @@ _init_encryptedFields (
    BSON_ASSERT_PARAM (out_fields);
    BSON_ASSERT_PARAM (in_fields);
    BSON_ASSERT_PARAM (fac);
-   BSON_ASSERT (fac_userdata || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (fac_userdata);
+   BSON_OPTIONAL_PARAM (error);
    // Ref to one encyrptedField
    bson_t cur_field;
    bsonVisitEach (

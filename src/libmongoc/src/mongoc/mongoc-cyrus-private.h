@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,8 @@ struct _mongoc_cyrus_t {
 #define SASL_CALLBACK_FN(_f) ((int (*) (void)) ((void (*) (void)) (_f)))
 #endif
 
+int
+_mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t type);
 void
 _mongoc_cyrus_init (mongoc_cyrus_t *sasl);
 bool

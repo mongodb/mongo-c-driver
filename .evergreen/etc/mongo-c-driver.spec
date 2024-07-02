@@ -10,13 +10,19 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.26.0
+%global up_version   1.27.2
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
 
 # disable for bootstrap (libmongocrypt needs libbson)
 %bcond_without       libmongocrypt
+
+%if 0%{?rhel} == 8
+%bcond_with          libutf8proc
+%else
+%bcond_without       libutf8proc
+%endif
 
 Name:      mongo-c-driver
 Summary:   Client library written in C for MongoDB
@@ -37,7 +43,9 @@ BuildRequires: openssl-devel
 BuildRequires: pkgconfig(libsasl2)
 BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(snappy)
+%if %{with libutf8proc}
 BuildRequires: pkgconfig(libutf8proc)
+%endif
 BuildRequires: pkgconfig(libzstd) >= 0.8.0
 %if %{with tests}
 BuildRequires: mongodb-server
@@ -45,7 +53,7 @@ BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
 # grep VERSION_LESS src/*/CMakeLists.txt
-BuildRequires: cmake(mongocrypt) >= 1.8.0
+BuildRequires: cmake(mongocrypt) >= 1.10.0
 %endif
 BuildRequires: perl-interpreter
 # From man pages
@@ -65,6 +73,10 @@ Provides:   %{name}-tools%{?_isa} = %{version}
 
 %package libs
 Summary:    Shared libraries for %{name}
+%if %{without libutf8proc}
+Provides:   bundled(libutf8proc) = 2.8.0
+%endif
+Provides:   bundled(uthash) = 2.3.0
 
 %description libs
 This package contains the shared libraries for %{name}.
@@ -146,7 +158,11 @@ Documentation: http://mongoc.org/libbson/%{version}/
     -DENABLE_CLIENT_SIDE_ENCRYPTION:BOOL=OFF \
 %endif
     -DCMAKE_SKIP_RPATH:BOOL=ON \
+%if %{with libutf8proc}
     -DUSE_BUNDLED_UTF8PROC:BOOL=OFF \
+%else
+    -DUSE_BUNDLED_UTF8PROC:BOOL=ON \
+%endif
     -DENABLE_SRV:BOOL=ON \
     -DENABLE_MONGODB_AWS_AUTH:STRING=ON \
     -S .
@@ -243,6 +259,22 @@ exit $ret
 
 
 %changelog
+* Wed Jun  5 2024 Remi Collet <remi@remirepo.net> - 1.27.2-1
+- update to 1.27.2
+
+* Mon May 13 2024 Remi Collet <remi@remirepo.net> - 1.27.1-1
+- update to 1.27.1
+
+* Thu May  2 2024 Remi Collet <remi@remirepo.net> - 1.27.0-1
+- update to 1.27.0
+- raise dependency to libmongocrypt 1.10.0
+
+* Wed Apr  3 2024 Remi Collet <remi@remirepo.net> - 1.26.2-1
+- update to 1.26.2
+
+* Wed Mar  6 2024 Remi Collet <remi@remirepo.net> - 1.26.1-1
+- update to 1.26.1
+
 * Fri Feb 16 2024 Remi Collet <remi@remirepo.net> - 1.26.0-1
 - update to 1.26.0
 - raise dependency to libmongocrypt 1.8.0

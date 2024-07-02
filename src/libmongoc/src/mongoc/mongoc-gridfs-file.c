@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -838,6 +838,18 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
             }
          } else if (strcmp (key, "data") == 0) {
             bson_iter_binary (&iter, NULL, &len, &data);
+            // If this not the last chunk, ensure length is equal to chunk size.
+            bool is_last_chunk = ((file->n + 1) == existing_chunks);
+            // If this is not the last chunk, error.
+            if (!is_last_chunk && bson_cmp_not_equal_us (len, file->chunk_size)) {
+               bson_set_error (&file->error,
+                               MONGOC_ERROR_GRIDFS,
+                               MONGOC_ERROR_GRIDFS_CORRUPT,
+                               "corrupt chunk number %" PRId32 ": not equal to chunk size: %" PRId32,
+                               file->n,
+                               file->chunk_size);
+               RETURN (0);
+            }
          } else {
             /* Unexpected key. This should never happen */
             RETURN (0);
@@ -853,7 +865,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       bson_set_error (&file->error,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
-                      "corrupt chunk number %" PRId32,
+                      "corrupt chunk number %" PRId32 ": no data",
                       file->n);
       RETURN (0);
    }
@@ -862,8 +874,9 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       bson_set_error (&file->error,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "corrupt chunk number %" PRId32 ": bad size",
-                      file->n);
+                      "corrupt chunk number %" PRId32 ": greater than chunk size: %" PRId32,
+                      file->n,
+                      file->chunk_size);
       RETURN (0);
    }
 

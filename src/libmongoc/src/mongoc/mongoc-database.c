@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1197,9 +1197,9 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
    BSON_ASSERT_PARAM (client);
    BSON_ASSERT_PARAM (dbName);
    BSON_ASSERT_PARAM (collName);
-   BSON_ASSERT (opts || true);
+   BSON_OPTIONAL_PARAM (opts);
    BSON_ASSERT_PARAM (encryptedFields);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    bson_init (encryptedFields); // Initially empty
 
@@ -1248,8 +1248,8 @@ mongoc_database_create_collection (mongoc_database_t *database,
 {
    BSON_ASSERT_PARAM (database);
    BSON_ASSERT_PARAM (name);
-   BSON_ASSERT (opts || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (opts);
+   BSON_OPTIONAL_PARAM (error);
 
    bson_t encryptedFields = BSON_INITIALIZER;
    if (!_mongoc_get_collection_encryptedFields (database->client,

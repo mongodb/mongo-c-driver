@@ -42,7 +42,7 @@ As of 1.4.0, the :symbol:`mongoc_client_pool_set_ssl_opts` and :symbol:`mongoc_c
 
 .. seealso::
 
-  | :doc:`configuring_tls`
+  | `Configuring TLS <configuring_tls_>`_
 
   | :doc:`mongoc_client_set_ssl_opts`
 

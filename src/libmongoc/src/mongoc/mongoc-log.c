@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@
 static bson_once_t once = BSON_ONCE_INIT;
 static bson_mutex_t gLogMutex;
 static mongoc_log_func_t gLogFunc = mongoc_log_default_handler;
-static bool gLogTrace = MONGOC_TRACE_ENABLED;
+bool gLogTrace = MONGOC_TRACE_ENABLED;
 static void *gLogData;
 
 static BSON_ONCE_FUN (_mongoc_ensure_mutex_once)

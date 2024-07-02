@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #include "operation.h"
 
 #include "mongoc-array-private.h"
+#include "mongoc-bulkwrite.h"
 #include "mongoc-util-private.h" // hex_to_bin
 #include "result.h"
 #include "test-diagnostics.h"
@@ -218,6 +219,285 @@ operation_list_database_names (test_t *test, operation_t *op, result_t *result, 
    ret = true;
 done:
    bson_destroy (opts);
+   return ret;
+}
+
+static bool
+append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bson_error_t *error)
+{
+   bool ok = false;
+   // Example `model_wrapper`:
+   // { "insertOne": { "namespace": "db.coll", "document": { "_id": 1 } }}
+   char *namespace = NULL;
+   bson_t *document = NULL;
+   bson_t *filter = NULL;
+   bson_t *update = NULL;
+   bson_t *replacement = NULL;
+   bson_t *collation = NULL;
+   bson_val_t *hint = NULL;
+   bool *upsert = NULL;
+   bson_t *arrayFilters = NULL;
+   bson_parser_t *parser = bson_parser_new ();
+
+   // Expect exactly one root key to identify the model (e.g. "insertOne"):
+   if (bson_count_keys (model_wrapper) != 1) {
+      test_set_error (error,
+                      "expected exactly one key in model, got %" PRIu32 " : %s",
+                      bson_count_keys (model_wrapper),
+                      tmp_json (model_wrapper));
+      goto done;
+   }
+   bson_iter_t model_wrapper_iter;
+   BSON_ASSERT (bson_iter_init (&model_wrapper_iter, model_wrapper));
+   BSON_ASSERT (bson_iter_next (&model_wrapper_iter));
+   const char *model_name = bson_iter_key (&model_wrapper_iter);
+   bson_t model_bson;
+   bson_iter_bson (&model_wrapper_iter, &model_bson);
+
+   if (0 == strcmp ("insertOne", model_name)) {
+      // Parse an "insertOne".
+      bson_parser_utf8 (parser, "namespace", &namespace);
+      bson_parser_doc (parser, "document", &document);
+      if (!bson_parser_parse (parser, &model_bson, error)) {
+         goto done;
+      }
+
+      if (!mongoc_bulkwrite_append_insertone (bw, namespace, document, NULL, error)) {
+         goto done;
+      }
+   } else if (0 == strcmp ("updateOne", model_name)) {
+      // Parse an "updateOne".
+      bson_parser_utf8 (parser, "namespace", &namespace);
+      bson_parser_doc (parser, "filter", &filter);
+      bson_parser_array_or_doc (parser, "update", &update);
+      bson_parser_array_optional (parser, "arrayFilters", &arrayFilters);
+      bson_parser_doc_optional (parser, "collation", &collation);
+      bson_parser_any_optional (parser, "hint", &hint);
+      bson_parser_bool_optional (parser, "upsert", &upsert);
+      if (!bson_parser_parse (parser, &model_bson, error)) {
+         goto done;
+      }
+
+      mongoc_bulkwrite_updateoneopts_t *opts = mongoc_bulkwrite_updateoneopts_new ();
+      mongoc_bulkwrite_updateoneopts_set_arrayfilters (opts, arrayFilters);
+      mongoc_bulkwrite_updateoneopts_set_collation (opts, collation);
+      if (hint) {
+         mongoc_bulkwrite_updateoneopts_set_hint (opts, bson_val_to_value (hint));
+      }
+      if (upsert) {
+         mongoc_bulkwrite_updateoneopts_set_upsert (opts, *upsert);
+      }
+
+      if (!mongoc_bulkwrite_append_updateone (bw, namespace, filter, update, opts, error)) {
+         mongoc_bulkwrite_updateoneopts_destroy (opts);
+         goto done;
+      }
+      mongoc_bulkwrite_updateoneopts_destroy (opts);
+   } else if (0 == strcmp ("updateMany", model_name)) {
+      // Parse an "updateMany".
+      bson_parser_utf8 (parser, "namespace", &namespace);
+      bson_parser_doc (parser, "filter", &filter);
+      bson_parser_array_or_doc (parser, "update", &update);
+      bson_parser_array_optional (parser, "arrayFilters", &arrayFilters);
+      bson_parser_doc_optional (parser, "collation", &collation);
+      bson_parser_any_optional (parser, "hint", &hint);
+      bson_parser_bool_optional (parser, "upsert", &upsert);
+      if (!bson_parser_parse (parser, &model_bson, error)) {
+         goto done;
+      }
+
+      mongoc_bulkwrite_updatemanyopts_t *opts = mongoc_bulkwrite_updatemanyopts_new ();
+      mongoc_bulkwrite_updatemanyopts_set_arrayfilters (opts, arrayFilters);
+      mongoc_bulkwrite_updatemanyopts_set_collation (opts, collation);
+      if (hint) {
+         mongoc_bulkwrite_updatemanyopts_set_hint (opts, bson_val_to_value (hint));
+      }
+      if (upsert) {
+         mongoc_bulkwrite_updatemanyopts_set_upsert (opts, *upsert);
+      }
+
+      if (!mongoc_bulkwrite_append_updatemany (bw, namespace, filter, update, opts, error)) {
+         mongoc_bulkwrite_updatemanyopts_destroy (opts);
+         goto done;
+      }
+      mongoc_bulkwrite_updatemanyopts_destroy (opts);
+   } else if (0 == strcmp ("deleteOne", model_name)) {
+      // Parse a "deleteOne".
+      bson_parser_utf8 (parser, "namespace", &namespace);
+      bson_parser_doc (parser, "filter", &filter);
+      bson_parser_doc_optional (parser, "collation", &collation);
+      bson_parser_any_optional (parser, "hint", &hint);
+      if (!bson_parser_parse (parser, &model_bson, error)) {
+         goto done;
+      }
+
+      mongoc_bulkwrite_deleteoneopts_t *opts = mongoc_bulkwrite_deleteoneopts_new ();
+      mongoc_bulkwrite_deleteoneopts_set_collation (opts, collation);
+      if (hint) {
+         mongoc_bulkwrite_deleteoneopts_set_hint (opts, bson_val_to_value (hint));
+      }
+
+      if (!mongoc_bulkwrite_append_deleteone (bw, namespace, filter, opts, error)) {
+         mongoc_bulkwrite_deleteoneopts_destroy (opts);
+         goto done;
+      }
+      mongoc_bulkwrite_deleteoneopts_destroy (opts);
+   } else if (0 == strcmp ("deleteMany", model_name)) {
+      // Parse a "deleteMany".
+      bson_parser_utf8 (parser, "namespace", &namespace);
+      bson_parser_doc (parser, "filter", &filter);
+      bson_parser_doc_optional (parser, "collation", &collation);
+      bson_parser_any_optional (parser, "hint", &hint);
+      if (!bson_parser_parse (parser, &model_bson, error)) {
+         goto done;
+      }
+
+      mongoc_bulkwrite_deletemanyopts_t *opts = mongoc_bulkwrite_deletemanyopts_new ();
+      mongoc_bulkwrite_deletemanyopts_set_collation (opts, collation);
+      if (hint) {
+         mongoc_bulkwrite_deletemanyopts_set_hint (opts, bson_val_to_value (hint));
+      }
+
+      if (!mongoc_bulkwrite_append_deletemany (bw, namespace, filter, opts, error)) {
+         mongoc_bulkwrite_deletemanyopts_destroy (opts);
+         goto done;
+      }
+      mongoc_bulkwrite_deletemanyopts_destroy (opts);
+   } else if (0 == strcmp ("replaceOne", model_name)) {
+      // Parse a "replaceOne".
+      bson_parser_utf8 (parser, "namespace", &namespace);
+      bson_parser_doc (parser, "filter", &filter);
+      bson_parser_doc (parser, "replacement", &replacement);
+      bson_parser_doc_optional (parser, "collation", &collation);
+      bson_parser_bool_optional (parser, "upsert", &upsert);
+      bson_parser_any_optional (parser, "hint", &hint);
+      if (!bson_parser_parse (parser, &model_bson, error)) {
+         goto done;
+      }
+
+      mongoc_bulkwrite_replaceoneopts_t *opts = mongoc_bulkwrite_replaceoneopts_new ();
+      mongoc_bulkwrite_replaceoneopts_set_collation (opts, collation);
+      if (hint) {
+         mongoc_bulkwrite_replaceoneopts_set_hint (opts, bson_val_to_value (hint));
+      }
+      if (upsert) {
+         mongoc_bulkwrite_replaceoneopts_set_upsert (opts, *upsert);
+      }
+
+      if (!mongoc_bulkwrite_append_replaceone (bw, namespace, filter, replacement, opts, error)) {
+         mongoc_bulkwrite_replaceoneopts_destroy (opts);
+         goto done;
+      }
+      mongoc_bulkwrite_replaceoneopts_destroy (opts);
+   } else {
+      test_set_error (error, "unsupported model: %s", model_name);
+      goto done;
+   }
+
+   ok = true;
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+   return ok;
+}
+
+static bool
+operation_client_bulkwrite (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_client_t *client = NULL;
+   mongoc_bulkwrite_t *bw = NULL;
+   mongoc_bulkwriteopts_t *opts = mongoc_bulkwriteopts_new ();
+
+   client = entity_map_get_client (test->entity_map, op->object, error);
+   if (!client) {
+      goto done;
+   }
+
+   int64_t nmodels = 0;
+
+   // Parse arguments.
+   {
+      bool parse_ok = false;
+      bson_t *args_models = NULL;
+      bool *args_verboseResults = NULL;
+      bool *args_ordered = NULL;
+      bson_val_t *args_comment = NULL;
+      bool *args_bypassDocumentValidation = NULL;
+      bson_t *args_let = NULL;
+      mongoc_write_concern_t *args_wc = NULL;
+      bson_parser_t *parser = bson_parser_new ();
+
+      bson_parser_array (parser, "models", &args_models);
+      bson_parser_bool_optional (parser, "verboseResults", &args_verboseResults);
+      bson_parser_bool_optional (parser, "ordered", &args_ordered);
+      bson_parser_any_optional (parser, "comment", &args_comment);
+      bson_parser_bool_optional (parser, "bypassDocumentValidation", &args_bypassDocumentValidation);
+      bson_parser_doc_optional (parser, "let", &args_let);
+      bson_parser_write_concern_optional (parser, &args_wc);
+      if (!bson_parser_parse (parser, op->arguments, error)) {
+         goto parse_done;
+      }
+      if (args_verboseResults && *args_verboseResults) {
+         mongoc_bulkwriteopts_set_verboseresults (opts, true);
+      }
+      if (args_ordered) {
+         mongoc_bulkwriteopts_set_ordered (opts, *args_ordered);
+      }
+      if (args_comment) {
+         mongoc_bulkwriteopts_set_comment (opts, bson_val_to_value (args_comment));
+      }
+      if (args_bypassDocumentValidation) {
+         mongoc_bulkwriteopts_set_bypassdocumentvalidation (opts, *args_bypassDocumentValidation);
+      }
+      if (args_let) {
+         mongoc_bulkwriteopts_set_let (opts, args_let);
+      }
+      if (args_wc) {
+         mongoc_bulkwriteopts_set_writeconcern (opts, args_wc);
+      }
+
+      // Parse models.
+      bson_iter_t args_models_iter;
+      BSON_ASSERT (bson_iter_init (&args_models_iter, args_models));
+      bw = mongoc_client_bulkwrite_new (client);
+      while (bson_iter_next (&args_models_iter)) {
+         nmodels++;
+         bson_t model_wrapper;
+         bson_iter_bson (&args_models_iter, &model_wrapper);
+         if (!append_client_bulkwritemodel (bw, &model_wrapper, error)) {
+            if (error->domain != TEST_ERROR_DOMAIN) {
+               // Propagate error as a test result.
+               result_from_val_and_reply (result, NULL, NULL, error);
+               // Return with a success (to not abort test runner) and propagate
+               // the error as a result.
+               ret = true;
+               *error = (bson_error_t){0};
+               bson_parser_destroy_with_parsed_fields (parser);
+               goto done;
+            }
+            goto parse_done;
+         }
+      }
+
+      parse_ok = true;
+   parse_done:
+      bson_parser_destroy_with_parsed_fields (parser);
+      if (!parse_ok) {
+         goto done;
+      }
+   }
+
+   // Do client bulk write.
+   mongoc_bulkwrite_set_session (bw, op->session);
+   mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, opts);
+
+   result_from_bulkwritereturn (result, bwr, nmodels);
+   mongoc_bulkwriteexception_destroy (bwr.exc);
+   mongoc_bulkwriteresult_destroy (bwr.res);
+   ret = true;
+done:
+   mongoc_bulkwriteopts_destroy (opts);
+   mongoc_bulkwrite_destroy (bw);
    return ret;
 }
 
@@ -2609,6 +2889,9 @@ operation_start_transaction (test_t *test, operation_t *op, result_t *result, bs
    bson_parser_read_concern_optional (bp, &rc);
    bson_parser_write_concern_optional (bp, &wc);
    bson_parser_read_prefs_optional (bp, &rp);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
    if (rc) {
       mongoc_transaction_opts_set_read_concern (opts, rc);
    }
@@ -3006,8 +3289,8 @@ static bool
 create_loop_bson_array_entity (entity_map_t *em, const char *id, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (em);
-   BSON_ASSERT (id || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (id);
+   BSON_OPTIONAL_PARAM (error);
 
    if (!id) {
       // Nothing to do.
@@ -3040,8 +3323,8 @@ static bool
 create_loop_size_t_entity (entity_map_t *em, const char *id, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (em);
-   BSON_ASSERT (id || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (id);
+   BSON_OPTIONAL_PARAM (error);
 
    if (!id) {
       return true;
@@ -3063,7 +3346,7 @@ static void
 increment_loop_counter (entity_map_t *em, const char *id)
 {
    BSON_ASSERT_PARAM (em);
-   BSON_ASSERT (id || true);
+   BSON_OPTIONAL_PARAM (id);
 
    if (id) {
       bson_error_t error = {0};
@@ -3080,9 +3363,9 @@ static bool
 append_loop_error (entity_map_t *em, const char *id, bson_error_t *op_error, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (em);
-   BSON_ASSERT (id || true);
+   BSON_OPTIONAL_PARAM (id);
    BSON_ASSERT_PARAM (op_error);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    if (!id) {
       return true;
@@ -3520,6 +3803,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"createChangeStream", operation_create_change_stream},
       {"listDatabases", operation_list_databases},
       {"listDatabaseNames", operation_list_database_names},
+      {"clientBulkWrite", operation_client_bulkwrite},
 
       /* ClientEncryption operations */
       {"createDataKey", operation_create_datakey},

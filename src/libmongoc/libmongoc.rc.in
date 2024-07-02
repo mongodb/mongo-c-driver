@@ -1,6 +1,7 @@
 // Defines Version Information to include in DLL on Windows.
 // Refer: https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource
 #include <winver.h> // Defines VS_VERSION_INFO
+
 #include <mongoc/mongoc-version.h> // Defines MONGOC_MAJOR_VERSION and other version macros.
 
 #define MONGOC_OUTPUT_BASENAME "@MONGOC_OUTPUT_BASENAME@"
@@ -33,7 +34,7 @@ BEGIN
             VALUE "OriginalFilename", MONGOC_OUTPUT_BASENAME "-" MONGOC_API_VERSION ".dll"
             VALUE "ProductName", "MongoDB C Driver"
             VALUE "ProductVersion", MONGOC_VERSION_S
-            VALUE "LegalCopyright", "Copyright (C) 2013-present MongoDB, Inc."
+            VALUE "LegalCopyright", "Copyright 2009-present MongoDB, Inc."
         END
     END
     BLOCK "VarFileInfo"

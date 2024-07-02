@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2017-present MongoDB, Inc.
+# Copyright 2009-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ validate_option = ('validate', {
 
 collation_option = ('collation', {
     'type': 'document',
-    'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://www.mongodb.com/docs/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.'
+    'help': 'Configure textual comparisons. See `Setting Collation Order <setting_collation_order_>`_, and `the MongoDB Manual entry on Collation <https://www.mongodb.com/docs/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.'
 })
 
 array_filters_option = ('arrayFilters', {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,7 +166,9 @@ _prefix_mongocryptd_error (bson_error_t *error)
 {
    char buf[sizeof (error->message)];
 
-   bson_snprintf (buf, sizeof (buf), "mongocryptd error: %s:", error->message);
+   // Truncation is OK.
+   int req = bson_snprintf (buf, sizeof (buf), "mongocryptd error: %s:", error->message);
+   BSON_ASSERT (req > 0);
    memcpy (error->message, buf, sizeof (buf));
 }
 
@@ -175,7 +177,9 @@ _prefix_keyvault_error (bson_error_t *error)
 {
    char buf[sizeof (error->message)];
 
-   bson_snprintf (buf, sizeof (buf), "key vault error: %s:", error->message);
+   // Truncation is OK.
+   int req = bson_snprintf (buf, sizeof (buf), "key vault error: %s:", error->message);
+   BSON_ASSERT (req > 0);
    memcpy (error->message, buf, sizeof (buf));
 }
 
@@ -1073,6 +1077,15 @@ _state_machine_run (_state_machine_t *state_machine, bson_t *result, bson_error_
          break;
       case MONGOCRYPT_CTX_DONE:
          goto success;
+         break;
+      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB is "
+                         "unimplemented");
+         goto fail;
+         break;
       }
    }
 
@@ -1410,6 +1423,11 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    // Enable the NEEDS_CREDENTIALS state for on-demand credential loading
    mongocrypt_setopt_use_need_kms_credentials_state (crypt->handle);
 
+   if (!mongocrypt_setopt_use_range_v2 (crypt->handle)) {
+      _crypt_check_error (crypt->handle, error, true);
+      goto fail;
+   }
+
    if (!mongocrypt_init (crypt->handle)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;
@@ -1567,12 +1585,12 @@ _create_explicit_state_machine (_mongoc_crypt_t *crypt,
 {
    BSON_ASSERT_PARAM (crypt);
    BSON_ASSERT_PARAM (keyvault_coll);
-   BSON_ASSERT (algorithm || true);
-   BSON_ASSERT (keyid || true);
-   BSON_ASSERT (keyaltname || true);
-   BSON_ASSERT (query_type || true);
-   BSON_ASSERT (range_opts || true);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (algorithm);
+   BSON_OPTIONAL_PARAM (keyid);
+   BSON_OPTIONAL_PARAM (keyaltname);
+   BSON_OPTIONAL_PARAM (query_type);
+   BSON_OPTIONAL_PARAM (range_opts);
+   BSON_OPTIONAL_PARAM (error);
 
    _state_machine_t *state_machine = NULL;
    bool ok = false;
@@ -1676,14 +1694,14 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
 {
    BSON_ASSERT_PARAM (crypt);
    BSON_ASSERT_PARAM (keyvault_coll);
-   BSON_ASSERT (algorithm || true);
-   BSON_ASSERT (keyid || true);
-   BSON_ASSERT (keyaltname || true);
-   BSON_ASSERT (query_type || true);
-   BSON_ASSERT (range_opts || true);
+   BSON_OPTIONAL_PARAM (algorithm);
+   BSON_OPTIONAL_PARAM (keyid);
+   BSON_OPTIONAL_PARAM (keyaltname);
+   BSON_OPTIONAL_PARAM (query_type);
+   BSON_OPTIONAL_PARAM (range_opts);
    BSON_ASSERT_PARAM (value_in);
    BSON_ASSERT_PARAM (value_out);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    _state_machine_t *state_machine = NULL;
    bson_t *to_encrypt_doc = NULL;
@@ -1751,14 +1769,14 @@ _mongoc_crypt_explicit_encrypt_expression (_mongoc_crypt_t *crypt,
 {
    BSON_ASSERT_PARAM (crypt);
    BSON_ASSERT_PARAM (keyvault_coll);
-   BSON_ASSERT (algorithm || true);
-   BSON_ASSERT (keyid || true);
-   BSON_ASSERT (keyaltname || true);
-   BSON_ASSERT (query_type || true);
-   BSON_ASSERT (range_opts || true);
+   BSON_OPTIONAL_PARAM (algorithm);
+   BSON_OPTIONAL_PARAM (keyid);
+   BSON_OPTIONAL_PARAM (keyaltname);
+   BSON_OPTIONAL_PARAM (query_type);
+   BSON_OPTIONAL_PARAM (range_opts);
    BSON_ASSERT_PARAM (expr_in);
    BSON_ASSERT_PARAM (expr_out);
-   BSON_ASSERT (error || true);
+   BSON_OPTIONAL_PARAM (error);
 
    _state_machine_t *state_machine = NULL;
    bson_t *to_encrypt_doc = NULL;

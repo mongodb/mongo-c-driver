@@ -20,11 +20,19 @@ on_exit () {
 }
 trap on_exit EXIT
 
+git config user.email "evergreen-build@example.com"
+git config user.name "Evergreen Build"
+
 if [ "${IS_PATCH}" = "true" ]; then
-  git diff HEAD -- . ':!debian' > ../upstream.patch
-  git diff HEAD -- debian > ../debian.patch
+  git diff HEAD > ../upstream.patch
   git clean -fdx
   git reset --hard HEAD
+  git remote add upstream https://github.com/mongodb/mongo-c-driver
+  git fetch upstream
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  git checkout upstream/debian/unstable
+  git checkout ${CURRENT_BRANCH}
+  git checkout upstream/debian/unstable -- ./debian/
   if [ -s ../upstream.patch ]; then
     [ -d debian/patches ] || mkdir debian/patches
     mv ../upstream.patch debian/patches/
@@ -33,33 +41,32 @@ if [ "${IS_PATCH}" = "true" ]; then
     git commit -m 'Evergreen patch build - upstream changes'
     git log -n1 -p
   fi
-  if [ -s ../debian.patch ]; then
-    git apply --index ../debian.patch
-    git commit -m 'Evergreen patch build - Debian packaging changes'
-    git log -n1 -p
-  fi
 fi
 
 cd ..
 
 git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.git
 export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
-sudo -E ./debootstrap.git/debootstrap unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
+sudo -E ./debootstrap.git/debootstrap --variant=buildd unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-chroot/tmp/
-sudo chroot ./unstable-chroot /bin/bash -c "(\
-  apt-get install -y build-essential git-buildpackage fakeroot debhelper cmake libssl-dev pkg-config python3-sphinx python3-sphinx-design zlib1g-dev libsasl2-dev libsnappy-dev libzstd-dev libmongocrypt-dev libjs-mathjax libutf8proc-dev furo && \
+sudo chroot ./unstable-chroot /bin/bash -c '(\
+  apt-get install -y build-essential git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax && \
   chown -R root:root /tmp/mongoc && \
   cd /tmp/mongoc && \
   git clean -fdx && \
   git reset --hard HEAD && \
-  python3 build/calc_release_version.py > VERSION_CURRENT && \
-  python3 build/calc_release_version.py -p > VERSION_RELEASED && \
-  git add --force VERSION_CURRENT VERSION_RELEASED && \
-  git commit VERSION_CURRENT VERSION_RELEASED -m 'Set current/released versions' && \
+  git remote remove upstream || true && \
+  git remote add upstream https://github.com/mongodb/mongo-c-driver && \
+  git fetch upstream && \
+  export CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)" && \
+  git checkout upstream/debian/unstable && \
+  git checkout ${CURRENT_BRANCH} && \
+  git checkout upstream/debian/unstable -- ./debian/ && \
+  git commit -m "fetch debian directory from the debian/unstable branch" && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \
-  gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )"
+  gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )'
 
 [ -e ./unstable-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
 (cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
@@ -72,22 +79,26 @@ sudo chroot ./unstable-chroot /bin/bash -c "(\
   dpkg-buildpackage -b && dpkg-buildpackage -S )"
 
 # And now do it all again for 32-bit
-sudo -E ./debootstrap.git/debootstrap --arch i386 unstable ./unstable-i386-chroot/ http://cdn-aws.deb.debian.org/debian
+sudo -E ./debootstrap.git/debootstrap --variant=buildd --arch i386 unstable ./unstable-i386-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-i386-chroot/tmp/
-sudo chroot ./unstable-i386-chroot /bin/bash -c "(\
-  apt-get install -y build-essential git-buildpackage fakeroot debhelper cmake libssl-dev pkg-config python3-sphinx python3-sphinx-design zlib1g-dev libsasl2-dev libsnappy-dev libzstd-dev libmongocrypt-dev libjs-mathjax libutf8proc-dev furo && \
+sudo chroot ./unstable-i386-chroot /bin/bash -c '(\
+  apt-get install -y build-essential git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax && \
   chown -R root:root /tmp/mongoc && \
   cd /tmp/mongoc && \
   git clean -fdx && \
   git reset --hard HEAD && \
-  python3 build/calc_release_version.py > VERSION_CURRENT && \
-  python3 build/calc_release_version.py -p > VERSION_RELEASED && \
-  git add --force VERSION_CURRENT VERSION_RELEASED && \
-  git commit VERSION_CURRENT VERSION_RELEASED -m 'Set current/released versions' && \
+  git remote remove upstream || true && \
+  git remote add upstream https://github.com/mongodb/mongo-c-driver && \
+  git fetch upstream && \
+  export CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)" && \
+  git checkout upstream/debian/unstable && \
+  git checkout ${CURRENT_BRANCH} && \
+  git checkout upstream/debian/unstable -- ./debian/ && \
+  git commit -m "fetch debian directory from the debian/unstable branch" && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \
-  gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )"
+  gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )'
 
 [ -e ./unstable-i386-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
 (cd ./unstable-i386-chroot/tmp/ ; tar zcvf ../../deb-i386.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)

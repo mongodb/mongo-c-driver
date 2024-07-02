@@ -1,4 +1,4 @@
-/* Copyright 2014 MongoDB, Inc.
+/* Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -339,6 +339,11 @@ _mongoc_scram_start (
       bson_set_error (
          error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: username is not set");
       goto FAIL;
+   }
+
+   if (!scram->pass) {
+      // Apply an empty string as a default.
+      scram->pass = bson_strdup ("");
    }
 
    /* auth message is as big as the outbuf just because */
@@ -994,6 +999,7 @@ _mongoc_scram_step (mongoc_scram_t *scram,
 bool
 _mongoc_sasl_prep_required (const char *str)
 {
+   BSON_ASSERT_PARAM (str);
    unsigned char c;
    while (*str) {
       c = (unsigned char) *str;
@@ -1032,7 +1038,8 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    }
 
    /* convert to unicode. */
-   utf8_codepoints = bson_malloc (sizeof (uint32_t) * (num_chars + 1)); /* add one for trailing 0 value. */
+   BSON_ASSERT (bson_cmp_less_equal_su (num_chars, SIZE_MAX / sizeof (uint32_t) - 1u));
+   utf8_codepoints = bson_malloc (sizeof (uint32_t) * ((size_t) num_chars + 1u)); /* add one for trailing 0 value. */
    const char *c = in_utf8;
 
    for (size_t i = 0; i < num_chars; ++i) {

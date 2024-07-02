@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,7 @@ _mongoc_client_get_rr (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        size_t initial_buffer_size,
+                       bool prefer_tcp,
                        bson_error_t *error);
 
 mongoc_client_t *

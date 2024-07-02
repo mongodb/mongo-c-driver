@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -291,7 +291,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       }
 
       if (server_id) {
-         (void) mongoc_cursor_set_hint (cursor, server_id);
+         (void) mongoc_cursor_set_server_id (cursor, server_id);
       }
 
       // Selectively copy the options:
@@ -725,6 +725,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                       doc (kv ("id", int64 (mongoc_cursor_get_id (cursor))),
                            kv ("ns", utf8_w_len (cursor->ns, cursor->nslen)),
                            kv (first_batch ? "firstBatch" : "nextBatch", bsonArray (docs_array)))));
+   char *db = bson_strndup (cursor->ns, cursor->dblen);
 
    bson_destroy (&docs_array);
 
@@ -732,6 +733,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                                       duration,
                                       &reply,
                                       cmd_name,
+                                      db,
                                       client->cluster.request_id,
                                       cursor->operation_id,
                                       &stream->sd->host,
@@ -745,6 +747,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
 
    mongoc_apm_command_succeeded_cleanup (&event);
    bson_destroy (&reply);
+   bson_free (db);
 
    EXIT;
 }
@@ -771,10 +774,12 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
     * {ok: 0}
     */
    bsonBuildDecl (reply, kv ("ok", int32 (0)));
+   char *db = bson_strndup (cursor->ns, cursor->dblen);
 
    mongoc_apm_command_failed_init (&event,
                                    duration,
                                    cmd_name,
+                                   db,
                                    &cursor->error,
                                    &reply,
                                    client->cluster.request_id,
@@ -790,6 +795,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
 
    mongoc_apm_command_failed_cleanup (&event);
    bson_destroy (&reply);
+   bson_free (db);
 
    EXIT;
 }
@@ -1432,15 +1438,21 @@ mongoc_cursor_get_limit (const mongoc_cursor_t *cursor)
 bool
 mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id)
 {
+   return mongoc_cursor_set_server_id (cursor, server_id);
+}
+
+bool
+mongoc_cursor_set_server_id (mongoc_cursor_t *cursor, uint32_t server_id)
+{
    BSON_ASSERT (cursor);
 
    if (cursor->server_id) {
-      MONGOC_ERROR ("mongoc_cursor_set_hint: server_id already set");
+      MONGOC_ERROR ("mongoc_cursor_set_server_id: server_id already set");
       return false;
    }
 
    if (!server_id) {
-      MONGOC_ERROR ("mongoc_cursor_set_hint: cannot set server_id to 0");
+      MONGOC_ERROR ("mongoc_cursor_set_server_id: cannot set server_id to 0");
       return false;
    }
 
@@ -1452,6 +1464,12 @@ mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id)
 
 uint32_t
 mongoc_cursor_get_hint (const mongoc_cursor_t *cursor)
+{
+   return mongoc_cursor_get_server_id (cursor);
+}
+
+uint32_t
+mongoc_cursor_get_server_id (const mongoc_cursor_t *cursor)
 {
    BSON_ASSERT (cursor);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->assembled.command = NULL;
    parts->assembled.query_flags = MONGOC_QUERY_NONE;
    parts->assembled.op_msg_is_exhaust = false;
-   parts->assembled.payload_identifier = NULL;
-   parts->assembled.payload = NULL;
+   parts->assembled.payloads_count = 0;
    parts->assembled.session = NULL;
    parts->assembled.is_acknowledged = true;
    parts->assembled.is_txn_finish = false;
@@ -949,7 +948,7 @@ mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *parts)
 }
 
 bool
-mongoc_cmd_is_compressible (mongoc_cmd_t *cmd)
+mongoc_cmd_is_compressible (const mongoc_cmd_t *cmd)
 {
    BSON_ASSERT (cmd);
    BSON_ASSERT (cmd->command_name);
@@ -960,27 +959,11 @@ mongoc_cmd_is_compressible (mongoc_cmd_t *cmd)
           !!strcasecmp (cmd->command_name, "createuser") && !!strcasecmp (cmd->command_name, "updateuser");
 }
 
-/*--------------------------------------------------------------------------
- *
- * _mongoc_cmd_append_payload_as_array --
- *    Append a write command payload as an array in a BSON document.
- *    Used by APM and Client-Side Encryption
- *
- * Arguments:
- *    cmd The mongoc_cmd_t, which may contain a payload to be appended.
- *    out A bson_t, which will be appended to if @cmd->payload is set.
- *
- * Pre-conditions:
- *    - @out is initialized.
- *    - cmd has a payload (i.e. is a write command).
- *
- * Post-conditions:
- *    - If @cmd->payload is set, then @out is appended to with the payload
- *      field's name ("documents" if insert, "updates" if update,
- *      "deletes" if delete) an the payload as a BSON array.
- *
- *--------------------------------------------------------------------------
- */
+
+//`_mongoc_cmd_append_payload_as_array` appends document seqence payloads as BSON arrays.
+// `cmd` must contain one or more document sequence payloads (`cmd->payloads_count` > 0).
+// `out` must be initialized by the caller.
+// Used by APM and In-Use Encryption (document sequences are not supported for auto encryption).
 void
 _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
 {
@@ -990,25 +973,28 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
    const char *field_name;
    bson_array_builder_t *bson;
 
-   BSON_ASSERT (cmd->payload && cmd->payload_size);
+   BSON_ASSERT (cmd->payloads_count > 0);
+   BSON_ASSERT (cmd->payloads_count <= MONGOC_CMD_PAYLOADS_COUNT_MAX);
 
-   /* make array from outgoing OP_MSG payload type 1 on an "insert",
-    * "update", or "delete" command. */
-   field_name = _mongoc_get_documents_field_name (cmd->command_name);
-   BSON_ASSERT (field_name);
-   BSON_ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (out, field_name, &bson));
+   for (size_t i = 0; i < cmd->payloads_count; i++) {
+      BSON_ASSERT (cmd->payloads[i].documents && cmd->payloads[i].size);
 
-   pos = cmd->payload;
-   while (pos < cmd->payload + cmd->payload_size) {
-      memcpy (&doc_len, pos, sizeof (doc_len));
-      doc_len = BSON_UINT32_FROM_LE (doc_len);
-      BSON_ASSERT (bson_init_static (&doc, pos, (size_t) doc_len));
-      bson_array_builder_append_document (bson, &doc);
+      // Create a BSON array from a document sequence (OP_MSG Section with payloadType=1).
+      field_name = cmd->payloads[i].identifier;
+      BSON_ASSERT (field_name);
+      BSON_ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (out, field_name, &bson));
 
-      pos += doc_len;
+      pos = cmd->payloads[i].documents;
+      while (pos < cmd->payloads[i].documents + cmd->payloads[i].size) {
+         memcpy (&doc_len, pos, sizeof (doc_len));
+         doc_len = BSON_UINT32_FROM_LE (doc_len);
+         BSON_ASSERT (bson_init_static (&doc, pos, (size_t) doc_len));
+         bson_array_builder_append_document (bson, &doc);
+
+         pos += doc_len;
+      }
+      bson_append_array_builder_end (out, bson);
    }
-
-   bson_append_array_builder_end (out, bson);
 }
 
 /*--------------------------------------------------------------------------

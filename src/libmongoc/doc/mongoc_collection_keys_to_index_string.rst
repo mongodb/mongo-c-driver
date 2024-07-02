@@ -20,7 +20,7 @@ Parameters
 Description
 -----------
 
-This function returns the canonical stringification of a given key specification. See :doc:`manage-collection-indexes` for example usage.
+This function returns the canonical stringification of a given key specification. See `Manage Collection Indexes <manage-collection-indexes_>`_ for example usage.
 
 It is a programming error to call this function on a non-standard index, such one other than a straight index with ascending and descending.
 

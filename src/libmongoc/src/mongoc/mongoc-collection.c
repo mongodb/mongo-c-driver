@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 
+#include "bson/bson.h"
 #include "mongoc-aggregate-private.h"
 #include "mongoc-bulk-operation.h"
 #include "mongoc-bulk-operation-private.h"
@@ -766,57 +767,49 @@ mongoc_collection_estimated_document_count (mongoc_collection_t *coll,
                                             bson_t *reply,
                                             bson_error_t *error)
 {
-   bson_iter_t iter;
-   int64_t count = -1;
-   bool ret;
-   bson_t reply_local;
-   bson_t *reply_ptr;
-   bson_t cmd = BSON_INITIALIZER;
-   mongoc_server_stream_t *server_stream = NULL;
-
    ENTRY;
 
    BSON_ASSERT_PARAM (coll);
 
-   server_stream = mongoc_cluster_stream_for_reads (&coll->client->cluster, read_prefs, NULL, NULL, reply, error);
-
+   // No sessionId allowed
    if (opts && bson_has_field (opts, "sessionId")) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Collection count must not specify explicit session");
-      GOTO (done);
+      RETURN (-1);
    }
 
-   reply_ptr = reply ? reply : &reply_local;
+   // Storage for the reply if no storage was given by caller
+   bson_t reply_local = BSON_INITIALIZER;
+   // Write the reply to either the caller's storage or a local variable
+   bson_t *const reply_ptr = reply ? reply : &reply_local;
 
-   BSON_APPEND_UTF8 (&cmd, "count", coll->collection);
-   ret = _mongoc_client_command_with_opts (coll->client,
-                                           coll->db,
-                                           &cmd,
-                                           MONGOC_CMD_READ,
-                                           opts,
-                                           MONGOC_QUERY_NONE,
-                                           read_prefs,
-                                           coll->read_prefs,
-                                           coll->read_concern,
-                                           coll->write_concern,
-                                           reply_ptr,
-                                           error);
-   if (ret) {
-      if (bson_iter_init_find (&iter, reply_ptr, "n")) {
-         count = bson_iter_as_int64 (&iter);
-      }
-   }
-
-done:
-   if (!reply) {
-      bson_destroy (&reply_local);
-   }
+   // Create and execute a "count" command
+   bsonBuildDecl (cmd, kv ("count", cstr (coll->collection)));
+   const bool command_ok = _mongoc_client_command_with_opts (coll->client,
+                                                             coll->db,
+                                                             &cmd,
+                                                             MONGOC_CMD_READ,
+                                                             opts,
+                                                             MONGOC_QUERY_NONE,
+                                                             read_prefs,
+                                                             coll->read_prefs,
+                                                             coll->read_concern,
+                                                             coll->write_concern,
+                                                             reply_ptr,
+                                                             error);
    bson_destroy (&cmd);
-   mongoc_server_stream_cleanup (server_stream);
 
-   RETURN (count);
+   // Extract the "n" field from the response
+   int64_t ret_count = -1;
+   if (command_ok) {
+      bsonParse (*reply_ptr, find (key ("n"), do (ret_count = bson_iter_as_int64 (&bsonVisitIter))));
+   }
+   // Destroy the local storage. This is a no-op if we used the caller's storage.
+   bson_destroy (&reply_local);
+
+   RETURN (ret_count);
 }
 
 
@@ -1783,6 +1776,7 @@ mongoc_collection_insert_one (
    mongoc_insert_one_opts_t insert_one_opts;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
+   bson_t insert_id = BSON_INITIALIZER;
    bson_t cmd_opts = BSON_INITIALIZER;
    bool ret = false;
 
@@ -1810,7 +1804,8 @@ mongoc_collection_insert_one (
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert_idl (&command, document, &cmd_opts, ++collection->client->cluster.operation_id);
+   _mongoc_write_command_init_insert_one_idl (
+      &command, document, &cmd_opts, &insert_id, ++collection->client->cluster.operation_id);
 
    command.flags.bypass_document_validation = insert_one_opts.bypass;
    _mongoc_collection_write_command_execute_idl (&command, collection, &insert_one_opts.crud, &result);
@@ -1824,11 +1819,17 @@ mongoc_collection_insert_one (
                                        error,
                                        "insertedCount");
 
+   // Only record _id of document if it was actually inserted and reply is non-NULL.
+   if (reply && result.nInserted > 0) {
+      bson_concat (reply, &insert_id);
+   }
+
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
 
 done:
    _mongoc_insert_one_opts_cleanup (&insert_one_opts);
+   bson_destroy (&insert_id);
    bson_destroy (&cmd_opts);
 
    RETURN (ret);
@@ -3130,13 +3131,11 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
 {
    mongoc_cluster_t *cluster;
    mongoc_cmd_parts_t parts;
-   bool is_retryable;
    bson_iter_t iter;
    bson_iter_t inner;
    const char *name;
    bson_t ss_reply;
-   bson_t reply_local;
-   bson_t *reply_ptr;
+   bson_t reply_local = BSON_INITIALIZER;
    bool ret = false;
    bson_t command = BSON_INITIALIZER;
    mongoc_server_stream_t *server_stream = NULL;
@@ -3150,14 +3149,17 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
    BSON_ASSERT_PARAM (query);
    BSON_ASSERT_PARAM (opts);
 
-   reply_ptr = reply ? reply : &reply_local;
+   if (reply) {
+      bson_init (reply);
+   } else {
+      // Caller did not pass an output `reply`. Use a local `reply` to determine if a server error is retryable.
+      reply = &reply_local;
+   }
    cluster = &collection->client->cluster;
 
    mongoc_cmd_parts_init (&parts, collection->client, collection->db, MONGOC_QUERY_NONE, &command);
    parts.is_read_command = true;
    parts.is_write_command = true;
-
-   bson_init (reply_ptr);
 
    if (!_mongoc_find_and_modify_appended_opts_parse (cluster->client, &opts->extra, &appended_opts, error)) {
       GOTO (done);
@@ -3166,7 +3168,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
    server_stream = mongoc_cluster_stream_for_writes (cluster, appended_opts.client_session, NULL, &ss_reply, error);
 
    if (!server_stream) {
-      bson_concat (reply_ptr, &ss_reply);
+      bson_concat (reply, &ss_reply);
       bson_destroy (&ss_reply);
       GOTO (done);
    }
@@ -3282,86 +3284,11 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
       GOTO (done);
    }
 
-   is_retryable = parts.is_retryable_write;
+   bson_destroy (reply);
+   ret = mongoc_cluster_run_retryable_write (
+      cluster, &parts.assembled, parts.is_retryable_write, &retry_server_stream, reply, error);
 
-   /* increment the transaction number for the first attempt of each retryable
-    * write command */
-   if (is_retryable) {
-      bson_iter_t txn_number_iter;
-      BSON_ASSERT (bson_iter_init_find (&txn_number_iter, parts.assembled.command, "txnNumber"));
-      bson_iter_overwrite_int64 (&txn_number_iter, ++parts.assembled.session->server_session->txn_number);
-   }
-
-   // Store the original error and reply if needed.
-   struct {
-      bson_t reply;
-      bson_error_t error;
-      bool set;
-   } original_error = {.reply = {0}, .error = {0}, .set = false};
-
-retry:
-   bson_destroy (reply_ptr);
-   ret = mongoc_cluster_run_command_monitored (cluster, &parts.assembled, reply_ptr, error);
-
-   if (parts.is_retryable_write) {
-      _mongoc_write_error_handle_labels (ret, error, reply_ptr, server_stream->sd);
-   }
-
-   if (is_retryable) {
-      _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply_ptr);
-   }
-
-   /* If a retryable error is encountered and the write is retryable, select
-    * a new writable stream and retry. If server selection fails or the selected
-    * server does not support retryable writes, fall through and allow the
-    * original error to be reported. */
-   if (is_retryable && _mongoc_write_error_get_type (reply_ptr) == MONGOC_WRITE_ERR_RETRY) {
-      bson_error_t ignored_error;
-
-      /* each write command may be retried at most once */
-      is_retryable = false;
-
-      {
-         mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new ();
-
-         mongoc_deprioritized_servers_add_if_sharded (ds, server_stream->topology_type, server_stream->sd);
-
-         retry_server_stream =
-            mongoc_cluster_stream_for_writes (cluster, parts.assembled.session, ds, NULL /* reply */, &ignored_error);
-
-         mongoc_deprioritized_servers_destroy (ds);
-      }
-
-      if (retry_server_stream) {
-         parts.assembled.server_stream = retry_server_stream;
-         {
-            // Store the original error and reply before retry.
-            BSON_ASSERT (!original_error.set); // Retry only happens once.
-            original_error.set = true;
-            bson_copy_to (reply_ptr, &original_error.reply);
-            if (error) {
-               original_error.error = *error;
-            }
-         }
-         GOTO (retry);
-      }
-   }
-
-   // If a retry attempt fails with an error labeled NoWritesPerformed,
-   // drivers MUST return the original error.
-   if (original_error.set && mongoc_error_has_label (reply_ptr, "NoWritesPerformed")) {
-      if (error) {
-         *error = original_error.error;
-      }
-      bson_destroy (reply_ptr);
-      bson_copy_to (&original_error.reply, reply_ptr);
-   }
-
-   if (original_error.set) {
-      bson_destroy (&original_error.reply);
-   }
-
-   if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+   if (bson_iter_init_find (&iter, reply, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       const char *errmsg = NULL;
       int32_t code = 0;
 
@@ -3388,9 +3315,7 @@ done:
    }
    mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
-   if (&reply_local == reply_ptr) {
-      bson_destroy (&reply_local);
-   }
+   bson_destroy (&reply_local);
    _mongoc_find_and_modify_appended_opts_cleanup (&appended_opts);
    RETURN (ret);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,7 +170,8 @@ txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data,
  */
 
 static bool
-_mongoc_get_rr_dnsapi (const char *hostname, mongoc_rr_type_t rr_type, mongoc_rr_data_t *rr_data, bson_error_t *error)
+_mongoc_get_rr_dnsapi (
+   const char *hostname, mongoc_rr_type_t rr_type, mongoc_rr_data_t *rr_data, bool prefer_tcp, bson_error_t *error)
 {
    const char *rr_type_name;
    WORD nst;
@@ -198,7 +199,11 @@ _mongoc_get_rr_dnsapi (const char *hostname, mongoc_rr_type_t rr_type, mongoc_rr
       callback = txt_callback;
    }
 
-   res = DnsQuery_UTF8 (hostname, nst, DNS_QUERY_BYPASS_CACHE, NULL /* IP Address */, &pdns, 0 /* reserved */);
+   DWORD options = DNS_QUERY_BYPASS_CACHE;
+   if (prefer_tcp) {
+      options |= DNS_QUERY_USE_TCP_ONLY;
+   }
+   res = DnsQuery_UTF8 (hostname, nst, options, NULL /* IP Address */, &pdns, 0 /* reserved */);
 
    if (res) {
       DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
@@ -386,6 +391,7 @@ _mongoc_get_rr_search (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        size_t initial_buffer_size,
+                       bool prefer_tcp,
                        bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_RES_NSEARCH
@@ -438,6 +444,9 @@ _mongoc_get_rr_search (const char *hostname,
 #ifdef MONGOC_HAVE_RES_NSEARCH
       /* thread-safe */
       res_ninit (&state);
+      if (prefer_tcp) {
+         state.options |= RES_USEVC;
+      }
       size = res_nsearch (&state, hostname, ns_c_in, nst, search_buf, buffer_size);
 #elif defined(MONGOC_HAVE_RES_SEARCH)
       size = res_search (hostname, ns_c_in, nst, search_buf, buffer_size);
@@ -551,6 +560,7 @@ _mongoc_client_get_rr (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        size_t initial_buffer_size,
+                       bool prefer_tcp,
                        bson_error_t *error)
 {
    BSON_ASSERT (rr_data);
@@ -563,9 +573,9 @@ _mongoc_client_get_rr (const char *hostname,
                    "libresolv unavailable, cannot use mongodb+srv URI");
    return false;
 #elif defined(MONGOC_HAVE_DNSAPI)
-   return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, error);
+   return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, prefer_tcp, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
-   return _mongoc_get_rr_search (hostname, rr_type, rr_data, initial_buffer_size, error);
+   return _mongoc_get_rr_search (hostname, rr_type, rr_data, initial_buffer_size, prefer_tcp, error);
 #else
 #error No SRV library is available, but ENABLE_SRV is true!
 #endif
@@ -608,7 +618,9 @@ mongoc_client_connect_tcp (int32_t connecttimeoutms, const mongoc_host_list_t *h
    BSON_ASSERT (connecttimeoutms);
    BSON_ASSERT (host);
 
-   bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
+   // Expect no truncation.
+   int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
+   BSON_ASSERT (bson_cmp_less_su (req, sizeof portstr));
 
    memset (&hints, 0, sizeof hints);
    hints.ai_family = host->family;
@@ -702,7 +714,13 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
 
    memset (&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
-   bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
+   // Expect no truncation.
+   int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
+
+   if (bson_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
+      RETURN (NULL);
+   }
 
    sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
 
@@ -1124,6 +1142,13 @@ mongoc_client_destroy (mongoc_client_t *client)
    }
 }
 
+
+void
+mongoc_client_set_sockettimeoutms (mongoc_client_t *client, int32_t timeoutms)
+{
+   BSON_ASSERT_PARAM (client);
+   mongoc_cluster_set_sockettimeoutms (&client->cluster, timeoutms);
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -1555,109 +1580,6 @@ mongoc_client_command (mongoc_client_t *client,
 
 
 static bool
-_mongoc_client_retryable_write_command_with_stream (mongoc_client_t *client,
-                                                    mongoc_cmd_parts_t *parts,
-                                                    mongoc_server_stream_t *server_stream,
-                                                    bson_t *reply,
-                                                    bson_error_t *error)
-{
-   mongoc_server_stream_t *retry_server_stream = NULL;
-   bson_iter_t txn_number_iter;
-   bool is_retryable = true;
-   bool ret;
-
-   ENTRY;
-
-   BSON_ASSERT_PARAM (client);
-   BSON_ASSERT (parts->is_retryable_write);
-
-   /* increment the transaction number for the first attempt of each retryable
-    * write command */
-   BSON_ASSERT (bson_iter_init_find (&txn_number_iter, parts->assembled.command, "txnNumber"));
-   bson_iter_overwrite_int64 (&txn_number_iter, ++parts->assembled.session->server_session->txn_number);
-
-   // Store the original error and reply if needed.
-   struct {
-      bson_t reply;
-      bson_error_t error;
-      bool set;
-   } original_error = {.reply = {0}, .error = {0}, false};
-
-retry:
-   ret = mongoc_cluster_run_command_monitored (&client->cluster, &parts->assembled, reply, error);
-
-   _mongoc_write_error_handle_labels (ret, error, reply, server_stream->sd);
-
-   if (is_retryable) {
-      _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply);
-   }
-
-   /* If a retryable error is encountered and the write is retryable, select
-    * a new writable stream and retry. If server selection fails or the selected
-    * server does not support retryable writes, fall through and allow the
-    * original error to be reported. */
-   if (is_retryable && _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
-      bson_error_t ignored_error;
-
-      // The write command may be retried at most once.
-      is_retryable = false;
-
-      {
-         mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new ();
-
-         mongoc_deprioritized_servers_add_if_sharded (ds, server_stream->topology_type, server_stream->sd);
-
-         BSON_ASSERT (!retry_server_stream);
-         retry_server_stream =
-            mongoc_cluster_stream_for_writes (&client->cluster, parts->assembled.session, ds, NULL, &ignored_error);
-
-         mongoc_deprioritized_servers_destroy (ds);
-      }
-
-      if (retry_server_stream) {
-         parts->assembled.server_stream = retry_server_stream;
-         {
-            // Store the original error and reply before retry.
-            BSON_ASSERT (!original_error.set); // Retry only happens once.
-            original_error.set = true;
-            bson_copy_to (reply, &original_error.reply);
-            if (error) {
-               original_error.error = *error;
-            }
-         }
-         bson_destroy (reply);
-         GOTO (retry);
-      }
-   }
-
-   if (retry_server_stream) {
-      mongoc_server_stream_cleanup (retry_server_stream);
-   }
-
-   // If a retry attempt fails with an error labeled NoWritesPerformed,
-   // drivers MUST return the original error.
-   if (original_error.set && mongoc_error_has_label (reply, "NoWritesPerformed")) {
-      if (error) {
-         *error = original_error.error;
-      }
-      bson_destroy (reply);
-      bson_copy_to (&original_error.reply, reply);
-   }
-
-   if (original_error.set) {
-      bson_destroy (&original_error.reply);
-   }
-
-   if (ret && error) {
-      /* if a retry succeeded, clear the initial error */
-      memset (error, 0, sizeof (bson_error_t));
-   }
-
-   RETURN (ret);
-}
-
-
-static bool
 _mongoc_client_retryable_read_command_with_stream (mongoc_client_t *client,
                                                    mongoc_cmd_parts_t *parts,
                                                    mongoc_server_stream_t *server_stream,
@@ -1750,7 +1672,17 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
    }
 
    if (parts->is_retryable_write) {
-      RETURN (_mongoc_client_retryable_write_command_with_stream (client, parts, server_stream, reply, error));
+      mongoc_server_stream_t *retry_server_stream = NULL;
+
+      bool ret = mongoc_cluster_run_retryable_write (
+         &client->cluster, &parts->assembled, true /* is_retryable */, &retry_server_stream, reply, error);
+
+      if (retry_server_stream) {
+         mongoc_server_stream_cleanup (retry_server_stream);
+         parts->assembled.server_stream = NULL;
+      }
+
+      RETURN (ret);
    }
 
    if (parts->is_retryable_read) {
@@ -2229,7 +2161,8 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
                                                  int64_t duration,
                                                  mongoc_server_stream_t *server_stream,
                                                  int64_t cursor_id,
-                                                 int64_t operation_id)
+                                                 int64_t operation_id,
+                                                 const char *db)
 {
    mongoc_client_t *client;
    bson_t doc;
@@ -2255,6 +2188,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
                                       duration,
                                       &doc,
                                       "killCursors",
+                                      db,
                                       cluster->request_id,
                                       operation_id,
                                       &server_stream->sd->host,
@@ -2276,7 +2210,8 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
                                               int64_t duration,
                                               mongoc_server_stream_t *server_stream,
                                               const bson_error_t *error,
-                                              int64_t operation_id)
+                                              int64_t operation_id,
+                                              const char *db)
 {
    mongoc_client_t *client;
    bson_t doc;
@@ -2297,6 +2232,7 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
    mongoc_apm_command_failed_init (&event,
                                    duration,
                                    "killCursors",
+                                   db,
                                    error,
                                    &doc,
                                    cluster->request_id,
@@ -2325,8 +2261,8 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
 {
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (server_stream);
-   BSON_ASSERT (db || true);
-   BSON_ASSERT (collection || true);
+   BSON_OPTIONAL_PARAM (db);
+   BSON_OPTIONAL_PARAM (collection);
 
    const bool has_ns = db && collection;
    const int64_t started = bson_get_monotonic_time ();
@@ -2357,10 +2293,10 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
    if (has_ns) {
       if (res) {
          _mongoc_client_monitor_op_killcursors_succeeded (
-            cluster, bson_get_monotonic_time () - started, server_stream, cursor_id, operation_id);
+            cluster, bson_get_monotonic_time () - started, server_stream, cursor_id, operation_id, db);
       } else {
          _mongoc_client_monitor_op_killcursors_failed (
-            cluster, bson_get_monotonic_time () - started, server_stream, &error, operation_id);
+            cluster, bson_get_monotonic_time () - started, server_stream, &error, operation_id, db);
       }
    }
 

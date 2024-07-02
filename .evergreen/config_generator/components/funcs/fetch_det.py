@@ -12,7 +12,7 @@ class FetchDET(Function):
             command_type=EvgCommandType.SETUP,
             script='''\
                 if [[ ! -d drivers-evergreen-tools ]]; then
-                    git clone --depth=1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+                    git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
                 fi
             ''',
         ),

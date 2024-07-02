@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1052,6 +1052,57 @@ test_mongoc_handshake_cannot_send (void)
    _reset_handshake ();
 }
 
+/* Test the case where the driver does not raise an error if saslSupportedMechs attribute
+of the initial handshake reply contains an unknown mechanism. */
+static void
+test_mongoc_handshake_no_validation_for_sasl_supported_mech (void)
+{
+   mongoc_client_t *client;
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   /* avoid rare test timeouts */
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 20000);
+
+   client = test_framework_client_new_from_uri (uri, NULL);
+   ASSERT (mongoc_client_set_appname (client, "my app"));
+
+   /* Send a ping where 'saslSupportedMechs' contains an arbitrary string  */
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1, 'saslSupportedMechs': 'unknownMechanism'}"), NULL, NULL, NULL);
+   ASSERT (future);
+   request = mock_server_receives_any_hello (server);
+   ASSERT (request);
+
+   reply_to_request_simple (
+      request, tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}", WIRE_VERSION_MIN, WIRE_VERSION_MAX));
+   request_destroy (request);
+   request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
+
+   ASSERT (request);
+   doc = request_get_doc (request, 0);
+   ASSERT (doc);
+   ASSERT (bson_has_field (doc, "saslSupportedMechs"));
+
+   reply_to_request_simple (request, "{'ok': 1}");
+   ASSERT (future_get_bool (future));
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+
+   ASSERT_NO_CAPTURED_LOGS ("mongoc_handshake_no_validation_for_sasl_supported_mechs");
+}
+
 extern char *
 _mongoc_handshake_get_config_hex_string (void);
 
@@ -1277,6 +1328,9 @@ test_handshake_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/too_big", test_mongoc_handshake_too_big);
    TestSuite_Add (suite, "/MongoDB/handshake/oversized_flags", test_mongoc_oversized_flags);
    TestSuite_AddMockServerTest (suite, "/MongoDB/handshake/cannot_send", test_mongoc_handshake_cannot_send);
+   TestSuite_AddMockServerTest (suite,
+                                "/MongoDB/handshake/no_validation_for_sasl_supported_mech",
+                                test_mongoc_handshake_no_validation_for_sasl_supported_mech);
    TestSuite_Add (suite, "/MongoDB/handshake/platform_config", test_handshake_platform_config);
    TestSuite_Add (suite, "/MongoDB/handshake/race_condition", test_mongoc_handshake_race_condition);
    TestSuite_AddFull (suite,

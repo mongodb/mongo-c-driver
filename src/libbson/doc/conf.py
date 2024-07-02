@@ -15,7 +15,7 @@ extensions = [
 
 # General information about the project.
 project = "libbson"
-copyright = "2017-present, MongoDB, Inc"
+copyright = "2009-present, MongoDB, Inc."
 author = "MongoDB, Inc"
 
 version_path = os.path.join(os.path.dirname(__file__), "../../..", "VERSION_CURRENT")
@@ -34,6 +34,14 @@ html_title = html_shorttitle = "libbson %s" % version
 html_sidebars = {}
 
 html_use_index = False
+
+rst_prolog = rf"""
+
+.. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
+
+.. _errors: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/tutorials/errors/
+
+"""
 
 
 def add_canonical_link(app, pagename, templatename, context, doctree):

@@ -110,7 +110,7 @@ case "$OS" in
       venvcreate "${PYTHON3_BINARY}" venv
       cd venv
       rm -rf mongo-orchestration
-      git clone --depth 1 git@github.com:10gen/mongo-orchestration.git
+      git clone --depth 1 https://github.com/10gen/mongo-orchestration.git
       cd mongo-orchestration
       python -m pip install .
       cd ../..
@@ -123,7 +123,7 @@ case "$OS" in
       cd venv
       rm -rf mongo-orchestration
       # Make sure MO is running latest version
-      git clone --depth 1 git@github.com:10gen/mongo-orchestration.git
+      git clone --depth 1 https://github.com/10gen/mongo-orchestration.git
       cd mongo-orchestration
       # Our zSeries machines are static-provisioned, cache corruptions persist.
       if [ $(uname -m) = "s390x" ]; then

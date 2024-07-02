@@ -12,7 +12,7 @@ Many C Driver functions report errors by returning ``false`` or -1 and filling o
 
 .. seealso::
 
-  | :doc:`Handling Errors in libbson <bson:errors>`.
+  | `Handling Errors in libbson <bson_errors_>`_.
 
 .. _Error code from server: https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.yml
 

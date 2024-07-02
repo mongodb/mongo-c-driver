@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,8 @@ static bson_oid_t kObjectIdZero = {{0}};
 static void
 append_documents_from_cmd (const mongoc_cmd_t *cmd, mongoc_apm_command_started_t *event)
 {
-   if (!cmd->payload || !cmd->payload_size) {
+   // If there are no document sequences (OP_MSG Section with payloadType=1), return the command unchanged.
+   if (cmd->payloads_count == 0) {
       return;
    }
 
@@ -200,6 +201,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    int64_t duration,
                                    const bson_t *reply,
                                    const char *command_name,
+                                   const char *database_name,
                                    int64_t request_id,
                                    int64_t operation_id,
                                    const mongoc_host_list_t *host,
@@ -224,6 +226,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
 
    event->duration = duration;
    event->command_name = command_name;
+   event->database_name = database_name;
    event->request_id = request_id;
    event->operation_id = operation_id;
    event->host = host;
@@ -260,6 +263,7 @@ void
 mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t duration,
                                 const char *command_name,
+                                const char *database_name,
                                 const bson_error_t *error,
                                 const bson_t *reply,
                                 int64_t request_id,
@@ -286,6 +290,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
 
    event->duration = duration;
    event->command_name = command_name;
+   event->database_name = database_name;
    event->error = error;
    event->request_id = request_id;
    event->operation_id = operation_id;
@@ -424,6 +429,11 @@ mongoc_apm_command_succeeded_get_command_name (const mongoc_apm_command_succeede
    return event->command_name;
 }
 
+const char *
+mongoc_apm_command_succeeded_get_database_name (const mongoc_apm_command_succeeded_t *event)
+{
+   return event->database_name;
+}
 
 int64_t
 mongoc_apm_command_succeeded_get_request_id (const mongoc_apm_command_succeeded_t *event)
@@ -586,6 +596,13 @@ void *
 mongoc_apm_command_failed_get_context (const mongoc_apm_command_failed_t *event)
 {
    return event->context;
+}
+
+
+const char *
+mongoc_apm_command_failed_get_database_name (const mongoc_apm_command_failed_t *event)
+{
+   return event->database_name;
 }
 
 

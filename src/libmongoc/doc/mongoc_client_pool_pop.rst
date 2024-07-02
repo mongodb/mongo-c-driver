@@ -16,6 +16,10 @@ Retrieve a :symbol:`mongoc_client_t` from the client pool, or create one. The to
 
 The returned :symbol:`mongoc_client_t` must be returned to the pool with :symbol:`mongoc_client_pool_push()`.
 
+.. note::
+
+   Return a checked out :symbol:`mongoc_client_t` to the pool with :symbol:`mongoc_client_pool_push` quickly to encourage reuse of clients among threads.
+
 Parameters
 ----------
 

@@ -16,12 +16,11 @@ Synopsis
       bson_t *expr_out,
       bson_error_t *error);
 
-.. important:: The |qenc:range-is-experimental| |qenc:api-is-experimental|
 .. versionadded:: 1.24.0
 
 Encrypts a Match Expression or Aggregate Expression to query a range index.
 
-To query with a ``RangePreview`` encrypted payload, use a
+To query with a ``Range`` encrypted payload, use a
 :symbol:`mongoc_client_t` configured with
 :symbol:`mongoc_auto_encryption_opts_t`. The
 :symbol:`mongoc_auto_encryption_opts_t` may be configured to bypass query
@@ -30,7 +29,7 @@ The :symbol:`mongoc_auto_encryption_opts_t` must not be configured to bypass
 automatic encryption with
 :symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption`. 
 
-To query with a ``RangePreview`` payload, ``expr`` must be one of the following forms: 
+To query with a ``Range`` payload, ``expr`` must be one of the following forms: 
 
 #. A Match Expression of the following form: 
 

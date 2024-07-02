@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,12 +59,17 @@ MONGOC_EXPORT (bool)
 mongoc_cursor_set_limit (mongoc_cursor_t *cursor, int64_t limit);
 MONGOC_EXPORT (int64_t)
 mongoc_cursor_get_limit (const mongoc_cursor_t *cursor);
-/* These names include the term "hint" for backward compatibility, should be
- * mongoc_cursor_get_server_id, mongoc_cursor_set_server_id. */
+// `mongoc_cursor_set_hint` is deprecated for more aptly named `mongoc_cursor_set_server_id`.
 MONGOC_EXPORT (bool)
-mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id);
+mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_cursor_set_server_id);
+MONGOC_EXPORT (bool)
+mongoc_cursor_set_server_id (mongoc_cursor_t *cursor, uint32_t server_id);
+// `mongoc_cursor_get_hint` is deprecated for more aptly named `mongoc_cursor_get_server_id`.
 MONGOC_EXPORT (uint32_t)
-mongoc_cursor_get_hint (const mongoc_cursor_t *cursor);
+mongoc_cursor_get_hint (const mongoc_cursor_t *cursor) BSON_GNUC_DEPRECATED_FOR (mongoc_cursor_get_server_id);
+MONGOC_EXPORT (uint32_t)
+mongoc_cursor_get_server_id (const mongoc_cursor_t *cursor);
 MONGOC_EXPORT (int64_t)
 mongoc_cursor_get_id (const mongoc_cursor_t *cursor);
 MONGOC_EXPORT (void)

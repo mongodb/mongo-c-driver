@@ -22,5 +22,5 @@ Parameters
 
   | :symbol:`mongoc_auto_encryption_opts_new()`
 
-  | :doc:`in-use-encryption`
+  | `In-Use Encryption <in-use-encryption_>`_
 

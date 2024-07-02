@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,6 +170,58 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
       _mongoc_write_command_insert_append (command, document);
    }
 
+   EXIT;
+}
+
+
+// `_mongoc_write_command_init_insert_one_idl` returns the inserted ID in `inserted_id`.
+// Only called by mongoc_collection_insert_one.
+void
+_mongoc_write_command_init_insert_one_idl (mongoc_write_command_t *command,
+                                           const bson_t *document,
+                                           const bson_t *cmd_opts,
+                                           bson_t *insert_id,
+                                           int64_t operation_id)
+{
+   mongoc_bulk_write_flags_t flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM (command);
+   BSON_ASSERT_PARAM (document);
+   BSON_ASSERT_PARAM (cmd_opts);
+   BSON_ASSERT_PARAM (insert_id);
+
+   _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
+
+   /* near identical to _mongoc_write_command_insert_append but additionally records the inserted id */
+   /* no need to handle NULL document from mongoc_collection_insert_bulk since only called by insert_one */
+   BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
+   BSON_ASSERT (document->len >= 5);
+
+   bson_iter_t iter;
+   bson_oid_t oid;
+   bson_t tmp;
+
+   /*
+    * If the document does not contain an "_id" field, we need to generate
+    * a new oid for "_id".
+    */
+   if (!bson_iter_init_find (&iter, document, "_id")) {
+      bson_init (&tmp);
+      bson_oid_init (&oid, NULL);
+      BSON_APPEND_OID (&tmp, "_id", &oid);
+      bson_concat (&tmp, document);
+      _mongoc_buffer_append (&command->payload, bson_get_data (&tmp), tmp.len);
+
+      BSON_APPEND_OID (insert_id, "insertedId", &oid);
+      bson_destroy (&tmp);
+   } else {
+      _mongoc_buffer_append (&command->payload, bson_get_data (document), document->len);
+      BSON_APPEND_VALUE (insert_id, "insertedId", bson_iter_value (&iter));
+   }
+
+   command->n_documents++;
    EXIT;
 }
 
@@ -561,7 +613,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    int32_t max_document_count;
-   uint32_t header;
    uint32_t payload_batch_size = 0;
    uint32_t payload_total_offset = 0;
    bool ship_it = false;
@@ -618,18 +669,18 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       EXIT;
    }
 
-   /*
-    * OP_MSG header == 16 byte
-    * + 4 bytes flagBits
-    * + 1 byte payload type = 1
-    * + 1 byte payload type = 2
-    * + 4 byte size of payload
-    * == 26 bytes opcode overhead
-    * + X Full command document {insert: "test", writeConcern: {...}}
-    * + Y command identifier ("documents", "deletes", "updates") ( + \0)
-    */
-
-   header = 26 + parts.assembled.command->len + gCommandFieldLens[command->type] + 1;
+   // Calculate overhead of OP_MSG data. See OP_MSG spec for description of fields.
+   uint32_t opmsg_overhead = 0;
+   {
+      opmsg_overhead += 16;                                   // OP_MSG.MsgHeader
+      opmsg_overhead += 4;                                    // OP_MSG.flagBits
+      opmsg_overhead += 1;                                    // OP_MSG.Section[0].payloadType (0)
+      opmsg_overhead += parts.assembled.command->len;         // OP_MSG.Section[0].payload.document
+      opmsg_overhead += 1;                                    // OP_MSG.Section[1].payloadType (1)
+      opmsg_overhead += 4;                                    // OP_MSG.Section[1].payload.size
+      opmsg_overhead += gCommandFieldLens[command->type] + 1; // OP_MSG.Section[1].payload.identifier
+      // OP_MSG.Section[1].payload.documents is omitted. Calculated below with remaining size.
+   }
 
    do {
       uint32_t ulen;
@@ -646,7 +697,8 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          result->failed = true;
          break;
 
-      } else if (bson_cmp_less_equal_us (payload_batch_size + header + ulen, max_msg_size) || document_count == 0) {
+      } else if (bson_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
+                 document_count == 0) {
          /* The current batch is still under max batch size in bytes */
          payload_batch_size += ulen;
 
@@ -664,86 +716,25 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       }
 
       if (ship_it) {
-         bool is_retryable = parts.is_retryable_write;
-         mongoc_write_err_type_t error_type;
-
+         parts.assembled.payloads_count = 1;
+         mongoc_cmd_payload_t *const payload = &parts.assembled.payloads[0];
          /* Seek past the document offset we have already sent */
-         parts.assembled.payload = command->payload.data + payload_total_offset;
+         payload->documents = command->payload.data + payload_total_offset;
          /* Only send the documents up to this size */
-         parts.assembled.payload_size = payload_batch_size;
-         parts.assembled.payload_identifier = gCommandFields[command->type];
+         payload->size = payload_batch_size;
+         payload->identifier = gCommandFields[command->type];
 
-         /* increment the transaction number for the first attempt of each
-          * retryable write command */
-         if (is_retryable) {
-            bson_iter_t txn_number_iter;
-            BSON_ASSERT (bson_iter_init_find (&txn_number_iter, parts.assembled.command, "txnNumber"));
-            bson_iter_overwrite_int64 (&txn_number_iter, ++parts.assembled.session->server_session->txn_number);
+
+         mongoc_server_stream_t *new_retry_server_stream = NULL;
+         ret = mongoc_cluster_run_retryable_write (
+            &client->cluster, &parts.assembled, parts.is_retryable_write, &new_retry_server_stream, &reply, error);
+         if (new_retry_server_stream) {
+            mongoc_server_stream_cleanup (retry_server_stream);
+            retry_server_stream = new_retry_server_stream;
          }
-
-         // Store the original error and reply if needed.
-         struct {
-            bson_t reply;
-            bson_error_t error;
-            bool set;
-         } original_error = {.reply = {0}, .error = {0}, .set = false};
-
-      retry:
-         ret = mongoc_cluster_run_command_monitored (&client->cluster, &parts.assembled, &reply, error);
-
-         if (parts.is_retryable_write) {
-            _mongoc_write_error_handle_labels (ret, error, &reply, server_stream->sd);
-         }
-
          /* Add this batch size so we skip these documents next time */
          payload_total_offset += payload_batch_size;
          payload_batch_size = 0;
-
-         /* If a retryable error is encountered and the write is retryable,
-          * select a new writable stream and retry. If server selection fails or
-          * the selected server does not support retryable writes, fall through
-          * and allow the original error to be reported. */
-         error_type = _mongoc_write_error_get_type (&reply);
-         if (is_retryable) {
-            _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, &reply);
-         }
-         if (is_retryable && error_type == MONGOC_WRITE_ERR_RETRY) {
-            bson_error_t ignored_error;
-
-            /* each write command may be retried at most once */
-            is_retryable = false;
-
-            {
-               mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new ();
-
-               if (retry_server_stream) {
-                  mongoc_deprioritized_servers_add_if_sharded (
-                     ds, retry_server_stream->topology_type, retry_server_stream->sd);
-                  mongoc_server_stream_cleanup (retry_server_stream);
-               } else {
-                  mongoc_deprioritized_servers_add_if_sharded (ds, server_stream->topology_type, server_stream->sd);
-               }
-
-               retry_server_stream = mongoc_cluster_stream_for_writes (&client->cluster, cs, ds, NULL, &ignored_error);
-
-               mongoc_deprioritized_servers_destroy (ds);
-            }
-
-            if (retry_server_stream) {
-               parts.assembled.server_stream = retry_server_stream;
-               {
-                  // Store the original error and reply before retry.
-                  BSON_ASSERT (!original_error.set); // Retry only happens once.
-                  original_error.set = true;
-                  bson_copy_to (&reply, &original_error.reply);
-                  if (error) {
-                     original_error.error = *error;
-                  }
-               }
-               bson_destroy (&reply);
-               GOTO (retry);
-            }
-         }
 
          if (!ret) {
             result->failed = true;
@@ -754,16 +745,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             }
          }
 
-         // If a retry attempt fails with an error labeled NoWritesPerformed,
-         // drivers MUST return the original error.
-         if (original_error.set && mongoc_error_has_label (&reply, "NoWritesPerformed")) {
-            if (error) {
-               *error = original_error.error;
-            }
-            bson_destroy (&reply);
-            bson_copy_to (&original_error.reply, &reply);
-         }
-
          /* Result merge needs to know the absolute index for a document
           * so it can rewrite the error message which contains the relative
           * document index per batch
@@ -772,9 +753,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          index_offset += document_count;
          document_count = 0;
          bson_destroy (&reply);
-         if (original_error.set) {
-            bson_destroy (&original_error.reply);
-         }
       }
       /* While we have more documents to write */
    } while (payload_total_offset < command->payload.len && !result->must_stop);

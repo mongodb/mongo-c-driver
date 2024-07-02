@@ -19,7 +19,7 @@ TEST_MATRIX = [
 
     # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
     # Test 7.0+ with Ubuntu 20.04+ since MongoDB 7.0 no longer ships binaries for Ubuntu 18.04.
-    ('ubuntu2004', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], ['7.0', 'latest']),
+    ('ubuntu2004', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], ['7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

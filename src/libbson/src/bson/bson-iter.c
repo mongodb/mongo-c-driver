@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ bson_iter_init (bson_iter_t *iter,  /* OUT */
    iter->d4 = 0;
    iter->next_off = 4;
    iter->err_off = 0;
+   iter->value = (bson_value_t){0};
 
    return true;
 }
@@ -1944,7 +1945,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          bson_iter_document (iter, &doclen, &docbuf);
 
-         if (bson_init_static (&b, docbuf, doclen) && VISIT_DOCUMENT (iter, key, &b, data)) {
+         if (!bson_init_static (&b, docbuf, doclen)) {
+            iter->err_off = iter->off;
+            break;
+         }
+         if (VISIT_DOCUMENT (iter, key, &b, data)) {
             return true;
          }
       } break;
@@ -1955,7 +1960,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          bson_iter_array (iter, &doclen, &docbuf);
 
-         if (bson_init_static (&b, docbuf, doclen) && VISIT_ARRAY (iter, key, &b, data)) {
+         if (!bson_init_static (&b, docbuf, doclen)) {
+            iter->err_off = iter->off;
+            break;
+         }
+         if (VISIT_ARRAY (iter, key, &b, data)) {
             return true;
          }
       } break;
@@ -2079,7 +2088,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
             return true;
          }
 
-         if (bson_init_static (&b, docbuf, doclen) && VISIT_CODEWSCOPE (iter, key, length, code, &b, data)) {
+         if (!bson_init_static (&b, docbuf, doclen)) {
+            iter->err_off = iter->off;
+            break;
+         }
+         if (VISIT_CODEWSCOPE (iter, key, length, code, &b, data)) {
             return true;
          }
       } break;

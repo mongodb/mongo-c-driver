@@ -76,7 +76,7 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
 
    mc_shared_tpld td = mc_tpld_take_ref (client->topology);
 
-   server_id = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_server_id (cursor);
 
    sd = mongoc_topology_description_server_by_id_const (td.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
@@ -345,6 +345,45 @@ test_exhaust_cursor_works (void *context)
    mongoc_client_destroy (client);
 }
 
+// `test_exhaust_cursor_no_match` is a regression test for CDRIVER-5515
+static void
+test_exhaust_cursor_no_match (void *context)
+{
+   BSON_UNUSED (context);
+   bson_error_t error;
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+
+   // Drop collection to remove prior test data.
+   mongoc_collection_drop (coll, NULL /* ignore error */);
+
+   mongoc_cursor_t *cursor =
+      mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), tmp_bson ("{'exhaust': true }"), NULL /* read_prefs */);
+   const bson_t *result;
+   size_t count = 0;
+   while (mongoc_cursor_next (cursor, &result)) {
+      count++;
+   }
+   // Expect an error if exhaust cursors are not supported.
+   const bool sharded = _mongoc_topology_get_type (cursor->client->topology) == MONGOC_TOPOLOGY_SHARDED;
+   int64_t wire_version;
+   test_framework_get_max_wire_version (&wire_version);
+   if (sharded && wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "exhaust cursors require");
+   } else {
+      // Expect no error.
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      // Expect no results.
+      ASSERT_CMPSIZE_T (count, ==, 0);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+
 static void
 test_exhaust_cursor_single (void *context)
 {
@@ -496,7 +535,7 @@ _check_error (mongoc_client_t *client, mongoc_cursor_t *cursor, exhaust_error_ty
 
    ASSERT (client);
 
-   server_id = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_server_id (cursor);
    ASSERT (server_id);
    ASSERT (mongoc_cursor_error (cursor, &error));
 
@@ -666,7 +705,7 @@ test_exhaust_in_child (void)
       mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), tmp_bson ("{'exhaust': true }"), NULL /* read prefs */);
    BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
    BSON_ASSERT (client->in_exhaust);
-   server_id = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_server_id (cursor);
 
    pid = fork ();
    if (pid == 0) {
@@ -709,6 +748,8 @@ void
 test_exhaust_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/works", test_exhaust_cursor_works, NULL, NULL, skip_if_no_exhaust);
+   TestSuite_AddFull (
+      suite, "/Client/exhaust_cursor/no_match", test_exhaust_cursor_no_match, NULL, NULL, skip_if_no_exhaust);
    TestSuite_AddFull (
       suite, "/Client/exhaust_cursor/single", test_exhaust_cursor_single, NULL, NULL, skip_if_no_exhaust);
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/pool", test_exhaust_cursor_pool, NULL, NULL, skip_if_no_exhaust);

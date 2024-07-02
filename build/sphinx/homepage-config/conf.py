@@ -20,7 +20,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'mongoc.org'
-copyright = u'2017, MongoDB, Inc'
+copyright = u'2009-present, MongoDB, Inc.'
 author = u'MongoDB, Inc'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
@@ -60,6 +60,11 @@ html_title = html_shorttitle = 'MongoDB C Driver %s' % version
 html_use_smartypants = False
 html_show_sourcelink = False
 html_use_index = False
+rst_prolog = rf"""
+
+.. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
+
+"""
 
 html_sidebars = {
     '**': []
