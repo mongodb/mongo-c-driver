@@ -10,6 +10,20 @@ Deprecated:
     * `mongoc_cursor_get_hint` is deprecated for `mongoc_cursor_get_server_id`
 
 
+libmongoc 1.27.4
+================
+
+Fixes:
+
+  * Fix possible crash reading malformed wire protocol message.
+  * Fix build with Visual Studio 2013.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
+
+
 
 libmongoc 1.27.3
 ================
