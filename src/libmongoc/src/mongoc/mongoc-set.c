@@ -146,32 +146,60 @@ typedef struct {
    void *ctx;
 } _mongoc_set_for_each_helper_t;
 
-
 static bool
 _mongoc_set_for_each_helper (uint32_t id, void *item, void *ctx)
 {
-   _mongoc_set_for_each_helper_t *helper = (_mongoc_set_for_each_helper_t *) ctx;
+   _mongoc_set_for_each_helper_t *helper = ctx;
 
    BSON_UNUSED (id);
 
    return helper->cb (item, helper->ctx);
 }
 
-
 void
 mongoc_set_for_each (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
 {
-   _mongoc_set_for_each_helper_t helper;
-   helper.cb = cb;
-   helper.ctx = ctx;
+   _mongoc_set_for_each_helper_t helper = {
+      .cb = cb,
+      .ctx = ctx,
+   };
 
    mongoc_set_for_each_with_id (set, _mongoc_set_for_each_helper, &helper);
+}
+
+
+typedef struct {
+   mongoc_set_for_each_const_cb_t cb;
+   void *ctx;
+} _mongoc_set_for_each_const_helper_t;
+
+static bool
+_mongoc_set_for_each_const_helper (uint32_t id, const void *item, void *ctx)
+{
+   _mongoc_set_for_each_const_helper_t *helper = ctx;
+
+   BSON_UNUSED (id);
+
+   return helper->cb (item, helper->ctx);
+}
+
+void
+mongoc_set_for_each_const (const mongoc_set_t *set, mongoc_set_for_each_const_cb_t cb, void *ctx)
+{
+   _mongoc_set_for_each_const_helper_t helper = {
+      .cb = cb,
+      .ctx = ctx,
+   };
+
+   mongoc_set_for_each_with_id_const (set, _mongoc_set_for_each_const_helper, &helper);
 }
 
 void
 mongoc_set_for_each_with_id (mongoc_set_t *set, mongoc_set_for_each_with_id_cb_t cb, void *ctx)
 {
-   mongoc_set_item_t *old_set;
+   BSON_ASSERT_PARAM (set);
+   BSON_ASSERT_PARAM (cb);
+   BSON_ASSERT (ctx || true);
 
    BSON_ASSERT (bson_in_range_unsigned (uint32_t, set->items_len));
    const uint32_t items_len = (uint32_t) set->items_len;
@@ -181,11 +209,42 @@ mongoc_set_for_each_with_id (mongoc_set_t *set, mongoc_set_for_each_with_id_cb_t
       return;
    }
 
-   old_set = (mongoc_set_item_t *) bson_malloc (sizeof (*old_set) * items_len);
+   mongoc_set_item_t *const old_set = bson_malloc (sizeof (*old_set) * items_len);
    memcpy (old_set, set->items, sizeof (*old_set) * items_len);
 
    for (uint32_t i = 0u; i < items_len; i++) {
-      if (!cb (i, old_set[i].item, ctx)) {
+      void *const item = old_set[i].item;
+
+      if (!cb (i, item, ctx)) {
+         break;
+      }
+   }
+
+   bson_free (old_set);
+}
+
+void
+mongoc_set_for_each_with_id_const (const mongoc_set_t *set, mongoc_set_for_each_with_id_const_cb_t cb, void *ctx)
+{
+   BSON_ASSERT_PARAM (set);
+   BSON_ASSERT_PARAM (cb);
+   BSON_ASSERT (ctx || true);
+
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, set->items_len));
+   const uint32_t items_len = (uint32_t) set->items_len;
+
+   /* prevent undefined behavior of memcpy(NULL) */
+   if (items_len == 0) {
+      return;
+   }
+
+   mongoc_set_item_t *const old_set = bson_malloc (sizeof (*old_set) * items_len);
+   memcpy (old_set, set->items, sizeof (*old_set) * items_len);
+
+   for (uint32_t i = 0u; i < items_len; i++) {
+      const void *const item = old_set[i].item;
+
+      if (!cb (i, item, ctx)) {
          break;
       }
    }
@@ -194,17 +253,12 @@ mongoc_set_for_each_with_id (mongoc_set_t *set, mongoc_set_for_each_with_id_cb_t
 }
 
 
-static mongoc_set_item_t *
-_mongoc_set_find (const mongoc_set_t *set, mongoc_set_for_each_const_cb_t cb, void *ctx)
+void *
+mongoc_set_find_item (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
 {
-   size_t i;
-   size_t items_len;
-   mongoc_set_item_t *item;
+   for (size_t i = 0u; i < set->items_len; i++) {
+      mongoc_set_item_t *const item = set->items + i;
 
-   items_len = set->items_len;
-
-   for (i = 0; i < items_len; i++) {
-      item = &set->items[i];
       if (cb (item->item, ctx)) {
          return item;
       }
@@ -214,26 +268,15 @@ _mongoc_set_find (const mongoc_set_t *set, mongoc_set_for_each_const_cb_t cb, vo
 }
 
 
-void *
-mongoc_set_find_item (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
-{
-   mongoc_set_item_t *item;
-
-   if ((item = _mongoc_set_find (set, (mongoc_set_for_each_const_cb_t) cb, ctx))) {
-      return item->item;
-   }
-
-   return NULL;
-}
-
-
 uint32_t
 mongoc_set_find_id (const mongoc_set_t *set, mongoc_set_for_each_const_cb_t cb, void *ctx)
 {
-   const mongoc_set_item_t *item;
+   for (size_t i = 0u; i < set->items_len; i++) {
+      const mongoc_set_item_t *const item = set->items + i;
 
-   if ((item = _mongoc_set_find (set, cb, ctx))) {
-      return item->id;
+      if (cb (item->item, ctx)) {
+         return item->id;
+      }
    }
 
    return 0;
