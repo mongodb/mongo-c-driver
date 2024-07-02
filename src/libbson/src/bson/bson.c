@@ -1503,26 +1503,27 @@ bson_append_utf8 (bson_t *bson, const char *key, int key_length, const char *val
    HANDLE_KEY_LENGTH (key, key_length);
 
    if (BSON_UNLIKELY (length < 0)) {
-      length = (int) strlen (value);
+      size_t len_sz = strlen (value);
+      if (bson_cmp_greater_us (len_sz, INT_MAX)) {
+         /* The return of 'false' would allow for possible overflow later on */
+         return bson_append_null (bson, key, key_length);
+      }
+      length = (int) len_sz;
    }
 
-   length_le = BSON_UINT32_TO_LE (length + 1);
+   if (!bson_cmp_less_su (length, UINT32_MAX)) {
+      return false;
+   }
+   length_le = BSON_UINT32_TO_LE ((uint32_t) length + 1u);
 
-   return _bson_append (bson,
-                        6,
-                        (1 + key_length + 1 + 4 + length + 1),
-                        1,
-                        &type,
-                        key_length,
-                        key,
-                        1,
-                        &gZero,
-                        4,
-                        &length_le,
-                        length,
-                        value,
-                        1,
-                        &gZero);
+   const int64_t num_bytes = INT64_C (1) + key_length + INT64_C (1) + INT64_C (4) + length + INT64_C (1);
+
+   if (bson_cmp_less_us (UINT32_MAX, num_bytes)) {
+      return false;
+   }
+
+   return _bson_append (
+      bson, 6, (uint32_t) num_bytes, 1, &type, key_length, key, 1, &gZero, 4, &length_le, length, value, 1, &gZero);
 }
 
 
