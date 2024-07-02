@@ -544,35 +544,47 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
    apm_command_callback (funcs, "commandSucceededEvent", succeeded);
 }
 
+static void
+set_command_started_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_command_started_cb (callbacks, command_started);
+}
+
+static void
+set_command_failed_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_command_failed_cb (callbacks, command_failed);
+}
+
+static void
+set_command_succeeded_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
+}
+
 // Note: multiple invocations of this function is okay, since all it does
 // is set the appropriate pointer in `callbacks`, and the callback function(s)
 // being used is always the same for a given type.
 static void
 set_command_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
 {
-   typedef void (*cb_t) (const void *);
-   typedef void (*set_func_t) (mongoc_apm_callbacks_t *, cb_t);
+   typedef void (*set_func_t) (mongoc_apm_callbacks_t *);
 
    typedef struct _command_to_cb_t {
       const char *type;
       set_func_t set;
-      cb_t cb;
    } command_to_cb_t;
 
    const command_to_cb_t commands[] = {
-      {.type = "commandStartedEvent",
-       .set = (set_func_t) mongoc_apm_set_command_started_cb,
-       .cb = (cb_t) command_started},
-      {.type = "commandFailedEvent", .set = (set_func_t) mongoc_apm_set_command_failed_cb, .cb = (cb_t) command_failed},
-      {.type = "commandSucceededEvent",
-       .set = (set_func_t) mongoc_apm_set_command_succeeded_cb,
-       .cb = (cb_t) command_succeeded},
-      {.type = NULL, .set = NULL, .cb = NULL},
+      {.type = "commandStartedEvent", .set = set_command_started_cb},
+      {.type = "commandFailedEvent", .set = set_command_failed_cb},
+      {.type = "commandSucceededEvent", .set = set_command_succeeded_cb},
+      {.type = NULL, .set = NULL},
    };
 
    for (const command_to_cb_t *iter = commands; iter->type; ++iter) {
       if (bson_strcasecmp (type, iter->type) == 0) {
-         iter->set (callbacks, iter->cb);
+         iter->set (callbacks);
          return;
       }
    }
