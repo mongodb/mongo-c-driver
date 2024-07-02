@@ -32,7 +32,7 @@ static test_skip_t skips[] = {
 
 /* Callback for JSON tests from Retryable Writes Spec */
 static void
-test_retryable_writes_cb (bson_t *scenario)
+test_retryable_writes_cb (void *scenario)
 {
    bool explicit_session;
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
