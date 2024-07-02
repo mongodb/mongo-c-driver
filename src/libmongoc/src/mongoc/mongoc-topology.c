@@ -194,7 +194,7 @@ _mongoc_topology_scanner_cb (
 }
 
 static void
-_server_session_init (mongoc_server_session_t *session, mongoc_topology_t *unused, bson_error_t *error)
+_server_session_init (void *session, void *unused, bson_error_t *error)
 {
    BSON_UNUSED (unused);
 
@@ -202,7 +202,7 @@ _server_session_init (mongoc_server_session_t *session, mongoc_topology_t *unuse
 }
 
 static void
-_server_session_destroy (mongoc_server_session_t *session, mongoc_topology_t *unused)
+_server_session_destroy (void *session, void *unused)
 {
    BSON_UNUSED (unused);
 
@@ -210,10 +210,13 @@ _server_session_destroy (mongoc_server_session_t *session, mongoc_topology_t *un
 }
 
 static int
-_server_session_should_prune (mongoc_server_session_t *session, mongoc_topology_t *topo)
+_server_session_should_prune (const void *session_vp, void *topo_vp)
 {
-   BSON_ASSERT_PARAM (session);
-   BSON_ASSERT_PARAM (topo);
+   BSON_ASSERT_PARAM (session_vp);
+   BSON_ASSERT_PARAM (topo_vp);
+
+   const mongoc_server_session_t *const session = session_vp;
+   mongoc_topology_t *const topo = topo_vp;
 
    /** If "dirty" (i.e. contains a network error), it should be dropped */
    if (session->dirty) {

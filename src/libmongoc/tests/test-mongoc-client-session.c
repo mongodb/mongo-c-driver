@@ -1190,9 +1190,10 @@ struct check_session_returned_t {
 };
 
 static int
-check_session_returned_visit (mongoc_server_session_t *ss, mongoc_topology_t *unused, void *check_state_)
+check_session_returned_visit (void *ss_vp, void *unused, void *check_state_)
 {
    match_ctx_t ctx = {{0}};
+   mongoc_server_session_t *const ss = ss_vp;
    struct check_session_returned_t *check_state = check_state_;
 
    BSON_UNUSED (unused);
