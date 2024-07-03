@@ -83,14 +83,14 @@ def add_ga_javascript(app: Sphinx, pagename: str, templatename: str, context: Di
     context["metatags"] = (
         context.get("metatags", "")
         + """
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-7301842-14"></script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-56KD6L3MDX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'UA-7301842-14');
+  gtag('config', 'G-56KD6L3MDX');
 </script>
 <!--  NPS survey -->
 <script type="text/javascript">
