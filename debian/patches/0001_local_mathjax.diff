@@ -2,12 +2,12 @@ Description: (Debian packaging) Fix lintian warning by using local mathjax packa
 Author: Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>
 Forwarded: not-needed
 ---
- src/libmongoc/doc/conf.py |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ src/libmongoc/doc/conf.py |    2 ++
+ 1 file changed, 2 insertions(+)
 
 --- a/src/libmongoc/doc/conf.py
 +++ b/src/libmongoc/doc/conf.py
-@@ -50,9 +50,11 @@
+@@ -50,6 +50,8 @@
  if has_sphinx_design:
      extensions.append("sphinx_design")
  
@@ -15,8 +15,4 @@ Forwarded: not-needed
 +
  # General information about the project.
  project = "libmongoc"
--copyright = "2017-present, MongoDB, Inc"
-+copyright = "2009-present, MongoDB, Inc."
- author = "MongoDB, Inc"
- 
- version_path = os.path.join(os.path.dirname(__file__), "../../..", "VERSION_CURRENT")
+ copyright = "2017-present, MongoDB, Inc"
