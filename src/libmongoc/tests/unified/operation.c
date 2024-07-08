@@ -3582,7 +3582,7 @@ operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t 
 
    // Rename the collection in the server,
    mongoc_collection_t *coll = ent->value;
-   if (!mongoc_collection_rename (coll, NULL, new_name, drop_target, error)) {
+   if (!mongoc_collection_rename (coll, NULL, new_name, *drop_target, error)) {
       goto done;
    }
    result_from_ok (result);
