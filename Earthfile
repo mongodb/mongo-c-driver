@@ -215,7 +215,6 @@ release-archive:
         --add-file cyclonedx.sbom.json \ # Add the SBOM
         --add-file ssldc_compliance_report.md
     SAVE ARTIFACT release.tar.gz
-    SAVE ARTIFACT ssldc_compliance_report.md
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:
