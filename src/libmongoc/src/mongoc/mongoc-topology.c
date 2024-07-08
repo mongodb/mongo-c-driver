@@ -285,7 +285,7 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl, size_t max_hosts, siz
     * Drivers SHOULD use the `Fisher-Yates shuffle` for randomization. */
    for (size_t idx = hl_size - 1u; idx > 0u; --idx) {
       /* 0 <= swap_pos <= idx */
-      const size_t swap_pos = _mongoc_rand_size_t (0u, idx, _mongoc_simple_rand_size_t);
+      const size_t swap_pos = _mongoc_rand_size_t (0u, idx);
 
       const mongoc_host_list_t *tmp = hl_array[swap_pos];
       hl_array[swap_pos] = hl_array[idx];
