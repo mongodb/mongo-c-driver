@@ -267,7 +267,7 @@ test_bson_corpus_parse_error (test_bson_parse_error_type_t *test)
 
 
 static void
-test_bson_corpus_cb (bson_t *scenario)
+test_bson_corpus_cb (void *scenario)
 {
    corpus_test (scenario, test_bson_corpus_valid, test_bson_corpus_decode_error, test_bson_corpus_parse_error);
 }

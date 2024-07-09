@@ -249,9 +249,7 @@ TestSuite_CheckMockServerAllowed (void)
 static void
 TestSuite_AddHelper (void *ctx)
 {
-   TestFunc cb = (TestFunc) ((TestFnCtx *) ctx)->test_fn;
-
-   cb ();
+   ((TestFnCtx *) ctx)->test_fn ();
 }
 
 void
@@ -332,9 +330,11 @@ _TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func,
 {
    Test *test;
    va_list ap;
+   TestFnCtx *ctx = bson_malloc (sizeof (TestFnCtx));
+   *ctx = (TestFnCtx){.test_fn = func, .dtor = NULL};
 
    va_start (ap, func);
-   test = _V_TestSuite_AddFull (suite, name, (TestFuncWC) func, NULL, NULL, ap);
+   test = _V_TestSuite_AddFull (suite, name, TestSuite_AddHelper, _TestSuite_TestFnCtxDtor, ctx, ap);
    va_end (ap);
 
    if (test) {

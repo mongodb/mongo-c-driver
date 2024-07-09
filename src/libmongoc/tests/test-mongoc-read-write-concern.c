@@ -102,7 +102,7 @@ invalid:
 
 
 static void
-test_rw_concern_uri (bson_t *scenario)
+test_rw_concern_uri (void *scenario_vp)
 {
    bson_iter_t scenario_iter;
    bson_iter_t test_iter;
@@ -117,6 +117,9 @@ test_rw_concern_uri (bson_t *scenario)
    const mongoc_write_concern_t *wc;
    mongoc_write_concern_t *wc_correct;
    mongoc_read_concern_t *rc_correct;
+
+   BSON_ASSERT_PARAM (scenario_vp);
+   const bson_t *const scenario = scenario_vp;
 
    /* initialize tests with the scenario */
    BSON_ASSERT (bson_iter_init_find (&scenario_iter, scenario, "tests"));
@@ -162,7 +165,7 @@ test_rw_concern_uri (bson_t *scenario)
 }
 
 static void
-test_rw_concern_document (bson_t *scenario)
+test_rw_concern_document (void *scenario_vp)
 {
    bson_iter_t scenario_iter;
    bson_iter_t test_iter;
@@ -176,6 +179,9 @@ test_rw_concern_document (bson_t *scenario)
    const bson_t *rc_doc_result;
    bson_t rc_doc_correct;
    bson_t wc_doc_correct;
+
+   BSON_ASSERT_PARAM (scenario_vp);
+   const bson_t *const scenario = scenario_vp;
 
    BSON_ASSERT (bson_iter_init_find (&scenario_iter, scenario, "tests"));
    BSON_ASSERT (bson_iter_recurse (&scenario_iter, &test_iter));

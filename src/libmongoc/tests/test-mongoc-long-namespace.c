@@ -428,15 +428,19 @@ collection_rename (test_fixture_t *test_fixture)
    bson_free (new_ns);
 }
 
-typedef void (*test_fn) (test_fixture_t *fixture);
+typedef void (*run_test_fn_t) (test_fixture_t *fixture);
+
+typedef struct {
+   run_test_fn_t test_fn;
+} run_test_helper_t;
 
 static void
 run_test (void *ctx)
 {
-   test_fn one_test;
    test_fixture_t test_fixture;
 
-   one_test = (test_fn) ((TestFnCtx *) ctx)->test_fn;
+   const run_test_fn_t one_test = ((run_test_helper_t *) ctx)->test_fn;
+
    /* Small names. */
    test_fixture_init (&test_fixture, 32, 32);
    one_test (&test_fixture);
@@ -514,61 +518,41 @@ unsupported_long_db (void)
    bson_free (long_db);
 }
 
+#define add_long_namespace_test(_name, _test_fn, ...)                              \
+   if (1) {                                                                        \
+      run_test_helper_t *const helper = bson_malloc (sizeof (*helper));            \
+      *helper = (run_test_helper_t){.test_fn = (_test_fn)};                        \
+      TestSuite_AddFull (suite, _name, run_test, &bson_free, helper, __VA_ARGS__); \
+   } else                                                                          \
+      ((void) 0)
+
 void
 test_long_namespace_install (TestSuite *suite)
 {
    /* MongoDB 4.4 (wire version 9) introduced support for long namespaces in
     * SERVER-32959 */
-   TestSuite_AddFullWithTestFn (suite,
-                                "/long_namespace/client_command",
-                                run_test,
-                                NULL /* dtor */,
-                                client_command,
-                                test_framework_skip_if_max_wire_version_less_than_9);
+   add_long_namespace_test (
+      "/long_namespace/client_command", client_command, test_framework_skip_if_max_wire_version_less_than_9);
 
-   TestSuite_AddFullWithTestFn (suite,
-                                "/long_namespace/database_command",
-                                run_test,
-                                NULL /* dtor */,
-                                database_command,
-                                test_framework_skip_if_max_wire_version_less_than_9);
+   add_long_namespace_test (
+      "/long_namespace/database_command", database_command, test_framework_skip_if_max_wire_version_less_than_9);
 
-   TestSuite_AddFullWithTestFn (suite,
-                                "/long_namespace/collection_command",
-                                run_test,
-                                NULL /* dtor */,
-                                collection_command,
-                                test_framework_skip_if_max_wire_version_less_than_9);
+   add_long_namespace_test (
+      "/long_namespace/collection_command", collection_command, test_framework_skip_if_max_wire_version_less_than_9);
 
-   TestSuite_AddFullWithTestFn (suite,
-                                "/long_namespace/crud",
-                                run_test,
-                                NULL /* dtor */,
-                                crud,
-                                test_framework_skip_if_max_wire_version_less_than_9);
+   add_long_namespace_test ("/long_namespace/crud", crud, test_framework_skip_if_max_wire_version_less_than_9);
 
-   TestSuite_AddFullWithTestFn (suite,
-                                "/long_namespace/getmore",
-                                run_test,
-                                NULL /* dtor */,
-                                getmore,
-                                test_framework_skip_if_max_wire_version_less_than_9);
+   add_long_namespace_test ("/long_namespace/getmore", getmore, test_framework_skip_if_max_wire_version_less_than_9);
 
-   TestSuite_AddFullWithTestFn (suite,
-                                "/long_namespace/change_stream",
-                                run_test,
-                                NULL /* dtor */,
-                                change_stream,
-                                test_framework_skip_if_not_rs_version_9,
-                                test_framework_skip_if_no_sessions);
+   add_long_namespace_test ("/long_namespace/change_stream",
+                            change_stream,
+                            test_framework_skip_if_not_rs_version_9,
+                            test_framework_skip_if_no_sessions);
 
-   TestSuite_AddFullWithTestFn (suite,
-                                "/long_namespace/collection_rename",
-                                run_test,
-                                NULL /* dtor */,
-                                collection_rename,
-                                test_framework_skip_if_max_wire_version_less_than_9,
-                                test_framework_skip_if_mongos);
+   add_long_namespace_test ("/long_namespace/collection_rename",
+                            collection_rename,
+                            test_framework_skip_if_max_wire_version_less_than_9,
+                            test_framework_skip_if_mongos);
 
    TestSuite_AddFull (suite,
                       "/long_namespace/unsupported_long_coll",

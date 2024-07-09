@@ -432,7 +432,7 @@ pool_set_heartbeat_event_callbacks (mongoc_client_pool_t *pool, context_t *conte
  *-----------------------------------------------------------------------
  */
 static void
-test_sdam_monitoring_cb (bson_t *test)
+test_sdam_monitoring_cb (void *test_vp)
 {
    mongoc_client_t *client;
    mongoc_topology_t *topology;
@@ -446,6 +446,9 @@ test_sdam_monitoring_cb (bson_t *test)
    bson_t events_expected;
    context_t context;
    bool first_phase;
+
+   BSON_ASSERT_PARAM (test_vp);
+   const bson_t *const test = test_vp;
 
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));

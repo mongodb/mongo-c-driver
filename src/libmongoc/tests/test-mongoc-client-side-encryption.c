@@ -92,7 +92,7 @@ _run_operation (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operatio
 }
 
 static void
-test_client_side_encryption_cb (bson_t *scenario)
+test_client_side_encryption_cb (void *scenario)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
    config.before_test_cb = _before_test;

@@ -769,7 +769,7 @@ run_gridfs_spec_test (mongoc_database_t *db, mongoc_gridfs_bucket_t *bucket, bso
 }
 
 static void
-test_gridfs_cb (bson_t *scenario)
+test_gridfs_cb (void *scenario_vp)
 {
    mongoc_gridfs_bucket_t *gridfs;
    mongoc_database_t *db;
@@ -780,6 +780,9 @@ test_gridfs_cb (bson_t *scenario)
    bson_t *data;
    bson_t *tests;
    bson_t *test;
+
+   BSON_ASSERT_PARAM (scenario_vp);
+   const bson_t *const scenario = scenario_vp;
 
    /* Make a gridfs on generated db */
    dbname = gen_collection_name ("test");
