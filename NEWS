@@ -9,6 +9,7 @@ Deprecated:
     * `mongoc_cursor_set_hint` is deprecated for `mongoc_cursor_set_server_id`
     * `mongoc_cursor_get_hint` is deprecated for `mongoc_cursor_get_server_id`
 
+  * A future minor release plans to drop support for Visual Studio 2013.
 
 
 libmongoc 1.27.3
