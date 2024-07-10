@@ -5842,9 +5842,9 @@ CEC_TEST (test_create_encrypted_collection_bad_keyId, const char *const kmsProvi
    bsonBuildDecl (
       ccOpts,
       kv ("encryptedFields",
-          doc (kv (
-             "fields",
-             array (doc (kv ("path", cstr ("ssn")), kv ("bsonType", cstr ("string")), kv ("keyId", bool (true))))))));
+          doc (kv ("fields",
+                   array (doc (
+                      kv ("path", cstr ("ssn")), kv ("bsonType", cstr ("string")), kv ("keyId", boolean (true))))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    bson_t *const mkey = _make_kms_masterkey (kmsProvider);
    mongoc_collection_t *const coll = mongoc_client_encryption_create_encrypted_collection (

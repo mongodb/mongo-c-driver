@@ -3555,7 +3555,7 @@ operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t 
    const char *object = op->object;
    bson_parser_t *bp = bson_parser_new ();
    bool ret = false;
-   bool *drop_target = false;
+   bool *drop_target = NULL;
    char *new_name = NULL;
    bson_parser_utf8 (bp, "to", &new_name);
    bson_parser_bool_optional (bp, "dropTarget", &drop_target);
@@ -3582,7 +3582,7 @@ operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t 
 
    // Rename the collection in the server,
    mongoc_collection_t *coll = ent->value;
-   if (!mongoc_collection_rename (coll, NULL, new_name, drop_target, error)) {
+   if (!mongoc_collection_rename (coll, NULL, new_name, drop_target ? *drop_target : false, error)) {
       goto done;
    }
    result_from_ok (result);
