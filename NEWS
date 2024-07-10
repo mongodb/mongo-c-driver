@@ -1,6 +1,10 @@
 libmongoc 1.28.0 (unreleased)
 =============================
 
+Notes:
+
+  * Bump minimum wire protocol version from 6 (MongoDB 3.6) to 7 (MongoDB 4.0).
+
 Deprecated:
 
   * Use of `*_hint` functions is deprecated in favor of more aptly named `*_server_id` functions:
