@@ -662,7 +662,7 @@ done:
 }
 
 void
-result_from_bulkwritereturn (result_t *result, mongoc_bulkwritereturn_t bwr, size_t nmodels)
+result_from_bulkwritereturn (result_t *result, mongoc_bulkwritereturn_t bwr)
 {
    // Build up the result value as a BSON document.
    bson_t bwr_bson = BSON_INITIALIZER;
