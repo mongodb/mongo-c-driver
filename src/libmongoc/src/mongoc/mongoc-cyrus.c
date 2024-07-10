@@ -146,6 +146,8 @@ sasl_verify_type_to_str (sasl_verify_type_t type)
 int
 _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t type)
 {
+   BSON_UNUSED (context);
+
    TRACE ("Attempting to load file: `%s`. Type is %s\n", file, sasl_verify_type_to_str (type));
 
 #ifdef _WIN32

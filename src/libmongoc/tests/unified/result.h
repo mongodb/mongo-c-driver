@@ -35,7 +35,7 @@ void
 result_from_bulk_write (result_t *result, const bson_t *reply, const bson_error_t *error);
 
 void
-result_from_bulkwritereturn (result_t *result, mongoc_bulkwritereturn_t bwr, size_t nmodels);
+result_from_bulkwritereturn (result_t *result, mongoc_bulkwritereturn_t bwr);
 
 void
 result_from_insert_one (result_t *result, const bson_t *reply, const bson_error_t *error);
