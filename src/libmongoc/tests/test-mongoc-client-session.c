@@ -2557,7 +2557,7 @@ test_sessions_snapshot_prose_test_1 (void *ctx)
    mongoc_client_t *client = NULL;
    mongoc_session_opt_t *session_opts = NULL;
    bson_error_t error;
-   bool r;
+   mongoc_client_session_t *r;
 
    BSON_UNUSED (ctx);
 
