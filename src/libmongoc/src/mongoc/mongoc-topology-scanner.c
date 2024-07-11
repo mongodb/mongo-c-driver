@@ -30,6 +30,10 @@
 #include "mongoc-stream-tls.h"
 #endif
 
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#include <openssl/ssl.h>
+#endif
+
 #include "mongoc-counters-private.h"
 #include "utlist.h"
 #include "mongoc-topology-private.h"
@@ -462,6 +466,10 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    mongoc_server_api_destroy (ts->api);
    bson_mutex_destroy (&ts->handshake_cmd_mtx);
 
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   SSL_CTX_free (ts->openssl_ctx);
+#endif
+
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
 
@@ -784,7 +792,12 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (mongoc_topology_scanner_node
    }
 #ifdef MONGOC_ENABLE_SSL
    if (node->ts->ssl_opts) {
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+      tls_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (
+         stream, node->host.host, node->ts->ssl_opts, 1, node->ts->openssl_ctx);
+#else
       tls_stream = mongoc_stream_tls_new_with_hostname (stream, node->host.host, node->ts->ssl_opts, 1);
+#endif
       if (!tls_stream) {
          mongoc_stream_destroy (stream);
          return NULL;

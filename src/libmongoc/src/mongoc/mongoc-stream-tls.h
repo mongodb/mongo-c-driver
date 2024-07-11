@@ -21,6 +21,10 @@
 
 #include <bson/bson.h>
 
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#include <openssl/ssl.h>
+#endif
+
 #include "mongoc-macros.h"
 #include "mongoc-ssl.h"
 #include "mongoc-stream.h"
@@ -47,6 +51,11 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream, const char *host)
 MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
    BSON_GNUC_WARN_UNUSED_RESULT;
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+MONGOC_EXPORT (mongoc_stream_t *)
+mongoc_stream_tls_new_with_hostname_and_openssl_context (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+#endif
 MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_tls_new (mongoc_stream_t *base_stream, mongoc_ssl_opt_t *opt, int client) BSON_GNUC_WARN_UNUSED_RESULT
    BSON_GNUC_DEPRECATED_FOR (mongoc_stream_tls_new_with_hostname);
