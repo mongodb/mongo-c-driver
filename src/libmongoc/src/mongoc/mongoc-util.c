@@ -307,6 +307,8 @@ _mongoc_wire_version_to_server_version (int32_t version)
       return "6.0";
    case WIRE_VERSION_7_0:
       return "7.0";
+   case WIRE_VERSION_8_0:
+      return "8.0";
    default:
       return "Unknown";
    }
