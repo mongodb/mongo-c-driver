@@ -884,6 +884,7 @@ mongoc_stream_tls_openssl_new_with_context (
    BIO *bio_ssl = NULL;
    BIO *bio_mongoc_shim = NULL;
    BIO_METHOD *meth;
+   SSL *ssl;
 
    BSON_ASSERT (base_stream);
    BSON_ASSERT (opt);
@@ -892,6 +893,14 @@ mongoc_stream_tls_openssl_new_with_context (
    if (!ssl_ctx) {
       RETURN (NULL);
    }
+
+   bio_ssl = BIO_new_ssl (ssl_ctx, client);
+   if (!bio_ssl) {
+      // SSL_CTX_free (ssl_ctx);
+      RETURN (NULL);
+   }
+
+   BIO_get_ssl (bio_ssl, &ssl);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L && !defined(LIBRESSL_VERSION_NUMBER)
    if (!opt->allow_invalid_hostname) {
@@ -905,22 +914,11 @@ mongoc_stream_tls_openssl_new_with_context (
       } else {
          X509_VERIFY_PARAM_set1_host (param, host, 0);
       }
-      SSL_CTX_set1_param (ssl_ctx, param);
+      SSL_set1_param (ssl, param);
       X509_VERIFY_PARAM_free (param);
    }
 #endif
 
-   if (opt->weak_cert_validation) {
-      SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_NONE, NULL);
-   } else {
-      SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_PEER, NULL);
-   }
-
-   bio_ssl = BIO_new_ssl (ssl_ctx, client);
-   if (!bio_ssl) {
-      // SSL_CTX_free (ssl_ctx);
-      RETURN (NULL);
-   }
    meth = mongoc_stream_tls_openssl_bio_meth_new ();
    bio_mongoc_shim = BIO_new (meth);
    if (!bio_mongoc_shim) {
@@ -933,9 +931,7 @@ mongoc_stream_tls_openssl_new_with_context (
 /* Added in OpenSSL 0.9.8f, as a build time option */
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
    if (client) {
-      SSL *ssl;
       /* Set the SNI hostname we are expecting certificate for */
-      BIO_get_ssl (bio_ssl, &ssl);
       SSL_set_tlsext_host_name (ssl, host);
 #endif
    }
@@ -944,9 +940,6 @@ mongoc_stream_tls_openssl_new_with_context (
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
    if (client && !opt->weak_cert_validation && !_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
-      SSL *ssl;
-
-      BIO_get_ssl (bio_ssl, &ssl);
 
       /* Set the status_request extension on the SSL object.
        * Do not use SSL_CTX_set_tlsext_status_type, since that requires OpenSSL

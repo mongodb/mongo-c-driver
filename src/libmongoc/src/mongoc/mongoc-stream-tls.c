@@ -266,12 +266,6 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    return mongoc_stream_tls_openssl_new_with_context (base_stream, host, opt, client, ssl_ctx);
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   return mongoc_stream_tls_libressl_new (base_stream, host, opt, client);
-#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-   return mongoc_stream_tls_secure_transport_new (base_stream, host, opt, client);
-#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-   return mongoc_stream_tls_secure_channel_new (base_stream, host, opt, client);
 #else
 #error "Don't know how to create TLS stream"
 #endif
