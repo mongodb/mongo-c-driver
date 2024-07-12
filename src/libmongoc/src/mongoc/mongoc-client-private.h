@@ -221,11 +221,18 @@ mongoc_client_connect (bool buffered,
                        const mongoc_host_list_t *host,
                        bson_error_t *error);
 
+mongoc_stream_t *
+mongoc_client_connect_with_openssl_context (bool buffered,
+                                            bool use_ssl,
+                                            void *ssl_opts_void,
+                                            SSL_CTX *ssl_ctx,
+                                            const mongoc_uri_t *uri,
+                                            const mongoc_host_list_t *host,
+                                            bson_error_t *error);
 
-/* Returns true if a versioned server API has been selected, otherwise returns
- * false. */
-bool
-mongoc_client_uses_server_api (const mongoc_client_t *client);
+   /* Returns true if a versioned server API has been selected, otherwise returns
+    * false. */
+   bool mongoc_client_uses_server_api (const mongoc_client_t *client);
 
 
 /* Returns true if load balancing mode has been selected, otherwise returns

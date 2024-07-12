@@ -33,6 +33,10 @@
 #include "mongoc-ssl-private.h"
 #endif
 
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#include "mongoc-openssl-private.h"
+#endif
+
 struct _mongoc_client_pool_t {
    bson_mutex_t mutex;
    mongoc_cond_t cond;
@@ -192,6 +196,9 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
       /* sets use_ssl = true */
       mongoc_client_pool_set_ssl_opts (pool, &ssl_opt);
       _mongoc_client_pool_set_internal_tls_opts (pool, &internal_tls_opts);
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+      pool->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&ssl_opt);
+#endif
    }
 #endif
    mongoc_counter_client_pools_active_inc ();

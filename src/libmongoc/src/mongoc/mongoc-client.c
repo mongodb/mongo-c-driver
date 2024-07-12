@@ -826,6 +826,92 @@ mongoc_client_connect (bool buffered,
    return base_stream;
 }
 
+
+mongoc_stream_t *
+mongoc_client_connect_with_openssl_context (bool buffered,
+                                            bool use_ssl,
+                                            void *ssl_opts_void,
+                                            SSL_CTX *ssl_ctx,
+                                            const mongoc_uri_t *uri,
+                                            const mongoc_host_list_t *host,
+                                            bson_error_t *error)
+{
+   mongoc_stream_t *base_stream = NULL;
+   int32_t connecttimeoutms;
+
+   BSON_ASSERT (uri);
+   BSON_ASSERT (host);
+
+#ifndef MONGOC_ENABLE_SSL
+   if (ssl_opts_void || mongoc_uri_get_tls (uri)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
+                      "TLS is not enabled in this build of mongo-c-driver.");
+      return NULL;
+   }
+#endif
+
+   connecttimeoutms =
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, MONGOC_DEFAULT_CONNECTTIMEOUTMS);
+
+   switch (host->family) {
+   case AF_UNSPEC:
+#if defined(AF_INET6)
+   case AF_INET6:
+#endif
+   case AF_INET:
+      base_stream = mongoc_client_connect_tcp (connecttimeoutms, host, error);
+      break;
+   case AF_UNIX:
+      base_stream = mongoc_client_connect_unix (host, error);
+      break;
+   default:
+      bson_set_error (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_TYPE, "Invalid address family: 0x%02x", host->family);
+      break;
+   }
+
+#ifdef MONGOC_ENABLE_SSL
+   if (base_stream) {
+      mongoc_ssl_opt_t *ssl_opts;
+      const char *mechanism;
+
+      ssl_opts = (mongoc_ssl_opt_t *) ssl_opts_void;
+      mechanism = mongoc_uri_get_auth_mechanism (uri);
+
+      if (use_ssl || (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
+         mongoc_stream_t *original = base_stream;
+
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+         base_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (base_stream, host->host, ssl_opts, true, ssl_ctx);
+#else
+         base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host, ssl_opts, true);
+#endif
+
+         if (!base_stream) {
+            mongoc_stream_destroy (original);
+            bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed initialize TLS state.");
+            return NULL;
+         }
+
+         if (!mongoc_stream_tls_handshake_block (base_stream, host->host, connecttimeoutms, error)) {
+            mongoc_stream_destroy (base_stream);
+            return NULL;
+         }
+      }
+   }
+#endif
+
+   if (!base_stream) {
+      return NULL;
+   }
+   if (buffered) {
+      return mongoc_stream_buffered_new (base_stream, 1024);
+   }
+   return base_stream;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -854,15 +940,21 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 {
    void *ssl_opts_void = NULL;
    bool use_ssl = false;
-#ifdef MONGOC_ENABLE_SSL
+   SSL_CTX *ssl_ctx;
+
    mongoc_client_t *client = (mongoc_client_t *) user_data;
 
+#ifdef MONGOC_ENABLE_SSL
    use_ssl = client->use_ssl;
    ssl_opts_void = (void *) &client->ssl_opts;
-
 #endif
 
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   ssl_ctx = client->topology->scanner->openssl_ctx;
+   return mongoc_client_connect_with_openssl_context (true, use_ssl, ssl_opts_void, ssl_ctx, uri, host, error);
+#else
    return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, error);
+#endif
 }
 
 /*
@@ -1098,7 +1190,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
 
 // This OpenSSL context will be used for all connections made by the new client.
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   if (topology->scanner->ssl_opts) {
+   if (topology->scanner->ssl_opts && !topology->scanner->openssl_ctx) {
       topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (topology->scanner->ssl_opts);
    }
 #endif
