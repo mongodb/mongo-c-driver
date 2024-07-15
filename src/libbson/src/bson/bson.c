@@ -302,7 +302,7 @@ _bson_encode_length (bson_t *bson) /* IN */
 
 static BSON_INLINE bool
 _bson_append_va (bson_t *bson,              /* IN */
-                 uint32_t n_bytes,          /* IN */
+                 uint64_t n_bytes,          /* IN */
                  uint32_t n_pairs,          /* IN */
                  uint32_t first_len,        /* IN */
                  const uint8_t *first_data, /* IN */
@@ -324,7 +324,13 @@ _bson_append_va (bson_t *bson,              /* IN */
 
    buf = _bson_data (bson) + bson->len - 1;
 
+   /* Track running sum of bytes written in a uint64_t to prevent possible overflow. */
+   uint64_t n_bytes_sum = 0;
    do {
+      n_bytes_sum += data_len;
+      if (BSON_UNLIKELY (bson_cmp_greater_uu (n_bytes_sum, n_bytes))) {
+         return false;
+      }
       n_pairs--;
       /* data may be NULL if data_len is 0. memcpy is not safe to call with
        * NULL. */
@@ -379,7 +385,7 @@ _bson_append_va (bson_t *bson,              /* IN */
 static bool
 _bson_append (bson_t *bson,              /* IN */
               uint32_t n_pairs,          /* IN */
-              uint32_t n_bytes,          /* IN */
+              uint64_t n_bytes,          /* IN */
               uint32_t first_len,        /* IN */
               const uint8_t *first_data, /* IN */
               ...)
@@ -1507,22 +1513,10 @@ bson_append_utf8 (bson_t *bson, const char *key, int key_length, const char *val
    }
 
    length_le = BSON_UINT32_TO_LE (length + 1);
+   const uint64_t num_bytes = UINT64_C (1) + key_length + UINT64_C (1) + UINT64_C (4) + length + UINT64_C (1);
 
-   return _bson_append (bson,
-                        6,
-                        (1 + key_length + 1 + 4 + length + 1),
-                        1,
-                        &type,
-                        key_length,
-                        key,
-                        1,
-                        &gZero,
-                        4,
-                        &length_le,
-                        length,
-                        value,
-                        1,
-                        &gZero);
+   return _bson_append (
+      bson, 6, num_bytes, 1, &type, key_length, key, 1, &gZero, 4, &length_le, length, value, 1, &gZero);
 }
 
 
