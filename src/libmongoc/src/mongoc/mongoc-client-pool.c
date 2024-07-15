@@ -81,6 +81,12 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool, const mongoc_ssl_op
 
    mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner, &pool->ssl_opts);
 
+// Update the OpenSSL context associated with this client pool.
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   SSL_CTX_free(pool->topology->scanner->openssl_ctx);
+   pool->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new(&pool->ssl_opts);
+#endif
+
    bson_mutex_unlock (&pool->mutex);
 }
 

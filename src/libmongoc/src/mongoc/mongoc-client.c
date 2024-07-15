@@ -1076,6 +1076,12 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opt
 
    if (client->topology->single_threaded) {
       mongoc_topology_scanner_set_ssl_opts (client->topology->scanner, &client->ssl_opts);
+
+// Previous connections made by client will still have their original OpenSSL context.
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   SSL_CTX_free(client->topology->scanner->openssl_ctx);
+   client->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new(&client->ssl_opts);
+#endif
    }
 }
 #endif

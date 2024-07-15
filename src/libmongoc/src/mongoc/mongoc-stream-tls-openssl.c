@@ -91,7 +91,7 @@ _mongoc_stream_tls_openssl_destroy (mongoc_stream_t *stream)
    mongoc_stream_destroy (tls->base_stream);
    tls->base_stream = NULL;
 
-   // SSL_CTX_free (openssl->ctx);
+   SSL_CTX_free (openssl->ctx);
    openssl->ctx = NULL;
 
    mongoc_openssl_ocsp_opt_destroy (openssl->ocsp_opts);
@@ -894,9 +894,11 @@ mongoc_stream_tls_openssl_new_with_context (
       RETURN (NULL);
    }
 
+   SSL_CTX_up_ref(ssl_ctx);
+
    bio_ssl = BIO_new_ssl (ssl_ctx, client);
    if (!bio_ssl) {
-      // SSL_CTX_free (ssl_ctx);
+      SSL_CTX_free (ssl_ctx);
       RETURN (NULL);
    }
 
@@ -924,7 +926,7 @@ mongoc_stream_tls_openssl_new_with_context (
    if (!bio_mongoc_shim) {
       BIO_free_all (bio_ssl);
       BIO_meth_free (meth);
-      // SSL_CTX_free (ssl_ctx);
+      SSL_CTX_free (ssl_ctx);
       RETURN (NULL);
    }
 
@@ -950,7 +952,7 @@ mongoc_stream_tls_openssl_new_with_context (
          mongoc_openssl_ocsp_opt_destroy (ocsp_opts);
          BIO_free_all (bio_ssl);
          BIO_meth_free (meth);
-         // SSL_CTX_free (ssl_ctx);
+         SSL_CTX_free (ssl_ctx);
          RETURN (NULL);
       }
 

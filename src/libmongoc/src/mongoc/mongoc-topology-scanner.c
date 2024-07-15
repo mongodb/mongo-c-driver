@@ -468,6 +468,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    SSL_CTX_free (ts->openssl_ctx);
+   ts->openssl_ctx = NULL;
 #endif
 
    /* This field can be set by a mongoc_client */
