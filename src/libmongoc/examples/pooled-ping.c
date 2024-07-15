@@ -56,7 +56,6 @@ main (int argc, char *argv[])
    pthread_mutex_init (&mutex, NULL);
    mongoc_init ();
 
-
    certificate_path = "/Users/julia.garland/Desktop/Code/drivers-evergreen-tools/.evergreen/x509gen/server.pem";
    ca_path = "/Users/julia.garland/Desktop/Code/drivers-evergreen-tools/.evergreen/x509gen/ca.pem";
 
