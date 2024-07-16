@@ -327,10 +327,15 @@ _bson_append_va (bson_t *bson,              /* IN */
    /* Track running sum of bytes written in a uint64_t to detect possible overflow of `n_bytes`. */
    uint64_t n_bytes_sum = 0;
    do {
-      n_bytes_sum += data_len;
-      if (BSON_UNLIKELY (bson_cmp_greater_uu (n_bytes_sum, n_bytes))) {
+      // Size of any individual data being appended should not exceed the total byte limit.
+      if (BSON_UNLIKELY (bson_cmp_less_uu (n_bytes, data_len))) {
          return false;
       }
+      // Total size of data being appended should not exceed the total byte limit.
+      if (BSON_UNLIKELY (bson_cmp_greater_uu (n_bytes_sum, n_bytes - data_len))) {
+         return false;
+      }
+      n_bytes_sum += data_len;
       n_pairs--;
       /* data may be NULL if data_len is 0. memcpy is not safe to call with
        * NULL. */
