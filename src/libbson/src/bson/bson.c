@@ -385,7 +385,7 @@ _bson_append_va (bson_t *bson,              /* IN */
 static bool
 _bson_append (bson_t *bson,              /* IN */
               uint32_t n_pairs,          /* IN */
-              uint64_t n_bytes,          /* IN */
+              uint32_t n_bytes,          /* IN */
               uint32_t first_len,        /* IN */
               const uint8_t *first_data, /* IN */
               ...)
