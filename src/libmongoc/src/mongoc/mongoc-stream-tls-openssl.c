@@ -859,9 +859,10 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, m
  * mongoc_stream_tls_openssl_new_with_context --
  *
  *       Creates a new mongoc_stream_tls_openssl_t to communicate with a remote
- *       server using a TLS stream, using ssl_ctx as the OpenSSL context instead
- *       of creating a new one.
- * 
+ *       server using a TLS stream, using an existing OpenSSL context.
+ *
+ *       Only called by mongoc_stream_tls_new_with_hostname_and_openssl_context.
+ *
  *       @ssl_ctx is the global OpenSSL context for the mongoc_client_t
  *       associated with this function call.
  *
@@ -894,7 +895,7 @@ mongoc_stream_tls_openssl_new_with_context (
       RETURN (NULL);
    }
 
-   SSL_CTX_up_ref(ssl_ctx);
+   SSL_CTX_up_ref (ssl_ctx);
 
    bio_ssl = BIO_new_ssl (ssl_ctx, client);
    if (!bio_ssl) {
@@ -942,7 +943,6 @@ mongoc_stream_tls_openssl_new_with_context (
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
    if (client && !opt->weak_cert_validation && !_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
-
       /* Set the status_request extension on the SSL object.
        * Do not use SSL_CTX_set_tlsext_status_type, since that requires OpenSSL
        * 1.1.0.

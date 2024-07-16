@@ -73,7 +73,6 @@
 #include "mongoc-openssl-private.h"
 #endif
 
-
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client"
 
@@ -827,6 +826,25 @@ mongoc_client_connect (bool buffered,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_connect_with_openssl_context --
+ *
+ *       Connect to a MongoDB server using OpenSSL.
+ *
+ *       @ssl_ctx is the global OpenSSL context for the mongoc_client_t
+ *       associated with this function call.
+ *
+ * Returns:
+ *       A newly allocated mongoc_stream_t if successful; otherwise
+ *       NULL and @error is set.
+ *
+ * Side effects:
+ *       @error is set if return value is NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
 mongoc_stream_t *
 mongoc_client_connect_with_openssl_context (bool buffered,
                                             bool use_ssl,
@@ -884,7 +902,8 @@ mongoc_client_connect_with_openssl_context (bool buffered,
          mongoc_stream_t *original = base_stream;
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-         base_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (base_stream, host->host, ssl_opts, true, ssl_ctx);
+         base_stream =
+            mongoc_stream_tls_new_with_hostname_and_openssl_context (base_stream, host->host, ssl_opts, true, ssl_ctx);
 #else
          base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host, ssl_opts, true);
 #endif
@@ -919,6 +938,8 @@ mongoc_client_connect_with_openssl_context (bool buffered,
  *
  *       A mongoc_stream_initiator_t that will handle the various type
  *       of supported sockets by MongoDB including TCP and UNIX.
+ *
+ *       Also supports sharing of OpenSSL context owned by a client.
  *
  *       Language binding authors may want to implement an alternate
  *       version of this method to use their native stream format.
@@ -1077,10 +1098,12 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opt
    if (client->topology->single_threaded) {
       mongoc_topology_scanner_set_ssl_opts (client->topology->scanner, &client->ssl_opts);
 
-// Previous connections made by client will still have their original OpenSSL context.
+
+/* Update the OpenSSL context associated with this client to match new ssl opts. */
+/* Active connections previously made by client can still access original OpenSSL context. */
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   SSL_CTX_free(client->topology->scanner->openssl_ctx);
-   client->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new(&client->ssl_opts);
+      SSL_CTX_free (client->topology->scanner->openssl_ctx);
+      client->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&client->ssl_opts);
 #endif
    }
 }
@@ -1194,7 +1217,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    }
 #endif
 
-// This OpenSSL context will be used for all connections made by the new client.
+/* this OpenSSL context will be used for all connections made by the new client */
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    if (topology->scanner->ssl_opts && !topology->scanner->openssl_ctx) {
       topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (topology->scanner->ssl_opts);

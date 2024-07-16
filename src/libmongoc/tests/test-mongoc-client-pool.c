@@ -637,7 +637,8 @@ disconnects_removed_servers_in_pool (void *unused)
 
 /* Test re-creating OpenSSL context when ssl_opts are changed. Looking for no memory leaks. */
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-static void test_mongoc_client_pool_change_openssl_context_operations (void)
+static void
+test_mongoc_client_pool_change_openssl_ctx (void)
 {
    mongoc_client_pool_t *pool;
    const mongoc_ssl_opt_t *ssl_opts;
@@ -646,7 +647,7 @@ static void test_mongoc_client_pool_change_openssl_context_operations (void)
 
    /* change ssl opts */
    ssl_opts = test_framework_get_ssl_opts ();
-   mongoc_client_pool_set_ssl_opts(pool, ssl_opts);
+   mongoc_client_pool_set_ssl_opts (pool, ssl_opts);
 }
 #endif
 
@@ -695,6 +696,6 @@ test_client_pool_install (TestSuite *suite)
       test_framework_skip_if_max_wire_version_less_than_9 /* require server 4.4+ for streaming monitoring protocol */);
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   TestSuite_Add(suite, "/ClientPool/change_openssl_ctx", test_mongoc_client_pool_change_openssl_context_operations);
+   TestSuite_Add (suite, "/ClientPool/openssl/change_ssl_opts", test_mongoc_client_pool_change_openssl_ctx);
 #endif
 }
