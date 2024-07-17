@@ -32,12 +32,12 @@
 #include "mongoc-opcode.h"
 
 #ifdef MONGOC_ENABLE_SSL
-#include <openssl/ssl.h>
-#include "mongoc-openssl-private.h"
+#include "mongoc-ssl.h"
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-#include
+#include <openssl/ssl.h>
+#include "mongoc-openssl-private.h"
 #endif
 
 #include "mongoc-stream.h"
@@ -219,6 +219,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client);
 mongoc_stream_t *
 mongoc_client_connect_tcp (int32_t connecttimeoutms, const mongoc_host_list_t *host, bson_error_t *error);
 
+mongoc_stream_t *
 mongoc_client_connect (bool buffered,
                        bool use_ssl,
                        void *ssl_opts_void,

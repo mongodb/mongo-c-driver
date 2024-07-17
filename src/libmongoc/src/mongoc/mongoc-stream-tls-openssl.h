@@ -32,8 +32,11 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, m
    BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (mongoc_stream_t *)
-mongoc_stream_tls_openssl_new_with_context (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
-   BSON_GNUC_WARN_UNUSED_RESULT;
+mongoc_stream_tls_openssl_new_with_context (mongoc_stream_t *base_stream,
+                                            const char *host,
+                                            mongoc_ssl_opt_t *opt,
+                                            int client,
+                                            SSL_CTX *ssl_ctx) BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS
 
