@@ -216,6 +216,7 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
 #endif
 }
 
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 /*
  *--------------------------------------------------------------------------
  *
@@ -261,12 +262,9 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (
    }
 #endif
 
-#if defined(MONGOC_ENABLE_SSL_OPENSSL)
    return mongoc_stream_tls_openssl_new_with_context (base_stream, host, opt, client, ssl_ctx);
-#else
-#error "Don't know how to create TLS stream"
-#endif
 }
+#endif
 
 mongoc_stream_t *
 mongoc_stream_tls_new (mongoc_stream_t *base_stream, mongoc_ssl_opt_t *opt, int client)

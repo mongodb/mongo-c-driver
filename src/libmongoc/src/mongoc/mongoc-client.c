@@ -860,16 +860,6 @@ mongoc_client_connect_with_openssl_context (bool buffered,
    BSON_ASSERT (uri);
    BSON_ASSERT (host);
 
-#ifndef MONGOC_ENABLE_SSL
-   if (ssl_opts_void || mongoc_uri_get_tls (uri)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
-                      "TLS is not enabled in this build of mongo-c-driver.");
-      return NULL;
-   }
-#endif
-
    connecttimeoutms =
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
@@ -890,7 +880,6 @@ mongoc_client_connect_with_openssl_context (bool buffered,
       break;
    }
 
-#ifdef MONGOC_ENABLE_SSL
    if (base_stream) {
       mongoc_ssl_opt_t *ssl_opts;
       const char *mechanism;
@@ -901,12 +890,8 @@ mongoc_client_connect_with_openssl_context (bool buffered,
       if (use_ssl || (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
          mongoc_stream_t *original = base_stream;
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
          base_stream =
             mongoc_stream_tls_new_with_hostname_and_openssl_context (base_stream, host->host, ssl_opts, true, ssl_ctx);
-#else
-         base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host, ssl_opts, true);
-#endif
 
          if (!base_stream) {
             mongoc_stream_destroy (original);
@@ -920,7 +905,6 @@ mongoc_client_connect_with_openssl_context (bool buffered,
          }
       }
    }
-#endif
 
    if (!base_stream) {
       return NULL;
@@ -970,7 +954,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-    SSL_CTX *ssl_ctx = client->topology->scanner->openssl_ctx;
+   SSL_CTX *ssl_ctx = client->topology->scanner->openssl_ctx;
    return mongoc_client_connect_with_openssl_context (true, use_ssl, ssl_opts_void, ssl_ctx, uri, host, error);
 #else
    return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, error);
