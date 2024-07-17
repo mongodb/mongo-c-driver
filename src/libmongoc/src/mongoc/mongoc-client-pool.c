@@ -77,16 +77,16 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool, const mongoc_ssl_op
    if (opts) {
       _mongoc_ssl_opts_copy_to (opts, &pool->ssl_opts, false /* don't overwrite internal opts. */);
       pool->ssl_opts_set = true;
+
+      /* Update the OpenSSL context associated with this client pool to match new ssl opts. */
+      /* All future clients popped from pool inherit this OpenSSL context. */
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+      SSL_CTX_free (pool->topology->scanner->openssl_ctx);
+      pool->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&pool->ssl_opts);
+#endif
    }
 
    mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner, &pool->ssl_opts);
-
-/* Update the OpenSSL context associated with this client pool to match new ssl opts. */
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
-   SSL_CTX_free (pool->topology->scanner->openssl_ctx);
-   pool->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&pool->ssl_opts);
-#endif
-
    bson_mutex_unlock (&pool->mutex);
 }
 
@@ -202,11 +202,6 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
       /* sets use_ssl = true */
       mongoc_client_pool_set_ssl_opts (pool, &ssl_opt);
       _mongoc_client_pool_set_internal_tls_opts (pool, &internal_tls_opts);
-
-/* all clients popped from pool inherit this OpenSSL context */
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
-      pool->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&ssl_opt);
-#endif
    }
 #endif
    mongoc_counter_client_pools_active_inc ();
