@@ -10,6 +10,10 @@
 #include <pthread.h>
 #include <stdio.h>
 
+#ifdef _WIN32
+#define sleep(_n) Sleep ((_n) * 1000)
+#endif
+
 static pthread_mutex_t mutex;
 static bool in_shutdown = false;
 
@@ -53,7 +57,7 @@ worker (void *data)
 int
 main (int argc, char *argv[])
 {
-   int num_clients = 100;
+   int num_clients = 2000;
 
    if (argc > 1) {
       num_clients = atoi (argv[1]);
