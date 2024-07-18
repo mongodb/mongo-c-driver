@@ -1,7 +1,7 @@
 /*
  * Used as a benchmark for CDRIVER-4656 to test the performance effect of sharing the OpenSSL context among all
  * connections made by a client.
- * 
+ *
  * TO RUN: % ./cmake-build/src/libmongoc/mongoc-double-pings
  */
 
