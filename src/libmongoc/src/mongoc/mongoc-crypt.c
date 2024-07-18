@@ -539,7 +539,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    const int32_t sockettimeout = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
    int64_t sleep_usec = 0;
 
-   while (kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx)) {
+   while ((kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx))) {
       mongoc_iovec_t iov;
       const mongoc_ssl_opt_t *ssl_opt;
       const char *provider;
