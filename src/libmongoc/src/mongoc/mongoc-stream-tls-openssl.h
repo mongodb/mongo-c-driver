@@ -31,12 +31,14 @@ MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
    BSON_GNUC_WARN_UNUSED_RESULT;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_tls_openssl_new_with_context (mongoc_stream_t *base_stream,
                                             const char *host,
                                             mongoc_ssl_opt_t *opt,
                                             int client,
                                             SSL_CTX *ssl_ctx) BSON_GNUC_WARN_UNUSED_RESULT;
+#endif
 
 BSON_END_DECLS
 

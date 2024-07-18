@@ -35,7 +35,7 @@
 #include "mongoc-ssl.h"
 #endif
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 #include <openssl/ssl.h>
 #include "mongoc-openssl-private.h"
 #endif
@@ -227,7 +227,7 @@ mongoc_client_connect (bool buffered,
                        const mongoc_host_list_t *host,
                        bson_error_t *error);
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 mongoc_stream_t *
 mongoc_client_connect_with_openssl_context (bool buffered,
                                             bool use_ssl,

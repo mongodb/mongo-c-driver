@@ -33,7 +33,7 @@
 #include "mongoc-ssl-private.h"
 #endif
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 #include "mongoc-openssl-private.h"
 #endif
 
@@ -80,7 +80,7 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool, const mongoc_ssl_op
 
       /* Update the OpenSSL context associated with this client pool to match new ssl opts. */
       /* All future clients popped from pool inherit this OpenSSL context. */
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
       SSL_CTX_free (pool->topology->scanner->openssl_ctx);
       pool->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&pool->ssl_opts);
 #endif

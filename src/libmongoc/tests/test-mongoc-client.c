@@ -2219,7 +2219,7 @@ test_client_buildinfo_hang (void)
 }
 
 /* Test re-creating OpenSSL context when ssl_opts are changed. Looking for no memory leaks. */
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 
 static void
 test_mongoc_client_change_openssl_ctx_before_ops (void)
@@ -4138,7 +4138,7 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Client/resends_handshake_on_network_error", test_mongoc_client_resends_handshake_on_network_error);
    TestSuite_Add (suite, "/Client/failure_to_auth", test_failure_to_auth);
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    TestSuite_Add (
       suite, "/Client/openssl/change_ssl_opts_before_ops", test_mongoc_client_change_openssl_ctx_before_ops);
    TestSuite_Add (

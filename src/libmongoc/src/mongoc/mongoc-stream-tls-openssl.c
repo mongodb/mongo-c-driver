@@ -91,8 +91,10 @@ _mongoc_stream_tls_openssl_destroy (mongoc_stream_t *stream)
    mongoc_stream_destroy (tls->base_stream);
    tls->base_stream = NULL;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX_free (openssl->ctx);
    openssl->ctx = NULL;
+#endif
 
    mongoc_openssl_ocsp_opt_destroy (openssl->ocsp_opts);
    openssl->ocsp_opts = NULL;
@@ -853,6 +855,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, m
    RETURN ((mongoc_stream_t *) tls);
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 /*
  *--------------------------------------------------------------------------
  *
@@ -995,6 +998,7 @@ mongoc_stream_tls_openssl_new_with_context (
 
    RETURN ((mongoc_stream_t *) tls);
 }
+#endif
 
 void
 mongoc_openssl_ocsp_opt_destroy (void *ocsp_opt)

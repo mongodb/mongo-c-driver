@@ -20,8 +20,9 @@
 #define MONGOC_STREAM_TLS_H
 
 #include <bson/bson.h>
+#include <openssl/opensslv.h>
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 #include <openssl/ssl.h>
 #endif
 
@@ -51,7 +52,7 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream, const char *host)
 MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
    BSON_GNUC_WARN_UNUSED_RESULT;
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_tls_new_with_hostname_and_openssl_context (mongoc_stream_t *base_stream,
                                                          const char *host,

@@ -30,7 +30,7 @@
 #include "mongoc-stream-tls.h"
 #endif
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 #include <openssl/ssl.h>
 #endif
 
@@ -466,7 +466,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    mongoc_server_api_destroy (ts->api);
    bson_mutex_destroy (&ts->handshake_cmd_mtx);
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX_free (ts->openssl_ctx);
    ts->openssl_ctx = NULL;
 #endif
@@ -793,7 +793,7 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (mongoc_topology_scanner_node
    }
 #ifdef MONGOC_ENABLE_SSL
    if (node->ts->ssl_opts) {
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
       tls_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (
          stream, node->host.host, node->ts->ssl_opts, 1, node->ts->openssl_ctx);
 #else

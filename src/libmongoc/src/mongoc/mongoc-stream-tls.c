@@ -216,7 +216,7 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
 #endif
 }
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 /*
  *--------------------------------------------------------------------------
  *

@@ -69,7 +69,7 @@
 #include "mongoc-opts-private.h"
 #endif
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 #include "mongoc-openssl-private.h"
 #endif
 
@@ -825,7 +825,7 @@ mongoc_client_connect (bool buffered,
    return base_stream;
 }
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 /*
  *--------------------------------------------------------------------------
  *
@@ -953,7 +953,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
    ssl_opts_void = (void *) &client->ssl_opts;
 #endif
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX *ssl_ctx = client->topology->scanner->openssl_ctx;
    return mongoc_client_connect_with_openssl_context (true, use_ssl, ssl_opts_void, ssl_ctx, uri, host, error);
 #else
@@ -1083,7 +1083,7 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opt
 
 /* Update the OpenSSL context associated with this client to match new ssl opts. */
 /* Active connections previously made by client can still access original OpenSSL context. */
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
       SSL_CTX_free (client->topology->scanner->openssl_ctx);
       client->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&client->ssl_opts);
 #endif
