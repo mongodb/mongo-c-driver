@@ -3,7 +3,8 @@
  * in a pool.
  *
  * TO RUN: % ./cmake-build/src/libmongoc/mongoc-pooled-ping [number of clients to check out]
- * The integer argument is optional, if not provided 100 clients are created by default.
+ * The integer argument is optional, if not provided 2000 clients are created by default.
+ * (2000 clients were used in the benchmark)
  */
 
 #include <mongoc/mongoc.h>
