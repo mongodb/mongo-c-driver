@@ -467,7 +467,9 @@ bson_validate_with_error (const bson_t *bson, bson_validate_flags_t flags, bson_
  * and @error is filled out.
  */
 BSON_EXPORT (bool)
-bson_validate_with_error_and_offset (const bson_t *bson, bson_validate_flags_t flags, size_t *offset,
+bson_validate_with_error_and_offset (const bson_t *bson,
+                                     bson_validate_flags_t flags,
+                                     size_t *offset,
                                      bson_error_t *error);
 
 

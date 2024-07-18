@@ -3288,19 +3288,21 @@ _bson_validate_internal (const bson_t *bson, bson_validate_state_t *state)
 bool
 bson_validate (const bson_t *bson, bson_validate_flags_t flags, size_t *offset)
 {
-   return bson_validate_with_error_and_offset(bson, flags, offset, NULL);
+   return bson_validate_with_error_and_offset (bson, flags, offset, NULL);
 }
 
 
 bool
 bson_validate_with_error (const bson_t *bson, bson_validate_flags_t flags, bson_error_t *error)
 {
-   return bson_validate_with_error_and_offset(bson, flags, NULL, error);
+   return bson_validate_with_error_and_offset (bson, flags, NULL, error);
 }
 
 
 bool
-bson_validate_with_error_and_offset (const bson_t *bson, bson_validate_flags_t flags, size_t *offset,
+bson_validate_with_error_and_offset (const bson_t *bson,
+                                     bson_validate_flags_t flags,
+                                     size_t *offset,
                                      bson_error_t *error)
 {
    bson_validate_state_t state;
