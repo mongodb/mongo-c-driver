@@ -10,7 +10,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #define sleep(_n) Sleep ((_n) * 1000)
 #endif
 
