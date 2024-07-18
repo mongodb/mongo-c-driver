@@ -539,8 +539,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    const int32_t sockettimeout = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
    int64_t sleep_usec = 0;
 
-   kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
-   while (kms_ctx) {
+   while (kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx)) {
       mongoc_iovec_t iov;
       const mongoc_ssl_opt_t *ssl_opt;
       const char *provider;
@@ -573,7 +572,6 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          goto fail;
       }
 
-   retry:
       sleep_usec = mongocrypt_kms_ctx_usleep (kms_ctx);
       if (sleep_usec > 0) {
          _mongoc_usleep (sleep_usec);
@@ -589,7 +587,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
 #endif
       if (!tls_stream) {
          if (mongocrypt_kms_ctx_fail (kms_ctx)) {
-            goto retry;
+            continue;
          } else {
             /* TLS errors are set in _get_stream */
             goto fail;
@@ -601,7 +599,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
 
       if (!_mongoc_stream_writev_full (tls_stream, &iov, 1, sockettimeout, error)) {
          if (mongocrypt_kms_ctx_fail (kms_ctx)) {
-            goto retry;
+            continue;
          } else {
             bson_set_error (
                error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to write to KMS stream: %s", endpoint);
@@ -629,7 +627,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          read_ret = mongoc_stream_read (tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
          if (read_ret <= 0) {
             if (mongocrypt_kms_ctx_fail (kms_ctx)) {
-               goto retry;
+               continue;
             } else {
                if (read_ret == -1) {
                   bson_set_error (error,
@@ -654,7 +652,6 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
             goto fail;
          }
       }
-      kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
    }
    /* When NULL is returned by mongocrypt_ctx_next_kms_ctx, this can either be
     * an error or end-of-list. */
