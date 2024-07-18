@@ -20,9 +20,8 @@
 #define MONGOC_STREAM_TLS_H
 
 #include <bson/bson.h>
-#include <openssl/opensslv.h>
 
-#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #endif
 
