@@ -97,12 +97,6 @@ fi
 
 "${cmake_binary:?}" --version
 
-if [[ "${OSTYPE}" == darwin* ]]; then
-  # MacOS does not have nproc.
-  nproc() {
-    sysctl -n hw.logicalcpu
-  }
-fi
 export CMAKE_BUILD_PARALLEL_LEVEL
 CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 
