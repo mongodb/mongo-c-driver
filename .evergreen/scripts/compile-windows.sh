@@ -151,4 +151,4 @@ fi
 "${cmake_binary}" --build . --config "${build_config}" --target mongo_c_driver_tests
 
 # Also validate examples.
-"${cmake_binary}" --build . --target mongo_c_driver_examples
+"${cmake_binary}" --build . --config "${build_config}" --target mongo_c_driver_examples
