@@ -1124,10 +1124,6 @@ if (MONGOC_ENABLE_SASL_CYRUS)
 endif ()
 
 if (ENABLE_TESTS)
-   if (NOT TARGET tests)
-      add_custom_target (tests)
-   endif ()
-
    add_library (test-libmongoc-lib STATIC EXCLUDE_FROM_ALL ${test-libmongoc-sources})
    if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
       message (STATUS "Disabling warning C4756 for VS 2013 and older")
@@ -1156,7 +1152,7 @@ if (ENABLE_TESTS)
 
    function (mongoc_add_test test)
       add_executable (${test} EXCLUDE_FROM_ALL ${ARGN})
-      add_dependencies (tests ${test})
+      add_dependencies (mongo_c_driver_tests ${test})
 
       target_link_libraries (${test}
          PUBLIC
@@ -1200,13 +1196,9 @@ if (ENABLE_TESTS)
 endif ()
 
 if (ENABLE_EXAMPLES AND ENABLE_SHARED)
-   if (NOT TARGET examples)
-      add_custom_target (examples)
-   endif ()
-
    function (mongoc_add_example example)
       add_executable (${example} EXCLUDE_FROM_ALL ${ARGN})
-      add_dependencies (examples ${example})
+      add_dependencies (mongo_c_driver_examples ${example})
 
       target_link_libraries (${example} mongoc_shared ${LIBRARIES})
       if (WIN32)

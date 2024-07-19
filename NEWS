@@ -8,8 +8,8 @@ Notes:
 Changed:
 
   * Test and example targets are excluded from the `ALL` target.
-    * All test targets can be built using the `tests` target (not to be confused with the `test` target, which _runs_ the built test executables via CTest).
-    * All example targets can be built using the `examples` target.
+    * All test targets can be built using the `mongo_c_driver_tests` target.
+    * All example targets can be built using the `mongo_c_driver_examples` target.
 
 Deprecated:
 

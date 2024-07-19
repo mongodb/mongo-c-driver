@@ -120,7 +120,7 @@ if [[ "${CC}" =~ mingw ]]; then
     -S "$(native-path "$mongoc_dir")"
 
   env "$cmake_binary" --build "$build_dir"
-  env "$cmake_binary" --build "$build_dir" --target tests
+  env "$cmake_binary" --build "$build_dir" --target mongo_c_driver_tests
   exit 0
 fi
 
@@ -147,6 +147,4 @@ fi
 "${cmake_binary}" --install . --config "${build_config}"
 
 # For use by test tasks, which directly use the binary directory contents.
-"${cmake_binary}" --build . --config "${build_config}" --target tests || {
-  echo "Ignoring build error which may be caused by ENABLE_TESTING=OFF" 1>&2
-}
+"${cmake_binary}" --build . --config "${build_config}" --target mongo_c_driver_tests

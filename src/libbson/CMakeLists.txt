@@ -263,13 +263,9 @@ endif ()
 #                                            888
 
 if (ENABLE_EXAMPLES)
-   if (NOT TARGET examples)
-      add_custom_target (examples)
-   endif ()
-
    function (add_example bin src)
       add_executable (${bin} EXCLUDE_FROM_ALL ${src})
-      add_dependencies (examples ${bin})
+      add_dependencies (mongo_c_driver_examples ${bin})
 
       # Link against the shared lib like normal apps
       if(TARGET bson_shared)

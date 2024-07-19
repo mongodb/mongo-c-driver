@@ -424,6 +424,10 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
    list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_DARWIN_C_SOURCE)
 endif ()
 
+# Convenience targets to build all tests or all examples.
+add_custom_target(mongo_c_driver_tests)
+add_custom_target(mongo_c_driver_examples)
+
 add_subdirectory (src/common)
 
 if (NOT USING_SYSTEM_BSON)
