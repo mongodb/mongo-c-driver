@@ -124,7 +124,7 @@ if [[ "${CC}" =~ mingw ]]; then
   exit 0
 fi
 
-# MSBUild needs additional assistance.
+# MSBuild needs additional assistance.
 # https://devblogs.microsoft.com/cppblog/improved-parallelism-in-msbuild/
 export UseMultiToolTask=1
 export EnforceProcessCountAcrossBuilds=1
