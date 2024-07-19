@@ -5,6 +5,12 @@ Notes:
 
   * Bump minimum wire protocol version from 6 (MongoDB 3.6) to 7 (MongoDB 4.0).
 
+Changed:
+
+  * Test and example targets are excluded from the `ALL` target.
+    * All test targets can be built using the `tests` target (not to be confused with the `test` target, which _runs_ the built test executables via CTest).
+    * All example targets can be built using the `examples` target.
+
 Deprecated:
 
   * Use of `*_hint` functions is deprecated in favor of more aptly named `*_server_id` functions:

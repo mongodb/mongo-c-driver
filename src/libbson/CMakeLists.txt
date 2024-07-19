@@ -262,21 +262,25 @@ endif ()
 #                                            888
 #                                            888
 
-function (add_example bin src)
-   set (BSON_EXAMPLE_SOURCES ${PROJECT_SOURCE_DIR}/${src})
-   add_executable (${bin} ${BSON_EXAMPLE_SOURCES})
-
-   # Link against the shared lib like normal apps
-   if(TARGET bson_shared)
-      target_link_libraries (${bin} bson_shared)
-   elseif(TARGET bson_static)
-      target_link_libraries (${bin} bson_static)
-   else()
-      return()
-   endif()
-endfunction ()
-
 if (ENABLE_EXAMPLES)
+   if (NOT TARGET examples)
+      add_custom_target (examples)
+   endif ()
+
+   function (add_example bin src)
+      add_executable (${bin} EXCLUDE_FROM_ALL ${src})
+      add_dependencies (examples ${bin})
+
+      # Link against the shared lib like normal apps
+      if(TARGET bson_shared)
+         target_link_libraries (${bin} bson_shared)
+      elseif(TARGET bson_static)
+         target_link_libraries (${bin} bson_static)
+      else()
+         return()
+      endif()
+   endfunction ()
+
    add_example (bcon-col-view examples/bcon-col-view.c)
    add_example (bcon-speed examples/bcon-speed.c)
    add_example (bson-metrics examples/bson-metrics.c)

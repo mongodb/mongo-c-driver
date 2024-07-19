@@ -97,30 +97,43 @@ fi
 
 "${cmake_binary:?}" --version
 
+if [[ "${OSTYPE}" == darwin* ]]; then
+  # MacOS does not have nproc.
+  nproc() {
+    sysctl -n hw.logicalcpu
+  }
+fi
+export CMAKE_BUILD_PARALLEL_LEVEL
+CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
+
 if [[ "${CC}" =~ mingw ]]; then
   # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
   configure_flags_append "-DCMAKE_CXX_STANDARD=11"
-  cmake_binary=$(native-path "$cmake_binary")
 
+  cmake_binary=$(native-path "$cmake_binary")
   build_dir=$(native-path "$mongoc_dir")
+  prefix_path=$(native-path "$install_dir/lib/cmake")
+
   env \
     "CC=gcc" \
     "CXX=g++" \
     "$cmake_binary" \
-      -G "MinGW Makefiles" \
-      -D CMAKE_PREFIX_PATH="$(native-path "$install_dir/lib/cmake")" \
-      "${configure_flags[@]}" \
-      "${extra_configure_flags[@]}" \
-      -B "$build_dir" \
-      -S "$(native-path "$mongoc_dir")"
+    -G "MinGW Makefiles" \
+    -D CMAKE_PREFIX_PATH="$prefix_path" \
+    "${configure_flags[@]}" \
+    "${extra_configure_flags[@]}" \
+    -B "$build_dir" \
+    -S "$(native-path "$mongoc_dir")"
 
-  env "$cmake_binary" --build "$build_dir" --parallel "$(nproc)"
+  env "$cmake_binary" --build "$build_dir"
+  env "$cmake_binary" --build "$build_dir" --target tests
   exit 0
 fi
 
-declare compile_flags=(
-  "/m" # Number of concurrent processes. No value=# of cpus
-)
+# MSBUild needs additional assistance.
+# https://devblogs.microsoft.com/cppblog/improved-parallelism-in-msbuild/
+export UseMultiToolTask=1
+export EnforceProcessCountAcrossBuilds=1
 
 if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
   echo "Installing libmongocrypt..."
@@ -136,5 +149,10 @@ if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
 fi
 
 "${cmake_binary}" -G "$CC" "${configure_flags[@]}" "${extra_configure_flags[@]}"
-"${cmake_binary}" --build . --target ALL_BUILD --config "${build_config}" -- "${compile_flags[@]}"
-"${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"
+"${cmake_binary}" --build . --config "${build_config}"
+"${cmake_binary}" --install . --config "${build_config}"
+
+# For use by test tasks, which directly use the binary directory contents.
+"${cmake_binary}" --build . --config "${build_config}" --target tests || {
+  echo "Ignoring build error which may be caused by ENABLE_TESTING=OFF" 1>&2
+}
