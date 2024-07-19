@@ -91,10 +91,10 @@ mongo_bool_setting(ENABLE_DEBUG_ASSERTIONS "Build library with runtime debug ass
 include(Sanitizers)
 
 # Toggle optional components:
-mongo_bool_setting(ENABLE_TESTS "Build MongoDB C Driver tests")
-mongo_bool_setting(ENABLE_EXAMPLES "Build MongoDB C Driver examples")
-mongo_bool_setting(ENABLE_MAN_PAGES "Build the manual pages" DEFAULT VALUE OFF)
-mongo_bool_setting(ENABLE_HTML_DOCS "Build the HTML documentation" DEFAULT VALUE OFF)
+mongo_bool_setting(ENABLE_TESTS "Enable building MongoDB C Driver tests")
+mongo_bool_setting(ENABLE_EXAMPLES "Enable building MongoDB C Driver examples")
+mongo_bool_setting(ENABLE_MAN_PAGES "Enable building the manual pages" DEFAULT VALUE OFF)
+mongo_bool_setting(ENABLE_HTML_DOCS "Enable building the HTML documentation" DEFAULT VALUE OFF)
 mongo_bool_setting(ENABLE_UNINSTALL "Generate an 'uninstall' script and an 'uninstall' build target")
 mongo_bool_setting(ENABLE_SRV "Enable support for mongodb+srv URIs.")
 
