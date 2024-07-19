@@ -215,3 +215,6 @@ CCACHE_NOHASHDIR=1
 
 # For use by test tasks, which directly use the binary directory contents.
 "${cmake_binary}" --build . --target mongo_c_driver_tests
+
+# Also validate examples.
+"${cmake_binary}" --build . --target mongo_c_driver_examples

@@ -121,6 +121,7 @@ if [[ "${CC}" =~ mingw ]]; then
 
   env "$cmake_binary" --build "$build_dir"
   env "$cmake_binary" --build "$build_dir" --target mongo_c_driver_tests
+  env "$cmake_binary" --build "$build_dir" --target mongo_c_driver_examples
   exit 0
 fi
 
@@ -148,3 +149,6 @@ fi
 
 # For use by test tasks, which directly use the binary directory contents.
 "${cmake_binary}" --build . --config "${build_config}" --target mongo_c_driver_tests
+
+# Also validate examples.
+"${cmake_binary}" --build . --target mongo_c_driver_examples
