@@ -1083,7 +1083,7 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opt
 
 /* Update the OpenSSL context associated with this client to match new ssl opts. */
 /* Active connections previously made by client can still access original OpenSSL context. */
-#if defined(MONGOC_ENABLE_SSL_OPENSSL && OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
       SSL_CTX_free (client->topology->scanner->openssl_ctx);
       client->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&client->ssl_opts);
 #endif
