@@ -91,10 +91,8 @@ _mongoc_stream_tls_openssl_destroy (mongoc_stream_t *stream)
    mongoc_stream_destroy (tls->base_stream);
    tls->base_stream = NULL;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX_free (openssl->ctx);
    openssl->ctx = NULL;
-#endif
 
    mongoc_openssl_ocsp_opt_destroy (openssl->ocsp_opts);
    openssl->ocsp_opts = NULL;
