@@ -31,6 +31,7 @@
 #include "mongoc/mongoc-client-side-encryption-private.h"
 
 #include "mongoc/mongoc-uri.h"
+#include "mongoc/mongoc-http-private.h"
 
 static void
 _before_test (json_test_ctx_t *ctx, const bson_t *test)
@@ -2596,7 +2597,7 @@ test_kms_tls_cert_wrong_host (void *unused)
    mongoc_client_destroy (client);
 }
 
-typedef enum { NO_CLIENT_CERT, WITH_TLS, INVALID_HOSTNAME, EXPIRED, WITH_NAMES } tls_test_ce_t;
+typedef enum { NO_CLIENT_CERT, WITH_TLS, INVALID_HOSTNAME, EXPIRED, WITH_NAMES, RETRY } tls_test_ce_t;
 
 static mongoc_client_encryption_t *
 _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_t test_ce)
@@ -2619,7 +2620,9 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_
    char *ca_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
    char *certificate_key_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
-   if (test_ce == WITH_TLS) {
+   if (test_ce == WITH_TLS || test_ce == RETRY) {
+      const char *port = test_ce == RETRY ? "9003" : "9002";
+
       kms_providers = tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' }}",
                                 mongoc_test_aws_access_key_id,
                                 mongoc_test_aws_secret_access_key);
@@ -2629,19 +2632,21 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_
       bson_concat (kms_providers,
                    tmp_bson ("{'azure': {'tenantId': '%s', 'clientId': '%s', "
                              "'clientSecret': '%s', "
-                             "'identityPlatformEndpoint': '127.0.0.1:9002' }}",
+                             "'identityPlatformEndpoint': '127.0.0.1:%s' }}",
                              mongoc_test_azure_tenant_id,
                              mongoc_test_azure_client_id,
-                             mongoc_test_azure_client_secret));
+                             mongoc_test_azure_client_secret,
+                             port));
       bson_concat (
          tls_opts,
          tmp_bson ("{'azure': {'tlsCaFile': '%s', 'tlsCertificateKeyFile': '%s' }}", ca_file, certificate_key_file));
 
       bson_concat (kms_providers,
                    tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
-                             "'endpoint': '127.0.0.1:9002' }}",
+                             "'endpoint': '127.0.0.1:%s' }}",
                              mongoc_test_gcp_email,
-                             mongoc_test_gcp_privatekey));
+                             mongoc_test_gcp_privatekey,
+                             port));
       bson_concat (
          tls_opts,
          tmp_bson ("{'gcp': {'tlsCaFile': '%s', 'tlsCertificateKeyFile': '%s' }}", ca_file, certificate_key_file));
@@ -3226,6 +3231,45 @@ test_kms_tls_options_extra_rejected (void *unused)
    mongoc_client_encryption_opts_destroy (ce_opts);
 
    mongoc_client_destroy (keyvault_client);
+}
+
+static mongoc_ssl_opt_t
+make_csfle_ssl_opts (void)
+{
+   /* The failpoint server is pretending to be a KMS server and uses the same certs */
+   mongoc_ssl_opt_t ssl_opts = {0};
+   ssl_opts.ca_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   ssl_opts.pem_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+   return ssl_opts;
+}
+
+static void
+set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network)
+{
+   mongoc_http_request_t req;
+   mongoc_http_response_t res;
+   bool r;
+   bson_error_t error = {0};
+
+   _mongoc_http_request_init (&req);
+   _mongoc_http_response_init (&res);
+
+   req.method = "POST";
+   req.host = "127.0.0.1";
+   req.port = 9003;
+   if (network) {
+      req.path = "/set_failpoint/network";
+   } else {
+      req.path = "/set_failpoint/http";
+   }
+   req.extra_headers = "Content-Type: application/json\r\n";
+   const char *count_json = "{ \"count\": 1 }";
+   req.body = count_json;
+   req.body_len = strlen (count_json);
+
+   r = _mongoc_http_send (&req, 10000, true, ssl_opts, &res, &error);
+   ASSERT_OR_PRINT (r, error);
+   _mongoc_http_response_cleanup (&res);
 }
 
 /* ee_fixture is a fixture for the Explicit Encryption prose test. */
@@ -6103,6 +6147,68 @@ test_bypass_mongocryptd_shared_library (void *unused)
    bson_free (args);
 }
 
+/* Prose test 23: KMS Retry Tests */
+static void
+test_kms_retry (void *unused)
+{
+   mongoc_client_t *keyvault_client = test_framework_new_default_client ();
+   mongoc_client_encryption_t *client_encryption = _tls_test_make_client_encryption (keyvault_client, RETRY);
+   bson_error_t error = {0};
+   bson_value_t keyid;
+   mongoc_client_encryption_datakey_opts_t *dkopts;
+   mongoc_ssl_opt_t ssl_opts = make_csfle_ssl_opts ();
+   bool res;
+
+   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1};
+   bson_value_t encrypted_field = {0};
+   mongoc_client_encryption_encrypt_opts_t *encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
+   mongoc_client_encryption_encrypt_opts_set_algorithm (encrypt_opts,
+                                                        MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+   // AWS
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts, tmp_bson (BSON_STR ({"region" : "r", "key" : "k", "endpoint" : "127.0.0.1:9003"})));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", dkopts, &keyid, &error);
+   ASSERT (res);
+
+   set_retry_failpoint (&ssl_opts, false);
+   set_retry_failpoint (&ssl_opts, true);
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT (res);
+
+   // Azure
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts, tmp_bson (BSON_STR ({"keyVaultEndpoint" : "127.0.0.1:9003", "keyName" : "foo"})));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "azure", dkopts, &keyid, &error);
+   ASSERT (res);
+
+   set_retry_failpoint (&ssl_opts, false);
+   set_retry_failpoint (&ssl_opts, true);
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT (res);
+
+   // GCP
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson (BSON_STR ({
+                                                           "projectId" : "foo",
+                                                           "location" : "bar",
+                                                           "keyRing" : "baz",
+                                                           "keyName" : "qux",
+                                                           "endpoint" : "127.0.0.1:9003"
+                                                        })));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "gcp", dkopts, &keyid, &error);
+   ASSERT (res);
+
+   set_retry_failpoint (&ssl_opts, false);
+   set_retry_failpoint (&ssl_opts, true);
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT (res);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -6280,6 +6386,12 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls_options/extra_rejected",
                       test_kms_tls_options_extra_rejected,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms_retry",
+                      test_kms_retry,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption);
