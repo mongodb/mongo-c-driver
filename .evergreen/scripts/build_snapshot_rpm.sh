@@ -25,7 +25,7 @@ set -o errexit
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ]; then
-    echo "Usage: ./.evergreen/scripts/build_snapshot_rpm.sh"
+    echo "Usage: .evergreen/scripts/build_snapshot_rpm.sh"
     echo ""
     echo "  This script is used to build a .rpm package directly from a snapshot of the"
     echo "  current repository."

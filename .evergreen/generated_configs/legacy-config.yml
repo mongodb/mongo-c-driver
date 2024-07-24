@@ -979,9 +979,9 @@ tasks:
         set -o errexit
         . .evergreen/scripts/find-cmake-latest.sh
         export CMAKE="$(find_cmake_latest)"
-        DESTDIR="$(pwd)/dest" ./.evergreen/scripts/install-uninstall-check.sh
-        BSON_ONLY=1 ./.evergreen/scripts/install-uninstall-check.sh
-        ./.evergreen/scripts/install-uninstall-check.sh
+        DESTDIR="$(pwd)/dest" .evergreen/scripts/install-uninstall-check.sh
+        BSON_ONLY=1 .evergreen/scripts/install-uninstall-check.sh
+        .evergreen/scripts/install-uninstall-check.sh
 - name: debug-compile-with-warnings
   commands:
   - command: shell.exec
@@ -1043,7 +1043,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        ./.evergreen/scripts/build-and-test-with-toolchain.sh
+        .evergreen/scripts/build-and-test-with-toolchain.sh
 - name: install-libmongoc-after-libbson
   commands:
   - command: shell.exec
@@ -1053,7 +1053,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        ./.evergreen/scripts/install-libmongoc-after-libbson.sh
+        .evergreen/scripts/install-libmongoc-after-libbson.sh
 - name: test-coverage-latest-replica-set-auth-sasl-openssl
   tags:
   - latest
@@ -16269,7 +16269,7 @@ tasks:
         set -o errexit
         echo "Building test-azurekms ... begin"
         pushd mongoc
-        ./.evergreen/scripts/compile-test-azurekms.sh
+        .evergreen/scripts/compile-test-azurekms.sh
         popd
         echo "Building test-azurekms ... end"
         echo "Copying files ... begin"
@@ -16310,7 +16310,7 @@ tasks:
       script: |-
         set -o errexit
         pushd mongoc
-        ./.evergreen/scripts/compile-test-azurekms.sh
+        .evergreen/scripts/compile-test-azurekms.sh
         popd
   - command: shell.exec
     type: test
@@ -16335,7 +16335,7 @@ tasks:
         set -o errexit
         echo "Building test-gcpkms ... begin"
         pushd mongoc
-        ./.evergreen/scripts/compile-test-gcpkms.sh
+        .evergreen/scripts/compile-test-gcpkms.sh
         popd
         echo "Building test-gcpkms ... end"
         echo "Copying files ... begin"
@@ -16373,7 +16373,7 @@ tasks:
       script: |-
         set -o errexit
         pushd mongoc
-        ./.evergreen/scripts/compile-test-gcpkms.sh
+        .evergreen/scripts/compile-test-gcpkms.sh
         popd
   - command: shell.exec
     type: test

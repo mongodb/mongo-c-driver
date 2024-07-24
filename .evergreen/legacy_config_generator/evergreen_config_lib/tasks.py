@@ -379,9 +379,9 @@ all_tasks = [
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
                 export CMAKE="$(find_cmake_latest)"
-                DESTDIR="$(pwd)/dest" ./.evergreen/scripts/install-uninstall-check.sh
-                BSON_ONLY=1 ./.evergreen/scripts/install-uninstall-check.sh
-                ./.evergreen/scripts/install-uninstall-check.sh""",
+                DESTDIR="$(pwd)/dest" .evergreen/scripts/install-uninstall-check.sh
+                BSON_ONLY=1 .evergreen/scripts/install-uninstall-check.sh
+                .evergreen/scripts/install-uninstall-check.sh""",
                 include_expansions_in_env=["distro_id"],
             )
         ],
@@ -420,12 +420,12 @@ all_tasks = [
                     ),
                 ]
             ),
-            shell_mongoc("./.evergreen/scripts/build-and-test-with-toolchain.sh"),
+            shell_mongoc(".evergreen/scripts/build-and-test-with-toolchain.sh"),
         ],
     ),
     NamedTask(
         "install-libmongoc-after-libbson",
-        commands=[shell_mongoc("./.evergreen/scripts/install-libmongoc-after-libbson.sh"),],
+        commands=[shell_mongoc(".evergreen/scripts/install-libmongoc-after-libbson.sh"),],
     ),
 ]
 
