@@ -78,18 +78,17 @@ Mongo C Driver uninstall program, generated with CMake
 
 Copyright 2009-present MongoDB, Inc.
 
-Licensed under the Apache License, Version 2.0 (the \"License\");
+Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
   http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an \"AS IS\" BASIS,
+distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
-limitations under the License.
-]])
+limitations under the License.]])
 string(STRIP header "${header}")
 string(REPLACE "\n" ";" header_lines "${header}")
 
@@ -193,11 +192,14 @@ set(init_lines)
 
 if(UNINSTALL_IS_WIN32)
     # Comment the header:
-    list(TRANSFORM header_lines PREPEND "rem ")
+    list(TRANSFORM header_lines PREPEND "rem " REGEX "^.+$")
+    list(TRANSFORM header_lines PREPEND "rem" REGEX "^$")
     # Add the preamble
     list(APPEND init_lines
         "@echo off"
+        ""
         "${header_lines}"
+        ""
         "${bat_preamble}"
         "if \"%DESTDIR%\"==\"\" ("
         "  set __prefix=${install_prefix}"
@@ -209,12 +211,14 @@ if(UNINSTALL_IS_WIN32)
     set(__rmdir "call :rmdir")
 else()
     # Comment the header:
-    list(TRANSFORM header_lines PREPEND "# * ")
+    list(TRANSFORM header_lines PREPEND "# " REGEX "^.+$")
+    list(TRANSFORM header_lines PREPEND "#" REGEX "^$")
     # Add the preamble
     list(APPEND init_lines
         "#!/usr/bin/env bash"
-        ""
+        "#"
         "${header_lines}"
+        ""
         "${sh_preamble}"
         "__prefix=\${DESTDIR:-}${install_prefix}"
         "")
