@@ -212,7 +212,8 @@ else()
     list(TRANSFORM header_lines PREPEND "# * ")
     # Add the preamble
     list(APPEND init_lines
-        "#!/bin/sh"
+        "#!/usr/bin/env bash"
+        ""
         "${header_lines}"
         "${sh_preamble}"
         "__prefix=\${DESTDIR:-}${install_prefix}"

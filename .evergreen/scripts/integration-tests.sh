@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/usr/bin/env bash
+#
 # Start up mongo-orchestration (a server to spawn mongodb clusters) and set up a cluster.
 #
 # Specify the following environment variables:
