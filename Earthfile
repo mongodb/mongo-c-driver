@@ -433,7 +433,7 @@ vcpkg-base:
     ENV VCPKG_ROOT=/opt/vcpkg-git
     ENV VCPKG_FORCE_SYSTEM_BINARIES=1
     GIT CLONE --branch=2023.06.20 https://github.com/microsoft/vcpkg $VCPKG_ROOT
-    RUN sh $VCPKG_ROOT/bootstrap-vcpkg.sh -disableMetrics && \
+    RUN $VCPKG_ROOT/bootstrap-vcpkg.sh -disableMetrics && \
         install -spD -m 755 $VCPKG_ROOT/vcpkg /usr/local/bin/
     LET src_dir=/opt/mongoc-vcpkg-example
     COPY src/libmongoc/examples/cmake/vcpkg/ $src_dir

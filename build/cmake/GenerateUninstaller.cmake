@@ -13,10 +13,8 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     # Platform dependent values:
     if(WIN32)
         set(_script_ext "cmd")
-        set(_script_runner cmd.exe /c)
     else()
         set(_script_ext "sh")
-        set(_script_runner sh -e -u)
     endif()
     # The script filename and path:
     set(_script_filename "${UNINSTALL_SCRIPT_NAME}.${_script_ext}")
@@ -46,7 +44,7 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR OR PROJECT_IS_TOP_LEVEL)
         add_custom_target(
             uninstall
-            COMMAND ${_script_runner} "${_uninstaller_script}"
+            COMMAND "${_uninstaller_script}"
             COMMENT Uninstalling...
         )
     endif()

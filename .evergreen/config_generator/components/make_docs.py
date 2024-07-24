@@ -16,9 +16,9 @@ class MakeDocs(Function):
             include_expansions_in_env=["distro_id"],
             script="""\
                 set -o errexit
-                bash tools/poetry.sh install --with=docs
+                ./tools/poetry.sh install --with=docs
                 # See SphinxBuild.cmake for EVG_DOCS_BUILD reasoning
-                bash tools/poetry.sh run env EVG_DOCS_BUILD=1 bash .evergreen/scripts/build-docs.sh
+                ./tools/poetry.sh run env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
                 """,
         ),
     ]
