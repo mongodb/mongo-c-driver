@@ -72,7 +72,7 @@ endfunction()
 
 # The copyright header:
 set(header [[
-Mongo C Driver uninstall program, generated with CMake
+MongoDB C Driver uninstall program, generated with CMake
 
 Copyright 2009-present MongoDB, Inc.
 
