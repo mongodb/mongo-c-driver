@@ -12,6 +12,10 @@ CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
 SRCROOT=$(pwd)
 
+# Use ccache if able.
+. $DIR/find-ccache.sh
+find_ccache_and_export_vars "$(pwd)" || true
+
 SCRATCH_DIR=$(pwd)/.scratch
 rm -rf "$SCRATCH_DIR"
 mkdir -p "$SCRATCH_DIR"
