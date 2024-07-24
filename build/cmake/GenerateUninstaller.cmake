@@ -70,6 +70,29 @@ function(append_line line)
     file(APPEND "${UNINSTALL_WRITE_FILE}" "${line}\n")
 endfunction()
 
+# Ensure generated uninstall script has executable permissions.
+if ("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.19.0")
+    file(
+        CHMOD "${UNINSTALL_WRITE_FILE}"
+        PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
+            WORLD_READ WORLD_EXECUTE
+    )
+else ()
+    # Workaround lack of file(CHMOD).
+    get_filename_component(_script_filename "${UNINSTALL_WRITE_FILE}" NAME)
+    file(
+        COPY "${UNINSTALL_WRITE_FILE}"
+        DESTINATION "${_script_filename}.d"
+        FILE_PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
+            WORLD_READ WORLD_EXECUTE
+    )
+    file(RENAME "${_script_filename}.d/${_script_filename}" "${_script_filename}")
+endif ()
+
 # The copyright header:
 set(header [[
 MongoDB C Driver uninstall program, generated with CMake
