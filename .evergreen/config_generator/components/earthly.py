@@ -176,7 +176,8 @@ def earthly_exec(
     return subprocess_exec(
         "bash",
         args=[
-            "tools/earthly.sh",
+            "-c",
+            "./tools/earthly.sh",
             *(f"--secret={k}" for k in (secrets or ())),
             f"+{target}",
             *(f"--{arg}={val}" for arg, val in (args or {}).items()),

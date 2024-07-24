@@ -994,7 +994,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=LibreSSL
@@ -1007,7 +1008,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1034,7 +1036,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=LibreSSL
@@ -1047,7 +1050,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1074,7 +1078,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1087,7 +1092,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1114,7 +1120,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1127,7 +1134,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1154,7 +1162,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=off
@@ -1167,7 +1176,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1194,7 +1204,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=off
@@ -1207,7 +1218,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1234,7 +1246,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +env-warmup
             - --sasl=off
             - --tls=OpenSSL
@@ -1247,7 +1260,8 @@ tasks:
           binary: bash
           working_dir: mongoc
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=off
@@ -1281,7 +1295,8 @@ tasks:
             SILK_CLIENT_ID: ${silk_client_id}
             SILK_CLIENT_SECRET: ${silk_client_secret}
           args:
-            - tools/earthly.sh
+            - -c
+            - ./tools/earthly.sh
             - --secret=SILK_CLIENT_ID
             - --secret=SILK_CLIENT_SECRET
             - +create-silk-asset-group
