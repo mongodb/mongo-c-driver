@@ -92,7 +92,7 @@ _run_operation (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operatio
 }
 
 static void
-test_client_side_encryption_cb (bson_t *scenario)
+test_client_side_encryption_cb (void *scenario)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
    config.before_test_cb = _before_test;
@@ -5842,9 +5842,9 @@ CEC_TEST (test_create_encrypted_collection_bad_keyId, const char *const kmsProvi
    bsonBuildDecl (
       ccOpts,
       kv ("encryptedFields",
-          doc (kv (
-             "fields",
-             array (doc (kv ("path", cstr ("ssn")), kv ("bsonType", cstr ("string")), kv ("keyId", bool (true))))))));
+          doc (kv ("fields",
+                   array (doc (
+                      kv ("path", cstr ("ssn")), kv ("bsonType", cstr ("string")), kv ("keyId", boolean (true))))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    bson_t *const mkey = _make_kms_masterkey (kmsProvider);
    mongoc_collection_t *const coll = mongoc_client_encryption_create_encrypted_collection (

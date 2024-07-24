@@ -181,6 +181,8 @@ if [[ "${OSTYPE}" == darwin* ]]; then
     sysctl -n hw.logicalcpu
   }
 fi
+export CMAKE_BUILD_PARALLEL_LEVEL
+CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 
 declare -a extra_configure_flags
 IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
@@ -207,5 +209,11 @@ fi
 find_ccache_and_export_vars "$(pwd)" || true
 
 "${cmake_binary}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
-"${cmake_binary}" --build . -- -j "$(nproc)"
-"${cmake_binary}" --build . --target install
+"${cmake_binary}" --build .
+"${cmake_binary}" --install .
+
+# For use by test tasks, which directly use the binary directory contents.
+"${cmake_binary}" --build . --target mongo_c_driver_tests
+
+# Also validate examples.
+"${cmake_binary}" --build . --target mongo_c_driver_examples

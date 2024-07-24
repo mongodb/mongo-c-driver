@@ -388,7 +388,7 @@ cleanup:
 
 
 static void
-test_dns (bson_t *test)
+test_dns (void *test)
 {
    _test_dns_maybe_pooled (test, false);
    _test_dns_maybe_pooled (test, true);

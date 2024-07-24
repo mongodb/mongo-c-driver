@@ -322,7 +322,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
  *-----------------------------------------------------------------------
  */
 void
-test_server_selection_logic_cb (bson_t *test)
+test_server_selection_logic_cb (void *test_vp)
 {
    bool expected_error;
    bson_error_t error;
@@ -352,7 +352,8 @@ test_server_selection_logic_cb (bson_t *test)
 
    _mongoc_array_init (&selected_servers, sizeof (mongoc_server_description_t *));
 
-   BSON_ASSERT (test);
+   BSON_ASSERT (test_vp);
+   const bson_t *const test = test_vp;
 
    expected_error = bson_iter_init_find (&iter, test, "error") && bson_iter_as_bool (&iter);
 
@@ -1863,6 +1864,12 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
    return original;
 }
 
+static void
+bson_destroy_vp (void *vp)
+{
+   bson_destroy ((bson_t *) vp);
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -1947,7 +1954,7 @@ _install_json_test_suite_with_check (TestSuite *suite, const char *base, const c
       }
       /* list of "check" functions that decide whether to skip the test */
       va_start (ap, callback);
-      _V_TestSuite_AddFull (suite, skip_json, (void (*) (void *)) callback, (void (*) (void *)) bson_destroy, test, ap);
+      _V_TestSuite_AddFull (suite, skip_json, callback, &bson_destroy_vp, test, ap);
 
       va_end (ap);
    }

@@ -1635,11 +1635,13 @@ done:
 }
 
 void
-run_one_test_file (bson_t *bson)
+run_one_test_file (void *bson_vp)
 {
    test_runner_t *test_runner = NULL;
    test_file_t *test_file = NULL;
    bson_iter_t test_iter;
+
+   bson_t *const bson = bson_vp;
 
    test_diagnostics_init ();
 

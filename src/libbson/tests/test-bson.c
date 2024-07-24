@@ -1144,12 +1144,11 @@ test_bson_validate (void)
       b, BSON_VALIDATE_NONE | BSON_VALIDATE_UTF8 | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS, &offset));
    bson_destroy (b);
 
-#define VALIDATE_TEST(_filename, _flags, _offset, _flag, _msg)     \
-   b = get_bson (_filename);                                       \
-   BSON_ASSERT (!bson_validate (b, _flags, &offset));              \
-   ASSERT_CMPSIZE_T (offset, ==, (size_t) _offset);                \
-   BSON_ASSERT (!bson_validate_with_error (b, _flags, &error));    \
-   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, _flag, _msg); \
+#define VALIDATE_TEST(_filename, _flags, _offset, _flag, _msg)                      \
+   b = get_bson (_filename);                                                        \
+   BSON_ASSERT (!bson_validate_with_error_and_offset (b, _flags, &offset, &error)); \
+   ASSERT_CMPSIZE_T (offset, ==, (size_t) _offset);                                 \
+   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, _flag, _msg);                  \
    bson_destroy (b)
 
    VALIDATE_TEST ("overflow2.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");

@@ -10,12 +10,12 @@ compile_libmongocrypt() {
   # `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no
   # divergence in the copied files.
 
-  # TODO: once 1.10.0 is released (containing MONGOCRYPT-605) replace the following with:
-  # git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.10.0 || return
+  # TODO: once 1.10.2 is released (containing MONGOCRYPT-706) replace the following with:
+  # git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.10.2 || return
   {
     git clone -q https://github.com/mongodb/libmongocrypt || return
-    # Check out commit containing MONGOCRYPT-614
-    git -C libmongocrypt checkout 9ce5db1ca353a4b82788724257d460a9ce67a3e9
+    # Check out commit containing MONGOCRYPT-706
+    git -C libmongocrypt checkout 06dedd42351b9adce146eaa0e971e793d8676e49
   }
 
   declare -a crypt_cmake_flags=(

@@ -41,6 +41,8 @@
 #include "mongoc-log.h"
 #include "mongoc-error.h"
 
+#include "common-macros-private.h"
+
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-openssl"
@@ -759,7 +761,9 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, m
    if (!client) {
       /* Only used by the Mock Server.
        * Set a callback to get the SNI, if provided */
+      MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_BEGIN
       SSL_CTX_set_tlsext_servername_callback (ssl_ctx, _mongoc_stream_tls_openssl_sni);
+      MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_END
    }
 
    if (opt->weak_cert_validation) {

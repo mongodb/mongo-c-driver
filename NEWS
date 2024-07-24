@@ -7,6 +7,16 @@ Build Configuration:
       * Set [`CMAKE_<LANG>_COMPILER_LAUNCHER`](https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html) to build with ccache.
   * Remove `MONGO_USE_CCACHE` (no longer applicable; see above).
 
+Notes:
+
+  * Bump minimum wire protocol version from 6 (MongoDB 3.6) to 7 (MongoDB 4.0).
+
+Changed:
+
+  * Test and example targets are excluded from the `ALL` target.
+    * All test targets can be built using the `mongo_c_driver_tests` target.
+    * All example targets can be built using the `mongo_c_driver_examples` target.
+
 Deprecated:
 
   * Use of `*_hint` functions is deprecated in favor of more aptly named `*_server_id` functions:
@@ -15,6 +25,7 @@ Deprecated:
     * `mongoc_cursor_set_hint` is deprecated for `mongoc_cursor_set_server_id`
     * `mongoc_cursor_get_hint` is deprecated for `mongoc_cursor_get_server_id`
 
+  * A future minor release plans to drop support for Visual Studio 2013.
 
 libmongoc 1.27.4
 ================

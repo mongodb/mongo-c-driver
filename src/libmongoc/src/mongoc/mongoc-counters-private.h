@@ -191,21 +191,21 @@ enum {
 
 #else
 /* when counters are disabled, these functions are no-ops */
-#define COUNTER(ident, Category, Name, Description)                   \
-   static BSON_INLINE void mongoc_counter_##ident##_add (int64_t val) \
-   {                                                                  \
-   }                                                                  \
-   static BSON_INLINE void mongoc_counter_##ident##_inc (void)        \
-   {                                                                  \
-   }                                                                  \
-   static BSON_INLINE void mongoc_counter_##ident##_dec (void)        \
-   {                                                                  \
-   }                                                                  \
-   static BSON_INLINE void mongoc_counter_##ident##_reset (void)      \
-   {                                                                  \
-   }                                                                  \
-   static BSON_INLINE void mongoc_counter_##ident##_count (void)      \
-   {                                                                  \
+#define COUNTER(ident, Category, Name, Description)                                     \
+   static BSON_INLINE void mongoc_counter_##ident##_add (BSON_MAYBE_UNUSED int64_t val) \
+   {                                                                                    \
+   }                                                                                    \
+   static BSON_INLINE void mongoc_counter_##ident##_inc (void)                          \
+   {                                                                                    \
+   }                                                                                    \
+   static BSON_INLINE void mongoc_counter_##ident##_dec (void)                          \
+   {                                                                                    \
+   }                                                                                    \
+   static BSON_INLINE void mongoc_counter_##ident##_reset (void)                        \
+   {                                                                                    \
+   }                                                                                    \
+   static BSON_INLINE void mongoc_counter_##ident##_count (void)                        \
+   {                                                                                    \
    }
 #include "mongoc-counters.defs"
 #undef COUNTER

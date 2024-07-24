@@ -130,7 +130,7 @@ _topology_has_description (const mongoc_topology_description_t *topology, bson_t
  *-----------------------------------------------------------------------
  */
 static void
-test_sdam_cb (bson_t *test)
+test_sdam_cb (void *test_vp)
 {
    mongoc_client_t *client;
    bson_t phase;
@@ -147,6 +147,9 @@ test_sdam_cb (bson_t *test)
    mc_shared_tpld td = MC_SHARED_TPLD_NULL;
    const char *set_name;
    const char *hostname;
+
+   BSON_ASSERT_PARAM (test_vp);
+   const bson_t *const test = test_vp;
 
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
@@ -452,10 +455,13 @@ run_one_integration_test (json_test_config_t *config, bson_t *test)
 }
 
 static void
-test_sdam_integration_cb (bson_t *scenario)
+test_sdam_integration_cb (void *scenario_vp)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
    bson_iter_t tests_iter;
+
+   BSON_ASSERT_PARAM (scenario_vp);
+   const bson_t *const scenario = scenario_vp;
 
    config.run_operation_cb = sdam_integration_operation_cb;
    config.scenario = scenario;

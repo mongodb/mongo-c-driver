@@ -1633,9 +1633,9 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
    uri->write_concern = write_concern;
 
    bsonParse (uri->options,
-              find (iKeyWithType (MONGOC_URI_SAFE, bool),
+              find (iKeyWithType (MONGOC_URI_SAFE, boolean),
                     do (mongoc_write_concern_set_w (write_concern,
-                                                    bsonAs (bool) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED))));
+                                                    bsonAs (boolean) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED))));
 
    if (bsonParseError) {
       MONGOC_URI_ERROR (error, "Error while parsing 'safe' URI option: %s", bsonParseError);
@@ -1651,8 +1651,8 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
    }
 
    bsonParse (uri->options,
-              find (iKeyWithType (MONGOC_URI_JOURNAL, bool),
-                    do (mongoc_write_concern_set_journal (write_concern, bsonAs (bool)))));
+              find (iKeyWithType (MONGOC_URI_JOURNAL, boolean),
+                    do (mongoc_write_concern_set_journal (write_concern, bsonAs (boolean)))));
    if (bsonParseError) {
       MONGOC_URI_ERROR (error, "Error while parsing 'journal' URI option: %s", bsonParseError);
       return false;

@@ -73,6 +73,6 @@ void
 run_unified_tests (TestSuite *suite, const char *base, const char *subdir);
 
 void
-run_one_test_file (bson_t *bson);
+run_one_test_file (void *bson_vp);
 
 #endif /* UNIFIED_RUNNER_H */

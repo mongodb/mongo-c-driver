@@ -11,7 +11,7 @@
       (void) 0
 
 int
-main (int argc, char *argv[])
+main (void)
 {
    bool ok = false;
 

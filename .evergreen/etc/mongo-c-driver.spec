@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.27.2
+%global up_version   1.27.4
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -259,6 +259,12 @@ exit $ret
 
 
 %changelog
+* Wed Jul  3 2024 Remi Collet <remi@remirepo.net> - 1.27.4-1
+- update to 1.27.4
+
+* Tue Jul  2 2024 Remi Collet <remi@remirepo.net> - 1.27.3-1
+- update to 1.27.3
+
 * Wed Jun  5 2024 Remi Collet <remi@remirepo.net> - 1.27.2-1
 - update to 1.27.2
 
