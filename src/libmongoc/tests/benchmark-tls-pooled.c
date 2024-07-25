@@ -2,21 +2,14 @@
  * Used as a benchmark for CDRIVER-4656 to test the performance effect of sharing the OpenSSL context among all clients
  * in a pool.
  *
- * TO RUN: % ./cmake-build/src/libmongoc/mongoc-pooled-ping [number of clients to check out]
- * The integer argument is optional, if not provided 2000 clients are created by default.
- * (2000 clients were used in the benchmark)
+ * TO BUILD: % cmake --build cmake-build --target benchmark-tls-pooled
+ * TO RUN: % ./cmake-build/src/libmongoc/benchmark-tls-pooled  [number of clients to check out]
+ * The integer argument is optional, if not provided 200 clients are created by default.
  */
 
 #include <mongoc/mongoc.h>
 #include <pthread.h>
 #include <stdio.h>
-
-#if defined(_WIN32) || defined(_WIN64)
-#define sleep(_n) Sleep ((_n) * 1000)
-#endif
-
-static pthread_mutex_t mutex;
-static bool in_shutdown = false;
 
 static void *
 worker (void *data)
@@ -30,26 +23,16 @@ worker (void *data)
 
    bson_append_int32 (&ping, "ping", 4, 1);
 
-   while (true) {
-      client = mongoc_client_pool_pop (pool);
+   client = mongoc_client_pool_pop (pool);
 
-      database = mongoc_client_get_database (client, "test");
-      r = mongoc_database_command_with_opts (database, &ping, NULL, NULL, NULL, &error);
+   database = mongoc_client_get_database (client, "test");
+   r = mongoc_database_command_with_opts (database, &ping, NULL, NULL, NULL, &error);
 
-      if (!r) {
-         fprintf (stderr, "Ping failure: %s\n", error.message);
-      }
-
-      mongoc_client_pool_push (pool, client);
-
-      pthread_mutex_lock (&mutex);
-      if (in_shutdown || r) {
-         pthread_mutex_unlock (&mutex);
-         break;
-      }
-
-      pthread_mutex_unlock (&mutex);
+   if (!r) {
+      fprintf (stderr, "Ping failure: %s\n", error.message);
    }
+
+   mongoc_client_pool_push (pool, client);
 
    bson_destroy (&ping);
    return NULL;
@@ -58,7 +41,7 @@ worker (void *data)
 int
 main (int argc, char *argv[])
 {
-   int num_clients = 2000;
+   int num_clients = 200;
 
    if (argc > 1) {
       num_clients = atoi (argv[1]);
@@ -70,12 +53,10 @@ main (int argc, char *argv[])
    unsigned i;
    void *ret;
 
-   pthread_mutex_init (&mutex, NULL);
    mongoc_init ();
 
    uri = mongoc_uri_new ("mongodb://localhost:27017/");
 
-#ifdef MONGOC_ENABLE_SSL
    const char *certificate_path;
    const char *ca_path;
 
@@ -86,23 +67,16 @@ main (int argc, char *argv[])
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_TLS, true);
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, certificate_path);
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, ca_path);
-#endif
 
-   if (num_clients > 100) {
-      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_MAXPOOLSIZE, num_clients);
-   }
+   // Always set maxPoolSize to match client count.
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_MAXPOOLSIZE, num_clients);
 
    pool = mongoc_client_pool_new (uri);
-   mongoc_client_pool_set_error_api (pool, 2);
+   mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
 
    for (i = 0; i < num_clients; i++) {
       pthread_create (&threads[i], NULL, worker, pool);
    }
-
-   sleep (30);
-   pthread_mutex_lock (&mutex);
-   in_shutdown = true;
-   pthread_mutex_unlock (&mutex);
 
    for (i = 0; i < num_clients; i++) {
       pthread_join (threads[i], &ret);

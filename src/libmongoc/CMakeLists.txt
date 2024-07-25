@@ -1226,14 +1226,8 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    mongoc_add_example (example-update ${PROJECT_SOURCE_DIR}/examples/example-update.c)
    mongoc_add_example (find-and-modify ${PROJECT_SOURCE_DIR}/examples/find-and-modify.c)
    mongoc_add_example (hello_mongoc ${PROJECT_SOURCE_DIR}/examples/hello_mongoc.c)
-   if (NOT WIN32)
-      mongoc_add_example (mongoc-double-pings ${PROJECT_SOURCE_DIR}/examples/mongoc-double-pings.c)
-   endif()
    mongoc_add_example (mongoc-dump ${PROJECT_SOURCE_DIR}/examples/mongoc-dump.c)
    mongoc_add_example (mongoc-ping ${PROJECT_SOURCE_DIR}/examples/mongoc-ping.c)
-   if (NOT WIN32)
-      mongoc_add_example (mongoc-pooled-ping ${PROJECT_SOURCE_DIR}/examples/mongoc-pooled-ping.c)
-   endif()
    mongoc_add_example (mongoc-tail ${PROJECT_SOURCE_DIR}/examples/mongoc-tail.c)
    mongoc_add_example (example-collection-command ${PROJECT_SOURCE_DIR}/examples/example-collection-command.c)
    mongoc_add_example (example-bulkwrite ${PROJECT_SOURCE_DIR}/examples/example-bulkwrite.c)
@@ -1270,6 +1264,13 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    # examples/tutorial
    mongoc_add_example (executing ${PROJECT_SOURCE_DIR}/examples/tutorial/executing.c)
    mongoc_add_example (appending ${PROJECT_SOURCE_DIR}/examples/tutorial/appending.c)
+endif ()
+
+if (ENABLE_TESTS AND ENABLE_SHARED AND MONGOC_ENABLE_SSL AND NOT WIN32)
+   # Add benchmarks to measure opening many TLS connections.
+   # Benchmarks require SSL, and do not build on Windows.
+   add_executable (benchmark-tls-pooled ${PROJECT_SOURCE_DIR}/tests/benchmark-tls-pooled.c)
+   target_link_libraries (benchmark-tls-pooled mongoc_shared ${LIBRARIES})
 endif ()
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
