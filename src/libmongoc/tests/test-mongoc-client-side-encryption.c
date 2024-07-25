@@ -6162,6 +6162,7 @@ test_range_explicit_encryption_applies_defaults (void *unused)
 
       bool ok = mongoc_client_encryption_encrypt (clientEncryption, &toEncrypt, eOpts, &payload_defaults, &error);
       ASSERT_OR_PRINT (ok, error);
+      ASSERT (payload_defaults.value_type == BSON_TYPE_BINARY);
 
       mongoc_client_encryption_encrypt_opts_destroy (eOpts);
    }
@@ -6190,7 +6191,6 @@ test_range_explicit_encryption_applies_defaults (void *unused)
 
       // Assert both payloads have equal length. Intended to check they used the same `trimFactor` and `sparsity`.
       ASSERT (payload.value_type == BSON_TYPE_BINARY);
-      ASSERT (payload_defaults.value_type == BSON_TYPE_BINARY);
       ASSERT_CMPUINT32 (payload.value.v_binary.data_len, ==, payload_defaults.value.v_binary.data_len);
 
       mongoc_client_encryption_encrypt_opts_destroy (eOpts);
@@ -6220,7 +6220,6 @@ test_range_explicit_encryption_applies_defaults (void *unused)
 
       // Assert payload with `trimFactor=0` has greater length.
       ASSERT (payload.value_type == BSON_TYPE_BINARY);
-      ASSERT (payload_defaults.value_type == BSON_TYPE_BINARY);
       ASSERT_CMPUINT32 (payload.value.v_binary.data_len, >, payload_defaults.value.v_binary.data_len);
 
       mongoc_client_encryption_encrypt_opts_destroy (eOpts);
@@ -6673,6 +6672,7 @@ test_client_side_encryption_install (TestSuite *suite)
                          test_range_explicit_encryption_applies_defaults,
                          NULL,
                          NULL,
+                         // No need to test for server version requirements. Test does not contact server.
                          test_framework_skip_if_no_client_side_encryption);
    }
 }
