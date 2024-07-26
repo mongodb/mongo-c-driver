@@ -4,6 +4,7 @@ libmongoc 1.28.0 (unreleased)
 Notes:
 
   * Bump minimum wire protocol version from 6 (MongoDB 3.6) to 7 (MongoDB 4.0).
+  * Raise required version of libmongocrypt to 1.11.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
 
 Changed:
 
