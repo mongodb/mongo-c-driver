@@ -123,4 +123,36 @@ cleanup:
    return rval;
 }
 
+int
+mongoc_crypto_openssl_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
+                                          const char *password,
+                                          uint32_t password_len,
+                                          const uint8_t *salt,
+                                          uint32_t salt_len,
+                                          uint32_t iterations,
+                                          uint32_t key_len,
+                                          unsigned char *output)
+{
+   EVP_MD *sha256;
+   sha256 = EVP_MD_fetch (NULL, "SHA-256", "fips=yes");
+
+   return PKCS5_PBKDF2_HMAC (password, password_len, salt, salt_len, iterations, sha256, key_len, output);
+}
+
+int
+mongoc_crypto_openssl_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
+                                          const char *password,
+                                          uint32_t password_len,
+                                          const uint8_t *salt,
+                                          uint32_t salt_len,
+                                          uint32_t iterations,
+                                          uint32_t key_len,
+                                          unsigned char *output)
+{
+   EVP_MD *sha1;
+   sha1 = EVP_MD_fetch (NULL, "SHA-1", "fips=yes");
+
+   return PKCS5_PBKDF2_HMAC (password, password_len, salt, salt_len, iterations, sha1, key_len, output);
+}
+
 #endif

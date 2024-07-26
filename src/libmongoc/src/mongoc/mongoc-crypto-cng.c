@@ -202,4 +202,32 @@ mongoc_crypto_cng_sha256 (mongoc_crypto_t *crypto,
    res = _mongoc_crypto_cng_hmac_or_hash (_sha256_hash_algo, NULL, 0, (void *) input, input_len, hash_out);
    return res;
 }
+
+int
+mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
+                                      const char *password,
+                                      uint32_t password_len,
+                                      const uint8_t *salt,
+                                      uint32_t salt_len,
+                                      uint32_t iterations,
+                                      uint32_t key_len,
+                                      unsigned char *output)
+{
+   return BCryptDeriveKeyPBKDF2 (_sha256_hmac_algo, password, password_len, salt, salt_len, iterations, output, key_len, 0);
+}
+
+int
+mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
+                                      const char *password,
+                                      uint32_t password_len,
+                                      const uint8_t *salt,
+                                      uint32_t salt_len,
+                                      uint32_t iterations,
+                                      uint32_t key_len,
+                                      unsigned char *output)
+{
+   return BCryptDeriveKeyPBKDF2 (_sha1_hmac_algo, password, password_len, salt, salt_len, iterations, output, key_len, 0);
+}
+
+
 #endif

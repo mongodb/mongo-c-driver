@@ -38,6 +38,16 @@ struct _mongoc_crypto_t {
                  int data_len,
                  unsigned char *hmac_out);
    bool (*hash) (mongoc_crypto_t *crypto, const unsigned char *input, const size_t input_len, unsigned char *hash_out);
+
+   int (*pbkdf) (mongoc_crypto_t *crypto,
+                 const char *password,
+                 uint32_t password_len,
+                 const uint8_t *salt,
+                 uint32_t salt_len,
+                 uint32_t iterations,
+                 uint32_t key_len,
+                 unsigned char *output);
+
    mongoc_crypto_hash_algorithm_t algorithm;
 };
 
@@ -57,6 +67,16 @@ mongoc_crypto_hash (mongoc_crypto_t *crypto,
                     const unsigned char *input,
                     const size_t input_len,
                     unsigned char *hash_out);
+
+int
+mongoc_crypto_pbkdf (mongoc_crypto_t *crypto,
+                 const char *password,
+                 uint32_t password_len,
+                 const uint8_t *salt,
+                 uint32_t salt_len,
+                 uint32_t iterations,
+                 uint32_t key_len,
+                 unsigned char *output);
 
 BSON_END_DECLS
 #endif /* MONGOC_CRYPTO_PRIVATE_H */

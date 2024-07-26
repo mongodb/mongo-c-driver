@@ -33,31 +33,39 @@ mongoc_crypto_init (mongoc_crypto_t *crypto, mongoc_crypto_hash_algorithm_t algo
 {
    crypto->hmac = NULL;
    crypto->hash = NULL;
+   crypto->pbkdf = NULL;
    if (algo == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
 #ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
       crypto->hmac = mongoc_crypto_openssl_hmac_sha1;
       crypto->hash = mongoc_crypto_openssl_sha1;
+      crypto->pbkdf = mongoc_crypto_openssl_pbkdf2_hmac_sha1;
 #elif defined(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO)
       crypto->hmac = mongoc_crypto_common_crypto_hmac_sha1;
       crypto->hash = mongoc_crypto_common_crypto_sha1;
+      crypto->pbkdf = mongoc_crypto_common_crypto_pbkdf2_hmac_sha1;
 #elif defined(MONGOC_ENABLE_CRYPTO_CNG)
       crypto->hmac = mongoc_crypto_cng_hmac_sha1;
       crypto->hash = mongoc_crypto_cng_sha1;
+      crypto->pbkdf = mongoc_crypto_cng_pbkdf2_hmac_sha1;
 #endif
    } else if (algo == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
 #ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
       crypto->hmac = mongoc_crypto_openssl_hmac_sha256;
       crypto->hash = mongoc_crypto_openssl_sha256;
+      crypto->pbkdf = mongoc_crypto_openssl_pbkdf2_hmac_sha256;
 #elif defined(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO)
       crypto->hmac = mongoc_crypto_common_crypto_hmac_sha256;
       crypto->hash = mongoc_crypto_common_crypto_sha256;
+      crypto->pbkdf = mongoc_crypto_common_crypto_pbkdf2_hmac_sha256;
 #elif defined(MONGOC_ENABLE_CRYPTO_CNG)
       crypto->hmac = mongoc_crypto_cng_hmac_sha256;
       crypto->hash = mongoc_crypto_cng_sha256;
+      crypto->pbkdf = mongoc_crypto_cng_pbkdf2_hmac_sha256;
 #endif
    }
    BSON_ASSERT (crypto->hmac);
    BSON_ASSERT (crypto->hash);
+   BSON_ASSERT (crypto->pbkdf);
    crypto->algorithm = algo;
 }
 
@@ -77,4 +85,18 @@ mongoc_crypto_hash (mongoc_crypto_t *crypto, const unsigned char *input, const s
 {
    return crypto->hash (crypto, input, input_len, output);
 }
+
+int
+mongoc_crypto_pbkdf (mongoc_crypto_t *crypto,
+                 const char *password,
+                 uint32_t password_len,
+                 const uint8_t *salt,
+                 uint32_t salt_len,
+                 uint32_t iterations,
+                 uint32_t key_len,
+                 unsigned char *output)
+{
+      return crypto->pbkdf (crypto, password, password_len, salt, salt_len, iterations, key_len, output);
+}
+
 #endif

@@ -61,6 +61,25 @@ mongoc_crypto_cng_sha256 (mongoc_crypto_t *crypto,
                           const size_t input_len,
                           unsigned char *hash_out);
 
+int
+mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
+                                      const char *password,
+                                      uint32_t password_len,
+                                      const uint8_t *salt,
+                                      uint32_t salt_len,
+                                      uint32_t iterations,
+                                      uint32_t key_len,
+                                      unsigned char *output);
+
+int
+mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
+                                      const char *password,
+                                      uint32_t password_len,
+                                      const uint8_t *salt,
+                                      uint32_t salt_len,
+                                      uint32_t iterations,
+                                      uint32_t key_len,
+                                      unsigned char *output);
 
 BSON_END_DECLS
 
