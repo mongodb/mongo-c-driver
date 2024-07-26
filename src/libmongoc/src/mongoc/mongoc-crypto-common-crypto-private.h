@@ -27,6 +27,16 @@
 
 BSON_BEGIN_DECLS
 
+int
+mongoc_crypto_common_crypto_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
+                                              const char *password,
+                                              uint32_t password_len,
+                                              const uint8_t *salt,
+                                              uint32_t salt_len,
+                                              uint32_t iterations,
+                                              uint32_t key_len,
+                                              unsigned char *output);
+
 void
 mongoc_crypto_common_crypto_hmac_sha1 (mongoc_crypto_t *crypto,
                                        const void *key,
@@ -41,6 +51,16 @@ mongoc_crypto_common_crypto_sha1 (mongoc_crypto_t *crypto,
                                   const size_t input_len,
                                   unsigned char *hash_out);
 
+int
+mongoc_crypto_common_crypto_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
+                                                const char *password,
+                                                uint32_t password_len,
+                                                const uint8_t *salt,
+                                                uint32_t salt_len,
+                                                uint32_t iterations,
+                                                uint32_t key_len,
+                                                unsigned char *output);
+
 void
 mongoc_crypto_common_crypto_hmac_sha256 (mongoc_crypto_t *crypto,
                                          const void *key,
@@ -54,26 +74,6 @@ mongoc_crypto_common_crypto_sha256 (mongoc_crypto_t *crypto,
                                     const unsigned char *input,
                                     const size_t input_len,
                                     unsigned char *hash_out);
-
-int
-mongoc_crypto_common_crypto_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
-                                                const char *password,
-                                                uint32_t password_len,
-                                                const uint8_t *salt,
-                                                uint32_t salt_len,
-                                                uint32_t iterations,
-                                                uint32_t key_len,
-                                                unsigned char *output);
-
-int
-mongoc_crypto_common_crypto_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
-                                                const char *password,
-                                                uint32_t password_len,
-                                                const uint8_t *salt,
-                                                uint32_t salt_len,
-                                                uint32_t iterations,
-                                                uint32_t key_len,
-                                                unsigned char *output);
 
 BSON_END_DECLS
 

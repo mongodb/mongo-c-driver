@@ -456,7 +456,8 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
                              uint32_t iterations)
 {
    uint8_t *output = scram->salted_password;
-   mongoc_crypto_pbkdf (&scram->crypto, password, password_len, salt, salt_len, iterations, MONGOC_SCRAM_HASH_MAX_SIZE, output);
+   mongoc_crypto_pbkdf (
+      &scram->crypto, password, password_len, salt, salt_len, iterations, MONGOC_SCRAM_HASH_MAX_SIZE, output);
 }
 
 
