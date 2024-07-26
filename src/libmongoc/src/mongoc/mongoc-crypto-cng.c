@@ -24,6 +24,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <bcrypt.h>
+#include <string.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)
 #define STATUS_UNSUCCESSFUL ((NTSTATUS) 0xC0000001L)
@@ -141,6 +142,35 @@ cleanup:
    return retval;
 }
 
+int
+mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
+                                    const char *password,
+                                    uint32_t password_len,
+                                    const uint8_t *salt,
+                                    uint32_t salt_len,
+                                    uint32_t iterations,
+                                    uint32_t key_len,
+                                    unsigned char *output)
+{
+   char *password_copy = malloc (sizeof (char) * (password_len + 1));
+   strncpy (password_copy, password, password_len);
+   password_copy[password_len] = '\0';
+
+   char *salt_copy = malloc (sizeof (char) * (salt_len + 1));
+   strncpy (salt_copy, (const char *) salt, salt_len);
+   salt_copy[salt_len] = '\0';
+
+   return BCryptDeriveKeyPBKDF2 (_sha1_hmac_algo,
+                                 (unsigned char *) password_copy,
+                                 password_len,
+                                 (unsigned char *) salt_copy,
+                                 salt_len,
+                                 iterations,
+                                 output,
+                                 key_len,
+                                 0);
+}
+
 void
 mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t *crypto,
                              const void *key,
@@ -170,6 +200,35 @@ mongoc_crypto_cng_sha1 (mongoc_crypto_t *crypto,
 
    res = _mongoc_crypto_cng_hmac_or_hash (_sha1_hash_algo, NULL, 0, (void *) input, input_len, hash_out);
    return res;
+}
+
+int
+mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
+                                      const char *password,
+                                      uint32_t password_len,
+                                      const uint8_t *salt,
+                                      uint32_t salt_len,
+                                      uint32_t iterations,
+                                      uint32_t key_len,
+                                      unsigned char *output)
+{
+   char *password_copy = malloc (sizeof (char) * (password_len + 1));
+   strncpy (password_copy, password, password_len);
+   password_copy[password_len] = '\0';
+
+   char *salt_copy = malloc (sizeof (char) * (salt_len + 1));
+   strncpy (salt_copy, (const char *) salt, salt_len);
+   salt_copy[salt_len] = '\0';
+
+   return BCryptDeriveKeyPBKDF2 (_sha256_hmac_algo,
+                                 (unsigned char *) password_copy,
+                                 password_len,
+                                 (unsigned char *) salt_copy,
+                                 salt_len,
+                                 iterations,
+                                 output,
+                                 key_len,
+                                 0);
 }
 
 void
@@ -202,44 +261,5 @@ mongoc_crypto_cng_sha256 (mongoc_crypto_t *crypto,
    res = _mongoc_crypto_cng_hmac_or_hash (_sha256_hash_algo, NULL, 0, (void *) input, input_len, hash_out);
    return res;
 }
-
-int
-mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
-                                      const char *password,
-                                      uint32_t password_len,
-                                      const uint8_t *salt,
-                                      uint32_t salt_len,
-                                      uint32_t iterations,
-                                      uint32_t key_len,
-                                      unsigned char *output)
-{
-   char *password_copy;
-   strncpy(password_copy, password, password_len);
-
-   char *salt_copy;
-   strncpy(salt_copy, (const char *)salt, salt_len);
-
-   return BCryptDeriveKeyPBKDF2 (_sha256_hmac_algo, password_copy, password_len, salt_copy, salt_len, iterations, output, key_len, 0);
-}
-
-int
-mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
-                                      const char *password,
-                                      uint32_t password_len,
-                                      const uint8_t *salt,
-                                      uint32_t salt_len,
-                                      uint32_t iterations,
-                                      uint32_t key_len,
-                                      unsigned char *output)
-{
-   char *password_copy;
-   strncpy(password_copy, password, password_len);
-
-   char *salt_copy;
-   strncpy(salt_copy, (const char *)salt, salt_len);
-
-   return BCryptDeriveKeyPBKDF2 (_sha1_hmac_algo, password_copy, password_len, salt_copy, salt_len, iterations, output, key_len, 0);
-}
-
 
 #endif
