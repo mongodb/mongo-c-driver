@@ -225,18 +225,8 @@ mongoc_client_connect (bool buffered,
                        void *ssl_opts_void,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
+                       void *openssl_ctx_void,
                        bson_error_t *error);
-
-#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-mongoc_stream_t *
-mongoc_client_connect_with_openssl_context (bool buffered,
-                                            bool use_ssl,
-                                            void *ssl_opts_void,
-                                            SSL_CTX *ssl_ctx,
-                                            const mongoc_uri_t *uri,
-                                            const mongoc_host_list_t *host,
-                                            bson_error_t *error);
-#endif
 
 /* Returns true if a versioned server API has been selected, otherwise returns
  * false. */

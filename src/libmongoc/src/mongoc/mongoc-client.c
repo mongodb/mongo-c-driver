@@ -751,6 +751,7 @@ mongoc_client_connect (bool buffered,
                        void *ssl_opts_void,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
+                       void *openssl_ctx_void,
                        bson_error_t *error)
 {
    mongoc_stream_t *base_stream = NULL;
@@ -800,98 +801,13 @@ mongoc_client_connect (bool buffered,
       if (use_ssl || (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
          mongoc_stream_t *original = base_stream;
 
-         base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host, ssl_opts, true);
-
-         if (!base_stream) {
-            mongoc_stream_destroy (original);
-            bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed initialize TLS state.");
-            return NULL;
-         }
-
-         if (!mongoc_stream_tls_handshake_block (base_stream, host->host, connecttimeoutms, error)) {
-            mongoc_stream_destroy (base_stream);
-            return NULL;
-         }
-      }
-   }
-#endif
-
-   if (!base_stream) {
-      return NULL;
-   }
-   if (buffered) {
-      return mongoc_stream_buffered_new (base_stream, 1024);
-   }
-   return base_stream;
-}
-
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_client_connect_with_openssl_context --
- *
- *       Connect to a MongoDB server using OpenSSL.
- *
- *       @ssl_ctx is the global OpenSSL context for the mongoc_client_t
- *       associated with this function call.
- *
- * Returns:
- *       A newly allocated mongoc_stream_t if successful; otherwise
- *       NULL and @error is set.
- *
- * Side effects:
- *       @error is set if return value is NULL.
- *
- *--------------------------------------------------------------------------
- */
-mongoc_stream_t *
-mongoc_client_connect_with_openssl_context (bool buffered,
-                                            bool use_ssl,
-                                            void *ssl_opts_void,
-                                            SSL_CTX *ssl_ctx,
-                                            const mongoc_uri_t *uri,
-                                            const mongoc_host_list_t *host,
-                                            bson_error_t *error)
-{
-   mongoc_stream_t *base_stream = NULL;
-   int32_t connecttimeoutms;
-
-   BSON_ASSERT (uri);
-   BSON_ASSERT (host);
-
-   connecttimeoutms =
-      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, MONGOC_DEFAULT_CONNECTTIMEOUTMS);
-
-   switch (host->family) {
-   case AF_UNSPEC:
-#if defined(AF_INET6)
-   case AF_INET6:
+         // Use shared OpenSSL context.
+         base_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (
+            base_stream, host->host, ssl_opts, true, (SSL_CTX *) openssl_ctx_void);
+#else
+         base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host, ssl_opts, true);
 #endif
-   case AF_INET:
-      base_stream = mongoc_client_connect_tcp (connecttimeoutms, host, error);
-      break;
-   case AF_UNIX:
-      base_stream = mongoc_client_connect_unix (host, error);
-      break;
-   default:
-      bson_set_error (
-         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_TYPE, "Invalid address family: 0x%02x", host->family);
-      break;
-   }
-
-   if (base_stream) {
-      mongoc_ssl_opt_t *ssl_opts;
-      const char *mechanism;
-
-      ssl_opts = (mongoc_ssl_opt_t *) ssl_opts_void;
-      mechanism = mongoc_uri_get_auth_mechanism (uri);
-
-      if (use_ssl || (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
-         mongoc_stream_t *original = base_stream;
-
-         base_stream =
-            mongoc_stream_tls_new_with_hostname_and_openssl_context (base_stream, host->host, ssl_opts, true, ssl_ctx);
 
          if (!base_stream) {
             mongoc_stream_destroy (original);
@@ -905,6 +821,7 @@ mongoc_client_connect_with_openssl_context (bool buffered,
          }
       }
    }
+#endif
 
    if (!base_stream) {
       return NULL;
@@ -914,7 +831,6 @@ mongoc_client_connect_with_openssl_context (bool buffered,
    }
    return base_stream;
 }
-#endif
 
 /*
  *--------------------------------------------------------------------------
@@ -955,9 +871,9 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX *ssl_ctx = client->topology->scanner->openssl_ctx;
-   return mongoc_client_connect_with_openssl_context (true, use_ssl, ssl_opts_void, ssl_ctx, uri, host, error);
+   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, error);
 #else
-   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, error);
+   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, NULL, error);
 #endif
 }
 
