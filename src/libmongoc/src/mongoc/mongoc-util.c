@@ -843,6 +843,8 @@ _mongoc_crypto_rand_size_t (void)
 
 #endif /* defined(MONGOC_ENABLE_CRYPTO) */
 
+__thread unsigned int _clickhouse_rand_seed = 0;
+
 static BSON_ONCE_FUN (_mongoc_simple_rand_init)
 {
    struct timeval tv;
@@ -864,23 +866,35 @@ uint32_t
 _mongoc_simple_rand_uint32_t (void)
 {
    bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+   if (_clickhouse_rand_seed == 0) {
+      struct timeval tv;
+      bson_gettimeofday (&tv);
+      _clickhouse_rand_seed ^= (unsigned int) tv.tv_sec;
+      _clickhouse_rand_seed ^= (unsigned int) tv.tv_usec;
+   }
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint32_t) rand () & 0x7FFFu) << 0u) | (((uint32_t) rand () & 0x7FFFu) << 15u) |
-          (((uint32_t) rand () & 0x0003u) << 30u);
+   return (((uint32_t) rand_r (&_clickhouse_rand_seed) & 0x7FFFu) << 0u) | (((uint32_t) rand_r (&_clickhouse_rand_seed) & 0x7FFFu) << 15u) |
+          (((uint32_t) rand_r (&_clickhouse_rand_seed) & 0x0003u) << 30u);
 }
 
 uint64_t
 _mongoc_simple_rand_uint64_t (void)
 {
    bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+   if (_clickhouse_rand_seed == 0) {
+      struct timeval tv;
+      bson_gettimeofday (&tv);
+      _clickhouse_rand_seed ^= (unsigned int) tv.tv_sec;
+      _clickhouse_rand_seed ^= (unsigned int) tv.tv_usec;
+   }
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint64_t) rand () & 0x7FFFu) << 0u) | (((uint64_t) rand () & 0x7FFFu) << 15u) |
-          (((uint64_t) rand () & 0x7FFFu) << 30u) | (((uint64_t) rand () & 0x7FFFu) << 45u) |
-          (((uint64_t) rand () & 0x0003u) << 60u);
+   return (((uint64_t) rand_r (&_clickhouse_rand_seed) & 0x7FFFu) << 0u) | (((uint64_t) rand_r (&_clickhouse_rand_seed) & 0x7FFFu) << 15u) |
+          (((uint64_t) rand_r (&_clickhouse_rand_seed) & 0x7FFFu) << 30u) | (((uint64_t) rand_r (&_clickhouse_rand_seed) & 0x7FFFu) << 45u) |
+          (((uint64_t) rand_r (&_clickhouse_rand_seed) & 0x0003u) << 60u);
 }
 
 uint32_t

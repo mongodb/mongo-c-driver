@@ -2520,8 +2520,8 @@ mongoc_cluster_init (mongoc_cluster_t *cluster, const mongoc_uri_t *uri, void *c
    cluster->nodes = mongoc_set_new (8, _mongoc_cluster_node_dtor, NULL);
 
    _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
-
-   cluster->operation_id = rand ();
+   unsigned int seed = time(NULL);
+   cluster->operation_id = rand_r (&seed);
 
    EXIT;
 }
