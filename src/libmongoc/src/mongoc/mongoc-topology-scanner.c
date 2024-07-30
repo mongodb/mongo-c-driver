@@ -32,6 +32,7 @@
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 #include <openssl/ssl.h>
+#include "mongoc-stream-tls-private.h"
 #endif
 
 #include "mongoc-counters-private.h"

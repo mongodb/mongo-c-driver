@@ -865,8 +865,13 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
       openssl_ctx_void = (void *) server_monitor->topology->scanner->openssl_ctx;
 #endif
 
-      server_monitor->stream = mongoc_client_connect (
-         false, ssl_opts_void != NULL, ssl_opts_void, server_monitor->uri, &server_monitor->description->host, openssl_ctx_void, error);
+      server_monitor->stream = mongoc_client_connect (false,
+                                                      ssl_opts_void != NULL,
+                                                      ssl_opts_void,
+                                                      server_monitor->uri,
+                                                      &server_monitor->description->host,
+                                                      openssl_ctx_void,
+                                                      error);
    }
 
    if (!server_monitor->stream) {

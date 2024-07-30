@@ -71,6 +71,7 @@
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 #include "mongoc-openssl-private.h"
+#include "mongoc-stream-tls-private.h"
 #endif
 
 #undef MONGOC_LOG_DOMAIN
