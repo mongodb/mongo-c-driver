@@ -203,19 +203,18 @@ release-archive:
     # The full link to the build for this commit
     LET waterfall_url = "https://spruce.mongodb.com/version/${base}_${revision}"
     # Insert the URL into the SSDLC report
-    COPY etc/ssdlc.md ssldc_compliance_report.md
+    COPY etc/ssdlc.md ssdlc_compliance_report.md
     RUN sed -i "
         s|@waterfall_url@|$waterfall_url|g
         s|@version@|$version|g
-    " ssldc_compliance_report.md
+    " ssdlc_compliance_report.md
     # Generate the archive
     RUN git archive -o release.tar.gz \
         --prefix="$prefix/" \ # Set the archive path prefix
         "$revision" \ # Add the source tree
         --add-file cyclonedx.sbom.json \ # Add the SBOM
-        --add-file ssldc_compliance_report.md
+        --add-file ssdlc_compliance_report.md
     SAVE ARTIFACT release.tar.gz
-    SAVE ARTIFACT ssldc_compliance_report.md
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:

@@ -41,6 +41,8 @@
 #include "mongoc-log.h"
 #include "mongoc-error.h"
 
+#include "common-macros-private.h"
+
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-openssl"

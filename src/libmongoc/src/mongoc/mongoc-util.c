@@ -307,6 +307,8 @@ _mongoc_wire_version_to_server_version (int32_t version)
       return "6.0";
    case WIRE_VERSION_7_0:
       return "7.0";
+   case WIRE_VERSION_8_0:
+      return "8.0";
    default:
       return "Unknown";
    }
@@ -914,12 +916,12 @@ _mongoc_simple_rand_size_t (void)
 }
 
 size_t
-_mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void))
+_mongoc_rand_size_t (size_t min, size_t max)
 {
    BSON_ASSERT (min <= max);
    BSON_ASSERT (min != 0u || max != UINT64_MAX);
 
-   return _mongoc_rand_java64 (max - min + 1u, (uint64_t (*) (void)) rand) + min;
+   return _mongoc_rand_java64 (max - min + 1u, &_mongoc_simple_rand_uint64_t) + min;
 }
 
 #elif SIZE_MAX == UINT32_MAX
@@ -933,12 +935,12 @@ _mongoc_simple_rand_size_t (void)
 }
 
 size_t
-_mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void))
+_mongoc_rand_size_t (size_t min, size_t max)
 {
    BSON_ASSERT (min <= max);
    BSON_ASSERT (min != 0u || max != UINT32_MAX);
 
-   return _mongoc_rand_nduid32 (max - min + 1u, (uint32_t (*) (void)) rand) + min;
+   return _mongoc_rand_nduid32 (max - min + 1u, &_mongoc_simple_rand_uint32_t) + min;
 }
 
 #else

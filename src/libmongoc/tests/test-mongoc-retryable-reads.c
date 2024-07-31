@@ -38,7 +38,7 @@ retryable_reads_test_run_operation (json_test_ctx_t *ctx, const bson_t *test, co
 
 /* Callback for JSON tests from Retryable Reads Spec */
 static void
-test_retryable_reads_cb (bson_t *scenario)
+test_retryable_reads_cb (void *scenario)
 {
    bool explicit_session;
    json_test_config_t config = JSON_TEST_CONFIG_INIT;

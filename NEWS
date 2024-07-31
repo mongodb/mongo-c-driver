@@ -1,6 +1,16 @@
 libmongoc 1.28.0 (unreleased)
 =============================
 
+Notes:
+
+  * Bump minimum wire protocol version from 6 (MongoDB 3.6) to 7 (MongoDB 4.0).
+
+Changed:
+
+  * Test and example targets are excluded from the `ALL` target.
+    * All test targets can be built using the `mongo_c_driver_tests` target.
+    * All example targets can be built using the `mongo_c_driver_examples` target.
+
 Deprecated:
 
   * Use of `*_hint` functions is deprecated in favor of more aptly named `*_server_id` functions:
@@ -8,6 +18,21 @@ Deprecated:
     * `mongoc_bulk_operation_get_hint` is deprecated for `mongoc_bulk_operation_get_server_id`
     * `mongoc_cursor_set_hint` is deprecated for `mongoc_cursor_set_server_id`
     * `mongoc_cursor_get_hint` is deprecated for `mongoc_cursor_get_server_id`
+
+  * A future minor release plans to drop support for Visual Studio 2013.
+
+libmongoc 1.27.4
+================
+
+Fixes:
+
+  * Fix possible crash reading malformed wire protocol message.
+  * Fix build with Visual Studio 2013.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
 
 
 

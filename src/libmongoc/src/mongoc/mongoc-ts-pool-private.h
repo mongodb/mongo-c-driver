@@ -31,6 +31,8 @@ typedef void (*_erased_constructor_fn) (void *self, void *userdata, struct _bson
 typedef void (*_erased_destructor_fn) (void *self, void *userdata);
 /** Type of an object pruning predicate */
 typedef int (*_erased_prune_predicate) (const void *self, void *userdata);
+/** Type of a pool visit function */
+typedef int (*_erased_visit_fn) (void *elem, void *pool_userdata, void *visit_userdata);
 
 /**
  * @brief Construction parameters for creating a new object pool.
@@ -243,9 +245,7 @@ mongoc_ts_pool_drop (mongoc_ts_pool *pool, void *item);
  *
  */
 void
-mongoc_ts_pool_visit_each (mongoc_ts_pool *pool,
-                           void *visit_userdata,
-                           int (*visitor) (void *item, void *pool_userdata, void *visit_userdata));
+mongoc_ts_pool_visit_each (mongoc_ts_pool *pool, void *visit_userdata, _erased_visit_fn visitor);
 
 /**
  * @brief Declare a thread-safe pool type that contains elements of a specific
@@ -262,80 +262,77 @@ mongoc_ts_pool_visit_each (mongoc_ts_pool *pool,
  * @param PrunePredicate A function that checks whether elements should be
  * dropped from the pool, or `NULL`
  */
-#define MONGOC_DECL_SPECIAL_TS_POOL(ElementType, PoolName, UserDataType, Constructor, Destructor, PrunePredicate) \
-   typedef struct PoolName {                                                                                      \
-      mongoc_ts_pool *pool;                                                                                       \
-   } PoolName;                                                                                                    \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE PoolName PoolName##_new_with_params (                                     \
-      void (*constructor) (ElementType *, UserDataType *, struct _bson_error_t *),                                \
-      void (*destructor) (ElementType *, UserDataType *),                                                         \
-      int (*prune_predicate) (ElementType *, UserDataType *),                                                     \
-      UserDataType *userdata)                                                                                     \
-   {                                                                                                              \
-      PoolName ret;                                                                                               \
-      mongoc_ts_pool_params params = {0};                                                                         \
-      params.userdata = userdata;                                                                                 \
-      params.constructor = (_erased_constructor_fn) constructor;                                                  \
-      params.destructor = (_erased_destructor_fn) destructor;                                                     \
-      params.prune_predicate = (_erased_prune_predicate) prune_predicate;                                         \
-      params.element_alignment = BSON_ALIGNOF (ElementType);                                                      \
-      params.element_size = sizeof (ElementType);                                                                 \
-      ret.pool = mongoc_ts_pool_new (params);                                                                     \
-      return ret;                                                                                                 \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE PoolName PoolName##_new (UserDataType *userdata)                          \
-   {                                                                                                              \
-      return PoolName##_new_with_params (Constructor, Destructor, PrunePredicate, userdata);                      \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_free (PoolName p)                                         \
-   {                                                                                                              \
-      mongoc_ts_pool_free (p.pool);                                                                               \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_clear (PoolName p)                                        \
-   {                                                                                                              \
-      mongoc_ts_pool_clear (p.pool);                                                                              \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE ElementType *PoolName##_get_existing (PoolName p)                         \
-   {                                                                                                              \
-      return (ElementType *) mongoc_ts_pool_get_existing (p.pool);                                                \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE ElementType *PoolName##_get (PoolName p, struct _bson_error_t *error)     \
-   {                                                                                                              \
-      return (ElementType *) mongoc_ts_pool_get (p.pool, error);                                                  \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_return (PoolName p, ElementType *elem)                    \
-   {                                                                                                              \
-      mongoc_ts_pool_return (p.pool, elem);                                                                       \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_drop (PoolName p, ElementType *elem)                      \
-   {                                                                                                              \
-      mongoc_ts_pool_drop (p.pool, elem);                                                                         \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE size_t PoolName##_size (PoolName p)                                       \
-   {                                                                                                              \
-      return mongoc_ts_pool_size (p.pool);                                                                        \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE int PoolName##_is_empty (PoolName p)                                      \
-   {                                                                                                              \
-      return mongoc_ts_pool_is_empty (p.pool);                                                                    \
-   }                                                                                                              \
-                                                                                                                  \
-   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_visit_each (                                              \
-      PoolName p,                                                                                                 \
-      void *visit_userdata,                                                                                       \
-      int (*visitor) (ElementType * elem, UserDataType * pool_userdata, void *visit_userdata))                    \
-   {                                                                                                              \
-      mongoc_ts_pool_visit_each (p.pool, visit_userdata, (int (*) (void *, void *, void *)) visitor);             \
+#define MONGOC_DECL_SPECIAL_TS_POOL(ElementType, PoolName, UserDataType, Constructor, Destructor, PrunePredicate)     \
+   typedef struct PoolName {                                                                                          \
+      mongoc_ts_pool *pool;                                                                                           \
+   } PoolName;                                                                                                        \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE PoolName PoolName##_new_with_params (_erased_constructor_fn constructor,      \
+                                                                             _erased_destructor_fn destructor,        \
+                                                                             _erased_prune_predicate prune_predicate, \
+                                                                             UserDataType *userdata)                  \
+   {                                                                                                                  \
+      PoolName ret;                                                                                                   \
+      mongoc_ts_pool_params params = {0};                                                                             \
+      params.userdata = userdata;                                                                                     \
+      params.constructor = constructor;                                                                               \
+      params.destructor = destructor;                                                                                 \
+      params.prune_predicate = prune_predicate;                                                                       \
+      params.element_alignment = BSON_ALIGNOF (ElementType);                                                          \
+      params.element_size = sizeof (ElementType);                                                                     \
+      ret.pool = mongoc_ts_pool_new (params);                                                                         \
+      return ret;                                                                                                     \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE PoolName PoolName##_new (UserDataType *userdata)                              \
+   {                                                                                                                  \
+      return PoolName##_new_with_params (Constructor, Destructor, PrunePredicate, userdata);                          \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_free (PoolName p)                                             \
+   {                                                                                                                  \
+      mongoc_ts_pool_free (p.pool);                                                                                   \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_clear (PoolName p)                                            \
+   {                                                                                                                  \
+      mongoc_ts_pool_clear (p.pool);                                                                                  \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE ElementType *PoolName##_get_existing (PoolName p)                             \
+   {                                                                                                                  \
+      return (ElementType *) mongoc_ts_pool_get_existing (p.pool);                                                    \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE ElementType *PoolName##_get (PoolName p, struct _bson_error_t *error)         \
+   {                                                                                                                  \
+      return (ElementType *) mongoc_ts_pool_get (p.pool, error);                                                      \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_return (PoolName p, ElementType *elem)                        \
+   {                                                                                                                  \
+      mongoc_ts_pool_return (p.pool, elem);                                                                           \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_drop (PoolName p, ElementType *elem)                          \
+   {                                                                                                                  \
+      mongoc_ts_pool_drop (p.pool, elem);                                                                             \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE size_t PoolName##_size (PoolName p)                                           \
+   {                                                                                                                  \
+      return mongoc_ts_pool_size (p.pool);                                                                            \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE int PoolName##_is_empty (PoolName p)                                          \
+   {                                                                                                                  \
+      return mongoc_ts_pool_is_empty (p.pool);                                                                        \
+   }                                                                                                                  \
+                                                                                                                      \
+   BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_visit_each (                                                  \
+      PoolName p, void *visit_userdata, _erased_visit_fn visitor)                                                     \
+   {                                                                                                                  \
+      mongoc_ts_pool_visit_each (p.pool, visit_userdata, visitor);                                                    \
    }
 
 #endif /* MONGOC_TS_POOL_PRIVATE_H */

@@ -1124,7 +1124,7 @@ if (MONGOC_ENABLE_SASL_CYRUS)
 endif ()
 
 if (ENABLE_TESTS)
-   add_library (test-libmongoc-lib STATIC ${test-libmongoc-sources})
+   add_library (test-libmongoc-lib STATIC EXCLUDE_FROM_ALL ${test-libmongoc-sources})
    if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
       message (STATUS "Disabling warning C4756 for VS 2013 and older")
       # Macro constant INFINITY triggers constant arithmetic overflow warnings in
@@ -1151,7 +1151,9 @@ if (ENABLE_TESTS)
    )
 
    function (mongoc_add_test test)
-      add_executable (${test} ${ARGN})
+      add_executable (${test} EXCLUDE_FROM_ALL ${ARGN})
+      add_dependencies (mongo_c_driver_tests ${test})
+
       target_link_libraries (${test}
          PUBLIC
             $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
@@ -1195,12 +1197,13 @@ endif ()
 
 if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    function (mongoc_add_example example)
-      add_executable (${example} ${ARGN})
+      add_executable (${example} EXCLUDE_FROM_ALL ${ARGN})
+      add_dependencies (mongo_c_driver_examples ${example})
+
       target_link_libraries (${example} mongoc_shared ${LIBRARIES})
       if (WIN32)
          target_link_libraries (${example} shlwapi)
       endif ()
-      set (EXAMPLES ${EXAMPLES} ${example})
    endfunction ()
 
    # examples/
@@ -1293,7 +1296,7 @@ set (MONGOC_HEADER_INSTALL_DIR
 )
 
 install (
-   TARGETS ${TARGETS_TO_INSTALL} ${EXAMPLES}
+   TARGETS ${TARGETS_TO_INSTALL}
    EXPORT mongoc-targets
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

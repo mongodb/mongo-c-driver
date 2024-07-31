@@ -413,8 +413,6 @@ operation_client_bulkwrite (test_t *test, operation_t *op, result_t *result, bso
       goto done;
    }
 
-   int64_t nmodels = 0;
-
    // Parse arguments.
    {
       bool parse_ok = false;
@@ -461,7 +459,6 @@ operation_client_bulkwrite (test_t *test, operation_t *op, result_t *result, bso
       BSON_ASSERT (bson_iter_init (&args_models_iter, args_models));
       bw = mongoc_client_bulkwrite_new (client);
       while (bson_iter_next (&args_models_iter)) {
-         nmodels++;
          bson_t model_wrapper;
          bson_iter_bson (&args_models_iter, &model_wrapper);
          if (!append_client_bulkwritemodel (bw, &model_wrapper, error)) {
@@ -491,7 +488,7 @@ operation_client_bulkwrite (test_t *test, operation_t *op, result_t *result, bso
    mongoc_bulkwrite_set_session (bw, op->session);
    mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, opts);
 
-   result_from_bulkwritereturn (result, bwr, nmodels);
+   result_from_bulkwritereturn (result, bwr);
    mongoc_bulkwriteexception_destroy (bwr.exc);
    mongoc_bulkwriteresult_destroy (bwr.res);
    ret = true;
@@ -3555,7 +3552,7 @@ operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t 
    const char *object = op->object;
    bson_parser_t *bp = bson_parser_new ();
    bool ret = false;
-   bool *drop_target = false;
+   bool *drop_target = NULL;
    char *new_name = NULL;
    bson_parser_utf8 (bp, "to", &new_name);
    bson_parser_bool_optional (bp, "dropTarget", &drop_target);
@@ -3582,7 +3579,7 @@ operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t 
 
    // Rename the collection in the server,
    mongoc_collection_t *coll = ent->value;
-   if (!mongoc_collection_rename (coll, NULL, new_name, drop_target, error)) {
+   if (!mongoc_collection_rename (coll, NULL, new_name, drop_target ? *drop_target : false, error)) {
       goto done;
    }
    result_from_ok (result);

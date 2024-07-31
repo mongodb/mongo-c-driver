@@ -324,7 +324,18 @@ _bson_append_va (bson_t *bson,              /* IN */
 
    buf = _bson_data (bson) + bson->len - 1;
 
+   /* Track running sum of bytes written in a uint64_t to detect possible overflow of `n_bytes`. */
+   uint64_t n_bytes_sum = 0;
    do {
+      // Size of any individual data being appended should not exceed the total byte limit.
+      if (BSON_UNLIKELY (bson_cmp_less_uu (n_bytes, data_len))) {
+         return false;
+      }
+      // Total size of data being appended should not exceed the total byte limit.
+      if (BSON_UNLIKELY (bson_cmp_greater_uu (n_bytes_sum, n_bytes - data_len))) {
+         return false;
+      }
+      n_bytes_sum += data_len;
       n_pairs--;
       /* data may be NULL if data_len is 0. memcpy is not safe to call with
        * NULL. */
@@ -3288,29 +3299,35 @@ _bson_validate_internal (const bson_t *bson, bson_validate_state_t *state)
 bool
 bson_validate (const bson_t *bson, bson_validate_flags_t flags, size_t *offset)
 {
-   bson_validate_state_t state;
-
-   state.flags = flags;
-   _bson_validate_internal (bson, &state);
-
-   if (state.err_offset > 0 && offset) {
-      *offset = (size_t) state.err_offset;
-   }
-
-   return state.err_offset < 0;
+   return bson_validate_with_error_and_offset (bson, flags, offset, NULL);
 }
 
 
 bool
 bson_validate_with_error (const bson_t *bson, bson_validate_flags_t flags, bson_error_t *error)
 {
+   return bson_validate_with_error_and_offset (bson, flags, NULL, error);
+}
+
+
+bool
+bson_validate_with_error_and_offset (const bson_t *bson,
+                                     bson_validate_flags_t flags,
+                                     size_t *offset,
+                                     bson_error_t *error)
+{
    bson_validate_state_t state;
 
    state.flags = flags;
    _bson_validate_internal (bson, &state);
 
-   if (state.err_offset > 0 && error) {
-      memcpy (error, &state.error, sizeof *error);
+   if (state.err_offset > 0) {
+      if (offset) {
+         *offset = (size_t) state.err_offset;
+      }
+      if (error) {
+         memcpy (error, &state.error, sizeof *error);
+      }
    }
 
    return state.err_offset < 0;

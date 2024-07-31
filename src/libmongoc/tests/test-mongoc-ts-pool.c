@@ -42,18 +42,18 @@ test_ts_pool_simple (void)
 }
 
 static int
-_is_int_42 (int *v, void *unused)
+_is_int_42 (const void *v, void *unused)
 {
-   (void) unused;
-   return *v == 42;
+   BSON_UNUSED (unused);
+   return *(const int *) v == 42;
 }
 
 static void
-_set_int_to_7 (int *v, void *unused, bson_error_t *unused2)
+_set_int_to_7 (void *v, void *unused, bson_error_t *unused2)
 {
-   (void) unused;
-   (void) unused2;
-   *v = 7;
+   BSON_UNUSED (unused);
+   BSON_UNUSED (unused2);
+   *(int *) v = 7;
 }
 
 /* Declare a pool that contains `int`, sets each new int to seven, and drops

@@ -14,9 +14,11 @@ Synopsis
 
 .. versionadded:: 1.28.0
 
-Sets trim factor for explicit encryption. Trim factor is required for explicit encryption of range indexes.
+Sets trim factor for explicit encryption.
 Only applies when the algorithm set by :symbol:`mongoc_client_encryption_encrypt_opts_set_algorithm()` is "Range".
 It is an error to set trim factor when algorithm is not "Range".
+
+The trim factor may be used to tune performance. When omitted, a default value is used.
 
 Trim factor must match the value set in the encryptedFields of the destination collection.
 It is an error to set a different value.
