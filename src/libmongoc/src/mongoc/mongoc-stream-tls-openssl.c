@@ -826,9 +826,6 @@ create_stream_with_ctx (
  *       @base_stream should be a stream that will become owned by the
  *       resulting tls stream. It will be used for raw I/O.
  *
- *       @trust_store_dir should be a path to the SSL cert db to use for
- *       verifying trust of the remote server.
- *
  * Returns:
  *       NULL on failure, otherwise a mongoc_stream_t.
  *
@@ -867,7 +864,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, m
  *
  *       Only called by mongoc_stream_tls_new_with_hostname_and_openssl_context.
  *
- *       @ssl_ctx is the global OpenSSL context for the mongoc_client_t
+ *       @ssl_ctx is the shared OpenSSL context for the mongoc_client_t
  *       associated with this function call.
  *
  * Returns:

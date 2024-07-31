@@ -30,14 +30,8 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-opcode.h"
-
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
-#endif
-
-#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-#include <openssl/ssl.h>
-#include "mongoc-openssl-private.h"
 #endif
 
 #include "mongoc-stream.h"
@@ -227,6 +221,7 @@ mongoc_client_connect (bool buffered,
                        const mongoc_host_list_t *host,
                        void *openssl_ctx_void,
                        bson_error_t *error);
+
 
 /* Returns true if a versioned server API has been selected, otherwise returns
  * false. */

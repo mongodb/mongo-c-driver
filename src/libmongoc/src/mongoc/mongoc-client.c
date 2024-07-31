@@ -863,11 +863,12 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 {
    void *ssl_opts_void = NULL;
    bool use_ssl = false;
-
 #ifdef MONGOC_ENABLE_SSL
    mongoc_client_t *client = (mongoc_client_t *) user_data;
+
    use_ssl = client->use_ssl;
    ssl_opts_void = (void *) &client->ssl_opts;
+
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
