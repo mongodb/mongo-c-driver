@@ -862,7 +862,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-      openssl_ctx_void = (void *) server_monitor->topology->scanner->openssl_ctx;
+      openssl_ctx_void = server_monitor->topology->scanner->openssl_ctx;
 #endif
 
       server_monitor->stream = mongoc_client_connect (false,
