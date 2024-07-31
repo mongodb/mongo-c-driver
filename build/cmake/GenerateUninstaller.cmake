@@ -13,10 +13,8 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     # Platform dependent values:
     if(WIN32)
         set(_script_ext "cmd")
-        set(_script_runner cmd.exe /c)
     else()
         set(_script_ext "sh")
-        set(_script_runner sh -e -u)
     endif()
     # The script filename and path:
     set(_script_filename "${UNINSTALL_SCRIPT_NAME}.${_script_ext}")
@@ -46,7 +44,7 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR OR PROJECT_IS_TOP_LEVEL)
         add_custom_target(
             uninstall
-            COMMAND ${_script_runner} "${_uninstaller_script}"
+            COMMAND "${_uninstaller_script}"
             COMMENT Uninstalling...
         )
     endif()
@@ -72,24 +70,46 @@ function(append_line line)
     file(APPEND "${UNINSTALL_WRITE_FILE}" "${line}\n")
 endfunction()
 
+# Ensure generated uninstall script has executable permissions.
+if ("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.19.0")
+    file (
+        CHMOD "${UNINSTALL_WRITE_FILE}"
+        PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
+            WORLD_READ WORLD_EXECUTE
+    )
+else ()
+    # Workaround lack of file(CHMOD).
+    get_filename_component(_script_filename "${UNINSTALL_WRITE_FILE}" NAME)
+    file (
+        COPY "${UNINSTALL_WRITE_FILE}"
+        DESTINATION "${_script_filename}.d"
+        FILE_PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
+            WORLD_READ WORLD_EXECUTE
+    )
+    file (RENAME "${_script_filename}.d/${_script_filename}" "${_script_filename}")
+endif ()
+
 # The copyright header:
 set(header [[
-Mongo C Driver uninstall program, generated with CMake
+MongoDB C Driver uninstall program, generated with CMake
 
 Copyright 2009-present MongoDB, Inc.
 
-Licensed under the Apache License, Version 2.0 (the \"License\");
+Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
   http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an \"AS IS\" BASIS,
+distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
-limitations under the License.
-]])
+limitations under the License.]])
 string(STRIP header "${header}")
 string(REPLACE "\n" ";" header_lines "${header}")
 
@@ -193,11 +213,14 @@ set(init_lines)
 
 if(UNINSTALL_IS_WIN32)
     # Comment the header:
-    list(TRANSFORM header_lines PREPEND "rem ")
+    list(TRANSFORM header_lines PREPEND "rem " REGEX "^.+$")
+    list(TRANSFORM header_lines PREPEND "rem" REGEX "^$")
     # Add the preamble
     list(APPEND init_lines
         "@echo off"
+        ""
         "${header_lines}"
+        ""
         "${bat_preamble}"
         "if \"%DESTDIR%\"==\"\" ("
         "  set __prefix=${install_prefix}"
@@ -209,11 +232,14 @@ if(UNINSTALL_IS_WIN32)
     set(__rmdir "call :rmdir")
 else()
     # Comment the header:
-    list(TRANSFORM header_lines PREPEND "# * ")
+    list(TRANSFORM header_lines PREPEND "# " REGEX "^.+$")
+    list(TRANSFORM header_lines PREPEND "#" REGEX "^$")
     # Add the preamble
     list(APPEND init_lines
-        "#!/bin/sh"
+        "#!/usr/bin/env bash"
+        "#"
         "${header_lines}"
+        ""
         "${sh_preamble}"
         "__prefix=\${DESTDIR:-}${install_prefix}"
         "")

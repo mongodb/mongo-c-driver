@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Make HTML page of all man pages so we can see them in Evergreen.
 #

@@ -206,11 +206,11 @@ else
   if [ "$LINK_STATIC" ]; then
     echo "pkg-config output:"
     echo $(pkg-config --libs --cflags libmongoc-static-1.0)
-    sh compile-with-pkg-config-static.sh
+    ./compile-with-pkg-config-static.sh
   else
     echo "pkg-config output:"
     echo $(pkg-config --libs --cflags libmongoc-1.0)
-    sh compile-with-pkg-config.sh
+    ./compile-with-pkg-config.sh
   fi
 fi
 

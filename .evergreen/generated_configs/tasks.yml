@@ -991,10 +991,9 @@ tasks:
       - command: subprocess.exec
         type: setup
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=LibreSSL
@@ -1004,10 +1003,9 @@ tasks:
       - command: subprocess.exec
         type: test
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1031,10 +1029,9 @@ tasks:
       - command: subprocess.exec
         type: setup
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=LibreSSL
@@ -1044,10 +1041,9 @@ tasks:
       - command: subprocess.exec
         type: test
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1071,10 +1067,9 @@ tasks:
       - command: subprocess.exec
         type: setup
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1084,10 +1079,9 @@ tasks:
       - command: subprocess.exec
         type: test
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1111,10 +1105,9 @@ tasks:
       - command: subprocess.exec
         type: setup
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1124,10 +1117,9 @@ tasks:
       - command: subprocess.exec
         type: test
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1151,10 +1143,9 @@ tasks:
       - command: subprocess.exec
         type: setup
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=off
@@ -1164,10 +1155,9 @@ tasks:
       - command: subprocess.exec
         type: test
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1191,10 +1181,9 @@ tasks:
       - command: subprocess.exec
         type: setup
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +env-warmup
             - --sasl=Cyrus
             - --tls=off
@@ -1204,10 +1193,9 @@ tasks:
       - command: subprocess.exec
         type: test
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
@@ -1231,10 +1219,9 @@ tasks:
       - command: subprocess.exec
         type: setup
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +env-warmup
             - --sasl=off
             - --tls=OpenSSL
@@ -1244,10 +1231,9 @@ tasks:
       - command: subprocess.exec
         type: test
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           args:
-            - tools/earthly.sh
             - +run
             - --targets=test-example test-cxx-driver
             - --sasl=off
@@ -1275,13 +1261,12 @@ tasks:
       - command: subprocess.exec
         type: setup
         params:
-          binary: bash
+          binary: ./tools/earthly.sh
           working_dir: mongoc
           env:
             SILK_CLIENT_ID: ${silk_client_id}
             SILK_CLIENT_SECRET: ${silk_client_secret}
           args:
-            - tools/earthly.sh
             - --secret=SILK_CLIENT_ID
             - --secret=SILK_CLIENT_SECRET
             - +create-silk-asset-group

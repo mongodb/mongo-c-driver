@@ -121,7 +121,7 @@ class CompileTask(NamedTask):
         for opt, value in sorted(self.compile_sh_opt.items()):
             script += ' %s="%s"' % (opt, value)
 
-        script += " bash .evergreen/scripts/compile.sh"
+        script += " .evergreen/scripts/compile.sh"
         commands.append(shell_mongoc(script, add_expansions_to_env=True))
         commands.append(func("upload-build"))
         commands.extend(self.suffix_commands)
@@ -302,7 +302,7 @@ all_tasks = [
     NamedTask(
         "debian-package-build",
         commands=[
-            shell_mongoc('export IS_PATCH="${is_patch}"\n' "sh .evergreen/scripts/debian_package_build.sh"),
+            shell_mongoc('export IS_PATCH="${is_patch}"\n' ".evergreen/scripts/debian_package_build.sh"),
             s3_put(
                 local_file="deb.tar.gz",
                 remote_file="${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz",
@@ -328,8 +328,8 @@ all_tasks = [
     NamedTask(
         "rpm-package-build",
         commands=[
-            shell_mongoc('export IS_PATCH="${is_patch}"\n' "sh .evergreen/scripts/check_rpm_spec.sh"),
-            shell_mongoc("sh .evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc('export IS_PATCH="${is_patch}"\n' ".evergreen/scripts/check_rpm_spec.sh"),
+            shell_mongoc(".evergreen/scripts/build_snapshot_rpm.sh"),
             s3_put(
                 local_file="rpm.tar.gz",
                 remote_file="${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz",
@@ -340,8 +340,8 @@ all_tasks = [
                 remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz",
                 content_type="${content_type|application/x-gzip}",
             ),
-            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
-            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n" ".evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" ".evergreen/scripts/build_snapshot_rpm.sh"),
         ],
     ),
     NamedTask(
@@ -379,9 +379,9 @@ all_tasks = [
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
                 export CMAKE="$(find_cmake_latest)"
-                DESTDIR="$(pwd)/dest" bash ./.evergreen/scripts/install-uninstall-check.sh
-                BSON_ONLY=1 bash ./.evergreen/scripts/install-uninstall-check.sh
-                bash ./.evergreen/scripts/install-uninstall-check.sh""",
+                DESTDIR="$(pwd)/dest" .evergreen/scripts/install-uninstall-check.sh
+                BSON_ONLY=1 .evergreen/scripts/install-uninstall-check.sh
+                .evergreen/scripts/install-uninstall-check.sh""",
                 include_expansions_in_env=["distro_id"],
             )
         ],
@@ -420,12 +420,12 @@ all_tasks = [
                     ),
                 ]
             ),
-            shell_mongoc("bash ./.evergreen/scripts/build-and-test-with-toolchain.sh"),
+            shell_mongoc(".evergreen/scripts/build-and-test-with-toolchain.sh"),
         ],
     ),
     NamedTask(
         "install-libmongoc-after-libbson",
-        commands=[shell_mongoc("bash ./.evergreen/scripts/install-libmongoc-after-libbson.sh"),],
+        commands=[shell_mongoc(".evergreen/scripts/install-libmongoc-after-libbson.sh"),],
     ),
 ]
 
@@ -736,7 +736,7 @@ all_tasks = chain(
             commands=[
                 shell_mongoc(
                     """
-            env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/scripts/compile.sh
+            env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
             """,
                     add_expansions_to_env=True,
                 ),
@@ -817,7 +817,7 @@ class SSLTask(Task):
         else:
             script += " SSL=OPENSSL"
 
-        script += " bash .evergreen/scripts/compile.sh"
+        script += " .evergreen/scripts/compile.sh"
 
         super(SSLTask, self).__init__(
             commands=[
@@ -1059,7 +1059,7 @@ class OCSPTask(MatrixTask):
         yield (
             shell_mongoc(
                 f"""
-                TEST_COLUMN={test_column} CERT_TYPE={self.settings.cert} USE_DELEGATE={use_delegate} bash .evergreen/scripts/run-ocsp-responder.sh
+                TEST_COLUMN={test_column} CERT_TYPE={self.settings.cert} USE_DELEGATE={use_delegate} .evergreen/scripts/run-ocsp-responder.sh
                 """
             )
         )
@@ -1072,7 +1072,7 @@ class OCSPTask(MatrixTask):
                 yield (
                     shell_mongoc(
                         f"""
-                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE={self.settings.cert} bash .evergreen/scripts/run-ocsp-cache-test.sh
+                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-cache-test.sh
                         """
                     )
                 )
@@ -1080,7 +1080,7 @@ class OCSPTask(MatrixTask):
                 yield (
                     shell_mongoc(
                         f"""
-                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} bash .evergreen/scripts/run-ocsp-test.sh
+                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-test.sh
                         """
                     )
                 )
@@ -1089,7 +1089,7 @@ class OCSPTask(MatrixTask):
                 yield (
                     shell_mongoc(
                         f"""
-                        CERT_TYPE={self.settings.cert} bash .evergreen/scripts/run-ocsp-cache-test.sh
+                        CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-cache-test.sh
                         """
                     )
                 )
@@ -1097,7 +1097,7 @@ class OCSPTask(MatrixTask):
                 yield (
                     shell_mongoc(
                         f"""
-                        TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} bash .evergreen/scripts/run-ocsp-test.sh
+                        TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-test.sh
                         """
                     )
                 )
