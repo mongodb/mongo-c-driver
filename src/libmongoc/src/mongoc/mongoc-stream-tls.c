@@ -216,6 +216,56 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
 #endif
 }
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_new_with_hostname_and_openssl_context --
+ *
+ *       Creates a new mongoc_stream_tls_t to communicate with a remote
+ *       server using a TLS stream, using an existing OpenSSL context.
+ *
+ *       @ssl_ctx is the global OpenSSL context for the mongoc_client_t
+ *       associated with this function call.
+ *
+ *       @host the hostname we are connected to and to verify the
+ *       server certificate against
+ *
+ *       @base_stream should be a stream that will become owned by the
+ *       resulting tls stream. It will be used for raw I/O.
+ *
+ * Returns:
+ *       NULL on failure, otherwise a mongoc_stream_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_stream_t *
+mongoc_stream_tls_new_with_hostname_and_openssl_context (
+   mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
+{
+   BSON_ASSERT (base_stream);
+
+   /* !client is only used for testing,
+    * when the streams are pretending to be the server */
+   if (!client || opt->weak_cert_validation) {
+      opt->allow_invalid_hostname = true;
+   }
+
+#ifndef _WIN32
+   /* Silly check for Unix Domain Sockets */
+   if (!host || (host[0] == '/' && !access (host, F_OK))) {
+      opt->allow_invalid_hostname = true;
+   }
+#endif
+
+   return mongoc_stream_tls_openssl_new_with_context (base_stream, host, opt, client, ssl_ctx);
+}
+#endif
+
 mongoc_stream_t *
 mongoc_stream_tls_new (mongoc_stream_t *base_stream, mongoc_ssl_opt_t *opt, int client)
 {

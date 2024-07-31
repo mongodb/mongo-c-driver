@@ -22,6 +22,9 @@
 /* TODO: rename to TOPOLOGY scanner */
 
 #include <bson/bson.h>
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#include <openssl/ssl.h>
+#endif
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
 #include "mongoc-handshake-private.h"
@@ -125,6 +128,10 @@ typedef struct mongoc_topology_scanner {
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;
+#endif
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+   SSL_CTX *openssl_ctx;
 #endif
 
    mongoc_apm_callbacks_t apm_callbacks;

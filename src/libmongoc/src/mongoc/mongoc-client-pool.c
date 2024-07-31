@@ -33,6 +33,10 @@
 #include "mongoc-ssl-private.h"
 #endif
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+#include "mongoc-openssl-private.h"
+#endif
+
 struct _mongoc_client_pool_t {
    bson_mutex_t mutex;
    mongoc_cond_t cond;
@@ -73,6 +77,13 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool, const mongoc_ssl_op
    if (opts) {
       _mongoc_ssl_opts_copy_to (opts, &pool->ssl_opts, false /* don't overwrite internal opts. */);
       pool->ssl_opts_set = true;
+
+      /* Update the OpenSSL context associated with this client pool to match new ssl opts. */
+      /* All future clients popped from pool inherit this OpenSSL context. */
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+      SSL_CTX_free (pool->topology->scanner->openssl_ctx);
+      pool->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&pool->ssl_opts);
+#endif
    }
 
    mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner, &pool->ssl_opts);
