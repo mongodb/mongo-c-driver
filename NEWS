@@ -1,6 +1,10 @@
 libmongoc 1.28.0 (unreleased)
 =============================
 
+New features:
+
+  * Support In-Use Encryption range queries.
+
 Notes:
 
   * Bump minimum wire protocol version from 6 (MongoDB 3.6) to 7 (MongoDB 4.0).
