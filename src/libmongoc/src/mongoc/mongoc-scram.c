@@ -112,7 +112,7 @@ _mongoc_scram_cache_init_once (void)
    bson_once (&init_cache_once_control, _mongoc_scram_cache_init);
 }
 
-static int
+int
 _scram_hash_size (mongoc_scram_t *scram)
 {
    if (scram->crypto.algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
