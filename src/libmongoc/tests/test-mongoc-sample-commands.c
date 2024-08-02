@@ -3678,7 +3678,7 @@ commit_with_retry (mongoc_client_session_t *cs, bson_error_t *error)
        * mongoc_transaction_opts_set_write_concern */
       r = mongoc_client_session_commit_transaction (cs, &reply, error);
       if (r) {
-         MONGOC_INFO ("Transaction committed");
+         MONGOC_DEBUG ("Transaction committed");
          break;
       }
 
