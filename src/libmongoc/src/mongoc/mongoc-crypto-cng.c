@@ -16,6 +16,7 @@
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_CRYPTO_CNG
+#include "mongoc-scram-private.h"
 #include "mongoc-crypto-private.h"
 #include "mongoc-crypto-cng-private.h"
 #include "mongoc-log.h"
@@ -76,8 +77,8 @@ mongoc_crypto_cng_cleanup (void)
    if (_sha256_hash_algo) {
       BCryptCloseAlgorithmProvider (&_sha256_hash_algo, 0);
    }
-   if (_sha256_hash_algo) {
-      BCryptCloseAlgorithmProvider (&_sha256_hash_algo, 0);
+   if (_sha256_hmac_algo) {
+      BCryptCloseAlgorithmProvider (&_sha256_hmac_algo, 0);
    }
 }
 
@@ -142,6 +143,42 @@ cleanup:
    return retval;
 }
 
+static int
+_crypto_hash_size (mongoc_crypto_t *crypto)
+{
+   if (crypto->algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
+      return MONGOC_SCRAM_SHA_1_HASH_SIZE;
+   } else if (crypto->algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
+      return MONGOC_SCRAM_SHA_256_HASH_SIZE;
+   }
+   return 0;
+}
+
+static void
+mongoc_crypto_cng_derive_key_pbkdf2 (mongoc_crypto_t *crypto, const char *password, uint32_t password_len, const uint8_t *salt, uint32_t salt_len, uint32_t iterations, uint32_t key_len, unsigned char *output)
+{
+   uint8_t intermediate_digest[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t start_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   const int hash_size = _crypto_hash_size (crypto);
+
+   memcpy (start_key, salt, salt_len);
+   start_key[salt_len] = 0;
+   start_key[salt_len + 1] = 0;
+   start_key[salt_len + 2] = 0;
+   start_key[salt_len + 3] = 1;
+
+   crypto->hmac (crypto, password, password_len, start_key, hash_size, output);
+   memcpy (intermediate_digest, output, hash_size);
+
+   for (uint32_t i = 2u; i <= iterations; i++) {
+      crypto->hmac (crypto, password, password_len, intermediate_digest, hash_size, intermediate_digest);
+
+      for (int k = 0; k < hash_size; k++) {
+         output[k] ^= intermediate_digest[k];
+      }
+   }
+}
+
 int
 mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                     const char *password,
@@ -152,6 +189,7 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                     uint32_t key_len,
                                     unsigned char *output)
 {
+#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
    char *password_copy = malloc (sizeof (char) * (password_len + 1));
    strncpy (password_copy, password, password_len);
    password_copy[password_len] = '\0';
@@ -159,8 +197,7 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
    char *salt_copy = malloc (sizeof (char) * (salt_len + 1));
    strncpy (salt_copy, (const char *) salt, salt_len);
    salt_copy[salt_len] = '\0';
-
-   return BCryptDeriveKeyPBKDF2 (_sha1_hmac_algo,
+   NTSTATUS status = BCryptDeriveKeyPBKDF2 (_sha1_hmac_algo,
                                  (unsigned char *) password_copy,
                                  password_len,
                                  (unsigned char *) salt_copy,
@@ -169,6 +206,17 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                  output,
                                  key_len,
                                  0);
+
+   if (!NT_SUCCESS (status)) {
+      MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
+   }
+   free(password_copy);
+   free(salt_copy);
+   return (int)status;
+#else
+   mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, key_len, output);
+   return 0;
+#endif
 }
 
 void
@@ -212,6 +260,7 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                       uint32_t key_len,
                                       unsigned char *output)
 {
+#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
    char *password_copy = malloc (sizeof (char) * (password_len + 1));
    strncpy (password_copy, password, password_len);
    password_copy[password_len] = '\0';
@@ -220,7 +269,7 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
    strncpy (salt_copy, (const char *) salt, salt_len);
    salt_copy[salt_len] = '\0';
 
-   return BCryptDeriveKeyPBKDF2 (_sha256_hmac_algo,
+   NTSTATUS status = BCryptDeriveKeyPBKDF2 (_sha256_hmac_algo,
                                  (unsigned char *) password_copy,
                                  password_len,
                                  (unsigned char *) salt_copy,
@@ -229,6 +278,17 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                  output,
                                  key_len,
                                  0);
+
+   if (!NT_SUCCESS (status)) {
+      MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
+   }
+   free(password_copy);
+   free(salt_copy);
+   return (int)status;
+#else
+   mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, key_len, output);
+   return 0;
+#endif
 }
 
 void

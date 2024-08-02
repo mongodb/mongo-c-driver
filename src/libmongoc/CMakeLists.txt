@@ -1345,6 +1345,11 @@ endif ()
 
 include (CMakePackageConfigHelpers)
 
+# Check if BCryptDeriveKeyPBKDF2 is defined in bcrypt.h
+if (WIN32 AND MONGOC_ENABLE_CRYPTO_CNG)
+   check_symbol_exists (BCryptDeriveKeyPBKDF2 bcrypt.h MONGOC_HAVE_BCRYPT_PBKDF2)
+endif ()
+
 write_basic_package_version_file (
    "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config-version.cmake"
    VERSION ${MONGOC_VERSION}

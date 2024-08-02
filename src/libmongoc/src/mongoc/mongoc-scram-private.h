@@ -66,9 +66,6 @@ typedef struct _mongoc_scram_t {
 #ifdef MONGOC_ENABLE_CRYPTO
 void
 _mongoc_scram_init (mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo);
-
-int
-_scram_hash_size (mongoc_scram_t *scram);
 #endif
 
 void
