@@ -2602,6 +2602,11 @@ test_example_59 (mongoc_database_t *db)
       return;
    }
 
+   if (test_framework_get_server_version () < test_framework_str_to_version ("5.0.0")) {
+      MONGOC_DEBUG ("Skipping test. Test requires server version 5.0.0\n");
+      return;
+   }
+
    mongoc_client_t *client = NULL;
    client = test_framework_new_default_client ();
 
@@ -2711,6 +2716,11 @@ test_example_60 (mongoc_database_t *db)
    BSON_UNUSED (db);
 
    if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
+   if (test_framework_get_server_version () < test_framework_str_to_version ("5.0.0")) {
+      MONGOC_DEBUG ("Skipping test. Test requires server version 5.0.0\n");
       return;
    }
 
