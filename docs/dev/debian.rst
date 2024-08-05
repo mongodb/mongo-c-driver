@@ -37,7 +37,7 @@ To publish a new release Debian package, perform the following:
    Commit these changes,
    `git commit -m "Fix-up, post Merge tag '1.xx.y' into debian/unstable"` and
    repeat step 3.
-6. Create a new changelog entry (use the command `dch -i` to ensure proper
+5. Create a new changelog entry (use the command `dch -i` to ensure proper
    formatting), then adjust the version number on the top line of the changelog
    as appropriate.
 7. Make any other necessary changes to the Debian packaging components (e.g.,
