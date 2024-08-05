@@ -399,6 +399,12 @@ install (EXPORT bson-targets
 include (LegacyPackage)
 include (CPack)
 
+add_executable(bsonpoke
+	fuzz/fuzz_test_libbson.c)
+target_include_directories(bsonpoke PRIVATE "src" "${PROJECT_BINARY_DIR}/src/")
+target_link_libraries(bsonpoke ${bson_libs})
+set_target_properties(bsonpoke PROPERTIES LINK_FLAGS ${FUZZING_ENGINE})
+
 # 8888888b.
 # 888  "Y88b
 # 888    888
