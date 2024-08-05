@@ -154,8 +154,55 @@ _crypto_hash_size (mongoc_crypto_t *crypto)
    return 0;
 }
 
+/* Wrapper for BCryptDeriveKeyPBKDF2 */
+#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
+static int
+_bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
+                           const char *password,
+                           uint32_t password_len,
+                           const uint8_t *salt,
+                           uint32_t salt_len,
+                           uint32_t iterations,
+                           uint32_t key_len,
+                           unsigned char *output)
+{
+   // Make non-const versions of password and salt.
+   char *password_copy = malloc (sizeof (char) * (password_len + 1));
+   strncpy (password_copy, password, password_len);
+   password_copy[password_len] = '\0';
+
+   char *salt_copy = malloc (sizeof (char) * (salt_len + 1));
+   strncpy (salt_copy, (const char *) salt, salt_len);
+   salt_copy[salt_len] = '\0';
+
+   NTSTATUS status = BCryptDeriveKeyPBKDF2 (prf,
+                                            (unsigned char *) password_copy,
+                                            password_len,
+                                            (unsigned char *) salt_copy,
+                                            salt_len,
+                                            iterations,
+                                            output,
+                                            key_len,
+                                            0);
+   if (!NT_SUCCESS (status)) {
+      MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
+   }
+   free (password_copy);
+   free (salt_copy);
+   return (int) status;
+}
+#endif
+
+/* Compute the SCRAM step Hi() as defined in RFC5802 */
 static void
-mongoc_crypto_cng_derive_key_pbkdf2 (mongoc_crypto_t *crypto, const char *password, uint32_t password_len, const uint8_t *salt, uint32_t salt_len, uint32_t iterations, uint32_t key_len, unsigned char *output)
+mongoc_crypto_cng_derive_key_pbkdf2 (mongoc_crypto_t *crypto,
+                                     const char *password,
+                                     uint32_t password_len,
+                                     const uint8_t *salt,
+                                     uint32_t salt_len,
+                                     uint32_t iterations,
+                                     uint32_t key_len,
+                                     unsigned char *output)
 {
    uint8_t intermediate_digest[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t start_key[MONGOC_SCRAM_HASH_MAX_SIZE];
@@ -190,29 +237,8 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                     unsigned char *output)
 {
 #if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
-   char *password_copy = malloc (sizeof (char) * (password_len + 1));
-   strncpy (password_copy, password, password_len);
-   password_copy[password_len] = '\0';
-
-   char *salt_copy = malloc (sizeof (char) * (salt_len + 1));
-   strncpy (salt_copy, (const char *) salt, salt_len);
-   salt_copy[salt_len] = '\0';
-   NTSTATUS status = BCryptDeriveKeyPBKDF2 (_sha1_hmac_algo,
-                                 (unsigned char *) password_copy,
-                                 password_len,
-                                 (unsigned char *) salt_copy,
-                                 salt_len,
-                                 iterations,
-                                 output,
-                                 key_len,
-                                 0);
-
-   if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
-   }
-   free(password_copy);
-   free(salt_copy);
-   return (int)status;
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, key_len, output)
 #else
    mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, key_len, output);
    return 0;
@@ -261,30 +287,8 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                       unsigned char *output)
 {
 #if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
-   char *password_copy = malloc (sizeof (char) * (password_len + 1));
-   strncpy (password_copy, password, password_len);
-   password_copy[password_len] = '\0';
-
-   char *salt_copy = malloc (sizeof (char) * (salt_len + 1));
-   strncpy (salt_copy, (const char *) salt, salt_len);
-   salt_copy[salt_len] = '\0';
-
-   NTSTATUS status = BCryptDeriveKeyPBKDF2 (_sha256_hmac_algo,
-                                 (unsigned char *) password_copy,
-                                 password_len,
-                                 (unsigned char *) salt_copy,
-                                 salt_len,
-                                 iterations,
-                                 output,
-                                 key_len,
-                                 0);
-
-   if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
-   }
-   free(password_copy);
-   free(salt_copy);
-   return (int)status;
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, key_len, output)
 #else
    mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, key_len, output);
    return 0;
