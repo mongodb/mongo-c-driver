@@ -1347,7 +1347,13 @@ include (CMakePackageConfigHelpers)
 
 # Check if BCryptDeriveKeyPBKDF2 is defined in bcrypt.h
 if (WIN32 AND MONGOC_ENABLE_CRYPTO_CNG)
-   check_symbol_exists (BCryptDeriveKeyPBKDF2 bcrypt.h MONGOC_HAVE_BCRYPT_PBKDF2)
+   check_symbol_exists (BCryptDeriveKeyPBKDF2 bcrypt.h HAVE_BCRYPT_PBKDF2)
+endif ()
+
+if (DEFINED HAVE_BCRYPT_PBKDF2)
+set (MONGOC_HAVE_BCRYPT_PBKDF2 1)
+else ()
+set (MONGOC_HAVE_BCRYPT_PBKDF2 0)
 endif ()
 
 write_basic_package_version_file (

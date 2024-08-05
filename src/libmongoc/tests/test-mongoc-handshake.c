@@ -1098,6 +1098,10 @@ test_handshake_platform_config (void)
    BSON_ASSERT (_get_bit (config_str, MONGOC_ENABLE_CRYPTO_CNG));
 #endif
 
+#ifdef MONGOC_HAVE_BCRYPT_PBKDF2
+   BSON_ASSERT (_get_bit (config_str, MONGOC_HAVE_BCRYPT_PBKDF2));
+#endif
+
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT));
 #endif
