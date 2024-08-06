@@ -1,3 +1,16 @@
+libmongoc 1.27.5
+================
+
+Fixes:
+
+  * Fix possible build error in environments where `bool` or `_Bool` is a macro.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libmongoc 1.27.4
 ================
 
