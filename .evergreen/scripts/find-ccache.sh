@@ -35,7 +35,7 @@ find_ccache() {
     find_ccache_check ccache && return
   } || true
 
-  # Some distros (non-Windows) provide ccache via mongodbtoolchain.
+  # Some distros provide ccache via mongodbtoolchain.
   {
     find_ccache_check /opt/mongodbtoolchain/v4/bin/ccache && return
   } || {
