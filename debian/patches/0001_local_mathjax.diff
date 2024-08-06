@@ -15,4 +15,4 @@ Forwarded: not-needed
 +
  # General information about the project.
  project = "libmongoc"
- copyright = "2009-present, MongoDB, Inc."
+ copyright = "2017-present, MongoDB, Inc"
