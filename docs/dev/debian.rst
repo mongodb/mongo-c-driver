@@ -23,36 +23,42 @@ Release Publishing
 
 To publish a new release Debian package, perform the following:
 
-1. For the first Debian package release on a **new release branch**, edit
-   ``debian/gbp.conf`` and update the ``upstream-branch`` and ``debian-branch``
-   variables to match the name of the new release branch (e.g., ``r1.xx``); both
-   variables should have the same value.
-
-2. Create a new changelog entry (use the command `dch -i` to ensure proper
+1. Change to the packaging branch, `git checkout debian/unstable`, and make sure
+   the working directorty is clean, `git status`, and up-to-date, `git pull`.
+2. Merge the release tag, `git merge 1.xx.y`; if there is a conflict (which
+   should be rare), then it may be better to pass some additional options,
+   `git merge -sort -Xtheirs 1.xx.y`.
+3. Verify that there are no extraneous differences from the release tag,
+   `git diff 1.xx.y..HEAD --stat -- . ':!debian'`; the command should produce
+   no output, and if any output is shown then that indicates differences in
+   files outside the `debian/` directory.
+4. If there were any files outside the `debian/` directory listed in the last
+   step then replace them, `git checkout 1.xx.y -- path/to/file1 path/to/file2`.
+   Commit these changes,
+   `git commit -m "Fix-up, post Merge tag '1.xx.y' into debian/unstable"` and
+   repeat step 3.
+5. Create a new changelog entry (use the command `dch -i` to ensure proper
    formatting), then adjust the version number on the top line of the changelog
    as appropriate.
-3. Make any other necessary changes to the Debian packaging components (e.g.,
+6. Make any other necessary changes to the Debian packaging components (e.g.,
    update to standards version, dependencies, descriptions, etc.) and make
    relevant entries in ``debian/changelog`` as needed.
-4. Use `git add` to stage the changed files for commit (only files in the
+7. Use `git add` to stage the changed files for commit (only files in the
    `debian/` directory should be committed), then commit them (the `debcommit`
    utility is helpful here).
-5. Build the package with `gbp buildpackage` and inspect the resulting package
+8. Build the package with `gbp buildpackage` and inspect the resulting package
    files (at a minimum use `debc` on the `.changes` file in order to confirm
    files are installed to the proper locations by the proper packages and also
    use `lintian` on the `.changes` file in order to confirm that there are no
    unexpected errors or warnings; the `lintian` used for this check should
    always be the latest version as it is found in the unstable distribution)
-6. If any changes are needed, make them, commit them, and rebuild the package.
+9. If any changes are needed, make them, commit them, and rebuild the package.
 
    .. note:: It may be desirable to squash multiple commits down to a single commit before building the final packages.
 
-7. Once the final packages are built, they can be signed and uploaded and the
-   version can be tagged using the `--git-tag` option of `gbp buildpackage`.
-8. After the commit has been tagged, switch from the release branch to the
-   master branch and cherry-pick the commit(s) made on the release branch that
-   touch only the Debian packaging (this will ensure that the packaging and
-   especially the changelog on the master remain up to date).
-9. The final steps are to sign and upload the package, push the commits on the
-   release branch and the master branch to the remote, and push the Debian
-   package tag.
+10. Once the final packages are built, they can be signed and uploaded and the
+    version can be tagged using the `--git-tag` option of `gbp buildpackage`.
+    The best approach is to build the packages, prepare everything and then
+    upload. Once the archive has accepted the upload, then execute
+    `gbp buildpackage --git-tag --git-tag-only --git-sign-tags` and push the
+    commits on the `debian/unstable` branch as well as the new signed tag.

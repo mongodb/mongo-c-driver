@@ -77,7 +77,7 @@ for ssl_ver in "${ssl_vers[@]}"; do
     LD_LIBRARY_PATH="${toolchain_lib_dir}" \
     PATH="${new_path}" \
     SSL="${ssl}" \
-    bash .evergreen/scripts/compile-unix.sh 2>&1 >|"${output_file}"
+    .evergreen/scripts/compile-unix.sh 2>&1 >|"${output_file}"
 
   # Verify that the toolchain components were used
   if grep -Ec "[-]I/opt/mongo-c-toolchain/include" "${output_file}" >/dev/null &&

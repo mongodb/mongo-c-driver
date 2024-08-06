@@ -32,7 +32,7 @@ def _create_tasks():
                 r"""
             echo "Building test-gcpkms ... begin"
             pushd mongoc
-            ./.evergreen/scripts/compile-test-gcpkms.sh
+            .evergreen/scripts/compile-test-gcpkms.sh
             popd
             echo "Building test-gcpkms ... end"
             echo "Copying files ... begin"
@@ -72,7 +72,7 @@ def _create_tasks():
             shell_exec(
                 r"""
             pushd mongoc
-            ./.evergreen/scripts/compile-test-gcpkms.sh
+            .evergreen/scripts/compile-test-gcpkms.sh
             popd""",
                 test=False,
                 add_expansions_to_env=True,

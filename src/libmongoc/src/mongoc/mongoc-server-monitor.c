@@ -855,12 +855,23 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
          server_monitor->uri, &server_monitor->description->host, server_monitor->initiator_context, error);
    } else {
       void *ssl_opts_void = NULL;
+      void *openssl_ctx_void = NULL;
 
 #ifdef MONGOC_ENABLE_SSL
       ssl_opts_void = server_monitor->ssl_opts;
 #endif
-      server_monitor->stream = mongoc_client_connect (
-         false, ssl_opts_void != NULL, ssl_opts_void, server_monitor->uri, &server_monitor->description->host, error);
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+      openssl_ctx_void = server_monitor->topology->scanner->openssl_ctx;
+#endif
+
+      server_monitor->stream = mongoc_client_connect (false,
+                                                      ssl_opts_void != NULL,
+                                                      ssl_opts_void,
+                                                      server_monitor->uri,
+                                                      &server_monitor->description->host,
+                                                      openssl_ctx_void,
+                                                      error);
    }
 
    if (!server_monitor->stream) {

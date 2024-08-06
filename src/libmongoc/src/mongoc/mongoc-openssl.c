@@ -1002,6 +1002,12 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
       return NULL;
    }
 
+   if (opt->weak_cert_validation) {
+      SSL_CTX_set_verify (ctx, SSL_VERIFY_NONE, NULL);
+   } else {
+      SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER, NULL);
+   }
+
    return ctx;
 }
 

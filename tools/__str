@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # This is a tiny shell utility for string manipulation.
 # Allow us to use "local"

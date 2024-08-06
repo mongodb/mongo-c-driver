@@ -219,6 +219,7 @@ mongoc_client_connect (bool buffered,
                        void *ssl_opts_void,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
+                       void *openssl_ctx_void,
                        bson_error_t *error);
 
 

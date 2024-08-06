@@ -6103,6 +6103,135 @@ test_bypass_mongocryptd_shared_library (void *unused)
    bson_free (args);
 }
 
+static void
+test_range_explicit_encryption_applies_defaults (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   bson_error_t error;
+   mongoc_client_t *keyVaultClient = test_framework_new_default_client ();
+
+   // Create a ClientEncryption object.
+   mongoc_client_encryption_t *clientEncryption;
+   {
+      mongoc_client_encryption_opts_t *ceOpts = mongoc_client_encryption_opts_new ();
+      bson_t *kms_providers = _make_local_kms_provider (NULL);
+
+      mongoc_client_encryption_opts_set_keyvault_client (ceOpts, keyVaultClient);
+      mongoc_client_encryption_opts_set_keyvault_namespace (ceOpts, "keyvault", "datakeys");
+      mongoc_client_encryption_opts_set_kms_providers (ceOpts, kms_providers);
+
+      clientEncryption = mongoc_client_encryption_new (ceOpts, &error);
+      ASSERT_OR_PRINT (clientEncryption, error);
+
+      bson_destroy (kms_providers);
+      mongoc_client_encryption_opts_destroy (ceOpts);
+   }
+
+   // Create a data key.
+   bson_value_t keyID;
+   {
+      mongoc_client_encryption_datakey_opts_t *dkOpts = mongoc_client_encryption_datakey_opts_new ();
+
+      bool ok = mongoc_client_encryption_create_datakey (clientEncryption, "local", dkOpts, &keyID, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      mongoc_client_encryption_datakey_opts_destroy (dkOpts);
+   }
+
+   bson_value_t minValue = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 0};
+   bson_value_t maxValue = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1000};
+   bson_value_t toEncrypt = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 123};
+
+   // Create `payload_defaults`.
+   bson_value_t payload_defaults;
+   {
+      mongoc_client_encryption_encrypt_opts_t *eOpts = mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eOpts, &keyID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eOpts, MONGOC_ENCRYPT_ALGORITHM_RANGE);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eOpts, 0);
+
+      // Apply range options. Omit `sparsity` and `trimFactor`.
+      {
+         mongoc_client_encryption_encrypt_range_opts_t *rOpts = mongoc_client_encryption_encrypt_range_opts_new ();
+         mongoc_client_encryption_encrypt_range_opts_set_min (rOpts, &minValue);
+         mongoc_client_encryption_encrypt_range_opts_set_max (rOpts, &maxValue);
+         mongoc_client_encryption_encrypt_opts_set_range_opts (eOpts, rOpts);
+         mongoc_client_encryption_encrypt_range_opts_destroy (rOpts);
+      }
+
+      bool ok = mongoc_client_encryption_encrypt (clientEncryption, &toEncrypt, eOpts, &payload_defaults, &error);
+      ASSERT_OR_PRINT (ok, error);
+      ASSERT (payload_defaults.value_type == BSON_TYPE_BINARY);
+
+      mongoc_client_encryption_encrypt_opts_destroy (eOpts);
+   }
+
+   // Case 1: Uses libmongocrypt defaults.
+   {
+      mongoc_client_encryption_encrypt_opts_t *eOpts = mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eOpts, &keyID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eOpts, MONGOC_ENCRYPT_ALGORITHM_RANGE);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eOpts, 0);
+
+      // Apply range options. Include `sparsity` and `trimFactor`.
+      {
+         mongoc_client_encryption_encrypt_range_opts_t *rOpts = mongoc_client_encryption_encrypt_range_opts_new ();
+         mongoc_client_encryption_encrypt_range_opts_set_min (rOpts, &minValue);
+         mongoc_client_encryption_encrypt_range_opts_set_max (rOpts, &maxValue);
+         mongoc_client_encryption_encrypt_range_opts_set_sparsity (rOpts, 2);
+         mongoc_client_encryption_encrypt_range_opts_set_trim_factor (rOpts, 6);
+         mongoc_client_encryption_encrypt_opts_set_range_opts (eOpts, rOpts);
+         mongoc_client_encryption_encrypt_range_opts_destroy (rOpts);
+      }
+
+      bson_value_t payload;
+      bool ok = mongoc_client_encryption_encrypt (clientEncryption, &toEncrypt, eOpts, &payload, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      // Assert both payloads have equal length. Intended to check they used the same `trimFactor` and `sparsity`.
+      ASSERT (payload.value_type == BSON_TYPE_BINARY);
+      ASSERT_CMPUINT32 (payload.value.v_binary.data_len, ==, payload_defaults.value.v_binary.data_len);
+
+      mongoc_client_encryption_encrypt_opts_destroy (eOpts);
+      bson_value_destroy (&payload);
+   }
+
+   // Case 1: Accepts `trimFactor` 0.
+   {
+      mongoc_client_encryption_encrypt_opts_t *eOpts = mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eOpts, &keyID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (eOpts, MONGOC_ENCRYPT_ALGORITHM_RANGE);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eOpts, 0);
+
+      // Apply range options. Omit `sparsity`, but include `trimFactor=0`.
+      {
+         mongoc_client_encryption_encrypt_range_opts_t *rOpts = mongoc_client_encryption_encrypt_range_opts_new ();
+         mongoc_client_encryption_encrypt_range_opts_set_min (rOpts, &minValue);
+         mongoc_client_encryption_encrypt_range_opts_set_max (rOpts, &maxValue);
+         mongoc_client_encryption_encrypt_range_opts_set_trim_factor (rOpts, 0);
+         mongoc_client_encryption_encrypt_opts_set_range_opts (eOpts, rOpts);
+         mongoc_client_encryption_encrypt_range_opts_destroy (rOpts);
+      }
+
+      bson_value_t payload;
+      bool ok = mongoc_client_encryption_encrypt (clientEncryption, &toEncrypt, eOpts, &payload, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      // Assert payload with `trimFactor=0` has greater length.
+      ASSERT (payload.value_type == BSON_TYPE_BINARY);
+      ASSERT_CMPUINT32 (payload.value.v_binary.data_len, >, payload_defaults.value.v_binary.data_len);
+
+      mongoc_client_encryption_encrypt_opts_destroy (eOpts);
+      bson_value_destroy (&payload);
+   }
+
+   bson_value_destroy (&payload_defaults);
+   bson_value_destroy (&keyID);
+   mongoc_client_encryption_destroy (clientEncryption);
+   mongoc_client_destroy (keyVaultClient);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -6537,5 +6666,13 @@ test_client_side_encryption_install (TestSuite *suite)
             bson_free (test_name);
          }
       }
+
+      TestSuite_AddFull (suite,
+                         "/client_side_encryption/range_explicit_encryption/applies_defaults",
+                         test_range_explicit_encryption_applies_defaults,
+                         NULL,
+                         NULL,
+                         // No need to test for server version requirements. Test does not contact server.
+                         test_framework_skip_if_no_client_side_encryption);
    }
 }
