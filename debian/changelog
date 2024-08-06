@@ -1,4 +1,4 @@
-mongo-c-driver (1.27.5-1) UNRELEASED; urgency=medium
+mongo-c-driver (1.27.5-1) unstable; urgency=medium
 
   * New upstream release
   * Remove Kyle from uploaders
