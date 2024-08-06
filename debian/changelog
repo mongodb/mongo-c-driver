@@ -1,6 +1,7 @@
 mongo-c-driver (1.27.5-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * Remove Kyle from uploaders
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 06 Aug 2024 11:11:43 -0400
 
