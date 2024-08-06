@@ -566,7 +566,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
             storeDocDupPtr (uri_options)),
       // Optional 'useMultipleMongoses' bool
       find (key ("useMultipleMongoses"),
-            if (not(type (bool)), then (error ("'useMultipleMongoses' must be a bool value"))),
+            if (not(type (boolean)), then (error ("'useMultipleMongoses' must be a bool value"))),
             do (use_multiple_mongoses_set = true),
             storeBool (use_multiple_mongoses)),
       // Events to observe:
@@ -611,18 +611,18 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                else (error ("Missing 'version' property in 'serverApi' object")),
                // Toggle strictness:
                find (key ("strict"),
-                     if (not(type (bool)), then (error ("'serverApi.strict' must be a bool"))),
-                     do (mongoc_server_api_strict (api, bsonAs (bool)))),
+                     if (not(type (boolean)), then (error ("'serverApi.strict' must be a bool"))),
+                     do (mongoc_server_api_strict (api, bsonAs (boolean)))),
                // Toggle deprecation errors:
                find (key ("deprecationErrors"),
-                     if (not(type (bool)), then (error ("serverApi.deprecationErrors must be a bool"))),
-                     do (mongoc_server_api_deprecation_errors (api, bsonAs (bool)))))),
+                     if (not(type (boolean)), then (error ("serverApi.deprecationErrors must be a bool"))),
+                     do (mongoc_server_api_deprecation_errors (api, bsonAs (boolean)))))),
       // Toggle observation of sensitive commands
       find (key ("observeSensitiveCommands"),
-            if (not(type (bool)), then (error ("'observeSensitiveCommands' must be a bool"))),
+            if (not(type (boolean)), then (error ("'observeSensitiveCommands' must be a bool"))),
             do ({
                bool *p = entity->observe_sensitive_commands = bson_malloc (sizeof (bool));
-               *p = bsonAs (bool);
+               *p = bsonAs (boolean);
             })),
       // Which events should be available as entities:
       find (key ("storeEventsAsEntities"),
