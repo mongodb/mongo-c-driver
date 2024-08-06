@@ -355,7 +355,7 @@ create-silk-asset-group:
 
 
 snyk:
-    FROM ubuntu:24.04
+    FROM --platform=linux/amd64 ubuntu:24.04
     RUN apt-get update && apt-get -y install curl
     RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
     RUN chmod a+x /usr/local/bin/snyk
