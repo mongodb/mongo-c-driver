@@ -231,9 +231,10 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                     unsigned char *output)
 {
 #if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
-   return _bcrypt_derive_key_pbkdf2 (_sha1_hmac_algo, password, password_len, salt, salt_len, iterations, output)
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output)
 #else
-   mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output_len, output);
+   mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
    return 0;
 #endif
 }
@@ -280,9 +281,10 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                       unsigned char *output)
 {
 #if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
-   return _bcrypt_derive_key_pbkdf2 (_sha256_hmac_algo, password, password_len, salt, salt_len, iterations, output)
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output)
 #else
-   mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output_len, output);
+   mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
    return 0;
 #endif
 }
