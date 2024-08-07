@@ -35,7 +35,7 @@ mongoc_crypto_openssl_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                         const uint8_t *salt,
                                         size_t salt_len,
                                         uint32_t iterations,
-                                        size_t key_len,
+                                        size_t output_len,
                                         unsigned char *output);
 
 void
@@ -59,7 +59,7 @@ mongoc_crypto_openssl_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                           const uint8_t *salt,
                                           size_t salt_len,
                                           uint32_t iterations,
-                                          size_t key_len,
+                                          size_t output_len,
                                           unsigned char *output);
 
 void

@@ -76,10 +76,10 @@ mongoc_crypto_pbkdf (mongoc_crypto_t *crypto,
                      const uint8_t *salt,
                      size_t salt_len,
                      uint32_t iterations,
-                     size_t key_len,
+                     size_t output_len,
                      unsigned char *output)
 {
-   return crypto->pbkdf (crypto, password, password_len, salt, salt_len, iterations, key_len, output);
+   return crypto->pbkdf (crypto, password, password_len, salt, salt_len, iterations, output_len, output);
 }
 
 void

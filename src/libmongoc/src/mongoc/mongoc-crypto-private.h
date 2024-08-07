@@ -45,7 +45,7 @@ struct _mongoc_crypto_t {
                  const uint8_t *salt,
                  size_t salt_len,
                  uint32_t iterations,
-                 size_t key_len,
+                 size_t output_len,
                  unsigned char *output);
 
    mongoc_crypto_hash_algorithm_t algorithm;
@@ -61,7 +61,7 @@ mongoc_crypto_pbkdf (mongoc_crypto_t *crypto,
                      const uint8_t *salt,
                      size_t salt_len,
                      uint32_t iterations,
-                     size_t key_len,
+                     size_t output_len,
                      unsigned char *output);
 
 void
