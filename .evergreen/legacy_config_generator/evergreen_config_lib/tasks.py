@@ -930,10 +930,9 @@ aws_compile_task = NamedTask(
             . .evergreen/scripts/find-cmake-latest.sh
             cmake_binary="$(find_cmake_latest)"
 
-            # Allow reuse of ccache compilation results between different build directories.
-            export CCACHE_BASEDIR CCACHE_NOHASHDIR
-            CCACHE_BASEDIR="$(pwd)"
-            CCACHE_NOHASHDIR=1
+            # Use ccache if able.
+            . .evergreen/scripts/find-ccache.sh
+            find_ccache_and_export_vars "$(pwd)" || true
 
             # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
             export CC='${CC}'
