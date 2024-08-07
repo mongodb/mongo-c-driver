@@ -325,5 +325,4 @@ mongoc_crypto_cng_sha256 (mongoc_crypto_t *crypto,
    res = _mongoc_crypto_cng_hmac_or_hash (_sha256_hash_algo, NULL, 0, (void *) input, input_len, hash_out);
    return res;
 }
-
 #endif
