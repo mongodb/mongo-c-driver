@@ -187,8 +187,8 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
    if (!NT_SUCCESS (status)) {
       MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
    }
-   free (password_copy);
-   free (salt_copy);
+   bson_free (password_copy);
+   bson_free (salt_copy);
    return (int) status;
 }
 #endif
