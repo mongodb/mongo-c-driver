@@ -41,11 +41,11 @@ struct _mongoc_crypto_t {
 
    int (*pbkdf) (mongoc_crypto_t *crypto,
                  const char *password,
-                 uint32_t password_len,
+                 size_t password_len,
                  const uint8_t *salt,
-                 uint32_t salt_len,
+                 size_t salt_len,
                  uint32_t iterations,
-                 uint32_t key_len,
+                 size_t key_len,
                  unsigned char *output);
 
    mongoc_crypto_hash_algorithm_t algorithm;
@@ -57,11 +57,11 @@ mongoc_crypto_init (mongoc_crypto_t *crypto, mongoc_crypto_hash_algorithm_t algo
 int
 mongoc_crypto_pbkdf (mongoc_crypto_t *crypto,
                      const char *password,
-                     uint32_t password_len,
+                     size_t password_len,
                      const uint8_t *salt,
-                     uint32_t salt_len,
+                     size_t salt_len,
                      uint32_t iterations,
-                     uint32_t key_len,
+                     size_t key_len,
                      unsigned char *output);
 
 void
