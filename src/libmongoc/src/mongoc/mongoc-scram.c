@@ -447,7 +447,7 @@ CLEANUP:
 
 
 /* Compute the SCRAM step Hi() as defined in RFC5802 */
-static void
+static bool
 _mongoc_scram_salt_password (mongoc_scram_t *scram,
                              const char *password,
                              uint32_t password_len,
@@ -456,7 +456,7 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
                              uint32_t iterations)
 {
    uint8_t *output = scram->salted_password;
-   mongoc_crypto_pbkdf (
+   return mongoc_crypto_pbkdf (
       &scram->crypto, password, password_len, salt, salt_len, iterations, MONGOC_SCRAM_HASH_MAX_SIZE, output);
 }
 
@@ -747,13 +747,15 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       _mongoc_scram_cache_apply_secrets (&cache, scram);
    }
 
-   if (!*scram->salted_password) {
-      _mongoc_scram_salt_password (scram,
-                                   hashed_password,
-                                   (uint32_t) strlen (hashed_password),
-                                   decoded_salt,
-                                   decoded_salt_len,
-                                   (uint32_t) iterations);
+   if (!*scram->salted_password && !_mongoc_scram_salt_password (scram,
+                                                                 hashed_password,
+                                                                 (uint32_t) strlen (hashed_password),
+                                                                 decoded_salt,
+                                                                 decoded_salt_len,
+                                                                 (uint32_t) iterations)) {
+      bson_set_error (
+         error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: failed to salt password");
+      goto FAIL;
    }
 
    _mongoc_scram_generate_client_proof (scram, outbuf, outbufmax, outbuflen);

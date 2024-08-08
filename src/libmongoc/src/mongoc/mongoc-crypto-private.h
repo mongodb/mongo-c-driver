@@ -39,7 +39,7 @@ struct _mongoc_crypto_t {
                  unsigned char *hmac_out);
    bool (*hash) (mongoc_crypto_t *crypto, const unsigned char *input, const size_t input_len, unsigned char *hash_out);
 
-   int (*pbkdf) (mongoc_crypto_t *crypto,
+   bool (*pbkdf) (mongoc_crypto_t *crypto,
                  const char *password,
                  size_t password_len,
                  const uint8_t *salt,

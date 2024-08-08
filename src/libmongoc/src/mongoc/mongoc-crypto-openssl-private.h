@@ -28,7 +28,7 @@
 
 BSON_BEGIN_DECLS
 
-int
+bool
 mongoc_crypto_openssl_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                         const char *password,
                                         size_t password_len,
@@ -52,7 +52,7 @@ mongoc_crypto_openssl_sha1 (mongoc_crypto_t *crypto,
                             const size_t input_len,
                             unsigned char *hash_out);
 
-int
+bool
 mongoc_crypto_openssl_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                           const char *password,
                                           size_t password_len,

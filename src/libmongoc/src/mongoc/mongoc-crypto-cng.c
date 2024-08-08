@@ -156,7 +156,7 @@ _crypto_hash_size (mongoc_crypto_t *crypto)
 
 /* Wrapper for BCryptDeriveKeyPBKDF2 */
 #if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
-static int
+static bool
 _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
                            const char *password,
                            size_t password_len,
@@ -179,17 +179,19 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
                                             output,
                                             output_len,
                                             0);
-   if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
-   }
    bson_free (password_copy);
    bson_free (salt_copy);
-   return (int) status;
+   
+   if (!NT_SUCCESS (status)) {
+      MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
+      return false;
+   }
+   return true;
 }
 #endif
 
 /* Compute the SCRAM step Hi() as defined in RFC5802 */
-static void
+static bool
 mongoc_crypto_cng_derive_key_pbkdf2 (mongoc_crypto_t *crypto,
                                      const char *password,
                                      size_t password_len,
@@ -218,9 +220,10 @@ mongoc_crypto_cng_derive_key_pbkdf2 (mongoc_crypto_t *crypto,
          output[k] ^= intermediate_digest[k];
       }
    }
+   return true;
 }
 
-int
+bool
 mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                     const char *password,
                                     size_t password_len,
@@ -234,8 +237,7 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
    return _bcrypt_derive_key_pbkdf2 (
       _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output)
 #else
-   mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
-   return 0;
+   return mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
 #endif
 }
 
@@ -270,7 +272,7 @@ mongoc_crypto_cng_sha1 (mongoc_crypto_t *crypto,
    return res;
 }
 
-int
+bool
 mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                       const char *password,
                                       size_t password_len,
@@ -284,8 +286,7 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
    return _bcrypt_derive_key_pbkdf2 (
       _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output)
 #else
-   mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
-   return 0;
+   return mongoc_crypto_cng_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
 #endif
 }
 
