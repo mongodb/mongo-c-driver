@@ -53,6 +53,8 @@ test_sample_command (sample_command_fn_t fn,
 
    ASSERT_NO_CAPTURED_LOGS (example_name);
 
+   capture_logs (false);
+
    if (drop_collection) {
       mongoc_collection_drop (collection, NULL);
    }
@@ -2913,6 +2915,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
       capture_logs (true);
       fn (db);
       ASSERT_NO_CAPTURED_LOGS ("change stream examples");
+      capture_logs (false);
 
       bson_mutex_lock (&ctx.lock);
       ctx.done = true;
@@ -3861,6 +3864,7 @@ test_sample_txn_commands (mongoc_client_t *client)
    /* test transactions retry example 3 */
    example_func (client);
    ASSERT_NO_CAPTURED_LOGS ("transactions retry example 3");
+   capture_logs (false);
    find_and_match (employees, "{'employee': 3}", "{'status': 'Inactive'}");
 
    mongoc_collection_destroy (employees);
