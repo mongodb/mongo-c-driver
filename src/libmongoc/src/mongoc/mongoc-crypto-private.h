@@ -40,13 +40,13 @@ struct _mongoc_crypto_t {
    bool (*hash) (mongoc_crypto_t *crypto, const unsigned char *input, const size_t input_len, unsigned char *hash_out);
 
    bool (*pbkdf) (mongoc_crypto_t *crypto,
-                 const char *password,
-                 size_t password_len,
-                 const uint8_t *salt,
-                 size_t salt_len,
-                 uint32_t iterations,
-                 size_t output_len,
-                 unsigned char *output);
+                  const char *password,
+                  size_t password_len,
+                  const uint8_t *salt,
+                  size_t salt_len,
+                  uint32_t iterations,
+                  size_t output_len,
+                  unsigned char *output);
 
    mongoc_crypto_hash_algorithm_t algorithm;
 };
