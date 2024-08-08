@@ -4427,6 +4427,7 @@ test_sample_commands (void)
    test_sample_command (test_example_55, 55, db, collection, false);
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
+   // Run 56 after 57 and 58. 56 deletes all data. 57 and 58 expect data present.
    test_sample_command (test_example_56, 56, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
