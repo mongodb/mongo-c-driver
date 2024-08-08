@@ -2602,14 +2602,9 @@ cleanup:
    return rc;
 }
 
-/*
- * JIRA: https://jira.mongodb.org/browse/DRIVERS-2181
- */
 static void
-test_example_59 (mongoc_database_t *db)
+test_snapshot_query_example_1 (void)
 {
-   BSON_UNUSED (db);
-
    if (!test_framework_skip_if_no_txns ()) {
       return;
    }
@@ -2733,10 +2728,8 @@ cleanup:
 
 
 static void
-test_example_60 (mongoc_database_t *db)
+test_snapshot_query_example_2 (void)
 {
-   BSON_UNUSED (db);
-
    if (!test_framework_skip_if_no_txns ()) {
       return;
    }
@@ -2852,6 +2845,18 @@ cleanup:
    bson_destroy (pipeline);
    mongoc_client_destroy (client);
    /* End Snapshot Query Example 2 Post */
+}
+
+// `test_snapshot_query_examples` examples for DRIVERS-2181.
+static void
+test_snapshot_query_examples (void)
+{
+   capture_logs (true);
+   test_snapshot_query_example_1 ();
+   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_1");
+   test_snapshot_query_example_2 ();
+   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_2");
+   capture_logs (false);
 }
 
 /* clang-format off */
@@ -4423,8 +4428,6 @@ test_sample_commands (void)
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
    test_sample_command (test_example_56, 56, db, collection, true);
-   test_sample_command (test_example_59, 59, db, collection, true);
-   test_sample_command (test_example_60, 60, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
@@ -4432,6 +4435,7 @@ test_sample_commands (void)
    test_sample_indexes (db);
    test_sample_run_command (db);
    test_sample_txn_commands (client);
+   test_snapshot_query_examples ();
 
    if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_9)) {
       test_sample_versioned_api ();
