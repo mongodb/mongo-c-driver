@@ -199,12 +199,11 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE algorithm,
                            const uint8_t *salt,
                            size_t salt_len,
                            uint32_t iterations,
-                           size_t output_len,
+                           size_t hash_size,
                            unsigned char *output)
 {
    uint8_t intermediate_digest[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t start_key[MONGOC_SCRAM_HASH_MAX_SIZE];
-   const int hash_size = _crypto_hash_size (crypto);
 
    memcpy (start_key, salt, salt_len);
    start_key[salt_len] = 0;
@@ -241,8 +240,13 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                     size_t output_len,
                                     unsigned char *output)
 {
+#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
    return _bcrypt_derive_key_pbkdf2 (
       _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
+#else
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, _crypto_hash_size (crypto), output);
+#endif
 }
 
 void
@@ -286,8 +290,13 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                       size_t output_len,
                                       unsigned char *output)
 {
+#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
    return _bcrypt_derive_key_pbkdf2 (
       _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
+#else
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, _crypto_hash_size (crypto), output);
+#endif
 }
 
 void
