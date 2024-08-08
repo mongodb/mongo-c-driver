@@ -2483,13 +2483,23 @@ insert_pet (mongoc_collection_t *collection, bool is_adoptable)
 
    doc = BCON_NEW ("adoptable", BCON_BOOL (is_adoptable));
 
-   rc = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
+   // Insert with majority write concern. Snapshot read concern reads from majority committed data.
+   bson_t opts = BSON_INITIALIZER;
+   {
+      mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_write_concern_append (wc, &opts);
+      mongoc_write_concern_destroy (wc);
+   }
+
+   rc = mongoc_collection_insert_one (collection, doc, &opts, NULL, &error);
    if (!rc) {
       MONGOC_ERROR ("insert into pets.%s failed: %s", mongoc_collection_get_name (collection), error.message);
       goto cleanup;
    }
 
 cleanup:
+   bson_destroy (&opts);
    bson_destroy (doc);
    return rc;
 }
@@ -2686,6 +2696,7 @@ retail_setup (mongoc_collection_t *sales_collection)
    bson_error_t error;
    struct timeval tv;
    int64_t unix_time_now = 0;
+   bson_t opts = BSON_INITIALIZER;
 
    if (bson_gettimeofday (&tv)) {
       MONGOC_ERROR ("could not get time of day");
@@ -2698,13 +2709,22 @@ retail_setup (mongoc_collection_t *sales_collection)
    doc =
       BCON_NEW ("shoeType", BCON_UTF8 ("boot"), "price", BCON_INT64 (30), "saleDate", BCON_DATE_TIME (unix_time_now));
 
-   ok = mongoc_collection_insert_one (sales_collection, doc, NULL, NULL, &error);
+   // Insert with majority write concern. Snapshot read concern reads from majority committed data.
+   {
+      mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_write_concern_append (wc, &opts);
+      mongoc_write_concern_destroy (wc);
+   }
+
+   ok = mongoc_collection_insert_one (sales_collection, doc, &opts, NULL, &error);
    if (!ok) {
       MONGOC_ERROR ("insert into retail.sales failed: %s", error.message);
       goto cleanup;
    }
 
 cleanup:
+   bson_destroy (&opts);
    bson_destroy (doc);
    return ok;
 }
