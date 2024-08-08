@@ -1308,16 +1308,20 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
       HANDLE_OPTION (else if, "$numberDecimal", BSON_TYPE_DECIMAL128, BSON_JSON_LF_DECIMAL128)
       else if (HANDLE_OPTION_KEY_COMPARE ("$timestamp"))
       {
+         HANDLE_OPTION_TYPE_CHECK ("$timestamp", BSON_TYPE_TIMESTAMP);
          bson->bson_type = BSON_TYPE_TIMESTAMP;
          bson->read_state = BSON_JSON_IN_BSON_TYPE_TIMESTAMP_STARTMAP;
       }
       else if (HANDLE_OPTION_KEY_COMPARE ("$regularExpression"))
       {
+         HANDLE_OPTION_TYPE_CHECK ("$regularExpression", BSON_TYPE_REGEX);
          bson->bson_type = BSON_TYPE_REGEX;
          bson->read_state = BSON_JSON_IN_BSON_TYPE_REGEX_STARTMAP;
       }
       else if (HANDLE_OPTION_KEY_COMPARE ("$dbPointer"))
       {
+         HANDLE_OPTION_TYPE_CHECK ("$dbPointer", BSON_TYPE_DBPOINTER);
+
          /* start parsing "key": {"$dbPointer": {...}}, save "key" for later */
          _bson_json_buf_set (&bson->dbpointer_key, bson->key, bson->key_buf.len);
 
@@ -1326,10 +1330,18 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
       }
       else if (HANDLE_OPTION_KEY_COMPARE ("$code"))
       {
+         // "$code" may come after "$scope".
+         if (bson->bson_type != BSON_TYPE_CODEWSCOPE) {
+            HANDLE_OPTION_TYPE_CHECK ("$code", BSON_TYPE_CODE);
+         }
          _bson_json_read_code_or_scope_key (bson, false /* is_scope */, val, len);
       }
       else if (HANDLE_OPTION_KEY_COMPARE ("$scope"))
       {
+         // "$scope" may come after "$code".
+         if (bson->bson_type != BSON_TYPE_CODE) {
+            HANDLE_OPTION_TYPE_CHECK ("$scope", BSON_TYPE_CODEWSCOPE);
+         }
          _bson_json_read_code_or_scope_key (bson, true /* is_scope */, val, len);
       }
       else
