@@ -2676,7 +2676,7 @@ test_example_59 (mongoc_database_t *db)
    /* End Snapshot Query Example 1 */
 
    if (adoptable_pets_count != 2) {
-      MONGOC_ERROR ("there should be exatly 2 adoptable_pets_count, found: %" PRId64, adoptable_pets_count);
+      MONGOC_ERROR ("there should be exactly 2 adoptable_pets_count, found: %" PRId64, adoptable_pets_count);
    }
 
    /* Start Snapshot Query Example 1 Post */
