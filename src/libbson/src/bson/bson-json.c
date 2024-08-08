@@ -1159,23 +1159,40 @@ _bson_json_read_start_map (bson_json_reader_t *reader) /* IN */
 }
 
 
+#define BSON_PRIVATE_SPECIAL_KEYS_XMACRO(X) \
+   X (binary)                               \
+   X (code)                                 \
+   X (date)                                 \
+   X (dbPointer)                            \
+   X (maxKey)                               \
+   X (minKey)                               \
+   X (numberDecimal)                        \
+   X (numberDouble)                         \
+   X (numberInt)                            \
+   X (numberLong)                           \
+   X (oid)                                  \
+   X (options)                              \
+   X (regex)                                \
+   X (regularExpression)                    \
+   X (scope)                                \
+   X (symbol)                               \
+   X (timestamp)                            \
+   X (type)                                 \
+   X (undefined)                            \
+   X (uuid)
+
+
 static bool
 _is_known_key (const char *key, size_t len)
 {
-   bool ret;
-
-#define IS_KEY(k) (len == strlen (k) && (0 == memcmp (k, key, len)))
-
-   ret = (IS_KEY ("$regularExpression") || IS_KEY ("$regex") || IS_KEY ("$options") || IS_KEY ("$code") ||
-          IS_KEY ("$scope") || IS_KEY ("$oid") || IS_KEY ("$binary") || IS_KEY ("$type") || IS_KEY ("$date") ||
-          IS_KEY ("$undefined") || IS_KEY ("$maxKey") || IS_KEY ("$minKey") || IS_KEY ("$timestamp") ||
-          IS_KEY ("$numberInt") || IS_KEY ("$numberLong") || IS_KEY ("$numberDouble") || IS_KEY ("$numberDecimal") ||
-          IS_KEY ("$numberInt") || IS_KEY ("$numberLong") || IS_KEY ("$numberDouble") || IS_KEY ("$numberDecimal") ||
-          IS_KEY ("$dbPointer") || IS_KEY ("$symbol") || IS_KEY ("$uuid"));
-
+#define IS_KEY(k)                                                    \
+   if (len == strlen ("$" #k) && (0 == memcmp ("$" #k, key, len))) { \
+      return true;                                                   \
+   }
+   BSON_PRIVATE_SPECIAL_KEYS_XMACRO (IS_KEY)
 #undef IS_KEY
 
-   return ret;
+   return false;
 }
 
 static void
