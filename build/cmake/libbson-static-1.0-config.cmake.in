@@ -23,7 +23,7 @@ set (BSON_STATIC_VERSION @libbson_VERSION@)
 set (BSON_STATIC_VERSION_FULL @libbson_VERSION_FULL@)
 
 include(CMakeFindDependencyMacro)
-find_dependency(bson-1.0)
+find_dependency(bson-static-1.0)
 
 set (BSON_STATIC_LIBRARY mongo::bson_static)
 set (BSON_STATIC_LIBRARIES mongo::bson_static)
