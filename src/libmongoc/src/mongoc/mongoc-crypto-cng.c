@@ -184,22 +184,22 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
    bson_free (salt_copy);
 
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
+      MONGOC_ERROR ("_bcrypt_derive_key_pbkdf2(): %ld", status);
       return false;
    }
    return true;
 }
 
 #else
-/* Compute the SCRAM step Hi() as defined in RFC5802 */
+/* Manually salts password if BCryptDeriveKeyPBKDF2 is unavailable */
 static bool
 _bcrypt_derive_key_pbkdf2 (mongoc_crypto_t *crypto,
-                                     const char *password,
-                                     size_t password_len,
-                                     const uint8_t *salt,
-                                     size_t salt_len,
-                                     uint32_t iterations,
-                                     unsigned char *output)
+                           const char *password,
+                           size_t password_len,
+                           const uint8_t *salt,
+                           size_t salt_len,
+                           uint32_t iterations,
+                           unsigned char *output)
 {
    uint8_t intermediate_digest[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t start_key[MONGOC_SCRAM_HASH_MAX_SIZE];
@@ -239,8 +239,7 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
    return _bcrypt_derive_key_pbkdf2 (
       _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
 #else
-   return _bcrypt_derive_key_pbkdf2 (
-      crypto, password, password_len, salt, salt_len, iterations, output);
+   return _bcrypt_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
 #endif
 }
 
@@ -289,8 +288,7 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
    return _bcrypt_derive_key_pbkdf2 (
       _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
 #else
-   return _bcrypt_derive_key_pbkdf2 (
-      crypto, password, password_len, salt, salt_len, iterations, output);
+   return _bcrypt_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
 #endif
 }
 
