@@ -534,13 +534,17 @@ endif ()
 
 # Check if BCryptDeriveKeyPBKDF2 is defined in bcrypt.h
 if (WIN32 AND MONGOC_ENABLE_CRYPTO_CNG)
-   check_symbol_exists (BCryptDeriveKeyPBKDF2 bcrypt.h HAVE_BCRYPT_PBKDF2)
+   cmake_push_check_state()
+   list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_WIN32_WINNT=0x0601)
+   list(APPEND CMAKE_REQUIRED_LIBRARIES Bcrypt.lib)
+   check_symbol_exists (BCryptDeriveKeyPBKDF2 "windows.h;bcrypt.h" HAVE_BCRYPT_PBKDF2)
+   cmake_pop_check_state()
 endif ()
 
 if (HAVE_BCRYPT_PBKDF2)
-set (MONGOC_HAVE_BCRYPT_PBKDF2 1)
+   set (MONGOC_HAVE_BCRYPT_PBKDF2 1)
 else ()
-set (MONGOC_HAVE_BCRYPT_PBKDF2 0)
+   set (MONGOC_HAVE_BCRYPT_PBKDF2 0)
 endif ()
 
 

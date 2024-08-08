@@ -54,7 +54,7 @@ struct _mongoc_crypto_t {
 void
 mongoc_crypto_init (mongoc_crypto_t *crypto, mongoc_crypto_hash_algorithm_t algo);
 
-int
+bool
 mongoc_crypto_pbkdf (mongoc_crypto_t *crypto,
                      const char *password,
                      size_t password_len,
