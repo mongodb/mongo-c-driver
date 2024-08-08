@@ -90,8 +90,6 @@ mongo_bool_setting(ENABLE_DEBUG_ASSERTIONS "Build library with runtime debug ass
 # for MONGO_SANITIZE:
 include(Sanitizers)
 
-include(Fuzzer)
-
 # Toggle optional components:
 mongo_bool_setting(ENABLE_TESTS "Enable building MongoDB C Driver tests")
 mongo_bool_setting(ENABLE_EXAMPLES "Enable building MongoDB C Driver examples")
