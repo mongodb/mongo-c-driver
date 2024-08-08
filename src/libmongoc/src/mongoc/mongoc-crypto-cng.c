@@ -193,12 +193,13 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
 #else
 /* Manually salts password if BCryptDeriveKeyPBKDF2 is unavailable */
 static bool
-_bcrypt_derive_key_pbkdf2 (mongoc_crypto_t *crypto,
+_bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE algorithm,
                            const char *password,
                            size_t password_len,
                            const uint8_t *salt,
                            size_t salt_len,
                            uint32_t iterations,
+                           size_t output_len,
                            unsigned char *output)
 {
    uint8_t intermediate_digest[MONGOC_SCRAM_HASH_MAX_SIZE];
@@ -211,11 +212,16 @@ _bcrypt_derive_key_pbkdf2 (mongoc_crypto_t *crypto,
    start_key[salt_len + 2] = 0;
    start_key[salt_len + 3] = 1;
 
-   crypto->hmac (crypto, password, password_len, start_key, hash_size, output);
+   if (!_mongoc_crypto_cng_hmac_or_hash (algorithm, password, password_len, start_key, hash_size, output)) {
+      return false;
+   }
    memcpy (intermediate_digest, output, hash_size);
 
    for (uint32_t i = 2u; i <= iterations; i++) {
-      crypto->hmac (crypto, password, password_len, intermediate_digest, hash_size, intermediate_digest);
+      if (!_mongoc_crypto_cng_hmac_or_hash (
+             algorithm, password, password_len, intermediate_digest, hash_size, output)) {
+         return false;
+      }
 
       for (int k = 0; k < hash_size; k++) {
          output[k] ^= intermediate_digest[k];
@@ -235,12 +241,8 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                     size_t output_len,
                                     unsigned char *output)
 {
-#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
    return _bcrypt_derive_key_pbkdf2 (
       _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
-#else
-   return _bcrypt_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
-#endif
 }
 
 void
@@ -284,12 +286,8 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                       size_t output_len,
                                       unsigned char *output)
 {
-#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
    return _bcrypt_derive_key_pbkdf2 (
       _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
-#else
-   return _bcrypt_derive_key_pbkdf2 (crypto, password, password_len, salt, salt_len, iterations, output);
-#endif
 }
 
 void
