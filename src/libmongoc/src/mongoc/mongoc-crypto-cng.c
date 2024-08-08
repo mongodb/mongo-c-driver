@@ -182,7 +182,7 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
                                             0);
    bson_free (password_copy);
    bson_free (salt_copy);
-   
+
    if (!NT_SUCCESS (status)) {
       MONGOC_ERROR ("BCryptDeriveKeyPBKDF2(): %ld", status);
       return false;
