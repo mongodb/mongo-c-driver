@@ -150,8 +150,9 @@ _crypto_hash_size (mongoc_crypto_t *crypto)
       return MONGOC_SCRAM_SHA_1_HASH_SIZE;
    } else if (crypto->algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
       return MONGOC_SCRAM_SHA_256_HASH_SIZE;
+   } else {
+      BSON_UNREACHABLE ("Unexpected crypto algorithm");
    }
-   return 0;
 }
 
 /* Wrapper for BCryptDeriveKeyPBKDF2 */

@@ -119,8 +119,9 @@ _scram_hash_size (mongoc_scram_t *scram)
       return MONGOC_SCRAM_SHA_1_HASH_SIZE;
    } else if (scram->crypto.algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
       return MONGOC_SCRAM_SHA_256_HASH_SIZE;
+   } else {
+      BSON_UNREACHABLE ("Unexpected crypto algorithm");
    }
-   return 0;
 }
 
 /* Copies the cache's secrets to scram */
