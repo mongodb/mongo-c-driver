@@ -2853,10 +2853,13 @@ test_snapshot_query_examples (void)
 {
    capture_logs (true);
    test_snapshot_query_example_1 ();
-   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_1");
-   test_snapshot_query_example_2 ();
-   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_2");
    capture_logs (false);
+   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_1");
+
+   capture_logs (true);
+   test_snapshot_query_example_2 ();
+   capture_logs (false);
+   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_2");
 }
 
 /* clang-format off */
