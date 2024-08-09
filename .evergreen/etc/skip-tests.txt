@@ -28,6 +28,5 @@
 
 /transactions/legacy/mongos-recovery-token/"commitTransaction retry fails on new mongos" # fails with server selection timeout (CDRIVER-4268)
 /transactions/legacy/pin-mongos/"unpin after transient error within a transaction and commit" # (CDRIVER-4351) server selection timeout (on ASAN Tests Ubuntu 18.04 build variant)
-/Samples # (CDRIVER-4352) strange "heartbeat failed" error
 
 /client_side_encryption/bypass_spawning_mongocryptd/mongocryptdBypassSpawn  # Fails if crypt_shared is visible
