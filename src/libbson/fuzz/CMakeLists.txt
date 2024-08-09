@@ -1,0 +1,4 @@
+add_executable(fuzz_test_init_from_json EXCLUDE_FROM_ALL
+   fuzz_test_init_from_json.c)
+target_link_libraries(fuzz_test_init_from_json PRIVATE bson_static)
+set_property(TARGET fuzz_test_init_from_json APPEND PROPERTY LINK_OPTIONS -fsanitize=fuzzer)

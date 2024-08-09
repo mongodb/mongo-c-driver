@@ -399,6 +399,10 @@ install (EXPORT bson-targets
 include (LegacyPackage)
 include (CPack)
 
+if (MONGO_FUZZ)
+   add_subdirectory(fuzz)
+endif ()
+
 # 8888888b.
 # 888  "Y88b
 # 888    888
