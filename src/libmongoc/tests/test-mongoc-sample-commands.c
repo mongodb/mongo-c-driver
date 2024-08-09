@@ -47,13 +47,11 @@ test_sample_command (sample_command_fn_t fn,
                      bool drop_collection)
 {
    char *example_name = bson_strdup_printf ("example %d", exampleno);
+
    capture_logs (true);
-
    fn (db);
-
-   ASSERT_NO_CAPTURED_LOGS (example_name);
-
    capture_logs (false);
+   ASSERT_NO_CAPTURED_LOGS (example_name);
 
    if (drop_collection) {
       mongoc_collection_drop (collection, NULL);
