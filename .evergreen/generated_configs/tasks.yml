@@ -981,7 +981,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804
       - ubuntu1804-medium
       - debian10
       - debian11
@@ -1019,7 +1018,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804
       - ubuntu1804-medium
       - debian10
       - debian11
@@ -1057,7 +1055,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804
       - ubuntu1804-medium
       - debian10
       - debian11
@@ -1095,7 +1092,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804
       - ubuntu1804-medium
       - debian10
       - debian11
@@ -1133,7 +1129,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804
       - ubuntu1804-medium
       - debian10
       - debian11
@@ -1171,7 +1166,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804
       - ubuntu1804-medium
       - debian10
       - debian11
@@ -1209,7 +1203,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804
       - ubuntu1804-medium
       - debian10
       - debian11
@@ -1251,7 +1244,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804
       - ubuntu1804-medium
       - debian10
       - debian11
