@@ -16,6 +16,7 @@
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_CRYPTO_CNG
+#include "mongoc-scram-private.h"
 #include "mongoc-crypto-private.h"
 #include "mongoc-crypto-cng-private.h"
 #include "mongoc-log.h"
@@ -24,6 +25,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <bcrypt.h>
+#include <string.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)
 #define STATUS_UNSUCCESSFUL ((NTSTATUS) 0xC0000001L)
@@ -75,8 +77,8 @@ mongoc_crypto_cng_cleanup (void)
    if (_sha256_hash_algo) {
       BCryptCloseAlgorithmProvider (&_sha256_hash_algo, 0);
    }
-   if (_sha256_hash_algo) {
-      BCryptCloseAlgorithmProvider (&_sha256_hash_algo, 0);
+   if (_sha256_hmac_algo) {
+      BCryptCloseAlgorithmProvider (&_sha256_hmac_algo, 0);
    }
 }
 
@@ -141,6 +143,112 @@ cleanup:
    return retval;
 }
 
+static int
+_crypto_hash_size (mongoc_crypto_t *crypto)
+{
+   if (crypto->algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
+      return MONGOC_SCRAM_SHA_1_HASH_SIZE;
+   } else if (crypto->algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
+      return MONGOC_SCRAM_SHA_256_HASH_SIZE;
+   } else {
+      BSON_UNREACHABLE ("Unexpected crypto algorithm");
+   }
+}
+
+#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
+/* Wrapper for BCryptDeriveKeyPBKDF2 */
+static bool
+_bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
+                           const char *password,
+                           size_t password_len,
+                           const uint8_t *salt,
+                           size_t salt_len,
+                           uint32_t iterations,
+                           size_t output_len,
+                           unsigned char *output)
+{
+   // Make non-const versions of password and salt.
+   char *password_copy = bson_strndup (password, password_len);
+   char *salt_copy = bson_strndup (salt, salt_len);
+
+   NTSTATUS status = BCryptDeriveKeyPBKDF2 (prf,
+                                            (unsigned char *) password_copy,
+                                            password_len,
+                                            (unsigned char *) salt_copy,
+                                            salt_len,
+                                            iterations,
+                                            output,
+                                            output_len,
+                                            0);
+   bson_free (password_copy);
+   bson_free (salt_copy);
+
+   if (!NT_SUCCESS (status)) {
+      MONGOC_ERROR ("_bcrypt_derive_key_pbkdf2(): %ld", status);
+      return false;
+   }
+   return true;
+}
+
+#else
+/* Manually salts password if BCryptDeriveKeyPBKDF2 is unavailable */
+static bool
+_bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE algorithm,
+                           const char *password,
+                           size_t password_len,
+                           const uint8_t *salt,
+                           size_t salt_len,
+                           uint32_t iterations,
+                           size_t hash_size,
+                           unsigned char *output)
+{
+   uint8_t intermediate_digest[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t start_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+
+   memcpy (start_key, salt, salt_len);
+   start_key[salt_len] = 0;
+   start_key[salt_len + 1] = 0;
+   start_key[salt_len + 2] = 0;
+   start_key[salt_len + 3] = 1;
+
+   if (!_mongoc_crypto_cng_hmac_or_hash (algorithm, password, password_len, start_key, hash_size, output)) {
+      return false;
+   }
+   memcpy (intermediate_digest, output, hash_size);
+
+   for (uint32_t i = 2u; i <= iterations; i++) {
+      if (!_mongoc_crypto_cng_hmac_or_hash (
+             algorithm, password, password_len, intermediate_digest, hash_size, output)) {
+         return false;
+      }
+
+      for (int k = 0; k < hash_size; k++) {
+         output[k] ^= intermediate_digest[k];
+      }
+   }
+   return true;
+}
+#endif
+
+bool
+mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
+                                    const char *password,
+                                    size_t password_len,
+                                    const uint8_t *salt,
+                                    size_t salt_len,
+                                    uint32_t iterations,
+                                    size_t output_len,
+                                    unsigned char *output)
+{
+#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
+#else
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, _crypto_hash_size (crypto), output);
+#endif
+}
+
 void
 mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t *crypto,
                              const void *key,
@@ -170,6 +278,25 @@ mongoc_crypto_cng_sha1 (mongoc_crypto_t *crypto,
 
    res = _mongoc_crypto_cng_hmac_or_hash (_sha1_hash_algo, NULL, 0, (void *) input, input_len, hash_out);
    return res;
+}
+
+bool
+mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
+                                      const char *password,
+                                      size_t password_len,
+                                      const uint8_t *salt,
+                                      size_t salt_len,
+                                      uint32_t iterations,
+                                      size_t output_len,
+                                      unsigned char *output)
+{
+#if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
+#else
+   return _bcrypt_derive_key_pbkdf2 (
+      _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, _crypto_hash_size (crypto), output);
+#endif
 }
 
 void

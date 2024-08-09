@@ -25,6 +25,18 @@
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 
+bool
+mongoc_crypto_openssl_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
+                                        const char *password,
+                                        size_t password_len,
+                                        const uint8_t *salt,
+                                        size_t salt_len,
+                                        uint32_t iterations,
+                                        size_t output_len,
+                                        unsigned char *output)
+{
+   return PKCS5_PBKDF2_HMAC (password, password_len, salt, salt_len, iterations, EVP_sha1 (), output_len, output);
+}
 
 void
 mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t *crypto,
@@ -82,6 +94,19 @@ cleanup:
    return rval;
 }
 
+bool
+mongoc_crypto_openssl_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
+                                          const char *password,
+                                          size_t password_len,
+                                          const uint8_t *salt,
+                                          size_t salt_len,
+                                          uint32_t iterations,
+                                          size_t output_len,
+                                          unsigned char *output)
+{
+   return PKCS5_PBKDF2_HMAC (password, password_len, salt, salt_len, iterations, EVP_sha256 (), output_len, output);
+}
+
 void
 mongoc_crypto_openssl_hmac_sha256 (mongoc_crypto_t *crypto,
                                    const void *key,
@@ -122,5 +147,4 @@ cleanup:
 
    return rval;
 }
-
 #endif

@@ -20,7 +20,23 @@
 #include "mongoc-crypto-common-crypto-private.h"
 #include <CommonCrypto/CommonHMAC.h>
 #include <CommonCrypto/CommonDigest.h>
+#include <CommonCrypto/CommonKeyDerivation.h>
+#include <CommonCrypto/CommonCryptoError.h>
 
+bool
+mongoc_crypto_common_crypto_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
+                                              const char *password,
+                                              size_t password_len,
+                                              const uint8_t *salt,
+                                              size_t salt_len,
+                                              uint32_t iterations,
+                                              size_t output_len,
+                                              unsigned char *output)
+{
+   return kCCSuccess ==
+          CCKeyDerivationPBKDF (
+             kCCPBKDF2, password, password_len, salt, salt_len, kCCPRFHmacAlgSHA1, iterations, output, output_len);
+}
 
 void
 mongoc_crypto_common_crypto_hmac_sha1 (mongoc_crypto_t *crypto,
@@ -46,6 +62,21 @@ mongoc_crypto_common_crypto_sha1 (mongoc_crypto_t *crypto,
    return false;
 }
 
+bool
+mongoc_crypto_common_crypto_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
+                                                const char *password,
+                                                size_t password_len,
+                                                const uint8_t *salt,
+                                                size_t salt_len,
+                                                uint32_t iterations,
+                                                size_t output_len,
+                                                unsigned char *output)
+{
+   return kCCSuccess ==
+          CCKeyDerivationPBKDF (
+             kCCPBKDF2, password, password_len, salt, salt_len, kCCPRFHmacAlgSHA256, iterations, output, output_len);
+}
+
 void
 mongoc_crypto_common_crypto_hmac_sha256 (mongoc_crypto_t *crypto,
                                          const void *key,
@@ -68,5 +99,4 @@ mongoc_crypto_common_crypto_sha256 (mongoc_crypto_t *crypto,
    }
    return false;
 }
-
 #endif
