@@ -130,7 +130,9 @@ bson_strerror_r (int err_code,                    /* IN */
    // required) by the POSIX spec (see:
    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/strerror.html#tag_16_574_08).
    (void) strerror_r (err_code, buf, buflen);
-#elif defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700
+#elif (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700) || \
+   (defined(__FreeBSD_version) && __FreeBSD_version >= 1203500) || \
+   defined(__MUSL__)
    // The behavior (of `strerror_l`) is undefined if the locale argument to
    // `strerror_l()` is the special locale object LC_GLOBAL_LOCALE or is not a
    // valid locale object handle.
@@ -170,6 +172,11 @@ bson_strerror_r (int err_code,                    /* IN */
    // Unlikely, but continue supporting use of GNU extension in cases where the
    // C Driver is being built without _XOPEN_SOURCE=700.
    ret = strerror_r (err_code, buf, buflen);
+#elif defined(__FreeBSD__)
+   // FreeBSD has implemented strerror_l in 12.3 version, so this condition is needed for compatability.
+   if (strerror_r (err_code, buf, buflen) != 0) {
+      ret = NULL;
+   }
 #else
 #error "Unable to find a supported strerror_r candidate"
 #endif
