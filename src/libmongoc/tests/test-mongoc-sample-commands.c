@@ -3057,11 +3057,6 @@ test_sample_causal_consistency (mongoc_client_t *client)
       return;
    }
 
-   if (test_framework_is_replset () && test_framework_data_nodes_count () == 1) {
-      MONGOC_DEBUG ("Skipping test. Detected single-node replica set. Test requires a secondary.\n");
-      return;
-   }
-
    /* Seed the 'db.items' collection with a document. */
    coll = mongoc_client_get_collection (client, "db", "items");
    mongoc_collection_drop (coll, &error);
