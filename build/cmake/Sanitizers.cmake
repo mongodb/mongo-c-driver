@@ -45,7 +45,7 @@ mongo_bool_setting(
     MONGO_FUZZ "Enable LibFuzzer integration"
     DEFAULT VALUE OFF
     VALIDATE CODE [[
-        if (NOT ENABLE_STATIC)
+        if (MONGO_FUZZ AND NOT ENABLE_STATIC)
 	    message (FATAL_ERROR "MONGO_FUZZ requires ENABLE_STATIC=ON or ENABLE_STATIC=BUILD_ONLY")
 	endif ()
     ]]
