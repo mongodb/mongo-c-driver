@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``str``: A string to be copied or NULL.
+* ``str``: A string to be copied or NULL. Aborts if length with NULL terminator (``strlen(str) + 1``) exceeds ``UINT32_MAX``.
 
 Description
 -----------

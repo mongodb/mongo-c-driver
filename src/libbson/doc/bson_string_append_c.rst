@@ -22,3 +22,4 @@ Description
 
 Appends ``c`` to the string builder ``string``.
 
+Aborts if the resulting string length including NULL terminator (``string->len + 1``) would exceed ``UINT32_MAX``.
