@@ -72,6 +72,7 @@ bson_string_new (const char *str) /* IN */
    } else {
       ret->len = 0;
    }
+   BSON_ASSERT (ret->len <= UINT32_MAX - 1);
    ret->alloc = ret->len + 1;
 
    if (!bson_is_power_of_two (ret->alloc)) {
