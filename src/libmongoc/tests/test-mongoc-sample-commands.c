@@ -2732,8 +2732,8 @@ test_snapshot_query_example_2 (void)
       return;
    }
 
-   if (test_framework_get_server_version () < test_framework_str_to_version ("5.0.0")) {
-      MONGOC_DEBUG ("Skipping test. Test requires server version 5.0.0\n");
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_SNAPSHOT_READS)) {
+      MONGOC_DEBUG ("Skipping test. Server does not support snapshot reads\n");
       return;
    }
 
