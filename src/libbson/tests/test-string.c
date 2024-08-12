@@ -18,6 +18,7 @@
 #include <bson/bson.h>
 
 #include "TestSuite.h"
+#include "test-libmongoc.h"
 
 
 static void
@@ -303,6 +304,68 @@ test_bson_strcasecmp (void)
    BSON_ASSERT (bson_strcasecmp ("FoZ", "foo") > 0);
 }
 
+static void
+test_bson_string_capacity (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   char *large_str = bson_malloc (UINT32_MAX);
+   memset (large_str, 's', UINT32_MAX); // Do not NULL terminate. Each test case sets NULL byte.
+
+   // Test the largest possible string that can be constructed.
+   {
+      large_str[UINT32_MAX - 1u] = '\0'; // Set size.
+      bson_string_t *str = bson_string_new (large_str);
+      bson_string_free (str, true);
+      large_str[UINT32_MAX - 1u] = 's'; // Restore.
+   }
+
+   // Test appending with `bson_string_append` to get maximum size.
+   {
+      large_str[UINT32_MAX - 1u] = '\0'; // Set size.
+      bson_string_t *str = bson_string_new ("");
+      bson_string_append (str, large_str);
+      bson_string_free (str, true);
+      large_str[UINT32_MAX - 1u] = 's'; // Restore.
+   }
+
+   // Test appending with `bson_string_append_c` to get maximum size.
+   {
+      large_str[UINT32_MAX - 2u] = '\0'; // Set size.
+      bson_string_t *str = bson_string_new (large_str);
+      bson_string_append_c (str, 'c');
+      bson_string_free (str, true);
+      large_str[UINT32_MAX - 2u] = 's'; // Restore.
+   }
+
+   // Test appending with `bson_string_append_printf` to get maximum size.
+   {
+      large_str[UINT32_MAX - 2u] = '\0'; // Set size.
+      bson_string_t *str = bson_string_new (large_str);
+      bson_string_append_printf (str, "c");
+      bson_string_free (str, true);
+      large_str[UINT32_MAX - 2u] = 's'; // Restore.
+   }
+
+   // Test appending with single characters.
+   {
+      large_str[UINT32_MAX - 2u] = '\0'; // Set size.
+      bson_string_t *str = bson_string_new (large_str);
+      bson_string_append_unichar (str, (bson_unichar_t) 's');
+      bson_string_free (str, true);
+      large_str[UINT32_MAX - 2u] = 's'; // Restore.
+   }
+
+   bson_free (large_str);
+}
+
+static int
+skip_if_no_large_allocations (void)
+{
+   // Skip tests requiring large allocations.
+   // Large allocations were observed to fail when run with TSan, and are time consuming with ASan.
+   return test_framework_getenv_bool ("MONGOC_TEST_LARGE_ALLOCATIONS");
+}
 
 void
 test_string_install (TestSuite *suite)
@@ -320,4 +383,6 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/snprintf", test_bson_snprintf);
    TestSuite_Add (suite, "/bson/string/strnlen", test_bson_strnlen);
    TestSuite_Add (suite, "/bson/string/strcasecmp", test_bson_strcasecmp);
+   TestSuite_AddFull (
+      suite, "/bson/string/capacity", test_bson_string_capacity, NULL, NULL, skip_if_no_large_allocations);
 }
