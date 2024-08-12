@@ -22,4 +22,4 @@ Description
 
 Appends a unicode character to string. The character will be encoded into its multi-byte UTF-8 representation.
 
-Aborts if the resulting string length, including NULL terminator, (``string->len + 1``) would exceed ``UINT32_MAX``.
+.. warning:: This function will abort if the length of the resulting string (including the NULL terminator) would exceed ``UINT32_MAX``.

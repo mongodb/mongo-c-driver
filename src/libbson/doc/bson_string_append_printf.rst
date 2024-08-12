@@ -23,4 +23,4 @@ Description
 
 Like bson_string_append() but formats a printf style string and then appends that to ``string``.
 
-Aborts if the resulting string length, including NULL terminator, (``string->len + 1``) would exceed ``UINT32_MAX``.
+.. warning:: This function will abort if the length of the resulting string (including the NULL terminator) would exceed ``UINT32_MAX``.
