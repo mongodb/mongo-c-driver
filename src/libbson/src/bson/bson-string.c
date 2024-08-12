@@ -110,12 +110,12 @@ bson_string_new (const char *str) /* IN */
    BSON_ASSERT (bson_in_range_unsigned (uint32_t, len_sz));
    const uint32_t len_u32 = (uint32_t) len_sz;
    bson_string_ensure_space (ret, len_u32);
-   ret->len = len_u32;
    if (str) {
       memcpy (ret->str, str, len_sz);
    }
 
-   ret->str[ret->len] = '\0';
+   ret->str[len_u32] = '\0';
+   ret->len = len_u32;
 
    return ret;
 }
