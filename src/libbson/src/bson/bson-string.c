@@ -172,8 +172,8 @@ bson_string_append (bson_string_t *string, /* IN */
    const uint32_t new_len = len_u32 + string->len;
    bson_string_ensure_space (string, new_len);
    memcpy (string->str + string->len, str, len_sz);
-   string->len = new_len;
    string->str[new_len] = '\0';
+   string->len = new_len;
 }
 
 
