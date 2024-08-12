@@ -49,7 +49,7 @@ bson_next_power_of_two_u32 (uint32_t v)
    return v;
 }
 
-// `bson_string_ensure_space` ensures `string` has enough room for `needed` + 1 bytes.
+// `bson_string_ensure_space` ensures `string` has enough room for `needed` + a null terminator.
 static void
 bson_string_ensure_space (bson_string_t *string, uint32_t needed)
 {
@@ -62,7 +62,7 @@ bson_string_ensure_space (bson_string_t *string, uint32_t needed)
    // Get the next largest power of 2 if possible.
    uint32_t alloc = bson_next_power_of_two_u32 (needed);
    if (alloc == 0) {
-      // Overflowed, cap at UINT32_MAX.
+      // Overflowed: saturate at UINT32_MAX.
       alloc = UINT32_MAX;
    }
    if (!string->str) {
