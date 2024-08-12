@@ -318,6 +318,10 @@ To test a load balanced deployment, set the following environment variables:
 * `SINGLE_MONGOS_LB_URI=<string>` to a MongoDB URI with a host of a load balancer fronting one mongos.
 * `MULTI_MONGOS_LB_URI=<string>` to a MongoDB URI with a host of a load balancer fronting multiple mongos processes.
 
+To run test cases with large allocations, set:
+
+* `MONGOC_TEST_LARGE_ALLOCATIONS=on` This may result in sudden test suite termination due to allocation failure. Use with caution.
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner
