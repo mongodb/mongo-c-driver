@@ -143,18 +143,6 @@ cleanup:
    return retval;
 }
 
-static int
-_crypto_hash_size (mongoc_crypto_t *crypto)
-{
-   if (crypto->algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
-      return MONGOC_SCRAM_SHA_1_HASH_SIZE;
-   } else if (crypto->algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
-      return MONGOC_SCRAM_SHA_256_HASH_SIZE;
-   } else {
-      BSON_UNREACHABLE ("Unexpected crypto algorithm");
-   }
-}
-
 #if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
 // Ensure lossless conversion between `uint64_t` and `ULONGLONG` below.
 BSON_STATIC_ASSERT2 (sizeof_ulonglong_uint64_t, sizeof (ULONGLONG) == sizeof (uint64_t));
@@ -189,7 +177,7 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
 
    // Make non-const versions of password and salt.
    char *password_copy = bson_strndup (password, password_len);
-   char *salt_copy = bson_strndup (salt, salt_len);
+   char *salt_copy = bson_strndup ((const char *) salt, salt_len);
 
    NTSTATUS status = BCryptDeriveKeyPBKDF2 (prf,
                                             (unsigned char *) password_copy,
@@ -211,6 +199,19 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
 }
 
 #else
+
+static size_t
+_crypto_hash_size (mongoc_crypto_t *crypto)
+{
+   if (crypto->algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
+      return MONGOC_SCRAM_SHA_1_HASH_SIZE;
+   } else if (crypto->algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
+      return MONGOC_SCRAM_SHA_256_HASH_SIZE;
+   } else {
+      BSON_UNREACHABLE ("Unexpected crypto algorithm");
+   }
+}
+
 /* Manually salts password if BCryptDeriveKeyPBKDF2 is unavailable */
 static bool
 _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE algorithm,
