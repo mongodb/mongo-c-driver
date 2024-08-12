@@ -314,7 +314,7 @@ test_bson_string_capacity (void *unused)
 
    // Test the largest possible string that can be constructed.
    {
-      large_str[UINT32_MAX - 1] = '\0'; // Set size.
+      large_str[UINT32_MAX - 1u] = '\0'; // Set size.
       bson_string_t *str = bson_string_new (large_str);
       bson_string_free (str, true);
       large_str[UINT32_MAX - 1] = 's'; // Restore.

@@ -53,8 +53,8 @@ static void
 bson_string_ensure_space (bson_string_t *string, uint32_t needed)
 {
    BSON_ASSERT_PARAM (string);
-   BSON_ASSERT (needed <= UINT32_MAX - 1);
-   needed += 1; // Add one for trailing NULL byte.
+   BSON_ASSERT (needed <= UINT32_MAX - 1u);
+   needed += 1u; // Add one for trailing NULL byte.
    if (string->alloc >= needed) {
       return;
    }
@@ -105,7 +105,7 @@ bson_string_new (const char *str) /* IN */
    bson_string_t *ret;
 
    ret = bson_malloc0 (sizeof *ret);
-   const size_t len_sz = str == NULL ? 0 : strlen (str);
+   const size_t len_sz = str == NULL ? 0u : strlen (str);
    BSON_ASSERT (bson_in_range_uint32_t_unsigned (len_sz));
    const uint32_t len_u32 = (uint32_t) len_sz;
    bson_string_ensure_space (ret, len_u32);
