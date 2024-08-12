@@ -2224,6 +2224,12 @@ test_client_buildinfo_hang (void)
 static void
 test_mongoc_client_change_openssl_ctx_before_ops (void)
 {
+   if (!test_framework_get_ssl ()) {
+      MONGOC_DEBUG ("Skipping test. Test requires server to be running with TLS enabled, but MONGOC_SSL_* environment "
+                    "variables are not set.");
+      return;
+   }
+
    mongoc_client_t *client;
    const mongoc_ssl_opt_t *ssl_opts;
    bson_error_t error;
@@ -2245,6 +2251,12 @@ test_mongoc_client_change_openssl_ctx_before_ops (void)
 static void
 test_mongoc_client_change_openssl_ctx_between_ops (void)
 {
+   if (!test_framework_get_ssl ()) {
+      MONGOC_DEBUG ("Skipping test. Test requires server to be running with TLS enabled, but MONGOC_SSL_* environment "
+                    "variables are not set.");
+      return;
+   }
+
    mongoc_client_t *client;
    const mongoc_ssl_opt_t *ssl_opts;
    bson_error_t error;
