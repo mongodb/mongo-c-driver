@@ -23,6 +23,9 @@
 #include <CommonCrypto/CommonKeyDerivation.h>
 #include <CommonCrypto/CommonCryptoError.h>
 
+// Ensure lossless conversion between `uint32_t` and `uint` below.
+BSON_STATIC_ASSERT2 (sizeof_uint_uint32_t, sizeof (uint) == sizeof (uint32_t));
+
 bool
 mongoc_crypto_common_crypto_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                               const char *password,
@@ -33,9 +36,17 @@ mongoc_crypto_common_crypto_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                               size_t output_len,
                                               unsigned char *output)
 {
-   return kCCSuccess ==
-          CCKeyDerivationPBKDF (
-             kCCPBKDF2, password, password_len, salt, salt_len, kCCPRFHmacAlgSHA1, iterations, output, output_len);
+   BSON_UNUSED (crypto);
+
+   return kCCSuccess == CCKeyDerivationPBKDF (kCCPBKDF2,
+                                              password,
+                                              password_len,
+                                              salt,
+                                              salt_len,
+                                              kCCPRFHmacAlgSHA1,
+                                              (uint) iterations,
+                                              output,
+                                              output_len);
 }
 
 void
@@ -72,9 +83,17 @@ mongoc_crypto_common_crypto_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                                 size_t output_len,
                                                 unsigned char *output)
 {
-   return kCCSuccess ==
-          CCKeyDerivationPBKDF (
-             kCCPBKDF2, password, password_len, salt, salt_len, kCCPRFHmacAlgSHA256, iterations, output, output_len);
+   BSON_UNUSED (crypto);
+
+   return kCCSuccess == CCKeyDerivationPBKDF (kCCPBKDF2,
+                                              password,
+                                              password_len,
+                                              salt,
+                                              salt_len,
+                                              kCCPRFHmacAlgSHA256,
+                                              (uint) iterations,
+                                              output,
+                                              output_len);
 }
 
 void
