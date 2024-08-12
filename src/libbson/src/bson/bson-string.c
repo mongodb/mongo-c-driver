@@ -37,6 +37,7 @@ bson_next_power_of_two_u32 (uint32_t v)
 {
    BSON_ASSERT (v > 0);
 
+   // https://graphics.stanford.edu/%7Eseander/bithacks.html#RoundUpPowerOf2
    v--;
    v |= v >> 1;
    v |= v >> 2;
