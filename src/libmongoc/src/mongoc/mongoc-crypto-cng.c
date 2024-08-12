@@ -156,6 +156,9 @@ _crypto_hash_size (mongoc_crypto_t *crypto)
 }
 
 #if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
+// Ensure lossless conversion between `uint64_t` and `ULONGLONG` below.
+BSON_STATIC_ASSERT2 (sizeof_ulonglong_uint64_t, sizeof (ULONGLONG) == sizeof (uint64_t));
+
 /* Wrapper for BCryptDeriveKeyPBKDF2 */
 static bool
 _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
@@ -167,18 +170,35 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
                            size_t output_len,
                            unsigned char *output)
 {
+   if (BSON_UNLIKELY (bson_cmp_greater_uu (password_len, ULONG_MAX))) {
+      MONGOC_ERROR ("PBDKF2 HMAC password length exceeds ULONG_MAX");
+      return false;
+   }
+
+   if (BSON_UNLIKELY (bson_cmp_greater_uu (salt_len, ULONG_MAX))) {
+      MONGOC_ERROR ("PBDKF2 HMAC salt length exceeds ULONG_MAX");
+      return false;
+   }
+
+   // `(ULONGLONG) iterations` is statically asserted above.
+
+   if (BSON_UNLIKELY (bson_cmp_greater_uu (output_len, ULONG_MAX))) {
+      MONGOC_ERROR ("PBDKF2 HMAC output length exceeds ULONG_MAX");
+      return false;
+   }
+
    // Make non-const versions of password and salt.
    char *password_copy = bson_strndup (password, password_len);
    char *salt_copy = bson_strndup (salt, salt_len);
 
    NTSTATUS status = BCryptDeriveKeyPBKDF2 (prf,
                                             (unsigned char *) password_copy,
-                                            password_len,
+                                            (ULONG) password_len,
                                             (unsigned char *) salt_copy,
-                                            salt_len,
-                                            iterations,
+                                            (ULONG) salt_len,
+                                            (ULONGLONG) iterations,
                                             output,
-                                            output_len,
+                                            (ULONG) output_len,
                                             0);
    bson_free (password_copy);
    bson_free (salt_copy);
@@ -222,7 +242,7 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE algorithm,
          return false;
       }
 
-      for (int k = 0; k < hash_size; k++) {
+      for (size_t k = 0; k < hash_size; k++) {
          output[k] ^= intermediate_digest[k];
       }
    }
@@ -291,9 +311,11 @@ mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                       unsigned char *output)
 {
 #if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
+   BSON_UNUSED (crypto);
    return _bcrypt_derive_key_pbkdf2 (
       _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
 #else
+   BSON_UNUSED (output_len);
    return _bcrypt_derive_key_pbkdf2 (
       _sha256_hmac_algo, password, password_len, salt, salt_len, iterations, _crypto_hash_size (crypto), output);
 #endif

@@ -20,6 +20,7 @@
 #ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
 #include "mongoc-crypto-openssl-private.h"
 #include "mongoc-crypto-private.h"
+#include "mongoc-log.h"
 
 #include <openssl/sha.h>
 #include <openssl/evp.h>
@@ -35,7 +36,36 @@ mongoc_crypto_openssl_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                         size_t output_len,
                                         unsigned char *output)
 {
-   return PKCS5_PBKDF2_HMAC (password, password_len, salt, salt_len, iterations, EVP_sha1 (), output_len, output);
+   BSON_UNUSED (crypto);
+
+   if (BSON_UNLIKELY (bson_cmp_greater_us (password_len, INT_MAX))) {
+      MONGOC_ERROR ("PBKDF2 HMAC password length exceeds INT_MAX");
+      return false;
+   }
+
+   if (BSON_UNLIKELY (bson_cmp_greater_us (salt_len, INT_MAX))) {
+      MONGOC_ERROR ("PBKDF2 HMAC salt length exceeds INT_MAX");
+      return false;
+   }
+
+   if (BSON_UNLIKELY (bson_cmp_greater_us (iterations, INT_MAX))) {
+      MONGOC_ERROR ("PBKDF2 HMAC iteration count exceeds INT_MAX");
+      return false;
+   }
+
+   if (BSON_UNLIKELY (bson_cmp_greater_us (iterations, INT_MAX))) {
+      MONGOC_ERROR ("PBKDF2 HMAC output buffer length exceeds INT_MAX");
+      return false;
+   }
+
+   return 0 != PKCS5_PBKDF2_HMAC (password,
+                                  (int) password_len,
+                                  salt,
+                                  (int) salt_len,
+                                  (int) iterations,
+                                  EVP_sha1 (),
+                                  (int) output_len,
+                                  output);
 }
 
 void
@@ -104,7 +134,36 @@ mongoc_crypto_openssl_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
                                           size_t output_len,
                                           unsigned char *output)
 {
-   return PKCS5_PBKDF2_HMAC (password, password_len, salt, salt_len, iterations, EVP_sha256 (), output_len, output);
+   BSON_UNUSED (crypto);
+
+   if (BSON_UNLIKELY (bson_cmp_greater_us (password_len, INT_MAX))) {
+      MONGOC_ERROR ("PBKDF2 HMAC password length exceeds INT_MAX");
+      return false;
+   }
+
+   if (BSON_UNLIKELY (bson_cmp_greater_us (salt_len, INT_MAX))) {
+      MONGOC_ERROR ("PBKDF2 HMAC salt length exceeds INT_MAX");
+      return false;
+   }
+
+   if (BSON_UNLIKELY (bson_cmp_greater_us (iterations, INT_MAX))) {
+      MONGOC_ERROR ("PBKDF2 HMAC iteration count exceeds INT_MAX");
+      return false;
+   }
+
+   if (BSON_UNLIKELY (bson_cmp_greater_us (iterations, INT_MAX))) {
+      MONGOC_ERROR ("PBKDF2 HMAC output buffer length exceeds INT_MAX");
+      return false;
+   }
+
+   return 0 != PKCS5_PBKDF2_HMAC (password,
+                                  (int) password_len,
+                                  salt,
+                                  (int) salt_len,
+                                  (int) iterations,
+                                  EVP_sha256 (),
+                                  (int) output_len,
+                                  output);
 }
 
 void
