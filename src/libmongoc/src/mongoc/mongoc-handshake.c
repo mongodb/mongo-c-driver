@@ -720,7 +720,9 @@ _mongoc_handshake_build_doc_with_application (const char *appname)
 void
 _mongoc_handshake_freeze (void)
 {
+   bson_mutex_lock (&gHandshakeLock);
    _mongoc_handshake_get ()->frozen = true;
+   bson_mutex_unlock (&gHandshakeLock);
 }
 
 /*
