@@ -2607,7 +2607,7 @@ test_snapshot_query_example_1 (void)
       return;
    }
 
-   if (!test_framework_max_wire_version_at_least (MONGOC_READ_SECONDARY)) {
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_SNAPSHOT_READS)) {
       MONGOC_DEBUG ("Skipping test. Server does not support snapshot reads\n");
       return;
    }
