@@ -176,8 +176,10 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
    }
 
    // Make non-const versions of password and salt.
-   char *password_copy = bson_strndup (password, password_len);
-   char *salt_copy = bson_strndup ((const char *) salt, salt_len);
+   char *password_copy = bson_malloc (sizeof (char) * password_len);
+   memcpy (password_copy, password, password_len);
+   uint8_t *salt_copy = bson_malloc (sizeof (uint8_t) * salt_len);
+   memcpy (salt_copy, salt, salt_len);
 
    NTSTATUS status = BCryptDeriveKeyPBKDF2 (prf,
                                             (unsigned char *) password_copy,
