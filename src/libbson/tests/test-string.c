@@ -317,43 +317,43 @@ test_bson_string_capacity (void *unused)
       large_str[UINT32_MAX - 1u] = '\0'; // Set size.
       bson_string_t *str = bson_string_new (large_str);
       bson_string_free (str, true);
-      large_str[UINT32_MAX - 1] = 's'; // Restore.
+      large_str[UINT32_MAX - 1u] = 's'; // Restore.
    }
 
    // Test appending with `bson_string_append` to get maximum size.
    {
-      large_str[UINT32_MAX - 1] = '\0'; // Set size.
+      large_str[UINT32_MAX - 1u] = '\0'; // Set size.
       bson_string_t *str = bson_string_new ("");
       bson_string_append (str, large_str);
       bson_string_free (str, true);
-      large_str[UINT32_MAX - 1] = 's'; // Restore.
+      large_str[UINT32_MAX - 1u] = 's'; // Restore.
    }
 
    // Test appending with `bson_string_append_c` to get maximum size.
    {
-      large_str[UINT32_MAX - 2] = '\0'; // Set size.
+      large_str[UINT32_MAX - 2u] = '\0'; // Set size.
       bson_string_t *str = bson_string_new (large_str);
       bson_string_append_c (str, 'c');
       bson_string_free (str, true);
-      large_str[UINT32_MAX - 2] = 's'; // Restore.
+      large_str[UINT32_MAX - 2u] = 's'; // Restore.
    }
 
    // Test appending with `bson_string_append_printf` to get maximum size.
    {
-      large_str[UINT32_MAX - 2] = '\0'; // Set size.
+      large_str[UINT32_MAX - 2u] = '\0'; // Set size.
       bson_string_t *str = bson_string_new (large_str);
       bson_string_append_printf (str, "c");
       bson_string_free (str, true);
-      large_str[UINT32_MAX - 2] = 's'; // Restore.
+      large_str[UINT32_MAX - 2u] = 's'; // Restore.
    }
 
    // Test appending with single characters.
    {
-      large_str[UINT32_MAX - 2] = '\0'; // Set size.
+      large_str[UINT32_MAX - 2u] = '\0'; // Set size.
       bson_string_t *str = bson_string_new (large_str);
       bson_string_append_unichar (str, (bson_unichar_t) 's');
       bson_string_free (str, true);
-      large_str[UINT32_MAX - 2] = 's'; // Restore.
+      large_str[UINT32_MAX - 2u] = 's'; // Restore.
    }
 
    bson_free (large_str);
