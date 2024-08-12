@@ -326,7 +326,7 @@ To test a load balanced deployment, set the following environment variables:
 
 To run test cases with large allocations, set:
 
-* `MONGOC_TEST_LARGE_ALLOCATIONS=on` This may result in unexpected errors on failure to allocate.
+* `MONGOC_TEST_LARGE_ALLOCATIONS=on` This may result in sudden test suite termination due to allocation failure. Use with caution.
 
 All tests should pass before submitting a patch.
 
