@@ -242,7 +242,6 @@ CONTAINER_RUN_DISTROS = [
     "ubuntu2204-large",
     "ubuntu2004-small",
     "ubuntu2004",
-    "ubuntu1804",
     "ubuntu1804-medium",
     "debian10",
     "debian11",
