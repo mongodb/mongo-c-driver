@@ -23,8 +23,8 @@ mongo_bool_setting(
 
 if (MONGO_FUZZ)
     set(mongo_fuzz_options "address,undefined,fuzzer-no-link")
-    if (NOT "${MONGO_SANITIZE}" STREQUAL "${mongo_fuzz_options}")
-        message(WARNING "Overriding user-provided MONGO_SANITIZE options in favor of MONGO_SANITIZE=ON")
+    if (MONGO_SANITIZE AND NOT "${MONGO_SANITIZE}" STREQUAL "${mongo_fuzz_options}")
+        message(WARNING "Overriding user-provided MONGO_SANITIZE options due to MONGO_FUZZ=ON")
     endif ()
     set_property (CACHE MONGO_SANITIZE PROPERTY VALUE "${mongo_fuzz_options}")
 endif ()
