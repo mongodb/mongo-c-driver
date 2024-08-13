@@ -187,6 +187,7 @@ enum bson_memory_order {
             BSON_UNREACHABLE ("Invalid bson_memory_order value");                                                      \
       })                                                                                                               \
       BSON_IF_GNU_LEGACY_ATOMICS ({                                                                                    \
+         BSON_UNUSED (order);                                                                                          \
          __sync_synchronize ();                                                                                        \
          return *a;                                                                                                    \
       })                                                                                                               \
@@ -213,7 +214,7 @@ enum bson_memory_order {
          default:                                                                                                      \
             BSON_UNREACHABLE ("Invalid bson_memory_order value");                                                      \
       })                                                                                                               \
-      BSON_IF_GNU_LEGACY_ATOMICS (return __sync_val_compare_and_swap (a, *a, value);)                                  \
+      BSON_IF_GNU_LEGACY_ATOMICS (BSON_UNUSED (ord); return __sync_val_compare_and_swap (a, *a, value);)               \
    }                                                                                                                   \
                                                                                                                        \
    static BSON_INLINE Type bson_atomic_##NamePart##_compare_exchange_strong (                                          \
