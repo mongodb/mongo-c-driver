@@ -64,6 +64,15 @@
 #  undef MONGOC_ENABLE_CRYPTO_CNG
 #endif
 
+/*
+ * MONGOC_HAVE_BCRYPT_PBKDF2 is set from configure to determine if 
+ * our Bcrypt Windows library supports PBKDF2 
+ */
+#define MONGOC_HAVE_BCRYPT_PBKDF2 @MONGOC_HAVE_BCRYPT_PBKDF2@
+
+#if MONGOC_HAVE_BCRYPT_PBKDF2 != 1
+#  undef MONGOC_HAVE_BCRYPT_PBKDF2
+#endif
 
 /*
  * MONGOC_ENABLE_SSL_SECURE_TRANSPORT is set from configure to determine if we are

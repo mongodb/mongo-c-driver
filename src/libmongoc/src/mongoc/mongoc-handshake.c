@@ -75,6 +75,10 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_ENABLE_CRYPTO_CNG);
 #endif
 
+#ifdef MONGOC_HAVE_BCRYPT_PBKDF2
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_HAVE_BCRYPT_PBKDF2);
+#endif
+
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT);
 #endif
@@ -722,6 +726,14 @@ _mongoc_handshake_build_doc_with_application (const char *appname)
 void
 _mongoc_handshake_freeze (void)
 {
+   bson_mutex_lock (&gHandshakeLock);
+   _mongoc_handshake_get ()->frozen = true;
+   bson_mutex_unlock (&gHandshakeLock);
+}
+
+static void
+_mongoc_handshake_freeze_nolock (void)
+{
    _mongoc_handshake_get ()->frozen = true;
 }
 
@@ -804,7 +816,7 @@ mongoc_handshake_data_append (const char *driver_name, const char *driver_versio
       _append_and_truncate (&_mongoc_handshake_get ()->driver_version, driver_version, HANDSHAKE_DRIVER_VERSION_MAX);
    }
 
-   _mongoc_handshake_freeze ();
+   _mongoc_handshake_freeze_nolock ();
    bson_mutex_unlock (&gHandshakeLock);
 
    return true;

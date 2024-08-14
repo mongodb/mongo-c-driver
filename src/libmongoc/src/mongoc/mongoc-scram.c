@@ -119,8 +119,9 @@ _scram_hash_size (mongoc_scram_t *scram)
       return MONGOC_SCRAM_SHA_1_HASH_SIZE;
    } else if (scram->crypto.algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
       return MONGOC_SCRAM_SHA_256_HASH_SIZE;
+   } else {
+      BSON_UNREACHABLE ("Unexpected crypto algorithm");
    }
-   return 0;
 }
 
 /* Copies the cache's secrets to scram */
@@ -447,7 +448,7 @@ CLEANUP:
 
 
 /* Compute the SCRAM step Hi() as defined in RFC5802 */
-static void
+static bool
 _mongoc_scram_salt_password (mongoc_scram_t *scram,
                              const char *password,
                              uint32_t password_len,
@@ -455,33 +456,14 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
                              uint32_t salt_len,
                              uint32_t iterations)
 {
-   uint8_t intermediate_digest[MONGOC_SCRAM_HASH_MAX_SIZE];
-   uint8_t start_key[MONGOC_SCRAM_HASH_MAX_SIZE];
-
-   uint8_t *output = scram->salted_password;
-
-   memcpy (start_key, salt, salt_len);
-
-   start_key[salt_len] = 0;
-   start_key[salt_len + 1] = 0;
-   start_key[salt_len + 2] = 0;
-   start_key[salt_len + 3] = 1;
-
-   mongoc_crypto_hmac (&scram->crypto, password, password_len, start_key, _scram_hash_size (scram), output);
-
-   memcpy (intermediate_digest, output, _scram_hash_size (scram));
-
-   /* intermediateDigest contains Ui and output contains the accumulated XOR:ed
-    * result */
-   for (uint32_t i = 2u; i <= iterations; i++) {
-      const int hash_size = _scram_hash_size (scram);
-
-      mongoc_crypto_hmac (&scram->crypto, password, password_len, intermediate_digest, hash_size, intermediate_digest);
-
-      for (int k = 0; k < hash_size; k++) {
-         output[k] ^= intermediate_digest[k];
-      }
-   }
+   return mongoc_crypto_pbkdf (&scram->crypto,
+                               password,
+                               password_len,
+                               salt,
+                               salt_len,
+                               iterations,
+                               MONGOC_SCRAM_HASH_MAX_SIZE,
+                               (unsigned char *) scram->salted_password);
 }
 
 
@@ -771,13 +753,15 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       _mongoc_scram_cache_apply_secrets (&cache, scram);
    }
 
-   if (!*scram->salted_password) {
-      _mongoc_scram_salt_password (scram,
-                                   hashed_password,
-                                   (uint32_t) strlen (hashed_password),
-                                   decoded_salt,
-                                   decoded_salt_len,
-                                   (uint32_t) iterations);
+   if (!*scram->salted_password && !_mongoc_scram_salt_password (scram,
+                                                                 hashed_password,
+                                                                 (uint32_t) strlen (hashed_password),
+                                                                 decoded_salt,
+                                                                 decoded_salt_len,
+                                                                 (uint32_t) iterations)) {
+      bson_set_error (
+         error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: failed to salt password");
+      goto FAIL;
    }
 
    _mongoc_scram_generate_client_proof (scram, outbuf, outbufmax, outbuflen);

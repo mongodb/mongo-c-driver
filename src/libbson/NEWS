@@ -8,6 +8,15 @@ Build Configuration:
   * Remove `MONGO_USE_CCACHE` (no longer applicable; see above).
 
 
+libbson 1.27.5
+==============
+
+  * Fix large string handling in `bson_append_utf8`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roberto C. Sánchez
+
 
 libbson 1.27.4
 ==============

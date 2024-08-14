@@ -50,7 +50,6 @@ process.
        - [ ] Update the EVG Project
        - [ ] Stop the Release Stopwatch (end time: HH:MM)
        - [ ] Record the Release
-   - [ ] Homebrew Release
    - [ ] vcpkg
    - [ ] Conan
 
@@ -531,24 +530,6 @@ Stop the stopwatch started at :ref:`do.stopwatch`. Record the the new release
 details in the `C/C++ Release Info`__ sheet.
 
 __ https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit#gid=0
-
-
-Homebrew Release
-################
-
-.. note::
-
-   This step requires a macOS machine. If you are not using macOS, ask in the
-   ``#dbx-c-cxx`` channel for someone to do this step on your behalf.
-
-**If this is a stable release**, update `the mongo-c-driver homebew formula`__. Let
-`$ARCHIVE_URL` be the URL to the release tag's source archive on GitHub\ [#tar-url]_::
-
-   $ brew bump-formula-pr mongo-c-driver --url $ARCHIVE_URL
-
-__ https://github.com/Homebrew/homebrew-core/blob/master/Formula/m/mongo-c-driver.rb
-
-.. [#tar-url] For example, the tagged archive for ``1.25.0`` is at https://github.com/mongodb/mongo-c-driver/archive/refs/tags/1.25.0.tar.gz
 
 
 Linux Distribution Packages

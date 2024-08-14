@@ -11,6 +11,24 @@ mongo_setting (
          endif()
       ]])
 
+mongo_bool_setting(
+    MONGO_FUZZ "Enable LibFuzzer integration"
+    DEFAULT VALUE OFF
+    VALIDATE CODE [[
+        if (MONGO_FUZZ AND NOT ENABLE_STATIC)
+	    message (FATAL_ERROR "MONGO_FUZZ requires ENABLE_STATIC=ON or ENABLE_STATIC=BUILD_ONLY")
+	endif ()
+    ]]
+)
+
+if (MONGO_FUZZ)
+    set(mongo_fuzz_options "address,undefined,fuzzer-no-link")
+    if (MONGO_SANITIZE AND NOT "${MONGO_SANITIZE}" STREQUAL "${mongo_fuzz_options}")
+        message(WARNING "Overriding user-provided MONGO_SANITIZE options due to MONGO_FUZZ=ON")
+    endif ()
+    set_property (CACHE MONGO_SANITIZE PROPERTY VALUE "${mongo_fuzz_options}")
+endif ()
+
 # Replace commas with semicolons for the genex
 string(REPLACE ";" "," _sanitize "${MONGO_SANITIZE}")
 
