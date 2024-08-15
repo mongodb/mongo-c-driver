@@ -1261,7 +1261,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                                 error)) {
       // Error during fields lookup
       bson_destroy (&encryptedFields);
-      return false;
+      return NULL;
    }
 
    if (!bson_empty (&encryptedFields)) {
