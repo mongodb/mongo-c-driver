@@ -1,4 +1,4 @@
-libmongoc 1.28.0 (unreleased)
+libmongoc 1.28.0 (Unreleased)
 =============================
 
 New features:
@@ -9,6 +9,12 @@ Notes:
 
   * Bump minimum wire protocol version from 6 (MongoDB 3.6) to 7 (MongoDB 4.0).
   * Raise required version of libmongocrypt to 1.11.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+
+Build Configuration:
+
+  * Remove automatic ccache detection and usage (CCache.cmake).
+      * Set [`CMAKE_<LANG>_COMPILER_LAUNCHER`](https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html) to build with ccache.
+  * Remove `MONGO_USE_CCACHE` (no longer applicable; see above).
 
 Changed:
 

@@ -315,9 +315,6 @@ if(ENABLE_MAINTAINER_FLAGS)
    )
 endif()
 
-# Enable CCache, if possible
-include (CCache)
-
 # Link with LLD, if possible
 if (NOT MSVC)
    include (LLDLinker)

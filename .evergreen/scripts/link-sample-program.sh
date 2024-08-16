@@ -72,10 +72,11 @@ fi
 
 ZSTD="AUTO"
 
-# Allow reuse of ccache compilation results between different build directories.
-export CCACHE_BASEDIR CCACHE_NOHASHDIR
-CCACHE_BASEDIR="$SCRATCH_DIR"
-CCACHE_NOHASHDIR=1
+# Use ccache if able.
+if [[ -f $DIR/find-ccache.sh ]]; then
+  . $DIR/find-ccache.sh
+  find_ccache_and_export_vars "$SCRATCH_DIR" || true
+fi
 
 $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"
 $CMAKE --build . --parallel

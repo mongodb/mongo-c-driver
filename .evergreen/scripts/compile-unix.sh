@@ -204,10 +204,9 @@ else
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
-# Allow reuse of ccache compilation results between different build directories.
-export CCACHE_BASEDIR CCACHE_NOHASHDIR
-CCACHE_BASEDIR="$(pwd)"
-CCACHE_NOHASHDIR=1
+# Use ccache if able.
+. "${script_dir:?}/find-ccache.sh"
+find_ccache_and_export_vars "$(pwd)" || true
 
 "${cmake_binary}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
 "${cmake_binary}" --build .
