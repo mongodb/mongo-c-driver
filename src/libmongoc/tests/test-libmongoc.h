@@ -284,4 +284,8 @@ test_framework_skip_if_serverless (void);
 bool
 test_framework_is_loadbalanced (void);
 
+// `test_framework_skip_if_no_server_ssl` skips if test runner was not told to connect to the server with SSL.
+int
+test_framework_skip_if_no_server_ssl (void);
+
 #endif
