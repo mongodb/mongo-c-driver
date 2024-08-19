@@ -35,7 +35,7 @@ string(REPLACE ";" "," _sanitize "${MONGO_SANITIZE}")
 if (_sanitize)
     string (MAKE_C_IDENTIFIER "HAVE_SANITIZE_${_sanitize}" ident)
     string (TOUPPER "${ident}" varname)
-    set (flag "-fsanitize=${_sanitize}")
+    set (flag -fsanitize=${_sanitize} -fno-sanitize-recover)
 
     cmake_push_check_state ()
         set (CMAKE_REQUIRED_FLAGS "${flag}")
