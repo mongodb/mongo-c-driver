@@ -155,7 +155,7 @@ all_functions = OD([
     )),
     ('compile coverage', Function(
         shell_mongoc(r'''
-        COVERAGE=ON DEBUG=ON .evergreen/scripts/compile.sh
+        COVERAGE=ON .evergreen/scripts/compile.sh
         ''', add_expansions_to_env=True),
     )),
     ('build mongohouse', Function(

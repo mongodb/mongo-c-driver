@@ -13,7 +13,6 @@ check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC "Visual Studio 15 2017 Win64"
 check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
-check_var_opt DEBUG "OFF"
 check_var_opt EXTRA_CONFIGURE_FLAGS
 check_var_opt RELEASE "OFF"
 check_var_opt SASL "SSPI"   # CMake default: AUTO.
@@ -64,17 +63,12 @@ configure_flags_append_if_not_null SNAPPY "-DENABLE_SNAPPY=${SNAPPY:-}"
 configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV:-}"
 configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB:-}"
 
-if [[ "${DEBUG:-}" == "ON" && "${RELEASE:-}" == "ON" ]]; then
-  echo "Cannot configure a build to be both debug and release!" 1>&2
-  exit 1
-fi
-
 declare build_config
-if [[ "${DEBUG}" == "ON" ]]; then
+if [[ "${RELEASE}" == "ON" ]]; then
+  build_config="RelWithDebInfo"
+else
   build_config="Debug"
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
-else
-  build_config="RelWithDebInfo"
 fi
 configure_flags_append "-DCMAKE_BUILD_TYPE=${build_config:?}"
 

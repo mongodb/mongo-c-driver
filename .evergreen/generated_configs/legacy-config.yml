@@ -213,7 +213,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        COVERAGE=ON DEBUG=ON .evergreen/scripts/compile.sh
+        COVERAGE=ON .evergreen/scripts/compile.sh
   build mongohouse:
   - command: shell.exec
     type: test
@@ -1446,7 +1446,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
+        env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
   - func: prepare-kerberos
   - func: run auth tests
     vars:
@@ -1656,7 +1656,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
+        env CFLAGS=-Wno-redundant-decls SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
   - func: run auth tests
   - func: upload-build
 - name: build-and-run-authentication-tests-openssl-1.0.1-fips
@@ -1672,7 +1672,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
+        env CFLAGS=-Wno-redundant-decls SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
   - func: run auth tests
   - func: upload-build
 - name: build-and-run-authentication-tests-openssl-1.0.2
@@ -1688,7 +1688,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
+        env CFLAGS=-Wno-redundant-decls SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
   - func: run auth tests
   - func: upload-build
 - name: build-and-run-authentication-tests-openssl-1.1.0
@@ -1704,7 +1704,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
+        env SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
   - func: run auth tests
   - func: upload-build
 - name: build-and-run-authentication-tests-libressl-2.5
@@ -1720,7 +1720,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SSL=LIBRESSL .evergreen/scripts/compile.sh
+        env SASL=OFF SSL=LIBRESSL .evergreen/scripts/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -1738,7 +1738,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SSL=AUTO .evergreen/scripts/compile.sh
+        env SASL=OFF SSL=AUTO .evergreen/scripts/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -1756,7 +1756,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SSL=LIBRESSL .evergreen/scripts/compile.sh
+        env SASL=OFF SSL=LIBRESSL .evergreen/scripts/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true

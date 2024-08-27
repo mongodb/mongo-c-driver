@@ -19,7 +19,8 @@ compile_libmongocrypt() {
     "-DBUILD_VERSION=1.11.0-pre"
   )
 
-  DEBUG="0" \
+  env \
+    DEBUG="0" \
     CMAKE_EXE="${cmake_binary}" \
     MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
     DEFAULT_BUILD_ONLY=true \

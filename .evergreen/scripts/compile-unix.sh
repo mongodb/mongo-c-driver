@@ -15,7 +15,6 @@ check_var_opt CHECK_LOG "OFF"
 check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
 check_var_opt COVERAGE # CMake default: OFF.
 check_var_opt CXXFLAGS
-check_var_opt DEBUG "OFF"
 check_var_opt ENABLE_SHM_COUNTERS # CMake default: AUTO.
 check_var_opt EXTRA_CMAKE_PREFIX_PATH
 check_var_opt EXTRA_CONFIGURE_FLAGS
@@ -82,16 +81,11 @@ configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV}"
 configure_flags_append_if_not_null TRACING "-DENABLE_TRACING=${TRACING}"
 configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB}"
 
-if [[ "${DEBUG:-}" == "ON" && "${RELEASE:-}" == "ON" ]]; then
-  echo "Cannot configure a build to be both debug and release!" 1>&2
-  exit 1
-fi
-
-if [[ "${DEBUG}" == "ON" ]]; then
+if [[ "${RELEASE}" == "ON" ]]; then
+  configure_flags_append "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+else
   configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
-else
-  configure_flags_append "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
 fi
 
 if [[ "${SSL}" == "OPENSSL_STATIC" ]]; then

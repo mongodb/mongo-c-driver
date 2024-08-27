@@ -78,9 +78,7 @@ def tasks():
 
 
 def variants():
-    expansions = {
-        'DEBUG': 'ON'
-    }
+    expansions = {}
 
     return [
         BuildVariant(
