@@ -210,12 +210,12 @@ fi
 . "${script_dir:?}/find-ccache.sh"
 find_ccache_and_export_vars "$(pwd)" || true
 
-"${cmake_binary}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
-"${cmake_binary}" --build .
-"${cmake_binary}" --install .
+"${cmake_binary}" -S . -B build "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
+"${cmake_binary}" --build build
+"${cmake_binary}" --install build
 
 # For use by test tasks, which directly use the binary directory contents.
-"${cmake_binary}" --build . --target mongo_c_driver_tests
+"${cmake_binary}" --build build --target mongo_c_driver_tests
 
 # Also validate examples.
-"${cmake_binary}" --build . --target mongo_c_driver_examples
+"${cmake_binary}" --build build --target mongo_c_driver_examples

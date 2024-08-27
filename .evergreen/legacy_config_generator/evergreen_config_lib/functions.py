@@ -191,7 +191,7 @@ all_functions = OD([
         echo "Waiting for mongohouse to start... done."
         pgrep -a "mongohouse"
         export RUN_MONGOHOUSE_TESTS=ON
-        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
+        ./build/src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
         '''),
     )),
     ('run aws tests', Function(

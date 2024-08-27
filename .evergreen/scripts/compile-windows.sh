@@ -103,24 +103,19 @@ if [[ "${CC}" =~ mingw ]]; then
   # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
   configure_flags_append "-DCMAKE_CXX_STANDARD=11"
 
-  cmake_binary=$(native-path "$cmake_binary")
-  build_dir=$(native-path "$mongoc_dir")
-  prefix_path=$(native-path "$install_dir/lib/cmake")
-
   env \
     "CC=gcc" \
     "CXX=g++" \
-    "$cmake_binary" \
+    "${cmake_binary:?}" \
+    -S . \
+    -B build \
     -G "MinGW Makefiles" \
-    -D CMAKE_PREFIX_PATH="$prefix_path" \
     "${configure_flags[@]}" \
-    "${extra_configure_flags[@]}" \
-    -B "$build_dir" \
-    -S "$(native-path "$mongoc_dir")"
+    "${extra_configure_flags[@]}"
 
-  env "$cmake_binary" --build "$build_dir"
-  env "$cmake_binary" --build "$build_dir" --target mongo_c_driver_tests
-  env "$cmake_binary" --build "$build_dir" --target mongo_c_driver_examples
+  env "${cmake_binary:?}" --build build
+  env "${cmake_binary:?}" --build build --target mongo_c_driver_tests
+  env "${cmake_binary:?}" --build build --target mongo_c_driver_examples
   exit 0
 fi
 
@@ -142,12 +137,12 @@ if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 fi
 
-"${cmake_binary}" -G "$CC" "${configure_flags[@]}" "${extra_configure_flags[@]}"
-"${cmake_binary}" --build . --config "${build_config}"
-"${cmake_binary}" --install . --config "${build_config}"
+"${cmake_binary:?}" -S . -B build -G "$CC" "${configure_flags[@]}" "${extra_configure_flags[@]}"
+"${cmake_binary:?}" --build build --config "${build_config:?}"
+"${cmake_binary:?}" --install build --config "${build_config:?}"
 
 # For use by test tasks, which directly use the binary directory contents.
-"${cmake_binary}" --build . --config "${build_config}" --target mongo_c_driver_tests
+"${cmake_binary:?}" --build build --config "${build_config:?}" --target mongo_c_driver_tests
 
 # Also validate examples.
-"${cmake_binary}" --build . --config "${build_config}" --target mongo_c_driver_examples
+"${cmake_binary:?}" --build build --config "${build_config:?}" --target mongo_c_driver_examples
