@@ -82,8 +82,14 @@ configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV}"
 configure_flags_append_if_not_null TRACING "-DENABLE_TRACING=${TRACING}"
 configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB}"
 
+if [[ "${DEBUG:-}" == "ON" && "${RELEASE:-}" == "ON" ]]; then
+  echo "Cannot configure a build to be both debug and release!" 1>&2
+  exit 1
+fi
+
 if [[ "${DEBUG}" == "ON" ]]; then
   configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
+  configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 else
   configure_flags_append "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
 fi
@@ -96,10 +102,6 @@ fi
 
 if [[ "${COVERAGE}" == "ON" ]]; then
   configure_flags_append "-DENABLE_COVERAGE=ON" "-DENABLE_EXAMPLES=OFF"
-fi
-
-if [[ "${RELEASE}" != "ON" ]]; then
-  configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
 declare -a flags

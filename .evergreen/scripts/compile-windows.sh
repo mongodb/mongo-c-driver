@@ -45,6 +45,9 @@ configure_flags_append_if_not_null() {
 
 declare install_dir="${mongoc_dir}/install-dir"
 
+declare -a extra_configure_flags
+IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
+
 ## * Note: For additional configure-time context, the following lines can be
 ## * uncommented to enable CMake's debug output:
 # configure_flags_append --log-level=debug
@@ -61,28 +64,24 @@ configure_flags_append_if_not_null SNAPPY "-DENABLE_SNAPPY=${SNAPPY:-}"
 configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV:-}"
 configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB:-}"
 
-if [[ "${DEBUG}" == "ON" ]]; then
-  configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
-else
-  configure_flags_append "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+if [[ "${DEBUG:-}" == "ON" && "${RELEASE:-}" == "ON" ]]; then
+  echo "Cannot configure a build to be both debug and release!" 1>&2
+  exit 1
 fi
+
+declare build_config
+if [[ "${DEBUG}" == "ON" ]]; then
+  build_config="Debug"
+  configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
+else
+  build_config="RelWithDebInfo"
+fi
+configure_flags_append "-DCMAKE_BUILD_TYPE=${build_config:?}"
 
 if [ "${SSL}" == "OPENSSL_STATIC" ]; then
   configure_flags_append "-DENABLE_SSL=OPENSSL" "-DOPENSSL_USE_STATIC_LIBS=ON"
 else
   configure_flags_append "-DENABLE_SSL=${SSL}"
-fi
-
-declare -a extra_configure_flags
-IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
-
-declare build_config
-
-if [[ "${RELEASE}" == "ON" ]]; then
-  build_config="RelWithDebInfo"
-else
-  build_config="Debug"
-  configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
 declare cmake_binary
