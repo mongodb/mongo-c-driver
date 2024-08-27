@@ -62,6 +62,10 @@ find_ccache_and_export_vars() {
   export CMAKE_CXX_COMPILER_LAUNCHER="${ccache_binary:?}"
 
   # Allow reuse of ccache compilation results between different build directories.
-  export CCACHE_BASEDIR="${base_dir:?}"
+  if [[ "${OSTYPE:?}" =~ cygwin ]]; then
+    export CCACHE_BASEDIR="$(cygpath -aw ${base_dir:?})"
+  else
+    export CCACHE_BASEDIR="${base_dir:?}"
+  fi
   export CCACHE_NOHASHDIR=1
 }
