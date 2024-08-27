@@ -175,7 +175,7 @@ if [[ "${CC}" =~ mingw ]]; then
   wait_for_server "simple HTTP" 8000
   echo "Waiting for simple HTTP server to start... done."
 
-  chmod -f +x ./build/src/libmongoc/test-libmongoc.exe
+  chmod -f +x ./cmake-build/src/libmongoc/test-libmongoc.exe
   cmd.exe /c "$(native-path "${script_dir}/run-tests-mingw.bat")"
   exit
 fi
@@ -266,8 +266,8 @@ cygwin)
 
   check_mongocryptd
 
-  chmod -f +x build/src/libmongoc/Debug/test-libmongoc.exe
-  LD_PRELOAD="${ld_preload:-}" ./build/src/libmongoc/Debug/test-libmongoc.exe "${test_args[@]}"
+  chmod -f +x cmake-build/src/libmongoc/Debug/test-libmongoc.exe
+  LD_PRELOAD="${ld_preload:-}" ./cmake-build/src/libmongoc/Debug/test-libmongoc.exe "${test_args[@]}"
   ;;
 
 *)
@@ -284,7 +284,7 @@ cygwin)
     openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
   fi
 
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" LD_PRELOAD="${ld_preload:-}" ./build/src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" LD_PRELOAD="${ld_preload:-}" ./cmake-build/src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
   ;;
 esac
 

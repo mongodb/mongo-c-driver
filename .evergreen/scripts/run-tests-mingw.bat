@@ -12,6 +12,6 @@ rmdir /Q /S C:\mongo-c-driver
 md C:\mongo-c-driver
 md C:\mongo-c-driver\bin
 copy /Y libmongoc-1.0.dll C:\mongo-c-driver\bin
-copy /Y build\src\libbson\libbson-1.0.dll C:\mongo-c-driver\bin
+copy /Y cmake-build\src\libbson\libbson-1.0.dll C:\mongo-c-driver\bin
 
-.\build\src\libmongoc\test-libmongoc.exe --no-fork -d -F test-results.json --skip-tests .evergreen\etc\skip-tests.txt
+.\cmake-build\src\libmongoc\test-libmongoc.exe --no-fork -d -F test-results.json --skip-tests .evergreen\etc\skip-tests.txt

@@ -93,6 +93,9 @@ fi
 export CMAKE_BUILD_PARALLEL_LEVEL
 CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 
+declare build_dir
+build_dir="cmake-build"
+
 if [[ "${CC}" =~ mingw ]]; then
   # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
   configure_flags_append "-DCMAKE_CXX_STANDARD=11"
@@ -102,14 +105,14 @@ if [[ "${CC}" =~ mingw ]]; then
     "CXX=g++" \
     "${cmake_binary:?}" \
     -S . \
-    -B build \
+    -B "${build_dir:?}" \
     -G "MinGW Makefiles" \
     "${configure_flags[@]}" \
     "${extra_configure_flags[@]}"
 
-  env "${cmake_binary:?}" --build build
-  env "${cmake_binary:?}" --build build --target mongo_c_driver_tests
-  env "${cmake_binary:?}" --build build --target mongo_c_driver_examples
+  env "${cmake_binary:?}" --build "${build_dir:?}"
+  env "${cmake_binary:?}" --build "${build_dir:?}" --target mongo_c_driver_tests
+  env "${cmake_binary:?}" --build "${build_dir:?}" --target mongo_c_driver_examples
   exit 0
 fi
 
@@ -131,12 +134,12 @@ if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 fi
 
-"${cmake_binary:?}" -S . -B build -G "$CC" "${configure_flags[@]}" "${extra_configure_flags[@]}"
-"${cmake_binary:?}" --build build --config "${build_config:?}"
-"${cmake_binary:?}" --install build --config "${build_config:?}"
+"${cmake_binary:?}" -S . -B "${build_dir:?}" -G "$CC" "${configure_flags[@]}" "${extra_configure_flags[@]}"
+"${cmake_binary:?}" --build "${build_dir:?}" --config "${build_config:?}"
+"${cmake_binary:?}" --install "${build_dir:?}" --config "${build_config:?}"
 
 # For use by test tasks, which directly use the binary directory contents.
-"${cmake_binary:?}" --build build --config "${build_config:?}" --target mongo_c_driver_tests
+"${cmake_binary:?}" --build "${build_dir:?}" --config "${build_config:?}" --target mongo_c_driver_tests
 
 # Also validate examples.
-"${cmake_binary:?}" --build build --config "${build_config:?}" --target mongo_c_driver_examples
+"${cmake_binary:?}" --build "${build_dir:?}" --config "${build_config:?}" --target mongo_c_driver_examples

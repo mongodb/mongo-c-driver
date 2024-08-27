@@ -8,7 +8,7 @@ fi
 shopt -s nullglob
 for i in *.core; do
    echo $i
-   echo "backtrace full" | gdb -q ./build/src/libmongoc/test-libmongoc $i
+   echo "backtrace full" | gdb -q ./cmake-build/src/libmongoc/test-libmongoc $i
 done
 
 # If there is still a test-libmongoc process running (perhaps due to

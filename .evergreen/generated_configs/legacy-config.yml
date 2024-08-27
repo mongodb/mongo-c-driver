@@ -259,7 +259,7 @@ functions:
         echo "Waiting for mongohouse to start... done."
         pgrep -a "mongohouse"
         export RUN_MONGOHOUSE_TESTS=ON
-        ./build/src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
+        ./cmake-build/src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
   run aws tests:
   - command: ec2.assume_role
     params:
