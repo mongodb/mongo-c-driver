@@ -24,8 +24,6 @@ This method has an internal time limit of 120 seconds, and will retry until that
 
 If a command inside ``cb`` fails, it may cause the transaction on the server to be aborted. This situation is normally handled transparently by the driver. However, if the application does not return that error from ``cb``, the driver will not be able to determine whether the transaction was aborted or not. The driver will then retry ``cb`` indefinitely. To avoid this situation, the application MUST NOT silently handle errors within ``cb``. If the application needs to handle errors within ``cb``, it MUST return them after doing so.
 
-If a command inside of the transaction fails, the driver may abort the transaction on the server. An attempt to commit such transaction will be rejected with ``NoSuchTransaction`` error.
-
 The parameter ``reply`` is initialized even upon failure to simplify memory management.
 
 Parameters
