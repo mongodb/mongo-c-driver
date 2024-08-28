@@ -34,4 +34,14 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l);
 void
 mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _iovcnt);
 
+BSON_BEGIN_DECLS
+#define STOP_LOGGING_CHECK                                          \
+   int stop_logging;                                                \
+   stop_logging = !gLogFunc;                                        \
+   stop_logging = stop_logging || !_mongoc_log_trace_is_enabled (); \
+   if (stop_logging) {                                              \
+      return;                                                       \
+   }
+
+BSON_END_DECLS
 #endif /* MONGOC_LOG_PRIVATE_H */
