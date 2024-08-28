@@ -80,21 +80,18 @@ buildvariants:
     display_name: cse-matrix-darwinssl
     expansions:
       CLIENT_SIDE_ENCRYPTION: "on"
-      DEBUG: "ON"
     tasks:
       - name: .cse-matrix-darwinssl
   - name: cse-matrix-openssl
     display_name: cse-matrix-openssl
     expansions:
       CLIENT_SIDE_ENCRYPTION: "on"
-      DEBUG: "ON"
     tasks:
       - name: .cse-matrix-openssl
   - name: cse-matrix-winssl
     display_name: cse-matrix-winssl
     expansions:
       CLIENT_SIDE_ENCRYPTION: "on"
-      DEBUG: "ON"
     tasks:
       - name: .cse-matrix-winssl
   - name: loadbalanced
@@ -140,26 +137,22 @@ buildvariants:
       - name: .sanitizers-matrix-tsan
   - name: sasl-matrix-darwinssl
     display_name: sasl-matrix-darwinssl
-    expansions:
-      DEBUG: "ON"
+    expansions: {}
     tasks:
       - name: .sasl-matrix-darwinssl
   - name: sasl-matrix-nossl
     display_name: sasl-matrix-nossl
-    expansions:
-      DEBUG: "ON"
+    expansions: {}
     tasks:
       - name: .sasl-matrix-nossl
   - name: sasl-matrix-openssl
     display_name: sasl-matrix-openssl
-    expansions:
-      DEBUG: "ON"
+    expansions: {}
     tasks:
       - name: .sasl-matrix-openssl
   - name: sasl-matrix-winssl
     display_name: sasl-matrix-winssl
-    expansions:
-      DEBUG: "ON"
+    expansions: {}
     tasks:
       - name: .sasl-matrix-winssl
   - name: scan-build-matrix
