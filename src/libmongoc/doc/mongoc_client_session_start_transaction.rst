@@ -18,6 +18,8 @@ Start a multi-document transaction for all following operations in this session.
 
 The transaction must be completed with :symbol:`mongoc_client_session_commit_transaction` or :symbol:`mongoc_client_session_abort_transaction`. An in-progress transaction is automatically aborted by :symbol:`mongoc_client_session_destroy`.
 
+If a command inside of the transaction fails, it may cause the transaction on the server to be aborted. An attempt to commit such transaction will be rejected with ``NoSuchTransaction`` error. 
+
 Parameters
 ----------
 
