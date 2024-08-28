@@ -70,9 +70,8 @@ class CompileTask(NamedTask):
 
         # Environment variables for .evergreen/scripts/compile.sh.
         self.compile_sh_opt: dict[str, str] = {}
-        if config == "debug":
-            self.compile_sh_opt["DEBUG"] = "ON"
-        else:
+
+        if config != "debug":
             assert config == "release"
             self.compile_sh_opt["RELEASE"] = "ON"
 
@@ -736,7 +735,7 @@ all_tasks = chain(
             commands=[
                 shell_mongoc(
                     """
-            env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
+            env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
             """,
                     add_expansions_to_env=True,
                 ),
@@ -808,7 +807,7 @@ class SSLTask(Task):
         if cflags:
             script += f" CFLAGS={cflags}"
 
-        script += " SASL=OFF"
+        script += " DEBUG=ON SASL=OFF"
 
         if enable_ssl is not False:
             script += " SSL=" + enable_ssl
