@@ -735,7 +735,7 @@ all_tasks = chain(
             commands=[
                 shell_mongoc(
                     """
-            env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
+            env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
             """,
                     add_expansions_to_env=True,
                 ),
@@ -807,7 +807,7 @@ class SSLTask(Task):
         if cflags:
             script += f" CFLAGS={cflags}"
 
-        script += " DEBUG=ON SASL=OFF"
+        script += " SASL=OFF"
 
         if enable_ssl is not False:
             script += " SSL=" + enable_ssl
