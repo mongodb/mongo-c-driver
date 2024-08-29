@@ -217,9 +217,7 @@ mongoc_log_default_handler (mongoc_log_level_t log_level, const char *log_domain
 void
 mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
 {
-   if (!_mongoc_log_trace_is_enabled ()) {
-      return;
-   }
+   STOP_LOGGING_CHECK;
 
    bson_string_t *const str = bson_string_new (NULL);
    bson_string_t *const astr = bson_string_new (NULL);
@@ -269,9 +267,7 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
    size_t _l = 0;
    uint8_t _v;
 
-   if (!_mongoc_log_trace_is_enabled ()) {
-      return;
-   }
+   STOP_LOGGING_CHECK;
 
    for (_i = 0; _i < _iovcnt; _i++) {
       _l += _iov[_i].iov_len;
