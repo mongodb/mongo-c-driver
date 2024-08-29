@@ -1410,7 +1410,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (str);
 
-   char *before_slash = NULL;
+   char *before_options = NULL;
    const char *tmp;
 
    if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
@@ -1423,23 +1423,28 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       goto error;
    }
 
-   before_slash = scan_to_unichar (str, '/', "", &tmp);
-   if (!before_slash) {
-      before_slash = bson_strdup (str);
-      str += strlen (before_slash);
+   // Check for delimiting slash (not required)
+   before_options = scan_to_unichar (str, '/', "", &tmp);
+   if (!before_options) {
+      before_options = scan_to_unichar (str, '?', "", &tmp);
+   }
+
+   if (!before_options) {
+      before_options = bson_strdup (str);
+      str += strlen (before_options);
    } else {
       str = tmp;
    }
 
-   if (!mongoc_uri_parse_before_slash (uri, before_slash, error)) {
+   if (!mongoc_uri_parse_before_slash (uri, before_options, error)) {
       goto error;
    }
 
    BSON_ASSERT (str);
 
    if (*str) {
-      if (*str == '/') {
-         str++;
+      // Check for valid end of hostname delimeter (skip slash if necessary)
+      if (*str == '?' || *str++ == '/') {
          if (*str) {
             if (!mongoc_uri_parse_database (uri, str, &str)) {
                MONGOC_URI_ERROR (error, "%s", "Invalid database name in URI");
@@ -1465,11 +1470,11 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       goto error;
    }
 
-   bson_free (before_slash);
+   bson_free (before_options);
    return true;
 
 error:
-   bson_free (before_slash);
+   bson_free (before_options);
    return false;
 }
 
