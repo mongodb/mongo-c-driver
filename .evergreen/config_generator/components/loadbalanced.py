@@ -5,6 +5,7 @@ from shrub.v3.evg_task import EvgTaskRef, EvgTaskDependency
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
+from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_tests import RunTests
 from config_generator.components.funcs.upload_build import UploadBuild
@@ -76,6 +77,7 @@ def tasks():
         run_on=find_large_distro(_DISTRO_NAME).name,
         tags=['loadbalanced', _DISTRO_NAME, _COMPILER],
         commands=[
+            FindCMakeLatest.call(),
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 env={

@@ -3,6 +3,7 @@ from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import to_cc
 from config_generator.etc.utils import Task
 
+from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 from config_generator.components.funcs.upload_build import UploadBuild
 
 
@@ -35,6 +36,7 @@ def generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, MATRIX, MORE_TAGS=None, MORE_
                 task_name = f'{tag}-{task_name}'
 
             commands = []
+            commands.append(FindCMakeLatest.call())
             commands.append(SASL_TO_FUNC[sasl].call(vars=compile_vars))
             commands.append(UploadBuild.call())
 

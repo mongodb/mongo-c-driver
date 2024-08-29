@@ -121,6 +121,8 @@ class CompileTask(NamedTask):
             script += ' %s="%s"' % (opt, value)
 
         script += " .evergreen/scripts/compile.sh"
+
+        commands.append(func('find-cmake-latest'))
         commands.append(shell_mongoc(script, add_expansions_to_env=True))
         commands.append(func("upload-build"))
         commands.extend(self.suffix_commands)
@@ -346,6 +348,7 @@ all_tasks = [
     NamedTask(
         "install-uninstall-check-mingw",
         commands=[
+            func("find-cmake-latest"),
             shell_mongoc(
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
@@ -360,6 +363,7 @@ all_tasks = [
     NamedTask(
         "install-uninstall-check-msvc",
         commands=[
+            func("find-cmake-latest"),
             shell_mongoc(
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
@@ -374,6 +378,7 @@ all_tasks = [
     NamedTask(
         "install-uninstall-check",
         commands=[
+            func("find-cmake-latest"),
             shell_mongoc(
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
@@ -733,6 +738,7 @@ all_tasks = chain(
             "authentication-tests-asan-memcheck",
             tags=["authentication-tests", "asan"],
             commands=[
+                func("find-cmake-latest"),
                 shell_mongoc(
                     """
             env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
@@ -821,6 +827,7 @@ class SSLTask(Task):
         super(SSLTask, self).__init__(
             commands=[
                 func("install ssl", SSL=full_version),
+                func("find-cmake-latest"),
                 shell_mongoc(script, add_expansions_to_env=True),
                 func("run auth tests", **(test_params or {})),
                 func("upload-build"),
@@ -923,6 +930,7 @@ all_tasks = chain(all_tasks, IPTask.matrix())
 aws_compile_task = NamedTask(
     "debug-compile-aws",
     commands=[
+        func('find-cmake-latest'),
         shell_mongoc(
             """
             export distro_id='${distro_id}' # Required by find_cmake_latest.

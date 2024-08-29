@@ -296,6 +296,7 @@ tasks:
   tags:
   - hardened
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -311,6 +312,7 @@ tasks:
   - compression
   - zlib
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -326,6 +328,7 @@ tasks:
   - compression
   - snappy
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -341,6 +344,7 @@ tasks:
   - compression
   - zstd
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -358,6 +362,7 @@ tasks:
   - zlib
   - zstd
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -372,6 +377,7 @@ tasks:
   tags:
   - debug-compile
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -388,6 +394,7 @@ tasks:
   - nosasl
   - nossl
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -400,6 +407,7 @@ tasks:
   - func: upload-build
 - name: debug-compile-lto
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -412,6 +420,7 @@ tasks:
   - func: upload-build
 - name: debug-compile-lto-thin
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -427,6 +436,7 @@ tasks:
   - debug-compile
   - no-counters
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -443,6 +453,7 @@ tasks:
   - debug-compile
   - special
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -459,6 +470,7 @@ tasks:
   - debug-compile
   - special
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -471,6 +483,7 @@ tasks:
   - func: upload-build
 - name: compile-tracing
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -483,6 +496,7 @@ tasks:
   - func: upload-build
 - name: release-compile
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -499,6 +513,7 @@ tasks:
   - nosasl
   - openssl
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -515,6 +530,7 @@ tasks:
   - nosasl
   - openssl-static
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -531,6 +547,7 @@ tasks:
   - debug-compile
   - nosasl
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -547,6 +564,7 @@ tasks:
   - nosasl
   - winssl
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -563,6 +581,7 @@ tasks:
   - nossl
   - sasl
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -579,6 +598,7 @@ tasks:
   - openssl
   - sasl
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -595,6 +615,7 @@ tasks:
   - openssl-static
   - sasl
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -611,6 +632,7 @@ tasks:
   - debug-compile
   - sasl
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -627,6 +649,7 @@ tasks:
   - nossl
   - sspi
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -643,6 +666,7 @@ tasks:
   - openssl
   - sspi
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -659,6 +683,7 @@ tasks:
   - openssl-static
   - sspi
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -671,6 +696,7 @@ tasks:
   - func: upload-build
 - name: debug-compile-rdtscp
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -687,6 +713,7 @@ tasks:
   - sspi
   - winssl
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -701,6 +728,7 @@ tasks:
   tags:
   - debug-compile
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -936,6 +964,7 @@ tasks:
         .evergreen/scripts/build_snapshot_rpm.sh
 - name: install-uninstall-check-mingw
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -952,6 +981,7 @@ tasks:
         cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
 - name: install-uninstall-check-msvc
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -968,6 +998,7 @@ tasks:
         cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
 - name: install-uninstall-check
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -984,6 +1015,7 @@ tasks:
         .evergreen/scripts/install-uninstall-check.sh
 - name: debug-compile-with-warnings
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1002,6 +1034,7 @@ tasks:
   - sasl
   - special
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1017,6 +1050,7 @@ tasks:
   - func: install ssl
     vars:
       SSL: openssl-1.0.1u
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1438,6 +1472,7 @@ tasks:
   - asan
   - authentication-tests
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1648,6 +1683,7 @@ tasks:
   - func: install ssl
     vars:
       SSL: openssl-1.0.1u
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1664,6 +1700,7 @@ tasks:
   - func: install ssl
     vars:
       SSL: openssl-1.0.1u-fips
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1680,6 +1717,7 @@ tasks:
   - func: install ssl
     vars:
       SSL: openssl-1.0.2l
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1696,6 +1734,7 @@ tasks:
   - func: install ssl
     vars:
       SSL: openssl-1.1.0l
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1712,6 +1751,7 @@ tasks:
   - func: install ssl
     vars:
       SSL: libressl-2.5.2
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1730,6 +1770,7 @@ tasks:
   - func: install ssl
     vars:
       SSL: libressl-3.0.2
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1748,6 +1789,7 @@ tasks:
   - func: install ssl
     vars:
       SSL: libressl-3.0.2
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1851,6 +1893,7 @@ tasks:
       URI: mongodb://localhost/
 - name: debug-compile-aws
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -16260,6 +16303,7 @@ tasks:
 - name: testazurekms-task
   commands:
   - func: fetch-source
+  - func: find-cmake-latest
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -16302,6 +16346,7 @@ tasks:
 - name: testazurekms-fail-task
   commands:
   - func: fetch-source
+  - func: find-cmake-latest
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -16326,6 +16371,7 @@ tasks:
 - name: testgcpkms-task
   commands:
   - func: fetch-source
+  - func: find-cmake-latest
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -16365,6 +16411,7 @@ tasks:
         GCPKMS_CMD="LD_LIBRARY_PATH=./testgcpkms MONGODB_URI='mongodb://localhost:27017' ./testgcpkms/test-gcpkms" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
 - name: testgcpkms-fail-task
   commands:
+  - func: find-cmake-latest
   - command: shell.exec
     params:
       add_expansions_to_env: true

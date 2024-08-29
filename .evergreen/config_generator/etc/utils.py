@@ -34,10 +34,11 @@ def bash_exec(
     include_expansions_in_env: Iterable[str] | None = None,
     working_dir: str | None = None,
     command_type: EvgCommandType | None = None,
+    retry_on_failure: bool | None = None,
     env: Mapping[str, str] | None = None,
     **kwargs,
 ):
-    return subprocess_exec(
+    ret = subprocess_exec(
         binary="bash",
         args=["-c", dedent(script)],
         include_expansions_in_env=list(include_expansions_in_env) if include_expansions_in_env else None,
@@ -46,6 +47,11 @@ def bash_exec(
         env=dict(env) if env else None,
         **kwargs,
     )
+
+    if retry_on_failure is not None:
+        ret.params |= {"retry_on_failure": retry_on_failure}
+
+    return ret
 
 
 def all_components():

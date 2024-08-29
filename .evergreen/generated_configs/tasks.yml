@@ -6,6 +6,7 @@ tasks:
     run_on: ubuntu1804-large
     tags: [sanitizers-matrix-asan, compile, ubuntu1804, clang, cse, asan, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -194,6 +195,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-asan, compile, ubuntu2004, clang, cse, asan, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -472,6 +474,7 @@ tasks:
     run_on: ubuntu1604-large
     tags: [sanitizers-matrix-asan, compile, ubuntu1604, clang, asan, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -480,6 +483,7 @@ tasks:
     run_on: ubuntu1804-large
     tags: [sanitizers-matrix-asan, compile, ubuntu1804, clang, asan, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -788,6 +792,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-asan, compile, ubuntu2004, clang, asan, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -1267,6 +1272,7 @@ tasks:
     run_on: macos-1100
     tags: [cse-matrix-darwinssl, compile, macos-1100, clang, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
@@ -1555,6 +1561,7 @@ tasks:
     run_on: debian10-large
     tags: [cse-matrix-openssl, compile, debian10, gcc, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -1563,6 +1570,7 @@ tasks:
     run_on: debian11-large
     tags: [cse-matrix-openssl, compile, debian11, gcc, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -1571,6 +1579,7 @@ tasks:
     run_on: debian92-large
     tags: [cse-matrix-openssl, compile, debian92, clang, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -1579,6 +1588,7 @@ tasks:
     run_on: debian92-large
     tags: [cse-matrix-openssl, compile, debian92, gcc, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -1587,6 +1597,7 @@ tasks:
     run_on: rhel80-large
     tags: [cse-matrix-openssl, compile, rhel80, gcc, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -1595,6 +1606,7 @@ tasks:
     run_on: rhel83-zseries-large
     tags: [cse-matrix-openssl, compile, rhel83-zseries, gcc, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -1743,6 +1755,7 @@ tasks:
     run_on: ubuntu1604-large
     tags: [cse-matrix-openssl, compile, ubuntu1604, clang, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -1751,6 +1764,7 @@ tasks:
     run_on: ubuntu1804-arm64-large
     tags: [cse-matrix-openssl, compile, ubuntu1804-arm64, gcc, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -1839,6 +1853,7 @@ tasks:
     run_on: ubuntu1804-large
     tags: [cse-matrix-openssl, compile, ubuntu1804, gcc, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -1927,6 +1942,7 @@ tasks:
     run_on: ubuntu2004-arm64-large
     tags: [cse-matrix-openssl, compile, ubuntu2004-arm64, gcc, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2055,6 +2071,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [cse-matrix-openssl, compile, ubuntu2004, gcc, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2183,6 +2200,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-openssl, compile, windows-vsCurrent, vs2017x64, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: Visual Studio 15 2017 Win64
@@ -2391,6 +2409,7 @@ tasks:
     run_on: windows-64-vs2015-large
     tags: [cse-matrix-winssl, compile, windows-64-vs2015, vs2015x64, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-winssl-compile
         vars:
           CC: Visual Studio 14 2015 Win64
@@ -2399,6 +2418,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2017x64, cse, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: cse-sasl-cyrus-winssl-compile
         vars:
           CC: Visual Studio 15 2017 Win64
@@ -2610,6 +2630,7 @@ tasks:
     run_on: rhel87-large
     tags: [loadbalanced, rhel87, gcc]
     commands:
+      - func: find-cmake-latest
       - command: subprocess.exec
         type: test
         params:
@@ -2886,6 +2907,7 @@ tasks:
           SSL: nossl
   - name: make-docs
     commands:
+      - func: find-cmake-latest
       - func: make-docs
       - func: upload-docs
       - func: upload-man-pages
@@ -2894,6 +2916,7 @@ tasks:
     commands:
       - func: fetch-det
       - func: run-simple-http-server
+      - func: find-cmake-latest
       - command: subprocess.exec
         type: test
         params:
@@ -2915,6 +2938,7 @@ tasks:
     run_on: debian10-large
     tags: [openssl-static-matrix, debian10, gcc]
     commands:
+      - func: find-cmake-latest
       - func: openssl-static-compile
         vars:
           CC: gcc
@@ -2922,6 +2946,7 @@ tasks:
     run_on: debian11-large
     tags: [openssl-static-matrix, debian11, gcc]
     commands:
+      - func: find-cmake-latest
       - func: openssl-static-compile
         vars:
           CC: gcc
@@ -2929,6 +2954,7 @@ tasks:
     run_on: debian92-large
     tags: [openssl-static-matrix, debian92, gcc]
     commands:
+      - func: find-cmake-latest
       - func: openssl-static-compile
         vars:
           CC: gcc
@@ -2936,6 +2962,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [openssl-static-matrix, ubuntu2004, gcc]
     commands:
+      - func: find-cmake-latest
       - func: openssl-static-compile
         vars:
           CC: gcc
@@ -2943,6 +2970,7 @@ tasks:
     run_on: macos-1100-arm64
     tags: [sasl-matrix-darwinssl, compile, macos-1100-arm64, clang, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
@@ -2951,6 +2979,7 @@ tasks:
     run_on: macos-1100
     tags: [sasl-matrix-darwinssl, compile, macos-1100, clang, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
@@ -3119,6 +3148,7 @@ tasks:
     run_on: debian10-large
     tags: [sasl-matrix-openssl, compile, debian10, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3127,6 +3157,7 @@ tasks:
     run_on: debian11-large
     tags: [sasl-matrix-openssl, compile, debian11, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3135,6 +3166,7 @@ tasks:
     run_on: debian92-large
     tags: [sasl-matrix-openssl, compile, debian92, clang, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -3143,6 +3175,7 @@ tasks:
     run_on: debian92-large
     tags: [sasl-matrix-openssl, compile, debian92, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3151,6 +3184,7 @@ tasks:
     run_on: rhel70-large
     tags: [sasl-matrix-openssl, compile, rhel70, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3159,6 +3193,7 @@ tasks:
     run_on: rhel80-large
     tags: [sasl-matrix-openssl, compile, rhel80, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3167,6 +3202,7 @@ tasks:
     run_on: rhel81-power8-large
     tags: [sasl-matrix-openssl, compile, rhel81-power8, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3315,6 +3351,7 @@ tasks:
     run_on: rhel83-zseries-large
     tags: [sasl-matrix-openssl, compile, rhel83-zseries, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3423,6 +3460,7 @@ tasks:
     run_on: ubuntu1604-arm64-large
     tags: [sasl-matrix-openssl, compile, ubuntu1604-arm64, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3451,6 +3489,7 @@ tasks:
     run_on: ubuntu1604-large
     tags: [sasl-matrix-openssl, compile, ubuntu1604, clang, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -3459,6 +3498,7 @@ tasks:
     run_on: ubuntu1804-arm64-large
     tags: [sasl-matrix-openssl, compile, ubuntu1804-arm64, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3547,6 +3587,7 @@ tasks:
     run_on: ubuntu1804-large
     tags: [sasl-matrix-openssl, compile, ubuntu1804, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3755,6 +3796,7 @@ tasks:
     run_on: ubuntu2004-arm64-large
     tags: [sasl-matrix-openssl, compile, ubuntu2004-arm64, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3823,6 +3865,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [sasl-matrix-openssl, compile, ubuntu2004, gcc, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -3891,6 +3934,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-openssl, compile, windows-vsCurrent, vs2017x64, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: Visual Studio 15 2017 Win64
@@ -3919,6 +3963,7 @@ tasks:
     run_on: windows-64-vs2013-large
     tags: [sasl-matrix-winssl, compile, windows-64-vs2013, vs2013x64, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-winssl-compile
         vars:
           CC: Visual Studio 12 2013 Win64
@@ -3927,6 +3972,7 @@ tasks:
     run_on: windows-64-vs2015-large
     tags: [sasl-matrix-winssl, compile, windows-64-vs2015, vs2015x64, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-winssl-compile
         vars:
           CC: Visual Studio 14 2015 Win64
@@ -3935,6 +3981,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-winssl-compile
         vars:
           CC: Visual Studio 15 2017 Win64
@@ -4103,6 +4150,7 @@ tasks:
     run_on: ubuntu1604-large
     tags: [sasl-matrix-nossl, compile, ubuntu1604, gcc, sasl-off]
     commands:
+      - func: find-cmake-latest
       - func: sasl-off-nossl-compile
         vars:
           CC: gcc
@@ -4111,6 +4159,7 @@ tasks:
     run_on: ubuntu1804-large
     tags: [sasl-matrix-nossl, compile, ubuntu1804, gcc, sasl-off]
     commands:
+      - func: find-cmake-latest
       - func: sasl-off-nossl-compile
         vars:
           CC: gcc
@@ -4419,6 +4468,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [sasl-matrix-nossl, compile, ubuntu2004, gcc, sasl-off]
     commands:
+      - func: find-cmake-latest
       - func: sasl-off-nossl-compile
         vars:
           CC: gcc
@@ -4607,6 +4657,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-nossl, compile, windows-vsCurrent, vs2017x64, sasl-off]
     commands:
+      - func: find-cmake-latest
       - func: sasl-off-nossl-compile
         vars:
           CC: Visual Studio 15 2017 Win64
@@ -4615,6 +4666,7 @@ tasks:
     run_on: windows-64-vs2013-large
     tags: [sasl-matrix-winssl, compile, windows-64-vs2013, vs2013x86, sasl-off]
     commands:
+      - func: find-cmake-latest
       - func: sasl-off-winssl-compile
         vars:
           CC: Visual Studio 12 2013
@@ -4623,6 +4675,7 @@ tasks:
     run_on: windows-64-vs2015-large
     tags: [sasl-matrix-winssl, compile, windows-64-vs2015, vs2015x86, sasl-off]
     commands:
+      - func: find-cmake-latest
       - func: sasl-off-winssl-compile
         vars:
           CC: Visual Studio 14 2015
@@ -4631,6 +4684,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-off]
     commands:
+      - func: find-cmake-latest
       - func: sasl-off-winssl-compile
         vars:
           CC: Visual Studio 15 2017 Win64
@@ -4639,6 +4693,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x86, sasl-off]
     commands:
+      - func: find-cmake-latest
       - func: sasl-off-winssl-compile
         vars:
           CC: Visual Studio 15 2017
@@ -4647,6 +4702,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, mingw, sasl-sspi]
     commands:
+      - func: find-cmake-latest
       - func: sasl-sspi-winssl-compile
         vars:
           CC: mingw
@@ -4695,6 +4751,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-sspi]
     commands:
+      - func: find-cmake-latest
       - func: sasl-sspi-winssl-compile
         vars:
           CC: Visual Studio 15 2017 Win64
@@ -4743,6 +4800,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x86, sasl-sspi]
     commands:
+      - func: find-cmake-latest
       - func: sasl-sspi-winssl-compile
         vars:
           CC: Visual Studio 15 2017
@@ -4791,6 +4849,7 @@ tasks:
     run_on: macos-1100
     tags: [scan-build-matrix, macos-1100, clang]
     commands:
+      - func: find-cmake-latest
       - func: scan-build
         vars:
           CC: clang
@@ -4799,6 +4858,7 @@ tasks:
     run_on: ubuntu1604-arm64-large
     tags: [scan-build-matrix, ubuntu1604-arm64, clang]
     commands:
+      - func: find-cmake-latest
       - func: scan-build
         vars:
           CC: clang
@@ -4807,6 +4867,7 @@ tasks:
     run_on: ubuntu1604-large
     tags: [scan-build-matrix, ubuntu1604, clang]
     commands:
+      - func: find-cmake-latest
       - func: scan-build
         vars:
           CC: clang
@@ -4815,6 +4876,7 @@ tasks:
     run_on: ubuntu1604-large
     tags: [scan-build-matrix, ubuntu1604, clang, i686]
     commands:
+      - func: find-cmake-latest
       - func: scan-build
         vars:
           CC: clang
@@ -4824,6 +4886,7 @@ tasks:
     run_on: ubuntu1804-arm64-large
     tags: [scan-build-matrix, ubuntu1804-arm64, clang]
     commands:
+      - func: find-cmake-latest
       - func: scan-build
         vars:
           CC: clang
@@ -4832,6 +4895,7 @@ tasks:
     run_on: ubuntu1804-large
     tags: [scan-build-matrix, ubuntu1804, clang, i686]
     commands:
+      - func: find-cmake-latest
       - func: scan-build
         vars:
           CC: clang
@@ -4841,6 +4905,7 @@ tasks:
     run_on: debian10-large
     tags: [std-matrix, debian10, clang, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: clang
@@ -4849,6 +4914,7 @@ tasks:
     run_on: debian10-large
     tags: [std-matrix, debian10, gcc, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: gcc
@@ -4857,6 +4923,7 @@ tasks:
     run_on: debian11-large
     tags: [std-matrix, debian11, clang, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: clang
@@ -4865,6 +4932,7 @@ tasks:
     run_on: debian11-large
     tags: [std-matrix, debian11, gcc, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: gcc
@@ -4873,6 +4941,7 @@ tasks:
     run_on: debian92-large
     tags: [std-matrix, debian92, clang, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: clang
@@ -4881,6 +4950,7 @@ tasks:
     run_on: ubuntu1604-large
     tags: [std-matrix, ubuntu1604, clang, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: clang
@@ -4889,6 +4959,7 @@ tasks:
     run_on: ubuntu1604-large
     tags: [std-matrix, ubuntu1604, clang, compile, i686, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: clang
@@ -4898,6 +4969,7 @@ tasks:
     run_on: ubuntu1804-large
     tags: [std-matrix, ubuntu1804, clang, compile, i686, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: clang
@@ -4907,6 +4979,7 @@ tasks:
     run_on: ubuntu1804-large
     tags: [std-matrix, ubuntu1804, gcc, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: gcc
@@ -4915,6 +4988,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, clang, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: clang
@@ -4923,6 +4997,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, gcc, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: gcc
@@ -4931,6 +5006,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c11]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: Visual Studio 15 2017 Win64
@@ -4939,6 +5015,7 @@ tasks:
     run_on: debian10-large
     tags: [std-matrix, debian10, gcc, compile, std-c17]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: gcc
@@ -4947,6 +5024,7 @@ tasks:
     run_on: debian11-large
     tags: [std-matrix, debian11, gcc, compile, std-c17]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: gcc
@@ -4955,6 +5033,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c17]
     commands:
+      - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: Visual Studio 15 2017 Win64
@@ -4963,6 +5042,7 @@ tasks:
     run_on: ubuntu1804-large
     tags: [sanitizers-matrix-tsan, compile, ubuntu1804, clang, tsan, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -5271,6 +5351,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-tsan, compile, ubuntu2004, clang, tsan, sasl-cyrus]
     commands:
+      - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang

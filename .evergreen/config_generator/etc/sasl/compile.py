@@ -3,6 +3,8 @@ from typing import ClassVar
 from shrub.v3.evg_command import EvgCommand
 from shrub.v3.evg_command import EvgCommandType
 
+from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+
 from config_generator.etc.utils import bash_exec
 
 from config_generator.etc.function import Function
