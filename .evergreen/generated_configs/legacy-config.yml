@@ -355,24 +355,6 @@ tasks:
         set -o errexit
         env SNAPPY="OFF" ZLIB="OFF" ZSTD="ON" .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-compression
-  tags:
-  - compression
-  - snappy
-  - zlib
-  - zstd
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SNAPPY="ON" ZLIB="BUNDLED" ZSTD="ON" .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: debug-compile-no-align
   tags:
   - debug-compile
@@ -446,40 +428,6 @@ tasks:
       script: |-
         set -o errexit
         env ENABLE_SHM_COUNTERS="OFF" .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-asan-clang
-  tags:
-  - asan-clang
-  - debug-compile
-  - special
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-asan-clang-openssl
-  tags:
-  - asan-clang
-  - debug-compile
-  - special
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" .evergreen/scripts/compile.sh
   - func: upload-build
 - name: compile-tracing
   commands:
@@ -575,23 +523,6 @@ tasks:
         set -o errexit
         env SSL="WINDOWS" .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-sasl-nossl
-  tags:
-  - debug-compile
-  - nossl
-  - sasl
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL="AUTO" SSL="OFF" .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: debug-compile-sasl-openssl
   tags:
   - debug-compile
@@ -642,57 +573,6 @@ tasks:
       script: |-
         set -o errexit
         env SASL="AUTO" SSL="DARWIN" .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-sspi-nossl
-  tags:
-  - debug-compile
-  - nossl
-  - sspi
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL="SSPI" SSL="OFF" .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-sspi-openssl
-  tags:
-  - debug-compile
-  - openssl
-  - sspi
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL="SSPI" SSL="OPENSSL" .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-sspi-openssl-static
-  tags:
-  - debug-compile
-  - openssl-static
-  - sspi
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL="SSPI" SSL="OPENSSL_STATIC" .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-rdtscp
   commands:
@@ -1026,25 +906,6 @@ tasks:
         set -o errexit
         env CFLAGS="-Werror -Wno-cast-align" .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-sasl-openssl-static-cse
-  tags:
-  - client-side-encryption
-  - debug-compile
-  - openssl-static
-  - sasl
-  - special
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="OPENSSL_STATIC" .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: debug-compile-nosasl-openssl-1.0.1
   commands:
   - func: install ssl
@@ -1343,31 +1204,6 @@ tasks:
     vars:
       AUTH: noauth
       COMPRESSORS: zstd
-      SSL: nossl
-- name: test-latest-server-compression
-  tags:
-  - compression
-  - latest
-  - snappy
-  - zlib
-  - zstd
-  depends_on:
-    name: debug-compile-compression
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-compression
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      ORCHESTRATION_FILE: snappy-zlib-zstd
-      SSL: nossl
-  - func: run-simple-http-server
-  - func: run-tests
-    vars:
-      AUTH: noauth
-      COMPRESSORS: snappy,zlib,zstd
       SSL: nossl
 - name: retry-true-latest-server
   depends_on:
