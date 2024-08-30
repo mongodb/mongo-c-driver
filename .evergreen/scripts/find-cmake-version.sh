@@ -231,7 +231,7 @@ find_cmake_version() {
 
     cd "${tmp_cmake_dir}" || return
 
-    curl "${curl_args[@]}" "${cmake_url}" --output "cmake.tar.gz" || return
+    curl "${cmake_url}" --output "cmake.tar.gz" || return
     tar xzf cmake.tar.gz || return
 
     if [[ "${OSTYPE}" == darwin* ]]; then

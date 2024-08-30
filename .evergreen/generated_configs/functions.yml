@@ -248,6 +248,16 @@ functions:
             for file in $(find .evergreen/scripts -type f); do
                 chmod +rx "$file" || exit
             done
+  find-cmake-latest:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        retry_on_failure: true
+        args:
+          - -c
+          - . .evergreen/scripts/find-cmake-latest.sh && find_cmake_latest
   kms-divergence-check:
     - command: subprocess.exec
       type: test

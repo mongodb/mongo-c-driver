@@ -121,6 +121,8 @@ class CompileTask(NamedTask):
             script += ' %s="%s"' % (opt, value)
 
         script += " .evergreen/scripts/compile.sh"
+
+        commands.append(func('find-cmake-latest'))
         commands.append(shell_mongoc(script, add_expansions_to_env=True))
         commands.append(func("upload-build"))
         commands.extend(self.suffix_commands)
@@ -185,7 +187,6 @@ all_tasks = [
     CompileTask("debug-compile-compression-zlib", tags=["zlib", "compression"], compression="zlib"),
     CompileTask("debug-compile-compression-snappy", tags=["snappy", "compression"], compression="snappy"),
     CompileTask("debug-compile-compression-zstd", tags=["zstd", "compression"], compression="zstd"),
-    CompileTask("debug-compile-compression", tags=["zlib", "snappy", "zstd", "compression"], compression="all"),
     CompileTask(
         "debug-compile-no-align",
         tags=["debug-compile"],
@@ -196,25 +197,6 @@ all_tasks = [
     CompileTask("debug-compile-lto", CFLAGS="-flto"),
     CompileTask("debug-compile-lto-thin", CFLAGS="-flto=thin"),
     CompileTask("debug-compile-no-counters", tags=["debug-compile", "no-counters"], ENABLE_SHM_COUNTERS="OFF"),
-    SpecialTask(
-        "debug-compile-asan-clang",
-        tags=["debug-compile", "asan-clang"],
-        compression="zlib",
-        CFLAGS="-fno-omit-frame-pointer",
-        CHECK_LOG="ON",
-        sanitize=["address"],
-        EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-    ),
-    SpecialTask(
-        "debug-compile-asan-clang-openssl",
-        tags=["debug-compile", "asan-clang"],
-        compression="zlib",
-        CFLAGS="-fno-omit-frame-pointer",
-        CHECK_LOG="ON",
-        sanitize=["address"],
-        EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-        SSL="OPENSSL",
-    ),
     CompileTask("compile-tracing", TRACING="ON", CFLAGS="-Werror -Wno-cast-align"),
     CompileTask("release-compile", config="release"),
     CompileTask("debug-compile-nosasl-openssl", tags=["debug-compile", "nosasl", "openssl"], SSL="OPENSSL"),
@@ -223,7 +205,6 @@ all_tasks = [
     ),
     CompileTask("debug-compile-nosasl-darwinssl", tags=["debug-compile", "nosasl", "darwinssl"], SSL="DARWIN"),
     CompileTask("debug-compile-nosasl-winssl", tags=["debug-compile", "nosasl", "winssl"], SSL="WINDOWS"),
-    CompileTask("debug-compile-sasl-nossl", tags=["debug-compile", "sasl", "nossl"], SASL="AUTO", SSL="OFF"),
     CompileTask("debug-compile-sasl-openssl", tags=["debug-compile", "sasl", "openssl"], SASL="AUTO", SSL="OPENSSL"),
     CompileTask(
         "debug-compile-sasl-openssl-static",
@@ -232,14 +213,6 @@ all_tasks = [
         SSL="OPENSSL_STATIC",
     ),
     CompileTask("debug-compile-sasl-darwinssl", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"),
-    CompileTask("debug-compile-sspi-nossl", tags=["debug-compile", "sspi", "nossl"], SASL="SSPI", SSL="OFF"),
-    CompileTask("debug-compile-sspi-openssl", tags=["debug-compile", "sspi", "openssl"], SASL="SSPI", SSL="OPENSSL"),
-    CompileTask(
-        "debug-compile-sspi-openssl-static",
-        tags=["debug-compile", "sspi", "openssl-static"],
-        SASL="SSPI",
-        SSL="OPENSSL_STATIC",
-    ),
     CompileTask("debug-compile-rdtscp", ENABLE_RDTSCP="ON"),
     CompileTask("debug-compile-sspi-winssl", tags=["debug-compile", "sspi", "winssl"], SASL="SSPI", SSL="WINDOWS"),
     CompileTask("debug-compile-nosrv", tags=["debug-compile"], SRV="OFF"),
@@ -346,6 +319,7 @@ all_tasks = [
     NamedTask(
         "install-uninstall-check-mingw",
         commands=[
+            func("find-cmake-latest"),
             shell_mongoc(
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
@@ -360,6 +334,7 @@ all_tasks = [
     NamedTask(
         "install-uninstall-check-msvc",
         commands=[
+            func("find-cmake-latest"),
             shell_mongoc(
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
@@ -374,6 +349,7 @@ all_tasks = [
     NamedTask(
         "install-uninstall-check",
         commands=[
+            func("find-cmake-latest"),
             shell_mongoc(
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
@@ -386,12 +362,6 @@ all_tasks = [
         ],
     ),
     CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
-    CompileWithClientSideEncryption(
-        "debug-compile-sasl-openssl-static-cse",
-        tags=["debug-compile", "sasl", "openssl-static"],
-        SASL="AUTO",
-        SSL="OPENSSL_STATIC",
-    ),
     CompileTask(
         "debug-compile-nosasl-openssl-1.0.1",
         prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
@@ -584,7 +554,7 @@ all_tasks = chain(all_tasks, DNSTask.matrix())
 
 
 class CompressionTask(MatrixTask):
-    axes = OD([("compression", ["zlib", "snappy", "zstd", "compression"])])
+    axes = OD([("compression", ["zlib", "snappy", "zstd"])])
     name_prefix = "test-latest-server"
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
@@ -733,6 +703,7 @@ all_tasks = chain(
             "authentication-tests-asan-memcheck",
             tags=["authentication-tests", "asan"],
             commands=[
+                func("find-cmake-latest"),
                 shell_mongoc(
                     """
             env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
@@ -821,6 +792,7 @@ class SSLTask(Task):
         super(SSLTask, self).__init__(
             commands=[
                 func("install ssl", SSL=full_version),
+                func("find-cmake-latest"),
                 shell_mongoc(script, add_expansions_to_env=True),
                 func("run auth tests", **(test_params or {})),
                 func("upload-build"),
@@ -923,6 +895,7 @@ all_tasks = chain(all_tasks, IPTask.matrix())
 aws_compile_task = NamedTask(
     "debug-compile-aws",
     commands=[
+        func('find-cmake-latest'),
         shell_mongoc(
             """
             export distro_id='${distro_id}' # Required by find_cmake_latest.

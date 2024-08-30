@@ -3,6 +3,8 @@ from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_command import FunctionCall
 from shrub.v3.evg_task import EvgTaskRef
 
+from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+
 from config_generator.etc.distros import find_large_distro
 from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import to_cc
@@ -74,6 +76,7 @@ def tasks():
                 run_on=distro.name,
                 tags=tags,
                 commands=[
+                    FindCMakeLatest.call(),
                     ScanBuild.call(vars=compile_vars),
                     FunctionCall(func='upload scan artifacts'),
                 ],
