@@ -1444,25 +1444,30 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 
    if (*str) {
       // Check for valid end of hostname delimeter (skip slash if necessary)
-      if (*str == '?' || *str++ == '/') {
+      if (*str != '/' && *str != '?') {
+         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
+         goto error;
+      }
+
+      if (*str == '/') {
+         // Try to parse database.
+         str++;
          if (*str) {
             if (!mongoc_uri_parse_database (uri, str, &str)) {
                MONGOC_URI_ERROR (error, "%s", "Invalid database name in URI");
                goto error;
             }
          }
+      }
 
-         if (*str == '?') {
-            str++;
-            if (*str) {
-               if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
-                  goto error;
-               }
+      if (*str == '?') {
+         // Try to parse options.
+         str++;
+         if (*str) {
+            if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
+               goto error;
             }
          }
-      } else {
-         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
-         goto error;
       }
    }
 
