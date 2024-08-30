@@ -1429,13 +1429,13 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    if (!before_slash) {
       // Handle cases of optional delimiting slash
 
-      // Skip any "?" that exist is the userpass
+      // Skip any "?"s that exist in the userpass
       userpass = scan_to_unichar (str, '@', "", &tmp);
       if (!userpass) {
-         // If none found, we can safely check for "?" indicating beginning of options
+         // If none found, safely check for "?" indicating beginning of options
          before_slash = scan_to_unichar (str, '?', "", &tmp);
       } else {
-         // Otherwise, see if options exist after username/password and concatenate result
+         // Otherwise, see if options exist after userpass and concatenate result
          hostname = scan_to_unichar (tmp, '?', "", &tmp);
 
          if (hostname) {
