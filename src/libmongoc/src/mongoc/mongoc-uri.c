@@ -1410,7 +1410,9 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (str);
 
-   char *before_options = NULL;
+   char *before_slash = NULL;
+   char *userpass = NULL;
+   char *hostname = NULL;
    const char *tmp;
 
    if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
@@ -1423,20 +1425,34 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       goto error;
    }
 
-   // Check for delimiting slash (not required)
-   before_options = scan_to_unichar (str, '/', "", &tmp);
-   if (!before_options) {
-      before_options = scan_to_unichar (str, '?', "", &tmp);
+   before_slash = scan_to_unichar (str, '/', "", &tmp);
+   if (!before_slash) {
+      // Handle cases of optional delimiting slash
+
+      // Skip any "?" that exist is the userpass
+      userpass = scan_to_unichar (str, '@', "", &tmp);
+      if (!userpass) {
+         // If none found, we can safely check for "?" indicating beginning of options
+         before_slash = scan_to_unichar (str, '?', "", &tmp);
+      } else {
+         // Otherwise, see if options exist after username/password and concatenate result
+         hostname = scan_to_unichar (tmp, '?', "", &tmp);
+
+         if (hostname) {
+            before_slash = bson_strdup (str);
+            before_slash[strlen (userpass) + strlen (hostname)] = '\0';
+         }
+      }
    }
 
-   if (!before_options) {
-      before_options = bson_strdup (str);
-      str += strlen (before_options);
+   if (!before_slash) {
+      before_slash = bson_strdup (str);
+      str += strlen (before_slash);
    } else {
       str = tmp;
    }
 
-   if (!mongoc_uri_parse_before_slash (uri, before_options, error)) {
+   if (!mongoc_uri_parse_before_slash (uri, before_slash, error)) {
       goto error;
    }
 
@@ -1475,11 +1491,15 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       goto error;
    }
 
-   bson_free (before_options);
+   bson_free (before_slash);
+   bson_free (userpass);
+   bson_free (hostname);
    return true;
 
 error:
-   bson_free (before_options);
+   bson_free (before_slash);
+   bson_free (userpass);
+   bson_free (hostname);
    return false;
 }
 
