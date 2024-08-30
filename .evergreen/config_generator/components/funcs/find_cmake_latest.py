@@ -5,6 +5,12 @@ from config_generator.etc.utils import bash_exec
 
 
 class FindCMakeLatest(Function):
+    '''
+    Call `find_cmake_latest` in an attempt to download-and-build the latest
+    CMake version as a Setup task with `retry_on_failure: true` prior to
+    subsequent use of `find-cmake-latest.sh` by compile and build scripts.
+    '''
+
     name = 'find-cmake-latest'
     command_type = EvgCommandType.SETUP
     commands = [
