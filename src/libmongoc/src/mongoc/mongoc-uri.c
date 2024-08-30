@@ -1411,8 +1411,6 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    BSON_ASSERT_PARAM (str);
 
    char *before_slash = NULL;
-   char *userpass = NULL;
-   char *hostname = NULL;
    const char *tmp;
 
    if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
@@ -1428,6 +1426,8 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    before_slash = scan_to_unichar (str, '/', "", &tmp);
    if (!before_slash) {
       // Handle cases of optional delimiting slash
+      char *userpass = NULL;
+      char *hostname = NULL;
 
       // Skip any "?"s that exist in the userpass
       userpass = scan_to_unichar (str, '@', "", &tmp);
@@ -1435,14 +1435,19 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
          // If none found, safely check for "?" indicating beginning of options
          before_slash = scan_to_unichar (str, '?', "", &tmp);
       } else {
+         const size_t userpass_len = (size_t) (tmp - str);
          // Otherwise, see if options exist after userpass and concatenate result
          hostname = scan_to_unichar (tmp, '?', "", &tmp);
 
          if (hostname) {
-            before_slash = bson_strdup (str);
-            before_slash[strlen (userpass) + strlen (hostname)] = '\0';
+            const size_t hostname_len = (size_t) (tmp - str) - userpass_len;
+
+            before_slash = bson_strndup (str, userpass_len + hostname_len);
          }
       }
+
+      bson_free (userpass);
+      bson_free (hostname);
    }
 
    if (!before_slash) {
@@ -1492,14 +1497,10 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    }
 
    bson_free (before_slash);
-   bson_free (userpass);
-   bson_free (hostname);
    return true;
 
 error:
    bson_free (before_slash);
-   bson_free (userpass);
-   bson_free (hostname);
    return false;
 }
 
