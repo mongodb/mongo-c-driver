@@ -2027,6 +2027,11 @@ test_mongoc_uri_duplicates (void)
    ASSERT_LOG_DUPE (MONGOC_URI_SAFE);
    BSON_ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SAFE, false));
 
+   RECREATE_URI (MONGOC_URI_SERVERMONITORINGMODE "=auto&" MONGOC_URI_SERVERMONITORINGMODE "=stream");
+   ASSERT_LOG_DUPE (MONGOC_URI_SERVERMONITORINGMODE);
+   str = mongoc_uri_get_server_monitoring_mode (uri);
+   BSON_ASSERT (strcmp (str, "stream") == 0);
+
    RECREATE_URI (MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=1&" MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_SERVERSELECTIONTIMEOUTMS);
    BSON_ASSERT (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 0) == 2);
@@ -2285,6 +2290,28 @@ test_parses_long_ipv6 (void)
    }
 }
 
+static void
+test_mongoc_server_monitoring_mode (void)
+{
+   mongoc_uri_t *uri;
+   const char *value;
+
+   // Check correct default value
+   uri = mongoc_uri_new ("mongodb://host/?serverMonitoringMode=polling");
+   value = mongoc_uri_get_server_monitoring_mode (uri);
+   ASSERT_CMPSTR (value, "auto");
+
+   uri = mongoc_uri_new ("mongodb://host/?serverMonitoringMode=poll");
+   value = mongoc_uri_get_server_monitoring_mode (uri);
+   ASSERT_CMPSTR (value, "poll");
+
+   uri = mongoc_uri_new ("mongodb://host/?serverMonitoringMode=stream");
+   value = mongoc_uri_get_server_monitoring_mode (uri);
+   ASSERT_CMPSTR (value, "stream");
+
+   mongoc_uri_destroy (uri);
+}
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -2312,4 +2339,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/one_tls_option_enables_tls", test_one_tls_option_enables_tls);
    TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
    TestSuite_Add (suite, "/Uri/parses_long_ipv6", test_parses_long_ipv6);
+   TestSuite_Add (suite, "/Uri/server_monitoring_mode", test_mongoc_server_monitoring_mode);
 }
