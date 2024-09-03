@@ -112,8 +112,8 @@ To enable Snyk monitoring for a release, execute the `+snyk-monitor-snapshot`
 Earthly target for the release branch to be monitored. Be sure to specify the
 correct branch name with `--branch`, and use `--name` to identify the snapshot
 as belonging to the new release version. Let ``$RELEASE_BRANCH`` being the name
-of the branch from which we are releasing, and let ``$NEW_VERSION`` be the new
-release version that we are posting:
+of the branch from which we are releasing (e.g. ``r1.27``), and let ``$NEW_VERSION`` be the new
+release version that we are posting (e.g. ``1.27.6``):
 
 .. code-block:: console
 
