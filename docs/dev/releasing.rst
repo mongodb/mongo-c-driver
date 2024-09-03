@@ -112,8 +112,8 @@ To enable Snyk monitoring for a release, execute the `+snyk-monitor-snapshot`
 Earthly target for the release branch to be monitored. Be sure to specify the
 correct branch name with `--branch`, and use `--name` to identify the snapshot
 as belonging to the new release version. Let ``$RELEASE_BRANCH`` being the name
-of the branch from which we are releasing, and let ``$NEW_VERSION`` be the new
-release version that we are posting:
+of the branch from which we are releasing (e.g. ``r1.27``), and let ``$NEW_VERSION`` be the new
+release version that we are posting (e.g. ``1.27.6``):
 
 .. code-block:: console
 
@@ -395,10 +395,9 @@ required for it to succeed:
    :any:`+sbom-download` targets.
 
 Once these prerequesites are met, creating the release archive can be done using
-the :any:`+signed-release` target. Let `$BRANCH` be the name of the Git branch
-from which the release is being made::
+the :any:`+signed-release` target.::
 
-   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$BRANCH --version=$NEW_VERSION
+   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$RELEASE_BRANCH --version=$NEW_VERSION
 
 .. note:: `$NEW_VERSION` must correspond to the Git tag created by the release.
 

@@ -175,7 +175,7 @@ multibuild:
 #   Create a release archive of the source tree. (Refer to dev docs)
 release-archive:
     FROM alpine:3.20
-    RUN apk add git
+    RUN apk add git bash
     ARG --required sbom_branch
     ARG --required prefix
     ARG --required ref
