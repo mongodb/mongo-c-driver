@@ -2373,13 +2373,12 @@ mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value)
       return false;
    }
 
-   // Default value is "auto"
-   if (strcmp (value, "stream") && strcmp (value, "poll"))
-      mongoc_uri_bson_append_or_replace_key (&uri->options, MONGOC_URI_SERVERMONITORINGMODE, "auto");
-   else
-      mongoc_uri_bson_append_or_replace_key (&uri->options, MONGOC_URI_SERVERMONITORINGMODE, value);
+   // Check for valid value
+   if (strcmp (value, "stream") && strcmp (value, "poll") && strcmp (value, "auto")) {
+      return false;
+   }
 
-
+   mongoc_uri_bson_append_or_replace_key (&uri->options, MONGOC_URI_SERVERMONITORINGMODE, value);
    return true;
 }
 
