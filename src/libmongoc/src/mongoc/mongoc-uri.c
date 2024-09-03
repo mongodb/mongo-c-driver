@@ -1425,6 +1425,32 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 
    before_slash = scan_to_unichar (str, '/', "", &tmp);
    if (!before_slash) {
+      // Handle cases of optional delimiting slash
+      char *userpass = NULL;
+      char *hosts = NULL;
+
+      // Skip any "?"s that exist in the userpass
+      userpass = scan_to_unichar (str, '@', "", &tmp);
+      if (!userpass) {
+         // If none found, safely check for "?" indicating beginning of options
+         before_slash = scan_to_unichar (str, '?', "", &tmp);
+      } else {
+         const size_t userpass_len = (size_t) (tmp - str);
+         // Otherwise, see if options exist after userpass and concatenate result
+         hosts = scan_to_unichar (tmp, '?', "", &tmp);
+
+         if (hosts) {
+            const size_t hosts_len = (size_t) (tmp - str) - userpass_len;
+
+            before_slash = bson_strndup (str, userpass_len + hosts_len);
+         }
+      }
+
+      bson_free (userpass);
+      bson_free (hosts);
+   }
+
+   if (!before_slash) {
       before_slash = bson_strdup (str);
       str += strlen (before_slash);
    } else {
@@ -1438,7 +1464,14 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    BSON_ASSERT (str);
 
    if (*str) {
+      // Check for valid end of hostname delimeter (skip slash if necessary)
+      if (*str != '/' && *str != '?') {
+         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
+         goto error;
+      }
+
       if (*str == '/') {
+         // Try to parse database.
          str++;
          if (*str) {
             if (!mongoc_uri_parse_database (uri, str, &str)) {
@@ -1446,18 +1479,16 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
                goto error;
             }
          }
+      }
 
-         if (*str == '?') {
-            str++;
-            if (*str) {
-               if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
-                  goto error;
-               }
+      if (*str == '?') {
+         // Try to parse options.
+         str++;
+         if (*str) {
+            if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
+               goto error;
             }
          }
-      } else {
-         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
-         goto error;
       }
    }
 
