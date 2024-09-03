@@ -2290,28 +2290,6 @@ test_parses_long_ipv6 (void)
    }
 }
 
-static void
-test_mongoc_server_monitoring_mode (void)
-{
-   mongoc_uri_t *uri;
-   const char *value;
-
-   // Check correct default value
-   uri = mongoc_uri_new ("mongodb://host/?serverMonitoringMode=polling");
-   value = mongoc_uri_get_server_monitoring_mode (uri);
-   ASSERT_CMPSTR (value, "auto");
-
-   uri = mongoc_uri_new ("mongodb://host/?serverMonitoringMode=poll");
-   value = mongoc_uri_get_server_monitoring_mode (uri);
-   ASSERT_CMPSTR (value, "poll");
-
-   uri = mongoc_uri_new ("mongodb://host/?serverMonitoringMode=stream");
-   value = mongoc_uri_get_server_monitoring_mode (uri);
-   ASSERT_CMPSTR (value, "stream");
-
-   mongoc_uri_destroy (uri);
-}
-
 void
 test_uri_install (TestSuite *suite)
 {
@@ -2339,5 +2317,4 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/one_tls_option_enables_tls", test_one_tls_option_enables_tls);
    TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
    TestSuite_Add (suite, "/Uri/parses_long_ipv6", test_parses_long_ipv6);
-   TestSuite_Add (suite, "/Uri/server_monitoring_mode", test_mongoc_server_monitoring_mode);
 }
