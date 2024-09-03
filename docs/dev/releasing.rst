@@ -395,10 +395,9 @@ required for it to succeed:
    :any:`+sbom-download` targets.
 
 Once these prerequesites are met, creating the release archive can be done using
-the :any:`+signed-release` target. Let `$BRANCH` be the name of the Git branch
-from which the release is being made::
+the :any:`+signed-release` target.::
 
-   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$BRANCH --version=$NEW_VERSION
+   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$RELEASE_BRANCH --version=$NEW_VERSION
 
 .. note:: `$NEW_VERSION` must correspond to the Git tag created by the release.
 
