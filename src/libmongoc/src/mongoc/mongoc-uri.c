@@ -1427,7 +1427,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    if (!before_slash) {
       // Handle cases of optional delimiting slash
       char *userpass = NULL;
-      char *hostname = NULL;
+      char *hosts = NULL;
 
       // Skip any "?"s that exist in the userpass
       userpass = scan_to_unichar (str, '@', "", &tmp);
@@ -1437,17 +1437,17 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       } else {
          const size_t userpass_len = (size_t) (tmp - str);
          // Otherwise, see if options exist after userpass and concatenate result
-         hostname = scan_to_unichar (tmp, '?', "", &tmp);
+         hosts = scan_to_unichar (tmp, '?', "", &tmp);
 
-         if (hostname) {
-            const size_t hostname_len = (size_t) (tmp - str) - userpass_len;
+         if (hosts) {
+            const size_t hosts_len = (size_t) (tmp - str) - userpass_len;
 
-            before_slash = bson_strndup (str, userpass_len + hostname_len);
+            before_slash = bson_strndup (str, userpass_len + hosts_len);
          }
       }
 
       bson_free (userpass);
-      bson_free (hostname);
+      bson_free (hosts);
    }
 
    if (!before_slash) {
