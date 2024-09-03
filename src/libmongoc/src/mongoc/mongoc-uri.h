@@ -63,6 +63,7 @@
 #define MONGOC_URI_SOCKETCHECKINTERVALMS "socketcheckintervalms"
 #define MONGOC_URI_SOCKETTIMEOUTMS "sockettimeoutms"
 #define MONGOC_URI_SRVSERVICENAME "srvservicename"
+#define MONGOC_URI_SERVERMONITORINGMODE "servermonitoringmode"
 #define MONGOC_URI_SRVMAXHOSTS "srvmaxhosts"
 #define MONGOC_URI_TLS "tls"
 #define MONGOC_URI_TLSCERTIFICATEKEYFILE "tlscertificatekeyfile"
@@ -197,6 +198,10 @@ MONGOC_EXPORT (const mongoc_read_concern_t *)
 mongoc_uri_get_read_concern (const mongoc_uri_t *uri);
 MONGOC_EXPORT (void)
 mongoc_uri_set_read_concern (mongoc_uri_t *uri, const mongoc_read_concern_t *rc);
+MONGOC_EXPORT (const char *)
+mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri);
+MONGOC_EXPORT (bool)
+mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value);
 
 BSON_END_DECLS
 
