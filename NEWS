@@ -33,6 +33,27 @@ Deprecated:
 
   * A future minor release plans to drop support for Visual Studio 2013.
 
+libmongoc 1.27.6
+================
+
+Fixes:
+
+  * Fix TSan warning.
+  * Fix C23 compile.
+
+Improvements:
+
+  * Document expected behavior of command errors in a transaction.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Adrian Dole
+  * Ezra Chung
+  * Joshua Siegel
+  * Kevin Albertson
+
+
+
 libmongoc 1.27.5
 ================
 
