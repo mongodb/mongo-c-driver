@@ -23,6 +23,7 @@
         {
           "name": "createEntities",
           "object": "testRunner",
+          "ignoreResultAndError": true,
           "arguments": {
             "entities": [
               {
@@ -110,6 +111,7 @@
         {
           "name": "createEntities",
           "object": "testRunner",
+          "ignoreResultAndError": true,
           "arguments": {
             "entities": [
               {
@@ -198,6 +200,7 @@
         {
           "name": "createEntities",
           "object": "testRunner",
+          "ignoreResultAndError": true,
           "arguments": {
             "entities": [
               {
@@ -285,6 +288,7 @@
         {
           "name": "createEntities",
           "object": "testRunner",
+          "ignoreResultAndError": true,
           "arguments": {
             "entities": [
               {
@@ -368,6 +372,7 @@
         {
           "name": "createEntities",
           "object": "testRunner",
+          "ignoreResultAndError": true,
           "arguments": {
             "entities": [
               {
@@ -451,6 +456,7 @@
         {
           "name": "createEntities",
           "object": "testRunner",
+          "ignoreResultAndError": true,
           "arguments": {
             "entities": [
               {

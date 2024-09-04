@@ -3783,6 +3783,42 @@ done:
    return ret;
 }
 
+static bool
+operation_create_entities (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   bson_t *entities = NULL;
+   bson_parser_t *parser = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   bson_t *opts = NULL;
+   bson_iter_t iter;
+
+   parser = bson_parser_new ();
+   bson_parser_allow_extra (parser, true);
+   bson_parser_array (parser, "entities", &entities);
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   };
+
+
+   // TODO: move to helper function
+   BSON_FOREACH (entities, iter)
+   {
+      bson_t entity_bson;
+
+      bson_iter_bson (&iter, &entity_bson);
+      if (!entity_map_create (test->entity_map, &entity_bson, error)) {
+         return false;
+      }
+   }
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (opts);
+   return ret;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -3882,6 +3918,8 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"commitTransaction", operation_commit_transaction},
       {"withTransaction", operation_with_transaction},
       {"abortTransaction", operation_abort_transaction},
+
+      {"createEntities", operation_create_entities},
 
    };
    bool ret = false;

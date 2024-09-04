@@ -112,6 +112,8 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          mongoc_uri_set_option_as_bool (uri, key, bson_iter_bool (&iter));
       } else if (0 == strcmp ("appname", key)) {
          mongoc_uri_set_appname (uri, bson_iter_utf8 (&iter, NULL));
+      } else if (0 == strcmp ("serverMonitoringMode", key)) {
+         mongoc_uri_set_server_monitoring_mode (uri, bson_iter_utf8 (&iter, NULL));
       } else {
          test_set_error (error, "Unimplemented test runner support for URI option: %s", key);
          goto done;
@@ -227,6 +229,7 @@ typedef const bson_oid_t *(*apm_func_bson_oid_t) (const void *);
 typedef int32_t (*apm_func_int32_t) (const void *);
 typedef const mongoc_host_list_t *(*apm_func_host_list_t) (const void *);
 typedef void (*apm_func_serialize_t) (bson_t *, const void *);
+typedef bool (*apm_func_bool_t) (const void *);
 
 typedef struct command_callback_funcs_t {
    apm_func_void_t get_context;
@@ -242,49 +245,73 @@ typedef struct command_callback_funcs_t {
    apm_func_serialize_t serialize;
 } command_callback_funcs_t;
 
-#define _apm_func(kind, fn) (mongoc_apm_command_##kind##_##fn##_cb)
-#define _apm_func_defn(kind, fn, type)                                     \
-   static type mongoc_apm_command_##kind##_##fn##_cb (const void *command) \
-   {                                                                       \
-      return (mongoc_apm_command_##kind##_##fn) (command);                 \
-   }                                                                       \
+typedef struct server_heartbeat_callback_funcs_t {
+   apm_func_int64_t get_duration_usec;
+   apm_func_bson_t get_reply;
+   apm_func_void_t get_context;
+   apm_func_host_list_t get_host;
+   apm_func_bool_t get_awaited;
+   apm_func_serialize_t serialize;
+} server_heartbeat_callback_funcs_t;
+
+#define _apm_func(name, kind, fn) (mongoc_apm_##name##_##kind##_##fn##_cb)
+#define _apm_func_defn(name, kind, fn, type)                                \
+   static type mongoc_apm_##name##_##kind##_##fn##_cb (const void *command) \
+   {                                                                        \
+      return (mongoc_apm_##name##_##kind##_##fn) (command);                 \
+   }                                                                        \
    struct _force_semicolon
 
-_apm_func_defn (started, get_context, void *);
-_apm_func_defn (started, get_command, const bson_t *);
-_apm_func_defn (started, get_command_name, const char *);
-_apm_func_defn (started, get_database_name, const char *);
-_apm_func_defn (started, get_request_id, int64_t);
-_apm_func_defn (started, get_operation_id, int64_t);
-_apm_func_defn (started, get_service_id, const bson_oid_t *);
-_apm_func_defn (started, get_host, const mongoc_host_list_t *);
-_apm_func_defn (started, get_server_connection_id_int64, int64_t);
+_apm_func_defn (command, started, get_context, void *);
+_apm_func_defn (command, started, get_command, const bson_t *);
+_apm_func_defn (command, started, get_command_name, const char *);
+_apm_func_defn (command, started, get_database_name, const char *);
+_apm_func_defn (command, started, get_request_id, int64_t);
+_apm_func_defn (command, started, get_operation_id, int64_t);
+_apm_func_defn (command, started, get_service_id, const bson_oid_t *);
+_apm_func_defn (command, started, get_host, const mongoc_host_list_t *);
+_apm_func_defn (command, started, get_server_connection_id_int64, int64_t);
 
-_apm_func_defn (failed, get_context, void *);
-_apm_func_defn (failed, get_reply, const bson_t *);
-_apm_func_defn (failed, get_command_name, const char *);
-_apm_func_defn (failed, get_database_name, const char *);
-_apm_func_defn (failed, get_request_id, int64_t);
-_apm_func_defn (failed, get_operation_id, int64_t);
-_apm_func_defn (failed, get_service_id, const bson_oid_t *);
-_apm_func_defn (failed, get_host, const mongoc_host_list_t *);
-_apm_func_defn (failed, get_server_connection_id_int64, int64_t);
+_apm_func_defn (command, failed, get_context, void *);
+_apm_func_defn (command, failed, get_reply, const bson_t *);
+_apm_func_defn (command, failed, get_command_name, const char *);
+_apm_func_defn (command, failed, get_database_name, const char *);
+_apm_func_defn (command, failed, get_request_id, int64_t);
+_apm_func_defn (command, failed, get_operation_id, int64_t);
+_apm_func_defn (command, failed, get_service_id, const bson_oid_t *);
+_apm_func_defn (command, failed, get_host, const mongoc_host_list_t *);
+_apm_func_defn (command, failed, get_server_connection_id_int64, int64_t);
 
-_apm_func_defn (succeeded, get_context, void *);
-_apm_func_defn (succeeded, get_reply, const bson_t *);
-_apm_func_defn (succeeded, get_command_name, const char *);
-_apm_func_defn (succeeded, get_database_name, const char *);
-_apm_func_defn (succeeded, get_request_id, int64_t);
-_apm_func_defn (succeeded, get_operation_id, int64_t);
-_apm_func_defn (succeeded, get_service_id, const bson_oid_t *);
-_apm_func_defn (succeeded, get_host, const mongoc_host_list_t *);
-_apm_func_defn (succeeded, get_server_connection_id_int64, int64_t);
+_apm_func_defn (command, succeeded, get_context, void *);
+_apm_func_defn (command, succeeded, get_reply, const bson_t *);
+_apm_func_defn (command, succeeded, get_command_name, const char *);
+_apm_func_defn (command, succeeded, get_database_name, const char *);
+_apm_func_defn (command, succeeded, get_request_id, int64_t);
+_apm_func_defn (command, succeeded, get_operation_id, int64_t);
+_apm_func_defn (command, succeeded, get_service_id, const bson_oid_t *);
+_apm_func_defn (command, succeeded, get_host, const mongoc_host_list_t *);
+_apm_func_defn (command, succeeded, get_server_connection_id_int64, int64_t);
+
+_apm_func_defn (server_heartbeat, started, get_host, const mongoc_host_list_t *);
+_apm_func_defn (server_heartbeat, started, get_context, void *);
+_apm_func_defn (server_heartbeat, started, get_awaited, bool);
+
+_apm_func_defn (server_heartbeat, succeeded, get_duration, int64_t);
+_apm_func_defn (server_heartbeat, succeeded, get_reply, const bson_t *);
+_apm_func_defn (server_heartbeat, succeeded, get_host, const mongoc_host_list_t *);
+_apm_func_defn (server_heartbeat, succeeded, get_context, void *);
+_apm_func_defn (server_heartbeat, succeeded, get_awaited, bool);
+
+_apm_func_defn (server_heartbeat, failed, get_duration, int64_t);
+_apm_func_defn (server_heartbeat, failed, get_host, const mongoc_host_list_t *);
+_apm_func_defn (server_heartbeat, failed, get_context, void *);
+_apm_func_defn (server_heartbeat, failed, get_awaited, bool);
 
 #undef _apm_func_defn
 
 
 static void
-observe_event (entity_t *entity, command_callback_funcs_t funcs, const char *type, const void *apm_command)
+observe_command_event (entity_t *entity, command_callback_funcs_t funcs, const char *type, const void *apm_command)
 {
    BSON_ASSERT_PARAM (type);
    BSON_ASSERT_PARAM (apm_command);
@@ -324,6 +351,35 @@ observe_event (entity_t *entity, command_callback_funcs_t funcs, const char *typ
    LL_APPEND (entity->events, event);
 }
 
+static void
+observe_server_heartbeat_event (entity_t *entity,
+                                server_heartbeat_callback_funcs_t funcs,
+                                const char *type,
+                                const void *apm_command)
+{
+   BSON_ASSERT_PARAM (type);
+   BSON_ASSERT_PARAM (apm_command);
+
+   BSON_ASSERT (funcs.get_context);
+   event_t *const event = event_new (type);
+
+   if (funcs.get_reply) {
+      event->reply = bson_copy (funcs.get_reply (apm_command));
+   }
+
+   BSON_ASSERT (funcs.get_awaited);
+   event->awaited = funcs.get_awaited (apm_command);
+
+   if (funcs.get_duration_usec) {
+      event->duration_usec = funcs.get_duration_usec (apm_command);
+   }
+
+   if (funcs.get_reply) {
+      event->reply = bson_copy (funcs.get_reply (apm_command));
+   }
+
+   LL_APPEND (entity->events, event);
+}
 
 static void
 store_event_serialize_started (bson_t *doc, const void *apm_command_vp)
@@ -430,7 +486,10 @@ store_event_serialize_succeeded (bson_t *doc, const void *apm_command_vp)
 
 
 static void
-store_event_to_entities (entity_t *entity, command_callback_funcs_t funcs, const char *type, const void *apm_command)
+store_command_event_to_entities (entity_t *entity,
+                                 command_callback_funcs_t funcs,
+                                 const char *type,
+                                 const void *apm_command)
 {
    BSON_ASSERT_PARAM (entity);
    BSON_ASSERT_PARAM (type);
@@ -469,6 +528,48 @@ store_event_to_entities (entity_t *entity, command_callback_funcs_t funcs, const
    }
 }
 
+static void
+store_server_heartbeat_event_to_entities (entity_t *entity,
+                                          server_heartbeat_callback_funcs_t funcs,
+                                          const char *type,
+                                          const void *apm_command)
+{
+   BSON_ASSERT_PARAM (entity);
+   BSON_ASSERT_PARAM (type);
+
+   BSON_ASSERT (entity->entity_map);
+
+   entity_map_t *const em = entity->entity_map;
+
+   store_event_t *const begin = (store_event_t *) entity->store_events.data;
+   store_event_t *const end = begin + entity->store_events.len;
+
+   const int64_t usecs = usecs_since_epoch ();
+   const double secs = (double) usecs / 1000000.0;
+
+   bson_error_t error = {0};
+
+   for (store_event_t *iter = begin; iter != end; ++iter) {
+      if (bson_strcasecmp (iter->type, type) == 0) {
+         mongoc_array_t *arr = entity_map_get_bson_array (em, iter->entity_id, &error);
+         ASSERT_OR_PRINT (arr, error);
+
+         bson_t *doc = bson_new ();
+
+         // Spec: the following fields MUST be stored with each event document:
+         BSON_APPEND_UTF8 (doc, "name", type);
+         BSON_APPEND_DOUBLE (doc, "observedAt", secs);
+
+         // The event subscriber MUST serialize the events it receives into a
+         // document, using the documented properties of the event as field
+         // names, and append the document to the list stored in the specified
+         // entity.
+         funcs.serialize (doc, apm_command);
+
+         _mongoc_array_append_val (arr, doc); // Transfer ownership.
+      }
+   }
+}
 
 static void
 apm_command_callback (command_callback_funcs_t funcs, const char *type, const void *apm_command)
@@ -479,8 +580,8 @@ apm_command_callback (command_callback_funcs_t funcs, const char *type, const vo
    BSON_ASSERT (funcs.get_context);
    entity_t *const entity = (entity_t *) funcs.get_context (apm_command);
 
-   observe_event (entity, funcs, type, apm_command);
-   store_event_to_entities (entity, funcs, type, apm_command);
+   observe_command_event (entity, funcs, type, apm_command);
+   store_command_event_to_entities (entity, funcs, type, apm_command);
 }
 
 
@@ -488,16 +589,16 @@ static void
 command_started (const mongoc_apm_command_started_t *started)
 {
    command_callback_funcs_t funcs = {
-      .get_context = _apm_func (started, get_context),
-      .get_command = _apm_func (started, get_command),
+      .get_context = _apm_func (command, started, get_context),
+      .get_command = _apm_func (command, started, get_command),
       .get_reply = NULL,
-      .get_command_name = _apm_func (started, get_command_name),
-      .get_database_name = _apm_func (started, get_database_name),
-      .get_request_id = _apm_func (started, get_request_id),
-      .get_operation_id = _apm_func (started, get_operation_id),
-      .get_service_id = _apm_func (started, get_service_id),
-      .get_host = _apm_func (started, get_host),
-      .get_server_connection_id = _apm_func (started, get_server_connection_id_int64),
+      .get_command_name = _apm_func (command, started, get_command_name),
+      .get_database_name = _apm_func (command, started, get_database_name),
+      .get_request_id = _apm_func (command, started, get_request_id),
+      .get_operation_id = _apm_func (command, started, get_operation_id),
+      .get_service_id = _apm_func (command, started, get_service_id),
+      .get_host = _apm_func (command, started, get_host),
+      .get_server_connection_id = _apm_func (command, started, get_server_connection_id_int64),
       .serialize = store_event_serialize_started,
    };
 
@@ -508,16 +609,16 @@ static void
 command_failed (const mongoc_apm_command_failed_t *failed)
 {
    command_callback_funcs_t funcs = {
-      .get_context = _apm_func (failed, get_context),
+      .get_context = _apm_func (command, failed, get_context),
       .get_command = NULL,
-      .get_reply = _apm_func (failed, get_reply),
-      .get_command_name = _apm_func (failed, get_command_name),
-      .get_database_name = _apm_func (failed, get_database_name),
-      .get_request_id = _apm_func (failed, get_request_id),
-      .get_operation_id = _apm_func (failed, get_operation_id),
-      .get_service_id = _apm_func (failed, get_service_id),
-      .get_host = _apm_func (failed, get_host),
-      .get_server_connection_id = _apm_func (failed, get_server_connection_id_int64),
+      .get_reply = _apm_func (command, failed, get_reply),
+      .get_command_name = _apm_func (command, failed, get_command_name),
+      .get_database_name = _apm_func (command, failed, get_database_name),
+      .get_request_id = _apm_func (command, failed, get_request_id),
+      .get_operation_id = _apm_func (command, failed, get_operation_id),
+      .get_service_id = _apm_func (command, failed, get_service_id),
+      .get_host = _apm_func (command, failed, get_host),
+      .get_server_connection_id = _apm_func (command, failed, get_server_connection_id_int64),
       .serialize = store_event_serialize_failed,
    };
 
@@ -528,16 +629,16 @@ static void
 command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
 {
    command_callback_funcs_t funcs = {
-      .get_context = _apm_func (succeeded, get_context),
+      .get_context = _apm_func (command, succeeded, get_context),
       .get_command = NULL,
-      .get_reply = _apm_func (succeeded, get_reply),
-      .get_command_name = _apm_func (succeeded, get_command_name),
-      .get_database_name = _apm_func (succeeded, get_database_name),
-      .get_request_id = _apm_func (succeeded, get_request_id),
-      .get_operation_id = _apm_func (succeeded, get_operation_id),
-      .get_service_id = _apm_func (succeeded, get_service_id),
-      .get_host = _apm_func (succeeded, get_host),
-      .get_server_connection_id = _apm_func (succeeded, get_server_connection_id_int64),
+      .get_reply = _apm_func (command, succeeded, get_reply),
+      .get_command_name = _apm_func (command, succeeded, get_command_name),
+      .get_database_name = _apm_func (command, succeeded, get_database_name),
+      .get_request_id = _apm_func (command, succeeded, get_request_id),
+      .get_operation_id = _apm_func (command, succeeded, get_operation_id),
+      .get_service_id = _apm_func (command, succeeded, get_service_id),
+      .get_host = _apm_func (command, succeeded, get_host),
+      .get_server_connection_id = _apm_func (command, succeeded, get_server_connection_id_int64),
       .serialize = store_event_serialize_succeeded,
    };
 
@@ -583,6 +684,107 @@ set_command_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
    };
 
    for (const command_to_cb_t *iter = commands; iter->type; ++iter) {
+      if (bson_strcasecmp (type, iter->type) == 0) {
+         iter->set (callbacks);
+         return;
+      }
+   }
+}
+
+static void
+apm_server_heartbeat_callback (server_heartbeat_callback_funcs_t funcs, const char *type, const void *apm_command)
+{
+   BSON_ASSERT_PARAM (type);
+   BSON_ASSERT_PARAM (apm_command);
+
+   BSON_ASSERT (funcs.get_context);
+   entity_t *const entity = (entity_t *) funcs.get_context (apm_command);
+
+   observe_server_heartbeat_event (entity, funcs, type, apm_command);
+   store_server_heartbeat_event_to_entities (entity, funcs, type, apm_command);
+}
+
+static void
+server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *started)
+{
+   server_heartbeat_callback_funcs_t funcs = {
+      .get_duration_usec = NULL,
+      .get_reply = NULL,
+      .get_host = _apm_func (server_heartbeat, started, get_host),
+      .get_context = _apm_func (server_heartbeat, started, get_context),
+      .get_awaited = _apm_func (server_heartbeat, started, get_awaited),
+   };
+
+   apm_server_heartbeat_callback (funcs, "serverHeartbeatStartedEvent", started);
+}
+
+static void
+server_heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *succeeded)
+{
+   server_heartbeat_callback_funcs_t funcs = {
+      .get_duration_usec = _apm_func (server_heartbeat, succeeded, get_duration),
+      .get_reply = _apm_func (server_heartbeat, succeeded, get_reply),
+      .get_host = _apm_func (server_heartbeat, succeeded, get_host),
+      .get_context = _apm_func (server_heartbeat, succeeded, get_context),
+      .get_awaited = _apm_func (server_heartbeat, succeeded, get_awaited),
+   };
+
+   apm_server_heartbeat_callback (funcs, "serverHeartbeatSucceededEvent", succeeded);
+}
+
+
+static void
+server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *failed)
+{
+   server_heartbeat_callback_funcs_t funcs = {
+      .get_duration_usec = _apm_func (server_heartbeat, failed, get_duration),
+      .get_reply = NULL,
+      .get_host = _apm_func (server_heartbeat, failed, get_host),
+      .get_context = _apm_func (server_heartbeat, failed, get_context),
+      .get_awaited = _apm_func (server_heartbeat, failed, get_awaited),
+   };
+
+
+   apm_server_heartbeat_callback (funcs, "serverHeartbeatFailedEvent", failed);
+}
+
+
+static void
+set_server_heartbeat_started_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_server_heartbeat_started_cb (callbacks, server_heartbeat_started);
+}
+
+static void
+set_server_heartbeat_succeeded_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks, server_heartbeat_succeeded);
+}
+
+static void
+set_server_heartbeat_failed_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_server_heartbeat_failed_cb (callbacks, server_heartbeat_failed);
+}
+
+static void
+set_server_heartbeat_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
+{
+   typedef void (*set_func_t) (mongoc_apm_callbacks_t *);
+
+   typedef struct _server_heartbeat_to_cb_t {
+      const char *type;
+      set_func_t set;
+   } server_heartbeat_to_cb_t;
+
+   const server_heartbeat_to_cb_t server_heartbeats[] = {
+      {.type = "serverHeartbeatStartedEvent", .set = set_server_heartbeat_started_cb},
+      {.type = "serverHeartbeatSucceededEvent", .set = set_server_heartbeat_succeeded_cb},
+      {.type = "serverHeartbeatFailedEvent", .set = set_server_heartbeat_failed_cb},
+      {.type = NULL, .set = NULL},
+   };
+
+   for (const server_heartbeat_to_cb_t *iter = server_heartbeats; iter->type; ++iter) {
       if (bson_strcasecmp (type, iter->type) == 0) {
          iter->set (callbacks);
          return;
@@ -654,6 +856,14 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                      do ({
                         const char *const type = bson_iter_utf8 (&bsonVisitIter, NULL);
                         set_command_callback (callbacks, type);
+                        add_observe_event (entity, type);
+                     })),
+               when (anyOf (iStrEqual ("serverHeartbeatStartedEvent"),
+                            iStrEqual ("serverHeartbeatSucceededEvent"),
+                            iStrEqual ("serverHeartbeatFailedEvent")),
+                     do ({
+                        const char *const type = bson_iter_utf8 (&bsonVisitIter, NULL);
+                        set_server_heartbeat_callback (callbacks, type);
                         add_observe_event (entity, type);
                      })),
                // Unsupported (but known) event names:

@@ -32,6 +32,8 @@ typedef struct _event_t {
    bson_oid_t service_id;
    int64_t server_connection_id;
    struct _event_t *next;
+   bool awaited;
+   int64_t duration_usec;
 } event_t;
 
 typedef struct _observe_event_t {
