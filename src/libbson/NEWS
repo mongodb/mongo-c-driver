@@ -1,7 +1,22 @@
+libbson 1.27.6
+==============
+
+Fixes:
+
+  * Fix handling of malformed extended JSON for special BSON types.
+  * Fix large string handling in `bson_string_new` and `bson_string_append`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
+
+
+
 libbson 1.27.5
 ==============
 
-  * Fix large string handline in `bson_append_utf8`.
+  * Fix large string handling in `bson_append_utf8`.
 
 Thanks to everyone who contributed to the development of this release.
 
