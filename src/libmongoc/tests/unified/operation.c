@@ -1297,7 +1297,10 @@ operation_run_command (test_t *test, operation_t *op, result_t *result, bson_err
    bson_destroy (&op_reply);
    mongoc_database_command_with_opts (db, command, rp, opts, &op_reply, &op_error);
 
-   result_from_val_and_reply (result, NULL, &op_reply, &op_error);
+   // Pass reply as a result value. Some `runCommand` operations check the result value with `expectResult`.
+   bson_val_t *val = bson_val_from_bson (&op_reply);
+   result_from_val_and_reply (result, val, &op_reply, &op_error);
+   bson_val_destroy (val);
 
    ret = true;
 done:
