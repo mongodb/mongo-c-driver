@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -284,7 +283,7 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
          int32_t radix_position = significand_digits + exponent;
 
          // Reserve space for null terminator.
-         const ptrdiff_t available_bytes = BSON_DECIMAL128_STRING - 1;
+         const int available_bytes = BSON_DECIMAL128_STRING - 1;
 
          if (radix_position > 0) { /* non-zero digits before radix */
             for (int32_t i = 0; i < radix_position && (str_out - str) < available_bytes; i++) {
