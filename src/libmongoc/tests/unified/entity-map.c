@@ -814,6 +814,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 {
    entity_t *entity = NULL;
    mongoc_client_t *client = NULL;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_uri_t *uri = NULL;
    bool ret = false;
    mongoc_apm_callbacks_t *callbacks = NULL;
@@ -982,7 +983,8 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, REDUCED_HEARTBEAT_FREQUENCY_MS);
    }
 
-   client = test_framework_client_new_from_uri (uri, api);
+   pool = test_framework_client_pool_new_from_uri (uri, api);
+   client = mongoc_client_pool_pop (pool);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;
