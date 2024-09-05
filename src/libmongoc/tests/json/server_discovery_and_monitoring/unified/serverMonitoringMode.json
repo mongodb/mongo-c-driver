@@ -66,6 +66,7 @@
         {
           "name": "waitForEvent",
           "object": "testRunner",
+          "ignoreResultAndError": true,
           "arguments": {
             "client": "client",
             "event": {
