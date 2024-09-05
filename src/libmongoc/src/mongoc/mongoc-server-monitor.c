@@ -88,6 +88,7 @@ struct _mongoc_server_monitor_t {
    mongoc_server_description_t *description;
    uint32_t server_id;
    bool is_rtt;
+   const char *mode;
 };
 
 static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (mongoc_server_monitor_t *server_monitor,
@@ -820,6 +821,7 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
    server_monitor->apm_context = td->apm_context;
    server_monitor->initiator = topology->scanner->initiator;
    server_monitor->initiator_context = topology->scanner->initiator_context;
+   server_monitor->mode = mongoc_uri_get_server_monitoring_mode (server_monitor->uri);
    mongoc_cond_init (&server_monitor->shared.cond);
    bson_mutex_init (&server_monitor->shared.mutex);
    return server_monitor;
@@ -950,10 +952,12 @@ _server_monitor_check_server (mongoc_server_monitor_t *server_monitor,
    }
 
    if (!bson_empty (&previous_description->topology_version) &&
-       _mongoc_handshake_get ()->env == MONGOC_HANDSHAKE_ENV_NONE) {
+       (_mongoc_handshake_get ()->env == MONGOC_HANDSHAKE_ENV_NONE || strcmp (server_monitor->mode, "stream") == 0)) {
       // Use stream monitoring if:
       // - Server supports stream monitoring (indicated by `topologyVersion`).
-      // - Application is not in an FaaS environment (e.g. AWS Lambda).
+      // - ONE OF:
+      //    - Application is not in an FaaS environment (e.g. AWS Lambda).
+      //    - serverMonitoringMode == "stream"
       awaited = true;
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "awaitable hello");
@@ -961,6 +965,7 @@ _server_monitor_check_server (mongoc_server_monitor_t *server_monitor,
       GOTO (exit);
    }
 
+   // Otherwise, use poll monitoring
    MONITOR_LOG (server_monitor, "polling hello");
    awaited = false;
    _server_monitor_heartbeat_started (server_monitor, awaited);
