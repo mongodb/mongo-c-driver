@@ -382,7 +382,7 @@ observe_server_heartbeat_event (entity_t *entity,
 }
 
 static void
-store_event_serialize_started (bson_t *doc, const void *apm_command_vp)
+store_command_event_serialize_started (bson_t *doc, const void *apm_command_vp)
 {
    // Spec: The test runner MAY omit the command field for CommandStartedEvent
    // and reply field for CommandSucceededEvent.
@@ -415,7 +415,7 @@ store_event_serialize_started (bson_t *doc, const void *apm_command_vp)
 
 
 static void
-store_event_serialize_failed (bson_t *doc, const void *apm_command_vp)
+store_command_event_serialize_failed (bson_t *doc, const void *apm_command_vp)
 {
    const mongoc_apm_command_failed_t *const apm_command = apm_command_vp;
 
@@ -451,7 +451,7 @@ store_event_serialize_failed (bson_t *doc, const void *apm_command_vp)
 
 
 static void
-store_event_serialize_succeeded (bson_t *doc, const void *apm_command_vp)
+store_command_event_serialize_succeeded (bson_t *doc, const void *apm_command_vp)
 {
    const mongoc_apm_command_succeeded_t *const apm_command = apm_command_vp;
 
@@ -484,6 +484,45 @@ store_event_serialize_succeeded (bson_t *doc, const void *apm_command_vp)
    }
 }
 
+static void
+store_server_heartbeat_event_serialize_started (bson_t *doc, const void *apm_command_vp)
+{
+   const mongoc_apm_server_heartbeat_started_t *const apm_command = apm_command_vp;
+
+   BSON_APPEND_UTF8 (doc, "connectionId", mongoc_apm_server_heartbeat_started_get_host (apm_command)->host_and_port);
+
+   BSON_APPEND_BOOL (doc, "awaited", mongoc_apm_server_heartbeat_started_get_awaited (apm_command));
+}
+
+static void
+store_server_heartbeat_event_serialize_succeeded (bson_t *doc, const void *apm_command_vp)
+{
+   const mongoc_apm_server_heartbeat_succeeded_t *const apm_command = apm_command_vp;
+
+   BSON_APPEND_INT64 (doc, "duration", mongoc_apm_server_heartbeat_succeeded_get_duration (apm_command));
+
+   BSON_APPEND_UTF8 (doc, "connectionId", mongoc_apm_server_heartbeat_succeeded_get_host (apm_command)->host_and_port);
+
+   BSON_APPEND_BOOL (doc, "awaited", mongoc_apm_server_heartbeat_succeeded_get_awaited (apm_command));
+}
+
+static void
+store_server_heartbeat_event_serialize_failed (bson_t *doc, const void *apm_command_vp)
+{
+   const mongoc_apm_server_heartbeat_failed_t *const apm_command = apm_command_vp;
+
+   BSON_APPEND_INT64 (doc, "duration", mongoc_apm_server_heartbeat_failed_get_duration (apm_command));
+
+   BSON_APPEND_UTF8 (doc, "connectionId", mongoc_apm_server_heartbeat_failed_get_host (apm_command)->host_and_port);
+
+   BSON_APPEND_BOOL (doc, "awaited", mongoc_apm_server_heartbeat_failed_get_awaited (apm_command));
+
+   {
+      bson_error_t error;
+      mongoc_apm_server_heartbeat_failed_get_error (apm_command, &error);
+      BSON_APPEND_UTF8 (doc, "failure", error.message);
+   }
+}
 
 static void
 store_command_event_to_entities (entity_t *entity,
@@ -599,7 +638,7 @@ command_started (const mongoc_apm_command_started_t *started)
       .get_service_id = _apm_func (command, started, get_service_id),
       .get_host = _apm_func (command, started, get_host),
       .get_server_connection_id = _apm_func (command, started, get_server_connection_id_int64),
-      .serialize = store_event_serialize_started,
+      .serialize = store_command_event_serialize_started,
    };
 
    apm_command_callback (funcs, "commandStartedEvent", started);
@@ -619,7 +658,7 @@ command_failed (const mongoc_apm_command_failed_t *failed)
       .get_service_id = _apm_func (command, failed, get_service_id),
       .get_host = _apm_func (command, failed, get_host),
       .get_server_connection_id = _apm_func (command, failed, get_server_connection_id_int64),
-      .serialize = store_event_serialize_failed,
+      .serialize = store_command_event_serialize_failed,
    };
 
    apm_command_callback (funcs, "commandFailedEvent", failed);
@@ -639,7 +678,7 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
       .get_service_id = _apm_func (command, succeeded, get_service_id),
       .get_host = _apm_func (command, succeeded, get_host),
       .get_server_connection_id = _apm_func (command, succeeded, get_server_connection_id_int64),
-      .serialize = store_event_serialize_succeeded,
+      .serialize = store_command_event_serialize_succeeded,
    };
 
    apm_command_callback (funcs, "commandSucceededEvent", succeeded);
@@ -713,6 +752,7 @@ server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *started)
       .get_host = _apm_func (server_heartbeat, started, get_host),
       .get_context = _apm_func (server_heartbeat, started, get_context),
       .get_awaited = _apm_func (server_heartbeat, started, get_awaited),
+      .serialize = store_server_heartbeat_event_serialize_started,
    };
 
    apm_server_heartbeat_callback (funcs, "serverHeartbeatStartedEvent", started);
@@ -727,6 +767,7 @@ server_heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *succe
       .get_host = _apm_func (server_heartbeat, succeeded, get_host),
       .get_context = _apm_func (server_heartbeat, succeeded, get_context),
       .get_awaited = _apm_func (server_heartbeat, succeeded, get_awaited),
+      .serialize = store_server_heartbeat_event_serialize_succeeded,
    };
 
    apm_server_heartbeat_callback (funcs, "serverHeartbeatSucceededEvent", succeeded);
@@ -742,6 +783,7 @@ server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *failed)
       .get_host = _apm_func (server_heartbeat, failed, get_host),
       .get_context = _apm_func (server_heartbeat, failed, get_context),
       .get_awaited = _apm_func (server_heartbeat, failed, get_awaited),
+      .serialize = store_server_heartbeat_event_serialize_failed,
    };
 
 

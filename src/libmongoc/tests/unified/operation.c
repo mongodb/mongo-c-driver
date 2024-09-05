@@ -3563,6 +3563,7 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
 
 
    parser = bson_parser_new ();
+   bson_parser_allow_extra (parser, true);
    bson_parser_utf8 (parser, "client", &client);
    bson_parser_doc (parser, "event", &event);
    bson_parser_int (parser, "count", &expected_count);
