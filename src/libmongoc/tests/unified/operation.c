@@ -3549,6 +3549,61 @@ operation_assert_number_connections_checked_out (test_t *test, operation_t *op, 
 }
 
 static bool
+operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   bson_t *event = NULL;
+   bson_parser_t *parser = NULL;
+   int64_t *expected_count = NULL;
+   char *client = NULL;
+   entity_t *entity = NULL;
+   event_t *eiter = NULL;
+   int64_t actual_count = 0;
+   bson_iter_t iter;
+
+
+   parser = bson_parser_new ();
+   bson_parser_utf8 (parser, "client", &client);
+   bson_parser_doc (parser, "event", &event);
+   bson_parser_int (parser, "count", &expected_count);
+
+
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   };
+
+   // One event is passed through as a key
+   bson_iter_init (&iter, event);
+   bson_iter_next (&iter);
+
+   // Make check 10 times at 1 second intervals
+   for (int i = 0; i < 10; ++i) {
+      entity = entity_map_get (test->entity_map, client, error);
+      if (!entity)
+         goto done;
+      // Count occurances of specified event
+      for (eiter = entity->events; eiter; eiter = eiter->next) {
+         printf ("EVENT: %s\n", entity->type);
+         if (strcmp (eiter->type, bson_iter_key (&iter)) == 0)
+            actual_count++;
+      }
+      printf ("expected:  %" PRIu64 ", actual: %" PRIu64 "\n", *expected_count, actual_count);
+      if (*expected_count == actual_count) {
+         ret = true;
+         goto done;
+      } else {
+         actual_count = 0;
+         // Wait for a second
+         _mongoc_usleep (1000000);
+      }
+   }
+
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+   return ret;
+}
+
+static bool
 operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    // First validate the arguments
@@ -3792,8 +3847,6 @@ operation_create_entities (test_t *test, operation_t *op, result_t *result, bson
    bool ret = false;
    bson_t *entities = NULL;
    bson_parser_t *parser = NULL;
-   mongoc_cursor_t *cursor = NULL;
-   bson_t *opts = NULL;
    bson_iter_t iter;
 
    parser = bson_parser_new ();
@@ -3817,8 +3870,6 @@ operation_create_entities (test_t *test, operation_t *op, result_t *result, bson
    ret = true;
 done:
    bson_parser_destroy_with_parsed_fields (parser);
-   mongoc_cursor_destroy (cursor);
-   bson_destroy (opts);
    return ret;
 }
 
@@ -3909,6 +3960,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"assertSessionUnpinned", operation_assert_session_unpinned},
       {"loop", operation_loop},
       {"assertNumberConnectionsCheckedOut", operation_assert_number_connections_checked_out},
+      {"waitForEvent", operation_wait_for_event},
 
       /* GridFS operations */
       {"delete", operation_delete},
