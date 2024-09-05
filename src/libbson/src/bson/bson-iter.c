@@ -641,7 +641,7 @@ fill_data_fields:
          /* subtype 2 has a redundant length header in the data */
          memcpy (&binary_len, (iter->raw + iter->d3), sizeof (binary_len));
          binary_len = BSON_UINT32_FROM_LE (binary_len);
-         if (binary_len + 4 != l) {
+         if (binary_len != l - 4) {
             iter->err_off = iter->d3;
             goto mark_invalid;
          }
