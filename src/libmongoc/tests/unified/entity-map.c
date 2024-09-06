@@ -619,6 +619,10 @@ apm_command_callback (command_callback_funcs_t funcs, const char *type, const vo
    BSON_ASSERT (funcs.get_context);
    entity_t *const entity = (entity_t *) funcs.get_context (apm_command);
 
+   if (entity->callbacks_disabled) {
+      return;
+   }
+
    observe_command_event (entity, funcs, type, apm_command);
    store_command_event_to_entities (entity, funcs, type, apm_command);
 }
@@ -738,6 +742,10 @@ apm_server_heartbeat_callback (server_heartbeat_callback_funcs_t funcs, const ch
 
    BSON_ASSERT (funcs.get_context);
    entity_t *const entity = (entity_t *) funcs.get_context (apm_command);
+
+   if (entity->callbacks_disabled) {
+      return;
+   }
 
    observe_server_heartbeat_event (entity, funcs, type, apm_command);
    store_server_heartbeat_event_to_entities (entity, funcs, type, apm_command);
@@ -1029,8 +1037,9 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, entity);
    client = mongoc_client_pool_pop (pool);
    test_framework_set_ssl_opts (client);
-   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;
+   entity->pool = pool;
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
@@ -2412,6 +2421,12 @@ event_list_to_string (event_t *events)
       if (eiter->database_name) {
          bson_string_append_printf (str, " db=%s", eiter->database_name);
       }
+      if (eiter->awaited) {
+         bson_string_append_printf (str, " awaited=%d", eiter->awaited);
+      }
+      if (eiter->duration_usec) {
+         bson_string_append_printf (str, " duration=%" PRId64, eiter->duration_usec);
+      }
       if (eiter->command) {
          bson_string_append_printf (str, " sent %s", tmp_json (eiter->command));
       }
@@ -2481,10 +2496,6 @@ entity_map_disable_event_listeners (entity_map_t *em)
 
    LL_FOREACH (em->entities, eiter)
    {
-      if (0 == strcmp (eiter->type, "client")) {
-         mongoc_client_t *client = (mongoc_client_t *) eiter->value;
-
-         mongoc_client_set_apm_callbacks (client, NULL, NULL);
-      }
+      eiter->callbacks_disabled = true;
    }
 }
