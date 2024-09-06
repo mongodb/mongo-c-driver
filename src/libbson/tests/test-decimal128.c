@@ -108,24 +108,34 @@ test_decimal128_to_string__regular (void)
    bson_decimal128_t trailing_zeros;
    bson_decimal128_t all_digits;
    bson_decimal128_t full_house;
+   bson_decimal128_t truncated_significand;
 
    DECIMAL128_FROM_ULLS (one, 0x3040000000000000, 0x0000000000000001);
    DECIMAL128_FROM_ULLS (zero, 0x3040000000000000, 0x0000000000000000);
    DECIMAL128_FROM_ULLS (two, 0x3040000000000000, 0x0000000000000002);
    DECIMAL128_FROM_ULLS (negative_one, 0xb040000000000000, 0x0000000000000001);
    DECIMAL128_FROM_ULLS (negative_zero, 0xb040000000000000, 0x0000000000000000);
-   DECIMAL128_FROM_ULLS (tenth, 0x303e000000000000, 0x0000000000000001); /* 0.1 */
-   /* 0.001234 */
+
+   // 0.1
+   DECIMAL128_FROM_ULLS (tenth, 0x303e000000000000, 0x0000000000000001);
+
+   // 0.001234
    DECIMAL128_FROM_ULLS (smallest_regular, 0x3034000000000000, 0x00000000000004d2);
-   /* 12345789012 */
+
+   // 12345789012
    DECIMAL128_FROM_ULLS (largest_regular, 0x3040000000000000, 0x0000001cbe991a14);
-   /* 0.00123400000 */
+
+   // 0.00123400000
    DECIMAL128_FROM_ULLS (trailing_zeros, 0x302a000000000000, 0x00000000075aef40);
-   /* 0.1234567890123456789012345678901234 */
+
+   // 0.1234567890123456789012345678901234
    DECIMAL128_FROM_ULLS (all_digits, 0x2ffc3cde6fff9732, 0xde825cd07e96aff2);
 
-   /* 5192296858534827628530496329220095 */
+   // 5192296858534827628530496329220095
    DECIMAL128_FROM_ULLS (full_house, 0x3040ffffffffffff, 0xffffffffffffffff);
+
+   // -0.000001038459371706965525706099265844019
+   DECIMAL128_FROM_ULLS (truncated_significand, 0xaff1ffffffffffff, 0xffffffffffffffff);
 
    bson_decimal128_to_string (&one, bid_string);
    BSON_ASSERT (!strcmp ("1", bid_string));
@@ -159,6 +169,9 @@ test_decimal128_to_string__regular (void)
 
    bson_decimal128_to_string (&full_house, bid_string);
    BSON_ASSERT (!strcmp ("5192296858534827628530496329220095", bid_string));
+
+   bson_decimal128_to_string (&truncated_significand, bid_string);
+   BSON_ASSERT (!strcmp ("-0.000001038459371706965525706099265844019", bid_string));
 }
 
 
