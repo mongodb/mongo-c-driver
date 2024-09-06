@@ -108,6 +108,7 @@ test_decimal128_to_string__regular (void)
    bson_decimal128_t trailing_zeros;
    bson_decimal128_t all_digits;
    bson_decimal128_t full_house;
+   bson_decimal128_t untruncated_significand;
    bson_decimal128_t truncated_significand;
 
    DECIMAL128_FROM_ULLS (one, 0x3040000000000000, 0x0000000000000001);
@@ -133,6 +134,9 @@ test_decimal128_to_string__regular (void)
 
    // 5192296858534827628530496329220095
    DECIMAL128_FROM_ULLS (full_house, 0x3040ffffffffffff, 0xffffffffffffffff);
+
+   // 0.0000010384593717069655257060992658440191
+   DECIMAL128_FROM_ULLS (untruncated_significand, 0x2ff1ffffffffffff, 0xffffffffffffffff);
 
    // -0.000001038459371706965525706099265844019
    DECIMAL128_FROM_ULLS (truncated_significand, 0xaff1ffffffffffff, 0xffffffffffffffff);
@@ -169,6 +173,9 @@ test_decimal128_to_string__regular (void)
 
    bson_decimal128_to_string (&full_house, bid_string);
    ASSERT_CMPSTR ("5192296858534827628530496329220095", bid_string);
+
+   bson_decimal128_to_string (&untruncated_significand, bid_string);
+   ASSERT_CMPSTR ("0.0000010384593717069655257060992658440191", bid_string);
 
    bson_decimal128_to_string (&truncated_significand, bid_string);
    ASSERT_CMPSTR ("-0.000001038459371706965525706099265844019", bid_string);
