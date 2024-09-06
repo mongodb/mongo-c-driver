@@ -1026,11 +1026,11 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
 
    pool = test_framework_client_pool_new_from_uri (uri, api);
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, entity);
    client = mongoc_client_pool_pop (pool);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;
-   mongoc_client_set_apm_callbacks (client, callbacks, entity);
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
