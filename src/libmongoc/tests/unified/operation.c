@@ -3584,17 +3584,15 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
          goto done;
       // Count occurances of specified event
       for (eiter = entity->events; eiter; eiter = eiter->next) {
-         printf ("EVENT: %s\n", entity->type);
          if (strcmp (eiter->type, bson_iter_key (&iter)) == 0)
             actual_count++;
       }
-      printf ("expected:  %" PRIu64 ", actual: %" PRIu64 "\n", *expected_count, actual_count);
-      if (*expected_count == actual_count) {
+
+      if (*expected_count <= actual_count) {
          ret = true;
          goto done;
       } else {
          actual_count = 0;
-         // Wait for a second
          _mongoc_usleep (1000000);
       }
    }
