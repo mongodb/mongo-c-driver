@@ -51,10 +51,10 @@ test_decimal128_to_string__infinity (void)
    DECIMAL128_FROM_ULLS (negative_infinity, 0xf800000000000000, 0);
 
    bson_decimal128_to_string (&positive_infinity, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "Infinity"));
+   ASSERT_CMPSTR (bid_string, "Infinity");
 
    bson_decimal128_to_string (&negative_infinity, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "-Infinity"));
+   ASSERT_CMPSTR (bid_string, "-Infinity");
 }
 
 
@@ -77,19 +77,19 @@ test_decimal128_to_string__nan (void)
    DECIMAL128_FROM_ULLS (dec_payload_nan, 0x7e00000000000000, 12);
 
    bson_decimal128_to_string (&dec_pnan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 
    bson_decimal128_to_string (&dec_nnan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 
    bson_decimal128_to_string (&dec_psnan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 
    bson_decimal128_to_string (&dec_nsnan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 
    bson_decimal128_to_string (&dec_payload_nan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 }
 
 
@@ -138,40 +138,40 @@ test_decimal128_to_string__regular (void)
    DECIMAL128_FROM_ULLS (truncated_significand, 0xaff1ffffffffffff, 0xffffffffffffffff);
 
    bson_decimal128_to_string (&one, bid_string);
-   BSON_ASSERT (!strcmp ("1", bid_string));
+   ASSERT_CMPSTR ("1", bid_string);
 
    bson_decimal128_to_string (&zero, bid_string);
-   BSON_ASSERT (!strcmp ("0", bid_string));
+   ASSERT_CMPSTR ("0", bid_string);
 
    bson_decimal128_to_string (&two, bid_string);
-   BSON_ASSERT (!strcmp ("2", bid_string));
+   ASSERT_CMPSTR ("2", bid_string);
 
    bson_decimal128_to_string (&negative_one, bid_string);
-   BSON_ASSERT (!strcmp ("-1", bid_string));
+   ASSERT_CMPSTR ("-1", bid_string);
 
    bson_decimal128_to_string (&negative_zero, bid_string);
-   BSON_ASSERT (!strcmp ("-0", bid_string));
+   ASSERT_CMPSTR ("-0", bid_string);
 
    bson_decimal128_to_string (&tenth, bid_string);
-   BSON_ASSERT (!strcmp ("0.1", bid_string));
+   ASSERT_CMPSTR ("0.1", bid_string);
 
    bson_decimal128_to_string (&smallest_regular, bid_string);
-   BSON_ASSERT (!strcmp ("0.001234", bid_string));
+   ASSERT_CMPSTR ("0.001234", bid_string);
 
    bson_decimal128_to_string (&largest_regular, bid_string);
-   BSON_ASSERT (!strcmp ("123456789012", bid_string));
+   ASSERT_CMPSTR ("123456789012", bid_string);
 
    bson_decimal128_to_string (&trailing_zeros, bid_string);
-   BSON_ASSERT (!strcmp ("0.00123400000", bid_string));
+   ASSERT_CMPSTR ("0.00123400000", bid_string);
 
    bson_decimal128_to_string (&all_digits, bid_string);
-   BSON_ASSERT (!strcmp ("0.1234567890123456789012345678901234", bid_string));
+   ASSERT_CMPSTR ("0.1234567890123456789012345678901234", bid_string);
 
    bson_decimal128_to_string (&full_house, bid_string);
-   BSON_ASSERT (!strcmp ("5192296858534827628530496329220095", bid_string));
+   ASSERT_CMPSTR ("5192296858534827628530496329220095", bid_string);
 
    bson_decimal128_to_string (&truncated_significand, bid_string);
-   BSON_ASSERT (!strcmp ("-0.000001038459371706965525706099265844019", bid_string));
+   ASSERT_CMPSTR ("-0.000001038459371706965525706099265844019", bid_string);
 }
 
 
@@ -205,40 +205,40 @@ test_decimal128_to_string__scientific (void)
    DECIMAL128_FROM_ULLS (trailing_zero_no_decimal, 0x3046000000000000, 0x0000000000000001);
 
    bson_decimal128_to_string (&huge, bid_string);
-   BSON_ASSERT (!strcmp ("1.000000000000000000000000000000000E+6144", bid_string));
+   ASSERT_CMPSTR ("1.000000000000000000000000000000000E+6144", bid_string);
 
    bson_decimal128_to_string (&tiny, bid_string);
-   BSON_ASSERT (!strcmp ("1E-6176", bid_string));
+   ASSERT_CMPSTR ("1E-6176", bid_string);
 
    bson_decimal128_to_string (&neg_tiny, bid_string);
-   BSON_ASSERT (!strcmp ("-1E-6176", bid_string));
+   ASSERT_CMPSTR ("-1E-6176", bid_string);
 
    bson_decimal128_to_string (&neg_tiny, bid_string);
-   BSON_ASSERT (!strcmp ("-1E-6176", bid_string));
+   ASSERT_CMPSTR ("-1E-6176", bid_string);
 
    bson_decimal128_to_string (&large, bid_string);
-   BSON_ASSERT (!strcmp ("9.999987654321E+112", bid_string));
+   ASSERT_CMPSTR ("9.999987654321E+112", bid_string);
 
    bson_decimal128_to_string (&largest, bid_string);
-   BSON_ASSERT (!strcmp ("9.999999999999999999999999999999999E+6144", bid_string));
+   ASSERT_CMPSTR ("9.999999999999999999999999999999999E+6144", bid_string);
 
    bson_decimal128_to_string (&tiniest, bid_string);
-   BSON_ASSERT (!strcmp ("9.999999999999999999999999999999999E-6143", bid_string));
+   ASSERT_CMPSTR ("9.999999999999999999999999999999999E-6143", bid_string);
 
    bson_decimal128_to_string (&trailing_zero, bid_string);
-   BSON_ASSERT (!strcmp ("1.050E+9", bid_string));
+   ASSERT_CMPSTR ("1.050E+9", bid_string);
 
    bson_decimal128_to_string (&one_trailing_zero, bid_string);
-   BSON_ASSERT (!strcmp ("1.050E+4", bid_string));
+   ASSERT_CMPSTR ("1.050E+4", bid_string);
 
    bson_decimal128_to_string (&move_decimal, bid_string);
-   BSON_ASSERT (!strcmp ("105", bid_string));
+   ASSERT_CMPSTR ("105", bid_string);
 
    bson_decimal128_to_string (&move_decimal_after, bid_string);
-   BSON_ASSERT (!strcmp ("1.05E+3", bid_string));
+   ASSERT_CMPSTR ("1.05E+3", bid_string);
 
    bson_decimal128_to_string (&trailing_zero_no_decimal, bid_string);
-   BSON_ASSERT (!strcmp ("1E+3", bid_string));
+   ASSERT_CMPSTR ("1E+3", bid_string);
 }
 
 
@@ -256,13 +256,13 @@ test_decimal128_to_string__zeros (void)
    DECIMAL128_FROM_ULLS (neg_exp_zero, 0x2b90000000000000, 0x0000000000000000);
 
    bson_decimal128_to_string (&zero, bid_string);
-   BSON_ASSERT (!strcmp ("0", bid_string));
+   ASSERT_CMPSTR ("0", bid_string);
 
    bson_decimal128_to_string (&pos_exp_zero, bid_string);
-   BSON_ASSERT (!strcmp ("0E+300", bid_string));
+   ASSERT_CMPSTR ("0E+300", bid_string);
 
    bson_decimal128_to_string (&neg_exp_zero, bid_string);
-   BSON_ASSERT (!strcmp ("0E-600", bid_string));
+   ASSERT_CMPSTR ("0E-600", bid_string);
 }
 
 
