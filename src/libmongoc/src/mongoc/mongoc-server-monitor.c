@@ -951,9 +951,10 @@ _server_monitor_check_server (mongoc_server_monitor_t *server_monitor,
       GOTO (exit);
    }
 
-   if (!bson_empty (&previous_description->topology_version) &&
+   if (strcmp (server_monitor->mode, "poll") && !bson_empty (&previous_description->topology_version) &&
        (_mongoc_handshake_get ()->env == MONGOC_HANDSHAKE_ENV_NONE || strcmp (server_monitor->mode, "stream") == 0)) {
       // Use stream monitoring if:
+      // - serverMonitoringMode != "poll"
       // - Server supports stream monitoring (indicated by `topologyVersion`).
       // - ONE OF:
       //    - Application is not in an FaaS environment (e.g. AWS Lambda).
