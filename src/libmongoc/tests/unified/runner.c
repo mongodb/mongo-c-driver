@@ -974,6 +974,7 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    bson_t *expected_reply = NULL;
    bool *expected_has_service_id = NULL;
    bool *expected_has_server_connection_id = NULL;
+   bool *expected_awaited = NULL;
 
    if (bson_count_keys (expected) != 1) {
       test_set_error (error, "expected 1 key in expected event, but got: %s", tmp_json (expected));
@@ -1001,6 +1002,7 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    bson_parser_doc_optional (bp, "reply", &expected_reply);
    bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
    bson_parser_bool_optional (bp, "hasServerConnectionId", &expected_has_server_connection_id);
+   bson_parser_bool_optional (bp, "awaited", &expected_awaited);
    if (!bson_parser_parse (bp, &expected_bson, error)) {
       goto done;
    }
@@ -1076,6 +1078,11 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
       }
    }
 
+   if (*expected_awaited != actual->awaited) {
+      test_set_error (error, "expected awaited: %d, but got %d", *expected_awaited, actual->awaited);
+      goto done;
+   }
+
    ret = true;
 done:
    bson_parser_destroy_with_parsed_fields (bp);
@@ -1113,7 +1120,7 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
           * supported. */
          ret = true;
          goto done;
-      } else if (0 != strcmp (event_type, "command")) {
+      } else if (0 != strcmp (event_type, "command") && 0 != strcmp (event_type, "sdam")) {
          test_set_error (error, "unexpected event type: %s", event_type);
          goto done;
       }
