@@ -2360,7 +2360,7 @@ mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)
 {
    BSON_ASSERT (uri);
 
-   return mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_SERVERMONITORINGMODE, NULL);
+   return mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_SERVERMONITORINGMODE, "auto");
 }
 
 
