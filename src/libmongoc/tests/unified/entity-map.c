@@ -524,11 +524,10 @@ store_server_heartbeat_event_serialize_failed (bson_t *doc, const void *apm_comm
    }
 }
 
+typedef void (*serialize_func_t) (bson_t *doc, const void *apm_command_vp);
+
 static void
-store_command_event_to_entities (entity_t *entity,
-                                 command_callback_funcs_t funcs,
-                                 const char *type,
-                                 const void *apm_command)
+store_event_to_entities (entity_t *entity, serialize_func_t serialize_func, const char *type, const void *apm_command)
 {
    BSON_ASSERT_PARAM (entity);
    BSON_ASSERT_PARAM (type);
@@ -560,50 +559,7 @@ store_command_event_to_entities (entity_t *entity,
          // document, using the documented properties of the event as field
          // names, and append the document to the list stored in the specified
          // entity.
-         funcs.serialize (doc, apm_command);
-
-         _mongoc_array_append_val (arr, doc); // Transfer ownership.
-      }
-   }
-}
-
-static void
-store_server_heartbeat_event_to_entities (entity_t *entity,
-                                          server_heartbeat_callback_funcs_t funcs,
-                                          const char *type,
-                                          const void *apm_command)
-{
-   BSON_ASSERT_PARAM (entity);
-   BSON_ASSERT_PARAM (type);
-
-   BSON_ASSERT (entity->entity_map);
-
-   entity_map_t *const em = entity->entity_map;
-
-   store_event_t *const begin = (store_event_t *) entity->store_events.data;
-   store_event_t *const end = begin + entity->store_events.len;
-
-   const int64_t usecs = usecs_since_epoch ();
-   const double secs = (double) usecs / 1000000.0;
-
-   bson_error_t error = {0};
-
-   for (store_event_t *iter = begin; iter != end; ++iter) {
-      if (bson_strcasecmp (iter->type, type) == 0) {
-         mongoc_array_t *arr = entity_map_get_bson_array (em, iter->entity_id, &error);
-         ASSERT_OR_PRINT (arr, error);
-
-         bson_t *doc = bson_new ();
-
-         // Spec: the following fields MUST be stored with each event document:
-         BSON_APPEND_UTF8 (doc, "name", type);
-         BSON_APPEND_DOUBLE (doc, "observedAt", secs);
-
-         // The event subscriber MUST serialize the events it receives into a
-         // document, using the documented properties of the event as field
-         // names, and append the document to the list stored in the specified
-         // entity.
-         funcs.serialize (doc, apm_command);
+         serialize_func (doc, apm_command);
 
          _mongoc_array_append_val (arr, doc); // Transfer ownership.
       }
@@ -624,7 +580,7 @@ apm_command_callback (command_callback_funcs_t funcs, const char *type, const vo
    }
 
    observe_command_event (entity, funcs, type, apm_command);
-   store_command_event_to_entities (entity, funcs, type, apm_command);
+   store_event_to_entities (entity, funcs.serialize, type, apm_command);
 }
 
 
@@ -705,34 +661,12 @@ set_command_succeeded_cb (mongoc_apm_callbacks_t *callbacks)
 {
    mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
 }
+typedef void (*set_func_t) (mongoc_apm_callbacks_t *);
 
-// Note: multiple invocations of this function is okay, since all it does
-// is set the appropriate pointer in `callbacks`, and the callback function(s)
-// being used is always the same for a given type.
-static void
-set_command_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
-{
-   typedef void (*set_func_t) (mongoc_apm_callbacks_t *);
-
-   typedef struct _command_to_cb_t {
-      const char *type;
-      set_func_t set;
-   } command_to_cb_t;
-
-   const command_to_cb_t commands[] = {
-      {.type = "commandStartedEvent", .set = set_command_started_cb},
-      {.type = "commandFailedEvent", .set = set_command_failed_cb},
-      {.type = "commandSucceededEvent", .set = set_command_succeeded_cb},
-      {.type = NULL, .set = NULL},
-   };
-
-   for (const command_to_cb_t *iter = commands; iter->type; ++iter) {
-      if (bson_strcasecmp (type, iter->type) == 0) {
-         iter->set (callbacks);
-         return;
-      }
-   }
-}
+typedef struct _event_to_cb_t {
+   const char *type;
+   set_func_t set;
+} event_to_cb_t;
 
 static void
 apm_server_heartbeat_callback (server_heartbeat_callback_funcs_t funcs, const char *type, const void *apm_command)
@@ -748,7 +682,7 @@ apm_server_heartbeat_callback (server_heartbeat_callback_funcs_t funcs, const ch
    }
 
    observe_server_heartbeat_event (entity, funcs, type, apm_command);
-   store_server_heartbeat_event_to_entities (entity, funcs, type, apm_command);
+   store_event_to_entities (entity, funcs.serialize, type, apm_command);
 }
 
 static void
@@ -817,24 +751,24 @@ set_server_heartbeat_failed_cb (mongoc_apm_callbacks_t *callbacks)
    mongoc_apm_set_server_heartbeat_failed_cb (callbacks, server_heartbeat_failed);
 }
 
+const event_to_cb_t server_heartbeat_events[] = {
+   {.type = "serverHeartbeatStartedEvent", .set = set_server_heartbeat_started_cb},
+   {.type = "serverHeartbeatSucceededEvent", .set = set_server_heartbeat_succeeded_cb},
+   {.type = "serverHeartbeatFailedEvent", .set = set_server_heartbeat_failed_cb},
+   {.type = NULL, .set = NULL},
+};
+
+const event_to_cb_t command_events[] = {
+   {.type = "commandStartedEvent", .set = set_command_started_cb},
+   {.type = "commandFailedEvent", .set = set_command_failed_cb},
+   {.type = "commandSucceededEvent", .set = set_command_succeeded_cb},
+   {.type = NULL, .set = NULL},
+};
+
 static void
-set_server_heartbeat_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
+set_event_callback (mongoc_apm_callbacks_t *callbacks, const char *type, const event_to_cb_t *event_map)
 {
-   typedef void (*set_func_t) (mongoc_apm_callbacks_t *);
-
-   typedef struct _server_heartbeat_to_cb_t {
-      const char *type;
-      set_func_t set;
-   } server_heartbeat_to_cb_t;
-
-   const server_heartbeat_to_cb_t server_heartbeats[] = {
-      {.type = "serverHeartbeatStartedEvent", .set = set_server_heartbeat_started_cb},
-      {.type = "serverHeartbeatSucceededEvent", .set = set_server_heartbeat_succeeded_cb},
-      {.type = "serverHeartbeatFailedEvent", .set = set_server_heartbeat_failed_cb},
-      {.type = NULL, .set = NULL},
-   };
-
-   for (const server_heartbeat_to_cb_t *iter = server_heartbeats; iter->type; ++iter) {
+   for (const event_to_cb_t *iter = event_map; iter->type; ++iter) {
       if (bson_strcasecmp (type, iter->type) == 0) {
          iter->set (callbacks);
          return;
@@ -906,7 +840,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                             iStrEqual ("commandSucceededEvent")),
                      do ({
                         const char *const type = bson_iter_utf8 (&bsonVisitIter, NULL);
-                        set_command_callback (callbacks, type);
+                        set_event_callback (callbacks, type, command_events);
                         add_observe_event (entity, type);
                      })),
                when (anyOf (iStrEqual ("serverHeartbeatStartedEvent"),
@@ -914,7 +848,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                             iStrEqual ("serverHeartbeatFailedEvent")),
                      do ({
                         const char *const type = bson_iter_utf8 (&bsonVisitIter, NULL);
-                        set_server_heartbeat_callback (callbacks, type);
+                        set_event_callback (callbacks, type, server_heartbeat_events);
                         add_observe_event (entity, type);
                      })),
                // Unsupported (but known) event names:
@@ -978,7 +912,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                                                    iStrEqual ("commandSucceededEvent")),
                                             do ({
                                                const char *const type = bson_iter_utf8 (&bsonVisitIter, NULL);
-                                               set_command_callback (callbacks, type);
+                                               set_event_callback (callbacks, type, command_events);
                                                add_store_event (entity, type, store_entity_id);
                                             })),
                                       when (eval (is_unsupported_event_type (bson_iter_utf8 (&bsonVisitIter, NULL))),
@@ -2420,9 +2354,6 @@ event_list_to_string (event_t *events)
       }
       if (eiter->awaited) {
          bson_string_append_printf (str, " awaited=%d", eiter->awaited);
-      }
-      if (eiter->duration_usec) {
-         bson_string_append_printf (str, " duration=%" PRId64, eiter->duration_usec);
       }
       if (eiter->command) {
          bson_string_append_printf (str, " sent %s", tmp_json (eiter->command));

@@ -3585,16 +3585,14 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
       // Count occurances of specified event
       for (eiter = entity->events; eiter; eiter = eiter->next) {
          if (strcmp (eiter->type, bson_iter_key (&iter)) == 0)
-            actual_count++;
+            if (++actual_count == *expected_count) {
+               ret = true;
+               goto done;
+            }
       }
 
-      if (*expected_count <= actual_count) {
-         ret = true;
-         goto done;
-      } else {
-         actual_count = 0;
-         _mongoc_usleep (1000000);
-      }
+      actual_count = 0;
+      _mongoc_usleep (1000000);
    }
 
 done:
@@ -3855,8 +3853,6 @@ operation_create_entities (test_t *test, operation_t *op, result_t *result, bson
       goto done;
    };
 
-
-   // TODO: move to helper function
    BSON_FOREACH (entities, iter)
    {
       bson_t entity_bson;
@@ -3960,6 +3956,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"loop", operation_loop},
       {"assertNumberConnectionsCheckedOut", operation_assert_number_connections_checked_out},
       {"waitForEvent", operation_wait_for_event},
+      {"createEntities", operation_create_entities},
 
       /* GridFS operations */
       {"delete", operation_delete},
@@ -3972,9 +3969,6 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"commitTransaction", operation_commit_transaction},
       {"withTransaction", operation_with_transaction},
       {"abortTransaction", operation_abort_transaction},
-
-      {"createEntities", operation_create_entities},
-
    };
    bool ret = false;
 
