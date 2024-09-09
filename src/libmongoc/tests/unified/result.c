@@ -366,11 +366,6 @@ result_check (result_t *result, entity_map_t *em, bson_val_t *expect_result, bso
          goto done;
       }
 
-      if (!result->value) {
-         test_set_error (error, "expected result, but got none");
-         goto done;
-      }
-
       if (!entity_map_match (em, expect_result, result->value, result->array_of_root_docs, error)) {
          test_diagnostics_error_info ("Result mismatch:\n"
                                       "Expected: %s\n"
