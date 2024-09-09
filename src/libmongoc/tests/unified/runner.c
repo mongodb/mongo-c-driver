@@ -1078,7 +1078,7 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
       }
    }
 
-   if (*expected_awaited != actual->awaited) {
+   if (expected_awaited && *expected_awaited != actual->awaited) {
       test_set_error (error, "expected awaited: %d, but got %d", *expected_awaited, actual->awaited);
       goto done;
    }
