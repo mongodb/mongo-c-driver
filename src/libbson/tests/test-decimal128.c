@@ -135,10 +135,10 @@ test_decimal128_to_string__regular (void)
    // 5192296858534827628530496329220095
    DECIMAL128_FROM_ULLS (full_house, 0x3040ffffffffffff, 0xffffffffffffffff);
 
-   // 0.0000010384593717069655257060992658440191
+   // 0.0000010384593717069655257060992658440191 (inexact rounding)
    DECIMAL128_FROM_ULLS (untruncated_significand, 0x2ff1ffffffffffff, 0xffffffffffffffff);
 
-   // -0.000001038459371706965525706099265844019
+   // -0.000001038459371706965525706099265844019 (inexact rounding)
    DECIMAL128_FROM_ULLS (truncated_significand, 0xaff1ffffffffffff, 0xffffffffffffffff);
 
    bson_decimal128_to_string (&one, bid_string);
@@ -444,6 +444,8 @@ test_decimal128_from_string__simple (void)
    bson_decimal128_t fractional_number;
    bson_decimal128_t leading_zeros;
    bson_decimal128_t leading_insignificant_zeros;
+   bson_decimal128_t untruncated_significand;
+   bson_decimal128_t truncated_significand;
 
    bson_decimal128_from_string ("1", &one);
    bson_decimal128_from_string ("-1", &negative_one);
@@ -458,6 +460,15 @@ test_decimal128_from_string__simple (void)
 
    bson_decimal128_from_string ("00012345678901234567", &leading_insignificant_zeros);
 
+
+   // Inexact Rounding Error
+   BSON_ASSERT (!bson_decimal128_from_string ("0.0000010384593717069655257060992658440191", &untruncated_significand));
+   BSON_ASSERT (!bson_decimal128_from_string ("-0.0000010384593717069655257060992658440191", &truncated_significand));
+
+   // OK
+   BSON_ASSERT (bson_decimal128_from_string ("0.000001038459371706965525706099265844019", &untruncated_significand));
+   BSON_ASSERT (bson_decimal128_from_string ("-0.000001038459371706965525706099265844019", &truncated_significand));
+
    BSON_ASSERT (decimal128_equal (&one, 0x3040000000000000, 0x0000000000000001));
    BSON_ASSERT (decimal128_equal (&negative_one, 0xb040000000000000, 0x0000000000000001));
    BSON_ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
@@ -469,6 +480,8 @@ test_decimal128_from_string__simple (void)
    BSON_ASSERT (decimal128_equal (&leading_zeros, 0x3032000000000000, 0x0000000000003039));
    BSON_ASSERT (decimal128_equal (&leading_insignificant_zeros, 0x3040000000000000, 0x002bdc545d6b4b87));
 
+   BSON_ASSERT (decimal128_equal (&untruncated_significand, 0x2ff2333333333333, 0x3333333333333333));
+   BSON_ASSERT (decimal128_equal (&truncated_significand, 0xaff2333333333333, 0x3333333333333333));
 
    bson_decimal128_from_string_w_len ("1", 1, &one);
    bson_decimal128_from_string_w_len ("-1", 2, &negative_one);
@@ -483,6 +496,18 @@ test_decimal128_from_string__simple (void)
 
    bson_decimal128_from_string_w_len ("00012345678901234567", 20, &leading_insignificant_zeros);
 
+   // Inexact Rounding Error
+   BSON_ASSERT (
+      !bson_decimal128_from_string_w_len ("0.0000010384593717069655257060992658440191", 42, &untruncated_significand));
+   BSON_ASSERT (
+      !bson_decimal128_from_string_w_len ("-0.0000010384593717069655257060992658440191", 43, &truncated_significand));
+
+   // OK
+   BSON_ASSERT (
+      bson_decimal128_from_string_w_len ("0.000001038459371706965525706099265844019", 41, &untruncated_significand));
+   BSON_ASSERT (
+      bson_decimal128_from_string_w_len ("-0.000001038459371706965525706099265844019", 42, &truncated_significand));
+
    BSON_ASSERT (decimal128_equal (&one, 0x3040000000000000, 0x0000000000000001));
    BSON_ASSERT (decimal128_equal (&negative_one, 0xb040000000000000, 0x0000000000000001));
    BSON_ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
@@ -493,6 +518,9 @@ test_decimal128_from_string__simple (void)
    BSON_ASSERT (decimal128_equal (&fractional_number, 0x3036000000000000, 0x0000000000003039));
    BSON_ASSERT (decimal128_equal (&leading_zeros, 0x3032000000000000, 0x0000000000003039));
    BSON_ASSERT (decimal128_equal (&leading_insignificant_zeros, 0x3040000000000000, 0x002bdc545d6b4b87));
+
+   BSON_ASSERT (decimal128_equal (&untruncated_significand, 0x2ff2333333333333, 0x3333333333333333));
+   BSON_ASSERT (decimal128_equal (&truncated_significand, 0xaff2333333333333, 0x3333333333333333));
 }
 
 
