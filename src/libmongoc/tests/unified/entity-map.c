@@ -374,10 +374,6 @@ observe_server_heartbeat_event (entity_t *entity,
       event->duration_usec = funcs.get_duration_usec (apm_command);
    }
 
-   if (funcs.get_reply) {
-      event->reply = bson_copy (funcs.get_reply (apm_command));
-   }
-
    LL_APPEND (entity->events, event);
 }
 
@@ -1908,7 +1904,10 @@ entity_destroy (entity_t *entity)
    BSON_ASSERT (entity->type);
 
    if (0 == strcmp ("client", entity->type)) {
-      mongoc_client_pool_push (entity->pool, (mongoc_client_t *) entity->value);
+      mongoc_client_t *client = NULL;
+
+      client = (mongoc_client_t *) entity->value;
+      mongoc_client_pool_push (entity->pool, client);
       mongoc_client_pool_destroy (entity->pool);
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
       mongoc_client_encryption_t *ce = NULL;
@@ -2425,6 +2424,8 @@ entity_map_disable_event_listeners (entity_map_t *em)
 
    LL_FOREACH (em->entities, eiter)
    {
-      eiter->callbacks_disabled = true;
+      if (0 == strcmp (eiter->type, "client")) {
+         eiter->callbacks_disabled = true;
+      }
    }
 }

@@ -3969,6 +3969,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"commitTransaction", operation_commit_transaction},
       {"withTransaction", operation_with_transaction},
       {"abortTransaction", operation_abort_transaction},
+
    };
    bool ret = false;
 
