@@ -181,7 +181,10 @@ functions:
           - -c
           - |
             if [[ ! -d drivers-evergreen-tools ]]; then
-                git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
+                git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
+                # Pin to commit in drivers-evergreen-tools to work around possible regression introduced in 57cadda5a5ea4ee272daa20cf402bdb58c5280e7.
+                cd drivers-evergreen-tools
+                git checkout 76ee1ac63ee55acaaf0aba0de67a565ac54b5127
             fi
     - command: subprocess.exec
       type: setup
