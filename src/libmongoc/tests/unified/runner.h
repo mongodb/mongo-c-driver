@@ -28,6 +28,7 @@
  * Runner Implementation" section of the Unified Test Format specification. */
 typedef struct {
    mongoc_client_t *internal_client;
+   mongoc_client_pool_t *internal_pool;
    semver_t server_version;
    /* topology_type may be "single", "replicaset", "sharded",
     * "sharded-replicaset", or "load-balanced". */

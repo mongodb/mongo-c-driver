@@ -338,7 +338,8 @@ test_runner_new (void)
    {
       mongoc_uri_t *const uri = test_framework_get_uri ();
 
-      test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
+      test_runner->internal_pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      test_runner->internal_client = mongoc_client_pool_pop (test_runner->internal_pool);
 
       /* In load balanced mode, the internal client must use the
        * SINGLE_LB_MONGOS_URI. */
@@ -356,13 +357,13 @@ test_runner_new (void)
    {
       mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new ();
       mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
-      mongoc_client_set_apm_callbacks (test_runner->internal_client, callbacks, test_runner);
+      mongoc_client_pool_set_apm_callbacks (test_runner->internal_pool, callbacks, test_runner);
       mongoc_apm_callbacks_destroy (callbacks);
    }
 
-   test_framework_set_ssl_opts (test_runner->internal_client);
+   test_framework_set_pool_ssl_opts (test_runner->internal_pool);
 
-   mongoc_client_set_error_api (test_runner->internal_client, MONGOC_ERROR_API_VERSION_2);
+   mongoc_client_pool_set_error_api (test_runner->internal_pool, MONGOC_ERROR_API_VERSION_2);
 
    test_runner->topology_type = get_topology_type (test_runner->internal_client);
    server_semver (test_runner->internal_client, &test_runner->server_version);
@@ -391,7 +392,8 @@ test_runner_new (void)
 static void
 test_runner_destroy (test_runner_t *test_runner)
 {
-   mongoc_client_destroy (test_runner->internal_client);
+   mongoc_client_pool_push (test_runner->internal_pool, test_runner->internal_client);
+   mongoc_client_pool_destroy (test_runner->internal_pool);
    _mongoc_array_destroy (&test_runner->server_ids);
    bson_destroy (test_runner->server_parameters);
    bson_free (test_runner);
