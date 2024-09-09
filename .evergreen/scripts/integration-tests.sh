@@ -29,6 +29,17 @@ DIR=$(dirname $0)
 # mongoc/.evergreen/scripts -> drivers-evergreen-tools/.evergreen/download-mongodb.sh
 . $DIR/../../../drivers-evergreen-tools/.evergreen/download-mongodb.sh
 
+# Set destination path for binary downloads to mongoc/mongodb/bin.
+export MONGODB_BINARIES
+case "$OS" in
+   cygwin*)
+      MONGODB_BINARIES=$(cygpath -m -a "$DIR/../../mongodb/bin")
+      ;;
+   *)
+      MONGODB_BINARIES="$DIR/../../mongodb/bin"
+      ;;
+esac
+
 get_distro
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
 DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT" "$MONGOSH_DOWNLOAD_URL" "$EXTRACT_MONGOSH"
