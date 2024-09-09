@@ -1908,6 +1908,7 @@ entity_destroy (entity_t *entity)
    BSON_ASSERT (entity->type);
 
    if (0 == strcmp ("client", entity->type)) {
+      mongoc_client_pool_push (entity->pool, (mongoc_client_t *) entity->value);
       mongoc_client_pool_destroy (entity->pool);
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
       mongoc_client_encryption_t *ce = NULL;
