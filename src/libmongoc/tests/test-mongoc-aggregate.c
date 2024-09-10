@@ -92,8 +92,80 @@ test_query_flags (void)
    }
 }
 
+typedef struct {
+   bson_t *cmd;
+   bson_mutex_t lock;
+} last_captured_t;
+
+static void
+command_started (const mongoc_apm_command_started_t *event)
+{
+   const bson_t *cmd = mongoc_apm_command_started_get_command (event);
+   last_captured_t *lc = mongoc_apm_command_started_get_context (event);
+   bson_mutex_lock (&lc->lock);
+   bson_destroy (lc->cmd);
+   lc->cmd = bson_copy (cmd);
+   bson_mutex_unlock (&lc->lock);
+}
+
+// `test_write_respects_read_prefs` tests that an aggregate with a write stage respects the original read preferences
+// when talking to >= 5.0 servers. This is a regression test for CDRIVER-5707.
+static void
+test_write_respects_read_prefs (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   last_captured_t lc = {0};
+   bson_mutex_init (&lc.lock);
+
+   mongoc_client_pool_t *pool = test_framework_new_default_client_pool ();
+   // Capture the most recent command-started event.
+   {
+      mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new ();
+      mongoc_apm_set_command_started_cb (cbs, command_started);
+      mongoc_client_pool_set_apm_callbacks (pool, cbs, &lc);
+      mongoc_apm_callbacks_destroy (cbs);
+   }
+
+   // Use agg with $out.
+   bson_t *pipeline = BCON_NEW ("pipeline", "[", "{", "$out", "foo", "}", "]");
+   mongoc_client_t *client = mongoc_client_pool_pop (pool);
+   mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+   mongoc_read_prefs_t *rp = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
+   mongoc_cursor_t *cursor = mongoc_collection_aggregate (coll, MONGOC_QUERY_NONE, pipeline, NULL /* opts */, rp);
+   // Iterate cursor to send `aggregate` command.
+   const bson_t *ignored;
+   ASSERT (!mongoc_cursor_next (cursor, &ignored));
+   bson_error_t error;
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   // Check that `aggregate` command contains $readPreference.
+   bson_t *cmd;
+   bson_mutex_lock (&lc.lock);
+   cmd = bson_copy (lc.cmd);
+   bson_mutex_unlock (&lc.lock);
+   ASSERT_MATCH (cmd, BSON_STR ({"$readPreference" : {"mode" : "secondaryPreferred"}}));
+
+   bson_destroy (cmd);
+   mongoc_read_prefs_destroy (rp);
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (pipeline);
+   mongoc_collection_destroy (coll);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   bson_destroy (lc.cmd);
+   bson_mutex_destroy (&lc.lock);
+}
+
 void
 test_aggregate_install (TestSuite *suite)
 {
    TestSuite_AddMockServerTest (suite, "/Aggregate/query_flags", test_query_flags);
+   TestSuite_AddFull (suite,
+                      "/Aggregate/write_respects_read_prefs",
+                      test_write_respects_read_prefs,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset,
+                      test_framework_skip_if_max_wire_version_less_than_13 /* require server 5.0+ */);
 }
