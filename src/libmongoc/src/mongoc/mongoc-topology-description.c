@@ -714,7 +714,7 @@ _check_any_server_less_than_wire_version_13 (const void *sd_, void *any_too_old_
 {
    const mongoc_server_description_t *sd = sd_;
    bool *any_too_old = any_too_old_;
-   if (sd->max_wire_version < WIRE_VERSION_5_0) {
+   if (sd->type != MONGOC_SERVER_UNKNOWN && sd->max_wire_version < WIRE_VERSION_5_0) {
       *any_too_old = true;
       return false /* Stop searching */;
    }
