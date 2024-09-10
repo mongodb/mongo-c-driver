@@ -590,14 +590,6 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
             continue;
          } else {
             /* TLS errors are set in _get_stream */
-            bson_error_t kms_error;
-            BSON_ASSERT (!_kms_ctx_check_error (kms_ctx, &kms_error, true));
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "%s. Failed to create KMS stream: %s",
-                            kms_error.message,
-                            endpoint);
             goto fail;
          }
       }
