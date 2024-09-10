@@ -282,8 +282,11 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
       } else {
          int32_t radix_position = significand_digits + exponent;
 
+         // Reserve space for null terminator.
+         const int available_bytes = BSON_DECIMAL128_STRING - 1;
+
          if (radix_position > 0) { /* non-zero digits before radix */
-            for (int32_t i = 0; i < radix_position && (str_out - str) < BSON_DECIMAL128_STRING; i++) {
+            for (int32_t i = 0; i < radix_position && (str_out - str) < available_bytes; i++) {
                *(str_out++) = *(significand_read++) + '0';
             }
          } else { /* leading zero before radix point */
@@ -296,7 +299,7 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
          }
 
          for (uint32_t i = 0; bson_cmp_greater_us (significand_digits - i, BSON_MAX (radix_position - 1, 0)) &&
-                              (str_out - str) < BSON_DECIMAL128_STRING;
+                              (str_out - str) < available_bytes;
               i++) {
             *(str_out++) = *(significand_read++) + '0';
          }
