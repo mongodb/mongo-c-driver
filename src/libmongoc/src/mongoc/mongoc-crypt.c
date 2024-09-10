@@ -590,6 +590,14 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
             continue;
          } else {
             /* TLS errors are set in _get_stream */
+            bson_error_t kms_error;
+            BSON_ASSERT (!_kms_ctx_check_error (kms_ctx, &kms_error, true));
+            bson_set_error (error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_SOCKET,
+                            "%s. Failed to create KMS stream: %s",
+                            kms_error.message,
+                            endpoint);
             goto fail;
          }
       }
@@ -601,8 +609,14 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          if (mongocrypt_kms_ctx_fail (kms_ctx)) {
             continue;
          } else {
-            bson_set_error (
-               error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to write to KMS stream: %s", endpoint);
+            bson_error_t kms_error;
+            BSON_ASSERT (!_kms_ctx_check_error (kms_ctx, &kms_error, true));
+            bson_set_error (error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_SOCKET,
+                            "%s. Failed to write to KMS stream: %s",
+                            kms_error.message,
+                            endpoint);
             goto fail;
          }
       }
@@ -624,18 +638,15 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
             if (mongocrypt_kms_ctx_fail (kms_ctx)) {
                break; // Stop reading reply.
             } else {
-               if (read_ret == -1) {
-                  bson_set_error (error,
-                                  MONGOC_ERROR_STREAM,
-                                  MONGOC_ERROR_STREAM_SOCKET,
-                                  "failed to read from KMS stream: %d",
-                                  errno);
-                  goto fail;
-               } else {
-                  bson_set_error (
-                     error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "unexpected EOF from KMS stream");
-                  goto fail;
-               }
+               bson_error_t kms_error;
+               BSON_ASSERT (!_kms_ctx_check_error (kms_ctx, &kms_error, true));
+               bson_set_error (error,
+                               MONGOC_ERROR_STREAM,
+                               MONGOC_ERROR_STREAM_SOCKET,
+                               "%s. Failed to read from KMS stream to: %s",
+                               kms_error.message,
+                               endpoint);
+               goto fail;
             }
          }
          mongocrypt_binary_destroy (http_reply);
