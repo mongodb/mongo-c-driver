@@ -726,7 +726,7 @@ _check_any_server_less_than_wire_version_13 (const void *sd_, void *any_too_old_
  * @brief Calculate the read mode that we should be using, based on what was
  * requested and what is available in the topology.
  *
- * Per the CRUD spec, if the requested read mode is *not* primary, and *any*
+ * Per the CRUD spec, if the requested read mode is *not* primary, and *any* available
  * server in the topology has a wire version < server v5.0, we must override the
  * read mode preference with "primary." Server v5.0 indicates support on a
  * secondary server for using aggregate pipelines that contain writing stages
@@ -751,7 +751,7 @@ _must_use_primary (const mongoc_topology_description_t *td,
       /* Maintain the requested read mode if it is a regular read operation */
       return false;
    case MONGOC_SS_AGGREGATE_WITH_WRITE: {
-      /* Check if any of the servers are too old to support the
+      /* Check if any of the available servers are too old to support the
        * aggregate-with-write on a secondary server */
       bool any_too_old = false;
       mongoc_set_for_each_const (mc_tpld_servers_const (td), _check_any_server_less_than_wire_version_13, &any_too_old);
