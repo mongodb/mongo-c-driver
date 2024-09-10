@@ -966,8 +966,8 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    pool = test_framework_client_pool_new_from_uri (uri, api);
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, entity);
    test_framework_set_pool_ssl_opts (pool);
-   client = mongoc_client_pool_pop (pool);
    mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
+   client = mongoc_client_pool_pop (pool);
    entity->value = client;
    entity->pool = pool;
 
