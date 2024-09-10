@@ -617,6 +617,7 @@ entity_t *
 entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 {
    entity_t *entity = NULL;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client = NULL;
    mongoc_uri_t *uri = NULL;
    bool ret = false;
@@ -778,11 +779,14 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, REDUCED_HEARTBEAT_FREQUENCY_MS);
    }
 
-   client = test_framework_client_new_from_uri (uri, api);
-   test_framework_set_ssl_opts (client);
-   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+
+   pool = test_framework_client_pool_new_from_uri (uri, api);
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, entity);
+   test_framework_set_pool_ssl_opts (pool);
+   mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
+   client = mongoc_client_pool_pop (pool);
    entity->value = client;
-   mongoc_client_set_apm_callbacks (client, callbacks, entity);
+   entity->pool = pool;
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
@@ -1720,7 +1724,10 @@ entity_destroy (entity_t *entity)
       mongoc_client_t *client = NULL;
 
       client = (mongoc_client_t *) entity->value;
-      mongoc_client_destroy (client);
+
+      // Pool destroy will destroy all clients inside of the pool
+      mongoc_client_pool_push (entity->pool, client);
+      mongoc_client_pool_destroy (entity->pool);
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
       mongoc_client_encryption_t *ce = NULL;
 

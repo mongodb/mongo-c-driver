@@ -57,6 +57,7 @@ typedef struct _entity_t {
    bson_t *lsid;
    char *session_client_id;
    int callbacks_disabled;
+   mongoc_client_pool_t *pool;
 } entity_t;
 
 struct _entity_findcursor_t;
