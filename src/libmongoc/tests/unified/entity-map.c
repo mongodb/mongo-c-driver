@@ -161,6 +161,7 @@ entity_new (entity_map_t *em, const char *type)
    entity = bson_malloc0 (sizeof (entity_t));
    entity->type = bson_strdup (type);
    entity->entity_map = em;
+   entity->callbacks_disabled = 0;
    _mongoc_array_init (&entity->observe_events, sizeof (observe_event_t));
    _mongoc_array_init (&entity->store_events, sizeof (store_event_t));
    return entity;
@@ -478,6 +479,11 @@ apm_command_callback (command_callback_funcs_t funcs, const char *type, const vo
 
    BSON_ASSERT (funcs.get_context);
    entity_t *const entity = (entity_t *) funcs.get_context (apm_command);
+
+   // Check if callbacks are disabled
+   if (bson_atomic_int_fetch (&entity->callbacks_disabled, bson_memory_order_relaxed)) {
+      return;
+   }
 
    observe_event (entity, funcs, type, apm_command);
    store_event_to_entities (entity, funcs, type, apm_command);
@@ -2228,9 +2234,7 @@ entity_map_disable_event_listeners (entity_map_t *em)
    LL_FOREACH (em->entities, eiter)
    {
       if (0 == strcmp (eiter->type, "client")) {
-         mongoc_client_t *client = (mongoc_client_t *) eiter->value;
-
-         mongoc_client_set_apm_callbacks (client, NULL, NULL);
+         bson_atomic_int_fetch_add (&eiter->callbacks_disabled, 1, bson_memory_order_acquire);
       }
    }
 }

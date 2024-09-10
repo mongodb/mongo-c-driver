@@ -56,6 +56,7 @@ typedef struct _entity_t {
    mongoc_array_t store_events;      // store_event_t [N].
    bson_t *lsid;
    char *session_client_id;
+   int callbacks_disabled;
 } entity_t;
 
 struct _entity_findcursor_t;
