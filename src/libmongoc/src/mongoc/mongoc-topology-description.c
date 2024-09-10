@@ -1015,7 +1015,8 @@ mongoc_topology_description_select (const mongoc_topology_description_t *topolog
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
       mongoc_server_description_t const *const sd = mongoc_set_get_item_const (mc_tpld_servers_const (topology), 0);
 
-      if (optype == MONGOC_SS_AGGREGATE_WITH_WRITE && sd->max_wire_version < WIRE_VERSION_5_0) {
+      if (optype == MONGOC_SS_AGGREGATE_WITH_WRITE && sd->type != MONGOC_SERVER_UNKNOWN &&
+          sd->max_wire_version < WIRE_VERSION_5_0) {
          /* The single server may be part of an unseen replica set that may not
           * support aggr-with-write operations on secondaries. Force the read
           * preference to use a primary. */
