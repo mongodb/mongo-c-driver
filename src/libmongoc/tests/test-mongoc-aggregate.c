@@ -115,6 +115,7 @@ test_write_respects_read_prefs (void *unused)
 {
    BSON_UNUSED (unused);
 
+   bson_error_t error;
    last_captured_t lc = {0};
    bson_mutex_init (&lc.lock);
 
@@ -127,31 +128,42 @@ test_write_respects_read_prefs (void *unused)
       mongoc_apm_callbacks_destroy (cbs);
    }
 
-   // Use agg with $out.
-   bson_t *pipeline = BCON_NEW ("pipeline", "[", "{", "$out", "foo", "}", "]");
-   mongoc_client_t *client = mongoc_client_pool_pop (pool);
-   mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
-   mongoc_read_prefs_t *rp = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
-   mongoc_cursor_t *cursor = mongoc_collection_aggregate (coll, MONGOC_QUERY_NONE, pipeline, NULL /* opts */, rp);
-   // Iterate cursor to send `aggregate` command.
-   const bson_t *ignored;
-   ASSERT (!mongoc_cursor_next (cursor, &ignored));
-   bson_error_t error;
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   // Create database 'db' on separate client to avoid "database 'db' not found" error.
+   {
+      mongoc_client_t *client = test_framework_new_default_client ();
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson (BSON_STR ({"x" : 1})), NULL, NULL, &error), error);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+
+   // Do an 'aggregate' with '$out'.
+   {
+      bson_t *pipeline = tmp_bson (BSON_STR ({"pipeline" : [ {"$out" : "foo"} ]}));
+      mongoc_client_t *client = mongoc_client_pool_pop (pool);
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_read_prefs_t *rp = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
+      mongoc_cursor_t *cursor = mongoc_collection_aggregate (coll, MONGOC_QUERY_NONE, pipeline, NULL /* opts */, rp);
+      // Iterate cursor to send `aggregate` command.
+      const bson_t *ignored;
+      ASSERT (!mongoc_cursor_next (cursor, &ignored));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      mongoc_read_prefs_destroy (rp);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (coll);
+      mongoc_client_pool_push (pool, client);
+   }
 
    // Check that `aggregate` command contains $readPreference.
-   bson_t *cmd;
-   bson_mutex_lock (&lc.lock);
-   cmd = bson_copy (lc.cmd);
-   bson_mutex_unlock (&lc.lock);
-   ASSERT_MATCH (cmd, BSON_STR ({"$readPreference" : {"mode" : "secondaryPreferred"}}));
+   {
+      bson_t *got;
+      bson_mutex_lock (&lc.lock);
+      got = bson_copy (lc.cmd);
+      bson_mutex_unlock (&lc.lock);
+      ASSERT_MATCH (got, BSON_STR ({"$readPreference" : {"mode" : "secondaryPreferred"}}));
+      bson_destroy (got);
+   }
 
-   bson_destroy (cmd);
-   mongoc_read_prefs_destroy (rp);
-   mongoc_cursor_destroy (cursor);
-   bson_destroy (pipeline);
-   mongoc_collection_destroy (coll);
-   mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
    bson_destroy (lc.cmd);
    bson_mutex_destroy (&lc.lock);
@@ -166,6 +178,6 @@ test_aggregate_install (TestSuite *suite)
                       test_write_respects_read_prefs,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_replset,
+                      test_framework_skip_if_single /* $readPreference is not sent for single servers */,
                       test_framework_skip_if_max_wire_version_less_than_13 /* require server 5.0+ */);
 }
