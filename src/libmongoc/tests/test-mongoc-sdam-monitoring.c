@@ -969,7 +969,7 @@ typedef struct {
    smm_event_type_t type;
 } smm_event_t;
 
-// `smm_t` is a test fixture for serverMonitoringMode tests.
+// `smm_t` is a test fixture for serverMonitoringMode tests
 #define MAX_EVENTS 3
 typedef struct {
    bson_mutex_t lock;
@@ -1030,7 +1030,7 @@ smm_new (const char *mode)
    {
       mongoc_uri_t *uri = test_framework_get_uri ();
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500); // To speed up test.
-      mongoc_uri_set_option_as_utf8 (uri, "serverMonitoringMode", mode);
+      mongoc_uri_set_server_monitoring_mode (uri, mode);
       t->pool = mongoc_client_pool_new (uri);
       test_framework_set_pool_ssl_opts (t->pool);
       mongoc_uri_destroy (uri);
@@ -1110,16 +1110,15 @@ smm_destroy (smm_t *t)
 // The spec test needs a client pool for stream monitoring. The unified test runner only uses single-threaded
 // clients.
 static void
-test_serverMonitoringMode (void *unused)
+test_serverMonitoringMode (void)
 {
-   BSON_UNUSED (unused);
-
    if (test_framework_is_replset ()) {
       printf ("Test is skipped. SDAM events are non-deterministic when monitoring multiple servers.");
       return;
    }
 
    smm_t *t = NULL;
+   mongoc_handshake_t *md = _mongoc_handshake_get ();
 
    if (test_framework_get_server_version () >= test_framework_str_to_version ("4.4.0")) {
       printf ("'connect with serverMonitoringMode=auto >=4.4' ... begin\n");
@@ -1138,7 +1137,30 @@ test_serverMonitoringMode (void *unused)
          smm_assert (t, true);
       }
       smm_destroy (t);
-      printf ("'connect with serverMonitoringMode=auto >=4.4' ... end\n");
+      printf ("'connect with serverMonitoringMode=stream >=4.4' ... end\n");
+
+      // Additional tests checking behavior when in a FAAS env
+      printf ("'connect with serverMonitoringMode=auto >=4.4 and in FAAS env' ... begin\n");
+      t = smm_new ("auto");
+      md->env = MONGOC_HANDSHAKE_ENV_AWS;
+      ASSERT (smm_wait (t, 3));
+      {
+         smm_assert (t, false);
+      }
+      smm_destroy (t);
+      printf ("'connect with serverMonitoringMode=auto >=4.4 and in FAAS env' ... end\n");
+
+      printf ("'connect with serverMonitoringMode=stream >=4.4 and in FAAS env' ... begin\n");
+      t = smm_new ("stream");
+
+      ASSERT (smm_wait (t, 3));
+      {
+         smm_assert (t, true);
+      }
+      smm_destroy (t);
+      printf ("'connect with serverMonitoringMode=stream >=4.4 and in FAAS env' ... end\n");
+
+      md->env = MONGOC_HANDSHAKE_ENV_NONE;
    }
 
    if (test_framework_get_server_version () <= test_framework_str_to_version ("4.2.99")) {
@@ -1199,10 +1221,6 @@ test_sdam_monitoring_install (TestSuite *suite)
       suite, "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns", test_heartbeat_fails_dns_pooled);
    TestSuite_AddMockServerTest (
       suite, "/server_discovery_and_monitoring/monitoring/no_duplicates", test_no_duplicates, NULL, NULL);
-   TestSuite_AddFull (suite,
-                      "/server_discovery_and_monitoring/monitoring/serverMonitoringMode",
-                      test_serverMonitoringMode,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      NULL);
+   TestSuite_AddLive (
+      suite, "/server_discovery_and_monitoring/monitoring/serverMonitoringMode", test_serverMonitoringMode);
 }
