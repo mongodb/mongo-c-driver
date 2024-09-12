@@ -1031,7 +1031,7 @@ smm_new (const char *mode)
       mongoc_uri_t *uri = test_framework_get_uri ();
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500); // To speed up test.
       mongoc_uri_set_server_monitoring_mode (uri, mode);
-      t->pool = mongoc_client_pool_new (uri);
+      t->pool = test_framework_client_pool_new_from_uri (uri, NULL);
       test_framework_set_pool_ssl_opts (t->pool);
       mongoc_uri_destroy (uri);
    }
