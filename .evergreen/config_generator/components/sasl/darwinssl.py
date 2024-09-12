@@ -20,7 +20,7 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('macos-1100', 'clang', None, 'cyrus', ['auth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('macos-1100', 'clang', None, 'cyrus', ['auth'], ['server'], ['4.0', '4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -55,9 +55,7 @@ def tasks():
 
 
 def variants():
-    expansions = {
-        'DEBUG': 'ON'
-    }
+    expansions = {}
 
     return [
         BuildVariant(

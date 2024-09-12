@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ typedef bool (*_mongoc_rr_resolver_fn) (const char *hostname,
                                         mongoc_rr_type_t rr_type,
                                         mongoc_rr_data_t *rr_data,
                                         size_t initial_buffer_size,
+                                        bool prefer_tcp,
                                         bson_error_t *error);
 
 /**
@@ -127,8 +128,10 @@ typedef struct _mongoc_topology_t {
    int64_t min_heartbeat_frequency_msec;
 
    /* Minimum of SRV record TTLs, but no lower than 60 seconds.
-    * May be zero for non-SRV/non-MongoS topology. */
-   int64_t srv_polling_rescan_interval_ms;
+    * May be zero for non-SRV/non-MongoS topology.
+    * DO NOT access directly: use the accessor methods to get/set the value.
+    */
+   int64_t _atomic_srv_polling_rescan_interval_ms;
    int64_t srv_polling_last_scan_ms;
    /* For multi-threaded, srv polling occurs in a separate thread. */
    bson_thread_t srv_polling_thread;
@@ -217,6 +220,11 @@ typedef struct _mongoc_topology_t {
    // `mongoc_client_set_usleep_impl`.
    mongoc_usleep_func_t usleep_fn;
    void *usleep_data;
+
+   // `srv_prefer_tcp` determines if DNS lookup for SRV tries TCP first instead of UDP.
+   // DNS implementations are expected to try UDP first, then retry with TCP if the UDP response indicates truncation.
+   // Some DNS servers truncate UDP responses without setting the truncated (TC) flag. This may result in no TCP retry.
+   bool srv_prefer_tcp;
 } mongoc_topology_t;
 
 mongoc_topology_t *
@@ -225,7 +233,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded);
 void
 mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
                                    mongoc_topology_description_t *td,
-                                   mongoc_apm_callbacks_t *callbacks,
+                                   mongoc_apm_callbacks_t const *callbacks,
                                    void *context);
 
 void
@@ -434,12 +442,23 @@ mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
 void
 _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology, _mongoc_rr_resolver_fn rr_resolver);
 
-/* _mongoc_topology_set_srv_polling_rescan_interval_ms is called by tests to
- * shorten the rescan interval.
- * Callers should call this before monitoring starts.
+/**
+ * @brief Thread-safe update the SRV polling rescan interval on the given topology
  */
-void
-_mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val);
+static BSON_INLINE void
+_mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val)
+{
+   bson_atomic_int64_exchange (&topology->_atomic_srv_polling_rescan_interval_ms, val, bson_memory_order_seq_cst);
+}
+
+/**
+ * @brief Thread-safe get the SRV polling interval
+ */
+static BSON_INLINE int64_t
+_mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *topology)
+{
+   return bson_atomic_int64_fetch (&topology->_atomic_srv_polling_rescan_interval_ms, bson_memory_order_seq_cst);
+}
 
 /**
  * @brief Return the latest connection generation for the server_id and/or

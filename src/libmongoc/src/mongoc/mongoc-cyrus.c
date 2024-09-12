@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,8 @@ sasl_verify_type_to_str (sasl_verify_type_t type)
 int
 _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t type)
 {
+   BSON_UNUSED (context);
+
    TRACE ("Attempting to load file: `%s`. Type is %s\n", file, sasl_verify_type_to_str (type));
 
 #ifdef _WIN32
@@ -173,12 +175,14 @@ _mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t
 void
 _mongoc_cyrus_init (mongoc_cyrus_t *sasl)
 {
+   MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_BEGIN
    sasl_callback_t callbacks[] = {{SASL_CB_AUTHNAME, SASL_CALLBACK_FN (_mongoc_cyrus_get_user), sasl},
                                   {SASL_CB_USER, SASL_CALLBACK_FN (_mongoc_cyrus_get_user), sasl},
                                   {SASL_CB_PASS, SASL_CALLBACK_FN (_mongoc_cyrus_get_pass), sasl},
                                   {SASL_CB_CANON_USER, SASL_CALLBACK_FN (_mongoc_cyrus_canon_user), sasl},
                                   {SASL_CB_VERIFYFILE, SASL_CALLBACK_FN (_mongoc_cyrus_verifyfile_cb), NULL},
                                   {SASL_CB_LIST_END}};
+   MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_END
 
    BSON_ASSERT (sasl);
 

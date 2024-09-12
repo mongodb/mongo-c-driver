@@ -75,8 +75,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
       BEFORE PUBLIC
-      "${SOURCE_DIR}/src/zlib-1.2.13"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.13"
+      "${SOURCE_DIR}/src/zlib-1.3.1"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
    )
    # Disable all warnings for compiling Zlib
    target_compile_options (zlib_obj PRIVATE -w)
@@ -84,8 +84,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.2.13"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.13"
+      "${SOURCE_DIR}/src/zlib-1.3.1"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
    )
 endif ()
 
@@ -497,10 +497,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.10.0)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.11.0)
       message (STATUS "  libmongocrypt found at ${mongocrypt_DIR}")
       message (STATUS "  libmongocrypt version ${mongocrypt_VERSION} found")
-      message (STATUS "  libmongocrypt version 1.10.0 is required to enable In-Use Encryption Support.")
+      message (STATUS "  libmongocrypt version 1.11.0 is required to enable In-Use Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -530,6 +530,21 @@ if (NOT MONGOC_HAVE_SS_FAMILY)
    set (MONGOC_HAVE_SS_FAMILY 0)
 else ()
    set (MONGOC_HAVE_SS_FAMILY 1)
+endif ()
+
+# Check if BCryptDeriveKeyPBKDF2 is defined in bcrypt.h
+if (WIN32 AND MONGOC_ENABLE_CRYPTO_CNG)
+   cmake_push_check_state()
+   list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_WIN32_WINNT=0x0601)
+   list(APPEND CMAKE_REQUIRED_LIBRARIES Bcrypt.lib)
+   check_symbol_exists (BCryptDeriveKeyPBKDF2 "windows.h;bcrypt.h" HAVE_BCRYPT_PBKDF2)
+   cmake_pop_check_state()
+endif ()
+
+if (HAVE_BCRYPT_PBKDF2)
+   set (MONGOC_HAVE_BCRYPT_PBKDF2 1)
+else ()
+   set (MONGOC_HAVE_BCRYPT_PBKDF2 0)
 endif ()
 
 
@@ -1124,7 +1139,7 @@ if (MONGOC_ENABLE_SASL_CYRUS)
 endif ()
 
 if (ENABLE_TESTS)
-   add_library (test-libmongoc-lib STATIC ${test-libmongoc-sources})
+   add_library (test-libmongoc-lib STATIC EXCLUDE_FROM_ALL ${test-libmongoc-sources})
    if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
       message (STATUS "Disabling warning C4756 for VS 2013 and older")
       # Macro constant INFINITY triggers constant arithmetic overflow warnings in
@@ -1151,7 +1166,9 @@ if (ENABLE_TESTS)
    )
 
    function (mongoc_add_test test)
-      add_executable (${test} ${ARGN})
+      add_executable (${test} EXCLUDE_FROM_ALL ${ARGN})
+      add_dependencies (mongo_c_driver_tests ${test})
+
       target_link_libraries (${test}
          PUBLIC
             $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
@@ -1195,12 +1212,13 @@ endif ()
 
 if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    function (mongoc_add_example example)
-      add_executable (${example} ${ARGN})
+      add_executable (${example} EXCLUDE_FROM_ALL ${ARGN})
+      add_dependencies (mongo_c_driver_examples ${example})
+
       target_link_libraries (${example} mongoc_shared ${LIBRARIES})
       if (WIN32)
          target_link_libraries (${example} shlwapi)
       endif ()
-      set (EXAMPLES ${EXAMPLES} ${example})
    endfunction ()
 
    # examples/
@@ -1266,6 +1284,13 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    mongoc_add_example (appending ${PROJECT_SOURCE_DIR}/examples/tutorial/appending.c)
 endif ()
 
+if (ENABLE_TESTS AND ENABLE_SHARED AND MONGOC_ENABLE_SSL AND NOT WIN32)
+   # Add benchmarks to measure opening many TLS connections.
+   # Benchmarks require SSL, and do not build on Windows.
+   add_executable (benchmark-tls-pooled ${PROJECT_SOURCE_DIR}/tests/benchmark-tls-pooled.c)
+   target_link_libraries (benchmark-tls-pooled mongoc_shared ${LIBRARIES})
+endif ()
+
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
@@ -1286,7 +1311,7 @@ set (MONGOC_HEADER_INSTALL_DIR
 )
 
 install (
-   TARGETS ${TARGETS_TO_INSTALL} ${EXAMPLES}
+   TARGETS ${TARGETS_TO_INSTALL}
    EXPORT mongoc-targets
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

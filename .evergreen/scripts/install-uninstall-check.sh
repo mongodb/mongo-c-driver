@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
@@ -11,6 +12,10 @@ DIR=$(dirname $0)
 CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
 SRCROOT=$(pwd)
+
+# Use ccache if able.
+. $DIR/find-ccache.sh
+find_ccache_and_export_vars "$(pwd)" || true
 
 SCRATCH_DIR=$(pwd)/.scratch
 rm -rf "$SCRATCH_DIR"
@@ -47,10 +52,11 @@ else
   BSON_ONLY_OPTION="-DENABLE_MONGOC=ON"
 fi
 
-# Allow reuse of ccache compilation results between different build directories.
-export CCACHE_BASEDIR CCACHE_NOHASHDIR
-CCACHE_BASEDIR="$SCRATCH_DIR"
-CCACHE_NOHASHDIR=1
+# Use ccache if able.
+if [[ -f $DIR/find-ccache.sh ]]; then
+  . $DIR/find-ccache.sh
+  find_ccache_and_export_vars "$SCRATCH_DIR" || true
+fi
 
 $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $BSON_ONLY_OPTION "$SCRATCH_DIR"
 $CMAKE --build .

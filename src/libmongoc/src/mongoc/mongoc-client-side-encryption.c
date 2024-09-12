@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -424,7 +424,14 @@ struct _mongoc_client_encryption_encrypt_range_opts_t {
       bson_value_t value;
       bool set;
    } max;
-   int64_t sparsity;
+   struct {
+      int32_t value;
+      bool set;
+   } trim_factor;
+   struct {
+      int64_t value;
+      bool set;
+   } sparsity;
    struct {
       int32_t value;
       bool set;
@@ -550,11 +557,21 @@ mongoc_client_encryption_encrypt_range_opts_new (void)
 }
 
 void
+mongoc_client_encryption_encrypt_range_opts_set_trim_factor (mongoc_client_encryption_encrypt_range_opts_t *range_opts,
+                                                             int32_t trim_factor)
+{
+   BSON_ASSERT_PARAM (range_opts);
+   range_opts->trim_factor.set = true;
+   range_opts->trim_factor.value = trim_factor;
+}
+
+void
 mongoc_client_encryption_encrypt_range_opts_set_sparsity (mongoc_client_encryption_encrypt_range_opts_t *range_opts,
                                                           int64_t sparsity)
 {
    BSON_ASSERT_PARAM (range_opts);
-   range_opts->sparsity = sparsity;
+   range_opts->sparsity.set = true;
+   range_opts->sparsity.value = sparsity;
 }
 
 void
@@ -612,6 +629,7 @@ copy_range_opts (const mongoc_client_encryption_encrypt_range_opts_t *opts)
       opts_new->precision.set = true;
    }
    opts_new->sparsity = opts->sparsity;
+   opts_new->trim_factor = opts->trim_factor;
    return opts_new;
 }
 
@@ -988,8 +1006,11 @@ append_bson_range_opts (bson_t *bson_range_opts, const mongoc_client_encryption_
    if (opts->range_opts->precision.set) {
       BSON_ASSERT (BSON_APPEND_INT32 (bson_range_opts, "precision", opts->range_opts->precision.value));
    }
-   if (opts->range_opts->sparsity) {
-      BSON_ASSERT (BSON_APPEND_INT64 (bson_range_opts, "sparsity", opts->range_opts->sparsity));
+   if (opts->range_opts->sparsity.set) {
+      BSON_ASSERT (BSON_APPEND_INT64 (bson_range_opts, "sparsity", opts->range_opts->sparsity.value));
+   }
+   if (opts->range_opts->trim_factor.set) {
+      BSON_ASSERT (BSON_APPEND_INT32 (bson_range_opts, "trimFactor", opts->range_opts->trim_factor.value));
    }
 }
 

@@ -20,7 +20,7 @@ mongohouse_test_operation_cb (json_test_ctx_t *ctx, const bson_t *test, const bs
 }
 
 static void
-test_mongohouse_cb (bson_t *scenario)
+test_mongohouse_cb (void *scenario)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
 

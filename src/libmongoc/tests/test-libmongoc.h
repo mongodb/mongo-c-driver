@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -283,5 +283,9 @@ test_framework_skip_if_serverless (void);
 
 bool
 test_framework_is_loadbalanced (void);
+
+// `test_framework_skip_if_no_server_ssl` skips if test runner was not told to connect to the server with SSL.
+int
+test_framework_skip_if_no_server_ssl (void);
 
 #endif

@@ -255,6 +255,14 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "christian@realm");
    mongoc_uri_destroy (uri);
 
+   /* should recognize a question mark in the userpass instead of mistaking it for the beginning of options */
+   uri = mongoc_uri_new ("mongodb://us?r:pa?s@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1");
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_username (uri), "us?r");
+   ASSERT_CMPSTR (mongoc_uri_get_password (uri), "pa?s");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
+   mongoc_uri_destroy (uri);
+
    /* should fail on invalid escaped characters */
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://u%ser:pwd@localhost:27017");

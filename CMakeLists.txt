@@ -91,10 +91,10 @@ mongo_bool_setting(ENABLE_DEBUG_ASSERTIONS "Build library with runtime debug ass
 include(Sanitizers)
 
 # Toggle optional components:
-mongo_bool_setting(ENABLE_TESTS "Build MongoDB C Driver tests")
-mongo_bool_setting(ENABLE_EXAMPLES "Build MongoDB C Driver examples")
-mongo_bool_setting(ENABLE_MAN_PAGES "Build the manual pages" DEFAULT VALUE OFF)
-mongo_bool_setting(ENABLE_HTML_DOCS "Build the HTML documentation" DEFAULT VALUE OFF)
+mongo_bool_setting(ENABLE_TESTS "Enable building MongoDB C Driver tests")
+mongo_bool_setting(ENABLE_EXAMPLES "Enable building MongoDB C Driver examples")
+mongo_bool_setting(ENABLE_MAN_PAGES "Enable building the manual pages" DEFAULT VALUE OFF)
+mongo_bool_setting(ENABLE_HTML_DOCS "Enable building the HTML documentation" DEFAULT VALUE OFF)
 mongo_bool_setting(ENABLE_UNINSTALL "Generate an 'uninstall' script and an 'uninstall' build target")
 mongo_bool_setting(ENABLE_SRV "Enable support for mongodb+srv URIs.")
 
@@ -315,9 +315,6 @@ if(ENABLE_MAINTAINER_FLAGS)
    )
 endif()
 
-# Enable CCache, if possible
-include (CCache)
-
 # Link with LLD, if possible
 if (NOT MSVC)
    include (LLDLinker)
@@ -424,6 +421,10 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
    list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_DARWIN_C_SOURCE)
 endif ()
 
+# Convenience targets to build all tests or all examples.
+add_custom_target(mongo_c_driver_tests)
+add_custom_target(mongo_c_driver_examples)
+
 add_subdirectory (src/common)
 
 if (NOT USING_SYSTEM_BSON)
@@ -454,21 +455,21 @@ if (ENABLE_MONGOC)
    )
 
    set (ZLIB_SOURCES
-      ${SOURCE_DIR}/src/zlib-1.2.13/adler32.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/crc32.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/deflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/infback.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/inffast.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/inflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/inftrees.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/trees.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/zutil.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/compress.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/uncompr.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/gzclose.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/gzlib.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/gzread.c
-      ${SOURCE_DIR}/src/zlib-1.2.13/gzwrite.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/adler32.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/crc32.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/deflate.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/infback.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/inffast.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/inflate.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/inftrees.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/trees.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/zutil.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/compress.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/uncompr.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/gzclose.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/gzlib.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/gzread.c
+      ${SOURCE_DIR}/src/zlib-1.3.1/gzwrite.c
    )
 
    set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")

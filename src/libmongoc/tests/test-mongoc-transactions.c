@@ -220,7 +220,7 @@ static test_skip_t skips[] = {
 
 
 static void
-test_transactions_cb (bson_t *scenario)
+test_transactions_cb (void *scenario)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
 

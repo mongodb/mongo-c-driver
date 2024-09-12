@@ -7,7 +7,7 @@ set -o errexit
 #
 
 #
-# Copyright 2018 MongoDB, Inc.
+# Copyright 2009-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ set -o errexit
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ]; then
-    echo "Usage: ./.evergreen/scripts/build_snapshot_rpm.sh"
+    echo "Usage: .evergreen/scripts/build_snapshot_rpm.sh"
     echo ""
     echo "  This script is used to build a .rpm package directly from a snapshot of the"
     echo "  current repository."
@@ -39,7 +39,7 @@ done
 
 package=mongo-c-driver
 spec_file=../mongo-c-driver.spec
-config=${MOCK_TARGET_CONFIG:=fedora-38-aarch64}
+config=${MOCK_TARGET_CONFIG:=fedora-40-aarch64}
 
 if [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/rpmspec ]; then
   echo "Missing the rpmbuild or rpmspec utility from the rpm-build package"

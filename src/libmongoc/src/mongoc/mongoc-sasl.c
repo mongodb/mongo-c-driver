@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,7 +165,9 @@ _mongoc_sasl_get_canonicalized_name (mongoc_stream_t *node_stream, /* IN */
       if (sock) {
          canonicalized = mongoc_socket_getnameinfo (sock);
          if (canonicalized) {
-            bson_snprintf (name, namelen, "%s", canonicalized);
+            // Truncation is OK.
+            int req = bson_snprintf (name, namelen, "%s", canonicalized);
+            BSON_ASSERT (req > 0);
             bson_free (canonicalized);
             RETURN (true);
          }

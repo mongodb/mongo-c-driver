@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 
+#include "bson/bson.h"
 #include "mongoc-aggregate-private.h"
 #include "mongoc-bulk-operation.h"
 #include "mongoc-bulk-operation-private.h"
@@ -766,57 +767,49 @@ mongoc_collection_estimated_document_count (mongoc_collection_t *coll,
                                             bson_t *reply,
                                             bson_error_t *error)
 {
-   bson_iter_t iter;
-   int64_t count = -1;
-   bool ret;
-   bson_t reply_local;
-   bson_t *reply_ptr;
-   bson_t cmd = BSON_INITIALIZER;
-   mongoc_server_stream_t *server_stream = NULL;
-
    ENTRY;
 
    BSON_ASSERT_PARAM (coll);
 
-   server_stream = mongoc_cluster_stream_for_reads (&coll->client->cluster, read_prefs, NULL, NULL, reply, error);
-
+   // No sessionId allowed
    if (opts && bson_has_field (opts, "sessionId")) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Collection count must not specify explicit session");
-      GOTO (done);
+      RETURN (-1);
    }
 
-   reply_ptr = reply ? reply : &reply_local;
+   // Storage for the reply if no storage was given by caller
+   bson_t reply_local = BSON_INITIALIZER;
+   // Write the reply to either the caller's storage or a local variable
+   bson_t *const reply_ptr = reply ? reply : &reply_local;
 
-   BSON_APPEND_UTF8 (&cmd, "count", coll->collection);
-   ret = _mongoc_client_command_with_opts (coll->client,
-                                           coll->db,
-                                           &cmd,
-                                           MONGOC_CMD_READ,
-                                           opts,
-                                           MONGOC_QUERY_NONE,
-                                           read_prefs,
-                                           coll->read_prefs,
-                                           coll->read_concern,
-                                           coll->write_concern,
-                                           reply_ptr,
-                                           error);
-   if (ret) {
-      if (bson_iter_init_find (&iter, reply_ptr, "n")) {
-         count = bson_iter_as_int64 (&iter);
-      }
-   }
-
-done:
-   if (!reply) {
-      bson_destroy (&reply_local);
-   }
+   // Create and execute a "count" command
+   bsonBuildDecl (cmd, kv ("count", cstr (coll->collection)));
+   const bool command_ok = _mongoc_client_command_with_opts (coll->client,
+                                                             coll->db,
+                                                             &cmd,
+                                                             MONGOC_CMD_READ,
+                                                             opts,
+                                                             MONGOC_QUERY_NONE,
+                                                             read_prefs,
+                                                             coll->read_prefs,
+                                                             coll->read_concern,
+                                                             coll->write_concern,
+                                                             reply_ptr,
+                                                             error);
    bson_destroy (&cmd);
-   mongoc_server_stream_cleanup (server_stream);
 
-   RETURN (count);
+   // Extract the "n" field from the response
+   int64_t ret_count = -1;
+   if (command_ok) {
+      bsonParse (*reply_ptr, find (key ("n"), do (ret_count = bson_iter_as_int64 (&bsonVisitIter))));
+   }
+   // Destroy the local storage. This is a no-op if we used the caller's storage.
+   bson_destroy (&reply_local);
+
+   RETURN (ret_count);
 }
 
 
@@ -1783,6 +1776,7 @@ mongoc_collection_insert_one (
    mongoc_insert_one_opts_t insert_one_opts;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
+   bson_t insert_id = BSON_INITIALIZER;
    bson_t cmd_opts = BSON_INITIALIZER;
    bool ret = false;
 
@@ -1810,7 +1804,8 @@ mongoc_collection_insert_one (
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert_idl (&command, document, &cmd_opts, ++collection->client->cluster.operation_id);
+   _mongoc_write_command_init_insert_one_idl (
+      &command, document, &cmd_opts, &insert_id, ++collection->client->cluster.operation_id);
 
    command.flags.bypass_document_validation = insert_one_opts.bypass;
    _mongoc_collection_write_command_execute_idl (&command, collection, &insert_one_opts.crud, &result);
@@ -1824,11 +1819,17 @@ mongoc_collection_insert_one (
                                        error,
                                        "insertedCount");
 
+   // Only record _id of document if it was actually inserted and reply is non-NULL.
+   if (reply && result.nInserted > 0) {
+      bson_concat (reply, &insert_id);
+   }
+
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
 
 done:
    _mongoc_insert_one_opts_cleanup (&insert_one_opts);
+   bson_destroy (&insert_id);
    bson_destroy (&cmd_opts);
 
    RETURN (ret);

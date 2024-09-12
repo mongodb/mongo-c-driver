@@ -5,7 +5,7 @@ import re
 from typing import Iterable, Literal, Mapping, NamedTuple, TypeVar
 
 from shrub.v3.evg_build_variant import BuildVariant
-from shrub.v3.evg_command import EvgCommandType, subprocess_exec
+from shrub.v3.evg_command import BuiltInCommand, EvgCommandType, subprocess_exec
 from shrub.v3.evg_task import EvgTaskRef
 
 from ..etc.utils import Task, all_possible
@@ -164,6 +164,28 @@ def variants_for(config: Configuration) -> Iterable[EarthlyVariant]:
     return filter(allow_env_for_config, all_envs)
 
 
+def earthly_exec(
+    *,
+    kind: Literal["test", "setup", "system"],
+    target: str,
+    secrets: Mapping[str, str] | None = None,
+    args: Mapping[str, str] | None = None,
+) -> BuiltInCommand:
+    """Create a subprocess_exec command that runs Earthly with the given arguments"""
+    env: dict[str, str] = {k: v for k, v in (secrets or {}).items()}
+    return subprocess_exec(
+        "./tools/earthly.sh",
+        args=[
+            *(f"--secret={k}" for k in (secrets or ())),
+            f"+{target}",
+            *(f"--{arg}={val}" for arg, val in (args or {}).items()),
+        ],
+        command_type=EvgCommandType(kind),
+        env=env if env else None,
+        working_dir="mongoc",
+    )
+
+
 def earthly_task(
     *,
     name: str,
@@ -184,12 +206,12 @@ def earthly_task(
         return
     # Generate the build-arg arguments based on the configuration options. The
     # NamedTuple field names must match with the ARG keys in the Earthfile!
-    earthly_args = [f"--{key}={val}" for key, val in config._asdict().items()]
-    # Add arguments that come from parameter expansions defined in the build variant
-    earthly_args += [
-        f"--env=${{{_ENV_PARAM_NAME}}}",
-        f"--c_compiler=${{{_CC_PARAM_NAME}}}",
-    ]
+    earthly_args = config._asdict()
+    earthly_args |= {
+        # Add arguments that come from parameter expansions defined in the build variant
+        "env": f"${{{_ENV_PARAM_NAME}}}",
+        "c_compiler": f"${{{_CC_PARAM_NAME}}}",
+    }
     return Task(
         name=name,
         commands=[
@@ -197,27 +219,17 @@ def earthly_task(
             # This won't generate any output, but allows EVG to track it as a separate build step
             # for timing and logging purposes. The subequent build step will cache-hit the
             # warmed-up build environments.
-            subprocess_exec(
-                "bash",
-                args=[
-                    "tools/earthly.sh",
-                    "+env-warmup",
-                    *earthly_args,
-                ],
-                working_dir="mongoc",
-                command_type=EvgCommandType.SETUP,
+            earthly_exec(
+                kind="setup",
+                target="env-warmup",
+                args=earthly_args,
             ),
             # Now execute the main tasks:
-            subprocess_exec(
-                "bash",
-                args=[
-                    "tools/earthly.sh",
-                    "+run",
-                    f"--targets={' '.join(targets)}",
-                    *earthly_args,
-                ],
-                working_dir="mongoc",
-                command_type=EvgCommandType.TEST,
+            earthly_exec(
+                kind="test",
+                target="run",
+                # The "targets" arg is for +run to specify which targets to run
+                args={"targets": " ".join(targets)} | earthly_args,
             ),
         ],
         tags=[f"earthly", "pr-merge-gate", *env_tags],
@@ -230,7 +242,6 @@ CONTAINER_RUN_DISTROS = [
     "ubuntu2204-large",
     "ubuntu2004-small",
     "ubuntu2004",
-    "ubuntu1804",
     "ubuntu1804-medium",
     "debian10",
     "debian11",
@@ -249,5 +260,5 @@ def tasks() -> Iterable[Task]:
             yield task
 
 
-def variants() -> list[BuildVariant]:
-    return [ev.as_evg_variant() for ev in all_possible(EarthlyVariant)]
+def variants() -> Iterable[BuildVariant]:
+    yield from (ev.as_evg_variant() for ev in all_possible(EarthlyVariant))

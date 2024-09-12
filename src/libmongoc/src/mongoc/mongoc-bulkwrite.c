@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,7 +222,7 @@ bool
 mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
                                    const char *ns,
                                    const bson_t *document,
-                                   const mongoc_bulkwrite_insertoneopts_t *opts, // may be NULL
+                                   BSON_MAYBE_UNUSED const mongoc_bulkwrite_insertoneopts_t *opts, // may be NULL
                                    bson_error_t *error)
 {
    BSON_ASSERT_PARAM (self);

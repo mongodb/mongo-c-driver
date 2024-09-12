@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,16 @@
 
 BSON_BEGIN_DECLS
 
+bool
+mongoc_crypto_common_crypto_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
+                                              const char *password,
+                                              size_t password_len,
+                                              const uint8_t *salt,
+                                              size_t salt_len,
+                                              uint32_t iterations,
+                                              size_t output_len,
+                                              unsigned char *output);
+
 void
 mongoc_crypto_common_crypto_hmac_sha1 (mongoc_crypto_t *crypto,
                                        const void *key,
@@ -40,6 +50,16 @@ mongoc_crypto_common_crypto_sha1 (mongoc_crypto_t *crypto,
                                   const unsigned char *input,
                                   const size_t input_len,
                                   unsigned char *hash_out);
+
+bool
+mongoc_crypto_common_crypto_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
+                                                const char *password,
+                                                size_t password_len,
+                                                const uint8_t *salt,
+                                                size_t salt_len,
+                                                uint32_t iterations,
+                                                size_t output_len,
+                                                unsigned char *output);
 
 void
 mongoc_crypto_common_crypto_hmac_sha256 (mongoc_crypto_t *crypto,

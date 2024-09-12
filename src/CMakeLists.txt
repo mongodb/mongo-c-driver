@@ -4,15 +4,15 @@
 
 # Copy zconf.h.in to zconf.h, used by zlib
 configure_file (
-   "${SOURCE_DIR}/src/zlib-1.2.13/zconf.h.in"
-   "${CMAKE_BINARY_DIR}/src/zlib-1.2.13/zconf.h"
+   "${SOURCE_DIR}/src/zlib-1.3.1/zconf.h.in"
+   "${CMAKE_BINARY_DIR}/src/zlib-1.3.1/zconf.h"
    COPYONLY
 )
 
 if (CMAKE_CXX_COMPILER)
    # Add a C++ source file that will #include the main C headers. This "library"
    # does nothing other than validate that the C headers are valid C++ headers.
-   add_library (mongoc-cxx-check STATIC cpp-check.cpp)
+   add_library (mongoc-cxx-check OBJECT cpp-check.cpp)
    if (TARGET mongoc_static)
       target_link_libraries (mongoc-cxx-check PRIVATE mongoc_static)
    else ()

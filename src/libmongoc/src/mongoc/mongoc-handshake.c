@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,10 @@ _mongoc_handshake_get_config_hex_string (void)
 
 #ifdef MONGOC_ENABLE_CRYPTO_CNG
    _set_bit (bf, byte_count, MONGOC_ENABLE_CRYPTO_CNG);
+#endif
+
+#ifdef MONGOC_HAVE_BCRYPT_PBKDF2
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_HAVE_BCRYPT_PBKDF2);
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
@@ -301,8 +305,10 @@ _get_os_version (void)
 #endif
 
    if (res) {
-      bson_snprintf (
+      // Truncation is OK.
+      int req = bson_snprintf (
          ret, HANDSHAKE_OS_VERSION_MAX, "%lu.%lu (%lu)", osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
+      BSON_ASSERT (req > 0);
       found = true;
    } else {
       MONGOC_WARNING ("Error with GetVersionEx(): %lu", GetLastError ());
@@ -720,6 +726,14 @@ _mongoc_handshake_build_doc_with_application (const char *appname)
 void
 _mongoc_handshake_freeze (void)
 {
+   bson_mutex_lock (&gHandshakeLock);
+   _mongoc_handshake_get ()->frozen = true;
+   bson_mutex_unlock (&gHandshakeLock);
+}
+
+static void
+_mongoc_handshake_freeze_nolock (void)
+{
    _mongoc_handshake_get ()->frozen = true;
 }
 
@@ -802,7 +816,7 @@ mongoc_handshake_data_append (const char *driver_name, const char *driver_versio
       _append_and_truncate (&_mongoc_handshake_get ()->driver_version, driver_version, HANDSHAKE_DRIVER_VERSION_MAX);
    }
 
-   _mongoc_handshake_freeze ();
+   _mongoc_handshake_freeze_nolock ();
    bson_mutex_unlock (&gHandshakeLock);
 
    return true;

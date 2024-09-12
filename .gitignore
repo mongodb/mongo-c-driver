@@ -38,3 +38,6 @@ dist
 # `secrets-export.sh` is created by the drivers-evergreen-tools `setup_secrets.sh` script.
 # Ignore this file to reduce risk of committing credentials during local development.
 secrets-export.sh
+
+# A file that can be used to store secrets for Earthly
+.secret

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -588,6 +588,42 @@ test_bulkwriteexception_str (const mongoc_bulkwriteexception_t *bwe);
    } else                                                                  \
       (void) 0
 
+// `get_current_connection_count` returns the server reported connection count.
+int32_t
+get_current_connection_count (const char *host_and_port);
+
+#define ASSERT_CONN_COUNT(host, expect)                           \
+   if (1) {                                                       \
+      int32_t _got = get_current_connection_count (host);         \
+      if (_got != expect) {                                       \
+         test_error ("Got unexpected connection count to %s:\n"   \
+                     "  Expected %" PRId32 ", got %" PRId32 "\n", \
+                     host,                                        \
+                     expect,                                      \
+                     _got);                                       \
+      }                                                           \
+   } else                                                         \
+      (void) 0
+
+#define ASSERT_EVENTUAL_CONN_COUNT(host, expect)                                   \
+   if (1) {                                                                        \
+      int64_t _start = bson_get_monotonic_time ();                                 \
+      while (true) {                                                               \
+         int32_t _got = get_current_connection_count (host);                       \
+         if (_got == expect) {                                                     \
+            break;                                                                 \
+         }                                                                         \
+         int64_t _now = bson_get_monotonic_time ();                                \
+         if (_now - _start > 5 * 1000 * 1000 /* five seconds */) {                 \
+            test_error ("Timed out waiting for expected connection count to %s:\n" \
+                        "  Expected %" PRId32 ", got %" PRId32 "\n",               \
+                        host,                                                      \
+                        expect,                                                    \
+                        _got);                                                     \
+         }                                                                         \
+      }                                                                            \
+   } else                                                                          \
+      (void) 0
 
 #define MAX_TEST_NAME_LENGTH 500
 #define MAX_TEST_CHECK_FUNCS 10

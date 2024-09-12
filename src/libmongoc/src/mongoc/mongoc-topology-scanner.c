@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,11 @@
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
+#endif
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+#include <openssl/ssl.h>
+#include "mongoc-stream-tls-private.h"
 #endif
 
 #include "mongoc-counters-private.h"
@@ -462,6 +467,11 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    mongoc_server_api_destroy (ts->api);
    bson_mutex_destroy (&ts->handshake_cmd_mtx);
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+   SSL_CTX_free (ts->openssl_ctx);
+   ts->openssl_ctx = NULL;
+#endif
+
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
 
@@ -784,7 +794,12 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (mongoc_topology_scanner_node
    }
 #ifdef MONGOC_ENABLE_SSL
    if (node->ts->ssl_opts) {
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+      tls_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (
+         stream, node->host.host, node->ts->ssl_opts, 1, node->ts->openssl_ctx);
+#else
       tls_stream = mongoc_stream_tls_new_with_hostname (stream, node->host.host, node->ts->ssl_opts, 1);
+#endif
       if (!tls_stream) {
          mongoc_stream_destroy (stream);
          return NULL;
@@ -850,7 +865,9 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bs
    }
 
    if (!node->dns_results) {
-      bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
+      // Expect no truncation.
+      int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
+      BSON_ASSERT (bson_cmp_less_su (req, sizeof portstr));
 
       memset (&hints, 0, sizeof hints);
       hints.ai_family = host->family;
@@ -910,7 +927,13 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
 
    memset (&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
-   bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
+   // Expect no truncation.
+   int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
+
+   if (bson_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
+      RETURN (false);
+   }
 
    sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
 

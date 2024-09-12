@@ -14,12 +14,9 @@ Synopsis
 
    #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
    #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
-   // (Experimental: See below)
    #define MONGOC_ENCRYPT_ALGORITHM_INDEXED "Indexed"
-   // (Experimental: See below)
    #define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
-   // (Experimental: See below)
-   #define MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW "RangePreview"
+   #define MONGOC_ENCRYPT_ALGORITHM_RANGE "Range"
 
 Identifies the algorithm to use for encryption. Valid values of ``algorithm`` are:
 
@@ -39,12 +36,10 @@ Identifies the algorithm to use for encryption. Valid values of ``algorithm`` ar
 
    for unindexed encryption. Specific to the `Queryable Encryption <queryable-encryption_>`_ feature.
 
-``"RangePreview"``
+``"Range"``
 
    for range encryption. Specific to the `Queryable Encryption <queryable-encryption_>`_ feature.
    
-   .. note:: The |qenc:range-is-experimental| |qenc:opt-is-experimental|
-
 Parameters
 ----------
 

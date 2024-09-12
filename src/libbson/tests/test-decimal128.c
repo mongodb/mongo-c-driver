@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,10 +51,10 @@ test_decimal128_to_string__infinity (void)
    DECIMAL128_FROM_ULLS (negative_infinity, 0xf800000000000000, 0);
 
    bson_decimal128_to_string (&positive_infinity, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "Infinity"));
+   ASSERT_CMPSTR (bid_string, "Infinity");
 
    bson_decimal128_to_string (&negative_infinity, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "-Infinity"));
+   ASSERT_CMPSTR (bid_string, "-Infinity");
 }
 
 
@@ -77,19 +77,19 @@ test_decimal128_to_string__nan (void)
    DECIMAL128_FROM_ULLS (dec_payload_nan, 0x7e00000000000000, 12);
 
    bson_decimal128_to_string (&dec_pnan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 
    bson_decimal128_to_string (&dec_nnan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 
    bson_decimal128_to_string (&dec_psnan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 
    bson_decimal128_to_string (&dec_nsnan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 
    bson_decimal128_to_string (&dec_payload_nan, bid_string);
-   BSON_ASSERT (!strcmp (bid_string, "NaN"));
+   ASSERT_CMPSTR (bid_string, "NaN");
 }
 
 
@@ -108,57 +108,77 @@ test_decimal128_to_string__regular (void)
    bson_decimal128_t trailing_zeros;
    bson_decimal128_t all_digits;
    bson_decimal128_t full_house;
+   bson_decimal128_t untruncated_significand;
+   bson_decimal128_t truncated_significand;
 
    DECIMAL128_FROM_ULLS (one, 0x3040000000000000, 0x0000000000000001);
    DECIMAL128_FROM_ULLS (zero, 0x3040000000000000, 0x0000000000000000);
    DECIMAL128_FROM_ULLS (two, 0x3040000000000000, 0x0000000000000002);
    DECIMAL128_FROM_ULLS (negative_one, 0xb040000000000000, 0x0000000000000001);
    DECIMAL128_FROM_ULLS (negative_zero, 0xb040000000000000, 0x0000000000000000);
-   DECIMAL128_FROM_ULLS (tenth, 0x303e000000000000, 0x0000000000000001); /* 0.1 */
-   /* 0.001234 */
+
+   // 0.1
+   DECIMAL128_FROM_ULLS (tenth, 0x303e000000000000, 0x0000000000000001);
+
+   // 0.001234
    DECIMAL128_FROM_ULLS (smallest_regular, 0x3034000000000000, 0x00000000000004d2);
-   /* 12345789012 */
+
+   // 12345789012
    DECIMAL128_FROM_ULLS (largest_regular, 0x3040000000000000, 0x0000001cbe991a14);
-   /* 0.00123400000 */
+
+   // 0.00123400000
    DECIMAL128_FROM_ULLS (trailing_zeros, 0x302a000000000000, 0x00000000075aef40);
-   /* 0.1234567890123456789012345678901234 */
+
+   // 0.1234567890123456789012345678901234
    DECIMAL128_FROM_ULLS (all_digits, 0x2ffc3cde6fff9732, 0xde825cd07e96aff2);
 
-   /* 5192296858534827628530496329220095 */
+   // 5192296858534827628530496329220095
    DECIMAL128_FROM_ULLS (full_house, 0x3040ffffffffffff, 0xffffffffffffffff);
 
+   // 0.0000010384593717069655257060992658440191 (inexact rounding)
+   DECIMAL128_FROM_ULLS (untruncated_significand, 0x2ff1ffffffffffff, 0xffffffffffffffff);
+
+   // -0.000001038459371706965525706099265844019 (inexact rounding)
+   DECIMAL128_FROM_ULLS (truncated_significand, 0xaff1ffffffffffff, 0xffffffffffffffff);
+
    bson_decimal128_to_string (&one, bid_string);
-   BSON_ASSERT (!strcmp ("1", bid_string));
+   ASSERT_CMPSTR ("1", bid_string);
 
    bson_decimal128_to_string (&zero, bid_string);
-   BSON_ASSERT (!strcmp ("0", bid_string));
+   ASSERT_CMPSTR ("0", bid_string);
 
    bson_decimal128_to_string (&two, bid_string);
-   BSON_ASSERT (!strcmp ("2", bid_string));
+   ASSERT_CMPSTR ("2", bid_string);
 
    bson_decimal128_to_string (&negative_one, bid_string);
-   BSON_ASSERT (!strcmp ("-1", bid_string));
+   ASSERT_CMPSTR ("-1", bid_string);
 
    bson_decimal128_to_string (&negative_zero, bid_string);
-   BSON_ASSERT (!strcmp ("-0", bid_string));
+   ASSERT_CMPSTR ("-0", bid_string);
 
    bson_decimal128_to_string (&tenth, bid_string);
-   BSON_ASSERT (!strcmp ("0.1", bid_string));
+   ASSERT_CMPSTR ("0.1", bid_string);
 
    bson_decimal128_to_string (&smallest_regular, bid_string);
-   BSON_ASSERT (!strcmp ("0.001234", bid_string));
+   ASSERT_CMPSTR ("0.001234", bid_string);
 
    bson_decimal128_to_string (&largest_regular, bid_string);
-   BSON_ASSERT (!strcmp ("123456789012", bid_string));
+   ASSERT_CMPSTR ("123456789012", bid_string);
 
    bson_decimal128_to_string (&trailing_zeros, bid_string);
-   BSON_ASSERT (!strcmp ("0.00123400000", bid_string));
+   ASSERT_CMPSTR ("0.00123400000", bid_string);
 
    bson_decimal128_to_string (&all_digits, bid_string);
-   BSON_ASSERT (!strcmp ("0.1234567890123456789012345678901234", bid_string));
+   ASSERT_CMPSTR ("0.1234567890123456789012345678901234", bid_string);
 
    bson_decimal128_to_string (&full_house, bid_string);
-   BSON_ASSERT (!strcmp ("5192296858534827628530496329220095", bid_string));
+   ASSERT_CMPSTR ("5192296858534827628530496329220095", bid_string);
+
+   bson_decimal128_to_string (&untruncated_significand, bid_string);
+   ASSERT_CMPSTR ("0.0000010384593717069655257060992658440191", bid_string);
+
+   bson_decimal128_to_string (&truncated_significand, bid_string);
+   ASSERT_CMPSTR ("-0.000001038459371706965525706099265844019", bid_string);
 }
 
 
@@ -192,40 +212,40 @@ test_decimal128_to_string__scientific (void)
    DECIMAL128_FROM_ULLS (trailing_zero_no_decimal, 0x3046000000000000, 0x0000000000000001);
 
    bson_decimal128_to_string (&huge, bid_string);
-   BSON_ASSERT (!strcmp ("1.000000000000000000000000000000000E+6144", bid_string));
+   ASSERT_CMPSTR ("1.000000000000000000000000000000000E+6144", bid_string);
 
    bson_decimal128_to_string (&tiny, bid_string);
-   BSON_ASSERT (!strcmp ("1E-6176", bid_string));
+   ASSERT_CMPSTR ("1E-6176", bid_string);
 
    bson_decimal128_to_string (&neg_tiny, bid_string);
-   BSON_ASSERT (!strcmp ("-1E-6176", bid_string));
+   ASSERT_CMPSTR ("-1E-6176", bid_string);
 
    bson_decimal128_to_string (&neg_tiny, bid_string);
-   BSON_ASSERT (!strcmp ("-1E-6176", bid_string));
+   ASSERT_CMPSTR ("-1E-6176", bid_string);
 
    bson_decimal128_to_string (&large, bid_string);
-   BSON_ASSERT (!strcmp ("9.999987654321E+112", bid_string));
+   ASSERT_CMPSTR ("9.999987654321E+112", bid_string);
 
    bson_decimal128_to_string (&largest, bid_string);
-   BSON_ASSERT (!strcmp ("9.999999999999999999999999999999999E+6144", bid_string));
+   ASSERT_CMPSTR ("9.999999999999999999999999999999999E+6144", bid_string);
 
    bson_decimal128_to_string (&tiniest, bid_string);
-   BSON_ASSERT (!strcmp ("9.999999999999999999999999999999999E-6143", bid_string));
+   ASSERT_CMPSTR ("9.999999999999999999999999999999999E-6143", bid_string);
 
    bson_decimal128_to_string (&trailing_zero, bid_string);
-   BSON_ASSERT (!strcmp ("1.050E+9", bid_string));
+   ASSERT_CMPSTR ("1.050E+9", bid_string);
 
    bson_decimal128_to_string (&one_trailing_zero, bid_string);
-   BSON_ASSERT (!strcmp ("1.050E+4", bid_string));
+   ASSERT_CMPSTR ("1.050E+4", bid_string);
 
    bson_decimal128_to_string (&move_decimal, bid_string);
-   BSON_ASSERT (!strcmp ("105", bid_string));
+   ASSERT_CMPSTR ("105", bid_string);
 
    bson_decimal128_to_string (&move_decimal_after, bid_string);
-   BSON_ASSERT (!strcmp ("1.05E+3", bid_string));
+   ASSERT_CMPSTR ("1.05E+3", bid_string);
 
    bson_decimal128_to_string (&trailing_zero_no_decimal, bid_string);
-   BSON_ASSERT (!strcmp ("1E+3", bid_string));
+   ASSERT_CMPSTR ("1E+3", bid_string);
 }
 
 
@@ -243,13 +263,13 @@ test_decimal128_to_string__zeros (void)
    DECIMAL128_FROM_ULLS (neg_exp_zero, 0x2b90000000000000, 0x0000000000000000);
 
    bson_decimal128_to_string (&zero, bid_string);
-   BSON_ASSERT (!strcmp ("0", bid_string));
+   ASSERT_CMPSTR ("0", bid_string);
 
    bson_decimal128_to_string (&pos_exp_zero, bid_string);
-   BSON_ASSERT (!strcmp ("0E+300", bid_string));
+   ASSERT_CMPSTR ("0E+300", bid_string);
 
    bson_decimal128_to_string (&neg_exp_zero, bid_string);
-   BSON_ASSERT (!strcmp ("0E-600", bid_string));
+   ASSERT_CMPSTR ("0E-600", bid_string);
 }
 
 
@@ -261,63 +281,67 @@ test_decimal128_from_string__invalid_inputs (void)
 {
    bson_decimal128_t dec;
 
-   bson_decimal128_from_string (".", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string (".e", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("invalid", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("in", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("i", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("E02", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("..1", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("1abcede", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("1.24abc", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("1.24abcE+02", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("1.24E+02abc2d", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("E+02", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("e+02", &dec);
-   BSON_ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string (".", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("1e", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string (".e", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("invalid", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("in", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("i", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("E02", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("..1", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("1abcede", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("1.24abc", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("1.24abcE+02", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("1.24E+02abc2d", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("E+02", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string ("e+02", &dec));
+   ASSERT (IS_NAN (dec));
 
-   bson_decimal128_from_string_w_len (".", 1, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len (".e", 2, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("", 0, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("invalid", 7, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("in", 2, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("i", 1, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("E02", 3, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("..1", 3, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("1abcede", 7, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("1.24abc", 7, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("1.24abcE+02", 11, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("1.24E+02abc2d", 13, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("E+02", 4, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("e+02", 4, &dec);
-   BSON_ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len (".", 1, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("1e", 2, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len (".e", 2, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("", 0, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("invalid", 7, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("in", 2, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("i", 1, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("E02", 3, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("..1", 3, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("1abcede", 7, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("1.24abc", 7, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("1.24abcE+02", 11, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("1.24E+02abc2d", 13, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("E+02", 4, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (!bson_decimal128_from_string_w_len ("e+02", 4, &dec));
+   ASSERT (IS_NAN (dec));
 }
 
 
@@ -326,47 +350,43 @@ test_decimal128_from_string__nan (void)
 {
    bson_decimal128_t dec;
 
-   bson_decimal128_from_string ("NaN", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("+NaN", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("-NaN", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("-nan", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("1e", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("+nan", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("nan", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("Nan", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("+Nan", &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string ("-Nan", &dec);
-   BSON_ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string ("NaN", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string ("+NaN", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string ("-NaN", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string ("-nan", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string ("+nan", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string ("nan", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string ("Nan", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string ("+Nan", &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string ("-Nan", &dec));
+   ASSERT (IS_NAN (dec));
 
-   bson_decimal128_from_string_w_len ("NaN", 3, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("+NaN", 4, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("-NaN", 4, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("-nan", 4, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("1e", 2, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("+nan", 4, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("nan", 3, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("Nan", 3, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("+Nan", 4, &dec);
-   BSON_ASSERT (IS_NAN (dec));
-   bson_decimal128_from_string_w_len ("-Nan", 4, &dec);
-   BSON_ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("NaN", 3, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("+NaN", 4, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("-NaN", 4, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("-nan", 4, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("+nan", 4, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("nan", 3, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("Nan", 3, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("+Nan", 4, &dec));
+   ASSERT (IS_NAN (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("-Nan", 4, &dec));
+   ASSERT (IS_NAN (dec));
 }
 
 
@@ -379,27 +399,27 @@ test_decimal128_from_string__infinity (void)
 {
    bson_decimal128_t dec;
 
-   bson_decimal128_from_string ("Infinity", &dec);
-   BSON_ASSERT (IS_PINFINITY (dec));
-   bson_decimal128_from_string ("+Infinity", &dec);
-   BSON_ASSERT (IS_PINFINITY (dec));
-   bson_decimal128_from_string ("+Inf", &dec);
-   BSON_ASSERT (IS_PINFINITY (dec));
-   bson_decimal128_from_string ("-Inf", &dec);
-   BSON_ASSERT (IS_NINFINITY (dec));
-   bson_decimal128_from_string ("-Infinity", &dec);
-   BSON_ASSERT (IS_NINFINITY (dec));
+   ASSERT (bson_decimal128_from_string ("Infinity", &dec));
+   ASSERT (IS_PINFINITY (dec));
+   ASSERT (bson_decimal128_from_string ("+Infinity", &dec));
+   ASSERT (IS_PINFINITY (dec));
+   ASSERT (bson_decimal128_from_string ("+Inf", &dec));
+   ASSERT (IS_PINFINITY (dec));
+   ASSERT (bson_decimal128_from_string ("-Inf", &dec));
+   ASSERT (IS_NINFINITY (dec));
+   ASSERT (bson_decimal128_from_string ("-Infinity", &dec));
+   ASSERT (IS_NINFINITY (dec));
 
-   bson_decimal128_from_string_w_len ("Infinity", 8, &dec);
-   BSON_ASSERT (IS_PINFINITY (dec));
-   bson_decimal128_from_string_w_len ("+Infinity", 9, &dec);
-   BSON_ASSERT (IS_PINFINITY (dec));
-   bson_decimal128_from_string_w_len ("+Inf", 4, &dec);
-   BSON_ASSERT (IS_PINFINITY (dec));
-   bson_decimal128_from_string_w_len ("-Inf", 4, &dec);
-   BSON_ASSERT (IS_NINFINITY (dec));
-   bson_decimal128_from_string_w_len ("-Infinity", 9, &dec);
-   BSON_ASSERT (IS_NINFINITY (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("Infinity", 8, &dec));
+   ASSERT (IS_PINFINITY (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("+Infinity", 9, &dec));
+   ASSERT (IS_PINFINITY (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("+Inf", 4, &dec));
+   ASSERT (IS_PINFINITY (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("-Inf", 4, &dec));
+   ASSERT (IS_NINFINITY (dec));
+   ASSERT (bson_decimal128_from_string_w_len ("-Infinity", 9, &dec));
+   ASSERT (IS_NINFINITY (dec));
 }
 
 
@@ -424,55 +444,83 @@ test_decimal128_from_string__simple (void)
    bson_decimal128_t fractional_number;
    bson_decimal128_t leading_zeros;
    bson_decimal128_t leading_insignificant_zeros;
+   bson_decimal128_t untruncated_significand;
+   bson_decimal128_t truncated_significand;
 
-   bson_decimal128_from_string ("1", &one);
-   bson_decimal128_from_string ("-1", &negative_one);
-   bson_decimal128_from_string ("0", &zero);
-   bson_decimal128_from_string ("-0", &negative_zero);
-   bson_decimal128_from_string ("12345678901234567", &number);
-   bson_decimal128_from_string ("989898983458", &number_two);
-   bson_decimal128_from_string ("-12345678901234567", &negative_number);
+   ASSERT (bson_decimal128_from_string ("1", &one));
+   ASSERT (bson_decimal128_from_string ("-1", &negative_one));
+   ASSERT (bson_decimal128_from_string ("0", &zero));
+   ASSERT (bson_decimal128_from_string ("-0", &negative_zero));
+   ASSERT (bson_decimal128_from_string ("12345678901234567", &number));
+   ASSERT (bson_decimal128_from_string ("989898983458", &number_two));
+   ASSERT (bson_decimal128_from_string ("-12345678901234567", &negative_number));
 
-   bson_decimal128_from_string ("0.12345", &fractional_number);
-   bson_decimal128_from_string ("0.0012345", &leading_zeros);
+   ASSERT (bson_decimal128_from_string ("0.12345", &fractional_number));
+   ASSERT (bson_decimal128_from_string ("0.0012345", &leading_zeros));
 
-   bson_decimal128_from_string ("00012345678901234567", &leading_insignificant_zeros);
-
-   BSON_ASSERT (decimal128_equal (&one, 0x3040000000000000, 0x0000000000000001));
-   BSON_ASSERT (decimal128_equal (&negative_one, 0xb040000000000000, 0x0000000000000001));
-   BSON_ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&negative_zero, 0xb040000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&number, 0x3040000000000000, 0x002bdc545d6b4b87));
-   BSON_ASSERT (decimal128_equal (&number_two, 0x3040000000000000, 0x000000e67a93c822));
-   BSON_ASSERT (decimal128_equal (&negative_number, 0xb040000000000000, 0x002bdc545d6b4b87));
-   BSON_ASSERT (decimal128_equal (&fractional_number, 0x3036000000000000, 0x0000000000003039));
-   BSON_ASSERT (decimal128_equal (&leading_zeros, 0x3032000000000000, 0x0000000000003039));
-   BSON_ASSERT (decimal128_equal (&leading_insignificant_zeros, 0x3040000000000000, 0x002bdc545d6b4b87));
+   ASSERT (bson_decimal128_from_string ("00012345678901234567", &leading_insignificant_zeros));
 
 
-   bson_decimal128_from_string_w_len ("1", 1, &one);
-   bson_decimal128_from_string_w_len ("-1", 2, &negative_one);
-   bson_decimal128_from_string_w_len ("0", 1, &zero);
-   bson_decimal128_from_string_w_len ("-0", 2, &negative_zero);
-   bson_decimal128_from_string_w_len ("12345678901234567", 17, &number);
-   bson_decimal128_from_string_w_len ("989898983458", 12, &number_two);
-   bson_decimal128_from_string_w_len ("-12345678901234567", 18, &negative_number);
+   // Inexact Rounding Error
+   ASSERT (!bson_decimal128_from_string ("0.0000010384593717069655257060992658440191", &untruncated_significand));
+   ASSERT (!bson_decimal128_from_string ("-0.0000010384593717069655257060992658440191", &truncated_significand));
 
-   bson_decimal128_from_string_w_len ("0.12345", 7, &fractional_number);
-   bson_decimal128_from_string_w_len ("0.0012345", 9, &leading_zeros);
+   // OK
+   ASSERT (bson_decimal128_from_string ("0.000001038459371706965525706099265844019", &untruncated_significand));
+   ASSERT (bson_decimal128_from_string ("-0.000001038459371706965525706099265844019", &truncated_significand));
 
-   bson_decimal128_from_string_w_len ("00012345678901234567", 20, &leading_insignificant_zeros);
+   ASSERT (decimal128_equal (&one, 0x3040000000000000, 0x0000000000000001));
+   ASSERT (decimal128_equal (&negative_one, 0xb040000000000000, 0x0000000000000001));
+   ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&negative_zero, 0xb040000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&number, 0x3040000000000000, 0x002bdc545d6b4b87));
+   ASSERT (decimal128_equal (&number_two, 0x3040000000000000, 0x000000e67a93c822));
+   ASSERT (decimal128_equal (&negative_number, 0xb040000000000000, 0x002bdc545d6b4b87));
+   ASSERT (decimal128_equal (&fractional_number, 0x3036000000000000, 0x0000000000003039));
+   ASSERT (decimal128_equal (&leading_zeros, 0x3032000000000000, 0x0000000000003039));
+   ASSERT (decimal128_equal (&leading_insignificant_zeros, 0x3040000000000000, 0x002bdc545d6b4b87));
 
-   BSON_ASSERT (decimal128_equal (&one, 0x3040000000000000, 0x0000000000000001));
-   BSON_ASSERT (decimal128_equal (&negative_one, 0xb040000000000000, 0x0000000000000001));
-   BSON_ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&negative_zero, 0xb040000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&number, 0x3040000000000000, 0x002bdc545d6b4b87));
-   BSON_ASSERT (decimal128_equal (&number_two, 0x3040000000000000, 0x000000e67a93c822));
-   BSON_ASSERT (decimal128_equal (&negative_number, 0xb040000000000000, 0x002bdc545d6b4b87));
-   BSON_ASSERT (decimal128_equal (&fractional_number, 0x3036000000000000, 0x0000000000003039));
-   BSON_ASSERT (decimal128_equal (&leading_zeros, 0x3032000000000000, 0x0000000000003039));
-   BSON_ASSERT (decimal128_equal (&leading_insignificant_zeros, 0x3040000000000000, 0x002bdc545d6b4b87));
+   ASSERT (decimal128_equal (&untruncated_significand, 0x2ff2333333333333, 0x3333333333333333));
+   ASSERT (decimal128_equal (&truncated_significand, 0xaff2333333333333, 0x3333333333333333));
+
+   ASSERT (bson_decimal128_from_string_w_len ("1", 1, &one));
+   ASSERT (bson_decimal128_from_string_w_len ("-1", 2, &negative_one));
+   ASSERT (bson_decimal128_from_string_w_len ("0", 1, &zero));
+   ASSERT (bson_decimal128_from_string_w_len ("-0", 2, &negative_zero));
+   ASSERT (bson_decimal128_from_string_w_len ("12345678901234567", 17, &number));
+   ASSERT (bson_decimal128_from_string_w_len ("989898983458", 12, &number_two));
+   ASSERT (bson_decimal128_from_string_w_len ("-12345678901234567", 18, &negative_number));
+
+   ASSERT (bson_decimal128_from_string_w_len ("0.12345", 7, &fractional_number));
+   ASSERT (bson_decimal128_from_string_w_len ("0.0012345", 9, &leading_zeros));
+
+   ASSERT (bson_decimal128_from_string_w_len ("00012345678901234567", 20, &leading_insignificant_zeros));
+
+   // Inexact Rounding Error
+   ASSERT (
+      !bson_decimal128_from_string_w_len ("0.0000010384593717069655257060992658440191", 42, &untruncated_significand));
+   ASSERT (
+      !bson_decimal128_from_string_w_len ("-0.0000010384593717069655257060992658440191", 43, &truncated_significand));
+
+   // OK
+   ASSERT (
+      bson_decimal128_from_string_w_len ("0.000001038459371706965525706099265844019", 41, &untruncated_significand));
+   ASSERT (
+      bson_decimal128_from_string_w_len ("-0.000001038459371706965525706099265844019", 42, &truncated_significand));
+
+   ASSERT (decimal128_equal (&one, 0x3040000000000000, 0x0000000000000001));
+   ASSERT (decimal128_equal (&negative_one, 0xb040000000000000, 0x0000000000000001));
+   ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&negative_zero, 0xb040000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&number, 0x3040000000000000, 0x002bdc545d6b4b87));
+   ASSERT (decimal128_equal (&number_two, 0x3040000000000000, 0x000000e67a93c822));
+   ASSERT (decimal128_equal (&negative_number, 0xb040000000000000, 0x002bdc545d6b4b87));
+   ASSERT (decimal128_equal (&fractional_number, 0x3036000000000000, 0x0000000000003039));
+   ASSERT (decimal128_equal (&leading_zeros, 0x3032000000000000, 0x0000000000003039));
+   ASSERT (decimal128_equal (&leading_insignificant_zeros, 0x3040000000000000, 0x002bdc545d6b4b87));
+
+   ASSERT (decimal128_equal (&untruncated_significand, 0x2ff2333333333333, 0x3333333333333333));
+   ASSERT (decimal128_equal (&truncated_significand, 0xaff2333333333333, 0x3333333333333333));
 }
 
 
@@ -487,46 +535,46 @@ test_decimal128_from_string__scientific (void)
    bson_decimal128_t fractional;
    bson_decimal128_t trailing_zeros;
 
-   bson_decimal128_from_string ("10e0", &ten);
-   bson_decimal128_from_string ("1e1", &ten_again);
-   bson_decimal128_from_string ("10e-1", &one);
+   ASSERT (bson_decimal128_from_string ("10e0", &ten));
+   ASSERT (bson_decimal128_from_string ("1e1", &ten_again));
+   ASSERT (bson_decimal128_from_string ("10e-1", &one));
 
-   BSON_ASSERT (decimal128_equal (&ten, 0x3040000000000000, 0x000000000000000a));
-   BSON_ASSERT (decimal128_equal (&ten_again, 0x3042000000000000, 0x0000000000000001));
-   BSON_ASSERT (decimal128_equal (&one, 0x303e000000000000, 0x000000000000000a));
+   ASSERT (decimal128_equal (&ten, 0x3040000000000000, 0x000000000000000a));
+   ASSERT (decimal128_equal (&ten_again, 0x3042000000000000, 0x0000000000000001));
+   ASSERT (decimal128_equal (&one, 0x303e000000000000, 0x000000000000000a));
 
-   bson_decimal128_from_string ("12345678901234567e6111", &huge_exp);
-   bson_decimal128_from_string ("1e-6176", &tiny_exp);
+   ASSERT (bson_decimal128_from_string ("12345678901234567e6111", &huge_exp));
+   ASSERT (bson_decimal128_from_string ("1e-6176", &tiny_exp));
 
-   BSON_ASSERT (decimal128_equal (&huge_exp, 0x5ffe000000000000, 0x002bdc545d6b4b87));
-   BSON_ASSERT (decimal128_equal (&tiny_exp, 0x0000000000000000, 0x0000000000000001));
+   ASSERT (decimal128_equal (&huge_exp, 0x5ffe000000000000, 0x002bdc545d6b4b87));
+   ASSERT (decimal128_equal (&tiny_exp, 0x0000000000000000, 0x0000000000000001));
 
-   bson_decimal128_from_string ("-100E-10", &fractional);
-   bson_decimal128_from_string ("10.50E8", &trailing_zeros);
+   ASSERT (bson_decimal128_from_string ("-100E-10", &fractional));
+   ASSERT (bson_decimal128_from_string ("10.50E8", &trailing_zeros));
 
-   BSON_ASSERT (decimal128_equal (&fractional, 0xb02c000000000000, 0x0000000000000064));
-   BSON_ASSERT (decimal128_equal (&trailing_zeros, 0x304c000000000000, 0x000000000000041a));
+   ASSERT (decimal128_equal (&fractional, 0xb02c000000000000, 0x0000000000000064));
+   ASSERT (decimal128_equal (&trailing_zeros, 0x304c000000000000, 0x000000000000041a));
 
 
-   bson_decimal128_from_string_w_len ("10e0", 4, &ten);
-   bson_decimal128_from_string_w_len ("1e1", 3, &ten_again);
-   bson_decimal128_from_string_w_len ("10e-1", 5, &one);
+   ASSERT (bson_decimal128_from_string_w_len ("10e0", 4, &ten));
+   ASSERT (bson_decimal128_from_string_w_len ("1e1", 3, &ten_again));
+   ASSERT (bson_decimal128_from_string_w_len ("10e-1", 5, &one));
 
-   BSON_ASSERT (decimal128_equal (&ten, 0x3040000000000000, 0x000000000000000a));
-   BSON_ASSERT (decimal128_equal (&ten_again, 0x3042000000000000, 0x0000000000000001));
-   BSON_ASSERT (decimal128_equal (&one, 0x303e000000000000, 0x000000000000000a));
+   ASSERT (decimal128_equal (&ten, 0x3040000000000000, 0x000000000000000a));
+   ASSERT (decimal128_equal (&ten_again, 0x3042000000000000, 0x0000000000000001));
+   ASSERT (decimal128_equal (&one, 0x303e000000000000, 0x000000000000000a));
 
-   bson_decimal128_from_string_w_len ("12345678901234567e6111", 22, &huge_exp);
-   bson_decimal128_from_string_w_len ("1e-6176", 7, &tiny_exp);
+   ASSERT (bson_decimal128_from_string_w_len ("12345678901234567e6111", 22, &huge_exp));
+   ASSERT (bson_decimal128_from_string_w_len ("1e-6176", 7, &tiny_exp));
 
-   BSON_ASSERT (decimal128_equal (&huge_exp, 0x5ffe000000000000, 0x002bdc545d6b4b87));
-   BSON_ASSERT (decimal128_equal (&tiny_exp, 0x0000000000000000, 0x0000000000000001));
+   ASSERT (decimal128_equal (&huge_exp, 0x5ffe000000000000, 0x002bdc545d6b4b87));
+   ASSERT (decimal128_equal (&tiny_exp, 0x0000000000000000, 0x0000000000000001));
 
-   bson_decimal128_from_string_w_len ("-100E-10", 8, &fractional);
-   bson_decimal128_from_string_w_len ("10.50E8", 7, &trailing_zeros);
+   ASSERT (bson_decimal128_from_string_w_len ("-100E-10", 8, &fractional));
+   ASSERT (bson_decimal128_from_string_w_len ("10.50E8", 7, &trailing_zeros));
 
-   BSON_ASSERT (decimal128_equal (&fractional, 0xb02c000000000000, 0x0000000000000064));
-   BSON_ASSERT (decimal128_equal (&trailing_zeros, 0x304c000000000000, 0x000000000000041a));
+   ASSERT (decimal128_equal (&fractional, 0xb02c000000000000, 0x0000000000000064));
+   ASSERT (decimal128_equal (&trailing_zeros, 0x304c000000000000, 0x000000000000041a));
 }
 
 
@@ -539,30 +587,30 @@ test_decimal128_from_string__large (void)
    bson_decimal128_t tiniest;
    bson_decimal128_t full_house;
 
-   bson_decimal128_from_string ("12345689012345789012345", &large);
-   bson_decimal128_from_string ("1234567890123456789012345678901234", &all_digits);
-   bson_decimal128_from_string ("9.999999999999999999999999999999999E+6144", &largest);
-   bson_decimal128_from_string ("9.999999999999999999999999999999999E-6143", &tiniest);
-   bson_decimal128_from_string ("5.192296858534827628530496329220095E+33", &full_house);
+   ASSERT (bson_decimal128_from_string ("12345689012345789012345", &large));
+   ASSERT (bson_decimal128_from_string ("1234567890123456789012345678901234", &all_digits));
+   ASSERT (bson_decimal128_from_string ("9.999999999999999999999999999999999E+6144", &largest));
+   ASSERT (bson_decimal128_from_string ("9.999999999999999999999999999999999E-6143", &tiniest));
+   ASSERT (bson_decimal128_from_string ("5.192296858534827628530496329220095E+33", &full_house));
 
-   BSON_ASSERT (decimal128_equal (&large, 0x304000000000029d, 0x42da3a76f9e0d979));
-   BSON_ASSERT (decimal128_equal (&all_digits, 0x30403cde6fff9732, 0xde825cd07e96aff2));
-   BSON_ASSERT (decimal128_equal (&largest, 0x5fffed09bead87c0, 0x378d8e63ffffffff));
-   BSON_ASSERT (decimal128_equal (&tiniest, 0x0001ed09bead87c0, 0x378d8e63ffffffff));
-   BSON_ASSERT (decimal128_equal (&full_house, 0x3040ffffffffffff, 0xffffffffffffffff));
+   ASSERT (decimal128_equal (&large, 0x304000000000029d, 0x42da3a76f9e0d979));
+   ASSERT (decimal128_equal (&all_digits, 0x30403cde6fff9732, 0xde825cd07e96aff2));
+   ASSERT (decimal128_equal (&largest, 0x5fffed09bead87c0, 0x378d8e63ffffffff));
+   ASSERT (decimal128_equal (&tiniest, 0x0001ed09bead87c0, 0x378d8e63ffffffff));
+   ASSERT (decimal128_equal (&full_house, 0x3040ffffffffffff, 0xffffffffffffffff));
 
 
-   bson_decimal128_from_string_w_len ("12345689012345789012345", -1, &large);
-   bson_decimal128_from_string_w_len ("1234567890123456789012345678901234", -1, &all_digits);
-   bson_decimal128_from_string_w_len ("9.999999999999999999999999999999999E+6144", -1, &largest);
-   bson_decimal128_from_string_w_len ("9.999999999999999999999999999999999E-6143", -1, &tiniest);
-   bson_decimal128_from_string_w_len ("5.192296858534827628530496329220095E+33", -1, &full_house);
+   ASSERT (bson_decimal128_from_string_w_len ("12345689012345789012345", -1, &large));
+   ASSERT (bson_decimal128_from_string_w_len ("1234567890123456789012345678901234", -1, &all_digits));
+   ASSERT (bson_decimal128_from_string_w_len ("9.999999999999999999999999999999999E+6144", -1, &largest));
+   ASSERT (bson_decimal128_from_string_w_len ("9.999999999999999999999999999999999E-6143", -1, &tiniest));
+   ASSERT (bson_decimal128_from_string_w_len ("5.192296858534827628530496329220095E+33", -1, &full_house));
 
-   BSON_ASSERT (decimal128_equal (&large, 0x304000000000029d, 0x42da3a76f9e0d979));
-   BSON_ASSERT (decimal128_equal (&all_digits, 0x30403cde6fff9732, 0xde825cd07e96aff2));
-   BSON_ASSERT (decimal128_equal (&largest, 0x5fffed09bead87c0, 0x378d8e63ffffffff));
-   BSON_ASSERT (decimal128_equal (&tiniest, 0x0001ed09bead87c0, 0x378d8e63ffffffff));
-   BSON_ASSERT (decimal128_equal (&full_house, 0x3040ffffffffffff, 0xffffffffffffffff));
+   ASSERT (decimal128_equal (&large, 0x304000000000029d, 0x42da3a76f9e0d979));
+   ASSERT (decimal128_equal (&all_digits, 0x30403cde6fff9732, 0xde825cd07e96aff2));
+   ASSERT (decimal128_equal (&largest, 0x5fffed09bead87c0, 0x378d8e63ffffffff));
+   ASSERT (decimal128_equal (&tiniest, 0x0001ed09bead87c0, 0x378d8e63ffffffff));
+   ASSERT (decimal128_equal (&full_house, 0x3040ffffffffffff, 0xffffffffffffffff));
 }
 
 
@@ -574,9 +622,9 @@ test_decimal128_from_string__exponent_normalization (void)
    bson_decimal128_t no_normalize;
    bson_decimal128_t a_disaster;
 
-   bson_decimal128_from_string ("1000000000000000000000000000000000000000", &trailing_zeros);
-   bson_decimal128_from_string ("10000000000000000000000000000000000", &one_normalize);
-   bson_decimal128_from_string ("1000000000000000000000000000000000", &no_normalize);
+   ASSERT (bson_decimal128_from_string ("1000000000000000000000000000000000000000", &trailing_zeros));
+   ASSERT (bson_decimal128_from_string ("10000000000000000000000000000000000", &one_normalize));
+   ASSERT (bson_decimal128_from_string ("1000000000000000000000000000000000", &no_normalize));
    bson_decimal128_from_string ("100000000000000000000000000000000000000000000000000000000000000000000"
                                 "000000000000000000000000000000000000000000000000000000000000000000000"
                                 "000000000000000000000000000000000000000000000000000000000000000000000"
@@ -594,15 +642,15 @@ test_decimal128_from_string__exponent_normalization (void)
                                 "0000000000000000000000000000000000",
                                 &a_disaster);
 
-   BSON_ASSERT (decimal128_equal (&trailing_zeros, 0x304c314dc6448d93, 0x38c15b0a00000000));
-   BSON_ASSERT (decimal128_equal (&one_normalize, 0x3042314dc6448d93, 0x38c15b0a00000000));
-   BSON_ASSERT (decimal128_equal (&no_normalize, 0x3040314dc6448d93, 0x38c15b0a00000000));
-   BSON_ASSERT (decimal128_equal (&a_disaster, 0x37cc314dc6448d93, 0x38c15b0a00000000));
+   ASSERT (decimal128_equal (&trailing_zeros, 0x304c314dc6448d93, 0x38c15b0a00000000));
+   ASSERT (decimal128_equal (&one_normalize, 0x3042314dc6448d93, 0x38c15b0a00000000));
+   ASSERT (decimal128_equal (&no_normalize, 0x3040314dc6448d93, 0x38c15b0a00000000));
+   ASSERT (decimal128_equal (&a_disaster, 0x37cc314dc6448d93, 0x38c15b0a00000000));
 
 
-   bson_decimal128_from_string_w_len ("1000000000000000000000000000000000000000", -1, &trailing_zeros);
-   bson_decimal128_from_string_w_len ("10000000000000000000000000000000000", -1, &one_normalize);
-   bson_decimal128_from_string_w_len ("1000000000000000000000000000000000", -1, &no_normalize);
+   ASSERT (bson_decimal128_from_string_w_len ("1000000000000000000000000000000000000000", -1, &trailing_zeros));
+   ASSERT (bson_decimal128_from_string_w_len ("10000000000000000000000000000000000", -1, &one_normalize));
+   ASSERT (bson_decimal128_from_string_w_len ("1000000000000000000000000000000000", -1, &no_normalize));
    bson_decimal128_from_string_w_len ("100000000000000000000000000000000000000000000000000000000000000000000"
                                       "000000000000000000000000000000000000000000000000000000000000000000000"
                                       "000000000000000000000000000000000000000000000000000000000000000000000"
@@ -621,10 +669,10 @@ test_decimal128_from_string__exponent_normalization (void)
                                       -1,
                                       &a_disaster);
 
-   BSON_ASSERT (decimal128_equal (&trailing_zeros, 0x304c314dc6448d93, 0x38c15b0a00000000));
-   BSON_ASSERT (decimal128_equal (&one_normalize, 0x3042314dc6448d93, 0x38c15b0a00000000));
-   BSON_ASSERT (decimal128_equal (&no_normalize, 0x3040314dc6448d93, 0x38c15b0a00000000));
-   BSON_ASSERT (decimal128_equal (&a_disaster, 0x37cc314dc6448d93, 0x38c15b0a00000000));
+   ASSERT (decimal128_equal (&trailing_zeros, 0x304c314dc6448d93, 0x38c15b0a00000000));
+   ASSERT (decimal128_equal (&one_normalize, 0x3042314dc6448d93, 0x38c15b0a00000000));
+   ASSERT (decimal128_equal (&no_normalize, 0x3040314dc6448d93, 0x38c15b0a00000000));
+   ASSERT (decimal128_equal (&a_disaster, 0x37cc314dc6448d93, 0x38c15b0a00000000));
 }
 
 
@@ -636,26 +684,26 @@ test_decimal128_from_string__zeros (void)
    bson_decimal128_t large_exponent;
    bson_decimal128_t negative_zero;
 
-   bson_decimal128_from_string ("0", &zero);
-   bson_decimal128_from_string ("0e-611", &exponent_zero);
-   bson_decimal128_from_string ("0e+6000", &large_exponent);
-   bson_decimal128_from_string ("-0e-1", &negative_zero);
+   ASSERT (bson_decimal128_from_string ("0", &zero));
+   ASSERT (bson_decimal128_from_string ("0e-611", &exponent_zero));
+   ASSERT (bson_decimal128_from_string ("0e+6000", &large_exponent));
+   ASSERT (bson_decimal128_from_string ("-0e-1", &negative_zero));
 
-   BSON_ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&exponent_zero, 0x2b7a000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&large_exponent, 0x5f20000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&negative_zero, 0xb03e000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&exponent_zero, 0x2b7a000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&large_exponent, 0x5f20000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&negative_zero, 0xb03e000000000000, 0x0000000000000000));
 
 
-   bson_decimal128_from_string_w_len ("0", 1, &zero);
-   bson_decimal128_from_string_w_len ("0e-611", -1, &exponent_zero);
-   bson_decimal128_from_string_w_len ("0e+6000", 7, &large_exponent);
-   bson_decimal128_from_string_w_len ("-0e-1", 5, &negative_zero);
+   ASSERT (bson_decimal128_from_string_w_len ("0", 1, &zero));
+   ASSERT (bson_decimal128_from_string_w_len ("0e-611", -1, &exponent_zero));
+   ASSERT (bson_decimal128_from_string_w_len ("0e+6000", 7, &large_exponent));
+   ASSERT (bson_decimal128_from_string_w_len ("-0e-1", 5, &negative_zero));
 
-   BSON_ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&exponent_zero, 0x2b7a000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&large_exponent, 0x5f20000000000000, 0x0000000000000000));
-   BSON_ASSERT (decimal128_equal (&negative_zero, 0xb03e000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&zero, 0x3040000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&exponent_zero, 0x2b7a000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&large_exponent, 0x5f20000000000000, 0x0000000000000000));
+   ASSERT (decimal128_equal (&negative_zero, 0xb03e000000000000, 0x0000000000000000));
 }
 
 static void
@@ -666,13 +714,13 @@ test_decimal128_from_string_w_len__special (void)
    bson_decimal128_t negative_number;
 
    /* These strings have more bytes than the length indicates. */
-   bson_decimal128_from_string_w_len ("12345678901234567abcd", 17, &number);
-   bson_decimal128_from_string_w_len ("989898983458abcd", 12, &number_two);
-   bson_decimal128_from_string_w_len ("-12345678901234567abcd", 18, &negative_number);
+   ASSERT (bson_decimal128_from_string_w_len ("12345678901234567abcd", 17, &number));
+   ASSERT (bson_decimal128_from_string_w_len ("989898983458abcd", 12, &number_two));
+   ASSERT (bson_decimal128_from_string_w_len ("-12345678901234567abcd", 18, &negative_number));
 
-   BSON_ASSERT (decimal128_equal (&number, 0x3040000000000000, 0x002bdc545d6b4b87));
-   BSON_ASSERT (decimal128_equal (&number_two, 0x3040000000000000, 0x000000e67a93c822));
-   BSON_ASSERT (decimal128_equal (&negative_number, 0xb040000000000000, 0x002bdc545d6b4b87));
+   ASSERT (decimal128_equal (&number, 0x3040000000000000, 0x002bdc545d6b4b87));
+   ASSERT (decimal128_equal (&number_two, 0x3040000000000000, 0x000000e67a93c822));
+   ASSERT (decimal128_equal (&negative_number, 0xb040000000000000, 0x002bdc545d6b4b87));
 }
 
 void

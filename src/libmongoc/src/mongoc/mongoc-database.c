@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1261,7 +1261,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                                 error)) {
       // Error during fields lookup
       bson_destroy (&encryptedFields);
-      return false;
+      return NULL;
    }
 
    if (!bson_empty (&encryptedFields)) {

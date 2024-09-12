@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ _mongoc_get_cpu_count (void)
    }
 
    return len;
-#elif defined(__APPLE__) || defined(__sun) || defined(_AIX)
+#elif defined(__APPLE__) || defined(_AIX)
    int ncpu;
 
    ncpu = (int) sysconf (_SC_NPROCESSORS_ONLN);
@@ -191,21 +191,21 @@ enum {
 
 #else
 /* when counters are disabled, these functions are no-ops */
-#define COUNTER(ident, Category, Name, Description)                   \
-   static BSON_INLINE void mongoc_counter_##ident##_add (int64_t val) \
-   {                                                                  \
-   }                                                                  \
-   static BSON_INLINE void mongoc_counter_##ident##_inc (void)        \
-   {                                                                  \
-   }                                                                  \
-   static BSON_INLINE void mongoc_counter_##ident##_dec (void)        \
-   {                                                                  \
-   }                                                                  \
-   static BSON_INLINE void mongoc_counter_##ident##_reset (void)      \
-   {                                                                  \
-   }                                                                  \
-   static BSON_INLINE void mongoc_counter_##ident##_count (void)      \
-   {                                                                  \
+#define COUNTER(ident, Category, Name, Description)                                     \
+   static BSON_INLINE void mongoc_counter_##ident##_add (BSON_MAYBE_UNUSED int64_t val) \
+   {                                                                                    \
+   }                                                                                    \
+   static BSON_INLINE void mongoc_counter_##ident##_inc (void)                          \
+   {                                                                                    \
+   }                                                                                    \
+   static BSON_INLINE void mongoc_counter_##ident##_dec (void)                          \
+   {                                                                                    \
+   }                                                                                    \
+   static BSON_INLINE void mongoc_counter_##ident##_reset (void)                        \
+   {                                                                                    \
+   }                                                                                    \
+   static BSON_INLINE void mongoc_counter_##ident##_count (void)                        \
+   {                                                                                    \
    }
 #include "mongoc-counters.defs"
 #undef COUNTER

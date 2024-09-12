@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -641,7 +641,7 @@ fill_data_fields:
          /* subtype 2 has a redundant length header in the data */
          memcpy (&binary_len, (iter->raw + iter->d3), sizeof (binary_len));
          binary_len = BSON_UINT32_FROM_LE (binary_len);
-         if (binary_len + 4 != l) {
+         if (binary_len != l - 4) {
             iter->err_off = iter->d3;
             goto mark_invalid;
          }
@@ -1945,7 +1945,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          bson_iter_document (iter, &doclen, &docbuf);
 
-         if (bson_init_static (&b, docbuf, doclen) && VISIT_DOCUMENT (iter, key, &b, data)) {
+         if (!bson_init_static (&b, docbuf, doclen)) {
+            iter->err_off = iter->off;
+            break;
+         }
+         if (VISIT_DOCUMENT (iter, key, &b, data)) {
             return true;
          }
       } break;
@@ -1956,7 +1960,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          bson_iter_array (iter, &doclen, &docbuf);
 
-         if (bson_init_static (&b, docbuf, doclen) && VISIT_ARRAY (iter, key, &b, data)) {
+         if (!bson_init_static (&b, docbuf, doclen)) {
+            iter->err_off = iter->off;
+            break;
+         }
+         if (VISIT_ARRAY (iter, key, &b, data)) {
             return true;
          }
       } break;
@@ -2080,7 +2088,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
             return true;
          }
 
-         if (bson_init_static (&b, docbuf, doclen) && VISIT_CODEWSCOPE (iter, key, length, code, &b, data)) {
+         if (!bson_init_static (&b, docbuf, doclen)) {
+            iter->err_off = iter->off;
+            break;
+         }
+         if (VISIT_CODEWSCOPE (iter, key, length, code, &b, data)) {
             return true;
          }
       } break;

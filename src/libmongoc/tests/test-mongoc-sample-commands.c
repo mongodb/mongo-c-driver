@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,10 @@ test_sample_command (sample_command_fn_t fn,
                      bool drop_collection)
 {
    char *example_name = bson_strdup_printf ("example %d", exampleno);
+
    capture_logs (true);
-
    fn (db);
-
+   capture_logs (false);
    ASSERT_NO_CAPTURED_LOGS (example_name);
 
    if (drop_collection) {
@@ -2483,13 +2483,23 @@ insert_pet (mongoc_collection_t *collection, bool is_adoptable)
 
    doc = BCON_NEW ("adoptable", BCON_BOOL (is_adoptable));
 
-   rc = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
+   // Insert with majority write concern. Snapshot read concern reads from majority committed data.
+   bson_t opts = BSON_INITIALIZER;
+   {
+      mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_write_concern_append (wc, &opts);
+      mongoc_write_concern_destroy (wc);
+   }
+
+   rc = mongoc_collection_insert_one (collection, doc, &opts, NULL, &error);
    if (!rc) {
       MONGOC_ERROR ("insert into pets.%s failed: %s", mongoc_collection_get_name (collection), error.message);
       goto cleanup;
    }
 
 cleanup:
+   bson_destroy (&opts);
    bson_destroy (doc);
    return rc;
 }
@@ -2590,15 +2600,15 @@ cleanup:
    return rc;
 }
 
-/*
- * JIRA: https://jira.mongodb.org/browse/DRIVERS-2181
- */
 static void
-test_example_59 (mongoc_database_t *db)
+test_snapshot_query_example_1 (void)
 {
-   BSON_UNUSED (db);
-
    if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_SNAPSHOT_READS)) {
+      MONGOC_DEBUG ("Skipping test. Server does not support snapshot reads\n");
       return;
    }
 
@@ -2661,7 +2671,7 @@ test_example_59 (mongoc_database_t *db)
    /* End Snapshot Query Example 1 */
 
    if (adoptable_pets_count != 2) {
-      MONGOC_ERROR ("there should be exatly 2 adoptable_pets_count, found: %" PRId64, adoptable_pets_count);
+      MONGOC_ERROR ("there should be exactly 2 adoptable_pets_count, found: %" PRId64, adoptable_pets_count);
    }
 
    /* Start Snapshot Query Example 1 Post */
@@ -2681,6 +2691,7 @@ retail_setup (mongoc_collection_t *sales_collection)
    bson_error_t error;
    struct timeval tv;
    int64_t unix_time_now = 0;
+   bson_t opts = BSON_INITIALIZER;
 
    if (bson_gettimeofday (&tv)) {
       MONGOC_ERROR ("could not get time of day");
@@ -2693,24 +2704,36 @@ retail_setup (mongoc_collection_t *sales_collection)
    doc =
       BCON_NEW ("shoeType", BCON_UTF8 ("boot"), "price", BCON_INT64 (30), "saleDate", BCON_DATE_TIME (unix_time_now));
 
-   ok = mongoc_collection_insert_one (sales_collection, doc, NULL, NULL, &error);
+   // Insert with majority write concern. Snapshot read concern reads from majority committed data.
+   {
+      mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_write_concern_append (wc, &opts);
+      mongoc_write_concern_destroy (wc);
+   }
+
+   ok = mongoc_collection_insert_one (sales_collection, doc, &opts, NULL, &error);
    if (!ok) {
       MONGOC_ERROR ("insert into retail.sales failed: %s", error.message);
       goto cleanup;
    }
 
 cleanup:
+   bson_destroy (&opts);
    bson_destroy (doc);
    return ok;
 }
 
 
 static void
-test_example_60 (mongoc_database_t *db)
+test_snapshot_query_example_2 (void)
 {
-   BSON_UNUSED (db);
-
    if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_SNAPSHOT_READS)) {
+      MONGOC_DEBUG ("Skipping test. Server does not support snapshot reads\n");
       return;
    }
 
@@ -2822,6 +2845,21 @@ cleanup:
    /* End Snapshot Query Example 2 Post */
 }
 
+// `test_snapshot_query_examples` examples for DRIVERS-2181.
+static void
+test_snapshot_query_examples (void)
+{
+   capture_logs (true);
+   test_snapshot_query_example_1 ();
+   capture_logs (false);
+   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_1");
+
+   capture_logs (true);
+   test_snapshot_query_example_2 ();
+   capture_logs (false);
+   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_2");
+}
+
 /* clang-format off */
 
 typedef struct {
@@ -2883,6 +2921,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
       capture_logs (true);
       fn (db);
       ASSERT_NO_CAPTURED_LOGS ("change stream examples");
+      capture_logs (false);
 
       bson_mutex_lock (&ctx.lock);
       ctx.done = true;
@@ -3383,6 +3422,89 @@ test_sample_aggregation (mongoc_database_t *db)
 }
 
 static void
+test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
+{
+   if (test_framework_get_server_version() < test_framework_str_to_version ("4.4")) {
+      return;
+   }
+
+   /* Start Aggregation Projection Example 1 */
+   mongoc_collection_t *collection;
+   bson_t *filter;
+   bson_t *opts;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+
+   collection = mongoc_database_get_collection (db, "inventory");
+   filter = BCON_NEW (NULL);
+   opts = BCON_NEW ("projection", "{",
+                     "_id", BCON_INT32(0),
+                     "item", BCON_INT32(1),
+                     "status", "{", 
+                           "$switch", "{", 
+                              "branches", "[", 
+                                 "{",
+                                       "case", "{",
+                                          "$eq", "[", 
+                                             "$status", BCON_UTF8("A"),
+                                          "]",
+                                       "}",
+                                       "then", BCON_UTF8("Available"),
+                                 "}",
+                                 "{",
+                                       "case", "{",
+                                          "$eq", "[", 
+                                             "$status", BCON_UTF8("D"),
+                                          "]",
+                                       "}",
+                                       "then", BCON_UTF8("Discontinued"),
+                                 "}",
+                              "]",
+                              "default", BCON_UTF8("No status found"),
+                           "}",
+                     "}",
+                     "area", "{", 
+                           "$concat", "[", 
+                              "{", 
+                                 "$toString", "{", 
+                                       "$multiply", "[", 
+                                          BCON_UTF8("$size.h"),
+                                          BCON_UTF8("$size.w"),
+                                       "]",
+                                 "}",
+                              "}",
+                              BCON_UTF8(" "),
+                              BCON_UTF8("$size.uom"),
+                           "]",
+                     "}",
+                     "reportNumber", "{", 
+                           "$literal", BCON_INT32(1),
+                     "}",
+                  "}");
+
+
+   cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      /* Do something with each doc here */
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   bson_destroy (filter);
+   bson_destroy (opts);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   /* End Aggregation Projection Example 1 */
+
+   ASSERT_NO_CAPTURED_LOGS ("sample projection with aggregation expressions examples");
+}
+
+
+static void
 test_sample_run_command (mongoc_database_t *db)
 {
    /* Start runCommand Example 1 */
@@ -3595,7 +3717,7 @@ commit_with_retry (mongoc_client_session_t *cs, bson_error_t *error)
        * mongoc_transaction_opts_set_write_concern */
       r = mongoc_client_session_commit_transaction (cs, &reply, error);
       if (r) {
-         MONGOC_INFO ("Transaction committed");
+         MONGOC_DEBUG ("Transaction committed");
          break;
       }
 
@@ -3639,7 +3761,8 @@ update_employee_info (mongoc_client_session_t *cs, bson_t *reply, bson_error_t *
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_SNAPSHOT);
    wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+   mongoc_write_concern_set_w (
+      wc, MONGOC_WRITE_CONCERN_W_MAJORITY); /* Atlas connection strings include majority by default*/
    txn_opts = mongoc_transaction_opts_new ();
    mongoc_transaction_opts_set_read_concern (txn_opts, rc);
    mongoc_transaction_opts_set_write_concern (txn_opts, wc);
@@ -3742,6 +3865,7 @@ test_sample_txn_commands (mongoc_client_t *client)
    /* test transactions retry example 3 */
    example_func (client);
    ASSERT_NO_CAPTURED_LOGS ("transactions retry example 3");
+   capture_logs (false);
    find_and_match (employees, "{'employee': 3}", "{'status': 'Inactive'}");
 
    mongoc_collection_destroy (employees);
@@ -3781,8 +3905,6 @@ with_transaction_example (bson_error_t *error)
 {
    mongoc_client_t *client = NULL;
    mongoc_write_concern_t *wc = NULL;
-   mongoc_read_concern_t *rc = NULL;
-   mongoc_read_prefs_t *rp = NULL;
    mongoc_collection_t *coll = NULL;
    bool success = false;
    bool ret = false;
@@ -3804,9 +3926,11 @@ with_transaction_example (bson_error_t *error)
 
    client = get_client ();
 
-   /* Prereq: Create collections. */
+   /* Prereq: Create collections. Note Atlas connection strings include a majority write
+    * concern by default.
+    */
    wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_wmajority (wc, 0);
    insert_opts = bson_new ();
    mongoc_write_concern_append (wc, insert_opts);
    coll = mongoc_client_get_collection (client, "mydb1", "foo");
@@ -3832,11 +3956,6 @@ with_transaction_example (bson_error_t *error)
 
    /* Step 2: Optional. Define options to use for the transaction. */
    txn_opts = mongoc_transaction_opts_new ();
-   rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   rc = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
-   mongoc_transaction_opts_set_read_prefs (txn_opts, rp);
-   mongoc_transaction_opts_set_read_concern (txn_opts, rc);
    mongoc_transaction_opts_set_write_concern (txn_opts, wc);
 
    /* Step 3: Use mongoc_client_session_with_transaction to start a transaction,
@@ -3851,8 +3970,6 @@ fail:
    bson_destroy (doc);
    mongoc_collection_destroy (coll);
    bson_destroy (insert_opts);
-   mongoc_read_concern_destroy (rc);
-   mongoc_read_prefs_destroy (rp);
    mongoc_write_concern_destroy (wc);
    mongoc_transaction_opts_destroy (txn_opts);
    mongoc_client_session_destroy (session);
@@ -4306,15 +4423,16 @@ test_sample_commands (void)
    test_sample_command (test_example_55, 55, db, collection, false);
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
+   // Run 56 after 57 and 58. 56 deletes all data. 57 and 58 expect data present.
    test_sample_command (test_example_56, 56, db, collection, true);
-   test_sample_command (test_example_59, 59, db, collection, true);
-   test_sample_command (test_example_60, 60, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
+   test_sample_projection_with_aggregation_expressions (db);
    test_sample_indexes (db);
    test_sample_run_command (db);
    test_sample_txn_commands (client);
+   test_snapshot_query_examples ();
 
    if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_9)) {
       test_sample_versioned_api ();

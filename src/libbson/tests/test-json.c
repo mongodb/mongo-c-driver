@@ -1925,9 +1925,9 @@ test_bson_json_double (void)
    BSON_ASSERT (BSON_ITER_HOLDS_DOUBLE (&iter));
    ASSERT_CMPDOUBLE (bson_iter_double (&iter), ==, 0.0);
 
-/* check that "x" is -0.0. signbit not available on Solaris, FreeBSD, or VS 2010
+/* check that "x" is -0.0. signbit not available on FreeBSD or VS 2010
  */
-#if !defined(__sun) && !defined(__FreeBSD__) && (!defined(_MSC_VER) || (_MSC_VER >= 1800))
+#if !defined(__FreeBSD__) && (!defined(_MSC_VER) || (_MSC_VER >= 1800))
    BSON_ASSERT (signbit (bson_iter_double (&iter)));
 #endif
 
@@ -2551,12 +2551,14 @@ test_bson_json_errors (void)
 {
    typedef const char *test_bson_json_error_t[2];
    test_bson_json_error_t tests[] = {
-      {"{\"x\": {\"$numberLong\": 1}}", "Invalid state for integer read: INT64"},
-      {"{\"x\": {\"$binary\": 1}}", "Unexpected integer 1 in type \"binary\""},
-      {"{\"x\": {\"$numberInt\": true}}", "Invalid read of boolean in state IN_BSON_TYPE"},
-      {"{\"x\": {\"$dbPointer\": true}}", "Invalid read of boolean in state IN_BSON_TYPE_DBPOINTER_STARTMAP"},
-      {"[{\"$code\": {}}]", "Unexpected nested object value for \"$code\" key"},
-      {"{\"x\": {\"$numberInt\": \"8589934592\"}}", "Invalid input string \"8589934592\", looking for INT32"},
+      {BSON_STR ({"x" : {"$numberLong" : 1}}), "Invalid state for integer read: INT64"},
+      {BSON_STR ({"x" : {"$binary" : 1}}), "Unexpected integer 1 in type \"binary\""},
+      {BSON_STR ({"x" : {"$numberInt" : true}}), "Invalid read of boolean in state IN_BSON_TYPE"},
+      {BSON_STR ({"x" : {"$dbPointer" : true}}), "Invalid read of boolean in state IN_BSON_TYPE_DBPOINTER_STARTMAP"},
+      {BSON_STR ([ {"$code" : {}} ]), "Unexpected nested object value for \"$code\" key"},
+      {BSON_STR ([ {"$scope" : {}, "$dbPointer" : {"" : {"$code" : ""}}} ]),
+       "Invalid key \"$dbPointer\".  Looking for values for type \"code\", got \"dbpointer\""},
+      {BSON_STR ({"x" : {"$numberInt" : "8589934592"}}), "Invalid input string \"8589934592\", looking for INT32"},
       {0},
    };
 

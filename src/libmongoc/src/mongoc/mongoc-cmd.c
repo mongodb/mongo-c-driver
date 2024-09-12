@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -948,7 +948,7 @@ mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *parts)
 }
 
 bool
-mongoc_cmd_is_compressible (mongoc_cmd_t *cmd)
+mongoc_cmd_is_compressible (const mongoc_cmd_t *cmd)
 {
    BSON_ASSERT (cmd);
    BSON_ASSERT (cmd->command_name);

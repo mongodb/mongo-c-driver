@@ -20,6 +20,9 @@ on_exit () {
 }
 trap on_exit EXIT
 
+git config user.email "evergreen-build@example.com"
+git config user.name "Evergreen Build"
+
 if [ "${IS_PATCH}" = "true" ]; then
   git diff HEAD > ../upstream.patch
   git clean -fdx
@@ -47,15 +50,11 @@ export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
 sudo -E ./debootstrap.git/debootstrap --variant=buildd unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c '(\
-  apt-get install -y build-essential git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax && \
+  apt-get install -y build-essential git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax python3-packaging && \
   chown -R root:root /tmp/mongoc && \
   cd /tmp/mongoc && \
   git clean -fdx && \
   git reset --hard HEAD && \
-  python3 build/calc_release_version.py > VERSION_CURRENT && \
-  python3 build/calc_release_version.py -p > VERSION_RELEASED && \
-  git add --force VERSION_CURRENT VERSION_RELEASED && \
-  git commit VERSION_CURRENT VERSION_RELEASED -m "Set current/released versions" && \
   git remote remove upstream || true && \
   git remote add upstream https://github.com/mongodb/mongo-c-driver && \
   git fetch upstream && \
@@ -88,10 +87,6 @@ sudo chroot ./unstable-i386-chroot /bin/bash -c '(\
   cd /tmp/mongoc && \
   git clean -fdx && \
   git reset --hard HEAD && \
-  python3 build/calc_release_version.py > VERSION_CURRENT && \
-  python3 build/calc_release_version.py -p > VERSION_RELEASED && \
-  git add --force VERSION_CURRENT VERSION_RELEASED && \
-  git commit VERSION_CURRENT VERSION_RELEASED -m "Set current/released versions" && \
   git remote remove upstream || true && \
   git remote add upstream https://github.com/mongodb/mongo-c-driver && \
   git fetch upstream && \

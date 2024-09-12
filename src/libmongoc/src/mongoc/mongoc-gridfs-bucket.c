@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,14 +102,18 @@ mongoc_gridfs_bucket_new (mongoc_database_t *db,
                       "bucketName \"%s\" must have fewer than %d characters",
                       gridfs_opts.bucketName,
                       (int) (sizeof (buf) - (strlen (".chunks") + 1)));
+      return NULL;
    }
 
    bucket = (mongoc_gridfs_bucket_t *) bson_malloc0 (sizeof *bucket);
 
-   bson_snprintf (buf, sizeof (buf), "%s.chunks", gridfs_opts.bucketName);
+   // Expect no truncation from above, checking no error occurred.
+   int req = bson_snprintf (buf, sizeof (buf), "%s.chunks", gridfs_opts.bucketName);
+   BSON_ASSERT (req > 0);
    bucket->chunks = mongoc_database_get_collection (db, buf);
 
-   bson_snprintf (buf, sizeof (buf), "%s.files", gridfs_opts.bucketName);
+   req = bson_snprintf (buf, sizeof (buf), "%s.files", gridfs_opts.bucketName);
+   BSON_ASSERT (req > 0);
    bucket->files = mongoc_database_get_collection (db, buf);
 
    if (gridfs_opts.writeConcern) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-log.h"
 #include "mongoc-error.h"
+
+#include "common-macros-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -695,49 +697,34 @@ _mongoc_stream_tls_openssl_should_retry (mongoc_stream_t *stream)
    RETURN (mongoc_stream_should_retry (tls->base_stream));
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_stream_tls_openssl_new --
- *
- *       Creates a new mongoc_stream_tls_openssl_t to communicate with a remote
- *       server using a TLS stream.
- *
- *       @base_stream should be a stream that will become owned by the
- *       resulting tls stream. It will be used for raw I/O.
- *
- *       @trust_store_dir should be a path to the SSL cert db to use for
- *       verifying trust of the remote server.
- *
- * Returns:
- *       NULL on failure, otherwise a mongoc_stream_t.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-mongoc_stream_t *
-mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
+/* Creates a new mongoc_stream_tls_openssl_t with ssl_ctx. */
+static mongoc_stream_t *
+create_stream_with_ctx (
+   mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
 {
    mongoc_stream_tls_t *tls;
    mongoc_stream_tls_openssl_t *openssl;
    mongoc_openssl_ocsp_opt_t *ocsp_opts = NULL;
-   SSL_CTX *ssl_ctx = NULL;
    BIO *bio_ssl = NULL;
    BIO *bio_mongoc_shim = NULL;
    BIO_METHOD *meth;
+   SSL *ssl;
 
    BSON_ASSERT (base_stream);
    BSON_ASSERT (opt);
    ENTRY;
 
-   ssl_ctx = _mongoc_openssl_ctx_new (opt);
-
    if (!ssl_ctx) {
       RETURN (NULL);
    }
+
+   bio_ssl = BIO_new_ssl (ssl_ctx, client);
+   if (!bio_ssl) {
+      SSL_CTX_free (ssl_ctx);
+      RETURN (NULL);
+   }
+
+   BIO_get_ssl (bio_ssl, &ssl);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L && !defined(LIBRESSL_VERSION_NUMBER)
    if (!opt->allow_invalid_hostname) {
@@ -751,28 +738,11 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, m
       } else {
          X509_VERIFY_PARAM_set1_host (param, host, 0);
       }
-      SSL_CTX_set1_param (ssl_ctx, param);
+      SSL_set1_param (ssl, param);
       X509_VERIFY_PARAM_free (param);
    }
 #endif
 
-   if (!client) {
-      /* Only used by the Mock Server.
-       * Set a callback to get the SNI, if provided */
-      SSL_CTX_set_tlsext_servername_callback (ssl_ctx, _mongoc_stream_tls_openssl_sni);
-   }
-
-   if (opt->weak_cert_validation) {
-      SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_NONE, NULL);
-   } else {
-      SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_PEER, NULL);
-   }
-
-   bio_ssl = BIO_new_ssl (ssl_ctx, client);
-   if (!bio_ssl) {
-      SSL_CTX_free (ssl_ctx);
-      RETURN (NULL);
-   }
    meth = mongoc_stream_tls_openssl_bio_meth_new ();
    bio_mongoc_shim = BIO_new (meth);
    if (!bio_mongoc_shim) {
@@ -785,9 +755,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, m
 /* Added in OpenSSL 0.9.8f, as a build time option */
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
    if (client) {
-      SSL *ssl;
       /* Set the SNI hostname we are expecting certificate for */
-      BIO_get_ssl (bio_ssl, &ssl);
       SSL_set_tlsext_host_name (ssl, host);
 #endif
    }
@@ -796,10 +764,6 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, m
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
    if (client && !opt->weak_cert_validation && !_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
-      SSL *ssl;
-
-      BIO_get_ssl (bio_ssl, &ssl);
-
       /* Set the status_request extension on the SSL object.
        * Do not use SSL_CTX_set_tlsext_status_type, since that requires OpenSSL
        * 1.1.0.
@@ -852,6 +816,78 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, m
 
    RETURN ((mongoc_stream_t *) tls);
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_openssl_new --
+ *
+ *       Creates a new mongoc_stream_tls_openssl_t to communicate with a remote
+ *       server using a TLS stream.
+ *
+ *       @base_stream should be a stream that will become owned by the
+ *       resulting tls stream. It will be used for raw I/O.
+ *
+ * Returns:
+ *       NULL on failure, otherwise a mongoc_stream_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_stream_t *
+mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
+{
+   SSL_CTX *ssl_ctx = _mongoc_openssl_ctx_new (opt);
+
+   if (!ssl_ctx) {
+      RETURN (NULL);
+   }
+
+   if (!client) {
+      /* Only used by the Mock Server.
+       * Set a callback to get the SNI, if provided */
+      SSL_CTX_set_tlsext_servername_callback (ssl_ctx, _mongoc_stream_tls_openssl_sni);
+   }
+
+   return create_stream_with_ctx (base_stream, host, opt, client, ssl_ctx);
+}
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_openssl_new_with_context --
+ *
+ *       Creates a new mongoc_stream_tls_openssl_t to communicate with a remote
+ *       server using a TLS stream, using an existing OpenSSL context.
+ *
+ *       Only called by mongoc_stream_tls_new_with_hostname_and_openssl_context.
+ *
+ *       @ssl_ctx is the shared OpenSSL context for the mongoc_client_t
+ *       associated with this function call.
+ *
+ * Returns:
+ *       NULL on failure, otherwise a mongoc_stream_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_stream_t *
+mongoc_stream_tls_openssl_new_with_context (
+   mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
+{
+   BSON_ASSERT_PARAM (ssl_ctx);
+   SSL_CTX_up_ref (ssl_ctx);
+
+   return create_stream_with_ctx (base_stream, host, opt, client, ssl_ctx);
+}
+#endif
 
 void
 mongoc_openssl_ocsp_opt_destroy (void *ocsp_opt)

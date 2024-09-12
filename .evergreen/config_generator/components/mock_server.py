@@ -3,6 +3,7 @@ from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_task import EvgTaskRef
 
 from config_generator.components.funcs.fetch_det import FetchDET
+from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.etc.utils import Task
 from config_generator.etc.utils import bash_exec
@@ -16,6 +17,7 @@ def tasks():
                 # Call fetch-det to define PYTHON3_BINARY expansion required for run-simple-http-server.
                 FetchDET.call(),
                 RunSimpleHTTPServer.call(),
+                FindCMakeLatest.call(),
                 bash_exec(
                     command_type=EvgCommandType.TEST,
                     add_expansions_to_env=True,

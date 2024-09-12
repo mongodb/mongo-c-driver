@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,7 +214,8 @@ _mongoc_simple_rand_uint64_t (void);
 size_t
 _mongoc_simple_rand_size_t (void);
 
-/* Returns a uniformly-distributed random integer in the range [min, max].
+/* Returns a uniformly-distributed random integer in the range [min, max]
+ * using the provided `rand` generator.
  *
  * The size of the range [min, max] must not equal the size of the representable
  * range of uint32_t (`min == 0 && max == UINT32_MAX` must not be true).
@@ -225,7 +226,8 @@ _mongoc_simple_rand_size_t (void);
 uint32_t
 _mongoc_rand_uint32_t (uint32_t min, uint32_t max, uint32_t (*rand) (void));
 
-/* Returns a uniformly-distributed random integer in the range [min, max].
+/* Returns a uniformly-distributed random integer in the range [min, max]
+ * using the provided `rand` generator.
  *
  * The size of the range [min, max] must not equal the size of the representable
  * range of uint64_t (`min == 0 && max == UINT64_MAX` must not be true).
@@ -236,16 +238,14 @@ _mongoc_rand_uint32_t (uint32_t min, uint32_t max, uint32_t (*rand) (void));
 uint64_t
 _mongoc_rand_uint64_t (uint64_t min, uint64_t max, uint64_t (*rand) (void));
 
-/* Returns a uniformly-distributed random integer in the range [min, max].
+/* Returns a uniformly-distributed random integer in the range [min, max]
+ * using the `_mongoc_simple_rand_size_t()` generator.
  *
  * The size of the range [min, max] must not equal the size of the representable
  * range of size_t (`min == 0 && max == SIZE_MAX` must not be true).
- *
- * The generator `rand` must return a random integer uniformly distributed in
- * the full range of representable values of size_t.
  */
 size_t
-_mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void));
+_mongoc_rand_size_t (size_t min, size_t max);
 
 /* _mongoc_iter_document_as_bson attempts to read the document from @iter into
  * @bson. */

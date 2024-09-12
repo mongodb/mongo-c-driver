@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1425,6 +1425,32 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 
    before_slash = scan_to_unichar (str, '/', "", &tmp);
    if (!before_slash) {
+      // Handle cases of optional delimiting slash
+      char *userpass = NULL;
+      char *hosts = NULL;
+
+      // Skip any "?"s that exist in the userpass
+      userpass = scan_to_unichar (str, '@', "", &tmp);
+      if (!userpass) {
+         // If none found, safely check for "?" indicating beginning of options
+         before_slash = scan_to_unichar (str, '?', "", &tmp);
+      } else {
+         const size_t userpass_len = (size_t) (tmp - str);
+         // Otherwise, see if options exist after userpass and concatenate result
+         hosts = scan_to_unichar (tmp, '?', "", &tmp);
+
+         if (hosts) {
+            const size_t hosts_len = (size_t) (tmp - str) - userpass_len;
+
+            before_slash = bson_strndup (str, userpass_len + hosts_len);
+         }
+      }
+
+      bson_free (userpass);
+      bson_free (hosts);
+   }
+
+   if (!before_slash) {
       before_slash = bson_strdup (str);
       str += strlen (before_slash);
    } else {
@@ -1438,7 +1464,14 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    BSON_ASSERT (str);
 
    if (*str) {
+      // Check for valid end of hostname delimeter (skip slash if necessary)
+      if (*str != '/' && *str != '?') {
+         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
+         goto error;
+      }
+
       if (*str == '/') {
+         // Try to parse database.
          str++;
          if (*str) {
             if (!mongoc_uri_parse_database (uri, str, &str)) {
@@ -1446,18 +1479,16 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
                goto error;
             }
          }
+      }
 
-         if (*str == '?') {
-            str++;
-            if (*str) {
-               if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
-                  goto error;
-               }
+      if (*str == '?') {
+         // Try to parse options.
+         str++;
+         if (*str) {
+            if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
+               goto error;
             }
          }
-      } else {
-         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
-         goto error;
       }
    }
 
@@ -1633,9 +1664,9 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
    uri->write_concern = write_concern;
 
    bsonParse (uri->options,
-              find (iKeyWithType (MONGOC_URI_SAFE, bool),
+              find (iKeyWithType (MONGOC_URI_SAFE, boolean),
                     do (mongoc_write_concern_set_w (write_concern,
-                                                    bsonAs (bool) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED))));
+                                                    bsonAs (boolean) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED))));
 
    if (bsonParseError) {
       MONGOC_URI_ERROR (error, "Error while parsing 'safe' URI option: %s", bsonParseError);
@@ -1651,8 +1682,8 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
    }
 
    bsonParse (uri->options,
-              find (iKeyWithType (MONGOC_URI_JOURNAL, bool),
-                    do (mongoc_write_concern_set_journal (write_concern, bsonAs (bool)))));
+              find (iKeyWithType (MONGOC_URI_JOURNAL, boolean),
+                    do (mongoc_write_concern_set_journal (write_concern, bsonAs (boolean)))));
    if (bsonParseError) {
       MONGOC_URI_ERROR (error, "Error while parsing 'journal' URI option: %s", bsonParseError);
       return false;

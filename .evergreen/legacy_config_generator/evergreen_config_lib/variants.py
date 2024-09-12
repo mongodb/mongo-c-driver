@@ -1,4 +1,4 @@
-# Copyright 2018-present MongoDB, Inc.
+# Copyright 2009-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -487,7 +487,7 @@ all_variants = [
     Variant(
         "packaging",
         "Linux Distro Packaging",
-        "ubuntu1804-test",
+        "debian12-latest-small",
         [
             "debian-package-build",
             OD([("name", "rpm-package-build"), ("distros", ["rhel90-arm64-small"])]),

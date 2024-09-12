@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -310,4 +310,13 @@ _mongoc_error_is_auth (const bson_error_t *error)
    }
 
    return error->domain == MONGOC_ERROR_CLIENT && error->code == MONGOC_ERROR_CLIENT_AUTHENTICATE;
+}
+
+void
+_mongoc_error_append (bson_error_t *error, const char *s)
+{
+   BSON_ASSERT (error);
+   const size_t error_len = strlen (error->message);
+   const size_t remaining = sizeof (error->message) - error_len;
+   bson_strncpy (error->message + error_len, s, remaining);
 }

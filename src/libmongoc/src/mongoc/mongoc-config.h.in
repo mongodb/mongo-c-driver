@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,15 @@
 #  undef MONGOC_ENABLE_CRYPTO_CNG
 #endif
 
+/*
+ * MONGOC_HAVE_BCRYPT_PBKDF2 is set from configure to determine if 
+ * our Bcrypt Windows library supports PBKDF2 
+ */
+#define MONGOC_HAVE_BCRYPT_PBKDF2 @MONGOC_HAVE_BCRYPT_PBKDF2@
+
+#if MONGOC_HAVE_BCRYPT_PBKDF2 != 1
+#  undef MONGOC_HAVE_BCRYPT_PBKDF2
+#endif
 
 /*
  * MONGOC_ENABLE_SSL_SECURE_TRANSPORT is set from configure to determine if we are

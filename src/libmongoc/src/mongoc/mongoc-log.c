@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@
 static bson_once_t once = BSON_ONCE_INIT;
 static bson_mutex_t gLogMutex;
 static mongoc_log_func_t gLogFunc = mongoc_log_default_handler;
-static bool gLogTrace = MONGOC_TRACE_ENABLED;
+bool gLogTrace = MONGOC_TRACE_ENABLED;
 static void *gLogData;
 
 static BSON_ONCE_FUN (_mongoc_ensure_mutex_once)
@@ -217,9 +217,7 @@ mongoc_log_default_handler (mongoc_log_level_t log_level, const char *log_domain
 void
 mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
 {
-   if (!_mongoc_log_trace_is_enabled ()) {
-      return;
-   }
+   STOP_LOGGING_CHECK;
 
    bson_string_t *const str = bson_string_new (NULL);
    bson_string_t *const astr = bson_string_new (NULL);
@@ -269,9 +267,7 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
    size_t _l = 0;
    uint8_t _v;
 
-   if (!_mongoc_log_trace_is_enabled ()) {
-      return;
-   }
+   STOP_LOGGING_CHECK;
 
    for (_i = 0; _i < _iovcnt; _i++) {
       _l += _iov[_i].iov_len;

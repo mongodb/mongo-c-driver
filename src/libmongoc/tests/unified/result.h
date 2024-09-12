@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ void
 result_from_bulk_write (result_t *result, const bson_t *reply, const bson_error_t *error);
 
 void
-result_from_bulkwritereturn (result_t *result, mongoc_bulkwritereturn_t bwr, size_t nmodels);
+result_from_bulkwritereturn (result_t *result, mongoc_bulkwritereturn_t bwr);
 
 void
 result_from_insert_one (result_t *result, const bson_t *reply, const bson_error_t *error);

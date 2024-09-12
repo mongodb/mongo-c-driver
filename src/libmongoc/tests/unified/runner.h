@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,6 @@ void
 run_unified_tests (TestSuite *suite, const char *base, const char *subdir);
 
 void
-run_one_test_file (bson_t *bson);
+run_one_test_file (void *bson_vp);
 
 #endif /* UNIFIED_RUNNER_H */

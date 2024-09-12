@@ -19,7 +19,7 @@ current="$(cat VERSION_CURRENT)"
 env \
   CFLAGS="-g -Og" \
   EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/changes-install" \
-  bash .evergreen/scripts/compile.sh
+  .evergreen/scripts/compile.sh
 
 # checkout the newest release
 git checkout "tags/${newest}" -f
