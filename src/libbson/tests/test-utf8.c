@@ -81,6 +81,29 @@ test_bson_utf8_escape_for_json (void)
    str = bson_utf8_escape_for_json (unescaped, -1);
    BSON_ASSERT (0 == memcmp (str, "\\u000e", 7));
    bson_free (str);
+
+   // Invalid UTF-8 strings (should return null)
+
+   // 2 bytes expected
+   str = bson_utf8_escape_for_json ("\xc2", -1);
+   BSON_ASSERT (!str);
+
+   // 3 bytes expected
+   str = bson_utf8_escape_for_json ("\xed", -1);
+   BSON_ASSERT (!str);
+
+   str = bson_utf8_escape_for_json ("\xed\x90", -1);
+   BSON_ASSERT (!str);
+
+   // 4 bytes expected
+   str = bson_utf8_escape_for_json ("\xf0", -1);
+   BSON_ASSERT (!str);
+
+   str = bson_utf8_escape_for_json ("\xf0\x9f", -1);
+   BSON_ASSERT (!str);
+
+   str = bson_utf8_escape_for_json ("\xf0\x9f\x9f", -1);
+   BSON_ASSERT (!str);
 }
 
 
