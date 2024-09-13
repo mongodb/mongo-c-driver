@@ -2358,7 +2358,7 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
 const char *
 mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)
 {
-   BSON_ASSERT (uri);
+   BSON_ASSERT_PARAM (uri);
 
    return mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_SERVERMONITORINGMODE, "auto");
 }
@@ -2367,12 +2367,8 @@ mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)
 bool
 mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value)
 {
-   BSON_ASSERT (uri);
-   BSON_ASSERT (value);
-
-   if (!bson_utf8_validate (value, strlen (value), false)) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (value);
 
    // Check for valid value
    if (strcmp (value, "stream") && strcmp (value, "poll") && strcmp (value, "auto")) {
