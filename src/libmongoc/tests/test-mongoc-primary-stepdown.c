@@ -38,12 +38,10 @@ _setup_test_with_client (mongoc_client_t *client)
 
    ASSERT (client);
 
-   bson_t *const opts = bson_new ();
-
    {
       mongoc_write_concern_t *const wc = mongoc_write_concern_new ();
       mongoc_write_concern_set_wmajority (wc, -1);
-      ASSERT (mongoc_write_concern_append (wc, opts));
+      mongoc_client_set_write_concern (client, wc);
       mongoc_write_concern_destroy (wc);
    }
 
@@ -66,13 +64,11 @@ _setup_test_with_client (mongoc_client_t *client)
 
    {
       mongoc_database_t *const db = mongoc_client_get_database (client, "step-down");
-      mongoc_collection_t *const coll = mongoc_database_create_collection (db, "step-down", opts, &error);
+      mongoc_collection_t *const coll = mongoc_database_create_collection (db, "step-down", NULL, &error);
       ASSERT_OR_PRINT (coll, error);
       mongoc_collection_destroy (coll);
       mongoc_database_destroy (db);
    }
-
-   bson_destroy (opts);
 }
 
 static int
@@ -141,25 +137,18 @@ _run_test_single_or_pooled (_test_fn_t test, bool use_pooled)
 static void
 test_getmore_iteration (mongoc_client_t *client)
 {
-   mongoc_write_concern_t *wc;
    mongoc_database_t *db;
    mongoc_collection_t *coll;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
    bson_t *insert;
-   bson_t *opts;
    bool res;
    int conn_count;
    int i;
    uint32_t primary_id;
 
    ASSERT (client);
-
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, -1);
-   opts = bson_new ();
-   ASSERT (mongoc_write_concern_append (wc, opts));
 
    coll = mongoc_client_get_collection (client, "step-down", "step-down");
 
@@ -181,7 +170,7 @@ test_getmore_iteration (mongoc_client_t *client)
       insert = bson_new ();
 
       bson_append_int32 (insert, "a", -1, i);
-      ASSERT (mongoc_collection_insert_one (coll, insert, opts, NULL, NULL));
+      ASSERT (mongoc_collection_insert_one (coll, insert, NULL, NULL, NULL));
 
       bson_destroy (insert);
    }
@@ -209,8 +198,6 @@ test_getmore_iteration (mongoc_client_t *client)
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (coll);
    mongoc_database_destroy (db);
-   mongoc_write_concern_destroy (wc);
-   bson_destroy (opts);
 }
 
 static void
