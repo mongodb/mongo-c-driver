@@ -24,6 +24,11 @@
 #include "mongoc-topology-private.h"
 
 /* For background monitoring of a single server. */
+typedef enum {
+   MONGOC_SERVER_MONITORING_AUTO = 0,
+   MONGOC_SERVER_MONITORING_POLL,
+   MONGOC_SERVER_MONITORING_STREAM
+} mongoc_server_monitoring_mode_t;
 
 typedef struct _mongoc_server_monitor_t mongoc_server_monitor_t;
 
