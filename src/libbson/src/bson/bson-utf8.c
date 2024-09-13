@@ -245,7 +245,7 @@ bson_utf8_validate (const char *utf8, /* IN */
  *       two byte UTF-8 sequence.
  *
  * Parameters:
- *       @utf8: A UTF-8 encoded string.
+ *       @utf8: A validated UTF-8 encoded string.
  *       @utf8_len: The length of @utf8 in bytes or -1 if NUL terminated.
  *
  * Returns:
