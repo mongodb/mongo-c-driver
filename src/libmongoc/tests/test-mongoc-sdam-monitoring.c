@@ -958,15 +958,13 @@ test_no_duplicates (void)
    mongoc_client_pool_destroy (pool);
 }
 
-typedef enum {
-   SERVER_HEARTBEAT_STARTED = 0,
-   SERVER_HEARTBEAT_SUCCEEDED,
-   SERVER_HEARTBEAT_FAILED,
-} smm_event_type_t;
+static const char *SERVER_HEARTBEAT_STARTED = "started";
+static const char *SERVER_HEARTBEAT_SUCCEEDED = "succeeded";
+static const char *SERVER_HEARTBEAT_FAILED = "failed";
 
 typedef struct {
    bool awaited;
-   smm_event_type_t type;
+   const char *type;
 } smm_event_t;
 
 // `smm_t` is a test fixture for serverMonitoringMode tests
@@ -979,7 +977,7 @@ typedef struct {
 } smm_t;
 
 static void
-handle_heartbeat_event (smm_t *t, bool awaited, smm_event_type_t event_type)
+handle_heartbeat_event (smm_t *t, bool awaited, const char *event_type)
 {
    bson_mutex_lock (&t->lock);
 
@@ -1079,21 +1077,21 @@ smm_wait (smm_t *t, size_t count)
 }
 
 
-static void
-smm_assert (smm_t *t, bool stream)
-{
-   bson_mutex_lock (&t->lock);
-
-   // First two events should always be a non-awaited heartbeat started and succeeded
-   ASSERT_CMPSIZE_T (t->events_len, ==, 3);
-   ASSERT_CMPINT (t->events[0].type, ==, SERVER_HEARTBEAT_STARTED);
-   ASSERT (!t->events[0].awaited);
-   ASSERT_CMPINT (t->events[1].type, ==, SERVER_HEARTBEAT_SUCCEEDED);
-   ASSERT (!t->events[1].awaited);
-   ASSERT_CMPINT (t->events[2].type, ==, SERVER_HEARTBEAT_STARTED);
-   ASSERT (stream == t->events[2].awaited); // check for stream or pool
-   bson_mutex_unlock (&t->lock);
-}
+#define smm_assert(t, stream)                                                               \
+   if (1) {                                                                                 \
+      bson_mutex_lock (&t->lock);                                                           \
+                                                                                            \
+      /* First two events should always be a non-awaited heartbeat started and succeeded */ \
+      ASSERT_CMPSIZE_T (t->events_len, ==, 3);                                              \
+      ASSERT_CMPSTR (t->events[0].type, SERVER_HEARTBEAT_STARTED);                          \
+      ASSERT (!t->events[0].awaited);                                                       \
+      ASSERT_CMPSTR (t->events[1].type, SERVER_HEARTBEAT_SUCCEEDED);                        \
+      ASSERT (!t->events[1].awaited);                                                       \
+      ASSERT_CMPSTR (t->events[2].type, SERVER_HEARTBEAT_STARTED);                          \
+      ASSERT (stream == t->events[2].awaited); /* check for stream or pool */               \
+      bson_mutex_unlock (&t->lock);                                                         \
+   } else                                                                                   \
+      (void) 0
 
 static void
 smm_destroy (smm_t *t)
@@ -1122,74 +1120,75 @@ test_serverMonitoringMode (void)
 
    if (test_framework_get_server_version () >= test_framework_str_to_version ("4.4.0")) {
       printf ("'connect with serverMonitoringMode=auto >=4.4' ... begin\n");
+
       t = smm_new ("auto");
       ASSERT (smm_wait (t, 3));
-      {
-         smm_assert (t, true);
-      }
+      smm_assert (t, true);
       smm_destroy (t);
+
       printf ("'connect with serverMonitoringMode=auto >=4.4' ... end\n");
 
       printf ("'connect with serverMonitoringMode=stream >=4.4' ... begin\n");
+
       t = smm_new ("stream");
       ASSERT (smm_wait (t, 3));
-      {
-         smm_assert (t, true);
-      }
+      smm_assert (t, true);
       smm_destroy (t);
+
       printf ("'connect with serverMonitoringMode=stream >=4.4' ... end\n");
 
       // Additional tests checking behavior when in a FAAS env
-      printf ("'connect with serverMonitoringMode=auto >=4.4 and in FAAS env' ... begin\n");
-      t = smm_new ("auto");
+      mongoc_handshake_env_t prev_env = md->env;
       md->env = MONGOC_HANDSHAKE_ENV_AWS;
+
+      printf ("'connect with serverMonitoringMode=auto >=4.4 and in FAAS env' ... begin\n");
+
+      t = smm_new ("auto");
       ASSERT (smm_wait (t, 3));
-      {
-         smm_assert (t, false);
-      }
+      smm_assert (t, false);
       smm_destroy (t);
+
       printf ("'connect with serverMonitoringMode=auto >=4.4 and in FAAS env' ... end\n");
 
       printf ("'connect with serverMonitoringMode=stream >=4.4 and in FAAS env' ... begin\n");
-      t = smm_new ("stream");
 
+      t = smm_new ("stream");
       ASSERT (smm_wait (t, 3));
-      {
-         smm_assert (t, true);
-      }
+      smm_assert (t, true);
       smm_destroy (t);
+
       printf ("'connect with serverMonitoringMode=stream >=4.4 and in FAAS env' ... end\n");
 
-      md->env = MONGOC_HANDSHAKE_ENV_NONE;
+      md->env = prev_env;
    }
 
    if (test_framework_get_server_version () <= test_framework_str_to_version ("4.2.99")) {
       printf ("'connect with serverMonitoringMode=auto <4.4' ... begin\n");
+
       t = smm_new ("auto");
       ASSERT (smm_wait (t, 3));
-      {
-         smm_assert (t, false);
-      }
+      smm_assert (t, false);
       smm_destroy (t);
+
       printf ("'connect with serverMonitoringMode=auto <4.4' ... end\n");
 
       printf ("'connect with serverMonitoringMode=stream <4.4' ... begin\n");
+
       t = smm_new ("stream");
       ASSERT (smm_wait (t, 3));
-      {
-         smm_assert (t, false);
-      }
+      smm_assert (t, false);
       smm_destroy (t);
+
       printf ("'connect with serverMonitoringMode=stream <4.4' ... end\n");
    }
 
    printf ("'connect with serverMonitoringMode=poll' ... begin\n");
+
    t = smm_new ("poll");
    ASSERT (smm_wait (t, 3));
-   {
-      smm_assert (t, false);
-   }
+   smm_assert (t, false);
    smm_destroy (t);
+
    printf ("'connect with serverMonitoringMode=poll' ... end\n");
 }
 
