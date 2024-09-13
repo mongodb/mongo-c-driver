@@ -34,35 +34,44 @@ _get_test_uri (void)
 static void
 _setup_test_with_client (mongoc_client_t *client)
 {
-   mongoc_write_concern_t *wc;
-   mongoc_database_t *db;
-   mongoc_collection_t *coll;
    bson_error_t error;
-   bson_t *opts;
 
    ASSERT (client);
 
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, -1);
-   opts = bson_new ();
-   ASSERT (mongoc_write_concern_append (wc, opts));
+   bson_t *const opts = bson_new ();
 
-   /* Drop the "step-down.step-down" collection and re-create it */
-   coll = mongoc_client_get_collection (client, "step-down", "step-down");
-   if (!mongoc_collection_drop (coll, &error)) {
-      if (NULL == strstr (error.message, "ns not found")) {
-         ASSERT_OR_PRINT (false, error);
-      }
+   {
+      mongoc_write_concern_t *const wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_wmajority (wc, -1);
+      ASSERT (mongoc_write_concern_append (wc, opts));
+      mongoc_write_concern_destroy (wc);
    }
 
-   db = mongoc_client_get_database (client, "step-down");
-   mongoc_collection_destroy (coll);
-   coll = mongoc_database_create_collection (db, "step-down", opts, &error);
-   ASSERT_OR_PRINT (coll, error);
+   {
+      mongoc_read_concern_t *const rc = mongoc_read_concern_new ();
+      ASSERT (mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY));
+      mongoc_client_set_read_concern (client, rc);
+      mongoc_read_concern_destroy (rc);
+   }
 
-   mongoc_collection_destroy (coll);
-   mongoc_database_destroy (db);
-   mongoc_write_concern_destroy (wc);
+   { /* Drop the "step-down.step-down" collection and re-create it */
+      mongoc_collection_t *const coll = mongoc_client_get_collection (client, "step-down", "step-down");
+      if (!mongoc_collection_drop (coll, &error)) {
+         if (NULL == strstr (error.message, "ns not found")) {
+            ASSERT_OR_PRINT (false, error);
+         }
+      }
+      mongoc_collection_destroy (coll);
+   }
+
+   {
+      mongoc_database_t *const db = mongoc_client_get_database (client, "step-down");
+      mongoc_collection_t *const coll = mongoc_database_create_collection (db, "step-down", opts, &error);
+      ASSERT_OR_PRINT (coll, error);
+      mongoc_collection_destroy (coll);
+      mongoc_database_destroy (db);
+   }
+
    bson_destroy (opts);
 }
 
