@@ -265,6 +265,8 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
    bson_string_t *str;
    bool length_provided = true;
    const char *end;
+   uint8_t mask;
+   uint8_t length_of_char;
 
    BSON_ASSERT (utf8);
 
@@ -278,6 +280,14 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
    end = utf8 + utf8_len;
 
    while (utf8 < end) {
+      // Check if expected char length goes past end
+      _bson_utf8_get_sequence (utf8, &length_of_char, &mask);
+      if (utf8 + length_of_char > end) {
+         // Invalid UTF-8
+         bson_string_free (str, true);
+         return NULL;
+      }
+
       c = bson_utf8_get_char (utf8);
 
       switch (c) {
