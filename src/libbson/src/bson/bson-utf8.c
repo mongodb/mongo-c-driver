@@ -245,7 +245,7 @@ bson_utf8_validate (const char *utf8, /* IN */
  *       two byte UTF-8 sequence.
  *
  * Parameters:
- *       @utf8: A validated UTF-8 encoded string.
+ *       @utf8: A UTF-8 encoded string.
  *       @utf8_len: The length of @utf8 in bytes or -1 if NUL terminated.
  *
  * Returns:
@@ -265,8 +265,6 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
    bson_string_t *str;
    bool length_provided = true;
    const char *end;
-   uint8_t mask;
-   uint8_t length_of_char;
 
    BSON_ASSERT (utf8);
 
@@ -280,9 +278,12 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
    end = utf8 + utf8_len;
 
    while (utf8 < end) {
+      uint8_t mask;
+      uint8_t length_of_char;
+
       // Check if expected char length goes past end
       _bson_utf8_get_sequence (utf8, &length_of_char, &mask);
-      if (utf8 + length_of_char > end) {
+      if (utf8 > end - length_of_char) {
          goto invalid_utf8;
       }
 
