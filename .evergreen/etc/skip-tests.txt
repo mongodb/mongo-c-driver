@@ -30,3 +30,6 @@
 /transactions/legacy/pin-mongos/"unpin after transient error within a transaction and commit" # (CDRIVER-4351) server selection timeout (on ASAN Tests Ubuntu 18.04 build variant)
 
 /client_side_encryption/bypass_spawning_mongocryptd/mongocryptdBypassSpawn  # Fails if crypt_shared is visible
+
+/Stepdown/getmore/single # SPEC-1442: C Driver does not implement connection pools or CMAP.
+/Stepdown/getmore/pooled # SPEC-1442: C Driver does not implement connection pools or CMAP.
