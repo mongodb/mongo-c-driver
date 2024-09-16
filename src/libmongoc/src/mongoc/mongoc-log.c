@@ -21,6 +21,7 @@
 #include <process.h>
 #elif defined(__APPLE__)
 #include <pthread.h>
+#include <AvailabilityMacros.h>
 #elif defined(__FreeBSD__)
 #include <sys/thr.h>
 #elif defined(__NetBSD__)
@@ -197,9 +198,15 @@ mongoc_log_default_handler (mongoc_log_level_t log_level, const char *log_domain
 #elif defined(__NetBSD__)
    pid = (int) _lwp_self ();
 #elif defined(__APPLE__)
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1070
+   // libc on macOS < 10.7 does not support `pthread_threadid_np`
+   mach_port_t tid = pthread_mach_thread_np (pthread_self ());
+   pid = (int) tid;
+#else
    uint64_t tid;
    pthread_threadid_np (0, &tid);
    pid = (int) tid;
+#endif
 #else
    pid = (int) getpid ();
 #endif
