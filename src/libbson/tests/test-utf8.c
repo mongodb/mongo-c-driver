@@ -66,6 +66,10 @@ test_bson_utf8_escape_for_json (void)
    BSON_ASSERT (0 == memcmp (str, "my\\u0000key", 7));
    bson_free (str);
 
+   str = bson_utf8_escape_for_json ("my\xc0\x80key", 7);
+   BSON_ASSERT (0 == memcmp (str, "my\\u0000key", strlen (str)));
+   bson_free (str);
+
    str = bson_utf8_escape_for_json ("my\"key", 6);
    BSON_ASSERT (0 == memcmp (str, "my\\\"key", 8));
    bson_free (str);
@@ -85,8 +89,14 @@ test_bson_utf8_escape_for_json (void)
    // Invalid UTF-8 strings (should return null)
 
    // 2 bytes expected
-   str = bson_utf8_escape_for_json ("\xc2", -1);
-   BSON_ASSERT (!str);
+   {
+      str = bson_utf8_escape_for_json ("\xc2", -1);
+      BSON_ASSERT (!str);
+
+      str = bson_utf8_escape_for_json ("\xc3\xa9", -1);
+      BSON_ASSERT (str);
+      bson_free (str);
+   }
 
    // 3 bytes expected
    {
@@ -95,6 +105,10 @@ test_bson_utf8_escape_for_json (void)
 
       str = bson_utf8_escape_for_json ("\xed\x90", -1);
       BSON_ASSERT (!str);
+
+      str = bson_utf8_escape_for_json ("\xe4\xb8\xad", -1);
+      BSON_ASSERT (str);
+      bson_free (str);
    }
 
    // 4 bytes expected
@@ -107,12 +121,11 @@ test_bson_utf8_escape_for_json (void)
 
       str = bson_utf8_escape_for_json ("\xf0\x9f\x9f", -1);
       BSON_ASSERT (!str);
-   }
 
-   // Convert both types of null chars (0x0 and 0xc0 0x80) to correct unicode
-   str = bson_utf8_escape_for_json ("\x0\xc0\x80", 3);
-   BSON_ASSERT (0 == memcmp (str, "\\u0000\\u0000", 4));
-   bson_free (str);
+      str = bson_utf8_escape_for_json ("\xf0\xa0\x9c\x8f", -1);
+      BSON_ASSERT (str);
+      bson_free (str);
+   }
 }
 
 
