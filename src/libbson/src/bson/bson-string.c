@@ -78,7 +78,7 @@ bson_string_ensure_space (bson_string_t *string, uint32_t needed)
  *
  * bson_string_new --
  *
- *       Create a new bson_string_t.
+ *       Create a new bson_string_t from an existing char *.
  *
  *       bson_string_t is a power-of-2 allocation growing string. Every
  *       time data is appended the next power of two size is chosen for
@@ -116,7 +116,53 @@ bson_string_new (const char *str) /* IN */
 
    ret->str[len_u32] = '\0';
    ret->len = len_u32;
+   return ret;
+}
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_string_alloc --
+ *
+ *       Create an empty bson_string_t and allocate memory for it.
+ *
+ *       bson_string_t is a power-of-2 allocation growing string. Every
+ *       time data is appended the next power of two size is chosen for
+ *       the allocation. Pretty standard stuff.
+ *
+ *       It is UTF-8 aware through the use of bson_string_append_unichar().
+ *       The proper UTF-8 character sequence will be used.
+ *
+ * Parameters:
+ *       @len: Length of the string to allocate
+ *
+ * Returns:
+ *       A newly allocated bson_string_t that should be freed with
+ *       bson_string_free().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bson_string_t *
+bson_string_alloc (uint8_t len)
+{
+   bson_string_t *ret;
+
+   ret = bson_malloc0 (sizeof *ret);
+   ret->len = 0;
+   ret->alloc = len + 1;
+
+   if (!bson_is_power_of_two (ret->alloc)) {
+      ret->alloc = (uint32_t) bson_next_power_of_two ((size_t) ret->alloc);
+   }
+
+   BSON_ASSERT (ret->alloc >= 1);
+
+   ret->str = bson_malloc (ret->alloc);
+   ret->str[ret->len] = '\0';
    return ret;
 }
 
@@ -145,6 +191,41 @@ bson_string_free (bson_string_t *string, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * bson_string_append_ex --
+ *
+ *       Append the UTF-8 string @str of given length @len to @string.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+bson_string_append_ex (bson_string_t *string, /* IN */
+                       const char *str,       /* IN */
+                       const size_t len)      /* IN */
+{
+   BSON_ASSERT (string);
+   BSON_ASSERT (str);
+
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len));
+   const uint32_t len_u32 = (uint32_t) len;
+   BSON_ASSERT (len_u32 <= UINT32_MAX - string->len);
+   const uint32_t new_len = len_u32 + string->len;
+   bson_string_ensure_space (string, new_len);
+   memcpy (string->str + string->len, str, len);
+   string->str[new_len] = '\0';
+   string->len = new_len;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * bson_string_append --
  *
  *       Append the UTF-8 string @str to @string.
@@ -162,18 +243,7 @@ void
 bson_string_append (bson_string_t *string, /* IN */
                     const char *str)       /* IN */
 {
-   BSON_ASSERT (string);
-   BSON_ASSERT (str);
-
-   const size_t len_sz = strlen (str);
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len_sz));
-   const uint32_t len_u32 = (uint32_t) len_sz;
-   BSON_ASSERT (len_u32 <= UINT32_MAX - string->len);
-   const uint32_t new_len = len_u32 + string->len;
-   bson_string_ensure_space (string, new_len);
-   memcpy (string->str + string->len, str, len_sz);
-   string->str[new_len] = '\0';
-   string->len = new_len;
+   bson_string_append_ex (string, str, strlen (str));
 }
 
 
@@ -248,6 +318,28 @@ bson_string_append_unichar (bson_string_t *string,  /* IN */
       str[len] = '\0';
       bson_string_append (string, str);
    }
+}
+
+void
+bson_string_append_codepoint (bson_string_t *string,  /* IN */
+                              bson_unichar_t unichar) /* IN */
+{
+   const char digits[] = "0123456789abcdef";
+   char str[6] = "\\u0000";
+
+   BSON_ASSERT (string);
+
+   if (unichar > 0xffff) {
+      bson_string_append_printf (string, "\\u%04x", unichar);
+      return;
+   }
+
+   str[2] = digits[(unichar >> 12) & 0xf];
+   str[3] = digits[(unichar >> 8) & 0xf];
+   str[4] = digits[(unichar >> 4) & 0xf];
+   str[5] = digits[unichar & 0xf];
+
+   bson_string_append_ex (string, str, 6);
 }
 
 

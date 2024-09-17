@@ -231,6 +231,28 @@ bson_utf8_validate (const char *utf8, /* IN */
 }
 
 
+static bool
+is_special_char (unsigned char c)
+{
+   /*
+   C++ equivalent:
+   std::bitset<256> charmap = [...]
+   return charmap[c];
+   */
+   static const bson_unichar_t charmap[8] = {0xffffffff, // control characters
+                                             0x00000004, // double quote "
+                                             0x10000000, // backslash
+                                             0x00000000,
+                                             0xffffffff,
+                                             0xffffffff,
+                                             0xffffffff,
+                                             0xffffffff}; // non-ASCII
+   const int int_index = c / (sizeof (bson_unichar_t) * 8);
+   const int bit_index = c & (sizeof (bson_unichar_t) * 8 - 1);
+   return (charmap[int_index] >> bit_index) & 1;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -264,36 +286,90 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
    bson_unichar_t c;
    bson_string_t *str;
    bool length_provided = true;
+   ssize_t pos;
    const char *end;
 
    BSON_ASSERT (utf8);
-
-   str = bson_string_new (NULL);
 
    if (utf8_len < 0) {
       length_provided = false;
       utf8_len = strlen (utf8);
    }
 
+   if (utf8_len == 0) {
+      return bson_strdup ("");
+   }
+
    end = utf8 + utf8_len;
 
-   while (utf8 < end) {
-      uint8_t mask;
-      uint8_t length_of_char;
+   str = bson_string_alloc (utf8_len);
 
-      // Check if expected char length goes past end
-      _bson_utf8_get_sequence (utf8, &length_of_char, &mask);
-      if (utf8 > end - length_of_char) {
-         goto invalid_utf8;
+   pos = 0;
+
+   do {
+      c = (unsigned char) utf8[pos];
+      if (!is_special_char (c)) {
+         // Normal character, no need to do anything besides iterate
+         // Copy rest of the string if we reach the end
+         pos++;
+         utf8_len--;
+         if (utf8_len == 0) {
+            bson_string_append_ex (str, utf8, pos);
+            break;
+         }
+
+         continue;
       }
 
-      c = bson_utf8_get_char (utf8);
+      // Reached a special character. Copy over all of normal characters
+      // we have passed so far
+      if (pos) {
+         bson_string_append_ex (str, utf8, pos);
+         utf8 += pos;
+         pos = 0;
+      }
+
+      // Check for unicode character
+      if (c > 0x7f /* highest ASCII character */) {
+         const char *utf8_old = utf8;
+         uint8_t char_len;
+         uint8_t mask;
+         uint8_t length_of_char;
+
+         // Check if expected char length goes past end
+         // bson_utf8_get_char will crash without this check
+         _bson_utf8_get_sequence (utf8, &length_of_char, &mask);
+         if (utf8 > end - length_of_char) {
+            goto invalid_utf8;
+         }
+
+         c = bson_utf8_get_char (utf8);
+
+         // Special NULL terminator check
+         if (*utf8 == '\xc0' && *(utf8 + 1) == '\x80') {
+            bson_string_append_codepoint (str, c);
+            utf8 += 2;
+         } else if (!c) {
+            /* invalid UTF-8 */
+            goto invalid_utf8;
+         } else {
+            bson_string_append_unichar (str, c);
+            utf8 = bson_utf8_next_char (utf8);
+         }
+
+         char_len = utf8 - utf8_old;
+         utf8_len -= char_len;
+         pos = 0;
+
+         continue;
+      }
 
       switch (c) {
-      case '\\':
       case '"':
-         bson_string_append_c (str, '\\');
-         bson_string_append_unichar (str, c);
+         bson_string_append (str, "\\\"");
+         break;
+      case '\\':
+         bson_string_append (str, "\\\\");
          break;
       case '\b':
          bson_string_append (str, "\\b");
@@ -311,22 +387,19 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          bson_string_append (str, "\\t");
          break;
       default:
-         if (c < ' ') {
-            bson_string_append_printf (str, "\\u%04x", (unsigned) c);
-         } else {
-            bson_string_append_unichar (str, c);
-         }
+         BSON_ASSERT (c < ' ');
+         bson_string_append_codepoint (str, c);
          break;
       }
 
       if (c) {
-         utf8 = bson_utf8_next_char (utf8);
+         utf8++;
       } else {
          if (length_provided) {
             // Check if current character is null character,
             // if so skip past it as we've already added '\\u0000' above
-            if (*utf8 == '\0' || (*utf8 == '\xc0' && *(utf8 + 1) == '\x80')) {
-               utf8 += (*utf8 == '\0') ? 1 : 2;
+            if (*utf8 == '\0') {
+               utf8++;
             } else {
                goto invalid_utf8;
             }
@@ -334,7 +407,9 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
             goto invalid_utf8;
          }
       }
-   }
+
+      utf8_len--;
+   } while (utf8_len);
 
    return bson_string_free (str, false);
 
