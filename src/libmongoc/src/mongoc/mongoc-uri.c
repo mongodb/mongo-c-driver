@@ -749,8 +749,8 @@ bool
 mongoc_uri_option_is_utf8 (const char *key)
 {
    return !strcasecmp (key, MONGOC_URI_APPNAME) || !strcasecmp (key, MONGOC_URI_REPLICASET) ||
-          !strcasecmp (key, MONGOC_URI_READPREFERENCE) || !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) ||
-          !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
+          !strcasecmp (key, MONGOC_URI_READPREFERENCE) || !strcasecmp (key, MONGOC_URI_SERVERMONITORINGMODE) ||
+          !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) || !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
           !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD) || !strcasecmp (key, MONGOC_URI_TLSCAFILE) ||
           /* deprecated options */
           !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
@@ -1139,6 +1139,11 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
             HANDLE_DUPE ();
          }
          if (!mongoc_uri_set_compressors (uri, value)) {
+            goto UNSUPPORTED_VALUE;
+         }
+
+      } else if (!strcmp (key, MONGOC_URI_SERVERMONITORINGMODE)) {
+         if (!mongoc_uri_set_server_monitoring_mode (uri, value)) {
             goto UNSUPPORTED_VALUE;
          }
 
@@ -2350,6 +2355,30 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
    return mongoc_uri_get_tls (uri);
 }
 
+const char *
+mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)
+{
+   BSON_ASSERT_PARAM (uri);
+
+   return mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_SERVERMONITORINGMODE, "auto");
+}
+
+
+bool
+mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value)
+{
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (value);
+
+   // Check for valid value
+   if (strcmp (value, "stream") && strcmp (value, "poll") && strcmp (value, "auto")) {
+      return false;
+   }
+
+   mongoc_uri_bson_append_or_replace_key (&uri->options, MONGOC_URI_SERVERMONITORINGMODE, value);
+   return true;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -2886,6 +2915,8 @@ mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri, const char *option_orig, const
    }
    if (!bson_strcasecmp (option, MONGOC_URI_APPNAME)) {
       return mongoc_uri_set_appname (uri, value);
+   } else if (!bson_strcasecmp (option, MONGOC_URI_SERVERMONITORINGMODE)) {
+      return mongoc_uri_set_server_monitoring_mode (uri, value);
    } else {
       option_lowercase = lowercase_str_new (option);
       mongoc_uri_bson_append_or_replace_key (&uri->options, option_lowercase, value);
