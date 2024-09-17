@@ -42,6 +42,7 @@
 #include "mongoc-stream-tls-secure-channel.h"
 #endif
 #include "mongoc-stream-tls.h"
+#include "mongoc-util-private.h" // BEGIN_IGNORE_DEPRECATIONS
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"
@@ -206,7 +207,9 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    return mongoc_stream_tls_openssl_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+   BEGIN_IGNORE_DEPRECATIONS
    return mongoc_stream_tls_libressl_new (base_stream, host, opt, client);
+   END_IGNORE_DEPRECATIONS
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    return mongoc_stream_tls_secure_transport_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
