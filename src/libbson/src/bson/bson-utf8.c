@@ -346,11 +346,11 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          c = bson_utf8_get_char (utf8);
 
          // Special NULL terminator check
+         // c == 0 in this case so we have to check it first
          if (*utf8 == '\xc0' && *(utf8 + 1) == '\x80') {
             bson_string_append_codepoint (str, c);
             utf8 += 2;
          } else if (!c) {
-            /* invalid UTF-8 */
             goto invalid_utf8;
          } else {
             bson_string_append_unichar (str, c);
@@ -364,6 +364,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          continue;
       }
 
+      // Is a special ASCII character
       switch (c) {
       case '"':
          bson_string_append (str, "\\\"");
@@ -392,25 +393,15 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          break;
       }
 
-      if (c) {
+      if (c || (length_provided && *utf8 == '\0')) {
+         // Check for any valid character and advance if found
          utf8++;
       } else {
-         if (length_provided) {
-            // Check if current character is null character,
-            // if so skip past it as we've already added '\\u0000' above
-            if (*utf8 == '\0') {
-               utf8++;
-            } else {
-               goto invalid_utf8;
-            }
-         } else {
-            goto invalid_utf8;
-         }
+         goto invalid_utf8;
       }
 
       utf8_len--;
    } while (utf8_len);
-
    return bson_string_free (str, false);
 
 invalid_utf8:
