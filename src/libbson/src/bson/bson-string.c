@@ -320,6 +320,23 @@ bson_string_append_unichar (bson_string_t *string,  /* IN */
    }
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_string_append_codepoint --
+ *
+ *       Append the Unicode codepoint @unichar to the string @string as a
+ *       Unicode escape sequence (e.g., \uXXXX). For codepoints greater than
+ *       0xffff, the full value is appended using bson_string_append_printf.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 void
 bson_string_append_codepoint (bson_string_t *string,  /* IN */
                               bson_unichar_t unichar) /* IN */
