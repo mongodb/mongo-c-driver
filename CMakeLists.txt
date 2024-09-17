@@ -149,12 +149,20 @@ mongo_setting(
       if(ENABLE_SASL STREQUAL "SSPI" AND NOT WIN32)
          message(WARNING "ENABLE_SASL=SSPI is only supported on Windows platforms")
       endif()
+      if(ENABLE_SASL STREQUAL "CYRUS" AND WIN32)
+         message(DEPRECATION "ENABLE_SASL=CYRUS on Windows platforms is deprecated and may be removed in a future major release")
+      endif()
    ]]
 )
 
 mongo_setting(CYRUS_PLUGIN_PATH_PREFIX "An absolute path prefix to enable loading Cyrus SASL plugins on Windows"
    TYPE STRING
    VISIBLE_IF [[ENABLE_SASL STREQUAL "CYRUS" AND WIN32]]
+   VALIDATE CODE [[
+      if (CYRUS_PLUGIN_PATH_PREFIX)
+         message(DEPRECATION "CYRUS_PLUGIN_PATH_PREFIX is deprecated and may be removed in a future major release")
+      endif ()
+   ]]
 )
 
 mongo_setting(ENABLE_CLIENT_SIDE_ENCRYPTION "Enable In-Use Encryption support. Requires additional support libraries."

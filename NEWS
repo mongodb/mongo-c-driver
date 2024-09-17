@@ -32,8 +32,9 @@ Deprecated:
     * `mongoc_cursor_get_hint` is deprecated for `mongoc_cursor_get_server_id`
 
   * A future minor release plans to drop support for Visual Studio 2013.
-
   * `ENABLE_SSL=LIBRESSL` is deprecated along with `mongoc_stream_tls_libressl_new`. Support for LibreSSL may be dropped in a future major release.
+  * `ENABLE_SASL=CYRUS` on Windows platforms is deprecated. Support for `ENABLE_SASL=CYRUS` on Windows may be dropped in a future major release.
+    * The associated Windows-only option `CYRUS_PLUGIN_PATH_PREFIX` is deprecated.
 
 libmongoc 1.27.6
 ================
