@@ -180,6 +180,7 @@ function(_auto_pick_tls_lib)
          # No OpenSSL. What about LibreSSL?
          find_package(LibreSSL)
          if(LibreSSL_FOUND)
+            message(DEPRECATION "LibreSSL was automatically chosen as the TLS library. Support for LibreSSL is deprecated and may be removed in a future major release. Use ENABLE_SSL option to specify a different TLS library.")
             _use_named_tls_lib(LIBRESSL)
          endif()
       endif()

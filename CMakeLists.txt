@@ -119,6 +119,8 @@ mongo_setting(
          message(WARNING "ENABLE_SSL=DARWIN is only supported on Apple platforms")
       elseif(ENABLE_SSL STREQUAL "WINDOWS" AND NOT WIN32)
          message(WARNING "ENABLE_SSL=WINDOWS is only supported on Windows platforms")
+      elseif (ENABLE_SSL STREQUAL "LIBRESSL")
+         message(DEPRECATION "ENABLE_SSL=LIBRESSL is deprecated and may be removed in a future major release")
       endif()
    ]]
 )

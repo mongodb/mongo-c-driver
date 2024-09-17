@@ -33,6 +33,8 @@ Deprecated:
 
   * A future minor release plans to drop support for Visual Studio 2013.
 
+  * `ENABLE_SSL=LIBRESSL` is deprecated along with `mongoc_stream_tls_libressl_new`. Support for LibreSSL may be dropped in a future major release.
+
 libmongoc 1.27.6
 ================
 
