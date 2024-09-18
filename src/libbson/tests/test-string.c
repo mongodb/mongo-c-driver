@@ -415,7 +415,7 @@ test_bson_string_alloc (void)
    bson_string_free (str, true);
 
    str = bson_string_alloc (2147483648);
-   BSON_ASSERT (str->alloc == __UINT32_MAX__);
+   BSON_ASSERT (str->alloc == UINT32_MAX);
    BSON_ASSERT (str->len == 0);
    bson_string_free (str, true);
 }
