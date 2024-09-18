@@ -1,5 +1,9 @@
-libbson 1.28.0 (Unreleased)
-=============================
+libbson 1.28.0
+==============
+
+New features:
+
+  * Add `bson_validate_with_error_and_offset`.
 
 Build Configuration:
 
