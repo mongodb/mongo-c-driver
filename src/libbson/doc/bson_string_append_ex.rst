@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   void
-  bson_string_append_ex (bson_string_t *string, const char *str, uint32_t len);
+  bson_string_append_ex (bson_string_t *string, const char *str, const size_t len);
 
 Parameters
 ----------
