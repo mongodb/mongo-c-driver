@@ -319,45 +319,6 @@ bson_string_append_unichar (bson_string_t *string,  /* IN */
    }
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * bson_string_append_codepoint --
- *
- *       Append the Unicode codepoint @unichar to the string @string as a
- *       Unicode escape sequence (e.g., \uXXXX). For codepoints greater than
- *       0xffff, the full value is appended using bson_string_append_printf.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-void
-bson_string_append_codepoint (bson_string_t *string,  /* IN */
-                              bson_unichar_t unichar) /* IN */
-{
-   const char digits[] = "0123456789abcdef";
-   char str[6] = "\\u0000";
-
-   BSON_ASSERT (string);
-
-   if (unichar > 0xffff) {
-      bson_string_append_printf (string, "\\u%04x", unichar);
-      return;
-   }
-
-   str[2] = digits[(unichar >> 12) & 0xf];
-   str[3] = digits[(unichar >> 8) & 0xf];
-   str[4] = digits[(unichar >> 4) & 0xf];
-   str[5] = digits[unichar & 0xf];
-
-   bson_string_append_ex (string, str, 6);
-}
-
 
 /*
  *--------------------------------------------------------------------------

@@ -37,7 +37,6 @@ This API is useful if you need to build UTF-8 encoded strings.
     bson_string_alloc
     bson_string_append
     bson_string_append_c
-    bson_string_append_codepoint
     bson_string_append_ex
     bson_string_append_printf
     bson_string_append_unichar
