@@ -56,6 +56,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->assembled.query_flags = MONGOC_QUERY_NONE;
    parts->assembled.op_msg_is_exhaust = false;
    parts->assembled.payloads_count = 0;
+   memset (parts->assembled.payloads, 0, sizeof parts->assembled.payloads);
    parts->assembled.session = NULL;
    parts->assembled.is_acknowledged = true;
    parts->assembled.is_txn_finish = false;
