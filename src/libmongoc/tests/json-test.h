@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
 
 #define MAX_NUM_TESTS 150
 
-typedef void (*test_hook) (bson_t *test);
+typedef void (*test_hook) (void *test);
 
 typedef struct {
    const char *description;
@@ -77,7 +77,7 @@ void
 process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology);
 
 void
-test_server_selection_logic_cb (bson_t *test);
+test_server_selection_logic_cb (void *test);
 
 mongoc_server_description_type_t
 server_type_from_test (const char *type);

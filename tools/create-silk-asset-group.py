@@ -161,7 +161,7 @@ class SimpleSilkClient:
                     "name": project,
                     "code_repo_url": code_repo_url,
                     "branch": branch,
-                    "file_path": [],
+                    "file_paths": ["*"],
                     "metadata": {
                         "sbom_lite_path": sbom_lite_path,
                     },
@@ -172,7 +172,7 @@ class SimpleSilkClient:
         )
         try:
             with urllib.request.urlopen(req) as resp:
-                json.loads(resp.read())  # No-op, but validates that JSON was returned
+                print(json.loads(resp.read()))  # No-op, but validates that JSON was returned
         except urllib.error.HTTPError as err:
             if err.status == 409 and exist_ok:
                 # 409: Conflict

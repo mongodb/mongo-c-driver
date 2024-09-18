@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,6 +170,58 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
       _mongoc_write_command_insert_append (command, document);
    }
 
+   EXIT;
+}
+
+
+// `_mongoc_write_command_init_insert_one_idl` returns the inserted ID in `inserted_id`.
+// Only called by mongoc_collection_insert_one.
+void
+_mongoc_write_command_init_insert_one_idl (mongoc_write_command_t *command,
+                                           const bson_t *document,
+                                           const bson_t *cmd_opts,
+                                           bson_t *insert_id,
+                                           int64_t operation_id)
+{
+   mongoc_bulk_write_flags_t flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM (command);
+   BSON_ASSERT_PARAM (document);
+   BSON_ASSERT_PARAM (cmd_opts);
+   BSON_ASSERT_PARAM (insert_id);
+
+   _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
+
+   /* near identical to _mongoc_write_command_insert_append but additionally records the inserted id */
+   /* no need to handle NULL document from mongoc_collection_insert_bulk since only called by insert_one */
+   BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
+   BSON_ASSERT (document->len >= 5);
+
+   bson_iter_t iter;
+   bson_oid_t oid;
+   bson_t tmp;
+
+   /*
+    * If the document does not contain an "_id" field, we need to generate
+    * a new oid for "_id".
+    */
+   if (!bson_iter_init_find (&iter, document, "_id")) {
+      bson_init (&tmp);
+      bson_oid_init (&oid, NULL);
+      BSON_APPEND_OID (&tmp, "_id", &oid);
+      bson_concat (&tmp, document);
+      _mongoc_buffer_append (&command->payload, bson_get_data (&tmp), tmp.len);
+
+      BSON_APPEND_OID (insert_id, "insertedId", &oid);
+      bson_destroy (&tmp);
+   } else {
+      _mongoc_buffer_append (&command->payload, bson_get_data (document), document->len);
+      BSON_APPEND_VALUE (insert_id, "insertedId", bson_iter_value (&iter));
+   }
+
+   command->n_documents++;
    EXIT;
 }
 
@@ -561,7 +613,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    int32_t max_document_count;
-   uint32_t header;
    uint32_t payload_batch_size = 0;
    uint32_t payload_total_offset = 0;
    bool ship_it = false;
@@ -618,18 +669,18 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       EXIT;
    }
 
-   /*
-    * OP_MSG header == 16 byte
-    * + 4 bytes flagBits
-    * + 1 byte payload type = 1
-    * + 1 byte payload type = 2
-    * + 4 byte size of payload
-    * == 26 bytes opcode overhead
-    * + X Full command document {insert: "test", writeConcern: {...}}
-    * + Y command identifier ("documents", "deletes", "updates") ( + \0)
-    */
-
-   header = 26 + parts.assembled.command->len + gCommandFieldLens[command->type] + 1;
+   // Calculate overhead of OP_MSG data. See OP_MSG spec for description of fields.
+   uint32_t opmsg_overhead = 0;
+   {
+      opmsg_overhead += 16;                                   // OP_MSG.MsgHeader
+      opmsg_overhead += 4;                                    // OP_MSG.flagBits
+      opmsg_overhead += 1;                                    // OP_MSG.Section[0].payloadType (0)
+      opmsg_overhead += parts.assembled.command->len;         // OP_MSG.Section[0].payload.document
+      opmsg_overhead += 1;                                    // OP_MSG.Section[1].payloadType (1)
+      opmsg_overhead += 4;                                    // OP_MSG.Section[1].payload.size
+      opmsg_overhead += gCommandFieldLens[command->type] + 1; // OP_MSG.Section[1].payload.identifier
+      // OP_MSG.Section[1].payload.documents is omitted. Calculated below with remaining size.
+   }
 
    do {
       uint32_t ulen;
@@ -646,7 +697,8 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          result->failed = true;
          break;
 
-      } else if (bson_cmp_less_equal_us (payload_batch_size + header + ulen, max_msg_size) || document_count == 0) {
+      } else if (bson_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
+                 document_count == 0) {
          /* The current batch is still under max batch size in bytes */
          payload_batch_size += ulen;
 

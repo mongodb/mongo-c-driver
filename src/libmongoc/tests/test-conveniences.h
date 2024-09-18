@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,6 +205,23 @@ match_json (const bson_t *doc,
 #define ASSERT_MATCH(doc, ...)                                                           \
    do {                                                                                  \
       BSON_ASSERT (match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)); \
+   } while (0)
+
+#define ASSERT_EQUAL_BSON(expected, actual)                                   \
+   do {                                                                       \
+      bson_t *_expected_bson = expected, *_actual_bson = actual;              \
+      char *_expected_str, *_actual_str;                                      \
+      _expected_str = bson_as_canonical_extended_json (_expected_bson, NULL); \
+      _actual_str = bson_as_canonical_extended_json (_actual_bson, NULL);     \
+      if (!bson_equal (_expected_bson, _actual_bson)) {                       \
+         test_error ("BSON unequal: \n"                                       \
+                     "Expected: %s\n"                                         \
+                     "Got     : %s",                                          \
+                     _expected_str,                                           \
+                     _actual_str);                                            \
+      }                                                                       \
+      bson_free (_actual_str);                                                \
+      bson_free (_expected_str);                                              \
    } while (0)
 
 bool

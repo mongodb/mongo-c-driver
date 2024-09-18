@@ -40,10 +40,10 @@ TEST_MATRIX = [
 
     # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
     # Test 7.0+ with Ubuntu 20.04+ since MongoDB 7.0 no longer ships binaries for Ubuntu 18.04.
-    ('ubuntu2004',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', 'latest']),
-    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', 'latest']),
-    ('ubuntu2004-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', 'latest']),
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', 'latest']),
+    ('ubuntu2004',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
+    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
+    ('ubuntu2004-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
+    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -85,7 +85,6 @@ def tasks():
 def variants():
     expansions = {
         'CLIENT_SIDE_ENCRYPTION': 'on',
-        'DEBUG': 'ON',
     }
 
     return [

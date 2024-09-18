@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,6 @@
 
 BSON_BEGIN_DECLS
 
-/* version corresponding to server 3.6 release */
-#define WIRE_VERSION_3_6 6
 /* version corresponding to server 4.0 release */
 #define WIRE_VERSION_4_0 7
 /* first version to support hint for "update" command */
@@ -79,12 +77,14 @@ BSON_BEGIN_DECLS
 /* version corresponding to server 7.1 release */
 #define WIRE_VERSION_7_1 22
 #define WIRE_VERSION_MONGOS_EXHAUST 22
+/* version corresponding to server 8.0 release */
+#define WIRE_VERSION_8_0 25
 
 /* Range of wire protocol versions this driver supports. Bumping
  * WIRE_VERSION_MAX must be accompanied by an update to
  * `_mongoc_wire_version_to_server_version`. */
-#define WIRE_VERSION_MIN WIRE_VERSION_3_6 /* a.k.a. minWireVersion */
-#define WIRE_VERSION_MAX WIRE_VERSION_7_0 /* a.k.a. maxWireVersion */
+#define WIRE_VERSION_MIN WIRE_VERSION_4_0 /* a.k.a. minWireVersion */
+#define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
 struct _mongoc_collection_t;
 
@@ -219,6 +219,7 @@ mongoc_client_connect (bool buffered,
                        void *ssl_opts_void,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
+                       void *openssl_ctx_void,
                        bson_error_t *error);
 
 

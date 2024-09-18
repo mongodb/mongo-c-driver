@@ -2,6 +2,8 @@ from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_task import EvgTaskRef
 
+from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+
 from config_generator.etc.distros import find_large_distro
 from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import to_cc
@@ -80,7 +82,10 @@ def tasks():
                     name=task_name,
                     run_on=distro.name,
                     tags=tags + [f'std-c{std}'],
-                    commands=[StdCompile.call(vars=compile_vars | with_std)],
+                    commands=[
+                        FindCMakeLatest.call(),
+                        StdCompile.call(vars=compile_vars | with_std)
+                    ],
                 )
             )
 

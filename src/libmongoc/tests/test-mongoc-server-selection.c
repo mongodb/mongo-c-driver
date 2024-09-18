@@ -16,12 +16,13 @@
  */
 
 static void
-test_rtt_calculation_cb (bson_t *test)
+test_rtt_calculation_cb (void *test_vp)
 {
    mongoc_server_description_t *description;
    bson_iter_t iter;
 
-   BSON_ASSERT (test);
+   BSON_ASSERT_PARAM (test_vp);
+   const bson_t *const test = test_vp;
 
    description = (mongoc_server_description_t *) bson_malloc0 (sizeof *description);
    mongoc_server_description_init (description, "localhost:27017", 1);

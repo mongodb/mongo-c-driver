@@ -366,7 +366,7 @@ kms_request_str_append_hashed (_kms_crypto_t *crypto,
                                kms_request_str_t *str,
                                kms_request_str_t *appended)
 {
-   uint8_t hash[32];
+   uint8_t hash[32] = {0};
    char *hex_chars;
 
    if (!crypto->sha256 (crypto->ctx, appended->str, appended->len, hash)) {

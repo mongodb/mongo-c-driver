@@ -262,21 +262,21 @@ endif ()
 #                                            888
 #                                            888
 
-function (add_example bin src)
-   set (BSON_EXAMPLE_SOURCES ${PROJECT_SOURCE_DIR}/${src})
-   add_executable (${bin} ${BSON_EXAMPLE_SOURCES})
-
-   # Link against the shared lib like normal apps
-   if(TARGET bson_shared)
-      target_link_libraries (${bin} bson_shared)
-   elseif(TARGET bson_static)
-      target_link_libraries (${bin} bson_static)
-   else()
-      return()
-   endif()
-endfunction ()
-
 if (ENABLE_EXAMPLES)
+   function (add_example bin src)
+      add_executable (${bin} EXCLUDE_FROM_ALL ${src})
+      add_dependencies (mongo_c_driver_examples ${bin})
+
+      # Link against the shared lib like normal apps
+      if(TARGET bson_shared)
+         target_link_libraries (${bin} bson_shared)
+      elseif(TARGET bson_static)
+         target_link_libraries (${bin} bson_static)
+      else()
+         return()
+      endif()
+   endfunction ()
+
    add_example (bcon-col-view examples/bcon-col-view.c)
    add_example (bcon-speed examples/bcon-speed.c)
    add_example (bson-metrics examples/bson-metrics.c)
@@ -398,6 +398,10 @@ install (EXPORT bson-targets
 
 include (LegacyPackage)
 include (CPack)
+
+if (MONGO_FUZZ)
+   add_subdirectory(fuzz)
+endif ()
 
 # 8888888b.
 # 888  "Y88b

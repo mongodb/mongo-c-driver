@@ -16,10 +16,9 @@ echo "Installing libmongocrypt ... begin"
 }
 echo "Installing libmongocrypt ... end"
 
-# Allow reuse of ccache compilation results between different build directories.
-export CCACHE_BASEDIR CCACHE_NOHASHDIR
-CCACHE_BASEDIR="$(pwd)"
-CCACHE_NOHASHDIR=1
+# Use ccache if able.
+. .evergreen/scripts/find-ccache.sh
+find_ccache_and_export_vars "$(pwd)" || true
 
 echo "Compile test-gcpkms ... begin"
 # Disable unnecessary dependencies. test-gcpkms is copied to a remote host for testing, which may not have all dependent libraries.

@@ -171,15 +171,126 @@ multibuild:
         --c_compiler=gcc --c_compiler=clang \
         --test_mongocxx_ref=master
 
+# release-archive :
+#   Create a release archive of the source tree. (Refer to dev docs)
+release-archive:
+    FROM alpine:3.20
+    RUN apk add git bash
+    ARG --required sbom_branch
+    ARG --required prefix
+    ARG --required ref
+
+    WORKDIR /s
+    COPY --dir .git .
+
+    # Get the commit hash that we are archiving. Use ^{commit} to "dereference" tag objects
+    LET revision = $(git rev-parse "$ref^{commit}")
+    RUN git restore --quiet --source=$revision -- VERSION_CURRENT
+    LET version = $(cat VERSION_CURRENT)
+
+    # Pick the waterfall project based on the tag
+    COPY tools+tools-dir/__str /usr/local/bin/__str
+    IF __str test "$version" -matches ".*\.0\$"
+        # This is a minor release. Link to the build on the main project.
+        LET base = "mongo_c_driver"
+    ELSE
+        # This is (probably) a patch release. Link to the build on the release branch.
+        LET base = "mongo_c_driver_latest_release"
+    END
+
+    COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
+
+    # The full link to the build for this commit
+    LET waterfall_url = "https://spruce.mongodb.com/version/${base}_${revision}"
+    # Insert the URL into the SSDLC report
+    COPY etc/ssdlc.md ssdlc_compliance_report.md
+    RUN sed -i "
+        s|@waterfall_url@|$waterfall_url|g
+        s|@version@|$version|g
+    " ssdlc_compliance_report.md
+    # Generate the archive
+    RUN git archive -o release.tar.gz \
+        --prefix="$prefix/" \ # Set the archive path prefix
+        "$revision" \ # Add the source tree
+        --add-file cyclonedx.sbom.json \ # Add the SBOM
+        --add-file ssdlc_compliance_report.md
+    SAVE ARTIFACT release.tar.gz
+
+# Obtain the signing public key. Exported as an artifact /c-driver.pub
+signing-pubkey:
+    FROM alpine:3.20
+    RUN apk add curl
+    RUN curl --location --silent --fail "https://pgp.mongodb.com/c-driver.pub" -o /c-driver.pub
+    SAVE ARTIFACT /c-driver.pub
+
+# sign-file :
+#   Sign an arbitrary file. This uses internal MongoDB tools and requires authentication
+#   to be used to access them. (Refer to dev docs)
+sign-file:
+    # Pull from Garasign:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-gpg
+    # Copy the file to be signed
+    ARG --required file
+    COPY $file /s/file
+    # Run the GPG signing command. Requires secrets!
+    RUN --secret GRS_CONFIG_USER1_USERNAME --secret GRS_CONFIG_USER1_PASSWORD \
+        gpgloader && \
+        gpg --yes --verbose --armor --detach-sign --output=/s/signature.asc /s/file
+    # Export the detatched signature
+    SAVE ARTIFACT /s/signature.asc /
+    # Verify the file signature against the public key
+    COPY +signing-pubkey/c-driver.pub /s/
+    RUN touch /keyring && \
+        gpg --no-default-keyring --keyring /keyring --import /s/c-driver.pub && \
+        gpgv --keyring=/keyring /s/signature.asc /s/file
+
+# signed-release :
+#   Generate a signed release artifact. Refer to the "Earthly" page of our dev docs for more information.
+#   (Refer to dev docs)
+signed-release:
+    FROM alpine:3.20
+    RUN apk add git
+    # We need to know which branch to get the SBOM from
+    ARG --required sbom_branch
+    # The version of the release. This affects the filepaths of the output and is the default for --ref
+    ARG --required version
+    # The Git revision of the repository to be archived. By default, archives the tag of the given version
+    ARG ref=refs/tags/$version
+    # File stem and archive prefix:
+    LET stem="mongo-c-driver-$version"
+    WORKDIR /s
+    # Run the commands "locally" so that the files can be transferred between the
+    # targets via the host filesystem.
+    LOCALLY
+    # Clean out a scratch space for us to work with
+    LET rel_dir = ".scratch/release"
+    RUN rm -rf -- "$rel_dir"
+    # Primary artifact files
+    LET rel_tgz = "$rel_dir/$stem.tar.gz"
+    LET rel_asc = "$rel_dir/$stem.tar.gz.asc"
+    # Make the release archive:
+    COPY (+release-archive/ --branch=$sbom_branch --prefix=$stem --ref=$ref) $rel_dir/
+    RUN mv $rel_dir/release.tar.gz $rel_tgz
+    # Sign the release archive:
+    COPY (+sign-file/signature.asc --file $rel_tgz) $rel_asc
+    # Save them as an artifact.
+    SAVE ARTIFACT $rel_dir /dist
+    # Remove our scratch space from the host. Getting at the artifacts requires `earthly --artifact`
+    RUN rm -rf -- "$rel_dir"
+
+# This target is simply an environment in which the SilkBomb executable is available.
+silkbomb:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
+    # Alias the silkbom executable to a simpler name:
+    RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
+
 # sbom-generate :
 #   Generate/update the etc/cyclonedx.sbom.json file from the etc/purls.txt file.
 #
 # This target will update the existing etc/cyclonedx.sbom.json file in-place based
 # on the content of etc/purls.txt.
 sbom-generate:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
-    # Alias the silkbom executable to a simpler name:
-    RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
+    FROM +silkbomb
     # Copy in the relevant files:
     WORKDIR /s
     COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
@@ -190,6 +301,26 @@ sbom-generate:
         --sbom-out cyclonedx.sbom.json
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
+
+# sbom-download :
+#   Download an augmented SBOM from the Silk server for the given branch. Exports
+#   the artifact as /augmented-sbom.json
+#
+# Requires credentials for silk access.
+sbom-download:
+    FROM alpine:3.20
+    ARG --required branch
+    # Run the SilkBomb tool to download the artifact that matches the requested branch
+    FROM +silkbomb
+    # Set --no-cache, because the remote artifact could change arbitrarily over time
+    RUN --no-cache \
+        --secret SILK_CLIENT_ID \
+        --secret SILK_CLIENT_SECRET \
+        silkbomb download \
+            --sbom-out augmented-sbom.json \
+            --silk-asset-group mongo-c-driver-${branch}
+    # Export as /augmented-sbom.json
+    SAVE ARTIFACT augmented-sbom.json
 
 # create-silk-asset-group :
 #   Create an asset group in Silk for the Git branch if one is not already defined.
@@ -221,6 +352,53 @@ create-silk-asset-group:
             --code-repo-url=https://github.com/mongodb/mongo-c-driver \
             --sbom-lite-path=etc/cyclonedx.sbom.json \
             --exist-ok
+
+
+snyk:
+    FROM --platform=linux/amd64 ubuntu:24.04
+    RUN apt-get update && apt-get -y install curl
+    RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
+    RUN chmod a+x /usr/local/bin/snyk
+
+snyk-test:
+    FROM +snyk
+    WORKDIR /s
+    # Take the scan from within the `src/` directory. This seems to help Snyk
+    # actually find the external dependencies that live there.
+    COPY --dir src .
+    WORKDIR src/
+    # Snaptshot the repository and run the scan
+    RUN --no-cache --secret SNYK_TOKEN \
+        snyk test --unmanaged --json > snyk.json
+    SAVE ARTIFACT snyk.json
+
+# snyk-monitor-snapshot :
+#   Post a crafted snapshot of the repository to Snyk for monitoring. Refer to "Snyk Scanning"
+#   in the dev docs for more details.
+snyk-monitor-snapshot:
+    FROM +snyk
+    WORKDIR /s
+    ARG remote="https://github.com/mongodb/mongo-c-driver.git"
+    ARG --required branch
+    ARG --required name
+    IF test "$remote" = "local"
+        COPY --dir src .
+    ELSE
+        GIT CLONE --branch $branch $remote clone
+        RUN mv clone/src .
+    END
+    # Take the scan from within the `src/` directory. This seems to help Snyk
+    # actually find the external dependencies that live there.
+    WORKDIR src/
+    # Snaptshot the repository and run the scan
+    RUN --no-cache --secret SNYK_TOKEN --secret SNYK_ORGANIZATION \
+        snyk monitor \
+            --org=$SNYK_ORGANIZATION \
+            --target-reference=$name \
+            --unmanaged \
+            --print-deps \
+            --project-name=mongo-c-driver \
+            --remote-repo-url=https://github.com/mongodb/mongo-c-driver
 
 # test-vcpkg-classic :
 #   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and
@@ -255,7 +433,7 @@ vcpkg-base:
     ENV VCPKG_ROOT=/opt/vcpkg-git
     ENV VCPKG_FORCE_SYSTEM_BINARIES=1
     GIT CLONE --branch=2023.06.20 https://github.com/microsoft/vcpkg $VCPKG_ROOT
-    RUN sh $VCPKG_ROOT/bootstrap-vcpkg.sh -disableMetrics && \
+    RUN $VCPKG_ROOT/bootstrap-vcpkg.sh -disableMetrics && \
         install -spD -m 755 $VCPKG_ROOT/vcpkg /usr/local/bin/
     LET src_dir=/opt/mongoc-vcpkg-example
     COPY src/libmongoc/examples/cmake/vcpkg/ $src_dir

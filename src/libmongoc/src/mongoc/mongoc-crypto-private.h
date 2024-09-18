@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,31 @@ struct _mongoc_crypto_t {
                  int data_len,
                  unsigned char *hmac_out);
    bool (*hash) (mongoc_crypto_t *crypto, const unsigned char *input, const size_t input_len, unsigned char *hash_out);
+
+   bool (*pbkdf) (mongoc_crypto_t *crypto,
+                  const char *password,
+                  size_t password_len,
+                  const uint8_t *salt,
+                  size_t salt_len,
+                  uint32_t iterations,
+                  size_t output_len,
+                  unsigned char *output);
+
    mongoc_crypto_hash_algorithm_t algorithm;
 };
 
 void
 mongoc_crypto_init (mongoc_crypto_t *crypto, mongoc_crypto_hash_algorithm_t algo);
+
+bool
+mongoc_crypto_pbkdf (mongoc_crypto_t *crypto,
+                     const char *password,
+                     size_t password_len,
+                     const uint8_t *salt,
+                     size_t salt_len,
+                     uint32_t iterations,
+                     size_t output_len,
+                     unsigned char *output);
 
 void
 mongoc_crypto_hmac (mongoc_crypto_t *crypto,
@@ -57,7 +77,6 @@ mongoc_crypto_hash (mongoc_crypto_t *crypto,
                     const unsigned char *input,
                     const size_t input_len,
                     unsigned char *hash_out);
-
 BSON_END_DECLS
 #endif /* MONGOC_CRYPTO_PRIVATE_H */
 #endif /* MONGOC_ENABLE_CRYPTO */

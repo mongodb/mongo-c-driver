@@ -1925,9 +1925,9 @@ test_bson_json_double (void)
    BSON_ASSERT (BSON_ITER_HOLDS_DOUBLE (&iter));
    ASSERT_CMPDOUBLE (bson_iter_double (&iter), ==, 0.0);
 
-/* check that "x" is -0.0. signbit not available on Solaris, FreeBSD, or VS 2010
+/* check that "x" is -0.0. signbit not available on FreeBSD or VS 2010
  */
-#if !defined(__sun) && !defined(__FreeBSD__) && (!defined(_MSC_VER) || (_MSC_VER >= 1800))
+#if !defined(__FreeBSD__) && (!defined(_MSC_VER) || (_MSC_VER >= 1800))
    BSON_ASSERT (signbit (bson_iter_double (&iter)));
 #endif
 

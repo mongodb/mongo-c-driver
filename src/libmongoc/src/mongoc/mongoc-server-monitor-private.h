@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,11 @@
 #include "mongoc-topology-private.h"
 
 /* For background monitoring of a single server. */
+typedef enum {
+   MONGOC_SERVER_MONITORING_AUTO = 0,
+   MONGOC_SERVER_MONITORING_POLL,
+   MONGOC_SERVER_MONITORING_STREAM
+} mongoc_server_monitoring_mode_t;
 
 typedef struct _mongoc_server_monitor_t mongoc_server_monitor_t;
 

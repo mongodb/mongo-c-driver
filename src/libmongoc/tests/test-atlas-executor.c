@@ -64,6 +64,12 @@ TestSuite_Run_Atlas (TestSuite *suite)
    capture_logs (false);
 }
 
+static void
+bson_destroy_vp (void *vp)
+{
+   bson_destroy ((bson_t *) vp);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -77,7 +83,7 @@ main (int argc, char **argv)
    ASSERT_OR_PRINT (bson, error);
 
    TestSuite_AddFull (
-      &suite, "test", (TestFuncWC) &run_one_test_file, (TestFuncDtor) &bson_destroy, bson, TestSuite_CheckLive, NULL);
+      &suite, "test", (TestFuncWC) &run_one_test_file, &bson_destroy_vp, bson, TestSuite_CheckLive, NULL);
 
    mongoc_init ();
    TestSuite_Run_Atlas (&suite);

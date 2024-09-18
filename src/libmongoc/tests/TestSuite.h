@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -577,6 +577,16 @@ bson_value_eq (const bson_value_t *a, const bson_value_t *b);
    } else                                                                       \
       (void) 0
 
+// `test_bulkwriteexception_tostring` returns a temporary string that does not need to be freed.
+const char *
+test_bulkwriteexception_str (const mongoc_bulkwriteexception_t *bwe);
+
+#define ASSERT_NO_BULKWRITEEXCEPTION(bwr)                                  \
+   if (bwr.exc) {                                                          \
+      const char *_str = test_bulkwriteexception_str (bwr.exc);            \
+      test_error ("Expected no bulk write exception, but got:\n%s", _str); \
+   } else                                                                  \
+      (void) 0
 
 // `get_current_connection_count` returns the server reported connection count.
 int32_t

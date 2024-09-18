@@ -88,7 +88,13 @@ kms_kmip_writer_test (void)
       "An Enumeration with value 255");
    kmip_writer_destroy (writer);
 
-   /* Boolean is not implemented. */
+   writer = kmip_writer_new ();
+   kmip_writer_write_bool (writer, KMIP_TAG_CompromiseDate, true);
+   kms_kmip_writer_test_evaluate (
+      writer,
+      "42 00 20 | 06 | 00 00 00 08 | 00 00 00 00 00 00 00 01",
+      "An boolean containing the value true");
+   kmip_writer_destroy (writer);
 
    writer = kmip_writer_new ();
    kmip_writer_write_string (
@@ -147,6 +153,7 @@ kms_kmip_reader_test (void)
    int64_t i64;
    uint32_t u32;
    uint8_t *ptr;
+   bool b;
 
    /* The following test cases come from section 9.1.2 of
     * http://docs.oasis-open.org/kmip/spec/v1.4/os/kmip-spec-v1.4-os.html */
@@ -200,7 +207,21 @@ kms_kmip_reader_test (void)
    kmip_reader_destroy (reader);
    free (data);
 
-   /* Boolean is not implemented */
+   /* A boolean with value true */
+   data = hex_to_data ("42 00 20 | 06 | 00 00 00 08 | 00 00 00 00 00 00 00 01",
+                       &datalen);
+   reader = kmip_reader_new (data, datalen);
+   ASSERT (kmip_reader_read_tag (reader, &tag));
+   ASSERT (tag == KMIP_TAG_CompromiseDate);
+   ASSERT (kmip_reader_read_type (reader, &type));
+   ASSERT (type == KMIP_ITEM_TYPE_Boolean);
+   ASSERT (kmip_reader_read_length (reader, &length));
+   ASSERT (length == 8);
+   ASSERT (kmip_reader_read_bool (reader, &b));
+   ASSERT (b);
+   ASSERT (!kmip_reader_has_data (reader));
+   kmip_reader_destroy (reader);
+   free (data);
 
    /* A Text String with the value 'Hello World' */
    data = hex_to_data ("42 00 20 | 07 | 00 00 00 0B | 48 65 6C "

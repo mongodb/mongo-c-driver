@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,7 +194,7 @@ _mongoc_topology_scanner_cb (
 }
 
 static void
-_server_session_init (mongoc_server_session_t *session, mongoc_topology_t *unused, bson_error_t *error)
+_server_session_init (void *session, void *unused, bson_error_t *error)
 {
    BSON_UNUSED (unused);
 
@@ -202,7 +202,7 @@ _server_session_init (mongoc_server_session_t *session, mongoc_topology_t *unuse
 }
 
 static void
-_server_session_destroy (mongoc_server_session_t *session, mongoc_topology_t *unused)
+_server_session_destroy (void *session, void *unused)
 {
    BSON_UNUSED (unused);
 
@@ -210,10 +210,13 @@ _server_session_destroy (mongoc_server_session_t *session, mongoc_topology_t *un
 }
 
 static int
-_server_session_should_prune (mongoc_server_session_t *session, mongoc_topology_t *topo)
+_server_session_should_prune (const void *session_vp, void *topo_vp)
 {
-   BSON_ASSERT_PARAM (session);
-   BSON_ASSERT_PARAM (topo);
+   BSON_ASSERT_PARAM (session_vp);
+   BSON_ASSERT_PARAM (topo_vp);
+
+   const mongoc_server_session_t *const session = session_vp;
+   mongoc_topology_t *const topo = topo_vp;
 
    /** If "dirty" (i.e. contains a network error), it should be dropped */
    if (session->dirty) {
@@ -282,7 +285,7 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl, size_t max_hosts, siz
     * Drivers SHOULD use the `Fisher-Yates shuffle` for randomization. */
    for (size_t idx = hl_size - 1u; idx > 0u; --idx) {
       /* 0 <= swap_pos <= idx */
-      const size_t swap_pos = _mongoc_rand_size_t (0u, idx, _mongoc_simple_rand_size_t);
+      const size_t swap_pos = _mongoc_rand_size_t (0u, idx);
 
       const mongoc_host_list_t *tmp = hl_array[swap_pos];
       hl_array[swap_pos] = hl_array[idx];
@@ -1118,6 +1121,9 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    uint32_t server_id;
    mc_shared_tpld td = mc_tpld_take_ref (topology);
 
+   bson_string_t *topology_type = bson_string_new (". Topology type: ");
+   bson_string_append (topology_type, mongoc_topology_description_type (td.ptr));
+
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
    int64_t loop_end;    /* when we last completed a loop (single-threaded) */
@@ -1173,10 +1179,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
             if (scan_ready > expire_at && !try_once) {
                /* selection timeout will expire before min heartbeat passes */
-               _mongoc_server_selection_error ("No suitable servers found: "
-                                               "`serverselectiontimeoutms` timed out",
-                                               &scanner_error,
-                                               error);
+               _mongoc_server_selection_error (timeout_msg, &scanner_error, error);
 
                server_id = 0;
                goto done;
@@ -1321,6 +1324,13 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    }
 
 done:
+   if (error && server_id == 0) {
+      /* server_id set to zero indicates that an error has occured and that `error` is initialized */
+      if (error->domain == MONGOC_ERROR_SERVER_SELECTION) {
+         _mongoc_error_append (error, topology_type->str);
+      }
+   }
+   bson_string_free (topology_type, true);
    mc_tpld_drop_ref (&td);
    return server_id;
 }

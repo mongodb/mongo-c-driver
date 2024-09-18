@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,10 @@
 #include "mongoc-opts-private.h"
 #endif
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+#include "mongoc-openssl-private.h"
+#include "mongoc-stream-tls-private.h"
+#endif
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client"
@@ -618,7 +622,9 @@ mongoc_client_connect_tcp (int32_t connecttimeoutms, const mongoc_host_list_t *h
    BSON_ASSERT (connecttimeoutms);
    BSON_ASSERT (host);
 
-   bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
+   // Expect no truncation.
+   int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
+   BSON_ASSERT (bson_cmp_less_su (req, sizeof portstr));
 
    memset (&hints, 0, sizeof hints);
    hints.ai_family = host->family;
@@ -712,7 +718,13 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
 
    memset (&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
-   bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
+   // Expect no truncation.
+   int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
+
+   if (bson_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
+      RETURN (NULL);
+   }
 
    sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
 
@@ -740,6 +752,7 @@ mongoc_client_connect (bool buffered,
                        void *ssl_opts_void,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
+                       void *openssl_ctx_void,
                        bson_error_t *error)
 {
    mongoc_stream_t *base_stream = NULL;
@@ -789,7 +802,13 @@ mongoc_client_connect (bool buffered,
       if (use_ssl || (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
          mongoc_stream_t *original = base_stream;
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+         // Use shared OpenSSL context.
+         base_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (
+            base_stream, host->host, ssl_opts, true, (SSL_CTX *) openssl_ctx_void);
+#else
          base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host, ssl_opts, true);
+#endif
 
          if (!base_stream) {
             mongoc_stream_destroy (original);
@@ -822,6 +841,8 @@ mongoc_client_connect (bool buffered,
  *       A mongoc_stream_initiator_t that will handle the various type
  *       of supported sockets by MongoDB including TCP and UNIX.
  *
+ *       Also supports sharing of OpenSSL context owned by a client.
+ *
  *       Language binding authors may want to implement an alternate
  *       version of this method to use their native stream format.
  *
@@ -850,7 +871,12 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 
 #endif
 
-   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, error);
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+   SSL_CTX *ssl_ctx = client->topology->scanner->openssl_ctx;
+   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, error);
+#else
+   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, NULL, error);
+#endif
 }
 
 /*
@@ -972,6 +998,13 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opt
 
    if (client->topology->single_threaded) {
       mongoc_topology_scanner_set_ssl_opts (client->topology->scanner, &client->ssl_opts);
+
+/* Update the OpenSSL context associated with this client to match new ssl opts. */
+/* Active connections previously made by client can still access original OpenSSL context. */
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+      SSL_CTX_free (client->topology->scanner->openssl_ctx);
+      client->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&client->ssl_opts);
+#endif
    }
 }
 #endif
@@ -1079,6 +1112,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
 
       _mongoc_ssl_opts_from_uri (&ssl_opt, &internal_tls_opts, client->uri);
       /* sets use_ssl = true */
+      /* this call creates an ssl ctx only if single-threaded, otherwise client inherits from pool */
       mongoc_client_set_ssl_opts (client, &ssl_opt);
       _mongoc_client_set_internal_tls_opts (client, &internal_tls_opts);
    }
@@ -2253,8 +2287,8 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
 {
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (server_stream);
-   BSON_ASSERT (db || true);
-   BSON_ASSERT (collection || true);
+   BSON_OPTIONAL_PARAM (db);
+   BSON_OPTIONAL_PARAM (collection);
 
    const bool has_ns = db && collection;
    const int64_t started = bson_get_monotonic_time ();

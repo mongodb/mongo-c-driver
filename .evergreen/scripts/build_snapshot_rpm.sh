@@ -7,7 +7,7 @@ set -o errexit
 #
 
 #
-# Copyright 2018 MongoDB, Inc.
+# Copyright 2009-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ set -o errexit
 
 for arg in "$@"; do
   if [ "$arg" = "-h" ]; then
-    echo "Usage: ./.evergreen/scripts/build_snapshot_rpm.sh"
+    echo "Usage: .evergreen/scripts/build_snapshot_rpm.sh"
     echo ""
     echo "  This script is used to build a .rpm package directly from a snapshot of the"
     echo "  current repository."

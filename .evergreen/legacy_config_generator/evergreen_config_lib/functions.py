@@ -1,4 +1,4 @@
-# Copyright 2018-present MongoDB, Inc.
+# Copyright 2009-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ build_path = '${build_variant}/${revision}/${version_id}/${build_id}'
 all_functions = OD([
     ('install ssl', Function(
         shell_mongoc(r'''
-        bash .evergreen/scripts/install-ssl.sh
+        .evergreen/scripts/install-ssl.sh
         ''', test=False, add_expansions_to_env=True),
     )),
     ('upload coverage', Function(
@@ -59,7 +59,7 @@ all_functions = OD([
     # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
         shell_mongoc(r'''
-        bash .evergreen/scripts/run-auth-tests.sh
+        .evergreen/scripts/run-auth-tests.sh
         ''', add_expansions_to_env=True),
     )),
     ('link sample program', Function(
@@ -70,8 +70,8 @@ all_functions = OD([
         export BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=${BUILD_SAMPLE_WITH_CMAKE_DEPRECATED}
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        LINK_STATIC=  bash .evergreen/scripts/link-sample-program.sh
-        LINK_STATIC=1 bash .evergreen/scripts/link-sample-program.sh
+        LINK_STATIC=  .evergreen/scripts/link-sample-program.sh
+        LINK_STATIC=1 .evergreen/scripts/link-sample-program.sh
         ''',
         include_expansions_in_env=['distro_id']),
     )),
@@ -79,12 +79,12 @@ all_functions = OD([
         shell_mongoc(r'''
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  bash .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 bash .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  bash .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 bash .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  bash .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
         ''',
         include_expansions_in_env=['distro_id']),
     )),
@@ -155,21 +155,21 @@ all_functions = OD([
     )),
     ('compile coverage', Function(
         shell_mongoc(r'''
-        COVERAGE=ON DEBUG=ON bash .evergreen/scripts/compile.sh
+        COVERAGE=ON .evergreen/scripts/compile.sh
         ''', add_expansions_to_env=True),
     )),
     ('build mongohouse', Function(
         shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/pull-mongohouse-image.sh
+        .evergreen/atlas_data_lake/pull-mongohouse-image.sh
         '''),
     )),
     ('run mongohouse', Function(
         shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        bash .evergreen/atlas_data_lake/run-mongohouse-image.sh
+        .evergreen/atlas_data_lake/run-mongohouse-image.sh
         '''),
     )),
     ('test mongohouse', Function(
@@ -191,7 +191,7 @@ all_functions = OD([
         echo "Waiting for mongohouse to start... done."
         pgrep -a "mongohouse"
         export RUN_MONGOHOUSE_TESTS=ON
-        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
+        ./cmake-build/src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
         '''),
     )),
     ('run aws tests', Function(
@@ -213,7 +213,7 @@ all_functions = OD([
         pushd ../drivers-evergreen-tools/.evergreen/auth_aws
         . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
-        bash .evergreen/scripts/run-aws-tests.sh
+        .evergreen/scripts/run-aws-tests.sh
         ''', include_expansions_in_env=["TESTCASE"])
     )),
 ])

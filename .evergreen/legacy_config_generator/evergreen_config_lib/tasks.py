@@ -1,4 +1,4 @@
-# Copyright 2018-present MongoDB, Inc.
+# Copyright 2009-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,9 +70,8 @@ class CompileTask(NamedTask):
 
         # Environment variables for .evergreen/scripts/compile.sh.
         self.compile_sh_opt: dict[str, str] = {}
-        if config == "debug":
-            self.compile_sh_opt["DEBUG"] = "ON"
-        else:
+
+        if config != "debug":
             assert config == "release"
             self.compile_sh_opt["RELEASE"] = "ON"
 
@@ -121,7 +120,9 @@ class CompileTask(NamedTask):
         for opt, value in sorted(self.compile_sh_opt.items()):
             script += ' %s="%s"' % (opt, value)
 
-        script += " bash .evergreen/scripts/compile.sh"
+        script += " .evergreen/scripts/compile.sh"
+
+        commands.append(func('find-cmake-latest'))
         commands.append(shell_mongoc(script, add_expansions_to_env=True))
         commands.append(func("upload-build"))
         commands.extend(self.suffix_commands)
@@ -186,7 +187,6 @@ all_tasks = [
     CompileTask("debug-compile-compression-zlib", tags=["zlib", "compression"], compression="zlib"),
     CompileTask("debug-compile-compression-snappy", tags=["snappy", "compression"], compression="snappy"),
     CompileTask("debug-compile-compression-zstd", tags=["zstd", "compression"], compression="zstd"),
-    CompileTask("debug-compile-compression", tags=["zlib", "snappy", "zstd", "compression"], compression="all"),
     CompileTask(
         "debug-compile-no-align",
         tags=["debug-compile"],
@@ -197,25 +197,6 @@ all_tasks = [
     CompileTask("debug-compile-lto", CFLAGS="-flto"),
     CompileTask("debug-compile-lto-thin", CFLAGS="-flto=thin"),
     CompileTask("debug-compile-no-counters", tags=["debug-compile", "no-counters"], ENABLE_SHM_COUNTERS="OFF"),
-    SpecialTask(
-        "debug-compile-asan-clang",
-        tags=["debug-compile", "asan-clang"],
-        compression="zlib",
-        CFLAGS="-fno-omit-frame-pointer",
-        CHECK_LOG="ON",
-        sanitize=["address"],
-        EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-    ),
-    SpecialTask(
-        "debug-compile-asan-clang-openssl",
-        tags=["debug-compile", "asan-clang"],
-        compression="zlib",
-        CFLAGS="-fno-omit-frame-pointer",
-        CHECK_LOG="ON",
-        sanitize=["address"],
-        EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-        SSL="OPENSSL",
-    ),
     CompileTask("compile-tracing", TRACING="ON", CFLAGS="-Werror -Wno-cast-align"),
     CompileTask("release-compile", config="release"),
     CompileTask("debug-compile-nosasl-openssl", tags=["debug-compile", "nosasl", "openssl"], SSL="OPENSSL"),
@@ -224,7 +205,6 @@ all_tasks = [
     ),
     CompileTask("debug-compile-nosasl-darwinssl", tags=["debug-compile", "nosasl", "darwinssl"], SSL="DARWIN"),
     CompileTask("debug-compile-nosasl-winssl", tags=["debug-compile", "nosasl", "winssl"], SSL="WINDOWS"),
-    CompileTask("debug-compile-sasl-nossl", tags=["debug-compile", "sasl", "nossl"], SASL="AUTO", SSL="OFF"),
     CompileTask("debug-compile-sasl-openssl", tags=["debug-compile", "sasl", "openssl"], SASL="AUTO", SSL="OPENSSL"),
     CompileTask(
         "debug-compile-sasl-openssl-static",
@@ -233,14 +213,6 @@ all_tasks = [
         SSL="OPENSSL_STATIC",
     ),
     CompileTask("debug-compile-sasl-darwinssl", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"),
-    CompileTask("debug-compile-sspi-nossl", tags=["debug-compile", "sspi", "nossl"], SASL="SSPI", SSL="OFF"),
-    CompileTask("debug-compile-sspi-openssl", tags=["debug-compile", "sspi", "openssl"], SASL="SSPI", SSL="OPENSSL"),
-    CompileTask(
-        "debug-compile-sspi-openssl-static",
-        tags=["debug-compile", "sspi", "openssl-static"],
-        SASL="SSPI",
-        SSL="OPENSSL_STATIC",
-    ),
     CompileTask("debug-compile-rdtscp", ENABLE_RDTSCP="ON"),
     CompileTask("debug-compile-sspi-winssl", tags=["debug-compile", "sspi", "winssl"], SASL="SSPI", SSL="WINDOWS"),
     CompileTask("debug-compile-nosrv", tags=["debug-compile"], SRV="OFF"),
@@ -302,7 +274,7 @@ all_tasks = [
     NamedTask(
         "debian-package-build",
         commands=[
-            shell_mongoc('export IS_PATCH="${is_patch}"\n' "sh .evergreen/scripts/debian_package_build.sh"),
+            shell_mongoc('export IS_PATCH="${is_patch}"\n' ".evergreen/scripts/debian_package_build.sh"),
             s3_put(
                 local_file="deb.tar.gz",
                 remote_file="${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz",
@@ -328,8 +300,8 @@ all_tasks = [
     NamedTask(
         "rpm-package-build",
         commands=[
-            shell_mongoc('export IS_PATCH="${is_patch}"\n' "sh .evergreen/scripts/check_rpm_spec.sh"),
-            shell_mongoc("sh .evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc('export IS_PATCH="${is_patch}"\n' ".evergreen/scripts/check_rpm_spec.sh"),
+            shell_mongoc(".evergreen/scripts/build_snapshot_rpm.sh"),
             s3_put(
                 local_file="rpm.tar.gz",
                 remote_file="${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz",
@@ -340,13 +312,14 @@ all_tasks = [
                 remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz",
                 content_type="${content_type|application/x-gzip}",
             ),
-            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
-            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" "sh .evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n" ".evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" ".evergreen/scripts/build_snapshot_rpm.sh"),
         ],
     ),
     NamedTask(
         "install-uninstall-check-mingw",
         commands=[
+            func("find-cmake-latest"),
             shell_mongoc(
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
@@ -361,6 +334,7 @@ all_tasks = [
     NamedTask(
         "install-uninstall-check-msvc",
         commands=[
+            func("find-cmake-latest"),
             shell_mongoc(
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
@@ -375,24 +349,19 @@ all_tasks = [
     NamedTask(
         "install-uninstall-check",
         commands=[
+            func("find-cmake-latest"),
             shell_mongoc(
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
                 export CMAKE="$(find_cmake_latest)"
-                DESTDIR="$(pwd)/dest" bash ./.evergreen/scripts/install-uninstall-check.sh
-                BSON_ONLY=1 bash ./.evergreen/scripts/install-uninstall-check.sh
-                bash ./.evergreen/scripts/install-uninstall-check.sh""",
+                DESTDIR="$(pwd)/dest" .evergreen/scripts/install-uninstall-check.sh
+                BSON_ONLY=1 .evergreen/scripts/install-uninstall-check.sh
+                .evergreen/scripts/install-uninstall-check.sh""",
                 include_expansions_in_env=["distro_id"],
             )
         ],
     ),
     CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
-    CompileWithClientSideEncryption(
-        "debug-compile-sasl-openssl-static-cse",
-        tags=["debug-compile", "sasl", "openssl-static"],
-        SASL="AUTO",
-        SSL="OPENSSL_STATIC",
-    ),
     CompileTask(
         "debug-compile-nosasl-openssl-1.0.1",
         prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
@@ -420,12 +389,12 @@ all_tasks = [
                     ),
                 ]
             ),
-            shell_mongoc("bash ./.evergreen/scripts/build-and-test-with-toolchain.sh"),
+            shell_mongoc(".evergreen/scripts/build-and-test-with-toolchain.sh"),
         ],
     ),
     NamedTask(
         "install-libmongoc-after-libbson",
-        commands=[shell_mongoc("bash ./.evergreen/scripts/install-libmongoc-after-libbson.sh"),],
+        commands=[shell_mongoc(".evergreen/scripts/install-libmongoc-after-libbson.sh"),],
     ),
 ]
 
@@ -585,7 +554,7 @@ all_tasks = chain(all_tasks, DNSTask.matrix())
 
 
 class CompressionTask(MatrixTask):
-    axes = OD([("compression", ["zlib", "snappy", "zstd", "compression"])])
+    axes = OD([("compression", ["zlib", "snappy", "zstd"])])
     name_prefix = "test-latest-server"
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
@@ -734,9 +703,10 @@ all_tasks = chain(
             "authentication-tests-asan-memcheck",
             tags=["authentication-tests", "asan"],
             commands=[
+                func("find-cmake-latest"),
                 shell_mongoc(
                     """
-            env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/scripts/compile.sh
+            env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
             """,
                     add_expansions_to_env=True,
                 ),
@@ -748,7 +718,7 @@ all_tasks = chain(
 )
 
 # Add API version tasks.
-for server_version in [ "7.0", "6.0", "5.0"]:
+for server_version in [ "8.0", "7.0", "6.0", "5.0"]:
     all_tasks = chain(
         all_tasks,
         [
@@ -808,7 +778,7 @@ class SSLTask(Task):
         if cflags:
             script += f" CFLAGS={cflags}"
 
-        script += " DEBUG=ON SASL=OFF"
+        script += " SASL=OFF"
 
         if enable_ssl is not False:
             script += " SSL=" + enable_ssl
@@ -817,11 +787,12 @@ class SSLTask(Task):
         else:
             script += " SSL=OPENSSL"
 
-        script += " bash .evergreen/scripts/compile.sh"
+        script += " .evergreen/scripts/compile.sh"
 
         super(SSLTask, self).__init__(
             commands=[
                 func("install ssl", SSL=full_version),
+                func("find-cmake-latest"),
                 shell_mongoc(script, add_expansions_to_env=True),
                 func("run auth tests", **(test_params or {})),
                 func("upload-build"),
@@ -924,16 +895,16 @@ all_tasks = chain(all_tasks, IPTask.matrix())
 aws_compile_task = NamedTask(
     "debug-compile-aws",
     commands=[
+        func('find-cmake-latest'),
         shell_mongoc(
             """
             export distro_id='${distro_id}' # Required by find_cmake_latest.
             . .evergreen/scripts/find-cmake-latest.sh
             cmake_binary="$(find_cmake_latest)"
 
-            # Allow reuse of ccache compilation results between different build directories.
-            export CCACHE_BASEDIR CCACHE_NOHASHDIR
-            CCACHE_BASEDIR="$(pwd)"
-            CCACHE_NOHASHDIR=1
+            # Use ccache if able.
+            . .evergreen/scripts/find-ccache.sh
+            find_ccache_and_export_vars "$(pwd)" || true
 
             # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
             export CC='${CC}'
@@ -952,7 +923,7 @@ class AWSTestTask(MatrixTask):
     axes = OD(
         [
             ("testcase", ["regular", "ec2", "ecs", "lambda", "assume_role", "assume_role_with_web_identity"]),
-            ("version", ["latest", "7.0", "6.0", "5.0", "4.4"]),
+            ("version", ["latest", "8.0", "7.0", "6.0", "5.0", "4.4"]),
         ]
     )
 
@@ -1007,7 +978,7 @@ class OCSPTask(MatrixTask):
             ("delegate", ["delegate", "nodelegate"]),
             ("cert", ["rsa", "ecdsa"]),
             ("ssl", ["openssl", "openssl-1.0.1", "darwinssl", "winssl"]),
-            ("version", ["latest", "7.0", "6.0", "5.0", "4.4"]),
+            ("version", ["latest", "8.0", "7.0", "6.0", "5.0", "4.4"]),
         ]
     )
 
@@ -1059,7 +1030,7 @@ class OCSPTask(MatrixTask):
         yield (
             shell_mongoc(
                 f"""
-                TEST_COLUMN={test_column} CERT_TYPE={self.settings.cert} USE_DELEGATE={use_delegate} bash .evergreen/scripts/run-ocsp-responder.sh
+                TEST_COLUMN={test_column} CERT_TYPE={self.settings.cert} USE_DELEGATE={use_delegate} .evergreen/scripts/run-ocsp-responder.sh
                 """
             )
         )
@@ -1072,7 +1043,7 @@ class OCSPTask(MatrixTask):
                 yield (
                     shell_mongoc(
                         f"""
-                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE={self.settings.cert} bash .evergreen/scripts/run-ocsp-cache-test.sh
+                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-cache-test.sh
                         """
                     )
                 )
@@ -1080,7 +1051,7 @@ class OCSPTask(MatrixTask):
                 yield (
                     shell_mongoc(
                         f"""
-                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} bash .evergreen/scripts/run-ocsp-test.sh
+                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-test.sh
                         """
                     )
                 )
@@ -1089,7 +1060,7 @@ class OCSPTask(MatrixTask):
                 yield (
                     shell_mongoc(
                         f"""
-                        CERT_TYPE={self.settings.cert} bash .evergreen/scripts/run-ocsp-cache-test.sh
+                        CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-cache-test.sh
                         """
                     )
                 )
@@ -1097,7 +1068,7 @@ class OCSPTask(MatrixTask):
                 yield (
                     shell_mongoc(
                         f"""
-                        TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} bash .evergreen/scripts/run-ocsp-test.sh
+                        TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-test.sh
                         """
                     )
                 )

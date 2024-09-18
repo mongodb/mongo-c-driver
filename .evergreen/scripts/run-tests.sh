@@ -113,8 +113,19 @@ fi
 # Sanitizer environment variables.
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
 export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
-export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
-export UBSAN_OPTIONS="print_stacktrace=1 abort_on_error=1"
+export TSAN_OPTIONS="suppressions=.tsan-suppressions"
+
+ubsan_opts=(
+  "print_stacktrace=1"
+  "abort_on_error=1"
+)
+
+# UBSan with Clang 3.8 fails to parse the suppression file.
+if [[ "${distro_id:?}" != ubuntu1604-* ]]; then
+  ubsan_opts+=("suppressions=.ubsan-suppressions")
+fi
+
+export UBSAN_OPTIONS="${ubsan_opts[*]}"
 
 declare -a test_args=(
   "-d"
@@ -164,7 +175,7 @@ if [[ "${CC}" =~ mingw ]]; then
   wait_for_server "simple HTTP" 8000
   echo "Waiting for simple HTTP server to start... done."
 
-  chmod -f +x ./src/libmongoc/test-libmongoc.exe
+  chmod -f +x ./cmake-build/src/libmongoc/test-libmongoc.exe
   cmd.exe /c "$(native-path "${script_dir}/run-tests-mingw.bat")"
   exit
 fi
@@ -255,8 +266,8 @@ cygwin)
 
   check_mongocryptd
 
-  chmod -f +x src/libmongoc/Debug/test-libmongoc.exe
-  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/Debug/test-libmongoc.exe "${test_args[@]}"
+  chmod -f +x cmake-build/src/libmongoc/Debug/test-libmongoc.exe
+  LD_PRELOAD="${ld_preload:-}" ./cmake-build/src/libmongoc/Debug/test-libmongoc.exe "${test_args[@]}"
   ;;
 
 *)
@@ -273,7 +284,7 @@ cygwin)
     openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
   fi
 
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" LD_PRELOAD="${ld_preload:-}" ./cmake-build/src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
   ;;
 esac
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,7 +179,11 @@ bson_val_eq (const bson_val_t *a, const bson_val_t *b, bson_val_comparison_flags
    vtype = a->type;
    if (vtype == BSON_TYPE_DOUBLE || vtype == BSON_TYPE_INT32 || vtype == BSON_TYPE_INT64) {
       if (flags & BSON_VAL_FLEXIBLE_NUMERICS) {
-         return bson_val_convert_int64 (a) == bson_val_convert_int64 (b);
+         bson_type_t vtype_b = b->type;
+         if (vtype_b == BSON_TYPE_INT32 || vtype_b == BSON_TYPE_INT64 || vtype_b == BSON_TYPE_DOUBLE) {
+            return bson_val_convert_int64 (a) == bson_val_convert_int64 (b);
+         }
+         // Otherwise fall through to propagate an error on a type mismatch.
       }
    }
 

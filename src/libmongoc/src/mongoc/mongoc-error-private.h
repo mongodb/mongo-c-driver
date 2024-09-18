@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,5 +88,9 @@ _mongoc_error_is_server (const bson_error_t *error);
 
 bool
 _mongoc_error_is_auth (const bson_error_t *error);
+
+/* Try to append `s` to `error`. Truncates `s` if `error` is out of space. */
+void
+_mongoc_error_append (bson_error_t *error, const char *s);
 
 BSON_END_DECLS

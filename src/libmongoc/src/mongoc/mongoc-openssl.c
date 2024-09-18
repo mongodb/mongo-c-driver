@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1000,6 +1000,12 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
    if (opt->crl_file && !_mongoc_openssl_setup_crl (ctx, opt->crl_file)) {
       SSL_CTX_free (ctx);
       return NULL;
+   }
+
+   if (opt->weak_cert_validation) {
+      SSL_CTX_set_verify (ctx, SSL_VERIFY_NONE, NULL);
+   } else {
+      SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER, NULL);
    }
 
    return ctx;

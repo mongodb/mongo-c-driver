@@ -26,7 +26,7 @@
 #     • The default full path to the Poetry that will be installed and run by
 #       this script (not present until after ensure-poetry or run-poetry is
 #       executed).
-# * WANT_POETRY_VERSION (overridable) (default 1.5.1)
+# * WANT_POETRY_VERSION (overridable) (default 1.8.2)
 #     • The version of Poetry that will be installed by run-poetry when executed.
 # * POETRY_PYTHON_VERSION (overridable) (default to result of find-python)
 #     • The Python binary to use by the Poetry installer and virtual environment(s).
@@ -34,8 +34,7 @@
 # Load vars and utils:
 . "$(dirname "${BASH_SOURCE[0]}")/use.sh" python paths base with_lock download
 
-: "${WANT_POETRY_VERSION:=1.5.1}"
-: "${POETRY_PYTHON_BINARY:="$(find-python)"}"
+: "${WANT_POETRY_VERSION:=1.8.2}"
 declare -r -x POETRY_HOME=${FORCE_POETRY_HOME:-"$BUILD_CACHE_DIR/poetry-$WANT_POETRY_VERSION"}
 declare -r POETRY_EXE=$POETRY_HOME/bin/poetry$EXE_SUFFIX
 
@@ -49,6 +48,7 @@ install-poetry() {
     installer=$poetry_home/install-poetry.py
     download-file --uri=https://install.python-poetry.org --out="$installer"
     # Run the install:
+    : "${POETRY_PYTHON_BINARY:="$(find-python)"}"
     with-lock "$POETRY_HOME/.install.lock" \
         env POETRY_HOME="$poetry_home" \
         "$POETRY_PYTHON_BINARY" -u "$installer" --yes --version "$poetry_version" \
@@ -66,6 +66,7 @@ ensure-poetry() {
     if ! is-file "$home/installed.txt" || [[ "$(cat "$home/installed.txt")" != "$version" ]]; then
         install-poetry "$version" "$home"
     fi
+    : "${POETRY_PYTHON_BINARY:="$(find-python)"}"
     # Extra step must be taken to ensure Poetry's virtual environment uses the correct Python binary.
     # See: https://github.com/python-poetry/poetry/issues/522
     with-lock "$POETRY_HOME/.install.lock" \

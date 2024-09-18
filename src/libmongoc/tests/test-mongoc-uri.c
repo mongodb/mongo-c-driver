@@ -255,6 +255,14 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "christian@realm");
    mongoc_uri_destroy (uri);
 
+   /* should recognize a question mark in the userpass instead of mistaking it for the beginning of options */
+   uri = mongoc_uri_new ("mongodb://us?r:pa?s@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1");
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_username (uri), "us?r");
+   ASSERT_CMPSTR (mongoc_uri_get_password (uri), "pa?s");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
+   mongoc_uri_destroy (uri);
+
    /* should fail on invalid escaped characters */
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://u%ser:pwd@localhost:27017");
@@ -2018,6 +2026,11 @@ test_mongoc_uri_duplicates (void)
    RECREATE_URI (MONGOC_URI_SAFE "=false&" MONGOC_URI_SAFE "=true");
    ASSERT_LOG_DUPE (MONGOC_URI_SAFE);
    BSON_ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SAFE, false));
+
+   RECREATE_URI (MONGOC_URI_SERVERMONITORINGMODE "=auto&" MONGOC_URI_SERVERMONITORINGMODE "=stream");
+   ASSERT_LOG_DUPE (MONGOC_URI_SERVERMONITORINGMODE);
+   str = mongoc_uri_get_server_monitoring_mode (uri);
+   BSON_ASSERT (strcmp (str, "stream") == 0);
 
    RECREATE_URI (MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=1&" MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_SERVERSELECTIONTIMEOUTMS);

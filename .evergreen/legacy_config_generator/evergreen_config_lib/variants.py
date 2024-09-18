@@ -1,4 +1,4 @@
-# Copyright 2018-present MongoDB, Inc.
+# Copyright 2009-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -442,6 +442,7 @@ all_variants = [
             "debug-compile-aws",
             ".test-aws .6.0",
             ".test-aws .7.0",
+            ".test-aws .8.0",
             ".test-aws .latest",
         ],
         {"CC": "clang"},
@@ -515,6 +516,7 @@ all_variants = [
             "debug-compile-nosasl-openssl",
             "debug-compile-nosasl-nossl",
             ".versioned-api .7.0",
+            ".versioned-api .8.0"
         ],
         {},
     ),

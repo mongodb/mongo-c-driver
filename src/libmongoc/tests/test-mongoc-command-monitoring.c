@@ -76,7 +76,7 @@ command_monitoring_test_run_operation (json_test_ctx_t *ctx, const bson_t *test,
  */
 
 static void
-test_command_monitoring_cb (bson_t *scenario)
+test_command_monitoring_cb (void *scenario)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
    config.run_operation_cb = command_monitoring_test_run_operation;

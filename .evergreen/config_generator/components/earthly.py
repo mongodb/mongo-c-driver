@@ -172,13 +172,11 @@ def earthly_exec(
     args: Mapping[str, str] | None = None,
 ) -> BuiltInCommand:
     """Create a subprocess_exec command that runs Earthly with the given arguments"""
-    env: dict[str, str] = {}
-    if secrets:
-        env["EARTHLY_SECRETS"] = ",".join(f"{k}={v}" for k, v in secrets.items())
+    env: dict[str, str] = {k: v for k, v in (secrets or {}).items()}
     return subprocess_exec(
-        "bash",
+        "./tools/earthly.sh",
         args=[
-            "tools/earthly.sh",
+            *(f"--secret={k}" for k in (secrets or ())),
             f"+{target}",
             *(f"--{arg}={val}" for arg, val in (args or {}).items()),
         ],
@@ -244,7 +242,6 @@ CONTAINER_RUN_DISTROS = [
     "ubuntu2204-large",
     "ubuntu2004-small",
     "ubuntu2004",
-    "ubuntu1804",
     "ubuntu1804-medium",
     "debian10",
     "debian11",

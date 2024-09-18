@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ typedef void (*mongoc_set_item_dtor) (void *item, void *ctx);
 typedef bool (*mongoc_set_for_each_cb_t) (void *item, void *ctx);
 typedef bool (*mongoc_set_for_each_const_cb_t) (const void *item, void *ctx);
 typedef bool (*mongoc_set_for_each_with_id_cb_t) (uint32_t id, void *item, void *ctx);
+typedef bool (*mongoc_set_for_each_with_id_const_cb_t) (uint32_t id, const void *item, void *ctx);
 
 typedef struct {
    uint32_t id;
@@ -92,14 +93,14 @@ mongoc_set_destroy (mongoc_set_t *set);
 void
 mongoc_set_for_each (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx);
 
-static BSON_INLINE void
-mongoc_set_for_each_const (const mongoc_set_t *set, mongoc_set_for_each_const_cb_t cb, void *ctx)
-{
-   mongoc_set_for_each ((mongoc_set_t *) set, (mongoc_set_for_each_cb_t) cb, ctx);
-}
+void
+mongoc_set_for_each_const (const mongoc_set_t *set, mongoc_set_for_each_const_cb_t cb, void *ctx);
 
 void
 mongoc_set_for_each_with_id (mongoc_set_t *set, mongoc_set_for_each_with_id_cb_t cb, void *ctx);
+
+void
+mongoc_set_for_each_with_id_const (const mongoc_set_t *set, mongoc_set_for_each_with_id_const_cb_t cb, void *ctx);
 
 /* first item in set for which "cb" returns true */
 void *

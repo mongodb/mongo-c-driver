@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,5 +33,13 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l);
 
 void
 mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _iovcnt);
+
+#define STOP_LOGGING_CHECK                                 \
+   if (1) {                                                \
+      if (!gLogFunc || !_mongoc_log_trace_is_enabled ()) { \
+         return;                                           \
+      }                                                    \
+   } else                                                  \
+      (void) 0
 
 #endif /* MONGOC_LOG_PRIVATE_H */

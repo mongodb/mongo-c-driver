@@ -15,7 +15,6 @@ check_var_opt CHECK_LOG "OFF"
 check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
 check_var_opt COVERAGE # CMake default: OFF.
 check_var_opt CXXFLAGS
-check_var_opt DEBUG "OFF"
 check_var_opt ENABLE_SHM_COUNTERS # CMake default: AUTO.
 check_var_opt EXTRA_CMAKE_PREFIX_PATH
 check_var_opt EXTRA_CONFIGURE_FLAGS
@@ -82,10 +81,11 @@ configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV}"
 configure_flags_append_if_not_null TRACING "-DENABLE_TRACING=${TRACING}"
 configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB}"
 
-if [[ "${DEBUG}" == "ON" ]]; then
-  configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
-else
+if [[ "${RELEASE}" == "ON" ]]; then
   configure_flags_append "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+else
+  configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
+  configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
 if [[ "${SSL}" == "OPENSSL_STATIC" ]]; then
@@ -96,10 +96,6 @@ fi
 
 if [[ "${COVERAGE}" == "ON" ]]; then
   configure_flags_append "-DENABLE_COVERAGE=ON" "-DENABLE_EXAMPLES=OFF"
-fi
-
-if [[ "${RELEASE}" != "ON" ]]; then
-  configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
 declare -a flags
@@ -181,6 +177,8 @@ if [[ "${OSTYPE}" == darwin* ]]; then
     sysctl -n hw.logicalcpu
   }
 fi
+export CMAKE_BUILD_PARALLEL_LEVEL
+CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 
 declare -a extra_configure_flags
 IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
@@ -202,11 +200,19 @@ else
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
-# Allow reuse of ccache compilation results between different build directories.
-export CCACHE_BASEDIR CCACHE_NOHASHDIR
-CCACHE_BASEDIR="$(pwd)"
-CCACHE_NOHASHDIR=1
+# Use ccache if able.
+. "${script_dir:?}/find-ccache.sh"
+find_ccache_and_export_vars "$(pwd)" || true
 
-"${cmake_binary}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
-"${cmake_binary}" --build . -- -j "$(nproc)"
-"${cmake_binary}" --build . --target install
+declare build_dir
+build_dir="cmake-build"
+
+"${cmake_binary}" -S . -B "${build_dir:?}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
+"${cmake_binary}" --build "${build_dir:?}"
+"${cmake_binary}" --install "${build_dir:?}"
+
+# For use by test tasks, which directly use the binary directory contents.
+"${cmake_binary}" --build "${build_dir:?}" --target mongo_c_driver_tests
+
+# Also validate examples.
+"${cmake_binary}" --build "${build_dir:?}" --target mongo_c_driver_examples

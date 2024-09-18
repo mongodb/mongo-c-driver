@@ -11,7 +11,6 @@ Synopsis
   mongoc_client_encryption_encrypt_range_opts_t *
   mongoc_client_encryption_encrypt_range_opts_new (void);
 
-.. important:: The |qenc:range-is-experimental| |qenc:api-is-experimental|
 .. versionadded:: 1.24.0
 
 Returns

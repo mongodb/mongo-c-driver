@@ -238,7 +238,7 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
 }
 
 static void
-test_connection_uri_cb (bson_t *scenario)
+test_connection_uri_cb (void *scenario_vp)
 {
    bson_iter_t iter;
    bson_iter_t descendent;
@@ -250,8 +250,8 @@ test_connection_uri_cb (bson_t *scenario)
    bson_t options;
    bool valid;
 
-   BSON_ASSERT (scenario);
-
+   BSON_ASSERT_PARAM (scenario_vp);
+   const bson_t *const scenario = scenario_vp;
 
    BSON_ASSERT (bson_iter_init_find (&iter, scenario, "tests"));
    BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));

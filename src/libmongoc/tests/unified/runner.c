@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -571,27 +571,28 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.8",  /* fully supported through this version */
-                                           "1.12", /* partially supported (expectedError.errorResponse assertions) */
-                                           "1.18" /* partially supported (additional properties in kmsProviders) */};
-   int i;
+   // `schema_version` is the latest schema version the test runner will try to run.
+   // 1.8 is fully supported. Later minor versions are partially supported.
+   // 1.12 is partially supported (expectedError.errorResponse assertions)
+   // 1.18 is partially supported (additional properties in kmsProviders)
+   // 1.20 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
+   semver_t schema_version;
+   semver_parse ("1.20", &schema_version);
 
-   for (i = 0; i < sizeof (supported_version_strs) / sizeof (supported_version_strs[0]); i++) {
-      semver_t supported_version;
-
-      semver_parse (supported_version_strs[i], &supported_version);
-      if (supported_version.major != test_file->schema_version.major) {
-         continue;
-      }
-      if (!supported_version.has_minor) {
-         /* All minor versions for this major version are supported. */
-         return;
-      }
-      if (supported_version.minor >= test_file->schema_version.minor) {
-         return;
-      }
+   if (schema_version.major != test_file->schema_version.major) {
+      goto fail;
    }
 
+   if (!schema_version.has_minor) {
+      /* All minor versions for this major version are supported. */
+      return;
+   }
+
+   if (schema_version.minor >= test_file->schema_version.minor) {
+      return;
+   }
+
+fail:
    test_error ("Unsupported schema version: %s", semver_to_string (&test_file->schema_version));
 }
 
@@ -1338,7 +1339,7 @@ static void
 append_bson_array (bson_t *doc, const char *key, const mongoc_array_t *array)
 {
    BSON_ASSERT_PARAM (key);
-   BSON_ASSERT (array || true);
+   BSON_OPTIONAL_PARAM (array);
 
    if (!array) {
       bson_t empty = BSON_INITIALIZER;
@@ -1634,11 +1635,13 @@ done:
 }
 
 void
-run_one_test_file (bson_t *bson)
+run_one_test_file (void *bson_vp)
 {
    test_runner_t *test_runner = NULL;
    test_file_t *test_file = NULL;
    bson_iter_t test_iter;
+
+   bson_t *const bson = bson_vp;
 
    test_diagnostics_init ();
 
@@ -1718,4 +1721,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "retryable_writes/unified");
 
    run_unified_tests (suite, JSON_DIR, "index-management");
+
+   run_unified_tests (suite, JSON_DIR, "command-logging-and-monitoring/monitoring");
 }

@@ -635,6 +635,24 @@ disconnects_removed_servers_in_pool (void *unused)
    bson_destroy (ping);
 }
 
+/* Test no memory leaks when changing ssl_opts from re-creating OpenSSL context. */
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+static void
+test_mongoc_client_pool_change_openssl_ctx (void)
+{
+   mongoc_client_pool_t *pool;
+   const mongoc_ssl_opt_t *ssl_opts;
+
+   pool = test_framework_new_default_client_pool ();
+
+   /* change ssl opts */
+   ssl_opts = test_framework_get_ssl_opts ();
+   mongoc_client_pool_set_ssl_opts (pool, ssl_opts);
+
+   mongoc_client_pool_destroy (pool);
+}
+#endif
+
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -678,4 +696,8 @@ test_client_pool_install (TestSuite *suite)
       NULL,
       test_framework_skip_if_not_mongos /* require mongos to ensure two servers available */,
       test_framework_skip_if_max_wire_version_less_than_9 /* require server 4.4+ for streaming monitoring protocol */);
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+   TestSuite_Add (suite, "/ClientPool/openssl/change_ssl_opts", test_mongoc_client_pool_change_openssl_ctx);
+#endif
 }

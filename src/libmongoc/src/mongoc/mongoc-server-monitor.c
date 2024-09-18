@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-present MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,6 +88,7 @@ struct _mongoc_server_monitor_t {
    mongoc_server_description_t *description;
    uint32_t server_id;
    bool is_rtt;
+   mongoc_server_monitoring_mode_t mode;
 };
 
 static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (mongoc_server_monitor_t *server_monitor,
@@ -789,6 +790,24 @@ _update_topology_description (mongoc_server_monitor_t *server_monitor, mongoc_se
    mc_tpld_modify_commit (tdmod);
 }
 
+/* Get the mode enum based on the uri
+ *
+ * Called during server monitor creation
+ */
+static mongoc_server_monitoring_mode_t
+_server_monitor_get_mode_enum (mongoc_server_monitor_t *server_monitor)
+{
+   const char *mode_str = mongoc_uri_get_server_monitoring_mode (server_monitor->uri);
+
+   if (strcmp (mode_str, "poll") == 0) {
+      return MONGOC_SERVER_MONITORING_POLL;
+   } else if (strcmp (mode_str, "stream") == 0) {
+      return MONGOC_SERVER_MONITORING_STREAM;
+   } else {
+      return MONGOC_SERVER_MONITORING_AUTO;
+   }
+}
+
 /* Create a new server monitor.
  *
  * Called during reconcile.
@@ -820,6 +839,7 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
    server_monitor->apm_context = td->apm_context;
    server_monitor->initiator = topology->scanner->initiator;
    server_monitor->initiator_context = topology->scanner->initiator_context;
+   server_monitor->mode = _server_monitor_get_mode_enum (server_monitor);
    mongoc_cond_init (&server_monitor->shared.cond);
    bson_mutex_init (&server_monitor->shared.mutex);
    return server_monitor;
@@ -855,12 +875,23 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
          server_monitor->uri, &server_monitor->description->host, server_monitor->initiator_context, error);
    } else {
       void *ssl_opts_void = NULL;
+      void *openssl_ctx_void = NULL;
 
 #ifdef MONGOC_ENABLE_SSL
       ssl_opts_void = server_monitor->ssl_opts;
 #endif
-      server_monitor->stream = mongoc_client_connect (
-         false, ssl_opts_void != NULL, ssl_opts_void, server_monitor->uri, &server_monitor->description->host, error);
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+      openssl_ctx_void = server_monitor->topology->scanner->openssl_ctx;
+#endif
+
+      server_monitor->stream = mongoc_client_connect (false,
+                                                      ssl_opts_void != NULL,
+                                                      ssl_opts_void,
+                                                      server_monitor->uri,
+                                                      &server_monitor->description->host,
+                                                      openssl_ctx_void,
+                                                      error);
    }
 
    if (!server_monitor->stream) {
@@ -938,11 +969,15 @@ _server_monitor_check_server (mongoc_server_monitor_t *server_monitor,
       GOTO (exit);
    }
 
-   if (!bson_empty (&previous_description->topology_version) &&
-       _mongoc_handshake_get ()->env == MONGOC_HANDSHAKE_ENV_NONE) {
+   if (server_monitor->mode != MONGOC_SERVER_MONITORING_POLL && !bson_empty (&previous_description->topology_version) &&
+       (_mongoc_handshake_get ()->env == MONGOC_HANDSHAKE_ENV_NONE ||
+        server_monitor->mode == MONGOC_SERVER_MONITORING_STREAM)) {
       // Use stream monitoring if:
+      // - serverMonitoringMode != "poll"
       // - Server supports stream monitoring (indicated by `topologyVersion`).
-      // - Application is not in an FaaS environment (e.g. AWS Lambda).
+      // - ONE OF:
+      //    - Application is not in an FaaS environment (e.g. AWS Lambda).
+      //    - serverMonitoringMode == "stream"
       awaited = true;
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "awaitable hello");

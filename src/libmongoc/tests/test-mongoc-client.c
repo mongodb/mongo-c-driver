@@ -587,7 +587,7 @@ test_mongoc_client_authenticate_cached (bool pooled)
       r = mongoc_cursor_next (cursor, &doc);
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
       ASSERT (r);
-      server_id = mongoc_cursor_get_hint (cursor);
+      server_id = mongoc_cursor_get_server_id (cursor);
       mongoc_cursor_destroy (cursor);
 
       if (pooled) {
@@ -911,7 +911,7 @@ test_mongoc_client_command_secondary (void)
    mongoc_cursor_next (cursor, &reply);
 
    if (test_framework_is_replset ()) {
-      BSON_ASSERT (test_framework_server_is_secondary (client, mongoc_cursor_get_hint (cursor)));
+      BSON_ASSERT (test_framework_server_is_secondary (client, mongoc_cursor_get_server_id (cursor)));
    }
 
    mongoc_read_prefs_destroy (read_prefs);
@@ -2218,6 +2218,59 @@ test_client_buildinfo_hang (void)
    capture_logs (false);
 }
 
+/* Test no memory leaks when changing ssl_opts from re-creating OpenSSL context. */
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+
+static void
+test_mongoc_client_change_openssl_ctx_before_ops (void *unused)
+{
+   BSON_UNUSED (unused);
+   mongoc_client_t *client;
+   const mongoc_ssl_opt_t *ssl_opts;
+   bson_error_t error;
+   bool ret;
+
+   client = test_framework_new_default_client ();
+
+   /* change ssl opts before a connection is made */
+   ssl_opts = test_framework_get_ssl_opts ();
+   mongoc_client_set_ssl_opts (client, ssl_opts);
+
+   /* any operation - ping the server */
+   ret = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   mongoc_client_destroy (client);
+}
+
+static void
+test_mongoc_client_change_openssl_ctx_between_ops (void *unused)
+{
+   BSON_UNUSED (unused);
+   mongoc_client_t *client;
+   const mongoc_ssl_opt_t *ssl_opts;
+   bson_error_t error;
+   bool ret;
+
+   client = test_framework_new_default_client ();
+
+   /* any operation - ping the server */
+   ret = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   /* change ssl opts before a second connection */
+   ssl_opts = test_framework_get_ssl_opts ();
+   mongoc_client_set_ssl_opts (client, ssl_opts);
+
+   /* any operation - ping the server */
+   ret = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   mongoc_client_destroy (client);
+}
+
+#endif /* MONGOC_ENABLE_SSL_OPENSSL */
+
 #else
 /* MONGOC_ENABLE_SSL is not defined */
 static void
@@ -2256,7 +2309,7 @@ _test_mongoc_client_get_description (bool pooled)
    collection = get_test_collection (client, "test_mongoc_client_description");
    cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
    ASSERT (!mongoc_cursor_next (cursor, &doc));
-   server_id = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_server_id (cursor);
    ASSERT (0 != server_id);
    sd = mongoc_client_get_server_description (client, server_id);
    ASSERT (sd);
@@ -4087,4 +4140,18 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Client/resends_handshake_on_network_error", test_mongoc_client_resends_handshake_on_network_error);
    TestSuite_Add (suite, "/Client/failure_to_auth", test_failure_to_auth);
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+   TestSuite_AddFull (suite,
+                      "/Client/openssl/change_ssl_opts_before_ops",
+                      test_mongoc_client_change_openssl_ctx_before_ops,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_server_ssl);
+   TestSuite_AddFull (suite,
+                      "/Client/openssl/change_ssl_opts_after_ops",
+                      test_mongoc_client_change_openssl_ctx_between_ops,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_server_ssl);
+#endif
 }

@@ -12,12 +12,11 @@ Synopsis
     mongoc_client_encryption_encrypt_range_opts_set_precision (
          mongoc_client_encryption_encrypt_range_opts_t *range_opts, int32_t precision);
 
-.. important:: The |qenc:range-is-experimental| |qenc:api-is-experimental|
 .. versionadded:: 1.24.0
 
 Sets precision for explicit encryption.
-Only applies when the algorithm set by :symbol:`mongoc_client_encryption_encrypt_opts_set_algorithm()` is "RangePreview".
-It is an error to set precision when algorithm is not "RangePreview".
+Only applies when the algorithm set by :symbol:`mongoc_client_encryption_encrypt_opts_set_algorithm()` is "Range".
+It is an error to set precision when algorithm is not "Range".
 
 Precision can only be set with double or decimal128 fields. 
 It is an error to set precision if the type of the encryptedFields in the destination collection is not double or decimal128. 

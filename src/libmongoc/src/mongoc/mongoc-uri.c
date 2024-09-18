@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -749,8 +749,8 @@ bool
 mongoc_uri_option_is_utf8 (const char *key)
 {
    return !strcasecmp (key, MONGOC_URI_APPNAME) || !strcasecmp (key, MONGOC_URI_REPLICASET) ||
-          !strcasecmp (key, MONGOC_URI_READPREFERENCE) || !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) ||
-          !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
+          !strcasecmp (key, MONGOC_URI_READPREFERENCE) || !strcasecmp (key, MONGOC_URI_SERVERMONITORINGMODE) ||
+          !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) || !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
           !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD) || !strcasecmp (key, MONGOC_URI_TLSCAFILE) ||
           /* deprecated options */
           !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
@@ -1142,6 +1142,11 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
             goto UNSUPPORTED_VALUE;
          }
 
+      } else if (!strcmp (key, MONGOC_URI_SERVERMONITORINGMODE)) {
+         if (!mongoc_uri_set_server_monitoring_mode (uri, value)) {
+            goto UNSUPPORTED_VALUE;
+         }
+
       } else if (mongoc_uri_option_is_utf8 (key)) {
          mongoc_uri_bson_append_or_replace_key (&uri->options, canon, value);
 
@@ -1425,6 +1430,32 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 
    before_slash = scan_to_unichar (str, '/', "", &tmp);
    if (!before_slash) {
+      // Handle cases of optional delimiting slash
+      char *userpass = NULL;
+      char *hosts = NULL;
+
+      // Skip any "?"s that exist in the userpass
+      userpass = scan_to_unichar (str, '@', "", &tmp);
+      if (!userpass) {
+         // If none found, safely check for "?" indicating beginning of options
+         before_slash = scan_to_unichar (str, '?', "", &tmp);
+      } else {
+         const size_t userpass_len = (size_t) (tmp - str);
+         // Otherwise, see if options exist after userpass and concatenate result
+         hosts = scan_to_unichar (tmp, '?', "", &tmp);
+
+         if (hosts) {
+            const size_t hosts_len = (size_t) (tmp - str) - userpass_len;
+
+            before_slash = bson_strndup (str, userpass_len + hosts_len);
+         }
+      }
+
+      bson_free (userpass);
+      bson_free (hosts);
+   }
+
+   if (!before_slash) {
       before_slash = bson_strdup (str);
       str += strlen (before_slash);
    } else {
@@ -1438,7 +1469,14 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    BSON_ASSERT (str);
 
    if (*str) {
+      // Check for valid end of hostname delimeter (skip slash if necessary)
+      if (*str != '/' && *str != '?') {
+         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
+         goto error;
+      }
+
       if (*str == '/') {
+         // Try to parse database.
          str++;
          if (*str) {
             if (!mongoc_uri_parse_database (uri, str, &str)) {
@@ -1446,18 +1484,16 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
                goto error;
             }
          }
+      }
 
-         if (*str == '?') {
-            str++;
-            if (*str) {
-               if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
-                  goto error;
-               }
+      if (*str == '?') {
+         // Try to parse options.
+         str++;
+         if (*str) {
+            if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
+               goto error;
             }
          }
-      } else {
-         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
-         goto error;
       }
    }
 
@@ -2319,6 +2355,30 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
    return mongoc_uri_get_tls (uri);
 }
 
+const char *
+mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)
+{
+   BSON_ASSERT_PARAM (uri);
+
+   return mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_SERVERMONITORINGMODE, "auto");
+}
+
+
+bool
+mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value)
+{
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (value);
+
+   // Check for valid value
+   if (strcmp (value, "stream") && strcmp (value, "poll") && strcmp (value, "auto")) {
+      return false;
+   }
+
+   mongoc_uri_bson_append_or_replace_key (&uri->options, MONGOC_URI_SERVERMONITORINGMODE, value);
+   return true;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -2855,6 +2915,8 @@ mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri, const char *option_orig, const
    }
    if (!bson_strcasecmp (option, MONGOC_URI_APPNAME)) {
       return mongoc_uri_set_appname (uri, value);
+   } else if (!bson_strcasecmp (option, MONGOC_URI_SERVERMONITORINGMODE)) {
+      return mongoc_uri_set_server_monitoring_mode (uri, value);
    } else {
       option_lowercase = lowercase_str_new (option);
       mongoc_uri_bson_append_or_replace_key (&uri->options, option_lowercase, value);

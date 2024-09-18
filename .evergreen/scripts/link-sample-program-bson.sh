@@ -44,10 +44,11 @@ mkdir -p $INSTALL_DIR
 
 cd $BUILD_DIR
 
-# Allow reuse of ccache compilation results between different build directories.
-export CCACHE_BASEDIR CCACHE_NOHASHDIR
-CCACHE_BASEDIR="$SCRATCH_DIR"
-CCACHE_NOHASHDIR=1
+# Use ccache if able.
+if [[ -f $DIR/find-ccache.sh ]]; then
+  . $DIR/find-ccache.sh
+  find_ccache_and_export_vars "$SCRATCH_DIR" || true
+fi
 
 if [ "$LINK_STATIC" ]; then
   # Our CMake system builds shared and static by default.
@@ -174,11 +175,11 @@ else
   if [ "$LINK_STATIC" ]; then
     echo "pkg-config output:"
     echo $(pkg-config --libs --cflags libbson-static-1.0)
-    sh compile-with-pkg-config-static.sh
+    ./compile-with-pkg-config-static.sh
   else
     echo "pkg-config output:"
     echo $(pkg-config --libs --cflags libbson-1.0)
-    sh compile-with-pkg-config.sh
+    ./compile-with-pkg-config.sh
   fi
 fi
 

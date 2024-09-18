@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 MongoDB Inc.
+ * Copyright 2009-present MongoDB, Inc.
  * Licensed under the Apache License, Version 2.0 (the "License");
  *
  * you may not use this file except in compliance with the License.
@@ -20,36 +20,6 @@
 /* strcasecmp on windows */
 #include "mongoc-util-private.h"
 #include "utlist.h"
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_host_list_push --
- *
- *       Add a host to the front of the list and return it.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-mongoc_host_list_t *
-_mongoc_host_list_push (const char *host, uint16_t port, int family, mongoc_host_list_t *next)
-{
-   mongoc_host_list_t *h;
-
-   BSON_ASSERT (host);
-
-   h = bson_malloc0 (sizeof (mongoc_host_list_t));
-   bson_strncpy (h->host, host, sizeof h->host);
-   h->port = port;
-   bson_snprintf (h->host_and_port, sizeof h->host_and_port, "%s:%hu", host, port);
-
-   h->family = family;
-   h->next = next;
-
-   return h;
-}
 
 static mongoc_host_list_t *
 _mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts, const char *host_and_port)

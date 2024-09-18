@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,9 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs, const bson_t *tag)
    BSON_ASSERT (read_prefs);
 
    key = bson_count_keys (&read_prefs->tags);
-   bson_snprintf (str, sizeof str, "%d", key);
+   // Expect no truncation.
+   int req = bson_snprintf (str, sizeof str, "%d", key);
+   BSON_ASSERT (bson_cmp_less_su (req, sizeof str));
 
    if (tag) {
       bson_append_document (&read_prefs->tags, str, -1, tag);

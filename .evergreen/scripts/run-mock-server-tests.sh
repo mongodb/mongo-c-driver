@@ -46,12 +46,12 @@ fi
 
 case "${OSTYPE}" in
 cygwin)
-  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc.exe "${test_args[@]}"
+  LD_PRELOAD="${ld_preload:-}" ./cmake-build/src/libmongoc/test-libmongoc.exe "${test_args[@]}"
   ;;
 
 *)
   ulimit -c unlimited || true
 
-  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
+  LD_PRELOAD="${ld_preload:-}" ./cmake-build/src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
   ;;
 esac

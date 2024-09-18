@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2623,4 +2623,13 @@ test_framework_is_loadbalanced (void)
 {
    return test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED") ||
           test_framework_getenv_bool ("MONGOC_TEST_DNS_LOADBALANCED");
+}
+
+int
+test_framework_skip_if_no_server_ssl (void)
+{
+   if (test_framework_get_ssl ()) {
+      return 1; // Proceed.
+   }
+   return 0; // Skip.
 }

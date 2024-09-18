@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -249,9 +249,7 @@ TestSuite_CheckMockServerAllowed (void)
 static void
 TestSuite_AddHelper (void *ctx)
 {
-   TestFunc cb = (TestFunc) ((TestFnCtx *) ctx)->test_fn;
-
-   cb ();
+   ((TestFnCtx *) ctx)->test_fn ();
 }
 
 void
@@ -332,9 +330,11 @@ _TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func,
 {
    Test *test;
    va_list ap;
+   TestFnCtx *ctx = bson_malloc (sizeof (TestFnCtx));
+   *ctx = (TestFnCtx){.test_fn = func, .dtor = NULL};
 
    va_start (ap, func);
-   test = _V_TestSuite_AddFull (suite, name, (TestFuncWC) func, NULL, NULL, ap);
+   test = _V_TestSuite_AddFull (suite, name, TestSuite_AddHelper, _TestSuite_TestFnCtxDtor, ctx, ap);
    va_end (ap);
 
    if (test) {
@@ -1225,6 +1225,25 @@ bson_value_eq (const bson_value_t *a, const bson_value_t *b)
    bson_destroy (tmp_b);
    bson_destroy (tmp_a);
    return ret;
+}
+
+const char *
+test_bulkwriteexception_str (const mongoc_bulkwriteexception_t *bwe)
+{
+   bson_error_t _error;
+   const char *_msg = "(none)";
+   if (mongoc_bulkwriteexception_error (bwe, &_error)) {
+      _msg = _error.message;
+   }
+   return tmp_str ("Bulk Write Exception:\n"
+                   "  Error                 : %s\n"
+                   "  Write Errors          : %s\n"
+                   "  Write Concern Errors  : %s\n"
+                   "  Error Reply           : %s",
+                   _msg,
+                   tmp_json (mongoc_bulkwriteexception_writeerrors (bwe)),
+                   tmp_json (mongoc_bulkwriteexception_writeconcernerrors (bwe)),
+                   tmp_json (mongoc_bulkwriteexception_errorreply (bwe)));
 }
 
 int32_t

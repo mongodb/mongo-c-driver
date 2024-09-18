@@ -22,7 +22,7 @@ TEST_MATRIX = [
     ('macos-1100', 'clang', None, 'cyrus', ['auth'], ['server', 'replica' ], ['4.2', '4.4', '5.0', '6.0'                ]),
 
     # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
-    ('macos-1100', 'clang', None, 'cyrus', ['auth'], ['server', 'replica' ], [                           '7.0', 'latest']),
+    ('macos-1100', 'clang', None, 'cyrus', ['auth'], ['server', 'replica' ], [                           '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -62,7 +62,6 @@ def tasks():
 def variants():
     expansions = {
         'CLIENT_SIDE_ENCRYPTION': 'on',
-        'DEBUG': 'ON',
     }
 
     return [
