@@ -154,7 +154,7 @@ bson_string_alloc (const uint32_t size)
    if (!bson_is_power_of_two (ret->alloc)) {
       ret->alloc = bson_next_power_of_two_u32 (ret->alloc);
       if (ret->alloc == 0) {
-         ret->alloc = __UINT32_MAX__;
+         ret->alloc = UINT32_MAX;
       }
    }
 
