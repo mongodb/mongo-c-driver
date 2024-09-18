@@ -475,6 +475,9 @@ Manually update the ``NEWS`` and ``src/libbson/NEWS`` files with the content
 from the release branch that we just published. Commit these changes to the new
 branch.
 
+For a minor release, manually update the ``VERSION_CURRENT`` file. Example if
+``1.28.0`` was just released, update to ``1.29.0-dev``.
+
 Push this branch to your fork of the repository::
 
    $ git push git@github.com:$YOUR_GH_USERNAME/mongo-c-driver.git post-release-merge
