@@ -741,7 +741,7 @@ _must_use_primary (const mongoc_topology_description_t *td,
       /* We never alter from a primary read mode. This early-return is just an
        * optimization to skip scanning for old servers, as we would end up
        * returning MONGOC_READ_PRIMARY regardless. */
-      return requested_read_mode;
+      return true;
    }
    switch (optype) {
    case MONGOC_SS_WRITE:
