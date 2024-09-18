@@ -359,6 +359,67 @@ test_bson_string_capacity (void *unused)
    bson_free (large_str);
 }
 
+static void
+test_bson_string_append_ex (void)
+{
+   bson_string_t *str;
+   char *s;
+
+   str = bson_string_new (NULL);
+   bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 10);
+   s = bson_string_free (str, false);
+   BSON_ASSERT (s);
+   BSON_ASSERT (!strcmp (s, "the quick "));
+   bson_free (s);
+
+   str = bson_string_new (NULL);
+   bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 0);
+   s = bson_string_free (str, false);
+   BSON_ASSERT (s);
+   BSON_ASSERT (!strcmp (s, ""));
+   bson_free (s);
+
+   str = bson_string_new (NULL);
+   bson_string_append_ex (str, "the quick\n brown fox jumps over the lazy dog", 10);
+   bson_string_append_ex (str, "the\n quick brown fox jumps over the lazy dog", 5);
+   s = bson_string_free (str, false);
+   BSON_ASSERT (s);
+   BSON_ASSERT (!strcmp (s, "the quick\nthe\n "));
+   bson_free (s);
+}
+
+static void
+test_bson_string_alloc (void)
+{
+   bson_string_t *str;
+
+   str = bson_string_alloc (0);
+   BSON_ASSERT (str->alloc == 1);
+   BSON_ASSERT (str->len == 0);
+   bson_string_free (str, true);
+
+
+   str = bson_string_alloc (1);
+   BSON_ASSERT (str->alloc == 2);
+   BSON_ASSERT (str->len == 0);
+   bson_string_free (str, true);
+
+   str = bson_string_alloc (2);
+   BSON_ASSERT (str->alloc == 4);
+   BSON_ASSERT (str->len == 0);
+   bson_string_free (str, true);
+
+   str = bson_string_alloc (10);
+   BSON_ASSERT (str->alloc == 16);
+   BSON_ASSERT (str->len == 0);
+   bson_string_free (str, true);
+
+   str = bson_string_alloc (2147483648);
+   BSON_ASSERT (str->alloc == __UINT32_MAX__);
+   BSON_ASSERT (str->len == 0);
+   bson_string_free (str, true);
+}
+
 static int
 skip_if_no_large_allocations (void)
 {
@@ -385,4 +446,6 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/strcasecmp", test_bson_strcasecmp);
    TestSuite_AddFull (
       suite, "/bson/string/capacity", test_bson_string_capacity, NULL, NULL, skip_if_no_large_allocations);
+   TestSuite_Add (suite, "/bson/string/append_ex", test_bson_string_append_ex);
+   TestSuite_Add (suite, "/bson/string/alloc", test_bson_string_alloc);
 }
