@@ -100,12 +100,12 @@ Create a New Clone of ``mongo-c-driver``
 
 To prevent publishing unwanted changes and to preserve local changes, create a
 fresh clone of the C driver. We will clone into a new arbitrary directory which
-we will refer to as `$RELEASE_CLONE`\ ::
+we will refer to as ``$RELEASE_CLONE`` ::
 
    $ git clone "git@github.com:mongodb/mongo-c-driver.git" $RELEASE_CLONE
 
 .. note:: Unless otherwise noted, all commands below should be executed from within
-   the `$RELEASE_CLONE` directory.
+   the ``$RELEASE_CLONE`` directory.
 
 Switch to a branch that corresponds to the release version:
 
