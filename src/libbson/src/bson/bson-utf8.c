@@ -298,7 +298,7 @@ _is_special_char (unsigned char c)
  */
 
 static BSON_INLINE void
-_bson_utf8_handle_special_char (bson_unichar_t c,   /* IN */
+_bson_utf8_handle_special_char (const uint8_t c,    /* IN */
                                 bson_string_t *str) /* OUT */
 {
    BSON_ASSERT (c < 0x80);
@@ -333,8 +333,6 @@ _bson_utf8_handle_special_char (bson_unichar_t c,   /* IN */
       const char digits[] = "0123456789abcdef";
       char codepoint[6] = "\\u0000";
 
-      codepoint[2] = digits[(c >> 12) & 0xf];
-      codepoint[3] = digits[(c >> 8) & 0xf];
       codepoint[4] = digits[(c >> 4) & 0xf];
       codepoint[5] = digits[c & 0xf];
 
@@ -374,7 +372,6 @@ char *
 bson_utf8_escape_for_json (const char *utf8, /* IN */
                            ssize_t utf8_len) /* IN */
 {
-   bson_unichar_t c;
    bson_string_t *str;
    bool length_provided = true;
    ssize_t pos;
@@ -404,8 +401,8 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       uint8_t mask;
       uint8_t length_of_char;
 
-      c = (unsigned char) utf8[pos];
-      if (!_is_special_char (c)) {
+      const uint8_t current_byte = (uint8_t) utf8[pos];
+      if (!_is_special_char (current_byte)) {
          // Normal character, no need to do anything besides iterate
          // Copy rest of the string if we reach the end
          pos++;
@@ -447,17 +444,17 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       }
 
       // Unicode character
-      if (c > 0x7f /* highest ASCII character */) {
+      if (current_byte > 0x7f /* highest ASCII character */) {
          const char *utf8_old = utf8;
          uint8_t char_len;
 
-         c = bson_utf8_get_char (utf8);
+         bson_unichar_t unichar = bson_utf8_get_char (utf8);
 
-         if (!c) {
+         if (!unichar) {
             goto invalid_utf8;
          }
 
-         bson_string_append_unichar (str, c);
+         bson_string_append_unichar (str, unichar);
          utf8 = bson_utf8_next_char (utf8);
 
          char_len = utf8 - utf8_old;
@@ -468,16 +465,16 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       }
 
       // Special ASCII characters (control chars and misc.)
-      _bson_utf8_handle_special_char (c, str);
+      _bson_utf8_handle_special_char (current_byte, str);
 
-      if (c) {
+      if (current_byte) {
          utf8++;
       } else {
          goto invalid_utf8;
       }
 
       utf8_ulen--;
-   } while (utf8_ulen);
+   } while (utf8_ulen > 0);
 
    return bson_string_free (str, false);
 
