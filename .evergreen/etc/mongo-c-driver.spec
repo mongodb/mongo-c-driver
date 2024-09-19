@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.27.6
+%global up_version   1.28.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -53,7 +53,7 @@ BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
 # grep VERSION_LESS src/*/CMakeLists.txt
-BuildRequires: cmake(mongocrypt) >= 1.10.0
+BuildRequires: cmake(mongocrypt) >= 1.11.0
 %endif
 BuildRequires: perl-interpreter
 # From man pages
@@ -258,6 +258,10 @@ exit $ret
 
 
 %changelog
+* Thu Sep 19 2024 Remi Collet <remi@remirepo.net> - 1.28.0-1
+- update to 1.28.0
+- raise dependency to libmongocrypt 1.11.0
+
 * Wed Sep  4 2024 Remi Collet <remi@remirepo.net> - 1.27.6-1
 - update to 1.27.6
 
