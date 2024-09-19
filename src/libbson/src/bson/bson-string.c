@@ -148,19 +148,11 @@ bson_string_alloc (const uint32_t size)
    bson_string_t *ret;
 
    ret = bson_malloc0 (sizeof *ret);
-   ret->len = 0;
-   ret->alloc = size + 1;
 
-   if (!bson_is_power_of_two (ret->alloc)) {
-      ret->alloc = bson_next_power_of_two_u32 (ret->alloc);
-      if (ret->alloc == 0) {
-         ret->alloc = UINT32_MAX;
-      }
-   }
+   bson_string_ensure_space (ret, size);
 
    BSON_ASSERT (ret->alloc >= 1);
-
-   ret->str = bson_malloc (ret->alloc);
+   ret->len = 0;
    ret->str[ret->len] = '\0';
    return ret;
 }

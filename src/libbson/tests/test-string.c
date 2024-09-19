@@ -356,6 +356,14 @@ test_bson_string_capacity (void *unused)
       large_str[UINT32_MAX - 2u] = 's'; // Restore.
    }
 
+   // Test allocating the largest possible string.
+   {
+      bson_string_t *str = bson_string_alloc (2147483648);
+      ASSERT_CMPUINT32 (str->alloc, ==, UINT32_MAX);
+      ASSERT_CMPUINT32 (str->len, ==, 0);
+      bson_string_free (str, true);
+   }
+
    bson_free (large_str);
 }
 
@@ -394,29 +402,24 @@ test_bson_string_alloc (void)
    bson_string_t *str;
 
    str = bson_string_alloc (0);
-   BSON_ASSERT (str->alloc == 1);
-   BSON_ASSERT (str->len == 0);
+   ASSERT_CMPUINT32 (str->alloc, ==, 1);
+   ASSERT_CMPUINT32 (str->len, ==, 0);
    bson_string_free (str, true);
 
 
    str = bson_string_alloc (1);
-   BSON_ASSERT (str->alloc == 2);
-   BSON_ASSERT (str->len == 0);
+   ASSERT_CMPUINT32 (str->alloc, ==, 2);
+   ASSERT_CMPUINT32 (str->len, ==, 0);
    bson_string_free (str, true);
 
    str = bson_string_alloc (2);
-   BSON_ASSERT (str->alloc == 4);
-   BSON_ASSERT (str->len == 0);
+   ASSERT_CMPUINT32 (str->alloc, ==, 4);
+   ASSERT_CMPUINT32 (str->len, ==, 0);
    bson_string_free (str, true);
 
    str = bson_string_alloc (10);
-   BSON_ASSERT (str->alloc == 16);
-   BSON_ASSERT (str->len == 0);
-   bson_string_free (str, true);
-
-   str = bson_string_alloc (2147483648);
-   BSON_ASSERT (str->alloc == UINT32_MAX);
-   BSON_ASSERT (str->len == 0);
+   ASSERT_CMPUINT32 (str->alloc, ==, 16);
+   ASSERT_CMPUINT32 (str->len, ==, 0);
    bson_string_free (str, true);
 }
 
