@@ -1,3 +1,10 @@
+libmongoc 1.29.0 (unreleased)
+=============================
+
+Platform Support:
+
+  * Support for Visual Studio 2013 is dropped.
+
 libmongoc 1.28.0
 ================
 
