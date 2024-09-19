@@ -122,7 +122,7 @@ bson_string_new (const char *str) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * bson_string_alloc --
+ * _bson_string_alloc --
  *
  *       Create an empty bson_string_t and allocate memory for it.
  *
@@ -143,8 +143,10 @@ bson_string_new (const char *str) /* IN */
  */
 
 bson_string_t *
-bson_string_alloc (const uint32_t size)
+_bson_string_alloc (const size_t size)
 {
+   BSON_ASSERT (size < UINT32_MAX);
+
    bson_string_t *ret;
 
    ret = bson_malloc0 (sizeof *ret);

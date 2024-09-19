@@ -21,6 +21,7 @@
 #include <bson/bson-json-private.h>
 #include <bson/bson-string.h>
 #include <bson/bson-iso8601-private.h>
+#include <bson/bson-string-private.h>
 
 #include "common-b64-private.h"
 
@@ -1472,7 +1473,7 @@ bson_append_regex_w_len (
       options = "";
    }
 
-   options_sorted = bson_string_alloc (strlen (options));
+   options_sorted = _bson_string_alloc (strlen (options));
 
    _bson_append_regex_options_sorted (options_sorted, options);
 

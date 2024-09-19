@@ -39,8 +39,6 @@ typedef struct {
 
 BSON_EXPORT (bson_string_t *)
 bson_string_new (const char *str);
-BSON_EXPORT (bson_string_t *)
-bson_string_alloc (const uint32_t len);
 BSON_EXPORT (char *)
 bson_string_free (bson_string_t *string, bool free_segment);
 BSON_EXPORT (void)

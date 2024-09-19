@@ -20,6 +20,7 @@
 #include <bson/bson-memory.h>
 #include <bson/bson-string.h>
 #include <bson/bson-utf8.h>
+#include <bson/bson-string-private.h>
 
 
 /*
@@ -392,7 +393,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
    end = utf8 + utf8_len;
 
-   str = bson_string_alloc (utf8_len);
+   str = _bson_string_alloc (utf8_len);
 
    pos = 0;
 
