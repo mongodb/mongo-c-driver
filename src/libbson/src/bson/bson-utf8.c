@@ -373,7 +373,6 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
                            ssize_t utf8_len) /* IN */
 {
    bool length_provided = true;
-   const char *end;
    size_t utf8_ulen;
 
    BSON_ASSERT (utf8);
@@ -389,21 +388,21 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       return bson_strdup ("");
    }
 
-   end = utf8 + utf8_ulen;
+   const char *end = utf8 + utf8_ulen;
 
    bson_string_t *str = _bson_string_alloc (utf8_ulen);
 
-   size_t normal_bytes_seen = 0u;
+   size_t normal_chars_seen = 0u;
 
    do {
-      const uint8_t current_byte = (uint8_t) utf8[normal_bytes_seen];
+      const uint8_t current_byte = (uint8_t) utf8[normal_chars_seen];
       if (!_is_special_char (current_byte)) {
          // Normal character, no need to do anything besides iterate
          // Copy rest of the string if we reach the end
-         normal_bytes_seen++;
+         normal_chars_seen++;
          utf8_ulen--;
          if (utf8_ulen == 0) {
-            bson_string_append_ex (str, utf8, normal_bytes_seen);
+            bson_string_append_ex (str, utf8, normal_chars_seen);
             break;
          }
 
@@ -412,10 +411,10 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
       // Reached a special character. Copy over all of normal characters
       // we have passed so far
-      if (normal_bytes_seen > 0) {
-         bson_string_append_ex (str, utf8, normal_bytes_seen);
-         utf8 += normal_bytes_seen;
-         normal_bytes_seen = 0;
+      if (normal_chars_seen > 0) {
+         bson_string_append_ex (str, utf8, normal_chars_seen);
+         utf8 += normal_chars_seen;
+         normal_chars_seen = 0;
       }
 
       // Check if expected char length goes past end
