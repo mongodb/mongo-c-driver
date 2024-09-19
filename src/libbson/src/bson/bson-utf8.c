@@ -379,21 +379,24 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
    bool length_provided = true;
    ssize_t pos;
    const char *end;
+   size_t utf8_ulen;
 
    BSON_ASSERT (utf8);
 
    if (utf8_len < 0) {
       length_provided = false;
-      utf8_len = strlen (utf8);
+      utf8_ulen = strlen (utf8);
+   } else {
+      utf8_ulen = (size_t) utf8_len;
    }
 
-   if (utf8_len == 0) {
+   if (utf8_ulen == 0) {
       return bson_strdup ("");
    }
 
-   end = utf8 + utf8_len;
+   end = utf8 + utf8_ulen;
 
-   str = _bson_string_alloc (utf8_len);
+   str = _bson_string_alloc (utf8_ulen);
 
    pos = 0;
 
@@ -406,8 +409,8 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          // Normal character, no need to do anything besides iterate
          // Copy rest of the string if we reach the end
          pos++;
-         utf8_len--;
-         if (utf8_len == 0) {
+         utf8_ulen--;
+         if (utf8_ulen == 0) {
             bson_string_append_ex (str, utf8, pos);
             break;
          }
@@ -438,7 +441,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          }
 
          bson_string_append (str, "\\u0000");
-         utf8_len -= *utf8 ? 2 : 1;
+         utf8_ulen -= *utf8 ? 2 : 1;
          utf8 += *utf8 ? 2 : 1;
          continue;
       }
@@ -458,7 +461,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          utf8 = bson_utf8_next_char (utf8);
 
          char_len = utf8 - utf8_old;
-         utf8_len -= char_len;
+         utf8_ulen -= char_len;
          pos = 0;
 
          continue;
@@ -473,8 +476,8 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          goto invalid_utf8;
       }
 
-      utf8_len--;
-   } while (utf8_len);
+      utf8_ulen--;
+   } while (utf8_ulen);
 
    return bson_string_free (str, false);
 
