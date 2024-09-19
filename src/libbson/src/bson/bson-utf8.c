@@ -267,9 +267,9 @@ _is_special_char (unsigned char c)
                                              0xffffffff,
                                              0xffffffff,
                                              0xffffffff}; // non-ASCII
-   const int int_index = c / (sizeof (bson_unichar_t) * 8);
-   const int bit_index = c & (sizeof (bson_unichar_t) * 8 - 1);
-   return (charmap[int_index] >> bit_index) & 1;
+   const int int_index = ((int) c) / ((int) sizeof (bson_unichar_t) * 8);
+   const int bit_index = ((int) c) & ((int) sizeof (bson_unichar_t) * 8 - 1);
+   return ((charmap[int_index] >> bit_index) & ((bson_unichar_t) 1)) != 0u;
 }
 
 /*
@@ -301,7 +301,7 @@ static BSON_INLINE void
 _bson_utf8_handle_special_char (const uint8_t c,    /* IN */
                                 bson_string_t *str) /* OUT */
 {
-   BSON_ASSERT (c < 0x80);
+   BSON_ASSERT (c < 0x80u);
    BSON_ASSERT (str);
 
    switch (c) {
@@ -328,15 +328,15 @@ _bson_utf8_handle_special_char (const uint8_t c,    /* IN */
       break;
    default: {
       // ASCII control character
-      BSON_ASSERT (c < 0x20);
+      BSON_ASSERT (c < 0x20u);
 
       const char digits[] = "0123456789abcdef";
       char codepoint[6] = "\\u0000";
 
-      codepoint[4] = digits[(c >> 4) & 0xf];
-      codepoint[5] = digits[c & 0xf];
+      codepoint[4] = digits[(c >> 4) & 0x0fu];
+      codepoint[5] = digits[c & 0x0fu];
 
-      bson_string_append_ex (str, codepoint, 6);
+      bson_string_append_ex (str, codepoint, sizeof (codepoint));
       break;
    }
    }
@@ -372,9 +372,7 @@ char *
 bson_utf8_escape_for_json (const char *utf8, /* IN */
                            ssize_t utf8_len) /* IN */
 {
-   bson_string_t *str;
    bool length_provided = true;
-   ssize_t pos;
    const char *end;
    size_t utf8_ulen;
 
@@ -393,22 +391,19 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
    end = utf8 + utf8_ulen;
 
-   str = _bson_string_alloc (utf8_ulen);
+   bson_string_t *str = _bson_string_alloc (utf8_ulen);
 
-   pos = 0;
+   size_t normal_bytes_seen = 0u;
 
    do {
-      uint8_t mask;
-      uint8_t length_of_char;
-
-      const uint8_t current_byte = (uint8_t) utf8[pos];
+      const uint8_t current_byte = (uint8_t) utf8[normal_bytes_seen];
       if (!_is_special_char (current_byte)) {
          // Normal character, no need to do anything besides iterate
          // Copy rest of the string if we reach the end
-         pos++;
+         normal_bytes_seen++;
          utf8_ulen--;
          if (utf8_ulen == 0) {
-            bson_string_append_ex (str, utf8, pos);
+            bson_string_append_ex (str, utf8, normal_bytes_seen);
             break;
          }
 
@@ -417,22 +412,27 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
       // Reached a special character. Copy over all of normal characters
       // we have passed so far
-      if (pos) {
-         bson_string_append_ex (str, utf8, pos);
-         utf8 += pos;
-         pos = 0;
+      if (normal_bytes_seen > 0) {
+         bson_string_append_ex (str, utf8, normal_bytes_seen);
+         utf8 += normal_bytes_seen;
+         normal_bytes_seen = 0;
       }
 
       // Check if expected char length goes past end
       // bson_utf8_get_char will crash without this check
-      _bson_utf8_get_sequence (utf8, &length_of_char, &mask);
-      if (utf8 > end - length_of_char) {
-         goto invalid_utf8;
+      {
+         uint8_t mask;
+         uint8_t length_of_char;
+
+         _bson_utf8_get_sequence (utf8, &length_of_char, &mask);
+         if (utf8 > end - length_of_char) {
+            goto invalid_utf8;
+         }
       }
 
       // Check for null character
       // Null characters are only allowed if the length is provided
-      if (!*utf8 || (*utf8 == '\xc0' && *(utf8 + 1) == '\x80')) {
+      if (utf8[0] == '\0' || (utf8[0] == '\xc0' && utf8[1] == '\x80')) {
          if (!length_provided) {
             goto invalid_utf8;
          }
@@ -443,8 +443,8 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          continue;
       }
 
-      // Unicode character
-      if (current_byte > 0x7f /* highest ASCII character */) {
+      // Highest ASCII character
+      if (current_byte > 0x7fu) {
          const char *utf8_old = utf8;
          uint8_t char_len;
 
@@ -459,7 +459,6 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
          char_len = utf8 - utf8_old;
          utf8_ulen -= char_len;
-         pos = 0;
 
          continue;
       }
