@@ -5,12 +5,23 @@ Platform Support:
 
   * Support for Visual Studio 2013 is dropped.
 
-libmongoc 1.28.0 (unreleased)
-=============================
+libmongoc 1.28.0
+================
 
 New features:
 
   * Support In-Use Encryption range queries.
+  * Include insert ID on result of `mongoc_collection_insert_one`.
+  * Add new bulk write API `mongoc_bulkwrite_t`. Requires MongoDB 8.0. Reduces round-trips for mixed writes.
+  - Add `serverMonitoringMode` URI option.
+
+Improvements:
+
+  * Improve performance of OpenSSL connection creation.
+  * Improve performance when trace logging is configured (`ENABLE_TRACING=ON`) but disabled at runtime.
+  * Prefer FIPS compliant functions for SCRAM-SHA-256 key derivation.
+  * Remove required slash to delimit options in MongoDB URI (e.g. `mongodb://example.com?w=1` parses the same as `mongodb://example.com/?w=1`).
+  * Include topology description in server selection timeout errors.
 
 Notes:
 

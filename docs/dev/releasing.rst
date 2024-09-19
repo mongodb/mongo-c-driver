@@ -95,6 +95,38 @@ Check that the `etc/purls.txt` file is up-to-date with the set of
 :term:`vendored dependencies <vendored dependency>`. If any items need to be
 updated, refer to `sbom-lite-updating`.
 
+Create a New Clone of ``mongo-c-driver``
+****************************************
+
+To prevent publishing unwanted changes and to preserve local changes, create a
+fresh clone of the C driver. We will clone into a new arbitrary directory which
+we will refer to as ``$RELEASE_CLONE`` ::
+
+   $ git clone "git@github.com:mongodb/mongo-c-driver.git" $RELEASE_CLONE
+
+.. note:: Unless otherwise noted, all commands below should be executed from within
+   the ``$RELEASE_CLONE`` directory.
+
+Switch to a branch that corresponds to the release version:
+
+- **If performing a minor release (x.y.0)**, create a new branch for the
+  major+minor release version. For example: If the major version is ``5`` and
+  the minor version is ``42``, create a branch ``r5.42``::
+
+      $ git checkout master      # Ensure we are on the `master` branch to begin
+      $ git checkout -b "r5.42"  # Create and switch to a new branch
+
+  Push the newly created branch into the remote::
+
+      $ git push origin "r5.42"
+
+- **If performing a patch release (x.y.z)**, there should already exist a
+  release branch corresponding to the major+minor version of the patch. For
+  example, if we are releasing patch version ``7.8.9``, then there should
+  already exist a branch ``r7.8``. Switch to that branch now::
+
+      $ git checkout --track origin/r7.8
+
 .. _releasing.snyk:
 
 Start Snyk Monitoring
@@ -264,39 +296,6 @@ called `$CDRIVER_TOOLS`::
 Install the Python requirements for the driver tools::
 
    $ pip install -r $CDRIVER_TOOLS/requirements.txt
-
-
-Create a New Clone of ``mongo-c-driver``
-****************************************
-
-To prevent publishing unwanted changes and to preserve local changes, create a
-fresh clone of the C driver. We will clone into a new arbitrary directory which
-we will refer to as `$RELEASE_CLONE`\ ::
-
-   $ git clone "git@github.com:mongodb/mongo-c-driver.git" $RELEASE_CLONE
-
-.. note:: Unless otherwise noted, all commands below should be executed from within
-   the `$RELEASE_CLONE` directory.
-
-Switch to a branch that corresponds to the release version:
-
-- **If performing a minor release (x.y.0)**, create a new branch for the
-  major+minor release version. For example: If the major version is ``5`` and
-  the minor version is ``42``, create a branch ``r5.42``::
-
-      $ git checkout master      # Ensure we are on the `master` branch to begin
-      $ git checkout -b "r5.42"  # Create and switch to a new branch
-
-  Push the newly created branch into the remote::
-
-      $ git push origin "r5.42"
-
-- **If performing a patch release (x.y.z)**, there should already exist a
-  release branch corresponding to the major+minor version of the patch. For
-  example, if we are releasing patch version ``7.8.9``, then there should
-  already exist a branch ``r7.8``. Switch to that branch now::
-
-      $ git checkout --track origin/r7.8
 
 
 **For Patch Releases**: Check Consistency with the Jira Release
@@ -475,6 +474,9 @@ arbitrary.)
 Manually update the ``NEWS`` and ``src/libbson/NEWS`` files with the content
 from the release branch that we just published. Commit these changes to the new
 branch.
+
+For a minor release, manually update the ``VERSION_CURRENT`` file. Example if
+``1.28.0`` was just released, update to ``1.29.0-dev``.
 
 Push this branch to your fork of the repository::
 
