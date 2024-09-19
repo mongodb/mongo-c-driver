@@ -230,6 +230,25 @@ bson_utf8_validate (const char *utf8, /* IN */
    return true;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _is_special_char --
+ *
+ *       Uses a bit mask to check if a character requires special formatting
+ *       or not. Called from bson_utf8_escape_for_json.
+ *
+ * Parameters:
+ *       @c: An unsigned char c.
+ *
+ * Returns:
+ *       true if @c requires special formatting. otherwise false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 static BSON_INLINE bool
 _is_special_char (unsigned char c)
