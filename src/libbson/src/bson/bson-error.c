@@ -130,7 +130,7 @@ bson_strerror_r (int err_code,                    /* IN */
    // required) by the POSIX spec (see:
    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/strerror.html#tag_16_574_08).
    (void) strerror_r (err_code, buf, buflen);
-#elif defined(_GNU_SOURCE)
+#elif defined(_GNU_SOURCE) && !defined(__MUSL__)
    // Unlikely, but continue supporting use of GNU extension in cases where the
    // C Driver is being built without _XOPEN_SOURCE=700.
    ret = strerror_r (err_code, buf, buflen);
