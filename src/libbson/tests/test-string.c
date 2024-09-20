@@ -359,7 +359,7 @@ test_bson_string_capacity (void *unused)
 
    // Test allocating the largest possible string.
    {
-      bson_string_t *str = _bson_string_alloc (2147483648);
+      bson_string_t *str = _bson_string_alloc (UINT32_MAX - 4u);
       ASSERT_CMPUINT32 (str->alloc, ==, UINT32_MAX);
       ASSERT_CMPUINT32 (str->len, ==, 0);
       bson_string_free (str, true);
@@ -377,23 +377,20 @@ test_bson_string_append_ex (void)
    str = bson_string_new (NULL);
    _bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 10);
    s = bson_string_free (str, false);
-   BSON_ASSERT (s);
-   BSON_ASSERT (!strcmp (s, "the quick "));
+   ASSERT_CMPSTR (s, "the quick ");
    bson_free (s);
 
    str = bson_string_new (NULL);
    _bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 0);
    s = bson_string_free (str, false);
-   BSON_ASSERT (s);
-   BSON_ASSERT (!strcmp (s, ""));
+   ASSERT_CMPSTR (s, "");
    bson_free (s);
 
    str = bson_string_new (NULL);
    _bson_string_append_ex (str, "the quick\n brown fox jumps over the lazy dog", 10);
    _bson_string_append_ex (str, "the\n quick brown fox jumps over the lazy dog", 5);
    s = bson_string_free (str, false);
-   BSON_ASSERT (s);
-   BSON_ASSERT (!strcmp (s, "the quick\nthe\n "));
+   ASSERT_CMPSTR (s, "the quick\nthe\n ");
    bson_free (s);
 }
 

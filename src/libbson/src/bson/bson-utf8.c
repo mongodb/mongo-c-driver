@@ -388,9 +388,9 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       return bson_strdup ("");
    }
 
-   const char *end = utf8 + utf8_ulen;
+   const char *const end = utf8 + utf8_ulen;
 
-   bson_string_t *str = _bson_string_alloc (utf8_ulen);
+   bson_string_t *const str = _bson_string_alloc (utf8_ulen);
 
    size_t normal_chars_seen = 0u;
 
@@ -437,7 +437,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          }
 
          bson_string_append (str, "\\u0000");
-         utf8_ulen -= *utf8 ? 2 : 1;
+         utf8_ulen -= *utf8 ? 2u : 1u;
          utf8 += *utf8 ? 2 : 1;
          continue;
       }

@@ -24,6 +24,7 @@
 #include <bson/bson-string.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-utf8.h>
+#include <bson/bson-string-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -145,7 +146,7 @@ bson_string_new (const char *str) /* IN */
 bson_string_t *
 _bson_string_alloc (const size_t size)
 {
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, size));
+   BSON_ASSERT (size < UINT32_MAX);
 
    bson_string_t *ret;
 
@@ -236,6 +237,8 @@ void
 bson_string_append (bson_string_t *string, /* IN */
                     const char *str)       /* IN */
 {
+   BSON_ASSERT_PARAM (string);
+   BSON_ASSERT_PARAM (str);
    _bson_string_append_ex (string, str, strlen (str));
 }
 
