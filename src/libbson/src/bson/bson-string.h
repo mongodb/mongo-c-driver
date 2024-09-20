@@ -42,8 +42,6 @@ bson_string_new (const char *str);
 BSON_EXPORT (char *)
 bson_string_free (bson_string_t *string, bool free_segment);
 BSON_EXPORT (void)
-bson_string_append_ex (bson_string_t *string, const char *str, const size_t len);
-BSON_EXPORT (void)
 bson_string_append (bson_string_t *string, const char *str);
 BSON_EXPORT (void)
 bson_string_append_c (bson_string_t *string, char str);

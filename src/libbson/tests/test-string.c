@@ -375,22 +375,22 @@ test_bson_string_append_ex (void)
    char *s;
 
    str = bson_string_new (NULL);
-   bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 10);
+   _bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 10);
    s = bson_string_free (str, false);
    BSON_ASSERT (s);
    BSON_ASSERT (!strcmp (s, "the quick "));
    bson_free (s);
 
    str = bson_string_new (NULL);
-   bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 0);
+   _bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 0);
    s = bson_string_free (str, false);
    BSON_ASSERT (s);
    BSON_ASSERT (!strcmp (s, ""));
    bson_free (s);
 
    str = bson_string_new (NULL);
-   bson_string_append_ex (str, "the quick\n brown fox jumps over the lazy dog", 10);
-   bson_string_append_ex (str, "the\n quick brown fox jumps over the lazy dog", 5);
+   _bson_string_append_ex (str, "the quick\n brown fox jumps over the lazy dog", 10);
+   _bson_string_append_ex (str, "the\n quick brown fox jumps over the lazy dog", 5);
    s = bson_string_free (str, false);
    BSON_ASSERT (s);
    BSON_ASSERT (!strcmp (s, "the quick\nthe\n "));

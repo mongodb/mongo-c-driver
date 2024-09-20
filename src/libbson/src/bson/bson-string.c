@@ -184,7 +184,7 @@ bson_string_free (bson_string_t *string, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * bson_string_append_ex --
+ * _bson_string_append_ex --
  *
  *       Append the UTF-8 string @str of given length @len to @string.
  *
@@ -198,9 +198,9 @@ bson_string_free (bson_string_t *string, /* IN */
  */
 
 void
-bson_string_append_ex (bson_string_t *string, /* IN */
-                       const char *str,       /* IN */
-                       const size_t len)      /* IN */
+_bson_string_append_ex (bson_string_t *string, /* IN */
+                        const char *str,       /* IN */
+                        const size_t len)      /* IN */
 {
    BSON_ASSERT (string);
    BSON_ASSERT (str);
@@ -236,7 +236,7 @@ void
 bson_string_append (bson_string_t *string, /* IN */
                     const char *str)       /* IN */
 {
-   bson_string_append_ex (string, str, strlen (str));
+   _bson_string_append_ex (string, str, strlen (str));
 }
 
 

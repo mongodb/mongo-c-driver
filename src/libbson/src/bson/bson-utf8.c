@@ -336,7 +336,7 @@ _bson_utf8_handle_special_char (const uint8_t c,    /* IN */
       codepoint[4] = digits[(c >> 4) & 0x0fu];
       codepoint[5] = digits[c & 0x0fu];
 
-      bson_string_append_ex (str, codepoint, sizeof (codepoint));
+      _bson_string_append_ex (str, codepoint, sizeof (codepoint));
       break;
    }
    }
@@ -402,7 +402,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          normal_chars_seen++;
          utf8_ulen--;
          if (utf8_ulen == 0) {
-            bson_string_append_ex (str, utf8, normal_chars_seen);
+            _bson_string_append_ex (str, utf8, normal_chars_seen);
             break;
          }
 
@@ -412,7 +412,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       // Reached a special character. Copy over all of normal characters
       // we have passed so far
       if (normal_chars_seen > 0) {
-         bson_string_append_ex (str, utf8, normal_chars_seen);
+         _bson_string_append_ex (str, utf8, normal_chars_seen);
          utf8 += normal_chars_seen;
          normal_chars_seen = 0;
       }
