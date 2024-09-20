@@ -145,15 +145,15 @@ bson_string_new (const char *str) /* IN */
 bson_string_t *
 _bson_string_alloc (const size_t size)
 {
-   BSON_ASSERT (size < UINT32_MAX);
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, size));
 
    bson_string_t *ret;
 
    ret = bson_malloc0 (sizeof *ret);
 
-   bson_string_ensure_space (ret, size);
+   bson_string_ensure_space (ret, (uint32_t) size);
 
-   BSON_ASSERT (ret->alloc >= 1);
+   BSON_ASSERT (ret->alloc > 0);
    ret->len = 0;
    ret->str[ret->len] = '\0';
    return ret;

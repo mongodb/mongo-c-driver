@@ -445,7 +445,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       // Highest ASCII character
       if (current_byte > 0x7fu) {
          const char *utf8_old = utf8;
-         uint8_t char_len;
+         size_t char_len;
 
          bson_unichar_t unichar = bson_utf8_get_char (utf8);
 
@@ -456,7 +456,8 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          bson_string_append_unichar (str, unichar);
          utf8 = bson_utf8_next_char (utf8);
 
-         char_len = utf8 - utf8_old;
+         char_len = (size_t) (utf8 - utf8_old);
+         BSON_ASSERT (utf8_ulen >= char_len);
          utf8_ulen -= char_len;
 
          continue;
@@ -465,7 +466,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       // Special ASCII characters (control chars and misc.)
       _bson_utf8_handle_special_char (current_byte, str);
 
-      if (current_byte) {
+      if (current_byte > 0) {
          utf8++;
       } else {
          goto invalid_utf8;
