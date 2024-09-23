@@ -305,6 +305,61 @@ test_bson_strcasecmp (void)
 }
 
 static void
+test_bson_string_truncate (void)
+{
+   // Test truncating.
+   {
+      bson_string_t *str = bson_string_new ("foobar");
+      ASSERT_CMPSIZE_T (str->len, ==, 6u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+
+      bson_string_truncate (str, 2);
+      ASSERT_CMPSTR (str->str, "fo");
+      ASSERT_CMPSIZE_T (str->len, ==, 2u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 4u);
+      bson_string_free (str, true);
+   }
+
+   // Test truncating to same length.
+   {
+      bson_string_t *str = bson_string_new ("foobar");
+      ASSERT_CMPSIZE_T (str->len, ==, 6u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+
+      bson_string_truncate (str, 6u);
+      ASSERT_CMPSTR (str->str, "foobar");
+      ASSERT_CMPUINT32 (str->len, ==, 6u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+      bson_string_free (str, true);
+   }
+
+   // Test truncating to 0.
+   {
+      bson_string_t *str = bson_string_new ("foobar");
+      ASSERT_CMPSIZE_T (str->len, ==, 6u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+
+      bson_string_truncate (str, 0u);
+      ASSERT_CMPSTR (str->str, "");
+      ASSERT_CMPUINT32 (str->len, ==, 0u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 1u);
+      bson_string_free (str, true);
+   }
+
+   // Test truncating beyond string length.
+   // The documentation for `bson_string_truncate` says the truncated length "must be smaller or equal to the current
+   // length of the string.". However, `bson_string_truncate` does not reject greater lengths. For backwards
+   // compatibility, this behavior is preserved.
+   {
+      bson_string_t *str = bson_string_new ("a");
+      bson_string_truncate (str, 2u); // Is not rejected.
+      ASSERT_CMPUINT32 (str->len, ==, 2u);
+      ASSERT_CMPUINT32 (str->alloc, ==, 4u);
+      bson_string_free (str, true);
+   }
+}
+
+static void
 test_bson_string_capacity (void *unused)
 {
    BSON_UNUSED (unused);
@@ -395,4 +450,5 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/strcasecmp", test_bson_strcasecmp);
    TestSuite_AddFull (
       suite, "/bson/string/capacity", test_bson_string_capacity, NULL, NULL, skip_if_no_large_allocations);
+   TestSuite_Add (suite, "/bson/string/truncate", test_bson_string_truncate);
 }
