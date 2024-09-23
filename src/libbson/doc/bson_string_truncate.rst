@@ -24,3 +24,4 @@ Truncates the string so that it is ``len`` bytes in length. This must be smaller
 
 A ``\0`` byte will be placed where the end of the string occurs.
 
+.. warning:: This function will abort if the length of the resulting string (including the NULL terminator) would exceed ``UINT32_MAX``.
