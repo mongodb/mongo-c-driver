@@ -356,6 +356,16 @@ test_bson_string_capacity (void *unused)
       large_str[UINT32_MAX - 2u] = 's'; // Restore.
    }
 
+   // Can truncate strings of length close to UINT32_MAX - 1.
+   {
+      large_str[UINT32_MAX - 1u] = '\0'; // Set size.
+      bson_string_t *str = bson_string_new (large_str);
+      bson_string_truncate (str, UINT32_MAX - 2); // Truncate one character.
+      ASSERT_CMPSIZE_T (strlen (str->str), ==, UINT32_MAX - 2u);
+      bson_string_free (str, true);
+      large_str[UINT32_MAX - 1u] = 's'; // Restore.
+   }
+
    bson_free (large_str);
 }
 
