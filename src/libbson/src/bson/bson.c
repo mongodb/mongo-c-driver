@@ -274,6 +274,93 @@ _bson_encode_length (bson_t *bson) /* IN */
 }
 
 
+typedef struct _bson_append_bytes_arg {
+   const uint8_t *bytes;
+   uint32_t length;
+} _bson_append_bytes_arg;
+
+typedef struct _bson_append_bytes_list {
+   _bson_append_bytes_arg args[8]; // Arbitrary: just needs to be large enough.
+   _bson_append_bytes_arg *current;
+   uint32_t n_bytes;
+} _bson_append_bytes_list;
+
+#define BSON_APPEND_BYTES_LIST_DECLARE(ident)                                \
+   _bson_append_bytes_list ident = {.current = (ident).args, .n_bytes = 0u}; \
+   ((void) 0)
+
+#define BSON_APPEND_BYTES_ADD_ARGUMENT(_bson, _list, _bytes, _length) \
+   if (BSON_UNLIKELY ((_length) > BSON_MAX_SIZE - (_list).n_bytes)) { \
+      goto append_failure;                                            \
+   } else if ((_length) > 0) {                                        \
+      *(_list).current++ = (_bson_append_bytes_arg){                  \
+         .bytes = (const uint8_t *) (_bytes),                         \
+         .length = (_length),                                         \
+      };                                                              \
+      (_list).n_bytes += (_length);                                   \
+   }                                                                  \
+   ((void) 0)
+
+#define BSON_APPEND_BYTES_ADD_CHECKED_STRING(_bson, _list, _key, _key_len) \
+   uint32_t BSON_CONCAT (key_ulen_, __LINE__);                             \
+   if ((_key_len) < 0) {                                                   \
+      const size_t key_zulen = strlen ((_key));                            \
+      if (BSON_UNLIKELY (key_zulen > UINT32_MAX)) {                        \
+         goto append_failure;                                              \
+      }                                                                    \
+      BSON_CONCAT (key_ulen_, __LINE__) = (uint32_t) key_zulen;            \
+   } else {                                                                \
+      const size_t key_zulen = (size_t) (_key_len);                        \
+      if (BSON_UNLIKELY (key_zulen > UINT32_MAX)) {                        \
+         goto append_failure;                                              \
+      } /* Necessary to validate embedded NULL is not present in key. */   \
+      else if (memchr ((_key), '\0', key_zulen) != NULL) {                 \
+         goto append_failure;                                              \
+      } else {                                                             \
+         BSON_CONCAT (key_ulen_, __LINE__) = (uint32_t) key_zulen;         \
+      }                                                                    \
+   }                                                                       \
+   BSON_APPEND_BYTES_ADD_ARGUMENT ((_bson), (_list), (_key), BSON_CONCAT (key_ulen_, __LINE__))
+
+#define BSON_APPEND_BYTES_APPLY_ARGUMENTS(_bson, _list)                                    \
+   if (BSON_UNLIKELY ((_list).n_bytes > BSON_MAX_SIZE - (_bson)->len)) {                   \
+      goto append_failure;                                                                 \
+   } else if (BSON_UNLIKELY (!_bson_grow ((_bson), (_list).n_bytes))) {                    \
+      goto append_failure;                                                                 \
+   }                                                                                       \
+   for (const _bson_append_bytes_arg *arg = (_list).args; arg != (_list).current; ++arg) { \
+      uint8_t *const data = _bson_data ((_bson)) + ((_bson)->len - 1u);                    \
+      memcpy (data, arg->bytes, arg->length);                                              \
+      (_bson)->len += arg->length;                                                         \
+      _bson_encode_length ((_bson));                                                       \
+      data[arg->length] = '\0';                                                            \
+   }                                                                                       \
+   ((void) 0)
+
+
+static BSON_INLINE bool
+_bson_append_bytes (bson_t *bson, const uint8_t *bytes, uint32_t length)
+{
+   BSON_ASSERT_PARAM (bson);
+
+   // Null only permitted when length is zero.
+   if (!bytes) {
+      return length == 0u;
+   }
+
+   uint8_t *data = _bson_data (bson) + (bson->len - 1u); // Exclude document terminator.
+
+   memcpy (data, bytes, length);
+   bson->len += length;
+
+   _bson_encode_length (bson);
+
+   data[length] = '\0';
+
+   return true;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
