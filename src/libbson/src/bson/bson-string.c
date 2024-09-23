@@ -312,7 +312,7 @@ bson_string_truncate (bson_string_t *string, /* IN */
       return;
    }
    uint32_t needed = len;
-   BSON_ASSERT (needed <= UINT32_MAX - 1u);
+   BSON_ASSERT (needed < UINT32_MAX);
    needed += 1u; // Add one for trailing NULL byte.
    uint32_t alloc = bson_next_power_of_two_u32 (needed);
    if (alloc == 0) {
