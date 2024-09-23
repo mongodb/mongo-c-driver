@@ -292,7 +292,7 @@ bson_string_append_printf (bson_string_t *string, const char *format, ...)
  *       Truncate the string @string to @len bytes.
  *
  *       The underlying memory will be released via realloc() down to
- *       the minimum required size specified by @len.
+ *       the minimum required size (at power-of-two boundary) specified by @len.
  *
  * Returns:
  *       None.
