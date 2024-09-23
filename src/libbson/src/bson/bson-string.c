@@ -307,19 +307,14 @@ void
 bson_string_truncate (bson_string_t *string, /* IN */
                       uint32_t len)          /* IN */
 {
-   uint32_t alloc;
-
-   BSON_ASSERT (string);
-   BSON_ASSERT (len < INT_MAX);
-
-   alloc = len + 1;
-
-   if (alloc < 16) {
-      alloc = 16;
-   }
-
-   if (!bson_is_power_of_two (alloc)) {
-      alloc = (uint32_t) bson_next_power_of_two ((size_t) alloc);
+   BSON_ASSERT_PARAM (string);
+   uint32_t needed = len;
+   BSON_ASSERT (needed <= UINT32_MAX - 1u);
+   needed += 1u; // Add one for trailing NULL byte.
+   uint32_t alloc = bson_next_power_of_two_u32 (needed);
+   if (alloc == 0) {
+      // Overflowed: saturate at UINT32_MAX.
+      alloc = UINT32_MAX;
    }
 
    string->str = bson_realloc (string->str, alloc);
