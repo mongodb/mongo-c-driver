@@ -1,3 +1,10 @@
+libbson 1.29.0 (Unreleased)
+===========================
+
+Deprecated:
+
+  * `bson_string_t` and associated functions are deprecated and planned for removal in a future major release.
+
 libbson 1.28.0
 ==============
 
