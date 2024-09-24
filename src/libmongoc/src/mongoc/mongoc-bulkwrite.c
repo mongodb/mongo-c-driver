@@ -1447,6 +1447,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    if (!opts) {
       opts = &defaults;
    }
+   bool is_ordered =
+      mongoc_optional_is_set (&opts->ordered) ? mongoc_optional_value (&opts->ordered) : true; // default.
    bool is_acknowledged = false;
    // Create empty result and exception to collect results/errors from batches.
    ret.res = _bulkwriteresult_new ();
@@ -1506,8 +1508,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       // errorsOnly is default true. Set to false if verboseResults requested.
       BSON_ASSERT (BSON_APPEND_BOOL (&cmd, "errorsOnly", !verboseresults));
       // ordered is default true.
-      BSON_ASSERT (BSON_APPEND_BOOL (
-         &cmd, "ordered", (mongoc_optional_is_set (&opts->ordered)) ? mongoc_optional_value (&opts->ordered) : true));
+      BSON_ASSERT (BSON_APPEND_BOOL (&cmd, "ordered", is_ordered));
 
       if (opts->comment.value_type != BSON_TYPE_EOD) {
          BSON_ASSERT (BSON_APPEND_VALUE (&cmd, "comment", &opts->comment));
@@ -1826,8 +1827,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       if (!batch_ok) {
          goto fail;
       }
-      bool is_ordered =
-         mongoc_optional_is_set (&opts->ordered) ? mongoc_optional_value (&opts->ordered) : true; // default.
       if (has_write_errors && is_ordered) {
          // Ordered writes must not continue to send batches once an error is
          // occurred. An individual write error is not a top-level error.
