@@ -275,20 +275,23 @@ _bson_encode_length (bson_t *bson) /* IN */
 
 
 typedef struct _bson_append_bytes_arg {
-   const uint8_t *bytes;
-   uint32_t length;
+   const uint8_t *bytes; // Not null.
+   uint32_t length;      // > 0.
 } _bson_append_bytes_arg;
 
 typedef struct _bson_append_bytes_list {
-   _bson_append_bytes_arg args[8]; // Arbitrary: just needs to be large enough.
-   _bson_append_bytes_arg *current;
-   uint32_t n_bytes;
+   _bson_append_bytes_arg args[8];  // Arbitrary length: just needs to be large enough.
+   _bson_append_bytes_arg *current; // "Insert"/"End" pointer.
+   uint32_t n_bytes;                // Total bytes to be appended.
 } _bson_append_bytes_list;
 
+// Declare local state with the identifier `ident`.
 #define BSON_APPEND_BYTES_LIST_DECLARE(ident)                                \
    _bson_append_bytes_list ident = {.current = (ident).args, .n_bytes = 0u}; \
    ((void) 0)
 
+// Add a bytes+length pair only if `_length > 0`.
+// Append failure if `n_bytes` will exceed BSON max size.
 #define BSON_APPEND_BYTES_ADD_ARGUMENT(_bson, _list, _bytes, _length) \
    if (BSON_UNLIKELY ((_length) > BSON_MAX_SIZE - (_list).n_bytes)) { \
       goto append_failure;                                            \
@@ -301,6 +304,8 @@ typedef struct _bson_append_bytes_list {
    } else                                                             \
       ((void) 0)
 
+// Add a UTF-8 string only if no embedded null bytes are present.
+// Uses `strlen (_key)` when `_key_len < 0`, otherwise uses `_key_len`.
 #define BSON_APPEND_BYTES_ADD_CHECKED_STRING(_bson, _list, _key, _key_len) \
    uint32_t BSON_CONCAT (key_ulen_, __LINE__);                             \
    if ((_key_len) < 0) {                                                   \
@@ -322,6 +327,8 @@ typedef struct _bson_append_bytes_list {
    }                                                                       \
    BSON_APPEND_BYTES_ADD_ARGUMENT ((_bson), (_list), (_key), BSON_CONCAT (key_ulen_, __LINE__))
 
+// Apply the list of arguments to be appended to `_bson`.
+// Append failure if adding `_list.n_bytes` will exceed BSON max size.
 #define BSON_APPEND_BYTES_APPLY_ARGUMENTS(_bson, _list)                                       \
    if (BSON_UNLIKELY ((_list).n_bytes > BSON_MAX_SIZE - (_bson)->len)) {                      \
       goto append_failure;                                                                    \
