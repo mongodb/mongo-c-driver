@@ -124,6 +124,21 @@ test_bson_utf8_escape_for_json (void)
       ASSERT_CMPSTR (str, "𠜏");
       bson_free (str);
    }
+
+   // Normal strings
+   {
+      str = bson_utf8_escape_for_json ("this is a normal string", -1);
+      ASSERT_CMPSTR (str, "this is a normal string");
+      bson_free (str);
+
+      str = bson_utf8_escape_for_json ("this is a normal string", 23);
+      ASSERT_CMPSTR (str, "this is a normal string");
+      bson_free (str);
+
+      str = bson_utf8_escape_for_json ("this is a normal string", 10);
+      ASSERT_CMPSTR (str, "this is a ");
+      bson_free (str);
+   }
 }
 
 
