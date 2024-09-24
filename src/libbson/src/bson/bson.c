@@ -292,7 +292,7 @@ typedef struct _bson_append_bytes_list {
 
 // Add a bytes+length pair only if `_length > 0`.
 // Append failure if `n_bytes` will exceed BSON max size.
-#define BSON_APPEND_BYTES_ADD_ARGUMENT(_bson, _list, _bytes, _length) \
+#define BSON_APPEND_BYTES_ADD_ARGUMENT(_list, _bytes, _length)        \
    if (BSON_UNLIKELY ((_length) > BSON_MAX_SIZE - (_list).n_bytes)) { \
       goto append_failure;                                            \
    } else if ((_length) > 0) {                                        \
@@ -306,26 +306,26 @@ typedef struct _bson_append_bytes_list {
 
 // Add a UTF-8 string only if no embedded null bytes are present.
 // Uses `strlen (_key)` when `_key_len < 0`, otherwise uses `_key_len`.
-#define BSON_APPEND_BYTES_ADD_CHECKED_STRING(_bson, _list, _key, _key_len) \
-   uint32_t BSON_CONCAT (key_ulen_, __LINE__);                             \
-   if ((_key_len) < 0) {                                                   \
-      const size_t key_zulen = strlen ((_key));                            \
-      if (BSON_UNLIKELY (key_zulen > UINT32_MAX)) {                        \
-         goto append_failure;                                              \
-      }                                                                    \
-      BSON_CONCAT (key_ulen_, __LINE__) = (uint32_t) key_zulen;            \
-   } else {                                                                \
-      const size_t key_zulen = (size_t) (_key_len);                        \
-      if (BSON_UNLIKELY (key_zulen > UINT32_MAX)) {                        \
-         goto append_failure;                                              \
-      } /* Necessary to validate embedded NULL is not present in key. */   \
-      else if (memchr ((_key), '\0', key_zulen) != NULL) {                 \
-         goto append_failure;                                              \
-      } else {                                                             \
-         BSON_CONCAT (key_ulen_, __LINE__) = (uint32_t) key_zulen;         \
-      }                                                                    \
-   }                                                                       \
-   BSON_APPEND_BYTES_ADD_ARGUMENT ((_bson), (_list), (_key), BSON_CONCAT (key_ulen_, __LINE__))
+#define BSON_APPEND_BYTES_ADD_CHECKED_STRING(_list, _key, _key_len)      \
+   uint32_t BSON_CONCAT (key_ulen_, __LINE__);                           \
+   if ((_key_len) < 0) {                                                 \
+      const size_t key_zulen = strlen ((_key));                          \
+      if (BSON_UNLIKELY (key_zulen > UINT32_MAX)) {                      \
+         goto append_failure;                                            \
+      }                                                                  \
+      BSON_CONCAT (key_ulen_, __LINE__) = (uint32_t) key_zulen;          \
+   } else {                                                              \
+      const size_t key_zulen = (size_t) (_key_len);                      \
+      if (BSON_UNLIKELY (key_zulen > UINT32_MAX)) {                      \
+         goto append_failure;                                            \
+      } /* Necessary to validate embedded NULL is not present in key. */ \
+      else if (memchr ((_key), '\0', key_zulen) != NULL) {               \
+         goto append_failure;                                            \
+      } else {                                                           \
+         BSON_CONCAT (key_ulen_, __LINE__) = (uint32_t) key_zulen;       \
+      }                                                                  \
+   }                                                                     \
+   BSON_APPEND_BYTES_ADD_ARGUMENT ((_list), (_key), BSON_CONCAT (key_ulen_, __LINE__))
 
 // Apply the list of arguments to be appended to `_bson`.
 // Append failure if adding `_list.n_bytes` will exceed BSON max size.
@@ -389,9 +389,9 @@ _bson_append_bson_begin (bson_t *bson,           /* IN */
 
       const uint8_t type = (uint8_t) child_type;
 
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-      BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+      BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
       /*
        * If the parent is an inline bson_t, then we need to convert
@@ -409,7 +409,7 @@ _bson_append_bson_begin (bson_t *bson,           /* IN */
 
       const uint8_t empty[5] = {5};
 
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &empty, sizeof (empty));
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, &empty, sizeof (empty));
 
       BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -676,9 +676,9 @@ bson_append_array (bson_t *bson,        /* IN */
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
    /*
     * Let's be a bit pedantic and ensure the array has properly formatted key
@@ -698,7 +698,7 @@ bson_append_array (bson_t *bson,        /* IN */
       }
    }
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, _bson_data (array), array->len);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, _bson_data (array), array->len);
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -751,9 +751,9 @@ bson_append_binary (bson_t *bson,           /* IN */
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
    const uint8_t subtype_arg = (uint8_t) subtype;
 
@@ -765,18 +765,18 @@ bson_append_binary (bson_t *bson,           /* IN */
       const uint32_t length_le = BSON_UINT32_TO_LE (length + 4u);
       const uint32_t length_arg = BSON_UINT32_TO_LE (length);
 
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &length_le, sizeof (length_le));
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &subtype_arg, sizeof (subtype_arg));
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &length_arg, sizeof (length_arg));
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, binary, length);
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, &length_le, sizeof (length_le));
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, &subtype_arg, sizeof (subtype_arg));
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, &length_arg, sizeof (length_arg));
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, binary, length);
 
       BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
    } else {
       const uint32_t length_arg = BSON_UINT32_TO_LE (length);
 
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &length_arg, sizeof (length_arg));
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &subtype_arg, sizeof (subtype_arg));
-      BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, binary, length);
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, &length_arg, sizeof (length_arg));
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, &subtype_arg, sizeof (subtype_arg));
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, binary, length);
 
       BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
    }
@@ -818,13 +818,13 @@ bson_append_bool (bson_t *bson,    /* IN */
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
    const uint8_t byte_arg = value ? 1u : 0u;
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &byte_arg, sizeof (byte_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &byte_arg, sizeof (byte_arg));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -878,11 +878,11 @@ bson_append_code (bson_t *bson,           /* IN */
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &length_arg, sizeof (length_arg));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, javascript, length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &length_arg, sizeof (length_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, javascript, length);
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -948,13 +948,13 @@ bson_append_code_with_scope (bson_t *bson,           /* IN */
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &total_length_arg, sizeof (total_length_arg));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &js_length_arg, sizeof (js_length_arg));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, javascript, js_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, _bson_data (scope), scope->len);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &total_length_arg, sizeof (total_length_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &js_length_arg, sizeof (js_length_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, javascript, js_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, _bson_data (scope), scope->len);
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1007,12 +1007,12 @@ bson_append_dbpointer (bson_t *bson,           /* IN */
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &length_arg, sizeof (length_arg));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, collection, length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, oid->bytes, sizeof (oid->bytes));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &length_arg, sizeof (length_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, collection, length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, oid->bytes, sizeof (oid->bytes));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1059,10 +1059,10 @@ bson_append_document (bson_t *bson,        /* IN */
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, _bson_data (value), value->len);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, _bson_data (value), value->len);
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1085,10 +1085,10 @@ bson_append_double (bson_t *bson, const char *key, int key_length, double value)
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &value_arg, sizeof (value_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &value_arg, sizeof (value_arg));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1111,10 +1111,10 @@ bson_append_int32 (bson_t *bson, const char *key, int key_length, int32_t value)
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &value_arg, sizeof (value_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &value_arg, sizeof (value_arg));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1137,10 +1137,10 @@ bson_append_int64 (bson_t *bson, const char *key, int key_length, int64_t value)
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &value_arg, sizeof (value_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &value_arg, sizeof (value_arg));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1166,10 +1166,10 @@ bson_append_decimal128 (bson_t *bson, const char *key, int key_length, const bso
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &value_arg, sizeof (value_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &value_arg, sizeof (value_arg));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1342,9 +1342,9 @@ bson_append_maxkey (bson_t *bson, const char *key, int key_length)
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1365,9 +1365,9 @@ bson_append_minkey (bson_t *bson, const char *key, int key_length)
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1388,9 +1388,9 @@ bson_append_null (bson_t *bson, const char *key, int key_length)
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1412,10 +1412,10 @@ bson_append_oid (bson_t *bson, const char *key, int key_length, const bson_oid_t
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, value->bytes, sizeof (value->bytes));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, value->bytes, sizeof (value->bytes));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1496,12 +1496,12 @@ bson_append_regex_w_len (
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, regex, regex_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, options_sorted->str, (options_sorted->len + 1u));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, regex, regex_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, options_sorted->str, (options_sorted->len + 1u));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1542,12 +1542,12 @@ bson_append_utf8 (bson_t *bson, const char *key, int key_length, const char *val
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &ulength_arg, sizeof (ulength_arg));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, value, ulength);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &ulength_arg, sizeof (ulength_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, value, ulength);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1586,12 +1586,12 @@ bson_append_symbol (bson_t *bson, const char *key, int key_length, const char *v
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &ulength_arg, sizeof (ulength_arg));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, value, ulength);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &ulength_arg, sizeof (ulength_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, value, ulength);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1630,10 +1630,10 @@ bson_append_timestamp (bson_t *bson, const char *key, int key_length, uint32_t t
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &value, sizeof (value));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &value, sizeof (value));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1667,10 +1667,10 @@ bson_append_date_time (bson_t *bson, const char *key, int key_length, int64_t va
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &value_arg, sizeof (value_arg));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &value_arg, sizeof (value_arg));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -1705,9 +1705,9 @@ bson_append_undefined (bson_t *bson, const char *key, int key_length)
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &type, sizeof (type));
-   BSON_APPEND_BYTES_ADD_CHECKED_STRING (bson, args, key, key_length);
-   BSON_APPEND_BYTES_ADD_ARGUMENT (bson, args, &gZero, sizeof (gZero));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &type, sizeof (type));
+   BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, key, key_length);
+   BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
@@ -3395,7 +3395,7 @@ bson_concat (bson_t *dst, const bson_t *src)
    if (!bson_empty (src)) {
       BSON_APPEND_BYTES_LIST_DECLARE (args);
 
-      BSON_APPEND_BYTES_ADD_ARGUMENT (dst, args, _bson_data (src) + 4, src->len - 5u);
+      BSON_APPEND_BYTES_ADD_ARGUMENT (args, _bson_data (src) + 4, src->len - 5u);
 
       BSON_APPEND_BYTES_APPLY_ARGUMENTS (dst, args);
    }
