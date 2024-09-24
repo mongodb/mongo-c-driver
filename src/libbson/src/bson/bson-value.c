@@ -35,6 +35,7 @@ bson_value_copy (const bson_value_t *src, /* IN */
       dst->value.v_double = src->value.v_double;
       break;
    case BSON_TYPE_UTF8:
+      BSON_ASSERT (src->value.v_utf8.len <= UINT32_MAX - 1);
       dst->value.v_utf8.len = src->value.v_utf8.len;
       dst->value.v_utf8.str = bson_malloc (src->value.v_utf8.len + 1);
       memcpy (dst->value.v_utf8.str, src->value.v_utf8.str, dst->value.v_utf8.len);
@@ -68,6 +69,7 @@ bson_value_copy (const bson_value_t *src, /* IN */
       dst->value.v_regex.options = bson_strdup (src->value.v_regex.options);
       break;
    case BSON_TYPE_DBPOINTER:
+      BSON_ASSERT (src->value.v_dbpointer.collection_len <= UINT32_MAX - 1);
       dst->value.v_dbpointer.collection_len = src->value.v_dbpointer.collection_len;
       dst->value.v_dbpointer.collection = bson_malloc (src->value.v_dbpointer.collection_len + 1);
       memcpy (
@@ -76,18 +78,21 @@ bson_value_copy (const bson_value_t *src, /* IN */
       bson_oid_copy (&src->value.v_dbpointer.oid, &dst->value.v_dbpointer.oid);
       break;
    case BSON_TYPE_CODE:
+      BSON_ASSERT (src->value.v_code.code_len <= UINT32_MAX - 1);
       dst->value.v_code.code_len = src->value.v_code.code_len;
       dst->value.v_code.code = bson_malloc (src->value.v_code.code_len + 1);
       memcpy (dst->value.v_code.code, src->value.v_code.code, dst->value.v_code.code_len);
       dst->value.v_code.code[dst->value.v_code.code_len] = '\0';
       break;
    case BSON_TYPE_SYMBOL:
+      BSON_ASSERT (src->value.v_symbol.len <= UINT32_MAX - 1);
       dst->value.v_symbol.len = src->value.v_symbol.len;
       dst->value.v_symbol.symbol = bson_malloc (src->value.v_symbol.len + 1);
       memcpy (dst->value.v_symbol.symbol, src->value.v_symbol.symbol, dst->value.v_symbol.len);
       dst->value.v_symbol.symbol[dst->value.v_symbol.len] = '\0';
       break;
    case BSON_TYPE_CODEWSCOPE:
+      BSON_ASSERT (src->value.v_codewscope.code_len <= UINT32_MAX - 1);
       dst->value.v_codewscope.code_len = src->value.v_codewscope.code_len;
       dst->value.v_codewscope.code = bson_malloc (src->value.v_codewscope.code_len + 1);
       memcpy (dst->value.v_codewscope.code, src->value.v_codewscope.code, dst->value.v_codewscope.code_len);
