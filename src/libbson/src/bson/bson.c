@@ -298,8 +298,8 @@ typedef struct _bson_append_bytes_list {
          .length = (_length),                                         \
       };                                                              \
       (_list).n_bytes += (_length);                                   \
-   }                                                                  \
-   ((void) 0)
+   } else                                                             \
+      ((void) 0)
 
 #define BSON_APPEND_BYTES_ADD_CHECKED_STRING(_bson, _list, _key, _key_len) \
    uint32_t BSON_CONCAT (key_ulen_, __LINE__);                             \
