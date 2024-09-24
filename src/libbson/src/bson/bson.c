@@ -322,19 +322,21 @@ typedef struct _bson_append_bytes_list {
    }                                                                       \
    BSON_APPEND_BYTES_ADD_ARGUMENT ((_bson), (_list), (_key), BSON_CONCAT (key_ulen_, __LINE__))
 
-#define BSON_APPEND_BYTES_APPLY_ARGUMENTS(_bson, _list)                                    \
-   if (BSON_UNLIKELY ((_list).n_bytes > BSON_MAX_SIZE - (_bson)->len)) {                   \
-      goto append_failure;                                                                 \
-   } else if (BSON_UNLIKELY (!_bson_grow ((_bson), (_list).n_bytes))) {                    \
-      goto append_failure;                                                                 \
-   }                                                                                       \
-   for (const _bson_append_bytes_arg *arg = (_list).args; arg != (_list).current; ++arg) { \
-      uint8_t *const data = _bson_data ((_bson)) + ((_bson)->len - 1u);                    \
-      memcpy (data, arg->bytes, arg->length);                                              \
-      (_bson)->len += arg->length;                                                         \
-      _bson_encode_length ((_bson));                                                       \
-      data[arg->length] = '\0';                                                            \
-   }                                                                                       \
+#define BSON_APPEND_BYTES_APPLY_ARGUMENTS(_bson, _list)                                       \
+   if (BSON_UNLIKELY ((_list).n_bytes > BSON_MAX_SIZE - (_bson)->len)) {                      \
+      goto append_failure;                                                                    \
+   } else if (BSON_UNLIKELY (!_bson_grow ((_bson), (_list).n_bytes))) {                       \
+      goto append_failure;                                                                    \
+   } else {                                                                                   \
+      uint8_t *data = _bson_data ((_bson)) + ((_bson)->len - 1u);                             \
+      for (const _bson_append_bytes_arg *arg = (_list).args; arg != (_list).current; ++arg) { \
+         memcpy (data, arg->bytes, arg->length);                                              \
+         (_bson)->len += arg->length;                                                         \
+         data += arg->length;                                                                 \
+      }                                                                                       \
+      _bson_encode_length ((_bson));                                                          \
+      data[0] = '\0';                                                                         \
+   }                                                                                          \
    ((void) 0)
 
 
