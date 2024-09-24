@@ -281,11 +281,11 @@ _is_special_char (unsigned char c)
  *       from UTF-8 to JSON. This includes characters that should be escaped
  *       as well as ASCII control characters.
  *
- *       Normal ASCII characters are handled in bson_utf8_escape_for_json,
- *       where this function is called from.
+ *       Normal ASCII characters and multi-byte UTF-8 sequences are handled
+ *       in bson_utf8_escape_for_json, where this function is called from.
  *
  * Parameters:
- *       @c: A bson_unichar_t.
+ *       @c: A uint8_t ASCII codepoint.
  *       @str: A string to append the special character to.
  *
  * Returns:
@@ -442,7 +442,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          continue;
       }
 
-      // Highest ASCII character
+      // Multi-byte UTF-8 sequence
       if (current_byte > 0x7fu) {
          const char *utf8_old = utf8;
          size_t char_len;

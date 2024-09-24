@@ -20,14 +20,10 @@
 #ifndef BSON_STRING_PRIVATE_H
 #define BSON_STRING_PRIVATE_H
 
-BSON_BEGIN_DECLS
-
 bson_string_t *
 _bson_string_alloc (const size_t size);
 
 void
 _bson_string_append_ex (bson_string_t *string, const char *str, const size_t len);
-
-BSON_END_DECLS
 
 #endif /* BSON_STRING_PRIVATE_H */
