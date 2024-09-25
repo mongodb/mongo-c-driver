@@ -287,10 +287,10 @@ typedef struct _bson_append_bytes_list {
 } _bson_append_bytes_list;
 
 // To support unchecked cast from non-negative `int` to `size_t`.
-BSON_STATIC_ASSERT2 (size_t_gt_int, SIZE_MAX >= INT_MAX);
+BSON_STATIC_ASSERT2 (size_t_gte_int, SIZE_MAX >= INT_MAX);
 
 // To support unchecked cast from `uint32_t` to `size_t`.
-BSON_STATIC_ASSERT2 (size_t_gt_uint32_t, SIZE_MAX >= UINT32_MAX);
+BSON_STATIC_ASSERT2 (size_t_gte_uint32_t, SIZE_MAX >= UINT32_MAX);
 
 // Declare local state with the identifier `ident`.
 #define BSON_APPEND_BYTES_LIST_DECLARE(ident)                                \
