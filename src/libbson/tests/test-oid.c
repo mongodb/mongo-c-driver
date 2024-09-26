@@ -228,11 +228,11 @@ test_bson_oid_init_sequence (void)
 static char *
 get_time_as_string (const bson_oid_t *oid)
 {
-   bson_string_t *str = bson_string_new (NULL);
+   mcd_string_t *str = mcd_string_new (NULL);
    time_t time = bson_oid_get_time_t (oid);
 
    _bson_iso8601_date_format (time * 1000, str);
-   return bson_string_free (str, false);
+   return mcd_string_free (str, false);
 }
 
 

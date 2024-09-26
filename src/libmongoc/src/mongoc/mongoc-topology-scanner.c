@@ -43,6 +43,7 @@
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
+#include <mcd-string.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
@@ -1167,20 +1168,20 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
    bson_error_t *error = &ts->error;
-   bson_string_t *msg;
+   mcd_string_t *msg;
 
    memset (&ts->error, 0, sizeof (bson_error_t));
 
-   msg = bson_string_new (NULL);
+   msg = mcd_string_new (NULL);
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
       if (node->last_error.code) {
          if (msg->len) {
-            bson_string_append_c (msg, ' ');
+            mcd_string_append_c (msg, ' ');
          }
 
-         bson_string_append_printf (msg, "[%s]", node->last_error.message);
+         mcd_string_append_printf (msg, "[%s]", node->last_error.message);
 
          /* last error domain and code win */
          error->domain = node->last_error.domain;
@@ -1189,7 +1190,7 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
    }
 
    bson_strncpy ((char *) &error->message, msg->str, sizeof (error->message));
-   bson_string_free (msg, true);
+   mcd_string_free (msg, true);
 
    _delete_retired_nodes (ts);
 }

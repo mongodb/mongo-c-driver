@@ -23,7 +23,7 @@
 
 #include <bson/bson-compat.h>
 #include <bson/bson-macros.h>
-#include <bson/bson-string.h>
+#include <mcd-string.h>
 
 
 BSON_BEGIN_DECLS
@@ -39,7 +39,7 @@ _bson_iso8601_date_parse (const char *str, int32_t len, int64_t *out, bson_error
  * Appends a date formatted like "2012-12-24T12:15:30.500Z" to @str.
  */
 void
-_bson_iso8601_date_format (int64_t msecs_since_epoch, bson_string_t *str);
+_bson_iso8601_date_format (int64_t msecs_since_epoch, mcd_string_t *str);
 
 BSON_END_DECLS
 

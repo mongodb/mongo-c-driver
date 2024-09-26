@@ -21,6 +21,7 @@
 #include "mock-server.h"
 #include "../test-conveniences.h"
 #include "../TestSuite.h"
+#include <mcd-string.h>
 
 static bool
 is_command_ns (const char *ns);
@@ -464,43 +465,43 @@ static char *
 query_flags_str (int32_t flags)
 {
    int flag = 1;
-   bson_string_t *str = bson_string_new ("");
+   mcd_string_t *str = mcd_string_new ("");
    bool begun = false;
 
    if (flags == MONGOC_OP_QUERY_FLAG_NONE) {
-      bson_string_append (str, "0");
+      mcd_string_append (str, "0");
    } else {
       while (flag <= MONGOC_OP_QUERY_FLAG_PARTIAL) {
          flag <<= 1;
 
          if (flags & flag) {
             if (begun) {
-               bson_string_append (str, "|");
+               mcd_string_append (str, "|");
             }
 
             begun = true;
 
             switch (flag) {
             case MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR:
-               bson_string_append (str, "TAILABLE");
+               mcd_string_append (str, "TAILABLE");
                break;
             case MONGOC_OP_QUERY_FLAG_SECONDARY_OK:
-               bson_string_append (str, "SECONDARY_OK");
+               mcd_string_append (str, "SECONDARY_OK");
                break;
             case MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY:
-               bson_string_append (str, "OPLOG_REPLAY");
+               mcd_string_append (str, "OPLOG_REPLAY");
                break;
             case MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT:
-               bson_string_append (str, "NO_TIMEOUT");
+               mcd_string_append (str, "NO_TIMEOUT");
                break;
             case MONGOC_OP_QUERY_FLAG_AWAIT_DATA:
-               bson_string_append (str, "AWAIT_DATA");
+               mcd_string_append (str, "AWAIT_DATA");
                break;
             case MONGOC_OP_QUERY_FLAG_EXHAUST:
-               bson_string_append (str, "EXHAUST");
+               mcd_string_append (str, "EXHAUST");
                break;
             case MONGOC_OP_QUERY_FLAG_PARTIAL:
-               bson_string_append (str, "PARTIAL");
+               mcd_string_append (str, "PARTIAL");
                break;
             case MONGOC_OP_QUERY_FLAG_NONE:
             default:
@@ -510,7 +511,7 @@ query_flags_str (int32_t flags)
       }
    }
 
-   return bson_string_free (str, false); /* detach buffer */
+   return mcd_string_free (str, false); /* detach buffer */
 }
 
 
@@ -530,7 +531,7 @@ static void
 request_from_query (request_t *request)
 {
    bson_iter_t iter;
-   bson_string_t *query_as_str = bson_string_new ("OP_QUERY ");
+   mcd_string_t *query_as_str = mcd_string_new ("OP_QUERY ");
    char *str;
 
    const int32_t request_flags = mcd_rpc_op_query_get_flags (request->rpc);
@@ -546,7 +547,7 @@ request_from_query (request_t *request)
       BSON_ASSERT (query);
       _mongoc_array_append_val (&request->docs, query);
 
-      bson_string_append_printf (query_as_str, "%s ", request_coll);
+      mcd_string_append_printf (query_as_str, "%s ", request_coll);
 
       if (is_command_ns (request_coll)) {
          request->is_command = true;
@@ -559,7 +560,7 @@ request_from_query (request_t *request)
       }
 
       str = bson_as_json (query, NULL);
-      bson_string_append (query_as_str, str);
+      mcd_string_append (query_as_str, str);
       bson_free (str);
    }
 
@@ -570,26 +571,26 @@ request_from_query (request_t *request)
       _mongoc_array_append_val (&request->docs, fields);
 
       str = bson_as_json (fields, NULL);
-      bson_string_append (query_as_str, " fields=");
-      bson_string_append (query_as_str, str);
+      mcd_string_append (query_as_str, " fields=");
+      mcd_string_append (query_as_str, str);
       bson_free (str);
    }
 
-   bson_string_append (query_as_str, " flags=");
+   mcd_string_append (query_as_str, " flags=");
 
    str = query_flags_str (request_flags);
-   bson_string_append (query_as_str, str);
+   mcd_string_append (query_as_str, str);
    bson_free (str);
 
    if (request_skip) {
-      bson_string_append_printf (query_as_str, " skip=%" PRId32, request_skip);
+      mcd_string_append_printf (query_as_str, " skip=%" PRId32, request_skip);
    }
 
    if (request_return) {
-      bson_string_append_printf (query_as_str, " n_return=%" PRId32, request_return);
+      mcd_string_append_printf (query_as_str, " n_return=%" PRId32, request_return);
    }
 
-   request->as_str = bson_string_free (query_as_str, false);
+   request->as_str = mcd_string_free (query_as_str, false);
 }
 
 
@@ -614,12 +615,12 @@ request_from_getmore (request_t *request)
 
 
 static void
-parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, bson_string_t *msg_as_str)
+parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, mcd_string_t *msg_as_str)
 {
    const uint8_t *pos = data;
    while (pos < data + data_len) {
       if (pos > data) {
-         bson_string_append (msg_as_str, ", ");
+         mcd_string_append (msg_as_str, ", ");
       }
 
       const int32_t doc_len = length_prefix (pos);
@@ -628,7 +629,7 @@ parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, bson
       _mongoc_array_append_val (&request->docs, doc);
 
       char *const str = bson_as_json (doc, NULL);
-      bson_string_append (msg_as_str, str);
+      mcd_string_append (msg_as_str, str);
       bson_free (str);
 
       pos += doc_len;
@@ -639,13 +640,13 @@ parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, bson
 static void
 request_from_op_msg (request_t *request)
 {
-   bson_string_t *msg_as_str = bson_string_new ("OP_MSG");
+   mcd_string_t *msg_as_str = mcd_string_new ("OP_MSG");
 
    const size_t sections_count = mcd_rpc_op_msg_get_sections_count (request->rpc);
 
    BSON_ASSERT (sections_count <= 2u);
    for (size_t index = 0; index < sections_count; ++index) {
-      bson_string_append (msg_as_str, (index > 0 ? ", " : " "));
+      mcd_string_append (msg_as_str, (index > 0 ? ", " : " "));
       const uint8_t kind = mcd_rpc_op_msg_section_get_kind (request->rpc, index);
       switch (kind) {
       case 0: { /* a single BSON document */
@@ -655,14 +656,14 @@ request_from_op_msg (request_t *request)
       }
 
       case 1: { /* a sequence of BSON documents */
-         bson_string_append (msg_as_str, mcd_rpc_op_msg_section_get_identifier (request->rpc, index));
-         bson_string_append (msg_as_str, ": [");
+         mcd_string_append (msg_as_str, mcd_rpc_op_msg_section_get_identifier (request->rpc, index));
+         mcd_string_append (msg_as_str, ": [");
          parse_op_msg_doc (request,
                            mcd_rpc_op_msg_section_get_document_sequence (request->rpc, index),
                            mcd_rpc_op_msg_section_get_document_sequence_length (request->rpc, index),
                            msg_as_str);
 
-         bson_string_append (msg_as_str, "]");
+         mcd_string_append (msg_as_str, "]");
          break;
       }
 
@@ -671,7 +672,7 @@ request_from_op_msg (request_t *request)
       }
    }
 
-   request->as_str = bson_string_free (msg_as_str, false);
+   request->as_str = mcd_string_free (msg_as_str, false);
    request->is_command = true; /* true for all OP_MSG requests */
 
    if (request->docs.len) {

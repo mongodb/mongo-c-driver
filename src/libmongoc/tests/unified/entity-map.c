@@ -32,6 +32,7 @@
  */
 #include "mongoc-client-private.h"
 #include "mongoc-topology-private.h"
+#include <mcd-string.h>
 
 #define REDUCED_HEARTBEAT_FREQUENCY_MS 500
 #define REDUCED_MIN_HEARTBEAT_FREQUENCY_MS 50
@@ -2145,28 +2146,28 @@ entity_map_match (
 char *
 event_list_to_string (event_t *events)
 {
-   bson_string_t *str = NULL;
+   mcd_string_t *str = NULL;
    event_t *eiter = NULL;
 
-   str = bson_string_new ("");
+   str = mcd_string_new ("");
    LL_FOREACH (events, eiter)
    {
-      bson_string_append_printf (str, "- %s:", eiter->type);
+      mcd_string_append_printf (str, "- %s:", eiter->type);
       if (eiter->command_name) {
-         bson_string_append_printf (str, " cmd=%s", eiter->command_name);
+         mcd_string_append_printf (str, " cmd=%s", eiter->command_name);
       }
       if (eiter->database_name) {
-         bson_string_append_printf (str, " db=%s", eiter->database_name);
+         mcd_string_append_printf (str, " db=%s", eiter->database_name);
       }
       if (eiter->command) {
-         bson_string_append_printf (str, " sent %s", tmp_json (eiter->command));
+         mcd_string_append_printf (str, " sent %s", tmp_json (eiter->command));
       }
       if (eiter->reply) {
-         bson_string_append_printf (str, " received %s", tmp_json (eiter->reply));
+         mcd_string_append_printf (str, " received %s", tmp_json (eiter->reply));
       }
-      bson_string_append (str, "\n");
+      mcd_string_append (str, "\n");
    }
-   return bson_string_free (str, false);
+   return mcd_string_free (str, false);
 }
 
 

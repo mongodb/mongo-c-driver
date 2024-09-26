@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include <bson/bson-memory.h>
-#include <bson/bson-string.h>
+#include <mcd-string.h>
 #include <bson/bson-utf8.h>
 #include <bson/bson-string-private.h>
 
@@ -298,33 +298,33 @@ _is_special_char (unsigned char c)
  */
 
 static BSON_INLINE void
-_bson_utf8_handle_special_char (const uint8_t c,    /* IN */
-                                bson_string_t *str) /* OUT */
+_bson_utf8_handle_special_char (const uint8_t c,   /* IN */
+                                mcd_string_t *str) /* OUT */
 {
    BSON_ASSERT (c < 0x80u);
    BSON_ASSERT (str);
 
    switch (c) {
    case '"':
-      bson_string_append (str, "\\\"");
+      mcd_string_append (str, "\\\"");
       break;
    case '\\':
-      bson_string_append (str, "\\\\");
+      mcd_string_append (str, "\\\\");
       break;
    case '\b':
-      bson_string_append (str, "\\b");
+      mcd_string_append (str, "\\b");
       break;
    case '\f':
-      bson_string_append (str, "\\f");
+      mcd_string_append (str, "\\f");
       break;
    case '\n':
-      bson_string_append (str, "\\n");
+      mcd_string_append (str, "\\n");
       break;
    case '\r':
-      bson_string_append (str, "\\r");
+      mcd_string_append (str, "\\r");
       break;
    case '\t':
-      bson_string_append (str, "\\t");
+      mcd_string_append (str, "\\t");
       break;
    default: {
       // ASCII control character
@@ -390,7 +390,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
    const char *const end = utf8 + utf8_ulen;
 
-   bson_string_t *const str = _bson_string_alloc (utf8_ulen);
+   mcd_string_t *const str = _bson_string_alloc (utf8_ulen);
 
    size_t normal_chars_seen = 0u;
 
@@ -436,7 +436,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
             goto invalid_utf8;
          }
 
-         bson_string_append (str, "\\u0000");
+         mcd_string_append (str, "\\u0000");
          utf8_ulen -= *utf8 ? 2u : 1u;
          utf8 += *utf8 ? 2 : 1;
          continue;
@@ -453,7 +453,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
             goto invalid_utf8;
          }
 
-         bson_string_append_unichar (str, unichar);
+         mcd_string_append_unichar (str, unichar);
          utf8 = bson_utf8_next_char (utf8);
 
          char_len = (size_t) (utf8 - utf8_old);
@@ -475,10 +475,10 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       utf8_ulen--;
    } while (utf8_ulen > 0);
 
-   return bson_string_free (str, false);
+   return mcd_string_free (str, false);
 
 invalid_utf8:
-   bson_string_free (str, true);
+   mcd_string_free (str, true);
    return NULL;
 }
 

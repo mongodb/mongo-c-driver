@@ -35,6 +35,7 @@
 #include "mongoc-log.h"
 #include "mongoc-log-private.h"
 #include "mongoc-thread-private.h"
+#include <mcd-string.h>
 
 
 static bson_once_t once = BSON_ONCE_INIT;
@@ -226,8 +227,8 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
 {
    STOP_LOGGING_CHECK;
 
-   bson_string_t *const str = bson_string_new (NULL);
-   bson_string_t *const astr = bson_string_new (NULL);
+   mcd_string_t *const str = mcd_string_new (NULL);
+   mcd_string_t *const astr = mcd_string_new (NULL);
 
    size_t _i;
    for (_i = 0u; _i < _l; _i++) {
@@ -235,23 +236,23 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
       const size_t rem = _i % 16u;
 
       if (rem == 0u) {
-         bson_string_append_printf (str, "%05zx: ", _i);
+         mcd_string_append_printf (str, "%05zx: ", _i);
       }
 
-      bson_string_append_printf (str, " %02x", _v);
+      mcd_string_append_printf (str, " %02x", _v);
       if (isprint (_v)) {
-         bson_string_append_printf (astr, " %c", _v);
+         mcd_string_append_printf (astr, " %c", _v);
       } else {
-         bson_string_append (astr, " .");
+         mcd_string_append (astr, " .");
       }
 
       if (rem == 15u) {
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
-         bson_string_truncate (str, 0);
-         bson_string_truncate (astr, 0);
+         mcd_string_truncate (str, 0);
+         mcd_string_truncate (astr, 0);
       } else if (rem == 7u) {
-         bson_string_append (str, " ");
-         bson_string_append (astr, " ");
+         mcd_string_append (str, " ");
+         mcd_string_append (astr, " ");
       }
    }
 
@@ -259,14 +260,14 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
       mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
    }
 
-   bson_string_free (str, true);
-   bson_string_free (astr, true);
+   mcd_string_free (str, true);
+   mcd_string_free (astr, true);
 }
 
 void
 mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _iovcnt)
 {
-   bson_string_t *str, *astr;
+   mcd_string_t *str, *astr;
    const char *_b;
    unsigned _i = 0;
    unsigned _j = 0;
@@ -281,8 +282,8 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
    }
 
    _i = 0;
-   str = bson_string_new (NULL);
-   astr = bson_string_new (NULL);
+   str = mcd_string_new (NULL);
+   astr = mcd_string_new (NULL);
 
    for (_j = 0; _j < _iovcnt; _j++) {
       _b = (char *) _iov[_j].iov_base;
@@ -291,23 +292,23 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
       for (_k = 0; _k < _l; _k++, _i++) {
          _v = *(_b + _k);
          if ((_i % 16) == 0) {
-            bson_string_append_printf (str, "%05x: ", _i);
+            mcd_string_append_printf (str, "%05x: ", _i);
          }
 
-         bson_string_append_printf (str, " %02x", _v);
+         mcd_string_append_printf (str, " %02x", _v);
          if (isprint (_v)) {
-            bson_string_append_printf (astr, " %c", _v);
+            mcd_string_append_printf (astr, " %c", _v);
          } else {
-            bson_string_append (astr, " .");
+            mcd_string_append (astr, " .");
          }
 
          if ((_i % 16) == 15) {
             mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
-            bson_string_truncate (str, 0);
-            bson_string_truncate (astr, 0);
+            mcd_string_truncate (str, 0);
+            mcd_string_truncate (astr, 0);
          } else if ((_i % 16) == 7) {
-            bson_string_append (str, " ");
-            bson_string_append (astr, " ");
+            mcd_string_append (str, " ");
+            mcd_string_append (astr, " ");
          }
       }
    }
@@ -316,6 +317,6 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
       mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
    }
 
-   bson_string_free (str, true);
-   bson_string_free (astr, true);
+   mcd_string_free (str, true);
+   mcd_string_free (astr, true);
 }

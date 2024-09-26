@@ -21,7 +21,7 @@
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
 #include <bson/bson-cmp.h>
-#include <bson/bson-string.h>
+#include <mcd-string.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-utf8.h>
 #include <bson/bson-string-private.h>
@@ -273,7 +273,7 @@ bson_string_append_c (bson_string_t *string, /* IN */
    if (BSON_UNLIKELY (string->alloc == (string->len + 1))) {
       cc[0] = c;
       cc[1] = '\0';
-      bson_string_append (string, cc);
+      mcd_string_append (string, cc);
       return;
    }
 
@@ -312,7 +312,7 @@ bson_string_append_unichar (bson_string_t *string,  /* IN */
 
    if (len <= 6) {
       str[len] = '\0';
-      bson_string_append (string, str);
+      mcd_string_append (string, str);
    }
 }
 
@@ -345,7 +345,7 @@ bson_string_append_printf (bson_string_t *string, const char *format, ...)
    va_start (args, format);
    ret = bson_strdupv_printf (format, args);
    va_end (args);
-   bson_string_append (string, ret);
+   mcd_string_append (string, ret);
    bson_free (ret);
 }
 

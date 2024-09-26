@@ -25,7 +25,7 @@
 
 #include <bson/bson-context-private.h>
 #include <bson/bson-oid.h>
-#include <bson/bson-string.h>
+#include <mcd-string.h>
 
 
 /*
