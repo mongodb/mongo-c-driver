@@ -1851,7 +1851,8 @@ test_mongoc_uri_dns_options (void)
    {
       capture_logs (true);
       ASSERT (mongoc_uri_parse_options (uri, "replicaSet=db2", true, NULL));
-      ASSERT_CAPTURED_LOG ("parsing TXT record", MONGOC_LOG_LEVEL_WARNING, "Cannot override URI option \"replicaSet\"");
+      ASSERT_CAPTURED_LOG (
+         "parsing replicaSet from TXT", MONGOC_LOG_LEVEL_WARNING, "Ignoring URI option \"replicaSet\"");
       capture_logs (false);
       ASSERT_MATCH (mongoc_uri_get_options (uri), "{'replicaset': 'rs1'}");
    }
@@ -1860,7 +1861,7 @@ test_mongoc_uri_dns_options (void)
    {
       capture_logs (true);
       ASSERT (mongoc_uri_parse_options (uri, "authSource=db2", true, NULL));
-      ASSERT_NO_CAPTURED_LOGS ("authSource ignored from TXT");
+      ASSERT_NO_CAPTURED_LOGS ("parsing authSource from TXT");
       capture_logs (false);
       ASSERT_MATCH (mongoc_uri_get_credentials (uri), "{'authsource': 'db1'}");
    }
