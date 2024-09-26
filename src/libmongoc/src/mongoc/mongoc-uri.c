@@ -904,7 +904,8 @@ mongoc_uri_split_option (mongoc_uri_t *uri, bson_t *options, const char *str, bo
             // Only log a trace message since this may be expected.
             TRACE ("Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
          } else {
-            MONGOC_WARNING ("Cannot override URI option \"%s\" from TXT record \"%s\"", key, str);
+            MONGOC_WARNING (
+               "Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
          }
          ret = true;
          goto CLEANUP;
