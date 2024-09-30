@@ -1332,14 +1332,14 @@ tasks:
       AUTH: auth
       MONGODB_VERSION: '8.0'
       REQUIRE_API_VERSION: 'true'
-      SSL: ssl
+      SSL: nossl
       TOPOLOGY: server
   - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: auth
       MONGODB_API_VERSION: 1
-      SSL: ssl
+      SSL: nossl
 - name: test-versioned-api-accept-version-two-8.0
   tags:
   - '8.0'
@@ -1380,14 +1380,14 @@ tasks:
       AUTH: auth
       MONGODB_VERSION: '7.0'
       REQUIRE_API_VERSION: 'true'
-      SSL: ssl
+      SSL: nossl
       TOPOLOGY: server
   - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: auth
       MONGODB_API_VERSION: 1
-      SSL: ssl
+      SSL: nossl
 - name: test-versioned-api-accept-version-two-7.0
   tags:
   - '7.0'
@@ -1428,14 +1428,14 @@ tasks:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       REQUIRE_API_VERSION: 'true'
-      SSL: ssl
+      SSL: nossl
       TOPOLOGY: server
   - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: auth
       MONGODB_API_VERSION: 1
-      SSL: ssl
+      SSL: nossl
 - name: test-versioned-api-accept-version-two-6.0
   tags:
   - '6.0'
@@ -1476,14 +1476,14 @@ tasks:
       AUTH: auth
       MONGODB_VERSION: '5.0'
       REQUIRE_API_VERSION: 'true'
-      SSL: ssl
+      SSL: nossl
       TOPOLOGY: server
   - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: auth
       MONGODB_API_VERSION: 1
-      SSL: ssl
+      SSL: nossl
 - name: test-versioned-api-accept-version-two-5.0
   tags:
   - '5.0'

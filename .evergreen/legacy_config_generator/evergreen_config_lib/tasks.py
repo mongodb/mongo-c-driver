@@ -716,19 +716,19 @@ for server_version in [ "8.0", "7.0", "6.0", "5.0"]:
             PostCompileTask(
                 "test-versioned-api-" + server_version,
                 tags=["versioned-api", f"{server_version}"],
-                get_build="debug-compile-nosasl-openssl",
+                get_build="debug-compile-nosasl-openssl", # Auth support requires SSL/TLS...
                 commands=[
                     func("fetch-det"),
                     func(
                         "bootstrap-mongo-orchestration",
                         TOPOLOGY="server",
                         AUTH="auth",
-                        SSL="ssl",
+                        SSL="nossl", # ... but require-api-version.js doesn't support TLS yet...
                         MONGODB_VERSION=server_version,
                         REQUIRE_API_VERSION="true",
                     ),
                     func("run-simple-http-server"),
-                    func("run-tests", MONGODB_API_VERSION=1, AUTH="auth", SSL="ssl"),
+                    func("run-tests", MONGODB_API_VERSION=1, AUTH="auth", SSL="nossl"), # ... so run with AUTH but without SSL.
                 ],
             ),
             PostCompileTask(
