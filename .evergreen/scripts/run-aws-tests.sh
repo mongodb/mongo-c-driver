@@ -127,7 +127,7 @@ if [[ "${TESTCASE}" == "ECS" ]]; then
 
   # Run the test
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
-  PROJECT_DIRECTORY="$ECS_SRC_DIR" MONGODB_BINARIES=${mongoc_dir}/mongodb/bin ./aws_setup.sh ecs
+  PROJECT_DIRECTORY="$ECS_SRC_DIR" MONGODB_BINARIES=${drivers_tools_dir}/mongodb/bin ./aws_setup.sh ecs
   popd # "${drivers_tools_dir}/.evergreen/auth_aws"
   exit
 fi

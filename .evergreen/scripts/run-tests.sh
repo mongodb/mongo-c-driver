@@ -30,6 +30,9 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
+declare det_dir
+det_dir="${mongoc_dir}/../drivers-evergreen-tools"
+
 declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 
 if [[ "${COMPRESSORS}" != "nocompressors" ]]; then
@@ -64,7 +67,7 @@ if [[ -n "${CLIENT_SIDE_ENCRYPTION}" ]]; then
   echo "Testing with Client Side Encryption enabled."
 
   echo "Setting temporary credentials..."
-  pushd "${mongoc_dir}/../drivers-evergreen-tools/.evergreen/csfle"
+  pushd "${det_dir:?}/.evergreen/csfle"
   {
     export AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key:?}"
     export AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id:?}"
@@ -258,12 +261,11 @@ if [[ "${ASAN}" == "on" ]]; then
   ld_preload="$(bypass_dlclose):${ld_preload}"
 fi
 
+# For mongocryptd, by integration-tests.sh.
+export PATH="${det_dir:?}/mongodb/bin:${PATH:-}"
+
 case "${OSTYPE}" in
 cygwin)
-  export PATH
-  PATH+=":/cygdrive/c/mongodb/bin"
-  PATH+=":/cygdrive/c/libmongocrypt/bin"
-
   check_mongocryptd
 
   chmod -f +x cmake-build/src/libmongoc/Debug/test-libmongoc.exe
@@ -272,9 +274,7 @@ cygwin)
 
 *)
   ulimit -c unlimited || true
-  # Need mongocryptd on the path.
-  export PATH
-  PATH+=":$(pwd)/mongodb/bin"
+
   check_mongocryptd
 
   # Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH

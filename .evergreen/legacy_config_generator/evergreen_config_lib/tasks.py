@@ -527,11 +527,6 @@ class DNSTask(MatrixTask):
                 SSL="ssl",
             )
 
-        if self.settings.auth:
-            vars = orchestration["vars"]
-            assert isinstance(vars, MutableMapping)
-            vars["AUTHSOURCE"] = "thisDB"
-
         yield orchestration
 
         dns = "on"
@@ -576,11 +571,7 @@ class CompressionTask(MatrixTask):
     def post_commands(self) -> Iterable[Value]:
         yield func("fetch-build", BUILD_NAME=self.build_task_name)
         yield func("fetch-det")
-        if self.settings.compression == "compression":
-            orc_file = "snappy-zlib-zstd"
-        else:
-            orc_file = self.settings.compression
-        yield func("bootstrap-mongo-orchestration", AUTH="noauth", SSL="nossl", ORCHESTRATION_FILE=orc_file)
+        yield func("bootstrap-mongo-orchestration", AUTH="noauth", SSL="nossl")
         yield func("run-simple-http-server")
         yield func("run-tests", AUTH="noauth", SSL="nossl", COMPRESSORS=",".join(self._compressor_list()))
 
@@ -752,7 +743,7 @@ for server_version in [ "8.0", "7.0", "6.0", "5.0"]:
                         AUTH="noauth",
                         SSL="nossl",
                         MONGODB_VERSION=server_version,
-                        ORCHESTRATION_FILE="versioned-api-testing",
+                        ORCHESTRATION_FILE="versioned-api-testing.json",
                     ),
                     func("run-simple-http-server"),
                     func("run-tests", MONGODB_API_VERSION=1, AUTH="noauth", SSL="nossl"),
@@ -944,7 +935,7 @@ class AWSTestTask(MatrixTask):
             func(
                 "bootstrap-mongo-orchestration",
                 AUTH="auth",
-                ORCHESTRATION_FILE="auth-aws",
+                ORCHESTRATION_FILE="auth-aws.json",
                 MONGODB_VERSION=self.settings.version,
                 TOPOLOGY="server",
             ),
@@ -1013,14 +1004,13 @@ class OCSPTask(MatrixTask):
         if self.test in ["malicious_server_test_1", "malicious_server_test_2"]:
             stapling = "mustStaple-disableStapling"
 
-        orchestration_file = "%s-basic-tls-ocsp-%s" % (self.settings.cert, stapling)
         orchestration = func(
             "bootstrap-mongo-orchestration",
             MONGODB_VERSION=self.settings.version,
             TOPOLOGY="server",
             SSL="ssl",
             OCSP="on",
-            ORCHESTRATION_FILE=orchestration_file,
+            ORCHESTRATION_FILE=f"{self.settings.cert}-basic-tls-ocsp-{stapling}.json",
         )
 
         # The cache test expects a revoked response from an OCSP responder, exactly like TEST_4.
