@@ -1648,12 +1648,9 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
-    vars:
-      IPV4_ONLY: 'off'
   - func: run-simple-http-server
   - func: run-tests
     vars:
-      IPV4_ONLY: 'off'
       URI: mongodb://[::1]/
 - name: test-latest-server-ipv6-client-ipv4-noauth-nosasl-nossl
   tags:
@@ -1670,12 +1667,9 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
-    vars:
-      IPV4_ONLY: 'off'
   - func: run-simple-http-server
   - func: run-tests
     vars:
-      IPV4_ONLY: 'off'
       URI: mongodb://127.0.0.1/
 - name: test-latest-server-ipv4-client-ipv4-noauth-nosasl-nossl
   tags:
@@ -1692,12 +1686,9 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
-    vars:
-      IPV4_ONLY: 'on'
   - func: run-simple-http-server
   - func: run-tests
     vars:
-      IPV4_ONLY: 'on'
       URI: mongodb://127.0.0.1/
 - name: test-latest-server-ipv4-client-localhost-noauth-nosasl-nossl
   tags:
@@ -1714,12 +1705,9 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
-    vars:
-      IPV4_ONLY: 'on'
   - func: run-simple-http-server
   - func: run-tests
     vars:
-      IPV4_ONLY: 'on'
       URI: mongodb://localhost/
 - name: debug-compile-aws
   commands:

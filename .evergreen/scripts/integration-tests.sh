@@ -7,7 +7,6 @@
 # MONGODB_VERSION: latest, 4.2, 4.0
 # TOPOLOGY: server, replica_set, sharded_cluster
 # AUTH: auth, noauth
-# IPV4_ONLY: off, on
 # SSL: openssl, darwinssl, winssl, nossl
 # ORCHESTRATION_FILE: <file name in DET configs/${TOPOLOGY}s/>
 # OCSP: off, on

@@ -847,11 +847,10 @@ class IPTask(MatrixTask):
         return [
             func("fetch-build", BUILD_NAME="debug-compile-nosasl-nossl"),
             func("fetch-det"),
-            func("bootstrap-mongo-orchestration", IPV4_ONLY=self.on_off("server", "ipv4")),
+            func("bootstrap-mongo-orchestration"),
             func("run-simple-http-server"),
             func(
                 "run-tests",
-                IPV4_ONLY=self.on_off("server", "ipv4"),
                 URI={
                     "ipv6": "mongodb://[::1]/",
                     "ipv4": "mongodb://127.0.0.1/",
