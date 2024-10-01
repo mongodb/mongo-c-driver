@@ -828,7 +828,6 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "    \"futureTimeoutMS\": %" PRIu64 ",\n"
             "    \"majorityReadConcern\": %s,\n"
             "    \"skipLiveTests\": %s,\n"
-            "    \"IPv6\": %s\n"
             "  },\n"
             "  \"options\": {\n"
             "    \"fork\": %s,\n"
