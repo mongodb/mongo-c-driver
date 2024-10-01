@@ -9,7 +9,6 @@
 # AUTH: auth, noauth
 # SSL: openssl, darwinssl, winssl, nossl
 # ORCHESTRATION_FILE: <file name in DET configs/${TOPOLOGY}s/>
-# OCSP: off, on
 # REQUIRE_API_VERSION: set to a non-empty string to set the requireApiVersion parameter
 #   This is currently only supported for standalone servers
 # LOAD_BALANCER: off, on
