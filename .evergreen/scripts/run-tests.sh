@@ -54,7 +54,6 @@ export MONGOC_TEST_URI="${URI}"
 export MONGOC_TEST_SERVER_LOG="json"
 export MONGOC_TEST_SKIP_MOCK="on"
 export MONGOC_TEST_IPV4_AND_IPV6_HOST="ipv4_and_ipv6.test.build.10gen.cc"
-export MONGOC_CHECK_IPV6="on"
 
 # Only set creds if testing with Client Side Encryption.
 # libmongoc may build with CSE enabled (if the host has libmongocrypt installed)
