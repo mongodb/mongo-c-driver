@@ -28,6 +28,11 @@
 #include <string.h>
 #include <math.h>
 
+#ifdef BSON_MEMCHECK
+#pragma message( \
+   "Do not define BSON_MEMCHECK. BSON_MEMCHECK changes the data layout of bson_t. BSON_MEMCHECK is deprecated may be removed in a future major release")
+#endif
+
 
 #ifndef BSON_MAX_RECURSION
 #define BSON_MAX_RECURSION 200

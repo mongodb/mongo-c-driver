@@ -3959,13 +3959,8 @@ test_failure_to_auth (void)
 void
 test_client_install (TestSuite *suite)
 {
-   if (test_framework_getenv_bool ("MONGOC_CHECK_IPV6")) {
-      /* try to validate ipv6 too */
-      TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_single);
-
-      /* try to validate ipv6 too */
-      TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_pooled);
-   }
+   TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_single);
+   TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_pooled);
 
    TestSuite_AddFull (
       suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, test_framework_skip_if_no_auth);
