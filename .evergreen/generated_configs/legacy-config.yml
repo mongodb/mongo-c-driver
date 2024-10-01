@@ -1092,7 +1092,6 @@ tasks:
       AUTH: auth
       SSL: ssl
       TOPOLOGY: replica_set
-      AUTHSOURCE: thisDB
   - func: run-tests
     vars:
       AUTH: auth
@@ -1111,7 +1110,6 @@ tasks:
       AUTH: auth
       SSL: ssl
       TOPOLOGY: replica_set
-      AUTHSOURCE: thisDB
   - func: run-tests
     vars:
       AUTH: auth
@@ -1130,7 +1128,6 @@ tasks:
       AUTH: auth
       SSL: ssl
       TOPOLOGY: replica_set
-      AUTHSOURCE: thisDB
   - func: run-tests
     vars:
       AUTH: auth
@@ -1151,7 +1148,6 @@ tasks:
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
-      ORCHESTRATION_FILE: zlib
       SSL: nossl
   - func: run-simple-http-server
   - func: run-tests
@@ -1174,7 +1170,6 @@ tasks:
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
-      ORCHESTRATION_FILE: snappy
       SSL: nossl
   - func: run-simple-http-server
   - func: run-tests
@@ -1197,7 +1192,6 @@ tasks:
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
-      ORCHESTRATION_FILE: zstd
       SSL: nossl
   - func: run-simple-http-server
   - func: run-tests
@@ -1361,7 +1355,7 @@ tasks:
     vars:
       AUTH: noauth
       MONGODB_VERSION: '8.0'
-      ORCHESTRATION_FILE: versioned-api-testing
+      ORCHESTRATION_FILE: versioned-api-testing.json
       SSL: nossl
       TOPOLOGY: server
   - func: run-simple-http-server
@@ -1409,7 +1403,7 @@ tasks:
     vars:
       AUTH: noauth
       MONGODB_VERSION: '7.0'
-      ORCHESTRATION_FILE: versioned-api-testing
+      ORCHESTRATION_FILE: versioned-api-testing.json
       SSL: nossl
       TOPOLOGY: server
   - func: run-simple-http-server
@@ -1457,7 +1451,7 @@ tasks:
     vars:
       AUTH: noauth
       MONGODB_VERSION: '6.0'
-      ORCHESTRATION_FILE: versioned-api-testing
+      ORCHESTRATION_FILE: versioned-api-testing.json
       SSL: nossl
       TOPOLOGY: server
   - func: run-simple-http-server
@@ -1505,7 +1499,7 @@ tasks:
     vars:
       AUTH: noauth
       MONGODB_VERSION: '5.0'
-      ORCHESTRATION_FILE: versioned-api-testing
+      ORCHESTRATION_FILE: versioned-api-testing.json
       SSL: nossl
       TOPOLOGY: server
   - func: run-simple-http-server
@@ -1654,12 +1648,9 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
-    vars:
-      IPV4_ONLY: 'off'
   - func: run-simple-http-server
   - func: run-tests
     vars:
-      IPV4_ONLY: 'off'
       URI: mongodb://[::1]/
 - name: test-latest-server-ipv6-client-ipv4-noauth-nosasl-nossl
   tags:
@@ -1676,12 +1667,9 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
-    vars:
-      IPV4_ONLY: 'off'
   - func: run-simple-http-server
   - func: run-tests
     vars:
-      IPV4_ONLY: 'off'
       URI: mongodb://127.0.0.1/
 - name: test-latest-server-ipv4-client-ipv4-noauth-nosasl-nossl
   tags:
@@ -1698,12 +1686,9 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
-    vars:
-      IPV4_ONLY: 'on'
   - func: run-simple-http-server
   - func: run-tests
     vars:
-      IPV4_ONLY: 'on'
       URI: mongodb://127.0.0.1/
 - name: test-latest-server-ipv4-client-localhost-noauth-nosasl-nossl
   tags:
@@ -1720,12 +1705,9 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
-    vars:
-      IPV4_ONLY: 'on'
   - func: run-simple-http-server
   - func: run-tests
     vars:
-      IPV4_ONLY: 'on'
       URI: mongodb://localhost/
 - name: debug-compile-aws
   commands:
@@ -1763,7 +1745,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1783,7 +1765,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '8.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1803,7 +1785,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '7.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1823,7 +1805,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1843,7 +1825,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1863,7 +1845,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1883,7 +1865,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1903,7 +1885,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '8.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1923,7 +1905,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '7.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1943,7 +1925,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1963,7 +1945,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -1983,7 +1965,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2003,7 +1985,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2023,7 +2005,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '8.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2043,7 +2025,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '7.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2063,7 +2045,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2083,7 +2065,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2103,7 +2085,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2123,7 +2105,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2143,7 +2125,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '8.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2163,7 +2145,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '7.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2183,7 +2165,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2203,7 +2185,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2223,7 +2205,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2243,7 +2225,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2263,7 +2245,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '8.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2283,7 +2265,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '7.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2303,7 +2285,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2323,7 +2305,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2343,7 +2325,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2363,7 +2345,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2383,7 +2365,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '8.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2403,7 +2385,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '7.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2423,7 +2405,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2443,7 +2425,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2463,7 +2445,7 @@ tasks:
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
-      ORCHESTRATION_FILE: auth-aws
+      ORCHESTRATION_FILE: auth-aws.json
       TOPOLOGY: server
   - func: run aws tests
     vars:
@@ -2490,7 +2472,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2524,7 +2506,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2558,7 +2540,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2592,7 +2574,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2626,7 +2608,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2660,7 +2642,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2694,7 +2676,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2728,7 +2710,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2762,7 +2744,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2796,7 +2778,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2830,7 +2812,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2864,7 +2846,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2898,7 +2880,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2932,7 +2914,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -2966,7 +2948,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3000,7 +2982,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3034,7 +3016,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3068,7 +3050,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3102,7 +3084,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3136,7 +3118,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3170,7 +3152,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3204,7 +3186,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3238,7 +3220,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3272,7 +3254,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3306,7 +3288,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3340,7 +3322,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3374,7 +3356,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3408,7 +3390,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3442,7 +3424,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3476,7 +3458,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3510,7 +3492,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3544,7 +3526,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3578,7 +3560,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3612,7 +3594,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3646,7 +3628,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3680,7 +3662,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3714,7 +3696,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3748,7 +3730,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3782,7 +3764,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3816,7 +3798,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3850,7 +3832,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3884,7 +3866,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3918,7 +3900,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3952,7 +3934,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -3986,7 +3968,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4020,7 +4002,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4054,7 +4036,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4088,7 +4070,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4122,7 +4104,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4156,7 +4138,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4190,7 +4172,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4224,7 +4206,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4258,7 +4240,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4292,7 +4274,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4326,7 +4308,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4360,7 +4342,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4394,7 +4376,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4428,7 +4410,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4462,7 +4444,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4496,7 +4478,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4530,7 +4512,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4564,7 +4546,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4598,7 +4580,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4632,7 +4614,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4666,7 +4648,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4700,7 +4682,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4734,7 +4716,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4768,7 +4750,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4802,7 +4784,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4836,7 +4818,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4870,7 +4852,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4904,7 +4886,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4938,7 +4920,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -4972,7 +4954,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5006,7 +4988,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5040,7 +5022,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5074,7 +5056,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5108,7 +5090,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5142,7 +5124,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5176,7 +5158,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5210,7 +5192,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5244,7 +5226,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5278,7 +5260,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5312,7 +5294,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5346,7 +5328,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5380,7 +5362,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5414,7 +5396,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5448,7 +5430,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5482,7 +5464,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5516,7 +5498,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5550,7 +5532,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5584,7 +5566,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5618,7 +5600,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5652,7 +5634,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5686,7 +5668,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5720,7 +5702,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5754,7 +5736,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5788,7 +5770,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5822,7 +5804,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5856,7 +5838,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5890,7 +5872,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5924,7 +5906,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5958,7 +5940,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -5992,7 +5974,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6026,7 +6008,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6060,7 +6042,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6094,7 +6076,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6128,7 +6110,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6162,7 +6144,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6196,7 +6178,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6230,7 +6212,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6264,7 +6246,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6298,7 +6280,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6332,7 +6314,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6366,7 +6348,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6400,7 +6382,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6434,7 +6416,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6468,7 +6450,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6502,7 +6484,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6536,7 +6518,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6570,7 +6552,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6604,7 +6586,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6638,7 +6620,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6672,7 +6654,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6706,7 +6688,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6740,7 +6722,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6774,7 +6756,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6808,7 +6790,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6842,7 +6824,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6876,7 +6858,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6910,7 +6892,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6944,7 +6926,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -6978,7 +6960,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7012,7 +6994,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7046,7 +7028,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7080,7 +7062,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7114,7 +7096,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7148,7 +7130,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7182,7 +7164,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7216,7 +7198,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7250,7 +7232,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7284,7 +7266,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7318,7 +7300,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7352,7 +7334,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7386,7 +7368,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7420,7 +7402,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7454,7 +7436,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7488,7 +7470,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7522,7 +7504,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7556,7 +7538,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7590,7 +7572,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7624,7 +7606,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7658,7 +7640,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7692,7 +7674,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7726,7 +7708,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7760,7 +7742,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7794,7 +7776,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7828,7 +7810,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7862,7 +7844,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7896,7 +7878,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7930,7 +7912,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7964,7 +7946,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -7998,7 +7980,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8032,7 +8014,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8066,7 +8048,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8100,7 +8082,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8134,7 +8116,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8168,7 +8150,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8202,7 +8184,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8236,7 +8218,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8270,7 +8252,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8304,7 +8286,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8338,7 +8320,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8372,7 +8354,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8406,7 +8388,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8440,7 +8422,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8474,7 +8456,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8508,7 +8490,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8542,7 +8524,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8576,7 +8558,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8610,7 +8592,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8644,7 +8626,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8678,7 +8660,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8712,7 +8694,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8746,7 +8728,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8780,7 +8762,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8814,7 +8796,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8848,7 +8830,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8882,7 +8864,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8916,7 +8898,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8950,7 +8932,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -8984,7 +8966,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9018,7 +9000,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9052,7 +9034,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9086,7 +9068,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9120,7 +9102,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9154,7 +9136,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9188,7 +9170,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9222,7 +9204,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9256,7 +9238,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9290,7 +9272,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9324,7 +9306,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9358,7 +9340,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9392,7 +9374,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9426,7 +9408,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9460,7 +9442,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9494,7 +9476,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9528,7 +9510,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9562,7 +9544,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9596,7 +9578,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9630,7 +9612,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9664,7 +9646,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9698,7 +9680,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9732,7 +9714,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9766,7 +9748,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9800,7 +9782,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9834,7 +9816,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9868,7 +9850,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9902,7 +9884,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9936,7 +9918,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -9970,7 +9952,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10004,7 +9986,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10038,7 +10020,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10072,7 +10054,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10106,7 +10088,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10140,7 +10122,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10174,7 +10156,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10208,7 +10190,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10242,7 +10224,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10276,7 +10258,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10310,7 +10292,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10344,7 +10326,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10378,7 +10360,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10412,7 +10394,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10446,7 +10428,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10480,7 +10462,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10514,7 +10496,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10548,7 +10530,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10582,7 +10564,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10616,7 +10598,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10650,7 +10632,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10684,7 +10666,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10718,7 +10700,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10752,7 +10734,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10786,7 +10768,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10820,7 +10802,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10854,7 +10836,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10888,7 +10870,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10922,7 +10904,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10956,7 +10938,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -10990,7 +10972,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11024,7 +11006,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11058,7 +11040,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11092,7 +11074,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11126,7 +11108,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11160,7 +11142,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11194,7 +11176,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11228,7 +11210,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11262,7 +11244,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11296,7 +11278,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11330,7 +11312,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11364,7 +11346,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11398,7 +11380,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11432,7 +11414,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11466,7 +11448,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11500,7 +11482,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11534,7 +11516,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11568,7 +11550,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11602,7 +11584,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11636,7 +11618,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11670,7 +11652,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11704,7 +11686,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11738,7 +11720,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11772,7 +11754,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11806,7 +11788,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11840,7 +11822,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11874,7 +11856,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11908,7 +11890,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11942,7 +11924,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -11976,7 +11958,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12010,7 +11992,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12044,7 +12026,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12078,7 +12060,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12112,7 +12094,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12146,7 +12128,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12180,7 +12162,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12214,7 +12196,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12248,7 +12230,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12282,7 +12264,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12316,7 +12298,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12350,7 +12332,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12384,7 +12366,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12418,7 +12400,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12452,7 +12434,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12486,7 +12468,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12520,7 +12502,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12554,7 +12536,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12588,7 +12570,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12622,7 +12604,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12656,7 +12638,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12690,7 +12672,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12724,7 +12706,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12758,7 +12740,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12792,7 +12774,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12826,7 +12808,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12860,7 +12842,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12894,7 +12876,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12928,7 +12910,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12962,7 +12944,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -12996,7 +12978,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13030,7 +13012,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13064,7 +13046,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13098,7 +13080,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13132,7 +13114,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13166,7 +13148,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13200,7 +13182,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13234,7 +13216,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13268,7 +13250,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13302,7 +13284,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13336,7 +13318,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13370,7 +13352,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13404,7 +13386,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13438,7 +13420,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13472,7 +13454,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13506,7 +13488,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13540,7 +13522,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13574,7 +13556,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13608,7 +13590,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13642,7 +13624,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13676,7 +13658,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13710,7 +13692,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13744,7 +13726,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13778,7 +13760,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13812,7 +13794,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13846,7 +13828,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13880,7 +13862,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13914,7 +13896,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13948,7 +13930,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -13982,7 +13964,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14016,7 +13998,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14050,7 +14032,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14084,7 +14066,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14118,7 +14100,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14152,7 +14134,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14186,7 +14168,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14220,7 +14202,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14254,7 +14236,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14288,7 +14270,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14322,7 +14304,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14356,7 +14338,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14390,7 +14372,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14424,7 +14406,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14458,7 +14440,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14492,7 +14474,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14526,7 +14508,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14560,7 +14542,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14594,7 +14576,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14628,7 +14610,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14662,7 +14644,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14696,7 +14678,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14730,7 +14712,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14764,7 +14746,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14798,7 +14780,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14832,7 +14814,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14866,7 +14848,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14900,7 +14882,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14934,7 +14916,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -14968,7 +14950,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15002,7 +14984,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15036,7 +15018,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15070,7 +15052,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15104,7 +15086,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15138,7 +15120,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15172,7 +15154,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15206,7 +15188,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15240,7 +15222,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15274,7 +15256,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15308,7 +15290,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15342,7 +15324,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15376,7 +15358,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15410,7 +15392,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15444,7 +15426,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15478,7 +15460,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15512,7 +15494,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15546,7 +15528,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15580,7 +15562,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15614,7 +15596,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15648,7 +15630,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15682,7 +15664,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15716,7 +15698,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15750,7 +15732,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15784,7 +15766,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15818,7 +15800,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15852,7 +15834,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15886,7 +15868,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15920,7 +15902,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15954,7 +15936,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -15988,7 +15970,7 @@ tasks:
     vars:
       MONGODB_VERSION: '8.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -16022,7 +16004,7 @@ tasks:
     vars:
       MONGODB_VERSION: '7.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -16056,7 +16038,7 @@ tasks:
     vars:
       MONGODB_VERSION: '6.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -16090,7 +16072,7 @@ tasks:
     vars:
       MONGODB_VERSION: '5.0'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
@@ -16124,7 +16106,7 @@ tasks:
     vars:
       MONGODB_VERSION: '4.4'
       OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling
+      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
       TOPOLOGY: server
   - command: shell.exec
