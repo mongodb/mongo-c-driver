@@ -887,6 +887,7 @@ prose_test_10 (void *ctx)
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    mongoc_bulkwriteopts_t *opts = mongoc_bulkwriteopts_new ();
+   mongoc_bulkwriteopts_set_ordered (opts, false);
    mongoc_bulkwriteopts_set_writeconcern (opts, wc);
 
    // Test a large insert.
