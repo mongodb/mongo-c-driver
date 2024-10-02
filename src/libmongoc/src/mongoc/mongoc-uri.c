@@ -36,6 +36,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-compression-private.h"
 #include "utlist.h"
+#include "mongoc-trace-private.h"
 
 #include <bson-dsl.h>
 
@@ -897,7 +898,15 @@ mongoc_uri_split_option (mongoc_uri_t *uri, bson_t *options, const char *str, bo
        * through TXT records." So, do NOT override existing options with TXT
        * options. */
       if (from_dns) {
-         MONGOC_WARNING ("Cannot override URI option \"%s\" from TXT record \"%s\"", key, str);
+         if (0 == strcmp (lkey, MONGOC_URI_AUTHSOURCE)) {
+            // Treat `authSource` as a special case. A server may support authentication with multiple mechanisms.
+            // MONGODB-X509 requires authSource=$external. SCRAM-SHA-256 requires authSource=admin.
+            // Only log a trace message since this may be expected.
+            TRACE ("Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
+         } else {
+            MONGOC_WARNING (
+               "Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
+         }
          ret = true;
          goto CLEANUP;
       }
