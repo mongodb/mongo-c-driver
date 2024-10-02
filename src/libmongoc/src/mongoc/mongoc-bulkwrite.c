@@ -1575,6 +1575,16 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
          is_acknowledged = mongoc_write_concern_is_acknowledged (wc);
       }
 
+      if (verboseresults && !is_acknowledged) {
+         bson_set_error (
+            &error,
+            MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_COMMAND_INVALID_ARG,
+            "Cannot request unacknowledged write concern and verbose results. Use acknowledged write concern");
+         _bulkwriteexception_set_error (ret.exc, &error);
+         goto fail;
+      }
+
       if (!mongoc_cmd_parts_assemble (&parts, ss, &error)) {
          _bulkwriteexception_set_error (ret.exc, &error);
          goto fail;
