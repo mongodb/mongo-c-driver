@@ -9,6 +9,13 @@ Platform Support:
 
   * Support for Visual Studio 2013 is dropped.
 
+libmongoc 1.28.1 (unreleased)
+=============================
+
+Fixed:
+
+  * Do not return result in `mongoc_bulkwritereturn_t` if there are no known successful writes.
+
 libmongoc 1.28.0
 ================
 
