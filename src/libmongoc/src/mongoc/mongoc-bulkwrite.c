@@ -1495,6 +1495,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       }
    }
 
+   bool is_ordered =
+      mongoc_optional_is_set (&opts->ordered) ? mongoc_optional_value (&opts->ordered) : true; // default.
    bool verboseresults =
       mongoc_optional_is_set (&opts->verboseresults) ? mongoc_optional_value (&opts->verboseresults) : false;
    ret.res->verboseresults = verboseresults;
@@ -1581,6 +1583,16 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             MONGOC_ERROR_COMMAND,
             MONGOC_ERROR_COMMAND_INVALID_ARG,
             "Cannot request unacknowledged write concern and verbose results. Use acknowledged write concern");
+         _bulkwriteexception_set_error (ret.exc, &error);
+         goto fail;
+      }
+
+      if (is_ordered && !is_acknowledged) {
+         bson_set_error (&error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot request unacknowledged write concern and ordered writes. Use unordered writes or "
+                         "acknowledged write concern");
          _bulkwriteexception_set_error (ret.exc, &error);
          goto fail;
       }
@@ -1836,8 +1848,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       if (!batch_ok) {
          goto fail;
       }
-      bool is_ordered =
-         mongoc_optional_is_set (&opts->ordered) ? mongoc_optional_value (&opts->ordered) : true; // default.
       if (has_write_errors && is_ordered) {
          // Ordered writes must not continue to send batches once an error is
          // occurred. An individual write error is not a top-level error.
