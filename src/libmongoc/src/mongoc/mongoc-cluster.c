@@ -546,7 +546,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       /*
        * Unacknowledged writes must provide a CommandSucceededEvent with an
        * {ok: 1} reply.
-       * https://github.com/mongodb/specifications/blob/master/source/command-logging-and-monitoring/command-logging-and-monitoring.rst#unacknowledged-acknowledged-writes
+       * https://github.com/mongodb/specifications/blob/master/source/command-logging-and-monitoring/command-logging-and-monitoring.md#unacknowledgedacknowledged-writes
        */
       if (!cmd->is_acknowledged) {
          bson_append_int32 (&fake_reply, "ok", 2, 1);

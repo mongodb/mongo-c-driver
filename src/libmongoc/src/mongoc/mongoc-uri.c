@@ -1164,7 +1164,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
           * Keys that aren't supported by a driver MUST be ignored.
           *
           * A WARN level logging message MUST be issued
-          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.rst#keys
+          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.md#keys
           */
          MONGOC_WARNING ("Unsupported URI option \"%s\"", key);
       }

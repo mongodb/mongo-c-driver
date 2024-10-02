@@ -112,7 +112,7 @@ _mongoc_n_return (mongoc_cursor_t *cursor)
    int64_t n_return;
 
    /* calculate numberToReturn according to:
-    * https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst#combining-limit-and-batch-size-for-the-wire-protocol
+    * https://github.com/mongodb/specifications/blob/master/source/crud/crud.md#combining-limit-and-batch-size-for-the-wire-protocol
     */
    limit = mongoc_cursor_get_limit (cursor);
    batch_size = mongoc_cursor_get_batch_size (cursor);
