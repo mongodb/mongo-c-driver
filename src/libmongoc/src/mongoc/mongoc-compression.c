@@ -137,9 +137,6 @@ mongoc_compressor_name_to_id (const char *compressor)
    return -1;
 }
 
-// To support unchecked casts from `unsigned long` to `size_t`.
-BSON_STATIC_ASSERT2 (size_t_gte_ulong, SIZE_MAX >= ULONG_MAX);
-
 bool
 mongoc_uncompress (int32_t compressor_id,
                    const uint8_t *compressed,
@@ -147,29 +144,11 @@ mongoc_uncompress (int32_t compressor_id,
                    uint8_t *uncompressed,
                    size_t *uncompressed_len)
 {
-   BSON_ASSERT_PARAM (compressed);
-   BSON_ASSERT_PARAM (uncompressed);
-   BSON_ASSERT_PARAM (uncompressed_len);
-
    TRACE ("Uncompressing with '%s' (%d)", mongoc_compressor_id_to_name (compressor_id), compressor_id);
 
    switch (compressor_id) {
    case MONGOC_COMPRESSOR_SNAPPY_ID: {
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-      size_t actual_uncompressed_len;
-
-      // Malformed message: inconsistent lengths.
-      if (BSON_UNLIKELY (!snappy_uncompressed_length (compressed, compressed_len, &actual_uncompressed_len))) {
-         return false;
-      }
-
-      // Malformed message: destination is not large enough.
-      if (actual_uncompressed_len > *uncompressed_len) {
-         return false;
-      }
-
-      *uncompressed_len = actual_uncompressed_len;
-
       snappy_status status;
       status = snappy_uncompress ((const char *) compressed, compressed_len, (char *) uncompressed, uncompressed_len);
 
@@ -183,27 +162,11 @@ mongoc_uncompress (int32_t compressor_id,
 
    case MONGOC_COMPRESSOR_ZLIB_ID: {
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-      // Malformed message: unrepresentable.
-      if (BSON_UNLIKELY (!bson_in_range_unsigned (unsigned_long, compressed_len))) {
-         return false;
-      }
+      BSON_ASSERT (bson_in_range_unsigned (unsigned_long, compressed_len));
+      const int ok =
+         uncompress (uncompressed, (unsigned long *) uncompressed_len, compressed, (unsigned long) compressed_len);
 
-      // Malformed message: unrepresentable.
-      if (BSON_UNLIKELY (!bson_in_range_unsigned (unsigned_long, *uncompressed_len))) {
-         return false;
-      }
-
-      uLong actual_uncompressed_len = (uLong) *uncompressed_len;
-
-      const bool ok = uncompress (uncompressed, &actual_uncompressed_len, compressed, (uLong) compressed_len) == Z_OK;
-
-      if (BSON_UNLIKELY (!ok)) {
-         return false;
-      }
-
-      *uncompressed_len = (size_t) actual_uncompressed_len;
-
-      return true;
+      return ok == Z_OK;
 #else
       MONGOC_WARNING ("Received zlib compressed opcode, but zlib "
                       "compression is not compiled in");

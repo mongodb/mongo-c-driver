@@ -3597,19 +3597,7 @@ mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
    // msgHeader consists of four int32 fields.
    const size_t message_header_length = 4u * sizeof (int32_t);
 
-   const int32_t uncompressed_size_raw = mcd_rpc_op_compressed_get_uncompressed_size (rpc);
-
-   // Malformed message: invalid uncompressedSize.
-   if (BSON_UNLIKELY (uncompressed_size_raw < 0)) {
-      return false;
-   }
-
-   const size_t uncompressed_size = (size_t) uncompressed_size_raw;
-
-   // Malformed message: original message length is not representable.
-   if (uncompressed_size > SIZE_MAX - message_header_length) {
-      return false;
-   }
+   const size_t uncompressed_size = (size_t) mcd_rpc_op_compressed_get_uncompressed_size (rpc);
 
    // uncompressedSize does not include msgHeader fields.
    const size_t original_message_length = message_header_length + uncompressed_size;
@@ -3655,11 +3643,7 @@ mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
       return false;
    }
 
-   // Malformed message: size inconsistency.
-   if (BSON_UNLIKELY (uncompressed_size != actual_uncompressed_size)) {
-      bson_free (ptr);
-      return false;
-   }
+   BSON_ASSERT (uncompressed_size == actual_uncompressed_size);
 
    *data_len = original_message_length;
    *data = ptr; // Ownership transfer.
