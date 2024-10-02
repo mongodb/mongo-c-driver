@@ -19,3 +19,20 @@ if (CMAKE_CXX_COMPILER)
       target_link_libraries (mongoc-cxx-check PRIVATE mongoc_shared)
    endif ()
 endif ()
+
+# public-header-warnings
+add_executable(public-header-warnings EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/c-check.c)
+
+target_include_directories(public-header-warnings PRIVATE
+    ${CMAKE_BINARY_DIR}/../install-dir/include/libbson-1.0
+    ${CMAKE_BINARY_DIR}/../install-dir/include/libmongoc-1.0
+)
+
+target_compile_options(public-header-warnings PRIVATE
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=all>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=extra>
+  $<$<C_COMPILER_ID:MSVC>:/W3>
+  $<$<C_COMPILER_ID:MSVC>:/WX>
+  $<$<C_COMPILER_ID:MSVC>:/wd5105>
+)
+
