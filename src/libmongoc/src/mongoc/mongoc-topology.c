@@ -1579,7 +1579,7 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology, mongoc_server
    /**
     * ! note:
     * At time of writing, this diverges from the spec:
-    * https://github.com/mongodb/specifications/blob/df6be82f865e9b72444488fd62ae1eb5fca18569/source/sessions/driver-sessions.rst#algorithm-to-return-a-serversession-instance-to-the-server-session-pool
+    * https://github.com/mongodb/specifications/blob/master/source/sessions/driver-sessions.md#algorithm-to-return-a-serversession-instance-to-the-server-session-pool
     *
     * The spec notes that before returning a session, we should first inspect
     * the back of the pool for expired items and delete them. In this case, we

@@ -1616,7 +1616,7 @@ mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection, const
 
    if (mongoc_cursor_error (cursor, &error) && error.code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
       /* collection does not exist. from spec: return no documents but no err:
-       * https://github.com/mongodb/specifications/blob/master/source/enumerate-indexes.rst#enumeration-getting-index-information
+       * https://github.com/mongodb/specifications/blob/master/source/enumerate-collections/enumerate-collections.md#getting-full-collection-information
        */
       _mongoc_cursor_set_empty (cursor);
    }

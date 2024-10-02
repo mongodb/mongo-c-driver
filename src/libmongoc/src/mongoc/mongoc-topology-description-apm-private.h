@@ -25,7 +25,7 @@
 /* Application Performance Monitoring for topology events, complies with the
  * SDAM Monitoring Spec:
 
-https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring-monitoring.rst
+https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring.md
 
  */
 

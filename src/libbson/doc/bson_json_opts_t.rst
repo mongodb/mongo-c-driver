@@ -34,7 +34,7 @@ The ``max_len`` member holds a maximum length for the resulting JSON string. Enc
 
   | :symbol:`bson_as_json_with_opts()`
 
-.. _MongoDB Extended JSON: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst
+.. _MongoDB Extended JSON: https://github.com/mongodb/specifications/blob/master/source/extended-json/extended-json.md
 
 
 .. only:: html
