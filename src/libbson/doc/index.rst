@@ -8,7 +8,7 @@ This site documents the API. For tutorials, guides, and explainers, see `MongoDB
 Introduction
 ------------
 
-libbson builds, parses, and iterates `BSON <http://bsonspec.org>`_ documents, the native data format of MongoDB. It also converts BSON to and from JSON, and provides a platform compatibility layer for `the MongoDB C Driver <https://www.mongoc.org/>`_.
+libbson builds, parses, and iterates `BSON <https://bsonspec.org>`_ documents, the native data format of MongoDB. It also converts BSON to and from JSON, and provides a platform compatibility layer for `the MongoDB C Driver <https://www.mongoc.org/>`_.
 
 
 .. toctree::
