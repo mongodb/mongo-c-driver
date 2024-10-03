@@ -567,7 +567,13 @@ bson_atomic_ptr_compare_exchange_weak (void *volatile *ptr, void *expect, void *
 static BSON_INLINE void *
 bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_memory_order ord)
 {
-   return bson_atomic_ptr_compare_exchange_strong ((void *volatile *) ptr, NULL, NULL, ord);
+   // Use a union to address cast-qual compilation warning
+   union {
+      void *volatile const *const_ptr;
+      void *volatile *non_const_ptr;
+   } u;
+   u.const_ptr = ptr;
+   return bson_atomic_ptr_compare_exchange_strong (u.non_const_ptr, NULL, NULL, ord);
 }
 
 #undef DECL_ATOMIC_STDINT
