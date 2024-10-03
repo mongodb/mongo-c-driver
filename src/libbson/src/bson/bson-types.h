@@ -28,6 +28,7 @@
 #include <bson/bson-config.h>
 #include <bson/bson-compat.h>
 #include <bson/bson-endian.h>
+#include <common-macros-private.h>
 
 BSON_BEGIN_DECLS
 
@@ -292,6 +293,7 @@ typedef enum {
  *--------------------------------------------------------------------------
  */
 
+MC_DISABLE_PADDED_WARNING_BEGIN
 BSON_ALIGNED_BEGIN (8)
 typedef struct _bson_value_t {
    bson_type_t value_type;
@@ -347,6 +349,7 @@ typedef struct _bson_value_t {
       bson_decimal128_t v_decimal128;
    } value;
 } bson_value_t BSON_ALIGNED_END (8);
+MC_DISABLE_PADDED_WARNING_END
 
 
 /**

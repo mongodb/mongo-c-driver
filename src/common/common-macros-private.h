@@ -68,4 +68,17 @@
 #endif // __has_warning("-Wunsafe-buffer-usage")
 #endif // defined(__clang__)
 
+// Disable the -Wpadded warning.
+#define MC_DISABLE_PADDED_WARNING_BEGIN
+#define MC_DISABLE_PADDED_WARNING_END
+#if defined(__clang__)
+#if __has_warning("-Wpadded")
+#undef MC_DISABLE_PADDED_WARNING_BEGIN
+#undef MC_DISABLE_PADDED_WARNING_END
+#define MC_DISABLE_PADDED_WARNING_BEGIN \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wpadded\"")
+#define MC_DISABLE_PADDED_WARNING_END _Pragma ("clang diagnostic pop")
+#endif // __has_warning("-Wunsafe-buffer-usage")
+#endif // defined(__clang__)
+
 #endif /* COMMON_MACROS_PRIVATE_H */
