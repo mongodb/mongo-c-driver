@@ -3234,7 +3234,7 @@ test_kms_tls_options_extra_rejected (void *unused)
 }
 
 static void
-set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network)
+set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network, uint32_t count)
 {
    mongoc_http_request_t req;
    mongoc_http_response_t res;
@@ -3253,7 +3253,8 @@ set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network)
       req.path = "/set_failpoint/http";
    }
    req.extra_headers = "Content-Type: application/json\r\n";
-   const char *count_json = "{ \"count\": 1 }";
+   char count_json[25];
+   sprintf (count_json, "{\"count\": %d}", count);
    req.body = count_json;
    req.body_len = strlen (count_json);
 
@@ -6137,85 +6138,6 @@ test_bypass_mongocryptd_shared_library (void *unused)
    bson_free (args);
 }
 
-/* Prose test 23: KMS Retry Tests */
-static void
-test_kms_retry (void *unused)
-{
-   mongoc_client_t *keyvault_client = test_framework_new_default_client ();
-   mongoc_client_encryption_t *client_encryption = _tls_test_make_client_encryption (keyvault_client, RETRY);
-   bson_error_t error = {0};
-   bson_value_t keyid;
-   mongoc_client_encryption_datakey_opts_t *dkopts;
-   char *ca_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
-   char *pem_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
-   mongoc_ssl_opt_t ssl_opts = {.ca_file = ca_file, .pem_file = pem_file};
-   bool res;
-
-   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1};
-   bson_value_t encrypted_field = {0};
-   mongoc_client_encryption_encrypt_opts_t *encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
-   mongoc_client_encryption_encrypt_opts_set_algorithm (encrypt_opts,
-                                                        MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
-   // AWS
-   dkopts = mongoc_client_encryption_datakey_opts_new ();
-   mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson (BSON_STR ({"region" : "r", "key" : "k", "endpoint" : "127.0.0.1:9003"})));
-   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", dkopts, &keyid, &error);
-   ASSERT_OR_PRINT (res, error);
-
-   set_retry_failpoint (&ssl_opts, false);
-   set_retry_failpoint (&ssl_opts, true);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
-   ASSERT_OR_PRINT (res, error);
-   bson_value_destroy (&keyid);
-   bson_value_destroy (&encrypted_field);
-   mongoc_client_encryption_datakey_opts_destroy (dkopts);
-
-   // Azure
-   dkopts = mongoc_client_encryption_datakey_opts_new ();
-   mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson (BSON_STR ({"keyVaultEndpoint" : "127.0.0.1:9003", "keyName" : "foo"})));
-   res = mongoc_client_encryption_create_datakey (client_encryption, "azure", dkopts, &keyid, &error);
-   ASSERT_OR_PRINT (res, error);
-
-   set_retry_failpoint (&ssl_opts, false);
-   set_retry_failpoint (&ssl_opts, true);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
-   ASSERT_OR_PRINT (res, error);
-   bson_value_destroy (&keyid);
-   bson_value_destroy (&encrypted_field);
-   mongoc_client_encryption_datakey_opts_destroy (dkopts);
-
-   // GCP
-   dkopts = mongoc_client_encryption_datakey_opts_new ();
-   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson (BSON_STR ({
-                                                           "projectId" : "foo",
-                                                           "location" : "bar",
-                                                           "keyRing" : "baz",
-                                                           "keyName" : "qux",
-                                                           "endpoint" : "127.0.0.1:9003"
-                                                        })));
-   res = mongoc_client_encryption_create_datakey (client_encryption, "gcp", dkopts, &keyid, &error);
-   ASSERT_OR_PRINT (res, error);
-
-   set_retry_failpoint (&ssl_opts, false);
-   set_retry_failpoint (&ssl_opts, true);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
-   ASSERT_OR_PRINT (res, error);
-   bson_value_destroy (&keyid);
-   bson_value_destroy (&encrypted_field);
-   mongoc_client_encryption_datakey_opts_destroy (dkopts);
-
-   bson_free (ca_file);
-   bson_free (pem_file);
-   mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);
-   mongoc_client_encryption_destroy (client_encryption);
-   mongoc_client_destroy (keyvault_client);
-}
-
 static void
 test_range_explicit_encryption_applies_defaults (void *unused)
 {
@@ -6343,6 +6265,88 @@ test_range_explicit_encryption_applies_defaults (void *unused)
    bson_value_destroy (&keyID);
    mongoc_client_encryption_destroy (clientEncryption);
    mongoc_client_destroy (keyVaultClient);
+}
+
+static void
+_test_retry_with_masterkey (const char *provider, bson_t *masterkey)
+{
+   mongoc_client_t *keyvault_client = test_framework_new_default_client ();
+   mongoc_client_encryption_t *client_encryption = _tls_test_make_client_encryption (keyvault_client, RETRY);
+   bson_error_t error = {0};
+   bson_value_t keyid;
+   mongoc_client_encryption_datakey_opts_t *dkopts;
+   char *ca_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   char *pem_file = test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+   mongoc_ssl_opt_t ssl_opts = {.ca_file = ca_file, .pem_file = pem_file};
+   bool res;
+
+   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1};
+   bson_value_t encrypted_field = {0};
+   mongoc_client_encryption_encrypt_opts_t *encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
+   mongoc_client_encryption_encrypt_opts_set_algorithm (encrypt_opts,
+                                                        MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+
+   // Case 1: createDataKey with TCP retry
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
+   res = mongoc_client_encryption_create_datakey (client_encryption, provider, dkopts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   set_retry_failpoint (&ssl_opts, true, 1);
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT_OR_PRINT (res, error);
+   bson_value_destroy (&keyid);
+   bson_value_destroy (&encrypted_field);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   // Case 2: createDataKey with HTTP retry
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
+   res = mongoc_client_encryption_create_datakey (client_encryption, provider, dkopts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   set_retry_failpoint (&ssl_opts, false, 1);
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT_OR_PRINT (res, error);
+   bson_value_destroy (&keyid);
+   bson_value_destroy (&encrypted_field);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   // Case 3: createDataKey fails after too many retries
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
+   res = mongoc_client_encryption_create_datakey (client_encryption, provider, dkopts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   set_retry_failpoint (&ssl_opts, true, 4);
+   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   ASSERT_ERROR_CONTAINS (error, 2, 4, "KMS request failed after");
+   bson_value_destroy (&keyid);
+   bson_value_destroy (&encrypted_field);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   bson_free (ca_file);
+   bson_free (pem_file);
+   mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);
+   mongoc_client_encryption_destroy (client_encryption);
+   mongoc_client_destroy (keyvault_client);
+}
+
+/* Prose test 23: KMS Retry Tests */
+static void
+test_kms_retry (void *unused)
+{
+   bson_t *aws_masterkey = tmp_bson (BSON_STR ({"region" : "r", "key" : "k", "endpoint" : "127.0.0.1:9003"}));
+   bson_t *azure_masterkey = tmp_bson (BSON_STR ({"keyVaultEndpoint" : "127.0.0.1:9003", "keyName" : "foo"}));
+   bson_t *gcp_masterkey = tmp_bson (BSON_STR (
+      {"projectId" : "foo", "location" : "bar", "keyRing" : "baz", "keyName" : "qux", "endpoint" : "127.0.0.1:9003"}));
+
+   _test_retry_with_masterkey ("aws", aws_masterkey);
+   _test_retry_with_masterkey ("azure", azure_masterkey);
+   _test_retry_with_masterkey ("gcp", gcp_masterkey);
 }
 
 void
