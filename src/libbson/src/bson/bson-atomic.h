@@ -590,7 +590,11 @@ static BSON_INLINE void
 bson_atomic_thread_fence (void)
 {
    BSON_IF_MSVC (MemoryBarrier ();)
+
+   MC_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_BEGIN
    BSON_IF_GNU_LIKE (__sync_synchronize ();)
+   MC_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_END
+
    BSON_IF_GNU_LEGACY_ATOMICS (__sync_synchronize ();)
 }
 

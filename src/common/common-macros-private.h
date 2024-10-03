@@ -94,4 +94,17 @@
 #endif // __has_warning("-Wcovered-switch-default")
 #endif // defined(__clang__)
 
+// Disable the -Watomic-implicit-seq-cst warning.
+#define MC_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_BEGIN
+#define MC_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_END
+#if defined(__clang__)
+#if __has_warning("-Watomic-implicit-seq-cst")
+#undef MC_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_BEGIN
+#undef MC_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_END
+#define MC_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_BEGIN \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Watomic-implicit-seq-cst\"")
+#define MC_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_END _Pragma ("clang diagnostic pop")
+#endif // __has_warning("-Watomic-implicit-seq-cst")
+#endif // defined(__clang__)
+
 #endif /* COMMON_MACROS_PRIVATE_H */
