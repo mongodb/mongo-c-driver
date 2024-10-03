@@ -19,13 +19,8 @@
 #ifndef MCD_STRING_H
 #define MCD_STRING_H
 
-#pragma push_macro("BSON_INSIDE")
-#undef BSON_INSIDE
-#define BSON_INSIDE 1
-#include <bson/bson-private.h> // BEGIN_IGNORE_DEPRECATIONS
-#include <bson/bson-string.h>
-#undef BSON_INSIDE
-#pragma pop_macro("BSON_INSIDE")
+#include <bson/bson.h>
+#include "common-macros-private.h" // BEGIN_IGNORE_DEPRECATIONS
 
 // mcd_string_t is an internal string type intended to replace the deprecated bson_string_t.
 // When bson_string_t is removed, migrate the implementation to mcd_string_t.
