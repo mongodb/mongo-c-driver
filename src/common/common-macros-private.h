@@ -55,4 +55,17 @@
 #endif // __has_warning("-Wcast-function-type-strict")
 #endif // defined(__clang__)
 
+// Disable the -Wunsafe-buffer-usage warning.
+#define MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
+#define MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
+#if defined(__clang__)
+#if __has_warning("-Wunsafe-buffer-usage")
+#undef MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
+#undef MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
+#define MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wunsafe-buffer-usage\"")
+#define MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END _Pragma ("clang diagnostic pop")
+#endif // __has_warning("-Wunsafe-buffer-usage")
+#endif // defined(__clang__)
+
 #endif /* COMMON_MACROS_PRIVATE_H */

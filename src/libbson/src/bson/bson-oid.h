@@ -27,7 +27,7 @@
 #include <bson/bson-macros.h>
 #include <bson/bson-types.h>
 #include <bson/bson-endian.h>
-
+#include <common-macros-private.h>
 
 BSON_BEGIN_DECLS
 
@@ -114,7 +114,9 @@ bson_oid_hash_unsafe (const bson_oid_t *oid)
    uint32_t i;
 
    for (i = 0; i < sizeof oid->bytes; i++) {
+      MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
       hash = ((hash << 5) + hash) + oid->bytes[i];
+      MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
    }
 
    return hash;
@@ -213,8 +215,10 @@ bson_oid_init_from_string_unsafe (bson_oid_t *oid, const char *str)
    int i;
 
    for (i = 0; i < 12; i++) {
+      MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
       oid->bytes[i] =
          (uint8_t) ((bson_oid_parse_hex_char (str[2 * i]) << 4) | (bson_oid_parse_hex_char (str[2 * i + 1])));
+      MC_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
    }
 }
 
