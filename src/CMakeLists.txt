@@ -23,16 +23,21 @@ endif ()
 # public-header-warnings
 add_executable(public-header-warnings EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/c-check.c)
 
-target_include_directories(public-header-warnings PRIVATE
-    ${CMAKE_BINARY_DIR}/../install-dir/include/libbson-1.0
-    ${CMAKE_BINARY_DIR}/../install-dir/include/libmongoc-1.0
-)
+target_link_libraries(public-header-warnings PRIVATE mongoc_static)
 
 target_compile_options(public-header-warnings PRIVATE
-  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=all>
   $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=extra>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=conversion>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=unused-parameter>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=unused-function>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=double-promotion>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=sign-conversion>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Weverything>
   $<$<C_COMPILER_ID:MSVC>:/W3>
   $<$<C_COMPILER_ID:MSVC>:/WX>
   $<$<C_COMPILER_ID:MSVC>:/wd5105>
+  $<$<C_COMPILER_ID:MSVC>:/analyze>
+  $<$<C_COMPILER_ID:MSVC>:/sdl>
+  $<$<C_COMPILER_ID:MSVC>:/permissive->
 )
 
