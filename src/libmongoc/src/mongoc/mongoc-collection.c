@@ -41,6 +41,7 @@
 #include "mongoc-write-command-private.h"
 #include "mongoc-error-private.h"
 #include "mongoc-database-private.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 #include <bson-dsl.h>
 #include <mcd-string.h>

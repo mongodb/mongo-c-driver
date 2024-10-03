@@ -41,7 +41,7 @@
 #include "mongoc-log.h"
 #include "mongoc-error.h"
 
-#include "common-macros-private.h"
+#include <common-macros-private.h>
 
 
 #undef MONGOC_LOG_DOMAIN

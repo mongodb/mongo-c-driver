@@ -42,7 +42,7 @@
 #include "mongoc-stream-tls-secure-channel.h"
 #endif
 #include "mongoc-stream-tls.h"
-#include "mongoc-util-private.h" // BEGIN_IGNORE_DEPRECATIONS
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"

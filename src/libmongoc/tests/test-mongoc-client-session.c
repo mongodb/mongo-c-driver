@@ -10,6 +10,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future-functions.h"
 #include "json-test.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "session-test"

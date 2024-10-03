@@ -2,6 +2,7 @@
 #include "mongoc/mongoc-client-pool-private.h"
 #include <mongoc/mongoc-client-private.h>
 #include "mongoc/mongoc-util-private.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 
 #include "TestSuite.h"

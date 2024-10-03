@@ -29,6 +29,7 @@
 #include <limits.h>
 
 #include "TestSuite.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 #define N_THREADS 4
 
