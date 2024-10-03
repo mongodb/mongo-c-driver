@@ -24,6 +24,7 @@
 #include <bson/bson-config.h>
 #include <bson/bson-compat.h>
 #include <bson/bson-macros.h>
+#include <common-macros-private.h>
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -31,6 +32,8 @@
 
 
 BSON_BEGIN_DECLS
+
+MC_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN
 
 enum bson_memory_order {
    bson_memory_order_seq_cst,
@@ -605,6 +608,8 @@ BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 #undef BSON_EMULATE_PTR
 #undef BSON_EMULATE_INT32
 #undef BSON_EMULATE_INT
+
+MC_DISABLE_COVERED_SWITCH_DEFAULT_END
 
 BSON_END_DECLS
 

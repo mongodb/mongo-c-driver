@@ -78,7 +78,20 @@
 #define MC_DISABLE_PADDED_WARNING_BEGIN \
    _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wpadded\"")
 #define MC_DISABLE_PADDED_WARNING_END _Pragma ("clang diagnostic pop")
-#endif // __has_warning("-Wunsafe-buffer-usage")
+#endif // __has_warning("-Wpadded")
+#endif // defined(__clang__)
+
+// Disable the -Wcovered-switch-default warning.
+#define MC_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN
+#define MC_DISABLE_COVERED_SWITCH_DEFAULT_END
+#if defined(__clang__)
+#if __has_warning("-Wcovered-switch-default")
+#undef MC_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN
+#undef MC_DISABLE_COVERED_SWITCH_DEFAULT_END
+#define MC_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wcovered-switch-default\"")
+#define MC_DISABLE_COVERED_SWITCH_DEFAULT_END _Pragma ("clang diagnostic pop")
+#endif // __has_warning("-Wcovered-switch-default")
 #endif // defined(__clang__)
 
 #endif /* COMMON_MACROS_PRIVATE_H */
