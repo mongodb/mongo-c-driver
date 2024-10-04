@@ -25,7 +25,6 @@
 #include <bson/bson-endian.h>
 #include <bson/bson-macros.h>
 #include <bson/bson-types.h>
-#include <common-macros-private.h>
 
 
 BSON_BEGIN_DECLS
