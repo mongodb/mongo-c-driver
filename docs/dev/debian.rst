@@ -27,7 +27,7 @@ To publish a new release Debian package, perform the following:
    the working directorty is clean, ``git status``, and up-to-date, ``git pull``.
 2. Because it is possible to have divergences between release branches, some
    special procedures are needed. Execute the following sequence of commands
-   (substituting as appropriat efor the actual version):
+   (substituting version numbers as appropriate):
 
 .. code-block:: console
 
