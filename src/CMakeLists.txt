@@ -26,18 +26,14 @@ add_executable(public-header-warnings EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DI
 target_link_libraries(public-header-warnings PRIVATE mongoc_static)
 
 target_compile_options(public-header-warnings PRIVATE
-  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=extra>
-  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=conversion>
-  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=unused-parameter>
-  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=unused-function>
-  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=double-promotion>
-  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror=sign-conversion>
-  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Weverything>
-  $<$<C_COMPILER_ID:MSVC>:/W3>
+  $<$<C_COMPILER_ID:AppleClang,Clang>:-Weverything>
+  $<$<C_COMPILER_ID:GNU>:-Wextra>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Werror>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Wno-declaration-after-statement>
+  $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Wno-disabled-macro-expansion>
+  $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-reserved-identifier>
+  $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-documentation-unknown-command>
+  $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-unknown-warning-option>
+  $<$<C_COMPILER_ID:MSVC>:/W4>
   $<$<C_COMPILER_ID:MSVC>:/WX>
-  $<$<C_COMPILER_ID:MSVC>:/wd5105>
-  $<$<C_COMPILER_ID:MSVC>:/analyze>
-  $<$<C_COMPILER_ID:MSVC>:/sdl>
-  $<$<C_COMPILER_ID:MSVC>:/permissive->
 )
-
