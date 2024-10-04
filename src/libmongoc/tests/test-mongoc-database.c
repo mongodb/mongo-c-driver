@@ -12,6 +12,7 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "test-conveniences.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 
 static void

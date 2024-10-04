@@ -26,6 +26,7 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
+#include <mcd-string.h>
 
 #define LOG_DOMAIN "test_monitoring"
 
@@ -55,7 +56,7 @@ typedef struct {
    tf_observations_t *observations;
    bson_mutex_t mutex;
    mongoc_cond_t cond;
-   bson_string_t *logs;
+   mcd_string_t *logs;
 } test_fixture_t;
 
 void
@@ -101,9 +102,9 @@ void BSON_GNUC_PRINTF (2, 3) tf_log (test_fixture_t *tf, const char *format, ...
    va_start (ap, format);
    str = bson_strdupv_printf (format, ap);
    va_end (ap);
-   bson_string_append (tf->logs, nowstr);
-   bson_string_append (tf->logs, str);
-   bson_string_append_c (tf->logs, '\n');
+   mcd_string_append (tf->logs, nowstr);
+   mcd_string_append (tf->logs, str);
+   mcd_string_append_c (tf->logs, '\n');
    bson_free (str);
 }
 
@@ -238,7 +239,7 @@ tf_new (tf_flags_t flags)
       mock_server_autoresponds (tf->server, auto_respond_polling_hello, NULL, NULL);
    }
    tf->flags = flags;
-   tf->logs = bson_string_new ("");
+   tf->logs = mcd_string_new ("");
    tf->client = mongoc_client_pool_pop (tf->pool);
    return tf;
 }
@@ -249,7 +250,7 @@ tf_destroy (test_fixture_t *tf)
    mock_server_destroy (tf->server);
    mongoc_client_pool_push (tf->pool, tf->client);
    mongoc_client_pool_destroy (tf->pool);
-   bson_string_free (tf->logs, true);
+   mcd_string_free (tf->logs, true);
    bson_mutex_destroy (&tf->mutex);
    mongoc_cond_destroy (&tf->cond);
    bson_free (tf->observations);

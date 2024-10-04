@@ -12,6 +12,7 @@
 #include "mongoc/mongoc-host-list-private.h"
 #include "mongoc/mongoc-read-concern-private.h"
 #include "mongoc/mongoc-write-concern-private.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 /* Reset server state by disabling failpoints, killing sessions, and... running
  * a distinct command. */

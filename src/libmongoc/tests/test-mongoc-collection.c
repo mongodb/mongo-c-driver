@@ -15,6 +15,7 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 
 BEGIN_IGNORE_DEPRECATIONS

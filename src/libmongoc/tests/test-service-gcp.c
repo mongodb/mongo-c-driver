@@ -1,6 +1,7 @@
 #include <mongoc/service-gcp.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include "TestSuite.h"
+#include <mcd-string.h>
 
 static void
 _test_gcp_parse (void)
@@ -42,7 +43,7 @@ _test_gcp_http_request (void)
    // Test that we correctly build a http request for the GCP metadata server
    gcp_request req;
    gcp_request_init (&req, "helloworld.com", 1234, NULL);
-   bson_string_t *req_str = _mongoc_http_render_request_head (&req.req);
+   mcd_string_t *req_str = _mongoc_http_render_request_head (&req.req);
    gcp_request_destroy (&req);
    ASSERT_CMPSTR (req_str->str,
                   "GET "
@@ -51,7 +52,7 @@ _test_gcp_http_request (void)
                   "Connection: close\r\n"
                   "Metadata-Flavor: Google\r\n"
                   "\r\n");
-   bson_string_free (req_str, true);
+   mcd_string_free (req_str, true);
 }
 
 static const char *

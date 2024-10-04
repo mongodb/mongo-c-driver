@@ -30,6 +30,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-util-private.h"
+#include <mcd-string.h>
 
 /*--------------------------------------------------------------------------
  * Auto Encryption options.
@@ -1317,25 +1318,25 @@ _uri_construction_error (bson_error_t *error)
 static bool
 _do_spawn (const char *path, char **args, bson_error_t *error)
 {
-   bson_string_t *command;
+   mcd_string_t *command;
    char **arg;
    PROCESS_INFORMATION process_information;
    STARTUPINFO startup_info;
 
    /* Construct the full command, quote path and arguments. */
-   command = bson_string_new ("");
-   bson_string_append (command, "\"");
+   command = mcd_string_new ("");
+   mcd_string_append (command, "\"");
    if (path) {
-      bson_string_append (command, path);
+      mcd_string_append (command, path);
    }
-   bson_string_append (command, "mongocryptd.exe");
-   bson_string_append (command, "\"");
+   mcd_string_append (command, "mongocryptd.exe");
+   mcd_string_append (command, "\"");
    /* skip the "mongocryptd" first arg. */
    arg = args + 1;
    while (*arg) {
-      bson_string_append (command, " \"");
-      bson_string_append (command, *arg);
-      bson_string_append (command, "\"");
+      mcd_string_append (command, " \"");
+      mcd_string_append (command, *arg);
+      mcd_string_append (command, "\"");
       arg++;
    }
 
@@ -1372,11 +1373,11 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                       "failed to spawn mongocryptd: %s",
                       message);
       LocalFree (message);
-      bson_string_free (command, true);
+      mcd_string_free (command, true);
       return false;
    }
 
-   bson_string_free (command, true);
+   mcd_string_free (command, true);
    return true;
 }
 #else

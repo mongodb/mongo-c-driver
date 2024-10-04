@@ -20,6 +20,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-write-concern-private.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 
 static void
