@@ -79,7 +79,12 @@
    _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wpadded\"")
 #define MC_DISABLE_PADDED_WARNING_END _Pragma ("clang diagnostic pop")
 #endif // __has_warning("-Wpadded")
-#endif // defined(__clang__)
+#elif defined(_MSC_VER)
+#undef MC_DISABLE_PADDED_WARNING_BEGIN
+#undef MC_DISABLE_PADDED_WARNING_END
+#define MC_DISABLE_PADDED_WARNING_BEGIN __pragma (warning (push)) __pragma (warning (disable : 4324))
+#define MC_DISABLE_PADDED_WARNING_END __pragma (warning (pop))
+#endif // defined(_MSC_VER)
 
 // Disable the -Wcovered-switch-default warning.
 #define MC_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN
