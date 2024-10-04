@@ -149,12 +149,9 @@ BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
  * ]|
  */
 #ifdef BSON_MEMCHECK
-#define BSON_INITIALIZER \
-   {                     \
-      3,                 \
-      5,                 \
-      bson_malloc (1),   \
-      {5},               \
+#define BSON_INITIALIZER          \
+   {                              \
+      3, 5, bson_malloc (1), {5}, \
    }
 #else
 #define BSON_INITIALIZER \
