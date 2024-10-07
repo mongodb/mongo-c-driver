@@ -452,7 +452,7 @@
       ]
     },
     {
-      "description": "Requesting unacknowledged write with verboseResults is a a client-side error",
+      "description": "Requesting unacknowledged write with verboseResults is a client-side error",
       "operations": [
         {
           "name": "clientBulkWrite",
@@ -476,13 +476,13 @@
           },
           "expectError": {
             "isClientError": true,
-            "errorContains": "Cannot request unacknowledged write concern and verbose results. Use acknowledged write concern"
+            "errorContains": "Cannot request unacknowledged write concern and verbose results"
           }
         }
       ]
     },
     {
-      "description": "Requesting unacknowledged write with ordered is a a client-side error",
+      "description": "Requesting unacknowledged write with ordered is a client-side error",
       "operations": [
         {
           "name": "clientBulkWrite",
@@ -504,7 +504,7 @@
           },
           "expectError": {
             "isClientError": true,
-            "errorContains": "Cannot request unacknowledged write concern and ordered writes. Use unordered writes or acknowledged write concern"
+            "errorContains": "Cannot request unacknowledged write concern and ordered writes"
           }
         }
       ]
