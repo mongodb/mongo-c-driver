@@ -28,7 +28,7 @@
 #include <bson/bson-macros.h>
 #include <bson/bson-config.h>
 #include <bson/bson-atomic.h>
-#include <bson/bson-cmp.h>
+#include <bson/bson-cmp.h> // Deprecated.
 #include <bson/bson-context.h>
 #include <bson/bson-clock.h>
 #include <bson/bson-decimal128.h>
