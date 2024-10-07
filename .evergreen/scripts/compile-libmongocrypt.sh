@@ -14,8 +14,8 @@ compile_libmongocrypt() {
   # git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.12.0 || return
   {
     git clone -q https://github.com/mongodb/libmongocrypt || return
-    # Check out commit containing DRIVERS-1541
-    git -C libmongocrypt checkout 2265e79c8c5dfdb4bf38a6f6b77b8fc74f02a764
+    # Check out commit containing MONGOCRYPT-599
+    git -C libmongocrypt checkout 7aeaec4ae1369c7d3c5b3aea6f1da35c5e9478b0
   }
 
   declare -a crypt_cmake_flags=(
