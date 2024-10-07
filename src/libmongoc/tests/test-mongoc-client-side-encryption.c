@@ -6289,6 +6289,7 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
    // Case 1: createDataKey with TCP retry
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
+   set_retry_failpoint (&ssl_opts, true, 1);
    res = mongoc_client_encryption_create_datakey (client_encryption, provider, dkopts, &keyid, &error);
    ASSERT_OR_PRINT (res, error);
 
@@ -6303,6 +6304,7 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
    // Case 2: createDataKey with HTTP retry
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
+   set_retry_failpoint (&ssl_opts, false, 1);
    res = mongoc_client_encryption_create_datakey (client_encryption, provider, dkopts, &keyid, &error);
    ASSERT_OR_PRINT (res, error);
 
@@ -6317,15 +6319,11 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
    // Case 3: createDataKey fails after too many retries
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
-   res = mongoc_client_encryption_create_datakey (client_encryption, provider, dkopts, &keyid, &error);
-   ASSERT_OR_PRINT (res, error);
-
    set_retry_failpoint (&ssl_opts, true, 4);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
+   res = mongoc_client_encryption_create_datakey (client_encryption, provider, dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, 2, 4, "KMS request failed after");
+
    bson_value_destroy (&keyid);
-   bson_value_destroy (&encrypted_field);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    bson_free (ca_file);
