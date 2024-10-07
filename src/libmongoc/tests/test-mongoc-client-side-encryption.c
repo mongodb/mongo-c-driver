@@ -3233,6 +3233,30 @@ test_kms_tls_options_extra_rejected (void *unused)
    mongoc_client_destroy (keyvault_client);
 }
 
+static const char *failpoint_server_ip = "127.0.0.1";
+static const int failpoint_server_port = 9003;
+
+static void
+reset_failpoints (mongoc_ssl_opt_t *ssl_opts)
+{
+   mongoc_http_request_t req;
+   mongoc_http_response_t res;
+   bool r;
+   bson_error_t error = {0};
+
+   _mongoc_http_request_init (&req);
+   _mongoc_http_response_init (&res);
+
+   req.method = "POST";
+   req.host = failpoint_server_ip;
+   req.port = failpoint_server_port;
+   req.path = "/reset";
+
+   r = _mongoc_http_send (&req, 10000, true, ssl_opts, &res, &error);
+   ASSERT_OR_PRINT (r, error);
+   _mongoc_http_response_cleanup (&res);
+}
+
 static void
 set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network, uint32_t count)
 {
@@ -3245,8 +3269,8 @@ set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network, uint32_t count)
    _mongoc_http_response_init (&res);
 
    req.method = "POST";
-   req.host = "127.0.0.1";
-   req.port = 9003;
+   req.host = failpoint_server_ip;
+   req.port = failpoint_server_port;
    if (network) {
       req.path = "/set_failpoint/network";
    } else {
@@ -6285,6 +6309,8 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
    mongoc_client_encryption_encrypt_opts_t *encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_algorithm (encrypt_opts,
                                                         MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+
+   reset_failpoints (&ssl_opts);
 
    // Case 1: createDataKey with TCP retry
    dkopts = mongoc_client_encryption_datakey_opts_new ();
