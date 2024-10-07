@@ -6304,7 +6304,7 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
    mongoc_ssl_opt_t ssl_opts = {.ca_file = ca_file, .pem_file = pem_file};
    bool res;
 
-   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1};
+   bson_value_t to_encrypt = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 123};
    bson_value_t encrypted_field = {0};
    mongoc_client_encryption_encrypt_opts_t *encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_algorithm (encrypt_opts,
@@ -6312,7 +6312,7 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
 
    reset_failpoints (&ssl_opts);
 
-   // Case 1: createDataKey with TCP retry
+   // Case 1: createDataKey and encrypt with TCP retry
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
    set_retry_failpoint (&ssl_opts, true, 1);
@@ -6327,7 +6327,7 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
    bson_value_destroy (&encrypted_field);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
-   // Case 2: createDataKey with HTTP retry
+   // Case 2: createDataKey and encrypt with HTTP retry
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
    set_retry_failpoint (&ssl_opts, false, 1);
