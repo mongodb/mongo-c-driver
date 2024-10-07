@@ -1331,24 +1331,25 @@ prose_test_15 (void *ctx)
    // Set callbacks to count the number of bulkWrite commands sent.
    bulkWrite_ctx *cb_ctx = capture_bulkWrite_info (client);
 
-   // Get `maxWriteBatchSize` from the server.
-   int32_t maxWriteBatchSize;
+   // Get `maxWriteBatchSize` and `maxBsonObjectSize` from the server.
+   server_limits_t sl = get_server_limits (client);
+   int32_t maxMessageSizeBytes = sl.maxMessageSizeBytes;
+   int32_t maxBsonObjectSize = sl.maxBsonObjectSize;
+
+
+   // Make a large document.
+   bson_t doc = BSON_INITIALIZER;
    {
-      bson_t reply;
-
-      ok = mongoc_client_command_simple (client, "admin", tmp_bson ("{'hello': 1}"), NULL, &reply, &error);
-      ASSERT_OR_PRINT (ok, error);
-
-      maxWriteBatchSize = bson_lookup_int32 (&reply, "maxWriteBatchSize");
-      bson_destroy (&reply);
+      char *large_str = repeat_char ('b', (size_t) maxBsonObjectSize - 500);
+      BSON_APPEND_UTF8 (&doc, "a", large_str);
+      bson_free (large_str);
    }
 
    // Execute bulkWrite.
    {
-      bson_t *doc = tmp_bson ("{'a': 'b'}");
       mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
-      for (int32_t i = 0; i < maxWriteBatchSize + 1; i++) {
-         ok = mongoc_bulkwrite_append_insertone (bw, "db.coll", doc, NULL, &error);
+      for (int32_t i = 0; i < maxMessageSizeBytes / maxBsonObjectSize + 1; i++) {
+         ok = mongoc_bulkwrite_append_insertone (bw, "db.coll", &doc, NULL, &error);
          ASSERT_OR_PRINT (ok, error);
       }
 
@@ -1376,7 +1377,7 @@ prose_test_15 (void *ctx)
    {
       bson_t expect = BSON_INITIALIZER;
       // Assert first `bulkWrite` sends `maxWriteBatchSize` ops.
-      BSON_APPEND_INT64 (&expect, "0", maxWriteBatchSize);
+      BSON_APPEND_INT64 (&expect, "0", maxMessageSizeBytes / maxBsonObjectSize);
       // Assert second `bulkWrite` sends 1 op.
       BSON_APPEND_INT64 (&expect, "1", 1);
       ASSERT_EQUAL_BSON (&expect, &cb_ctx->ops_counts);
@@ -1398,12 +1399,13 @@ prose_test_15 (void *ctx)
    // Count documents in collection.
    {
       mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
-      int64_t expected = maxWriteBatchSize + 1;
+      int64_t expected = maxMessageSizeBytes / maxBsonObjectSize + 1;
       int64_t got = mongoc_collection_count_documents (coll, tmp_bson ("{}"), NULL, NULL, NULL, &error);
       ASSERT_CMPINT64 (got, ==, expected);
       mongoc_collection_destroy (coll);
    }
 
+   bson_destroy (&doc);
    bulkWrite_ctx_destroy (cb_ctx);
    mongoc_client_destroy (client);
 }
