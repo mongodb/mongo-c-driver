@@ -28,7 +28,7 @@ from evergreen_config_generator.tasks import (
     DependencySpec,
 )
 from evergreen_config_lib import shell_mongoc
-from pkg_resources import parse_version
+from packaging.version import Version
 
 
 ToggleStr = Literal["OFF", "ON"]
@@ -474,7 +474,7 @@ class CoverageTask(MatrixTask):
         # CSE has extra requirements
         if self.settings.version != "latest":
             # We only work with 4.2 or newer for CSE
-            require(parse_version(str(self.settings.version)) >= parse_version("4.2"))
+            require(Version(str(self.settings.version)) >= Version("4.2"))
         return True
 
 
