@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 
 # Generates *.yml files under .evergreen/generated_configs.
-#
-# Install dependencies by running (preferably in a virtual environment):
-#     python -m pip install -r .evergreen/config_generator/requirements.txt
-#
-# Invoke this using the command:
-#     python3 .evergreen/config_generator/generate-config.py
 
 
 import sys
