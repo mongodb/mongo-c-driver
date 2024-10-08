@@ -24,7 +24,6 @@
 #define BCON_H_
 
 #include "bson.h"
-#include <bson/bson-macros.h>
 
 
 BSON_BEGIN_DECLS

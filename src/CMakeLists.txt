@@ -23,7 +23,11 @@ endif ()
 # public-header-warnings
 add_executable(public-header-warnings EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/c-check.c)
 
-target_link_libraries(public-header-warnings PRIVATE mongoc_static)
+if (TARGET mongoc_static)
+   target_link_libraries(public-header-warnings PRIVATE mongoc_static)
+else ()
+   target_link_libraries(public-header-warnings PRIVATE mongoc_shared)
+endif ()
 
 target_compile_options(public-header-warnings PRIVATE
   $<$<C_COMPILER_ID:AppleClang,Clang>:-Weverything>
