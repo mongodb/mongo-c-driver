@@ -168,21 +168,17 @@ typedef enum {
    BCON_TYPE_ERROR,
 } bcon_type_t;
 
-MC_DISABLE_PADDED_WARNING_BEGIN
 typedef struct bcon_append_ctx_frame {
    int i;
    bool is_array;
    bson_t bson;
 } bcon_append_ctx_frame_t;
-MC_DISABLE_PADDED_WARNING_END
 
-MC_DISABLE_PADDED_WARNING_BEGIN
 typedef struct bcon_extract_ctx_frame {
    int i;
    bool is_array;
    bson_iter_t iter;
 } bcon_extract_ctx_frame_t;
-MC_DISABLE_PADDED_WARNING_END
 
 typedef struct _bcon_append_ctx_t {
    bcon_append_ctx_frame_t stack[BCON_STACK_MAX];
