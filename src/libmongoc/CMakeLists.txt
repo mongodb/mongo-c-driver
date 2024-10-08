@@ -75,7 +75,7 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
       BEFORE PUBLIC
-      "${SOURCE_DIR}/src/zlib-1.3.1"
+      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1"
       "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
    )
    # Disable all warnings for compiling Zlib
@@ -84,7 +84,7 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.3.1"
+      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1"
       "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
    )
 endif ()
@@ -644,9 +644,9 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/service-gcp.c
-   ${PROJECT_SOURCE_DIR}/../../src/common/common-b64.c
-   ${PROJECT_SOURCE_DIR}/../../src/common/common-md5.c
-   ${PROJECT_SOURCE_DIR}/../../src/common/common-thread.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/common-b64.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/common-md5.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/common-thread.c
 
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-scram.c
@@ -783,7 +783,7 @@ set(UTF8PROC_INCLUDE_DIRS, "")
 if (USE_BUNDLED_UTF8PROC)
    set (
       UTF8PROC_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/utf8proc-2.8.0"
+      "${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.8.0"
    )
    list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
 else()
@@ -842,7 +842,7 @@ set_property(
 
 set (
    UTHASH_INCLUDE_DIR
-   "${SOURCE_DIR}/src/uthash"
+   "${mongo-c-driver_SOURCE_DIR}/src/uthash"
 )
 
 if (ENABLE_SHARED)
@@ -859,11 +859,11 @@ if (ENABLE_SHARED)
    target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    target_include_directories (mongoc_shared PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
-      target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
+      target_include_directories (mongoc_shared PRIVATE "${mongo-c-driver_SOURCE_DIR}/src/kms-message/src")
       if (APPLE)
-         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,\"${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.txt\"")
+         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,\"${mongo-c-driver_SOURCE_DIR}/build/cmake/libmongoc-hidden-symbols.txt\"")
       elseif (UNIX)
-         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.map\"")
+         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${mongo-c-driver_SOURCE_DIR}/build/cmake/libmongoc-hidden-symbols.map\"")
       endif ()
 
    endif ()
@@ -887,9 +887,9 @@ if (ENABLE_SHARED)
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common>
    )
 
    set_target_properties (mongoc_shared PROPERTIES
@@ -911,7 +911,7 @@ if (ENABLE_SHARED)
       )
    endif () # ENABLE_APPLE_FRAMEWORK
 
-   add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
+   add_executable (mongoc-stat ${mongo-c-driver_SOURCE_DIR}/src/tools/mongoc-stat.c)
    target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
 
    # mongoc-stat works if shared memory performance counters are enabled.
@@ -944,7 +944,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    target_include_directories (mongoc_static PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
-      target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
+      target_include_directories (mongoc_static PRIVATE "${mongo-c-driver_SOURCE_DIR}/src/kms-message/src")
    endif ()
    target_compile_definitions (mongoc_static
       PUBLIC
@@ -967,9 +967,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common>
    )
    set_target_properties (mongoc_static PROPERTIES
       VERSION 0.0.0
@@ -983,30 +983,30 @@ endif ()
 
 
 set (test-libmongoc-sources
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.h
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-atomic.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-b64.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-basic.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-extract.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-cmp.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-corpus.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-error.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-version.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-clock.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-decimal128.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-endian.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-iso8601.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-iter.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-json.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-oid.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-reader.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-string.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-utf8.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-value.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-writer.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-atomic.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-b64.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bcon-basic.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bcon-extract.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-cmp.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-corpus.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-error.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-version.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-clock.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-decimal128.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-endian.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-iso8601.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-iter.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-json.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-oid.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-reader.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-string.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-utf8.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-value.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-writer.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-match.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-parser.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-val.c
