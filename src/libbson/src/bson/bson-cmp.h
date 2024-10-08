@@ -28,6 +28,23 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+// bson-cmp.h is deprecated.
+// Ignore deprecation warnings for function calls within this file.
+
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#define BSON_BEGIN_IGNORE_DEPRECATIONS \
+   _Pragma ("GCC diagnostic push") _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define BSON_END_IGNORE_DEPRECATIONS _Pragma ("GCC diagnostic pop")
+#elif defined(__clang__)
+#define BSON_BEGIN_IGNORE_DEPRECATIONS \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define BSON_END_IGNORE_DEPRECATIONS _Pragma ("clang diagnostic pop")
+#else
+#define BSON_BEGIN_IGNORE_DEPRECATIONS
+#define BSON_END_IGNORE_DEPRECATIONS
+#endif
+
+BSON_BEGIN_IGNORE_DEPRECATIONS
 
 BSON_BEGIN_DECLS
 
@@ -52,7 +69,6 @@ BSON_BEGIN_DECLS
  * argument(s). Enabling compiler warnings for implicit sign conversions is
  * recommended.
  */
-
 
 #define BSON_CMP_SET(op, ss, uu, su, us)                                                                   \
    static BSON_INLINE bool BSON_GNUC_DEPRECATED BSON_CONCAT3 (bson_cmp_, op, _ss) (int64_t t, int64_t u)   \
@@ -169,5 +185,9 @@ BSON_IN_RANGE_SET_UNSIGNED (size_t, SIZE_MAX)
 
 BSON_END_DECLS
 
+BSON_END_IGNORE_DEPRECATIONS
+
+#undef BSON_BEGIN_IGNORE_DEPRECATIONS
+#undef BSON_END_IGNORE_DEPRECATIONS
 
 #endif /* BSON_CMP_H */
