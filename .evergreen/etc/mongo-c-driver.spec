@@ -27,7 +27,7 @@
 Name:      mongo-c-driver
 Summary:   Client library written in C for MongoDB
 Version:   %{up_version}%{?up_prever:~%{up_prever}}
-Release:   1%{?dist}
+Release:   2%{?dist}
 # See THIRD_PARTY_NOTICES
 License:   Apache-2.0 AND ISC AND MIT AND Zlib
 URL:       https://github.com/%{gh_owner}/%{gh_project}
@@ -258,6 +258,9 @@ exit $ret
 
 
 %changelog
+* Mon Oct  7 2024 Remi Collet <remi@remirepo.net> - 1.28.0-2
+- rebuild for utf8proc #2316935
+
 * Thu Sep 19 2024 Remi Collet <remi@remirepo.net> - 1.28.0-1
 - update to 1.28.0
 - raise dependency to libmongocrypt 1.11.0
