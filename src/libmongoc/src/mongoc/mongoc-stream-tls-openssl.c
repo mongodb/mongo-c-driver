@@ -882,7 +882,10 @@ mongoc_stream_t *
 mongoc_stream_tls_openssl_new_with_context (
    mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
 {
-   BSON_ASSERT_PARAM (ssl_ctx);
+   // `ssl_ctx` may be NULL if creating the context failed. Return NULL to signal failure.
+   if (!ssl_ctx) {
+      return NULL;
+   }
    SSL_CTX_up_ref (ssl_ctx);
 
    return create_stream_with_ctx (base_stream, host, opt, client, ssl_ctx);
