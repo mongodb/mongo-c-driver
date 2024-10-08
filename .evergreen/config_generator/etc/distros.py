@@ -60,10 +60,6 @@ MACOS_ARM64_DISTROS = [
 ]
 
 RHEL_DISTROS = [
-    Distro(name='rhel70-large', os='rhel', os_type='linux', os_ver='7.0', size='large'),
-    Distro(name='rhel70-small', os='rhel', os_type='linux', os_ver='7.0', size='small'),
-    Distro(name='rhel76-large', os='rhel', os_type='linux', os_ver='7.6', size='large'),
-    Distro(name='rhel76-small', os='rhel', os_type='linux', os_ver='7.6', size='small'),
     Distro(name='rhel80-large', os='rhel', os_type='linux', os_ver='8.0', size='large'),
     Distro(name='rhel80-small', os='rhel', os_type='linux', os_ver='8.0', size='small'),
     Distro(name='rhel84-large', os='rhel', os_type='linux', os_ver='8.4', size='large'),
@@ -82,15 +78,11 @@ RHEL_ARM64_DISTROS = [
 ]
 
 RHEL_POWER8_DISTROS = [
-    Distro(name='rhel71-power8-large', os='rhel', os_type='linux', os_ver='7.1', size='large', arch='power8'),
-    Distro(name='rhel71-power8-small', os='rhel', os_type='linux', os_ver='7.1', size='small', arch='power8'),
     Distro(name='rhel81-power8-large', os='rhel', os_type='linux', os_ver='8.1', size='large', arch='power8'),
     Distro(name='rhel81-power8-small', os='rhel', os_type='linux', os_ver='8.1', size='small', arch='power8'),
 ]
 
 RHEL_ZSERIES_DISTROS = [
-    Distro(name='rhel72-zseries-large', os='rhel', os_type='linux', os_ver='7.2', size='large', arch='zseries'),
-    Distro(name='rhel72-zseries-small', os='rhel', os_type='linux', os_ver='7.2', size='small', arch='zseries'),
     Distro(name='rhel83-zseries-large', os='rhel', os_type='linux', os_ver='8.3', size='large', arch='zseries'),
     Distro(name='rhel83-zseries-small', os='rhel', os_type='linux', os_ver='8.3', size='small', arch='zseries'),
 ]

@@ -144,24 +144,6 @@ all_variants = [
         {"CC": "gcc"},
     ),
     Variant(
-        "gcc48rhel",
-        "GCC 4.8 (RHEL 7.0)",
-        "rhel70",
-        # Skip client-side-encryption tests on RHEL 7.0 due to OCSP errors
-        # with Azure. See CDRIVER-3620 and CDRIVER-3814.
-        [
-            ".hardened",
-            ".compression !.snappy",
-            "release-compile",
-            "debug-compile-nosasl-nossl",
-            "debug-compile-sasl-openssl",
-            "debug-compile-nosasl-openssl",
-            ".authentication-tests .openssl",
-            ".latest .nossl",
-        ],
-        {"CC": "gcc"},
-    ),
-    Variant(
         "gcc63",
         "GCC 6.3 (Debian 9.2)",
         "debian92-test",

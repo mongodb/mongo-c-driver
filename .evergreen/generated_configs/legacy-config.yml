@@ -16459,20 +16459,6 @@ buildvariants:
   - debug-compile-sasl-openssl
   - .authentication-tests .openssl
   - .latest .nossl
-- name: gcc48rhel
-  display_name: GCC 4.8 (RHEL 7.0)
-  expansions:
-    CC: gcc
-  run_on: rhel70
-  tasks:
-  - .hardened
-  - .compression !.snappy
-  - release-compile
-  - debug-compile-nosasl-nossl
-  - debug-compile-sasl-openssl
-  - debug-compile-nosasl-openssl
-  - .authentication-tests .openssl
-  - .latest .nossl
 - name: gcc63
   display_name: GCC 6.3 (Debian 9.2)
   expansions:

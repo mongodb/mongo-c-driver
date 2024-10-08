@@ -1935,6 +1935,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+    run_on: ubuntu2004-large
+    tags: [cse-matrix-openssl, compile, ubuntu2004, clang, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
     tags: [cse-matrix-openssl, compile, ubuntu2004, gcc, cse, sasl-cyrus]
@@ -3168,15 +3177,6 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
-  - name: sasl-cyrus-openssl-rhel70-gcc-compile
-    run_on: rhel70-large
-    tags: [sasl-matrix-openssl, compile, rhel70, gcc, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
   - name: sasl-cyrus-openssl-rhel80-gcc-compile
     run_on: rhel80-large
     tags: [sasl-matrix-openssl, compile, rhel80, gcc, sasl-cyrus]
@@ -3573,6 +3573,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+  - name: sasl-cyrus-openssl-ubuntu2004-clang-compile
+    run_on: ubuntu2004-large
+    tags: [sasl-matrix-openssl, compile, ubuntu2004, clang, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
     tags: [sasl-matrix-openssl, compile, ubuntu2004, gcc, sasl-cyrus]

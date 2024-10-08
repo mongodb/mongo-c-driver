@@ -19,7 +19,6 @@ COMPILE_MATRIX = [
     ('debian11',          'gcc',        None, ['cyrus']),
     ('debian92',          'clang',      None, ['cyrus']),
     ('debian92',          'gcc',        None, ['cyrus']),
-    ('rhel70',            'gcc',        None, ['cyrus']),
     ('rhel80',            'gcc',        None, ['cyrus']),
     ('rhel81-power8',     'gcc',        None, ['cyrus']),
     ('rhel83-zseries',    'gcc',        None, ['cyrus']),
