@@ -325,9 +325,6 @@ if(ENABLE_MAINTAINER_FLAGS)
    )
 endif()
 
-# Warnings as errors for our source code.
-add_compile_options (${mongoc-warning-options})
-
 # Link with LLD, if possible
 if (NOT MSVC)
    include (LLDLinker)

@@ -565,7 +565,7 @@ else ()
 endif ()
 
 
-set (SOURCES ${SOURCES}
+set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-nsinfo.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c
@@ -693,6 +693,26 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-bulkwrite.c
 )
 
+if (MONGOC_ENABLE_SASL)
+   list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
+   if (MONGOC_ENABLE_SASL_CYRUS)
+      message (STATUS "Compiling against Cyrus SASL")
+      list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-cyrus.c)
+      list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c)
+   elseif (MONGOC_ENABLE_SASL_SSPI)
+      message (STATUS "Compiling against Windows SSPI")
+      list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
+      list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
+   endif ()
+else ()
+   message (STATUS "SASL disabled")
+endif ()
+
+# Enable unconditional warnings-as-errors for our source code.
+set_property(SOURCE ${MONGOC_SOURCES} APPEND PROPERTY COMPILE_OPTIONS ${mongoc-warning-options})
+
+list (APPEND SOURCES ${MONGOC_SOURCES})
+
 set (HEADERS
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h
@@ -769,21 +789,6 @@ if (ENABLE_APPLE_FRAMEWORK)
       "${PROJECT_SOURCE_DIR}/src/mongoc/modules/module.modulemap.in"
       "${PROJECT_BINARY_DIR}/src/mongoc/modules/module.modulemap"
    )
-endif ()
-
-if (MONGOC_ENABLE_SASL)
-   set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
-   if (MONGOC_ENABLE_SASL_CYRUS)
-      message (STATUS "Compiling against Cyrus SASL")
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-cyrus.c)
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c)
-   elseif (MONGOC_ENABLE_SASL_SSPI)
-      message (STATUS "Compiling against Windows SSPI")
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
-   endif ()
-else ()
-   message (STATUS "SASL disabled")
 endif ()
 
 set (LIBRARIES
@@ -950,6 +955,7 @@ if (ENABLE_SHARED)
    endif () # ENABLE_APPLE_FRAMEWORK
 
    add_executable (mongoc-stat ${mongo-c-driver_SOURCE_DIR}/src/tools/mongoc-stat.c)
+   target_compile_options (mongoc-stat PRIVATE ${mongoc-warning-options})
    target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
 
    # mongoc-stat works if shared memory performance counters are enabled.
@@ -1191,6 +1197,8 @@ if (ENABLE_TESTS)
    target_compile_options (test-libmongoc-lib
       PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
    )
+   # Enable unconditional warnings-as-errors for our source code.
+   target_compile_options (test-libmongoc-lib PRIVATE ${mongoc-warning-options})
    target_include_directories (test-libmongoc-lib
       PRIVATE
          ${PROJECT_SOURCE_DIR}/tests
@@ -1217,6 +1225,8 @@ if (ENABLE_TESTS)
       target_compile_options (${test}
          PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
       )
+      # Enable unconditional warnings-as-errors for our source code.
+      target_compile_options (${test} PRIVATE ${mongoc-warning-options})
       target_include_directories (${test}
          PRIVATE
             ${PROJECT_SOURCE_DIR}/tests
@@ -1253,6 +1263,9 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    function (mongoc_add_example example)
       add_executable (${example} EXCLUDE_FROM_ALL ${ARGN})
       add_dependencies (mongo_c_driver_examples ${example})
+
+      # Enable unconditional warnings-as-errors for our source code.
+      target_compile_options (${example} PRIVATE ${mongoc-warning-options})
 
       target_link_libraries (${example} mongoc_shared ${LIBRARIES})
       if (WIN32)
@@ -1327,6 +1340,7 @@ if (ENABLE_TESTS AND ENABLE_SHARED AND MONGOC_ENABLE_SSL AND NOT WIN32)
    # Add benchmarks to measure opening many TLS connections.
    # Benchmarks require SSL, and do not build on Windows.
    add_executable (benchmark-tls-pooled ${PROJECT_SOURCE_DIR}/tests/benchmark-tls-pooled.c)
+   target_compile_options (benchmark-tls-pooled PRIVATE ${mongoc-warning-options})
    target_link_libraries (benchmark-tls-pooled mongoc_shared ${LIBRARIES})
 endif ()
 

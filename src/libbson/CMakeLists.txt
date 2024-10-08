@@ -223,6 +223,9 @@ mongo_target_requirements(
          MCOMMON_NAME_PREFIX=_bson_mcommon
    COMPILE_OPTIONS
       PRIVATE
+         # Enable unconditional warnings-as-errors for our source code.
+         ${mongoc-warning-options}
+
          # Macro constant INFINITY triggers constant arithmetic overflow warnings in
          # VS 2013, but VS 2013 doesn't support inline warning suppression.
          # Remove once support for VS 2013 is dropped.
@@ -266,6 +269,9 @@ if (ENABLE_EXAMPLES)
    function (add_example bin src)
       add_executable (${bin} EXCLUDE_FROM_ALL ${src})
       add_dependencies (mongo_c_driver_examples ${bin})
+
+      # Enable unconditional warnings-as-errors for our source code.
+      target_compile_options (${bin} PRIVATE ${mongoc-warning-options})
 
       # Link against the shared lib like normal apps
       if(TARGET bson_shared)
