@@ -36,7 +36,6 @@ types-docutils = "^0.20.0.1"
 # but are not required otherwise.
 [tool.poetry.group.ext.dependencies]
 pydantic = "^1"
-pyyaml = "<5.4"
 
 [build-system]
 requires = ["poetry-core"]
