@@ -17,6 +17,8 @@
 #include "mock_server/mock-rs.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
+#include <inttypes.h>
+
 
 BEGIN_IGNORE_DEPRECATIONS
 
@@ -2591,7 +2593,7 @@ again:
       for (j = 0; j < 2; j++) {
          r = mongoc_cursor_next (cursor, &doc);
          if (mongoc_cursor_error (cursor, &error)) {
-            test_error ("[%d.%d] %s", error.domain, error.code, error.message);
+            test_error ("[%" PRIu32 ".%" PRIu32 "] %s", error.domain, error.code, error.message);
          }
 
          ASSERT (r);

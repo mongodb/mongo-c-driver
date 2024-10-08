@@ -126,7 +126,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
                          MONGOC_ERROR_AZURE,
                          MONGOC_ERROR_KMS_SERVER_BAD_JSON,
                          "Invalid 'expires_in' string \"%.*s\" from IMDS server",
-                         expires_in_len,
+                         bson_in_range_unsigned (int, expires_in_len) ? (int) expires_in_len : INT_MAX,
                          expires_in_str);
       } else {
          out->expires_in = mcd_seconds (s);

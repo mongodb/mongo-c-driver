@@ -752,7 +752,9 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream, const char 
       error->code = 0;
    }
 
-   TRACE ("Getting ready for state: %d, timeout is %" PRId64, secure_channel->connecting_state + 1, tls->timeout_msec);
+   TRACE ("Getting ready for state: %d, timeout is %" PRId64,
+          (int) secure_channel->connecting_state + 1,
+          tls->timeout_msec);
 
    switch (secure_channel->connecting_state) {
    case ssl_connect_1:

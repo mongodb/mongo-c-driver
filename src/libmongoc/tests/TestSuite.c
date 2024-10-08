@@ -428,7 +428,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
                        NULL,  /* Use parent's starting directory */
                        &si,
                        &pi)) {
-      test_error ("CreateProcess failed (%ld).", GetLastError ());
+      test_error ("CreateProcess failed (%lu).", GetLastError ());
       bson_free (cmdline);
 
       return -1;
@@ -736,19 +736,18 @@ TestSuite_PrintJsonSystemHeader (FILE *stream)
    fprintf (stream,
             "  \"host\": {\n"
             "    \"sysname\": \"Windows\",\n"
-            "    \"release\": \"%ld.%ld (%ld)\",\n"
-            "    \"machine\": \"%ld\",\n"
+            "    \"release\": \"%lu.%lu (%lu)\",\n"
+            "    \"machine\": \"%lu\",\n"
             "    \"memory\": {\n"
-            "      \"pagesize\": %ld,\n"
-            "      \"npages\": %d\n"
+            "      \"pagesize\": %lu,\n"
+            "      \"npages\": 0\n"
             "    }\n"
             "  },\n",
             major_version,
             minor_version,
             build,
             si.dwProcessorType,
-            si.dwPageSize,
-            0);
+            si.dwPageSize);
 #else
    struct utsname u;
    uint64_t pagesize;
@@ -826,7 +825,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  \"framework\": {\n"
             "    \"monitoringVerbose\": %s,\n"
             "    \"mockServerLog\": \"%s\",\n"
-            "    \"futureTimeoutMS\": %" PRIu64 ",\n"
+            "    \"futureTimeoutMS\": %" PRId64 ",\n"
             "    \"majorityReadConcern\": %s,\n"
             "    \"skipLiveTests\": %s,\n"
             "  },\n"

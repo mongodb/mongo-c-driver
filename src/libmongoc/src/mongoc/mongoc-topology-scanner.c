@@ -45,6 +45,8 @@
 #include "mongoc-util-private.h"
 #include <mcd-string.h>
 
+#include <inttypes.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
 
@@ -778,7 +780,7 @@ _async_handler (mongoc_async_cmd_t *acmd,
       return;
    case MONGOC_ASYNC_CMD_IN_PROGRESS:
    default:
-      fprintf (stderr, "unexpected async status: %d\n", async_status);
+      fprintf (stderr, "unexpected async status: %d\n", (int) async_status);
       BSON_ASSERT (false);
       return;
    }

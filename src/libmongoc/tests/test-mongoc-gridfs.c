@@ -222,7 +222,7 @@ test_remove (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   bson_snprintf (name, sizeof name, "test-remove.%u", rand ());
+   bson_snprintf (name, sizeof name, "test-remove.%d", rand ());
    opts.filename = name;
 
    file = mongoc_gridfs_create_file (gridfs, &opts);

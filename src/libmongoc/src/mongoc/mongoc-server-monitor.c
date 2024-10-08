@@ -27,6 +27,8 @@
 #include "mongoc/mongoc-topology-private.h"
 #include "mongoc/mongoc-trace-private.h"
 
+#include <inttypes.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "monitor"
 
@@ -541,7 +543,7 @@ _server_monitor_poll_with_interrupt (mongoc_server_monitor_t *server_monitor,
       ssize_t ret;
       mongoc_stream_poll_t poller[1];
 
-      MONITOR_LOG (server_monitor, "_server_monitor_poll_with_interrupt expires in: %" PRIu64 "ms", timeleft_ms);
+      MONITOR_LOG (server_monitor, "_server_monitor_poll_with_interrupt expires in: %" PRId64 "ms", timeleft_ms);
       poller[0].stream = server_monitor->stream;
       poller[0].events = POLLIN; /* POLLERR and POLLHUP are added in mongoc_socket_poll. */
       poller[0].revents = 0;

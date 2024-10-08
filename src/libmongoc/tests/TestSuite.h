@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "mongoc/mongoc-array-private.h"
 #include "mongoc/mongoc-util-private.h"
@@ -160,7 +161,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          if (off == -1) {                                                                                       \
             off = BSON_MAX ((expected)->len, (bson)->len) - 1;                                                  \
          }                                                                                                      \
-         MONGOC_STDERR_PRINTF ("bson objects unequal (byte %u):\n(%s)\n(%s)\n", off, bson_json, expected_json); \
+         MONGOC_STDERR_PRINTF ("bson objects unequal (byte %d):\n(%s)\n(%s)\n", off, bson_json, expected_json); \
          {                                                                                                      \
             int fd1 = bson_open ("failure.bad.bson", O_RDWR | O_CREAT, 0640);                                   \
             int fd2 = bson_open ("failure.expected.bson", O_RDWR | O_CREAT, 0640);                              \
@@ -393,31 +394,33 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                                              \
    } while (0)
 
-#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)                           \
-   do {                                                                                  \
-      if (error.domain != _domain) {                                                     \
-         MONGOC_STDERR_PRINTF ("%s:%d %s(): error domain %d doesn't match expected %d\n" \
-                               "error: \"%s\"",                                          \
-                               __FILE__,                                                 \
-                               __LINE__,                                                 \
-                               BSON_FUNC,                                                \
-                               error.domain,                                             \
-                               _domain,                                                  \
-                               error.message);                                           \
-         abort ();                                                                       \
-      };                                                                                 \
-      if (error.code != _code) {                                                         \
-         MONGOC_STDERR_PRINTF ("%s:%d %s(): error code %d doesn't match expected %d\n"   \
-                               "error: \"%s\"",                                          \
-                               __FILE__,                                                 \
-                               __LINE__,                                                 \
-                               BSON_FUNC,                                                \
-                               error.code,                                               \
-                               _code,                                                    \
-                               error.message);                                           \
-         abort ();                                                                       \
-      };                                                                                 \
-      ASSERT_CONTAINS (error.message, _message);                                         \
+#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)                                             \
+   do {                                                                                                    \
+      uint32_t _domain_ = (_domain);                                                                       \
+      uint32_t _code_ = (_code);                                                                           \
+      if (error.domain != _domain_) {                                                                      \
+         MONGOC_STDERR_PRINTF ("%s:%d %s(): error domain %" PRIu32 " doesn't match expected %" PRIu32 "\n" \
+                               "error: \"%s\"",                                                            \
+                               __FILE__,                                                                   \
+                               __LINE__,                                                                   \
+                               BSON_FUNC,                                                                  \
+                               error.domain,                                                               \
+                               _domain_,                                                                   \
+                               error.message);                                                             \
+         abort ();                                                                                         \
+      };                                                                                                   \
+      if (error.code != _code_) {                                                                          \
+         MONGOC_STDERR_PRINTF ("%s:%d %s(): error code %" PRIu32 " doesn't match expected %" PRIu32 "\n"   \
+                               "error: \"%s\"",                                                            \
+                               __FILE__,                                                                   \
+                               __LINE__,                                                                   \
+                               BSON_FUNC,                                                                  \
+                               error.code,                                                                 \
+                               _code_,                                                                     \
+                               error.message);                                                             \
+         abort ();                                                                                         \
+      };                                                                                                   \
+      ASSERT_CONTAINS (error.message, _message);                                                           \
    } while (0)
 
 #define ASSERT_CAPTURED_LOG(_info, _level, _msg)                                                       \

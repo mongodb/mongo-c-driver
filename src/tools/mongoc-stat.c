@@ -111,7 +111,7 @@ mongoc_counters_new_from_pid (unsigned pid)
    size = len;
 
    if (MAP_FAILED == (mem = mmap (NULL, size, PROT_READ, MAP_SHARED, fd, 0))) {
-      fprintf (stderr, "Failed to mmap shared memory segment of size: %u", (unsigned) size);
+      fprintf (stderr, "Failed to mmap shared memory segment of size: %zu", size);
       close (fd);
       return NULL;
    }
@@ -198,9 +198,9 @@ main (int argc, char *argv[])
       return 1;
    }
 
-   pid = strtol (argv[1], NULL, 10);
+   pid = (int) strtol (argv[1], NULL, 10);
    if (!(counters = mongoc_counters_new_from_pid (pid))) {
-      fprintf (stderr, "Failed to load shared memory for pid %u.\n", pid);
+      fprintf (stderr, "Failed to load shared memory for pid %d.\n", pid);
       return EXIT_FAILURE;
    }
 

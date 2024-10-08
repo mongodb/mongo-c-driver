@@ -28,6 +28,8 @@
 #include "TestSuite.h"
 #include <mcd-string.h>
 
+#include <inttypes.h>
+
 #define LOG_DOMAIN "test_monitoring"
 
 typedef struct {
@@ -64,11 +66,11 @@ tf_dump (test_fixture_t *tf)
 {
    printf ("== Begin dump ==\n");
    printf ("-- Current observations --\n");
-   printf ("n_heartbeat_started=%d\n", tf->observations->n_heartbeat_started);
-   printf ("n_heartbeat_succeeded=%d\n", tf->observations->n_heartbeat_succeeded);
-   printf ("n_heartbeat_failed=%d\n", tf->observations->n_heartbeat_failed);
-   printf ("n_server_changed=%d\n", tf->observations->n_server_changed);
-   printf ("sd_type=%d\n", tf->observations->sd_type);
+   printf ("n_heartbeat_started=%" PRIu32 "\n", tf->observations->n_heartbeat_started);
+   printf ("n_heartbeat_succeeded=%" PRIu32 "\n", tf->observations->n_heartbeat_succeeded);
+   printf ("n_heartbeat_failed=%" PRIu32 "\n", tf->observations->n_heartbeat_failed);
+   printf ("n_server_changed=%" PRIu32 "\n", tf->observations->n_server_changed);
+   printf ("sd_type=%d\n", (int) tf->observations->sd_type);
 
    printf ("-- Test fixture logs --\n");
    printf ("%s", tf->logs->str);
