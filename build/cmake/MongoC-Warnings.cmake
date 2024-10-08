@@ -26,6 +26,10 @@ function (mongoc_add_warning_options)
    # "Old" GNU is GCC < 5, which is missing several warning options
    set(cond/gcc-lt5 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,5>>)
    set(cond/gcc-lt7 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,7>>)
+   set(cond/gcc-lt8 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,8>>)
+   set(cond/gcc-lt11 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,11>>)
+   set(cond/clang-lt10 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,10>>)
+   set(cond/clang-lt19 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,19>>)
    # Process options:
    foreach (opt IN LISTS ARGV)
       # Replace prefixes. Matches right-most first:
@@ -79,6 +83,22 @@ mongoc_add_warning_options (
      msvc:/we4090
      # Definite use of uninitialized value
      gnu-like:-Werror=uninitialized msvc:/we4700
+
+     # Format strings.
+     gnu-like:-Werror=format
+     gnu-like:-Werror=format=2
+     # GCC does not document the full list of warnings enabled by -Wformat.
+     # For assurance, explicitly include those not listed by -Wformat or -Wformat=2.
+     gnu:not-gcc-lt11:-Werror=format-diag
+     gnu:not-gcc-lt8:-Werror=format-overflow=2
+     gnu:not-gcc-lt5:-Werror=format-signedness
+     gnu:not-gcc-lt8:-Werror=format-truncation=2
+     # Clang does not include several flags in `-Wformat` or `-Wformat=2`.
+     # For assurance, explicitly include those not listed by -Wformat or -Wformat=2.
+     clang:-Werror=format-non-iso
+     clang:-Werror=format-pedantic
+     clang:not-clang-lt19:-Werror=format-signedness
+     clang:not-clang-lt10:-Werror=format-type-confusion
 
      # Aside: Disable CRT insecurity warnings
      msvc:/D_CRT_SECURE_NO_WARNINGS

@@ -308,9 +308,6 @@ if(ENABLE_MAINTAINER_FLAGS)
       gnu-like:-Wall
       gnu-like:-Wempty-body
       gnu:not-gcc-lt7:-Wexpansion-to-defined
-      gnu-like:-Wformat
-      gnu-like:-Wformat-nonliteral
-      gnu-like:-Wformat-security
       gnu-like:-Winit-self
       gnu-like:-Wmissing-include-dirs
       gnu-like:-Wredundant-decls
