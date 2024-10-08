@@ -1,5 +1,5 @@
 #[[
-   This file sets warning options for the directories in which it is include()'d
+   This file sets warning options in the "mongoc-warning-options" variable when included.
 
    These warnings are intended to be ported to each supported platform, and
    especially for high-value warnings that are very likely to catch latent bugs
@@ -7,11 +7,11 @@
 ]]
 
 #[[
-   Define additional compile options, conditional on the compiler being used.
+   Appends additional compile options to the "mongoc-warning-options" variable, conditioned
+   on the compiler being used.
+
    Each option should be prefixed by `gnu:`, `clang:`, `msvc:`, or `gnu-like:`.
    Those options will be conditionally enabled for GCC, Clang, or MSVC.
-
-   These options are attached to the source directory and its children.
 ]]
 function (mongoc_add_warning_options)
    list(APPEND CMAKE_MESSAGE_CONTEXT ${CMAKE_CURRENT_FUNCTION})
@@ -53,11 +53,14 @@ function (mongoc_add_warning_options)
          set(opt "${before}${opt}")
          message(TRACE "Become: ${opt}")
       endwhile ()
-      add_compile_options("${opt}")
+      list(APPEND mongoc-warning-options "${opt}")
    endforeach ()
+   set(mongoc-warning-options "${mongoc-warning-options}" PARENT_SCOPE)
 endfunction ()
 
 set (is_c_lang "$<COMPILE_LANGUAGE:C>")
+
+set (mongoc-warning-options "")
 
 # These below warnings should always be unconditional hard errors, as the code is
 # almost definitely broken
