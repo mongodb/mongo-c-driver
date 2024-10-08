@@ -200,6 +200,15 @@ test_mongoc_ssl_opts_cleanup_zero (void)
    _mongoc_ssl_opts_cleanup (&ssl_opt, false /* free_internal */);
 }
 
+// `test_non_existant_cafile` is a regression test for CDRIVER-5736.
+static void
+test_non_existant_cafile (void)
+{
+   mongoc_client_t *client = mongoc_client_new ("mongodb://localhost:27017/?tls=true&tlsCAFile=/nonexistant/ca.pem");
+   ASSERT (!mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL));
+   mongoc_client_destroy (client);
+}
+
 #endif /* MONGOC_ENABLE_SSL */
 
 void
@@ -208,5 +217,6 @@ test_ssl_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/ssl_opt/from_bson", test_mongoc_ssl_opts_from_bson);
    TestSuite_Add (suite, "/ssl_opt/cleanup", test_mongoc_ssl_opts_cleanup_zero);
+   TestSuite_Add (suite, "/ssl_opt/non-existant-cafile", test_non_existant_cafile);
 #endif /* MONGOC_ENABLE_SSL */
 }
