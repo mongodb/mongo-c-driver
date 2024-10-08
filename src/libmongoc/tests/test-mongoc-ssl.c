@@ -204,6 +204,7 @@ static void
 test_non_existant_cafile (void)
 {
    mongoc_client_t *client = mongoc_client_new ("mongodb://localhost:27017/?tls=true&tlsCAFile=/nonexistant/ca.pem");
+   // Ignore return. May return true on Windows hosts. See CDRIVER-5747.
    mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
    mongoc_client_destroy (client);
 }
