@@ -70,7 +70,23 @@ endif ()
 if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
-   add_library (zlib_obj OBJECT "${ZLIB_SOURCES}")
+   add_library (zlib_obj OBJECT
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/adler32.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/crc32.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/deflate.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/infback.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inffast.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inflate.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inftrees.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/trees.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/zutil.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/compress.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/uncompr.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzclose.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzlib.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzread.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzwrite.c
+   )
    set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
@@ -799,6 +815,28 @@ if(ENABLE_SRV)
 endif()
 
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
+   set (KMS_MSG_SOURCES
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/hexlify.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_b64.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_caller_identity_request.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_apple.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_libcrypto.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_none.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_windows.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_decrypt_request.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_encrypt_request.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_kmip_response_parser.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_kv_list.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_message.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_port.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_request.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_request_opt.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_request_str.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_response.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_response_parser.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/sort.c
+   )
+
    # Disable warnings on bundled kms_message source files.
    set_source_files_properties (${KMS_MSG_SOURCES} PROPERTIES COMPILE_FLAGS -w)
    set (SOURCES ${SOURCES} ${KMS_MSG_SOURCES})

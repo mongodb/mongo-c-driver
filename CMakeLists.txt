@@ -458,28 +458,6 @@ if (ENABLE_MONGOC)
       message (FATAL_ERROR "ENABLE_TESTS requires ENABLE_STATIC or ENABLE_STATIC_BUILD")
    endif ()
 
-   set (UTF8PROC_SOURCES
-      ${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.8.0/utf8proc.c
-   )
-
-   set (ZLIB_SOURCES
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/adler32.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/crc32.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/deflate.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/infback.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inffast.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inflate.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inftrees.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/trees.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/zutil.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/compress.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/uncompr.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzclose.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzlib.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzread.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzwrite.c
-   )
-
    set (CPACK_RESOURCE_FILE_LICENSE "${mongo-c-driver_SOURCE_DIR}/COPYING")
 
    include (CPack)
@@ -491,28 +469,6 @@ if (ENABLE_MONGOC)
       # Until CDRIVER-520.
       add_definitions (-Wno-deprecated-declarations)
    endif ()
-
-   set (KMS_MSG_SOURCES
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/hexlify.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_b64.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_caller_identity_request.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_apple.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_libcrypto.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_none.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_windows.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_decrypt_request.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_encrypt_request.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_kmip_response_parser.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_kv_list.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_message.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_port.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_request.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_request_opt.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_request_str.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_response.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_response_parser.c
-      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/sort.c
-   )
 
    if (NOT ENABLE_MONGODB_AWS_AUTH MATCHES "ON|OFF|AUTO")
       message (FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH option must be ON, AUTO, or OFF")
