@@ -245,7 +245,7 @@ _mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream, char *buf, siz
          &secure_channel->ctxt->ctxt_handle, SECPKG_ATTR_STREAM_SIZES, &secure_channel->stream_sizes);
 
       if (sspi_status != SEC_E_OK) {
-         TRACE ("failing here: %d", __LINE__);
+         TRACE ("failing here: %d", (int) (__LINE__));
          return -1;
       }
    }

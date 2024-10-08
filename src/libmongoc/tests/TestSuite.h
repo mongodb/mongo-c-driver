@@ -118,25 +118,25 @@ bson_open (const char *filename, int flags, ...)
    } else                                    \
       ((void) 0)
 
-#define ASSERT(Cond)                                                                                         \
-   do {                                                                                                      \
-      if (!(Cond)) {                                                                                         \
-         MONGOC_STDERR_PRINTF (                                                                              \
-            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (Cond)); \
-         abort ();                                                                                           \
-      }                                                                                                      \
+#define ASSERT(Cond)                                                                                                 \
+   do {                                                                                                              \
+      if (!(Cond)) {                                                                                                 \
+         MONGOC_STDERR_PRINTF (                                                                                      \
+            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, (int) (__LINE__), BSON_FUNC, BSON_STR (Cond)); \
+         abort ();                                                                                                   \
+      }                                                                                                              \
    } while (0)
 
 
 void
 _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
-#define test_error(...)                                                                    \
-   if (1) {                                                                                \
-      MONGOC_STDERR_PRINTF ("test error in: %s %d:%s()\n", __FILE__, __LINE__, BSON_FUNC); \
-      _test_error (__VA_ARGS__);                                                           \
-      abort (); /* suppress missing return errors in non-void functions */                 \
-   } else                                                                                  \
+#define test_error(...)                                                                            \
+   if (1) {                                                                                        \
+      MONGOC_STDERR_PRINTF ("test error in: %s %d:%s()\n", __FILE__, (int) (__LINE__), BSON_FUNC); \
+      _test_error (__VA_ARGS__);                                                                   \
+      abort (); /* suppress missing return errors in non-void functions */                         \
+   } else                                                                                          \
       ((void) 0)
 
 #define bson_eq_bson(bson, expected)                                                                            \
@@ -181,41 +181,47 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #undef ASSERT_OR_PRINT
 #endif
 
-#define ASSERT_OR_PRINT(_statement, _err)                                                                            \
-   do {                                                                                                              \
-      if (!(_statement)) {                                                                                           \
-         MONGOC_STDERR_PRINTF (                                                                                      \
-            "FAIL:%s:%d  %s()\n  %s\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (_statement), _err.message); \
-         abort ();                                                                                                   \
-      }                                                                                                              \
+#define ASSERT_OR_PRINT(_statement, _err)                          \
+   do {                                                            \
+      if (!(_statement)) {                                         \
+         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n  %s\n\n", \
+                               __FILE__,                           \
+                               (int) (__LINE__),                   \
+                               BSON_FUNC,                          \
+                               BSON_STR (_statement),              \
+                               _err.message);                      \
+         abort ();                                                 \
+      }                                                            \
    } while (0)
 
-#define ASSERT_CURSOR_NEXT(_cursor, _doc)                                                                       \
-   do {                                                                                                         \
-      bson_error_t _err;                                                                                        \
-      if (!mongoc_cursor_next ((_cursor), (_doc))) {                                                            \
-         if (mongoc_cursor_error ((_cursor), &_err)) {                                                          \
-            MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, _err.message);   \
-         } else {                                                                                               \
-            MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, "empty cursor"); \
-         }                                                                                                      \
-         abort ();                                                                                              \
-      }                                                                                                         \
+#define ASSERT_CURSOR_NEXT(_cursor, _doc)                                                                             \
+   do {                                                                                                               \
+      bson_error_t _err;                                                                                              \
+      if (!mongoc_cursor_next ((_cursor), (_doc))) {                                                                  \
+         if (mongoc_cursor_error ((_cursor), &_err)) {                                                                \
+            MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, _err.message); \
+         } else {                                                                                                     \
+            MONGOC_STDERR_PRINTF (                                                                                    \
+               "FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, "empty cursor");                  \
+         }                                                                                                            \
+         abort ();                                                                                                    \
+      }                                                                                                               \
    } while (0)
 
 
-#define ASSERT_CURSOR_DONE(_cursor)                                                                              \
-   do {                                                                                                          \
-      bson_error_t _err;                                                                                         \
-      const bson_t *_doc;                                                                                        \
-      if (mongoc_cursor_next ((_cursor), &_doc)) {                                                               \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, "non-empty cursor"); \
-         abort ();                                                                                               \
-      }                                                                                                          \
-      if (mongoc_cursor_error ((_cursor), &_err)) {                                                              \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, _err.message);       \
-         abort ();                                                                                               \
-      }                                                                                                          \
+#define ASSERT_CURSOR_DONE(_cursor)                                                                                \
+   do {                                                                                                            \
+      bson_error_t _err;                                                                                           \
+      const bson_t *_doc;                                                                                          \
+      if (mongoc_cursor_next ((_cursor), &_doc)) {                                                                 \
+         MONGOC_STDERR_PRINTF (                                                                                    \
+            "FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, "non-empty cursor");              \
+         abort ();                                                                                                 \
+      }                                                                                                            \
+      if (mongoc_cursor_error ((_cursor), &_err)) {                                                                \
+         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, _err.message); \
+         abort ();                                                                                                 \
+      }                                                                                                            \
    } while (0)
 
 
@@ -231,7 +237,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                                BSON_STR (eq),                                   \
                                _b,                                              \
                                __FILE__,                                        \
-                               __LINE__,                                        \
+                               (int) (__LINE__),                                \
                                BSON_FUNC);                                      \
          abort ();                                                              \
       }                                                                         \
@@ -275,7 +281,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                                _a,                                                                    \
                                _b,                                                                    \
                                __FILE__,                                                              \
-                               __LINE__,                                                              \
+                               (int) (__LINE__),                                                      \
                                BSON_FUNC);                                                            \
          abort ();                                                                                    \
       }                                                                                               \
@@ -294,7 +300,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                                (double) a,                                          \
                                (double) b,                                          \
                                __FILE__,                                            \
-                               __LINE__,                                            \
+                               (int) (__LINE__),                                    \
                                BSON_FUNC);                                          \
          abort ();                                                                  \
       }                                                                             \
@@ -312,7 +318,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                                _a ? _a : "(null)",                                          \
                                _b ? _b : "(null)",                                          \
                                __FILE__,                                                    \
-                               __LINE__,                                                    \
+                               (int) (__LINE__),                                            \
                                BSON_FUNC);                                                  \
          abort ();                                                                          \
       }                                                                                     \
@@ -343,7 +349,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                                __aa,                                        \
                                __bb,                                        \
                                __FILE__,                                    \
-                               __LINE__,                                    \
+                               (int) (__LINE__),                            \
                                BSON_FUNC);                                  \
          abort ();                                                          \
       }                                                                     \
@@ -368,30 +374,31 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CONTAINS(a, b)                                                                                    \
-   do {                                                                                                          \
-      char *_a_lower = bson_strdup (a);                                                                          \
-      char *_b_lower = bson_strdup (b);                                                                          \
-      mongoc_lowercase (_a_lower, _a_lower);                                                                     \
-      mongoc_lowercase (_b_lower, _b_lower);                                                                     \
-      if (NULL == strstr ((_a_lower), (_b_lower))) {                                                             \
-         MONGOC_STDERR_PRINTF ("%s:%d %s(): [%s] does not contain [%s]\n", __FILE__, __LINE__, BSON_FUNC, a, b); \
-         abort ();                                                                                               \
-      }                                                                                                          \
-      bson_free (_a_lower);                                                                                      \
-      bson_free (_b_lower);                                                                                      \
+#define ASSERT_CONTAINS(a, b)                                                                         \
+   do {                                                                                               \
+      char *_a_lower = bson_strdup (a);                                                               \
+      char *_b_lower = bson_strdup (b);                                                               \
+      mongoc_lowercase (_a_lower, _a_lower);                                                          \
+      mongoc_lowercase (_b_lower, _b_lower);                                                          \
+      if (NULL == strstr ((_a_lower), (_b_lower))) {                                                  \
+         MONGOC_STDERR_PRINTF (                                                                       \
+            "%s:%d %s(): [%s] does not contain [%s]\n", __FILE__, (int) (__LINE__), BSON_FUNC, a, b); \
+         abort ();                                                                                    \
+      }                                                                                               \
+      bson_free (_a_lower);                                                                           \
+      bson_free (_b_lower);                                                                           \
    } while (0)
 
-#define ASSERT_STARTSWITH(a, b)                                                                      \
-   do {                                                                                              \
-      /* evaluate once */                                                                            \
-      const char *_a = a;                                                                            \
-      const char *_b = b;                                                                            \
-      if ((_a) != strstr ((_a), (_b))) {                                                             \
-         MONGOC_STDERR_PRINTF (                                                                      \
-            "%s:%d %s(): : [%s] does not start with [%s]\n", __FILE__, __LINE__, BSON_FUNC, _a, _b); \
-         abort ();                                                                                   \
-      }                                                                                              \
+#define ASSERT_STARTSWITH(a, b)                                                                              \
+   do {                                                                                                      \
+      /* evaluate once */                                                                                    \
+      const char *_a = a;                                                                                    \
+      const char *_b = b;                                                                                    \
+      if ((_a) != strstr ((_a), (_b))) {                                                                     \
+         MONGOC_STDERR_PRINTF (                                                                              \
+            "%s:%d %s(): : [%s] does not start with [%s]\n", __FILE__, (int) (__LINE__), BSON_FUNC, _a, _b); \
+         abort ();                                                                                           \
+      }                                                                                                      \
    } while (0)
 
 #define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)                                             \
@@ -402,7 +409,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          MONGOC_STDERR_PRINTF ("%s:%d %s(): error domain %" PRIu32 " doesn't match expected %" PRIu32 "\n" \
                                "error: \"%s\"",                                                            \
                                __FILE__,                                                                   \
-                               __LINE__,                                                                   \
+                               (int) (__LINE__),                                                           \
                                BSON_FUNC,                                                                  \
                                error.domain,                                                               \
                                _domain_,                                                                   \
@@ -413,7 +420,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          MONGOC_STDERR_PRINTF ("%s:%d %s(): error code %" PRIu32 " doesn't match expected %" PRIu32 "\n"   \
                                "error: \"%s\"",                                                            \
                                __FILE__,                                                                   \
-                               __LINE__,                                                                   \
+                               (int) (__LINE__),                                                           \
                                BSON_FUNC,                                                                  \
                                error.code,                                                                 \
                                _code_,                                                                     \
@@ -423,24 +430,24 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       ASSERT_CONTAINS (error.message, _message);                                                           \
    } while (0)
 
-#define ASSERT_CAPTURED_LOG(_info, _level, _msg)                                                       \
-   do {                                                                                                \
-      if (!has_captured_log (_level, _msg)) {                                                          \
-         MONGOC_STDERR_PRINTF (                                                                        \
-            "%s:%d %s(): testing %s didn't log \"%s\"\n", __FILE__, __LINE__, BSON_FUNC, _info, _msg); \
-         print_captured_logs ("\t");                                                                   \
-         abort ();                                                                                     \
-      }                                                                                                \
+#define ASSERT_CAPTURED_LOG(_info, _level, _msg)                                                               \
+   do {                                                                                                        \
+      if (!has_captured_log (_level, _msg)) {                                                                  \
+         MONGOC_STDERR_PRINTF (                                                                                \
+            "%s:%d %s(): testing %s didn't log \"%s\"\n", __FILE__, (int) (__LINE__), BSON_FUNC, _info, _msg); \
+         print_captured_logs ("\t");                                                                           \
+         abort ();                                                                                             \
+      }                                                                                                        \
    } while (0)
 
-#define ASSERT_NO_CAPTURED_LOGS(_info)                                                                \
-   do {                                                                                               \
-      if (has_captured_logs ()) {                                                                     \
-         MONGOC_STDERR_PRINTF (                                                                       \
-            "%s:%d %s(): testing %s shouldn't have logged:\n", __FILE__, __LINE__, BSON_FUNC, _info); \
-         print_captured_logs ("\t");                                                                  \
-         abort ();                                                                                    \
-      }                                                                                               \
+#define ASSERT_NO_CAPTURED_LOGS(_info)                                                                        \
+   do {                                                                                                       \
+      if (has_captured_logs ()) {                                                                             \
+         MONGOC_STDERR_PRINTF (                                                                               \
+            "%s:%d %s(): testing %s shouldn't have logged:\n", __FILE__, (int) (__LINE__), BSON_FUNC, _info); \
+         print_captured_logs ("\t");                                                                          \
+         abort ();                                                                                            \
+      }                                                                                                       \
    } while (0)
 
 #define ASSERT_HAS_FIELD(_bson, _field)                                               \
@@ -488,7 +495,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       if (!(_statement)) {                                                                      \
          MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n  Failed with error code: %d (%s)\n\n", \
                                __FILE__,                                                        \
-                               __LINE__,                                                        \
+                               (int) (__LINE__),                                                \
                                BSON_FUNC,                                                       \
                                BSON_STR (_statement),                                           \
                                _errcode,                                                        \
@@ -507,7 +514,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                                count,                                                                            \
                                n,                                                                                \
                                __FILE__,                                                                         \
-                               __LINE__,                                                                         \
+                               (int) (__LINE__),                                                                 \
                                BSON_FUNC);                                                                       \
          abort ();                                                                                               \
       }                                                                                                          \
@@ -526,7 +533,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                                _count,                                                \
                                _n,                                                    \
                                __FILE__,                                              \
-                               __LINE__,                                              \
+                               (int) (__LINE__),                                      \
                                BSON_FUNC);                                            \
          abort ();                                                                    \
       }                                                                               \
@@ -541,7 +548,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                                   "   %s:%d  %s()\n",                  \
                                   BSON_STR (_pred),                    \
                                   __FILE__,                            \
-                                  __LINE__,                            \
+                                  (int) (__LINE__),                    \
                                   BSON_FUNC);                          \
             abort ();                                                  \
          }                                                             \
@@ -549,15 +556,16 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                \
    } while (0)
 
-#define ASSERT_WITH_MSG(_statement, ...)                                                                            \
-   do {                                                                                                             \
-      if (!(_statement)) {                                                                                          \
-         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (_statement)); \
-         fprintf (stderr, __VA_ARGS__);                                                                             \
-         fprintf (stderr, "\n");                                                                                    \
-         fflush (stderr);                                                                                           \
-         abort ();                                                                                                  \
-      }                                                                                                             \
+#define ASSERT_WITH_MSG(_statement, ...)                                                                 \
+   do {                                                                                                  \
+      if (!(_statement)) {                                                                               \
+         MONGOC_STDERR_PRINTF (                                                                          \
+            "FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, BSON_STR (_statement)); \
+         fprintf (stderr, __VA_ARGS__);                                                                  \
+         fprintf (stderr, "\n");                                                                         \
+         fflush (stderr);                                                                                \
+         abort ();                                                                                       \
+      }                                                                                                  \
    } while (0)
 
 // bson_value_to_str returns a string representation of a BSON value.
