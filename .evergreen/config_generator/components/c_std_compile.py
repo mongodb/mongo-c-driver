@@ -19,10 +19,6 @@ TAG = 'std-matrix'
 # fmt: off
 MATRIX = [
     ('debian92',          'clang',     None,   [11,   ]),
-    ('ubuntu1604',        'clang',     'i686', [11,   ]),
-    ('ubuntu1604',        'clang',     None,   [11,   ]),
-    ('ubuntu1804',        'clang',     'i686', [11,   ]),
-    ('ubuntu1804',        'gcc',       None,   [11,   ]),
     ('debian10',          'clang',     None,   [11,   ]),
     ('debian10',          'gcc',       None,   [11, 17]),
     ('debian11',          'clang',     None,   [11,   ]),

@@ -96,10 +96,6 @@ RHEL_ZSERIES_DISTROS = [
 ]
 
 UBUNTU_DISTROS = [
-    Distro(name='ubuntu1604-large', os='ubuntu', os_type='linux', os_ver='16.04', size='large'),
-    Distro(name='ubuntu1604-small', os='ubuntu', os_type='linux', os_ver='16.04', size='small'),
-    Distro(name='ubuntu1804-large', os='ubuntu', os_type='linux', os_ver='18.04', size='large'),
-    Distro(name='ubuntu1804-small', os='ubuntu', os_type='linux', os_ver='18.04', size='small'),
     Distro(name='ubuntu2004-large', os='ubuntu', os_type='linux', os_ver='20.04', size='large'),
     Distro(name='ubuntu2004-small', os='ubuntu', os_type='linux', os_ver='20.04', size='small'),
     Distro(name='ubuntu2204-large', os='ubuntu', os_type='linux', os_ver='22.04', size='large'),
@@ -107,10 +103,6 @@ UBUNTU_DISTROS = [
 ]
 
 UBUNTU_ARM64_DISTROS = [
-    Distro(name='ubuntu1604-arm64-large', os='ubuntu', os_type='linux', os_ver='16.04', size='large', arch='arm64'),
-    Distro(name='ubuntu1604-arm64-small', os='ubuntu', os_type='linux', os_ver='16.04', size='small', arch='arm64'),
-    Distro(name='ubuntu1804-arm64-large', os='ubuntu', os_type='linux', os_ver='18.04', size='large', arch='arm64'),
-    Distro(name='ubuntu1804-arm64-small', os='ubuntu', os_type='linux', os_ver='18.04', size='small', arch='arm64'),
     Distro(name='ubuntu2004-arm64-large', os='ubuntu', os_type='linux', os_ver='20.04', size='large', arch='arm64'),
     Distro(name='ubuntu2004-arm64-small', os='ubuntu', os_type='linux', os_ver='20.04', size='small', arch='arm64'),
     Distro(name='ubuntu2204-arm64-large', os='ubuntu', os_type='linux', os_ver='22.04', size='large', arch='arm64'),

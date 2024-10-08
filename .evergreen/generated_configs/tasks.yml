@@ -2,195 +2,6 @@ tasks:
   - name: abi-compliance-check
     commands:
       - func: abi-compliance-check
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile
-    run_on: ubuntu1804-large
-    tags: [sanitizers-matrix-asan, compile, ubuntu1804, clang, cse, asan, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: cse-sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.2", openssl]
-    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth-with-mongocrypt
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.2", with-mongocrypt, openssl]
-    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
-            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.4", openssl]
-    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth-with-mongocrypt
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "4.4", with-mongocrypt, openssl]
-    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
-            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "5.0", openssl]
-    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth-with-mongocrypt
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "5.0", with-mongocrypt, openssl]
-    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
-            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "6.0", openssl]
-    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth-with-mongocrypt
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, cse, asan, auth, server, "6.0", with-mongocrypt, openssl]
-    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
-            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-mock-kms-servers
-      - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-asan, compile, ubuntu2004, clang, cse, asan, sasl-cyrus]
@@ -200,6 +11,276 @@ tasks:
         vars:
           CC: clang
       - func: upload-build
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-replica-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "4.4", openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-replica-auth-with-mongocrypt
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "4.4", with-mongocrypt, openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-server-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "4.4", openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-server-auth-with-mongocrypt
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "4.4", with-mongocrypt, openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-replica-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "5.0", openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-replica-auth-with-mongocrypt
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "5.0", with-mongocrypt, openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "5.0", openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-server-auth-with-mongocrypt
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "5.0", with-mongocrypt, openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-replica-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "6.0", openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-replica-auth-with-mongocrypt
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "6.0", with-mongocrypt, openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "6.0", openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-server-auth-with-mongocrypt
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, server, "6.0", with-mongocrypt, openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-replica-auth
     run_on: ubuntu2004-small
     tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, cse, asan, auth, replica, "7.0", openssl]
@@ -470,324 +551,6 @@ tasks:
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1604-clang-compile
-    run_on: ubuntu1604-large
-    tags: [sanitizers-matrix-asan, compile, ubuntu1604, clang, asan, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-    run_on: ubuntu1804-large
-    tags: [sanitizers-matrix-asan, compile, ubuntu1804, clang, asan, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "4.0", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "4.0", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "4.0", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "4.2", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "4.2", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "4.2", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "4.4", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "4.4", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "4.4", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "5.0", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "5.0", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "5.0", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, replica, "6.0", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, server, "6.0", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-asan, test, ubuntu1804, clang, sasl-cyrus, asan, auth, sharded, "6.0", openssl]
-    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-asan, compile, ubuntu2004, clang, asan, sasl-cyrus]
@@ -797,6 +560,186 @@ tasks:
         vars:
           CC: clang
       - func: upload-build
+  - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-replica-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, replica, "4.4", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-server-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, server, "4.4", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-sharded-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, sharded, "4.4", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-replica-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, replica, "5.0", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, server, "5.0", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-sharded-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, sharded, "5.0", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-replica-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, replica, "6.0", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, server, "6.0", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-sharded-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, sharded, "6.0", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-replica-auth
     run_on: ubuntu2004-small
     tags: [sanitizers-matrix-asan, test, ubuntu2004, clang, sasl-cyrus, asan, auth, replica, "7.0", openssl]
@@ -986,7 +929,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804-medium
       - debian10
       - debian11
       - amazon2
@@ -1023,7 +965,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804-medium
       - debian10
       - debian11
       - amazon2
@@ -1060,7 +1001,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804-medium
       - debian10
       - debian11
       - amazon2
@@ -1097,7 +1037,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804-medium
       - debian10
       - debian11
       - amazon2
@@ -1134,7 +1073,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804-medium
       - debian10
       - debian11
       - amazon2
@@ -1171,7 +1109,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804-medium
       - debian10
       - debian11
       - amazon2
@@ -1208,7 +1145,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804-medium
       - debian10
       - debian11
       - amazon2
@@ -1249,7 +1185,6 @@ tasks:
       - ubuntu2204-large
       - ubuntu2004-small
       - ubuntu2004
-      - ubuntu1804-medium
       - debian10
       - debian11
       - amazon2
@@ -1751,193 +1686,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-ubuntu1604-clang-compile
-    run_on: ubuntu1604-large
-    tags: [cse-matrix-openssl, compile, ubuntu1604, clang, cse, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: cse-sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-    run_on: ubuntu1804-arm64-large
-    tags: [cse-matrix-openssl, compile, ubuntu1804-arm64, gcc, cse, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: cse-sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-4.2-server-auth
-    run_on: ubuntu1804-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "4.2", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-4.4-server-auth
-    run_on: ubuntu1804-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "4.4", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-5.0-server-auth
-    run_on: ubuntu1804-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-6.0-server-auth
-    run_on: ubuntu1804-arm64-small
-    tags: [cse-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile
-    run_on: ubuntu1804-large
-    tags: [cse-matrix-openssl, compile, ubuntu1804, gcc, cse, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: cse-sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-test-4.2-server-auth
-    run_on: ubuntu1804-small
-    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "4.2", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-test-4.4-server-auth
-    run_on: ubuntu1804-small
-    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "4.4", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-test-5.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-test-6.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [cse-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
     run_on: ubuntu2004-arm64-large
     tags: [cse-matrix-openssl, compile, ubuntu2004-arm64, gcc, cse, sasl-cyrus]
@@ -1947,6 +1695,126 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-replica-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, "4.4", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, server, "4.4", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-replica-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-replica-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, "6.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-replica-auth
     run_on: ubuntu2004-arm64-small
     tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
@@ -2076,6 +1944,126 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-4.4-replica-auth
+    run_on: ubuntu2004-small
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, replica, "4.4", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-4.4-server-auth
+    run_on: ubuntu2004-small
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, server, "4.4", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-5.0-replica-auth
+    run_on: ubuntu2004-small
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, replica, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-5.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-6.0-replica-auth
+    run_on: ubuntu2004-small
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, replica, "6.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-6.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-7.0-replica-auth
     run_on: ubuntu2004-small
     tags: [cse-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
@@ -3456,342 +3444,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1604-arm64-gcc-compile
-    run_on: ubuntu1604-arm64-large
-    tags: [sasl-matrix-openssl, compile, ubuntu1604-arm64, gcc, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-cyrus-openssl-ubuntu1604-arm64-gcc-test-4.0-server-auth
-    run_on: ubuntu1604-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1604-arm64, gcc, sasl-cyrus, auth, server, "4.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1604-arm64-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1604-arm64-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1604-clang-compile
-    run_on: ubuntu1604-large
-    tags: [sasl-matrix-openssl, compile, ubuntu1604, clang, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-    run_on: ubuntu1804-arm64-large
-    tags: [sasl-matrix-openssl, compile, ubuntu1804-arm64, gcc, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-4.2-server-auth
-    run_on: ubuntu1804-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "4.2", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-4.4-server-auth
-    run_on: ubuntu1804-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "4.4", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-5.0-server-auth
-    run_on: ubuntu1804-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "5.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-6.0-server-auth
-    run_on: ubuntu1804-arm64-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804-arm64, gcc, sasl-cyrus, auth, server, "6.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-    run_on: ubuntu1804-large
-    tags: [sasl-matrix-openssl, compile, ubuntu1804, gcc, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.0-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "4.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "4.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.2-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "4.2", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.2-server-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "4.2", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.4-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "4.4", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.4-server-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "4.4", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-5.0-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "5.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-5.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "5.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-6.0-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, replica, "6.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-6.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-openssl, test, ubuntu1804, gcc, sasl-cyrus, auth, server, "6.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
     run_on: ubuntu2004-arm64-large
     tags: [sasl-matrix-openssl, compile, ubuntu2004-arm64, gcc, sasl-cyrus]
@@ -3801,6 +3453,66 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
+  - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [sasl-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, auth, server, "4.4", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [sasl-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, auth, server, "5.0", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [sasl-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, auth, server, "6.0", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
     run_on: ubuntu2004-arm64-small
     tags: [sasl-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, auth, server, "7.0", openssl]
@@ -3870,6 +3582,66 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
+  - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-4.4-server-auth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, auth, server, "4.4", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-5.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, auth, server, "5.0", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-6.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, auth, server, "6.0", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-7.0-server-auth
     run_on: ubuntu2004-small
     tags: [sasl-matrix-openssl, test, ubuntu2004, gcc, sasl-cyrus, auth, server, "7.0", openssl]
@@ -4137,324 +3909,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-off-nossl-ubuntu1604-gcc-compile
-    run_on: ubuntu1604-large
-    tags: [sasl-matrix-nossl, compile, ubuntu1604, gcc, sasl-off]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-ubuntu1804-gcc-compile
-    run_on: ubuntu1804-large
-    tags: [sasl-matrix-nossl, compile, ubuntu1804, gcc, sasl-off]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-4.0-replica-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, replica, "4.0"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-4.0-server-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, server, "4.0"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-4.0-sharded-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, sharded, "4.0"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-4.2-replica-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, replica, "4.2"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-4.2-server-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, server, "4.2"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-4.2-sharded-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, sharded, "4.2"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-4.4-replica-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, replica, "4.4"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-4.4-server-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, server, "4.4"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-4.4-sharded-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, sharded, "4.4"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-5.0-replica-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, replica, "5.0"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-5.0-server-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, server, "5.0"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-5.0-sharded-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, sharded, "5.0"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-6.0-replica-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, replica, "6.0"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-6.0-server-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, server, "6.0"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-gcc-test-6.0-sharded-noauth
-    run_on: ubuntu1804-small
-    tags: [sasl-matrix-nossl, test, ubuntu1804, gcc, sasl-off, noauth, sharded, "6.0"]
-    depends_on: [{ name: sasl-off-nossl-ubuntu1804-gcc-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-off-nossl-ubuntu1804-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: nossl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
   - name: sasl-off-nossl-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
     tags: [sasl-matrix-nossl, compile, ubuntu2004, gcc, sasl-off]
@@ -4464,6 +3918,186 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
+  - name: sasl-off-nossl-ubuntu2004-gcc-test-4.4-replica-noauth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, replica, "4.4"]
+    depends_on: [{ name: sasl-off-nossl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-ubuntu2004-gcc-test-4.4-server-noauth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, server, "4.4"]
+    depends_on: [{ name: sasl-off-nossl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-ubuntu2004-gcc-test-4.4-sharded-noauth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, sharded, "4.4"]
+    depends_on: [{ name: sasl-off-nossl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-ubuntu2004-gcc-test-5.0-replica-noauth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, replica, "5.0"]
+    depends_on: [{ name: sasl-off-nossl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-ubuntu2004-gcc-test-5.0-server-noauth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, server, "5.0"]
+    depends_on: [{ name: sasl-off-nossl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-ubuntu2004-gcc-test-5.0-sharded-noauth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, sharded, "5.0"]
+    depends_on: [{ name: sasl-off-nossl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-ubuntu2004-gcc-test-6.0-replica-noauth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, replica, "6.0"]
+    depends_on: [{ name: sasl-off-nossl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-ubuntu2004-gcc-test-6.0-server-noauth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, server, "6.0"]
+    depends_on: [{ name: sasl-off-nossl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-ubuntu2004-gcc-test-6.0-sharded-noauth
+    run_on: ubuntu2004-small
+    tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, sharded, "6.0"]
+    depends_on: [{ name: sasl-off-nossl-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: sasl-off-nossl-ubuntu2004-gcc-test-7.0-replica-noauth
     run_on: ubuntu2004-small
     tags: [sasl-matrix-nossl, test, ubuntu2004, gcc, sasl-off, noauth, replica, "7.0"]
@@ -4836,46 +4470,18 @@ tasks:
         vars:
           CC: clang
       - func: upload scan artifacts
-  - name: scan-build-ubuntu1604-arm64-clang
-    run_on: ubuntu1604-arm64-large
-    tags: [scan-build-matrix, ubuntu1604-arm64, clang]
+  - name: scan-build-ubuntu2004-arm64-clang
+    run_on: ubuntu2004-arm64-large
+    tags: [scan-build-matrix, ubuntu2004-arm64, clang]
     commands:
       - func: find-cmake-latest
       - func: scan-build
         vars:
           CC: clang
       - func: upload scan artifacts
-  - name: scan-build-ubuntu1604-clang
-    run_on: ubuntu1604-large
-    tags: [scan-build-matrix, ubuntu1604, clang]
-    commands:
-      - func: find-cmake-latest
-      - func: scan-build
-        vars:
-          CC: clang
-      - func: upload scan artifacts
-  - name: scan-build-ubuntu1604-clang-i686
-    run_on: ubuntu1604-large
-    tags: [scan-build-matrix, ubuntu1604, clang, i686]
-    commands:
-      - func: find-cmake-latest
-      - func: scan-build
-        vars:
-          CC: clang
-          MARCH: i686
-      - func: upload scan artifacts
-  - name: scan-build-ubuntu1804-arm64-clang
-    run_on: ubuntu1804-arm64-large
-    tags: [scan-build-matrix, ubuntu1804-arm64, clang]
-    commands:
-      - func: find-cmake-latest
-      - func: scan-build
-        vars:
-          CC: clang
-      - func: upload scan artifacts
-  - name: scan-build-ubuntu1804-clang-i686
-    run_on: ubuntu1804-large
-    tags: [scan-build-matrix, ubuntu1804, clang, i686]
+  - name: scan-build-ubuntu2004-clang-i686
+    run_on: ubuntu2004-large
+    tags: [scan-build-matrix, ubuntu2004, clang, i686]
     commands:
       - func: find-cmake-latest
       - func: scan-build
@@ -4927,44 +4533,6 @@ tasks:
       - func: std-compile
         vars:
           CC: clang
-          C_STD_VERSION: 11
-  - name: std-c11-ubuntu1604-clang-compile
-    run_on: ubuntu1604-large
-    tags: [std-matrix, ubuntu1604, clang, compile, std-c11]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CC: clang
-          C_STD_VERSION: 11
-  - name: std-c11-ubuntu1604-clang-i686-compile
-    run_on: ubuntu1604-large
-    tags: [std-matrix, ubuntu1604, clang, compile, i686, std-c11]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CC: clang
-          C_STD_VERSION: 11
-          MARCH: i686
-  - name: std-c11-ubuntu1804-clang-i686-compile
-    run_on: ubuntu1804-large
-    tags: [std-matrix, ubuntu1804, clang, compile, i686, std-c11]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CC: clang
-          C_STD_VERSION: 11
-          MARCH: i686
-  - name: std-c11-ubuntu1804-gcc-compile
-    run_on: ubuntu1804-large
-    tags: [std-matrix, ubuntu1804, gcc, compile, std-c11]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CC: gcc
           C_STD_VERSION: 11
   - name: std-c11-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
@@ -5020,315 +4588,6 @@ tasks:
         vars:
           CC: Visual Studio 15 2017 Win64
           C_STD_VERSION: 17
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-    run_on: ubuntu1804-large
-    tags: [sanitizers-matrix-tsan, compile, ubuntu1804, clang, tsan, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "4.0", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "4.0", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "4.0", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "4.2", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "4.2", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "4.2", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "4.4", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "4.4", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "4.4", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "5.0", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "5.0", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "5.0", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-replica-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, replica, "6.0", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, server, "6.0", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-sharded-auth
-    run_on: ubuntu1804-small
-    tags: [sanitizers-matrix-tsan, test, ubuntu1804, clang, sasl-cyrus, tsan, auth, sharded, "6.0", openssl]
-    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-tsan, compile, ubuntu2004, clang, tsan, sasl-cyrus]
@@ -5338,6 +4597,186 @@ tasks:
         vars:
           CC: clang
       - func: upload-build
+  - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-replica-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, replica, "4.4", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-server-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, server, "4.4", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-sharded-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, sharded, "4.4", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-replica-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, replica, "5.0", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, server, "5.0", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-5.0-sharded-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, sharded, "5.0", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-replica-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, replica, "6.0", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-server-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, server, "6.0", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-6.0-sharded-auth
+    run_on: ubuntu2004-small
+    tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, sharded, "6.0", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-7.0-replica-auth
     run_on: ubuntu2004-small
     tags: [sanitizers-matrix-tsan, test, ubuntu2004, clang, sasl-cyrus, tsan, auth, replica, "7.0", openssl]
