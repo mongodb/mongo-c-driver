@@ -29,6 +29,23 @@
 #include <intrin.h>
 #endif
 
+// bson-atomic.h is deprecated.
+// Ignore deprecation warnings for function calls within this file.
+
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#define BSON_BEGIN_IGNORE_DEPRECATIONS \
+   _Pragma ("GCC diagnostic push") _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define BSON_END_IGNORE_DEPRECATIONS _Pragma ("GCC diagnostic pop")
+#elif defined(__clang__)
+#define BSON_BEGIN_IGNORE_DEPRECATIONS \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define BSON_END_IGNORE_DEPRECATIONS _Pragma ("clang diagnostic pop")
+#else
+#define BSON_BEGIN_IGNORE_DEPRECATIONS
+#define BSON_END_IGNORE_DEPRECATIONS
+#endif
+
+BSON_BEGIN_IGNORE_DEPRECATIONS
 
 BSON_BEGIN_DECLS
 
@@ -607,5 +624,9 @@ BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 
 BSON_END_DECLS
 
+BSON_END_IGNORE_DEPRECATIONS
+
+#undef BSON_BEGIN_IGNORE_DEPRECATIONS
+#undef BSON_END_IGNORE_DEPRECATIONS
 
 #endif /* BSON_ATOMIC_H */
