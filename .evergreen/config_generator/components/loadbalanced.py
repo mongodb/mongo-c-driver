@@ -13,7 +13,7 @@ from config_generator.etc.distros import make_distro_str, find_small_distro, fin
 from config_generator.etc.utils import Task, bash_exec
 
 # Use `rhel8.9` distro. `rhel8.9` distro includes necessary dependency: `haproxy`.
-_DISTRO_NAME = "rhel89"
+_DISTRO_NAME = "rhel8.9"
 _COMPILER = "gcc"
 
 
