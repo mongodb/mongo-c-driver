@@ -22,29 +22,11 @@
 #include <sched.h>
 #endif
 
-int32_t
-bson_atomic_int_add (volatile int32_t *p, int32_t n)
-{
-   return n + bson_atomic_int32_fetch_add ((DECL_ATOMIC_INTEGRAL_INT32 *) p, n, bson_memory_order_seq_cst);
-}
-
-int64_t
-bson_atomic_int64_add (volatile int64_t *p, int64_t n)
-{
-   return n + bson_atomic_int64_fetch_add (p, n, bson_memory_order_seq_cst);
-}
-
 void
 mcd_thrd_yield (void)
 {
    BSON_IF_WINDOWS (SwitchToThread ();)
    BSON_IF_POSIX (sched_yield ();)
-}
-
-void
-bson_memory_barrier (void)
-{
-   bson_atomic_thread_fence ();
 }
 
 /**

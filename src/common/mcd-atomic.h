@@ -581,18 +581,6 @@ mcd_atomic_thread_fence (void)
 #undef MCD_IF_GNU_LEGACY_ATOMICS
 #undef MCD_USE_LEGACY_GCC_ATOMICS
 
-BSON_GNUC_DEPRECATED_FOR ("mcd_atomic_thread_fence")
-void
-mcd_memory_barrier (void);
-
-BSON_GNUC_DEPRECATED_FOR ("mcd_atomic_int_fetch_add")
-int32_t
-mcd_atomic_int_add (volatile int32_t *p, int32_t n);
-
-BSON_GNUC_DEPRECATED_FOR ("mcd_atomic_int64_fetch_add")
-int64_t
-mcd_atomic_int64_add (volatile int64_t *p, int64_t n);
-
 
 #undef MCD_EMULATE_PTR
 #undef MCD_EMULATE_INT32
