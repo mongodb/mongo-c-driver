@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <bson/bson-prelude.h>
+#include "common-prelude.h"
 
 
 #ifndef MCD_ATOMIC_H
