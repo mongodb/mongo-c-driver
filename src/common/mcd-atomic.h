@@ -309,55 +309,55 @@ DECL_ATOMIC_INTEGRAL (int, int, )
 #define DECL_ATOMIC_INTEGRAL_INT32 int32_t
 #endif
 
-BSON_EXPORT (int64_t)
+int64_t
 _mcd_emul_atomic_int64_fetch_add (int64_t volatile *val, int64_t v, enum mcd_memory_order);
-BSON_EXPORT (int64_t)
+int64_t
 _mcd_emul_atomic_int64_exchange (int64_t volatile *val, int64_t v, enum mcd_memory_order);
-BSON_EXPORT (int64_t)
+int64_t
 _mcd_emul_atomic_int64_compare_exchange_strong (int64_t volatile *val,
                                                 int64_t expect_value,
                                                 int64_t new_value,
                                                 enum mcd_memory_order);
 
-BSON_EXPORT (int64_t)
+int64_t
 _mcd_emul_atomic_int64_compare_exchange_weak (int64_t volatile *val,
                                               int64_t expect_value,
                                               int64_t new_value,
                                               enum mcd_memory_order);
 
-BSON_EXPORT (int32_t)
+int32_t
 _mcd_emul_atomic_int32_fetch_add (int32_t volatile *val, int32_t v, enum mcd_memory_order);
-BSON_EXPORT (int32_t)
+int32_t
 _mcd_emul_atomic_int32_exchange (int32_t volatile *val, int32_t v, enum mcd_memory_order);
-BSON_EXPORT (int32_t)
+int32_t
 _mcd_emul_atomic_int32_compare_exchange_strong (int32_t volatile *val,
                                                 int32_t expect_value,
                                                 int32_t new_value,
                                                 enum mcd_memory_order);
 
-BSON_EXPORT (int32_t)
+int32_t
 _mcd_emul_atomic_int32_compare_exchange_weak (int32_t volatile *val,
                                               int32_t expect_value,
                                               int32_t new_value,
                                               enum mcd_memory_order);
 
-BSON_EXPORT (int)
+int
 _mcd_emul_atomic_int_fetch_add (int volatile *val, int v, enum mcd_memory_order);
-BSON_EXPORT (int)
+int
 _mcd_emul_atomic_int_exchange (int volatile *val, int v, enum mcd_memory_order);
-BSON_EXPORT (int)
+int
 _mcd_emul_atomic_int_compare_exchange_strong (int volatile *val,
                                               int expect_value,
                                               int new_value,
                                               enum mcd_memory_order);
 
-BSON_EXPORT (int)
+int
 _mcd_emul_atomic_int_compare_exchange_weak (int volatile *val, int expect_value, int new_value, enum mcd_memory_order);
 
-BSON_EXPORT (void *)
+void *
 _mcd_emul_atomic_ptr_exchange (void *volatile *val, void *v, enum mcd_memory_order);
 
-BSON_EXPORT (void)
+void
 mcd_thrd_yield (void);
 
 #if (defined(_MSC_VER) && !defined(_M_IX86)) || (defined(__LP64__) && __LP64__)
@@ -586,13 +586,16 @@ mcd_atomic_thread_fence (void)
 #undef MCD_USE_LEGACY_GCC_ATOMICS
 
 BSON_GNUC_DEPRECATED_FOR ("mcd_atomic_thread_fence")
-BSON_EXPORT (void) mcd_memory_barrier (void);
+void
+mcd_memory_barrier (void);
 
 BSON_GNUC_DEPRECATED_FOR ("mcd_atomic_int_fetch_add")
-BSON_EXPORT (int32_t) mcd_atomic_int_add (volatile int32_t *p, int32_t n);
+int32_t
+mcd_atomic_int_add (volatile int32_t *p, int32_t n);
 
 BSON_GNUC_DEPRECATED_FOR ("mcd_atomic_int64_fetch_add")
-BSON_EXPORT (int64_t) mcd_atomic_int64_add (volatile int64_t *p, int64_t n);
+int64_t
+mcd_atomic_int64_add (volatile int64_t *p, int64_t n);
 
 
 #undef MCD_EMULATE_PTR
