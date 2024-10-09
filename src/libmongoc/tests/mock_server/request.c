@@ -22,6 +22,7 @@
 #include "../test-conveniences.h"
 #include "../TestSuite.h"
 #include <mcd-string.h>
+#include <mcd-cmp.h>
 
 static bool
 is_command_ns (const char *ns);
@@ -54,7 +55,7 @@ request_new (const mongoc_buffer_t *buffer,
    BSON_ASSERT_PARAM (client);
    BSON_ASSERT_PARAM (replies);
 
-   BSON_ASSERT (bson_in_range_signed (size_t, msg_len));
+   BSON_ASSERT (mcd_in_range_signed (size_t, msg_len));
 
    request_t *const request = (request_t *) bson_malloc0 (sizeof *request);
 
@@ -126,7 +127,7 @@ assert_request_matches_flags (const request_t *request, uint32_t flags)
    BSON_ASSERT (request);
 
    const int32_t request_flags = mcd_rpc_op_query_get_flags (request->rpc);
-   if (bson_cmp_not_equal_su (request_flags, flags)) {
+   if (mcd_cmp_not_equal_su (request_flags, flags)) {
       test_error ("request's query flags are %s, expected %s",
                   query_flags_str (request_flags),
                   query_flags_str ((int32_t) flags));
@@ -200,7 +201,7 @@ request_matches_query (const request_t *request,
    assert_request_matches_flags (request, flags);
 
    const int32_t request_skip = mcd_rpc_op_query_get_number_to_skip (request->rpc);
-   if (bson_cmp_not_equal_su (request_skip, skip)) {
+   if (mcd_cmp_not_equal_su (request_skip, skip)) {
       test_error ("requests's skip = %" PRId32 ", expected %" PRIu32 ": %s", request_skip, skip, doc_as_json);
       goto done;
    }

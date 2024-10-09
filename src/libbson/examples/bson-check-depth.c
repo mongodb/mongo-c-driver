@@ -17,6 +17,7 @@
 /* -- sphinx-include-start -- */
 /* Reports the maximum nested depth of a BSON document. */
 #include <bson/bson.h>
+#include <mcd-cmp.h>
 
 #include <assert.h>
 #include <inttypes.h>
@@ -114,7 +115,7 @@ main (int argc, char **argv)
       return 1;
    }
 
-   BSON_ASSERT (bson_in_range_signed (uint32_t, max_depth));
+   BSON_ASSERT (mcd_in_range_signed (uint32_t, max_depth));
 
    while ((bson = bson_reader_read (bson_reader, &reached_eof))) {
       check_depth (bson, (uint32_t) max_depth);

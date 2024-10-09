@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "client-side-encryption-helpers.h"
+#include <mcd-cmp.h>
 
 /* This example demonstrates how to set up automatic decryption without
  * automatic encryption using the community version of MongoDB */
@@ -142,7 +143,7 @@ main (void)
    to_encrypt.value_type = BSON_TYPE_UTF8;
    to_encrypt.value.v_utf8.str = "123456789";
    const size_t len = strlen (to_encrypt.value.v_utf8.str);
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len));
+   BSON_ASSERT (mcd_in_range_unsigned (uint32_t, len));
    to_encrypt.value.v_utf8.len = (uint32_t) len;
 
    ret = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);

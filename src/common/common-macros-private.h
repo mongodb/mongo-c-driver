@@ -28,7 +28,7 @@
 #endif
 
 // `MC_ENABLE_CONVERSION_WARNING_BEGIN` enables -Wconversion to check for potentially unsafe integer conversions.
-// The `bson_in_range_*` functions can help address these warnings by ensuring a cast is within bounds.
+// The `mcd_in_range_*` functions can help address these warnings by ensuring a cast is within bounds.
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) // gcc 4.6 added support for "diagnostic push".
 #define MC_ENABLE_CONVERSION_WARNING_BEGIN \
    _Pragma ("GCC diagnostic push") _Pragma ("GCC diagnostic warning \"-Wconversion\"")

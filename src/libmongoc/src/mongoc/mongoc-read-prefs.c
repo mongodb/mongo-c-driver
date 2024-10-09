@@ -18,6 +18,7 @@
 #include "mongoc-error.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-trace-private.h"
+#include <mcd-cmp.h>
 
 
 mongoc_read_prefs_t *
@@ -87,7 +88,7 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs, const bson_t *tag)
    key = bson_count_keys (&read_prefs->tags);
    // Expect no truncation.
    int req = bson_snprintf (str, sizeof str, "%d", key);
-   BSON_ASSERT (bson_cmp_less_su (req, sizeof str));
+   BSON_ASSERT (mcd_cmp_less_su (req, sizeof str));
 
    if (tag) {
       bson_append_document (&read_prefs->tags, str, -1, tag);

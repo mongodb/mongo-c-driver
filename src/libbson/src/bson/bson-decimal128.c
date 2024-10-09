@@ -19,11 +19,11 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <bson/bson-cmp.h>
 #include <bson/bson-decimal128.h>
 #include <bson/bson-types.h>
 #include <bson/bson-macros.h>
 #include <mcd-string.h>
+#include <mcd-cmp.h>
 
 
 #define BSON_DECIMAL128_EXPONENT_MAX 6111
@@ -298,7 +298,7 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
             *(str_out++) = '0';
          }
 
-         for (uint32_t i = 0; bson_cmp_greater_us (significand_digits - i, BSON_MAX (radix_position - 1, 0)) &&
+         for (uint32_t i = 0; mcd_cmp_greater_us (significand_digits - i, BSON_MAX (radix_position - 1, 0)) &&
                               (str_out - str) < available_bytes;
               i++) {
             *(str_out++) = *(significand_read++) + '0';
@@ -582,7 +582,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
       int read_exponent = SSCANF (++str_read, "%" SCNd64 "%n", &temp_exponent, &nread);
       str_read += nread;
 
-      if (!read_exponent || nread == 0 || !bson_in_range_int32_t_signed (temp_exponent)) {
+      if (!read_exponent || nread == 0 || !mcd_in_range_int32_t_signed (temp_exponent)) {
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
@@ -623,11 +623,10 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    /* to represent user input */
 
    /* Overflow prevention */
-   if (bson_cmp_less_equal_su (exponent, radix_position) &&
-       bson_cmp_greater_us (radix_position, exponent + (1 << 14))) {
+   if (mcd_cmp_less_equal_su (exponent, radix_position) && mcd_cmp_greater_us (radix_position, exponent + (1 << 14))) {
       exponent = BSON_DECIMAL128_EXPONENT_MIN;
    } else {
-      BSON_ASSERT (bson_in_range_unsigned (int32_t, radix_position));
+      BSON_ASSERT (mcd_in_range_unsigned (int32_t, radix_position));
       exponent -= (int32_t) radix_position;
    }
 

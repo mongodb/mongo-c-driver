@@ -1,4 +1,5 @@
 #include "client-side-encryption-helpers.h"
+#include <mcd-cmp.h>
 
 uint8_t *
 hex_to_bin (const char *hex, uint32_t *len)
@@ -13,7 +14,7 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   if (!bson_in_range_unsigned (uint32_t, hex_len / 2u)) {
+   if (!mcd_in_range_unsigned (uint32_t, hex_len / 2u)) {
       return NULL;
    }
 

@@ -44,6 +44,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
 #include <mcd-string.h>
+#include <mcd-cmp.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
@@ -868,7 +869,7 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bs
    if (!node->dns_results) {
       // Expect no truncation.
       int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
-      BSON_ASSERT (bson_cmp_less_su (req, sizeof portstr));
+      BSON_ASSERT (mcd_cmp_less_su (req, sizeof portstr));
 
       memset (&hints, 0, sizeof hints);
       hints.ai_family = host->family;
@@ -931,7 +932,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
    // Expect no truncation.
    int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
 
-   if (bson_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
+   if (mcd_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
       bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
       RETURN (false);
    }

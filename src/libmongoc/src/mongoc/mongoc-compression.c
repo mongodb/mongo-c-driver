@@ -20,6 +20,7 @@
 #include "mongoc-compression-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
+#include <mcd-cmp.h>
 
 #ifdef MONGOC_ENABLE_COMPRESSION
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
@@ -45,7 +46,7 @@ mongoc_compressor_max_compressed_length (int32_t compressor_id, size_t len)
 
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
    case MONGOC_COMPRESSOR_ZLIB_ID:
-      BSON_ASSERT (bson_in_range_unsigned (unsigned_long, len));
+      BSON_ASSERT (mcd_in_range_unsigned (unsigned_long, len));
       return compressBound ((unsigned long) len);
 #endif
 
@@ -170,12 +171,12 @@ mongoc_uncompress (int32_t compressor_id,
    case MONGOC_COMPRESSOR_ZLIB_ID: {
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
       // Malformed message: unrepresentable.
-      if (BSON_UNLIKELY (!bson_in_range_unsigned (unsigned_long, compressed_len))) {
+      if (BSON_UNLIKELY (!mcd_in_range_unsigned (unsigned_long, compressed_len))) {
          return false;
       }
 
       // Malformed message: unrepresentable.
-      if (BSON_UNLIKELY (!bson_in_range_unsigned (unsigned_long, *uncompressed_len))) {
+      if (BSON_UNLIKELY (!mcd_in_range_unsigned (unsigned_long, *uncompressed_len))) {
          return false;
       }
 
@@ -253,7 +254,7 @@ mongoc_compress (int32_t compressor_id,
 
    case MONGOC_COMPRESSOR_ZLIB_ID:
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-      BSON_ASSERT (bson_in_range_unsigned (unsigned_long, uncompressed_len));
+      BSON_ASSERT (mcd_in_range_unsigned (unsigned_long, uncompressed_len));
       return compress2 ((unsigned char *) compressed,
                         (unsigned long *) compressed_len,
                         (unsigned char *) uncompressed,

@@ -22,6 +22,7 @@
 #include "mongoc-stream-gridfs-upload-private.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-util-private.h"
+#include <mcd-cmp.h>
 
 /* Returns the minimum of two numbers */
 static size_t
@@ -328,7 +329,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file, const mong
       }
    }
 
-   BSON_ASSERT (bson_in_range_signed (size_t, file->chunk_size));
+   BSON_ASSERT (mcd_in_range_signed (size_t, file->chunk_size));
    const size_t chunk_size = (size_t) file->chunk_size;
 
    for (size_t i = 0u; i < iovcnt; i++) {
@@ -352,7 +353,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file, const mong
       }
    }
 
-   BSON_ASSERT (bson_in_range_unsigned (ssize_t, total));
+   BSON_ASSERT (mcd_in_range_unsigned (ssize_t, total));
    return (ssize_t) total;
 }
 
@@ -396,14 +397,14 @@ _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file, mongoc_iove
             }
             if (file->finished) {
                /* There's nothing left to read */
-               BSON_ASSERT (bson_in_range_unsigned (ssize_t, total));
+               BSON_ASSERT (mcd_in_range_unsigned (ssize_t, total));
                RETURN ((ssize_t) total);
             }
          }
       }
    }
 
-   BSON_ASSERT (bson_in_range_unsigned (ssize_t, total));
+   BSON_ASSERT (mcd_in_range_unsigned (ssize_t, total));
    RETURN ((ssize_t) total);
 }
 

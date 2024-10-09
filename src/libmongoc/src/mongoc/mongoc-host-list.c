@@ -20,6 +20,7 @@
 /* strcasecmp on windows */
 #include "mongoc-util-private.h"
 #include "utlist.h"
+#include <mcd-cmp.h>
 
 static mongoc_host_list_t *
 _mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts, const char *host_and_port)
@@ -314,7 +315,7 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       mongoc_lowercase (link_->host, link_->host);
       int req =
          bson_snprintf (link_->host_and_port, sizeof link_->host_and_port, "[%s]:%" PRIu16, link_->host, link_->port);
-      BSON_ASSERT (bson_in_range_size_t_signed (req));
+      BSON_ASSERT (mcd_in_range_size_t_signed (req));
       // Use `<`, not `<=` to account for NULL byte.
       BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
    } else if (strchr (host, '/') && strstr (host, ".sock")) {
@@ -327,7 +328,7 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       mongoc_lowercase (link_->host, link_->host);
       int req =
          bson_snprintf (link_->host_and_port, sizeof link_->host_and_port, "%s:%" PRIu16, link_->host, link_->port);
-      BSON_ASSERT (bson_in_range_size_t_signed (req));
+      BSON_ASSERT (mcd_in_range_size_t_signed (req));
       // Use `<`, not `<=` to account for NULL byte.
       BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
    }

@@ -33,6 +33,7 @@
 #include "mongoc-openssl-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-log.h"
+#include <mcd-cmp.h>
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -214,7 +215,7 @@ mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
       RETURN (-1);
    }
 
-   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
+   if (BSON_UNLIKELY (!mcd_in_range_signed (int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
       MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
       return -1;
@@ -234,7 +235,7 @@ mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
       BIO_set_retry_read (openssl->bio);
    }
 
-   BSON_ASSERT (bson_in_range_signed (int, ret));
+   BSON_ASSERT (mcd_in_range_signed (int, ret));
 
    RETURN ((int) ret);
 }
@@ -282,7 +283,7 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
    iov.iov_base = (void *) buf;
    iov.iov_len = (size_t) len;
 
-   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
+   if (BSON_UNLIKELY (!mcd_in_range_signed (int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
       MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
       RETURN (-1);
@@ -307,7 +308,7 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
       BIO_set_retry_write (openssl->bio);
    }
 
-   BSON_ASSERT (bson_in_range_signed (int, ret));
+   BSON_ASSERT (mcd_in_range_signed (int, ret));
 
    RETURN ((int) ret);
 }

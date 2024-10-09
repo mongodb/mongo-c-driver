@@ -19,7 +19,7 @@
 #include <mcd-string.h>
 #include <bson/bson-value.h>
 #include <bson/bson-oid.h>
-#include <bson/bson-cmp.h>
+#include <mcd-cmp.h>
 
 
 void
@@ -36,7 +36,7 @@ bson_value_copy (const bson_value_t *src, /* IN */
       dst->value.v_double = src->value.v_double;
       break;
    case BSON_TYPE_UTF8:
-      BSON_ASSERT (bson_in_range_size_t_unsigned (src->value.v_utf8.len));
+      BSON_ASSERT (mcd_in_range_size_t_unsigned (src->value.v_utf8.len));
       size_t utf8_len_sz = (size_t) src->value.v_utf8.len;
       BSON_ASSERT (utf8_len_sz <= SIZE_MAX - 1);
       dst->value.v_utf8.len = src->value.v_utf8.len;
@@ -72,7 +72,7 @@ bson_value_copy (const bson_value_t *src, /* IN */
       dst->value.v_regex.options = bson_strdup (src->value.v_regex.options);
       break;
    case BSON_TYPE_DBPOINTER:
-      BSON_ASSERT (bson_in_range_size_t_unsigned (src->value.v_dbpointer.collection_len));
+      BSON_ASSERT (mcd_in_range_size_t_unsigned (src->value.v_dbpointer.collection_len));
       size_t dbpointer_len_sz = (size_t) src->value.v_dbpointer.collection_len;
       BSON_ASSERT (dbpointer_len_sz <= SIZE_MAX - 1);
       dst->value.v_dbpointer.collection_len = src->value.v_dbpointer.collection_len;
@@ -83,7 +83,7 @@ bson_value_copy (const bson_value_t *src, /* IN */
       bson_oid_copy (&src->value.v_dbpointer.oid, &dst->value.v_dbpointer.oid);
       break;
    case BSON_TYPE_CODE:
-      BSON_ASSERT (bson_in_range_size_t_unsigned (src->value.v_code.code_len));
+      BSON_ASSERT (mcd_in_range_size_t_unsigned (src->value.v_code.code_len));
       size_t code_len_sz = (size_t) src->value.v_code.code_len;
       BSON_ASSERT (code_len_sz <= SIZE_MAX - 1);
       dst->value.v_code.code_len = src->value.v_code.code_len;
@@ -92,7 +92,7 @@ bson_value_copy (const bson_value_t *src, /* IN */
       dst->value.v_code.code[dst->value.v_code.code_len] = '\0';
       break;
    case BSON_TYPE_SYMBOL:
-      BSON_ASSERT (bson_in_range_size_t_unsigned (src->value.v_symbol.len));
+      BSON_ASSERT (mcd_in_range_size_t_unsigned (src->value.v_symbol.len));
       size_t symbol_len_sz = (size_t) src->value.v_symbol.len;
       BSON_ASSERT (symbol_len_sz <= SIZE_MAX - 1);
       dst->value.v_symbol.len = src->value.v_symbol.len;
@@ -101,7 +101,7 @@ bson_value_copy (const bson_value_t *src, /* IN */
       dst->value.v_symbol.symbol[dst->value.v_symbol.len] = '\0';
       break;
    case BSON_TYPE_CODEWSCOPE:
-      BSON_ASSERT (bson_in_range_size_t_unsigned (src->value.v_codewscope.code_len));
+      BSON_ASSERT (mcd_in_range_size_t_unsigned (src->value.v_codewscope.code_len));
       size_t codewscope_len_sz = (size_t) src->value.v_codewscope.code_len;
       BSON_ASSERT (codewscope_len_sz <= SIZE_MAX - 1);
       dst->value.v_codewscope.code_len = src->value.v_codewscope.code_len;
