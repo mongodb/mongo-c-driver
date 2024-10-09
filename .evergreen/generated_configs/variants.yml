@@ -69,6 +69,20 @@ buildvariants:
       MONGOC_EARTHLY_ENV: archlinux
     tasks:
       - name: .archlinux-gcc
+  - name: centos7-clang
+    display_name: CentOS 7.0 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: centos7
+    tasks:
+      - name: .centos7-clang
+  - name: centos7-gcc
+    display_name: CentOS 7.0 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: centos7
+    tasks:
+      - name: .centos7-gcc
   - name: clang-format
     display_name: clang-format
     run_on:

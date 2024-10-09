@@ -155,7 +155,7 @@ env-warmup:
 multibuild:
     BUILD +run --targets "test-example" \
         --env=alpine3.16 --env=alpine3.17 --env=alpine3.18 --env=alpine3.19 \
-        --env=u20 --env=u22 \
+        --env=u16 --env=u18 --env=u20 --env=u22 --env=centos7 \
         --env=archlinux \
         --tls=OpenSSL --tls=off \
         --sasl=Cyrus --sasl=off \
@@ -501,6 +501,9 @@ env.archlinux:
     DO --pass-args tools+ADD_C_COMPILER
     DO +PREP_CMAKE
 
+env.centos7:
+    DO --pass-args +CENTOS_ENV --version=7
+
 ALPINE_ENV:
     COMMAND
     ARG --required version
@@ -538,5 +541,27 @@ UBUNTU_ENV:
 
     DO --pass-args tools+ADD_SASL
     DO --pass-args tools+ADD_TLS
+    DO --pass-args tools+ADD_C_COMPILER
+    DO +PREP_CMAKE
+
+CENTOS_ENV:
+    COMMAND
+    ARG --required version
+    FROM --pass-args tools+init-env --from centos:$version
+    # Update repositories to use vault.centos.org
+    RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
+        sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+    RUN yum -y install epel-release && yum -y update
+    RUN yum -y install curl gcc gcc-c++ make
+    ARG --required purpose
+
+    IF test "$purpose" = build
+        RUN yum -y install ninja-build ccache snappy-devel zlib-devel
+    ELSE IF test "$purpose" = test
+        RUN yum -y install ninja-build snappy
+    END
+
+    DO --pass-args tools+ADD_SASL --cyrus_dev_pkg="cyrus-sasl-devel" --cyrus_rt_pkg="cyrus-sasl-lib"
+    DO --pass-args tools+ADD_TLS --openssl_dev_pkg="openssl-devel" --openssl_rt_pkg="openssl-libs"
     DO --pass-args tools+ADD_C_COMPILER
     DO +PREP_CMAKE

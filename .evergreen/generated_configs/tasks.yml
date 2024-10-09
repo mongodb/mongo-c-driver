@@ -1004,7 +1004,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [earthly, pr-merge-gate, u16-clang, u16-gcc]
+    tags: [earthly, pr-merge-gate, centos7-clang, centos7-gcc, u16-clang, u16-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -1112,7 +1112,7 @@ tasks:
       - debian10
       - debian11
       - amazon2
-    tags: [earthly, pr-merge-gate, u16-clang, u16-gcc]
+    tags: [earthly, pr-merge-gate, centos7-clang, centos7-gcc, u16-clang, u16-gcc]
     commands:
       - command: subprocess.exec
         type: setup

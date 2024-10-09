@@ -27,6 +27,7 @@ EnvKey = Literal[
     "alpine3.18",
     "alpine3.19",
     "archlinux",
+    "centos7"
 ]
 "Identifiers for environments. These correspond to special 'env.*' targets in the Earthfile."
 CompilerName = Literal["gcc", "clang"]
@@ -55,6 +56,8 @@ def os_split(env: EnvKey) -> tuple[str, None | str]:
         # Match 'u22', 'u20', 'u71' etc.
         case ubu if mat := re.match(r"u(\d\d)", ubu):
             return "Ubuntu", f"{mat[1]}.04"
+        case "centos7":
+            return "CentOS", "7.0"
         case _:
             raise ValueError(
                 f"Failed to split OS env key {env=} into a name+version pair (unrecognized)"
@@ -150,14 +153,14 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
         # Other sasl=off tasks we'll just ignore:
         case _, ("off", _tls, _cxx):
             return False
-        # Ubuntu does not ship with a LibreSSL package:
-        case e, (_sasl, "LibreSSL", _cxx) if e.display_name.startswith("Ubuntu"):
+        # Ubuntu and CentOS do not ship with a LibreSSL package:
+        case e, (_sasl, "LibreSSL", _cxx) if e.display_name.startswith("Ubuntu") or e.display_name.startswith("CentOS"):
             return False
         # u16 is not capable of building mongocxx
-        case ["u16", _], (_, _, "none"):
+        case e, (_, _, "none") if e.display_name.startswith("Ubuntu 16") or e.display_name.startswith("CentOS 7"):
             return True
          # Exclude u16 for all other configurations
-        case ["u16", _], _:
+        case e, _ if e.display_name.startswith("Ubuntu 16") or e.display_name.startswith("CentOS 7"):
             return False
         # Exclude all other envs
         case _, (_, _, "none"):
