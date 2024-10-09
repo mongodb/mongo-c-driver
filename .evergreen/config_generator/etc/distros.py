@@ -64,8 +64,8 @@ RHEL_DISTROS = [
     Distro(name='rhel80-small', os='rhel', os_type='linux', os_ver='8.0', size='small'),
     Distro(name='rhel84-large', os='rhel', os_type='linux', os_ver='8.4', size='large'),
     Distro(name='rhel84-small', os='rhel', os_type='linux', os_ver='8.4', size='small'),
-    Distro(name='rhel87-large', os='rhel', os_type='linux', os_ver='8.7', size='large'),
-    Distro(name='rhel87-small', os='rhel', os_type='linux', os_ver='8.7', size='small'),
+    Distro(name='rhel89-large', os='rhel', os_type='linux', os_ver='8.7', size='large'),
+    Distro(name='rhel89-small', os='rhel', os_type='linux', os_ver='8.7', size='small'),
     Distro(name='rhel90-large', os='rhel', os_type='linux', os_ver='9.0', size='large'),
     Distro(name='rhel90-small', os='rhel', os_type='linux', os_ver='9.0', size='small'),
 ]
