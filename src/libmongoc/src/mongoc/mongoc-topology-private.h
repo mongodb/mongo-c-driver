@@ -30,6 +30,7 @@
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
 #include "mongoc-sleep.h"
+#include <mcd-atomic.h>
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -448,7 +449,7 @@ _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology, _mongoc_rr_resolv
 static BSON_INLINE void
 _mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val)
 {
-   bson_atomic_int64_exchange (&topology->_atomic_srv_polling_rescan_interval_ms, val, bson_memory_order_seq_cst);
+   mcd_atomic_int64_exchange (&topology->_atomic_srv_polling_rescan_interval_ms, val, mcd_memory_order_seq_cst);
 }
 
 /**
@@ -457,7 +458,7 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology
 static BSON_INLINE int64_t
 _mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *topology)
 {
-   return bson_atomic_int64_fetch (&topology->_atomic_srv_polling_rescan_interval_ms, bson_memory_order_seq_cst);
+   return mcd_atomic_int64_fetch (&topology->_atomic_srv_polling_rescan_interval_ms, mcd_memory_order_seq_cst);
 }
 
 /**

@@ -45,6 +45,7 @@
 #include "mongoc-util-private.h"
 #include <mcd-string.h>
 #include <mcd-cmp.h>
+#include <mcd-atomic.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
@@ -296,7 +297,7 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts, bson_
 
    /* appname will only be changed from NULL, so a non-null pointer will never
     * be invalidated after this fetch. */
-   appname = bson_atomic_ptr_fetch ((void *) &ts->appname, bson_memory_order_relaxed);
+   appname = mcd_atomic_ptr_fetch ((void *) &ts->appname, mcd_memory_order_relaxed);
 
    bson_mutex_lock (&ts->handshake_cmd_mtx);
    /* If this is the first time using the node or if it's the first time
@@ -1248,7 +1249,7 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts, const char 
    }
 
    s = bson_strdup (appname);
-   prev = bson_atomic_ptr_compare_exchange_strong ((void *) &ts->appname, NULL, s, bson_memory_order_relaxed);
+   prev = mcd_atomic_ptr_compare_exchange_strong ((void *) &ts->appname, NULL, s, mcd_memory_order_relaxed);
    if (prev == NULL) {
       return true;
    }

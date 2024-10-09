@@ -31,6 +31,7 @@
 #include "mongoc-database-private.h"
 #include "mongoc-util-private.h"
 #include <mcd-string.h>
+#include <mcd-atomic.h>
 
 /*--------------------------------------------------------------------------
  * Auto Encryption options.
@@ -1901,14 +1902,14 @@ _mongoc_cse_client_pool_enable_auto_encryption (mongoc_topology_t *topology,
       GOTO (fail);
    }
 
-   prev_cse_state = bson_atomic_int_compare_exchange_strong (
-      (int *) &topology->cse_state, MONGOC_CSE_DISABLED, MONGOC_CSE_STARTING, bson_memory_order_acquire);
+   prev_cse_state = mcd_atomic_int_compare_exchange_strong (
+      (int *) &topology->cse_state, MONGOC_CSE_DISABLED, MONGOC_CSE_STARTING, mcd_memory_order_acquire);
    while (prev_cse_state == MONGOC_CSE_STARTING) {
       /* Another thread is starting client-side encryption. It may take some
        * time to start, but don't continue until it is finished. */
       bson_thrd_yield ();
-      prev_cse_state = bson_atomic_int_compare_exchange_strong (
-         (int *) &topology->cse_state, MONGOC_CSE_DISABLED, MONGOC_CSE_STARTING, bson_memory_order_acquire);
+      prev_cse_state = mcd_atomic_int_compare_exchange_strong (
+         (int *) &topology->cse_state, MONGOC_CSE_DISABLED, MONGOC_CSE_STARTING, mcd_memory_order_acquire);
    }
 
    if (prev_cse_state == MONGOC_CSE_ENABLED) {
@@ -1974,7 +1975,7 @@ fail:
    if (prev_cse_state == MONGOC_CSE_DISABLED) {
       /* We need to set the new CSE state. */
       mongoc_topology_cse_state_t new_state = setup_okay ? MONGOC_CSE_ENABLED : MONGOC_CSE_DISABLED;
-      bson_atomic_int_exchange ((int *) &topology->cse_state, new_state, bson_memory_order_release);
+      mcd_atomic_int_exchange ((int *) &topology->cse_state, new_state, mcd_memory_order_release);
    }
    mongoc_uri_destroy (mongocryptd_uri);
    RETURN (setup_okay);
@@ -2757,7 +2758,7 @@ _mongoc_cse_is_enabled (mongoc_client_t *client)
 
    while (1) {
       mongoc_topology_cse_state_t state =
-         bson_atomic_int_fetch ((int *) &client->topology->cse_state, bson_memory_order_relaxed);
+         mcd_atomic_int_fetch ((int *) &client->topology->cse_state, mcd_memory_order_relaxed);
       if (state != MONGOC_CSE_STARTING) {
          return state == MONGOC_CSE_ENABLED;
       }

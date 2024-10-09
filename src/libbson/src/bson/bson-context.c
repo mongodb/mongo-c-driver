@@ -22,7 +22,7 @@
 #include <string.h>
 #include <time.h>
 
-#include <bson/bson-atomic.h>
+#include <mcd-atomic.h>
 #include <bson/bson-clock.h>
 #include <bson/bson-context.h>
 #include <bson/bson-context-private.h>
@@ -61,8 +61,8 @@ void
 _bson_context_set_oid_seq32 (bson_context_t *context, /* IN */
                              bson_oid_t *oid)         /* OUT */
 {
-   uint32_t seq = (uint32_t) bson_atomic_int32_fetch_add (
-      (DECL_ATOMIC_INTEGRAL_INT32 *) &context->seq32, 1, bson_memory_order_seq_cst);
+   uint32_t seq = (uint32_t) mcd_atomic_int32_fetch_add (
+      (DECL_ATOMIC_INTEGRAL_INT32 *) &context->seq32, 1, mcd_memory_order_seq_cst);
    seq = BSON_UINT32_TO_BE (seq);
    memcpy (&oid->bytes[BSON_OID_SEQ32_OFFSET], ((uint8_t *) &seq) + 1, BSON_OID_SEQ32_SIZE);
 }
@@ -72,7 +72,7 @@ void
 _bson_context_set_oid_seq64 (bson_context_t *context, /* IN */
                              bson_oid_t *oid)         /* OUT */
 {
-   uint64_t seq = (uint64_t) bson_atomic_int64_fetch_add ((int64_t *) &context->seq64, 1, bson_memory_order_seq_cst);
+   uint64_t seq = (uint64_t) mcd_atomic_int64_fetch_add ((int64_t *) &context->seq64, 1, mcd_memory_order_seq_cst);
 
    seq = BSON_UINT64_TO_BE (seq);
    memcpy (&oid->bytes[BSON_OID_SEQ64_OFFSET], &seq, BSON_OID_SEQ64_SIZE);
@@ -278,7 +278,7 @@ _bson_context_init_random (bson_context_t *context, bool init_seq)
    bson_gettimeofday (&rand_params.time);
    rand_params.pid = _bson_getpid ();
    _bson_context_get_hostname (rand_params.hostname);
-   rand_params.rand_call_counter = bson_atomic_int64_fetch_add (&s_rand_call_counter, 1, bson_memory_order_seq_cst);
+   rand_params.rand_call_counter = mcd_atomic_int64_fetch_add (&s_rand_call_counter, 1, mcd_memory_order_seq_cst);
 
    /* Generate a SipHash key. We do not care about secrecy or determinism, only
     * uniqueness. */

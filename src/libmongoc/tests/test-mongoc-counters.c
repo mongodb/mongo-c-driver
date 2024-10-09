@@ -22,6 +22,7 @@
 #include "TestSuite.h"
 #include "mock_server/future-functions.h"
 #include <mcd-cmp.h>
+#include <mcd-atomic.h>
 
 /* test statistics counters excluding OP_INSERT, OP_UPDATE, and OP_DELETE since
  * those were superseded by write commands in 2.6. */
@@ -34,7 +35,7 @@
 
 /* helper to reset a prev_* counter */
 #define RESET(ident) \
-   bson_atomic_int32_exchange (&prev_##ident, mongoc_counter_##ident##_count (), bson_memory_order_seq_cst)
+   mcd_atomic_int32_exchange (&prev_##ident, mongoc_counter_##ident##_count (), mcd_memory_order_seq_cst)
 
 /* helper to compare and reset a prev_* counter. */
 #define DIFF_AND_RESET(ident, cmp, expected)                 \
