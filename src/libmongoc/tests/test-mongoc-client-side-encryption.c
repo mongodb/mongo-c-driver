@@ -3278,7 +3278,7 @@ set_retry_failpoint (mongoc_ssl_opt_t *ssl_opts, bool network, uint32_t count)
    }
    req.extra_headers = "Content-Type: application/json\r\n";
    char count_json[25];
-   sprintf (count_json, "{\"count\": %d}", count);
+   sprintf (count_json, "{\"count\": %" PRIu32 "}", count);
    req.body = count_json;
    req.body_len = strlen (count_json);
 
