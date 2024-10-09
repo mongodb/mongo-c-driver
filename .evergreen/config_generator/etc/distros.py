@@ -123,9 +123,6 @@ WINDOWS_DISTROS = [
 
     Distro(name='windows-vsCurrent-large', os='windows', os_type='windows', vs_ver='vsCurrent', size='large'), # Windows Server 2019
     Distro(name='windows-vsCurrent-small', os='windows', os_type='windows', vs_ver='vsCurrent', size='small'), # Windows Server 2019
-
-    Distro(name='windows-vsCurrent2-large', os='windows', os_type='windows', vs_ver='vsCurrent2', size='large'),
-    Distro(name='windows-vsCurrent2-small', os='windows', os_type='windows', vs_ver='vsCurrent2', size='small'),
 ]
 #fmt: on
 # pylint: enable=line-too-long
