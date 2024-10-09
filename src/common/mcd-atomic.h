@@ -21,9 +21,7 @@
 #define MCD_ATOMIC_H
 
 
-#include <bson/bson-config.h>
-#include <bson/bson-compat.h>
-#include <bson/bson-macros.h>
+#include <bson/bson.h> // BSON_INLINE
 
 #ifdef _MSC_VER
 #include <intrin.h>
