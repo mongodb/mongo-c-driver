@@ -305,6 +305,21 @@ DECL_ATOMIC_INTEGRAL (int, int, )
 #define DECL_ATOMIC_INTEGRAL_INT32 int32_t
 #endif
 
+#define _mcd_emul_atomic_int64_fetch_add COMMON_NAME (emul_atomic_int64_fetch_add)
+#define _mcd_emul_atomic_int64_exchange COMMON_NAME (emul_atomic_int64_exchange)
+#define _mcd_emul_atomic_int64_compare_exchange_strong COMMON_NAME (emul_atomic_int64_compare_exchange_strong)
+#define _mcd_emul_atomic_int64_compare_exchange_weak COMMON_NAME (emul_atomic_int64_compare_exchange_weak)
+#define _mcd_emul_atomic_int32_fetch_add COMMON_NAME (emul_atomic_int32_fetch_add)
+#define _mcd_emul_atomic_int32_exchange COMMON_NAME (emul_atomic_int32_exchange)
+#define _mcd_emul_atomic_int32_compare_exchange_strong COMMON_NAME (emul_atomic_int32_compare_exchange_strong)
+#define _mcd_emul_atomic_int32_compare_exchange_weak COMMON_NAME (emul_atomic_int32_compare_exchange_weak)
+#define _mcd_emul_atomic_int_fetch_add COMMON_NAME (emul_atomic_int_fetch_add)
+#define _mcd_emul_atomic_int_exchange COMMON_NAME (emul_atomic_int_exchange)
+#define _mcd_emul_atomic_int_compare_exchange_strong COMMON_NAME (emul_atomic_int_compare_exchange_strong)
+#define _mcd_emul_atomic_int_compare_exchange_weak COMMON_NAME (emul_atomic_int_compare_exchange_weak)
+#define _mcd_emul_atomic_ptr_exchange COMMON_NAME (emul_atomic_ptr_exchange)
+#define mcd_thrd_yield COMMON_NAME (thrd_yield)
+
 int64_t
 _mcd_emul_atomic_int64_fetch_add (int64_t volatile *val, int64_t v, enum mcd_memory_order);
 int64_t
