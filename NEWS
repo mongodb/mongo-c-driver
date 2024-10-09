@@ -10,12 +10,16 @@ Platform Support:
 
   * Support for Visual Studio 2013 is dropped.
 
-libmongoc 1.28.1 (unreleased)
-=============================
+libmongoc 1.28.1
+================
 
-Fixed:
+Fixes:
 
   * Do not return result in `mongoc_bulkwritereturn_t` if there are no known successful writes.
+  * Validate lengths in ill-formed server responses.
+  * Do not override read preference when using aggregate with `$out/$merge` with unscanned servers.
+  * Remove unexpected warning if `authSource` in TXT record is overriden by URI option.
+  * Fix crash when non-existent CA file configured with OpenSSL.
 
 libmongoc 1.28.0
 ================
