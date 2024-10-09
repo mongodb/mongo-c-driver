@@ -30,8 +30,6 @@
 #endif
 
 
-BSON_BEGIN_DECLS
-
 enum mcd_memory_order {
    mcd_memory_order_seq_cst,
    mcd_memory_order_acquire,
@@ -601,8 +599,6 @@ mcd_atomic_int64_add (volatile int64_t *p, int64_t n);
 #undef MCD_EMULATE_PTR
 #undef MCD_EMULATE_INT32
 #undef MCD_EMULATE_INT
-
-BSON_END_DECLS
 
 
 #endif /* MCD_ATOMIC_H */
