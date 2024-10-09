@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "common-prelude.h"
 
 #ifndef MCD_CMP_H
 #define MCD_CMP_H
