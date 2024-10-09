@@ -995,6 +995,42 @@ tasks:
             - --test_mongocxx_ref=r3.9.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, u16-clang, u16-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +env-warmup
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=none
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +run
+            - --targets=test-example
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=none
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r3.8.0"
     run_on:
       - ubuntu2204-small
@@ -1065,6 +1101,42 @@ tasks:
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, u16-clang, u16-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +env-warmup
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=none
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +run
+            - --targets=test-example
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=none
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r3.8.0"

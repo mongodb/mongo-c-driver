@@ -163,6 +163,20 @@ buildvariants:
     display_name: std-matrix
     tasks:
       - name: .std-matrix
+  - name: u16-clang
+    display_name: Ubuntu 16.04 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: u16
+    tasks:
+      - name: .u16-clang
+  - name: u16-gcc
+    display_name: Ubuntu 16.04 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: u16
+    tasks:
+      - name: .u16-gcc
   - name: u18-clang
     display_name: Ubuntu 18.04 (LLVM/Clang)
     expansions:

@@ -461,6 +461,9 @@ run:
 # 88.     88  V888  `8bd8'    .88.   88 `88. `8b  d8' 88  V888 88  88  88 88.     88  V888    88    db   8D
 # Y88888P VP   V8P    YP    Y888888P 88   YD  `Y88P'  VP   V8P YP  YP  YP Y88888P VP   V8P    YP    `8888Y'
 
+env.u16:
+    DO --pass-args +UBUNTU_ENV --version=16.04
+
 env.u18:
     DO --pass-args +UBUNTU_ENV --version=18.04
 

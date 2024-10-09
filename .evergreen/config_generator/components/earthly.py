@@ -18,6 +18,7 @@ _CC_PARAM_NAME = "MONGOC_EARTHLY_C_COMPILER"
 
 
 EnvKey = Literal[
+    "u16",
     "u18",
     "u20",
     "u22",
@@ -36,7 +37,7 @@ SASLOption = Literal["Cyrus", "off"]
 "Valid options for the SASL configuration parameter"
 TLSOption = Literal["LibreSSL", "OpenSSL", "off"]
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["r3.8.0", "r3.9.0"]
+CxxVersion = Literal["r3.8.0", "r3.9.0", "none"]
 "C++ driver refs that are under CI test"
 
 # A separator character, since we cannot use whitespace
@@ -152,6 +153,15 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
         # Ubuntu does not ship with a LibreSSL package:
         case e, (_sasl, "LibreSSL", _cxx) if e.display_name.startswith("Ubuntu"):
             return False
+        # u16 is not capable of building mongocxx
+        case ["u16", _], (_, _, "none"):
+            return True
+         # Exclude u16 for all other configurations
+        case ["u16", _], _:
+            return False
+        # Exclude all other envs
+        case _, (_, _, "none"):
+            return False
         # Anything else: Allow it to run:
         case _:
             return True
@@ -250,9 +260,16 @@ CONTAINER_RUN_DISTROS = [
 
 def tasks() -> Iterable[Task]:
     for conf in all_possible(Configuration):
+        # test-example is a target in all configurations
+        targets = ["test-example"]
+        
+        # test-cxx-driver is only a target in configurations with specified mongocxx versions
+        if conf.test_mongocxx_ref != "none":
+            targets.append("test-cxx-driver")
+        
         task = earthly_task(
             name=f"check:{conf.suffix}",
-            targets=("test-example", "test-cxx-driver"),
+            targets=targets,
             config=conf,
         )
         if task is not None:
