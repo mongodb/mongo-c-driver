@@ -385,11 +385,10 @@ typedef struct {
  * memory allocations under certain circumstances such as reading from an
  * incoming mongo packet.
  */
-
 BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR)
 typedef struct {
    uint32_t type;
-   /*< private >*/
+   /**< private >**/
 } bson_reader_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
 
 

@@ -95,7 +95,9 @@ static BSON_INLINE uint32_t
 bson_iter_utf8_len_unsafe (const bson_iter_t *iter)
 {
    uint32_t raw;
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    memcpy (&raw, iter->raw + iter->d1, sizeof (raw));
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 
    const uint32_t native = BSON_UINT32_FROM_LE (raw);
 
@@ -131,7 +133,9 @@ static BSON_INLINE const char *
 bson_iter_code_unsafe (const bson_iter_t *iter, uint32_t *length)
 {
    *length = bson_iter_utf8_len_unsafe (iter);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    return (const char *) (iter->raw + iter->d2);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 }
 
 
@@ -169,7 +173,9 @@ bson_iter_double_unsafe (const bson_iter_t *iter)
 {
    double val;
 
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    memcpy (&val, iter->raw + iter->d1, sizeof (val));
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
    return BSON_DOUBLE_FROM_LE (val);
 }
 
@@ -212,7 +218,9 @@ static BSON_INLINE int32_t
 bson_iter_int32_unsafe (const bson_iter_t *iter)
 {
    uint32_t raw;
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    memcpy (&raw, iter->raw + iter->d1, sizeof (raw));
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 
    const uint32_t native = BSON_UINT32_FROM_LE (raw);
 
@@ -242,7 +250,9 @@ static BSON_INLINE int64_t
 bson_iter_int64_unsafe (const bson_iter_t *iter)
 {
    uint64_t raw;
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    memcpy (&raw, iter->raw + iter->d1, sizeof (raw));
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 
    const uint64_t native = BSON_UINT64_FROM_LE (raw);
 
@@ -287,7 +297,9 @@ bson_iter_oid (const bson_iter_t *iter);
 static BSON_INLINE const bson_oid_t *
 bson_iter_oid_unsafe (const bson_iter_t *iter)
 {
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    return (const bson_oid_t *) (iter->raw + iter->d1);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 }
 
 
@@ -309,8 +321,10 @@ bson_iter_decimal128_unsafe (const bson_iter_t *iter, bson_decimal128_t *dec)
    uint64_t low_le;
    uint64_t high_le;
 
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    memcpy (&low_le, iter->raw + iter->d1, sizeof (low_le));
    memcpy (&high_le, iter->raw + iter->d1 + 8, sizeof (high_le));
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 
    dec->low = BSON_UINT64_FROM_LE (low_le);
    dec->high = BSON_UINT64_FROM_LE (high_le);
@@ -335,7 +349,9 @@ bson_iter_key_len (const bson_iter_t *iter);
 static BSON_INLINE const char *
 bson_iter_key_unsafe (const bson_iter_t *iter)
 {
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    return (const char *) (iter->raw + iter->key);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 }
 
 
@@ -354,7 +370,9 @@ static BSON_INLINE const char *
 bson_iter_utf8_unsafe (const bson_iter_t *iter, size_t *length)
 {
    *length = bson_iter_utf8_len_unsafe (iter);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    return (const char *) (iter->raw + iter->d2);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 }
 
 
@@ -432,7 +450,9 @@ bson_iter_bool_unsafe (const bson_iter_t *iter)
 {
    char val;
 
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    memcpy (&val, iter->raw + iter->d1, 1);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
    return !!val;
 }
 
@@ -464,7 +484,9 @@ bson_iter_type (const bson_iter_t *iter);
 static BSON_INLINE bson_type_t
 bson_iter_type_unsafe (const bson_iter_t *iter)
 {
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    return (bson_type_t) (iter->raw + iter->type)[0];
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 }
 
 
