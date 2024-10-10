@@ -13,6 +13,8 @@
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
 
+#include <inttypes.h>
+
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster-test"
@@ -785,7 +787,11 @@ receives_with_cluster_time (mock_server_t *server, uint32_t timestamp, uint32_t 
    BSON_ASSERT (BSON_ITER_HOLDS_TIMESTAMP (&cluster_time));
    bson_iter_timestamp (&cluster_time, &t, &i);
    if (t != timestamp || i != increment) {
-      test_error ("Expected Timestamp(%d, %d), got Timestamp(%d, %d)", timestamp, increment, t, i);
+      test_error ("Expected Timestamp(%" PRIu32 ", %" PRIu32 "), got Timestamp(%" PRIu32 ", %" PRIu32 ")",
+                  timestamp,
+                  increment,
+                  t,
+                  i);
    }
 
    return request;

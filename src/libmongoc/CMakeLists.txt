@@ -70,12 +70,28 @@ endif ()
 if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
-   add_library (zlib_obj OBJECT "${ZLIB_SOURCES}")
+   add_library (zlib_obj OBJECT
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/adler32.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/crc32.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/deflate.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/infback.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inffast.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inflate.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inftrees.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/trees.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/zutil.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/compress.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/uncompr.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzclose.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzlib.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzread.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzwrite.c
+   )
    set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
       BEFORE PUBLIC
-      "${SOURCE_DIR}/src/zlib-1.3.1"
+      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1"
       "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
    )
    # Disable all warnings for compiling Zlib
@@ -84,7 +100,7 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.3.1"
+      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1"
       "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
    )
 endif ()
@@ -549,7 +565,7 @@ else ()
 endif ()
 
 
-set (SOURCES ${SOURCES}
+set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-nsinfo.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c
@@ -644,9 +660,9 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/service-gcp.c
-   ${PROJECT_SOURCE_DIR}/../../src/common/common-b64.c
-   ${PROJECT_SOURCE_DIR}/../../src/common/common-md5.c
-   ${PROJECT_SOURCE_DIR}/../../src/common/common-thread.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/common-b64.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/common-md5.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/common-thread.c
 
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-scram.c
@@ -676,6 +692,26 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ocsp-cache.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-bulkwrite.c
 )
+
+if (MONGOC_ENABLE_SASL)
+   list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
+   if (MONGOC_ENABLE_SASL_CYRUS)
+      message (STATUS "Compiling against Cyrus SASL")
+      list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-cyrus.c)
+      list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c)
+   elseif (MONGOC_ENABLE_SASL_SSPI)
+      message (STATUS "Compiling against Windows SSPI")
+      list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
+      list (APPEND MONGOC_SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
+   endif ()
+else ()
+   message (STATUS "SASL disabled")
+endif ()
+
+# Enable unconditional warnings-as-errors for our source code.
+set_property(SOURCE ${MONGOC_SOURCES} APPEND PROPERTY COMPILE_OPTIONS ${mongoc-warning-options})
+
+list (APPEND SOURCES ${MONGOC_SOURCES})
 
 set (HEADERS
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h
@@ -755,21 +791,6 @@ if (ENABLE_APPLE_FRAMEWORK)
    )
 endif ()
 
-if (MONGOC_ENABLE_SASL)
-   set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
-   if (MONGOC_ENABLE_SASL_CYRUS)
-      message (STATUS "Compiling against Cyrus SASL")
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-cyrus.c)
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c)
-   elseif (MONGOC_ENABLE_SASL_SSPI)
-      message (STATUS "Compiling against Windows SSPI")
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
-   endif ()
-else ()
-   message (STATUS "SASL disabled")
-endif ()
-
 set (LIBRARIES
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
@@ -783,7 +804,7 @@ set(UTF8PROC_INCLUDE_DIRS, "")
 if (USE_BUNDLED_UTF8PROC)
    set (
       UTF8PROC_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/utf8proc-2.8.0"
+      "${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.8.0"
    )
    list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
 else()
@@ -799,6 +820,28 @@ if(ENABLE_SRV)
 endif()
 
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
+   set (KMS_MSG_SOURCES
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/hexlify.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_b64.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_caller_identity_request.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_apple.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_libcrypto.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_none.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_crypto_windows.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_decrypt_request.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_encrypt_request.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_kmip_response_parser.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_kv_list.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_message.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_port.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_request.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_request_opt.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_request_str.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_response.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/kms_response_parser.c
+      ${mongo-c-driver_SOURCE_DIR}/src/kms-message/src/sort.c
+   )
+
    # Disable warnings on bundled kms_message source files.
    set_source_files_properties (${KMS_MSG_SOURCES} PROPERTIES COMPILE_FLAGS -w)
    set (SOURCES ${SOURCES} ${KMS_MSG_SOURCES})
@@ -842,7 +885,7 @@ set_property(
 
 set (
    UTHASH_INCLUDE_DIR
-   "${SOURCE_DIR}/src/uthash"
+   "${mongo-c-driver_SOURCE_DIR}/src/uthash"
 )
 
 if (ENABLE_SHARED)
@@ -859,11 +902,11 @@ if (ENABLE_SHARED)
    target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    target_include_directories (mongoc_shared PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
-      target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
+      target_include_directories (mongoc_shared PRIVATE "${mongo-c-driver_SOURCE_DIR}/src/kms-message/src")
       if (APPLE)
-         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,\"${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.txt\"")
+         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,\"${mongo-c-driver_SOURCE_DIR}/build/cmake/libmongoc-hidden-symbols.txt\"")
       elseif (UNIX)
-         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.map\"")
+         set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${mongo-c-driver_SOURCE_DIR}/build/cmake/libmongoc-hidden-symbols.map\"")
       endif ()
 
    endif ()
@@ -887,9 +930,9 @@ if (ENABLE_SHARED)
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common>
    )
 
    set_target_properties (mongoc_shared PROPERTIES
@@ -911,7 +954,8 @@ if (ENABLE_SHARED)
       )
    endif () # ENABLE_APPLE_FRAMEWORK
 
-   add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
+   add_executable (mongoc-stat ${mongo-c-driver_SOURCE_DIR}/src/tools/mongoc-stat.c)
+   target_compile_options (mongoc-stat PRIVATE ${mongoc-warning-options})
    target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
 
    # mongoc-stat works if shared memory performance counters are enabled.
@@ -944,7 +988,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    target_include_directories (mongoc_static PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
-      target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
+      target_include_directories (mongoc_static PRIVATE "${mongo-c-driver_SOURCE_DIR}/src/kms-message/src")
    endif ()
    target_compile_definitions (mongoc_static
       PUBLIC
@@ -967,9 +1011,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common>
    )
    set_target_properties (mongoc_static PROPERTIES
       VERSION 0.0.0
@@ -983,30 +1027,30 @@ endif ()
 
 
 set (test-libmongoc-sources
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.h
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-atomic.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-b64.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-basic.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-extract.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-cmp.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-corpus.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-error.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-version.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-clock.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-decimal128.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-endian.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-iso8601.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-iter.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-json.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-oid.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-reader.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-string.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-utf8.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-value.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-writer.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-atomic.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-b64.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bcon-basic.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bcon-extract.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-cmp.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-corpus.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-error.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-version.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-clock.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-decimal128.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-endian.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-iso8601.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-iter.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-json.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-oid.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-reader.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-string.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-utf8.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-value.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-writer.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-match.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-parser.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-val.c
@@ -1153,6 +1197,8 @@ if (ENABLE_TESTS)
    target_compile_options (test-libmongoc-lib
       PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
    )
+   # Enable unconditional warnings-as-errors for our source code.
+   target_compile_options (test-libmongoc-lib PRIVATE ${mongoc-warning-options})
    target_include_directories (test-libmongoc-lib
       PRIVATE
          ${PROJECT_SOURCE_DIR}/tests
@@ -1179,6 +1225,8 @@ if (ENABLE_TESTS)
       target_compile_options (${test}
          PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
       )
+      # Enable unconditional warnings-as-errors for our source code.
+      target_compile_options (${test} PRIVATE ${mongoc-warning-options})
       target_include_directories (${test}
          PRIVATE
             ${PROJECT_SOURCE_DIR}/tests
@@ -1215,6 +1263,9 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    function (mongoc_add_example example)
       add_executable (${example} EXCLUDE_FROM_ALL ${ARGN})
       add_dependencies (mongo_c_driver_examples ${example})
+
+      # Enable unconditional warnings-as-errors for our source code.
+      target_compile_options (${example} PRIVATE ${mongoc-warning-options})
 
       target_link_libraries (${example} mongoc_shared ${LIBRARIES})
       if (WIN32)
@@ -1289,6 +1340,7 @@ if (ENABLE_TESTS AND ENABLE_SHARED AND MONGOC_ENABLE_SSL AND NOT WIN32)
    # Add benchmarks to measure opening many TLS connections.
    # Benchmarks require SSL, and do not build on Windows.
    add_executable (benchmark-tls-pooled ${PROJECT_SOURCE_DIR}/tests/benchmark-tls-pooled.c)
+   target_compile_options (benchmark-tls-pooled PRIVATE ${mongoc-warning-options})
    target_link_libraries (benchmark-tls-pooled mongoc_shared ${LIBRARIES})
 endif ()
 

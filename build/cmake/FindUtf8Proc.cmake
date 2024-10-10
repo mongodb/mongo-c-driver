@@ -1,6 +1,6 @@
 if(USE_BUNDLED_UTF8PROC)
   message (STATUS "Enabling utf8proc (bundled)")
-  add_library (utf8proc_obj OBJECT "${UTF8PROC_SOURCES}")
+  add_library (utf8proc_obj OBJECT "${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.8.0/utf8proc.c")
   set_property (TARGET utf8proc_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
   target_compile_definitions (utf8proc_obj PUBLIC UTF8PROC_STATIC)
 else ()

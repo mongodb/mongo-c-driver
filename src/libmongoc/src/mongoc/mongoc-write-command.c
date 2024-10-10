@@ -28,6 +28,7 @@
 #include "mongoc-opts-private.h"
 #include <mcd-string.h>
 
+#include <inttypes.h>
 
 /* indexed by MONGOC_WRITE_COMMAND_DELETE, INSERT, UPDATE */
 static const char *gCommandNames[] = {"delete", "insert", "update"};
@@ -382,8 +383,8 @@ _mongoc_write_command_too_large_error (bson_error_t *error, int32_t idx, int32_t
    bson_set_error (error,
                    MONGOC_ERROR_BSON,
                    MONGOC_ERROR_BSON_INVALID,
-                   "Document %u is too large for the cluster. "
-                   "Document is %u bytes, max is %d.",
+                   "Document %" PRId32 " is too large for the cluster. "
+                   "Document is %" PRId32 " bytes, max is %" PRId32 ".",
                    idx,
                    len,
                    max_bson_size);

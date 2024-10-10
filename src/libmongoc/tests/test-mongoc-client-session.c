@@ -12,6 +12,8 @@
 #include "json-test.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
+#include <inttypes.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "session-test"
 
@@ -1494,10 +1496,14 @@ parse_reply_time (const bson_t *reply, op_time_t *op_time)
 }
 
 
-#define ASSERT_OP_TIMES_EQUAL(_a, _b)                                                               \
-   if ((_a).t != (_b).t || (_a).i != (_b).i) {                                                      \
-      test_error (#_a " (%d, %d) does not match " #_b " (%d, %d)", (_a).t, (_a).i, (_b).t, (_b).i); \
-   } else                                                                                           \
+#define ASSERT_OP_TIMES_EQUAL(_a, _b)                                                                  \
+   if ((_a).t != (_b).t || (_a).i != (_b).i) {                                                         \
+      test_error (#_a " (%" PRIu32 ", %" PRIu32 ") does not match " #_b " (%" PRIu32 ", %" PRIu32 ")", \
+                  (_a).t,                                                                              \
+                  (_a).i,                                                                              \
+                  (_b).t,                                                                              \
+                  (_b).i);                                                                             \
+   } else                                                                                              \
       ((void) 0)
 
 

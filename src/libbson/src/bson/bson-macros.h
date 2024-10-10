@@ -190,24 +190,25 @@
 #define BSON_FUNC __func__
 #endif
 
-#define BSON_ASSERT(test)                                                                                 \
-   do {                                                                                                   \
-      if (!(BSON_LIKELY (test))) {                                                                        \
-         fprintf (stderr, "%s:%d %s(): precondition failed: %s\n", __FILE__, __LINE__, BSON_FUNC, #test); \
-         abort ();                                                                                        \
-      }                                                                                                   \
+#define BSON_ASSERT(test)                                                                                         \
+   do {                                                                                                           \
+      if (!(BSON_LIKELY (test))) {                                                                                \
+         fprintf (stderr, "%s:%d %s(): precondition failed: %s\n", __FILE__, (int) (__LINE__), BSON_FUNC, #test); \
+         abort ();                                                                                                \
+      }                                                                                                           \
    } while (0)
 
 /**
  * @brief Assert the expression `Assertion`, and evaluates to `Value` on
  * success.
  */
-#define BSON_ASSERT_INLINE(Assertion, Value)                                                                         \
-   ((void) ((Assertion)                                                                                              \
-               ? (0)                                                                                                 \
-               : ((fprintf (stderr, "%s:%d %s(): Assertion '%s' failed", __FILE__, __LINE__, BSON_FUNC, #Assertion), \
-                   abort ()),                                                                                        \
-                  0)),                                                                                               \
+#define BSON_ASSERT_INLINE(Assertion, Value)                                                                           \
+   ((void) ((Assertion)                                                                                                \
+               ? (0)                                                                                                   \
+               : ((fprintf (                                                                                           \
+                      stderr, "%s:%d %s(): Assertion '%s' failed", __FILE__, (int) (__LINE__), BSON_FUNC, #Assertion), \
+                   abort ()),                                                                                          \
+                  0)),                                                                                                 \
     Value)
 
 /**
@@ -349,10 +350,10 @@
  * @param What A string to include in the error message if this point is ever
  * executed.
  */
-#define BSON_UNREACHABLE(What)                                                                             \
-   do {                                                                                                    \
-      fprintf (stderr, "%s:%d %s(): Unreachable code reached: %s\n", __FILE__, __LINE__, BSON_FUNC, What); \
-      abort ();                                                                                            \
+#define BSON_UNREACHABLE(What)                                                                                     \
+   do {                                                                                                            \
+      fprintf (stderr, "%s:%d %s(): Unreachable code reached: %s\n", __FILE__, (int) (__LINE__), BSON_FUNC, What); \
+      abort ();                                                                                                    \
    } while (0)
 
 /**

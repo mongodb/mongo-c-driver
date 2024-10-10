@@ -35,6 +35,8 @@
 #include <strings.h>
 #endif
 
+#include <inttypes.h>
+
 
 static bool gConveniencesInitialized = false;
 static mongoc_array_t gTmpBsonArray;
@@ -1273,7 +1275,7 @@ bson_value_as_int64 (const bson_value_t *value)
    } else if (value->value_type == BSON_TYPE_INT64) {
       return value->value.v_int64;
    } else {
-      test_error ("bson_value_as_int64 called on value of type %d", value->value_type);
+      test_error ("bson_value_as_int64 called on value of type %d", (int) value->value_type);
    }
 }
 
@@ -1468,7 +1470,7 @@ match_bson_value (const bson_value_t *doc, const bson_value_t *pattern, match_ct
       }
       break;
    default:
-      test_error ("unexpected value type %d: %s", doc->value_type, _mongoc_bson_type_to_str (doc->value_type));
+      test_error ("unexpected value type %d: %s", (int) doc->value_type, _mongoc_bson_type_to_str (doc->value_type));
    }
 
    if (!ret) {
