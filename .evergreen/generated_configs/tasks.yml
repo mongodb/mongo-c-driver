@@ -1605,6 +1605,8 @@ tasks:
   - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
     run_on: rhel83-zseries-large
     tags: [cse-matrix-openssl, compile, rhel83-zseries, gcc, cse, sasl-cyrus]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
@@ -1615,6 +1617,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -1635,6 +1639,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -1655,6 +1661,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -1675,6 +1683,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, "8.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -1695,6 +1705,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "8.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -1715,6 +1727,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -1735,6 +1749,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3201,6 +3217,8 @@ tasks:
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-compile
     run_on: rhel81-power8-large
     tags: [sasl-matrix-openssl, compile, rhel81-power8, gcc, sasl-cyrus]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
@@ -3211,6 +3229,8 @@ tasks:
     run_on: rhel81-power8-small
     tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "4.2", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3231,6 +3251,8 @@ tasks:
     run_on: rhel81-power8-small
     tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "4.4", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3251,6 +3273,8 @@ tasks:
     run_on: rhel81-power8-small
     tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "5.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3271,6 +3295,8 @@ tasks:
     run_on: rhel81-power8-small
     tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "6.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3291,6 +3317,8 @@ tasks:
     run_on: rhel81-power8-small
     tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "7.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3311,6 +3339,8 @@ tasks:
     run_on: rhel81-power8-small
     tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, "8.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3331,6 +3361,8 @@ tasks:
     run_on: rhel81-power8-small
     tags: [sasl-matrix-openssl, test, rhel81-power8, gcc, sasl-cyrus, auth, server, latest, openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel81-power8-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3350,6 +3382,8 @@ tasks:
   - name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile
     run_on: rhel83-zseries-large
     tags: [sasl-matrix-openssl, compile, rhel83-zseries, gcc, sasl-cyrus]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
@@ -3360,6 +3394,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "5.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3380,6 +3416,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "6.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3400,6 +3438,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "7.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3420,6 +3460,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "8.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
@@ -3440,6 +3482,8 @@ tasks:
     run_on: rhel83-zseries-small
     tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, latest, openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+    batchtime: 1440
+    patchable: false
     commands:
       - func: fetch-build
         vars:
