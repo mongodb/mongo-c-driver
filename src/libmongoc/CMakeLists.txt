@@ -644,6 +644,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/service-gcp.c
+   ${PROJECT_SOURCE_DIR}/../../src/common/mcd-atomic.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-b64.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-md5.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-thread.c
