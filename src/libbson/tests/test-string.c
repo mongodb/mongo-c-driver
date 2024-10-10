@@ -16,6 +16,7 @@
 
 
 #include <bson/bson.h>
+#include <bson/bson-string-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -305,6 +306,61 @@ test_bson_strcasecmp (void)
 }
 
 static void
+test_bson_string_truncate (void)
+{
+   // Test truncating.
+   {
+      bson_string_t *str = bson_string_new ("foobar");
+      ASSERT_CMPSIZE_T (str->len, ==, 6u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+
+      bson_string_truncate (str, 2);
+      ASSERT_CMPSTR (str->str, "fo");
+      ASSERT_CMPSIZE_T (str->len, ==, 2u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 4u);
+      bson_string_free (str, true);
+   }
+
+   // Test truncating to same length.
+   {
+      bson_string_t *str = bson_string_new ("foobar");
+      ASSERT_CMPSIZE_T (str->len, ==, 6u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+
+      bson_string_truncate (str, 6u);
+      ASSERT_CMPSTR (str->str, "foobar");
+      ASSERT_CMPUINT32 (str->len, ==, 6u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+      bson_string_free (str, true);
+   }
+
+   // Test truncating to 0.
+   {
+      bson_string_t *str = bson_string_new ("foobar");
+      ASSERT_CMPSIZE_T (str->len, ==, 6u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+
+      bson_string_truncate (str, 0u);
+      ASSERT_CMPSTR (str->str, "");
+      ASSERT_CMPUINT32 (str->len, ==, 0u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 1u);
+      bson_string_free (str, true);
+   }
+
+   // Test truncating beyond string length.
+   // The documentation for `bson_string_truncate` says the truncated length "must be smaller or equal to the current
+   // length of the string.". However, `bson_string_truncate` does not reject greater lengths. For backwards
+   // compatibility, this behavior is preserved.
+   {
+      bson_string_t *str = bson_string_new ("a");
+      bson_string_truncate (str, 2u); // Is not rejected.
+      ASSERT_CMPUINT32 (str->len, ==, 2u);
+      ASSERT_CMPUINT32 (str->alloc, ==, 4u);
+      bson_string_free (str, true);
+   }
+}
+
+static void
 test_bson_string_capacity (void *unused)
 {
    BSON_UNUSED (unused);
@@ -356,7 +412,74 @@ test_bson_string_capacity (void *unused)
       large_str[UINT32_MAX - 2u] = 's'; // Restore.
    }
 
+   // Test allocating the largest possible string.
+   {
+      bson_string_t *str = _bson_string_alloc (UINT32_MAX - 1u);
+      ASSERT_CMPUINT32 (str->alloc, ==, UINT32_MAX);
+      ASSERT_CMPUINT32 (str->len, ==, 0);
+      bson_string_free (str, true);
+   }
+
+   // Can truncate strings of length close to UINT32_MAX - 1.
+   {
+      large_str[UINT32_MAX - 1u] = '\0'; // Set size.
+      bson_string_t *str = bson_string_new (large_str);
+      bson_string_truncate (str, UINT32_MAX - 2); // Truncate one character.
+      ASSERT_CMPSIZE_T (strlen (str->str), ==, UINT32_MAX - 2u);
+      bson_string_free (str, true);
+      large_str[UINT32_MAX - 1u] = 's'; // Restore.
+   }
+
    bson_free (large_str);
+}
+
+static void
+test_bson_string_append_ex (void)
+{
+   bson_string_t *str;
+
+   str = bson_string_new (NULL);
+   _bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 10);
+   ASSERT_CMPSTR (str->str, "the quick ");
+   bson_string_free (str, true);
+
+   str = bson_string_new (NULL);
+   _bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 0);
+   ASSERT_CMPSTR (str->str, "");
+   bson_string_free (str, true);
+
+   str = bson_string_new (NULL);
+   _bson_string_append_ex (str, "the quick\n brown fox jumps over the lazy dog", 10);
+   _bson_string_append_ex (str, "the\n quick brown fox jumps over the lazy dog", 5);
+   ASSERT_CMPSTR (str->str, "the quick\nthe\n ");
+   bson_string_free (str, true);
+}
+
+static void
+test_bson_string_alloc (void)
+{
+   bson_string_t *str;
+
+   str = _bson_string_alloc (0);
+   ASSERT_CMPUINT32 (str->alloc, ==, 1);
+   ASSERT_CMPUINT32 (str->len, ==, 0);
+   bson_string_free (str, true);
+
+
+   str = _bson_string_alloc (1);
+   ASSERT_CMPUINT32 (str->alloc, ==, 2);
+   ASSERT_CMPUINT32 (str->len, ==, 0);
+   bson_string_free (str, true);
+
+   str = _bson_string_alloc (2);
+   ASSERT_CMPUINT32 (str->alloc, ==, 4);
+   ASSERT_CMPUINT32 (str->len, ==, 0);
+   bson_string_free (str, true);
+
+   str = _bson_string_alloc (10);
+   ASSERT_CMPUINT32 (str->alloc, ==, 16);
+   ASSERT_CMPUINT32 (str->len, ==, 0);
+   bson_string_free (str, true);
 }
 
 static int
@@ -385,4 +508,7 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/strcasecmp", test_bson_strcasecmp);
    TestSuite_AddFull (
       suite, "/bson/string/capacity", test_bson_string_capacity, NULL, NULL, skip_if_no_large_allocations);
+   TestSuite_Add (suite, "/bson/string/append_ex", test_bson_string_append_ex);
+   TestSuite_Add (suite, "/bson/string/alloc", test_bson_string_alloc);
+   TestSuite_Add (suite, "/bson/string/truncate", test_bson_string_truncate);
 }

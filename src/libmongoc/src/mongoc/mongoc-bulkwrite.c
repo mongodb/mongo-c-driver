@@ -822,6 +822,11 @@ struct _mongoc_bulkwriteresult_t {
    int64_t matchedcount;
    int64_t modifiedcount;
    int64_t deletedcount;
+   int64_t errorscount; // sum of all `nErrors`.
+   struct {
+      bool isset;
+      int64_t index;
+   } first_error_index;
    uint32_t serverid;
    bson_t insertresults;
    bson_t updateresults;
@@ -1253,6 +1258,12 @@ _bulkwritereturn_apply_reply (mongoc_bulkwritereturn_t *self, const bson_t *cmd_
    }
    self->res->upsertedcount += nUpserted;
 
+   int64_t nErrors;
+   if (!lookup_as_int64 (cmd_reply, "nErrors", &nErrors, NULL, self->exc)) {
+      return false;
+   }
+   self->res->errorscount += nErrors;
+
    bson_error_t error;
    bson_iter_t iter;
    if (bson_iter_init_find (&iter, cmd_reply, "writeConcernError")) {
@@ -1332,6 +1343,10 @@ _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
    // `models_idx` is the index of the model that produced this result.
    size_t models_idx = (size_t) idx + ops_doc_offset;
    if (ok == 0) {
+      if (!self->res->first_error_index.isset) {
+         self->res->first_error_index.isset = true;
+         self->res->first_error_index.index = idx;
+      }
       bson_iter_t result_iter;
 
       // Parse `code`.
@@ -1437,6 +1452,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (opts);
 
+   bool has_successful_results = false;
    mongoc_bulkwritereturn_t ret = {0};
    bson_error_t error = {0};
    mongoc_server_stream_t *ss = NULL;
@@ -1447,6 +1463,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    if (!opts) {
       opts = &defaults;
    }
+   bool is_ordered =
+      mongoc_optional_is_set (&opts->ordered) ? mongoc_optional_value (&opts->ordered) : true; // default.
    bool is_acknowledged = false;
    // Create empty result and exception to collect results/errors from batches.
    ret.res = _bulkwriteresult_new ();
@@ -1506,8 +1524,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       // errorsOnly is default true. Set to false if verboseResults requested.
       BSON_ASSERT (BSON_APPEND_BOOL (&cmd, "errorsOnly", !verboseresults));
       // ordered is default true.
-      BSON_ASSERT (BSON_APPEND_BOOL (
-         &cmd, "ordered", (mongoc_optional_is_set (&opts->ordered)) ? mongoc_optional_value (&opts->ordered) : true));
+      BSON_ASSERT (BSON_APPEND_BOOL (&cmd, "ordered", is_ordered));
 
       if (opts->comment.value_type != BSON_TYPE_EOD) {
          BSON_ASSERT (BSON_APPEND_VALUE (&cmd, "comment", &opts->comment));
@@ -1826,8 +1843,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       if (!batch_ok) {
          goto fail;
       }
-      bool is_ordered =
-         mongoc_optional_is_set (&opts->ordered) ? mongoc_optional_value (&opts->ordered) : true; // default.
       if (has_write_errors && is_ordered) {
          // Ordered writes must not continue to send batches once an error is
          // occurred. An individual write error is not a top-level error.
@@ -1836,7 +1851,19 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    }
 
 fail:
-   if (!is_acknowledged) {
+   if (is_ordered) {
+      // Ordered writes stop on first error. If the error reported is for an index > 0, assume some writes suceeded.
+      if (ret.res->errorscount == 0 || (ret.res->first_error_index.isset && ret.res->first_error_index.index > 0)) {
+         has_successful_results = true;
+      }
+   } else {
+      BSON_ASSERT (bson_in_range_size_t_signed (ret.res->errorscount));
+      size_t errorscount_sz = (size_t) ret.res->errorscount;
+      if (errorscount_sz < self->n_ops) {
+         has_successful_results = true;
+      }
+   }
+   if (!is_acknowledged || !has_successful_results) {
       mongoc_bulkwriteresult_destroy (ret.res);
       ret.res = NULL;
    }

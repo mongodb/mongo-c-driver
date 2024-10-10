@@ -33,6 +33,7 @@
 #include "mcd-azure.h"
 #include "mcd-time.h"
 #include "service-gcp.h"
+#include <mcd-string.h>
 
 // `mcd_mapof_kmsid_to_tlsopts` maps a KMS ID (e.g. `aws` or `aws:myname`) to a
 // `mongoc_ssl_opt_t`. The acryonym TLS is preferred over SSL for
@@ -1137,10 +1138,10 @@ _parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t 
    bson_t tls_opts_doc;
    const uint8_t *data;
    uint32_t len;
-   bson_string_t *errmsg;
+   mcd_string_t *errmsg;
    bson_iter_t permitted_iter;
 
-   errmsg = bson_string_new (NULL);
+   errmsg = mcd_string_new (NULL);
    kms_provider = bson_iter_key (iter);
    memset (out_opt, 0, sizeof (mongoc_ssl_opt_t));
 
@@ -1204,7 +1205,7 @@ _parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t 
 
    ok = true;
 fail:
-   bson_string_free (errmsg, true /* free_segment */);
+   mcd_string_free (errmsg, true /* free_segment */);
    return ok;
 }
 

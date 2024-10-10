@@ -7,3 +7,6 @@ target_link_libraries(fuzz_test_init_from_json PRIVATE fuzz_test_properties)
 
 add_executable(fuzz_test_validate EXCLUDE_FROM_ALL fuzz_test_validate.c)
 target_link_libraries(fuzz_test_validate PRIVATE fuzz_test_properties)
+
+add_executable(fuzz_test_bson_utf8_escape_for_json EXCLUDE_FROM_ALL fuzz_test_bson_utf8_escape_for_json.c)
+target_link_libraries(fuzz_test_bson_utf8_escape_for_json PRIVATE fuzz_test_properties)

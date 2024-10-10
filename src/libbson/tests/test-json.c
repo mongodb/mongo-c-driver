@@ -6,6 +6,7 @@
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
+#include <mcd-string.h>
 
 static ssize_t
 test_bson_json_read_cb_helper (void *string, uint8_t *buf, size_t len)
@@ -752,7 +753,7 @@ test_bson_json_read_buffering (void)
 {
    bson_t **bsons;
    char *json_tmp;
-   bson_string_t *json;
+   mcd_string_t *json;
    bson_error_t error;
    bson_t bson_out = BSON_INITIALIZER;
    int i;
@@ -764,7 +765,7 @@ test_bson_json_read_buffering (void)
    bson_json_reader_t *reader;
    int r;
 
-   json = bson_string_new (NULL);
+   json = mcd_string_new (NULL);
 
    /* parse between 1 and 10 JSON objects */
    for (n_docs = 1; n_docs < 10; n_docs++) {
@@ -785,7 +786,7 @@ test_bson_json_read_buffering (void)
             /* append the BSON document's JSON representation to "json" */
             json_tmp = bson_as_json (bsons[docs_idx], NULL);
             BSON_ASSERT (json_tmp);
-            bson_string_append (json, json_tmp);
+            mcd_string_append (json, json_tmp);
             bson_free (json_tmp);
          }
 
@@ -810,7 +811,7 @@ test_bson_json_read_buffering (void)
          ASSERT_CMPINT (0, ==, bson_json_reader_read (reader, &bson_out, &error));
 
          bson_json_reader_destroy (reader);
-         bson_string_truncate (json, 0);
+         mcd_string_truncate (json, 0);
 
          for (docs_idx = 0; docs_idx < n_docs; docs_idx++) {
             bson_destroy (bsons[docs_idx]);
@@ -820,7 +821,7 @@ test_bson_json_read_buffering (void)
       }
    }
 
-   bson_string_free (json, true);
+   mcd_string_free (json, true);
    bson_destroy (&bson_out);
 }
 

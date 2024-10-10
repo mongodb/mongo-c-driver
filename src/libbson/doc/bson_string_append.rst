@@ -3,6 +3,11 @@
 bson_string_append()
 ====================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
+      This function is deprecated and should not be used in new code.
+
 Synopsis
 --------
 
@@ -22,4 +27,4 @@ Description
 
 Appends the ASCII or UTF-8 encoded string ``str`` to ``string``. This is not suitable for embedding NULLs in strings.
 
-.. warning:: This function will abort if the length of the resulting string (including the NULL terminator) would exceed ``UINT32_MAX``.
+.. warning:: The length of the resulting string (including the ``NULL`` terminator) MUST NOT exceed ``UINT32_MAX``.

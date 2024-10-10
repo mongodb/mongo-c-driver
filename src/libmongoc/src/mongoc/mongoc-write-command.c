@@ -26,6 +26,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-opts-private.h"
+#include <mcd-string.h>
 
 
 /* indexed by MONGOC_WRITE_COMMAND_DELETE, INSERT, UPDATE */
@@ -986,15 +987,15 @@ _set_error_from_response (bson_t *bson_array,
 {
    bson_iter_t array_iter;
    bson_iter_t doc_iter;
-   bson_string_t *compound_err;
+   mcd_string_t *compound_err;
    const char *errmsg = NULL;
    int32_t code = 0;
    uint32_t n_keys, i;
 
-   compound_err = bson_string_new (NULL);
+   compound_err = mcd_string_new (NULL);
    n_keys = bson_count_keys (bson_array);
    if (n_keys > 1) {
-      bson_string_append_printf (compound_err, "Multiple %s errors: ", error_type);
+      mcd_string_append_printf (compound_err, "Multiple %s errors: ", error_type);
    }
 
    if (!bson_empty0 (bson_array) && bson_iter_init (&array_iter, bson_array)) {
@@ -1013,13 +1014,13 @@ _set_error_from_response (bson_t *bson_array,
 
                   /* build message like 'Multiple write errors: "foo", "bar"' */
                   if (n_keys > 1) {
-                     bson_string_append_printf (compound_err, "\"%s\"", errmsg);
+                     mcd_string_append_printf (compound_err, "\"%s\"", errmsg);
                      if (i < n_keys - 1) {
-                        bson_string_append (compound_err, ", ");
+                        mcd_string_append (compound_err, ", ");
                      }
                   } else {
                      /* single error message */
-                     bson_string_append (compound_err, errmsg);
+                     mcd_string_append (compound_err, errmsg);
                   }
                }
             }
@@ -1033,7 +1034,7 @@ _set_error_from_response (bson_t *bson_array,
       }
    }
 
-   bson_string_free (compound_err, true);
+   mcd_string_free (compound_err, true);
 }
 
 

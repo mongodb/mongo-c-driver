@@ -3,6 +3,11 @@
 bson_string_truncate()
 ======================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
+      This function is deprecated and should not be used in new code.
+
 Synopsis
 --------
 
@@ -24,3 +29,4 @@ Truncates the string so that it is ``len`` bytes in length. This must be smaller
 
 A ``\0`` byte will be placed where the end of the string occurs.
 
+.. warning:: The length of the resulting string (including the ``NULL`` terminator) MUST NOT exceed ``UINT32_MAX``.

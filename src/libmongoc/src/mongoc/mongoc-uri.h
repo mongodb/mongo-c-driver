@@ -57,6 +57,7 @@
 #define MONGOC_URI_RETRYREADS "retryreads"
 #define MONGOC_URI_RETRYWRITES "retrywrites"
 #define MONGOC_URI_SAFE "safe"
+#define MONGOC_URI_SERVERMONITORINGMODE "servermonitoringmode"
 #define MONGOC_URI_SERVERSELECTIONTIMEOUTMS "serverselectiontimeoutms"
 #define MONGOC_URI_SERVERSELECTIONTRYONCE "serverselectiontryonce"
 #define MONGOC_URI_SLAVEOK "slaveok"
@@ -197,6 +198,10 @@ MONGOC_EXPORT (const mongoc_read_concern_t *)
 mongoc_uri_get_read_concern (const mongoc_uri_t *uri);
 MONGOC_EXPORT (void)
 mongoc_uri_set_read_concern (mongoc_uri_t *uri, const mongoc_read_concern_t *rc);
+MONGOC_EXPORT (const char *)
+mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri);
+MONGOC_EXPORT (bool)
+mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value);
 
 BSON_END_DECLS
 

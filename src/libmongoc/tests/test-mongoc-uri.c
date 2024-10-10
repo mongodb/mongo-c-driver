@@ -10,6 +10,7 @@
 
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
+#include <mcd-string.h>
 
 static void
 test_mongoc_uri_new (void)
@@ -1847,14 +1848,24 @@ test_mongoc_uri_dns_options (void)
    mongoc_uri_destroy (uri);
    uri = mongoc_uri_new ("mongodb+srv://user@a.b.c/?authSource=db1&replicaSet=rs1");
 
-   capture_logs (true);
-   /* parse_options returns true, but logs warnings */
-   BSON_ASSERT (mongoc_uri_parse_options (uri, "authSource=db2&replicaSet=db2", true, NULL));
-   ASSERT_CAPTURED_LOG ("parsing TXT record", MONGOC_LOG_LEVEL_WARNING, "Cannot override URI option \"authSource\"");
-   ASSERT_CAPTURED_LOG ("parsing TXT record", MONGOC_LOG_LEVEL_WARNING, "Cannot override URI option \"replicaSet\"");
-   capture_logs (false);
-   ASSERT_MATCH (mongoc_uri_get_credentials (uri), "{'authsource': 'db1'}");
-   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'replicaset': 'rs1'}");
+   // test that parsing warns if replicaSet is ignored from TXT records.
+   {
+      capture_logs (true);
+      ASSERT (mongoc_uri_parse_options (uri, "replicaSet=db2", true, NULL));
+      ASSERT_CAPTURED_LOG (
+         "parsing replicaSet from TXT", MONGOC_LOG_LEVEL_WARNING, "Ignoring URI option \"replicaSet\"");
+      capture_logs (false);
+      ASSERT_MATCH (mongoc_uri_get_options (uri), "{'replicaset': 'rs1'}");
+   }
+
+   // test that parsing does not warn if authSource is ignored from TXT records.
+   {
+      capture_logs (true);
+      ASSERT (mongoc_uri_parse_options (uri, "authSource=db2", true, NULL));
+      ASSERT_NO_CAPTURED_LOGS ("parsing authSource from TXT");
+      capture_logs (false);
+      ASSERT_MATCH (mongoc_uri_get_credentials (uri), "{'authsource': 'db1'}");
+   }
 
    mongoc_uri_destroy (uri);
 }
@@ -2026,6 +2037,11 @@ test_mongoc_uri_duplicates (void)
    RECREATE_URI (MONGOC_URI_SAFE "=false&" MONGOC_URI_SAFE "=true");
    ASSERT_LOG_DUPE (MONGOC_URI_SAFE);
    BSON_ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SAFE, false));
+
+   RECREATE_URI (MONGOC_URI_SERVERMONITORINGMODE "=auto&" MONGOC_URI_SERVERMONITORINGMODE "=stream");
+   ASSERT_LOG_DUPE (MONGOC_URI_SERVERMONITORINGMODE);
+   str = mongoc_uri_get_server_monitoring_mode (uri);
+   BSON_ASSERT (strcmp (str, "stream") == 0);
 
    RECREATE_URI (MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=1&" MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_SERVERSELECTIONTIMEOUTMS);
@@ -2235,10 +2251,10 @@ test_parses_long_ipv6 (void)
    // Test the largest permitted IPv6 literal.
    {
       // Construct a string of repeating `:`.
-      bson_string_t *host = bson_string_new (NULL);
+      mcd_string_t *host = mcd_string_new (NULL);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2; i++) {
          // Max IPv6 literal is two less due to including `[` and `]`.
-         bson_string_append (host, ":");
+         mcd_string_append (host, ":");
       }
 
       char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
@@ -2254,15 +2270,15 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      bson_string_free (host, true /* free_segment */);
+      mcd_string_free (host, true /* free_segment */);
    }
 
    // Test one character more than the largest IPv6 literal.
    {
       // Construct a string of repeating `:`.
-      bson_string_t *host = bson_string_new (NULL);
+      mcd_string_t *host = mcd_string_new (NULL);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2 + 1; i++) {
-         bson_string_append (host, ":");
+         mcd_string_append (host, ":");
       }
 
       char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
@@ -2281,7 +2297,7 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      bson_string_free (host, true /* free_segment */);
+      mcd_string_free (host, true /* free_segment */);
    }
 }
 

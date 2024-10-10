@@ -264,7 +264,7 @@ _mongoc_bson_type_to_str (bson_type_t t)
 
 
 /* Refer to:
- * https://github.com/mongodb/specifications/blob/master/source/wireversion-featurelist.rst
+ * https://github.com/mongodb/specifications/blob/master/source/wireversion-featurelist/wireversion-featurelist.md
  * and:
  * https://github.com/mongodb/mongo/blob/master/src/mongo/db/wire_version.h#L57
  */

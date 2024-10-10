@@ -308,6 +308,7 @@ MONGOC_URI_SAFE                            safe                              {tr
     mongoc_uri_get_read_prefs
     mongoc_uri_get_read_prefs_t
     mongoc_uri_get_replica_set
+    mongoc_uri_get_server_monitoring_mode
     mongoc_uri_get_service
     mongoc_uri_get_ssl
     mongoc_uri_get_string
@@ -336,6 +337,7 @@ MONGOC_URI_SAFE                            safe                              {tr
     mongoc_uri_set_password
     mongoc_uri_set_read_concern
     mongoc_uri_set_read_prefs_t
+    mongoc_uri_set_server_monitoring_mode
     mongoc_uri_set_username
     mongoc_uri_set_write_concern
     mongoc_uri_unescape

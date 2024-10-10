@@ -14,7 +14,6 @@ check_var_opt CLIENT_SIDE_ENCRYPTION
 check_var_opt COMPRESSORS "nocompressors"
 check_var_opt COVERAGE # CMake default: OFF.
 check_var_opt DNS "nodns"
-check_var_opt IPV4_ONLY
 check_var_opt LOADBALANCED "noloadbalanced"
 check_var_opt MARCH
 check_var_opt MONGODB_API_VERSION
@@ -29,6 +28,9 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
+
+declare det_dir
+det_dir="${mongoc_dir}/../drivers-evergreen-tools"
 
 declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 
@@ -53,10 +55,6 @@ export MONGOC_TEST_SERVER_LOG="json"
 export MONGOC_TEST_SKIP_MOCK="on"
 export MONGOC_TEST_IPV4_AND_IPV6_HOST="ipv4_and_ipv6.test.build.10gen.cc"
 
-if [[ "${IPV4_ONLY}" != "on" ]]; then
-  export MONGOC_CHECK_IPV6="on"
-fi
-
 # Only set creds if testing with Client Side Encryption.
 # libmongoc may build with CSE enabled (if the host has libmongocrypt installed)
 # and will try to run those tests (which fail on ASAN unless spawning is bypassed).
@@ -64,7 +62,7 @@ if [[ -n "${CLIENT_SIDE_ENCRYPTION}" ]]; then
   echo "Testing with Client Side Encryption enabled."
 
   echo "Setting temporary credentials..."
-  pushd "${mongoc_dir}/../drivers-evergreen-tools/.evergreen/csfle"
+  pushd "${det_dir:?}/.evergreen/csfle"
   {
     export AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key:?}"
     export AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id:?}"
@@ -258,12 +256,11 @@ if [[ "${ASAN}" == "on" ]]; then
   ld_preload="$(bypass_dlclose):${ld_preload}"
 fi
 
+# For mongocryptd, by integration-tests.sh.
+export PATH="${det_dir:?}/mongodb/bin:${PATH:-}"
+
 case "${OSTYPE}" in
 cygwin)
-  export PATH
-  PATH+=":/cygdrive/c/mongodb/bin"
-  PATH+=":/cygdrive/c/libmongocrypt/bin"
-
   check_mongocryptd
 
   chmod -f +x cmake-build/src/libmongoc/Debug/test-libmongoc.exe
@@ -272,9 +269,7 @@ cygwin)
 
 *)
   ulimit -c unlimited || true
-  # Need mongocryptd on the path.
-  export PATH
-  PATH+=":$(pwd)/mongodb/bin"
+
   check_mongocryptd
 
   # Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH

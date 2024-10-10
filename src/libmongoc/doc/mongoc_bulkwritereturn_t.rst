@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
    typedef struct {
-     mongoc_bulkwriteresult_t *res;    // NULL if write was unacknowledged.
+     mongoc_bulkwriteresult_t *res;    // NULL if no known successful writes or write was unacknowledged.
      mongoc_bulkwriteexception_t *exc; // NULL if no error.
    } mongoc_bulkwritereturn_t;
 
@@ -20,7 +20,7 @@ Description
 
 ``res`` or ``exc`` may outlive the :symbol:`mongoc_bulkwrite_t` that was executed.
 
-``res`` is NULL if the :symbol:`mongoc_bulkwrite_t` was executed with an unacknowledged write concern.
+``res`` is NULL if the :symbol:`mongoc_bulkwrite_t` has no known successful writes or was executed with an unacknowledged write concern.
 
 ``res`` must be freed with :symbol:`mongoc_bulkwriteresult_destroy`.
 

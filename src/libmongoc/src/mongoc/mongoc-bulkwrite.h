@@ -235,7 +235,7 @@ mongoc_bulkwrite_append_deletemany (mongoc_bulkwrite_t *self,
 
 // `mongoc_bulkwritereturn_t` may outlive `mongoc_bulkwrite_t`.
 typedef struct {
-   mongoc_bulkwriteresult_t *res;    // NULL if write was unacknowledged.
+   mongoc_bulkwriteresult_t *res;    // NULL if no known successful writes or write was unacknowledged.
    mongoc_bulkwriteexception_t *exc; // NULL if no error.
 } mongoc_bulkwritereturn_t;
 

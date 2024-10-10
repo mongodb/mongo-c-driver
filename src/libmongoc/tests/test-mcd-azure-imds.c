@@ -3,6 +3,7 @@
 #include <mongoc/mongoc-host-list-private.h>
 
 #include "TestSuite.h"
+#include <mcd-string.h>
 
 #define RAW_STRING(...) #__VA_ARGS__
 
@@ -39,7 +40,7 @@ _test_http_req (void)
    // Test generating an HTTP request for the IMDS server
    mcd_azure_imds_request req;
    mcd_azure_imds_request_init (&req, "example.com", 9879, "");
-   bson_string_t *req_str = _mongoc_http_render_request_head (&req.req);
+   mcd_string_t *req_str = _mongoc_http_render_request_head (&req.req);
    mcd_azure_imds_request_destroy (&req);
    // Assert that we composed exactly the request that we expected
    ASSERT_CMPSTR (req_str->str,
@@ -52,7 +53,7 @@ _test_http_req (void)
                   "Metadata: true\r\n"
                   "Accept: application/json\r\n"
                   "\r\n");
-   bson_string_free (req_str, true);
+   mcd_string_free (req_str, true);
 }
 
 static const char *

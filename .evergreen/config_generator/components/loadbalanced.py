@@ -94,7 +94,7 @@ def tasks():
     )
 
     # Satisfy requirements specified in
-    # https://github.com/mongodb/specifications/blob/14916f76fd92b2686d8e3d1f0e4c2d2ef88ca5a7/source/load-balancers/tests/README.rst#testing-requirements
+    # https://github.com/mongodb/specifications/blob/master/source/load-balancers/tests/README.md#testing-requirements
     #
     # > For each server version that supports load balanced clusters, drivers
     # > MUST add two Evergreen tasks: one with a sharded cluster with both

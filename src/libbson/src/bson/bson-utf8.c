@@ -18,8 +18,9 @@
 #include <string.h>
 
 #include <bson/bson-memory.h>
-#include <bson/bson-string.h>
+#include <mcd-string.h>
 #include <bson/bson-utf8.h>
+#include <bson/bson-string-private.h>
 
 
 /*
@@ -230,6 +231,116 @@ bson_utf8_validate (const char *utf8, /* IN */
    return true;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _is_special_char --
+ *
+ *       Uses a bit mask to check if a character requires special formatting
+ *       or not. Called from bson_utf8_escape_for_json.
+ *
+ * Parameters:
+ *       @c: An unsigned char c.
+ *
+ * Returns:
+ *       true if @c requires special formatting. otherwise false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static BSON_INLINE bool
+_is_special_char (unsigned char c)
+{
+   /*
+   C++ equivalent:
+   std::bitset<256> charmap = [...]
+   return charmap[c];
+   */
+   static const bson_unichar_t charmap[8] = {0xffffffff, // control characters
+                                             0x00000004, // double quote "
+                                             0x10000000, // backslash
+                                             0x00000000,
+                                             0xffffffff,
+                                             0xffffffff,
+                                             0xffffffff,
+                                             0xffffffff}; // non-ASCII
+   const int int_index = ((int) c) / ((int) sizeof (bson_unichar_t) * 8);
+   const int bit_index = ((int) c) & ((int) sizeof (bson_unichar_t) * 8 - 1);
+   return ((charmap[int_index] >> bit_index) & ((bson_unichar_t) 1)) != 0u;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _bson_utf8_handle_special_char --
+ *
+ *       Appends a special character in the correct format when converting
+ *       from UTF-8 to JSON. This includes characters that should be escaped
+ *       as well as ASCII control characters.
+ *
+ *       Normal ASCII characters and multi-byte UTF-8 sequences are handled
+ *       in bson_utf8_escape_for_json, where this function is called from.
+ *
+ * Parameters:
+ *       @c: A uint8_t ASCII codepoint.
+ *       @str: A string to append the special character to.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static BSON_INLINE void
+_bson_utf8_handle_special_char (const uint8_t c,   /* IN */
+                                mcd_string_t *str) /* OUT */
+{
+   BSON_ASSERT (c < 0x80u);
+   BSON_ASSERT (str);
+
+   switch (c) {
+   case '"':
+      mcd_string_append (str, "\\\"");
+      break;
+   case '\\':
+      mcd_string_append (str, "\\\\");
+      break;
+   case '\b':
+      mcd_string_append (str, "\\b");
+      break;
+   case '\f':
+      mcd_string_append (str, "\\f");
+      break;
+   case '\n':
+      mcd_string_append (str, "\\n");
+      break;
+   case '\r':
+      mcd_string_append (str, "\\r");
+      break;
+   case '\t':
+      mcd_string_append (str, "\\t");
+      break;
+   default: {
+      // ASCII control character
+      BSON_ASSERT (c < 0x20u);
+
+      const char digits[] = "0123456789abcdef";
+      char codepoint[6] = "\\u0000";
+
+      codepoint[4] = digits[(c >> 4) & 0x0fu];
+      codepoint[5] = digits[c & 0x0fu];
+
+      _bson_string_append_ex (str, codepoint, sizeof (codepoint));
+      break;
+   }
+   }
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -261,70 +372,114 @@ char *
 bson_utf8_escape_for_json (const char *utf8, /* IN */
                            ssize_t utf8_len) /* IN */
 {
-   bson_unichar_t c;
-   bson_string_t *str;
    bool length_provided = true;
-   const char *end;
+   size_t utf8_ulen;
 
    BSON_ASSERT (utf8);
 
-   str = bson_string_new (NULL);
-
    if (utf8_len < 0) {
       length_provided = false;
-      utf8_len = strlen (utf8);
+      utf8_ulen = strlen (utf8);
+   } else {
+      utf8_ulen = (size_t) utf8_len;
    }
 
-   end = utf8 + utf8_len;
+   if (utf8_ulen == 0) {
+      return bson_strdup ("");
+   }
 
-   while (utf8 < end) {
-      c = bson_utf8_get_char (utf8);
+   const char *const end = utf8 + utf8_ulen;
 
-      switch (c) {
-      case '\\':
-      case '"':
-         bson_string_append_c (str, '\\');
-         bson_string_append_unichar (str, c);
-         break;
-      case '\b':
-         bson_string_append (str, "\\b");
-         break;
-      case '\f':
-         bson_string_append (str, "\\f");
-         break;
-      case '\n':
-         bson_string_append (str, "\\n");
-         break;
-      case '\r':
-         bson_string_append (str, "\\r");
-         break;
-      case '\t':
-         bson_string_append (str, "\\t");
-         break;
-      default:
-         if (c < ' ') {
-            bson_string_append_printf (str, "\\u%04x", (unsigned) c);
-         } else {
-            bson_string_append_unichar (str, c);
+   mcd_string_t *const str = _bson_string_alloc (utf8_ulen);
+
+   size_t normal_chars_seen = 0u;
+
+   do {
+      const uint8_t current_byte = (uint8_t) utf8[normal_chars_seen];
+      if (!_is_special_char (current_byte)) {
+         // Normal character, no need to do anything besides iterate
+         // Copy rest of the string if we reach the end
+         normal_chars_seen++;
+         utf8_ulen--;
+         if (utf8_ulen == 0) {
+            _bson_string_append_ex (str, utf8, normal_chars_seen);
+            break;
          }
-         break;
+
+         continue;
       }
 
-      if (c) {
+      // Reached a special character. Copy over all of normal characters
+      // we have passed so far
+      if (normal_chars_seen > 0) {
+         _bson_string_append_ex (str, utf8, normal_chars_seen);
+         utf8 += normal_chars_seen;
+         normal_chars_seen = 0;
+      }
+
+      // Check if expected char length goes past end
+      // bson_utf8_get_char will crash without this check
+      {
+         uint8_t mask;
+         uint8_t length_of_char;
+
+         _bson_utf8_get_sequence (utf8, &length_of_char, &mask);
+         if (utf8 > end - length_of_char) {
+            goto invalid_utf8;
+         }
+      }
+
+      // Check for null character
+      // Null characters are only allowed if the length is provided
+      if (utf8[0] == '\0' || (utf8[0] == '\xc0' && utf8[1] == '\x80')) {
+         if (!length_provided) {
+            goto invalid_utf8;
+         }
+
+         mcd_string_append (str, "\\u0000");
+         utf8_ulen -= *utf8 ? 2u : 1u;
+         utf8 += *utf8 ? 2 : 1;
+         continue;
+      }
+
+      // Multi-byte UTF-8 sequence
+      if (current_byte > 0x7fu) {
+         const char *utf8_old = utf8;
+         size_t char_len;
+
+         bson_unichar_t unichar = bson_utf8_get_char (utf8);
+
+         if (!unichar) {
+            goto invalid_utf8;
+         }
+
+         mcd_string_append_unichar (str, unichar);
          utf8 = bson_utf8_next_char (utf8);
-      } else {
-         if (length_provided && !*utf8) {
-            /* we escaped nil as '\u0000', now advance past it */
-            utf8++;
-         } else {
-            /* invalid UTF-8 */
-            bson_string_free (str, true);
-            return NULL;
-         }
-      }
-   }
 
-   return bson_string_free (str, false);
+         char_len = (size_t) (utf8 - utf8_old);
+         BSON_ASSERT (utf8_ulen >= char_len);
+         utf8_ulen -= char_len;
+
+         continue;
+      }
+
+      // Special ASCII characters (control chars and misc.)
+      _bson_utf8_handle_special_char (current_byte, str);
+
+      if (current_byte > 0) {
+         utf8++;
+      } else {
+         goto invalid_utf8;
+      }
+
+      utf8_ulen--;
+   } while (utf8_ulen > 0);
+
+   return mcd_string_free (str, false);
+
+invalid_utf8:
+   mcd_string_free (str, true);
+   return NULL;
 }
 
 

@@ -36,8 +36,10 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-compression-private.h"
 #include "utlist.h"
+#include "mongoc-trace-private.h"
 
 #include <bson-dsl.h>
+#include <mcd-string.h>
 
 struct _mongoc_uri_t {
    char *str;
@@ -749,8 +751,8 @@ bool
 mongoc_uri_option_is_utf8 (const char *key)
 {
    return !strcasecmp (key, MONGOC_URI_APPNAME) || !strcasecmp (key, MONGOC_URI_REPLICASET) ||
-          !strcasecmp (key, MONGOC_URI_READPREFERENCE) || !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) ||
-          !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
+          !strcasecmp (key, MONGOC_URI_READPREFERENCE) || !strcasecmp (key, MONGOC_URI_SERVERMONITORINGMODE) ||
+          !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) || !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
           !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD) || !strcasecmp (key, MONGOC_URI_TLSCAFILE) ||
           /* deprecated options */
           !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
@@ -897,7 +899,15 @@ mongoc_uri_split_option (mongoc_uri_t *uri, bson_t *options, const char *str, bo
        * through TXT records." So, do NOT override existing options with TXT
        * options. */
       if (from_dns) {
-         MONGOC_WARNING ("Cannot override URI option \"%s\" from TXT record \"%s\"", key, str);
+         if (0 == strcmp (lkey, MONGOC_URI_AUTHSOURCE)) {
+            // Treat `authSource` as a special case. A server may support authentication with multiple mechanisms.
+            // MONGODB-X509 requires authSource=$external. SCRAM-SHA-256 requires authSource=admin.
+            // Only log a trace message since this may be expected.
+            TRACE ("Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
+         } else {
+            MONGOC_WARNING (
+               "Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
+         }
          ret = true;
          goto CLEANUP;
       }
@@ -1142,6 +1152,11 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
             goto UNSUPPORTED_VALUE;
          }
 
+      } else if (!strcmp (key, MONGOC_URI_SERVERMONITORINGMODE)) {
+         if (!mongoc_uri_set_server_monitoring_mode (uri, value)) {
+            goto UNSUPPORTED_VALUE;
+         }
+
       } else if (mongoc_uri_option_is_utf8 (key)) {
          mongoc_uri_bson_append_or_replace_key (&uri->options, canon, value);
 
@@ -1150,7 +1165,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
           * Keys that aren't supported by a driver MUST be ignored.
           *
           * A WARN level logging message MUST be issued
-          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.rst#keys
+          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.md#keys
           */
          MONGOC_WARNING ("Unsupported URI option \"%s\"", key);
       }
@@ -2200,7 +2215,7 @@ char *
 mongoc_uri_unescape (const char *escaped_string)
 {
    bson_unichar_t c;
-   bson_string_t *str;
+   mcd_string_t *str;
    unsigned int hex = 0;
    const char *ptr;
    const char *end;
@@ -2221,7 +2236,7 @@ mongoc_uri_unescape (const char *escaped_string)
 
    ptr = escaped_string;
    end = ptr + len;
-   str = bson_string_new (NULL);
+   str = mcd_string_new (NULL);
 
    for (; *ptr; ptr = bson_utf8_next_char (ptr)) {
       c = bson_utf8_get_char (ptr);
@@ -2234,16 +2249,16 @@ mongoc_uri_unescape (const char *escaped_string)
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
              || 0 == hex) {
-            bson_string_free (str, true);
+            mcd_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
          }
-         bson_string_append_c (str, hex);
+         mcd_string_append_c (str, hex);
          ptr += 2;
          unescape_occurred = true;
          break;
       default:
-         bson_string_append_unichar (str, c);
+         mcd_string_append_unichar (str, c);
          break;
       }
    }
@@ -2251,11 +2266,11 @@ mongoc_uri_unescape (const char *escaped_string)
    /* Check that after unescaping, it is still valid UTF-8 */
    if (unescape_occurred && !bson_utf8_validate (str->str, str->len, false)) {
       MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
-      bson_string_free (str, true);
+      mcd_string_free (str, true);
       return NULL;
    }
 
-   return bson_string_free (str, false);
+   return mcd_string_free (str, false);
 }
 
 
@@ -2348,6 +2363,30 @@ bool
 mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
 {
    return mongoc_uri_get_tls (uri);
+}
+
+const char *
+mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)
+{
+   BSON_ASSERT_PARAM (uri);
+
+   return mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_SERVERMONITORINGMODE, "auto");
+}
+
+
+bool
+mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value)
+{
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (value);
+
+   // Check for valid value
+   if (strcmp (value, "stream") && strcmp (value, "poll") && strcmp (value, "auto")) {
+      return false;
+   }
+
+   mongoc_uri_bson_append_or_replace_key (&uri->options, MONGOC_URI_SERVERMONITORINGMODE, value);
+   return true;
 }
 
 /*
@@ -2886,6 +2925,8 @@ mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri, const char *option_orig, const
    }
    if (!bson_strcasecmp (option, MONGOC_URI_APPNAME)) {
       return mongoc_uri_set_appname (uri, value);
+   } else if (!bson_strcasecmp (option, MONGOC_URI_SERVERMONITORINGMODE)) {
+      return mongoc_uri_set_server_monitoring_mode (uri, value);
    } else {
       option_lowercase = lowercase_str_new (option);
       mongoc_uri_bson_append_or_replace_key (&uri->options, option_lowercase, value);

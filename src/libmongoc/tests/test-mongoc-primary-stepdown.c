@@ -34,36 +34,39 @@ _get_test_uri (void)
 static void
 _setup_test_with_client (mongoc_client_t *client)
 {
-   mongoc_write_concern_t *wc;
-   mongoc_database_t *db;
-   mongoc_collection_t *coll;
    bson_error_t error;
-   bson_t *opts;
 
    ASSERT (client);
 
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, -1);
-   opts = bson_new ();
-   ASSERT (mongoc_write_concern_append (wc, opts));
-
    /* Drop the "step-down.step-down" collection and re-create it */
-   coll = mongoc_client_get_collection (client, "step-down", "step-down");
-   if (!mongoc_collection_drop (coll, &error)) {
-      if (NULL == strstr (error.message, "ns not found")) {
-         ASSERT_OR_PRINT (false, error);
+   {
+      mongoc_collection_t *const coll = mongoc_client_get_collection (client, "step-down", "step-down");
+      if (!mongoc_collection_drop (coll, &error)) {
+         if (NULL == strstr (error.message, "ns not found")) {
+            ASSERT_OR_PRINT (false, error);
+         }
       }
+      mongoc_collection_destroy (coll);
    }
 
-   db = mongoc_client_get_database (client, "step-down");
-   mongoc_collection_destroy (coll);
-   coll = mongoc_database_create_collection (db, "step-down", opts, &error);
-   ASSERT_OR_PRINT (coll, error);
+   {
+      mongoc_database_t *const db = mongoc_client_get_database (client, "step-down");
 
-   mongoc_collection_destroy (coll);
-   mongoc_database_destroy (db);
-   mongoc_write_concern_destroy (wc);
-   bson_destroy (opts);
+      bson_t opts = BSON_INITIALIZER;
+
+      {
+         mongoc_write_concern_t *const wc = mongoc_write_concern_new ();
+         mongoc_write_concern_set_wmajority (wc, -1);
+         ASSERT (mongoc_write_concern_append (wc, &opts));
+         mongoc_write_concern_destroy (wc);
+      }
+
+      mongoc_collection_t *const coll = mongoc_database_create_collection (db, "step-down", &opts, &error);
+      ASSERT_OR_PRINT (coll, error);
+      mongoc_collection_destroy (coll);
+      mongoc_database_destroy (db);
+      bson_destroy (&opts);
+   }
 }
 
 static int
@@ -132,25 +135,16 @@ _run_test_single_or_pooled (_test_fn_t test, bool use_pooled)
 static void
 test_getmore_iteration (mongoc_client_t *client)
 {
-   mongoc_write_concern_t *wc;
    mongoc_database_t *db;
    mongoc_collection_t *coll;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
-   bson_t *insert;
-   bson_t *opts;
    bool res;
    int conn_count;
-   int i;
    uint32_t primary_id;
 
    ASSERT (client);
-
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, -1);
-   opts = bson_new ();
-   ASSERT (mongoc_write_concern_append (wc, opts));
 
    coll = mongoc_client_get_collection (client, "step-down", "step-down");
 
@@ -168,13 +162,26 @@ test_getmore_iteration (mongoc_client_t *client)
    conn_count = _connection_count (client, primary_id);
 
    /* Insert 5 documents */
-   for (i = 0; i < 5; i++) {
-      insert = bson_new ();
+   {
+      bson_t opts = BSON_INITIALIZER;
 
-      bson_append_int32 (insert, "a", -1, i);
-      ASSERT (mongoc_collection_insert_one (coll, insert, opts, NULL, NULL));
+      {
+         mongoc_write_concern_t *const wc = mongoc_write_concern_new ();
+         mongoc_write_concern_set_wmajority (wc, -1);
+         ASSERT (mongoc_write_concern_append (wc, &opts));
+         mongoc_write_concern_destroy (wc);
+      }
 
-      bson_destroy (insert);
+      for (int i = 0; i < 5; i++) {
+         bson_t insert = BSON_INITIALIZER;
+
+         bson_append_int32 (&insert, "a", -1, i);
+         ASSERT (mongoc_collection_insert_one (coll, &insert, &opts, NULL, NULL));
+
+         bson_destroy (&insert);
+      }
+
+      bson_destroy (&opts);
    }
 
    /* Retrieve the first batch of 2 documents */
@@ -200,8 +207,6 @@ test_getmore_iteration (mongoc_client_t *client)
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (coll);
    mongoc_database_destroy (db);
-   mongoc_write_concern_destroy (wc);
-   bson_destroy (opts);
 }
 
 static void

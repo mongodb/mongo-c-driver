@@ -329,25 +329,6 @@ all_variants = [
         {"CC": "Visual Studio 14 2015"},
     ),
     Variant(
-        "windows-2013",
-        "Windows (VS 2013)",
-        "windows-64-vs2013-compile",
-        [
-            ".compression !.snappy !.zstd !.latest",
-            "release-compile",
-            "debug-compile-sspi-winssl",
-            ".authentication-tests .winssl",
-        ],
-        {"CC": "Visual Studio 12 2013 Win64"},
-    ),
-    Variant(
-        "windows-2013-32",
-        "Windows (i686) (VS 2013)",
-        "windows-64-vs2013-compile",
-        ["release-compile", "debug-compile-rdtscp", "debug-compile-sspi-winssl", ".authentication-tests .winssl"],
-        {"CC": "Visual Studio 12 2013"},
-    ),
-    Variant(
         "mingw-windows2016",
         "MinGW-W64 (Windows Server 2016)",
         "windows-vsCurrent-large",

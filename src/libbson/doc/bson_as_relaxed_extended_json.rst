@@ -47,4 +47,4 @@ Example
 
   .. include:: includes/seealso/bson-as-json.txt
 
-.. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst
+.. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json/extended-json.md

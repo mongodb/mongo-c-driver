@@ -63,24 +63,82 @@ test_bson_utf8_escape_for_json (void)
    char *unescaped = "\x0e";
 
    str = bson_utf8_escape_for_json ("my\0key", 6);
-   BSON_ASSERT (0 == memcmp (str, "my\\u0000key", 7));
+   ASSERT_CMPSTR (str, "my\\u0000key");
+   bson_free (str);
+
+   str = bson_utf8_escape_for_json ("my\xc0\x80key", 7);
+   ASSERT_CMPSTR (str, "my\\u0000key");
    bson_free (str);
 
    str = bson_utf8_escape_for_json ("my\"key", 6);
-   BSON_ASSERT (0 == memcmp (str, "my\\\"key", 8));
+   ASSERT_CMPSTR (str, "my\\\"key");
    bson_free (str);
 
    str = bson_utf8_escape_for_json ("my\\key", 6);
-   BSON_ASSERT (0 == memcmp (str, "my\\\\key", 8));
+   ASSERT_CMPSTR (str, "my\\\\key");
    bson_free (str);
 
    str = bson_utf8_escape_for_json ("\\\"\\\"", -1);
-   BSON_ASSERT (0 == memcmp (str, "\\\\\\\"\\\\\\\"", 9));
+   ASSERT_CMPSTR (str, "\\\\\\\"\\\\\\\"");
    bson_free (str);
 
    str = bson_utf8_escape_for_json (unescaped, -1);
-   BSON_ASSERT (0 == memcmp (str, "\\u000e", 7));
+   ASSERT_CMPSTR (str, "\\u000e");
    bson_free (str);
+
+   // 2 bytes expected
+   {
+      str = bson_utf8_escape_for_json ("\xc2", -1);
+      ASSERT (!str);
+
+      str = bson_utf8_escape_for_json ("\xc3\xa9", -1);
+      ASSERT_CMPSTR (str, "é");
+      bson_free (str);
+   }
+
+   // 3 bytes expected
+   {
+      str = bson_utf8_escape_for_json ("\xed", -1);
+      ASSERT (!str);
+
+      str = bson_utf8_escape_for_json ("\xed\x90", -1);
+      ASSERT (!str);
+
+      str = bson_utf8_escape_for_json ("\xe4\xb8\xad", -1);
+      ASSERT_CMPSTR (str, "中");
+      bson_free (str);
+   }
+
+   // 4 bytes expected
+   {
+      str = bson_utf8_escape_for_json ("\xf0", -1);
+      ASSERT (!str);
+
+      str = bson_utf8_escape_for_json ("\xf0\x9f", -1);
+      ASSERT (!str);
+
+      str = bson_utf8_escape_for_json ("\xf0\x9f\x9f", -1);
+      ASSERT (!str);
+
+      str = bson_utf8_escape_for_json ("\xf0\xa0\x9c\x8f", -1);
+      ASSERT_CMPSTR (str, "𠜏");
+      bson_free (str);
+   }
+
+   // Normal strings
+   {
+      str = bson_utf8_escape_for_json ("this is a normal string", -1);
+      ASSERT_CMPSTR (str, "this is a normal string");
+      bson_free (str);
+
+      str = bson_utf8_escape_for_json ("this is a normal string", 23);
+      ASSERT_CMPSTR (str, "this is a normal string");
+      bson_free (str);
+
+      str = bson_utf8_escape_for_json ("this is a normal string", 10);
+      ASSERT_CMPSTR (str, "this is a ");
+      bson_free (str);
+   }
 }
 
 

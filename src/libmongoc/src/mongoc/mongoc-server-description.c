@@ -907,7 +907,7 @@ mongoc_server_description_filter_stale (const mongoc_server_description_t **sds,
  * Given a set of server descriptions, set to NULL any that don't
  * match the read preference's tag sets.
  *
- * https://github.com/mongodb/specifications/blob/master/source/server-selection/server-selection.rst#tag-set
+ * https://github.com/mongodb/specifications/blob/master/source/server-selection/server-selection.md#tag_sets
  *
  *-------------------------------------------------------------------------
  */

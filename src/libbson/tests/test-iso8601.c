@@ -32,14 +32,14 @@ test_date (const char *str, int64_t millis)
 static void
 test_date_io (const char *str_in, const char *str_out, int64_t millis)
 {
-   bson_string_t *bson_str;
+   mcd_string_t *bson_str;
 
    test_date (str_in, millis);
 
-   bson_str = bson_string_new (NULL);
+   bson_str = mcd_string_new (NULL);
    _bson_iso8601_date_format (millis, bson_str);
    ASSERT_CMPSTR (bson_str->str, str_out);
-   bson_string_free (bson_str, true);
+   mcd_string_free (bson_str, true);
 }
 
 

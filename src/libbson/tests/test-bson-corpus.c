@@ -2,6 +2,7 @@
 #include "TestSuite.h"
 #include "json-test.h"
 #include "corpus-test.h"
+#include <mcd-string.h>
 
 
 #define IS_NAN(dec) (dec).high == 0x7c00000000000000ull
@@ -39,19 +40,19 @@ skipped_corpus_test_t VS2013_SKIPPED_CORPUS_TESTS[] = {
 static void
 compare_data (const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len)
 {
-   bson_string_t *a_str;
-   bson_string_t *b_str;
+   mcd_string_t *a_str;
+   mcd_string_t *b_str;
    uint32_t i;
 
    if (a_len != b_len || memcmp (a, b, (size_t) a_len)) {
-      a_str = bson_string_new (NULL);
+      a_str = mcd_string_new (NULL);
       for (i = 0; i < a_len; i++) {
-         bson_string_append_printf (a_str, "%02X", (int) a[i]);
+         mcd_string_append_printf (a_str, "%02X", (int) a[i]);
       }
 
-      b_str = bson_string_new (NULL);
+      b_str = mcd_string_new (NULL);
       for (i = 0; i < b_len; i++) {
-         bson_string_append_printf (b_str, "%02X", (int) b[i]);
+         mcd_string_append_printf (b_str, "%02X", (int) b[i]);
       }
 
       fprintf (stderr, "unequal data of length %d and %d:\n%s\n%s\n", a_len, b_len, a_str->str, b_str->str);

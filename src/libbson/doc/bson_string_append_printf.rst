@@ -3,6 +3,11 @@
 bson_string_append_printf()
 ===========================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
+      This function is deprecated and should not be used in new code.
+
 Synopsis
 --------
 
@@ -23,4 +28,4 @@ Description
 
 Like bson_string_append() but formats a printf style string and then appends that to ``string``.
 
-.. warning:: This function will abort if the length of the resulting string (including the NULL terminator) would exceed ``UINT32_MAX``.
+.. warning:: The length of the resulting string (including the ``NULL`` terminator) MUST NOT exceed ``UINT32_MAX``.
