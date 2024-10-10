@@ -21,199 +21,199 @@
 static void
 test_mcd_cmp_equal (void)
 {
-   BSON_ASSERT (mcd_cmp_equal_ss (0, 0));
-   BSON_ASSERT (!mcd_cmp_equal_ss (0, -1));
-   BSON_ASSERT (!mcd_cmp_equal_ss (0, 1));
-   BSON_ASSERT (!mcd_cmp_equal_ss (-1, 0));
-   BSON_ASSERT (mcd_cmp_equal_ss (-1, -1));
-   BSON_ASSERT (!mcd_cmp_equal_ss (-1, 1));
-   BSON_ASSERT (!mcd_cmp_equal_ss (1, 0));
-   BSON_ASSERT (!mcd_cmp_equal_ss (1, -1));
-   BSON_ASSERT (mcd_cmp_equal_ss (1, 1));
+   ASSERT (mcd_cmp_equal_ss (0, 0));
+   ASSERT (!mcd_cmp_equal_ss (0, -1));
+   ASSERT (!mcd_cmp_equal_ss (0, 1));
+   ASSERT (!mcd_cmp_equal_ss (-1, 0));
+   ASSERT (mcd_cmp_equal_ss (-1, -1));
+   ASSERT (!mcd_cmp_equal_ss (-1, 1));
+   ASSERT (!mcd_cmp_equal_ss (1, 0));
+   ASSERT (!mcd_cmp_equal_ss (1, -1));
+   ASSERT (mcd_cmp_equal_ss (1, 1));
 
-   BSON_ASSERT (mcd_cmp_equal_uu (0u, 0u));
-   BSON_ASSERT (!mcd_cmp_equal_uu (0u, 1u));
-   BSON_ASSERT (!mcd_cmp_equal_uu (1u, 0u));
-   BSON_ASSERT (mcd_cmp_equal_uu (1u, 1u));
+   ASSERT (mcd_cmp_equal_uu (0u, 0u));
+   ASSERT (!mcd_cmp_equal_uu (0u, 1u));
+   ASSERT (!mcd_cmp_equal_uu (1u, 0u));
+   ASSERT (mcd_cmp_equal_uu (1u, 1u));
 
-   BSON_ASSERT (mcd_cmp_equal_su (0, 0u));
-   BSON_ASSERT (!mcd_cmp_equal_su (0, 1u));
-   BSON_ASSERT (!mcd_cmp_equal_su (-1, 0u));
-   BSON_ASSERT (!mcd_cmp_equal_su (-1, 1u));
-   BSON_ASSERT (!mcd_cmp_equal_su (1, 0u));
-   BSON_ASSERT (mcd_cmp_equal_su (1, 1u));
+   ASSERT (mcd_cmp_equal_su (0, 0u));
+   ASSERT (!mcd_cmp_equal_su (0, 1u));
+   ASSERT (!mcd_cmp_equal_su (-1, 0u));
+   ASSERT (!mcd_cmp_equal_su (-1, 1u));
+   ASSERT (!mcd_cmp_equal_su (1, 0u));
+   ASSERT (mcd_cmp_equal_su (1, 1u));
 
-   BSON_ASSERT (mcd_cmp_equal_us (0u, 0));
-   BSON_ASSERT (!mcd_cmp_equal_us (0u, -1));
-   BSON_ASSERT (!mcd_cmp_equal_us (0u, 1));
-   BSON_ASSERT (!mcd_cmp_equal_us (1u, 0));
-   BSON_ASSERT (!mcd_cmp_equal_us (1u, -1));
-   BSON_ASSERT (mcd_cmp_equal_us (1u, 1));
+   ASSERT (mcd_cmp_equal_us (0u, 0));
+   ASSERT (!mcd_cmp_equal_us (0u, -1));
+   ASSERT (!mcd_cmp_equal_us (0u, 1));
+   ASSERT (!mcd_cmp_equal_us (1u, 0));
+   ASSERT (!mcd_cmp_equal_us (1u, -1));
+   ASSERT (mcd_cmp_equal_us (1u, 1));
 }
 
 static void
 test_mcd_cmp_not_equal (void)
 {
-   BSON_ASSERT (!mcd_cmp_not_equal_ss (0, 0));
-   BSON_ASSERT (mcd_cmp_not_equal_ss (0, -1));
-   BSON_ASSERT (mcd_cmp_not_equal_ss (0, 1));
-   BSON_ASSERT (mcd_cmp_not_equal_ss (-1, 0));
-   BSON_ASSERT (!mcd_cmp_not_equal_ss (-1, -1));
-   BSON_ASSERT (mcd_cmp_not_equal_ss (-1, 1));
-   BSON_ASSERT (mcd_cmp_not_equal_ss (1, 0));
-   BSON_ASSERT (mcd_cmp_not_equal_ss (1, -1));
-   BSON_ASSERT (!mcd_cmp_not_equal_ss (1, 1));
+   ASSERT (!mcd_cmp_not_equal_ss (0, 0));
+   ASSERT (mcd_cmp_not_equal_ss (0, -1));
+   ASSERT (mcd_cmp_not_equal_ss (0, 1));
+   ASSERT (mcd_cmp_not_equal_ss (-1, 0));
+   ASSERT (!mcd_cmp_not_equal_ss (-1, -1));
+   ASSERT (mcd_cmp_not_equal_ss (-1, 1));
+   ASSERT (mcd_cmp_not_equal_ss (1, 0));
+   ASSERT (mcd_cmp_not_equal_ss (1, -1));
+   ASSERT (!mcd_cmp_not_equal_ss (1, 1));
 
-   BSON_ASSERT (!mcd_cmp_not_equal_uu (0u, 0u));
-   BSON_ASSERT (mcd_cmp_not_equal_uu (0u, 1u));
-   BSON_ASSERT (mcd_cmp_not_equal_uu (1u, 0u));
-   BSON_ASSERT (!mcd_cmp_not_equal_uu (1u, 1u));
+   ASSERT (!mcd_cmp_not_equal_uu (0u, 0u));
+   ASSERT (mcd_cmp_not_equal_uu (0u, 1u));
+   ASSERT (mcd_cmp_not_equal_uu (1u, 0u));
+   ASSERT (!mcd_cmp_not_equal_uu (1u, 1u));
 
-   BSON_ASSERT (!mcd_cmp_not_equal_su (0, 0u));
-   BSON_ASSERT (mcd_cmp_not_equal_su (0, 1u));
-   BSON_ASSERT (mcd_cmp_not_equal_su (-1, 0u));
-   BSON_ASSERT (mcd_cmp_not_equal_su (-1, 1u));
-   BSON_ASSERT (mcd_cmp_not_equal_su (1, 0u));
-   BSON_ASSERT (!mcd_cmp_not_equal_su (1, 1u));
+   ASSERT (!mcd_cmp_not_equal_su (0, 0u));
+   ASSERT (mcd_cmp_not_equal_su (0, 1u));
+   ASSERT (mcd_cmp_not_equal_su (-1, 0u));
+   ASSERT (mcd_cmp_not_equal_su (-1, 1u));
+   ASSERT (mcd_cmp_not_equal_su (1, 0u));
+   ASSERT (!mcd_cmp_not_equal_su (1, 1u));
 
-   BSON_ASSERT (!mcd_cmp_not_equal_us (0u, 0));
-   BSON_ASSERT (mcd_cmp_not_equal_us (0u, -1));
-   BSON_ASSERT (mcd_cmp_not_equal_us (0u, 1));
-   BSON_ASSERT (mcd_cmp_not_equal_us (1u, 0));
-   BSON_ASSERT (mcd_cmp_not_equal_us (1u, -1));
-   BSON_ASSERT (!mcd_cmp_not_equal_us (1u, 1));
+   ASSERT (!mcd_cmp_not_equal_us (0u, 0));
+   ASSERT (mcd_cmp_not_equal_us (0u, -1));
+   ASSERT (mcd_cmp_not_equal_us (0u, 1));
+   ASSERT (mcd_cmp_not_equal_us (1u, 0));
+   ASSERT (mcd_cmp_not_equal_us (1u, -1));
+   ASSERT (!mcd_cmp_not_equal_us (1u, 1));
 }
 
 static void
 test_mcd_cmp_less (void)
 {
-   BSON_ASSERT (!mcd_cmp_less_ss (0, 0));
-   BSON_ASSERT (!mcd_cmp_less_ss (0, -1));
-   BSON_ASSERT (mcd_cmp_less_ss (0, 1));
-   BSON_ASSERT (mcd_cmp_less_ss (-1, 0));
-   BSON_ASSERT (!mcd_cmp_less_ss (-1, -1));
-   BSON_ASSERT (mcd_cmp_less_ss (-1, 1));
-   BSON_ASSERT (!mcd_cmp_less_ss (1, 0));
-   BSON_ASSERT (!mcd_cmp_less_ss (1, -1));
-   BSON_ASSERT (!mcd_cmp_less_ss (1, 1));
+   ASSERT (!mcd_cmp_less_ss (0, 0));
+   ASSERT (!mcd_cmp_less_ss (0, -1));
+   ASSERT (mcd_cmp_less_ss (0, 1));
+   ASSERT (mcd_cmp_less_ss (-1, 0));
+   ASSERT (!mcd_cmp_less_ss (-1, -1));
+   ASSERT (mcd_cmp_less_ss (-1, 1));
+   ASSERT (!mcd_cmp_less_ss (1, 0));
+   ASSERT (!mcd_cmp_less_ss (1, -1));
+   ASSERT (!mcd_cmp_less_ss (1, 1));
 
-   BSON_ASSERT (!mcd_cmp_less_uu (0u, 0u));
-   BSON_ASSERT (mcd_cmp_less_uu (0u, 1u));
-   BSON_ASSERT (!mcd_cmp_less_uu (1u, 0u));
-   BSON_ASSERT (!mcd_cmp_less_uu (1u, 1u));
+   ASSERT (!mcd_cmp_less_uu (0u, 0u));
+   ASSERT (mcd_cmp_less_uu (0u, 1u));
+   ASSERT (!mcd_cmp_less_uu (1u, 0u));
+   ASSERT (!mcd_cmp_less_uu (1u, 1u));
 
-   BSON_ASSERT (!mcd_cmp_less_su (0, 0u));
-   BSON_ASSERT (mcd_cmp_less_su (0, 1u));
-   BSON_ASSERT (mcd_cmp_less_su (-1, 0u));
-   BSON_ASSERT (mcd_cmp_less_su (-1, 1u));
-   BSON_ASSERT (!mcd_cmp_less_su (1, 0u));
-   BSON_ASSERT (!mcd_cmp_less_su (1, 1u));
+   ASSERT (!mcd_cmp_less_su (0, 0u));
+   ASSERT (mcd_cmp_less_su (0, 1u));
+   ASSERT (mcd_cmp_less_su (-1, 0u));
+   ASSERT (mcd_cmp_less_su (-1, 1u));
+   ASSERT (!mcd_cmp_less_su (1, 0u));
+   ASSERT (!mcd_cmp_less_su (1, 1u));
 
-   BSON_ASSERT (!mcd_cmp_less_us (0u, 0));
-   BSON_ASSERT (!mcd_cmp_less_us (0u, -1));
-   BSON_ASSERT (mcd_cmp_less_us (0u, 1));
-   BSON_ASSERT (!mcd_cmp_less_us (1u, 0));
-   BSON_ASSERT (!mcd_cmp_less_us (1u, -1));
-   BSON_ASSERT (!mcd_cmp_less_us (1u, 1));
+   ASSERT (!mcd_cmp_less_us (0u, 0));
+   ASSERT (!mcd_cmp_less_us (0u, -1));
+   ASSERT (mcd_cmp_less_us (0u, 1));
+   ASSERT (!mcd_cmp_less_us (1u, 0));
+   ASSERT (!mcd_cmp_less_us (1u, -1));
+   ASSERT (!mcd_cmp_less_us (1u, 1));
 }
 
 static void
 test_mcd_cmp_greater (void)
 {
-   BSON_ASSERT (!mcd_cmp_greater_ss (0, 0));
-   BSON_ASSERT (mcd_cmp_greater_ss (0, -1));
-   BSON_ASSERT (!mcd_cmp_greater_ss (0, 1));
-   BSON_ASSERT (!mcd_cmp_greater_ss (-1, 0));
-   BSON_ASSERT (!mcd_cmp_greater_ss (-1, -1));
-   BSON_ASSERT (!mcd_cmp_greater_ss (-1, 1));
-   BSON_ASSERT (mcd_cmp_greater_ss (1, 0));
-   BSON_ASSERT (mcd_cmp_greater_ss (1, -1));
-   BSON_ASSERT (!mcd_cmp_greater_ss (1, 1));
+   ASSERT (!mcd_cmp_greater_ss (0, 0));
+   ASSERT (mcd_cmp_greater_ss (0, -1));
+   ASSERT (!mcd_cmp_greater_ss (0, 1));
+   ASSERT (!mcd_cmp_greater_ss (-1, 0));
+   ASSERT (!mcd_cmp_greater_ss (-1, -1));
+   ASSERT (!mcd_cmp_greater_ss (-1, 1));
+   ASSERT (mcd_cmp_greater_ss (1, 0));
+   ASSERT (mcd_cmp_greater_ss (1, -1));
+   ASSERT (!mcd_cmp_greater_ss (1, 1));
 
-   BSON_ASSERT (!mcd_cmp_greater_uu (0u, 0u));
-   BSON_ASSERT (!mcd_cmp_greater_uu (0u, 1u));
-   BSON_ASSERT (mcd_cmp_greater_uu (1u, 0u));
-   BSON_ASSERT (!mcd_cmp_greater_uu (1u, 1u));
+   ASSERT (!mcd_cmp_greater_uu (0u, 0u));
+   ASSERT (!mcd_cmp_greater_uu (0u, 1u));
+   ASSERT (mcd_cmp_greater_uu (1u, 0u));
+   ASSERT (!mcd_cmp_greater_uu (1u, 1u));
 
-   BSON_ASSERT (!mcd_cmp_greater_su (0, 0u));
-   BSON_ASSERT (!mcd_cmp_greater_su (0, 1u));
-   BSON_ASSERT (!mcd_cmp_greater_su (-1, 0u));
-   BSON_ASSERT (!mcd_cmp_greater_su (-1, 1u));
-   BSON_ASSERT (mcd_cmp_greater_su (1, 0u));
-   BSON_ASSERT (!mcd_cmp_greater_su (1, 1u));
+   ASSERT (!mcd_cmp_greater_su (0, 0u));
+   ASSERT (!mcd_cmp_greater_su (0, 1u));
+   ASSERT (!mcd_cmp_greater_su (-1, 0u));
+   ASSERT (!mcd_cmp_greater_su (-1, 1u));
+   ASSERT (mcd_cmp_greater_su (1, 0u));
+   ASSERT (!mcd_cmp_greater_su (1, 1u));
 
-   BSON_ASSERT (!mcd_cmp_greater_us (0u, 0));
-   BSON_ASSERT (mcd_cmp_greater_us (0u, -1));
-   BSON_ASSERT (!mcd_cmp_greater_us (0u, 1));
-   BSON_ASSERT (mcd_cmp_greater_us (1u, 0));
-   BSON_ASSERT (mcd_cmp_greater_us (1u, -1));
-   BSON_ASSERT (!mcd_cmp_greater_us (1u, 1));
+   ASSERT (!mcd_cmp_greater_us (0u, 0));
+   ASSERT (mcd_cmp_greater_us (0u, -1));
+   ASSERT (!mcd_cmp_greater_us (0u, 1));
+   ASSERT (mcd_cmp_greater_us (1u, 0));
+   ASSERT (mcd_cmp_greater_us (1u, -1));
+   ASSERT (!mcd_cmp_greater_us (1u, 1));
 }
 
 static void
 test_mcd_cmp_less_equal (void)
 {
-   BSON_ASSERT (mcd_cmp_less_equal_ss (0, 0));
-   BSON_ASSERT (!mcd_cmp_less_equal_ss (0, -1));
-   BSON_ASSERT (mcd_cmp_less_equal_ss (0, 1));
-   BSON_ASSERT (mcd_cmp_less_equal_ss (-1, 0));
-   BSON_ASSERT (mcd_cmp_less_equal_ss (-1, -1));
-   BSON_ASSERT (mcd_cmp_less_equal_ss (-1, 1));
-   BSON_ASSERT (!mcd_cmp_less_equal_ss (1, 0));
-   BSON_ASSERT (!mcd_cmp_less_equal_ss (1, -1));
-   BSON_ASSERT (mcd_cmp_less_equal_ss (1, 1));
+   ASSERT (mcd_cmp_less_equal_ss (0, 0));
+   ASSERT (!mcd_cmp_less_equal_ss (0, -1));
+   ASSERT (mcd_cmp_less_equal_ss (0, 1));
+   ASSERT (mcd_cmp_less_equal_ss (-1, 0));
+   ASSERT (mcd_cmp_less_equal_ss (-1, -1));
+   ASSERT (mcd_cmp_less_equal_ss (-1, 1));
+   ASSERT (!mcd_cmp_less_equal_ss (1, 0));
+   ASSERT (!mcd_cmp_less_equal_ss (1, -1));
+   ASSERT (mcd_cmp_less_equal_ss (1, 1));
 
-   BSON_ASSERT (mcd_cmp_less_equal_uu (0u, 0u));
-   BSON_ASSERT (mcd_cmp_less_equal_uu (0u, 1u));
-   BSON_ASSERT (!mcd_cmp_less_equal_uu (1u, 0u));
-   BSON_ASSERT (mcd_cmp_less_equal_uu (1u, 1u));
+   ASSERT (mcd_cmp_less_equal_uu (0u, 0u));
+   ASSERT (mcd_cmp_less_equal_uu (0u, 1u));
+   ASSERT (!mcd_cmp_less_equal_uu (1u, 0u));
+   ASSERT (mcd_cmp_less_equal_uu (1u, 1u));
 
-   BSON_ASSERT (mcd_cmp_less_equal_su (0, 0u));
-   BSON_ASSERT (mcd_cmp_less_equal_su (0, 1u));
-   BSON_ASSERT (mcd_cmp_less_equal_su (-1, 0u));
-   BSON_ASSERT (mcd_cmp_less_equal_su (-1, 1u));
-   BSON_ASSERT (!mcd_cmp_less_equal_su (1, 0u));
-   BSON_ASSERT (mcd_cmp_less_equal_su (1, 1u));
+   ASSERT (mcd_cmp_less_equal_su (0, 0u));
+   ASSERT (mcd_cmp_less_equal_su (0, 1u));
+   ASSERT (mcd_cmp_less_equal_su (-1, 0u));
+   ASSERT (mcd_cmp_less_equal_su (-1, 1u));
+   ASSERT (!mcd_cmp_less_equal_su (1, 0u));
+   ASSERT (mcd_cmp_less_equal_su (1, 1u));
 
-   BSON_ASSERT (mcd_cmp_less_equal_us (0u, 0));
-   BSON_ASSERT (!mcd_cmp_less_equal_us (0u, -1));
-   BSON_ASSERT (mcd_cmp_less_equal_us (0u, 1));
-   BSON_ASSERT (!mcd_cmp_less_equal_us (1u, 0));
-   BSON_ASSERT (!mcd_cmp_less_equal_us (1u, -1));
-   BSON_ASSERT (mcd_cmp_less_equal_us (1u, 1));
+   ASSERT (mcd_cmp_less_equal_us (0u, 0));
+   ASSERT (!mcd_cmp_less_equal_us (0u, -1));
+   ASSERT (mcd_cmp_less_equal_us (0u, 1));
+   ASSERT (!mcd_cmp_less_equal_us (1u, 0));
+   ASSERT (!mcd_cmp_less_equal_us (1u, -1));
+   ASSERT (mcd_cmp_less_equal_us (1u, 1));
 }
 
 static void
 test_mcd_cmp_greater_equal (void)
 {
-   BSON_ASSERT (mcd_cmp_greater_equal_ss (0, 0));
-   BSON_ASSERT (mcd_cmp_greater_equal_ss (0, -1));
-   BSON_ASSERT (!mcd_cmp_greater_equal_ss (0, 1));
-   BSON_ASSERT (!mcd_cmp_greater_equal_ss (-1, 0));
-   BSON_ASSERT (mcd_cmp_greater_equal_ss (-1, -1));
-   BSON_ASSERT (!mcd_cmp_greater_equal_ss (-1, 1));
-   BSON_ASSERT (mcd_cmp_greater_equal_ss (1, 0));
-   BSON_ASSERT (mcd_cmp_greater_equal_ss (1, -1));
-   BSON_ASSERT (mcd_cmp_greater_equal_ss (1, 1));
+   ASSERT (mcd_cmp_greater_equal_ss (0, 0));
+   ASSERT (mcd_cmp_greater_equal_ss (0, -1));
+   ASSERT (!mcd_cmp_greater_equal_ss (0, 1));
+   ASSERT (!mcd_cmp_greater_equal_ss (-1, 0));
+   ASSERT (mcd_cmp_greater_equal_ss (-1, -1));
+   ASSERT (!mcd_cmp_greater_equal_ss (-1, 1));
+   ASSERT (mcd_cmp_greater_equal_ss (1, 0));
+   ASSERT (mcd_cmp_greater_equal_ss (1, -1));
+   ASSERT (mcd_cmp_greater_equal_ss (1, 1));
 
-   BSON_ASSERT (mcd_cmp_greater_equal_uu (0u, 0u));
-   BSON_ASSERT (!mcd_cmp_greater_equal_uu (0u, 1u));
-   BSON_ASSERT (mcd_cmp_greater_equal_uu (1u, 0u));
-   BSON_ASSERT (mcd_cmp_greater_equal_uu (1u, 1u));
+   ASSERT (mcd_cmp_greater_equal_uu (0u, 0u));
+   ASSERT (!mcd_cmp_greater_equal_uu (0u, 1u));
+   ASSERT (mcd_cmp_greater_equal_uu (1u, 0u));
+   ASSERT (mcd_cmp_greater_equal_uu (1u, 1u));
 
-   BSON_ASSERT (mcd_cmp_greater_equal_su (0, 0u));
-   BSON_ASSERT (!mcd_cmp_greater_equal_su (0, 1u));
-   BSON_ASSERT (!mcd_cmp_greater_equal_su (-1, 0u));
-   BSON_ASSERT (!mcd_cmp_greater_equal_su (-1, 1u));
-   BSON_ASSERT (mcd_cmp_greater_equal_su (1, 0u));
-   BSON_ASSERT (mcd_cmp_greater_equal_su (1, 1u));
+   ASSERT (mcd_cmp_greater_equal_su (0, 0u));
+   ASSERT (!mcd_cmp_greater_equal_su (0, 1u));
+   ASSERT (!mcd_cmp_greater_equal_su (-1, 0u));
+   ASSERT (!mcd_cmp_greater_equal_su (-1, 1u));
+   ASSERT (mcd_cmp_greater_equal_su (1, 0u));
+   ASSERT (mcd_cmp_greater_equal_su (1, 1u));
 
-   BSON_ASSERT (mcd_cmp_greater_equal_us (0u, 0));
-   BSON_ASSERT (mcd_cmp_greater_equal_us (0u, -1));
-   BSON_ASSERT (!mcd_cmp_greater_equal_us (0u, 1));
-   BSON_ASSERT (mcd_cmp_greater_equal_us (1u, 0));
-   BSON_ASSERT (mcd_cmp_greater_equal_us (1u, -1));
-   BSON_ASSERT (mcd_cmp_greater_equal_us (1u, 1));
+   ASSERT (mcd_cmp_greater_equal_us (0u, 0));
+   ASSERT (mcd_cmp_greater_equal_us (0u, -1));
+   ASSERT (!mcd_cmp_greater_equal_us (0u, 1));
+   ASSERT (mcd_cmp_greater_equal_us (1u, 0));
+   ASSERT (mcd_cmp_greater_equal_us (1u, -1));
+   ASSERT (mcd_cmp_greater_equal_us (1u, 1));
 }
 
 /* Sanity check: ensure ssize_t limits are as expected relative to size_t. */
@@ -234,65 +234,65 @@ test_mcd_in_range (void)
    const ssize_t ssize_min = SSIZE_MIN;
    const ssize_t ssize_max = SSIZE_MAX;
 
-   BSON_ASSERT (!mcd_in_range_signed (int8_t, int8_min - 1));
-   BSON_ASSERT (mcd_in_range_signed (int8_t, int8_min));
-   BSON_ASSERT (mcd_in_range_signed (int8_t, 0));
-   BSON_ASSERT (mcd_in_range_signed (int8_t, int8_max));
-   BSON_ASSERT (!mcd_in_range_signed (int8_t, int8_max + 1));
+   ASSERT (!mcd_in_range_signed (int8_t, int8_min - 1));
+   ASSERT (mcd_in_range_signed (int8_t, int8_min));
+   ASSERT (mcd_in_range_signed (int8_t, 0));
+   ASSERT (mcd_in_range_signed (int8_t, int8_max));
+   ASSERT (!mcd_in_range_signed (int8_t, int8_max + 1));
 
-   BSON_ASSERT (mcd_in_range_unsigned (int8_t, 0u));
-   BSON_ASSERT (mcd_in_range_unsigned (int8_t, (uint64_t) int8_max));
-   BSON_ASSERT (!mcd_in_range_unsigned (int8_t, (uint64_t) (int8_max + 1)));
+   ASSERT (mcd_in_range_unsigned (int8_t, 0u));
+   ASSERT (mcd_in_range_unsigned (int8_t, (uint64_t) int8_max));
+   ASSERT (!mcd_in_range_unsigned (int8_t, (uint64_t) (int8_max + 1)));
 
-   BSON_ASSERT (!mcd_in_range_signed (uint8_t, int8_min - 1));
-   BSON_ASSERT (!mcd_in_range_signed (uint8_t, int8_min));
-   BSON_ASSERT (mcd_in_range_signed (uint8_t, 0));
-   BSON_ASSERT (mcd_in_range_signed (uint8_t, int8_max));
-   BSON_ASSERT (mcd_in_range_signed (uint8_t, int8_max + 1));
-   BSON_ASSERT (mcd_in_range_signed (uint8_t, (int64_t) uint8_max));
-   BSON_ASSERT (!mcd_in_range_signed (uint8_t, (int64_t) uint8_max + 1));
+   ASSERT (!mcd_in_range_signed (uint8_t, int8_min - 1));
+   ASSERT (!mcd_in_range_signed (uint8_t, int8_min));
+   ASSERT (mcd_in_range_signed (uint8_t, 0));
+   ASSERT (mcd_in_range_signed (uint8_t, int8_max));
+   ASSERT (mcd_in_range_signed (uint8_t, int8_max + 1));
+   ASSERT (mcd_in_range_signed (uint8_t, (int64_t) uint8_max));
+   ASSERT (!mcd_in_range_signed (uint8_t, (int64_t) uint8_max + 1));
 
-   BSON_ASSERT (mcd_in_range_unsigned (uint8_t, 0u));
-   BSON_ASSERT (mcd_in_range_unsigned (uint8_t, uint8_max));
-   BSON_ASSERT (!mcd_in_range_unsigned (uint8_t, uint8_max + 1u));
+   ASSERT (mcd_in_range_unsigned (uint8_t, 0u));
+   ASSERT (mcd_in_range_unsigned (uint8_t, uint8_max));
+   ASSERT (!mcd_in_range_unsigned (uint8_t, uint8_max + 1u));
 
-   BSON_ASSERT (!mcd_in_range_signed (int32_t, int32_min - 1));
-   BSON_ASSERT (mcd_in_range_signed (int32_t, int32_min));
-   BSON_ASSERT (mcd_in_range_signed (int32_t, 0));
-   BSON_ASSERT (mcd_in_range_signed (int32_t, int32_max));
-   BSON_ASSERT (!mcd_in_range_signed (int32_t, int32_max + 1));
+   ASSERT (!mcd_in_range_signed (int32_t, int32_min - 1));
+   ASSERT (mcd_in_range_signed (int32_t, int32_min));
+   ASSERT (mcd_in_range_signed (int32_t, 0));
+   ASSERT (mcd_in_range_signed (int32_t, int32_max));
+   ASSERT (!mcd_in_range_signed (int32_t, int32_max + 1));
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, 0u));
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, (uint64_t) int32_max));
-   BSON_ASSERT (!mcd_in_range_unsigned (int32_t, (uint64_t) (int32_max + 1)));
+   ASSERT (mcd_in_range_unsigned (int32_t, 0u));
+   ASSERT (mcd_in_range_unsigned (int32_t, (uint64_t) int32_max));
+   ASSERT (!mcd_in_range_unsigned (int32_t, (uint64_t) (int32_max + 1)));
 
-   BSON_ASSERT (!mcd_in_range_signed (uint32_t, int32_min - 1));
-   BSON_ASSERT (!mcd_in_range_signed (uint32_t, int32_min));
-   BSON_ASSERT (mcd_in_range_signed (uint32_t, 0));
-   BSON_ASSERT (mcd_in_range_signed (uint32_t, int32_max));
-   BSON_ASSERT (mcd_in_range_signed (uint32_t, int32_max + 1));
-   BSON_ASSERT (mcd_in_range_signed (uint32_t, (int64_t) uint32_max));
-   BSON_ASSERT (!mcd_in_range_signed (uint32_t, (int64_t) uint32_max + 1));
+   ASSERT (!mcd_in_range_signed (uint32_t, int32_min - 1));
+   ASSERT (!mcd_in_range_signed (uint32_t, int32_min));
+   ASSERT (mcd_in_range_signed (uint32_t, 0));
+   ASSERT (mcd_in_range_signed (uint32_t, int32_max));
+   ASSERT (mcd_in_range_signed (uint32_t, int32_max + 1));
+   ASSERT (mcd_in_range_signed (uint32_t, (int64_t) uint32_max));
+   ASSERT (!mcd_in_range_signed (uint32_t, (int64_t) uint32_max + 1));
 
-   BSON_ASSERT (mcd_in_range_unsigned (uint32_t, 0u));
-   BSON_ASSERT (mcd_in_range_unsigned (uint32_t, uint32_max));
-   BSON_ASSERT (!mcd_in_range_unsigned (uint32_t, uint32_max + 1u));
+   ASSERT (mcd_in_range_unsigned (uint32_t, 0u));
+   ASSERT (mcd_in_range_unsigned (uint32_t, uint32_max));
+   ASSERT (!mcd_in_range_unsigned (uint32_t, uint32_max + 1u));
 
-   BSON_ASSERT (mcd_in_range_signed (ssize_t, ssize_min));
-   BSON_ASSERT (mcd_in_range_signed (ssize_t, 0));
-   BSON_ASSERT (mcd_in_range_signed (ssize_t, ssize_max));
+   ASSERT (mcd_in_range_signed (ssize_t, ssize_min));
+   ASSERT (mcd_in_range_signed (ssize_t, 0));
+   ASSERT (mcd_in_range_signed (ssize_t, ssize_max));
 
-   BSON_ASSERT (mcd_in_range_unsigned (ssize_t, 0u));
-   BSON_ASSERT (mcd_in_range_unsigned (ssize_t, (size_t) ssize_max));
-   BSON_ASSERT (!mcd_in_range_unsigned (ssize_t, (size_t) ssize_max + 1u));
+   ASSERT (mcd_in_range_unsigned (ssize_t, 0u));
+   ASSERT (mcd_in_range_unsigned (ssize_t, (size_t) ssize_max));
+   ASSERT (!mcd_in_range_unsigned (ssize_t, (size_t) ssize_max + 1u));
 
-   BSON_ASSERT (!mcd_in_range_signed (size_t, ssize_min));
-   BSON_ASSERT (mcd_in_range_signed (size_t, 0));
-   BSON_ASSERT (mcd_in_range_signed (size_t, ssize_max));
+   ASSERT (!mcd_in_range_signed (size_t, ssize_min));
+   ASSERT (mcd_in_range_signed (size_t, 0));
+   ASSERT (mcd_in_range_signed (size_t, ssize_max));
 
-   BSON_ASSERT (mcd_in_range_unsigned (size_t, 0u));
-   BSON_ASSERT (mcd_in_range_unsigned (size_t, (size_t) ssize_max));
-   BSON_ASSERT (mcd_in_range_unsigned (size_t, (size_t) ssize_max + 1u));
+   ASSERT (mcd_in_range_unsigned (size_t, 0u));
+   ASSERT (mcd_in_range_unsigned (size_t, (size_t) ssize_max));
+   ASSERT (mcd_in_range_unsigned (size_t, (size_t) ssize_max + 1u));
 }
 
 void
