@@ -28,6 +28,7 @@
 #include <Mstcpip.h>
 #include <process.h>
 #endif
+#include <mcd-cmp.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"
@@ -1189,7 +1190,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
 
    for (size_t i = 0u; i < iovcnt; i++) {
 #ifdef _WIN32
-      BSON_ASSERT (bson_in_range_unsigned (int, iov[i].iov_len));
+      BSON_ASSERT (mcd_in_range_unsigned (int, iov[i].iov_len));
       const int wrote = send (sock->sd, iov[i].iov_base, (int) iov[i].iov_len, 0);
       if (wrote == SOCKET_ERROR) {
 #else
@@ -1206,7 +1207,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
 
       ret += wrote;
 
-      if (bson_cmp_not_equal_su (wrote, iov[i].iov_len)) {
+      if (mcd_cmp_not_equal_su (wrote, iov[i].iov_len)) {
          RETURN (ret);
       }
    }
@@ -1256,7 +1257,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock, /* IN */
    DUMP_IOVEC (sendbuf, iov, iovcnt);
 
 #ifdef _WIN32
-   BSON_ASSERT (bson_in_range_unsigned (unsigned_long, iovcnt));
+   BSON_ASSERT (mcd_in_range_unsigned (unsigned_long, iovcnt));
    ret = WSASend (sock->sd, (LPWSABUF) iov, (DWORD) iovcnt, &dwNumberofBytesSent, 0, NULL, NULL);
    TRACE ("WSASend sent: %ld (out of: %zu), ret: %d", dwNumberofBytesSent, iov->iov_len, ret);
 #else

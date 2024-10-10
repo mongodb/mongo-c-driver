@@ -25,6 +25,7 @@
 #include "util.h"
 #include "utlist.h"
 #include "bson-dsl.h"
+#include <mcd-cmp.h>
 
 typedef struct {
    char *name;
@@ -554,7 +555,7 @@ operation_create_datakey (test_t *test, operation_t *op, result_t *result, bson_
             _mongoc_array_append_val (&arr, key_alt_name);
          }
 
-         BSON_ASSERT (bson_in_range_unsigned (uint32_t, arr.len));
+         BSON_ASSERT (mcd_in_range_unsigned (uint32_t, arr.len));
 
          mongoc_client_encryption_datakey_opts_set_keyaltnames (datakey_opts, arr.data, (uint32_t) arr.len);
 
@@ -2635,13 +2636,13 @@ operation_download (test_t *test, operation_t *op, result_t *result, bson_error_
 
    if (stream) {
       while ((bytes_read = mongoc_stream_read (stream, buf, sizeof (buf), 1, 0)) > 0) {
-         ASSERT (bson_in_range_signed (uint32_t, bytes_read));
+         ASSERT (mcd_in_range_signed (uint32_t, bytes_read));
          _mongoc_array_append_vals (&all_bytes, buf, (uint32_t) bytes_read);
       }
       mongoc_gridfs_bucket_stream_error (stream, &op_error);
    }
 
-   ASSERT (bson_in_range_unsigned (uint32_t, all_bytes.len));
+   ASSERT (mcd_in_range_unsigned (uint32_t, all_bytes.len));
    val = bson_val_from_bytes (all_bytes.data, (uint32_t) all_bytes.len);
    result_from_val_and_reply (result, val, NULL, &op_error);
 

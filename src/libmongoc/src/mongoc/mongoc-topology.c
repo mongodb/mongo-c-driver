@@ -37,6 +37,7 @@
 
 #include <stdint.h>
 #include <mcd-string.h>
+#include <mcd-cmp.h>
 
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
@@ -615,7 +616,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    size_t hl_array_size = 0u;
 
-   BSON_ASSERT (bson_in_range_signed (size_t, td->max_hosts));
+   BSON_ASSERT (mcd_in_range_signed (size_t, td->max_hosts));
    const mongoc_host_list_t *const *hl_array = _mongoc_apply_srv_max_hosts (hl, (size_t) td->max_hosts, &hl_array_size);
 
    for (size_t idx = 0u; idx < hl_array_size; ++idx) {

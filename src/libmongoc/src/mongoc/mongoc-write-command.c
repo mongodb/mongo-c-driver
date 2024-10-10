@@ -27,6 +27,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-opts-private.h"
 #include <mcd-string.h>
+#include <mcd-cmp.h>
 
 
 /* indexed by MONGOC_WRITE_COMMAND_DELETE, INSERT, UPDATE */
@@ -689,7 +690,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       ulen = BSON_UINT32_FROM_LE (ulen);
 
       // Although messageLength is an int32, it should never be negative.
-      BSON_ASSERT (bson_in_range_unsigned (int32_t, ulen));
+      BSON_ASSERT (mcd_in_range_unsigned (int32_t, ulen));
       const int32_t slen = (int32_t) ulen;
 
       if (slen > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
@@ -698,7 +699,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          result->failed = true;
          break;
 
-      } else if (bson_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
+      } else if (mcd_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
                  document_count == 0) {
          /* The current batch is still under max batch size in bytes */
          payload_batch_size += ulen;

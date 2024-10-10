@@ -29,6 +29,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
+#include <mcd-cmp.h>
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -413,7 +414,7 @@ _mongoc_stream_writev_full (
       total_bytes += iov[i].iov_len;
    }
 
-   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, timeout_msec))) {
+   if (BSON_UNLIKELY (!mcd_in_range_signed (int32_t, timeout_msec))) {
       // CDRIVER-4589
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
@@ -444,7 +445,7 @@ _mongoc_stream_writev_full (
       RETURN (false);
    }
 
-   if (bson_cmp_not_equal_su (r, total_bytes)) {
+   if (mcd_cmp_not_equal_su (r, total_bytes)) {
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,

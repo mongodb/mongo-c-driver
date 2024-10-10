@@ -44,6 +44,8 @@
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
 #include <mcd-string.h>
+#include <mcd-cmp.h>
+#include <mcd-atomic.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
@@ -295,7 +297,7 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts, bson_
 
    /* appname will only be changed from NULL, so a non-null pointer will never
     * be invalidated after this fetch. */
-   appname = bson_atomic_ptr_fetch ((void *) &ts->appname, bson_memory_order_relaxed);
+   appname = mcd_atomic_ptr_fetch ((void *) &ts->appname, mcd_memory_order_relaxed);
 
    bson_mutex_lock (&ts->handshake_cmd_mtx);
    /* If this is the first time using the node or if it's the first time
@@ -868,7 +870,7 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bs
    if (!node->dns_results) {
       // Expect no truncation.
       int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
-      BSON_ASSERT (bson_cmp_less_su (req, sizeof portstr));
+      BSON_ASSERT (mcd_cmp_less_su (req, sizeof portstr));
 
       memset (&hints, 0, sizeof hints);
       hints.ai_family = host->family;
@@ -931,7 +933,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
    // Expect no truncation.
    int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
 
-   if (bson_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
+   if (mcd_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
       bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
       RETURN (false);
    }
@@ -1247,7 +1249,7 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts, const char 
    }
 
    s = bson_strdup (appname);
-   prev = bson_atomic_ptr_compare_exchange_strong ((void *) &ts->appname, NULL, s, bson_memory_order_relaxed);
+   prev = mcd_atomic_ptr_compare_exchange_strong ((void *) &ts->appname, NULL, s, mcd_memory_order_relaxed);
    if (prev == NULL) {
       return true;
    }

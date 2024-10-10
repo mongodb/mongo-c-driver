@@ -4,7 +4,7 @@ int
 LLVMFuzzerTestOneInput (const uint8_t *data, size_t size)
 {
    // Reject inputs with lengths greater than ssize_t
-   if (bson_cmp_greater_us (size, SSIZE_MAX)) {
+   if (size > (size_t) SSIZE_MAX) {
       return -1;
    }
 
