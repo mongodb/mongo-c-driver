@@ -6347,7 +6347,7 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
    set_retry_failpoint (&ssl_opts, true, 4);
    res = mongoc_client_encryption_create_datakey (client_encryption, provider, dkopts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (error, 2, 4, "KMS request failed after");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "KMS request failed after");
 
    bson_value_destroy (&keyid);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
