@@ -25,6 +25,7 @@ class Task(EvgTask):
 
     disable: bool = False
     run_on: str | Sequence[str] | None = None
+    batchtime: int | None = None
 
 
 # Automatically formats the provided script and invokes it in Bash.
