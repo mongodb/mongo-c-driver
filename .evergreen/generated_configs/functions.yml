@@ -5,6 +5,14 @@ functions:
       params:
         binary: bash
         working_dir: mongoc
+        args:
+          - -c
+          - .evergreen/scripts/abi-compliance-check-setup.sh
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
         add_expansions_to_env: true
         args:
           - -c

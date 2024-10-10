@@ -15,15 +15,12 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('ubuntu1604',        'gcc',         None,   ['off']),
-    ('ubuntu1804',        'gcc',         None,   ['off']),
     ('ubuntu2004',        'gcc',         None,   ['off']),
     ('windows-vsCurrent', 'vs2017x64',   None,   ['off']),
 ]
 
 TEST_MATRIX = [
-    ('ubuntu1804', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.0', '4.2', '4.4', '5.0', '6.0',                ]),
-    ('ubuntu2004', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   '7.0', '8.0', 'latest']),
+    ('ubuntu2004', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
