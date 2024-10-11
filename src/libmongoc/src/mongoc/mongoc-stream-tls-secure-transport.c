@@ -37,10 +37,6 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-tls-secure-transport-private.h"
 #include <mcd-string.h>
-#include <common-macros-private.h>
-#include <mcd-atomic.h>
-
-BEGIN_IGNORE_DEPRECATIONS
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure_transport"
@@ -703,6 +699,4 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
    }
    RETURN ((mongoc_stream_t *) tls);
 }
-
-END_IGNORE_DEPRECATIONS
 #endif /* MONGOC_ENABLE_SSL_SECURE_TRANSPORT */
