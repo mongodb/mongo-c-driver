@@ -449,7 +449,7 @@ _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology, _mongoc_rr_resolv
 static BSON_INLINE void
 _mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val)
 {
-   mcd_atomic_int64_exchange (&topology->_atomic_srv_polling_rescan_interval_ms, val, mcd_memory_order_seq_cst);
+   mcd_atomic_int64_exchange (&topology->_atomic_srv_polling_rescan_interval_ms, val, mcommon_memory_order_seq_cst);
 }
 
 /**
@@ -458,7 +458,7 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology
 static BSON_INLINE int64_t
 _mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *topology)
 {
-   return mcd_atomic_int64_fetch (&topology->_atomic_srv_polling_rescan_interval_ms, mcd_memory_order_seq_cst);
+   return mcd_atomic_int64_fetch (&topology->_atomic_srv_polling_rescan_interval_ms, mcommon_memory_order_seq_cst);
 }
 
 /**

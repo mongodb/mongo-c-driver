@@ -37,7 +37,7 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
    mongoc_topology_t *topology;
 
    topology = topology_void;
-   while (mcd_atomic_int_fetch (&topology->scanner_state, mcd_memory_order_relaxed) ==
+   while (mcd_atomic_int_fetch (&topology->scanner_state, mcommon_memory_order_relaxed) ==
           MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       int64_t now_ms;
       int64_t scan_due_ms;
@@ -65,7 +65,7 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
        * topology srv_polling_mtx for the scan. The topology may have shut
        * down in that time. */
       bson_mutex_lock (&topology->srv_polling_mtx);
-      if (mcd_atomic_int_fetch (&topology->scanner_state, mcd_memory_order_relaxed) !=
+      if (mcd_atomic_int_fetch (&topology->scanner_state, mcommon_memory_order_relaxed) !=
           MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
          bson_mutex_unlock (&topology->srv_polling_mtx);
          break;
@@ -133,7 +133,7 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    prev_state = mcd_atomic_int_compare_exchange_strong (&topology->scanner_state,
                                                         MONGOC_TOPOLOGY_SCANNER_OFF,
                                                         MONGOC_TOPOLOGY_SCANNER_BG_RUNNING,
-                                                        mcd_memory_order_relaxed);
+                                                        mcommon_memory_order_relaxed);
 
    if (prev_state != MONGOC_TOPOLOGY_SCANNER_OFF) {
       /* The topology scanner is already running, or another thread is starting
@@ -222,7 +222,7 @@ _mongoc_topology_background_monitoring_reconcile (mongoc_topology_t *topology, m
 
    BSON_ASSERT (!topology->single_threaded);
 
-   if (mcd_atomic_int_fetch (&topology->scanner_state, mcd_memory_order_relaxed) !=
+   if (mcd_atomic_int_fetch (&topology->scanner_state, mcommon_memory_order_relaxed) !=
        MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       return;
    }
@@ -251,7 +251,7 @@ _mongoc_topology_background_monitoring_request_scan (mongoc_topology_t *topology
 
    BSON_ASSERT (!topology->single_threaded);
 
-   if (mcd_atomic_int_fetch (&topology->scanner_state, mcd_memory_order_relaxed) ==
+   if (mcd_atomic_int_fetch (&topology->scanner_state, mcommon_memory_order_relaxed) ==
        MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
       return;
    }
@@ -281,7 +281,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
 
    BSON_ASSERT (!topology->single_threaded);
 
-   if (mcd_atomic_int_fetch (&topology->scanner_state, mcd_memory_order_relaxed) !=
+   if (mcd_atomic_int_fetch (&topology->scanner_state, mcommon_memory_order_relaxed) !=
        MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       return;
    }
@@ -290,7 +290,8 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
 
    /* Tell the srv polling thread to stop */
    bson_mutex_lock (&topology->srv_polling_mtx);
-   mcd_atomic_int_exchange (&topology->scanner_state, MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN, mcd_memory_order_relaxed);
+   mcd_atomic_int_exchange (
+      &topology->scanner_state, MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN, mcommon_memory_order_relaxed);
 
    if (topology->is_srv_polling) {
       /* Signal the srv poller to break out of waiting */
@@ -343,7 +344,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    mongoc_set_destroy (topology->rtt_monitors);
    topology->server_monitors = mongoc_set_new (1, NULL, NULL);
    topology->rtt_monitors = mongoc_set_new (1, NULL, NULL);
-   mcd_atomic_int_exchange (&topology->scanner_state, MONGOC_TOPOLOGY_SCANNER_OFF, mcd_memory_order_relaxed);
+   mcd_atomic_int_exchange (&topology->scanner_state, MONGOC_TOPOLOGY_SCANNER_OFF, mcommon_memory_order_relaxed);
    mongoc_cond_broadcast (&topology->cond_client);
    bson_mutex_unlock (&topology->tpld_modification_mtx);
 }

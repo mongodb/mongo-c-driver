@@ -773,7 +773,7 @@ _update_topology_description (mongoc_server_monitor_t *server_monitor, mongoc_se
       _mongoc_topology_update_cluster_time (topology, hello_response);
    }
 
-   if (mcd_atomic_int_fetch (&topology->scanner_state, mcd_memory_order_relaxed) ==
+   if (mcd_atomic_int_fetch (&topology->scanner_state, mcommon_memory_order_relaxed) ==
        MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
       return;
    }

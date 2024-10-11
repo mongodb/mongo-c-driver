@@ -61,14 +61,14 @@
       Assert (value, ==, 53);                                                  \
    } while (0)
 
-#define TEST_INTEGER_KIND(Kind, TypeName, Assert)                                 \
-   do {                                                                           \
-      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcd_memory_order_relaxed, Assert); \
-      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcd_memory_order_acq_rel, Assert); \
-      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcd_memory_order_acquire, Assert); \
-      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcd_memory_order_release, Assert); \
-      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcd_memory_order_consume, Assert); \
-      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcd_memory_order_seq_cst, Assert); \
+#define TEST_INTEGER_KIND(Kind, TypeName, Assert)                                     \
+   do {                                                                               \
+      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcommon_memory_order_relaxed, Assert); \
+      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcommon_memory_order_acq_rel, Assert); \
+      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcommon_memory_order_acquire, Assert); \
+      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcommon_memory_order_release, Assert); \
+      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcommon_memory_order_consume, Assert); \
+      TEST_KIND_WITH_MEMORDER (Kind, TypeName, mcommon_memory_order_seq_cst, Assert); \
    } while (0)
 
 
@@ -92,15 +92,15 @@ test_pointers (void)
    int *ptr = &v;
    int *other;
    int *prev;
-   other = mcd_atomic_ptr_fetch ((void *) &ptr, mcd_memory_order_relaxed);
+   other = mcd_atomic_ptr_fetch ((void *) &ptr, mcommon_memory_order_relaxed);
    ASSERT_CMPVOID (other, ==, ptr);
-   prev = mcd_atomic_ptr_exchange ((void *) &other, &u, mcd_memory_order_relaxed);
+   prev = mcd_atomic_ptr_exchange ((void *) &other, &u, mcommon_memory_order_relaxed);
    ASSERT_CMPVOID (prev, ==, &v);
    ASSERT_CMPVOID (other, ==, &u);
-   prev = mcd_atomic_ptr_compare_exchange_strong ((void *) &other, &v, &w, mcd_memory_order_relaxed);
+   prev = mcd_atomic_ptr_compare_exchange_strong ((void *) &other, &v, &w, mcommon_memory_order_relaxed);
    ASSERT_CMPVOID (prev, ==, &u);
    ASSERT_CMPVOID (other, ==, &u);
-   prev = mcd_atomic_ptr_compare_exchange_strong ((void *) &other, &u, &w, mcd_memory_order_relaxed);
+   prev = mcd_atomic_ptr_compare_exchange_strong ((void *) &other, &u, &w, mcommon_memory_order_relaxed);
    ASSERT_CMPVOID (prev, ==, &u);
    ASSERT_CMPVOID (other, ==, &w);
 }
