@@ -16433,8 +16433,8 @@ buildvariants:
   - debug-compile-sasl-openssl
   - debug-compile-nosasl-openssl
   - .authentication-tests .openssl
-- name: clang60-i686
-  display_name: clang 6.0 (i686) (Ubuntu 20.04)
+- name: clang100-i686
+  display_name: clang 10.0 (i686) (Ubuntu 20.04)
   expansions:
     CC: clang
     MARCH: i686
@@ -16495,8 +16495,8 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - .latest .nossl
-- name: gcc75-i686
-  display_name: GCC 7.5 (i686) (Ubuntu 20.04)
+- name: gcc94-i686
+  display_name: GCC 9.4 (i686) (Ubuntu 20.04)
   expansions:
     CC: gcc
     MARCH: i686
@@ -16506,8 +16506,8 @@ buildvariants:
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
   - .latest .nossl .nosasl
-- name: gcc75
-  display_name: GCC 7.5 (Ubuntu 20.04)
+- name: gcc94
+  display_name: GCC 9.4 (Ubuntu 20.04)
   expansions:
     CC: gcc
   run_on: ubuntu2004-test
@@ -16656,8 +16656,8 @@ buildvariants:
   - .authentication-tests .openssl
   - .latest .nossl
   batchtime: 1440
-- name: clang60ubuntu
-  display_name: clang 6.0 (Ubuntu 20.04)
+- name: clang100ubuntu
+  display_name: clang 10.0 (Ubuntu 20.04)
   expansions:
     CC: clang
   run_on: ubuntu2004-test
