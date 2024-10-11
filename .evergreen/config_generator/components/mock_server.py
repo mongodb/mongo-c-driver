@@ -1,16 +1,15 @@
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType
-from shrub.v3.evg_task import EvgTaskRef
+from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
 from config_generator.components.funcs.fetch_det import FetchDET
 from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
-from config_generator.etc.utils import Task
 from config_generator.etc.utils import bash_exec
 
 def tasks():
     return [
-        Task(
+        EvgTask(
             name="mock-server-test",
             run_on="ubuntu2204-small",
             commands=[
