@@ -329,53 +329,55 @@ DECL_ATOMIC_INTEGRAL (int, int, )
 #endif
 
 BSON_EXPORT (int64_t)
-_bson_emul_atomic_int64_fetch_add (int64_t volatile *val, int64_t v, enum bson_memory_order) BSON_GNUC_DEPRECATED;
+_bson_emul_atomic_int64_fetch_add (int64_t volatile *val, int64_t v, enum bson_memory_order);
 BSON_EXPORT (int64_t)
-_bson_emul_atomic_int64_exchange (int64_t volatile *val, int64_t v, enum bson_memory_order) BSON_GNUC_DEPRECATED;
+_bson_emul_atomic_int64_exchange (int64_t volatile *val, int64_t v, enum bson_memory_order);
 BSON_EXPORT (int64_t)
 _bson_emul_atomic_int64_compare_exchange_strong (int64_t volatile *val,
                                                  int64_t expect_value,
                                                  int64_t new_value,
-                                                 enum bson_memory_order) BSON_GNUC_DEPRECATED;
+                                                 enum bson_memory_order);
 
 BSON_EXPORT (int64_t)
 _bson_emul_atomic_int64_compare_exchange_weak (int64_t volatile *val,
                                                int64_t expect_value,
                                                int64_t new_value,
-                                               enum bson_memory_order) BSON_GNUC_DEPRECATED;
+                                               enum bson_memory_order);
 
 BSON_EXPORT (int32_t)
-_bson_emul_atomic_int32_fetch_add (int32_t volatile *val, int32_t v, enum bson_memory_order) BSON_GNUC_DEPRECATED;
+_bson_emul_atomic_int32_fetch_add (int32_t volatile *val, int32_t v, enum bson_memory_order);
 BSON_EXPORT (int32_t)
-_bson_emul_atomic_int32_exchange (int32_t volatile *val, int32_t v, enum bson_memory_order) BSON_GNUC_DEPRECATED;
+_bson_emul_atomic_int32_exchange (int32_t volatile *val, int32_t v, enum bson_memory_order);
 BSON_EXPORT (int32_t)
 _bson_emul_atomic_int32_compare_exchange_strong (int32_t volatile *val,
                                                  int32_t expect_value,
                                                  int32_t new_value,
-                                                 enum bson_memory_order) BSON_GNUC_DEPRECATED;
+                                                 enum bson_memory_order);
 
 BSON_EXPORT (int32_t)
 _bson_emul_atomic_int32_compare_exchange_weak (int32_t volatile *val,
                                                int32_t expect_value,
                                                int32_t new_value,
-                                               enum bson_memory_order) BSON_GNUC_DEPRECATED;
+                                               enum bson_memory_order);
 
 BSON_EXPORT (int)
-_bson_emul_atomic_int_fetch_add (int volatile *val, int v, enum bson_memory_order) BSON_GNUC_DEPRECATED;
+_bson_emul_atomic_int_fetch_add (int volatile *val, int v, enum bson_memory_order);
 BSON_EXPORT (int)
-_bson_emul_atomic_int_exchange (int volatile *val, int v, enum bson_memory_order) BSON_GNUC_DEPRECATED;
+_bson_emul_atomic_int_exchange (int volatile *val, int v, enum bson_memory_order);
 BSON_EXPORT (int)
 _bson_emul_atomic_int_compare_exchange_strong (int volatile *val,
                                                int expect_value,
                                                int new_value,
-                                               enum bson_memory_order) BSON_GNUC_DEPRECATED;
+                                               enum bson_memory_order);
 
 BSON_EXPORT (int)
-_bson_emul_atomic_int_compare_exchange_weak (int volatile *val, int expect_value, int new_value, enum bson_memory_order)
-   BSON_GNUC_DEPRECATED;
+_bson_emul_atomic_int_compare_exchange_weak (int volatile *val,
+                                             int expect_value,
+                                             int new_value,
+                                             enum bson_memory_order);
 
 BSON_EXPORT (void *)
-_bson_emul_atomic_ptr_exchange (void *volatile *val, void *v, enum bson_memory_order) BSON_GNUC_DEPRECATED;
+_bson_emul_atomic_ptr_exchange (void *volatile *val, void *v, enum bson_memory_order);
 
 BSON_EXPORT (void)
 bson_thrd_yield (void);
