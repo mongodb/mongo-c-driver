@@ -43,7 +43,7 @@
 #include "mongoc-database-private.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 #include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN

@@ -38,7 +38,7 @@
 #include "utlist.h"
 #include "mongoc-trace-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 #include <common-string-private.h>
 
 struct _mongoc_uri_t {

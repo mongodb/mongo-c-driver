@@ -36,7 +36,7 @@
 #include "mongoc-version.h"
 #include "mongoc-util-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
 

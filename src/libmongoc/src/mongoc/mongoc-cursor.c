@@ -30,7 +30,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-aggregate-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>
 
 #undef MONGOC_LOG_DOMAIN

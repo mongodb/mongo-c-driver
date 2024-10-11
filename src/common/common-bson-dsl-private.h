@@ -4,7 +4,7 @@
 #define BSON_BSON_DSL_H_INCLUDED
 
 /**
- * @file bson-dsl.h
+ * @file common-bson-dsl-private.h
  * @brief Define a C-preprocessor DSL for working with BSON objects
  *
  * This file defines an embedded DSL for working with BSON objects consisely and

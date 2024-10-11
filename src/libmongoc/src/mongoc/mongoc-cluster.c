@@ -57,7 +57,7 @@
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-error-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>
 
 #include <inttypes.h>

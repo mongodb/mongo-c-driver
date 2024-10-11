@@ -23,7 +23,7 @@
 #include "utlist.h"
 #include "util.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 
 #include "common-b64-private.h"
 #include "mongoc-client-side-encryption-private.h"
