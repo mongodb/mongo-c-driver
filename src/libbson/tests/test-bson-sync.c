@@ -26,7 +26,7 @@ test_bson_sync_synchronize (void)
    BEGIN_IGNORE_DEPRECATIONS
 
    // This doesn't test for correct functionality, only that it exists and can be called
-   bson_sync_synchronize();
+   bson_sync_synchronize ();
 
    END_IGNORE_DEPRECATIONS
 }
