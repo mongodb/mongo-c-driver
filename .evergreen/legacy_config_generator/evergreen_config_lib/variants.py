@@ -115,8 +115,8 @@ all_variants = [
         {"CC": "clang"},
     ),
     Variant(
-        "clang60-i686",
-        "clang 6.0 (i686) (Ubuntu 20.04)",
+        "clang100-i686",
+        "clang 10.0 (i686) (Ubuntu 20.04)",
         "ubuntu2004-test",
         [
             "release-compile",
@@ -172,15 +172,15 @@ all_variants = [
         {"CC": "gcc"},
     ),
     Variant(
-        "gcc75-i686",
-        "GCC 7.5 (i686) (Ubuntu 20.04)",
+        "gcc94-i686",
+        "GCC 9.4 (i686) (Ubuntu 20.04)",
         "ubuntu2004-test",
         ["release-compile", "debug-compile-nosasl-nossl", "debug-compile-no-align", ".latest .nossl .nosasl"],
         {"CC": "gcc", "MARCH": "i686"},
     ),
     Variant(
-        "gcc75",
-        "GCC 7.5 (Ubuntu 20.04)",
+        "gcc94",
+        "GCC 9.4 (Ubuntu 20.04)",
         "ubuntu2004-test",
         [
             ".compression !.zstd",
@@ -340,8 +340,8 @@ all_variants = [
         batchtime=days(1),
     ),
     Variant(
-        "clang60ubuntu",
-        "clang 6.0 (Ubuntu 20.04)",
+        "clang100ubuntu",
+        "clang 10.0 (Ubuntu 20.04)",
         "ubuntu2004-test",
         [
             "debug-compile-sasl-openssl-static",
