@@ -115,7 +115,7 @@ test_thread_fence (void)
 static void
 test_thrd_yield (void)
 {
-   mcd_thrd_yield ();
+   mcommon_thrd_yield ();
 }
 
 void

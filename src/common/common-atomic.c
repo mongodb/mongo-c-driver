@@ -23,7 +23,7 @@
 #endif
 
 void
-mcd_thrd_yield (void)
+mcommon_thrd_yield (void)
 {
    BSON_IF_WINDOWS (SwitchToThread ();)
    BSON_IF_POSIX (sched_yield ();)
@@ -52,7 +52,7 @@ _lock_emul_atomic (void)
    }
    /* Still don't have the lock. Spin and yield */
    while (mcommon_atomic_int8_compare_exchange_weak (&gEmulAtomicLock, 0, 1, mcommon_memory_order_acquire) != 0) {
-      mcd_thrd_yield ();
+      mcommon_thrd_yield ();
    }
 }
 

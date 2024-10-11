@@ -319,7 +319,7 @@ DECL_ATOMIC_INTEGRAL (int, int, )
 #define _mcommon_emul_atomic_int_compare_exchange_strong COMMON_NAME (emul_atomic_int_compare_exchange_strong)
 #define _mcommon_emul_atomic_int_compare_exchange_weak COMMON_NAME (emul_atomic_int_compare_exchange_weak)
 #define _mcommon_emul_atomic_ptr_exchange COMMON_NAME (emul_atomic_ptr_exchange)
-#define mcd_thrd_yield COMMON_NAME (thrd_yield)
+#define mcommon_thrd_yield COMMON_NAME (thrd_yield)
 
 int64_t
 _mcommon_emul_atomic_int64_fetch_add (int64_t volatile *val, int64_t v, enum mcommon_memory_order);
@@ -373,7 +373,7 @@ void *
 _mcommon_emul_atomic_ptr_exchange (void *volatile *val, void *v, enum mcommon_memory_order);
 
 void
-mcd_thrd_yield (void);
+mcommon_thrd_yield (void);
 
 #if (defined(_MSC_VER) && !defined(_M_IX86)) || (defined(__LP64__) && __LP64__)
 /* (64-bit intrinsics are only available in x64) */
