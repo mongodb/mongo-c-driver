@@ -119,7 +119,7 @@ test_thrd_yield (void)
 }
 
 void
-test_atomic_install (TestSuite *suite)
+test_mcd_atomic_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/mcd-atomic/integers", test_integers);
    TestSuite_Add (suite, "/mcd-atomic/pointers", test_pointers);
