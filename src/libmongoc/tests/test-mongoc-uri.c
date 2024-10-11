@@ -10,7 +10,7 @@
 
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 static void
 test_mongoc_uri_new (void)

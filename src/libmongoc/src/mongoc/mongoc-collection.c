@@ -44,7 +44,7 @@
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 #include <bson-dsl.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"

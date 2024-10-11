@@ -3,7 +3,7 @@
 #include <mongoc/mongoc-host-list-private.h>
 
 #include "TestSuite.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #define RAW_STRING(...) #__VA_ARGS__
 

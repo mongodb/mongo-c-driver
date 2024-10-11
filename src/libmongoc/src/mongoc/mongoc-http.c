@@ -22,7 +22,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-buffer-private.h"
 #include "mcd-time.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 void

@@ -2,7 +2,7 @@
 #include "TestSuite.h"
 #include "json-test.h"
 #include "corpus-test.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #include <inttypes.h>
 

@@ -6,7 +6,7 @@
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 static ssize_t

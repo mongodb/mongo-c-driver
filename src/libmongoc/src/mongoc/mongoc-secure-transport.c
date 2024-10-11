@@ -36,7 +36,7 @@
 #include <Security/Security.h>
 #include <Security/SecureTransport.h>
 #include <CoreFoundation/CoreFoundation.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 /* Jailbreak Darwin Private API */
 /*

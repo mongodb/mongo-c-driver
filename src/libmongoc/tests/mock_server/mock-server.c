@@ -28,7 +28,7 @@
 #include "../test-conveniences.h"
 #include "../test-libmongoc.h"
 #include "../TestSuite.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H

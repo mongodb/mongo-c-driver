@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include <bson/bson-memory.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <bson/bson-utf8.h>
 #include <bson/bson-string-private.h>
 

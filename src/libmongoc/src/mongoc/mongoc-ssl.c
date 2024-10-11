@@ -24,7 +24,7 @@
 #include "mongoc-log.h"
 #include "mongoc-uri.h"
 #include "mongoc-util-private.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #include "mongoc-openssl-private.h"

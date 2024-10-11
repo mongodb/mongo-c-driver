@@ -39,7 +39,7 @@
 #include "mongoc-trace-private.h"
 
 #include <bson-dsl.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 struct _mongoc_uri_t {
    char *str;

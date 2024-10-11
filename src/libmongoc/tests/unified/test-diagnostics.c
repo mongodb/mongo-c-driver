@@ -20,7 +20,7 @@
 #include "TestSuite.h"
 #include "common-thread-private.h"
 #include <signal.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 typedef struct _msg_t {
    char *string;

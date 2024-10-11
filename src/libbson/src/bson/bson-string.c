@@ -21,7 +21,7 @@
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
 #include <common-cmp-private.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-utf8.h>
 #include <bson/bson-string-private.h>

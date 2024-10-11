@@ -30,7 +30,7 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>

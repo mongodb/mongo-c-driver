@@ -11,7 +11,7 @@
 #include "mongoc/mongoc-read-concern-private.h"
 #include "mongoc/mongoc-write-concern-private.h"
 #include "test-conveniences.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 

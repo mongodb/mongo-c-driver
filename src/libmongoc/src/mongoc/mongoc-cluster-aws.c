@@ -29,7 +29,7 @@
 #include "mongoc-http-private.h"
 #include "mongoc-rand-private.h"
 #include "mongoc-ssl-private.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"

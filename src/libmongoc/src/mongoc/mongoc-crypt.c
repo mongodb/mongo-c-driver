@@ -33,7 +33,7 @@
 #include "mcd-azure.h"
 #include "mcd-time.h"
 #include "service-gcp.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 // `mcd_mapof_kmsid_to_tlsopts` maps a KMS ID (e.g. `aws` or `aws:myname`) to a

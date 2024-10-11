@@ -26,7 +26,7 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #include <inttypes.h>
 

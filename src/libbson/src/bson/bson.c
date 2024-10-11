@@ -19,7 +19,7 @@
 #include <bson/bson-config.h>
 #include <bson/bson-private.h>
 #include <bson/bson-json-private.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <bson/bson-iso8601-private.h>
 #include <bson/bson-string-private.h>
 #include <common-cmp-private.h>

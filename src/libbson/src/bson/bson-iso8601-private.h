@@ -23,7 +23,7 @@
 
 #include <bson/bson-compat.h>
 #include <bson/bson-macros.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 
 BSON_BEGIN_DECLS

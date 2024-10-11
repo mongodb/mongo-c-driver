@@ -21,7 +21,7 @@
 #include "mock-server.h"
 #include "../test-conveniences.h"
 #include "../TestSuite.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 static bool

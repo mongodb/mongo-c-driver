@@ -43,7 +43,7 @@
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 #include <common-atomic-private.h>
 

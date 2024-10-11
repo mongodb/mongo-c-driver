@@ -24,7 +24,7 @@
 #include "test-diagnostics.h"
 #include "utlist.h"
 #include "util.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 typedef struct {

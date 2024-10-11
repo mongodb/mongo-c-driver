@@ -23,7 +23,7 @@
 #include "test-conveniences.h"
 #include "util.h"
 #include "TestSuite.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 struct _result_t {
    bool ok;

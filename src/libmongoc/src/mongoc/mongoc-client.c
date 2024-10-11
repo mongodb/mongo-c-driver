@@ -70,7 +70,7 @@
 #include "mongoc-stream-tls-private.h"
 #endif
 
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 #include <inttypes.h>

@@ -30,7 +30,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-util-private.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-atomic-private.h>
 
 /*--------------------------------------------------------------------------

@@ -42,7 +42,7 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #define SKIP_LINE_BUFFER_SIZE 1024
 

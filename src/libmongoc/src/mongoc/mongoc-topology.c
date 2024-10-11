@@ -36,7 +36,7 @@
 #include "utlist.h"
 
 #include <stdint.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 static void

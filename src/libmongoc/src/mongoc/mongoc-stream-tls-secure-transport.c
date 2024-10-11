@@ -36,7 +36,7 @@
 #include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-tls-secure-transport-private.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure_transport"

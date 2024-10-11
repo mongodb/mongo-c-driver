@@ -29,7 +29,7 @@
 #include "mongoc-stream-tls-secure-channel-private.h"
 #include "mongoc-errno-private.h"
 #include "mongoc-error.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 
