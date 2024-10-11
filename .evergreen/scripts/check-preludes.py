@@ -41,7 +41,6 @@ checks = [
         "name": "libbson",
         "headers": list(BSON_PREFIX.glob("*.h")),
         "exclusions": [
-            BSON_PREFIX / "bson-dsl.h",
             BSON_PREFIX / "bson-prelude.h",
             BSON_PREFIX / "bson.h",
         ],
