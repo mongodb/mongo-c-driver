@@ -2,12 +2,11 @@ from itertools import product
 
 from shrub.v3.evg_command import expansions_update
 from shrub.v3.evg_command import KeyValueParam
-from shrub.v3.evg_task import EvgTaskDependency
+from shrub.v3.evg_task import EvgTask, EvgTaskDependency
 
 from config_generator.etc.distros import find_small_distro
 from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import to_cc
-from config_generator.etc.utils import Task
 
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
@@ -65,7 +64,7 @@ def generate_test_tasks(SSL, TAG, MATRIX):
             test_commands.append(RunTests.call())
 
             res.append(
-                Task(
+                EvgTask(
                     name=test_task_name,
                     run_on=test_distro.name,
                     tags=test_tags,

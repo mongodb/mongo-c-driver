@@ -1,14 +1,13 @@
 from typing import Iterable
 
 from shrub.v3.evg_build_variant import BuildVariant
-from shrub.v3.evg_task import EvgTaskRef
+from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
-from ..etc.utils import Task
 from . import earthly
 
 
-def tasks() -> Iterable[Task]:
-    yield Task(
+def tasks() -> Iterable[EvgTask]:
+    yield EvgTask(
         name="create-silk-asset-group",
         commands=[
             earthly.earthly_exec(

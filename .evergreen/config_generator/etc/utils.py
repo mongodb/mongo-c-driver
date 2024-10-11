@@ -3,29 +3,15 @@ from importlib import import_module
 from inspect import isclass
 from pathlib import Path
 from textwrap import dedent
-from typing import (Any, Iterable, Literal, Mapping, Sequence, Type, TypeVar,
+from typing import (Any, Iterable, Literal, Mapping, Type, TypeVar,
                     Union, cast)
 
 import yaml
 from shrub.v3.evg_command import EvgCommandType, subprocess_exec
 from shrub.v3.evg_project import EvgProject
-from shrub.v3.evg_task import EvgTask
 from typing_extensions import get_args, get_origin, get_type_hints
 
 T = TypeVar('T')
-
-
-# Equivalent to EvgTask but defines additional properties.
-class Task(EvgTask):
-    """
-    An evergreen task model that also includes additional properties.
-
-    (The shrub.py model is missing some properties)
-    """
-
-    disable: bool = False
-    run_on: str | Sequence[str] | None = None
-    batchtime: int | None = None
 
 
 # Automatically formats the provided script and invokes it in Bash.
