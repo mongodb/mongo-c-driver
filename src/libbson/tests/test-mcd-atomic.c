@@ -121,8 +121,8 @@ test_thrd_yield (void)
 void
 test_mcommon_atomic_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/mcd-atomic/integers", test_integers);
-   TestSuite_Add (suite, "/mcd-atomic/pointers", test_pointers);
-   TestSuite_Add (suite, "/mcd-atomic/thread_fence", test_thread_fence);
-   TestSuite_Add (suite, "/mcd-atomic/thread_yield", test_thrd_yield);
+   TestSuite_Add (suite, "/mcommon/atomic/integers", test_integers);
+   TestSuite_Add (suite, "/mcommon/atomic/pointers", test_pointers);
+   TestSuite_Add (suite, "/mcommon/atomic/thread_fence", test_thread_fence);
+   TestSuite_Add (suite, "/mcommon/atomic/thread_yield", test_thrd_yield);
 }
