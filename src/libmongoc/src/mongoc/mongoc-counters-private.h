@@ -156,7 +156,7 @@ enum {
       int64_t *counter = &BSON_CONCAT (__mongoc_counter_, ident)                                            \
                              .cpus[_mongoc_sched_getcpu ()]                                                 \
                              .slots[BSON_CONCAT (COUNTER_, ident) % SLOTS_PER_CACHELINE];                   \
-      mcd_atomic_int64_fetch_add (counter, val, mcommon_memory_order_seq_cst);                              \
+      mcommon_atomic_int64_fetch_add (counter, val, mcommon_memory_order_seq_cst);                          \
    }                                                                                                        \
    static BSON_INLINE void mongoc_counter_##ident##_inc (void)                                              \
    {                                                                                                        \
@@ -171,9 +171,9 @@ enum {
       uint32_t i;                                                                                           \
       for (i = 0; i < _mongoc_get_cpu_count (); i++) {                                                      \
          int64_t *counter = &__mongoc_counter_##ident.cpus[i].slots[COUNTER_##ident % SLOTS_PER_CACHELINE]; \
-         mcd_atomic_int64_exchange (counter, 0, mcommon_memory_order_seq_cst);                              \
+         mcommon_atomic_int64_exchange (counter, 0, mcommon_memory_order_seq_cst);                          \
       }                                                                                                     \
-      mcd_atomic_thread_fence ();                                                                           \
+      mcommon_atomic_thread_fence ();                                                                       \
    }                                                                                                        \
    static BSON_INLINE int32_t mongoc_counter_##ident##_count (void)                                         \
    {                                                                                                        \
@@ -183,7 +183,7 @@ enum {
          const int64_t *counter = &BSON_CONCAT (__mongoc_counter_, ident)                                   \
                                       .cpus[_i]                                                             \
                                       .slots[BSON_CONCAT (COUNTER_, ident) % SLOTS_PER_CACHELINE];          \
-         _sum += mcd_atomic_int64_fetch (counter, mcommon_memory_order_seq_cst);                            \
+         _sum += mcommon_atomic_int64_fetch (counter, mcommon_memory_order_seq_cst);                        \
       }                                                                                                     \
       return _sum;                                                                                          \
    }

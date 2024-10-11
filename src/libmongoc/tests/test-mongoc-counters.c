@@ -35,7 +35,7 @@
 
 /* helper to reset a prev_* counter */
 #define RESET(ident) \
-   mcd_atomic_int32_exchange (&prev_##ident, mongoc_counter_##ident##_count (), mcommon_memory_order_seq_cst)
+   mcommon_atomic_int32_exchange (&prev_##ident, mongoc_counter_##ident##_count (), mcommon_memory_order_seq_cst)
 
 /* helper to compare and reset a prev_* counter. */
 #define DIFF_AND_RESET(ident, cmp, expected)                 \

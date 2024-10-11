@@ -39,19 +39,19 @@ static void
 _lock_emul_atomic (void)
 {
    int i;
-   if (mcd_atomic_int8_compare_exchange_weak (&gEmulAtomicLock, 0, 1, mcommon_memory_order_acquire) == 0) {
+   if (mcommon_atomic_int8_compare_exchange_weak (&gEmulAtomicLock, 0, 1, mcommon_memory_order_acquire) == 0) {
       /* Successfully took the spinlock */
       return;
    }
    /* Failed. Try taking ten more times, then begin sleeping. */
    for (i = 0; i < 10; ++i) {
-      if (mcd_atomic_int8_compare_exchange_weak (&gEmulAtomicLock, 0, 1, mcommon_memory_order_acquire) == 0) {
+      if (mcommon_atomic_int8_compare_exchange_weak (&gEmulAtomicLock, 0, 1, mcommon_memory_order_acquire) == 0) {
          /* Succeeded in taking the lock */
          return;
       }
    }
    /* Still don't have the lock. Spin and yield */
-   while (mcd_atomic_int8_compare_exchange_weak (&gEmulAtomicLock, 0, 1, mcommon_memory_order_acquire) != 0) {
+   while (mcommon_atomic_int8_compare_exchange_weak (&gEmulAtomicLock, 0, 1, mcommon_memory_order_acquire) != 0) {
       mcd_thrd_yield ();
    }
 }
@@ -59,7 +59,7 @@ _lock_emul_atomic (void)
 static void
 _unlock_emul_atomic (void)
 {
-   int64_t rv = mcd_atomic_int8_exchange (&gEmulAtomicLock, 0, mcommon_memory_order_release);
+   int64_t rv = mcommon_atomic_int8_exchange (&gEmulAtomicLock, 0, mcommon_memory_order_release);
    BSON_ASSERT (rv == 1 && "Released atomic lock while not holding it");
 }
 

@@ -20,7 +20,7 @@
 
 #include "TestSuite.h"
 
-#define ATOMIC(Kind, Operation) BSON_CONCAT4 (mcd_atomic_, Kind, _, Operation)
+#define ATOMIC(Kind, Operation) BSON_CONCAT4 (mcommon_atomic_, Kind, _, Operation)
 
 
 #define TEST_KIND_WITH_MEMORDER(Kind, TypeName, MemOrder, Assert)              \
@@ -92,15 +92,15 @@ test_pointers (void)
    int *ptr = &v;
    int *other;
    int *prev;
-   other = mcd_atomic_ptr_fetch ((void *) &ptr, mcommon_memory_order_relaxed);
+   other = mcommon_atomic_ptr_fetch ((void *) &ptr, mcommon_memory_order_relaxed);
    ASSERT_CMPVOID (other, ==, ptr);
-   prev = mcd_atomic_ptr_exchange ((void *) &other, &u, mcommon_memory_order_relaxed);
+   prev = mcommon_atomic_ptr_exchange ((void *) &other, &u, mcommon_memory_order_relaxed);
    ASSERT_CMPVOID (prev, ==, &v);
    ASSERT_CMPVOID (other, ==, &u);
-   prev = mcd_atomic_ptr_compare_exchange_strong ((void *) &other, &v, &w, mcommon_memory_order_relaxed);
+   prev = mcommon_atomic_ptr_compare_exchange_strong ((void *) &other, &v, &w, mcommon_memory_order_relaxed);
    ASSERT_CMPVOID (prev, ==, &u);
    ASSERT_CMPVOID (other, ==, &u);
-   prev = mcd_atomic_ptr_compare_exchange_strong ((void *) &other, &u, &w, mcommon_memory_order_relaxed);
+   prev = mcommon_atomic_ptr_compare_exchange_strong ((void *) &other, &u, &w, mcommon_memory_order_relaxed);
    ASSERT_CMPVOID (prev, ==, &u);
    ASSERT_CMPVOID (other, ==, &w);
 }
@@ -109,7 +109,7 @@ test_pointers (void)
 static void
 test_thread_fence (void)
 {
-   mcd_atomic_thread_fence ();
+   mcommon_atomic_thread_fence ();
 }
 
 static void
@@ -119,7 +119,7 @@ test_thrd_yield (void)
 }
 
 void
-test_mcd_atomic_install (TestSuite *suite)
+test_mcommon_atomic_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/mcd-atomic/integers", test_integers);
    TestSuite_Add (suite, "/mcd-atomic/pointers", test_pointers);

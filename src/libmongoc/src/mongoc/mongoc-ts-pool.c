@@ -160,7 +160,7 @@ _new_item (mongoc_ts_pool *pool, bson_error_t *error)
       }
    }
    if (node && audit_pool_enabled) {
-      mcd_atomic_int32_fetch_add (&pool->outstanding_items, 1, mcommon_memory_order_relaxed);
+      mcommon_atomic_int32_fetch_add (&pool->outstanding_items, 1, mcommon_memory_order_relaxed);
    }
    return node;
 }
@@ -192,9 +192,9 @@ _try_get (mongoc_ts_pool *pool)
    }
    bson_mutex_unlock (&pool->mtx);
    if (node) {
-      mcd_atomic_int32_fetch_sub (&pool->size, 1, mcommon_memory_order_relaxed);
+      mcommon_atomic_int32_fetch_sub (&pool->size, 1, mcommon_memory_order_relaxed);
       if (audit_pool_enabled) {
-         mcd_atomic_int32_fetch_add (&pool->outstanding_items, 1, mcommon_memory_order_relaxed);
+         mcommon_atomic_int32_fetch_add (&pool->outstanding_items, 1, mcommon_memory_order_relaxed);
       }
    }
    return node;
@@ -303,9 +303,9 @@ mongoc_ts_pool_return (mongoc_ts_pool *pool, void *item)
       node->next = pool->head;
       pool->head = node;
       bson_mutex_unlock (&pool->mtx);
-      mcd_atomic_int32_fetch_add (&node->owner_pool->size, 1, mcommon_memory_order_relaxed);
+      mcommon_atomic_int32_fetch_add (&node->owner_pool->size, 1, mcommon_memory_order_relaxed);
       if (audit_pool_enabled) {
-         mcd_atomic_int32_fetch_sub (&node->owner_pool->outstanding_items, 1, mcommon_memory_order_relaxed);
+         mcommon_atomic_int32_fetch_sub (&node->owner_pool->outstanding_items, 1, mcommon_memory_order_relaxed);
       }
    }
 }
@@ -318,7 +318,7 @@ mongoc_ts_pool_drop (mongoc_ts_pool *pool, void *item)
    BSON_ASSERT (pool == node->owner_pool);
 
    if (audit_pool_enabled) {
-      mcd_atomic_int32_fetch_sub (&node->owner_pool->outstanding_items, 1, mcommon_memory_order_relaxed);
+      mcommon_atomic_int32_fetch_sub (&node->owner_pool->outstanding_items, 1, mcommon_memory_order_relaxed);
    }
    _delete_item (node);
 }
@@ -332,7 +332,7 @@ mongoc_ts_pool_is_empty (const mongoc_ts_pool *pool)
 size_t
 mongoc_ts_pool_size (const mongoc_ts_pool *pool)
 {
-   return mcd_atomic_int32_fetch (&pool->size, mcommon_memory_order_relaxed);
+   return mcommon_atomic_int32_fetch (&pool->size, mcommon_memory_order_relaxed);
 }
 
 void
