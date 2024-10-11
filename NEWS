@@ -1,12 +1,6 @@
 libmongoc 1.29.0 (unreleased)
 =============================
 
-Deprecated:
-
-  * Compiling with `BSON_MEMCHECK` defined is deprecated.
-  * `bson_string_t` and associated functions.
-  * `bson_in_range_*` and `bson_cmp_*` functions.
-  * `bson_atomic_*` and `bson_thrd_yield` functions.
 
 Platform Support:
 
