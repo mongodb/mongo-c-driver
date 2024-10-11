@@ -6,6 +6,6 @@ if (ENABLE_DEBUG_ASSERTIONS)
 endif ()
 
 configure_file (
-        "${PROJECT_SOURCE_DIR}/src/common/common-config.h.in"
-        "${PROJECT_BINARY_DIR}/src/common/common-config.h"
+        "${PROJECT_SOURCE_DIR}/src/common/src/common-config.h.in"
+        "${PROJECT_BINARY_DIR}/src/common/src/common-config.h"
 )

@@ -25,7 +25,7 @@ if len(sys.argv) != 2:
 
 MONGOC_PREFIX = Path("src/libmongoc/src/mongoc")
 BSON_PREFIX = Path("src/libbson/src/bson")
-COMMON_PREFIX = Path("src/common")
+COMMON_PREFIX = Path("src/common/src")
 
 checks = [
     {
