@@ -987,7 +987,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-common-cmp.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.h
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-mcd-atomic.c
+   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-common-atomic.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-atomic.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-b64.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson.c
