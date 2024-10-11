@@ -315,7 +315,7 @@ static BSON_THREAD_FUN (sendv_test_client, data_)
          amount += (int) r;
       }
 
-      if (mcd_cmp_not_equal_su (r, gFourMB)) {
+      if (mcommon_cmp_not_equal_su (r, gFourMB)) {
          if (!done) {
             bson_mutex_lock (&data->cond_mutex);
             data->amount = amount;

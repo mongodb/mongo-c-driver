@@ -16,8 +16,8 @@
 
 #include "common-prelude.h"
 
-#ifndef MCD_CMP_H
-#define MCD_CMP_H
+#ifndef MCOMMON_CMP_H
+#define MCOMMON_CMP_H
 
 
 #include <bson/bson.h> /* ssize_t, BSON_CONCAT */
@@ -36,10 +36,10 @@ BSON_BEGIN_DECLS
  * Due to lack of type deduction in C, relational comparison functions (e.g.
  * `cmp_less`) are defined in sets of four "functions" according to the
  * signedness of each value argument, e.g.:
- *  - mcd_cmp_less_ss (signed-value, signed-value)
- *  - mcd_cmp_less_uu (unsigned-value, unsigned-value)
- *  - mcd_cmp_less_su (signed-value, unsigned-value)
- *  - mcd_cmp_less_us (unsigned-value, signed-value)
+ *  - mcommon_cmp_less_ss (signed-value, signed-value)
+ *  - mcommon_cmp_less_uu (unsigned-value, unsigned-value)
+ *  - mcommon_cmp_less_su (signed-value, unsigned-value)
+ *  - mcommon_cmp_less_us (unsigned-value, signed-value)
  *
  * Similarly, the `in_range` function is defined as a set of two "functions"
  * according to the signedness of the value argument:
@@ -52,72 +52,82 @@ BSON_BEGIN_DECLS
  */
 
 
-#define MCD_CMP_SET(op, ss, uu, su, us)                                              \
-   static BSON_INLINE bool BSON_CONCAT3 (mcd_cmp_, op, _ss) (int64_t t, int64_t u)   \
-   {                                                                                 \
-      return (ss);                                                                   \
-   }                                                                                 \
-                                                                                     \
-   static BSON_INLINE bool BSON_CONCAT3 (mcd_cmp_, op, _uu) (uint64_t t, uint64_t u) \
-   {                                                                                 \
-      return (uu);                                                                   \
-   }                                                                                 \
-                                                                                     \
-   static BSON_INLINE bool BSON_CONCAT3 (mcd_cmp_, op, _su) (int64_t t, uint64_t u)  \
-   {                                                                                 \
-      return (su);                                                                   \
-   }                                                                                 \
-                                                                                     \
-   static BSON_INLINE bool BSON_CONCAT3 (mcd_cmp_, op, _us) (uint64_t t, int64_t u)  \
-   {                                                                                 \
-      return (us);                                                                   \
+#define MCOMMON_CMP_SET(op, ss, uu, su, us)                                              \
+   static BSON_INLINE bool BSON_CONCAT3 (mcommon_cmp_, op, _ss) (int64_t t, int64_t u)   \
+   {                                                                                     \
+      return (ss);                                                                       \
+   }                                                                                     \
+                                                                                         \
+   static BSON_INLINE bool BSON_CONCAT3 (mcommon_cmp_, op, _uu) (uint64_t t, uint64_t u) \
+   {                                                                                     \
+      return (uu);                                                                       \
+   }                                                                                     \
+                                                                                         \
+   static BSON_INLINE bool BSON_CONCAT3 (mcommon_cmp_, op, _su) (int64_t t, uint64_t u)  \
+   {                                                                                     \
+      return (su);                                                                       \
+   }                                                                                     \
+                                                                                         \
+   static BSON_INLINE bool BSON_CONCAT3 (mcommon_cmp_, op, _us) (uint64_t t, int64_t u)  \
+   {                                                                                     \
+      return (us);                                                                       \
    }
 
-MCD_CMP_SET (equal, t == u, t == u, t < 0 ? false : (uint64_t) (t) == u, u < 0 ? false : t == (uint64_t) (u))
+MCOMMON_CMP_SET (equal, t == u, t == u, t < 0 ? false : (uint64_t) (t) == u, u < 0 ? false : t == (uint64_t) (u))
 
-MCD_CMP_SET (
-   not_equal, !mcd_cmp_equal_ss (t, u), !mcd_cmp_equal_uu (t, u), !mcd_cmp_equal_su (t, u), !mcd_cmp_equal_us (t, u))
+MCOMMON_CMP_SET (not_equal,
+                 !mcommon_cmp_equal_ss (t, u),
+                 !mcommon_cmp_equal_uu (t, u),
+                 !mcommon_cmp_equal_su (t, u),
+                 !mcommon_cmp_equal_us (t, u))
 
-MCD_CMP_SET (less, t < u, t < u, t < 0 ? true : (uint64_t) (t) < u, u < 0 ? false : t < (uint64_t) (u))
+MCOMMON_CMP_SET (less, t < u, t < u, t < 0 ? true : (uint64_t) (t) < u, u < 0 ? false : t < (uint64_t) (u))
 
-MCD_CMP_SET (greater, mcd_cmp_less_ss (u, t), mcd_cmp_less_uu (u, t), mcd_cmp_less_us (u, t), mcd_cmp_less_su (u, t))
+MCOMMON_CMP_SET (greater,
+                 mcommon_cmp_less_ss (u, t),
+                 mcommon_cmp_less_uu (u, t),
+                 mcommon_cmp_less_us (u, t),
+                 mcommon_cmp_less_su (u, t))
 
-MCD_CMP_SET (less_equal,
-             !mcd_cmp_greater_ss (t, u),
-             !mcd_cmp_greater_uu (t, u),
-             !mcd_cmp_greater_su (t, u),
-             !mcd_cmp_greater_us (t, u))
+MCOMMON_CMP_SET (less_equal,
+                 !mcommon_cmp_greater_ss (t, u),
+                 !mcommon_cmp_greater_uu (t, u),
+                 !mcommon_cmp_greater_su (t, u),
+                 !mcommon_cmp_greater_us (t, u))
 
-MCD_CMP_SET (
-   greater_equal, !mcd_cmp_less_ss (t, u), !mcd_cmp_less_uu (t, u), !mcd_cmp_less_su (t, u), !mcd_cmp_less_us (t, u))
+MCOMMON_CMP_SET (greater_equal,
+                 !mcommon_cmp_less_ss (t, u),
+                 !mcommon_cmp_less_uu (t, u),
+                 !mcommon_cmp_less_su (t, u),
+                 !mcommon_cmp_less_us (t, u))
 
-#undef MCD_CMP_SET
+#undef MCOMMON_CMP_SET
 
 
 /* Return true if the given value is within the range of the corresponding
  * signed type. The suffix must match the signedness of the given value. */
-#define MCD_IN_RANGE_SET_SIGNED(Type, min, max)                                             \
-   static BSON_INLINE bool BSON_CONCAT3 (mcd_in_range, _##Type, _signed) (int64_t value)    \
-   {                                                                                        \
-      return mcd_cmp_greater_equal_ss (value, min) && mcd_cmp_less_equal_ss (value, max);   \
-   }                                                                                        \
-                                                                                            \
-   static BSON_INLINE bool BSON_CONCAT3 (mcd_in_range, _##Type, _unsigned) (uint64_t value) \
-   {                                                                                        \
-      return mcd_cmp_greater_equal_us (value, min) && mcd_cmp_less_equal_us (value, max);   \
+#define MCD_IN_RANGE_SET_SIGNED(Type, min, max)                                                   \
+   static BSON_INLINE bool BSON_CONCAT3 (mcd_in_range, _##Type, _signed) (int64_t value)          \
+   {                                                                                              \
+      return mcommon_cmp_greater_equal_ss (value, min) && mcommon_cmp_less_equal_ss (value, max); \
+   }                                                                                              \
+                                                                                                  \
+   static BSON_INLINE bool BSON_CONCAT3 (mcd_in_range, _##Type, _unsigned) (uint64_t value)       \
+   {                                                                                              \
+      return mcommon_cmp_greater_equal_us (value, min) && mcommon_cmp_less_equal_us (value, max); \
    }
 
 /* Return true if the given value is within the range of the corresponding
  * unsigned type. The suffix must match the signedness of the given value. */
-#define MCD_IN_RANGE_SET_UNSIGNED(Type, max)                                                \
-   static BSON_INLINE bool BSON_CONCAT3 (mcd_in_range, _##Type, _signed) (int64_t value)    \
-   {                                                                                        \
-      return mcd_cmp_greater_equal_su (value, 0u) && mcd_cmp_less_equal_su (value, max);    \
-   }                                                                                        \
-                                                                                            \
-   static BSON_INLINE bool BSON_CONCAT3 (mcd_in_range, _##Type, _unsigned) (uint64_t value) \
-   {                                                                                        \
-      return mcd_cmp_less_equal_uu (value, max);                                            \
+#define MCD_IN_RANGE_SET_UNSIGNED(Type, max)                                                     \
+   static BSON_INLINE bool BSON_CONCAT3 (mcd_in_range, _##Type, _signed) (int64_t value)         \
+   {                                                                                             \
+      return mcommon_cmp_greater_equal_su (value, 0u) && mcommon_cmp_less_equal_su (value, max); \
+   }                                                                                             \
+                                                                                                 \
+   static BSON_INLINE bool BSON_CONCAT3 (mcd_in_range, _##Type, _unsigned) (uint64_t value)      \
+   {                                                                                             \
+      return mcommon_cmp_less_equal_uu (value, max);                                             \
    }
 
 MCD_IN_RANGE_SET_SIGNED (signed_char, SCHAR_MIN, SCHAR_MAX)
@@ -161,4 +171,4 @@ MCD_IN_RANGE_SET_UNSIGNED (size_t, SIZE_MAX)
 BSON_END_DECLS
 
 
-#endif /* MCD_CMP_H */
+#endif /* MCOMMON_CMP_H */

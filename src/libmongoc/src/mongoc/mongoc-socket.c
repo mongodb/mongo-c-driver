@@ -1207,7 +1207,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
 
       ret += wrote;
 
-      if (mcd_cmp_not_equal_su (wrote, iov[i].iov_len)) {
+      if (mcommon_cmp_not_equal_su (wrote, iov[i].iov_len)) {
          RETURN (ret);
       }
    }

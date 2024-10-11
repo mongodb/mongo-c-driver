@@ -2071,7 +2071,7 @@ bson_json_reader_read (bson_json_reader_t *reader, /* IN */
 
          /* accumulate a key or string value */
          if (reader->json_text_pos != -1) {
-            if (mcd_cmp_less_su (reader->json_text_pos, reader->json->pos)) {
+            if (mcommon_cmp_less_su (reader->json_text_pos, reader->json->pos)) {
                BSON_ASSERT (mcd_in_range_unsigned (ssize_t, reader->json->pos));
                accum = BSON_MIN ((ssize_t) reader->json->pos - reader->json_text_pos, r);
                /* if this chunk stopped mid-token, buf_offset is how far into

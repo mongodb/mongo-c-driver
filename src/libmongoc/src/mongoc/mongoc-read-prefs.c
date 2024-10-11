@@ -88,7 +88,7 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs, const bson_t *tag)
    key = bson_count_keys (&read_prefs->tags);
    // Expect no truncation.
    int req = bson_snprintf (str, sizeof str, "%d", key);
-   BSON_ASSERT (mcd_cmp_less_su (req, sizeof str));
+   BSON_ASSERT (mcommon_cmp_less_su (req, sizeof str));
 
    if (tag) {
       bson_append_document (&read_prefs->tags, str, -1, tag);

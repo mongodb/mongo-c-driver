@@ -2067,7 +2067,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
 
    const ssize_t n_written = mongoc_stream_writev (client, iov, iovcnt, -1);
 
-   BSON_ASSERT (mcd_cmp_equal_su (n_written, expected));
+   BSON_ASSERT (mcommon_cmp_equal_su (n_written, expected));
 
    bson_free (iov);
    mcd_rpc_message_destroy (rpc);

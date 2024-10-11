@@ -19,201 +19,201 @@
 #include <common-cmp-private.h>
 
 static void
-test_mcd_cmp_equal (void)
+test_mcommon_cmp_equal (void)
 {
-   ASSERT (mcd_cmp_equal_ss (0, 0));
-   ASSERT (!mcd_cmp_equal_ss (0, -1));
-   ASSERT (!mcd_cmp_equal_ss (0, 1));
-   ASSERT (!mcd_cmp_equal_ss (-1, 0));
-   ASSERT (mcd_cmp_equal_ss (-1, -1));
-   ASSERT (!mcd_cmp_equal_ss (-1, 1));
-   ASSERT (!mcd_cmp_equal_ss (1, 0));
-   ASSERT (!mcd_cmp_equal_ss (1, -1));
-   ASSERT (mcd_cmp_equal_ss (1, 1));
+   ASSERT (mcommon_cmp_equal_ss (0, 0));
+   ASSERT (!mcommon_cmp_equal_ss (0, -1));
+   ASSERT (!mcommon_cmp_equal_ss (0, 1));
+   ASSERT (!mcommon_cmp_equal_ss (-1, 0));
+   ASSERT (mcommon_cmp_equal_ss (-1, -1));
+   ASSERT (!mcommon_cmp_equal_ss (-1, 1));
+   ASSERT (!mcommon_cmp_equal_ss (1, 0));
+   ASSERT (!mcommon_cmp_equal_ss (1, -1));
+   ASSERT (mcommon_cmp_equal_ss (1, 1));
 
-   ASSERT (mcd_cmp_equal_uu (0u, 0u));
-   ASSERT (!mcd_cmp_equal_uu (0u, 1u));
-   ASSERT (!mcd_cmp_equal_uu (1u, 0u));
-   ASSERT (mcd_cmp_equal_uu (1u, 1u));
+   ASSERT (mcommon_cmp_equal_uu (0u, 0u));
+   ASSERT (!mcommon_cmp_equal_uu (0u, 1u));
+   ASSERT (!mcommon_cmp_equal_uu (1u, 0u));
+   ASSERT (mcommon_cmp_equal_uu (1u, 1u));
 
-   ASSERT (mcd_cmp_equal_su (0, 0u));
-   ASSERT (!mcd_cmp_equal_su (0, 1u));
-   ASSERT (!mcd_cmp_equal_su (-1, 0u));
-   ASSERT (!mcd_cmp_equal_su (-1, 1u));
-   ASSERT (!mcd_cmp_equal_su (1, 0u));
-   ASSERT (mcd_cmp_equal_su (1, 1u));
+   ASSERT (mcommon_cmp_equal_su (0, 0u));
+   ASSERT (!mcommon_cmp_equal_su (0, 1u));
+   ASSERT (!mcommon_cmp_equal_su (-1, 0u));
+   ASSERT (!mcommon_cmp_equal_su (-1, 1u));
+   ASSERT (!mcommon_cmp_equal_su (1, 0u));
+   ASSERT (mcommon_cmp_equal_su (1, 1u));
 
-   ASSERT (mcd_cmp_equal_us (0u, 0));
-   ASSERT (!mcd_cmp_equal_us (0u, -1));
-   ASSERT (!mcd_cmp_equal_us (0u, 1));
-   ASSERT (!mcd_cmp_equal_us (1u, 0));
-   ASSERT (!mcd_cmp_equal_us (1u, -1));
-   ASSERT (mcd_cmp_equal_us (1u, 1));
+   ASSERT (mcommon_cmp_equal_us (0u, 0));
+   ASSERT (!mcommon_cmp_equal_us (0u, -1));
+   ASSERT (!mcommon_cmp_equal_us (0u, 1));
+   ASSERT (!mcommon_cmp_equal_us (1u, 0));
+   ASSERT (!mcommon_cmp_equal_us (1u, -1));
+   ASSERT (mcommon_cmp_equal_us (1u, 1));
 }
 
 static void
-test_mcd_cmp_not_equal (void)
+test_mcommon_cmp_not_equal (void)
 {
-   ASSERT (!mcd_cmp_not_equal_ss (0, 0));
-   ASSERT (mcd_cmp_not_equal_ss (0, -1));
-   ASSERT (mcd_cmp_not_equal_ss (0, 1));
-   ASSERT (mcd_cmp_not_equal_ss (-1, 0));
-   ASSERT (!mcd_cmp_not_equal_ss (-1, -1));
-   ASSERT (mcd_cmp_not_equal_ss (-1, 1));
-   ASSERT (mcd_cmp_not_equal_ss (1, 0));
-   ASSERT (mcd_cmp_not_equal_ss (1, -1));
-   ASSERT (!mcd_cmp_not_equal_ss (1, 1));
+   ASSERT (!mcommon_cmp_not_equal_ss (0, 0));
+   ASSERT (mcommon_cmp_not_equal_ss (0, -1));
+   ASSERT (mcommon_cmp_not_equal_ss (0, 1));
+   ASSERT (mcommon_cmp_not_equal_ss (-1, 0));
+   ASSERT (!mcommon_cmp_not_equal_ss (-1, -1));
+   ASSERT (mcommon_cmp_not_equal_ss (-1, 1));
+   ASSERT (mcommon_cmp_not_equal_ss (1, 0));
+   ASSERT (mcommon_cmp_not_equal_ss (1, -1));
+   ASSERT (!mcommon_cmp_not_equal_ss (1, 1));
 
-   ASSERT (!mcd_cmp_not_equal_uu (0u, 0u));
-   ASSERT (mcd_cmp_not_equal_uu (0u, 1u));
-   ASSERT (mcd_cmp_not_equal_uu (1u, 0u));
-   ASSERT (!mcd_cmp_not_equal_uu (1u, 1u));
+   ASSERT (!mcommon_cmp_not_equal_uu (0u, 0u));
+   ASSERT (mcommon_cmp_not_equal_uu (0u, 1u));
+   ASSERT (mcommon_cmp_not_equal_uu (1u, 0u));
+   ASSERT (!mcommon_cmp_not_equal_uu (1u, 1u));
 
-   ASSERT (!mcd_cmp_not_equal_su (0, 0u));
-   ASSERT (mcd_cmp_not_equal_su (0, 1u));
-   ASSERT (mcd_cmp_not_equal_su (-1, 0u));
-   ASSERT (mcd_cmp_not_equal_su (-1, 1u));
-   ASSERT (mcd_cmp_not_equal_su (1, 0u));
-   ASSERT (!mcd_cmp_not_equal_su (1, 1u));
+   ASSERT (!mcommon_cmp_not_equal_su (0, 0u));
+   ASSERT (mcommon_cmp_not_equal_su (0, 1u));
+   ASSERT (mcommon_cmp_not_equal_su (-1, 0u));
+   ASSERT (mcommon_cmp_not_equal_su (-1, 1u));
+   ASSERT (mcommon_cmp_not_equal_su (1, 0u));
+   ASSERT (!mcommon_cmp_not_equal_su (1, 1u));
 
-   ASSERT (!mcd_cmp_not_equal_us (0u, 0));
-   ASSERT (mcd_cmp_not_equal_us (0u, -1));
-   ASSERT (mcd_cmp_not_equal_us (0u, 1));
-   ASSERT (mcd_cmp_not_equal_us (1u, 0));
-   ASSERT (mcd_cmp_not_equal_us (1u, -1));
-   ASSERT (!mcd_cmp_not_equal_us (1u, 1));
+   ASSERT (!mcommon_cmp_not_equal_us (0u, 0));
+   ASSERT (mcommon_cmp_not_equal_us (0u, -1));
+   ASSERT (mcommon_cmp_not_equal_us (0u, 1));
+   ASSERT (mcommon_cmp_not_equal_us (1u, 0));
+   ASSERT (mcommon_cmp_not_equal_us (1u, -1));
+   ASSERT (!mcommon_cmp_not_equal_us (1u, 1));
 }
 
 static void
-test_mcd_cmp_less (void)
+test_mcommon_cmp_less (void)
 {
-   ASSERT (!mcd_cmp_less_ss (0, 0));
-   ASSERT (!mcd_cmp_less_ss (0, -1));
-   ASSERT (mcd_cmp_less_ss (0, 1));
-   ASSERT (mcd_cmp_less_ss (-1, 0));
-   ASSERT (!mcd_cmp_less_ss (-1, -1));
-   ASSERT (mcd_cmp_less_ss (-1, 1));
-   ASSERT (!mcd_cmp_less_ss (1, 0));
-   ASSERT (!mcd_cmp_less_ss (1, -1));
-   ASSERT (!mcd_cmp_less_ss (1, 1));
+   ASSERT (!mcommon_cmp_less_ss (0, 0));
+   ASSERT (!mcommon_cmp_less_ss (0, -1));
+   ASSERT (mcommon_cmp_less_ss (0, 1));
+   ASSERT (mcommon_cmp_less_ss (-1, 0));
+   ASSERT (!mcommon_cmp_less_ss (-1, -1));
+   ASSERT (mcommon_cmp_less_ss (-1, 1));
+   ASSERT (!mcommon_cmp_less_ss (1, 0));
+   ASSERT (!mcommon_cmp_less_ss (1, -1));
+   ASSERT (!mcommon_cmp_less_ss (1, 1));
 
-   ASSERT (!mcd_cmp_less_uu (0u, 0u));
-   ASSERT (mcd_cmp_less_uu (0u, 1u));
-   ASSERT (!mcd_cmp_less_uu (1u, 0u));
-   ASSERT (!mcd_cmp_less_uu (1u, 1u));
+   ASSERT (!mcommon_cmp_less_uu (0u, 0u));
+   ASSERT (mcommon_cmp_less_uu (0u, 1u));
+   ASSERT (!mcommon_cmp_less_uu (1u, 0u));
+   ASSERT (!mcommon_cmp_less_uu (1u, 1u));
 
-   ASSERT (!mcd_cmp_less_su (0, 0u));
-   ASSERT (mcd_cmp_less_su (0, 1u));
-   ASSERT (mcd_cmp_less_su (-1, 0u));
-   ASSERT (mcd_cmp_less_su (-1, 1u));
-   ASSERT (!mcd_cmp_less_su (1, 0u));
-   ASSERT (!mcd_cmp_less_su (1, 1u));
+   ASSERT (!mcommon_cmp_less_su (0, 0u));
+   ASSERT (mcommon_cmp_less_su (0, 1u));
+   ASSERT (mcommon_cmp_less_su (-1, 0u));
+   ASSERT (mcommon_cmp_less_su (-1, 1u));
+   ASSERT (!mcommon_cmp_less_su (1, 0u));
+   ASSERT (!mcommon_cmp_less_su (1, 1u));
 
-   ASSERT (!mcd_cmp_less_us (0u, 0));
-   ASSERT (!mcd_cmp_less_us (0u, -1));
-   ASSERT (mcd_cmp_less_us (0u, 1));
-   ASSERT (!mcd_cmp_less_us (1u, 0));
-   ASSERT (!mcd_cmp_less_us (1u, -1));
-   ASSERT (!mcd_cmp_less_us (1u, 1));
+   ASSERT (!mcommon_cmp_less_us (0u, 0));
+   ASSERT (!mcommon_cmp_less_us (0u, -1));
+   ASSERT (mcommon_cmp_less_us (0u, 1));
+   ASSERT (!mcommon_cmp_less_us (1u, 0));
+   ASSERT (!mcommon_cmp_less_us (1u, -1));
+   ASSERT (!mcommon_cmp_less_us (1u, 1));
 }
 
 static void
-test_mcd_cmp_greater (void)
+test_mcommon_cmp_greater (void)
 {
-   ASSERT (!mcd_cmp_greater_ss (0, 0));
-   ASSERT (mcd_cmp_greater_ss (0, -1));
-   ASSERT (!mcd_cmp_greater_ss (0, 1));
-   ASSERT (!mcd_cmp_greater_ss (-1, 0));
-   ASSERT (!mcd_cmp_greater_ss (-1, -1));
-   ASSERT (!mcd_cmp_greater_ss (-1, 1));
-   ASSERT (mcd_cmp_greater_ss (1, 0));
-   ASSERT (mcd_cmp_greater_ss (1, -1));
-   ASSERT (!mcd_cmp_greater_ss (1, 1));
+   ASSERT (!mcommon_cmp_greater_ss (0, 0));
+   ASSERT (mcommon_cmp_greater_ss (0, -1));
+   ASSERT (!mcommon_cmp_greater_ss (0, 1));
+   ASSERT (!mcommon_cmp_greater_ss (-1, 0));
+   ASSERT (!mcommon_cmp_greater_ss (-1, -1));
+   ASSERT (!mcommon_cmp_greater_ss (-1, 1));
+   ASSERT (mcommon_cmp_greater_ss (1, 0));
+   ASSERT (mcommon_cmp_greater_ss (1, -1));
+   ASSERT (!mcommon_cmp_greater_ss (1, 1));
 
-   ASSERT (!mcd_cmp_greater_uu (0u, 0u));
-   ASSERT (!mcd_cmp_greater_uu (0u, 1u));
-   ASSERT (mcd_cmp_greater_uu (1u, 0u));
-   ASSERT (!mcd_cmp_greater_uu (1u, 1u));
+   ASSERT (!mcommon_cmp_greater_uu (0u, 0u));
+   ASSERT (!mcommon_cmp_greater_uu (0u, 1u));
+   ASSERT (mcommon_cmp_greater_uu (1u, 0u));
+   ASSERT (!mcommon_cmp_greater_uu (1u, 1u));
 
-   ASSERT (!mcd_cmp_greater_su (0, 0u));
-   ASSERT (!mcd_cmp_greater_su (0, 1u));
-   ASSERT (!mcd_cmp_greater_su (-1, 0u));
-   ASSERT (!mcd_cmp_greater_su (-1, 1u));
-   ASSERT (mcd_cmp_greater_su (1, 0u));
-   ASSERT (!mcd_cmp_greater_su (1, 1u));
+   ASSERT (!mcommon_cmp_greater_su (0, 0u));
+   ASSERT (!mcommon_cmp_greater_su (0, 1u));
+   ASSERT (!mcommon_cmp_greater_su (-1, 0u));
+   ASSERT (!mcommon_cmp_greater_su (-1, 1u));
+   ASSERT (mcommon_cmp_greater_su (1, 0u));
+   ASSERT (!mcommon_cmp_greater_su (1, 1u));
 
-   ASSERT (!mcd_cmp_greater_us (0u, 0));
-   ASSERT (mcd_cmp_greater_us (0u, -1));
-   ASSERT (!mcd_cmp_greater_us (0u, 1));
-   ASSERT (mcd_cmp_greater_us (1u, 0));
-   ASSERT (mcd_cmp_greater_us (1u, -1));
-   ASSERT (!mcd_cmp_greater_us (1u, 1));
+   ASSERT (!mcommon_cmp_greater_us (0u, 0));
+   ASSERT (mcommon_cmp_greater_us (0u, -1));
+   ASSERT (!mcommon_cmp_greater_us (0u, 1));
+   ASSERT (mcommon_cmp_greater_us (1u, 0));
+   ASSERT (mcommon_cmp_greater_us (1u, -1));
+   ASSERT (!mcommon_cmp_greater_us (1u, 1));
 }
 
 static void
-test_mcd_cmp_less_equal (void)
+test_mcommon_cmp_less_equal (void)
 {
-   ASSERT (mcd_cmp_less_equal_ss (0, 0));
-   ASSERT (!mcd_cmp_less_equal_ss (0, -1));
-   ASSERT (mcd_cmp_less_equal_ss (0, 1));
-   ASSERT (mcd_cmp_less_equal_ss (-1, 0));
-   ASSERT (mcd_cmp_less_equal_ss (-1, -1));
-   ASSERT (mcd_cmp_less_equal_ss (-1, 1));
-   ASSERT (!mcd_cmp_less_equal_ss (1, 0));
-   ASSERT (!mcd_cmp_less_equal_ss (1, -1));
-   ASSERT (mcd_cmp_less_equal_ss (1, 1));
+   ASSERT (mcommon_cmp_less_equal_ss (0, 0));
+   ASSERT (!mcommon_cmp_less_equal_ss (0, -1));
+   ASSERT (mcommon_cmp_less_equal_ss (0, 1));
+   ASSERT (mcommon_cmp_less_equal_ss (-1, 0));
+   ASSERT (mcommon_cmp_less_equal_ss (-1, -1));
+   ASSERT (mcommon_cmp_less_equal_ss (-1, 1));
+   ASSERT (!mcommon_cmp_less_equal_ss (1, 0));
+   ASSERT (!mcommon_cmp_less_equal_ss (1, -1));
+   ASSERT (mcommon_cmp_less_equal_ss (1, 1));
 
-   ASSERT (mcd_cmp_less_equal_uu (0u, 0u));
-   ASSERT (mcd_cmp_less_equal_uu (0u, 1u));
-   ASSERT (!mcd_cmp_less_equal_uu (1u, 0u));
-   ASSERT (mcd_cmp_less_equal_uu (1u, 1u));
+   ASSERT (mcommon_cmp_less_equal_uu (0u, 0u));
+   ASSERT (mcommon_cmp_less_equal_uu (0u, 1u));
+   ASSERT (!mcommon_cmp_less_equal_uu (1u, 0u));
+   ASSERT (mcommon_cmp_less_equal_uu (1u, 1u));
 
-   ASSERT (mcd_cmp_less_equal_su (0, 0u));
-   ASSERT (mcd_cmp_less_equal_su (0, 1u));
-   ASSERT (mcd_cmp_less_equal_su (-1, 0u));
-   ASSERT (mcd_cmp_less_equal_su (-1, 1u));
-   ASSERT (!mcd_cmp_less_equal_su (1, 0u));
-   ASSERT (mcd_cmp_less_equal_su (1, 1u));
+   ASSERT (mcommon_cmp_less_equal_su (0, 0u));
+   ASSERT (mcommon_cmp_less_equal_su (0, 1u));
+   ASSERT (mcommon_cmp_less_equal_su (-1, 0u));
+   ASSERT (mcommon_cmp_less_equal_su (-1, 1u));
+   ASSERT (!mcommon_cmp_less_equal_su (1, 0u));
+   ASSERT (mcommon_cmp_less_equal_su (1, 1u));
 
-   ASSERT (mcd_cmp_less_equal_us (0u, 0));
-   ASSERT (!mcd_cmp_less_equal_us (0u, -1));
-   ASSERT (mcd_cmp_less_equal_us (0u, 1));
-   ASSERT (!mcd_cmp_less_equal_us (1u, 0));
-   ASSERT (!mcd_cmp_less_equal_us (1u, -1));
-   ASSERT (mcd_cmp_less_equal_us (1u, 1));
+   ASSERT (mcommon_cmp_less_equal_us (0u, 0));
+   ASSERT (!mcommon_cmp_less_equal_us (0u, -1));
+   ASSERT (mcommon_cmp_less_equal_us (0u, 1));
+   ASSERT (!mcommon_cmp_less_equal_us (1u, 0));
+   ASSERT (!mcommon_cmp_less_equal_us (1u, -1));
+   ASSERT (mcommon_cmp_less_equal_us (1u, 1));
 }
 
 static void
-test_mcd_cmp_greater_equal (void)
+test_mcommon_cmp_greater_equal (void)
 {
-   ASSERT (mcd_cmp_greater_equal_ss (0, 0));
-   ASSERT (mcd_cmp_greater_equal_ss (0, -1));
-   ASSERT (!mcd_cmp_greater_equal_ss (0, 1));
-   ASSERT (!mcd_cmp_greater_equal_ss (-1, 0));
-   ASSERT (mcd_cmp_greater_equal_ss (-1, -1));
-   ASSERT (!mcd_cmp_greater_equal_ss (-1, 1));
-   ASSERT (mcd_cmp_greater_equal_ss (1, 0));
-   ASSERT (mcd_cmp_greater_equal_ss (1, -1));
-   ASSERT (mcd_cmp_greater_equal_ss (1, 1));
+   ASSERT (mcommon_cmp_greater_equal_ss (0, 0));
+   ASSERT (mcommon_cmp_greater_equal_ss (0, -1));
+   ASSERT (!mcommon_cmp_greater_equal_ss (0, 1));
+   ASSERT (!mcommon_cmp_greater_equal_ss (-1, 0));
+   ASSERT (mcommon_cmp_greater_equal_ss (-1, -1));
+   ASSERT (!mcommon_cmp_greater_equal_ss (-1, 1));
+   ASSERT (mcommon_cmp_greater_equal_ss (1, 0));
+   ASSERT (mcommon_cmp_greater_equal_ss (1, -1));
+   ASSERT (mcommon_cmp_greater_equal_ss (1, 1));
 
-   ASSERT (mcd_cmp_greater_equal_uu (0u, 0u));
-   ASSERT (!mcd_cmp_greater_equal_uu (0u, 1u));
-   ASSERT (mcd_cmp_greater_equal_uu (1u, 0u));
-   ASSERT (mcd_cmp_greater_equal_uu (1u, 1u));
+   ASSERT (mcommon_cmp_greater_equal_uu (0u, 0u));
+   ASSERT (!mcommon_cmp_greater_equal_uu (0u, 1u));
+   ASSERT (mcommon_cmp_greater_equal_uu (1u, 0u));
+   ASSERT (mcommon_cmp_greater_equal_uu (1u, 1u));
 
-   ASSERT (mcd_cmp_greater_equal_su (0, 0u));
-   ASSERT (!mcd_cmp_greater_equal_su (0, 1u));
-   ASSERT (!mcd_cmp_greater_equal_su (-1, 0u));
-   ASSERT (!mcd_cmp_greater_equal_su (-1, 1u));
-   ASSERT (mcd_cmp_greater_equal_su (1, 0u));
-   ASSERT (mcd_cmp_greater_equal_su (1, 1u));
+   ASSERT (mcommon_cmp_greater_equal_su (0, 0u));
+   ASSERT (!mcommon_cmp_greater_equal_su (0, 1u));
+   ASSERT (!mcommon_cmp_greater_equal_su (-1, 0u));
+   ASSERT (!mcommon_cmp_greater_equal_su (-1, 1u));
+   ASSERT (mcommon_cmp_greater_equal_su (1, 0u));
+   ASSERT (mcommon_cmp_greater_equal_su (1, 1u));
 
-   ASSERT (mcd_cmp_greater_equal_us (0u, 0));
-   ASSERT (mcd_cmp_greater_equal_us (0u, -1));
-   ASSERT (!mcd_cmp_greater_equal_us (0u, 1));
-   ASSERT (mcd_cmp_greater_equal_us (1u, 0));
-   ASSERT (mcd_cmp_greater_equal_us (1u, -1));
-   ASSERT (mcd_cmp_greater_equal_us (1u, 1));
+   ASSERT (mcommon_cmp_greater_equal_us (0u, 0));
+   ASSERT (mcommon_cmp_greater_equal_us (0u, -1));
+   ASSERT (!mcommon_cmp_greater_equal_us (0u, 1));
+   ASSERT (mcommon_cmp_greater_equal_us (1u, 0));
+   ASSERT (mcommon_cmp_greater_equal_us (1u, -1));
+   ASSERT (mcommon_cmp_greater_equal_us (1u, 1));
 }
 
 /* Sanity check: ensure ssize_t limits are as expected relative to size_t. */
@@ -296,13 +296,13 @@ test_mcd_in_range (void)
 }
 
 void
-test_mcd_cmp_install (TestSuite *suite)
+test_mcommon_cmp_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/mcd/cmp/equal", test_mcd_cmp_equal);
-   TestSuite_Add (suite, "/mcd/cmp/not_equal", test_mcd_cmp_not_equal);
-   TestSuite_Add (suite, "/mcd/cmp/less", test_mcd_cmp_less);
-   TestSuite_Add (suite, "/mcd/cmp/greater", test_mcd_cmp_greater);
-   TestSuite_Add (suite, "/mcd/cmp/less_equal", test_mcd_cmp_less_equal);
-   TestSuite_Add (suite, "/mcd/cmp/greater_equal", test_mcd_cmp_greater_equal);
+   TestSuite_Add (suite, "/mcd/cmp/equal", test_mcommon_cmp_equal);
+   TestSuite_Add (suite, "/mcd/cmp/not_equal", test_mcommon_cmp_not_equal);
+   TestSuite_Add (suite, "/mcd/cmp/less", test_mcommon_cmp_less);
+   TestSuite_Add (suite, "/mcd/cmp/greater", test_mcommon_cmp_greater);
+   TestSuite_Add (suite, "/mcd/cmp/less_equal", test_mcommon_cmp_less_equal);
+   TestSuite_Add (suite, "/mcd/cmp/greater_equal", test_mcommon_cmp_greater_equal);
    TestSuite_Add (suite, "/mcd/cmp/in_range", test_mcd_in_range);
 }

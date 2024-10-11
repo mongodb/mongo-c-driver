@@ -699,7 +699,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          result->failed = true;
          break;
 
-      } else if (mcd_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
+      } else if (mcommon_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
                  document_count == 0) {
          /* The current batch is still under max batch size in bytes */
          payload_batch_size += ulen;

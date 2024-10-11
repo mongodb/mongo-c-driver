@@ -221,7 +221,7 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls, char *buf, size_t bu
       now = bson_get_monotonic_time ();
 
       if ((expire - now) < 0) {
-         if (mcd_cmp_less_su (ret, buf_len)) {
+         if (mcommon_cmp_less_su (ret, buf_len)) {
             mongoc_counter_streams_timeout_inc ();
          }
 
@@ -332,7 +332,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov,
              * if we didn't buffer and have to send out of the iovec */
 
             child_ret = _mongoc_stream_tls_openssl_write (tls, to_write, to_write_len);
-            if (mcd_cmp_not_equal_su (child_ret, to_write_len)) {
+            if (mcommon_cmp_not_equal_su (child_ret, to_write_len)) {
                TRACE ("Got child_ret: %zu while to_write_len is: %zu", child_ret, to_write_len);
             }
 
@@ -347,7 +347,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov,
 
             ret += child_ret;
 
-            if (mcd_cmp_less_su (child_ret, to_write_len)) {
+            if (mcommon_cmp_less_su (child_ret, to_write_len)) {
                /* we timed out, so send back what we could send */
 
                RETURN (ret);

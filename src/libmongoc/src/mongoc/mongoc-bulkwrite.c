@@ -1579,7 +1579,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             goto fail;
          }
          if (!mongoc_write_concern_is_acknowledged (wc) &&
-             mcd_cmp_greater_us (self->max_insert_len, maxBsonObjectSize)) {
+             mcommon_cmp_greater_us (self->max_insert_len, maxBsonObjectSize)) {
             bson_set_error (&error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,

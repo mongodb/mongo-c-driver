@@ -435,7 +435,7 @@ mongoc_gridfs_file_readv (
    BSON_ASSERT (iovcnt);
 
    /* Reading when positioned past the end does nothing */
-   if (mcd_cmp_greater_equal_us (file->pos, file->length)) {
+   if (mcommon_cmp_greater_equal_us (file->pos, file->length)) {
       return 0;
    }
 
@@ -499,7 +499,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file, const mongoc_iovec_t *iov
    }
 
    /* When writing past the end-of-file, fill the gap with zeros */
-   if (mcd_cmp_greater_us (file->pos, file->length) && !_mongoc_gridfs_file_extend (file)) {
+   if (mcommon_cmp_greater_us (file->pos, file->length) && !_mongoc_gridfs_file_extend (file)) {
       return -1;
    }
 
@@ -564,7 +564,7 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
 
    BSON_ASSERT (file);
 
-   if (mcd_cmp_greater_equal_su (file->length, file->pos)) {
+   if (mcommon_cmp_greater_equal_su (file->length, file->pos)) {
       RETURN (0);
    }
 
@@ -812,7 +812,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
       /* we might have had a cursor before, then seeked ahead past a chunk.
        * iterate until we're on the right chunk */
-      while (mcd_cmp_less_equal_us (file->cursor_range[0], file->n)) {
+      while (mcommon_cmp_less_equal_us (file->cursor_range[0], file->n)) {
          if (!mongoc_cursor_next (file->cursor, &chunk)) {
             /* copy cursor error; if there's none, we're missing a chunk */
             if (!mongoc_cursor_error (file->cursor, &file->error)) {
@@ -842,7 +842,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
             // If this not the last chunk, ensure length is equal to chunk size.
             bool is_last_chunk = ((file->n + 1) == existing_chunks);
             // If this is not the last chunk, error.
-            if (!is_last_chunk && mcd_cmp_not_equal_us (len, file->chunk_size)) {
+            if (!is_last_chunk && mcommon_cmp_not_equal_us (len, file->chunk_size)) {
                bson_set_error (&file->error,
                                MONGOC_ERROR_GRIDFS,
                                MONGOC_ERROR_GRIDFS_CORRUPT,
@@ -871,7 +871,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       RETURN (0);
    }
 
-   if (mcd_cmp_greater_us (len, file->chunk_size)) {
+   if (mcommon_cmp_greater_us (len, file->chunk_size)) {
       bson_set_error (&file->error,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CORRUPT,

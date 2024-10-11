@@ -857,7 +857,7 @@ test_write_past_end (void)
       mongoc_collection_count_documents (mongoc_gridfs_get_chunks (gridfs), tmp_bson (NULL), NULL, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (cnt != -1, error);
-   ASSERT (mcd_cmp_equal_us (expected_chunks, cnt));
+   ASSERT (mcommon_cmp_equal_us (expected_chunks, cnt));
 
    mongoc_gridfs_file_destroy (file);
    file = mongoc_gridfs_find_one (gridfs, tmp_bson (NULL), &error);

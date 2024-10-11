@@ -283,7 +283,7 @@ _consume_bson_objects (const uint8_t **ptr, size_t *remaining_bytes, int32_t *nu
       }
 
       if (doc_len < MONGOC_RPC_MINIMUM_BSON_LENGTH ||
-          mcd_cmp_greater_su (doc_len, *remaining_bytes + sizeof (int32_t))) {
+          mcommon_cmp_greater_su (doc_len, *remaining_bytes + sizeof (int32_t))) {
          *ptr -= sizeof (int32_t); // Revert so *data_end points to start of
                                    // document as invalid input.
          return false;
@@ -386,7 +386,7 @@ _consume_op_msg_section (
       // identifier field, but 4 bytes is sufficient to avoid unsigned integer
       // overflow when computing `remaining_section_bytes` and to encourage as
       // much progress is made parsing input data as able.
-      if (mcd_cmp_less_su (section.payload.document_sequence.section_len, sizeof (int32_t))) {
+      if (mcommon_cmp_less_su (section.payload.document_sequence.section_len, sizeof (int32_t))) {
          *ptr -= sizeof (int32_t); // Revert so *data_end points to start of
                                    // document sequence as invalid input.
          return false;
@@ -786,7 +786,7 @@ _consume_op_kill_cursors (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *rem
    if (op_kill_cursors->number_of_cursor_ids < 0 ||
        // Truncation may (deliberately) leave unparsed bytes that will later
        // trigger validation failure due to unexpected remaining bytes.
-       mcd_cmp_greater_su (op_kill_cursors->number_of_cursor_ids, *remaining_bytes / sizeof (int64_t))) {
+       mcommon_cmp_greater_su (op_kill_cursors->number_of_cursor_ids, *remaining_bytes / sizeof (int64_t))) {
       *ptr -= sizeof (int32_t); // Revert so *data_len points to start of
                                 // numberOfCursorIds as invalid input.
       return false;
@@ -852,7 +852,7 @@ mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc, const void *data, size
    }
 
    if (rpc->msg_header.message_length < MONGOC_RPC_MINIMUM_MESSAGE_LENGTH ||
-       mcd_cmp_greater_su (rpc->msg_header.message_length, remaining_bytes + sizeof (int32_t))) {
+       mcommon_cmp_greater_su (rpc->msg_header.message_length, remaining_bytes + sizeof (int32_t))) {
       ptr -= sizeof (int32_t); // Revert so *data_end points to start of
                                // messageLength as invalid input.
       goto fail;
@@ -2497,7 +2497,7 @@ mcd_rpc_op_kill_cursors_set_cursor_ids (mcd_rpc_message *rpc, const int64_t *cur
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_KILL_CURSORS);
-   BSON_ASSERT (mcd_cmp_less_su (number_of_cursor_ids, (size_t) INT32_MAX / sizeof (int64_t)));
+   BSON_ASSERT (mcommon_cmp_less_su (number_of_cursor_ids, (size_t) INT32_MAX / sizeof (int64_t)));
 
    const size_t cursor_ids_length = (size_t) number_of_cursor_ids * sizeof (int64_t);
 

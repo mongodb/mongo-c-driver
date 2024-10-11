@@ -445,7 +445,7 @@ _mongoc_stream_writev_full (
       RETURN (false);
    }
 
-   if (mcd_cmp_not_equal_su (r, total_bytes)) {
+   if (mcommon_cmp_not_equal_su (r, total_bytes)) {
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,

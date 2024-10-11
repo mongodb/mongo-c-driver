@@ -183,7 +183,7 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream, /* IN */
       for (size_t i = 0; i < iovcnt; i++) {
          BSON_ASSERT (mcd_in_range_unsigned (unsigned_int, iov[i].iov_len));
          const int nwrite = _write (file->fd, iov[i].iov_base, (unsigned int) iov[i].iov_len);
-         if (mcd_cmp_not_equal_su (nwrite, iov[i].iov_len)) {
+         if (mcommon_cmp_not_equal_su (nwrite, iov[i].iov_len)) {
             ret = ret ? ret : -1;
             goto done;
          }

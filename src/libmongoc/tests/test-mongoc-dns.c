@@ -203,7 +203,7 @@ _host_list_matches (const bson_t *test, context_t *ctx)
       ctx->hosts = NULL;
       bson_mutex_unlock (&ctx->mutex);
 
-      ret = mcd_cmp_equal_su (expected, actual);
+      ret = mcommon_cmp_equal_su (expected, actual);
    }
 
    return ret;

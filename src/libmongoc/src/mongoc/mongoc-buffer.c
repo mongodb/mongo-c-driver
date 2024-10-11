@@ -197,7 +197,7 @@ _mongoc_buffer_append_from_stream (
    }
 
    ret = mongoc_stream_read (stream, buf, size, size, (int32_t) timeout_msec);
-   if (mcd_cmp_not_equal_su (ret, size)) {
+   if (mcommon_cmp_not_equal_su (ret, size)) {
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,

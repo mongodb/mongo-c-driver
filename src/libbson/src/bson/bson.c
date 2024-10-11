@@ -2820,10 +2820,10 @@ _bson_as_json_visit_after (const bson_iter_t *iter, const char *key, void *data)
       return false;
    }
 
-   if (mcd_cmp_greater_equal_us (state->str->len, state->max_len)) {
+   if (mcommon_cmp_greater_equal_us (state->str->len, state->max_len)) {
       state->max_len_reached = true;
 
-      if (mcd_cmp_greater_us (state->str->len, state->max_len)) {
+      if (mcommon_cmp_greater_us (state->str->len, state->max_len)) {
          BSON_ASSERT (mcd_in_range_signed (uint32_t, state->max_len));
          /* Truncate string to maximum length */
          mcd_string_truncate (state->str, (uint32_t) state->max_len);

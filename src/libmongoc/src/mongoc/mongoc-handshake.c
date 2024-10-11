@@ -580,10 +580,11 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
     * Try to drop flags first, and if there is still not enough space also
     * drop compiler info */
    if (!truncate ||
-       mcd_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (compiler_info) + 1u)) {
+       mcommon_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (compiler_info) + 1u)) {
       mcd_string_append (combined_platform, compiler_info);
    }
-   if (!truncate || mcd_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (flags) + 1u)) {
+   if (!truncate ||
+       mcommon_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (flags) + 1u)) {
       mcd_string_append (combined_platform, flags);
    }
 

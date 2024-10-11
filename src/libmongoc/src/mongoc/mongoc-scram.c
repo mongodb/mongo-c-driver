@@ -664,7 +664,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    /* verify our nonce */
-   if (mcd_cmp_less_us (val_r_len, scram->encoded_nonce_len) ||
+   if (mcommon_cmp_less_us (val_r_len, scram->encoded_nonce_len) ||
        mongoc_memcmp (val_r, scram->encoded_nonce, scram->encoded_nonce_len)) {
       bson_set_error (error,
                       MONGOC_ERROR_SCRAM,
@@ -1023,7 +1023,7 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    }
 
    /* convert to unicode. */
-   BSON_ASSERT (mcd_cmp_less_equal_su (num_chars, SIZE_MAX / sizeof (uint32_t) - 1u));
+   BSON_ASSERT (mcommon_cmp_less_equal_su (num_chars, SIZE_MAX / sizeof (uint32_t) - 1u));
    utf8_codepoints = bson_malloc (sizeof (uint32_t) * ((size_t) num_chars + 1u)); /* add one for trailing 0 value. */
    const char *c = in_utf8;
 
