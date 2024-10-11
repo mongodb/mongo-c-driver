@@ -118,7 +118,7 @@ main (void)
    to_encrypt.value_type = BSON_TYPE_UTF8;
    to_encrypt.value.v_utf8.str = "123456789";
    const size_t len = strlen (to_encrypt.value.v_utf8.str);
-   BSON_ASSERT (len >= 0 && (uint64_t) len <= UINT32_MAX);
+   BSON_ASSERT (len <= UINT32_MAX);
    to_encrypt.value.v_utf8.len = (uint32_t) len;
 
    ret = mongoc_client_encryption_encrypt (client_encryption, &to_encrypt, encrypt_opts, &encrypted_field, &error);
