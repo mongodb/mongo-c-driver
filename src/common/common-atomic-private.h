@@ -306,71 +306,71 @@ DECL_ATOMIC_INTEGRAL (int, int, )
 #define DECL_ATOMIC_INTEGRAL_INT32 int32_t
 #endif
 
-#define _mcd_emul_atomic_int64_fetch_add COMMON_NAME (emul_atomic_int64_fetch_add)
-#define _mcd_emul_atomic_int64_exchange COMMON_NAME (emul_atomic_int64_exchange)
-#define _mcd_emul_atomic_int64_compare_exchange_strong COMMON_NAME (emul_atomic_int64_compare_exchange_strong)
-#define _mcd_emul_atomic_int64_compare_exchange_weak COMMON_NAME (emul_atomic_int64_compare_exchange_weak)
-#define _mcd_emul_atomic_int32_fetch_add COMMON_NAME (emul_atomic_int32_fetch_add)
-#define _mcd_emul_atomic_int32_exchange COMMON_NAME (emul_atomic_int32_exchange)
-#define _mcd_emul_atomic_int32_compare_exchange_strong COMMON_NAME (emul_atomic_int32_compare_exchange_strong)
-#define _mcd_emul_atomic_int32_compare_exchange_weak COMMON_NAME (emul_atomic_int32_compare_exchange_weak)
-#define _mcd_emul_atomic_int_fetch_add COMMON_NAME (emul_atomic_int_fetch_add)
-#define _mcd_emul_atomic_int_exchange COMMON_NAME (emul_atomic_int_exchange)
-#define _mcd_emul_atomic_int_compare_exchange_strong COMMON_NAME (emul_atomic_int_compare_exchange_strong)
-#define _mcd_emul_atomic_int_compare_exchange_weak COMMON_NAME (emul_atomic_int_compare_exchange_weak)
-#define _mcd_emul_atomic_ptr_exchange COMMON_NAME (emul_atomic_ptr_exchange)
+#define _mcommon_emul_atomic_int64_fetch_add COMMON_NAME (emul_atomic_int64_fetch_add)
+#define _mcommon_emul_atomic_int64_exchange COMMON_NAME (emul_atomic_int64_exchange)
+#define _mcommon_emul_atomic_int64_compare_exchange_strong COMMON_NAME (emul_atomic_int64_compare_exchange_strong)
+#define _mcommon_emul_atomic_int64_compare_exchange_weak COMMON_NAME (emul_atomic_int64_compare_exchange_weak)
+#define _mcommon_emul_atomic_int32_fetch_add COMMON_NAME (emul_atomic_int32_fetch_add)
+#define _mcommon_emul_atomic_int32_exchange COMMON_NAME (emul_atomic_int32_exchange)
+#define _mcommon_emul_atomic_int32_compare_exchange_strong COMMON_NAME (emul_atomic_int32_compare_exchange_strong)
+#define _mcommon_emul_atomic_int32_compare_exchange_weak COMMON_NAME (emul_atomic_int32_compare_exchange_weak)
+#define _mcommon_emul_atomic_int_fetch_add COMMON_NAME (emul_atomic_int_fetch_add)
+#define _mcommon_emul_atomic_int_exchange COMMON_NAME (emul_atomic_int_exchange)
+#define _mcommon_emul_atomic_int_compare_exchange_strong COMMON_NAME (emul_atomic_int_compare_exchange_strong)
+#define _mcommon_emul_atomic_int_compare_exchange_weak COMMON_NAME (emul_atomic_int_compare_exchange_weak)
+#define _mcommon_emul_atomic_ptr_exchange COMMON_NAME (emul_atomic_ptr_exchange)
 #define mcd_thrd_yield COMMON_NAME (thrd_yield)
 
 int64_t
-_mcd_emul_atomic_int64_fetch_add (int64_t volatile *val, int64_t v, enum mcommon_memory_order);
+_mcommon_emul_atomic_int64_fetch_add (int64_t volatile *val, int64_t v, enum mcommon_memory_order);
 int64_t
-_mcd_emul_atomic_int64_exchange (int64_t volatile *val, int64_t v, enum mcommon_memory_order);
+_mcommon_emul_atomic_int64_exchange (int64_t volatile *val, int64_t v, enum mcommon_memory_order);
 int64_t
-_mcd_emul_atomic_int64_compare_exchange_strong (int64_t volatile *val,
-                                                int64_t expect_value,
-                                                int64_t new_value,
+_mcommon_emul_atomic_int64_compare_exchange_strong (int64_t volatile *val,
+                                                    int64_t expect_value,
+                                                    int64_t new_value,
+                                                    enum mcommon_memory_order);
+
+int64_t
+_mcommon_emul_atomic_int64_compare_exchange_weak (int64_t volatile *val,
+                                                  int64_t expect_value,
+                                                  int64_t new_value,
+                                                  enum mcommon_memory_order);
+
+int32_t
+_mcommon_emul_atomic_int32_fetch_add (int32_t volatile *val, int32_t v, enum mcommon_memory_order);
+int32_t
+_mcommon_emul_atomic_int32_exchange (int32_t volatile *val, int32_t v, enum mcommon_memory_order);
+int32_t
+_mcommon_emul_atomic_int32_compare_exchange_strong (int32_t volatile *val,
+                                                    int32_t expect_value,
+                                                    int32_t new_value,
+                                                    enum mcommon_memory_order);
+
+int32_t
+_mcommon_emul_atomic_int32_compare_exchange_weak (int32_t volatile *val,
+                                                  int32_t expect_value,
+                                                  int32_t new_value,
+                                                  enum mcommon_memory_order);
+
+int
+_mcommon_emul_atomic_int_fetch_add (int volatile *val, int v, enum mcommon_memory_order);
+int
+_mcommon_emul_atomic_int_exchange (int volatile *val, int v, enum mcommon_memory_order);
+int
+_mcommon_emul_atomic_int_compare_exchange_strong (int volatile *val,
+                                                  int expect_value,
+                                                  int new_value,
+                                                  enum mcommon_memory_order);
+
+int
+_mcommon_emul_atomic_int_compare_exchange_weak (int volatile *val,
+                                                int expect_value,
+                                                int new_value,
                                                 enum mcommon_memory_order);
-
-int64_t
-_mcd_emul_atomic_int64_compare_exchange_weak (int64_t volatile *val,
-                                              int64_t expect_value,
-                                              int64_t new_value,
-                                              enum mcommon_memory_order);
-
-int32_t
-_mcd_emul_atomic_int32_fetch_add (int32_t volatile *val, int32_t v, enum mcommon_memory_order);
-int32_t
-_mcd_emul_atomic_int32_exchange (int32_t volatile *val, int32_t v, enum mcommon_memory_order);
-int32_t
-_mcd_emul_atomic_int32_compare_exchange_strong (int32_t volatile *val,
-                                                int32_t expect_value,
-                                                int32_t new_value,
-                                                enum mcommon_memory_order);
-
-int32_t
-_mcd_emul_atomic_int32_compare_exchange_weak (int32_t volatile *val,
-                                              int32_t expect_value,
-                                              int32_t new_value,
-                                              enum mcommon_memory_order);
-
-int
-_mcd_emul_atomic_int_fetch_add (int volatile *val, int v, enum mcommon_memory_order);
-int
-_mcd_emul_atomic_int_exchange (int volatile *val, int v, enum mcommon_memory_order);
-int
-_mcd_emul_atomic_int_compare_exchange_strong (int volatile *val,
-                                              int expect_value,
-                                              int new_value,
-                                              enum mcommon_memory_order);
-
-int
-_mcd_emul_atomic_int_compare_exchange_weak (int volatile *val,
-                                            int expect_value,
-                                            int new_value,
-                                            enum mcommon_memory_order);
 
 void *
-_mcd_emul_atomic_ptr_exchange (void *volatile *val, void *v, enum mcommon_memory_order);
+_mcommon_emul_atomic_ptr_exchange (void *volatile *val, void *v, enum mcommon_memory_order);
 
 void
 mcd_thrd_yield (void);
@@ -386,25 +386,25 @@ DECL_ATOMIC_STDINT (int64, 64)
 static BSON_INLINE int64_t
 mcommon_atomic_int64_fetch (const int64_t volatile *val, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int64_fetch_add ((int64_t volatile *) val, 0, order);
+   return _mcommon_emul_atomic_int64_fetch_add ((int64_t volatile *) val, 0, order);
 }
 
 static BSON_INLINE int64_t
 mcommon_atomic_int64_fetch_add (int64_t volatile *val, int64_t v, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int64_fetch_add (val, v, order);
+   return _mcommon_emul_atomic_int64_fetch_add (val, v, order);
 }
 
 static BSON_INLINE int64_t
 mcommon_atomic_int64_fetch_sub (int64_t volatile *val, int64_t v, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int64_fetch_add (val, -v, order);
+   return _mcommon_emul_atomic_int64_fetch_add (val, -v, order);
 }
 
 static BSON_INLINE int64_t
 mcommon_atomic_int64_exchange (int64_t volatile *val, int64_t v, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int64_exchange (val, v, order);
+   return _mcommon_emul_atomic_int64_exchange (val, v, order);
 }
 
 static BSON_INLINE int64_t
@@ -413,7 +413,7 @@ mcommon_atomic_int64_compare_exchange_strong (int64_t volatile *val,
                                               int64_t new_value,
                                               enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int64_compare_exchange_strong (val, expect_value, new_value, order);
+   return _mcommon_emul_atomic_int64_compare_exchange_strong (val, expect_value, new_value, order);
 }
 
 static BSON_INLINE int64_t
@@ -422,7 +422,7 @@ mcommon_atomic_int64_compare_exchange_weak (int64_t volatile *val,
                                             int64_t new_value,
                                             enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int64_compare_exchange_weak (val, expect_value, new_value, order);
+   return _mcommon_emul_atomic_int64_compare_exchange_weak (val, expect_value, new_value, order);
 }
 #endif
 
@@ -430,25 +430,25 @@ mcommon_atomic_int64_compare_exchange_weak (int64_t volatile *val,
 static BSON_INLINE int32_t
 mcommon_atomic_int32_fetch (const int32_t volatile *val, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int32_fetch_add ((int32_t volatile *) val, 0, order);
+   return _mcommon_emul_atomic_int32_fetch_add ((int32_t volatile *) val, 0, order);
 }
 
 static BSON_INLINE int32_t
 mcommon_atomic_int32_fetch_add (int32_t volatile *val, int32_t v, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int32_fetch_add (val, v, order);
+   return _mcommon_emul_atomic_int32_fetch_add (val, v, order);
 }
 
 static BSON_INLINE int32_t
 mcommon_atomic_int32_fetch_sub (int32_t volatile *val, int32_t v, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int32_fetch_add (val, -v, order);
+   return _mcommon_emul_atomic_int32_fetch_add (val, -v, order);
 }
 
 static BSON_INLINE int32_t
 mcommon_atomic_int32_exchange (int32_t volatile *val, int32_t v, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int32_exchange (val, v, order);
+   return _mcommon_emul_atomic_int32_exchange (val, v, order);
 }
 
 static BSON_INLINE int32_t
@@ -457,7 +457,7 @@ mcommon_atomic_int32_compare_exchange_strong (int32_t volatile *val,
                                               int32_t new_value,
                                               enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int32_compare_exchange_strong (val, expect_value, new_value, order);
+   return _mcommon_emul_atomic_int32_compare_exchange_strong (val, expect_value, new_value, order);
 }
 
 static BSON_INLINE int32_t
@@ -466,7 +466,7 @@ mcommon_atomic_int32_compare_exchange_weak (int32_t volatile *val,
                                             int32_t new_value,
                                             enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int32_compare_exchange_weak (val, expect_value, new_value, order);
+   return _mcommon_emul_atomic_int32_compare_exchange_weak (val, expect_value, new_value, order);
 }
 #endif /* MCOMMON_EMULATE_INT32 */
 
@@ -474,25 +474,25 @@ mcommon_atomic_int32_compare_exchange_weak (int32_t volatile *val,
 static BSON_INLINE int
 mcommon_atomic_int_fetch (const int volatile *val, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int_fetch_add ((int volatile *) val, 0, order);
+   return _mcommon_emul_atomic_int_fetch_add ((int volatile *) val, 0, order);
 }
 
 static BSON_INLINE int
 mcommon_atomic_int_fetch_add (int volatile *val, int v, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int_fetch_add (val, v, order);
+   return _mcommon_emul_atomic_int_fetch_add (val, v, order);
 }
 
 static BSON_INLINE int
 mcommon_atomic_int_fetch_sub (int volatile *val, int v, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int_fetch_add (val, -v, order);
+   return _mcommon_emul_atomic_int_fetch_add (val, -v, order);
 }
 
 static BSON_INLINE int
 mcommon_atomic_int_exchange (int volatile *val, int v, enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int_exchange (val, v, order);
+   return _mcommon_emul_atomic_int_exchange (val, v, order);
 }
 
 static BSON_INLINE int
@@ -501,7 +501,7 @@ mcommon_atomic_int_compare_exchange_strong (int volatile *val,
                                             int new_value,
                                             enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int_compare_exchange_strong (val, expect_value, new_value, order);
+   return _mcommon_emul_atomic_int_compare_exchange_strong (val, expect_value, new_value, order);
 }
 
 static BSON_INLINE int
@@ -510,7 +510,7 @@ mcommon_atomic_int_compare_exchange_weak (int volatile *val,
                                           int new_value,
                                           enum mcommon_memory_order order)
 {
-   return _mcd_emul_atomic_int_compare_exchange_weak (val, expect_value, new_value, order);
+   return _mcommon_emul_atomic_int_compare_exchange_weak (val, expect_value, new_value, order);
 }
 #endif /* MCOMMON_EMULATE_INT */
 
@@ -518,7 +518,7 @@ static BSON_INLINE void *
 mcommon_atomic_ptr_exchange (void *volatile *ptr, void *new_value, enum mcommon_memory_order ord)
 {
 #if defined(MCOMMON_EMULATE_PTR)
-   return _mcd_emul_atomic_ptr_exchange (ptr, new_value, ord);
+   return _mcommon_emul_atomic_ptr_exchange (ptr, new_value, ord);
 #elif defined(MCOMMON_USE_LEGACY_GCC_ATOMICS)
    /* The older __sync_val_compare_and_swap also takes oldval */
    DEF_ATOMIC_OP (_InterlockedExchangePointer, , __sync_val_compare_and_swap, ord, ptr, *ptr, new_value);

@@ -64,7 +64,7 @@ _unlock_emul_atomic (void)
 }
 
 int64_t
-_mcd_emul_atomic_int64_fetch_add (volatile int64_t *p, int64_t n, enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_int64_fetch_add (volatile int64_t *p, int64_t n, enum mcommon_memory_order _unused)
 {
    int64_t ret;
 
@@ -78,7 +78,7 @@ _mcd_emul_atomic_int64_fetch_add (volatile int64_t *p, int64_t n, enum mcommon_m
 }
 
 int64_t
-_mcd_emul_atomic_int64_exchange (volatile int64_t *p, int64_t n, enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_int64_exchange (volatile int64_t *p, int64_t n, enum mcommon_memory_order _unused)
 {
    int64_t ret;
 
@@ -92,10 +92,10 @@ _mcd_emul_atomic_int64_exchange (volatile int64_t *p, int64_t n, enum mcommon_me
 }
 
 int64_t
-_mcd_emul_atomic_int64_compare_exchange_strong (volatile int64_t *p,
-                                                int64_t expect_value,
-                                                int64_t new_value,
-                                                enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_int64_compare_exchange_strong (volatile int64_t *p,
+                                                    int64_t expect_value,
+                                                    int64_t new_value,
+                                                    enum mcommon_memory_order _unused)
 {
    int64_t ret;
 
@@ -111,18 +111,18 @@ _mcd_emul_atomic_int64_compare_exchange_strong (volatile int64_t *p,
 }
 
 int64_t
-_mcd_emul_atomic_int64_compare_exchange_weak (volatile int64_t *p,
-                                              int64_t expect_value,
-                                              int64_t new_value,
-                                              enum mcommon_memory_order order)
+_mcommon_emul_atomic_int64_compare_exchange_weak (volatile int64_t *p,
+                                                  int64_t expect_value,
+                                                  int64_t new_value,
+                                                  enum mcommon_memory_order order)
 {
    /* We're emulating. We can't do a weak version. */
-   return _mcd_emul_atomic_int64_compare_exchange_strong (p, expect_value, new_value, order);
+   return _mcommon_emul_atomic_int64_compare_exchange_strong (p, expect_value, new_value, order);
 }
 
 
 int32_t
-_mcd_emul_atomic_int32_fetch_add (volatile int32_t *p, int32_t n, enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_int32_fetch_add (volatile int32_t *p, int32_t n, enum mcommon_memory_order _unused)
 {
    int32_t ret;
 
@@ -136,7 +136,7 @@ _mcd_emul_atomic_int32_fetch_add (volatile int32_t *p, int32_t n, enum mcommon_m
 }
 
 int32_t
-_mcd_emul_atomic_int32_exchange (volatile int32_t *p, int32_t n, enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_int32_exchange (volatile int32_t *p, int32_t n, enum mcommon_memory_order _unused)
 {
    int32_t ret;
 
@@ -150,10 +150,10 @@ _mcd_emul_atomic_int32_exchange (volatile int32_t *p, int32_t n, enum mcommon_me
 }
 
 int32_t
-_mcd_emul_atomic_int32_compare_exchange_strong (volatile int32_t *p,
-                                                int32_t expect_value,
-                                                int32_t new_value,
-                                                enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_int32_compare_exchange_strong (volatile int32_t *p,
+                                                    int32_t expect_value,
+                                                    int32_t new_value,
+                                                    enum mcommon_memory_order _unused)
 {
    int32_t ret;
 
@@ -169,18 +169,18 @@ _mcd_emul_atomic_int32_compare_exchange_strong (volatile int32_t *p,
 }
 
 int32_t
-_mcd_emul_atomic_int32_compare_exchange_weak (volatile int32_t *p,
-                                              int32_t expect_value,
-                                              int32_t new_value,
-                                              enum mcommon_memory_order order)
+_mcommon_emul_atomic_int32_compare_exchange_weak (volatile int32_t *p,
+                                                  int32_t expect_value,
+                                                  int32_t new_value,
+                                                  enum mcommon_memory_order order)
 {
    /* We're emulating. We can't do a weak version. */
-   return _mcd_emul_atomic_int32_compare_exchange_strong (p, expect_value, new_value, order);
+   return _mcommon_emul_atomic_int32_compare_exchange_strong (p, expect_value, new_value, order);
 }
 
 
 int
-_mcd_emul_atomic_int_fetch_add (volatile int *p, int n, enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_int_fetch_add (volatile int *p, int n, enum mcommon_memory_order _unused)
 {
    int ret;
 
@@ -194,7 +194,7 @@ _mcd_emul_atomic_int_fetch_add (volatile int *p, int n, enum mcommon_memory_orde
 }
 
 int
-_mcd_emul_atomic_int_exchange (volatile int *p, int n, enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_int_exchange (volatile int *p, int n, enum mcommon_memory_order _unused)
 {
    int ret;
 
@@ -208,10 +208,10 @@ _mcd_emul_atomic_int_exchange (volatile int *p, int n, enum mcommon_memory_order
 }
 
 int
-_mcd_emul_atomic_int_compare_exchange_strong (volatile int *p,
-                                              int expect_value,
-                                              int new_value,
-                                              enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_int_compare_exchange_strong (volatile int *p,
+                                                  int expect_value,
+                                                  int new_value,
+                                                  enum mcommon_memory_order _unused)
 {
    int ret;
 
@@ -227,17 +227,17 @@ _mcd_emul_atomic_int_compare_exchange_strong (volatile int *p,
 }
 
 int
-_mcd_emul_atomic_int_compare_exchange_weak (volatile int *p,
-                                            int expect_value,
-                                            int new_value,
-                                            enum mcommon_memory_order order)
+_mcommon_emul_atomic_int_compare_exchange_weak (volatile int *p,
+                                                int expect_value,
+                                                int new_value,
+                                                enum mcommon_memory_order order)
 {
    /* We're emulating. We can't do a weak version. */
-   return _mcd_emul_atomic_int_compare_exchange_strong (p, expect_value, new_value, order);
+   return _mcommon_emul_atomic_int_compare_exchange_strong (p, expect_value, new_value, order);
 }
 
 void *
-_mcd_emul_atomic_ptr_exchange (void *volatile *p, void *n, enum mcommon_memory_order _unused)
+_mcommon_emul_atomic_ptr_exchange (void *volatile *p, void *n, enum mcommon_memory_order _unused)
 {
    void *ret;
 
