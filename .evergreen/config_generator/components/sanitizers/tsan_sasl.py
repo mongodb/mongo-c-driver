@@ -11,11 +11,14 @@ from config_generator.components.sanitizers.tsan import TAG
 # fmt: off
 COMPILE_MATRIX = [
     ('ubuntu2004', 'clang', None, ['cyrus']),
+    ('debian10',   'clang', None, ['cyrus']),
 ]
 
 TEST_OPENSSL_MATRIX = [
-    # Test 7.0+ with Ubuntu 20.04+ since MongoDB 7.0 no longer ships binaries for Ubuntu 18.04.
     ('ubuntu2004', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+
+    # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
+    ('debian10',   'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2']), 
 ]
 # fmt: on
 # pylint: enable=line-too-long

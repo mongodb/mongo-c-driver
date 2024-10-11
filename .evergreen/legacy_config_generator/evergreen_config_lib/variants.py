@@ -165,13 +165,6 @@ all_variants = [
         {"CC": "gcc"},
     ),
     Variant(
-        "gcc94",
-        "GCC 9.4 (Ubuntu 20.04)",
-        "ubuntu2004-large",
-        ["release-compile", "debug-compile-nosasl-nossl", ".latest .nossl"],
-        {"CC": "gcc"},
-    ),
-    Variant(
         "gcc94-i686",
         "GCC 9.4 (i686) (Ubuntu 20.04)",
         "ubuntu2004-test",

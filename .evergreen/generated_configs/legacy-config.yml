@@ -16486,15 +16486,6 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - .latest .nossl
-- name: gcc94
-  display_name: GCC 9.4 (Ubuntu 20.04)
-  expansions:
-    CC: gcc
-  run_on: ubuntu2004-large
-  tasks:
-  - release-compile
-  - debug-compile-nosasl-nossl
-  - .latest .nossl
 - name: gcc94-i686
   display_name: GCC 9.4 (i686) (Ubuntu 20.04)
   expansions:

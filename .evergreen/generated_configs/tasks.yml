@@ -2,6 +2,60 @@ tasks:
   - name: abi-compliance-check
     commands:
       - func: abi-compliance-check
+  - name: asan-cse-sasl-cyrus-openssl-debian10-clang-compile
+    run_on: debian10-large
+    tags: [sanitizers-matrix-asan, compile, debian10, clang, cse, asan, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: asan-cse-sasl-cyrus-openssl-debian10-clang-test-4.2-server-auth
+    run_on: debian10-small
+    tags: [sanitizers-matrix-asan, test, debian10, clang, sasl-cyrus, cse, asan, auth, server, "4.2", openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-debian10-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-debian10-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-cse-sasl-cyrus-openssl-debian10-clang-test-4.2-server-auth-with-mongocrypt
+    run_on: debian10-small
+    tags: [sanitizers-matrix-asan, test, debian10, clang, sasl-cyrus, cse, asan, auth, server, "4.2", with-mongocrypt, openssl]
+    depends_on: [{ name: asan-cse-sasl-cyrus-openssl-debian10-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-cse-sasl-cyrus-openssl-debian10-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+            - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
+            - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-asan, compile, ubuntu2004, clang, cse, asan, sasl-cyrus]
@@ -550,6 +604,75 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-mock-kms-servers
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-debian10-clang-compile
+    run_on: debian10-large
+    tags: [sanitizers-matrix-asan, compile, debian10, clang, asan, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: asan-sasl-cyrus-openssl-debian10-clang-test-4.2-replica-auth
+    run_on: debian10-small
+    tags: [sanitizers-matrix-asan, test, debian10, clang, sasl-cyrus, asan, auth, replica, "4.2", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-debian10-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-debian10-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-debian10-clang-test-4.2-server-auth
+    run_on: debian10-small
+    tags: [sanitizers-matrix-asan, test, debian10, clang, sasl-cyrus, asan, auth, server, "4.2", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-debian10-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-debian10-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: asan-sasl-cyrus-openssl-debian10-clang-test-4.2-sharded-auth
+    run_on: debian10-small
+    tags: [sanitizers-matrix-asan, test, debian10, clang, sasl-cyrus, asan, auth, sharded, "4.2", openssl]
+    depends_on: [{ name: asan-sasl-cyrus-openssl-debian10-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: asan-sasl-cyrus-openssl-debian10-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
@@ -1573,6 +1696,46 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
+  - name: cse-sasl-cyrus-openssl-debian10-gcc-test-4.2-replica-auth
+    run_on: debian10-small
+    tags: [cse-matrix-openssl, test, debian10, gcc, sasl-cyrus, cse, auth, replica, "4.2", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-debian10-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-debian10-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-debian10-gcc-test-4.2-server-auth
+    run_on: debian10-small
+    tags: [cse-matrix-openssl, test, debian10, gcc, sasl-cyrus, cse, auth, server, "4.2", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-debian10-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-debian10-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
     run_on: debian11-large
     tags: [cse-matrix-openssl, compile, debian11, gcc, cse, sasl-cyrus]
@@ -3222,6 +3385,46 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
+  - name: sasl-cyrus-openssl-debian10-gcc-test-4.2-replica-auth
+    run_on: debian10-small
+    tags: [sasl-matrix-openssl, test, debian10, gcc, sasl-cyrus, auth, replica, "4.2", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-debian10-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-debian10-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-debian10-gcc-test-4.2-server-auth
+    run_on: debian10-small
+    tags: [sasl-matrix-openssl, test, debian10, gcc, sasl-cyrus, auth, server, "4.2", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-debian10-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-debian10-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: sasl-cyrus-openssl-debian11-gcc-compile
     run_on: debian11-large
     tags: [sasl-matrix-openssl, compile, debian11, gcc, sasl-cyrus]
@@ -3990,6 +4193,75 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+  - name: sasl-off-nossl-debian10-gcc-compile
+    run_on: debian10-large
+    tags: [sasl-matrix-nossl, compile, debian10, gcc, sasl-off]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-off-nossl-compile
+        vars:
+          CC: gcc
+      - func: upload-build
+  - name: sasl-off-nossl-debian10-gcc-test-4.2-replica-noauth
+    run_on: debian10-small
+    tags: [sasl-matrix-nossl, test, debian10, gcc, sasl-off, noauth, replica, "4.2"]
+    depends_on: [{ name: sasl-off-nossl-debian10-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-debian10-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-debian10-gcc-test-4.2-server-noauth
+    run_on: debian10-small
+    tags: [sasl-matrix-nossl, test, debian10, gcc, sasl-off, noauth, server, "4.2"]
+    depends_on: [{ name: sasl-off-nossl-debian10-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-debian10-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-off-nossl-debian10-gcc-test-4.2-sharded-noauth
+    run_on: debian10-small
+    tags: [sasl-matrix-nossl, test, debian10, gcc, sasl-off, noauth, sharded, "4.2"]
+    depends_on: [{ name: sasl-off-nossl-debian10-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-off-nossl-debian10-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: sasl-off-nossl-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
     tags: [sasl-matrix-nossl, compile, ubuntu2004, gcc, sasl-off]
@@ -4669,6 +4941,75 @@ tasks:
         vars:
           CC: Visual Studio 15 2017 Win64
           C_STD_VERSION: 17
+  - name: tsan-sasl-cyrus-openssl-debian10-clang-compile
+    run_on: debian10-large
+    tags: [sanitizers-matrix-tsan, compile, debian10, clang, tsan, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: tsan-sasl-cyrus-openssl-debian10-clang-test-4.2-replica-auth
+    run_on: debian10-small
+    tags: [sanitizers-matrix-tsan, test, debian10, clang, sasl-cyrus, tsan, auth, replica, "4.2", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-debian10-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-debian10-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-debian10-clang-test-4.2-server-auth
+    run_on: debian10-small
+    tags: [sanitizers-matrix-tsan, test, debian10, clang, sasl-cyrus, tsan, auth, server, "4.2", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-debian10-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-debian10-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: tsan-sasl-cyrus-openssl-debian10-clang-test-4.2-sharded-auth
+    run_on: debian10-small
+    tags: [sanitizers-matrix-tsan, test, debian10, clang, sasl-cyrus, tsan, auth, sharded, "4.2", openssl]
+    depends_on: [{ name: tsan-sasl-cyrus-openssl-debian10-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: tsan-sasl-cyrus-openssl-debian10-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
     tags: [sanitizers-matrix-tsan, compile, ubuntu2004, clang, tsan, sasl-cyrus]
