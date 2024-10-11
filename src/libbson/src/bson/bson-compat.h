@@ -204,7 +204,7 @@ typedef signed char bool;
 #endif
 
 static BSON_INLINE void
-BSON_GNUC_DEPRECATED_FOR ("bson_atomic_thread_fence")
+BSON_GNUC_DEPRECATED
 bson_sync_synchronize (void)
 {
    BSON_IF_MSVC (MemoryBarrier ();)
