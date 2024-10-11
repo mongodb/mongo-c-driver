@@ -13,8 +13,8 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   size_t num_bytes = hex_len / 2;
-   if ((uint64_t) num_bytes >= UINT32_MAX) {
+   size_t num_bytes = hex_len / 2u;
+   if (num_bytes >= UINT32_MAX) {
       return false;
    }
 
