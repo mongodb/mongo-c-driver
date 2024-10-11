@@ -22,7 +22,7 @@
 #include "mongoc-stream-gridfs-upload-private.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-util-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 /* Returns the minimum of two numbers */
 static size_t

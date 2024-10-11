@@ -35,7 +35,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-error.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);

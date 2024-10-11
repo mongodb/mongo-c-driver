@@ -20,7 +20,7 @@
 /* strcasecmp on windows */
 #include "mongoc-util-private.h"
 #include "utlist.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static mongoc_host_list_t *
 _mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts, const char *host_and_port)

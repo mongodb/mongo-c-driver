@@ -44,7 +44,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 #include <mcd-atomic.h>
 
 #undef MONGOC_LOG_DOMAIN

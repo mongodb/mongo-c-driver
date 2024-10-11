@@ -31,7 +31,7 @@
 #include "mongoc-aggregate-private.h"
 
 #include <bson-dsl.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cursor"

@@ -19,7 +19,7 @@
 #include <bson/bson-config.h>
 #include <bson/bson-decimal128.h>
 #include <bson/bson-types.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #define ITER_TYPE(i) ((bson_type_t) * ((i)->raw + (i)->type))
 

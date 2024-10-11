@@ -20,7 +20,7 @@
 #include "mongoc-compression-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #ifdef MONGOC_ENABLE_COMPRESSION
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB

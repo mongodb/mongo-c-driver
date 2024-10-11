@@ -21,7 +21,7 @@
 #include "mongoc-error.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-trace-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 #undef MONGOC_LOG_DOMAIN

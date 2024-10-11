@@ -18,7 +18,7 @@
 
 #include "test-conveniences.h"
 #include "TestSuite.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static int
 cmp_key (const void *a, const void *b)

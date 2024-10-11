@@ -25,7 +25,7 @@
 #include "util.h"
 #include "utlist.h"
 #include "bson-dsl.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 typedef struct {
    char *name;

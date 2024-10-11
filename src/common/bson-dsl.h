@@ -14,7 +14,7 @@
  */
 
 #include "bson/bson.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 enum {
    /// Toggle this value to enable/disable debug output for all bsonDSL

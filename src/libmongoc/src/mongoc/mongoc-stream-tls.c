@@ -43,7 +43,7 @@
 #endif
 #include "mongoc-stream-tls.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"

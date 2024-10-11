@@ -6,7 +6,7 @@
 #undef MONGOC_INSIDE
 
 #include <bson/bson.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 typedef struct _mcd_rpc_message_header mcd_rpc_message_header;

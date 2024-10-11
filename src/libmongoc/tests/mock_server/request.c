@@ -22,7 +22,7 @@
 #include "../test-conveniences.h"
 #include "../TestSuite.h"
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static bool
 is_command_ns (const char *ns);

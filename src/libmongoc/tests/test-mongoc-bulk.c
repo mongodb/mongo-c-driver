@@ -12,7 +12,7 @@
 #include "mock_server/mock-server.h"
 #include "test-conveniences.h"
 #include "mock_server/mock-rs.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 typedef void (*update_fn) (mongoc_bulk_operation_t *bulk, const bson_t *selector, const bson_t *document, bool upsert);

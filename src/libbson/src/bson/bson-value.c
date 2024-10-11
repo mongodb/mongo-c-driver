@@ -19,7 +19,7 @@
 #include <mcd-string.h>
 #include <bson/bson-value.h>
 #include <bson/bson-oid.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 void

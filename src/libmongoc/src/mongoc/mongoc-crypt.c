@@ -34,7 +34,7 @@
 #include "mcd-time.h"
 #include "service-gcp.h"
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 // `mcd_mapof_kmsid_to_tlsopts` maps a KMS ID (e.g. `aws` or `aws:myname`) to a
 // `mongoc_ssl_opt_t`. The acryonym TLS is preferred over SSL for

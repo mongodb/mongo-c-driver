@@ -58,7 +58,7 @@
 #include "mongoc-error-private.h"
 
 #include <bson-dsl.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #include <inttypes.h>
 

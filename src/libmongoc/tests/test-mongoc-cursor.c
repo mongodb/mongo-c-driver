@@ -12,7 +12,7 @@
 #include "mongoc/mongoc-write-concern-private.h"
 #include "test-conveniences.h"
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 typedef mongoc_cursor_t *(*make_cursor_fn) (mongoc_collection_t *);

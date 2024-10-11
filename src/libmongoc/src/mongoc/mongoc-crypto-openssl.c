@@ -21,7 +21,7 @@
 #include "mongoc-crypto-openssl-private.h"
 #include "mongoc-crypto-private.h"
 #include "mongoc-log.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #include <openssl/sha.h>
 #include <openssl/evp.h>

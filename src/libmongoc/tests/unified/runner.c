@@ -25,7 +25,7 @@
 #include "utlist.h"
 #include "util.h"
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 typedef struct {
    const char *file_description;

@@ -31,7 +31,7 @@
 #include "mongoc-client-session-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-sleep.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;

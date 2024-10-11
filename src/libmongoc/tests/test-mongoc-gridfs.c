@@ -13,7 +13,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 static mongoc_gridfs_t *

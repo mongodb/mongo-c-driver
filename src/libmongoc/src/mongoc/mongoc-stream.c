@@ -29,7 +29,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 #undef MONGOC_LOG_DOMAIN

@@ -19,7 +19,7 @@
 
 #include <bson/bson-keys.h>
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 static const char *gUint32Strs[] = {

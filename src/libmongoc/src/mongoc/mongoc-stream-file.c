@@ -24,7 +24,7 @@
 #include "mongoc-stream-file.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-counters-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 /*
  * TODO: This does not respect timeouts or set O_NONBLOCK.

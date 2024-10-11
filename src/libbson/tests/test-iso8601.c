@@ -2,7 +2,7 @@
 
 #include "bson/bson-iso8601-private.h"
 #include "TestSuite.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static const bool is_time_t_small = (sizeof (time_t) == sizeof (int32_t));
 

@@ -38,7 +38,7 @@
 
 #include <bson-dsl.h>
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init

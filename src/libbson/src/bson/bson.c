@@ -22,7 +22,7 @@
 #include <mcd-string.h>
 #include <bson/bson-iso8601-private.h>
 #include <bson/bson-string-private.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #include "common-b64-private.h"
 

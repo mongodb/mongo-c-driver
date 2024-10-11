@@ -9,7 +9,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "json-test-monitoring.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>

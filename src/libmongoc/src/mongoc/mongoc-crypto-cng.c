@@ -21,7 +21,7 @@
 #include "mongoc-crypto-cng-private.h"
 #include "mongoc-log.h"
 #include "mongoc-thread-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #include <windows.h>
 #include <stdio.h>

@@ -18,7 +18,7 @@
 #include "mongoc-error.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-trace-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 mongoc_read_prefs_t *

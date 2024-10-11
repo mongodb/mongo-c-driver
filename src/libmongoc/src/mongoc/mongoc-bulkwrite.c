@@ -28,7 +28,7 @@
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-util-private.h> // _mongoc_iter_document_as_bson
 #include <mongoc/mongoc-optional.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 MC_ENABLE_CONVERSION_WARNING_BEGIN
 

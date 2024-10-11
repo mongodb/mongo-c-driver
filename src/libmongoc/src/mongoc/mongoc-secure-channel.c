@@ -30,7 +30,7 @@
 #include "mongoc-errno-private.h"
 #include "mongoc-error.h"
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 #undef MONGOC_LOG_DOMAIN

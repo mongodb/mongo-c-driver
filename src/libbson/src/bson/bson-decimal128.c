@@ -23,7 +23,7 @@
 #include <bson/bson-types.h>
 #include <bson/bson-macros.h>
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 #define BSON_DECIMAL128_EXPONENT_MAX 6111

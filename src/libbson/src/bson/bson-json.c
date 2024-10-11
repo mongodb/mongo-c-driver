@@ -28,7 +28,7 @@
 
 #include "common-b64-private.h"
 #include "jsonsl/jsonsl.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #ifdef _WIN32
 #include <io.h>

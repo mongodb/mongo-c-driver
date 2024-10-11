@@ -6,7 +6,7 @@
 #include "TestSuite.h"
 
 #include <inttypes.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 // clang-format off

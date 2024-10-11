@@ -16,7 +16,7 @@
 
 #include "TestSuite.h"
 
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static void
 test_mcd_cmp_equal (void)

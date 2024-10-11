@@ -19,7 +19,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-read-concern-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #define BSON_ERR(...)                                                                    \
    do {                                                                                  \

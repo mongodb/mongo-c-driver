@@ -13,7 +13,7 @@
 
 #include "json-test.h"
 #include "test-libmongoc.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static void
 _assert_options_match (const bson_t *test, mongoc_uri_t *uri)

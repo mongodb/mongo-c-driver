@@ -18,7 +18,7 @@
 
 #include "TestSuite.h"
 #include "common-b64-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static void
 _test_encode_helper (char *input, size_t input_len, char *expected_output, int expected_output_len)

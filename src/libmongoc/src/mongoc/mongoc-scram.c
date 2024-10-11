@@ -31,7 +31,7 @@
 #include "mongoc-memcmp-private.h"
 #include "common-thread-private.h"
 #include <utf8proc.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 typedef struct _mongoc_scram_cache_entry_t {
    /* book keeping */

@@ -4,7 +4,7 @@
 #include "json-test-operations.h"
 #include "test-libmongoc.h"
 #include "mongoc-bulkwrite.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static bool
 crud_test_operation_cb (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)

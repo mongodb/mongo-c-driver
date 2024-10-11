@@ -32,7 +32,7 @@
 
 #include "mongoc/mongoc-uri.h"
 #include "mongoc/mongoc-http-private.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static void
 _before_test (json_test_ctx_t *ctx, const bson_t *test)

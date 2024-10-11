@@ -20,7 +20,7 @@
 
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 #include <mcd-string.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-utf8.h>

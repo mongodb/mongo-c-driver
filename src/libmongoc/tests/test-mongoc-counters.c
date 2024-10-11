@@ -21,7 +21,7 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 #include "mock_server/future-functions.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 #include <mcd-atomic.h>
 
 /* test statistics counters excluding OP_INSERT, OP_UPDATE, and OP_DELETE since

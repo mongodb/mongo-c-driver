@@ -27,7 +27,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-opts-private.h"
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 
 /* indexed by MONGOC_WRITE_COMMAND_DELETE, INSERT, UPDATE */

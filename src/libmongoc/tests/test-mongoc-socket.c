@@ -6,7 +6,7 @@
 #include "mongoc/mongoc-thread-private.h"
 #include "mongoc/mongoc-errno-private.h"
 #include "TestSuite.h"
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 #include "test-libmongoc.h"
 

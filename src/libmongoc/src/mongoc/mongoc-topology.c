@@ -37,7 +37,7 @@
 
 #include <stdint.h>
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);

@@ -23,7 +23,7 @@
 #include "mongoc-buffer-private.h"
 #include "mcd-time.h"
 #include <mcd-string.h>
-#include <mcd-cmp.h>
+#include <common-cmp-private.h>
 
 void
 _mongoc_http_request_init (mongoc_http_request_t *request)
