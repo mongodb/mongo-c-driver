@@ -26,7 +26,7 @@
 #include "mongoc-compression-private.h"
 
 #include <bson-dsl.h>
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 #include <stdio.h>
 

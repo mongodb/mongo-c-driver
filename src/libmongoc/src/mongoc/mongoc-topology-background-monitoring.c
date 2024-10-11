@@ -27,7 +27,7 @@
 #include "mongoc-topology-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "monitor"

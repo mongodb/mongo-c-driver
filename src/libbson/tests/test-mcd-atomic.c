@@ -16,7 +16,7 @@
 
 
 #include <bson/bson.h>
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 #include "TestSuite.h"
 

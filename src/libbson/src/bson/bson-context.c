@@ -22,7 +22,7 @@
 #include <string.h>
 #include <time.h>
 
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 #include <bson/bson-clock.h>
 #include <bson/bson-context.h>
 #include <bson/bson-context-private.h>

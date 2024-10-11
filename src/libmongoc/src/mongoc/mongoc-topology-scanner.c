@@ -45,7 +45,7 @@
 #include "mongoc-util-private.h"
 #include <mcd-string.h>
 #include <common-cmp-private.h>
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"

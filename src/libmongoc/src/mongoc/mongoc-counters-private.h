@@ -20,7 +20,7 @@
 #define MONGOC_COUNTERS_PRIVATE_H
 
 #include <bson/bson.h>
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 #include "mongoc.h"
 

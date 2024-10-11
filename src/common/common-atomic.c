@@ -15,7 +15,7 @@
  */
 
 
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 #ifdef BSON_OS_UNIX
 /* For sched_yield() */

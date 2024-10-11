@@ -18,7 +18,7 @@
 
 #include "common-thread-private.h"
 #include <bson/bson.h>
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 typedef struct _mongoc_shared_ptr_aux {
    int refcount;

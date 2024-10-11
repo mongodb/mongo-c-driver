@@ -11,7 +11,7 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-reconcile-test"

@@ -2,7 +2,7 @@
 #include "common-thread-private.h"
 
 #include "bson/bson.h"
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 /**
  * Toggle this to enable/disable checks that all items are returned to the pool

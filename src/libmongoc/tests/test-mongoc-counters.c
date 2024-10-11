@@ -22,7 +22,7 @@
 #include "TestSuite.h"
 #include "mock_server/future-functions.h"
 #include <common-cmp-private.h>
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 /* test statistics counters excluding OP_INSERT, OP_UPDATE, and OP_DELETE since
  * those were superseded by write commands in 2.6. */

@@ -31,7 +31,7 @@
 #include "mongoc-database-private.h"
 #include "mongoc-util-private.h"
 #include <mcd-string.h>
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 /*--------------------------------------------------------------------------
  * Auto Encryption options.

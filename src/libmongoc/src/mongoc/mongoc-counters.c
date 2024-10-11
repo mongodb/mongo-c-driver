@@ -33,7 +33,7 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-log.h"
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 
 #pragma pack(1)

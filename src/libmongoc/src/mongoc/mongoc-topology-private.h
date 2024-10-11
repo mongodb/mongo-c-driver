@@ -30,7 +30,7 @@
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
 #include "mongoc-sleep.h"
-#include <mcd-atomic.h>
+#include <common-atomic-private.h>
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
