@@ -298,11 +298,11 @@ test_mcommon_in_range (void)
 void
 test_mcommon_cmp_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/mcd/cmp/equal", test_mcommon_cmp_equal);
-   TestSuite_Add (suite, "/mcd/cmp/not_equal", test_mcommon_cmp_not_equal);
-   TestSuite_Add (suite, "/mcd/cmp/less", test_mcommon_cmp_less);
-   TestSuite_Add (suite, "/mcd/cmp/greater", test_mcommon_cmp_greater);
-   TestSuite_Add (suite, "/mcd/cmp/less_equal", test_mcommon_cmp_less_equal);
-   TestSuite_Add (suite, "/mcd/cmp/greater_equal", test_mcommon_cmp_greater_equal);
-   TestSuite_Add (suite, "/mcd/cmp/in_range", test_mcommon_in_range);
+   TestSuite_Add (suite, "/mcommon/cmp/equal", test_mcommon_cmp_equal);
+   TestSuite_Add (suite, "/mcommon/cmp/not_equal", test_mcommon_cmp_not_equal);
+   TestSuite_Add (suite, "/mcommon/cmp/less", test_mcommon_cmp_less);
+   TestSuite_Add (suite, "/mcommon/cmp/greater", test_mcommon_cmp_greater);
+   TestSuite_Add (suite, "/mcommon/cmp/less_equal", test_mcommon_cmp_less_equal);
+   TestSuite_Add (suite, "/mcommon/cmp/greater_equal", test_mcommon_cmp_greater_equal);
+   TestSuite_Add (suite, "/mcommon/cmp/in_range", test_mcommon_in_range);
 }
