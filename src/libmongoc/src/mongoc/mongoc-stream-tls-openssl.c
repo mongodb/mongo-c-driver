@@ -210,7 +210,7 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls, char *buf, size_t bu
       expire = bson_get_monotonic_time () + (tls->timeout_msec * 1000);
    }
 
-   BSON_ASSERT (mcd_in_range_unsigned (int, buf_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, buf_len));
    ret = BIO_write (openssl->bio, buf, (int) buf_len);
 
    if (ret <= 0) {

@@ -1264,7 +1264,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    // Number of messages sent by background threads depend on the number of
    // members in the replica set.
    const size_t member_count_zu = test_framework_replset_member_count ();
-   ASSERT (mcd_in_range_unsigned (int32_t, member_count_zu));
+   ASSERT (mcommon_in_range_unsigned (int32_t, member_count_zu));
    const int32_t member_count = (int32_t) member_count_zu;
 
    // MongoDB Handshake Spec: Since MongoDB server 4.4, the initial handshake

@@ -202,7 +202,7 @@ mongoc_set_for_each_with_id (mongoc_set_t *set, mongoc_set_for_each_with_id_cb_t
    BSON_ASSERT_PARAM (cb);
    BSON_ASSERT (ctx || true);
 
-   BSON_ASSERT (mcd_in_range_unsigned (uint32_t, set->items_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, set->items_len));
    const uint32_t items_len = (uint32_t) set->items_len;
 
    /* prevent undefined behavior of memcpy(NULL) */
@@ -231,7 +231,7 @@ mongoc_set_for_each_with_id_const (const mongoc_set_t *set, mongoc_set_for_each_
    BSON_ASSERT_PARAM (cb);
    BSON_ASSERT (ctx || true);
 
-   BSON_ASSERT (mcd_in_range_unsigned (uint32_t, set->items_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, set->items_len));
    const uint32_t items_len = (uint32_t) set->items_len;
 
    /* prevent undefined behavior of memcpy(NULL) */

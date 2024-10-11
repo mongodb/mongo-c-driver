@@ -93,7 +93,7 @@ static int32_t
 _mongoc_http_msec_remaining (mcd_timer timer)
 {
    const int64_t msec = mcd_get_milliseconds (mcd_timer_remaining (timer));
-   BSON_ASSERT (mcd_in_range_signed (int32_t, msec));
+   BSON_ASSERT (mcommon_in_range_signed (int32_t, msec));
    return (int32_t) msec;
 }
 
@@ -267,10 +267,10 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    }
 
    const size_t headers_len = (size_t) (ptr - http_response_str);
-   BSON_ASSERT (mcd_in_range_unsigned (int, headers_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, headers_len));
 
    const size_t body_len = http_response_buf.len - headers_len - strlen (header_delimiter);
-   BSON_ASSERT (mcd_in_range_unsigned (int, body_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, body_len));
 
    res->headers_len = (int) headers_len;
    res->headers = bson_strndup (http_response_str, (size_t) headers_len);

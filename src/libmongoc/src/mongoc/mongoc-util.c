@@ -988,7 +988,7 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   BSON_ASSERT (mcd_in_range_unsigned (uint32_t, hex_len / 2u));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, hex_len / 2u));
 
    *len = (uint32_t) (hex_len / 2u);
    out = bson_malloc0 (*len);
@@ -1001,7 +1001,7 @@ hex_to_bin (const char *hex, uint32_t *len)
          return NULL;
       }
 
-      BSON_ASSERT (mcd_in_range_unsigned (uint8_t, hex_char));
+      BSON_ASSERT (mcommon_in_range_unsigned (uint8_t, hex_char));
       out[i / 2u] = (uint8_t) hex_char;
    }
    return out;

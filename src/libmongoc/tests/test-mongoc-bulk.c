@@ -3573,7 +3573,7 @@ test_bulk_max_msg_size (void)
    /* fill up to the 48 000 000 bytes message size */
    bson_init (&doc);
    bson_append_int32 (&doc, "_id", -1, 3);
-   ASSERT (mcd_in_range_unsigned (int, filler_string));
+   ASSERT (mcommon_in_range_unsigned (int, filler_string));
    bson_append_utf8 (&doc, "msg", -1, msg, (int) filler_string);
    mongoc_bulk_operation_insert (bulk, &doc);
    bson_destroy (&doc);
@@ -3608,7 +3608,7 @@ test_bulk_max_msg_size (void)
    /* fill up to the 48 000 001 bytes message size */
    bson_init (&doc);
    bson_append_int32 (&doc, "_id", -1, 3);
-   ASSERT (mcd_in_range_unsigned (int, filler_string + 1u));
+   ASSERT (mcommon_in_range_unsigned (int, filler_string + 1u));
    bson_append_utf8 (&doc, "msg", -1, msg, (int) (filler_string + 1u));
    mongoc_bulk_operation_insert (bulk, &doc);
    bson_destroy (&doc);

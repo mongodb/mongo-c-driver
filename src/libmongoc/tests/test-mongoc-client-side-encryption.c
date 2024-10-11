@@ -602,7 +602,7 @@ test_datakey_and_double_encryption_creating_and_using (mongoc_client_encryption_
       to_encrypt.value.v_utf8.str = bson_strdup (hello);
 
       const size_t len = strlen (to_encrypt.value.v_utf8.str);
-      ASSERT (mcd_in_range_unsigned (uint32_t, len));
+      ASSERT (mcommon_in_range_unsigned (uint32_t, len));
       to_encrypt.value.v_utf8.len = (uint32_t) len;
    }
 
@@ -4737,7 +4737,7 @@ decryption_events_setup (void)
       plaintext.value.v_utf8.str = "hello";
 
       const size_t len = strlen (plaintext.value.v_utf8.str);
-      ASSERT (mcd_in_range_unsigned (uint32_t, len));
+      ASSERT (mcommon_in_range_unsigned (uint32_t, len));
 
       plaintext.value.v_utf8.len = (uint32_t) len;
 

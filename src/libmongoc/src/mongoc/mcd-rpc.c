@@ -1800,7 +1800,7 @@ mcd_rpc_op_compressed_set_compressed_message (mcd_rpc_message *rpc,
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, compressed_message_length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, compressed_message_length));
    rpc->op_compressed.compressed_message = compressed_message;
    rpc->op_compressed.compressed_message_len = compressed_message_length;
    return (int32_t) compressed_message_length;
@@ -1921,7 +1921,7 @@ mcd_rpc_op_msg_section_set_identifier (mcd_rpc_message *rpc, size_t index, const
    rpc->op_msg.sections[index].payload.document_sequence.identifier = identifier;
    rpc->op_msg.sections[index].payload.document_sequence.identifier_len = identifier_len;
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, identifier_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, identifier_len));
    return (int32_t) identifier_len;
 }
 
@@ -1957,7 +1957,7 @@ mcd_rpc_op_msg_section_set_document_sequence (mcd_rpc_message *rpc,
    rpc->op_msg.sections[index].payload.document_sequence.bson_objects = document_sequence;
    rpc->op_msg.sections[index].payload.document_sequence.bson_objects_len = bson_objects_len;
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, document_sequence_length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, document_sequence_length));
    return (int32_t) bson_objects_len;
 }
 
@@ -2104,7 +2104,7 @@ mcd_rpc_op_reply_set_documents (mcd_rpc_message *rpc, const void *documents, siz
    rpc->op_reply.documents = documents;
    rpc->op_reply.documents_len = documents_len;
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, documents_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, documents_len));
    return (int32_t) documents_len;
 }
 
@@ -2152,7 +2152,7 @@ mcd_rpc_op_update_set_full_collection_name (mcd_rpc_message *rpc, const char *fu
    rpc->op_update.full_collection_name = full_collection_name;
    rpc->op_update.full_collection_name_len = length;
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 
@@ -2233,7 +2233,7 @@ mcd_rpc_op_insert_set_full_collection_name (mcd_rpc_message *rpc, const char *fu
    rpc->op_insert.full_collection_name = full_collection_name;
    rpc->op_insert.full_collection_name_len = length;
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 
@@ -2246,7 +2246,7 @@ mcd_rpc_op_insert_set_documents (mcd_rpc_message *rpc, const void *documents, si
    rpc->op_insert.documents = documents;
    rpc->op_insert.documents_len = documents_len;
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, documents_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, documents_len));
    return (int32_t) documents_len;
 }
 
@@ -2319,7 +2319,7 @@ mcd_rpc_op_query_set_full_collection_name (mcd_rpc_message *rpc, const char *ful
    rpc->op_query.full_collection_name = full_collection_name;
    rpc->op_query.full_collection_name_len = length;
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 
@@ -2395,7 +2395,7 @@ mcd_rpc_op_get_more_set_full_collection_name (mcd_rpc_message *rpc, const char *
    rpc->op_get_more.full_collection_name = full_collection_name;
    rpc->op_get_more.full_collection_name_len = length;
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 
@@ -2453,7 +2453,7 @@ mcd_rpc_op_delete_set_full_collection_name (mcd_rpc_message *rpc, const char *fu
    rpc->op_delete.full_collection_name = full_collection_name;
    rpc->op_delete.full_collection_name_len = length;
 
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 

@@ -1154,7 +1154,7 @@ test_cursor_int64_t_maxtimems (void)
    bson_append_bool (max_await_time_ms, "awaitData", 9, true);
    bson_append_int64 (
       max_await_time_ms, MONGOC_CURSOR_MAX_AWAIT_TIME_MS, MONGOC_CURSOR_MAX_AWAIT_TIME_MS_LEN, ms_int64);
-   ASSERT (mcd_in_range_int32_t_unsigned (server_id));
+   ASSERT (mcommon_in_range_int32_t_unsigned (server_id));
    BSON_APPEND_INT32 (max_await_time_ms, "serverId", (uint32_t) server_id);
 
    cursor = mongoc_cursor_new_from_command_reply_with_opts (client,

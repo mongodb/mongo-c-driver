@@ -315,7 +315,7 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       mongoc_lowercase (link_->host, link_->host);
       int req =
          bson_snprintf (link_->host_and_port, sizeof link_->host_and_port, "[%s]:%" PRIu16, link_->host, link_->port);
-      BSON_ASSERT (mcd_in_range_size_t_signed (req));
+      BSON_ASSERT (mcommon_in_range_size_t_signed (req));
       // Use `<`, not `<=` to account for NULL byte.
       BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
    } else if (strchr (host, '/') && strstr (host, ".sock")) {
@@ -328,7 +328,7 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       mongoc_lowercase (link_->host, link_->host);
       int req =
          bson_snprintf (link_->host_and_port, sizeof link_->host_and_port, "%s:%" PRIu16, link_->host, link_->port);
-      BSON_ASSERT (mcd_in_range_size_t_signed (req));
+      BSON_ASSERT (mcommon_in_range_size_t_signed (req));
       // Use `<`, not `<=` to account for NULL byte.
       BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
    }

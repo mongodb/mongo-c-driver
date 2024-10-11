@@ -842,14 +842,14 @@ test_write_past_end (void)
    ASSERT (file);
 
    r = mongoc_gridfs_file_writev (file, iov, 1, 0);
-   ASSERT (mcd_in_range_signed (size_t, r));
+   ASSERT (mcommon_in_range_signed (size_t, r));
    ASSERT_CMPSIZE_T ((size_t) r, ==, len);
 
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, (int64_t) delta, SEEK_SET), ==, 0);
    ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, delta);
 
    r = mongoc_gridfs_file_writev (file, iov, 1, 0);
-   ASSERT (mcd_in_range_signed (size_t, r));
+   ASSERT (mcommon_in_range_signed (size_t, r));
    ASSERT_CMPSIZE_T ((size_t) r, ==, len);
    mongoc_gridfs_file_save (file);
 
@@ -863,11 +863,11 @@ test_write_past_end (void)
    file = mongoc_gridfs_find_one (gridfs, tmp_bson (NULL), &error);
    ASSERT_OR_PRINT (file, error);
 
-   BSON_ASSERT (mcd_in_range_unsigned (size_t, delta + len));
+   BSON_ASSERT (mcommon_in_range_unsigned (size_t, delta + len));
    const size_t total_bytes = (size_t) (delta + len);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, total_bytes, 0);
-   ASSERT (mcd_in_range_signed (size_t, r));
+   ASSERT (mcommon_in_range_signed (size_t, r));
    ASSERT_CMPSIZE_T ((size_t) r, ==, total_bytes);
 
    mongoc_gridfs_file_destroy (file);
@@ -963,7 +963,7 @@ test_stream (void)
 
    stream = mongoc_stream_gridfs_new (file);
 
-   ASSERT (mcd_in_range_signed (size_t, file->length));
+   ASSERT (mcommon_in_range_signed (size_t, file->length));
    const ssize_t r = mongoc_stream_readv (stream, &iov, 1, (size_t) file->length, 0);
    ASSERT_CMPINT64 ((int64_t) r, ==, file->length);
 
@@ -1517,7 +1517,7 @@ test_reading_multiple_chunks (void)
             ssize_t got =
                mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
             ASSERT_CMPSSIZE_T (got, >=, 0);
-            ASSERT (mcd_in_range_int_signed (got));
+            ASSERT (mcommon_in_range_int_signed (got));
             mcd_string_append_printf (str, "%.*s", (int) got, (char *) buf);
             ASSERT_CMPSSIZE_T (got, ==, 4);
          }
@@ -1527,7 +1527,7 @@ test_reading_multiple_chunks (void)
             ssize_t got =
                mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
             ASSERT_CMPSSIZE_T (got, >=, 0);
-            ASSERT (mcd_in_range_int_signed (got));
+            ASSERT (mcommon_in_range_int_signed (got));
             mcd_string_append_printf (str, "%.*s", (int) got, (char *) buf);
             ASSERT_CMPSSIZE_T (got, ==, 3);
          }

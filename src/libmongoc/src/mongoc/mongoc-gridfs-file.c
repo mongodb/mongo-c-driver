@@ -570,7 +570,7 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
 
    const uint64_t target_length = file->pos;
 
-   BSON_ASSERT (mcd_in_range_signed (uint64_t, file->length));
+   BSON_ASSERT (mcommon_in_range_signed (uint64_t, file->length));
    const uint64_t diff = file->pos - (uint64_t) file->length;
 
    if (-1 == mongoc_gridfs_file_seek (file, 0, SEEK_END)) {
@@ -585,7 +585,7 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
       /* Set bytes until we reach the limit or fill a page */
       {
          const uint64_t len = target_length - file->pos;
-         BSON_ASSERT (mcd_in_range_unsigned (uint32_t, len));
+         BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len));
          file->pos += _mongoc_gridfs_file_page_memset0 (file->page, (uint32_t) len);
       }
 
@@ -598,11 +598,11 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
       }
    }
 
-   BSON_ASSERT (mcd_in_range_unsigned (int64_t, target_length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int64_t, target_length));
    file->length = (int64_t) target_length;
    file->is_dirty = true;
 
-   BSON_ASSERT (mcd_in_range_unsigned (ssize_t, diff));
+   BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, diff));
    RETURN ((ssize_t) diff);
 }
 
@@ -931,7 +931,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence)
       offset = delta;
       break;
    case SEEK_CUR:
-      BSON_ASSERT (mcd_in_range_unsigned (int64_t, file->pos));
+      BSON_ASSERT (mcommon_in_range_unsigned (int64_t, file->pos));
       offset = (int64_t) file->pos + delta;
       break;
    case SEEK_END:
@@ -965,15 +965,15 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence)
        * lazily load */
    } else if (file->page) {
       const int64_t n = offset % file->chunk_size;
-      BSON_ASSERT (mcd_in_range_signed (uint32_t, n));
+      BSON_ASSERT (mcommon_in_range_signed (uint32_t, n));
       BSON_ASSERT (_mongoc_gridfs_file_page_seek (file->page, (uint32_t) n));
    }
 
    file->pos = (uint64_t) offset;
 
-   BSON_ASSERT (mcd_in_range_signed (uint64_t, file->chunk_size));
+   BSON_ASSERT (mcommon_in_range_signed (uint64_t, file->chunk_size));
    const uint64_t n = file->pos / (uint64_t) file->chunk_size;
-   BSON_ASSERT (mcd_in_range_unsigned (int32_t, n));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, n));
    file->n = (int32_t) n;
 
    return 0;

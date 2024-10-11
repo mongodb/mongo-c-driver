@@ -582,7 +582,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
       int read_exponent = SSCANF (++str_read, "%" SCNd64 "%n", &temp_exponent, &nread);
       str_read += nread;
 
-      if (!read_exponent || nread == 0 || !mcd_in_range_int32_t_signed (temp_exponent)) {
+      if (!read_exponent || nread == 0 || !mcommon_in_range_int32_t_signed (temp_exponent)) {
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
@@ -627,7 +627,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
        mcommon_cmp_greater_us (radix_position, exponent + (1 << 14))) {
       exponent = BSON_DECIMAL128_EXPONENT_MIN;
    } else {
-      BSON_ASSERT (mcd_in_range_unsigned (int32_t, radix_position));
+      BSON_ASSERT (mcommon_in_range_unsigned (int32_t, radix_position));
       exponent -= (int32_t) radix_position;
    }
 

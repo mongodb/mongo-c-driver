@@ -135,7 +135,7 @@ td_to_bson (const mongoc_topology_description_t *td, bson_t *bson)
    mongoc_set_t const *servers_set = mc_tpld_servers_const (td);
 
    for (size_t i = 0; i < servers_set->items_len; i++) {
-      BSON_ASSERT (mcd_in_range_unsigned (uint32_t, i));
+      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, i));
       bson_uint32_to_string ((uint32_t) i, &key, str, sizeof str);
       sd_to_bson (mongoc_set_get_item_const (servers_set, i), &server);
       BSON_APPEND_DOCUMENT (&servers, key, &server);

@@ -119,7 +119,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_begin ("\"%s\" => [%s]", String, _bsonDSL_strElide (30, Element)); \
    const char *_bbString = (String);                                           \
    const uint64_t length = (Len);                                              \
-   if (mcd_in_range_unsigned (int, length)) {                                  \
+   if (mcommon_in_range_unsigned (int, length)) {                              \
       _bbCtx.key = _bbString;                                                  \
       _bbCtx.key_len = (int) length;                                           \
       _bsonValueOperation (Element);                                           \

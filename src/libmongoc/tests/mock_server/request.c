@@ -55,7 +55,7 @@ request_new (const mongoc_buffer_t *buffer,
    BSON_ASSERT_PARAM (client);
    BSON_ASSERT_PARAM (replies);
 
-   BSON_ASSERT (mcd_in_range_signed (size_t, msg_len));
+   BSON_ASSERT (mcommon_in_range_signed (size_t, msg_len));
 
    request_t *const request = (request_t *) bson_malloc0 (sizeof *request);
 

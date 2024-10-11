@@ -232,10 +232,10 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
 
    /* Start reading everything off the socket to unblock the client */
    do {
-      ASSERT (mcd_in_range_signed (size_t, amount));
+      ASSERT (mcommon_in_range_signed (size_t, amount));
       const ssize_t r = mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
       if (r > 0) {
-         ASSERT (mcd_in_range_signed (int, r));
+         ASSERT (mcommon_in_range_signed (int, r));
          amount -= (int) r;
       }
    } while (amount > 0);
@@ -252,10 +252,10 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
    bson_mutex_unlock (&data->cond_mutex);
 
    do {
-      ASSERT (mcd_in_range_signed (size_t, amount));
+      ASSERT (mcommon_in_range_signed (size_t, amount));
       const ssize_t r = mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
       if (r > 0) {
-         ASSERT (mcd_in_range_signed (int, r));
+         ASSERT (mcommon_in_range_signed (int, r));
          amount -= (int) r;
       }
    } while (amount > 0);
@@ -311,7 +311,7 @@ static BSON_THREAD_FUN (sendv_test_client, data_)
       const ssize_t r = mongoc_stream_writev (stream, &iov, 1, WAIT);
 
       if (r > 0) {
-         BSON_ASSERT (mcd_in_range_signed (int, r));
+         BSON_ASSERT (mcommon_in_range_signed (int, r));
          amount += (int) r;
       }
 

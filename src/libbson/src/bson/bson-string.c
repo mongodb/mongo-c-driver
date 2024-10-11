@@ -108,7 +108,7 @@ bson_string_new (const char *str) /* IN */
 
    ret = bson_malloc0 (sizeof *ret);
    const size_t len_sz = str == NULL ? 0u : strlen (str);
-   BSON_ASSERT (mcd_in_range_unsigned (uint32_t, len_sz));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len_sz));
    const uint32_t len_u32 = (uint32_t) len_sz;
    bson_string_ensure_space (ret, len_u32);
    if (str) {
@@ -206,7 +206,7 @@ _bson_string_append_ex (bson_string_t *string, /* IN */
    BSON_ASSERT (string);
    BSON_ASSERT (str);
 
-   BSON_ASSERT (mcd_in_range_unsigned (uint32_t, len));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len));
    const uint32_t len_u32 = (uint32_t) len;
    BSON_ASSERT (len_u32 <= UINT32_MAX - string->len);
    const uint32_t new_len = len_u32 + string->len;

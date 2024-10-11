@@ -58,7 +58,7 @@ void
 _mongoc_timestamp_append (mongoc_timestamp_t *timestamp, bson_t *bson, char *key)
 {
    const size_t len = strlen (key);
-   BSON_ASSERT (mcd_in_range_unsigned (int, len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, len));
    bson_append_timestamp (bson, key, (int) len, timestamp->timestamp, timestamp->increment);
 }
 

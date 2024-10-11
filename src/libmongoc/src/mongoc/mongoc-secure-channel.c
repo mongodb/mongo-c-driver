@@ -425,7 +425,7 @@ mongoc_secure_channel_read (mongoc_stream_tls_t *tls, void *data, size_t data_le
 {
    BSON_ASSERT_PARAM (tls);
 
-   if (BSON_UNLIKELY (!mcd_in_range_signed (int32_t, tls->timeout_msec))) {
+   if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
       MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
       return -1;
@@ -453,7 +453,7 @@ mongoc_secure_channel_write (mongoc_stream_tls_t *tls, const void *data, size_t 
 {
    BSON_ASSERT_PARAM (tls);
 
-   if (BSON_UNLIKELY (!mcd_in_range_signed (int32_t, tls->timeout_msec))) {
+   if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
       MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
       return -1;

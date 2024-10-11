@@ -414,7 +414,7 @@ _mongoc_stream_writev_full (
       total_bytes += iov[i].iov_len;
    }
 
-   if (BSON_UNLIKELY (!mcd_in_range_signed (int32_t, timeout_msec))) {
+   if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, timeout_msec))) {
       // CDRIVER-4589
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,

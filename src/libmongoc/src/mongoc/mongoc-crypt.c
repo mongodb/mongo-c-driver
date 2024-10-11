@@ -649,7 +649,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          }
          mongocrypt_binary_destroy (http_reply);
 
-         BSON_ASSERT (mcd_in_range_signed (uint32_t, read_ret));
+         BSON_ASSERT (mcommon_in_range_signed (uint32_t, read_ret));
          http_reply = mongocrypt_binary_new_from_data (buf, (uint32_t) read_ret);
          if (!mongocrypt_kms_ctx_feed (kms_ctx, http_reply)) {
             _kms_ctx_check_error (kms_ctx, error, true);

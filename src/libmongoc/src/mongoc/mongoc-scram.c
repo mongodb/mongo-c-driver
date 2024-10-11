@@ -808,7 +808,7 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram, uint8_t *verificat
 
    if (!*scram->server_key) {
       const size_t key_len = strlen (MONGOC_SCRAM_SERVER_KEY);
-      BSON_ASSERT (mcd_in_range_unsigned (int, key_len));
+      BSON_ASSERT (mcommon_in_range_unsigned (int, key_len));
 
       /* ServerKey := HMAC(SaltedPassword, "Server Key") */
       mongoc_crypto_hmac (&scram->crypto,

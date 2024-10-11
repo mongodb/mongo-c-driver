@@ -186,7 +186,7 @@ _mongoc_buffer_append_from_stream (
 
    BSON_ASSERT ((buffer->len + size) <= buffer->datalen);
 
-   if (BSON_UNLIKELY (!mcd_in_range_signed (int32_t, timeout_msec))) {
+   if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, timeout_msec))) {
       // CDRIVER-4589
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
@@ -239,7 +239,7 @@ _mongoc_buffer_fill (
    BSON_ASSERT (buffer->datalen);
 
    if (min_bytes <= buffer->len) {
-      BSON_ASSERT (mcd_in_range_unsigned (ssize_t, buffer->len));
+      BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, buffer->len));
       RETURN ((ssize_t) buffer->len);
    }
 
@@ -249,7 +249,7 @@ _mongoc_buffer_fill (
 
    avail_bytes = buffer->datalen - buffer->len;
 
-   if (BSON_UNLIKELY (!mcd_in_range_signed (int32_t, timeout_msec))) {
+   if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, timeout_msec))) {
       // CDRIVER-4589
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
@@ -278,7 +278,7 @@ _mongoc_buffer_fill (
       RETURN (-1);
    }
 
-   BSON_ASSERT (mcd_in_range_unsigned (ssize_t, buffer->len));
+   BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, buffer->len));
    RETURN ((ssize_t) buffer->len);
 }
 
@@ -319,7 +319,7 @@ _mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
 
    BSON_ASSERT ((buffer->len + size) <= buffer->datalen);
 
-   if (BSON_UNLIKELY (!mcd_in_range_signed (int32_t, timeout_msec))) {
+   if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, timeout_msec))) {
       // CDRIVER-4589
       MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", timeout_msec);
       RETURN (-1);

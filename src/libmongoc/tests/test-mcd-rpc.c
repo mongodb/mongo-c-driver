@@ -356,7 +356,7 @@ test_rpc_message_from_data_op_compressed_valid (void)
       mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-      ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+      ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
       ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -420,7 +420,7 @@ _test_rpc_message_from_data_op_msg_valid_kind_0 (const uint8_t *data, size_t dat
    mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
    ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-   ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+   ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
    ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
    ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
    ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -470,7 +470,7 @@ _test_rpc_message_from_data_op_msg_valid_kind_1_single (const uint8_t *data, siz
    mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
    ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-   ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+   ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
    ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
    ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
    ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -542,7 +542,7 @@ _test_rpc_message_from_data_op_msg_valid_kind_1_multiple (const uint8_t *data, s
    mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
    ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-   ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+   ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
    ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
    ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
    ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -659,7 +659,7 @@ test_rpc_message_from_data_op_reply_valid (void)
       mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-      ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+      ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
       ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -759,7 +759,7 @@ test_rpc_message_from_data_op_update_valid (void)
       mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-      ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+      ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
       ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -822,7 +822,7 @@ test_rpc_message_from_data_op_insert_valid (void)
       mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-      ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+      ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
       ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -901,7 +901,7 @@ test_rpc_message_from_data_op_query_valid (void)
       mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-      ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+      ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
       ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -1005,7 +1005,7 @@ test_rpc_message_from_data_op_get_more_valid (void)
       mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-      ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+      ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
       ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -1033,7 +1033,7 @@ test_rpc_message_from_data_op_delete_valid (void)
       mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-      ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+      ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
       ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);
@@ -1072,7 +1072,7 @@ test_rpc_message_from_data_op_kill_cursors_valid (void)
       mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, data_len, &data_end);
 
       ASSERT_RPC_MESSAGE_RESULT (rpc, data, data_end, data_len);
-      ASSERT (mcd_in_range_unsigned (int32_t, data_len));
+      ASSERT (mcommon_in_range_unsigned (int32_t, data_len));
       ASSERT_CMPINT32 (mcd_rpc_header_get_message_length (rpc), ==, (int32_t) data_len);
       ASSERT_CMPINT32 (mcd_rpc_header_get_request_id (rpc), ==, 16909060);
       ASSERT_CMPINT32 (mcd_rpc_header_get_response_to (rpc), ==, 84281096);

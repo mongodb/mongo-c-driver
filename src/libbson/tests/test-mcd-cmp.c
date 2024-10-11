@@ -221,7 +221,7 @@ BSON_STATIC_ASSERT2 (ssize_t_size_min_check, SSIZE_MIN + 1 == -SSIZE_MAX);
 BSON_STATIC_ASSERT2 (ssize_t_size_max_check, (size_t) SSIZE_MAX <= SIZE_MAX);
 
 static void
-test_mcd_in_range (void)
+test_mcommon_in_range (void)
 {
    const int64_t int8_min = INT8_MIN;
    const int64_t int8_max = INT8_MAX;
@@ -234,65 +234,65 @@ test_mcd_in_range (void)
    const ssize_t ssize_min = SSIZE_MIN;
    const ssize_t ssize_max = SSIZE_MAX;
 
-   ASSERT (!mcd_in_range_signed (int8_t, int8_min - 1));
-   ASSERT (mcd_in_range_signed (int8_t, int8_min));
-   ASSERT (mcd_in_range_signed (int8_t, 0));
-   ASSERT (mcd_in_range_signed (int8_t, int8_max));
-   ASSERT (!mcd_in_range_signed (int8_t, int8_max + 1));
+   ASSERT (!mcommon_in_range_signed (int8_t, int8_min - 1));
+   ASSERT (mcommon_in_range_signed (int8_t, int8_min));
+   ASSERT (mcommon_in_range_signed (int8_t, 0));
+   ASSERT (mcommon_in_range_signed (int8_t, int8_max));
+   ASSERT (!mcommon_in_range_signed (int8_t, int8_max + 1));
 
-   ASSERT (mcd_in_range_unsigned (int8_t, 0u));
-   ASSERT (mcd_in_range_unsigned (int8_t, (uint64_t) int8_max));
-   ASSERT (!mcd_in_range_unsigned (int8_t, (uint64_t) (int8_max + 1)));
+   ASSERT (mcommon_in_range_unsigned (int8_t, 0u));
+   ASSERT (mcommon_in_range_unsigned (int8_t, (uint64_t) int8_max));
+   ASSERT (!mcommon_in_range_unsigned (int8_t, (uint64_t) (int8_max + 1)));
 
-   ASSERT (!mcd_in_range_signed (uint8_t, int8_min - 1));
-   ASSERT (!mcd_in_range_signed (uint8_t, int8_min));
-   ASSERT (mcd_in_range_signed (uint8_t, 0));
-   ASSERT (mcd_in_range_signed (uint8_t, int8_max));
-   ASSERT (mcd_in_range_signed (uint8_t, int8_max + 1));
-   ASSERT (mcd_in_range_signed (uint8_t, (int64_t) uint8_max));
-   ASSERT (!mcd_in_range_signed (uint8_t, (int64_t) uint8_max + 1));
+   ASSERT (!mcommon_in_range_signed (uint8_t, int8_min - 1));
+   ASSERT (!mcommon_in_range_signed (uint8_t, int8_min));
+   ASSERT (mcommon_in_range_signed (uint8_t, 0));
+   ASSERT (mcommon_in_range_signed (uint8_t, int8_max));
+   ASSERT (mcommon_in_range_signed (uint8_t, int8_max + 1));
+   ASSERT (mcommon_in_range_signed (uint8_t, (int64_t) uint8_max));
+   ASSERT (!mcommon_in_range_signed (uint8_t, (int64_t) uint8_max + 1));
 
-   ASSERT (mcd_in_range_unsigned (uint8_t, 0u));
-   ASSERT (mcd_in_range_unsigned (uint8_t, uint8_max));
-   ASSERT (!mcd_in_range_unsigned (uint8_t, uint8_max + 1u));
+   ASSERT (mcommon_in_range_unsigned (uint8_t, 0u));
+   ASSERT (mcommon_in_range_unsigned (uint8_t, uint8_max));
+   ASSERT (!mcommon_in_range_unsigned (uint8_t, uint8_max + 1u));
 
-   ASSERT (!mcd_in_range_signed (int32_t, int32_min - 1));
-   ASSERT (mcd_in_range_signed (int32_t, int32_min));
-   ASSERT (mcd_in_range_signed (int32_t, 0));
-   ASSERT (mcd_in_range_signed (int32_t, int32_max));
-   ASSERT (!mcd_in_range_signed (int32_t, int32_max + 1));
+   ASSERT (!mcommon_in_range_signed (int32_t, int32_min - 1));
+   ASSERT (mcommon_in_range_signed (int32_t, int32_min));
+   ASSERT (mcommon_in_range_signed (int32_t, 0));
+   ASSERT (mcommon_in_range_signed (int32_t, int32_max));
+   ASSERT (!mcommon_in_range_signed (int32_t, int32_max + 1));
 
-   ASSERT (mcd_in_range_unsigned (int32_t, 0u));
-   ASSERT (mcd_in_range_unsigned (int32_t, (uint64_t) int32_max));
-   ASSERT (!mcd_in_range_unsigned (int32_t, (uint64_t) (int32_max + 1)));
+   ASSERT (mcommon_in_range_unsigned (int32_t, 0u));
+   ASSERT (mcommon_in_range_unsigned (int32_t, (uint64_t) int32_max));
+   ASSERT (!mcommon_in_range_unsigned (int32_t, (uint64_t) (int32_max + 1)));
 
-   ASSERT (!mcd_in_range_signed (uint32_t, int32_min - 1));
-   ASSERT (!mcd_in_range_signed (uint32_t, int32_min));
-   ASSERT (mcd_in_range_signed (uint32_t, 0));
-   ASSERT (mcd_in_range_signed (uint32_t, int32_max));
-   ASSERT (mcd_in_range_signed (uint32_t, int32_max + 1));
-   ASSERT (mcd_in_range_signed (uint32_t, (int64_t) uint32_max));
-   ASSERT (!mcd_in_range_signed (uint32_t, (int64_t) uint32_max + 1));
+   ASSERT (!mcommon_in_range_signed (uint32_t, int32_min - 1));
+   ASSERT (!mcommon_in_range_signed (uint32_t, int32_min));
+   ASSERT (mcommon_in_range_signed (uint32_t, 0));
+   ASSERT (mcommon_in_range_signed (uint32_t, int32_max));
+   ASSERT (mcommon_in_range_signed (uint32_t, int32_max + 1));
+   ASSERT (mcommon_in_range_signed (uint32_t, (int64_t) uint32_max));
+   ASSERT (!mcommon_in_range_signed (uint32_t, (int64_t) uint32_max + 1));
 
-   ASSERT (mcd_in_range_unsigned (uint32_t, 0u));
-   ASSERT (mcd_in_range_unsigned (uint32_t, uint32_max));
-   ASSERT (!mcd_in_range_unsigned (uint32_t, uint32_max + 1u));
+   ASSERT (mcommon_in_range_unsigned (uint32_t, 0u));
+   ASSERT (mcommon_in_range_unsigned (uint32_t, uint32_max));
+   ASSERT (!mcommon_in_range_unsigned (uint32_t, uint32_max + 1u));
 
-   ASSERT (mcd_in_range_signed (ssize_t, ssize_min));
-   ASSERT (mcd_in_range_signed (ssize_t, 0));
-   ASSERT (mcd_in_range_signed (ssize_t, ssize_max));
+   ASSERT (mcommon_in_range_signed (ssize_t, ssize_min));
+   ASSERT (mcommon_in_range_signed (ssize_t, 0));
+   ASSERT (mcommon_in_range_signed (ssize_t, ssize_max));
 
-   ASSERT (mcd_in_range_unsigned (ssize_t, 0u));
-   ASSERT (mcd_in_range_unsigned (ssize_t, (size_t) ssize_max));
-   ASSERT (!mcd_in_range_unsigned (ssize_t, (size_t) ssize_max + 1u));
+   ASSERT (mcommon_in_range_unsigned (ssize_t, 0u));
+   ASSERT (mcommon_in_range_unsigned (ssize_t, (size_t) ssize_max));
+   ASSERT (!mcommon_in_range_unsigned (ssize_t, (size_t) ssize_max + 1u));
 
-   ASSERT (!mcd_in_range_signed (size_t, ssize_min));
-   ASSERT (mcd_in_range_signed (size_t, 0));
-   ASSERT (mcd_in_range_signed (size_t, ssize_max));
+   ASSERT (!mcommon_in_range_signed (size_t, ssize_min));
+   ASSERT (mcommon_in_range_signed (size_t, 0));
+   ASSERT (mcommon_in_range_signed (size_t, ssize_max));
 
-   ASSERT (mcd_in_range_unsigned (size_t, 0u));
-   ASSERT (mcd_in_range_unsigned (size_t, (size_t) ssize_max));
-   ASSERT (mcd_in_range_unsigned (size_t, (size_t) ssize_max + 1u));
+   ASSERT (mcommon_in_range_unsigned (size_t, 0u));
+   ASSERT (mcommon_in_range_unsigned (size_t, (size_t) ssize_max));
+   ASSERT (mcommon_in_range_unsigned (size_t, (size_t) ssize_max + 1u));
 }
 
 void
@@ -304,5 +304,5 @@ test_mcommon_cmp_install (TestSuite *suite)
    TestSuite_Add (suite, "/mcd/cmp/greater", test_mcommon_cmp_greater);
    TestSuite_Add (suite, "/mcd/cmp/less_equal", test_mcommon_cmp_less_equal);
    TestSuite_Add (suite, "/mcd/cmp/greater_equal", test_mcommon_cmp_greater_equal);
-   TestSuite_Add (suite, "/mcd/cmp/in_range", test_mcd_in_range);
+   TestSuite_Add (suite, "/mcd/cmp/in_range", test_mcommon_in_range);
 }

@@ -690,7 +690,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       ulen = BSON_UINT32_FROM_LE (ulen);
 
       // Although messageLength is an int32, it should never be negative.
-      BSON_ASSERT (mcd_in_range_unsigned (int32_t, ulen));
+      BSON_ASSERT (mcommon_in_range_unsigned (int32_t, ulen));
       const int32_t slen = (int32_t) ulen;
 
       if (slen > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {

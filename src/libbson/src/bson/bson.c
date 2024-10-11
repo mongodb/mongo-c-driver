@@ -2824,7 +2824,7 @@ _bson_as_json_visit_after (const bson_iter_t *iter, const char *key, void *data)
       state->max_len_reached = true;
 
       if (mcommon_cmp_greater_us (state->str->len, state->max_len)) {
-         BSON_ASSERT (mcd_in_range_signed (uint32_t, state->max_len));
+         BSON_ASSERT (mcommon_in_range_signed (uint32_t, state->max_len));
          /* Truncate string to maximum length */
          mcd_string_truncate (state->str, (uint32_t) state->max_len);
       }
@@ -2922,7 +2922,7 @@ _bson_as_json_visit_codewscope (
 
    /* Encode scope with the same mode */
    if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
-      BSON_ASSERT (mcd_in_range_unsigned (int32_t, state->str->len));
+      BSON_ASSERT (mcommon_in_range_unsigned (int32_t, state->str->len));
       max_scope_len = BSON_MAX (0, state->max_len - (int32_t) state->str->len);
    }
 
@@ -2975,7 +2975,7 @@ _bson_as_json_visit_document (const bson_iter_t *iter, const char *key, const bs
       child_state.mode = state->mode;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
       if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
-         BSON_ASSERT (mcd_in_range_unsigned (int32_t, state->str->len));
+         BSON_ASSERT (mcommon_in_range_unsigned (int32_t, state->str->len));
          child_state.max_len = BSON_MAX (0, state->max_len - (int32_t) state->str->len);
       }
 
@@ -3024,7 +3024,7 @@ _bson_as_json_visit_array (const bson_iter_t *iter, const char *key, const bson_
       child_state.mode = state->mode;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
       if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
-         BSON_ASSERT (mcd_in_range_unsigned (int32_t, state->str->len));
+         BSON_ASSERT (mcommon_in_range_unsigned (int32_t, state->str->len));
          child_state.max_len = BSON_MAX (0, state->max_len - (int32_t) state->str->len);
       }
 

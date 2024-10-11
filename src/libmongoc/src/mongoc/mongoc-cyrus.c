@@ -357,7 +357,7 @@ _mongoc_cyrus_start (mongoc_cyrus_t *sasl, uint8_t **outbuf, uint32_t *outbuflen
          error, MONGOC_ERROR_SASL, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Unable to base64 encode client SASL message");
       return false;
    } else {
-      BSON_ASSERT (mcd_in_range_signed (uint32_t, b64_ret));
+      BSON_ASSERT (mcommon_in_range_signed (uint32_t, b64_ret));
       *outbuflen = (uint32_t) b64_ret;
    }
 
@@ -447,7 +447,7 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
       } else {
          /* Set the output length to the number of characters written excluding
           * the NULL. */
-         BSON_ASSERT (mcd_in_range_signed (uint32_t, b64_ret));
+         BSON_ASSERT (mcommon_in_range_signed (uint32_t, b64_ret));
          *outbuflen = (uint32_t) b64_ret;
       }
    }

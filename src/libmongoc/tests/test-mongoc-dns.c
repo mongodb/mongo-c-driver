@@ -898,7 +898,7 @@ _mock_rr_resolver_prose_test_10 (const char *service,
 
    if (rr_type == MONGOC_RR_SRV) {
       const size_t count = _mongoc_host_list_length (rr_data->hosts);
-      BSON_ASSERT (mcd_in_range_unsigned (uint32_t, count));
+      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, count));
 
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
                                    "localhost.test.build.10gen.cc:27019",
@@ -1000,7 +1000,7 @@ _mock_rr_resolver_prose_test_11 (const char *service,
 
    if (rr_type == MONGOC_RR_SRV) {
       const size_t count = _mongoc_host_list_length (rr_data->hosts);
-      BSON_ASSERT (mcd_in_range_unsigned (uint32_t, count));
+      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, count));
 
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019", "localhost.test.build.10gen.cc:27020");
       rr_data->count = (uint32_t) count;
@@ -1099,7 +1099,7 @@ _mock_rr_resolver_prose_test_12 (const char *service,
 
    if (rr_type == MONGOC_RR_SRV) {
       const size_t count = _mongoc_host_list_length (rr_data->hosts);
-      BSON_ASSERT (mcd_in_range_unsigned (uint32_t, count));
+      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, count));
 
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
                                    "localhost.test.build.10gen.cc:27019",
@@ -1250,7 +1250,7 @@ _mock_rr_resolver_with_override (const char *service,
    if (rr_type == MONGOC_RR_SRV) {
       bson_mutex_lock (&rr_override.lock);
       const size_t count = _mongoc_host_list_length (rr_override.hosts);
-      BSON_ASSERT (mcd_in_range_unsigned (uint32_t, count));
+      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, count));
       rr_data->hosts = _mongoc_host_list_copy_all (rr_override.hosts);
       rr_data->count = (uint32_t) count;
       rr_data->txt_record_opts = NULL;
