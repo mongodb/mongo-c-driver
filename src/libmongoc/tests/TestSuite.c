@@ -203,7 +203,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       } else if (!strcmp (mock_server_log, "stderr")) {
          suite->mock_server_log = stderr;
       } else if (!strcmp (mock_server_log, "json")) {
-         suite->mock_server_log_buf = mcd_string_new (NULL);
+         suite->mock_server_log_buf = mcommon_string_new (NULL);
       } else {
          test_error ("Unrecognized option: MONGOC_TEST_SERVER_LOG=%s", mock_server_log);
       }
@@ -507,7 +507,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
       close (pipefd[1]);
       while ((nread = read (pipefd[0], buf, sizeof (buf) - 1)) > 0) {
          buf[nread] = '\0';
-         mcd_string_append (suite->mock_server_log_buf, buf);
+         mcommon_string_append (suite->mock_server_log_buf, buf);
       }
    }
 
@@ -522,10 +522,10 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
 
 /* replace " with \", newline with \n, tab with four spaces */
 static void
-_append_json_escaped (mcd_string_t *buf, const char *s)
+_append_json_escaped (mcommon_string_t *buf, const char *s)
 {
    char *escaped = bson_utf8_escape_for_json (s, -1);
-   mcd_string_append (buf, escaped);
+   mcommon_string_append (buf, escaped);
    bson_free (escaped);
 }
 
@@ -538,14 +538,14 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 {
    int64_t t1, t2, t3;
    char name[MAX_TEST_NAME_LENGTH];
-   mcd_string_t *buf;
-   mcd_string_t *mock_server_log_buf;
+   mcommon_string_t *buf;
+   mcommon_string_t *mock_server_log_buf;
    size_t i;
    int status = 0;
 
    bson_snprintf (name, sizeof name, "%s%s", suite->name, test->name);
 
-   buf = mcd_string_new (NULL);
+   buf = mcommon_string_new (NULL);
 
    if (suite->flags & TEST_DEBUGOUTPUT) {
       test_msg ("Begin %s, seed %u", name, test->seed);
@@ -559,12 +559,12 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
             test_msg ("@@ctest-skipped@@");
          }
          if (!suite->silent) {
-            mcd_string_append_printf (buf,
-                                      "    { \"status\": \"skip\", \"test_file\": \"%s\","
-                                      " \"reason\": \"%s\" }%s",
-                                      test->name,
-                                      skip->reason,
-                                      ((*count) == 1) ? "" : ",");
+            mcommon_string_append_printf (buf,
+                                          "    { \"status\": \"skip\", \"test_file\": \"%s\","
+                                          " \"reason\": \"%s\" }%s",
+                                          test->name,
+                                          skip->reason,
+                                          ((*count) == 1) ? "" : ",");
             test_msg ("%s", buf->str);
             if (suite->outfile) {
                fprintf (suite->outfile, "%s", buf->str);
@@ -583,7 +583,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
             test_msg ("@@ctest-skipped@@");
          }
          if (!suite->silent) {
-            mcd_string_append_printf (
+            mcommon_string_append_printf (
                buf, "    { \"status\": \"skip\", \"test_file\": \"%s\" }%s", test->name, ((*count) == 1) ? "" : ",");
             test_msg ("%s", buf->str);
             if (suite->outfile) {
@@ -626,37 +626,37 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    ASSERT_CMPINT64 (t2, >=, t1);
    t3 = t2 - t1;
 
-   mcd_string_append_printf (buf,
-                             "    { \"status\": \"%s\", "
-                             "\"test_file\": \"%s\", "
-                             "\"seed\": \"%u\", "
-                             "\"start\": %u.%06u, "
-                             "\"end\": %u.%06u, "
-                             "\"elapsed\": %u.%06u ",
-                             (status == 0) ? "pass" : "fail",
-                             name,
-                             test->seed,
-                             (unsigned) t1 / (1000 * 1000),
-                             (unsigned) t1 % (1000 * 1000),
-                             (unsigned) t2 / (1000 * 1000),
-                             (unsigned) t2 % (1000 * 1000),
-                             (unsigned) t3 / (1000 * 1000),
-                             (unsigned) t3 % (1000 * 1000));
+   mcommon_string_append_printf (buf,
+                                 "    { \"status\": \"%s\", "
+                                 "\"test_file\": \"%s\", "
+                                 "\"seed\": \"%u\", "
+                                 "\"start\": %u.%06u, "
+                                 "\"end\": %u.%06u, "
+                                 "\"elapsed\": %u.%06u ",
+                                 (status == 0) ? "pass" : "fail",
+                                 name,
+                                 test->seed,
+                                 (unsigned) t1 / (1000 * 1000),
+                                 (unsigned) t1 % (1000 * 1000),
+                                 (unsigned) t2 / (1000 * 1000),
+                                 (unsigned) t2 % (1000 * 1000),
+                                 (unsigned) t3 / (1000 * 1000),
+                                 (unsigned) t3 % (1000 * 1000));
 
    mock_server_log_buf = suite->mock_server_log_buf;
 
    if (mock_server_log_buf && mock_server_log_buf->len) {
-      mcd_string_append (buf, ", \"log_raw\": \"");
+      mcommon_string_append (buf, ", \"log_raw\": \"");
       _append_json_escaped (buf, mock_server_log_buf->str);
-      mcd_string_append (buf, "\"");
+      mcommon_string_append (buf, "\"");
 
-      mcd_string_truncate (mock_server_log_buf, 0);
+      mcommon_string_truncate (mock_server_log_buf, 0);
    }
 
-   mcd_string_append_printf (buf, " }");
+   mcommon_string_append_printf (buf, " }");
 
    if (*count > 1) {
-      mcd_string_append_printf (buf, ",");
+      mcommon_string_append_printf (buf, ",");
    }
 
    test_msg ("%s", buf->str);
@@ -666,7 +666,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    }
 
 done:
-   mcd_string_free (buf, true);
+   mcommon_string_free (buf, true);
 
    return status ? 1 : 0;
 }
@@ -1124,7 +1124,7 @@ TestSuite_Destroy (TestSuite *suite)
    }
 
    if (suite->mock_server_log_buf) {
-      mcd_string_free (suite->mock_server_log_buf, true);
+      mcommon_string_free (suite->mock_server_log_buf, true);
    }
 
    bson_free (suite->name);
@@ -1177,7 +1177,7 @@ test_suite_mock_server_log (const char *msg, ...)
       va_end (ap);
 
       if (gTestSuite->mock_server_log_buf) {
-         mcd_string_append_printf (gTestSuite->mock_server_log_buf, "%s\n", formatted_msg);
+         mcommon_string_append_printf (gTestSuite->mock_server_log_buf, "%s\n", formatted_msg);
       } else {
          fprintf (gTestSuite->mock_server_log, "%s\n", formatted_msg);
          fflush (gTestSuite->mock_server_log);

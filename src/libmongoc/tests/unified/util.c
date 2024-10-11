@@ -54,10 +54,10 @@ bson_copy_and_sort (const bson_t *in)
 typedef struct {
    const char *str;
    bson_type_t type;
-} mcd_string_and_type_t;
+} mcommon_string_and_type_t;
 
 /* List of aliases: https://www.mongodb.com/docs/manual/reference/bson-types/ */
-mcd_string_and_type_t bson_type_map[] = {
+mcommon_string_and_type_t bson_type_map[] = {
    {"double", BSON_TYPE_DOUBLE},   {"string", BSON_TYPE_UTF8},
    {"object", BSON_TYPE_DOCUMENT}, {"array", BSON_TYPE_ARRAY},
    {"binData", BSON_TYPE_BINARY},  {"undefined", BSON_TYPE_UNDEFINED},

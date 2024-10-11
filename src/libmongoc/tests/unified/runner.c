@@ -763,11 +763,11 @@ check_run_on_requirement (test_runner_t *test_runner,
 static bool
 check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requirements, const char **reason)
 {
-   mcd_string_t *fail_reasons = NULL;
+   mcommon_string_t *fail_reasons = NULL;
    bool requirements_satisfied = false;
    bson_iter_t iter;
 
-   fail_reasons = mcd_string_new ("");
+   fail_reasons = mcommon_string_new ("");
    BSON_FOREACH (run_on_requirements, iter)
    {
       bson_t run_on_requirement;
@@ -784,7 +784,7 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
          break;
       }
 
-      mcd_string_append_printf (
+      mcommon_string_append_printf (
          fail_reasons, "- Requirement %s failed because: %s\n", bson_iter_key (&iter), fail_reason);
       bson_free (fail_reason);
    }
@@ -793,7 +793,7 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
    if (!requirements_satisfied) {
       (*reason) = tmp_str ("runOnRequirements not satisfied:\n%s", fail_reasons->str);
    }
-   mcd_string_free (fail_reasons, true);
+   mcommon_string_free (fail_reasons, true);
    return requirements_satisfied;
 }
 

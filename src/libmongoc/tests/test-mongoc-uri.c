@@ -2251,10 +2251,10 @@ test_parses_long_ipv6 (void)
    // Test the largest permitted IPv6 literal.
    {
       // Construct a string of repeating `:`.
-      mcd_string_t *host = mcd_string_new (NULL);
+      mcommon_string_t *host = mcommon_string_new (NULL);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2; i++) {
          // Max IPv6 literal is two less due to including `[` and `]`.
-         mcd_string_append (host, ":");
+         mcommon_string_append (host, ":");
       }
 
       char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
@@ -2270,15 +2270,15 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      mcd_string_free (host, true /* free_segment */);
+      mcommon_string_free (host, true /* free_segment */);
    }
 
    // Test one character more than the largest IPv6 literal.
    {
       // Construct a string of repeating `:`.
-      mcd_string_t *host = mcd_string_new (NULL);
+      mcommon_string_t *host = mcommon_string_new (NULL);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2 + 1; i++) {
-         mcd_string_append (host, ":");
+         mcommon_string_append (host, ":");
       }
 
       char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
@@ -2297,7 +2297,7 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      mcd_string_free (host, true /* free_segment */);
+      mcommon_string_free (host, true /* free_segment */);
    }
 }
 

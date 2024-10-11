@@ -81,7 +81,7 @@ _mongoc_cfstringref_to_cstring (CFStringRef str)
 }
 
 static void
-_bson_append_cftyperef (mcd_string_t *retval, const char *label, CFTypeRef str)
+_bson_append_cftyperef (mcommon_string_t *retval, const char *label, CFTypeRef str)
 {
    char *cs;
 
@@ -89,10 +89,10 @@ _bson_append_cftyperef (mcd_string_t *retval, const char *label, CFTypeRef str)
       cs = _mongoc_cfstringref_to_cstring (str);
 
       if (cs) {
-         mcd_string_append_printf (retval, "%s%s", label, cs);
+         mcommon_string_append_printf (retval, "%s%s", label, cs);
          bson_free (cs);
       } else {
-         mcd_string_append_printf (retval, "%s(null)", label);
+         mcommon_string_append_printf (retval, "%s(null)", label);
       }
    }
 }
@@ -125,7 +125,7 @@ char *
 _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
 {
    CFTypeRef value;
-   mcd_string_t *retval;
+   mcommon_string_t *retval;
    CFTypeRef subject_name;
    CFDictionaryRef cert_dict;
 
@@ -146,7 +146,7 @@ _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
       return NULL;
    }
 
-   retval = mcd_string_new ("");
+   retval = mcommon_string_new ("");
    ;
 
    value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDCountryName);
@@ -188,7 +188,7 @@ _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
    _bson_append_cftyperef (retval, ",STREET", value);
 
    CFRelease (cert_dict);
-   return mcd_string_free (retval, false);
+   return mcommon_string_free (retval, false);
 }
 
 

@@ -1968,7 +1968,7 @@ static void
 _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_stream_t *client)
 {
    char *doc_json;
-   mcd_string_t *docs_json;
+   mcommon_string_t *docs_json;
    uint8_t *buf;
    uint8_t *ptr;
    size_t len;
@@ -1993,13 +1993,13 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
       return;
    }
 
-   docs_json = mcd_string_new ("");
+   docs_json = mcommon_string_new ("");
    for (int i = 0; i < n_docs; i++) {
       doc_json = bson_as_json (&docs[i], NULL);
-      mcd_string_append (docs_json, doc_json);
+      mcommon_string_append (docs_json, doc_json);
       bson_free (doc_json);
       if (i < n_docs - 1) {
-         mcd_string_append (docs_json, ", ");
+         mcommon_string_append (docs_json, ", ");
       }
    }
 
@@ -2071,7 +2071,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
 
    bson_free (iov);
    mcd_rpc_message_destroy (rpc);
-   mcd_string_free (docs_json, true);
+   mcommon_string_free (docs_json, true);
    bson_free (buf);
 }
 
@@ -2094,7 +2094,7 @@ void
 rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary, int has_tags, ...)
 {
    va_list ap;
-   mcd_string_t *hosts;
+   mcommon_string_t *hosts;
    bool first;
    mock_server_t *host;
 
@@ -2103,7 +2103,7 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
                     max_wire_version,
                     WIRE_VERSION_MIN);
 
-   hosts = mcd_string_new ("");
+   hosts = mcommon_string_new ("");
 
    va_start (ap, has_tags);
 
@@ -2112,10 +2112,10 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
       if (first) {
          first = false;
       } else {
-         mcd_string_append (hosts, ",");
+         mcommon_string_append (hosts, ",");
       }
 
-      mcd_string_append_printf (hosts, "'%s'", mock_server_get_host_and_port (host));
+      mcommon_string_append_printf (hosts, "'%s'", mock_server_get_host_and_port (host));
    }
 
    va_end (ap);
@@ -2139,5 +2139,5 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
                            max_wire_version,
                            hosts->str);
 
-   mcd_string_free (hosts, true);
+   mcommon_string_free (hosts, true);
 }

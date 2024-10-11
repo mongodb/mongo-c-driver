@@ -135,16 +135,16 @@ static bool
 txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
    DWORD i;
-   mcd_string_t *txt;
+   mcommon_string_t *txt;
 
-   txt = mcd_string_new (NULL);
+   txt = mcommon_string_new (NULL);
 
    for (i = 0; i < pdns->Data.TXT.dwStringCount; i++) {
-      mcd_string_append (txt, pdns->Data.TXT.pStringArray[i]);
+      mcommon_string_append (txt, pdns->Data.TXT.pStringArray[i]);
    }
 
    rr_data->txt_record_opts = bson_strdup (txt->str);
-   mcd_string_free (txt, true);
+   mcommon_string_free (txt, true);
 
    return true;
 }
@@ -332,7 +332,7 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
 {
    char s[256];
    const uint8_t *data;
-   mcd_string_t *txt;
+   mcommon_string_t *txt;
    uint16_t pos, total;
    uint8_t len;
    bool ret = false;
@@ -346,7 +346,7 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
 
    /* a TXT record has one or more strings, each up to 255 chars, each is
     * prefixed by its length as 1 byte. thus endianness doesn't matter. */
-   txt = mcd_string_new (NULL);
+   txt = mcommon_string_new (NULL);
    pos = 0;
    data = ns_rr_rdata (*rr);
 
@@ -354,12 +354,12 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
       memcpy (&len, data + pos, sizeof (uint8_t));
       pos++;
       bson_strncpy (s, (const char *) (data + pos), (size_t) len + 1);
-      mcd_string_append (txt, s);
+      mcommon_string_append (txt, s);
       pos += len;
    }
 
    rr_data->txt_record_opts = bson_strdup (txt->str);
-   mcd_string_free (txt, true);
+   mcommon_string_free (txt, true);
    ret = true;
 
 done:

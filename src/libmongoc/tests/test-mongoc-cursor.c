@@ -1744,27 +1744,27 @@ typedef struct {
 
 
 static void
-_make_reply_batch (mcd_string_t *reply, uint32_t n_docs, bool first_batch, bool finished)
+_make_reply_batch (mcommon_string_t *reply, uint32_t n_docs, bool first_batch, bool finished)
 {
    uint32_t j;
 
-   mcd_string_append_printf (reply,
-                             "{'ok': 1, 'cursor': {"
-                             "    'id': %d,"
-                             "    'ns': 'db.coll',",
-                             finished ? 0 : 123);
+   mcommon_string_append_printf (reply,
+                                 "{'ok': 1, 'cursor': {"
+                                 "    'id': %d,"
+                                 "    'ns': 'db.coll',",
+                                 finished ? 0 : 123);
 
    if (first_batch) {
-      mcd_string_append (reply, "'firstBatch': [{}");
+      mcommon_string_append (reply, "'firstBatch': [{}");
    } else {
-      mcd_string_append (reply, "'nextBatch': [{}");
+      mcommon_string_append (reply, "'nextBatch': [{}");
    }
 
    for (j = 1; j < n_docs; j++) {
-      mcd_string_append (reply, ", {}");
+      mcommon_string_append (reply, ", {}");
    }
 
-   mcd_string_append (reply, "]}}");
+   mcommon_string_append (reply, "]}}");
 }
 
 
@@ -1778,7 +1778,7 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
    future_t *future;
    int j;
    int reply_no;
-   mcd_string_t *reply;
+   mcommon_string_t *reply;
    bool cursor_finished;
 
    BSON_APPEND_UTF8 (&find_cmd, "find", "coll");
@@ -1801,10 +1801,10 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
    assert_match_bson (request_get_doc (request, 0), &find_cmd, true);
 
-   reply = mcd_string_new (NULL);
+   reply = mcommon_string_new (NULL);
    _make_reply_batch (reply, (uint32_t) test->reply_length[0], true, false);
    reply_to_request_simple (request, reply->str);
-   mcd_string_free (reply, true);
+   mcommon_string_free (reply, true);
 
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -1830,12 +1830,12 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
       assert_match_bson (request_get_doc (request, 0), &getmore_cmd, true);
 
-      reply = mcd_string_new (NULL);
+      reply = mcommon_string_new (NULL);
       cursor_finished = (reply_no == 2);
       _make_reply_batch (reply, (uint32_t) test->reply_length[reply_no], false, cursor_finished);
 
       reply_to_request_simple (request, reply->str);
-      mcd_string_free (reply, true);
+      mcommon_string_free (reply, true);
 
       ASSERT (future_get_bool (future));
       future_destroy (future);

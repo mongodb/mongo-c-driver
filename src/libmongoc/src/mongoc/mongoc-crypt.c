@@ -1139,10 +1139,10 @@ _parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t 
    bson_t tls_opts_doc;
    const uint8_t *data;
    uint32_t len;
-   mcd_string_t *errmsg;
+   mcommon_string_t *errmsg;
    bson_iter_t permitted_iter;
 
-   errmsg = mcd_string_new (NULL);
+   errmsg = mcommon_string_new (NULL);
    kms_provider = bson_iter_key (iter);
    memset (out_opt, 0, sizeof (mongoc_ssl_opt_t));
 
@@ -1206,7 +1206,7 @@ _parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t 
 
    ok = true;
 fail:
-   mcd_string_free (errmsg, true /* free_segment */);
+   mcommon_string_free (errmsg, true /* free_segment */);
    return ok;
 }
 

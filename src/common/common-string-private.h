@@ -16,46 +16,46 @@
 
 #include "common-prelude.h"
 
-#ifndef MCD_STRING_H
-#define MCD_STRING_H
+#ifndef MCOMMON_STRING_H
+#define MCOMMON_STRING_H
 
 #include <bson/bson.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
-// mcd_string_t is an internal string type intended to replace the deprecated bson_string_t.
-// When bson_string_t is removed, migrate the implementation to mcd_string_t.
-typedef bson_string_t mcd_string_t;
+// mcommon_string_t is an internal string type intended to replace the deprecated bson_string_t.
+// When bson_string_t is removed, migrate the implementation to mcommon_string_t.
+typedef bson_string_t mcommon_string_t;
 
-static BSON_INLINE mcd_string_t *
-mcd_string_new (const char *str)
+static BSON_INLINE mcommon_string_t *
+mcommon_string_new (const char *str)
 {
    BEGIN_IGNORE_DEPRECATIONS
    return bson_string_new (str);
    END_IGNORE_DEPRECATIONS
 }
 static BSON_INLINE char *
-mcd_string_free (mcd_string_t *string, bool free_segment)
+mcommon_string_free (mcommon_string_t *string, bool free_segment)
 {
    BEGIN_IGNORE_DEPRECATIONS
    return bson_string_free (string, free_segment);
    END_IGNORE_DEPRECATIONS
 }
 static BSON_INLINE void
-mcd_string_append (mcd_string_t *string, const char *str)
+mcommon_string_append (mcommon_string_t *string, const char *str)
 {
    BEGIN_IGNORE_DEPRECATIONS
    bson_string_append (string, str);
    END_IGNORE_DEPRECATIONS
 }
 static BSON_INLINE void
-mcd_string_append_c (mcd_string_t *string, char str)
+mcommon_string_append_c (mcommon_string_t *string, char str)
 {
    BEGIN_IGNORE_DEPRECATIONS
    bson_string_append_c (string, str);
    END_IGNORE_DEPRECATIONS
 }
 static BSON_INLINE void
-mcd_string_append_unichar (mcd_string_t *string, bson_unichar_t unichar)
+mcommon_string_append_unichar (mcommon_string_t *string, bson_unichar_t unichar)
 {
    BEGIN_IGNORE_DEPRECATIONS
    bson_string_append_unichar (string, unichar);
@@ -63,10 +63,10 @@ mcd_string_append_unichar (mcd_string_t *string, bson_unichar_t unichar)
 }
 
 static BSON_INLINE void
-mcd_string_append_printf (mcd_string_t *string, const char *format, ...) BSON_GNUC_PRINTF (2, 3);
+mcommon_string_append_printf (mcommon_string_t *string, const char *format, ...) BSON_GNUC_PRINTF (2, 3);
 
 static BSON_INLINE void
-mcd_string_append_printf (mcd_string_t *string, const char *format, ...)
+mcommon_string_append_printf (mcommon_string_t *string, const char *format, ...)
 {
    va_list args;
    char *ret;
@@ -84,11 +84,11 @@ mcd_string_append_printf (mcd_string_t *string, const char *format, ...)
 }
 
 static BSON_INLINE void
-mcd_string_truncate (mcd_string_t *string, uint32_t len)
+mcommon_string_truncate (mcommon_string_t *string, uint32_t len)
 {
    BEGIN_IGNORE_DEPRECATIONS
    bson_string_truncate (string, len);
    END_IGNORE_DEPRECATIONS
 }
 
-#endif /* MCD_STRING_H */
+#endif /* MCOMMON_STRING_H */

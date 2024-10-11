@@ -141,7 +141,7 @@ test_mongoc_ssl_opts_from_bson (void)
 
    for (test = tests; test->bson != NULL; test++) {
       mongoc_ssl_opt_t ssl_opt = {0};
-      mcd_string_t *errmsg = mcd_string_new (NULL);
+      mcommon_string_t *errmsg = mcommon_string_new (NULL);
       bool ok = _mongoc_ssl_opts_from_bson (&ssl_opt, tmp_bson (test->bson), errmsg);
 
       MONGOC_DEBUG ("testcase: %s", test->bson);
@@ -186,7 +186,7 @@ test_mongoc_ssl_opts_from_bson (void)
       ASSERT (!ssl_opt.crl_file);
 
       _mongoc_ssl_opts_cleanup (&ssl_opt, true /* free_internal */);
-      mcd_string_free (errmsg, true /* free_segment */);
+      mcommon_string_free (errmsg, true /* free_segment */);
    }
 }
 
