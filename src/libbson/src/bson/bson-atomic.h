@@ -49,7 +49,7 @@ BSON_BEGIN_IGNORE_DEPRECATIONS
 
 BSON_BEGIN_DECLS
 
-enum bson_memory_order {
+enum BSON_GNUC_DEPRECATED bson_memory_order {
    bson_memory_order_seq_cst,
    bson_memory_order_acquire,
    bson_memory_order_release,
