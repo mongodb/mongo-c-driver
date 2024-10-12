@@ -3385,16 +3385,17 @@ bson_validate_with_error_and_offset (const bson_t *bson,
    state.flags = flags;
    _bson_validate_internal (bson, &state);
 
-   if (state.err_offset > 0) {
+   if (state.err_offset >= 0) {
       if (offset) {
          *offset = (size_t) state.err_offset;
       }
       if (error) {
          memcpy (error, &state.error, sizeof *error);
       }
+      return false;
    }
 
-   return state.err_offset < 0;
+   return true;
 }
 
 
