@@ -1123,8 +1123,8 @@ static void
 test_bson_validate_with_error_and_offset (void)
 {
    size_t err_offset = 12345;
-   bson_error_t err = { 67890 };
-   bson_t bson = { 0 };
+   bson_error_t err = {67890};
+   bson_t bson = {0};
    ASSERT (!bson_validate_with_error_and_offset (&bson, BSON_VALIDATE_NONE, &err_offset, &err));
    ASSERT (err_offset == 0);
    ASSERT (err.domain != 67890);
