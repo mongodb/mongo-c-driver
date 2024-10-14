@@ -25,7 +25,7 @@
 #include "utlist.h"
 #include "util.h"
 #include <mcd-string.h>
-
+#include <common-cmp-private.h>
 
 typedef struct {
    const char *file_description;
@@ -1332,7 +1332,7 @@ done:
 static void
 append_size_t (bson_t *doc, const char *key, size_t value)
 {
-   BSON_ASSERT (bson_in_range_unsigned (int64_t, value));
+   BSON_ASSERT (mcommon_in_range_unsigned (int64_t, value));
    BSON_ASSERT (BSON_APPEND_INT64 (doc, key, (int64_t) value));
 }
 

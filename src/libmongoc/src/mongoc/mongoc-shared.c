@@ -18,6 +18,7 @@
 
 #include "common-thread-private.h"
 #include <bson/bson.h>
+#include <common-atomic-private.h>
 
 typedef struct _mongoc_shared_ptr_aux {
    int refcount;
@@ -115,7 +116,7 @@ mongoc_shared_ptr_copy (mongoc_shared_ptr ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
-      bson_atomic_int_fetch_add (&ret._aux->refcount, 1, bson_memory_order_acquire);
+      mcommon_atomic_int_fetch_add (&ret._aux->refcount, 1, mcommon_memory_order_acquire);
    }
    return ret;
 }
@@ -130,7 +131,7 @@ mongoc_shared_ptr_reset_null (mongoc_shared_ptr *ptr)
       return;
    }
    /* Decrement the reference count by one */
-   prevcount = bson_atomic_int_fetch_sub (&ptr->_aux->refcount, 1, bson_memory_order_acq_rel);
+   prevcount = mcommon_atomic_int_fetch_sub (&ptr->_aux->refcount, 1, mcommon_memory_order_acq_rel);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
        * Release the managed data. */
@@ -144,5 +145,5 @@ int
 mongoc_shared_ptr_use_count (mongoc_shared_ptr ptr)
 {
    BSON_ASSERT (!mongoc_shared_ptr_is_null (ptr) && "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_use_count");
-   return bson_atomic_int_fetch (&ptr._aux->refcount, bson_memory_order_relaxed);
+   return mcommon_atomic_int_fetch (&ptr._aux->refcount, mcommon_memory_order_relaxed);
 }

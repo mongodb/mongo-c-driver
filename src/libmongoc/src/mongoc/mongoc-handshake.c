@@ -38,6 +38,7 @@
 
 #include <bson-dsl.h>
 #include <mcd-string.h>
+#include <common-cmp-private.h>
 
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init
@@ -437,7 +438,7 @@ _get_env_info (mongoc_handshake_t *handshake)
       char *endptr;
       int64_t env_memory_mb = bson_ascii_strtoll (memory_str, &endptr, 10);
       bool parse_ok = endptr == memory_str + (strlen (memory_str));
-      bool in_range = bson_in_range_int32_t_signed (env_memory_mb);
+      bool in_range = mcommon_in_range_int32_t_signed (env_memory_mb);
 
       if (parse_ok && in_range) {
          handshake->env_memory_mb.set = true;
@@ -448,7 +449,7 @@ _get_env_info (mongoc_handshake_t *handshake)
       char *endptr;
       int64_t env_timeout_sec = bson_ascii_strtoll (timeout_str, &endptr, 10);
       bool parse_ok = endptr == timeout_str + (strlen (timeout_str));
-      bool in_range = bson_in_range_int32_t_signed (env_timeout_sec);
+      bool in_range = mcommon_in_range_int32_t_signed (env_timeout_sec);
 
       if (parse_ok && in_range) {
          handshake->env_timeout_sec.set = true;
@@ -579,16 +580,17 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
     * Try to drop flags first, and if there is still not enough space also
     * drop compiler info */
    if (!truncate ||
-       bson_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (compiler_info) + 1u)) {
+       mcommon_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (compiler_info) + 1u)) {
       mcd_string_append (combined_platform, compiler_info);
    }
-   if (!truncate || bson_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (flags) + 1u)) {
+   if (!truncate ||
+       mcommon_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (flags) + 1u)) {
       mcd_string_append (combined_platform, flags);
    }
 
    /* We use the flags_index field to check if the CLAGS/LDFLAGS need to be
     * truncated, and if so we drop them altogether */
-   BSON_ASSERT (bson_in_range_unsigned (int, combined_platform->len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, combined_platform->len));
    int length = truncate ? BSON_MIN (max_platform_str_size - 1, (int) combined_platform->len) : -1;
    bson_append_utf8 (doc, HANDSHAKE_PLATFORM_FIELD, -1, combined_platform->str, length);
 
@@ -761,7 +763,7 @@ _append_and_truncate (char **s, const char *suffix, size_t max_len)
    }
 
    const size_t space_for_suffix = max_len - required_space;
-   BSON_ASSERT (bson_in_range_unsigned (int, space_for_suffix));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, space_for_suffix));
 
    *s = bson_strdup_printf ("%s / %.*s", prefix, (int) space_for_suffix, suffix);
    BSON_ASSERT (strlen (*s) <= max_len);

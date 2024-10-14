@@ -660,6 +660,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/service-gcp.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/common-b64.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/common-md5.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/common-thread.c
@@ -1027,8 +1028,10 @@ endif ()
 
 
 set (test-libmongoc-sources
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-common-cmp.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-b64.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c

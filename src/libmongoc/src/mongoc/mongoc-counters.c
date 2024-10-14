@@ -33,6 +33,7 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-log.h"
+#include <common-atomic-private.h>
 
 
 #pragma pack(1)
@@ -266,7 +267,7 @@ mongoc_counters_register (
    bson_strncpy (infos->name, name, sizeof infos->name);
    bson_strncpy (infos->description, description, sizeof infos->description);
 
-   bson_atomic_thread_fence ();
+   mcommon_atomic_thread_fence ();
 
    counters->n_counters++;
 
@@ -316,7 +317,7 @@ _mongoc_counters_init (void)
     * we have initialized the rest of the counters. Don't forget our memory
     * barrier to prevent compiler reordering.
     */
-   bson_atomic_thread_fence ();
+   mcommon_atomic_thread_fence ();
    counters->size = (uint32_t) size;
 #endif
 }

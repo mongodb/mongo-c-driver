@@ -16,6 +16,9 @@
 
 
 #include <bson/bson-atomic.h>
+#include <common-macros-private.h>
+
+BEGIN_IGNORE_DEPRECATIONS
 
 #ifdef BSON_OS_UNIX
 /* For sched_yield() */
@@ -267,3 +270,5 @@ _bson_emul_atomic_ptr_exchange (void *volatile *p, void *n, enum bson_memory_ord
    _unlock_emul_atomic ();
    return ret;
 }
+
+END_IGNORE_DEPRECATIONS

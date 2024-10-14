@@ -2,6 +2,7 @@
 
 #include "bson/bson-iso8601-private.h"
 #include "TestSuite.h"
+#include <common-cmp-private.h>
 
 static const bool is_time_t_small = (sizeof (time_t) == sizeof (int32_t));
 
@@ -13,7 +14,7 @@ test_date (const char *str, int64_t millis)
 
    const size_t len = strlen (str);
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, len));
 
    if (!_bson_iso8601_date_parse (str, (int32_t) len, &v, &error)) {
       fprintf (stderr, "could not parse (%s)\n", str);
@@ -59,7 +60,7 @@ test_date_should_fail (const char *str)
 
    const size_t len = strlen (str);
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, len));
 
    if (_bson_iso8601_date_parse (str, (int32_t) len, &v, &error)) {
       fprintf (stderr, "should not be able to parse (%s)\n", str);

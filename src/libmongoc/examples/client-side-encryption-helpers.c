@@ -13,8 +13,9 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   if (!bson_in_range_unsigned (uint32_t, hex_len / 2u)) {
-      return NULL;
+   size_t num_bytes = hex_len / 2u;
+   if (num_bytes >= UINT32_MAX) {
+      return false;
    }
 
    *len = (uint32_t) (hex_len / 2u);

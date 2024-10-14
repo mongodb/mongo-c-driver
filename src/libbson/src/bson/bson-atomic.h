@@ -29,10 +29,27 @@
 #include <intrin.h>
 #endif
 
+// bson-atomic.h is deprecated.
+// Ignore deprecation warnings for function calls within this file.
+
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#define BSON_BEGIN_IGNORE_DEPRECATIONS \
+   _Pragma ("GCC diagnostic push") _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define BSON_END_IGNORE_DEPRECATIONS _Pragma ("GCC diagnostic pop")
+#elif defined(__clang__)
+#define BSON_BEGIN_IGNORE_DEPRECATIONS \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define BSON_END_IGNORE_DEPRECATIONS _Pragma ("clang diagnostic pop")
+#else
+#define BSON_BEGIN_IGNORE_DEPRECATIONS
+#define BSON_END_IGNORE_DEPRECATIONS
+#endif
+
+BSON_BEGIN_IGNORE_DEPRECATIONS
 
 BSON_BEGIN_DECLS
 
-enum bson_memory_order {
+enum BSON_GNUC_DEPRECATED bson_memory_order {
    bson_memory_order_seq_cst,
    bson_memory_order_acquire,
    bson_memory_order_release,
@@ -146,7 +163,7 @@ enum bson_memory_order {
 
 
 #define DECL_ATOMIC_INTEGRAL(NamePart, Type, VCIntrinSuffix)                                                           \
-   static BSON_INLINE Type bson_atomic_##NamePart##_fetch_add (                                                        \
+   static BSON_INLINE Type BSON_GNUC_DEPRECATED bson_atomic_##NamePart##_fetch_add (                                   \
       Type volatile *a, Type addend, enum bson_memory_order ord)                                                       \
    {                                                                                                                   \
       DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchangeAdd, VCIntrinSuffix),                                            \
@@ -157,7 +174,7 @@ enum bson_memory_order {
                      addend);                                                                                          \
    }                                                                                                                   \
                                                                                                                        \
-   static BSON_INLINE Type bson_atomic_##NamePart##_fetch_sub (                                                        \
+   static BSON_INLINE Type BSON_GNUC_DEPRECATED bson_atomic_##NamePart##_fetch_sub (                                   \
       Type volatile *a, Type subtrahend, enum bson_memory_order ord)                                                   \
    {                                                                                                                   \
       /* MSVC doesn't have a subtract intrinsic, so just reuse addition    */                                          \
@@ -166,7 +183,8 @@ enum bson_memory_order {
       BSON_IF_GNU_LEGACY_ATOMICS (DEF_ATOMIC_OP (~, ~, __sync_fetch_and_sub, ord, a, subtrahend);)                     \
    }                                                                                                                   \
                                                                                                                        \
-   static BSON_INLINE Type bson_atomic_##NamePart##_fetch (Type volatile const *a, enum bson_memory_order order)       \
+   static BSON_INLINE Type BSON_GNUC_DEPRECATED bson_atomic_##NamePart##_fetch (Type volatile const *a,                \
+                                                                                enum bson_memory_order order)          \
    {                                                                                                                   \
       /* MSVC doesn't have a load intrinsic, so just add zero */                                                       \
       BSON_IF_MSVC (return bson_atomic_##NamePart##_fetch_add ((Type volatile *) a, 0, order);)                        \
@@ -193,7 +211,7 @@ enum bson_memory_order {
       })                                                                                                               \
    }                                                                                                                   \
                                                                                                                        \
-   static BSON_INLINE Type bson_atomic_##NamePart##_exchange (                                                         \
+   static BSON_INLINE Type BSON_GNUC_DEPRECATED bson_atomic_##NamePart##_exchange (                                    \
       Type volatile *a, Type value, enum bson_memory_order ord)                                                        \
    {                                                                                                                   \
       BSON_IF_MSVC (DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchange, VCIntrinSuffix), ~, ~, ord, a, value);)          \
@@ -217,7 +235,7 @@ enum bson_memory_order {
       BSON_IF_GNU_LEGACY_ATOMICS (BSON_UNUSED (ord); return __sync_val_compare_and_swap (a, *a, value);)               \
    }                                                                                                                   \
                                                                                                                        \
-   static BSON_INLINE Type bson_atomic_##NamePart##_compare_exchange_strong (                                          \
+   static BSON_INLINE Type BSON_GNUC_DEPRECATED bson_atomic_##NamePart##_compare_exchange_strong (                     \
       Type volatile *a, Type expect, Type new_value, enum bson_memory_order ord)                                       \
    {                                                                                                                   \
       Type actual = expect;                                                                                            \
@@ -245,7 +263,7 @@ enum bson_memory_order {
       return actual;                                                                                                   \
    }                                                                                                                   \
                                                                                                                        \
-   static BSON_INLINE Type bson_atomic_##NamePart##_compare_exchange_weak (                                            \
+   static BSON_INLINE Type BSON_GNUC_DEPRECATED bson_atomic_##NamePart##_compare_exchange_weak (                       \
       Type volatile *a, Type expect, Type new_value, enum bson_memory_order ord)                                       \
    {                                                                                                                   \
       Type actual = expect;                                                                                            \
@@ -372,31 +390,31 @@ DECL_ATOMIC_INTEGRAL (int64, __int64, 64)
 DECL_ATOMIC_STDINT (int64, 64)
 #endif
 #else
-static BSON_INLINE int64_t
+static BSON_INLINE int64_t BSON_GNUC_DEPRECATED
 bson_atomic_int64_fetch (const int64_t volatile *val, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int64_fetch_add ((int64_t volatile *) val, 0, order);
 }
 
-static BSON_INLINE int64_t
+static BSON_INLINE int64_t BSON_GNUC_DEPRECATED
 bson_atomic_int64_fetch_add (int64_t volatile *val, int64_t v, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int64_fetch_add (val, v, order);
 }
 
-static BSON_INLINE int64_t
+static BSON_INLINE int64_t BSON_GNUC_DEPRECATED
 bson_atomic_int64_fetch_sub (int64_t volatile *val, int64_t v, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int64_fetch_add (val, -v, order);
 }
 
-static BSON_INLINE int64_t
+static BSON_INLINE int64_t BSON_GNUC_DEPRECATED
 bson_atomic_int64_exchange (int64_t volatile *val, int64_t v, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int64_exchange (val, v, order);
 }
 
-static BSON_INLINE int64_t
+static BSON_INLINE int64_t BSON_GNUC_DEPRECATED
 bson_atomic_int64_compare_exchange_strong (int64_t volatile *val,
                                            int64_t expect_value,
                                            int64_t new_value,
@@ -405,7 +423,7 @@ bson_atomic_int64_compare_exchange_strong (int64_t volatile *val,
    return _bson_emul_atomic_int64_compare_exchange_strong (val, expect_value, new_value, order);
 }
 
-static BSON_INLINE int64_t
+static BSON_INLINE int64_t BSON_GNUC_DEPRECATED
 bson_atomic_int64_compare_exchange_weak (int64_t volatile *val,
                                          int64_t expect_value,
                                          int64_t new_value,
@@ -416,31 +434,31 @@ bson_atomic_int64_compare_exchange_weak (int64_t volatile *val,
 #endif
 
 #if defined(BSON_EMULATE_INT32)
-static BSON_INLINE int32_t
+static BSON_INLINE int32_t BSON_GNUC_DEPRECATED
 bson_atomic_int32_fetch (const int32_t volatile *val, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int32_fetch_add ((int32_t volatile *) val, 0, order);
 }
 
-static BSON_INLINE int32_t
+static BSON_INLINE int32_t BSON_GNUC_DEPRECATED
 bson_atomic_int32_fetch_add (int32_t volatile *val, int32_t v, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int32_fetch_add (val, v, order);
 }
 
-static BSON_INLINE int32_t
+static BSON_INLINE int32_t BSON_GNUC_DEPRECATED
 bson_atomic_int32_fetch_sub (int32_t volatile *val, int32_t v, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int32_fetch_add (val, -v, order);
 }
 
-static BSON_INLINE int32_t
+static BSON_INLINE int32_t BSON_GNUC_DEPRECATED
 bson_atomic_int32_exchange (int32_t volatile *val, int32_t v, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int32_exchange (val, v, order);
 }
 
-static BSON_INLINE int32_t
+static BSON_INLINE int32_t BSON_GNUC_DEPRECATED
 bson_atomic_int32_compare_exchange_strong (int32_t volatile *val,
                                            int32_t expect_value,
                                            int32_t new_value,
@@ -449,7 +467,7 @@ bson_atomic_int32_compare_exchange_strong (int32_t volatile *val,
    return _bson_emul_atomic_int32_compare_exchange_strong (val, expect_value, new_value, order);
 }
 
-static BSON_INLINE int32_t
+static BSON_INLINE int32_t BSON_GNUC_DEPRECATED
 bson_atomic_int32_compare_exchange_weak (int32_t volatile *val,
                                          int32_t expect_value,
                                          int32_t new_value,
@@ -460,31 +478,31 @@ bson_atomic_int32_compare_exchange_weak (int32_t volatile *val,
 #endif /* BSON_EMULATE_INT32 */
 
 #if defined(BSON_EMULATE_INT)
-static BSON_INLINE int
+static BSON_INLINE int BSON_GNUC_DEPRECATED
 bson_atomic_int_fetch (const int volatile *val, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int_fetch_add ((int volatile *) val, 0, order);
 }
 
-static BSON_INLINE int
+static BSON_INLINE int BSON_GNUC_DEPRECATED
 bson_atomic_int_fetch_add (int volatile *val, int v, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int_fetch_add (val, v, order);
 }
 
-static BSON_INLINE int
+static BSON_INLINE int BSON_GNUC_DEPRECATED
 bson_atomic_int_fetch_sub (int volatile *val, int v, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int_fetch_add (val, -v, order);
 }
 
-static BSON_INLINE int
+static BSON_INLINE int BSON_GNUC_DEPRECATED
 bson_atomic_int_exchange (int volatile *val, int v, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int_exchange (val, v, order);
 }
 
-static BSON_INLINE int
+static BSON_INLINE int BSON_GNUC_DEPRECATED
 bson_atomic_int_compare_exchange_strong (int volatile *val,
                                          int expect_value,
                                          int new_value,
@@ -493,14 +511,14 @@ bson_atomic_int_compare_exchange_strong (int volatile *val,
    return _bson_emul_atomic_int_compare_exchange_strong (val, expect_value, new_value, order);
 }
 
-static BSON_INLINE int
+static BSON_INLINE int BSON_GNUC_DEPRECATED
 bson_atomic_int_compare_exchange_weak (int volatile *val, int expect_value, int new_value, enum bson_memory_order order)
 {
    return _bson_emul_atomic_int_compare_exchange_weak (val, expect_value, new_value, order);
 }
 #endif /* BSON_EMULATE_INT */
 
-static BSON_INLINE void *
+static BSON_INLINE void *BSON_GNUC_DEPRECATED
 bson_atomic_ptr_exchange (void *volatile *ptr, void *new_value, enum bson_memory_order ord)
 {
 #if defined(BSON_EMULATE_PTR)
@@ -513,7 +531,7 @@ bson_atomic_ptr_exchange (void *volatile *ptr, void *new_value, enum bson_memory
 #endif
 }
 
-static BSON_INLINE void *
+static BSON_INLINE void *BSON_GNUC_DEPRECATED
 bson_atomic_ptr_compare_exchange_strong (void *volatile *ptr, void *expect, void *new_value, enum bson_memory_order ord)
 {
    switch (ord) {
@@ -537,7 +555,7 @@ bson_atomic_ptr_compare_exchange_strong (void *volatile *ptr, void *expect, void
 }
 
 
-static BSON_INLINE void *
+static BSON_INLINE void *BSON_GNUC_DEPRECATED
 bson_atomic_ptr_compare_exchange_weak (void *volatile *ptr, void *expect, void *new_value, enum bson_memory_order ord)
 {
    switch (ord) {
@@ -561,7 +579,7 @@ bson_atomic_ptr_compare_exchange_weak (void *volatile *ptr, void *expect, void *
 }
 
 
-static BSON_INLINE void *
+static BSON_INLINE void *BSON_GNUC_DEPRECATED
 bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_memory_order ord)
 {
    return bson_atomic_ptr_compare_exchange_strong ((void *volatile *) ptr, NULL, NULL, ord);
@@ -577,7 +595,7 @@ bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_memory_order ord)
 /**
  * @brief Generate a full-fence memory barrier at the call site.
  */
-static BSON_INLINE void
+static BSON_INLINE void BSON_GNUC_DEPRECATED
 bson_atomic_thread_fence (void)
 {
    BSON_IF_MSVC (MemoryBarrier ();)
@@ -592,13 +610,13 @@ bson_atomic_thread_fence (void)
 #undef BSON_IF_GNU_LEGACY_ATOMICS
 #undef BSON_USE_LEGACY_GCC_ATOMICS
 
-BSON_GNUC_DEPRECATED_FOR ("bson_atomic_thread_fence")
+BSON_GNUC_DEPRECATED
 BSON_EXPORT (void) bson_memory_barrier (void);
 
-BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int_fetch_add")
+BSON_GNUC_DEPRECATED
 BSON_EXPORT (int32_t) bson_atomic_int_add (volatile int32_t *p, int32_t n);
 
-BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int64_fetch_add")
+BSON_GNUC_DEPRECATED
 BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 
 
@@ -608,5 +626,9 @@ BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 
 BSON_END_DECLS
 
+BSON_END_IGNORE_DEPRECATIONS
+
+#undef BSON_BEGIN_IGNORE_DEPRECATIONS
+#undef BSON_END_IGNORE_DEPRECATIONS
 
 #endif /* BSON_ATOMIC_H */
