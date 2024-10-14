@@ -16,8 +16,8 @@
 
 #include "common-prelude.h"
 
-#ifndef MONGO_C_DRIVER_COMMON_MACROS_H
-#define MONGO_C_DRIVER_COMMON_MACROS_H
+#ifndef MONGO_C_DRIVER_COMMON_MACROS_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_MACROS_PRIVATE_H
 
 /* Test only assert. Is a noop unless -DENABLE_DEBUG_ASSERTIONS=ON is set
  * during configuration */
@@ -68,4 +68,4 @@
 #define END_IGNORE_DEPRECATIONS
 #endif
 
-#endif /* COMMON_MACROS_PRIVATE_H */
+#endif /* MONGO_C_DRIVER_COMMON_MACROS_PRIVATE_H */
