@@ -15,24 +15,26 @@ Parameters
 ----------
 
 * ``bson``: A :symbol:`bson_t`.
-* ``flags``: A bitwise-or of all desired :symbol:`bson_validate_flags_t <bson_validate_with_error>`.
-* ``offset``: A location for the offset within ``bson`` where the error occurred.
+* ``flags``: A bitwise-or of all desired :symbol:`bson_validate_flags_t`.
+* ``offset``: Optional location where the error offset will be written.
 
 Description
 -----------
 
 Validates a BSON document by walking through the document and inspecting the keys and values for valid content.
 
-You can modify how the validation occurs through the use of the ``flags`` parameter, see :symbol:`bson_validate_with_error()` for details.
+You can modify how the validation occurs through the use of the ``flags`` parameter, see :symbol:`bson_validate_flags_t` for details.
 
 Returns
 -------
 
-Returns true if ``bson`` is valid; otherwise false and ``offset`` is set to the byte offset where the error was detected.
+If ``bson`` passes the requested validations, returns true.
+Otherwise, returns false and if ``offset`` is non-`NULL` it will be written with the byte offset in the document where an error was detected.
+
+To get more information about the specific validation failure, use :symbol:`bson_validate_with_error_and_offset()` instead.
 
 .. seealso::
 
-  | :symbol:`bson_validate_with_error()`.
+  | :symbol:`bson_validate_with_error()`, :symbol:`bson_validate_with_error_and_offset()`.
 
   | :symbol:`bson_visitor_t` can be used for custom validation, :ref:`example_custom_validation`.
-
