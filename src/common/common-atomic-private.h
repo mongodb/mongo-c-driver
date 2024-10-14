@@ -17,8 +17,8 @@
 #include "common-prelude.h"
 
 
-#ifndef MCOMMON_ATOMIC_H
-#define MCOMMON_ATOMIC_H
+#ifndef MONGO_C_DRIVER_COMMON_ATOMIC_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_ATOMIC_PRIVATE_H
 
 
 #include <bson/bson.h> // BSON_INLINE
@@ -618,4 +618,4 @@ mcommon_atomic_thread_fence (void)
 #undef MCOMMON_EMULATE_INT
 
 
-#endif /* MCOMMON_ATOMIC_H */
+#endif /* MONGO_C_DRIVER_COMMON_ATOMIC_PRIVATE_H */

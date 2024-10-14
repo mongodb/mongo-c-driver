@@ -16,8 +16,8 @@
 
 #include "common-prelude.h"
 
-#ifndef MCOMMON_CMP_H
-#define MCOMMON_CMP_H
+#ifndef MONGO_C_DRIVER_COMMON_CMP_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_CMP_PRIVATE_H
 
 
 #include <bson/bson.h> /* ssize_t, BSON_CONCAT */
@@ -171,4 +171,4 @@ MCOMMON_IN_RANGE_SET_UNSIGNED (size_t, SIZE_MAX)
 BSON_END_DECLS
 
 
-#endif /* MCOMMON_CMP_H */
+#endif /* MONGO_C_DRIVER_COMMON_CMP_PRIVATE_H */
