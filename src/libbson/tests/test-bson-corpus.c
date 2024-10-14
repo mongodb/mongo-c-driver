@@ -4,6 +4,8 @@
 #include "corpus-test.h"
 #include <mcd-string.h>
 
+#include <inttypes.h>
+
 
 #define IS_NAN(dec) (dec).high == 0x7c00000000000000ull
 
@@ -47,15 +49,16 @@ compare_data (const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len
    if (a_len != b_len || memcmp (a, b, (size_t) a_len)) {
       a_str = mcd_string_new (NULL);
       for (i = 0; i < a_len; i++) {
-         mcd_string_append_printf (a_str, "%02X", (int) a[i]);
+         mcd_string_append_printf (a_str, "%02" PRIx8, a[i]);
       }
 
       b_str = mcd_string_new (NULL);
       for (i = 0; i < b_len; i++) {
-         mcd_string_append_printf (b_str, "%02X", (int) b[i]);
+         mcd_string_append_printf (b_str, "%02" PRIx8, b[i]);
       }
 
-      fprintf (stderr, "unequal data of length %d and %d:\n%s\n%s\n", a_len, b_len, a_str->str, b_str->str);
+      fprintf (
+         stderr, "unequal data of length %" PRIu32 " and %" PRIu32 ":\n%s\n%s\n", a_len, b_len, a_str->str, b_str->str);
 
       abort ();
    }

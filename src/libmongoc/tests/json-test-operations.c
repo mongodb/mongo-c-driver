@@ -34,6 +34,8 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
+#include <inttypes.h>
+
 
 mongoc_client_session_t *
 session_from_name (json_test_ctx_t *ctx, const char *session_name)
@@ -474,7 +476,10 @@ check_error_code_name (const bson_t *operation, const bson_error_t *error)
    code_name = bson_lookup_utf8 (operation, "errorCodeName");
    expected_error_code = error_code_from_name (code_name);
    if (error->code != expected_error_code) {
-      test_error ("Expected error code %d : %s but got error code %d\n", expected_error_code, code_name, error->code);
+      test_error ("Expected error code %" PRIu32 " : %s but got error code %" PRIu32 "\n",
+                  expected_error_code,
+                  code_name,
+                  error->code);
    }
 }
 

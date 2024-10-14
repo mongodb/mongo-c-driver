@@ -6,9 +6,9 @@ from typing import Iterable, Literal, Mapping, NamedTuple, TypeVar
 
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import BuiltInCommand, EvgCommandType, subprocess_exec
-from shrub.v3.evg_task import EvgTaskRef
+from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
-from ..etc.utils import Task, all_possible
+from ..etc.utils import all_possible
 
 T = TypeVar("T")
 
@@ -191,7 +191,7 @@ def earthly_task(
     name: str,
     targets: Iterable[str],
     config: Configuration,
-) -> Task | None:
+) -> EvgTask | None:
     """
     Create an EVG task which executes earthly using the given parameters. If this
     function returns `None`, then the task configuration is excluded from executing
@@ -212,7 +212,7 @@ def earthly_task(
         "env": f"${{{_ENV_PARAM_NAME}}}",
         "c_compiler": f"${{{_CC_PARAM_NAME}}}",
     }
-    return Task(
+    return EvgTask(
         name=name,
         commands=[
             # First, just build the "env-warmup" which will prepare the build environment.
@@ -249,7 +249,7 @@ CONTAINER_RUN_DISTROS = [
 ]
 
 
-def tasks() -> Iterable[Task]:
+def tasks() -> Iterable[EvgTask]:
     for conf in all_possible(Configuration):
         task = earthly_task(
             name=f"check:{conf.suffix}",

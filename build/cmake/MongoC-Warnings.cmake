@@ -1,5 +1,5 @@
 #[[
-   This file sets warning options for the directories in which it is include()'d
+   This file sets warning options in the "mongoc-warning-options" variable when included.
 
    These warnings are intended to be ported to each supported platform, and
    especially for high-value warnings that are very likely to catch latent bugs
@@ -7,11 +7,11 @@
 ]]
 
 #[[
-   Define additional compile options, conditional on the compiler being used.
+   Appends additional compile options to the "mongoc-warning-options" variable, conditioned
+   on the compiler being used.
+
    Each option should be prefixed by `gnu:`, `clang:`, `msvc:`, or `gnu-like:`.
    Those options will be conditionally enabled for GCC, Clang, or MSVC.
-
-   These options are attached to the source directory and its children.
 ]]
 function (mongoc_add_warning_options)
    list(APPEND CMAKE_MESSAGE_CONTEXT ${CMAKE_CURRENT_FUNCTION})
@@ -26,6 +26,10 @@ function (mongoc_add_warning_options)
    # "Old" GNU is GCC < 5, which is missing several warning options
    set(cond/gcc-lt5 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,5>>)
    set(cond/gcc-lt7 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,7>>)
+   set(cond/gcc-lt8 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,8>>)
+   set(cond/gcc-lt11 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,11>>)
+   set(cond/clang-lt10 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,10>>)
+   set(cond/clang-lt19 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,19>>)
    # Process options:
    foreach (opt IN LISTS ARGV)
       # Replace prefixes. Matches right-most first:
@@ -53,11 +57,14 @@ function (mongoc_add_warning_options)
          set(opt "${before}${opt}")
          message(TRACE "Become: ${opt}")
       endwhile ()
-      add_compile_options("${opt}")
+      list(APPEND mongoc-warning-options "${opt}")
    endforeach ()
+   set(mongoc-warning-options "${mongoc-warning-options}" PARENT_SCOPE)
 endfunction ()
 
 set (is_c_lang "$<COMPILE_LANGUAGE:C>")
+
+set (mongoc-warning-options "")
 
 # These below warnings should always be unconditional hard errors, as the code is
 # almost definitely broken
@@ -76,6 +83,22 @@ mongoc_add_warning_options (
      msvc:/we4090
      # Definite use of uninitialized value
      gnu-like:-Werror=uninitialized msvc:/we4700
+
+     # Format strings.
+     gnu-like:-Werror=format
+     gnu-like:-Werror=format=2
+     # GCC does not document the full list of warnings enabled by -Wformat.
+     # For assurance, explicitly include those not listed by -Wformat or -Wformat=2.
+     gnu:not-gcc-lt11:-Werror=format-diag
+     gnu:not-gcc-lt8:-Werror=format-overflow=2
+     gnu:not-gcc-lt5:-Werror=format-signedness
+     gnu:not-gcc-lt8:-Werror=format-truncation=2
+     # Clang does not include several flags in `-Wformat` or `-Wformat=2`.
+     # For assurance, explicitly include those not listed by -Wformat or -Wformat=2.
+     clang:-Werror=format-non-iso
+     clang:-Werror=format-pedantic
+     clang:not-clang-lt19:-Werror=format-signedness
+     clang:not-clang-lt10:-Werror=format-type-confusion
 
      # Aside: Disable CRT insecurity warnings
      msvc:/D_CRT_SECURE_NO_WARNINGS

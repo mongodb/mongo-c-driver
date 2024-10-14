@@ -77,6 +77,12 @@ def tasks():
     res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX)
     res += generate_test_tasks(SSL, TAG, TEST_MATRIX)
 
+    # PowerPC and zSeries are limited resources.
+    for task in res:
+        if any(pattern in task.run_on for pattern in ["power8", "zseries"]):
+            task.patchable = False
+            task.batchtime = 1440  # 1 day
+
     return res
 
 

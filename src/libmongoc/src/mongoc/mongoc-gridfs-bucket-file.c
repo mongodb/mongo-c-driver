@@ -24,6 +24,8 @@
 #include "mongoc-util-private.h"
 #include <common-cmp-private.h>
 
+#include <inttypes.h>
+
 /* Returns the minimum of two numbers */
 static size_t
 _mongoc_min (const size_t a, const size_t b)
@@ -284,7 +286,7 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
       bson_set_error (&file->err,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "Chunk %d expected to have size %" PRId64 " but is size %d.",
+                      "Chunk %d expected to have size %" PRId64 " but is size %" PRIu32 ".",
                       file->curr_chunk,
                       expected_size,
                       data_len);

@@ -2272,8 +2272,11 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    scanner_node = mongoc_topology_scanner_get_node (cluster->client->topology->scanner, server_id);
    /* This could happen if a user explicitly passes a bad server id. */
    if (!scanner_node) {
-      bson_set_error (
-         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Could not find server with id: %d", server_id);
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Could not find server with id: %" PRIu32,
+                      server_id);
       return NULL;
    }
 

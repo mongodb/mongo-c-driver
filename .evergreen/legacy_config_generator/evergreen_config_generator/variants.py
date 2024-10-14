@@ -26,7 +26,8 @@ class Variant(ConfigObject):
         run_on: list[str] | str,
         tasks: Iterable[str | ValueMapping],
         expansions: Mapping[str, str] | None = None,
-        tags: Iterable[str] = (),
+        tags: Iterable[str] | None = None,
+        patchable: bool | None = None,
         batchtime: int | None = None,
         display_tasks: Iterable[ValueMapping] = None,
     ):
@@ -36,7 +37,8 @@ class Variant(ConfigObject):
         self.run_on = run_on
         self.tasks = tasks
         self.expansions = expansions
-        self.tags = list(tags)
+        self.tags = tags
+        self.patchable = patchable
         self.batchtime = batchtime
         self.display_tasks = display_tasks
 
@@ -46,7 +48,12 @@ class Variant(ConfigObject):
 
     def to_dict(self):
         v = super(Variant, self).to_dict()
-        for i in "display_name", "expansions", "run_on", "tasks", "batchtime", "tags", "display_tasks":
-            if getattr(self, i):
-                v[i] = getattr(self, i)
+        for i in "display_name", "expansions", "run_on", "tasks", "patchable", "batchtime", "tags", "display_tasks":
+            attr = getattr(self, i)
+
+            # Allow `False`, but ignore empty lists and dicts.
+            if isinstance(attr, None | list | dict) and not attr:
+                continue
+
+            v[i] = attr
         return v

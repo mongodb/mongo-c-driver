@@ -13,11 +13,11 @@
    } else                            \
       (void) 0
 
-#define ASSERT(stmt)                                                                      \
-   if (!stmt) {                                                                           \
-      fprintf (stderr, "assertion failed on line: %d, statement: %s\n", __LINE__, #stmt); \
-      abort ();                                                                           \
-   } else                                                                                 \
+#define ASSERT(stmt)                                                                              \
+   if (!stmt) {                                                                                   \
+      fprintf (stderr, "assertion failed on line: %d, statement: %s\n", (int) (__LINE__), #stmt); \
+      abort ();                                                                                   \
+   } else                                                                                         \
       (void) 0
 
 int

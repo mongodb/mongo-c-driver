@@ -73,6 +73,8 @@
 #include <mcd-string.h>
 #include <common-cmp-private.h>
 
+#include <inttypes.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client"
 
@@ -785,8 +787,11 @@ mongoc_client_connect (bool buffered,
       base_stream = mongoc_client_connect_unix (host, error);
       break;
    default:
-      bson_set_error (
-         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_TYPE, "Invalid address family: 0x%02x", host->family);
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_INVALID_TYPE,
+                      "Invalid address family: 0x%02x",
+                      (unsigned int) host->family);
       break;
    }
 

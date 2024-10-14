@@ -8,6 +8,8 @@
 #include "mock_server/mock-server.h"
 #include "mongoc/mongoc-error-private.h"
 
+#include <inttypes.h>
+
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "error-test"
@@ -140,7 +142,7 @@ test_state_change_helper (uint32_t domain, bool expect_error)
                                            MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS};
    int i;
 
-   MONGOC_DEBUG ("Checking domain = %d", domain);
+   MONGOC_DEBUG ("Checking domain = %" PRIu32, domain);
 
    memset (&error, 0, sizeof (bson_error_t));
    error.domain = domain;

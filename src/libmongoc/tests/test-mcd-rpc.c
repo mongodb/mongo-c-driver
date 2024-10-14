@@ -1776,7 +1776,9 @@ test_rpc_message_from_data_op_kill_cursors_invalid (void)
    } else                                                                                                              \
       (void) 0
 
-#define ASSERT_IOVEC_UINT8(index, expected) ASSERT_IOVEC_VALUE (index, expected, uint8_t, uint8_t, (uint8_t), PRIu8)
+// Use `%d` for uint8_t to avoid -Wformat warnings due to integer promotion rules conflicting with definition of `PRIu8`
+// as `%u` by GCC on certain platforms (only in release mode...?).
+#define ASSERT_IOVEC_UINT8(index, expected) ASSERT_IOVEC_VALUE (index, expected, uint8_t, uint8_t, (uint8_t), "d")
 #define ASSERT_IOVEC_INT32(index, expected) \
    ASSERT_IOVEC_VALUE (index, expected, int32_t, uint32_t, BSON_UINT32_FROM_LE, PRId32)
 #define ASSERT_IOVEC_UINT32(index, expected) \
@@ -1819,7 +1821,7 @@ test_rpc_message_to_iovecs_op_compressed (void)
    ASSERT_IOVEC_INT32 (3, 2012);     // opCode
    ASSERT_IOVEC_INT32 (4, 2013);     // originalOpcode
    ASSERT_IOVEC_INT32 (5, 20);       // uncompressedSize
-   ASSERT_IOVEC_UINT8 (6, 0u);       // compressorId
+   ASSERT_IOVEC_UINT8 (6, 0);        // compressorId
    ASSERT_IOVEC_BYTES (7, 25u, 20u); // compressedMessage
 
    bson_free (iovecs);

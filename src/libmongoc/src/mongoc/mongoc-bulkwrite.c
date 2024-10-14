@@ -242,12 +242,12 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
    uint32_t persisted_id_offset = 0;
    {
       // Refer: bsonspec.org for BSON format.
-      persisted_id_offset += 4;                       // Document length.
-      persisted_id_offset += 1;                       // BSON type for int32.
-      persisted_id_offset += strlen ("insert") + 1;   // Key + 1 for NULL byte.
-      persisted_id_offset += 4;                       // int32 value.
-      persisted_id_offset += 1;                       // BSON type for document.
-      persisted_id_offset += strlen ("document") + 1; // Key + 1 for NULL byte.
+      persisted_id_offset += 4;                                   // Document length.
+      persisted_id_offset += 1;                                   // BSON type for int32.
+      persisted_id_offset += (uint32_t) strlen ("insert") + 1u;   // Key + 1 for NULL byte.
+      persisted_id_offset += 4;                                   // int32 value.
+      persisted_id_offset += 1;                                   // BSON type for document.
+      persisted_id_offset += (uint32_t) strlen ("document") + 1u; // Key + 1 for NULL byte.
    }
 
    // If `document` does not contain `_id`, add one in the beginning.

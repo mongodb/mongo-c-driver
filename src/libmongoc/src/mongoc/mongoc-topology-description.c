@@ -2325,7 +2325,7 @@ mongoc_topology_description_type (const mongoc_topology_description_t *td)
       return "LoadBalanced";
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
-      fprintf (stderr, "ERROR: Unknown topology type %d\n", td->type);
+      fprintf (stderr, "ERROR: Unknown topology type %d\n", (int) td->type);
       BSON_ASSERT (0);
    }
 

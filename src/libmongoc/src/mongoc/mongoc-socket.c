@@ -30,6 +30,8 @@
 #endif
 #include <common-cmp-private.h>
 
+#include <inttypes.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"
 
@@ -1259,7 +1261,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock, /* IN */
 #ifdef _WIN32
    BSON_ASSERT (mcommon_in_range_unsigned (unsigned_long, iovcnt));
    ret = WSASend (sock->sd, (LPWSABUF) iov, (DWORD) iovcnt, &dwNumberofBytesSent, 0, NULL, NULL);
-   TRACE ("WSASend sent: %ld (out of: %zu), ret: %d", dwNumberofBytesSent, iov->iov_len, ret);
+   TRACE ("WSASend sent: %lu (out of: %zu), ret: %d", dwNumberofBytesSent, iov->iov_len, ret);
 #else
    memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
@@ -1271,7 +1273,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock, /* IN */
 #else
                   0);
 #endif
-   TRACE ("Send %zu out of %zu bytes", ret, iov->iov_len);
+   TRACE ("Send %zd out of %zu bytes", ret, iov->iov_len);
 #endif
 
 

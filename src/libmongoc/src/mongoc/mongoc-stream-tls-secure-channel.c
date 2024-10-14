@@ -245,7 +245,7 @@ _mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream, char *buf, siz
          &secure_channel->ctxt->ctxt_handle, SECPKG_ATTR_STREAM_SIZES, &secure_channel->stream_sizes);
 
       if (sspi_status != SEC_E_OK) {
-         TRACE ("failing here: %d", __LINE__);
+         TRACE ("failing here: %d", (int) (__LINE__));
          return -1;
       }
    }
@@ -752,7 +752,9 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream, const char 
       error->code = 0;
    }
 
-   TRACE ("Getting ready for state: %d, timeout is %" PRId64, secure_channel->connecting_state + 1, tls->timeout_msec);
+   TRACE ("Getting ready for state: %d, timeout is %" PRId64,
+          (int) secure_channel->connecting_state + 1,
+          tls->timeout_msec);
 
    switch (secure_channel->connecting_state) {
    case ssl_connect_1:

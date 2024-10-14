@@ -16670,6 +16670,7 @@ buildvariants:
   - debug-compile-sasl-openssl
   - .latest .nossl
   - test-dns-openssl
+  patchable: false
   batchtime: 1440
 - name: arm-ubuntu1804
   display_name: '*ARM (aarch64) (Ubuntu 18.04)'
@@ -16710,6 +16711,7 @@ buildvariants:
   - debug-compile-sasl-openssl
   - .authentication-tests .openssl
   - .latest .nossl
+  patchable: false
   batchtime: 1440
 - name: clang60ubuntu
   display_name: clang 6.0 (Ubuntu 18.04)
