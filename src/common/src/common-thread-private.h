@@ -18,8 +18,8 @@
 #include "common-config.h"
 #include "common-macros-private.h"
 
-#ifndef COMMON_THREAD_PRIVATE_H
-#define COMMON_THREAD_PRIVATE_H
+#ifndef MONGO_C_DRIVER_COMMON_THREAD_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_THREAD_PRIVATE_H
 
 #define BSON_INSIDE
 #include "bson/bson-compat.h"
@@ -206,4 +206,4 @@ bson_shared_mutex_unlock_shared (bson_shared_mutex_t *mtx)
 
 BSON_END_DECLS
 
-#endif /* COMMON_THREAD_PRIVATE_H */
+#endif /* MONGO_C_DRIVER_COMMON_THREAD_PRIVATE_H */
