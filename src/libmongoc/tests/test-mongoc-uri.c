@@ -2302,6 +2302,30 @@ test_parses_long_ipv6 (void)
 }
 
 void
+test_uri_depr (void)
+{
+   // Test behavior of deprecated URI options.
+   // Regression test for CDRIVER-3769 Deprecate unimplemented URI options
+
+   // Test an unsupported option warns.
+   {
+      capture_logs (true);
+      mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?foo=bar");
+      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported"); // OK.
+      capture_logs (false);
+      mongoc_uri_destroy (uri);
+   }
+   // Test maxIdleTimeMS warns.
+   {
+      capture_logs (true);
+      mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?maxIdleTimeMS=123");
+      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported"); // Fails! Nothing was logged.
+      capture_logs (false);
+      mongoc_uri_destroy (uri);
+   }
+}
+
+void
 test_uri_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Uri/new", test_mongoc_uri_new);
@@ -2328,4 +2352,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/one_tls_option_enables_tls", test_one_tls_option_enables_tls);
    TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
    TestSuite_Add (suite, "/Uri/parses_long_ipv6", test_parses_long_ipv6);
+   TestSuite_Add (suite, "/Uri/depr", test_uri_depr);
 }
