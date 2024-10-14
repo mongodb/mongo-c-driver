@@ -610,13 +610,13 @@ bson_atomic_thread_fence (void)
 #undef BSON_IF_GNU_LEGACY_ATOMICS
 #undef BSON_USE_LEGACY_GCC_ATOMICS
 
-BSON_GNUC_DEPRECATED_FOR ("bson_atomic_thread_fence")
+BSON_GNUC_DEPRECATED
 BSON_EXPORT (void) bson_memory_barrier (void);
 
-BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int_fetch_add")
+BSON_GNUC_DEPRECATED
 BSON_EXPORT (int32_t) bson_atomic_int_add (volatile int32_t *p, int32_t n);
 
-BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int64_fetch_add")
+BSON_GNUC_DEPRECATED
 BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 
 
