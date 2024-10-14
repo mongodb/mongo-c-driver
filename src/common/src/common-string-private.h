@@ -16,8 +16,8 @@
 
 #include "common-prelude.h"
 
-#ifndef MCOMMON_STRING_H
-#define MCOMMON_STRING_H
+#ifndef MONGO_C_DRIVER_COMMON_STRING_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_STRING_PRIVATE_H
 
 #include <bson/bson.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
@@ -91,4 +91,4 @@ mcommon_string_truncate (mcommon_string_t *string, uint32_t len)
    END_IGNORE_DEPRECATIONS
 }
 
-#endif /* MCOMMON_STRING_H */
+#endif /* MONGO_C_DRIVER_COMMON_STRING_PRIVATE_H */
