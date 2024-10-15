@@ -2,20 +2,20 @@
   "tests": [
     {
       "description": "Valid connection pool options are parsed correctly",
-      "uri": "mongodb://example.com/?waitQueueTimeoutMS=50000&maxPoolSize=5&minPoolSize=3",
+      "uri": "mongodb://example.com/?maxIdleTimeMS=50000&maxPoolSize=5&minPoolSize=3",
       "valid": true,
       "warning": false,
       "hosts": null,
       "auth": null,
       "options": {
-        "waitQueueTimeoutMS": 50000,
+        "maxIdleTimeMS": 50000,
         "maxPoolSize": 5,
         "minPoolSize": 3
       }
     },
     {
-      "description": "Non-numeric waitQueueTimeoutMS causes a warning",
-      "uri": "mongodb://example.com/?waitQueueTimeoutMS=invalid",
+      "description": "Non-numeric maxIdleTimeMS causes a warning",
+      "uri": "mongodb://example.com/?maxIdleTimeMS=invalid",
       "valid": true,
       "warning": true,
       "hosts": null,
@@ -23,8 +23,8 @@
       "options": {}
     },
     {
-      "description": "Too low waitQueueTimeoutMS causes a warning",
-      "uri": "mongodb://example.com/?waitQueueTimeoutMS=-2",
+      "description": "Too low maxIdleTimeMS causes a warning",
+      "uri": "mongodb://example.com/?maxIdleTimeMS=-2",
       "valid": true,
       "warning": true,
       "hosts": null,
