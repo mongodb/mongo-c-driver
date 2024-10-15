@@ -1120,6 +1120,18 @@ test_bson_validate_dbpointer (void)
 
 
 static void
+test_bson_validate_with_error_and_offset (void)
+{
+   size_t err_offset = 12345;
+   bson_error_t err = {67890};
+   bson_t bson = {0};
+   ASSERT (!bson_validate_with_error_and_offset (&bson, BSON_VALIDATE_NONE, &err_offset, &err));
+   ASSERT_CMPSIZE_T (err_offset, ==, 0);
+   ASSERT_CMPUINT32 (err.domain, !=, 67890); // domain is overwritten.
+}
+
+
+static void
 test_bson_validate (void)
 {
    char filename[64];
@@ -3228,6 +3240,7 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/validate/dbref", test_bson_validate_dbref);
    TestSuite_Add (suite, "/bson/validate/bool", test_bson_validate_bool);
    TestSuite_Add (suite, "/bson/validate/dbpointer", test_bson_validate_dbpointer);
+   TestSuite_Add (suite, "/bson/validate/with_error_and_offset", test_bson_validate_with_error_and_offset);
    TestSuite_Add (suite, "/bson/new_1mm", test_bson_new_1mm);
    TestSuite_Add (suite, "/bson/init_1mm", test_bson_init_1mm);
    TestSuite_Add (suite, "/bson/build_child", test_bson_build_child);
