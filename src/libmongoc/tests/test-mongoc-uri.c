@@ -2311,15 +2311,23 @@ test_uri_depr (void)
    {
       capture_logs (true);
       mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?foo=bar");
-      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported"); // OK.
+      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported");
       capture_logs (false);
       mongoc_uri_destroy (uri);
    }
-   // Test maxIdleTimeMS warns.
+   // Test that waitQueueMultiple warns.
+   {
+      capture_logs (true);
+      mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?waitQueueMultiple=123");
+      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported");
+      capture_logs (false);
+      mongoc_uri_destroy (uri);
+   }
+   // Test that maxIdleTimeMS warns.
    {
       capture_logs (true);
       mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?maxIdleTimeMS=123");
-      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported"); // Fails! Nothing was logged.
+      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported");
       capture_logs (false);
       mongoc_uri_destroy (uri);
    }
