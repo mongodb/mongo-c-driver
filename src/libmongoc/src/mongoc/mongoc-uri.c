@@ -38,8 +38,8 @@
 #include "utlist.h"
 #include "mongoc-trace-private.h"
 
-#include <bson-dsl.h>
-#include <mcd-string.h>
+#include <common-bson-dsl-private.h>
+#include <common-string-private.h>
 
 struct _mongoc_uri_t {
    char *str;
@@ -2215,7 +2215,7 @@ char *
 mongoc_uri_unescape (const char *escaped_string)
 {
    bson_unichar_t c;
-   mcd_string_t *str;
+   mcommon_string_t *str;
    unsigned int hex = 0;
    const char *ptr;
    const char *end;
@@ -2236,7 +2236,7 @@ mongoc_uri_unescape (const char *escaped_string)
 
    ptr = escaped_string;
    end = ptr + len;
-   str = mcd_string_new (NULL);
+   str = mcommon_string_new (NULL);
 
    for (; *ptr; ptr = bson_utf8_next_char (ptr)) {
       c = bson_utf8_get_char (ptr);
@@ -2249,16 +2249,16 @@ mongoc_uri_unescape (const char *escaped_string)
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
              || 0 == hex) {
-            mcd_string_free (str, true);
+            mcommon_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
          }
-         mcd_string_append_c (str, hex);
+         mcommon_string_append_c (str, hex);
          ptr += 2;
          unescape_occurred = true;
          break;
       default:
-         mcd_string_append_unichar (str, c);
+         mcommon_string_append_unichar (str, c);
          break;
       }
    }
@@ -2266,11 +2266,11 @@ mongoc_uri_unescape (const char *escaped_string)
    /* Check that after unescaping, it is still valid UTF-8 */
    if (unescape_occurred && !bson_utf8_validate (str->str, str->len, false)) {
       MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
-      mcd_string_free (str, true);
+      mcommon_string_free (str, true);
       return NULL;
    }
 
-   return mcd_string_free (str, false);
+   return mcommon_string_free (str, false);
 }
 
 

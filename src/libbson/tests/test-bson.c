@@ -21,7 +21,7 @@
 #include <fcntl.h>
 #include <time.h>
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"

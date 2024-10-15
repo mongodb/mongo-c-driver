@@ -29,7 +29,7 @@
 #include "mongoc-stream-tls-secure-channel-private.h"
 #include "mongoc-errno-private.h"
 #include "mongoc-error.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 
@@ -241,7 +241,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
 }
 
 void
-_bson_append_szoid (mcd_string_t *retval, PCCERT_CONTEXT cert, const char *label, void *oid)
+_bson_append_szoid (mcommon_string_t *retval, PCCERT_CONTEXT cert, const char *label, void *oid)
 {
    DWORD oid_len = CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, NULL, 0);
 
@@ -249,14 +249,14 @@ _bson_append_szoid (mcd_string_t *retval, PCCERT_CONTEXT cert, const char *label
       char *tmp = bson_malloc0 (oid_len);
 
       CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, tmp, oid_len);
-      mcd_string_append_printf (retval, "%s%s", label, tmp);
+      mcommon_string_append_printf (retval, "%s%s", label, tmp);
       bson_free (tmp);
    }
 }
 char *
 _mongoc_secure_channel_extract_subject (const char *filename, const char *passphrase)
 {
-   mcd_string_t *retval;
+   mcommon_string_t *retval;
    PCCERT_CONTEXT cert;
 
    cert = mongoc_secure_channel_setup_certificate_from_file (filename);
@@ -264,7 +264,7 @@ _mongoc_secure_channel_extract_subject (const char *filename, const char *passph
       return NULL;
    }
 
-   retval = mcd_string_new ("");
+   retval = mcommon_string_new ("");
    ;
    _bson_append_szoid (retval, cert, "C=", szOID_COUNTRY_NAME);
    _bson_append_szoid (retval, cert, ",ST=", szOID_STATE_OR_PROVINCE_NAME);
@@ -274,7 +274,7 @@ _mongoc_secure_channel_extract_subject (const char *filename, const char *passph
    _bson_append_szoid (retval, cert, ",CN=", szOID_COMMON_NAME);
    _bson_append_szoid (retval, cert, ",STREET=", szOID_STREET_ADDRESS);
 
-   return mcd_string_free (retval, false);
+   return mcommon_string_free (retval, false);
 }
 
 bool

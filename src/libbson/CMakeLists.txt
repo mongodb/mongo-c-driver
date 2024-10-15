@@ -157,9 +157,9 @@ target_include_directories(_libbson_build_interface INTERFACE
    # The generated src/
    ${PROJECT_BINARY_DIR}/src/
    # The source directories of the common lib:
-   ${mongo-c-driver_SOURCE_DIR}/src/common/
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/
    # Generated:
-   ${mongo-c-driver_BINARY_DIR}/src/common/
+   ${mongo-c-driver_BINARY_DIR}/src/common/src/
    )
 target_link_libraries(_libbson_build_interface INTERFACE mongo::detail::c_platform)
 
@@ -168,7 +168,7 @@ file(GLOB_RECURSE all_sources CONFIGURE_DEPENDS
    src/*.c src/*.h
    # Include common library source files within libbson itself (names
    # will be mangled with MCOMMON_NAME_PREFIX)
-   "${mongo-c-driver_SOURCE_DIR}/src/common/*.c"
+   "${mongo-c-driver_SOURCE_DIR}/src/common/src/*.c"
    )
 
 # List of the primary BSON library targets that we are building

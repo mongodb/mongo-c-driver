@@ -43,8 +43,8 @@
 #include "mongoc-database-private.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
-#include <bson-dsl.h>
-#include <mcd-string.h>
+#include <common-bson-dsl-private.h>
+#include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -1189,7 +1189,7 @@ mongoc_collection_drop_index_with_opts (mongoc_collection_t *collection,
 char *
 mongoc_collection_keys_to_index_string (const bson_t *keys)
 {
-   mcd_string_t *s;
+   mcommon_string_t *s;
    bson_iter_t iter;
    bson_type_t type;
    int i = 0;
@@ -1200,25 +1200,26 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
       return NULL;
    }
 
-   s = mcd_string_new (NULL);
+   s = mcommon_string_new (NULL);
 
    while (bson_iter_next (&iter)) {
       /* Index type can be specified as a string ("2d") or as an integer
        * representing direction */
       type = bson_iter_type (&iter);
       if (type == BSON_TYPE_UTF8) {
-         mcd_string_append_printf (s, (i++ ? "_%s_%s" : "%s_%s"), bson_iter_key (&iter), bson_iter_utf8 (&iter, NULL));
+         mcommon_string_append_printf (
+            s, (i++ ? "_%s_%s" : "%s_%s"), bson_iter_key (&iter), bson_iter_utf8 (&iter, NULL));
       } else if (type == BSON_TYPE_INT32) {
-         mcd_string_append_printf (s, (i++ ? "_%s_%d" : "%s_%d"), bson_iter_key (&iter), bson_iter_int32 (&iter));
+         mcommon_string_append_printf (s, (i++ ? "_%s_%d" : "%s_%d"), bson_iter_key (&iter), bson_iter_int32 (&iter));
       } else if (type == BSON_TYPE_INT64) {
-         mcd_string_append_printf (
+         mcommon_string_append_printf (
             s, (i++ ? "_%s_%" PRId64 : "%s_%" PRId64), bson_iter_key (&iter), bson_iter_int64 (&iter));
       } else {
-         mcd_string_free (s, true);
+         mcommon_string_free (s, true);
          return NULL;
       }
    }
-   return mcd_string_free (s, false);
+   return mcommon_string_free (s, false);
 }
 
 

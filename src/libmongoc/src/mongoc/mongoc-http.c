@@ -22,7 +22,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-buffer-private.h"
 #include "mcd-time.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 void
@@ -47,7 +47,7 @@ _mongoc_http_response_cleanup (mongoc_http_response_t *response)
    bson_free (response->body);
 }
 
-mcd_string_t *
+mcommon_string_t *
 _mongoc_http_render_request_head (const mongoc_http_request_t *req)
 {
    BSON_ASSERT_PARAM (req);
@@ -65,27 +65,27 @@ _mongoc_http_render_request_head (const mongoc_http_request_t *req)
       path = bson_strdup (req->path);
    }
 
-   mcd_string_t *const string = mcd_string_new ("");
+   mcommon_string_t *const string = mcommon_string_new ("");
    // Set the request line
-   mcd_string_append_printf (string, "%s %s HTTP/1.0\r\n", req->method, path);
+   mcommon_string_append_printf (string, "%s %s HTTP/1.0\r\n", req->method, path);
    // (We're done with the path string:)
    bson_free (path);
 
    /* Always add Host header. */
-   mcd_string_append_printf (string, "Host: %s:%d\r\n", req->host, req->port);
+   mcommon_string_append_printf (string, "Host: %s:%d\r\n", req->host, req->port);
    /* Always add Connection: close header to ensure server closes connection. */
-   mcd_string_append_printf (string, "Connection: close\r\n");
+   mcommon_string_append_printf (string, "Connection: close\r\n");
    /* Add Content-Length if body is included. */
    if (req->body_len) {
-      mcd_string_append_printf (string, "Content-Length: %d\r\n", req->body_len);
+      mcommon_string_append_printf (string, "Content-Length: %d\r\n", req->body_len);
    }
    // Add any extra headers
    if (req->extra_headers) {
-      mcd_string_append (string, req->extra_headers);
+      mcommon_string_append (string, req->extra_headers);
    }
 
    // Final terminator
-   mcd_string_append (string, "\r\n");
+   mcommon_string_append (string, "\r\n");
    return string;
 }
 
@@ -110,7 +110,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    bool ret = false;
    mongoc_iovec_t iovec;
    char *path = NULL;
-   mcd_string_t *http_request = NULL;
+   mcommon_string_t *http_request = NULL;
    mongoc_buffer_t http_response_buf;
    char *http_response_str;
    char *ptr;
@@ -283,7 +283,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
 fail:
    mongoc_stream_destroy (stream);
    if (http_request) {
-      mcd_string_free (http_request, true);
+      mcommon_string_free (http_request, true);
    }
    _mongoc_buffer_destroy (&http_response_buf);
    bson_free (path);

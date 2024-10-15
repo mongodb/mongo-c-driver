@@ -36,7 +36,7 @@
 #include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-tls-secure-transport-private.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure_transport"
@@ -410,35 +410,35 @@ _set_error_from_osstatus (OSStatus status, const char *prefix, bson_error_t *err
 static char *
 explain_trust_result (SecTrustRef trust, SecTrustResultType trust_result)
 {
-   mcd_string_t *reason;
+   mcommon_string_t *reason;
    CFArrayRef cfprops = NULL;
    CFIndex count, i;
 
-   reason = mcd_string_new ("");
+   reason = mcommon_string_new ("");
    switch (trust_result) {
    case kSecTrustResultDeny:
-      mcd_string_append (reason, "Certificate trust denied");
+      mcommon_string_append (reason, "Certificate trust denied");
       break;
    case kSecTrustResultRecoverableTrustFailure:
-      mcd_string_append (reason, "Certificate trust failure");
+      mcommon_string_append (reason, "Certificate trust failure");
       break;
    case kSecTrustResultFatalTrustFailure:
-      mcd_string_append (reason, "Certificate trust fatal failure");
+      mcommon_string_append (reason, "Certificate trust fatal failure");
       break;
    case kSecTrustResultInvalid:
-      mcd_string_append (reason, "Certificate trust evaluation failure");
+      mcommon_string_append (reason, "Certificate trust evaluation failure");
       break;
    default:
-      mcd_string_append_printf (reason, "Certificate trust failure #%d", (int) trust_result);
+      mcommon_string_append_printf (reason, "Certificate trust failure #%d", (int) trust_result);
       break;
    }
-   mcd_string_append (reason, ": ");
+   mcommon_string_append (reason, ": ");
 
    cfprops = SecTrustCopyProperties (trust);
    /* This contains an array of dictionaries, each representing a cert in the
     * chain. Append the first failure reason found. */
    if (!cfprops) {
-      mcd_string_append (reason, "Unable to retreive cause for trust failure");
+      mcommon_string_append (reason, "Unable to retreive cause for trust failure");
       goto done;
    }
 
@@ -451,7 +451,7 @@ explain_trust_result (SecTrustRef trust, SecTrustResultType trust_result)
 
       elem = CFArrayGetValueAtIndex (cfprops, i);
       if (CFGetTypeID (elem) != CFDictionaryGetTypeID ()) {
-         mcd_string_append (reason, "Unable to parse cause for trust failure");
+         mcommon_string_append (reason, "Unable to parse cause for trust failure");
          goto done;
       }
 
@@ -461,24 +461,24 @@ explain_trust_result (SecTrustRef trust, SecTrustResultType trust_result)
          continue;
       }
       if (CFGetTypeID (reason_elem) != CFStringGetTypeID ()) {
-         mcd_string_append (reason, "Unable to parse trust failure error");
+         mcommon_string_append (reason, "Unable to parse trust failure error");
          goto done;
       }
       reason_str = _mongoc_cfstringref_to_cstring (reason_elem);
       if (reason_str) {
-         mcd_string_append (reason, reason_str);
+         mcommon_string_append (reason, reason_str);
          bson_free (reason_str);
          goto done;
       } else {
-         mcd_string_append (reason, "Unable to express trust failure error");
+         mcommon_string_append (reason, "Unable to express trust failure error");
          goto done;
       }
    }
 
-   mcd_string_append (reason, "No trust failure reason available");
+   mcommon_string_append (reason, "No trust failure reason available");
 done:
    CFReleaseSafe (cfprops);
-   return mcd_string_free (reason, false);
+   return mcommon_string_free (reason, false);
 }
 
 /* Returns a boolean indicating success. If false is returned, then an error is

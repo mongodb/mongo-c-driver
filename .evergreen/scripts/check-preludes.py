@@ -25,7 +25,7 @@ if len(sys.argv) != 2:
 
 MONGOC_PREFIX = Path("src/libmongoc/src/mongoc")
 BSON_PREFIX = Path("src/libbson/src/bson")
-COMMON_PREFIX = Path("src/common")
+COMMON_PREFIX = Path("src/common/src")
 
 checks = [
     {
@@ -41,7 +41,6 @@ checks = [
         "name": "libbson",
         "headers": list(BSON_PREFIX.glob("*.h")),
         "exclusions": [
-            BSON_PREFIX / "bson-dsl.h",
             BSON_PREFIX / "bson-prelude.h",
             BSON_PREFIX / "bson.h",
         ],

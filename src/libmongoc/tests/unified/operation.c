@@ -24,7 +24,7 @@
 #include "test-libmongoc.h"
 #include "util.h"
 #include "utlist.h"
-#include "bson-dsl.h"
+#include "common-bson-dsl-private.h"
 #include <common-cmp-private.h>
 
 typedef struct {

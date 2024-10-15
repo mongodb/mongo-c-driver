@@ -18,7 +18,7 @@
 #include <stdio.h>
 
 #include <bson/bson-keys.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 

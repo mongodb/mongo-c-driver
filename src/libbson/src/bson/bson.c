@@ -19,7 +19,7 @@
 #include <bson/bson-config.h>
 #include <bson/bson-private.h>
 #include <bson/bson-json-private.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <bson/bson-iso8601-private.h>
 #include <bson/bson-string-private.h>
 #include <common-cmp-private.h>
@@ -68,7 +68,7 @@ typedef struct {
    bool keys;
    ssize_t *err_offset;
    uint32_t depth;
-   mcd_string_t *str;
+   mcommon_string_t *str;
    bson_json_mode_t mode;
    int32_t max_len;
    bool max_len_reached;
@@ -1461,14 +1461,14 @@ append_failure:
  */
 
 static BSON_INLINE void
-_bson_append_regex_options_sorted (mcd_string_t *buffer, /* IN */
-                                   const char *options)  /* IN */
+_bson_append_regex_options_sorted (mcommon_string_t *buffer, /* IN */
+                                   const char *options)      /* IN */
 {
    const char *c;
 
    for (c = BSON_REGEX_OPTIONS_SORTED; *c; c++) {
       if (strchr (options, *c)) {
-         mcd_string_append_c (buffer, *c);
+         mcommon_string_append_c (buffer, *c);
       }
    }
 }
@@ -1500,7 +1500,7 @@ bson_append_regex_w_len (
       options = "";
    }
 
-   mcd_string_t *const options_sorted = _bson_string_alloc (strlen (options));
+   mcommon_string_t *const options_sorted = _bson_string_alloc (strlen (options));
    _bson_append_regex_options_sorted (options_sorted, options);
 
    if (options_sorted->len > UINT32_MAX - 1u) {
@@ -1521,7 +1521,7 @@ bson_append_regex_w_len (
    ret = true;
 
 append_failure:
-   (void) mcd_string_free (options_sorted, true);
+   (void) mcommon_string_free (options_sorted, true);
 
    return ret;
 }
@@ -2399,9 +2399,9 @@ _bson_as_json_visit_utf8 (const bson_iter_t *iter, const char *key, size_t v_utf
    escaped = bson_utf8_escape_for_json (v_utf8, v_utf8_len);
 
    if (escaped) {
-      mcd_string_append (state->str, "\"");
-      mcd_string_append (state->str, escaped);
-      mcd_string_append (state->str, "\"");
+      mcommon_string_append (state->str, "\"");
+      mcommon_string_append (state->str, escaped);
+      mcommon_string_append (state->str, "\"");
       bson_free (escaped);
       return false;
    }
@@ -2419,9 +2419,9 @@ _bson_as_json_visit_int32 (const bson_iter_t *iter, const char *key, int32_t v_i
    BSON_UNUSED (key);
 
    if (state->mode == BSON_JSON_MODE_CANONICAL) {
-      mcd_string_append_printf (state->str, "{ \"$numberInt\" : \"%" PRId32 "\" }", v_int32);
+      mcommon_string_append_printf (state->str, "{ \"$numberInt\" : \"%" PRId32 "\" }", v_int32);
    } else {
-      mcd_string_append_printf (state->str, "%" PRId32, v_int32);
+      mcommon_string_append_printf (state->str, "%" PRId32, v_int32);
    }
 
    return false;
@@ -2437,9 +2437,9 @@ _bson_as_json_visit_int64 (const bson_iter_t *iter, const char *key, int64_t v_i
    BSON_UNUSED (key);
 
    if (state->mode == BSON_JSON_MODE_CANONICAL) {
-      mcd_string_append_printf (state->str, "{ \"$numberLong\" : \"%" PRId64 "\" }", v_int64);
+      mcommon_string_append_printf (state->str, "{ \"$numberLong\" : \"%" PRId64 "\" }", v_int64);
    } else {
-      mcd_string_append_printf (state->str, "%" PRId64, v_int64);
+      mcommon_string_append_printf (state->str, "%" PRId64, v_int64);
    }
 
    return false;
@@ -2457,9 +2457,9 @@ _bson_as_json_visit_decimal128 (const bson_iter_t *iter, const char *key, const 
 
    bson_decimal128_to_string (value, decimal128_string);
 
-   mcd_string_append (state->str, "{ \"$numberDecimal\" : \"");
-   mcd_string_append (state->str, decimal128_string);
-   mcd_string_append (state->str, "\" }");
+   mcommon_string_append (state->str, "{ \"$numberDecimal\" : \"");
+   mcommon_string_append (state->str, decimal128_string);
+   mcommon_string_append (state->str, "\" }");
 
    return false;
 }
@@ -2469,7 +2469,7 @@ static bool
 _bson_as_json_visit_double (const bson_iter_t *iter, const char *key, double v_double, void *data)
 {
    bson_json_state_t *state = data;
-   mcd_string_t *str = state->str;
+   mcommon_string_t *str = state->str;
    uint32_t start_len;
    bool legacy;
 
@@ -2483,29 +2483,29 @@ _bson_as_json_visit_double (const bson_iter_t *iter, const char *key, double v_d
             (state->mode == BSON_JSON_MODE_RELAXED && !(v_double != v_double || v_double * 0 != 0));
 
    if (!legacy) {
-      mcd_string_append (state->str, "{ \"$numberDouble\" : \"");
+      mcommon_string_append (state->str, "{ \"$numberDouble\" : \"");
    }
 
    if (!legacy && v_double != v_double) {
-      mcd_string_append (str, "NaN");
+      mcommon_string_append (str, "NaN");
    } else if (!legacy && v_double * 0 != 0) {
       if (v_double > 0) {
-         mcd_string_append (str, "Infinity");
+         mcommon_string_append (str, "Infinity");
       } else {
-         mcd_string_append (str, "-Infinity");
+         mcommon_string_append (str, "-Infinity");
       }
    } else {
       start_len = str->len;
-      mcd_string_append_printf (str, "%.20g", v_double);
+      mcommon_string_append_printf (str, "%.20g", v_double);
 
       /* ensure trailing ".0" to distinguish "3" from "3.0" */
       if (strspn (&str->str[start_len], "0123456789-") == str->len - start_len) {
-         mcd_string_append (str, ".0");
+         mcommon_string_append (str, ".0");
       }
    }
 
    if (!legacy) {
-      mcd_string_append (state->str, "\" }");
+      mcommon_string_append (state->str, "\" }");
    }
 
    return false;
@@ -2520,7 +2520,7 @@ _bson_as_json_visit_undefined (const bson_iter_t *iter, const char *key, void *d
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
 
-   mcd_string_append (state->str, "{ \"$undefined\" : true }");
+   mcommon_string_append (state->str, "{ \"$undefined\" : true }");
 
    return false;
 }
@@ -2534,7 +2534,7 @@ _bson_as_json_visit_null (const bson_iter_t *iter, const char *key, void *data)
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
 
-   mcd_string_append (state->str, "null");
+   mcommon_string_append (state->str, "null");
 
    return false;
 }
@@ -2550,9 +2550,9 @@ _bson_as_json_visit_oid (const bson_iter_t *iter, const char *key, const bson_oi
    BSON_UNUSED (key);
 
    bson_oid_to_string (oid, str);
-   mcd_string_append (state->str, "{ \"$oid\" : \"");
-   mcd_string_append (state->str, str);
-   mcd_string_append (state->str, "\" }");
+   mcommon_string_append (state->str, "{ \"$oid\" : \"");
+   mcommon_string_append (state->str, str);
+   mcommon_string_append (state->str, "\" }");
 
    return false;
 }
@@ -2578,17 +2578,17 @@ _bson_as_json_visit_binary (const bson_iter_t *iter,
    BSON_ASSERT (mcommon_b64_ntop (v_binary, v_binary_len, b64, b64_len) != -1);
 
    if (state->mode == BSON_JSON_MODE_CANONICAL || state->mode == BSON_JSON_MODE_RELAXED) {
-      mcd_string_append (state->str, "{ \"$binary\" : { \"base64\" : \"");
-      mcd_string_append (state->str, b64);
-      mcd_string_append (state->str, "\", \"subType\" : \"");
-      mcd_string_append_printf (state->str, "%02x", v_subtype);
-      mcd_string_append (state->str, "\" } }");
+      mcommon_string_append (state->str, "{ \"$binary\" : { \"base64\" : \"");
+      mcommon_string_append (state->str, b64);
+      mcommon_string_append (state->str, "\", \"subType\" : \"");
+      mcommon_string_append_printf (state->str, "%02x", v_subtype);
+      mcommon_string_append (state->str, "\" } }");
    } else {
-      mcd_string_append (state->str, "{ \"$binary\" : \"");
-      mcd_string_append (state->str, b64);
-      mcd_string_append (state->str, "\", \"$type\" : \"");
-      mcd_string_append_printf (state->str, "%02x", v_subtype);
-      mcd_string_append (state->str, "\" }");
+      mcommon_string_append (state->str, "{ \"$binary\" : \"");
+      mcommon_string_append (state->str, b64);
+      mcommon_string_append (state->str, "\", \"$type\" : \"");
+      mcommon_string_append_printf (state->str, "%02x", v_subtype);
+      mcommon_string_append (state->str, "\" }");
    }
 
    bson_free (b64);
@@ -2605,7 +2605,7 @@ _bson_as_json_visit_bool (const bson_iter_t *iter, const char *key, bool v_bool,
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
 
-   mcd_string_append (state->str, v_bool ? "true" : "false");
+   mcommon_string_append (state->str, v_bool ? "true" : "false");
 
    return false;
 }
@@ -2620,17 +2620,17 @@ _bson_as_json_visit_date_time (const bson_iter_t *iter, const char *key, int64_t
    BSON_UNUSED (key);
 
    if (state->mode == BSON_JSON_MODE_CANONICAL || (state->mode == BSON_JSON_MODE_RELAXED && msec_since_epoch < 0)) {
-      mcd_string_append (state->str, "{ \"$date\" : { \"$numberLong\" : \"");
-      mcd_string_append_printf (state->str, "%" PRId64, msec_since_epoch);
-      mcd_string_append (state->str, "\" } }");
+      mcommon_string_append (state->str, "{ \"$date\" : { \"$numberLong\" : \"");
+      mcommon_string_append_printf (state->str, "%" PRId64, msec_since_epoch);
+      mcommon_string_append (state->str, "\" } }");
    } else if (state->mode == BSON_JSON_MODE_RELAXED) {
-      mcd_string_append (state->str, "{ \"$date\" : \"");
+      mcommon_string_append (state->str, "{ \"$date\" : \"");
       _bson_iso8601_date_format (msec_since_epoch, state->str);
-      mcd_string_append (state->str, "\" }");
+      mcommon_string_append (state->str, "\" }");
    } else {
-      mcd_string_append (state->str, "{ \"$date\" : ");
-      mcd_string_append_printf (state->str, "%" PRId64, msec_since_epoch);
-      mcd_string_append (state->str, " }");
+      mcommon_string_append (state->str, "{ \"$date\" : ");
+      mcommon_string_append_printf (state->str, "%" PRId64, msec_since_epoch);
+      mcommon_string_append (state->str, " }");
    }
 
    return false;
@@ -2653,17 +2653,17 @@ _bson_as_json_visit_regex (
    }
 
    if (state->mode == BSON_JSON_MODE_CANONICAL || state->mode == BSON_JSON_MODE_RELAXED) {
-      mcd_string_append (state->str, "{ \"$regularExpression\" : { \"pattern\" : \"");
-      mcd_string_append (state->str, escaped);
-      mcd_string_append (state->str, "\", \"options\" : \"");
+      mcommon_string_append (state->str, "{ \"$regularExpression\" : { \"pattern\" : \"");
+      mcommon_string_append (state->str, escaped);
+      mcommon_string_append (state->str, "\", \"options\" : \"");
       _bson_append_regex_options_sorted (state->str, v_options);
-      mcd_string_append (state->str, "\" } }");
+      mcommon_string_append (state->str, "\" } }");
    } else {
-      mcd_string_append (state->str, "{ \"$regex\" : \"");
-      mcd_string_append (state->str, escaped);
-      mcd_string_append (state->str, "\", \"$options\" : \"");
+      mcommon_string_append (state->str, "{ \"$regex\" : \"");
+      mcommon_string_append (state->str, escaped);
+      mcommon_string_append (state->str, "\", \"$options\" : \"");
       _bson_append_regex_options_sorted (state->str, v_options);
-      mcd_string_append (state->str, "\" }");
+      mcommon_string_append (state->str, "\" }");
    }
 
    bson_free (escaped);
@@ -2681,11 +2681,11 @@ _bson_as_json_visit_timestamp (
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
 
-   mcd_string_append (state->str, "{ \"$timestamp\" : { \"t\" : ");
-   mcd_string_append_printf (state->str, "%u", v_timestamp);
-   mcd_string_append (state->str, ", \"i\" : ");
-   mcd_string_append_printf (state->str, "%u", v_increment);
-   mcd_string_append (state->str, " } }");
+   mcommon_string_append (state->str, "{ \"$timestamp\" : { \"t\" : ");
+   mcommon_string_append_printf (state->str, "%u", v_timestamp);
+   mcommon_string_append (state->str, ", \"i\" : ");
+   mcommon_string_append_printf (state->str, "%u", v_increment);
+   mcommon_string_append (state->str, " } }");
 
    return false;
 }
@@ -2713,31 +2713,31 @@ _bson_as_json_visit_dbpointer (const bson_iter_t *iter,
    }
 
    if (state->mode == BSON_JSON_MODE_CANONICAL || state->mode == BSON_JSON_MODE_RELAXED) {
-      mcd_string_append (state->str, "{ \"$dbPointer\" : { \"$ref\" : \"");
-      mcd_string_append (state->str, escaped);
-      mcd_string_append (state->str, "\"");
+      mcommon_string_append (state->str, "{ \"$dbPointer\" : { \"$ref\" : \"");
+      mcommon_string_append (state->str, escaped);
+      mcommon_string_append (state->str, "\"");
 
       if (v_oid) {
          bson_oid_to_string (v_oid, str);
-         mcd_string_append (state->str, ", \"$id\" : { \"$oid\" : \"");
-         mcd_string_append (state->str, str);
-         mcd_string_append (state->str, "\" }");
+         mcommon_string_append (state->str, ", \"$id\" : { \"$oid\" : \"");
+         mcommon_string_append (state->str, str);
+         mcommon_string_append (state->str, "\" }");
       }
 
-      mcd_string_append (state->str, " } }");
+      mcommon_string_append (state->str, " } }");
    } else {
-      mcd_string_append (state->str, "{ \"$ref\" : \"");
-      mcd_string_append (state->str, escaped);
-      mcd_string_append (state->str, "\"");
+      mcommon_string_append (state->str, "{ \"$ref\" : \"");
+      mcommon_string_append (state->str, escaped);
+      mcommon_string_append (state->str, "\"");
 
       if (v_oid) {
          bson_oid_to_string (v_oid, str);
-         mcd_string_append (state->str, ", \"$id\" : \"");
-         mcd_string_append (state->str, str);
-         mcd_string_append (state->str, "\"");
+         mcommon_string_append (state->str, ", \"$id\" : \"");
+         mcommon_string_append (state->str, str);
+         mcommon_string_append (state->str, "\"");
       }
 
-      mcd_string_append (state->str, " }");
+      mcommon_string_append (state->str, " }");
    }
 
    bson_free (escaped);
@@ -2754,7 +2754,7 @@ _bson_as_json_visit_minkey (const bson_iter_t *iter, const char *key, void *data
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
 
-   mcd_string_append (state->str, "{ \"$minKey\" : 1 }");
+   mcommon_string_append (state->str, "{ \"$minKey\" : 1 }");
 
    return false;
 }
@@ -2768,7 +2768,7 @@ _bson_as_json_visit_maxkey (const bson_iter_t *iter, const char *key, void *data
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
 
-   mcd_string_append (state->str, "{ \"$maxKey\" : 1 }");
+   mcommon_string_append (state->str, "{ \"$maxKey\" : 1 }");
 
    return false;
 }
@@ -2787,15 +2787,15 @@ _bson_as_json_visit_before (const bson_iter_t *iter, const char *key, void *data
    }
 
    if (state->count) {
-      mcd_string_append (state->str, ", ");
+      mcommon_string_append (state->str, ", ");
    }
 
    if (state->keys) {
       escaped = bson_utf8_escape_for_json (key, -1);
       if (escaped) {
-         mcd_string_append (state->str, "\"");
-         mcd_string_append (state->str, escaped);
-         mcd_string_append (state->str, "\" : ");
+         mcommon_string_append (state->str, "\"");
+         mcommon_string_append (state->str, escaped);
+         mcommon_string_append (state->str, "\" : ");
          bson_free (escaped);
       } else {
          return true;
@@ -2826,7 +2826,7 @@ _bson_as_json_visit_after (const bson_iter_t *iter, const char *key, void *data)
       if (mcommon_cmp_greater_us (state->str->len, state->max_len)) {
          BSON_ASSERT (mcommon_in_range_signed (uint32_t, state->max_len));
          /* Truncate string to maximum length */
-         mcd_string_truncate (state->str, (uint32_t) state->max_len);
+         mcommon_string_truncate (state->str, (uint32_t) state->max_len);
       }
 
       return true;
@@ -2857,9 +2857,9 @@ _bson_as_json_visit_code (const bson_iter_t *iter, const char *key, size_t v_cod
       return true;
    }
 
-   mcd_string_append (state->str, "{ \"$code\" : \"");
-   mcd_string_append (state->str, escaped);
-   mcd_string_append (state->str, "\" }");
+   mcommon_string_append (state->str, "{ \"$code\" : \"");
+   mcommon_string_append (state->str, escaped);
+   mcommon_string_append (state->str, "\" }");
    bson_free (escaped);
 
    return false;
@@ -2882,13 +2882,13 @@ _bson_as_json_visit_symbol (
    }
 
    if (state->mode == BSON_JSON_MODE_CANONICAL || state->mode == BSON_JSON_MODE_RELAXED) {
-      mcd_string_append (state->str, "{ \"$symbol\" : \"");
-      mcd_string_append (state->str, escaped);
-      mcd_string_append (state->str, "\" }");
+      mcommon_string_append (state->str, "{ \"$symbol\" : \"");
+      mcommon_string_append (state->str, escaped);
+      mcommon_string_append (state->str, "\" }");
    } else {
-      mcd_string_append (state->str, "\"");
-      mcd_string_append (state->str, escaped);
-      mcd_string_append (state->str, "\"");
+      mcommon_string_append (state->str, "\"");
+      mcommon_string_append (state->str, escaped);
+      mcommon_string_append (state->str, "\"");
    }
 
    bson_free (escaped);
@@ -2914,9 +2914,9 @@ _bson_as_json_visit_codewscope (
       return true;
    }
 
-   mcd_string_append (state->str, "{ \"$code\" : \"");
-   mcd_string_append (state->str, code_escaped);
-   mcd_string_append (state->str, "\", \"$scope\" : ");
+   mcommon_string_append (state->str, "{ \"$code\" : \"");
+   mcommon_string_append (state->str, code_escaped);
+   mcommon_string_append (state->str, "\", \"$scope\" : ");
 
    bson_free (code_escaped);
 
@@ -2932,8 +2932,8 @@ _bson_as_json_visit_codewscope (
       return true;
    }
 
-   mcd_string_append (state->str, scope);
-   mcd_string_append (state->str, " }");
+   mcommon_string_append (state->str, scope);
+   mcommon_string_append (state->str, " }");
 
    bson_free (scope);
 
@@ -2965,12 +2965,12 @@ _bson_as_json_visit_document (const bson_iter_t *iter, const char *key, const bs
    BSON_UNUSED (key);
 
    if (state->depth >= BSON_MAX_RECURSION) {
-      mcd_string_append (state->str, "{ ... }");
+      mcommon_string_append (state->str, "{ ... }");
       return false;
    }
 
    if (bson_iter_init (&child, v_document)) {
-      child_state.str = mcd_string_new ("{ ");
+      child_state.str = mcommon_string_new ("{ ");
       child_state.depth = state->depth + 1;
       child_state.mode = state->mode;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
@@ -2983,10 +2983,10 @@ _bson_as_json_visit_document (const bson_iter_t *iter, const char *key, const bs
 
       if (bson_iter_visit_all (&child, &bson_as_json_visitors, &child_state)) {
          if (child_state.max_len_reached) {
-            mcd_string_append (state->str, child_state.str->str);
+            mcommon_string_append (state->str, child_state.str->str);
          }
 
-         mcd_string_free (child_state.str, true);
+         mcommon_string_free (child_state.str, true);
 
          /* If max_len was reached, we return a success state to ensure that
           * VISIT_AFTER is still called
@@ -2994,9 +2994,9 @@ _bson_as_json_visit_document (const bson_iter_t *iter, const char *key, const bs
          return !child_state.max_len_reached;
       }
 
-      mcd_string_append (child_state.str, " }");
-      mcd_string_append (state->str, child_state.str->str);
-      mcd_string_free (child_state.str, true);
+      mcommon_string_append (child_state.str, " }");
+      mcommon_string_append (state->str, child_state.str->str);
+      mcommon_string_free (child_state.str, true);
    }
 
    return false;
@@ -3014,12 +3014,12 @@ _bson_as_json_visit_array (const bson_iter_t *iter, const char *key, const bson_
    BSON_UNUSED (key);
 
    if (state->depth >= BSON_MAX_RECURSION) {
-      mcd_string_append (state->str, "{ ... }");
+      mcommon_string_append (state->str, "{ ... }");
       return false;
    }
 
    if (bson_iter_init (&child, v_array)) {
-      child_state.str = mcd_string_new ("[ ");
+      child_state.str = mcommon_string_new ("[ ");
       child_state.depth = state->depth + 1;
       child_state.mode = state->mode;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
@@ -3032,10 +3032,10 @@ _bson_as_json_visit_array (const bson_iter_t *iter, const char *key, const bson_
 
       if (bson_iter_visit_all (&child, &bson_as_json_visitors, &child_state)) {
          if (child_state.max_len_reached) {
-            mcd_string_append (state->str, child_state.str->str);
+            mcommon_string_append (state->str, child_state.str->str);
          }
 
-         mcd_string_free (child_state.str, true);
+         mcommon_string_free (child_state.str, true);
 
          /* If max_len was reached, we return a success state to ensure that
           * VISIT_AFTER is still called
@@ -3043,9 +3043,9 @@ _bson_as_json_visit_array (const bson_iter_t *iter, const char *key, const bson_
          return !child_state.max_len_reached;
       }
 
-      mcd_string_append (child_state.str, " ]");
-      mcd_string_append (state->str, child_state.str->str);
-      mcd_string_free (child_state.str, true);
+      mcommon_string_append (child_state.str, " ]");
+      mcommon_string_append (state->str, child_state.str->str);
+      mcommon_string_free (child_state.str, true);
    }
 
    return false;
@@ -3081,7 +3081,7 @@ _bson_as_json_visit_all (
 
    state.count = 0;
    state.keys = !is_outermost_array;
-   state.str = mcd_string_new (is_outermost_array ? "[ " : "{ ");
+   state.str = mcommon_string_new (is_outermost_array ? "[ " : "{ ");
    state.depth = 0;
    state.err_offset = &err_offset;
    state.mode = mode;
@@ -3092,7 +3092,7 @@ _bson_as_json_visit_all (
       /*
        * We were prematurely exited due to corruption or failed visitor.
        */
-      mcd_string_free (state.str, true);
+      mcommon_string_free (state.str, true);
       if (length) {
          *length = 0;
       }
@@ -3103,16 +3103,16 @@ _bson_as_json_visit_all (
     */
    remaining = state.max_len - state.str->len;
    if (state.max_len == BSON_MAX_LEN_UNLIMITED || remaining > 1) {
-      mcd_string_append (state.str, is_outermost_array ? " ]" : " }");
+      mcommon_string_append (state.str, is_outermost_array ? " ]" : " }");
    } else if (remaining == 1) {
-      mcd_string_append (state.str, " ");
+      mcommon_string_append (state.str, " ");
    }
 
    if (length) {
       *length = state.str->len;
    }
 
-   return mcd_string_free (state.str, false);
+   return mcommon_string_free (state.str, false);
 }
 
 

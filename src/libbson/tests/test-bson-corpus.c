@@ -2,7 +2,7 @@
 #include "TestSuite.h"
 #include "json-test.h"
 #include "corpus-test.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #include <inttypes.h>
 
@@ -42,19 +42,19 @@ skipped_corpus_test_t VS2013_SKIPPED_CORPUS_TESTS[] = {
 static void
 compare_data (const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len)
 {
-   mcd_string_t *a_str;
-   mcd_string_t *b_str;
+   mcommon_string_t *a_str;
+   mcommon_string_t *b_str;
    uint32_t i;
 
    if (a_len != b_len || memcmp (a, b, (size_t) a_len)) {
-      a_str = mcd_string_new (NULL);
+      a_str = mcommon_string_new (NULL);
       for (i = 0; i < a_len; i++) {
-         mcd_string_append_printf (a_str, "%02" PRIx8, a[i]);
+         mcommon_string_append_printf (a_str, "%02" PRIx8, a[i]);
       }
 
-      b_str = mcd_string_new (NULL);
+      b_str = mcommon_string_new (NULL);
       for (i = 0; i < b_len; i++) {
-         mcd_string_append_printf (b_str, "%02" PRIx8, b[i]);
+         mcommon_string_append_printf (b_str, "%02" PRIx8, b[i]);
       }
 
       fprintf (

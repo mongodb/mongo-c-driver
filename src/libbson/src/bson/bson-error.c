@@ -22,7 +22,7 @@
 #include <bson/bson-config.h>
 #include <bson/bson-error.h>
 #include <bson/bson-memory.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <bson/bson-types.h>
 
 // See `bson_strerror_r()` definition below.

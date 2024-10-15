@@ -43,7 +43,7 @@
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 #include <common-atomic-private.h>
 
@@ -1172,20 +1172,20 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
    bson_error_t *error = &ts->error;
-   mcd_string_t *msg;
+   mcommon_string_t *msg;
 
    memset (&ts->error, 0, sizeof (bson_error_t));
 
-   msg = mcd_string_new (NULL);
+   msg = mcommon_string_new (NULL);
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
       if (node->last_error.code) {
          if (msg->len) {
-            mcd_string_append_c (msg, ' ');
+            mcommon_string_append_c (msg, ' ');
          }
 
-         mcd_string_append_printf (msg, "[%s]", node->last_error.message);
+         mcommon_string_append_printf (msg, "[%s]", node->last_error.message);
 
          /* last error domain and code win */
          error->domain = node->last_error.domain;
@@ -1194,7 +1194,7 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
    }
 
    bson_strncpy ((char *) &error->message, msg->str, sizeof (error->message));
-   mcd_string_free (msg, true);
+   mcommon_string_free (msg, true);
 
    _delete_retired_nodes (ts);
 }

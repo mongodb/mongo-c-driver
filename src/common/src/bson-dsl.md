@@ -1,6 +1,6 @@
-# Using `bson-dsl.h`
+# Using `common-bson-dsl-private.h`
 
-The header `<bson-dsl.h>` exposes an embedded domain-specific language
+The header `<common-bson-dsl-private.h>` exposes an embedded domain-specific language
 (DSL) built upon the C99 preprocessor. The DSL emits valid C99 and C++03 code
 that can be used to inspect and construct `bson_t` objects.
 
@@ -28,7 +28,7 @@ The following DSL "grammatical elements" are defined:
 - [*VisitOperation*](#visitoperation)
 - [*Predicate*](#predicate)
 
-**NOTE:** The `bson-dsl.h` header is *not* a public API. It is intended for
+**NOTE:** The `common-bson-dsl-private.h` header is *not* a public API. It is intended for
 internal use and may be changed, broken, updated, or removed.
 
 # Generating BSON Data
@@ -899,7 +899,7 @@ correction.
 
 Unfortunately, debugging through macro definitions is still a tricky subject.
 
-`bson-dsl.h` includes a function `_bson_dsl_debug()`, which is invoked for every
+`common-bson-dsl-private.h` includes a function `_bson_dsl_debug()`, which is invoked for every
 DSL subcommand, including a string expressing the arguments to the command. If
 debug is "enabled" for the DSL, `_bson_dsl_debug` will write the debug output to
 `stderr`. If it is "disabled", `_bson_dsl_debug` is a no-op.
@@ -934,7 +934,7 @@ That is, MAP accepts a name `F` and zero or more arguments as `args`. For
 each argument `a` in `args`, expand one `F(x)`.
 
 The actual definition of `MAP` is non-trivial. The definition provded in
-`bson-dsl.h` can be found near the bottom of the file, and goes by the name
+`common-bson-dsl-private.h` can be found near the bottom of the file, and goes by the name
 `_bsonDSL_mapMacro`. It is not necessary to understand how `MAP` works to
 understand the DSL.
 

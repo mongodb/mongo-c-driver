@@ -22,7 +22,7 @@
 #include <bson/bson-decimal128.h>
 #include <bson/bson-types.h>
 #include <bson/bson-macros.h>
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 

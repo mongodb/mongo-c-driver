@@ -12,7 +12,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-cmp-private.h>
 
 
@@ -1506,7 +1506,7 @@ test_reading_multiple_chunks (void)
 
       // Read the entire file.
       {
-         mcd_string_t *str = mcd_string_new ("");
+         mcommon_string_t *str = mcommon_string_new ("");
          uint8_t buf[7] = {0};
          mongoc_iovec_t iov = {.iov_base = (void *) buf, .iov_len = sizeof (buf)};
          mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename (gridfs, "test_file", &error);
@@ -1518,7 +1518,7 @@ test_reading_multiple_chunks (void)
                mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
             ASSERT_CMPSSIZE_T (got, >=, 0);
             ASSERT (mcommon_in_range_int_signed (got));
-            mcd_string_append_printf (str, "%.*s", (int) got, (char *) buf);
+            mcommon_string_append_printf (str, "%.*s", (int) got, (char *) buf);
             ASSERT_CMPSSIZE_T (got, ==, 4);
          }
 
@@ -1528,12 +1528,12 @@ test_reading_multiple_chunks (void)
                mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
             ASSERT_CMPSSIZE_T (got, >=, 0);
             ASSERT (mcommon_in_range_int_signed (got));
-            mcd_string_append_printf (str, "%.*s", (int) got, (char *) buf);
+            mcommon_string_append_printf (str, "%.*s", (int) got, (char *) buf);
             ASSERT_CMPSSIZE_T (got, ==, 3);
          }
 
          ASSERT_CMPSTR (str->str, "foobar");
-         mcd_string_free (str, true);
+         mcommon_string_free (str, true);
          mongoc_gridfs_file_destroy (file);
       }
 

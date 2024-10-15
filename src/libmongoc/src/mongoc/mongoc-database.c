@@ -30,7 +30,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-change-stream-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "database"

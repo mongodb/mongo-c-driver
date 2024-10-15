@@ -24,7 +24,7 @@
 #include "sync-queue.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 
 struct _mock_rs_t {
@@ -67,18 +67,18 @@ char *
 hosts (mongoc_array_t *servers)
 {
    const char *host_and_port;
-   mcd_string_t *hosts_str = mcd_string_new ("");
+   mcommon_string_t *hosts_str = mcommon_string_new ("");
 
    for (size_t i = 0u; i < servers->len; i++) {
       host_and_port = mock_server_get_host_and_port (get_server (servers, i));
-      mcd_string_append_printf (hosts_str, "\"%s\"", host_and_port);
+      mcommon_string_append_printf (hosts_str, "\"%s\"", host_and_port);
 
       if (i + 1u < servers->len) {
-         mcd_string_append_printf (hosts_str, ", ");
+         mcommon_string_append_printf (hosts_str, ", ");
       }
    }
 
-   return mcd_string_free (hosts_str, false); /* detach buffer */
+   return mcommon_string_free (hosts_str, false); /* detach buffer */
 }
 
 
@@ -86,19 +86,19 @@ mongoc_uri_t *
 make_uri (mongoc_array_t *servers)
 {
    const char *host_and_port;
-   mcd_string_t *uri_str = mcd_string_new ("mongodb://");
+   mcommon_string_t *uri_str = mcommon_string_new ("mongodb://");
    mongoc_uri_t *uri;
 
    for (size_t i = 0u; i < servers->len; i++) {
       host_and_port = mock_server_get_host_and_port (get_server (servers, i));
-      mcd_string_append_printf (uri_str, "%s", host_and_port);
+      mcommon_string_append_printf (uri_str, "%s", host_and_port);
 
       if (i + 1u < servers->len) {
-         mcd_string_append_printf (uri_str, ",");
+         mcommon_string_append_printf (uri_str, ",");
       }
    }
 
-   mcd_string_append_printf (uri_str, "/?replicaSet=rs");
+   mcommon_string_append_printf (uri_str, "/?replicaSet=rs");
 
    uri = mongoc_uri_new (uri_str->str);
 
@@ -107,7 +107,7 @@ make_uri (mongoc_array_t *servers)
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, false);
 
-   mcd_string_free (uri_str, true);
+   mcommon_string_free (uri_str, true);
 
    return uri;
 }

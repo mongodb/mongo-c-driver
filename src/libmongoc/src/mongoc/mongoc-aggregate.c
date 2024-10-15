@@ -23,7 +23,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 
 /*--------------------------------------------------------------------------
  *

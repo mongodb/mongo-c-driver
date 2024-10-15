@@ -16,8 +16,8 @@
 
 #include "common-prelude.h"
 
-#ifndef COMMON_B64_PRIVATE_H
-#define COMMON_B64_PRIVATE_H
+#ifndef MONGO_C_DRIVER_COMMON_B64_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_B64_PRIVATE_H
 
 #include <bson/bson.h>
 
@@ -55,4 +55,4 @@ mcommon_b64_ntop (uint8_t const *src, size_t srclength, char *target, size_t tar
 int
 mcommon_b64_pton (char const *src, uint8_t *target, size_t targsize);
 
-#endif /* COMMON_B64_PRIVATE_H */
+#endif /* MONGO_C_DRIVER_COMMON_B64_PRIVATE_H */

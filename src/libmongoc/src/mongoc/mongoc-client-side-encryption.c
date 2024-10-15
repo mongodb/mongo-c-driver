@@ -19,7 +19,7 @@
 #include <signal.h>
 #endif
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 
 #include "mongoc.h"
 #include "mongoc-client-private.h"
@@ -30,7 +30,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-util-private.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 #include <common-atomic-private.h>
 
 /*--------------------------------------------------------------------------
@@ -1319,25 +1319,25 @@ _uri_construction_error (bson_error_t *error)
 static bool
 _do_spawn (const char *path, char **args, bson_error_t *error)
 {
-   mcd_string_t *command;
+   mcommon_string_t *command;
    char **arg;
    PROCESS_INFORMATION process_information;
    STARTUPINFO startup_info;
 
    /* Construct the full command, quote path and arguments. */
-   command = mcd_string_new ("");
-   mcd_string_append (command, "\"");
+   command = mcommon_string_new ("");
+   mcommon_string_append (command, "\"");
    if (path) {
-      mcd_string_append (command, path);
+      mcommon_string_append (command, path);
    }
-   mcd_string_append (command, "mongocryptd.exe");
-   mcd_string_append (command, "\"");
+   mcommon_string_append (command, "mongocryptd.exe");
+   mcommon_string_append (command, "\"");
    /* skip the "mongocryptd" first arg. */
    arg = args + 1;
    while (*arg) {
-      mcd_string_append (command, " \"");
-      mcd_string_append (command, *arg);
-      mcd_string_append (command, "\"");
+      mcommon_string_append (command, " \"");
+      mcommon_string_append (command, *arg);
+      mcommon_string_append (command, "\"");
       arg++;
    }
 
@@ -1374,11 +1374,11 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                       "failed to spawn mongocryptd: %s",
                       message);
       LocalFree (message);
-      mcd_string_free (command, true);
+      mcommon_string_free (command, true);
       return false;
    }
 
-   mcd_string_free (command, true);
+   mcommon_string_free (command, true);
    return true;
 }
 #else

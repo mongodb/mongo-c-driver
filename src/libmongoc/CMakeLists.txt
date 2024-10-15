@@ -660,10 +660,10 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/service-gcp.c
-   ${mongo-c-driver_SOURCE_DIR}/src/common/common-atomic.c
-   ${mongo-c-driver_SOURCE_DIR}/src/common/common-b64.c
-   ${mongo-c-driver_SOURCE_DIR}/src/common/common-md5.c
-   ${mongo-c-driver_SOURCE_DIR}/src/common/common-thread.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-atomic.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-b64.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-md5.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-thread.c
 
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-scram.c
@@ -931,9 +931,9 @@ if (ENABLE_SHARED)
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
-         $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
-         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common/src>
    )
 
    set_target_properties (mongoc_shared PROPERTIES
@@ -1012,9 +1012,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
-         $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
-         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common>
+         $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common/src>
    )
    set_target_properties (mongoc_static PROPERTIES
       VERSION 0.0.0
@@ -1028,10 +1028,10 @@ endif ()
 
 
 set (test-libmongoc-sources
-   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-common-cmp.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-atomic.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-cmp.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h
-   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-b64.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c

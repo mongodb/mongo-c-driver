@@ -1,10 +1,10 @@
 #include "common-prelude.h"
 
-#ifndef BSON_BSON_DSL_H_INCLUDED
-#define BSON_BSON_DSL_H_INCLUDED
+#ifndef MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H
 
 /**
- * @file bson-dsl.h
+ * @file common-bson-dsl-private.h
  * @brief Define a C-preprocessor DSL for working with BSON objects
  *
  * This file defines an embedded DSL for working with BSON objects consisely and
@@ -1274,4 +1274,4 @@ _bsonVisitIterAs_boolean (void)
 // clang-format on
 
 
-#endif // BSON_BSON_DSL_H_INCLUDED
+#endif // MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H

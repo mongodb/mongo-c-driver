@@ -24,7 +24,7 @@
 #include "mongoc-log.h"
 #include "mongoc-uri.h"
 #include "mongoc-util-private.h"
-#include <mcd-string.h>
+#include <common-string-private.h>
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #include "mongoc-openssl-private.h"
@@ -168,19 +168,19 @@ _mongoc_ssl_opts_disable_ocsp_endpoint_check (const mongoc_ssl_opt_t *ssl_opt)
 }
 
 bool
-_mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, mcd_string_t *errmsg)
+_mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, mcommon_string_t *errmsg)
 {
    bson_iter_t iter;
 
    if (ssl_opt->internal) {
-      mcd_string_append (errmsg, "SSL options must not have internal state set");
+      mcommon_string_append (errmsg, "SSL options must not have internal state set");
       return false;
    }
 
    ssl_opt->internal = bson_malloc0 (sizeof (_mongoc_internal_tls_opts_t));
 
    if (!bson_iter_init (&iter, bson)) {
-      mcd_string_append (errmsg, "error initializing iterator to BSON SSL options");
+      mcommon_string_append (errmsg, "error initializing iterator to BSON SSL options");
       return false;
    }
 
@@ -228,7 +228,7 @@ _mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, mcd_s
          }
       }
 
-      mcd_string_append_printf (
+      mcommon_string_append_printf (
          errmsg, "unexpected %s option: %s", _mongoc_bson_type_to_str (bson_iter_type (&iter)), key);
       return false;
    }
