@@ -10,9 +10,21 @@ import yaml
 from shrub.v3.evg_command import EvgCommandType, subprocess_exec
 from shrub.v3.evg_project import EvgProject
 from shrub.v3.shrub_service import ConfigDumper
+from shrub.v3.evg_task import EvgTaskRef
 from typing_extensions import get_args, get_origin, get_type_hints
 
 T = TypeVar('T')
+
+
+# Equivalent to EvgTaskRef but defines additional properties.
+class TaskRef(EvgTaskRef):
+    """
+    An evergreen task reference model that also includes additional properties.
+
+    (The shrub.py model is missing some properties)
+    """
+
+    batchtime: int | None = None
 
 
 # Automatically formats the provided script and invokes it in Bash.
