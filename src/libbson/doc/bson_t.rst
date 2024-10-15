@@ -225,6 +225,7 @@ BSON document contains duplicate keys.
     bson_steal
     bson_validate
     bson_validate_with_error
+    bson_validate_with_error_and_offset
 
 Example
 -------
