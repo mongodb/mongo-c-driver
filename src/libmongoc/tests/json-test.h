@@ -115,4 +115,7 @@ check_scenario_version (const bson_t *scenario);
 void
 check_outcome_collection (mongoc_collection_t *collection, bson_t *test);
 
+bool
+test_should_be_skipped (const test_skip_t *skips, const char *description);
+
 #endif
