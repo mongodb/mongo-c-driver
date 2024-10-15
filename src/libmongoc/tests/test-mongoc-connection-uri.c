@@ -104,7 +104,6 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
       /* CDRIVER-3167 */
       if ((mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 0) < 0) ||
           (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 0) < 0) ||
-          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXIDLETIMEMS, 0) < 0) ||
           (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 0) < 0) ||
           (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0) < 0)) {
          MONGOC_WARNING ("Invalid negative timeout");
