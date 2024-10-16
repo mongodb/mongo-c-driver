@@ -75,7 +75,7 @@ On the other hand, if the client connects to the server successfully and attempt
      }
 
      if (mongoc_cursor_error_document (cursor, &error, &reply)) {
-        str = bson_as_json (reply, NULL);
+        str = bson_as_relaxed_extended_json (reply, NULL);
         fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, str);
         bson_free (str);
      }

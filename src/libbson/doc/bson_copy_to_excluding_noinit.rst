@@ -56,7 +56,7 @@ Example
      bson_init (&bson2);
      bson_copy_to_excluding_noinit (&bson, &bson2, "b", NULL);
 
-     str = bson_as_json (&bson2, NULL);
+     str = bson_as_relaxed_extended_json (&bson2, NULL);
      /* Prints
       * { "a" : 1, "c" : 2 }
       */
