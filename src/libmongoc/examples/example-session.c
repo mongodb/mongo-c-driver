@@ -92,7 +92,7 @@ main (int argc, char *argv[])
    cursor = mongoc_collection_find_with_opts (collection, selector, find_opts, secondary);
 
    while (mongoc_cursor_next (cursor, &doc)) {
-      str = bson_as_json (doc, NULL);
+      str = bson_as_relaxed_extended_json (doc, NULL);
       fprintf (stdout, "%s\n", str);
       bson_free (str);
    }

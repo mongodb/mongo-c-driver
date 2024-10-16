@@ -128,7 +128,7 @@ retry_transaction:
          goto done;
       }
 
-      reply_json = bson_as_json (&reply, NULL);
+      reply_json = bson_as_relaxed_extended_json (&reply, NULL);
       printf ("%s\n", reply_json);
       bson_free (reply_json);
    }
