@@ -143,3 +143,8 @@ fi
 
 # Also validate examples.
 "${cmake_binary:?}" --build "${build_dir:?}" --config "${build_config:?}" --target mongo_c_driver_examples
+
+if [[ "$EXTRA_CONFIGURE_FLAGS" != *"ENABLE_MONGOC=OFF"* ]]; then
+  # Check public headers for extra warnings.
+  "${cmake_binary:?}" --build "${build_dir:?}" --config "${build_config:?}" --target public-header-warnings
+fi

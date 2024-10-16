@@ -367,4 +367,17 @@
       (void) (expr);      \
    } while (0)
 
+// Disable the -Wunsafe-buffer-usage warning.
+#define BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
+#define BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
+#if defined(__clang__)
+#if __has_warning("-Wunsafe-buffer-usage")
+#undef BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
+#undef BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
+#define BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wunsafe-buffer-usage\"")
+#define BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END _Pragma ("clang diagnostic pop")
+#endif // __has_warning("-Wunsafe-buffer-usage")
+#endif // defined(__clang__)
+
 #endif /* BSON_MACROS_H */

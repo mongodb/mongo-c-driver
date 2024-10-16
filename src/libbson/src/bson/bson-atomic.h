@@ -97,6 +97,34 @@ enum BSON_GNUC_DEPRECATED bson_memory_order {
 #define BSON_EMULATE_PTR
 #endif
 
+// Disable the -Wcovered-switch-default warning.
+#define BSON_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN
+#define BSON_DISABLE_COVERED_SWITCH_DEFAULT_END
+#if defined(__clang__)
+#if __has_warning("-Wcovered-switch-default")
+#undef BSON_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN
+#undef BSON_DISABLE_COVERED_SWITCH_DEFAULT_END
+#define BSON_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wcovered-switch-default\"")
+#define BSON_DISABLE_COVERED_SWITCH_DEFAULT_END _Pragma ("clang diagnostic pop")
+#endif // __has_warning("-Wcovered-switch-default")
+#endif // defined(__clang__)
+
+// Disable the -Watomic-implicit-seq-cst warning.
+#define BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_BEGIN
+#define BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_END
+#if defined(__clang__)
+#if __has_warning("-Watomic-implicit-seq-cst")
+#undef BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_BEGIN
+#undef BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_END
+#define BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_BEGIN \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Watomic-implicit-seq-cst\"")
+#define BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_END _Pragma ("clang diagnostic pop")
+#endif // __has_warning("-Watomic-implicit-seq-cst")
+#endif // defined(__clang__)
+
+BSON_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN
+
 #define DEF_ATOMIC_OP(MSVC_Intrinsic, GNU_Intrinsic, GNU_Legacy_Intrinsic, Order, ...)                  \
    do {                                                                                                 \
       switch (Order) {                                                                                  \
@@ -582,7 +610,13 @@ bson_atomic_ptr_compare_exchange_weak (void *volatile *ptr, void *expect, void *
 static BSON_INLINE void *BSON_GNUC_DEPRECATED
 bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_memory_order ord)
 {
-   return bson_atomic_ptr_compare_exchange_strong ((void *volatile *) ptr, NULL, NULL, ord);
+   // Use a union to address cast-qual compilation warning
+   union {
+      void *volatile const *const_ptr;
+      void *volatile *non_const_ptr;
+   } u;
+   u.const_ptr = ptr;
+   return bson_atomic_ptr_compare_exchange_strong (u.non_const_ptr, NULL, NULL, ord);
 }
 
 #undef DECL_ATOMIC_STDINT
@@ -599,7 +633,11 @@ static BSON_INLINE void BSON_GNUC_DEPRECATED
 bson_atomic_thread_fence (void)
 {
    BSON_IF_MSVC (MemoryBarrier ();)
+
+   BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_BEGIN
    BSON_IF_GNU_LIKE (__sync_synchronize ();)
+   BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_END
+
    BSON_IF_GNU_LEGACY_ATOMICS (__sync_synchronize ();)
 }
 
@@ -619,10 +657,16 @@ BSON_EXPORT (int32_t) bson_atomic_int_add (volatile int32_t *p, int32_t n);
 BSON_GNUC_DEPRECATED
 BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 
+BSON_DISABLE_COVERED_SWITCH_DEFAULT_END
 
 #undef BSON_EMULATE_PTR
 #undef BSON_EMULATE_INT32
 #undef BSON_EMULATE_INT
+#undef BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_BEGIN
+#undef BSON_DISABLE_ATOMIC_IMPLICIT_SEQ_CST_END
+#undef BSON_DISABLE_COVERED_SWITCH_DEFAULT_BEGIN
+#undef BSON_DISABLE_COVERED_SWITCH_DEFAULT_END
+
 
 BSON_END_DECLS
 
