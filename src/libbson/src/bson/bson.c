@@ -3122,6 +3122,9 @@ _bson_as_json_visit_all (
 char *
 bson_as_json_with_opts (const bson_t *bson, size_t *length, const bson_json_opts_t *opts)
 {
+   BSON_ASSERT_PARAM (bson);
+   BSON_OPTIONAL_PARAM (length);
+   BSON_ASSERT_PARAM (opts);
    return _bson_as_json_visit_all (bson, length, opts->mode, opts->max_len, opts->is_outermost_array);
 }
 
