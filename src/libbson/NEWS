@@ -1,3 +1,27 @@
+libbson 1.29.0 (Unreleased)
+===========================
+
+Deprecated:
+
+  * `bson_string_t` and associated functions are deprecated and planned for removal in a future major release.
+  * Compiling with `BSON_MEMCHECK` defined is deprecated.
+  * `bson_in_range_*` and `bson_cmp_*` functions.
+  * `bson_atomic_*` and `bson_thrd_yield` functions.
+
+libbson 1.28.1
+==============
+
+Fixes:
+
+  * Fix large string handling in `bson_string_truncate`.
+  * Fix possible crash in `bson_value_copy`.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Joshua Siegel
+  * Kevin Albertson
+
 libbson 1.28.0
 ==============
 

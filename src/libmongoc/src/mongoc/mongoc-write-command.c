@@ -26,7 +26,10 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-opts-private.h"
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
+#include <inttypes.h>
 
 /* indexed by MONGOC_WRITE_COMMAND_DELETE, INSERT, UPDATE */
 static const char *gCommandNames[] = {"delete", "insert", "update"};
@@ -381,8 +384,8 @@ _mongoc_write_command_too_large_error (bson_error_t *error, int32_t idx, int32_t
    bson_set_error (error,
                    MONGOC_ERROR_BSON,
                    MONGOC_ERROR_BSON_INVALID,
-                   "Document %u is too large for the cluster. "
-                   "Document is %u bytes, max is %d.",
+                   "Document %" PRId32 " is too large for the cluster. "
+                   "Document is %" PRId32 " bytes, max is %" PRId32 ".",
                    idx,
                    len,
                    max_bson_size);
@@ -688,7 +691,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       ulen = BSON_UINT32_FROM_LE (ulen);
 
       // Although messageLength is an int32, it should never be negative.
-      BSON_ASSERT (bson_in_range_unsigned (int32_t, ulen));
+      BSON_ASSERT (mcommon_in_range_unsigned (int32_t, ulen));
       const int32_t slen = (int32_t) ulen;
 
       if (slen > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
@@ -697,7 +700,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          result->failed = true;
          break;
 
-      } else if (bson_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
+      } else if (mcommon_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
                  document_count == 0) {
          /* The current batch is still under max batch size in bytes */
          payload_batch_size += ulen;
@@ -986,15 +989,15 @@ _set_error_from_response (bson_t *bson_array,
 {
    bson_iter_t array_iter;
    bson_iter_t doc_iter;
-   bson_string_t *compound_err;
+   mcommon_string_t *compound_err;
    const char *errmsg = NULL;
    int32_t code = 0;
    uint32_t n_keys, i;
 
-   compound_err = bson_string_new (NULL);
+   compound_err = mcommon_string_new (NULL);
    n_keys = bson_count_keys (bson_array);
    if (n_keys > 1) {
-      bson_string_append_printf (compound_err, "Multiple %s errors: ", error_type);
+      mcommon_string_append_printf (compound_err, "Multiple %s errors: ", error_type);
    }
 
    if (!bson_empty0 (bson_array) && bson_iter_init (&array_iter, bson_array)) {
@@ -1013,13 +1016,13 @@ _set_error_from_response (bson_t *bson_array,
 
                   /* build message like 'Multiple write errors: "foo", "bar"' */
                   if (n_keys > 1) {
-                     bson_string_append_printf (compound_err, "\"%s\"", errmsg);
+                     mcommon_string_append_printf (compound_err, "\"%s\"", errmsg);
                      if (i < n_keys - 1) {
-                        bson_string_append (compound_err, ", ");
+                        mcommon_string_append (compound_err, ", ");
                      }
                   } else {
                      /* single error message */
-                     bson_string_append (compound_err, errmsg);
+                     mcommon_string_append (compound_err, errmsg);
                   }
                }
             }
@@ -1033,7 +1036,7 @@ _set_error_from_response (bson_t *bson_array,
       }
    }
 
-   bson_string_free (compound_err, true);
+   mcommon_string_free (compound_err, true);
 }
 
 

@@ -31,6 +31,7 @@
 #include "mongoc-client-session-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-sleep.h"
+#include <common-cmp-private.h>
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
@@ -264,7 +265,7 @@ _mongoc_bson_type_to_str (bson_type_t t)
 
 
 /* Refer to:
- * https://github.com/mongodb/specifications/blob/master/source/wireversion-featurelist.rst
+ * https://github.com/mongodb/specifications/blob/master/source/wireversion-featurelist/wireversion-featurelist.md
  * and:
  * https://github.com/mongodb/mongo/blob/master/src/mongo/db/wire_version.h#L57
  */
@@ -987,7 +988,7 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, hex_len / 2u));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, hex_len / 2u));
 
    *len = (uint32_t) (hex_len / 2u);
    out = bson_malloc0 (*len);
@@ -1000,7 +1001,7 @@ hex_to_bin (const char *hex, uint32_t *len)
          return NULL;
       }
 
-      BSON_ASSERT (bson_in_range_unsigned (uint8_t, hex_char));
+      BSON_ASSERT (mcommon_in_range_unsigned (uint8_t, hex_char));
       out[i / 2u] = (uint8_t) hex_char;
    }
    return out;

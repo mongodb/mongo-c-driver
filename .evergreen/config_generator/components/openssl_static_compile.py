@@ -1,6 +1,6 @@
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType
-from shrub.v3.evg_task import EvgTaskRef
+from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
 from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 
@@ -9,7 +9,6 @@ from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import to_cc
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
-from config_generator.etc.utils import Task
 
 SSL = 'openssl-static'
 TAG = f'{SSL}-matrix'
@@ -67,7 +66,7 @@ def tasks():
         task_name = f'openssl-static-compile-{distro_str}'
 
         res.append(
-            Task(
+            EvgTask(
                 name=task_name,
                 run_on=distro.name,
                 tags=tags,

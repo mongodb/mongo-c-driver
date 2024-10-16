@@ -6,6 +6,8 @@
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
 static ssize_t
 test_bson_json_read_cb_helper (void *string, uint8_t *buf, size_t len)
@@ -752,7 +754,7 @@ test_bson_json_read_buffering (void)
 {
    bson_t **bsons;
    char *json_tmp;
-   bson_string_t *json;
+   mcommon_string_t *json;
    bson_error_t error;
    bson_t bson_out = BSON_INITIALIZER;
    int i;
@@ -764,7 +766,7 @@ test_bson_json_read_buffering (void)
    bson_json_reader_t *reader;
    int r;
 
-   json = bson_string_new (NULL);
+   json = mcommon_string_new (NULL);
 
    /* parse between 1 and 10 JSON objects */
    for (n_docs = 1; n_docs < 10; n_docs++) {
@@ -785,7 +787,7 @@ test_bson_json_read_buffering (void)
             /* append the BSON document's JSON representation to "json" */
             json_tmp = bson_as_json (bsons[docs_idx], NULL);
             BSON_ASSERT (json_tmp);
-            bson_string_append (json, json_tmp);
+            mcommon_string_append (json, json_tmp);
             bson_free (json_tmp);
          }
 
@@ -810,7 +812,7 @@ test_bson_json_read_buffering (void)
          ASSERT_CMPINT (0, ==, bson_json_reader_read (reader, &bson_out, &error));
 
          bson_json_reader_destroy (reader);
-         bson_string_truncate (json, 0);
+         mcommon_string_truncate (json, 0);
 
          for (docs_idx = 0; docs_idx < n_docs; docs_idx++) {
             bson_destroy (bsons[docs_idx]);
@@ -820,7 +822,7 @@ test_bson_json_read_buffering (void)
       }
    }
 
-   bson_string_free (json, true);
+   mcommon_string_free (json, true);
    bson_destroy (&bson_out);
 }
 
@@ -2715,7 +2717,7 @@ test_bson_as_json_with_opts (bson_t *bson, bson_json_mode_t mode, int max_len, c
    ASSERT_CMPSIZE_T (json_len, ==, strlen (expected));
 
    if (max_len != BSON_MAX_LEN_UNLIMITED) {
-      ASSERT (bson_in_range_signed (size_t, max_len));
+      ASSERT (mcommon_in_range_signed (size_t, max_len));
       ASSERT_CMPSIZE_T (json_len, <=, (size_t) max_len);
    }
 
@@ -2741,7 +2743,7 @@ run_bson_as_json_with_opts_tests (bson_t *bson, bson_json_mode_t mode, const cha
    const size_t ulen = strlen (expected);
    char *truncated;
 
-   BSON_ASSERT (bson_in_range_unsigned (int, ulen));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, ulen));
    const int len = (int) ulen;
 
    /* Test with 0 length (empty string). */

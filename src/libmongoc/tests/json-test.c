@@ -1325,7 +1325,7 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
          } else if (BSON_ITER_HOLDS_INT (&iter)) {
             mongoc_write_concern_set_w (wc, (int32_t) bson_iter_as_int64 (&iter));
          } else {
-            test_error ("Unrecognized type for 'w': %d", bson_iter_type (&iter));
+            test_error ("Unrecognized type for 'w': %d", (int) bson_iter_type (&iter));
          }
 
          mongoc_uri_set_write_concern (uri, wc);

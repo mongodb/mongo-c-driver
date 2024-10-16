@@ -12,6 +12,8 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
 
 static mongoc_gridfs_t *
@@ -221,7 +223,7 @@ test_remove (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   bson_snprintf (name, sizeof name, "test-remove.%u", rand ());
+   bson_snprintf (name, sizeof name, "test-remove.%d", rand ());
    opts.filename = name;
 
    file = mongoc_gridfs_create_file (gridfs, &opts);
@@ -840,14 +842,14 @@ test_write_past_end (void)
    ASSERT (file);
 
    r = mongoc_gridfs_file_writev (file, iov, 1, 0);
-   ASSERT (bson_in_range_signed (size_t, r));
+   ASSERT (mcommon_in_range_signed (size_t, r));
    ASSERT_CMPSIZE_T ((size_t) r, ==, len);
 
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, (int64_t) delta, SEEK_SET), ==, 0);
    ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, delta);
 
    r = mongoc_gridfs_file_writev (file, iov, 1, 0);
-   ASSERT (bson_in_range_signed (size_t, r));
+   ASSERT (mcommon_in_range_signed (size_t, r));
    ASSERT_CMPSIZE_T ((size_t) r, ==, len);
    mongoc_gridfs_file_save (file);
 
@@ -855,17 +857,17 @@ test_write_past_end (void)
       mongoc_collection_count_documents (mongoc_gridfs_get_chunks (gridfs), tmp_bson (NULL), NULL, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (cnt != -1, error);
-   ASSERT (bson_cmp_equal_us (expected_chunks, cnt));
+   ASSERT (mcommon_cmp_equal_us (expected_chunks, cnt));
 
    mongoc_gridfs_file_destroy (file);
    file = mongoc_gridfs_find_one (gridfs, tmp_bson (NULL), &error);
    ASSERT_OR_PRINT (file, error);
 
-   BSON_ASSERT (bson_in_range_unsigned (size_t, delta + len));
+   BSON_ASSERT (mcommon_in_range_unsigned (size_t, delta + len));
    const size_t total_bytes = (size_t) (delta + len);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, total_bytes, 0);
-   ASSERT (bson_in_range_signed (size_t, r));
+   ASSERT (mcommon_in_range_signed (size_t, r));
    ASSERT_CMPSIZE_T ((size_t) r, ==, total_bytes);
 
    mongoc_gridfs_file_destroy (file);
@@ -961,7 +963,7 @@ test_stream (void)
 
    stream = mongoc_stream_gridfs_new (file);
 
-   ASSERT (bson_in_range_signed (size_t, file->length));
+   ASSERT (mcommon_in_range_signed (size_t, file->length));
    const ssize_t r = mongoc_stream_readv (stream, &iov, 1, (size_t) file->length, 0);
    ASSERT_CMPINT64 ((int64_t) r, ==, file->length);
 
@@ -1504,7 +1506,7 @@ test_reading_multiple_chunks (void)
 
       // Read the entire file.
       {
-         bson_string_t *str = bson_string_new ("");
+         mcommon_string_t *str = mcommon_string_new ("");
          uint8_t buf[7] = {0};
          mongoc_iovec_t iov = {.iov_base = (void *) buf, .iov_len = sizeof (buf)};
          mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename (gridfs, "test_file", &error);
@@ -1515,8 +1517,8 @@ test_reading_multiple_chunks (void)
             ssize_t got =
                mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
             ASSERT_CMPSSIZE_T (got, >=, 0);
-            ASSERT (bson_in_range_int_signed (got));
-            bson_string_append_printf (str, "%.*s", (int) got, (char *) buf);
+            ASSERT (mcommon_in_range_int_signed (got));
+            mcommon_string_append_printf (str, "%.*s", (int) got, (char *) buf);
             ASSERT_CMPSSIZE_T (got, ==, 4);
          }
 
@@ -1525,13 +1527,13 @@ test_reading_multiple_chunks (void)
             ssize_t got =
                mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
             ASSERT_CMPSSIZE_T (got, >=, 0);
-            ASSERT (bson_in_range_int_signed (got));
-            bson_string_append_printf (str, "%.*s", (int) got, (char *) buf);
+            ASSERT (mcommon_in_range_int_signed (got));
+            mcommon_string_append_printf (str, "%.*s", (int) got, (char *) buf);
             ASSERT_CMPSSIZE_T (got, ==, 3);
          }
 
          ASSERT_CMPSTR (str->str, "foobar");
-         bson_string_free (str, true);
+         mcommon_string_free (str, true);
          mongoc_gridfs_file_destroy (file);
       }
 

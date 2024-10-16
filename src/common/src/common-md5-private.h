@@ -16,8 +16,8 @@
 
 #include "common-prelude.h"
 
-#ifndef COMMON_MD5_PRIVATE_H
-#define COMMON_MD5_PRIVATE_H
+#ifndef MONGO_C_DRIVER_COMMON_MD5_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_MD5_PRIVATE_H
 
 #include "bson/bson.h"
 
@@ -36,4 +36,4 @@ mcommon_md5_finish (bson_md5_t *pms, uint8_t digest[16]);
 
 BSON_END_DECLS
 
-#endif /* COMMON_MD5_PRIVATE_H */
+#endif /* MONGO_C_DRIVER_COMMON_MD5_PRIVATE_H */

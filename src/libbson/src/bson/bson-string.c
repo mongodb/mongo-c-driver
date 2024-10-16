@@ -20,8 +20,8 @@
 
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
-#include <bson/bson-cmp.h>
-#include <bson/bson-string.h>
+#include <common-cmp-private.h>
+#include <common-string-private.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-utf8.h>
 #include <bson/bson-string-private.h>
@@ -108,7 +108,7 @@ bson_string_new (const char *str) /* IN */
 
    ret = bson_malloc0 (sizeof *ret);
    const size_t len_sz = str == NULL ? 0u : strlen (str);
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len_sz));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len_sz));
    const uint32_t len_u32 = (uint32_t) len_sz;
    bson_string_ensure_space (ret, len_u32);
    if (str) {
@@ -206,7 +206,7 @@ _bson_string_append_ex (bson_string_t *string, /* IN */
    BSON_ASSERT (string);
    BSON_ASSERT (str);
 
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len));
    const uint32_t len_u32 = (uint32_t) len;
    BSON_ASSERT (len_u32 <= UINT32_MAX - string->len);
    const uint32_t new_len = len_u32 + string->len;
@@ -273,7 +273,7 @@ bson_string_append_c (bson_string_t *string, /* IN */
    if (BSON_UNLIKELY (string->alloc == (string->len + 1))) {
       cc[0] = c;
       cc[1] = '\0';
-      bson_string_append (string, cc);
+      mcommon_string_append (string, cc);
       return;
    }
 
@@ -312,7 +312,7 @@ bson_string_append_unichar (bson_string_t *string,  /* IN */
 
    if (len <= 6) {
       str[len] = '\0';
-      bson_string_append (string, str);
+      mcommon_string_append (string, str);
    }
 }
 
@@ -345,7 +345,7 @@ bson_string_append_printf (bson_string_t *string, const char *format, ...)
    va_start (args, format);
    ret = bson_strdupv_printf (format, args);
    va_end (args);
-   bson_string_append (string, ret);
+   mcommon_string_append (string, ret);
    bson_free (ret);
 }
 

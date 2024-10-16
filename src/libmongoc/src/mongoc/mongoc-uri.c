@@ -36,8 +36,10 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-compression-private.h"
 #include "utlist.h"
+#include "mongoc-trace-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
+#include <common-string-private.h>
 
 struct _mongoc_uri_t {
    char *str;
@@ -897,7 +899,15 @@ mongoc_uri_split_option (mongoc_uri_t *uri, bson_t *options, const char *str, bo
        * through TXT records." So, do NOT override existing options with TXT
        * options. */
       if (from_dns) {
-         MONGOC_WARNING ("Cannot override URI option \"%s\" from TXT record \"%s\"", key, str);
+         if (0 == strcmp (lkey, MONGOC_URI_AUTHSOURCE)) {
+            // Treat `authSource` as a special case. A server may support authentication with multiple mechanisms.
+            // MONGODB-X509 requires authSource=$external. SCRAM-SHA-256 requires authSource=admin.
+            // Only log a trace message since this may be expected.
+            TRACE ("Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
+         } else {
+            MONGOC_WARNING (
+               "Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
+         }
          ret = true;
          goto CLEANUP;
       }
@@ -1155,7 +1165,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
           * Keys that aren't supported by a driver MUST be ignored.
           *
           * A WARN level logging message MUST be issued
-          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.rst#keys
+          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.md#keys
           */
          MONGOC_WARNING ("Unsupported URI option \"%s\"", key);
       }
@@ -2205,7 +2215,7 @@ char *
 mongoc_uri_unescape (const char *escaped_string)
 {
    bson_unichar_t c;
-   bson_string_t *str;
+   mcommon_string_t *str;
    unsigned int hex = 0;
    const char *ptr;
    const char *end;
@@ -2226,7 +2236,7 @@ mongoc_uri_unescape (const char *escaped_string)
 
    ptr = escaped_string;
    end = ptr + len;
-   str = bson_string_new (NULL);
+   str = mcommon_string_new (NULL);
 
    for (; *ptr; ptr = bson_utf8_next_char (ptr)) {
       c = bson_utf8_get_char (ptr);
@@ -2239,16 +2249,16 @@ mongoc_uri_unescape (const char *escaped_string)
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
              || 0 == hex) {
-            bson_string_free (str, true);
+            mcommon_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
          }
-         bson_string_append_c (str, hex);
+         mcommon_string_append_c (str, hex);
          ptr += 2;
          unescape_occurred = true;
          break;
       default:
-         bson_string_append_unichar (str, c);
+         mcommon_string_append_unichar (str, c);
          break;
       }
    }
@@ -2256,11 +2266,11 @@ mongoc_uri_unescape (const char *escaped_string)
    /* Check that after unescaping, it is still valid UTF-8 */
    if (unescape_occurred && !bson_utf8_validate (str->str, str->len, false)) {
       MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
-      bson_string_free (str, true);
+      mcommon_string_free (str, true);
       return NULL;
    }
 
-   return bson_string_free (str, false);
+   return mcommon_string_free (str, false);
 }
 
 

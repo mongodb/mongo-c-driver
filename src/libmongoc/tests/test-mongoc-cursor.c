@@ -11,6 +11,8 @@
 #include "mongoc/mongoc-read-concern-private.h"
 #include "mongoc/mongoc-write-concern-private.h"
 #include "test-conveniences.h"
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
 
 typedef mongoc_cursor_t *(*make_cursor_fn) (mongoc_collection_t *);
@@ -1152,7 +1154,7 @@ test_cursor_int64_t_maxtimems (void)
    bson_append_bool (max_await_time_ms, "awaitData", 9, true);
    bson_append_int64 (
       max_await_time_ms, MONGOC_CURSOR_MAX_AWAIT_TIME_MS, MONGOC_CURSOR_MAX_AWAIT_TIME_MS_LEN, ms_int64);
-   ASSERT (bson_in_range_int32_t_unsigned (server_id));
+   ASSERT (mcommon_in_range_int32_t_unsigned (server_id));
    BSON_APPEND_INT32 (max_await_time_ms, "serverId", (uint32_t) server_id);
 
    cursor = mongoc_cursor_new_from_command_reply_with_opts (client,
@@ -1742,27 +1744,27 @@ typedef struct {
 
 
 static void
-_make_reply_batch (bson_string_t *reply, uint32_t n_docs, bool first_batch, bool finished)
+_make_reply_batch (mcommon_string_t *reply, uint32_t n_docs, bool first_batch, bool finished)
 {
    uint32_t j;
 
-   bson_string_append_printf (reply,
-                              "{'ok': 1, 'cursor': {"
-                              "    'id': %d,"
-                              "    'ns': 'db.coll',",
-                              finished ? 0 : 123);
+   mcommon_string_append_printf (reply,
+                                 "{'ok': 1, 'cursor': {"
+                                 "    'id': %d,"
+                                 "    'ns': 'db.coll',",
+                                 finished ? 0 : 123);
 
    if (first_batch) {
-      bson_string_append (reply, "'firstBatch': [{}");
+      mcommon_string_append (reply, "'firstBatch': [{}");
    } else {
-      bson_string_append (reply, "'nextBatch': [{}");
+      mcommon_string_append (reply, "'nextBatch': [{}");
    }
 
    for (j = 1; j < n_docs; j++) {
-      bson_string_append (reply, ", {}");
+      mcommon_string_append (reply, ", {}");
    }
 
-   bson_string_append (reply, "]}}");
+   mcommon_string_append (reply, "]}}");
 }
 
 
@@ -1776,7 +1778,7 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
    future_t *future;
    int j;
    int reply_no;
-   bson_string_t *reply;
+   mcommon_string_t *reply;
    bool cursor_finished;
 
    BSON_APPEND_UTF8 (&find_cmd, "find", "coll");
@@ -1799,10 +1801,10 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
    assert_match_bson (request_get_doc (request, 0), &find_cmd, true);
 
-   reply = bson_string_new (NULL);
+   reply = mcommon_string_new (NULL);
    _make_reply_batch (reply, (uint32_t) test->reply_length[0], true, false);
    reply_to_request_simple (request, reply->str);
-   bson_string_free (reply, true);
+   mcommon_string_free (reply, true);
 
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -1828,12 +1830,12 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
       assert_match_bson (request_get_doc (request, 0), &getmore_cmd, true);
 
-      reply = bson_string_new (NULL);
+      reply = mcommon_string_new (NULL);
       cursor_finished = (reply_no == 2);
       _make_reply_batch (reply, (uint32_t) test->reply_length[reply_no], false, cursor_finished);
 
       reply_to_request_simple (request, reply->str);
-      bson_string_free (reply, true);
+      mcommon_string_free (reply, true);
 
       ASSERT (future_get_bool (future));
       future_destroy (future);

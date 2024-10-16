@@ -57,7 +57,8 @@
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-error-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
+#include <common-cmp-private.h>
 
 #include <inttypes.h>
 
@@ -170,7 +171,7 @@ _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov, size_t iovcnt, int skip, char
    size_t difference = 0;
 
    for (size_t n = 0u; n < iovcnt; n++) {
-      BSON_ASSERT (bson_in_range_unsigned (int, iov[n].iov_len));
+      BSON_ASSERT (mcommon_in_range_unsigned (int, iov[n].iov_len));
       const int iov_len = (int) iov[n].iov_len;
 
       total_iov_len += iov_len;
@@ -546,7 +547,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       /*
        * Unacknowledged writes must provide a CommandSucceededEvent with an
        * {ok: 1} reply.
-       * https://github.com/mongodb/specifications/blob/master/source/command-logging-and-monitoring/command-logging-and-monitoring.rst#unacknowledged-acknowledged-writes
+       * https://github.com/mongodb/specifications/blob/master/source/command-logging-and-monitoring/command-logging-and-monitoring.md#unacknowledgedacknowledged-writes
        */
       if (!cmd->is_acknowledged) {
          bson_append_int32 (&fake_reply, "ok", 2, 1);
@@ -2271,8 +2272,11 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    scanner_node = mongoc_topology_scanner_get_node (cluster->client->topology->scanner, server_id);
    /* This could happen if a user explicitly passes a bad server id. */
    if (!scanner_node) {
-      bson_set_error (
-         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Could not find server with id: %d", server_id);
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Could not find server with id: %" PRIu32,
+                      server_id);
       return NULL;
    }
 
@@ -3250,10 +3254,10 @@ _mongoc_cluster_run_opmsg_send (
       for (size_t i = 0; i < cmd->payloads_count; i++) {
          const mongoc_cmd_payload_t payload = cmd->payloads[i];
 
-         BSON_ASSERT (bson_in_range_signed (size_t, payload.size));
+         BSON_ASSERT (mcommon_in_range_signed (size_t, payload.size));
 
          const size_t section_length = sizeof (int32_t) + strlen (payload.identifier) + 1u + (size_t) payload.size;
-         BSON_ASSERT (bson_in_range_unsigned (int32_t, section_length));
+         BSON_ASSERT (mcommon_in_range_unsigned (int32_t, section_length));
 
          size_t section_idx = 1u + i;
          message_length += mcd_rpc_op_msg_section_set_kind (rpc, section_idx, 1);
@@ -3512,7 +3516,7 @@ mcd_rpc_message_compress (mcd_rpc_message *rpc,
    // compressedMessage does not include msgHeader fields.
    BSON_ASSERT (original_message_length >= message_header_length);
    const size_t uncompressed_size = (size_t) (original_message_length - message_header_length);
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, uncompressed_size));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, uncompressed_size));
 
    const size_t estimated_compressed_size = mongoc_compressor_max_compressed_length (compressor_id, uncompressed_size);
 
@@ -3597,7 +3601,19 @@ mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
    // msgHeader consists of four int32 fields.
    const size_t message_header_length = 4u * sizeof (int32_t);
 
-   const size_t uncompressed_size = (size_t) mcd_rpc_op_compressed_get_uncompressed_size (rpc);
+   const int32_t uncompressed_size_raw = mcd_rpc_op_compressed_get_uncompressed_size (rpc);
+
+   // Malformed message: invalid uncompressedSize.
+   if (BSON_UNLIKELY (uncompressed_size_raw < 0)) {
+      return false;
+   }
+
+   const size_t uncompressed_size = (size_t) uncompressed_size_raw;
+
+   // Malformed message: original message length is not representable.
+   if (BSON_UNLIKELY (uncompressed_size > SIZE_MAX - message_header_length)) {
+      return false;
+   }
 
    // uncompressedSize does not include msgHeader fields.
    const size_t original_message_length = message_header_length + uncompressed_size;
@@ -3643,7 +3659,11 @@ mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
       return false;
    }
 
-   BSON_ASSERT (uncompressed_size == actual_uncompressed_size);
+   // Malformed message: size inconsistency.
+   if (BSON_UNLIKELY (uncompressed_size != actual_uncompressed_size)) {
+      bson_free (ptr);
+      return false;
+   }
 
    *data_len = original_message_length;
    *data = ptr; // Ownership transfer.

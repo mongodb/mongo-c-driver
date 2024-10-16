@@ -26,6 +26,9 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
+#include <common-string-private.h>
+
+#include <inttypes.h>
 
 #define LOG_DOMAIN "test_monitoring"
 
@@ -55,7 +58,7 @@ typedef struct {
    tf_observations_t *observations;
    bson_mutex_t mutex;
    mongoc_cond_t cond;
-   bson_string_t *logs;
+   mcommon_string_t *logs;
 } test_fixture_t;
 
 void
@@ -63,11 +66,11 @@ tf_dump (test_fixture_t *tf)
 {
    printf ("== Begin dump ==\n");
    printf ("-- Current observations --\n");
-   printf ("n_heartbeat_started=%d\n", tf->observations->n_heartbeat_started);
-   printf ("n_heartbeat_succeeded=%d\n", tf->observations->n_heartbeat_succeeded);
-   printf ("n_heartbeat_failed=%d\n", tf->observations->n_heartbeat_failed);
-   printf ("n_server_changed=%d\n", tf->observations->n_server_changed);
-   printf ("sd_type=%d\n", tf->observations->sd_type);
+   printf ("n_heartbeat_started=%" PRIu32 "\n", tf->observations->n_heartbeat_started);
+   printf ("n_heartbeat_succeeded=%" PRIu32 "\n", tf->observations->n_heartbeat_succeeded);
+   printf ("n_heartbeat_failed=%" PRIu32 "\n", tf->observations->n_heartbeat_failed);
+   printf ("n_server_changed=%" PRIu32 "\n", tf->observations->n_server_changed);
+   printf ("sd_type=%d\n", (int) tf->observations->sd_type);
 
    printf ("-- Test fixture logs --\n");
    printf ("%s", tf->logs->str);
@@ -101,9 +104,9 @@ void BSON_GNUC_PRINTF (2, 3) tf_log (test_fixture_t *tf, const char *format, ...
    va_start (ap, format);
    str = bson_strdupv_printf (format, ap);
    va_end (ap);
-   bson_string_append (tf->logs, nowstr);
-   bson_string_append (tf->logs, str);
-   bson_string_append_c (tf->logs, '\n');
+   mcommon_string_append (tf->logs, nowstr);
+   mcommon_string_append (tf->logs, str);
+   mcommon_string_append_c (tf->logs, '\n');
    bson_free (str);
 }
 
@@ -238,7 +241,7 @@ tf_new (tf_flags_t flags)
       mock_server_autoresponds (tf->server, auto_respond_polling_hello, NULL, NULL);
    }
    tf->flags = flags;
-   tf->logs = bson_string_new ("");
+   tf->logs = mcommon_string_new ("");
    tf->client = mongoc_client_pool_pop (tf->pool);
    return tf;
 }
@@ -249,7 +252,7 @@ tf_destroy (test_fixture_t *tf)
    mock_server_destroy (tf->server);
    mongoc_client_pool_push (tf->pool, tf->client);
    mongoc_client_pool_destroy (tf->pool);
-   bson_string_free (tf->logs, true);
+   mcommon_string_free (tf->logs, true);
    bson_mutex_destroy (&tf->mutex);
    mongoc_cond_destroy (&tf->cond);
    bson_free (tf->observations);

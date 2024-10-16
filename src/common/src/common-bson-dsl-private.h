@@ -1,10 +1,10 @@
 #include "common-prelude.h"
 
-#ifndef BSON_BSON_DSL_H_INCLUDED
-#define BSON_BSON_DSL_H_INCLUDED
+#ifndef MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H
 
 /**
- * @file bson-dsl.h
+ * @file common-bson-dsl-private.h
  * @brief Define a C-preprocessor DSL for working with BSON objects
  *
  * This file defines an embedded DSL for working with BSON objects consisely and
@@ -14,6 +14,7 @@
  */
 
 #include "bson/bson.h"
+#include <common-cmp-private.h>
 
 enum {
    /// Toggle this value to enable/disable debug output for all bsonDSL
@@ -118,7 +119,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_begin ("\"%s\" => [%s]", String, _bsonDSL_strElide (30, Element)); \
    const char *_bbString = (String);                                           \
    const uint64_t length = (Len);                                              \
-   if (bson_in_range_unsigned (int, length)) {                                 \
+   if (mcommon_in_range_unsigned (int, length)) {                              \
       _bbCtx.key = _bbString;                                                  \
       _bbCtx.key_len = (int) length;                                           \
       _bsonValueOperation (Element);                                           \
@@ -1273,4 +1274,4 @@ _bsonVisitIterAs_boolean (void)
 // clang-format on
 
 
-#endif // BSON_BSON_DSL_H_INCLUDED
+#endif // MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H

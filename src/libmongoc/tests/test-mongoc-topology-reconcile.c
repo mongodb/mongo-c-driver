@@ -11,6 +11,7 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
+#include <common-atomic-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-reconcile-test"
@@ -401,7 +402,7 @@ test_topology_reconcile_from_handshake (void *ctx)
    ASSERT_CMPINT (count, ==, 0);
 
    /* allow pool to start scanner thread */
-   bson_atomic_int_exchange (&topology->scanner_state, MONGOC_TOPOLOGY_SCANNER_OFF, bson_memory_order_seq_cst);
+   mcommon_atomic_int_exchange (&topology->scanner_state, MONGOC_TOPOLOGY_SCANNER_OFF, mcommon_memory_order_seq_cst);
    mongoc_client_pool_push (pool, client);
    client = mongoc_client_pool_pop (pool);
 

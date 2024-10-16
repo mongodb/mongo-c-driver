@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <bson/bson-atomic.h>
 #include <bson/bson-config.h>
 #include <bson/bson-memory.h>
 

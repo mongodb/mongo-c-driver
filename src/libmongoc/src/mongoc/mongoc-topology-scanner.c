@@ -43,6 +43,11 @@
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
+#include <common-string-private.h>
+#include <common-cmp-private.h>
+#include <common-atomic-private.h>
+
+#include <inttypes.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
@@ -294,7 +299,7 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts, bson_
 
    /* appname will only be changed from NULL, so a non-null pointer will never
     * be invalidated after this fetch. */
-   appname = bson_atomic_ptr_fetch ((void *) &ts->appname, bson_memory_order_relaxed);
+   appname = mcommon_atomic_ptr_fetch ((void *) &ts->appname, mcommon_memory_order_relaxed);
 
    bson_mutex_lock (&ts->handshake_cmd_mtx);
    /* If this is the first time using the node or if it's the first time
@@ -777,7 +782,7 @@ _async_handler (mongoc_async_cmd_t *acmd,
       return;
    case MONGOC_ASYNC_CMD_IN_PROGRESS:
    default:
-      fprintf (stderr, "unexpected async status: %d\n", async_status);
+      fprintf (stderr, "unexpected async status: %d\n", (int) async_status);
       BSON_ASSERT (false);
       return;
    }
@@ -867,7 +872,7 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bs
    if (!node->dns_results) {
       // Expect no truncation.
       int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
-      BSON_ASSERT (bson_cmp_less_su (req, sizeof portstr));
+      BSON_ASSERT (mcommon_cmp_less_su (req, sizeof portstr));
 
       memset (&hints, 0, sizeof hints);
       hints.ai_family = host->family;
@@ -930,7 +935,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
    // Expect no truncation.
    int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
 
-   if (bson_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
+   if (mcommon_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
       bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
       RETURN (false);
    }
@@ -1167,20 +1172,20 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
    bson_error_t *error = &ts->error;
-   bson_string_t *msg;
+   mcommon_string_t *msg;
 
    memset (&ts->error, 0, sizeof (bson_error_t));
 
-   msg = bson_string_new (NULL);
+   msg = mcommon_string_new (NULL);
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
       if (node->last_error.code) {
          if (msg->len) {
-            bson_string_append_c (msg, ' ');
+            mcommon_string_append_c (msg, ' ');
          }
 
-         bson_string_append_printf (msg, "[%s]", node->last_error.message);
+         mcommon_string_append_printf (msg, "[%s]", node->last_error.message);
 
          /* last error domain and code win */
          error->domain = node->last_error.domain;
@@ -1189,7 +1194,7 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
    }
 
    bson_strncpy ((char *) &error->message, msg->str, sizeof (error->message));
-   bson_string_free (msg, true);
+   mcommon_string_free (msg, true);
 
    _delete_retired_nodes (ts);
 }
@@ -1246,7 +1251,7 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts, const char 
    }
 
    s = bson_strdup (appname);
-   prev = bson_atomic_ptr_compare_exchange_strong ((void *) &ts->appname, NULL, s, bson_memory_order_relaxed);
+   prev = mcommon_atomic_ptr_compare_exchange_strong ((void *) &ts->appname, NULL, s, mcommon_memory_order_relaxed);
    if (prev == NULL) {
       return true;
    }

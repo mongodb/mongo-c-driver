@@ -131,7 +131,7 @@ test_bson_strdup_printf (void)
 {
    char *s;
 
-   s = bson_strdup_printf ("%s:%u", "localhost", 27017);
+   s = bson_strdup_printf ("%s:%d", "localhost", 27017);
    BSON_ASSERT (!strcmp (s, "localhost:27017"));
    bson_free (s);
 }

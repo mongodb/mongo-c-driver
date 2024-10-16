@@ -29,7 +29,7 @@ provider and master key.
 If ``provider`` is not ``NULL``, rewraps matching data keys with the new KMS
 provider as described by ``master_key``. The ``master_key`` document must
 conform to the `Client Side Encryption specification
-<https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.rst#masterkey>`_.
+<https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md#masterkey>`_.
 
 Parameters
 ----------

@@ -33,7 +33,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-rpc-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 
 static bool
 _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_stream_t *server_stream)

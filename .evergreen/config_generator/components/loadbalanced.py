@@ -1,6 +1,6 @@
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType, FunctionCall, expansions_update
-from shrub.v3.evg_task import EvgTaskRef, EvgTaskDependency
+from shrub.v3.evg_task import EvgTask, EvgTaskRef, EvgTaskDependency
 
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
@@ -10,7 +10,7 @@ from config_generator.components.funcs.run_simple_http_server import RunSimpleHT
 from config_generator.components.funcs.run_tests import RunTests
 from config_generator.components.funcs.upload_build import UploadBuild
 from config_generator.etc.distros import make_distro_str, find_small_distro, find_large_distro
-from config_generator.etc.utils import Task, bash_exec
+from config_generator.etc.utils import bash_exec
 
 # Use `rhel8.7` distro. `rhel8.7` distro includes necessary dependency: `haproxy`.
 _DISTRO_NAME = "rhel87"
@@ -40,7 +40,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
     auth_str = "auth" if auth else "noauth"
     ssl_str = "openssl" if ssl else "nossl"
     distro_str = make_distro_str(_DISTRO_NAME, _COMPILER, None)
-    return Task(
+    return EvgTask(
         name=f"loadbalanced-{distro_str}-test-{server_version}-{auth_str}-{ssl_str}",
         depends_on=[EvgTaskDependency(
             name=f"loadbalanced-{distro_str}-compile")],
@@ -72,7 +72,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
 
 def tasks():
     distro_str = make_distro_str(_DISTRO_NAME, _COMPILER, None)
-    yield Task(
+    yield EvgTask(
         name=f"loadbalanced-{distro_str}-compile",
         run_on=find_large_distro(_DISTRO_NAME).name,
         tags=['loadbalanced', _DISTRO_NAME, _COMPILER],
@@ -94,7 +94,7 @@ def tasks():
     )
 
     # Satisfy requirements specified in
-    # https://github.com/mongodb/specifications/blob/14916f76fd92b2686d8e3d1f0e4c2d2ef88ca5a7/source/load-balancers/tests/README.rst#testing-requirements
+    # https://github.com/mongodb/specifications/blob/master/source/load-balancers/tests/README.md#testing-requirements
     #
     # > For each server version that supports load balanced clusters, drivers
     # > MUST add two Evergreen tasks: one with a sharded cluster with both

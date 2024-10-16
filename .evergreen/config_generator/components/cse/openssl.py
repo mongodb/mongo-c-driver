@@ -1,8 +1,8 @@
 from shrub.v3.evg_build_variant import BuildVariant
-from shrub.v3.evg_task import EvgTaskRef
 
 from config_generator.etc.compile import generate_compile_tasks
 from config_generator.etc.function import merge_defns
+from config_generator.etc.utils import TaskRef
 
 from config_generator.etc.cse.compile import CompileCommon
 from config_generator.etc.cse.test import generate_test_tasks
@@ -64,20 +64,25 @@ def functions():
     )
 
 
+SASL_TO_FUNC = {
+    'cyrus': SaslCyrusOpenSSLCompile,
+}
+
+MORE_TAGS = ['cse']
+
+TASKS = [
+    *generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS),
+    *generate_test_tasks(SSL, TAG, TEST_MATRIX),
+]
+
+
 def tasks():
-    res = []
+    res = TASKS.copy()
 
-    SASL_TO_FUNC = {
-        'cyrus': SaslCyrusOpenSSLCompile,
-    }
-
-    MORE_TAGS = ['cse']
-
-    res += generate_compile_tasks(
-        SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS
-    )
-
-    res += generate_test_tasks(SSL, TAG, TEST_MATRIX)
+    # PowerPC and zSeries are limited resources.
+    for task in res:
+        if any(pattern in task.run_on for pattern in ["power8", "zseries"]):
+            task.patchable = False
 
     return res
 
@@ -87,11 +92,25 @@ def variants():
         'CLIENT_SIDE_ENCRYPTION': 'on',
     }
 
+    tasks = []
+
+    # PowerPC and zSeries are limited resources.
+    for task in TASKS:
+        if any(pattern in task.run_on for pattern in ["power8", "zseries"]):
+            tasks.append(
+                TaskRef(
+                    name=task.name,
+                    batchtime=1440,   # 1 day
+                )
+            )
+        else:
+            tasks.append(task.get_task_ref())
+
     return [
         BuildVariant(
             name=TAG,
             display_name=TAG,
-            tasks=[EvgTaskRef(name=f'.{TAG}')],
+            tasks=tasks,
             expansions=expansions,
         ),
     ]

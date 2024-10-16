@@ -24,7 +24,8 @@
 #include "test-diagnostics.h"
 #include "utlist.h"
 #include "util.h"
-
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
 typedef struct {
    const char *file_description;
@@ -762,11 +763,11 @@ check_run_on_requirement (test_runner_t *test_runner,
 static bool
 check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requirements, const char **reason)
 {
-   bson_string_t *fail_reasons = NULL;
+   mcommon_string_t *fail_reasons = NULL;
    bool requirements_satisfied = false;
    bson_iter_t iter;
 
-   fail_reasons = bson_string_new ("");
+   fail_reasons = mcommon_string_new ("");
    BSON_FOREACH (run_on_requirements, iter)
    {
       bson_t run_on_requirement;
@@ -783,7 +784,7 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
          break;
       }
 
-      bson_string_append_printf (
+      mcommon_string_append_printf (
          fail_reasons, "- Requirement %s failed because: %s\n", bson_iter_key (&iter), fail_reason);
       bson_free (fail_reason);
    }
@@ -792,7 +793,7 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
    if (!requirements_satisfied) {
       (*reason) = tmp_str ("runOnRequirements not satisfied:\n%s", fail_reasons->str);
    }
-   bson_string_free (fail_reasons, true);
+   mcommon_string_free (fail_reasons, true);
    return requirements_satisfied;
 }
 
@@ -1331,7 +1332,7 @@ done:
 static void
 append_size_t (bson_t *doc, const char *key, size_t value)
 {
-   BSON_ASSERT (bson_in_range_unsigned (int64_t, value));
+   BSON_ASSERT (mcommon_in_range_unsigned (int64_t, value));
    BSON_ASSERT (BSON_APPEND_INT64 (doc, key, (int64_t) value));
 }
 

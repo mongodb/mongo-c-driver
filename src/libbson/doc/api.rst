@@ -19,6 +19,7 @@ API Reference
   bson_subtype_t
   bson_type_t
   bson_unichar_t
+  bson_validate_flags_t
   bson_value_t
   bson_visitor_t
   bson_writer_t

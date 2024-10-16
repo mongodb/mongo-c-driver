@@ -115,7 +115,7 @@ ordered_option = ('ordered', {
 validate_option = ('validate', {
     'type': 'bson_validate_flags_t',
     'convert': '_mongoc_convert_validate_flags',
-    'help': 'Construct a bitwise-or of all desired :symbol:`bson_validate_flags_t <bson_validate_with_error>`. Set to ``false`` to skip client-side validation of the provided BSON documents.'
+    'help': 'Construct a bitwise-or of all desired :symbol:`bson_validate_flags_t`. Set to ``false`` to skip client-side validation of the provided BSON documents.'
 })
 
 collation_option = ('collation', {

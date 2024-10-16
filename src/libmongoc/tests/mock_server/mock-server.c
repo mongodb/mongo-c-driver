@@ -28,6 +28,8 @@
 #include "../test-conveniences.h"
 #include "../test-libmongoc.h"
 #include "../TestSuite.h"
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -353,7 +355,7 @@ mock_server_run (mock_server_t *server)
    // socklen_t: an unsigned opaque integral type of length of at least 32 bits.
    // To forestall portability problems, it is recommended that applications
    // should not use values larger than 2^32 - 1.
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, bind_addr_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, bind_addr_len));
 
    if (-1 == mongoc_socket_bind (ssock, (struct sockaddr *) bind_addr, (uint32_t) bind_addr_len)) {
       perror ("Failed to bind socket");
@@ -1851,7 +1853,7 @@ again:
       }
 
       if (_mongoc_buffer_fill (&buffer, client_stream, (size_t) msg_len, -1, &error) == -1) {
-         MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__, error.message);
+         MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, (int) (__LINE__), error.message);
          GOTO (failure);
       }
 
@@ -1966,7 +1968,7 @@ static void
 _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_stream_t *client)
 {
    char *doc_json;
-   bson_string_t *docs_json;
+   mcommon_string_t *docs_json;
    uint8_t *buf;
    uint8_t *ptr;
    size_t len;
@@ -1991,13 +1993,13 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
       return;
    }
 
-   docs_json = bson_string_new ("");
+   docs_json = mcommon_string_new ("");
    for (int i = 0; i < n_docs; i++) {
       doc_json = bson_as_json (&docs[i], NULL);
-      bson_string_append (docs_json, doc_json);
+      mcommon_string_append (docs_json, doc_json);
       bson_free (doc_json);
       if (i < n_docs - 1) {
-         bson_string_append (docs_json, ", ");
+         mcommon_string_append (docs_json, ", ");
       }
    }
 
@@ -2065,11 +2067,11 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
 
    const ssize_t n_written = mongoc_stream_writev (client, iov, iovcnt, -1);
 
-   BSON_ASSERT (bson_cmp_equal_su (n_written, expected));
+   BSON_ASSERT (mcommon_cmp_equal_su (n_written, expected));
 
    bson_free (iov);
    mcd_rpc_message_destroy (rpc);
-   bson_string_free (docs_json, true);
+   mcommon_string_free (docs_json, true);
    bson_free (buf);
 }
 
@@ -2092,7 +2094,7 @@ void
 rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary, int has_tags, ...)
 {
    va_list ap;
-   bson_string_t *hosts;
+   mcommon_string_t *hosts;
    bool first;
    mock_server_t *host;
 
@@ -2101,7 +2103,7 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
                     max_wire_version,
                     WIRE_VERSION_MIN);
 
-   hosts = bson_string_new ("");
+   hosts = mcommon_string_new ("");
 
    va_start (ap, has_tags);
 
@@ -2110,10 +2112,10 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
       if (first) {
          first = false;
       } else {
-         bson_string_append (hosts, ",");
+         mcommon_string_append (hosts, ",");
       }
 
-      bson_string_append_printf (hosts, "'%s'", mock_server_get_host_and_port (host));
+      mcommon_string_append_printf (hosts, "'%s'", mock_server_get_host_and_port (host));
    }
 
    va_end (ap);
@@ -2137,5 +2139,5 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
                            max_wire_version,
                            hosts->str);
 
-   bson_string_free (hosts, true);
+   mcommon_string_free (hosts, true);
 }

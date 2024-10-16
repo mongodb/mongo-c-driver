@@ -182,7 +182,7 @@ kms_kmip_request_activate_new (void *reserved, const char *unique_identifer)
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
 
    kmip_writer_begin_struct (writer, KMIP_TAG_BatchItem);
-   /* 0x0A == Get */
+   /* 0x12 == Activate */
    kmip_writer_write_enumeration (writer, KMIP_TAG_Operation, 0x12);
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestPayload);
    kmip_writer_write_string (writer,
