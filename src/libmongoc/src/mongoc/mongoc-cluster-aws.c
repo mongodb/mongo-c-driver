@@ -552,7 +552,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds, 
       if (!_mongoc_iter_document_as_bson (&Error_iter, &Error_bson, error)) {
          goto fail;
       }
-      char *Error_json = bson_as_json (&Error_bson, NULL);
+      char *Error_json = bson_as_relaxed_extended_json (&Error_bson, NULL);
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
