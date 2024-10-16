@@ -104,7 +104,6 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
       /* CDRIVER-3167 */
       if ((mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 0) < 0) ||
           (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 0) < 0) ||
-          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXIDLETIMEMS, 0) < 0) ||
           (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 0) < 0) ||
           (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0) < 0)) {
          MONGOC_WARNING ("Invalid negative timeout");
@@ -240,11 +239,18 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
 static void
 test_connection_uri_cb (void *scenario_vp)
 {
+   static const test_skip_t skips[] = {
+      {.description = "Valid connection pool options are parsed correctly",
+       .reason = "libmongoc does not support maxIdleTimeMS"},
+      {.description = "Valid connection and timeout options are parsed correctly",
+       .reason = "libmongoc does not support maxIdleTimeMS"},
+      {.description = NULL},
+   };
+
    bson_iter_t iter;
    bson_iter_t descendent;
    bson_iter_t tests_iter;
    bson_iter_t warning_iter;
-   const char *uri_string = NULL;
    bson_t hosts;
    bson_t auth;
    bson_t options;
@@ -262,23 +268,17 @@ test_connection_uri_cb (void *scenario_vp)
 
       bson_iter_bson (&tests_iter, &test_case);
 
-      if (test_suite_debug_output ()) {
-         bson_iter_t test_case_iter;
-
-         ASSERT (bson_iter_recurse (&tests_iter, &test_case_iter));
-         if (bson_iter_find (&test_case_iter, "description")) {
-            const char *description = bson_iter_utf8 (&test_case_iter, NULL);
-            ASSERT (bson_iter_find_case (&test_case_iter, "uri"));
-
-            printf ("  - %s: '%s'\n", description, bson_iter_utf8 (&test_case_iter, 0));
-            fflush (stdout);
-         } else {
-            fprintf (stderr, "Couldn't find `description` field in testcase\n");
-            BSON_ASSERT (0);
-         }
+      const char *description = bson_lookup_utf8 (&test_case, "description");
+      if (test_should_be_skipped (skips, description)) {
+         continue;
       }
 
-      uri_string = bson_lookup_utf8 (&test_case, "uri");
+      const char *uri_string = bson_lookup_utf8 (&test_case, "uri");
+      if (test_suite_debug_output ()) {
+         printf ("  - %s: '%s'\n", description, uri_string);
+         fflush (stdout);
+      }
+
       /* newer spec test replaces both "auth" and "options" with "credential"
        */
       if (bson_has_field (&test_case, "credential")) {

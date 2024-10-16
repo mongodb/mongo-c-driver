@@ -49,7 +49,9 @@
       ],
       "auth": null,
       "options": {
-        "authmechanismproperties": { "SERVICE_NAME": "49" }
+        "authmechanismproperties": {
+          "SERVICE_NAME": "49"
+        }
       }
     },
     {
@@ -115,8 +117,8 @@
         "source": "$external",
         "mechanism": "GSSAPI",
         "mechanism_properties": {
-            "SERVICE_NAME": "mongodb",
-            "CANONICALIZE_HOST_NAME": true
+          "SERVICE_NAME": "mongodb",
+          "CANONICALIZE_HOST_NAME": true
         }
       }
     },
@@ -130,28 +132,59 @@
         "source": "$external",
         "mechanism": "GSSAPI",
         "mechanism_properties": {
-            "SERVICE_NAME": "abc",
-            "CANONICALIZE_HOST_NAME": true
+          "SERVICE_NAME": "abc",
+          "CANONICALIZE_HOST_NAME": true
         }
       }
-   },
-   {
-    "description": "Username containing percent encoded multi-byte UTF-8 is valid",
-    "uri": "mongodb://%E2%98%83",
-    "valid": true,
-    "hosts": [
-      {
-        "type": "hostname",
-        "host": "☃",
-        "port": null
+    },
+    {
+      "description": "Username containing percent encoded multi-byte UTF-8 is valid",
+      "uri": "mongodb://%E2%98%83",
+      "valid": true,
+      "hosts": [
+        {
+          "type": "hostname",
+          "host": "☃",
+          "port": null
+        }
+      ]
+    },
+    {
+      "description": "Username containing percent encoded multi-byte UTF-8 is valid",
+      "uri": "mongodb://%E2%D8%83",
+      "valid": false,
+      "warning": true
+    },
+    {
+      "description": "Valid connection and timeout options are parsed correctly, libmongoc version without maxIdleTimeMS",
+      "uri": "mongodb://example.com/?appname=URI-OPTIONS-SPEC-TEST&connectTimeoutMS=20000&heartbeatFrequencyMS=5000&localThresholdMS=3000&replicaSet=uri-options-spec&retryWrites=true&serverSelectionTimeoutMS=15000&socketTimeoutMS=7500",
+      "valid": true,
+      "warning": false,
+      "hosts": null,
+      "auth": null,
+      "options": {
+        "appname": "URI-OPTIONS-SPEC-TEST",
+        "connectTimeoutMS": 20000,
+        "heartbeatFrequencyMS": 5000,
+        "localThresholdMS": 3000,
+        "replicaSet": "uri-options-spec",
+        "retryWrites": true,
+        "serverSelectionTimeoutMS": 15000,
+        "socketTimeoutMS": 7500
       }
-    ]
-  },
-  {
-    "description": "Username containing percent encoded multi-byte UTF-8 is valid",
-    "uri": "mongodb://%E2%D8%83",
-    "valid": false,
-    "warning": true
-  }
+    },
+    {
+      "description": "Valid connection pool options are parsed correctly, libmongoc version without maxIdleTimeMS",
+      "uri": "mongodb://example.com/?waitQueueTimeoutMS=50000&maxPoolSize=5&minPoolSize=3",
+      "valid": true,
+      "warning": false,
+      "hosts": null,
+      "auth": null,
+      "options": {
+        "waitQueueTimeoutMS": 50000,
+        "maxPoolSize": 5,
+        "minPoolSize": 3
+      }
+    }
   ]
 }
