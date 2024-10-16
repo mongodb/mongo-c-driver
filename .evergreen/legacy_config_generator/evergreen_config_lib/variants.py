@@ -34,7 +34,7 @@ all_variants = [
     Variant(
         "abi-compliance-check",
         "ABI Compliance Check",
-        ["ubuntu1804-small", "ubuntu1804-medium", "ubuntu1804-large"],
+        ["ubuntu2004-small", "ubuntu2004-medium", "ubuntu2004-large"],
         ["abi-compliance-check"],
     ),
     Variant(
@@ -59,7 +59,7 @@ all_variants = [
             OD([("name", "link-with-cmake-windows-ssl"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", "link-with-cmake-windows-snappy"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", "link-with-cmake-mingw"), ("distros", ["windows-vsCurrent-large"])]),
-            OD([("name", "link-with-pkg-config"), ("distros", ["ubuntu1804-test"])]),
+            OD([("name", "link-with-pkg-config"), ("distros", ["ubuntu2004-test"])]),
             OD([("name", "link-with-pkg-config-mac"), ("distros", ["macos-1100"])]),
             "link-with-pkg-config-ssl",
             "link-with-bson",
@@ -115,9 +115,9 @@ all_variants = [
         {"CC": "clang"},
     ),
     Variant(
-        "clang60-i686",
-        "clang 6.0 (i686) (Ubuntu 18.04)",
-        "ubuntu1804-test",
+        "clang100-i686",
+        "clang 10.0 (i686) (Ubuntu 20.04)",
+        "ubuntu2004-test",
         [
             "release-compile",
             "debug-compile-nosasl-nossl",
@@ -126,27 +126,6 @@ all_variants = [
             ".latest .nossl .nosasl",
         ],
         {"CC": "clang", "MARCH": "i686"},
-    ),
-    Variant(
-        "clang38-i686",
-        "clang 3.8 (i686) (Ubuntu 16.04)",
-        "ubuntu1604-test",
-        ["release-compile", "debug-compile-no-align"],
-        {"CC": "clang", "MARCH": "i686"},
-    ),
-    Variant(
-        "clang38ubuntu",
-        "clang 3.8 (Ubuntu 16.04)",
-        "ubuntu1604-test",
-        [
-            ".compression !.zstd",
-            "release-compile",
-            "debug-compile-sasl-openssl",
-            "debug-compile-nosasl-openssl",
-            "debug-compile-no-align",
-            ".authentication-tests .openssl",
-        ],
-        {"CC": "clang"},
     ),
     Variant(
         "gcc82rhel",
@@ -159,24 +138,6 @@ all_variants = [
             "debug-compile-nosasl-nossl",
             "debug-compile-nosasl-openssl",
             "debug-compile-sasl-openssl",
-            ".authentication-tests .openssl",
-            ".latest .nossl",
-        ],
-        {"CC": "gcc"},
-    ),
-    Variant(
-        "gcc48rhel",
-        "GCC 4.8 (RHEL 7.0)",
-        "rhel70",
-        # Skip client-side-encryption tests on RHEL 7.0 due to OCSP errors
-        # with Azure. See CDRIVER-3620 and CDRIVER-3814.
-        [
-            ".hardened",
-            ".compression !.snappy",
-            "release-compile",
-            "debug-compile-nosasl-nossl",
-            "debug-compile-sasl-openssl",
-            "debug-compile-nosasl-openssl",
             ".authentication-tests .openssl",
             ".latest .nossl",
         ],
@@ -204,23 +165,16 @@ all_variants = [
         {"CC": "gcc"},
     ),
     Variant(
-        "gcc94",
-        "GCC 9.4 (Ubuntu 20.04)",
-        "ubuntu2004-large",
-        ["release-compile", "debug-compile-nosasl-nossl", ".latest .nossl"],
-        {"CC": "gcc"},
-    ),
-    Variant(
-        "gcc75-i686",
-        "GCC 7.5 (i686) (Ubuntu 18.04)",
-        "ubuntu1804-test",
+        "gcc94-i686",
+        "GCC 9.4 (i686) (Ubuntu 20.04)",
+        "ubuntu2004-test",
         ["release-compile", "debug-compile-nosasl-nossl", "debug-compile-no-align", ".latest .nossl .nosasl"],
         {"CC": "gcc", "MARCH": "i686"},
     ),
     Variant(
-        "gcc75",
-        "GCC 7.5 (Ubuntu 18.04)",
-        "ubuntu1804-test",
+        "gcc94",
+        "GCC 9.4 (Ubuntu 20.04)",
+        "ubuntu2004-test",
         [
             ".compression !.zstd",
             "debug-compile-nosrv",
@@ -238,13 +192,6 @@ all_variants = [
             "test-dns-auth-openssl",
             "test-dns-loadbalanced-openssl",
         ],
-        {"CC": "gcc"},
-    ),
-    Variant(
-        "gcc54",
-        "GCC 5.4 (Ubuntu 16.04)",
-        "ubuntu1604-test",
-        [".compression !.zstd", "debug-compile-nosrv", "release-compile", "debug-compile-no-align"],
         {"CC": "gcc"},
     ),
     Variant(
@@ -352,9 +299,9 @@ all_variants = [
         batchtime=days(1),
     ),
     Variant(
-        "arm-ubuntu1804",
-        "*ARM (aarch64) (Ubuntu 18.04)",
-        "ubuntu1804-arm64-large",
+        "arm-ubuntu2004",
+        "*ARM (aarch64) (Ubuntu 20.04)",
+        "ubuntu2004-arm64-large",
         [
             ".compression !.snappy !.zstd",
             "debug-compile-no-align",
@@ -366,14 +313,6 @@ all_variants = [
             ".latest .nossl",
             "test-dns-openssl",
         ],
-        {"CC": "gcc"},
-        batchtime=days(1),
-    ),
-    Variant(
-        "arm-ubuntu1604",
-        "*ARM (aarch64) (Ubuntu 16.04)",
-        "ubuntu1604-arm64-large",
-        [".compression !.snappy !.zstd", "debug-compile-no-align", "release-compile"],
         {"CC": "gcc"},
         batchtime=days(1),
     ),
@@ -396,9 +335,9 @@ all_variants = [
         batchtime=days(1),
     ),
     Variant(
-        "clang60ubuntu",
-        "clang 6.0 (Ubuntu 18.04)",
-        "ubuntu1804-test",
+        "clang100ubuntu",
+        "clang 10.0 (Ubuntu 20.04)",
+        "ubuntu2004-test",
         [
             "debug-compile-sasl-openssl-static",
             ".authentication-tests .asan",
@@ -479,18 +418,6 @@ all_variants = [
         {},
         tags=["pr-merge-gate"],
     ),
-    Variant(
-        "versioned-api-ubuntu1804",
-        "Versioned API Tests (Ubuntu 18.04)",
-        "ubuntu1804-test",
-        [
-            "debug-compile-nosasl-openssl",
-            "debug-compile-nosasl-nossl",
-            ".versioned-api .5.0",
-            ".versioned-api .6.0",
-        ],
-        {},
-    ),
     # Test 7.0+ with Ubuntu 20.04+ since MongoDB 7.0 no longer ships binaries for Ubuntu 18.04.
     Variant(
         "versioned-api-ubuntu2004",
@@ -499,6 +426,8 @@ all_variants = [
         [
             "debug-compile-nosasl-openssl",
             "debug-compile-nosasl-nossl",
+            ".versioned-api .5.0",
+            ".versioned-api .6.0",
             ".versioned-api .7.0",
             ".versioned-api .8.0"
         ],

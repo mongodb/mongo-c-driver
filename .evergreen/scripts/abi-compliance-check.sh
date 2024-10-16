@@ -15,6 +15,12 @@ declare newest current
 newest="$(cat VERSION_RELEASED)"
 current="$(cat VERSION_CURRENT)"
 
+declare working_dir
+working_dir="$(pwd)"
+
+export PATH
+PATH="${working_dir:?}/install/bin:${PATH:-}"
+
 # build the current changes
 env \
   CFLAGS="-g -Og" \

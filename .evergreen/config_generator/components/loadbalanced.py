@@ -12,8 +12,8 @@ from config_generator.components.funcs.upload_build import UploadBuild
 from config_generator.etc.distros import make_distro_str, find_small_distro, find_large_distro
 from config_generator.etc.utils import bash_exec
 
-# Use `rhel8.7` distro. `rhel8.7` distro includes necessary dependency: `haproxy`.
-_DISTRO_NAME = "rhel87"
+# Use `rhel8.9` distro. `rhel8.9` distro includes necessary dependency: `haproxy`.
+_DISTRO_NAME = "rhel8.9"
 _COMPILER = "gcc"
 
 

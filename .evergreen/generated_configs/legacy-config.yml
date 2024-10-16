@@ -16331,9 +16331,9 @@ buildvariants:
 - name: abi-compliance-check
   display_name: ABI Compliance Check
   run_on:
-  - ubuntu1804-small
-  - ubuntu1804-medium
-  - ubuntu1804-large
+  - ubuntu2004-small
+  - ubuntu2004-medium
+  - ubuntu2004-large
   tasks:
   - abi-compliance-check
 - name: smoke
@@ -16373,7 +16373,7 @@ buildvariants:
     - windows-vsCurrent-large
   - name: link-with-pkg-config
     distros:
-    - ubuntu1804-test
+    - ubuntu2004-test
   - name: link-with-pkg-config-mac
     distros:
     - macos-1100
@@ -16433,39 +16433,18 @@ buildvariants:
   - debug-compile-sasl-openssl
   - debug-compile-nosasl-openssl
   - .authentication-tests .openssl
-- name: clang60-i686
-  display_name: clang 6.0 (i686) (Ubuntu 18.04)
+- name: clang100-i686
+  display_name: clang 10.0 (i686) (Ubuntu 20.04)
   expansions:
     CC: clang
     MARCH: i686
-  run_on: ubuntu1804-test
+  run_on: ubuntu2004-test
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
   - .debug-compile !.sspi .nossl .nosasl
   - .latest .nossl .nosasl
-- name: clang38-i686
-  display_name: clang 3.8 (i686) (Ubuntu 16.04)
-  expansions:
-    CC: clang
-    MARCH: i686
-  run_on: ubuntu1604-test
-  tasks:
-  - release-compile
-  - debug-compile-no-align
-- name: clang38ubuntu
-  display_name: clang 3.8 (Ubuntu 16.04)
-  expansions:
-    CC: clang
-  run_on: ubuntu1604-test
-  tasks:
-  - .compression !.zstd
-  - release-compile
-  - debug-compile-sasl-openssl
-  - debug-compile-nosasl-openssl
-  - debug-compile-no-align
-  - .authentication-tests .openssl
 - name: gcc82rhel
   display_name: GCC 8.2 (RHEL 8.0)
   expansions:
@@ -16478,20 +16457,6 @@ buildvariants:
   - debug-compile-nosasl-nossl
   - debug-compile-nosasl-openssl
   - debug-compile-sasl-openssl
-  - .authentication-tests .openssl
-  - .latest .nossl
-- name: gcc48rhel
-  display_name: GCC 4.8 (RHEL 7.0)
-  expansions:
-    CC: gcc
-  run_on: rhel70
-  tasks:
-  - .hardened
-  - .compression !.snappy
-  - release-compile
-  - debug-compile-nosasl-nossl
-  - debug-compile-sasl-openssl
-  - debug-compile-nosasl-openssl
   - .authentication-tests .openssl
   - .latest .nossl
 - name: gcc63
@@ -16521,31 +16486,22 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - .latest .nossl
-- name: gcc94
-  display_name: GCC 9.4 (Ubuntu 20.04)
-  expansions:
-    CC: gcc
-  run_on: ubuntu2004-large
-  tasks:
-  - release-compile
-  - debug-compile-nosasl-nossl
-  - .latest .nossl
-- name: gcc75-i686
-  display_name: GCC 7.5 (i686) (Ubuntu 18.04)
+- name: gcc94-i686
+  display_name: GCC 9.4 (i686) (Ubuntu 20.04)
   expansions:
     CC: gcc
     MARCH: i686
-  run_on: ubuntu1804-test
+  run_on: ubuntu2004-test
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
   - .latest .nossl .nosasl
-- name: gcc75
-  display_name: GCC 7.5 (Ubuntu 18.04)
+- name: gcc94
+  display_name: GCC 9.4 (Ubuntu 20.04)
   expansions:
     CC: gcc
-  run_on: ubuntu1804-test
+  run_on: ubuntu2004-test
   tasks:
   - .compression !.zstd
   - debug-compile-nosrv
@@ -16562,16 +16518,6 @@ buildvariants:
   - test-dns-openssl
   - test-dns-auth-openssl
   - test-dns-loadbalanced-openssl
-- name: gcc54
-  display_name: GCC 5.4 (Ubuntu 16.04)
-  expansions:
-    CC: gcc
-  run_on: ubuntu1604-test
-  tasks:
-  - .compression !.zstd
-  - debug-compile-nosrv
-  - release-compile
-  - debug-compile-no-align
 - name: darwin
   display_name: '*Darwin, macOS (Apple LLVM)'
   expansions:
@@ -16672,11 +16618,11 @@ buildvariants:
   - test-dns-openssl
   patchable: false
   batchtime: 1440
-- name: arm-ubuntu1804
-  display_name: '*ARM (aarch64) (Ubuntu 18.04)'
+- name: arm-ubuntu2004
+  display_name: '*ARM (aarch64) (Ubuntu 20.04)'
   expansions:
     CC: gcc
-  run_on: ubuntu1804-arm64-large
+  run_on: ubuntu2004-arm64-large
   tasks:
   - .compression !.snappy !.zstd
   - debug-compile-no-align
@@ -16687,16 +16633,6 @@ buildvariants:
   - .authentication-tests .openssl
   - .latest .nossl
   - test-dns-openssl
-  batchtime: 1440
-- name: arm-ubuntu1604
-  display_name: '*ARM (aarch64) (Ubuntu 16.04)'
-  expansions:
-    CC: gcc
-  run_on: ubuntu1604-arm64-large
-  tasks:
-  - .compression !.snappy !.zstd
-  - debug-compile-no-align
-  - release-compile
   batchtime: 1440
 - name: zseries-rhel83
   display_name: '*zSeries'
@@ -16713,11 +16649,11 @@ buildvariants:
   - .latest .nossl
   patchable: false
   batchtime: 1440
-- name: clang60ubuntu
-  display_name: clang 6.0 (Ubuntu 18.04)
+- name: clang100ubuntu
+  display_name: clang 10.0 (Ubuntu 20.04)
   expansions:
     CC: clang
-  run_on: ubuntu1804-test
+  run_on: ubuntu2004-test
   tasks:
   - debug-compile-sasl-openssl-static
   - .authentication-tests .asan
@@ -16792,20 +16728,14 @@ buildvariants:
     - rhel90-arm64-small
   tags:
   - pr-merge-gate
-- name: versioned-api-ubuntu1804
-  display_name: Versioned API Tests (Ubuntu 18.04)
-  run_on: ubuntu1804-test
-  tasks:
-  - debug-compile-nosasl-openssl
-  - debug-compile-nosasl-nossl
-  - .versioned-api .5.0
-  - .versioned-api .6.0
 - name: versioned-api-ubuntu2004
   display_name: Versioned API Tests (Ubuntu 20.04)
   run_on: ubuntu2004-test
   tasks:
   - debug-compile-nosasl-openssl
   - debug-compile-nosasl-nossl
+  - .versioned-api .5.0
+  - .versioned-api .6.0
   - .versioned-api .7.0
   - .versioned-api .8.0
 - name: testazurekms-variant
