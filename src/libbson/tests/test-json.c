@@ -8,6 +8,7 @@
 #include "test-conveniences.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>
+#include <bson/bson-iso8601-private.h>
 
 static ssize_t
 test_bson_json_read_cb_helper (void *string, uint8_t *buf, size_t len)
@@ -3367,6 +3368,318 @@ test_parse_array (void)
    }
 }
 
+static void
+test_bson_as_json_all_formats (void)
+{
+   bson_error_t error;
+
+#define ASSERT_AS_JSON(bson, mode, expect_single_quoted)                          \
+   if (1) {                                                                       \
+      bson_json_opts_t *opts = bson_json_opts_new (mode, BSON_MAX_LEN_UNLIMITED); \
+      char *got = bson_as_json_with_opts (bson, NULL, opts);                      \
+      ASSERT (got);                                                               \
+      char *expect = single_quotes_to_double (expect_single_quoted);              \
+      ASSERT_CMPSTR (got, expect);                                                \
+      bson_free (got);                                                            \
+      bson_free (expect);                                                         \
+      bson_json_opts_destroy (opts);                                              \
+   } else                                                                         \
+      (void) 0
+
+
+   // Test each BSON type listed on: https://www.mongodb.com/docs/manual/reference/bson-types/
+   {
+      // BSON type: double
+      {
+         bson_t *b = BCON_NEW ("double", BCON_DOUBLE (1.5));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'double' : { '$numberDouble' : '1.5' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'double' : 1.5 }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'double' : 1.5 }");
+         bson_destroy (b);
+      }
+
+      // BSON type: string
+      {
+         bson_t *b = BCON_NEW ("string", "foo");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'string' : 'foo' }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'string' : 'foo' }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'string' : 'foo' }");
+         bson_destroy (b);
+      }
+
+      // BSON type: object
+      {
+         bson_t *b = BCON_NEW ("object", "{", "a", "b", "}");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'object' : { 'a' : 'b' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'object' : { 'a' : 'b' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'object' : { 'a' : 'b' } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: array
+      {
+         bson_t *b = BCON_NEW ("array", "[", "a", "]");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'array' : [ 'a' ] }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'array' : [ 'a' ] }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'array' : [ 'a' ] }");
+         bson_destroy (b);
+      }
+
+      // BSON type: binData
+      {
+         bson_t *b = BCON_NEW ("binData", BCON_BIN (BSON_SUBTYPE_BINARY, (uint8_t *) "abc", 3u));
+         ASSERT_AS_JSON (
+            b, BSON_JSON_MODE_CANONICAL, "{ 'binData' : { '$binary' : { 'base64' : 'YWJj', 'subType' : '00' } } }");
+         ASSERT_AS_JSON (
+            b, BSON_JSON_MODE_RELAXED, "{ 'binData' : { '$binary' : { 'base64' : 'YWJj', 'subType' : '00' } } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'binData' : { '$binary' : 'YWJj', '$type' : '00' } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: undefined
+      {
+         bson_t *b = BCON_NEW ("undefined", BCON_UNDEFINED);
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'undefined' : { '$undefined' : true } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'undefined' : { '$undefined' : true } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'undefined' : { '$undefined' : true } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: objectId
+      {
+         bson_oid_t oid;
+         bson_oid_init_from_string (&oid, "123412341234abcdabcdabcd");
+
+         bson_t *b = BCON_NEW ("objectId", BCON_OID (&oid));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'objectId' : { '$oid' : '123412341234abcdabcdabcd' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'objectId' : { '$oid' : '123412341234abcdabcdabcd' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'objectId' : { '$oid' : '123412341234abcdabcdabcd' } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: bool
+      {
+         bson_t *b = BCON_NEW ("bool", BCON_BOOL (true));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'bool' : true }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'bool' : true }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'bool' : true }");
+         bson_destroy (b);
+      }
+
+      // BSON type: date
+      {
+         const char *date_str = "2024-01-01T00:00Z";
+         int64_t date_ms;
+         ASSERT_OR_PRINT (_bson_iso8601_date_parse (date_str, (int32_t) strlen (date_str), &date_ms, &error), error);
+
+         bson_t *b = BCON_NEW ("date", BCON_DATE_TIME (date_ms));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'date' : { '$date' : { '$numberLong' : '1704067200000' } } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'date' : { '$date' : '2024-01-01T00:00:00Z' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'date' : { '$date' : 1704067200000 } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: null
+      {
+         bson_t *b = BCON_NEW ("null", BCON_NULL);
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'null' : null }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'null' : null }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'null' : null }");
+         bson_destroy (b);
+      }
+
+      // BSON type: regex
+      {
+         bson_t *b = BCON_NEW ("regex", BCON_REGEX ("a.*b", "i"));
+         ASSERT_AS_JSON (b,
+                         BSON_JSON_MODE_CANONICAL,
+                         "{ 'regex' : { '$regularExpression' : { 'pattern' : 'a.*b', 'options' : 'i' } } }");
+         ASSERT_AS_JSON (b,
+                         BSON_JSON_MODE_RELAXED,
+                         "{ 'regex' : { '$regularExpression' : { 'pattern' : 'a.*b', 'options' : 'i' } } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'regex' : { '$regex' : 'a.*b', '$options' : 'i' } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: dbPointer
+      {
+         bson_oid_t oid;
+         bson_oid_init_from_string (&oid, "123412341234abcdabcdabcd");
+
+         bson_t *b = BCON_NEW ("dbPointer", BCON_DBPOINTER ("coll", &oid));
+         ASSERT_AS_JSON (b,
+                         BSON_JSON_MODE_CANONICAL,
+                         "{ 'dbPointer' : { '$dbPointer' : { '$ref' : 'coll', '$id' : { '$oid' : "
+                         "'123412341234abcdabcdabcd' } } } }");
+         ASSERT_AS_JSON (b,
+                         BSON_JSON_MODE_RELAXED,
+                         "{ 'dbPointer' : { '$dbPointer' : { '$ref' : 'coll', '$id' : { '$oid' : "
+                         "'123412341234abcdabcdabcd' } } } }");
+         ASSERT_AS_JSON (
+            b, BSON_JSON_MODE_LEGACY, "{ 'dbPointer' : { '$ref' : 'coll', '$id' : '123412341234abcdabcdabcd' } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: javascript
+      {
+         bson_t *b = BCON_NEW ("javascript", BCON_CODE ("code"));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'javascript' : { '$code' : 'code' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'javascript' : { '$code' : 'code' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'javascript' : { '$code' : 'code' } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: symbol
+      {
+         bson_t *b = BCON_NEW ("symbol", BCON_SYMBOL ("symbol"));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'symbol' : { '$symbol' : 'symbol' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'symbol' : { '$symbol' : 'symbol' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'symbol' : 'symbol' }");
+         bson_destroy (b);
+      }
+
+      // BSON type: int
+      {
+         bson_t *b = BCON_NEW ("int", BCON_INT32 (123));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'int' : { '$numberInt' : '123' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'int' : 123 }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'int' : 123 }");
+         bson_destroy (b);
+      }
+
+      // BSON type: timestamp
+      {
+         bson_t *b = BCON_NEW ("timestamp", BCON_TIMESTAMP (0u, 1u));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'timestamp' : { '$timestamp' : { 't' : 0, 'i' : 1 } } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'timestamp' : { '$timestamp' : { 't' : 0, 'i' : 1 } } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'timestamp' : { '$timestamp' : { 't' : 0, 'i' : 1 } } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: long
+      {
+         bson_t *b = BCON_NEW ("long", BCON_INT64 (456));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'long' : { '$numberLong' : '456' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'long' : 456 }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'long' : 456 }");
+         bson_destroy (b);
+      }
+
+      // BSON type: decimal
+      {
+         bson_decimal128_t decimal128;
+         ASSERT (bson_decimal128_from_string ("1.23", &decimal128));
+
+         bson_t *b = BCON_NEW ("decimal", BCON_DECIMAL128 (&decimal128));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'decimal' : { '$numberDecimal' : '1.23' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'decimal' : { '$numberDecimal' : '1.23' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'decimal' : { '$numberDecimal' : '1.23' } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: minKey
+      {
+         bson_t *b = BCON_NEW ("minKey", BCON_MINKEY);
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'minKey' : { '$minKey' : 1 } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'minKey' : { '$minKey' : 1 } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'minKey' : { '$minKey' : 1 } }");
+         bson_destroy (b);
+      }
+
+      // BSON type: maxKey
+      {
+         bson_t *b = BCON_NEW ("maxKey", BCON_MAXKEY);
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'maxKey' : { '$maxKey' : 1 } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'maxKey' : { '$maxKey' : 1 } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'maxKey' : { '$maxKey' : 1 } }");
+         bson_destroy (b);
+      }
+   }
+
+
+   // Test other cases referenced in the Extended JSON specification that sometimes encode differently.
+   {
+      // Code with scope
+      {
+         bson_t *scope = BCON_NEW ("a", "b");
+
+         bson_t *b = BCON_NEW ("codewscope", BCON_CODEWSCOPE ("code", scope));
+         ASSERT_AS_JSON (
+            b, BSON_JSON_MODE_CANONICAL, "{ 'codewscope' : { '$code' : 'code', '$scope' : { 'a' : 'b' } } }");
+         ASSERT_AS_JSON (
+            b, BSON_JSON_MODE_RELAXED, "{ 'codewscope' : { '$code' : 'code', '$scope' : { 'a' : 'b' } } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'codewscope' : { '$code' : 'code', '$scope' : { 'a' : 'b' } } }");
+         bson_destroy (scope);
+         bson_destroy (b);
+      }
+
+      // Double NaN.
+      {
+         bson_t *b = BCON_NEW ("double_nan", BCON_DOUBLE (NAN));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'double_nan' : { '$numberDouble' : 'NaN' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'double_nan' : { '$numberDouble' : 'NaN' } }");
+         // Legacy encoding is platform dependent. May encode to '[-]nan' or '[-]nan(n-char-sequence)' without quotes.
+         {
+            char *as_legacy = bson_as_legacy_extended_json (b, NULL);
+            char *ptr = as_legacy;
+            ASSERT_STARTSWITH (ptr, "{ \"double_nan\" : ");
+            ptr += strlen ("{ \"double_nan\" : ");
+            if (ptr[0] == '-') {
+               ptr += 1;
+            }
+            ASSERT_STARTSWITH (ptr, "nan");
+            bson_free (as_legacy);
+         }
+         bson_destroy (b);
+      }
+
+      // Double Infinity.
+      {
+         bson_t *b = BCON_NEW ("double_inf", BCON_DOUBLE (INFINITY));
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_CANONICAL, "{ 'double_inf' : { '$numberDouble' : 'Infinity' } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'double_inf' : { '$numberDouble' : 'Infinity' } }");
+         // Legacy encoding is platform dependent. May encode to 'inf' or 'infinity' without quotes.
+         {
+            char *as_legacy = bson_as_legacy_extended_json (b, NULL);
+            bool found_match = (0 == strcmp ("{ \"double_inf\" : inf }", as_legacy)) ||
+                               (0 == strcmp ("{ \"double_inf\" : infinity }", as_legacy));
+            if (!found_match) {
+               test_error ("got unexpected Extended Legacy JSON: %s\n", as_legacy);
+            }
+            bson_free (as_legacy);
+         }
+         bson_destroy (b);
+      }
+
+      // Date before year 1970.
+      {
+         const char *date_str = "1969-01-01T00:00Z";
+         int64_t date_ms;
+         ASSERT_OR_PRINT (_bson_iso8601_date_parse (date_str, (int32_t) strlen (date_str), &date_ms, &error), error);
+
+         bson_t *b = BCON_NEW ("date_before_1970", BCON_DATE_TIME (-1));
+         ASSERT_AS_JSON (
+            b, BSON_JSON_MODE_CANONICAL, "{ 'date_before_1970' : { '$date' : { '$numberLong' : '-1' } } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_RELAXED, "{ 'date_before_1970' : { '$date' : { '$numberLong' : '-1' } } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'date_before_1970' : { '$date' : -1 } }");
+         bson_destroy (b);
+      }
+
+      // Date after year 9999 (excluding year 9999).
+      {
+         const int64_t msec_since_Y10K = 253402300800000; // Milliseconds since 10000-01-01T00:00:00Z.
+         bson_t *b = BCON_NEW ("date_after_9999", BCON_DATE_TIME (msec_since_Y10K));
+         ASSERT_AS_JSON (
+            b, BSON_JSON_MODE_CANONICAL, "{ 'date_after_9999' : { '$date' : { '$numberLong' : '253402300800000' } } }");
+         ASSERT_AS_JSON (
+            b, BSON_JSON_MODE_RELAXED, "{ 'date_after_9999' : { '$date' : { '$numberLong' : '253402300800000' } } }");
+         ASSERT_AS_JSON (b, BSON_JSON_MODE_LEGACY, "{ 'date_after_9999' : { '$date' : 253402300800000 } }");
+         bson_destroy (b);
+      }
+   }
+}
+
+
 void
 test_json_install (TestSuite *suite)
 {
@@ -3470,4 +3783,5 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/as_json_with_opts/all_types", test_bson_as_json_with_opts_all_types);
    TestSuite_Add (suite, "/bson/parse_array", test_parse_array);
    TestSuite_Add (suite, "/bson/decimal128_overflowing_exponent", test_decimal128_overflowing_exponent);
+   TestSuite_Add (suite, "/bson/as_json/all_formats", test_bson_as_json_all_formats);
 }
