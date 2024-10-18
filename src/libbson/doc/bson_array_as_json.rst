@@ -26,7 +26,7 @@ Description
 -----------
 
 The :symbol:`bson_array_as_json()` function shall encode ``bson`` as a UTF-8
-string using libbson's Legacy Extended JSON format, except the outermost element is
+string using :doc:`libbson's Legacy Extended JSON <legacy_extended_json>`, except the outermost element is
 encoded as a JSON array, rather than a JSON document. This function is
 superseded by :symbol:`bson_array_as_canonical_extended_json()` and
 :symbol:`bson_array_as_relaxed_extended_json()`, which use the same 
