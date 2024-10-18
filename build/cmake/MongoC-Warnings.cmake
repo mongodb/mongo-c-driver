@@ -28,6 +28,7 @@ function (mongoc_add_warning_options)
    set(cond/gcc-lt7 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,7>>)
    set(cond/gcc-lt8 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,8>>)
    set(cond/gcc-lt11 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,11>>)
+   set(cond/clang-lt4 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,4>>)
    set(cond/clang-lt10 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,10>>)
    set(cond/clang-lt19 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,19>>)
    # Process options:
@@ -96,7 +97,7 @@ mongoc_add_warning_options (
      # Clang does not include several flags in `-Wformat` or `-Wformat=2`.
      # For assurance, explicitly include those not listed by -Wformat or -Wformat=2.
      clang:-Werror=format-non-iso
-     clang:-Werror=format-pedantic
+     clang:not-clang-lt4:-Werror=format-pedantic
      clang:not-clang-lt19:-Werror=format-signedness
      clang:not-clang-lt10:-Werror=format-type-confusion
 
