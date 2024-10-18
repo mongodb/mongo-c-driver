@@ -203,13 +203,6 @@ typedef signed char bool;
 #define BSON_IF_POSIX(...) __VA_ARGS__
 #endif
 
-static BSON_INLINE void BSON_GNUC_DEPRECATED
-bson_sync_synchronize (void)
-{
-   BSON_IF_MSVC (MemoryBarrier ();)
-   BSON_IF_GNU_LIKE (__sync_synchronize ();)
-}
-
 
 BSON_END_DECLS
 

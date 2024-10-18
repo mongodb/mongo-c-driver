@@ -641,6 +641,12 @@ bson_atomic_thread_fence (void)
    BSON_IF_GNU_LEGACY_ATOMICS (__sync_synchronize ();)
 }
 
+static BSON_INLINE void BSON_GNUC_DEPRECATED
+bson_sync_synchronize (void)
+{
+   bson_atomic_thread_fence ();
+}
+
 #ifdef BSON_USE_LEGACY_GCC_ATOMICS
 #undef BSON_IF_GNU_LIKE
 #define BSON_IF_GNU_LIKE(...) __VA_ARGS__
