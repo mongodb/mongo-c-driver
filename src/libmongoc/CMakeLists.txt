@@ -1040,6 +1040,7 @@ set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-cmp.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-corpus.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-error.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-sync.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-version.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-clock.c
