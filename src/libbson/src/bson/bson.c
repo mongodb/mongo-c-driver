@@ -2619,7 +2619,10 @@ _bson_as_json_visit_date_time (const bson_iter_t *iter, const char *key, int64_t
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
 
-   if (state->mode == BSON_JSON_MODE_CANONICAL || (state->mode == BSON_JSON_MODE_RELAXED && msec_since_epoch < 0)) {
+   const int64_t msec_since_Y10K = 253402300800000; // Milliseconds since 10000-01-01T00:00:00Z.
+
+   if (state->mode == BSON_JSON_MODE_CANONICAL ||
+       (state->mode == BSON_JSON_MODE_RELAXED && (msec_since_epoch < 0 || msec_since_epoch >= msec_since_Y10K))) {
       mcommon_string_append (state->str, "{ \"$date\" : { \"$numberLong\" : \"");
       mcommon_string_append_printf (state->str, "%" PRId64, msec_since_epoch);
       mcommon_string_append (state->str, "\" } }");
