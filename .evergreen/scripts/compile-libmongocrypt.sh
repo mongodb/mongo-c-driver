@@ -10,13 +10,11 @@ compile_libmongocrypt() {
   # `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no
   # divergence in the copied files.
 
-  # TODO: once 1.12.0 is released replace the following with:
+  # TODO: once 1.12.0 is released (containing de69cc91e1574e8861cd0ceb4bb866cc02a53d6b) replace the following with:
   # git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.12.0 || return
   {
-    # TODO: update once https://github.com/mongodb/libmongocrypt/pull/895 is merged.
-    git clone -q https://github.com/kevinAlbs/libmongocrypt || return
-    # Check out commit removing use of (the now deprecated) bson_as_json
-    git -C libmongocrypt checkout --branch CDRIVER-5700
+    git clone -q https://github.com/mongodb/libmongocrypt || return
+    git -C libmongocrypt checkout de69cc91e1574e8861cd0ceb4bb866cc02a53d6b
   }
 
   declare -a crypt_cmake_flags=(
