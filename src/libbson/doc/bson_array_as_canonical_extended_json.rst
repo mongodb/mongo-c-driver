@@ -20,7 +20,9 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_array_as_canonical_extended_json()` encodes ``bson`` as a UTF-8 string in Canonical Extended JSON. See `MongoDB Extended JSON format`_ for a description of Extended JSON formats. The outermost element is encoded as a JSON array, rather than a JSON document.
+The :symbol:`bson_array_as_canonical_extended_json()` encodes ``bson`` as a UTF-8 string in Canonical Extended JSON.
+See `MongoDB Extended JSON format`_ for a description of Extended JSON formats.
+The outermost element is encoded as a JSON array, rather than a JSON document.
 
 The caller is responsible for freeing the resulting UTF-8 encoded string by calling :symbol:`bson_free()` with the result.
 

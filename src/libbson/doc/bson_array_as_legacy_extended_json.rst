@@ -20,14 +20,9 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_array_as_legacy_extended_json()` function shall encode ``bson`` as a UTF-8
-string using :doc:`libbson's Legacy Extended JSON <legacy_extended_json>`, except the outermost element is
-encoded as a JSON array, rather than a JSON document. This function is
-superseded by :symbol:`bson_array_as_canonical_extended_json()` and
-:symbol:`bson_array_as_relaxed_extended_json()`, which use the same 
-`MongoDB Extended JSON format`_ as all other MongoDB drivers.
-The caller is responsible for freeing the resulting UTF-8 encoded string by
-calling :symbol:`bson_free()` with the result.
+The :symbol:`bson_array_as_legacy_extended_json()` function shall encode ``bson`` as a UTF-8 string using :doc:`libbson's Legacy Extended JSON <legacy_extended_json>`, except the outermost element is encoded as a JSON array, rather than a JSON document.
+This function is superseded by :symbol:`bson_array_as_canonical_extended_json()` and :symbol:`bson_array_as_relaxed_extended_json()`, which use the same `MongoDB Extended JSON format`_ as all other MongoDB drivers.
+The caller is responsible for freeing the resulting UTF-8 encoded string by calling :symbol:`bson_free()` with the result.
 
 If non-NULL, ``length`` will be set to the length of the result in bytes.
 
