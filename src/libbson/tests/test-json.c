@@ -2453,20 +2453,20 @@ test_bson_array_as_legacy_json (void)
    size_t len;
    char *str;
 
-   str = bson_array_as_json (&d, &len);
+   str = bson_array_as_legacy_extended_json (&d, &len);
    ASSERT_CMPSTR (str, "[ ]");
    ASSERT_CMPSIZE_T (len, ==, 3u);
    bson_free (str);
 
    BSON_APPEND_INT32 (&d, "0", 1);
-   str = bson_array_as_json (&d, &len);
+   str = bson_array_as_legacy_extended_json (&d, &len);
    ASSERT_CMPSTR (str, "[ 1 ]");
    ASSERT_CMPSIZE_T (len, ==, 5u);
    bson_free (str);
 
    /* test corrupted bson */
    BSON_APPEND_UTF8 (&d, "1", "\x80"); /* bad UTF-8 */
-   str = bson_array_as_json (&d, &len);
+   str = bson_array_as_legacy_extended_json (&d, &len);
    BSON_ASSERT (!str);
    BSON_ASSERT (!len);
 
