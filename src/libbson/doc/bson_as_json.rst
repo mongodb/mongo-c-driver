@@ -40,32 +40,6 @@ If successful, a newly allocated UTF-8 encoded string and ``length`` is set.
 
 Upon failure, NULL is returned.
 
-Example
--------
-
-.. code-block:: c
-
-  #include <bson/bson.h>
-
-  int main ()
-  {
-     bson_t bson;
-     char *str;
-
-     bson_init (&bson);
-     BSON_APPEND_UTF8 (&bson, "0", "foo");
-     BSON_APPEND_UTF8 (&bson, "1", "bar");
-
-     str = bson_as_json (&bson, NULL);
-     /* Prints
-      * { "0" : "foo", "1" : "bar" }
-      */
-     printf ("%s\n", str);
-     bson_free (str);
-
-     bson_destroy (&bson);
-  }
-
 .. only:: html
 
   .. include:: includes/seealso/bson-as-json.txt
