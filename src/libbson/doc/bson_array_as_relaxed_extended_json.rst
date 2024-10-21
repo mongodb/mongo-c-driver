@@ -20,7 +20,7 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_as_relaxed_extended_json()` encodes ``bson`` as a UTF-8 string in the Relaxed Extended JSON.
+:symbol:`bson_as_relaxed_extended_json()` encodes ``bson`` as a UTF-8 string in the Relaxed Extended JSON.
 The outermost element is encoded as a JSON array (``[ ... ]``), rather than a JSON document (``{ ... }``).
 See `MongoDB Extended JSON format`_ for a description of Extended JSON formats.
 

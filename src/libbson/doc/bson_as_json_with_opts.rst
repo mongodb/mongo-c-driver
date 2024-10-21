@@ -21,7 +21,7 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_as_json_with_opts()` encodes ``bson`` as a UTF-8 string in the `MongoDB Extended JSON format`_ or :doc:`libbson's Legacy Extended JSON <legacy_extended_json>`.
+:symbol:`bson_as_json_with_opts()` encodes ``bson`` as a UTF-8 string in the `MongoDB Extended JSON format`_ or :doc:`libbson's Legacy Extended JSON <legacy_extended_json>`.
 
 The caller is responsible for freeing the resulting UTF-8 encoded string by calling :symbol:`bson_free()` with the result.
 
