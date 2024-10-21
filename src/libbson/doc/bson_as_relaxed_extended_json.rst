@@ -37,12 +37,11 @@ Upon failure, NULL is returned.
 Example
 -------
 
-.. code-block:: c
-
-  char *str = bson_as_relaxed_extended_json (doc, NULL);
-  printf ("%s\n", str);
-  bson_free (str);
-
+.. literalinclude:: ../examples/extended-json.c
+   :language: c
+   :start-after: // bson_as_relaxed_extended_json ... begin
+   :end-before: // bson_as_relaxed_extended_json ... end
+   :dedent: 6
 
 .. only:: html
 

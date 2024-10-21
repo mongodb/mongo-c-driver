@@ -38,31 +38,11 @@ Upon failure, NULL is returned.
 Example
 -------
 
-.. code-block:: c
-
-  #include <bson/bson.h>
-
-  int main ()
-  {
-     bson_t bson;
-     char *str;
-
-     bson_init (&bson);
-     /* BSON array is a normal BSON document with integer values for the keys,
-      * starting with 0 and continuing sequentially
-      */
-     BSON_APPEND_INT32 (&bson, "0", 1);
-     BSON_APPEND_UTF8 (&bson, "1", "bar");
-
-     str = bson_array_as_canonical_extended_json (&bson, NULL);
-     /* Prints
-      * [ { "$numberInt" : 1 }, "bar" ]
-      */
-     printf ("%s\n", str);
-     bson_free (str);
-
-     bson_destroy (&bson);
-  }
+.. literalinclude:: ../examples/extended-json.c
+   :language: c
+   :start-after: // bson_array_as_canonical_extended_json ... begin
+   :end-before: // bson_array_as_canonical_extended_json ... end
+   :dedent: 6
 
 
 .. only:: html

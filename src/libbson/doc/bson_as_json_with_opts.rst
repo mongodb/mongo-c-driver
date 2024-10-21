@@ -39,13 +39,11 @@ Upon failure, NULL is returned.
 Example
 -------
 
-.. code-block:: c
-
-  bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_CANONICAL, BSON_MAX_LEN_UNLIMITED);
-  char *str = bson_as_json_with_opts (doc, NULL, opts);
-  printf ("%s\n", str);
-  bson_free (str);
-  bson_json_opts_destroy (opts);
+.. literalinclude:: ../examples/extended-json.c
+   :language: c
+   :start-after: // bson_as_json_with_opts ... begin
+   :end-before: // bson_as_json_with_opts ... end
+   :dedent: 6
 
 
 .. only:: html
