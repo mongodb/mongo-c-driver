@@ -561,7 +561,7 @@ result_check (result_t *result, entity_map_t *em, bson_val_t *expect_result, bso
          if (!bson_match (error_response, val_to_match, result->array_of_root_docs, error)) {
             test_diagnostics_error_info ("error.errorResponse mismatch:\nExpected: %s\nActual: %s\n",
                                          bson_val_to_json (error_response),
-                                         bson_as_json (result->reply, NULL));
+                                         bson_as_relaxed_extended_json (result->reply, NULL));
             bson_val_destroy (val_to_match);
             bson_destroy (&doc_to_match);
             goto done;

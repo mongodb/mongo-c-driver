@@ -435,8 +435,8 @@ test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
          bson_iter_bson (&iter, &client_cluster_time);
          if (!bson_equal (test->cluster_time, &client_cluster_time)) {
             test_error ("Unequal clusterTimes.\nServer sent %s\nClient sent %s",
-                        bson_as_json (test->cluster_time, NULL),
-                        bson_as_json (&client_cluster_time, NULL));
+                        bson_as_relaxed_extended_json (test->cluster_time, NULL),
+                        bson_as_relaxed_extended_json (&client_cluster_time, NULL));
          }
 
          bson_destroy (&client_cluster_time);

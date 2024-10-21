@@ -1585,7 +1585,8 @@ assert_no_duplicate_keys (const bson_t *doc)
 
    while (bson_iter_next (&iter)) {
       if (mongoc_set_find_item (keys, find_key, (void *) bson_iter_key (&iter))) {
-         test_error ("Duplicate key \"%s\" in document:\n%s", bson_iter_key (&iter), bson_as_json (doc, NULL));
+         test_error (
+            "Duplicate key \"%s\" in document:\n%s", bson_iter_key (&iter), bson_as_relaxed_extended_json (doc, NULL));
       }
 
       mongoc_set_add (keys, 0 /* index */, (void *) bson_iter_key (&iter));

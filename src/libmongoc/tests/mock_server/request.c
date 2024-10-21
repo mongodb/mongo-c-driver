@@ -155,7 +155,7 @@ request_matches_query (const request_t *request,
 
    if (request->docs.len) {
       doc = request_get_doc (request, 0);
-      doc_as_json = bson_as_json (doc, NULL);
+      doc_as_json = bson_as_relaxed_extended_json (doc, NULL);
    } else {
       doc = NULL;
       doc_as_json = NULL;
@@ -560,7 +560,7 @@ request_from_query (request_t *request)
          }
       }
 
-      str = bson_as_json (query, NULL);
+      str = bson_as_relaxed_extended_json (query, NULL);
       mcommon_string_append (query_as_str, str);
       bson_free (str);
    }
@@ -571,7 +571,7 @@ request_from_query (request_t *request)
       BSON_ASSERT (fields);
       _mongoc_array_append_val (&request->docs, fields);
 
-      str = bson_as_json (fields, NULL);
+      str = bson_as_relaxed_extended_json (fields, NULL);
       mcommon_string_append (query_as_str, " fields=");
       mcommon_string_append (query_as_str, str);
       bson_free (str);
@@ -629,7 +629,7 @@ parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, mcom
       BSON_ASSERT (doc);
       _mongoc_array_append_val (&request->docs, doc);
 
-      char *const str = bson_as_json (doc, NULL);
+      char *const str = bson_as_relaxed_extended_json (doc, NULL);
       mcommon_string_append (msg_as_str, str);
       bson_free (str);
 
