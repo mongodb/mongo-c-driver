@@ -123,7 +123,7 @@ test_bson_as_json_x1000 (void)
    }
 
    for (i = 0; i < 1000; i++) {
-      str = bson_as_json (b, &len);
+      str = bson_as_legacy_extended_json (b, &len);
       bson_free (str);
    }
 
@@ -227,7 +227,7 @@ test_bson_as_json_multi (void)
       BSON_ASSERT (bson_append_decimal128 (b, "Decimal128", -1, &decimal128));
    }
 
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
 
    /* Based on multi-type-deprecated.json from BSON Corpus Tests. */
    ASSERT_CMPSTR (str,
@@ -278,7 +278,7 @@ test_bson_as_json_string (void)
 
    b = bson_new ();
    BSON_ASSERT (bson_append_utf8 (b, "foo", -1, "bar", -1));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
    BSON_ASSERT (len == 17);
    BSON_ASSERT (!strcmp ("{ \"foo\" : \"bar\" }", str));
    bson_free (str);
@@ -295,7 +295,7 @@ test_bson_as_json_int32 (void)
 
    b = bson_new ();
    BSON_ASSERT (bson_append_int32 (b, "foo", -1, 1234));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
    BSON_ASSERT (len == 16);
    BSON_ASSERT (!strcmp ("{ \"foo\" : 1234 }", str));
    bson_free (str);
@@ -312,7 +312,7 @@ test_bson_as_json_int64 (void)
 
    b = bson_new ();
    BSON_ASSERT (bson_append_int64 (b, "foo", -1, 341234123412341234ULL));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
    BSON_ASSERT (len == 30);
    BSON_ASSERT (!strcmp ("{ \"foo\" : 341234123412341234 }", str));
    bson_free (str);
@@ -334,7 +334,7 @@ test_bson_as_json_double (void)
    BSON_ASSERT (bson_append_double (b, "baz", -1, -1));
    BSON_ASSERT (bson_append_double (b, "quux", -1, 0.03125));
    BSON_ASSERT (bson_append_double (b, "huge", -1, 1e99));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
 
    expected = bson_strdup_printf ("{"
                                   " \"foo\" : 123.5,"
@@ -367,7 +367,7 @@ test_bson_as_json_double_nonfinite (void)
    BSON_ASSERT (bson_append_double (b, "nan", -1, NAN));
    BSON_ASSERT (bson_append_double (b, "pos_inf", -1, pos_inf));
    BSON_ASSERT (bson_append_double (b, "neg_inf", -1, neg_inf));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
 
    expected = bson_strdup_printf ("{"
                                   " \"nan\" : %.20g,"
@@ -397,7 +397,7 @@ test_bson_as_json_decimal128 (void)
 
    b = bson_new ();
    BSON_ASSERT (bson_append_decimal128 (b, "decimal128", -1, &decimal128));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
    ASSERT_CMPSTR (str,
                   "{ "
                   "\"decimal128\" : { \"$numberDecimal\" : \"11\" }"
@@ -416,7 +416,7 @@ test_bson_as_json_code (void)
    char *str;
 
    BSON_ASSERT (bson_append_code (&code, "c", -1, "function () {}"));
-   str = bson_as_json (&code, NULL);
+   str = bson_as_legacy_extended_json (&code, NULL);
    ASSERT_CMPSTR (str, "{ \"c\" : { \"$code\" : \"function () {}\" } }");
 
    bson_free (str);
@@ -424,7 +424,7 @@ test_bson_as_json_code (void)
 
    /* empty scope */
    BSON_ASSERT (BSON_APPEND_CODE_WITH_SCOPE (&code, "c", "function () {}", &scope));
-   str = bson_as_json (&code, NULL);
+   str = bson_as_legacy_extended_json (&code, NULL);
    ASSERT_CMPSTR (str, "{ \"c\" : { \"$code\" : \"function () {}\", \"$scope\" : { } } }");
 
    bson_free (str);
@@ -432,7 +432,7 @@ test_bson_as_json_code (void)
 
    BSON_APPEND_INT32 (&scope, "x", 1);
    BSON_ASSERT (BSON_APPEND_CODE_WITH_SCOPE (&code, "c", "function () {}", &scope));
-   str = bson_as_json (&code, NULL);
+   str = bson_as_legacy_extended_json (&code, NULL);
    ASSERT_CMPSTR (str,
                   "{ \"c\" : { \"$code\" : \"function () {}\", \"$scope\" "
                   ": { \"x\" : 1 } } }");
@@ -442,7 +442,7 @@ test_bson_as_json_code (void)
 
    /* test that embedded quotes are backslash-escaped */
    BSON_ASSERT (BSON_APPEND_CODE (&code, "c", "return \"a\""));
-   str = bson_as_json (&code, NULL);
+   str = bson_as_legacy_extended_json (&code, NULL);
 
    /* hard to read, this is { "c" : { "$code" : "return \"a\"" } } */
    ASSERT_CMPSTR (str, "{ \"c\" : { \"$code\" : \"return \\\"a\\\"\" } }");
@@ -464,7 +464,7 @@ test_bson_as_json_date_time (void)
    BSON_ASSERT (bson_append_date_time (b, "epoch", -1, 0));
    BSON_ASSERT (bson_append_date_time (b, "negative", -1, -123456000));
    BSON_ASSERT (bson_append_date_time (b, "positive", -1, 123456000));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
 
    ASSERT_CMPSTR (str,
                   "{"
@@ -491,7 +491,7 @@ test_bson_as_json_regex (void)
    BSON_ASSERT (bson_append_regex (b, "unordered", -1, "^abcd", "xusmli"));
    BSON_ASSERT (bson_append_regex (b, "duplicate", -1, "^abcd", "mmiii"));
    BSON_ASSERT (bson_append_regex (b, "unsupported", -1, "^abcd", "jkmlvz"));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
 
    ASSERT_CMPSTR (str,
                   "{"
@@ -523,7 +523,7 @@ test_bson_as_json_symbol (void)
    b = bson_new ();
    BSON_ASSERT (bson_append_symbol (b, "symbol", -1, "foo", -1));
    BSON_ASSERT (bson_append_symbol (b, "escaping", -1, "\"bar\"", -1));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
 
    ASSERT_CMPSTR (str,
                   "{"
@@ -547,7 +547,7 @@ test_bson_as_json_utf8 (void)
 
    b = bson_new ();
    BSON_ASSERT (bson_append_utf8 (b, FIVE_EUROS, -1, FIVE_EUROS, -1));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
    BSON_ASSERT (!strcmp (str, "{ \"" FIVE_EUROS "\" : \"" FIVE_EUROS "\" }"));
    bson_free (str);
    bson_destroy (b);
@@ -567,7 +567,7 @@ test_bson_as_json_dbpointer (void)
    b = bson_new ();
    BSON_ASSERT (bson_append_dbpointer (b, "dbpointer", -1, "collection", &oid));
    BSON_ASSERT (bson_append_dbpointer (b, "escaping", -1, "\"coll\"", &oid));
-   str = bson_as_json (b, &len);
+   str = bson_as_legacy_extended_json (b, &len);
 
    ASSERT_CMPSTR (str,
                   "{"
@@ -623,7 +623,7 @@ test_bson_as_json_stack_overflow (void)
    r = bson_init_static (&b, buf, 16777220);
    BSON_ASSERT (r);
 
-   str = bson_as_json (&b, NULL);
+   str = bson_as_legacy_extended_json (&b, NULL);
    BSON_ASSERT (str);
 
    r = !!strstr (str, "...");
@@ -656,7 +656,7 @@ test_bson_corrupt (void)
    r = bson_init_static (&b, buf, (uint32_t) r);
    BSON_ASSERT (r);
 
-   str = bson_as_json (&b, NULL);
+   str = bson_as_legacy_extended_json (&b, NULL);
    BSON_ASSERT (!str);
 
    bson_destroy (&b);
@@ -684,7 +684,7 @@ test_bson_corrupt_utf8 (void)
    r = bson_init_static (&b, buf, (uint32_t) r);
    BSON_ASSERT (r);
 
-   str = bson_as_json (&b, NULL);
+   str = bson_as_legacy_extended_json (&b, NULL);
    BSON_ASSERT (!str);
 
    bson_destroy (&b);
@@ -712,7 +712,7 @@ test_bson_corrupt_binary (void)
    r = bson_init_static (&b, buf, (uint32_t) r);
    BSON_ASSERT (r);
 
-   str = bson_as_json (&b, NULL);
+   str = bson_as_legacy_extended_json (&b, NULL);
    BSON_ASSERT (!str);
 
    bson_destroy (&b);
@@ -786,7 +786,7 @@ test_bson_json_read_buffering (void)
             }
 
             /* append the BSON document's JSON representation to "json" */
-            json_tmp = bson_as_json (bsons[docs_idx], NULL);
+            json_tmp = bson_as_legacy_extended_json (bsons[docs_idx], NULL);
             BSON_ASSERT (json_tmp);
             mcommon_string_append (json, json_tmp);
             bson_free (json_tmp);
@@ -952,9 +952,9 @@ test_bson_json_read_corrupt_document (void)
 
    bson_t bson;
    BSON_ASSERT (bson_init_static (&bson, (uint8_t *) bad_doc, sizeof (bad_doc)));
-   BSON_ASSERT (!bson_as_json (&bson, NULL));
+   BSON_ASSERT (!bson_as_legacy_extended_json (&bson, NULL));
    BSON_ASSERT (bson_init_static (&bson, (uint8_t *) bad_array, sizeof (bad_array)));
-   BSON_ASSERT (!bson_as_json (&bson, NULL));
+   BSON_ASSERT (!bson_as_legacy_extended_json (&bson, NULL));
 }
 
 
@@ -2534,13 +2534,13 @@ test_bson_as_json_spacing (void)
    size_t len;
    char *str;
 
-   str = bson_as_json (&d, &len);
+   str = bson_as_legacy_extended_json (&d, &len);
    BSON_ASSERT (0 == strcmp (str, "{ }"));
    BSON_ASSERT (len == 3);
    bson_free (str);
 
    BSON_APPEND_INT32 (&d, "a", 1);
-   str = bson_as_json (&d, &len);
+   str = bson_as_legacy_extended_json (&d, &len);
    BSON_ASSERT (0 == strcmp (str, "{ \"a\" : 1 }"));
    BSON_ASSERT (len == 11);
    bson_free (str);
@@ -2583,7 +2583,7 @@ test_bson_integer_width (void)
    bson_error_t err;
    bson_t *bs = bson_new_from_json ((const uint8_t *) sd, strlen (sd), &err);
 
-   match = bson_as_json (bs, 0);
+   match = bson_as_legacy_extended_json (bs, 0);
    ASSERT_CMPSTR (match, "{ \"v\" : -1234567890123, \"x\" : 12345678901234 }");
 
    bson_free (match);
