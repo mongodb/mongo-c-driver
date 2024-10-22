@@ -133,7 +133,7 @@ hello_json (mock_rs_t *rs, mongoc_server_description_type_t type, const bson_t *
    if (bson_empty0 (tags)) {
       tags_json = bson_strdup ("{}");
    } else {
-      tags_json = bson_as_json (tags, NULL);
+      tags_json = bson_as_relaxed_extended_json (tags, NULL);
    }
 
    hosts_str = hosts (&rs->servers);

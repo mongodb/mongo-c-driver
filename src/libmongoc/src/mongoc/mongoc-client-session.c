@@ -569,7 +569,7 @@ _mongoc_parse_cluster_time (const bson_t *cluster_time, uint32_t *timestamp, uin
 
    if (!cluster_time || !bson_iter_init_find (&iter, cluster_time, "clusterTime") ||
        !BSON_ITER_HOLDS_TIMESTAMP (&iter)) {
-      s = bson_as_json (cluster_time, NULL);
+      s = bson_as_relaxed_extended_json (cluster_time, NULL);
       MONGOC_ERROR ("Cannot parse cluster time from %s\n", s);
       bson_free (s);
       return false;

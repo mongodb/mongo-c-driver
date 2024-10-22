@@ -295,6 +295,7 @@ if (ENABLE_EXAMPLES)
    add_example (json-to-bson examples/json-to-bson.c)
    add_example (bson-check-depth examples/bson-check-depth.c)
    add_example (creating examples/creating.c)
+   add_example (extended-json examples/extended-json.c)
 endif () # ENABLE_EXAMPLES
 
 

@@ -546,7 +546,7 @@ auto_hello (request_t *request, void *data)
       BSON_APPEND_INT32 (&response, "maxWireVersion", WIRE_VERSION_MAX);
    }
 
-   response_json = bson_as_json (&response, 0);
+   response_json = bson_as_relaxed_extended_json (&response, 0);
 
    if (mock_server_get_rand_delay (request->server)) {
       _mongoc_usleep ((int64_t) (rand () % 10) * 1000);
@@ -1995,7 +1995,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
 
    docs_json = mcommon_string_new ("");
    for (int i = 0; i < n_docs; i++) {
-      doc_json = bson_as_json (&docs[i], NULL);
+      doc_json = bson_as_relaxed_extended_json (&docs[i], NULL);
       mcommon_string_append (docs_json, doc_json);
       bson_free (doc_json);
       if (i < n_docs - 1) {

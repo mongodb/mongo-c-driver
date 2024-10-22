@@ -3169,7 +3169,7 @@ test_sample_causal_consistency (mongoc_client_t *client)
 					      read_prefs);
 
    while (mongoc_cursor_next (cursor, &result)) {
-      json = bson_as_json (result, NULL);
+      json = bson_as_relaxed_extended_json (result, NULL);
       fprintf (stdout, "Document: %s\n", json);
       bson_free (json);
    }
@@ -4316,7 +4316,7 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    /* This block not evaluated, but is inserted into documentation to represent the above reply.
     * Don't delete me! */
    /* Start Versioned API Example 6 */
-   char *str = bson_as_json (&reply, NULL /* length */);
+   char *str = bson_as_relaxed_extended_json (&reply, NULL /* length */);
    printf ("%s", str);
    /* Prints the server reply:
     * { "ok" : 0, "errmsg" : "Provided apiStrict:true, but the command count is not in API Version 1", "code" : 323, "codeName" : "APIStrictError" } */

@@ -50,8 +50,8 @@ _assert_options_match (const bson_t *test, mongoc_uri_t *uri)
                      "expected: %s\n"
                      "actual: %s",
                      opt_name,
-                     bson_as_json (&opts_from_test, NULL),
-                     bson_as_json (opts_or_creds, NULL));
+                     bson_as_relaxed_extended_json (&opts_from_test, NULL),
+                     bson_as_relaxed_extended_json (opts_or_creds, NULL));
       }
 
       test_value = bson_iter_value (&test_opts_iter);
@@ -62,8 +62,8 @@ _assert_options_match (const bson_t *test, mongoc_uri_t *uri)
                      "actual: %s",
                      opt_name,
                      ctx.errmsg,
-                     bson_as_json (&opts_from_test, NULL),
-                     bson_as_json (opts_from_uri, NULL));
+                     bson_as_relaxed_extended_json (&opts_from_test, NULL),
+                     bson_as_relaxed_extended_json (opts_from_uri, NULL));
       }
    }
 }

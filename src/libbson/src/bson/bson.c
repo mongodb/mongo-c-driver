@@ -3122,6 +3122,9 @@ _bson_as_json_visit_all (
 char *
 bson_as_json_with_opts (const bson_t *bson, size_t *length, const bson_json_opts_t *opts)
 {
+   BSON_ASSERT_PARAM (bson);
+   BSON_OPTIONAL_PARAM (length);
+   BSON_ASSERT_PARAM (opts);
    return _bson_as_json_visit_all (bson, length, opts->mode, opts->max_len, opts->is_outermost_array);
 }
 
@@ -3136,6 +3139,12 @@ bson_as_canonical_extended_json (const bson_t *bson, size_t *length)
 
 char *
 bson_as_json (const bson_t *bson, size_t *length)
+{
+   return bson_as_legacy_extended_json (bson, length);
+}
+
+char *
+bson_as_legacy_extended_json (const bson_t *bson, size_t *length)
 {
    const bson_json_opts_t opts = {BSON_JSON_MODE_LEGACY, BSON_MAX_LEN_UNLIMITED, false};
    return bson_as_json_with_opts (bson, length, &opts);
@@ -3152,6 +3161,12 @@ bson_as_relaxed_extended_json (const bson_t *bson, size_t *length)
 
 char *
 bson_array_as_json (const bson_t *bson, size_t *length)
+{
+   return bson_array_as_legacy_extended_json (bson, length);
+}
+
+char *
+bson_array_as_legacy_extended_json (const bson_t *bson, size_t *length)
 {
    const bson_json_opts_t opts = {BSON_JSON_MODE_LEGACY, BSON_MAX_LEN_UNLIMITED, true};
    return bson_as_json_with_opts (bson, length, &opts);
