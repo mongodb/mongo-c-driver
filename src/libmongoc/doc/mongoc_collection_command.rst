@@ -32,12 +32,12 @@ Parameters
 ----------
 
 * ``collection``: A :symbol:`mongoc_collection_t`.
-* ``flags``: A :symbol:`mongoc_query_flags_t`.
-* ``skip``: A uint32_t with the number of documents to skip or zero.
-* ``limit``: A uint32_t with the max number of documents to return or zero.
-* ``batch_size``: A uint32_t with the number of documents in each batch or zero. Default is 100.
+* ``flags``: Unused.
+* ``skip``: Unused.
+* ``limit``: Unused.
+* ``batch_size``: Unused.
 * ``command``: A :symbol:`bson:bson_t` containing the command to execute.
-* ``fields``: A :symbol:`bson:bson_t` containing the fields to return or ``NULL``. Not all commands support this option.
+* ``fields``: Unused.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
 
 Returns

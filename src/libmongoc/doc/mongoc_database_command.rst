@@ -37,12 +37,12 @@ Parameters
 ----------
 
 * ``database``: A :symbol:`mongoc_database_t`.
-* ``flags``: A :symbol:`mongoc_query_flags_t`.
-* ``skip``: The number of documents to skip on the server.
-* ``limit``: The maximum number of documents to return from the cursor.
-* ``batch_size``: Attempt to batch results from the server in groups of ``batch_size`` documents.
+* ``flags``: Unused.
+* ``skip``: Unused.
+* ``limit``: Unused.
+* ``batch_size``: Unused.
 * ``command``: A :symbol:`bson:bson_t` containing the command.
-* ``fields``: An optional :symbol:`bson:bson_t` containing the fields to return. ``NULL`` for all fields.
+* ``fields``: Unused.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
 
 Returns
