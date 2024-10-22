@@ -3622,8 +3622,9 @@ test_bson_as_json_all_formats (void)
          {
             char *as_legacy = bson_as_legacy_extended_json (b, NULL);
             char *ptr = as_legacy;
-            ASSERT_STARTSWITH (ptr, "{ \"double_nan\" : ");
-            ptr += strlen ("{ \"double_nan\" : ");
+            const char *expected_prefix = "{ \"double_nan\" : ";
+            ASSERT_STARTSWITH (ptr, expected_prefix);
+            ptr += strlen (expected_prefix);
             if (ptr[0] == '-') {
                ptr += 1;
             }
