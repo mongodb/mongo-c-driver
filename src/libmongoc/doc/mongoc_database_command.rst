@@ -3,6 +3,11 @@
 mongoc_database_command()
 =========================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
+      This function is deprecated and should not be used in new code.
+
 Synopsis
 --------
 
@@ -17,7 +22,7 @@ Synopsis
                            const bson_t *command,
                            const bson_t *fields,
                            const mongoc_read_prefs_t *read_prefs)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+     BSON_GNUC_WARN_UNUSED_RESULT BSON_GNUC_DEPRECATED_FOR (mongoc_database_command_simple);
 
 This function is superseded by :symbol:`mongoc_database_command_with_opts()`, :symbol:`mongoc_database_read_command_with_opts()`, :symbol:`mongoc_database_write_command_with_opts()`, and :symbol:`mongoc_database_read_write_command_with_opts()`.
 

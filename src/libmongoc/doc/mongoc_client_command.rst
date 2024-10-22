@@ -3,6 +3,11 @@
 mongoc_client_command()
 =======================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
+      This function is deprecated and should not be used in new code.
+
 Synopsis
 --------
 
@@ -18,7 +23,7 @@ Synopsis
                          const bson_t *query,
                          const bson_t *fields,
                          const mongoc_read_prefs_t *read_prefs)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+     BSON_GNUC_WARN_UNUSED_RESULT BSON_GNUC_DEPRECATED_FOR (mongoc_client_command_simple);
 
 This function is superseded by :symbol:`mongoc_client_command_with_opts()`, :symbol:`mongoc_client_read_command_with_opts()`, :symbol:`mongoc_client_write_command_with_opts()`, and :symbol:`mongoc_client_read_write_command_with_opts()`.
 
