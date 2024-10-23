@@ -1514,8 +1514,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       }
    }
 
-   bool is_ordered =
-      mongoc_optional_is_set (&opts->ordered) ? mongoc_optional_value (&opts->ordered) : true; // default.
    bool verboseresults =
       mongoc_optional_is_set (&opts->verboseresults) ? mongoc_optional_value (&opts->verboseresults) : false;
    ret.res->verboseresults = verboseresults;
