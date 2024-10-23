@@ -3,6 +3,11 @@
 mongoc_database_command()
 =========================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
+      This function is deprecated and should not be used in new code.
+
 Synopsis
 --------
 
@@ -17,9 +22,9 @@ Synopsis
                            const bson_t *command,
                            const bson_t *fields,
                            const mongoc_read_prefs_t *read_prefs)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+     BSON_GNUC_WARN_UNUSED_RESULT BSON_GNUC_DEPRECATED_FOR (mongoc_database_command_simple);
 
-This function is superseded by :symbol:`mongoc_database_command_with_opts()`, :symbol:`mongoc_database_read_command_with_opts()`, :symbol:`mongoc_database_write_command_with_opts()`, and :symbol:`mongoc_database_read_write_command_with_opts()`.
+This function is superseded by :symbol:`mongoc_database_command_simple()`.
 
 Description
 -----------
@@ -32,13 +37,36 @@ Parameters
 ----------
 
 * ``database``: A :symbol:`mongoc_database_t`.
-* ``flags``: A :symbol:`mongoc_query_flags_t`.
-* ``skip``: The number of documents to skip on the server.
-* ``limit``: The maximum number of documents to return from the cursor.
-* ``batch_size``: Attempt to batch results from the server in groups of ``batch_size`` documents.
+* ``flags``: Unused.
+* ``skip``: Unused.
+* ``limit``: Unused.
+* ``batch_size``: Unused.
 * ``command``: A :symbol:`bson:bson_t` containing the command.
-* ``fields``: An optional :symbol:`bson:bson_t` containing the fields to return. ``NULL`` for all fields.
+* ``fields``: Unused.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
+
+Migrating
+---------
+
+:symbol:`mongoc_database_command` is deprecated.
+
+The following example uses :symbol:`mongoc_database_command`:
+
+.. literalinclude:: ../examples/migrating.c
+   :language: c
+   :dedent: 6
+   :start-after: // mongoc_database_command ... before ... begin
+   :end-before:  // mongoc_database_command ... before ... end
+   :caption: Before
+
+To migrate, use a non-deprecated alternative, like :symbol:`mongoc_database_command_simple`:
+
+.. literalinclude:: ../examples/migrating.c
+   :language: c
+   :dedent: 6
+   :start-after: // mongoc_database_command ... after ... begin
+   :end-before:  // mongoc_database_command ... after ... end
+   :caption: After
 
 Returns
 -------

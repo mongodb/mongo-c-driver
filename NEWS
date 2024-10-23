@@ -6,6 +6,12 @@ Platform Support:
 
   * Support for Visual Studio 2013 is dropped.
 
+Deprecated:
+
+  * `mongoc_client_command` is deprecated and planned for removal in a future release. Use `mongoc_client_command_simple` instead.
+  * `mongoc_database_command` is deprecated and planned for removal in a future release. Use `mongoc_database_command_simple` instead.
+  * `mongoc_collection_command` is deprecated and planned for removal in a future release. Use `mongoc_collection_command_simple` instead.
+
 libmongoc 1.28.1
 ================
 
