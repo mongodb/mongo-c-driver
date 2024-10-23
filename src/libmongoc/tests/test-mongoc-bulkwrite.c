@@ -180,6 +180,7 @@ test_bulkwrite_session_with_unacknowledged (void *ctx)
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    mongoc_bulkwriteopts_t *opts = mongoc_bulkwriteopts_new ();
+   mongoc_bulkwriteopts_set_ordered (opts, false);
    mongoc_bulkwriteopts_set_writeconcern (opts, wc);
 
    // Execute bulk write:

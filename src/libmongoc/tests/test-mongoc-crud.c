@@ -155,6 +155,9 @@ typedef struct {
    // `operation_ids` is a BSON document of this form:
    // { "0": <int64>, "1":  <int64> ... }
    bson_t operation_ids;
+   // `write_concerns` is a BSON document of this form:
+   // { "0": <document|null>, "1": <document|null> ... }
+   bson_t write_concerns;
    int numGetMore;
    int numKillCursors;
 } bulkWrite_ctx;
@@ -180,6 +183,13 @@ bulkWrite_cb (const mongoc_apm_command_started_t *event)
       char *key = bson_strdup_printf ("%" PRIu32, bson_count_keys (&ctx->ops_counts));
       BSON_APPEND_INT64 (&ctx->ops_counts, key, ops_count);
       BSON_APPEND_INT64 (&ctx->operation_ids, key, mongoc_apm_command_started_get_operation_id (event));
+      // Record write concern (if present).
+      bson_iter_t wc_iter;
+      if (bson_iter_init_find (&wc_iter, cmd, "writeConcern")) {
+         BSON_APPEND_ITER (&ctx->write_concerns, key, &wc_iter);
+      } else {
+         BSON_APPEND_NULL (&ctx->write_concerns, key);
+      }
       bson_free (key);
    }
 
@@ -199,6 +209,7 @@ capture_bulkWrite_info (mongoc_client_t *client)
    bulkWrite_ctx *cb_ctx = bson_malloc0 (sizeof (*cb_ctx));
    bson_init (&cb_ctx->ops_counts);
    bson_init (&cb_ctx->operation_ids);
+   bson_init (&cb_ctx->write_concerns);
    mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (cbs, bulkWrite_cb);
    mongoc_client_set_apm_callbacks (client, cbs, cb_ctx);
@@ -211,6 +222,7 @@ bulkWrite_ctx_reset (bulkWrite_ctx *cb_ctx)
 {
    bson_reinit (&cb_ctx->ops_counts);
    bson_reinit (&cb_ctx->operation_ids);
+   bson_reinit (&cb_ctx->write_concerns);
    cb_ctx->numGetMore = 0;
    cb_ctx->numKillCursors = 0;
 }
@@ -223,6 +235,7 @@ bulkWrite_ctx_destroy (bulkWrite_ctx *cb_ctx)
    }
    bson_destroy (&cb_ctx->ops_counts);
    bson_destroy (&cb_ctx->operation_ids);
+   bson_destroy (&cb_ctx->write_concerns);
    bson_free (cb_ctx);
 }
 
@@ -888,6 +901,7 @@ prose_test_10 (void *ctx)
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    mongoc_bulkwriteopts_t *opts = mongoc_bulkwriteopts_new ();
+   mongoc_bulkwriteopts_set_ordered (opts, false);
    mongoc_bulkwriteopts_set_writeconcern (opts, wc);
 
    // Test a large insert.
@@ -1286,6 +1300,117 @@ prose_test_13 (void *ctx)
    mongoc_client_destroy (client);
 }
 
+static void
+prose_test_15 (void *ctx)
+{
+   /*
+   15. `MongoClient.bulkWrite` with unacknowledged write concern uses `w:0` for all batches
+   */
+   mongoc_client_t *client;
+   BSON_UNUSED (ctx);
+   bool ok;
+   bson_error_t error;
+
+   client = test_framework_new_default_client ();
+
+   // Drop collection.
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_collection_drop (coll, NULL); // Ignore error.
+      mongoc_collection_destroy (coll);
+   }
+
+   // Create collection to workaround SERVER-95537.
+   {
+      mongoc_database_t *db = mongoc_client_get_database (client, "db");
+      mongoc_collection_t *coll = mongoc_database_create_collection (db, "coll", NULL, &error);
+      ASSERT_OR_PRINT (coll, error);
+      mongoc_collection_destroy (coll);
+      mongoc_database_destroy (db);
+   }
+
+   // Set callbacks to count the number of bulkWrite commands sent.
+   bulkWrite_ctx *cb_ctx = capture_bulkWrite_info (client);
+
+   // Get `maxWriteBatchSize` and `maxBsonObjectSize` from the server.
+   server_limits_t sl = get_server_limits (client);
+   int32_t maxMessageSizeBytes = sl.maxMessageSizeBytes;
+   int32_t maxBsonObjectSize = sl.maxBsonObjectSize;
+
+
+   // Make a large document.
+   bson_t doc = BSON_INITIALIZER;
+   {
+      char *large_str = repeat_char ('b', (size_t) maxBsonObjectSize - 500);
+      BSON_APPEND_UTF8 (&doc, "a", large_str);
+      bson_free (large_str);
+   }
+
+   // Execute bulkWrite.
+   {
+      mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
+      for (int32_t i = 0; i < maxMessageSizeBytes / maxBsonObjectSize + 1; i++) {
+         ok = mongoc_bulkwrite_append_insertone (bw, "db.coll", &doc, NULL, &error);
+         ASSERT_OR_PRINT (ok, error);
+      }
+
+      // Configure options with unacknowledge write concern and unordered writes.
+      mongoc_bulkwriteopts_t *bwo;
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+         mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+         bwo = mongoc_bulkwriteopts_new ();
+         mongoc_bulkwriteopts_set_writeconcern (bwo, wc);
+         mongoc_bulkwriteopts_set_ordered (bwo, false);
+         mongoc_write_concern_destroy (wc);
+      }
+
+      mongoc_bulkwritereturn_t ret = mongoc_bulkwrite_execute (bw, bwo);
+      ASSERT (!ret.res); // No result due to unacknowledged.
+      ASSERT_NO_BULKWRITEEXCEPTION (ret);
+      mongoc_bulkwriteexception_destroy (ret.exc);
+      mongoc_bulkwriteresult_destroy (ret.res);
+      mongoc_bulkwriteopts_destroy (bwo);
+      mongoc_bulkwrite_destroy (bw);
+   }
+
+   // Check command started events.
+   {
+      bson_t expect = BSON_INITIALIZER;
+      // Assert first `bulkWrite` sends `maxWriteBatchSize` ops.
+      BSON_APPEND_INT64 (&expect, "0", maxMessageSizeBytes / maxBsonObjectSize);
+      // Assert second `bulkWrite` sends 1 op.
+      BSON_APPEND_INT64 (&expect, "1", 1);
+      ASSERT_EQUAL_BSON (&expect, &cb_ctx->ops_counts);
+      bson_destroy (&expect);
+
+      // Assert both have the same `operation_id`.
+      int64_t operation_id_0 = bson_lookup_int64 (&cb_ctx->operation_ids, "0");
+      int64_t operation_id_1 = bson_lookup_int64 (&cb_ctx->operation_ids, "1");
+      ASSERT_CMPINT64 (operation_id_0, ==, operation_id_1);
+
+      // Assert both use unacknowledged write concern.
+      bson_init (&expect);
+      BCON_APPEND (&expect, "0", "{", "w", BCON_INT32 (0), "}");
+      BCON_APPEND (&expect, "1", "{", "w", BCON_INT32 (0), "}");
+      ASSERT_EQUAL_BSON (&expect, &cb_ctx->write_concerns);
+      bson_destroy (&expect);
+   }
+
+   // Count documents in collection.
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+      int64_t expected = maxMessageSizeBytes / maxBsonObjectSize + 1;
+      int64_t got = mongoc_collection_count_documents (coll, tmp_bson ("{}"), NULL, NULL, NULL, &error);
+      ASSERT_CMPINT64 (got, ==, expected);
+      mongoc_collection_destroy (coll);
+   }
+
+   bson_destroy (&doc);
+   bulkWrite_ctx_destroy (cb_ctx);
+   mongoc_client_destroy (client);
+}
+
 
 void
 test_crud_install (TestSuite *suite)
@@ -1392,4 +1517,12 @@ test_crud_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
                       test_framework_skip_if_no_client_side_encryption);
+
+   TestSuite_AddFull (suite,
+                      "/crud/prose_test_15",
+                      prose_test_15,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
+   );
 }
