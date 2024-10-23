@@ -48,6 +48,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
                    mc_kms_credentials_callback creds_cb,
+                   int32_t cache_expiration_ms,
                    bson_error_t *error);
 
 void
