@@ -104,7 +104,8 @@
         "autoEncryptOpts": {
           "kmsProviders": {
             "aws": { }
-          }
+          },
+          "keyExpirationMS": 1
         }
       },
       "operations": [
@@ -115,6 +116,13 @@
               "_id": 1,
               "encrypted_string": "string0"
             }
+          }
+        },
+        {
+          "name": "wait",
+          "object": "testRunner",
+          "arguments": {
+            "ms": 2
           }
         },
         {
@@ -195,17 +203,6 @@
               "ordered": true
             },
             "command_name": "insert"
-          }
-        },
-        {
-          "command_started_event": {
-            "command": {
-              "listCollections": 1,
-              "filter": {
-                "name": "default"
-              }
-            },
-            "command_name": "listCollections"
           }
         },
         {
