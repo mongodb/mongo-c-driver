@@ -1338,6 +1338,11 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    # examples/tutorial
    mongoc_add_example (executing ${PROJECT_SOURCE_DIR}/examples/tutorial/executing.c)
    mongoc_add_example (appending ${PROJECT_SOURCE_DIR}/examples/tutorial/appending.c)
+   mongoc_add_example (migrating ${PROJECT_SOURCE_DIR}/examples/migrating.c)
+   # Ignore deprecation warnings in migrating examples. Migrating examples deliberately call deprecated API to show how to migrate.
+   target_compile_options (migrating
+      PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
+   )
 endif ()
 
 if (ENABLE_TESTS AND ENABLE_SHARED AND MONGOC_ENABLE_SSL AND NOT WIN32)

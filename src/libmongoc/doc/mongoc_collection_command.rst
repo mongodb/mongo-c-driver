@@ -40,6 +40,29 @@ Parameters
 * ``fields``: Unused.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
 
+Migrating
+---------
+
+:symbol:`mongoc_collection_command` is deprecated.
+
+The following example uses :symbol:`mongoc_collection_command`:
+
+.. literalinclude:: ../examples/migrating.c
+   :language: c
+   :dedent: 6
+   :start-after: // mongoc_collection_command ... before ... begin
+   :end-before:  // mongoc_collection_command ... before ... end
+   :caption: Before
+
+To migrate, use a non-deprecated alternative, like :symbol:`mongoc_collection_command_simple`:
+
+.. literalinclude:: ../examples/migrating.c
+   :language: c
+   :dedent: 6
+   :start-after: // mongoc_collection_command ... after ... begin
+   :end-before:  // mongoc_collection_command ... after ... end
+   :caption: After
+
 Returns
 -------
 
