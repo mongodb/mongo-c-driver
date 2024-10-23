@@ -18,6 +18,7 @@
 
 #include "bsonutil/bson-parser.h"
 #include "TestSuite.h"
+#include "mongoc.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "utlist.h"
@@ -1192,10 +1193,12 @@ entity_client_encryption_new (entity_map_t *entity_map, bson_t *bson, bson_error
       char *client_id = NULL;
       char *kv_ns = NULL;
       bson_t *kms = NULL;
+      int64_t *key_expiration;
 
       bson_parser_utf8 (ce_opts_parser, "keyVaultClient", &client_id);
       bson_parser_utf8 (ce_opts_parser, "keyVaultNamespace", &kv_ns);
       bson_parser_doc (ce_opts_parser, "kmsProviders", &kms);
+      bson_parser_int_optional (ce_opts_parser, "keyExpirationMS", &key_expiration);
 
       if (!bson_parser_parse (ce_opts_parser, ce_opts_bson, error)) {
          goto ce_opts_done;
@@ -1234,6 +1237,10 @@ entity_client_encryption_new (entity_map_t *entity_map, bson_t *bson, bson_error
          }
 
          mongoc_client_encryption_opts_set_keyvault_namespace (ce_opts, db, coll);
+      }
+
+      if (key_expiration && *key_expiration >= 0) {
+         mongoc_client_encryption_opts_set_key_expiration (ce_opts, *key_expiration);
       }
 
       if (!_parse_and_set_kms_providers (ce_opts, kms, error)) {

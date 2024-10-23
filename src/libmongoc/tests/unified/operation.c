@@ -3546,6 +3546,22 @@ operation_assert_number_connections_checked_out (test_t *test, operation_t *op, 
 }
 
 static bool
+operation_wait (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   BSON_UNUSED (test);
+   BSON_UNUSED (error);
+
+   bson_iter_t iter;
+   bson_iter_init_find (&iter, op->arguments, "ms");
+   ASSERT (BSON_ITER_HOLDS_INT (&iter));
+   const int64_t sleep_msec = bson_iter_as_int64 (&iter);
+   _mongoc_usleep (sleep_msec * 1000);
+
+   result_from_ok (result);
+   return true;
+}
+
+static bool
 operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    // First validate the arguments
@@ -3870,6 +3886,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"assertSessionUnpinned", operation_assert_session_unpinned},
       {"loop", operation_loop},
       {"assertNumberConnectionsCheckedOut", operation_assert_number_connections_checked_out},
+      {"wait", operation_wait},
 
       /* GridFS operations */
       {"delete", operation_delete},

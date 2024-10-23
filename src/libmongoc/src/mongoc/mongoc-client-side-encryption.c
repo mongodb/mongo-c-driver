@@ -50,7 +50,7 @@ struct _mongoc_auto_encryption_opts_t {
    bool bypass_query_analysis;
    mc_kms_credentials_callback creds_cb;
    bson_t *extra;
-   int32_t cache_expiration_ms; /* <0 means unset */
+   int64_t cache_expiration_ms; /* <0 means unset */
 };
 
 static void
@@ -244,7 +244,7 @@ struct _mongoc_client_encryption_opts_t {
    bson_t *kms_providers;
    bson_t *tls_opts;
    mc_kms_credentials_callback creds_cb;
-   int32_t cache_expiration_ms;
+   int64_t cache_expiration_ms;
 };
 
 mongoc_client_encryption_opts_t *
@@ -329,7 +329,7 @@ mongoc_client_encryption_opts_set_kms_credential_provider_callback (mongoc_clien
 }
 
 void
-mongoc_client_encryption_opts_set_cache_expiration (mongoc_client_encryption_opts_t *opts, int32_t cache_expiration_ms)
+mongoc_client_encryption_opts_set_key_expiration (mongoc_client_encryption_opts_t *opts, int64_t cache_expiration_ms)
 {
    BSON_ASSERT_PARAM (opts);
    opts->cache_expiration_ms = cache_expiration_ms;

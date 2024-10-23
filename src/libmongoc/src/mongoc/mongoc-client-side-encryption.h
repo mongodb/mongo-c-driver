@@ -134,7 +134,7 @@ mongoc_client_encryption_opts_set_kms_credential_provider_callback (mongoc_clien
                                                                     void *userdata);
 
 MONGOC_EXPORT (void)
-mongoc_client_encryption_opts_set_cache_expiration (mongoc_client_encryption_opts_t *opts, int32_t cache_expiration_ms);
+mongoc_client_encryption_opts_set_key_expiration (mongoc_client_encryption_opts_t *opts, int64_t cache_expiration_ms);
 
 MONGOC_EXPORT (mongoc_client_encryption_rewrap_many_datakey_result_t *)
 mongoc_client_encryption_rewrap_many_datakey_result_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
