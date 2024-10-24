@@ -590,13 +590,16 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
 
    /* If we do not allow matching against a subset of actual events, check if
     * there are extra "actual" events */
-   if (!allow_subset && bson_iter_next (&actual_iter)) {
+   if (!allow_subset) {
       bson_t extra;
-
-      bson_iter_bson (&actual_iter, &extra);
-      _apm_match_error_context (&ctx->events, expectations);
-      test_error ("extra actual event was not found in expectations: %s\n",
-                  bson_as_canonical_extended_json (&extra, NULL));
+      while (bson_iter_next (&actual_iter)) {
+         bson_iter_bson (&actual_iter, &extra);
+         if (!skip_cse_list_collections (&extra)) {
+            _apm_match_error_context (&ctx->events, expectations);
+            test_error ("extra actual event was not found in expectations: %s\n",
+                        bson_as_canonical_extended_json (&extra, NULL));
+         }
+      }
    }
 
    for (i = 0; i < 2; i++) {

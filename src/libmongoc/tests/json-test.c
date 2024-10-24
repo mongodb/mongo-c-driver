@@ -1599,6 +1599,12 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_free (env_cryptSharedLibPath);
    }
 
+   if (bson_iter_init_find (&iter, &opts, "keyExpirationMS")) {
+      BSON_ASSERT (BSON_ITER_HOLDS_INT (&iter));
+      const int expiration = bson_iter_int32 (&iter);
+      mongoc_auto_encryption_opts_set_key_expiration (auto_encryption_opts, expiration);
+   }
+
    mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, &extra);
    bson_destroy (&extra);
 

@@ -52,6 +52,7 @@ struct _mongoc_auto_encryption_opts_t {
    bool bypass_query_analysis;
    mc_kms_credentials_callback creds_cb;
    bson_t *extra;
+   int64_t cache_expiration_ms; /* <0 means unset */
 };
 
 static void
@@ -65,7 +66,9 @@ _set_creds_callback (mc_kms_credentials_callback *cb, mongoc_kms_credentials_pro
 mongoc_auto_encryption_opts_t *
 mongoc_auto_encryption_opts_new (void)
 {
-   return bson_malloc0 (sizeof (mongoc_auto_encryption_opts_t));
+   mongoc_auto_encryption_opts_t *opts = bson_malloc0 (sizeof (mongoc_auto_encryption_opts_t));
+   opts->cache_expiration_ms = -1;
+   return opts;
 }
 
 void
@@ -132,6 +135,16 @@ mongoc_auto_encryption_opts_set_kms_providers (mongoc_auto_encryption_opts_t *op
    if (providers) {
       opts->kms_providers = bson_copy (providers);
    }
+}
+
+void
+mongoc_auto_encryption_opts_set_key_expiration (mongoc_auto_encryption_opts_t *opts, int32_t expiration)
+{
+   if (!opts) {
+      return;
+   }
+
+   opts->cache_expiration_ms = expiration;
 }
 
 /* _bson_copy_or_null returns a copy of @bson or NULL if @bson is NULL */
@@ -233,12 +246,15 @@ struct _mongoc_client_encryption_opts_t {
    bson_t *kms_providers;
    bson_t *tls_opts;
    mc_kms_credentials_callback creds_cb;
+   int64_t cache_expiration_ms;
 };
 
 mongoc_client_encryption_opts_t *
 mongoc_client_encryption_opts_new (void)
 {
-   return bson_malloc0 (sizeof (mongoc_client_encryption_opts_t));
+   mongoc_client_encryption_opts_t *ret = bson_malloc0 (sizeof (mongoc_client_encryption_opts_t));
+   ret->cache_expiration_ms = -1;
+   return ret;
 }
 
 void
@@ -312,6 +328,13 @@ mongoc_client_encryption_opts_set_kms_credential_provider_callback (mongoc_clien
    BSON_ASSERT_PARAM (opts);
    opts->creds_cb.fn = fn;
    opts->creds_cb.userdata = userdata;
+}
+
+void
+mongoc_client_encryption_opts_set_key_expiration (mongoc_client_encryption_opts_t *opts, int64_t cache_expiration_ms)
+{
+   BSON_ASSERT_PARAM (opts);
+   opts->cache_expiration_ms = cache_expiration_ms;
 }
 
 /*--------------------------------------------------------------------------
@@ -1794,6 +1817,7 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
                          opts->bypass_auto_encryption,
                          opts->bypass_query_analysis,
                          opts->creds_cb,
+                         opts->cache_expiration_ms,
                          error);
    if (!client->topology->crypt) {
       GOTO (fail);
@@ -1933,6 +1957,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (mongoc_topology_t *topology,
                                         opts->bypass_auto_encryption,
                                         opts->bypass_query_analysis,
                                         opts->creds_cb,
+                                        opts->cache_expiration_ms,
                                         error);
    if (!topology->crypt) {
       GOTO (fail);
@@ -2031,6 +2056,7 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts, bson_error_
                                                  false,
                                                  /* bypass_query_analysis. Not applicable. */
                                                  opts->creds_cb,
+                                                 opts->cache_expiration_ms,
                                                  error);
    if (!client_encryption->crypt) {
       goto fail;
