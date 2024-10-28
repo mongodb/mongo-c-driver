@@ -7,6 +7,7 @@ mongoc_collection_command()
    .. deprecated:: 1.29.0
 
       This function is deprecated and should not be used in new code.
+      This function is superseded by :symbol:`mongoc_collection_command_simple()`.
 
 Synopsis
 --------
@@ -22,8 +23,6 @@ Synopsis
                              const bson_t *command,
                              const bson_t *fields,
                              const mongoc_read_prefs_t *read_prefs);
-
-This function is superseded by :symbol:`mongoc_collection_command_simple()`.
 
 .. include:: includes/not-retryable-read.txt
 
