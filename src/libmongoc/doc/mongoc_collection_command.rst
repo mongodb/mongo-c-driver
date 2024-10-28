@@ -52,7 +52,7 @@ The following example uses :symbol:`mongoc_collection_command`:
    :end-before:  // mongoc_collection_command ... before ... end
    :caption: Before
 
-To migrate, use a non-deprecated alternative, like :symbol:`mongoc_collection_command_simple`:
+The above code block may be rewritten to use :symbol:`mongoc_collection_command_simple` instead, as shown below:
 
 .. literalinclude:: ../examples/migrating.c
    :language: c

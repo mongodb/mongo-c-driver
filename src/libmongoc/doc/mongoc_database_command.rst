@@ -57,7 +57,7 @@ The following example uses :symbol:`mongoc_database_command`:
    :end-before:  // mongoc_database_command ... before ... end
    :caption: Before
 
-To migrate, use a non-deprecated alternative, like :symbol:`mongoc_database_command_simple`:
+The above code block may be rewritten to use :symbol:`mongoc_database_command_simple` instead, as shown below:
 
 .. literalinclude:: ../examples/migrating.c
    :language: c
