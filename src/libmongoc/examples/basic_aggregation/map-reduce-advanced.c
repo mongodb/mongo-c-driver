@@ -21,7 +21,7 @@ map_reduce_advanced (mongoc_database_t *database)
                        "out",
                        "{",
                        "inline",
-                       "1",
+                       BCON_INT32 (1),
                        "}");
 
    read_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
