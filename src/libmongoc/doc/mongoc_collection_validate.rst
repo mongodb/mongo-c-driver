@@ -17,7 +17,7 @@ Synopsis
   mongoc_collection_validate (mongoc_collection_t *collection,
                               const bson_t *options,
                               bson_t *reply,
-                              bson_error_t *error) BSON_GNUC_DEPRECATED;
+                              bson_error_t *error);
 
 Parameters
 ----------

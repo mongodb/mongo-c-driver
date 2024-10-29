@@ -17,7 +17,7 @@ Synopsis
   mongoc_collection_create_index (mongoc_collection_t *collection,
                                   const bson_t *keys,
                                   const mongoc_index_opt_t *opt,
-                                  bson_error_t *error) BSON_GNUC_DEPRECATED;
+                                  bson_error_t *error);
 
 Parameters
 ----------

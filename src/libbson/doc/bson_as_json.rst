@@ -14,7 +14,7 @@ Synopsis
 .. code-block:: c
 
   char *
-  bson_as_json (const bson_t *bson, size_t *length) BSON_GNUC_DEPRECATED_FOR (bson_as_legacy_extended_json);
+  bson_as_json (const bson_t *bson, size_t *length);
 
 Parameters
 ----------
