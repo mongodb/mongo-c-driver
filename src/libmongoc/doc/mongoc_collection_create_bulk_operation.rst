@@ -19,8 +19,7 @@ Synopsis
   mongoc_collection_create_bulk_operation (
      mongoc_collection_t *collection,
      bool ordered,
-     const mongoc_write_concern_t *write_concern) BSON_GNUC_WARN_UNUSED_RESULT
-     BSON_GNUC_DEPRECATED_FOR (mongoc_collection_create_bulk_operation_with_opts);
+     const mongoc_write_concern_t *write_concern) BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

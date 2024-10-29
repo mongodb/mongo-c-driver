@@ -17,9 +17,7 @@ Synopsis
 
   int32_t
   mongoc_apm_command_failed_get_server_connection_id (
-    const mongoc_apm_command_failed_t *event)
-    BSON_GNUC_DEPRECATED_FOR (
-        "mongoc_apm_command_failed_get_server_connection_id_int64");
+    const mongoc_apm_command_failed_t *event);
 
 Returns this event's context.
 

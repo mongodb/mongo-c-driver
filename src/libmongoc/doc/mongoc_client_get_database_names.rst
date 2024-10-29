@@ -17,8 +17,7 @@ Synopsis
 
   char **
   mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
-     BSON_GNUC_WARN_UNUSED_RESULT
-     BSON_GNUC_DEPRECATED_FOR (mongoc_client_get_database_names_with_opts);
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Description
 -----------

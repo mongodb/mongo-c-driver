@@ -19,8 +19,7 @@ Synopsis
   mongoc_database_find_collections (mongoc_database_t *database,
                                     const bson_t *filter,
                                     bson_error_t *error)
-     BSON_GNUC_WARN_UNUSED_RESULT
-     BSON_GNUC_DEPRECATED_FOR (mongoc_database_find_collections_with_opts);
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Description
 -----------

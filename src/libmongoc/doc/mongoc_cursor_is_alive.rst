@@ -17,8 +17,7 @@ Synopsis
 .. code-block:: c
 
   bool
-  mongoc_cursor_is_alive (const mongoc_cursor_t *cursor)
-     BSON_GNUC_DEPRECATED_FOR (mongoc_cursor_more);
+  mongoc_cursor_is_alive (const mongoc_cursor_t *cursor);
 
 Parameters
 ----------

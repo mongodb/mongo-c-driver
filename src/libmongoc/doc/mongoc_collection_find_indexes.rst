@@ -17,9 +17,8 @@ Synopsis
 
   mongoc_cursor_t *
   mongoc_collection_find_indexes (mongoc_collection_t *collection,
-                                  bson_error_t *error);
-     BSON_GNUC_WARN_UNUSED_RESULT
-     BSON_GNUC_DEPRECATED_FOR (mongoc_collection_find_indexes_with_opts);
+                                  bson_error_t *error)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Fetches a cursor containing documents, each corresponding to an index on this collection.
 

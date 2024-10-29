@@ -16,8 +16,7 @@ Synopsis
 .. code-block:: c
 
   void
-  bson_oid_init_sequence (bson_oid_t *oid, bson_context_t *context)
-    BSON_GNUC_DEPRECATED_FOR (bson_oid_init);
+  bson_oid_init_sequence (bson_oid_t *oid, bson_context_t *context);
 
 Parameters
 ----------

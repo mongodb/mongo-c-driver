@@ -20,9 +20,7 @@ Synopsis
                             mongoc_delete_flags_t flags,
                             const bson_t *selector,
                             const mongoc_write_concern_t *write_concern,
-                            bson_error_t *error)
-     BSON_GNUC_DEPRECATED_FOR (mongoc_collection_delete_one or
-                               mongoc_collection_delete_many);
+                            bson_error_t *error);
 
 Parameters
 ----------

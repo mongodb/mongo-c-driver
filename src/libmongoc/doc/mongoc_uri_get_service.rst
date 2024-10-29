@@ -16,8 +16,7 @@ Synopsis
 .. code-block:: c
 
   const char *
-  mongoc_uri_get_service (const mongoc_uri_t *uri)
-     BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_srv_hostname);
+  mongoc_uri_get_service (const mongoc_uri_t *uri);
 
 Parameters
 ----------

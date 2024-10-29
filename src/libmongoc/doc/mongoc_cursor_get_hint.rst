@@ -16,7 +16,7 @@ Synopsis
 .. code-block:: c
 
   uint32_t
-  mongoc_cursor_get_hint (const mongoc_cursor_t *cursor) BSON_GNUC_DEPRECATED_FOR (mongoc_cursor_get_server_id);
+  mongoc_cursor_get_hint (const mongoc_cursor_t *cursor);
 
 Parameters
 ----------

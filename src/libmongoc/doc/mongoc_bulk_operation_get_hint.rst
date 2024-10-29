@@ -16,8 +16,7 @@ Synopsis
 .. code-block:: c
 
   uint32_t
-  mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk)
-    BSON_GNUC_DEPRECATED_FOR (mongoc_bulk_operation_get_server_id);
+  mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk);
 
 Parameters
 ----------

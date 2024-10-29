@@ -16,8 +16,7 @@ Synopsis
 .. code-block:: c
 
   bool
-  mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id)
-    BSON_GNUC_DEPRECATED_FOR (mongoc_cursor_set_server_id);
+  mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id);
 
 Parameters
 ----------
