@@ -6,9 +6,7 @@ mongoc_collection_find()
 .. warning::
    .. deprecated:: 1.5.0
 
-      This function is deprecated and should not be used in new code.
-
-Use the more convenient :symbol:`mongoc_collection_find_with_opts` instead.
+      Use :symbol:`mongoc_collection_find_with_opts` instead.
 
 Synopsis
 --------

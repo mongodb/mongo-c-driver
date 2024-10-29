@@ -6,9 +6,7 @@ mongoc_cursor_set_hint()
 .. warning::
    .. deprecated:: 1.28.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`mongoc_cursor_set_server_id()` in new code.
+      Use :symbol:`mongoc_cursor_set_server_id()` instead.
 
 Synopsis
 --------

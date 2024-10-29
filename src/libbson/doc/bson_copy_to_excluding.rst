@@ -6,9 +6,7 @@ bson_copy_to_excluding()
 .. warning::
    .. deprecated:: 1.1.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`bson_copy_to_excluding_noinit()` in new code.
+      Use :symbol:`bson_copy_to_excluding_noinit()` instead.
 
 Synopsis
 --------

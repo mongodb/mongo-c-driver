@@ -6,7 +6,6 @@ mongoc_collection_count()
 .. warning::
    .. deprecated:: 1.11.0
 
-      This function is deprecated and should not be used in new code.
       Use :symbol:`mongoc_collection_count_documents` or :symbol:`mongoc_collection_estimated_document_count` instead.
 
       :symbol:`mongoc_collection_count_documents` has similar performance to calling :symbol:`mongoc_collection_count` with a non-NULL ``query``, and is guaranteed to retrieve an accurate collection count. See :ref:`migrating from deprecated count functions <migrating-from-deprecated-count>` for details.

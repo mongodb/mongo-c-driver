@@ -6,9 +6,7 @@ mongoc_client_get_database_names()
 .. warning::
    .. deprecated:: 1.9.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`mongoc_client_get_database_names_with_opts()` in new code.
+      Use :symbol:`mongoc_client_get_database_names_with_opts()` instead.
 
 Synopsis
 --------

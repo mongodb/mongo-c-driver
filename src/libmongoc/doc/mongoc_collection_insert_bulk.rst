@@ -6,9 +6,7 @@ mongoc_collection_insert_bulk()
 .. warning::
    .. deprecated:: 1.9.0
 
-     This function is deprecated and should not be used in new code.
-
-     Please use :symbol:`mongoc_collection_insert_many()` in new code.
+    Use :symbol:`mongoc_collection_insert_many()` instead.
 
 Synopsis
 --------

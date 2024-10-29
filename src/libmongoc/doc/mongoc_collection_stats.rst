@@ -6,7 +6,7 @@ mongoc_collection_stats()
 .. warning::
    .. deprecated:: 1.10.0
 
-      This helper function is deprecated and should not be used in new code. Use the `$collStats aggregation pipeline stage <https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/>`_ with :symbol:`mongoc_collection_aggregate()` instead.
+      Use the `$collStats aggregation pipeline stage <https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/>`_ with :symbol:`mongoc_collection_aggregate()` instead.
 
 Synopsis
 --------

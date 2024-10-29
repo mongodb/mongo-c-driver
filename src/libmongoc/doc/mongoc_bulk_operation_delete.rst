@@ -6,9 +6,7 @@ mongoc_bulk_operation_delete()
 .. warning::
    .. deprecated:: 0.96.0
 
-   This function is deprecated and should not be used in new code.
-
-   Please use :symbol:`mongoc_bulk_operation_remove()` in new code.
+   Use :symbol:`mongoc_bulk_operation_remove()` instead.
 
 Synopsis
 --------
