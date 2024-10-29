@@ -46,7 +46,7 @@ Creating a top-level array
     bool
     bson_array_builder_build (bson_array_builder_t *bab, bson_t *out);
 
-    BSON_EXPORT (void)
+    void
     bson_array_builder_destroy (bson_array_builder_t *bab);
 
 ``bson_array_builder_new`` and ``bson_array_builder_build`` may be used to build a top-level BSON array. ``bson_array_builder_build`` initializes and moves BSON data to ``out``. The ``bson_array_builder_t`` may be reused and will start appending a new array at index "0":
