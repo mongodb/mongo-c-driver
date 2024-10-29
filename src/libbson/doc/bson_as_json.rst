@@ -8,7 +8,7 @@ bson_as_json()
 
       This function is deprecated and should not be used in new code.
 
-      This function is superseded by :symbol:`bson_as_canonical_extended_json()` and :symbol:`bson_as_relaxed_extended_json()`, which use the same `MongoDB Extended JSON format`_ as all other MongoDB drivers.
+      Prefer :symbol:`bson_as_canonical_extended_json()` and :symbol:`bson_as_relaxed_extended_json()`, which use the same `MongoDB Extended JSON format`_ as all other MongoDB drivers.
 
       To continue producing Legacy Extended JSON, :symbol:`bson_as_legacy_extended_json()` may be used.
 
