@@ -6,12 +6,8 @@ mongoc_uri_get_ssl()
 .. warning::
    .. deprecated:: 1.15.0
 
-      This function is deprecated and should not be used in new code. See `Manage Collection Indexes <manage-collection-indexes_>`_.
+      Use :doc:`mongoc_uri_get_tls() <mongoc_uri_get_tls>` instead.
 
-
-This function is deprecated and should not be used in new code.
-
-Please use :doc:`mongoc_uri_get_tls() <mongoc_uri_get_tls>` in new code.
 
 Synopsis
 --------
@@ -19,8 +15,7 @@ Synopsis
 .. code-block:: c
 
   bool
-  mongoc_uri_get_ssl (const mongoc_uri_t *uri)
-     BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_tls);
+  mongoc_uri_get_ssl (const mongoc_uri_t *uri);
 
 Parameters
 ----------

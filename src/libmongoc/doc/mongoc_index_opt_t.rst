@@ -6,7 +6,7 @@ mongoc_index_opt_t
 .. warning::
    .. deprecated:: 1.8.0
 
-      This structure is deprecated and should not be used in new code. See `Manage Collection Indexes <manage-collection-indexes_>`_.
+      See `Manage Collection Indexes <manage-collection-indexes_>`_ for alternatives.
 
 Synopsis
 --------

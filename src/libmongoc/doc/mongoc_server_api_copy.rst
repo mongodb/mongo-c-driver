@@ -9,8 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_server_api_t *
-  mongoc_server_api_copy (const mongoc_server_api_t *api)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_server_api_copy (const mongoc_server_api_t *api);
 
 Creates a deep copy of ``api``.
 

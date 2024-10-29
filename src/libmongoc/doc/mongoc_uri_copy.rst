@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_uri_t *
-  mongoc_uri_copy (const mongoc_uri_t *uri) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_uri_copy (const mongoc_uri_t *uri);
 
 Parameters
 ----------

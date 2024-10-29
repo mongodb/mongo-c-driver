@@ -10,7 +10,7 @@ Synopsis
 
   mongoc_server_description_t *
   mongoc_server_description_new_copy (
-     const mongoc_server_description_t *description) BSON_GNUC_WARN_UNUSED_RESULT;
+     const mongoc_server_description_t *description);
 
 Parameters
 ----------

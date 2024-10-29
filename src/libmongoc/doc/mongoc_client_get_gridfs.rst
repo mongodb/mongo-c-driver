@@ -12,7 +12,7 @@ Synopsis
   mongoc_client_get_gridfs (mongoc_client_t *client,
                             const char *db,
                             const char *prefix,
-                            bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+                            bson_error_t *error);
 
 The ``mongoc_client_get_gridfs()`` function shall create a new :symbol:`mongoc_gridfs_t`. The ``db`` parameter is the name of the database which the gridfs instance should exist in. The ``prefix`` parameter corresponds to the gridfs collection namespacing; its default is "fs", thus the default GridFS collection names are "fs.files" and "fs.chunks".
 

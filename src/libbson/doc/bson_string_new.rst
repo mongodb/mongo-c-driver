@@ -6,8 +6,6 @@ bson_string_new()
 .. warning::
    .. deprecated:: 1.29.0
 
-      This function is deprecated and should not be used in new code.
-
 Synopsis
 --------
 

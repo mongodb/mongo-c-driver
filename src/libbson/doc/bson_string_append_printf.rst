@@ -6,16 +6,13 @@ bson_string_append_printf()
 .. warning::
    .. deprecated:: 1.29.0
 
-      This function is deprecated and should not be used in new code.
-
 Synopsis
 --------
 
 .. code-block:: c
 
   void
-  bson_string_append_printf (bson_string_t *string, const char *format, ...)
-     BSON_GNUC_PRINTF (2, 3);
+  bson_string_append_printf (bson_string_t *string, const char *format, ...);
 
 Parameters
 ----------

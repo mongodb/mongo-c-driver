@@ -6,9 +6,7 @@ mongoc_uri_get_read_prefs()
 .. warning::
    .. deprecated:: 1.2.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :doc:`mongoc_uri_get_read_prefs_t() <mongoc_uri_get_read_prefs_t>` in new code.
+      Use :doc:`mongoc_uri_get_read_prefs_t() <mongoc_uri_get_read_prefs_t>` instead.
 
 Synopsis
 --------

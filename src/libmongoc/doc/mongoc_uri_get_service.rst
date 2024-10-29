@@ -6,9 +6,7 @@ mongoc_uri_get_service()
 .. warning::
    .. deprecated:: 1.21.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`mongoc_uri_get_srv_hostname()` in new code.
+      Use :symbol:`mongoc_uri_get_srv_hostname()` instead.
 
 Synopsis
 --------
@@ -16,8 +14,7 @@ Synopsis
 .. code-block:: c
 
   const char *
-  mongoc_uri_get_service (const mongoc_uri_t *uri)
-     BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_srv_hostname);
+  mongoc_uri_get_service (const mongoc_uri_t *uri);
 
 Parameters
 ----------

@@ -11,7 +11,7 @@ Synopsis
   mongoc_stream_t *
   mongoc_stream_file_new_for_path (const char *path,
                                    int flags,
-                                   int mode) BSON_GNUC_WARN_UNUSED_RESULT;
+                                   int mode);
 
 Parameters
 ----------

@@ -6,7 +6,6 @@ bson_string_t
 .. warning::
    .. deprecated:: 1.29.0
 
-      This struct is deprecated and should not be used in new code.
 
 String Building Abstraction
 

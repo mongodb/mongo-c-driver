@@ -38,7 +38,7 @@ Synopsis
   mongoc_log (mongoc_log_level_t log_level,
               const char *log_domain,
               const char *format,
-              ...) BSON_GNUC_PRINTF (3, 4);
+              ...);
   const char *
   mongoc_log_level_str (mongoc_log_level_t log_level);
   void

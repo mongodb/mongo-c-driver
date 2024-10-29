@@ -12,8 +12,7 @@ Synopsis
   mongoc_collection_find_with_opts (mongoc_collection_t *collection,
                                     const bson_t *filter,
                                     const bson_t *opts,
-                                    const mongoc_read_prefs_t *read_prefs)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                                    const mongoc_read_prefs_t *read_prefs);
 
 Parameters
 ----------

@@ -6,9 +6,7 @@ bson_oid_init_sequence()
 .. warning::
    .. deprecated:: 1.14.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`bson_oid_init()` in new code.
+      Use :symbol:`bson_oid_init()` instead.
 
 Synopsis
 --------
@@ -16,8 +14,7 @@ Synopsis
 .. code-block:: c
 
   void
-  bson_oid_init_sequence (bson_oid_t *oid, bson_context_t *context)
-    BSON_GNUC_DEPRECATED_FOR (bson_oid_init);
+  bson_oid_init_sequence (bson_oid_t *oid, bson_context_t *context);
 
 Parameters
 ----------

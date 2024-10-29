@@ -10,7 +10,7 @@ Synopsis
 
   mongoc_client_encryption_t *
   mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
-                                bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+                                bson_error_t *error);
 
 Create a new :symbol:`mongoc_client_encryption_t`.
 

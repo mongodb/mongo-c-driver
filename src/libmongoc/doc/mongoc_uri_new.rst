@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_uri_t *
-  mongoc_uri_new (const char *uri_string) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_uri_new (const char *uri_string);
 
 Parameters
 ----------
