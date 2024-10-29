@@ -6,11 +6,9 @@ bson_array_as_json()
 .. warning::
    .. deprecated:: 1.29.0
 
-      This function is deprecated and should not be used in new code.
+      Use :symbol:`bson_array_as_canonical_extended_json()` and :symbol:`bson_array_as_relaxed_extended_json()` instead, which use the same `MongoDB Extended JSON format`_ as all other MongoDB drivers.
 
-      Prefer :symbol:`bson_array_as_canonical_extended_json()` and :symbol:`bson_array_as_relaxed_extended_json()`, which use the same `MongoDB Extended JSON format`_ as all other MongoDB drivers.
-
-      To continue producing Legacy Extended JSON, :symbol:`bson_array_as_legacy_extended_json()` may be used.
+      To continue producing Legacy Extended JSON, use :symbol:`bson_array_as_legacy_extended_json()`.
 
 Synopsis
 --------
