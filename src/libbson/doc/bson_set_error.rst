@@ -10,8 +10,7 @@ Synopsis
 
   void
   bson_set_error (
-     bson_error_t *error, uint32_t domain, uint32_t code, const char *format, ...)
-     BSON_GNUC_PRINTF (4, 5);
+     bson_error_t *error, uint32_t domain, uint32_t code, const char *format, ...);
 
 Parameters
 ----------
