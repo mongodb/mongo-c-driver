@@ -1352,7 +1352,7 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
       } else if (mongoc_uri_option_is_utf8 (key)) {
          mongoc_uri_set_option_as_utf8 (uri, key, bson_iter_utf8 (&iter, NULL));
       } else {
-         test_error ("Unsupported clientOptions field \"%s\" in %s", key, bson_as_json (opts, NULL));
+         test_error ("Unsupported clientOptions field \"%s\" in %s", key, bson_as_relaxed_extended_json (opts, NULL));
       }
    }
 }

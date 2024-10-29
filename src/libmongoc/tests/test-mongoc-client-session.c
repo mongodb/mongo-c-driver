@@ -1000,7 +1000,7 @@ started (const mongoc_apm_command_started_t *event)
    ctx.strict_numeric_types = false;
 
    if (test->verbose) {
-      char *s = bson_as_json (cmd, NULL);
+      char *s = bson_as_relaxed_extended_json (cmd, NULL);
       printf ("%s\n", s);
       bson_free (s);
    }
@@ -1071,7 +1071,7 @@ succeeded (const mongoc_apm_command_succeeded_t *event)
    session_test_t *test = (session_test_t *) mongoc_apm_command_succeeded_get_context (event);
 
    if (test->verbose) {
-      char *s = bson_as_json (reply, NULL);
+      char *s = bson_as_relaxed_extended_json (reply, NULL);
       printf ("<--  %s\n", s);
       bson_free (s);
    }
@@ -1226,7 +1226,7 @@ check_session_returned (session_test_t *test, const bson_t *lsid)
     * been used. It is expected behavior for found to be false if
     * ss->last_used_usec == SESSION_NEVER_USED */
    if (!check_state.found) {
-      test_error ("server session %s not returned to pool", bson_as_json (lsid, NULL));
+      test_error ("server session %s not returned to pool", bson_as_relaxed_extended_json (lsid, NULL));
    }
 }
 
@@ -1553,7 +1553,7 @@ _test_causal_consistency (session_test_fn_t test_fn, bool allow_read_concern)
       for (i = 0; i < test->cmds.len; i++) {
          cmd = _mongoc_array_index (&test->cmds, bson_t *, i);
          if (bson_has_field (cmd, "readConcern")) {
-            test_error ("Command should not have included readConcern: %s", bson_as_json (cmd, NULL));
+            test_error ("Command should not have included readConcern: %s", bson_as_relaxed_extended_json (cmd, NULL));
          }
       }
    }

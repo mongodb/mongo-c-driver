@@ -6,9 +6,7 @@ mongoc_database_find_collections()
 .. warning::
    .. deprecated:: 1.9.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`mongoc_database_find_collections_with_opts()` in new code.
+      Use :symbol:`mongoc_database_find_collections_with_opts()` instead.
 
 Synopsis
 --------
@@ -18,9 +16,7 @@ Synopsis
   mongoc_cursor_t *
   mongoc_database_find_collections (mongoc_database_t *database,
                                     const bson_t *filter,
-                                    bson_error_t *error)
-     BSON_GNUC_WARN_UNUSED_RESULT
-     BSON_GNUC_DEPRECATED_FOR (mongoc_database_find_collections_with_opts);
+                                    bson_error_t *error);
 
 Description
 -----------

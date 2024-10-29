@@ -6,9 +6,7 @@ bson_copy_to_excluding()
 .. warning::
    .. deprecated:: 1.1.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`bson_copy_to_excluding_noinit()` in new code.
+      Use :symbol:`bson_copy_to_excluding_noinit()` instead.
 
 Synopsis
 --------
@@ -19,8 +17,7 @@ Synopsis
   bson_copy_to_excluding (const bson_t *src,
                           bson_t *dst,
                           const char *first_exclude,
-                          ...) BSON_GNUC_NULL_TERMINATED
-     BSON_GNUC_DEPRECATED_FOR (bson_copy_to_excluding_noinit);
+                          ...);
 
 Parameters
 ----------

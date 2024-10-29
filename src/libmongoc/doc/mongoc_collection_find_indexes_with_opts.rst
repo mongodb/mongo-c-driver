@@ -10,8 +10,7 @@ Synopsis
 
   mongoc_cursor_t *
   mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
-                                            const bson_t *opts)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                                            const bson_t *opts);
 
 Fetches a cursor containing documents, each corresponding to an index on this collection.
 

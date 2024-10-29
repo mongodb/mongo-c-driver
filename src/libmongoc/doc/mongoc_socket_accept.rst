@@ -10,7 +10,7 @@ Synopsis
 
   mongoc_socket_t *
   mongoc_socket_accept (mongoc_socket_t *sock,
-                        int64_t expire_at) BSON_GNUC_WARN_UNUSED_RESULT;
+                        int64_t expire_at);
 
 Parameters
 ----------

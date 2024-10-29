@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   char *
-  mongoc_uri_unescape (const char *escaped_string) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_uri_unescape (const char *escaped_string);
 
 Parameters
 ----------

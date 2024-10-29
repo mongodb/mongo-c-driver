@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   const mongoc_ssl_opt_t *
-  mongoc_ssl_opt_get_default (void) BSON_GNUC_PURE;
+  mongoc_ssl_opt_get_default (void);
 
 Returns
 -------

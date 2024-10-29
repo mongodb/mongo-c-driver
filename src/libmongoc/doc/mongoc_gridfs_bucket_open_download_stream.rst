@@ -11,8 +11,7 @@ Synopsis
   mongoc_stream_t *
   mongoc_gridfs_bucket_open_download_stream (mongoc_gridfs_bucket_t *bucket,
                                              const bson_value_t *file_id,
-                                             bson_error_t *error)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                                             bson_error_t *error);
 
 Parameters
 ----------

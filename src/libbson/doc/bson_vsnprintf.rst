@@ -9,8 +9,7 @@ Synopsis
 .. code-block:: c
 
   int
-  bson_vsnprintf (char *str, size_t size, const char *format, va_list ap)
-     BSON_GNUC_PRINTF (3, 0);
+  bson_vsnprintf (char *str, size_t size, const char *format, va_list ap);
 
 Parameters
 ----------

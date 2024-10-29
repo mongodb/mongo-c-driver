@@ -6,7 +6,6 @@ bson_string_truncate()
 .. warning::
    .. deprecated:: 1.29.0
 
-      This function is deprecated and should not be used in new code.
 
 Synopsis
 --------

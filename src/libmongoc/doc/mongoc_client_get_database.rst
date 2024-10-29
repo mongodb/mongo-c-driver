@@ -10,7 +10,7 @@ Synopsis
 
   mongoc_database_t *
   mongoc_client_get_database (mongoc_client_t *client,
-                              const char *name) BSON_GNUC_WARN_UNUSED_RESULT;
+                              const char *name);
 
 Get a newly allocated :symbol:`mongoc_database_t` for the database named ``name``.
 

@@ -6,9 +6,7 @@ mongoc_write_concern_get_fsync()
 .. warning::
    .. deprecated:: 1.4.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`mongoc_write_concern_get_journal()` in new code.
+      Use :symbol:`mongoc_write_concern_get_journal()` instead.
 
 Synopsis
 --------

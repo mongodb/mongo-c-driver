@@ -11,7 +11,7 @@ Synopsis
   mongoc_socket_t *
   mongoc_socket_new (int domain,
                      int type,
-                     int protocol) BSON_GNUC_WARN_UNUSED_RESULT;
+                     int protocol);
 
 Parameters
 ----------

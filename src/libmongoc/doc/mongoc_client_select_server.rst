@@ -12,7 +12,7 @@ Synopsis
   mongoc_client_select_server (mongoc_client_t *client,
                                bool for_writes,
                                const mongoc_read_prefs_t *prefs,
-                               bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+                               bson_error_t *error);
 
 Choose a server for an operation, according to the logic described in the Server Selection Spec.
 

@@ -26,3 +26,4 @@ API Reference
   bson_get_monotonic_time
   bson_memory
   version
+  legacy_extended_json

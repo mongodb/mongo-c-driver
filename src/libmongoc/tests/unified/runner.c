@@ -576,9 +576,9 @@ check_schema_version (test_file_t *test_file)
    // 1.8 is fully supported. Later minor versions are partially supported.
    // 1.12 is partially supported (expectedError.errorResponse assertions)
    // 1.18 is partially supported (additional properties in kmsProviders)
-   // 1.20 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
+   // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
    semver_t schema_version;
-   semver_parse ("1.20", &schema_version);
+   semver_parse ("1.21", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -1409,8 +1409,8 @@ test_generate_atlas_results (test_t *test, bson_error_t *error)
 
    size_t events_json_len = 0u;
    size_t results_json_len = 0u;
-   char *const events_json = bson_as_json (&events_doc, &events_json_len);
-   char *const results_json = bson_as_json (&results_doc, &results_json_len);
+   char *const events_json = bson_as_relaxed_extended_json (&events_doc, &events_json_len);
+   char *const results_json = bson_as_relaxed_extended_json (&results_doc, &results_json_len);
 
    ASSERT_WITH_MSG (events_json, "failed to convert events BSON document to JSON");
    ASSERT_WITH_MSG (results_json, "failed to convert results BSON document to JSON");

@@ -10,8 +10,7 @@ Synopsis
 
   mongoc_topology_description_t *
   mongoc_topology_description_new_copy (
-     const mongoc_topology_description_t *description)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+     const mongoc_topology_description_t *description);
 
 Parameters
 ----------
