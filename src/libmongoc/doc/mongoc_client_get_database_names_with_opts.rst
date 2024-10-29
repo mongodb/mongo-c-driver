@@ -11,8 +11,7 @@ Synopsis
   char **
   mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
                                               const bson_t *opts,
-                                              bson_error_t *error)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                                              bson_error_t *error);
 
 This function queries the MongoDB server for a list of known databases.
 

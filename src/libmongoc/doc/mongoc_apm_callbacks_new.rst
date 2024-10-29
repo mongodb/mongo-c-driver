@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_apm_callbacks_t *
-  mongoc_apm_callbacks_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_apm_callbacks_new (void);
 
 Create a struct to hold event-notification callbacks.
 

@@ -9,8 +9,7 @@ Synopsis
 .. code-block:: c
 
   const char *
-  mongoc_client_get_crypt_shared_version (const mongoc_client_t *client)
-    BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_client_get_crypt_shared_version (const mongoc_client_t *client);
 
 Obtain the version string of the crypt_shared_ that is loaded for
 auto-encryption on the given ``client``. If no crypt_shared_ library is loaded,

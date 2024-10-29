@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_find_and_modify_opts_t *
-  mongoc_find_and_modify_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_find_and_modify_opts_new (void);
 
 Returns
 -------

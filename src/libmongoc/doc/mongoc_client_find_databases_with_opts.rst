@@ -10,7 +10,7 @@ Synopsis
 
   mongoc_cursor_t *
   mongoc_client_find_databases_with_opts (
-     mongoc_client_t *client, const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
+     mongoc_client_t *client, const bson_t *opts);
 
 Fetches a cursor containing documents, each corresponding to a database on this MongoDB server.
 

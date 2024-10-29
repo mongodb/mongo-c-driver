@@ -10,7 +10,7 @@ Synopsis
 
   mongoc_server_description_t **
   mongoc_client_get_server_descriptions (const mongoc_client_t *client,
-                                         size_t *n) BSON_GNUC_WARN_UNUSED_RESULT;
+                                         size_t *n);
 
 Fetches an array of :symbol:`mongoc_server_description_t` structs for all known servers in the topology. Returns no servers until the client connects. Returns a single server if the client is directly connected, or all members of a replica set if the client's MongoDB URI includes a "replicaSet" option, or all known mongos servers if the MongoDB URI includes a list of them.
 

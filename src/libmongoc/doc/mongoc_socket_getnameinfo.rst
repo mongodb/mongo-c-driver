@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   char *
-  mongoc_socket_getnameinfo (mongoc_socket_t *sock) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_socket_getnameinfo (mongoc_socket_t *sock);
 
 Parameters
 ----------

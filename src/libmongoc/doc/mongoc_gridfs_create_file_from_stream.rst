@@ -11,8 +11,7 @@ Synopsis
   mongoc_gridfs_file_t *
   mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t *gridfs,
                                          mongoc_stream_t *stream,
-                                         mongoc_gridfs_file_opt_t *opt)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                                         mongoc_gridfs_file_opt_t *opt);
 
 Parameters
 ----------

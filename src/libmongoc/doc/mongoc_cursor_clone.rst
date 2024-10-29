@@ -9,8 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_cursor_t *
-  mongoc_cursor_clone (const mongoc_cursor_t *cursor)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_cursor_clone (const mongoc_cursor_t *cursor);
 
 Parameters
 ----------

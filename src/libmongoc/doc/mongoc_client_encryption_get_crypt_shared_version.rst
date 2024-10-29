@@ -9,8 +9,7 @@ Synopsis
 .. code-block:: c
 
   const char*
-  mongoc_client_encryption_get_crypt_shared_version (mongoc_client_encryption_t const *enc)
-      BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_client_encryption_get_crypt_shared_version (mongoc_client_encryption_t const *enc);
 
 Obtain the version string of the crypt_shared_ that is loaded for the given
 explicit encryption object. If no crypt_shared_ library is loaded, the returned

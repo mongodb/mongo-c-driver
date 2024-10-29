@@ -10,7 +10,7 @@ Synopsis
 
   mongoc_server_description_t *
   mongoc_client_get_server_description (
-     mongoc_client_t *client, uint32_t server_id) BSON_GNUC_WARN_UNUSED_RESULT;
+     mongoc_client_t *client, uint32_t server_id);
 
 Get information about the server specified by ``server_id``.
 

@@ -15,7 +15,7 @@ Synopsis
 
   mongoc_gridfs_file_list_t *
   mongoc_gridfs_find (mongoc_gridfs_t *gridfs,
-                      const bson_t *query) BSON_GNUC_WARN_UNUSED_RESULT;
+                      const bson_t *query);
 
 Parameters
 ----------

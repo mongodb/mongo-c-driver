@@ -23,8 +23,7 @@ Synopsis
                           uint32_t batch_size,
                           const bson_t *query,
                           const bson_t *fields,
-                          const mongoc_read_prefs_t *read_prefs)
-        BSON_GNUC_WARN_UNUSED_RESULT;
+                          const mongoc_read_prefs_t *read_prefs);
 
 Parameters
 ----------

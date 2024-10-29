@@ -18,8 +18,7 @@ Synopsis
   mongoc_cursor_t *
   mongoc_database_find_collections (mongoc_database_t *database,
                                     const bson_t *filter,
-                                    bson_error_t *error)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                                    bson_error_t *error);
 
 Description
 -----------
