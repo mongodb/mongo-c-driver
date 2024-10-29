@@ -82,8 +82,7 @@ main (void)
       bson_t reply;
       bson_error_t error;
       bson_t *cmd = BCON_NEW ("find", "foo", "filter", "{", "}");
-      bool ok = mongoc_client_command_simple (client, "db", cmd, NULL /* read prefs */, &reply, &error);
-      if (!ok) {
+      if (!mongoc_client_command_simple (client, "db", cmd, NULL /* read prefs */, &reply, &error)) {
          FAIL ("Expected no error, got: %s\n", error.message);
       }
 
@@ -132,8 +131,7 @@ main (void)
       bson_t reply;
       bson_error_t error;
       bson_t *cmd = BCON_NEW ("find", "foo", "filter", "{", "}");
-      bool ok = mongoc_database_command_simple (db, cmd, NULL /* read prefs */, &reply, &error);
-      if (!ok) {
+      if (!mongoc_database_command_simple (db, cmd, NULL /* read prefs */, &reply, &error)) {
          FAIL ("Expected no error, got: %s\n", error.message);
       }
 
@@ -182,8 +180,7 @@ main (void)
       bson_t reply;
       bson_error_t error;
       bson_t *cmd = BCON_NEW ("find", "foo", "filter", "{", "}");
-      bool ok = mongoc_collection_command_simple (coll, cmd, NULL /* read prefs */, &reply, &error);
-      if (!ok) {
+      if (!mongoc_collection_command_simple (coll, cmd, NULL /* read prefs */, &reply, &error)) {
          FAIL ("Expected no error, got: %s\n", error.message);
       }
 
