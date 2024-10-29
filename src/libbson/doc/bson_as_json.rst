@@ -8,6 +8,10 @@ bson_as_json()
 
       This function is deprecated and should not be used in new code.
 
+      This function is superseded by :symbol:`bson_as_canonical_extended_json()` and :symbol:`bson_as_relaxed_extended_json()`, which use the same `MongoDB Extended JSON format`_ as all other MongoDB drivers.
+
+      To continue producing Legacy Extended JSON, :symbol:`bson_as_legacy_extended_json()` may be used.
+
 Synopsis
 --------
 
@@ -26,8 +30,6 @@ Description
 -----------
 
 :symbol:`bson_as_json()` encodes ``bson`` as a UTF-8 string using :doc:`libbson's Legacy Extended JSON <legacy_extended_json>`.
-This function is superseded by :symbol:`bson_as_canonical_extended_json()` and :symbol:`bson_as_relaxed_extended_json()`, which use the same `MongoDB Extended JSON format`_ as all other MongoDB drivers.
-To continue producing Legacy Extended JSON, :symbol:`bson_as_legacy_extended_json()` may be used.
 
 The caller is responsible for freeing the resulting UTF-8 encoded string by calling :symbol:`bson_free()` with the result.
 
