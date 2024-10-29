@@ -7,7 +7,7 @@ mongoc_collection_command()
    .. deprecated:: 1.29.0
 
       This function is deprecated and should not be used in new code.
-      This function is superseded by :symbol:`mongoc_collection_command_simple()`.
+      Use :symbol:`mongoc_collection_command_simple()` instead.
 
 Synopsis
 --------
