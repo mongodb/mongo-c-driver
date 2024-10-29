@@ -19,7 +19,7 @@ Synopsis
   bson_copy_to_excluding (const bson_t *src,
                           bson_t *dst,
                           const char *first_exclude,
-                          ...) BSON_GNUC_NULL_TERMINATED
+                          ...)
      BSON_GNUC_DEPRECATED_FOR (bson_copy_to_excluding_noinit);
 
 Parameters

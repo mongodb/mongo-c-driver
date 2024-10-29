@@ -12,7 +12,7 @@ Synopsis
   bson_copy_to_excluding_noinit (const bson_t *src,
                                  bson_t *dst,
                                  const char *first_exclude,
-                                 ...) BSON_GNUC_NULL_TERMINATED;
+                                 ...);
 
 Parameters
 ----------
