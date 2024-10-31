@@ -29,7 +29,9 @@ Parameters
 Description
 -----------
 
-Superseded by :symbol:`mongoc_collection_update_one`, :symbol:`mongoc_collection_update_many`, and :symbol:`mongoc_collection_replace_one`.
+.. note::
+   
+   To pass additional options, use :symbol:`mongoc_collection_update_one`, :symbol:`mongoc_collection_update_many`, or :symbol:`mongoc_collection_replace_one`.
 
 This function shall update documents in ``collection`` that match ``selector``.
 

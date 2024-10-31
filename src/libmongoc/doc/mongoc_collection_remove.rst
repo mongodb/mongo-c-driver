@@ -27,7 +27,9 @@ Parameters
 Description
 -----------
 
-Superseded by :symbol:`mongoc_collection_delete_one` and :symbol:`mongoc_collection_delete_many`.
+.. note::
+   
+   To pass additional options, use :symbol:`mongoc_collection_delete_one` or :symbol:`mongoc_collection_delete_many`.
 
 This function shall remove documents in the given ``collection`` that match ``selector``. The bson ``selector`` is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.
 
