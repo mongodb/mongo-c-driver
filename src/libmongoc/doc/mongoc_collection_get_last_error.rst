@@ -3,6 +3,9 @@
 mongoc_collection_get_last_error()
 ==================================
 
+.. warning::
+   .. deprecated:: 1.9.0
+
 Synopsis
 --------
 
