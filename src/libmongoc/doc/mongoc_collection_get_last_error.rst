@@ -22,9 +22,13 @@ Parameters
 Description
 -----------
 
-The mongoc_collection_get_last_error() function returns a bulk result. See `Bulk Write Operations <bulk_>`_ for examples of bulk results.
+:symbol:`mongoc_collection_get_last_error` returns write results from some operations:
 
-A write_concern must be at least ``MONGOC_WRITE_CONCERN_W_DEFAULT`` in last command execution for this to be available.
+- :symbol:`mongoc_collection_update`
+- :symbol:`mongoc_collection_remove`
+- :symbol:`mongoc_collection_delete`
+- :symbol:`mongoc_collection_insert_bulk`
+- :symbol:`mongoc_collection_insert`
 
 Returns
 -------
