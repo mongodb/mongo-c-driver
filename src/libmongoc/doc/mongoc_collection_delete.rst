@@ -6,7 +6,7 @@ mongoc_collection_delete()
 .. warning::
    .. deprecated:: 1.9.0
 
-      Use :symbol:`mongoc_collection_delete_one()` or :symbol:`mongoc_collection_delete_many()` instead.
+      Use :symbol:`mongoc_collection_remove`, :symbol:`mongoc_collection_delete_one()` or :symbol:`mongoc_collection_delete_many()` instead.
 
 Synopsis
 --------
