@@ -5707,6 +5707,112 @@ test_insert_one_reports_id (void)
 
 #undef ASSERT_INDEX_EXISTS
 
+static void
+test_get_last_error (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = get_test_collection (client, "test_get_last_error");
+   bson_error_t error;
+   bool ok;
+
+   // Test mongoc_collection_update:
+   {
+      mongoc_collection_drop (coll, NULL);
+
+      // Clear error:
+      ASSERT_OR_PRINT (mongoc_collection_command_simple (coll, tmp_bson ("{'ping': 1}"), NULL, NULL, &error), error);
+      ASSERT (!mongoc_collection_get_last_error (coll));
+
+      // Insert a document to remove:
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{'_id': 0}"), NULL, NULL, &error), error);
+
+      // Update:
+      ok = mongoc_collection_update (
+         coll, MONGOC_UPDATE_NONE, tmp_bson ("{}"), tmp_bson ("{'$set': {'foo': 'bar'}}"), NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+      const bson_t *gle = mongoc_collection_get_last_error (coll);
+      ASSERT_MATCH (
+         gle,
+         BSON_STR (
+            {"nInserted" : 0, "nMatched" : 1, "nModified" : 1, "nRemoved" : 0, "nUpserted" : 0, "writeErrors" : []}));
+   }
+
+   // Test mongoc_collection_remove:
+   {
+      mongoc_collection_drop (coll, NULL);
+
+      // Clear error:
+      ASSERT_OR_PRINT (mongoc_collection_command_simple (coll, tmp_bson ("{'ping': 1}"), NULL, NULL, &error), error);
+      ASSERT (!mongoc_collection_get_last_error (coll));
+
+      // Insert a document to remove:
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{'_id': 0}"), NULL, NULL, &error), error);
+
+      ok = mongoc_collection_remove (coll, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+      const bson_t *gle = mongoc_collection_get_last_error (coll);
+      ASSERT_MATCH (
+         gle,
+         BSON_STR (
+            {"nInserted" : 0, "nMatched" : 0, "nModified" : 0, "nRemoved" : 1, "nUpserted" : 0, "writeErrors" : []}));
+   }
+
+   // Test mongoc_collection_delete:
+   {
+      mongoc_collection_drop (coll, NULL);
+
+      // Clear error:
+      ASSERT_OR_PRINT (mongoc_collection_command_simple (coll, tmp_bson ("{'ping': 1}"), NULL, NULL, &error), error);
+      ASSERT (!mongoc_collection_get_last_error (coll));
+
+      // Insert a document to delete:
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{'_id': 0}"), NULL, NULL, &error), error);
+
+      ok = mongoc_collection_delete (coll, MONGOC_DELETE_NONE, tmp_bson ("{}"), NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+      const bson_t *gle = mongoc_collection_get_last_error (coll);
+      ASSERT_MATCH (
+         gle,
+         BSON_STR (
+            {"nInserted" : 0, "nMatched" : 0, "nModified" : 0, "nRemoved" : 1, "nUpserted" : 0, "writeErrors" : []}));
+   }
+
+   // Test mongoc_collection_insert_bulk:
+   {
+      mongoc_collection_drop (coll, NULL);
+
+      // Clear error:
+      ASSERT_OR_PRINT (mongoc_collection_command_simple (coll, tmp_bson ("{'ping': 1}"), NULL, NULL, &error), error);
+      ASSERT (!mongoc_collection_get_last_error (coll));
+
+      bson_t *docs[] = {tmp_bson ("{'_id': 1}")};
+      ok = mongoc_collection_insert_bulk (coll, MONGOC_INSERT_NONE, (const bson_t **) docs, 1u, NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+      const bson_t *gle = mongoc_collection_get_last_error (coll);
+      ASSERT_MATCH (
+         gle,
+         BSON_STR (
+            {"nInserted" : 1, "nMatched" : 0, "nModified" : 0, "nRemoved" : 0, "nUpserted" : 0, "writeErrors" : []}));
+   }
+
+   // Test mongoc_collection_insert:
+   {
+      mongoc_collection_drop (coll, NULL);
+
+      // Clear error:
+      ASSERT_OR_PRINT (mongoc_collection_command_simple (coll, tmp_bson ("{'ping': 1}"), NULL, NULL, &error), error);
+      ASSERT (!mongoc_collection_get_last_error (coll));
+
+      ok = mongoc_collection_insert (coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), NULL, &error);
+      ASSERT_OR_PRINT (ok, error);
+      const bson_t *gle = mongoc_collection_get_last_error (coll);
+      ASSERT_MATCH (gle, BSON_STR ({"insertedCount" : 1, "insertedId" : 1}));
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -5866,4 +5972,5 @@ test_collection_install (TestSuite *suite)
                       // requires failpoint
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddLive (suite, "/Collection/insert_one_reports_id", test_insert_one_reports_id);
+   TestSuite_AddLive (suite, "/Collection/get_last_error", test_get_last_error);
 }
