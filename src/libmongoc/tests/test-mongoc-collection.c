@@ -1062,6 +1062,23 @@ test_update (void)
       ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "empty key");
    }
 
+   // Test a successful replacement:
+   {
+      mongoc_collection_drop (coll, NULL);
+      bson_t *b = tmp_bson ("{'foo' : 'bar'}");
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, b, NULL, NULL, &error), error);
+
+      bson_t *q = tmp_bson ("{}");
+      bson_t *u = tmp_bson ("{'foo2': 'bar2'}");
+      ASSERT_OR_PRINT (mongoc_collection_update (coll, MONGOC_UPDATE_NONE, q, u, NULL, &error), error);
+
+      bson_t *f = tmp_bson ("{'foo2': 'bar2'}");
+      int64_t count = mongoc_collection_count_documents (coll, f, NULL, NULL, NULL, &error);
+      ASSERT_OR_PRINT (count >= 0, error);
+      ASSERT_CMPINT64 (count, ==, 1);
+      ASSERT_OR_PRINT (mongoc_collection_drop (coll, &error), error);
+   }
+
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
 }
