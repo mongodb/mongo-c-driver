@@ -33,5 +33,6 @@ Description
 Returns
 -------
 
-A :symbol:`bson:bson_t` that should not be modified or ``NULL``.
+A :symbol:`bson:bson_t` that should not be modified or ``NULL``. The returned :symbol:`bson:bson_t` is may be
+invalidated by the next operation on ``collection``.
 
