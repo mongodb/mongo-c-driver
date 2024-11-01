@@ -3,6 +3,7 @@
 int
 main (void)
 {
+   mongoc_init ();
    bson_t *to_insert = BCON_NEW ("_id", BCON_INT32 (1));
    bson_t *selector = BCON_NEW ("_id", "{", "$gt", BCON_INT32 (0), "}");
    bson_t *update = BCON_NEW ("$set", "{", "x", BCON_INT32 (1), "}");
@@ -63,6 +64,6 @@ main (void)
    mongoc_collection_destroy (coll);
    mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
-
+   mongoc_cleanup ();
    return EXIT_SUCCESS;
 }
