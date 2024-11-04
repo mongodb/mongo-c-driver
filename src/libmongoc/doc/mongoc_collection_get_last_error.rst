@@ -6,6 +6,18 @@ mongoc_collection_get_last_error()
 .. warning::
    .. deprecated:: 1.9.0
 
+    To get write results from write operations, instead use:
+    
+    - :symbol:`mongoc_collection_update_one`
+    - :symbol:`mongoc_collection_update_many`
+    - :symbol:`mongoc_collection_delete_one`
+    - :symbol:`mongoc_collection_delete_many`
+    - :symbol:`mongoc_collection_insert_one`
+    - :symbol:`mongoc_collection_insert_many`
+    - :symbol:`mongoc_bulkwrite_t`
+    - :symbol:`mongoc_bulk_operation_t`
+
+
 Synopsis
 --------
 
