@@ -822,8 +822,8 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       mongoc_bulk_operation_t *bulk_insert = NULL;
       mongoc_write_concern_t *wc = NULL;
       bson_t *bulk_opts = NULL;
-      bson_t *drop_opts = NULL;
-      bson_t *create_opts = NULL;
+      bson_t *drop_opts = bson_new ();
+      bson_t *create_opts = bson_new ();
       bool ret = false;
 
       bson_iter_bson (&initial_data_iter, &collection_data);
@@ -844,11 +844,16 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       /* Check if the server supports majority write concern on 'drop' and
        * 'create'. */
       if (semver_cmp_str (&test_runner->server_version, "3.4") >= 0) {
-         drop_opts = bson_new ();
          mongoc_write_concern_append (wc, drop_opts);
-         create_opts = bson_new ();
          mongoc_write_concern_append (wc, create_opts);
       }
+
+      if (is_topology_type_sharded (test_runner->topology_type)) {
+         // From spec: "test runner SHOULD use a single mongos for handling initialData"
+         BSON_APPEND_INT32 (drop_opts, "serverId", 1);
+         BSON_APPEND_INT32 (create_opts, "serverId", 1);
+      }
+
       coll = mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name);
       if (!mongoc_collection_drop_with_opts (coll, drop_opts, error)) {
          if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
@@ -864,6 +869,11 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          bson_iter_t documents_iter;
 
          bulk_insert = mongoc_collection_create_bulk_operation_with_opts (coll, bulk_opts);
+
+         if (is_topology_type_sharded (test_runner->topology_type)) {
+            // From spec: "test runner SHOULD use a single mongos for handling initialData"
+            mongoc_bulk_operation_set_server_id (bulk_insert, 1u);
+         }
 
          BSON_FOREACH (documents, documents_iter)
          {
