@@ -156,12 +156,10 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
       if (iter->server_id != 0) {
          if (!mongoc_client_command_simple_with_server_id (
                 client, "admin", disable_cmd, rp, iter->server_id, NULL /* reply */, error)) {
-            bson_destroy (disable_cmd);
             goto done;
          }
       } else {
          if (!mongoc_client_command_simple (client, "admin", disable_cmd, rp, NULL /* reply */, error)) {
-            bson_destroy (disable_cmd);
             goto done;
          }
       }
