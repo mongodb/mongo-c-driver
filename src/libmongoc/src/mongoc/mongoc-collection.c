@@ -1935,31 +1935,6 @@ done:
    RETURN (ret);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_update --
- *
- *       Updates one or more documents matching @selector with @update.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @flags: The flags for the update.
- *       @selector: A bson_t containing your selector.
- *       @update: A bson_t containing your update document.
- *       @write_concern: The write concern or NULL.
- *       @error: A location for an error or NULL.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @collection->gle is setup, depending on write_concern->w value.
- *       @error is setup upon failure.
- *
- *--------------------------------------------------------------------------
- */
-
 bool
 mongoc_collection_update (mongoc_collection_t *collection,
                           mongoc_update_flags_t uflags,
@@ -2362,38 +2337,6 @@ mongoc_collection_save (mongoc_collection_t *collection,
    return ret;
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_remove --
- *
- *       Delete one or more items from a collection. If you want to
- *       limit to a single delete, provided MONGOC_REMOVE_SINGLE_REMOVE
- *       for @flags.
- *
- *       Superseded by mongoc_collection_delete_one/many.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @flags: the delete flags or 0.
- *       @selector: A selector of documents to delete.
- *       @write_concern: A write concern or NULL. If NULL, the default
- *                       write concern for the collection will be used.
- *       @error: A location for an error or NULL.
- *
- * Returns:
- *       true if successful; otherwise false and error is set.
- *
- *       If the write concern does not dictate checking the result, this
- *       function may return true even if it failed.
- *
- * Side effects:
- *       @collection->gle is setup, depending on write_concern->w value.
- *       @error is setup upon failure.
- *
- *--------------------------------------------------------------------------
- */
 
 bool
 mongoc_collection_remove (mongoc_collection_t *collection,

@@ -1023,83 +1023,63 @@ test_decimal128 (void *ctx)
 static void
 test_update (void)
 {
-   mongoc_collection_t *collection;
-   mongoc_database_t *database;
-   mongoc_client_t *client;
-   bson_context_t *context;
    bson_error_t error;
-   bool r;
-   bson_oid_t oid;
-   unsigned i;
-   bson_t b;
-   bson_t q;
-   bson_t u;
-   bson_t set;
 
-   client = test_framework_new_default_client ();
-   ASSERT (client);
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = get_test_collection (client, "test_update");
 
-   database = get_test_database (client);
-   ASSERT (database);
+   // Test a successful update:
+   {
+      mongoc_collection_drop (coll, NULL);
+      bson_t *b = tmp_bson ("{'foo' : 'bar'}");
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, b, NULL, NULL, &error), error);
 
-   collection = get_test_collection (client, "test_update");
-   ASSERT (collection);
+      bson_t *q = tmp_bson ("{}");
+      bson_t *u = tmp_bson ("{'$set': {'foo': 'updated' }}");
+      ASSERT_OR_PRINT (mongoc_collection_update (coll, MONGOC_UPDATE_NONE, q, u, NULL, &error), error);
 
-   context = bson_context_new (BSON_CONTEXT_NONE);
-   ASSERT (context);
-
-   for (i = 0; i < 10; i++) {
-      bson_init (&b);
-      bson_oid_init (&oid, context);
-      bson_append_oid (&b, "_id", 3, &oid);
-      bson_append_utf8 (&b, "utf8", 4, "utf8 string", 11);
-      bson_append_int32 (&b, "int32", 5, 1234);
-      bson_append_int64 (&b, "int64", 5, 12345678);
-      bson_append_bool (&b, "bool", 4, 1);
-
-      ASSERT_OR_PRINT (mongoc_collection_insert_one (collection, &b, NULL, NULL, &error), error);
-
-      bson_init (&q);
-      bson_append_oid (&q, "_id", 3, &oid);
-
-      bson_init (&u);
-      bson_append_document_begin (&u, "$set", 4, &set);
-      bson_append_utf8 (&set, "utf8", 4, "updated", 7);
-      bson_append_document_end (&u, &set);
-
-      ASSERT_OR_PRINT (mongoc_collection_update (collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error), error);
-
-      bson_destroy (&b);
-      bson_destroy (&q);
-      bson_destroy (&u);
+      bson_t *f = tmp_bson ("{'foo': 'updated'}");
+      int64_t count = mongoc_collection_count_documents (coll, f, NULL, NULL, NULL, &error);
+      ASSERT_OR_PRINT (count >= 0, error);
+      ASSERT_CMPINT64 (count, ==, 1);
    }
 
-   bson_init (&q);
-   bson_init (&u);
-   BSON_APPEND_INT32 (&u, "abcd", 1);
-   BSON_APPEND_INT32 (&u, "$hi", 1);
-   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error);
-   ASSERT (!r);
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
-   ASSERT (error.code == MONGOC_ERROR_COMMAND_INVALID_ARG);
-   bson_destroy (&q);
-   bson_destroy (&u);
+   // Test an invalid update document with both $-prefixed and non-$-prefixed fields:
+   {
+      bson_t *q = tmp_bson ("{}");
+      bson_t *u = tmp_bson ("{'abcd': 1, '$hi': 1 }");
+      bool ok = mongoc_collection_update (coll, MONGOC_UPDATE_NONE, q, u, NULL, &error);
+      ASSERT (!ok);
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid key");
+   }
 
-   bson_init (&q);
-   bson_init (&u);
-   BSON_APPEND_INT32 (&u, "" /* empty key */, 1);
-   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error);
-   ASSERT (!r);
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
-   ASSERT (error.code == MONGOC_ERROR_COMMAND_INVALID_ARG);
-   bson_destroy (&q);
-   bson_destroy (&u);
+   // Test an invalid update document with an empty field:
+   {
+      bson_t *q = tmp_bson ("{}");
+      bson_t *u = tmp_bson ("{'': 1 }");
+      bool ok = mongoc_collection_update (coll, MONGOC_UPDATE_NONE, q, u, NULL, &error);
+      ASSERT (!ok);
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "empty key");
+   }
 
-   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+   // Test a successful replacement:
+   {
+      mongoc_collection_drop (coll, NULL);
+      bson_t *b = tmp_bson ("{'foo' : 'bar'}");
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, b, NULL, NULL, &error), error);
 
-   mongoc_collection_destroy (collection);
-   mongoc_database_destroy (database);
-   bson_context_destroy (context);
+      bson_t *q = tmp_bson ("{}");
+      bson_t *u = tmp_bson ("{'foo2': 'bar2'}");
+      ASSERT_OR_PRINT (mongoc_collection_update (coll, MONGOC_UPDATE_NONE, q, u, NULL, &error), error);
+
+      bson_t *f = tmp_bson ("{'foo2': 'bar2'}");
+      int64_t count = mongoc_collection_count_documents (coll, f, NULL, NULL, NULL, &error);
+      ASSERT_OR_PRINT (count >= 0, error);
+      ASSERT_CMPINT64 (count, ==, 1);
+      ASSERT_OR_PRINT (mongoc_collection_drop (coll, &error), error);
+   }
+
+   mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
 }
 
