@@ -1623,7 +1623,7 @@ test_run (test_t *test, bson_error_t *error)
 done:
    /* always clean up failpoints, even on test failure */
    if (!cleanup_failpoints (test, &nonfatal_error)) {
-      MONGOC_DEBUG ("error cleaning up failpoints: %s", nonfatal_error.message);
+      test_error ("error cleaning up failpoints: %s", nonfatal_error.message);
    }
    /* always terminate transactions, even on test failure. */
    if (!test_runner_terminate_open_transactions (test_runner, &nonfatal_error)) {
