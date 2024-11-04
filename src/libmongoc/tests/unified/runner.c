@@ -337,7 +337,6 @@ test_runner_new (void)
    {
       mongoc_uri_t *const uri = test_framework_get_uri ();
 
-      test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
 
       /* In load balanced mode, the internal client must use the
        * SINGLE_LB_MONGOS_URI. */
@@ -348,6 +347,8 @@ test_runner_new (void)
             test_error ("error applying multiple mongos: %s", error.message);
          }
       }
+
+      test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
 
       mongoc_uri_destroy (uri);
    }
