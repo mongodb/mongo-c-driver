@@ -12,6 +12,10 @@ Deprecated:
   * `mongoc_database_command` is deprecated and planned for removal in a future release. Use `mongoc_database_command_simple` instead.
   * `mongoc_collection_command` is deprecated and planned for removal in a future release. Use `mongoc_collection_command_simple` instead.
 
+Notes:
+
+  * Raise required version of libmongocrypt to 1.12.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+
 libmongoc 1.28.1
 ================
 
