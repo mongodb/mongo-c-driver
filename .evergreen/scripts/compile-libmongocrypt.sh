@@ -17,7 +17,7 @@ compile_libmongocrypt() {
     "-DBUILD_TESTING=OFF"
     "-DENABLE_ONLINE_TESTS=OFF"
     "-DENABLE_MONGOC=OFF"
-    "-DBUILD_VERSION=1.11.0-pre"
+    "-DBUILD_VERSION=1.12.0"
   )
 
   env \
