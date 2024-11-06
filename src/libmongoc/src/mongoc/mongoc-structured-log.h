@@ -46,8 +46,7 @@ typedef enum {
 
 typedef struct _mongoc_structured_log_entry_t mongoc_structured_log_entry_t;
 
-typedef void (*mongoc_structured_log_func_t) (
-   mongoc_structured_log_entry_t *entry, void *user_data);
+typedef void (*mongoc_structured_log_func_t) (mongoc_structured_log_entry_t *entry, void *user_data);
 
 /**
  * mongoc_structured_log_set_handler:
@@ -57,8 +56,7 @@ typedef void (*mongoc_structured_log_func_t) (
  * Sets the function to be called to handle structured log messages.
  */
 MONGOC_EXPORT (void)
-mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func,
-                                   void *user_data);
+mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data);
 
 /**
  * mongoc_structured_log_entry_get_message:
@@ -81,8 +79,7 @@ mongoc_structured_log_entry_get_message (mongoc_structured_log_entry_t *entry);
  * Returns the severity level of the structured log entry
  */
 MONGOC_EXPORT (mongoc_structured_log_level_t)
-mongoc_structured_log_entry_get_level (
-   const mongoc_structured_log_entry_t *entry);
+mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entry);
 
 /**
  * mongoc_structured_log_entry_get_component:
@@ -91,8 +88,7 @@ mongoc_structured_log_entry_get_level (
  * Returns the component of the structured log entry
  */
 MONGOC_EXPORT (mongoc_structured_log_component_t)
-mongoc_structured_log_entry_get_component (
-   const mongoc_structured_log_entry_t *entry);
+mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry);
 
 /**
  * mongoc_structured_log_document_to_json:

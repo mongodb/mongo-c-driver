@@ -19,9 +19,6 @@
 void
 mongoc_structured_log_connection_client_created (void)
 {
-   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-                          MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,
-                          "Client created",
-                          NULL,
-                          NULL);
+   mongoc_structured_log (
+      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG, MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION, "Client created", NULL, NULL);
 }

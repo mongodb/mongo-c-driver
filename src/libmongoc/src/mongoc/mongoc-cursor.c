@@ -648,14 +648,8 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
    db = bson_strndup (cursor->ns, cursor->dblen);
 
    /* @todo Provide missing arguments */
-   mongoc_structured_log_command_started (cmd,
-                                          cmd_name,
-                                          db,
-                                          cursor->operation_id,
-                                          client->cluster.request_id,
-                                          &server_stream->sd->host,
-                                          0,
-                                          false);
+   mongoc_structured_log_command_started (
+      cmd, cmd_name, db, cursor->operation_id, client->cluster.request_id, &server_stream->sd->host, 0, false);
 
    if (!client->apm_callbacks.started) {
       /* successful */
@@ -739,14 +733,8 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
    bson_destroy (&docs_array);
 
    /* @todo Provide missing arguments */
-   mongoc_structured_log_command_success (cmd_name,
-                                          cursor->operation_id,
-                                          &reply,
-                                          duration,
-                                          client->cluster.request_id,
-                                          &stream->sd->host,
-                                          0,
-                                          false);
+   mongoc_structured_log_command_success (
+      cmd_name, cursor->operation_id, &reply, duration, client->cluster.request_id, &stream->sd->host, 0, false);
 
    if (!client->apm_callbacks.succeeded) {
       bson_destroy (&reply);
@@ -797,14 +785,8 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
    char *db = bson_strndup (cursor->ns, cursor->dblen);
 
    /* @todo Provide missing arguments */
-   mongoc_structured_log_command_failure (cmd_name,
-                                          cursor->operation_id,
-                                          &reply,
-                                          &cursor->error,
-                                          client->cluster.request_id,
-                                          &stream->sd->host,
-                                          0,
-                                          false);
+   mongoc_structured_log_command_failure (
+      cmd_name, cursor->operation_id, &reply, &cursor->error, client->cluster.request_id, &stream->sd->host, 0, false);
 
    if (!client->apm_callbacks.failed) {
       bson_destroy (&reply);

@@ -53,8 +53,7 @@ structured_log_func (mongoc_structured_log_entry_t *entry, void *user_data)
 
    ASSERT_CMPINT (entry->level, ==, assumption->expected_entry.level);
    ASSERT_CMPINT (entry->component, ==, assumption->expected_entry.component);
-   ASSERT (bson_equal (mongoc_structured_log_entry_get_message (entry),
-                       assumption->expected_entry.structured_message));
+   ASSERT (bson_equal (mongoc_structured_log_entry_get_message (entry), assumption->expected_entry.structured_message));
 }
 
 void
@@ -76,11 +75,8 @@ test_plain_log_entry ()
 
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
 
-   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
-                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-                          "Plain log entry",
-                          NULL,
-                          NULL);
+   mongoc_structured_log (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, "Plain log entry", NULL, NULL);
 
    ASSERT_CMPINT (assumption.calls, =, 1);
 
@@ -90,7 +86,9 @@ test_plain_log_entry ()
 }
 
 void
-_test_append_extra_data (mongoc_structured_log_component_t component, void *structured_log_data, bson_t *structured_message /* OUT */)
+_test_append_extra_data (mongoc_structured_log_component_t component,
+                         void *structured_log_data,
+                         bson_t *structured_message /* OUT */)
 {
    BCON_APPEND (structured_message, "extra", BCON_INT32 (1));
 }
@@ -104,10 +102,7 @@ test_log_entry_with_extra_data ()
          MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
          "Plain log entry",
-         BCON_NEW ("message",
-                   BCON_UTF8 ("Plain log entry"),
-                   "extra",
-                   BCON_INT32 (1)),
+         BCON_NEW ("message", BCON_UTF8 ("Plain log entry"), "extra", BCON_INT32 (1)),
       },
       1,
       0,
@@ -134,6 +129,5 @@ void
 test_structured_log_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/structured_log/plain", test_plain_log_entry);
-   TestSuite_Add (
-      suite, "/structured_log/with_extra_data", test_log_entry_with_extra_data);
+   TestSuite_Add (suite, "/structured_log/with_extra_data", test_log_entry_with_extra_data);
 }

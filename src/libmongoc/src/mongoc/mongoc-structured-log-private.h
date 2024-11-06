@@ -26,10 +26,9 @@
 #define MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL MONGOC_STRUCTURED_LOG_LEVEL_WARNING;
 #define MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH 1000;
 
-typedef void (*mongoc_structured_log_build_message_t) (
-   mongoc_structured_log_component_t component,
-   void *structured_log_data,
-   bson_t *structured_message /* OUT */);
+typedef void (*mongoc_structured_log_build_message_t) (mongoc_structured_log_component_t component,
+                                                       void *structured_log_data,
+                                                       bson_t *structured_message /* OUT */);
 
 struct _mongoc_structured_log_entry_t {
    mongoc_structured_log_level_t level;
@@ -48,7 +47,6 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
                        void *structured_message_data);
 
 void
-_mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func,
-                                    void **user_data);
+_mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data);
 
 #endif /* MONGOC_STRUCTURED_LOG_PRIVATE_H */

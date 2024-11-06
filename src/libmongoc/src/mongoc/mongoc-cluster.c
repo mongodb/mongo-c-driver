@@ -562,8 +562,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       /* @todo Provide missing arguments */
       mongoc_structured_log_command_success (cmd->command_name,
                                              cmd->operation_id,
-                                             cmd->is_acknowledged ? reply
-                                                                  : &fake_reply,
+                                             cmd->is_acknowledged ? reply : &fake_reply,
                                              duration,
                                              request_id,
                                              &server_stream->sd->host,
@@ -594,30 +593,24 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       int64_t duration = bson_get_monotonic_time () - started;
 
       /* @todo Provide missing arguments */
-      mongoc_structured_log_command_failure (cmd->command_name,
-                                             cmd->operation_id,
-                                             reply,
-                                             error,
-                                             cluster->request_id,
-                                             &server_stream->sd->host,
-                                             0,
-                                             false);
+      mongoc_structured_log_command_failure (
+         cmd->command_name, cmd->operation_id, reply, error, cluster->request_id, &server_stream->sd->host, 0, false);
 
       if (callbacks->failed) {
          mongoc_apm_command_failed_init (&failed_event,
                                          duration,
                                          cmd->command_name,
                                          cmd->db_name,
-                                      error,
+                                         error,
                                          reply,
                                          request_id,
                                          cmd->operation_id,
                                          &server_stream->sd->host,
                                          server_id,
                                          &server_stream->sd->service_id,
-                                      server_stream->sd->server_connection_id,
-                                      is_redacted,
-                                      cluster->client->apm_context);
+                                         server_stream->sd->server_connection_id,
+                                         is_redacted,
+                                         cluster->client->apm_context);
 
          callbacks->failed (&failed_event);
          mongoc_apm_command_failed_cleanup (&failed_event);

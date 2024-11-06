@@ -19,11 +19,9 @@
 #include "mongoc-structured-log-command-private.h"
 
 static void
-_mongoc_log_structured_append_command_data (
-   void *structured_log_data, bson_t *structured_message /* OUT */)
+_mongoc_log_structured_append_command_data (void *structured_log_data, bson_t *structured_message /* OUT */)
 {
-   _mongoc_structured_log_command_t *log_command =
-      (_mongoc_structured_log_command_t *) structured_log_data;
+   _mongoc_structured_log_command_t *log_command = (_mongoc_structured_log_command_t *) structured_log_data;
 
    BCON_APPEND (structured_message,
                 "commandName",
@@ -41,9 +39,7 @@ _mongoc_log_structured_append_command_data (
 
    /* Append client port only if it was provided */
    if (log_command->client_port) {
-      BCON_APPEND (structured_message,
-                   "clientPort",
-                   BCON_INT32 (log_command->client_port));
+      BCON_APPEND (structured_message, "clientPort", BCON_INT32 (log_command->client_port));
    }
 
    BCON_APPEND (structured_message,
@@ -54,80 +50,61 @@ _mongoc_log_structured_append_command_data (
 }
 
 static void
-mongoc_log_structured_build_command_started_message (
-   mongoc_structured_log_component_t component,
-   void *structured_log_data,
-   bson_t *structured_message /* OUT */)
+mongoc_log_structured_build_command_started_message (mongoc_structured_log_component_t component,
+                                                     void *structured_log_data,
+                                                     bson_t *structured_message /* OUT */)
 {
    char *cmd_json;
-   _mongoc_structured_log_command_t *log_command =
-      (_mongoc_structured_log_command_t *) structured_log_data;
+   _mongoc_structured_log_command_t *log_command = (_mongoc_structured_log_command_t *) structured_log_data;
 
    BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
    cmd_json = mongoc_structured_log_document_to_json (log_command->command);
 
-   _mongoc_log_structured_append_command_data (structured_log_data,
-                                               structured_message);
+   _mongoc_log_structured_append_command_data (structured_log_data, structured_message);
 
-   BCON_APPEND (structured_message,
-                "databaseName",
-                BCON_UTF8 (log_command->db_name),
-                "command",
-                BCON_UTF8 (cmd_json));
+   BCON_APPEND (structured_message, "databaseName", BCON_UTF8 (log_command->db_name), "command", BCON_UTF8 (cmd_json));
 
    bson_free (cmd_json);
 }
 
 static void
-mongoc_log_structured_build_command_succeeded_message (
-   mongoc_structured_log_component_t component,
-   void *structured_log_data,
-   bson_t *structured_message /* OUT */)
+mongoc_log_structured_build_command_succeeded_message (mongoc_structured_log_component_t component,
+                                                       void *structured_log_data,
+                                                       bson_t *structured_message /* OUT */)
 {
    char *reply_json;
-   _mongoc_structured_log_command_t *log_command =
-      (_mongoc_structured_log_command_t *) structured_log_data;
+   _mongoc_structured_log_command_t *log_command = (_mongoc_structured_log_command_t *) structured_log_data;
 
    BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
    reply_json = mongoc_structured_log_document_to_json (log_command->reply);
 
-   _mongoc_log_structured_append_command_data (structured_log_data,
-                                               structured_message);
+   _mongoc_log_structured_append_command_data (structured_log_data, structured_message);
 
-   BCON_APPEND (structured_message,
-                "duration",
-                BCON_INT64 (log_command->duration),
-                "reply",
-                BCON_UTF8 (reply_json));
+   BCON_APPEND (structured_message, "duration", BCON_INT64 (log_command->duration), "reply", BCON_UTF8 (reply_json));
 
    bson_free (reply_json);
 }
 
 static void
-mongoc_log_structured_build_command_failed_message (
-   mongoc_structured_log_component_t component,
-   void *structured_log_data,
-   bson_t *structured_message /* OUT */)
+mongoc_log_structured_build_command_failed_message (mongoc_structured_log_component_t component,
+                                                    void *structured_log_data,
+                                                    bson_t *structured_message /* OUT */)
 {
    char *reply_json;
-   _mongoc_structured_log_command_t *log_command =
-      (_mongoc_structured_log_command_t *) structured_log_data;
+   _mongoc_structured_log_command_t *log_command = (_mongoc_structured_log_command_t *) structured_log_data;
 
    BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
    reply_json = mongoc_structured_log_document_to_json (log_command->reply);
 
-   _mongoc_log_structured_append_command_data (structured_log_data,
-                                               structured_message);
+   _mongoc_log_structured_append_command_data (structured_log_data, structured_message);
 
    BCON_APPEND (structured_message, "reply", BCON_UTF8 (reply_json));
 
    if (log_command->error) {
-      BCON_APPEND (structured_message,
-                   "failure",
-                   BCON_UTF8 (log_command->error->message));
+      BCON_APPEND (structured_message, "failure", BCON_UTF8 (log_command->error->message));
    }
 
    bson_free (reply_json);
