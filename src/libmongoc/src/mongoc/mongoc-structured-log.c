@@ -154,13 +154,13 @@ _mongoc_structured_log_get_log_level (mongoc_structured_log_component_t componen
    case MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION:
       return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SERVER_SELECTION");
    default:
-      MONGOC_ERROR ("Requesting log level for unsupported component %d", component);
+      MONGOC_ERROR ("Requesting log level for unsupported component %d", (int) component);
       exit (EXIT_FAILURE);
    }
 }
 
 static void
-_mongoc_structured_log_initialize_stream ()
+_mongoc_structured_log_initialize_stream (void)
 {
    const char *log_target = getenv ("MONGODB_LOGGING_PATH");
    bool log_to_stderr = !log_target || !strcmp (log_target, "stderr");
@@ -173,7 +173,7 @@ _mongoc_structured_log_initialize_stream ()
 }
 
 static FILE *
-_mongoc_structured_log_get_stream ()
+_mongoc_structured_log_get_stream (void)
 {
    if (!log_stream) {
       _mongoc_structured_log_initialize_stream ();
@@ -193,12 +193,12 @@ mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, voi
       return;
    }
 
-   message = bson_as_json (mongoc_structured_log_entry_get_message (entry), NULL);
+   message = bson_as_legacy_extended_json (mongoc_structured_log_entry_get_message (entry), NULL);
 
    fprintf (_mongoc_structured_log_get_stream (),
             "Structured log: %d, %d, %s\n",
-            mongoc_structured_log_entry_get_level (entry),
-            mongoc_structured_log_entry_get_component (entry),
+            (int) mongoc_structured_log_entry_get_level (entry),
+            (int) mongoc_structured_log_entry_get_component (entry),
             message);
 
    bson_free (message);
@@ -223,9 +223,10 @@ mongoc_structured_log_get_max_length (void)
 char *
 mongoc_structured_log_document_to_json (const bson_t *document)
 {
-   bson_json_opts_t opts = {BSON_JSON_MODE_CANONICAL, mongoc_structured_log_get_max_length ()};
-
-   return bson_as_json_with_opts (document, NULL, &opts);
+   bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_CANONICAL, mongoc_structured_log_get_max_length ());
+   char *json = bson_as_json_with_opts (document, NULL, opts);
+   bson_json_opts_destroy (opts);
+   return json;
 }
 
 /* just for testing */

@@ -57,7 +57,7 @@ structured_log_func (mongoc_structured_log_entry_t *entry, void *user_data)
 }
 
 void
-test_plain_log_entry ()
+test_plain_log_entry (void)
 {
    struct structured_log_state old_state;
    struct log_assumption assumption = {
@@ -94,7 +94,7 @@ _test_append_extra_data (mongoc_structured_log_component_t component,
 }
 
 void
-test_log_entry_with_extra_data ()
+test_log_entry_with_extra_data (void)
 {
    struct structured_log_state old_state;
    struct log_assumption assumption = {

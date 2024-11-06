@@ -153,7 +153,7 @@ mongoc_structured_log_command_started_with_cmd (const mongoc_cmd_t *cmd,
    bson_t *command = (bson_t *) cmd->command;
    bool command_owned = false;
 
-   if (cmd->payload && !cmd->payload_size) {
+   if (cmd->payloads_count != 0) {
       command = bson_copy (cmd->command);
       command_owned = true;
 
