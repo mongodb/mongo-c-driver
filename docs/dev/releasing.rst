@@ -396,8 +396,9 @@ required for it to succeed:
 Once these prerequesites are met, creating the release archive can be done using
 the :any:`+signed-release` target.::
 
-   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$RELEASE_BRANCH --version=$NEW_VERSION
+   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$SBOM_BRANCH --version=$NEW_VERSION
 
+.. note:: `$SBOM_BRANCH` must be ``master`` for a minor release, or ``$RELEASE_BRANCH`` for a patch release.
 .. note:: `$NEW_VERSION` must correspond to the Git tag created by the release.
 
 The above command will create a `dist/` directory in the working directory that
