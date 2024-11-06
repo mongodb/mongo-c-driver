@@ -736,28 +736,26 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
    mongoc_structured_log_command_success (
       cmd_name, cursor->operation_id, &reply, duration, client->cluster.request_id, &stream->sd->host, 0, false);
 
-   if (!client->apm_callbacks.succeeded) {
-      bson_destroy (&reply);
-      EXIT;
+   if (client->apm_callbacks.succeeded) {
+      mongoc_apm_command_succeeded_init (&event,
+                                         duration,
+                                         &reply,
+                                         cmd_name,
+                                         db,
+                                         client->cluster.request_id,
+                                         cursor->operation_id,
+                                         &stream->sd->host,
+                                         stream->sd->id,
+                                         &stream->sd->service_id,
+                                         stream->sd->server_connection_id,
+                                         false,
+                                         client->apm_context);
+
+      client->apm_callbacks.succeeded (&event);
+
+      mongoc_apm_command_succeeded_cleanup (&event);
    }
 
-   mongoc_apm_command_succeeded_init (&event,
-                                      duration,
-                                      &reply,
-                                      cmd_name,
-                                      db,
-                                      client->cluster.request_id,
-                                      cursor->operation_id,
-                                      &stream->sd->host,
-                                      stream->sd->id,
-                                      &stream->sd->service_id,
-                                      stream->sd->server_connection_id,
-                                      false,
-                                      client->apm_context);
-
-   client->apm_callbacks.succeeded (&event);
-
-   mongoc_apm_command_succeeded_cleanup (&event);
    bson_destroy (&reply);
    bson_free (db);
 
@@ -788,29 +786,27 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
    mongoc_structured_log_command_failure (
       cmd_name, cursor->operation_id, &reply, &cursor->error, client->cluster.request_id, &stream->sd->host, 0, false);
 
-   if (!client->apm_callbacks.failed) {
-      bson_destroy (&reply);
-      EXIT;
+   if (client->apm_callbacks.failed) {
+      mongoc_apm_command_failed_init (&event,
+                                      duration,
+                                      cmd_name,
+                                      db,
+                                      &cursor->error,
+                                      &reply,
+                                      client->cluster.request_id,
+                                      cursor->operation_id,
+                                      &stream->sd->host,
+                                      stream->sd->id,
+                                      &stream->sd->service_id,
+                                      stream->sd->server_connection_id,
+                                      false,
+                                      client->apm_context);
+
+      client->apm_callbacks.failed (&event);
+
+      mongoc_apm_command_failed_cleanup (&event);
    }
 
-   mongoc_apm_command_failed_init (&event,
-                                   duration,
-                                   cmd_name,
-                                   db,
-                                   &cursor->error,
-                                   &reply,
-                                   client->cluster.request_id,
-                                   cursor->operation_id,
-                                   &stream->sd->host,
-                                   stream->sd->id,
-                                   &stream->sd->service_id,
-                                   stream->sd->server_connection_id,
-                                   false,
-                                   client->apm_context);
-
-   client->apm_callbacks.failed (&event);
-
-   mongoc_apm_command_failed_cleanup (&event);
    bson_destroy (&reply);
    bson_free (db);
 
