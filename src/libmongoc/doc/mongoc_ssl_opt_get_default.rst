@@ -14,5 +14,5 @@ Synopsis
 Returns
 -------
 
-Returns the default SSL options for the process. This should not be modified or freed.
+Returns the default TLS options for the process. This should not be modified or freed.
 
