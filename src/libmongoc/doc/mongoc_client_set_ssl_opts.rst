@@ -14,6 +14,9 @@ Synopsis
                               const mongoc_ssl_opt_t *opts);
   #endif
 
+.. note::
+   |ssl:naming|
+
 Sets the TLS (SSL) options to use when connecting to TLS enabled MongoDB servers.
 
 The ``mongoc_ssl_opt_t`` struct is copied by the client along with the strings

@@ -20,6 +20,9 @@ Synopsis
      void *padding[6];
   } mongoc_ssl_opt_t;
 
+.. note::
+   |ssl:naming|
+
 Description
 -----------
 

@@ -11,6 +11,9 @@ Synopsis
   const mongoc_ssl_opt_t *
   mongoc_ssl_opt_get_default (void);
 
+.. note::
+   |ssl:naming|
+
 Returns
 -------
 

@@ -14,6 +14,9 @@ Synopsis
                                    const mongoc_ssl_opt_t *opts);
   #endif
 
+.. note::
+   |ssl:naming|
+
 This function is identical to :symbol:`mongoc_client_set_ssl_opts()` except for
 client pools. It ensures that all clients retrieved from
 :symbol:`mongoc_client_pool_pop()` or :symbol:`mongoc_client_pool_try_pop()`
