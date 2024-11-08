@@ -19,13 +19,13 @@ Synopsis
 
 Sets the TLS (SSL) options to use when connecting to TLS enabled MongoDB servers.
 
-The ``mongoc_ssl_opt_t`` struct is copied by the client along with the strings
+The :symbol:`mongoc_ssl_opt_t` struct is copied by the client along with the strings
 it points to (``pem_file``, ``pem_pwd``, ``ca_file``, ``ca_dir``, and
 ``crl_file``) so they don't have to remain valid after the call to
-``mongoc_client_set_ssl_opts``.
+:symbol:`mongoc_client_set_ssl_opts`.
 
-A call to ``mongoc_client_set_ssl_opts`` overrides all TLS options set through
-the connection string with which the ``mongoc_client_t`` was constructed.
+A call to :symbol:`mongoc_client_set_ssl_opts` overrides all TLS options set through
+the connection string with which the :symbol:`mongoc_client_t` was constructed.
 
 It is a programming error to call this function on a client from a
 :symbol:`mongoc_client_pool_t`. Instead, call
