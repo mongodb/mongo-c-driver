@@ -32,7 +32,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-rpc-private.h"
-#include "mongoc-structured-log-command-private.h"
+#include "mongoc-structured-log-private.h"
 
 #include <common-bson-dsl-private.h>
 
@@ -50,9 +50,20 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
    _mongoc_cursor_prepare_getmore_command (cursor, &doc);
    db = bson_strndup (cursor->ns, cursor->dblen);
 
-   /* @todo Provide missing arguments */
-   mongoc_structured_log_command_started (
-      &doc, "getMore", db, cursor->operation_id, client->cluster.request_id, &server_stream->sd->host, 0, false);
+   mongoc_structured_log (
+      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      "Command started",
+      MONGOC_STRUCTURED_LOG_INT32 ("requestId", client->cluster.request_id),
+      MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION (server_stream->sd,
+                                                (MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST |
+                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
+                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
+                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)),
+      MONGOC_STRUCTURED_LOG_UTF8 ("databaseName", db),
+      MONGOC_STRUCTURED_LOG_UTF8 ("commandName", "getMore"),
+      MONGOC_STRUCTURED_LOG_INT64 ("operationId", cursor->operation_id),
+      MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("command", &doc));
 
    if (!client->apm_callbacks.started) {
       /* successful */

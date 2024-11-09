@@ -56,7 +56,7 @@
 #include "mongoc-handshake-private.h"
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-error-private.h"
-#include "mongoc-structured-log-command-private.h"
+#include "mongoc-structured-log-private.h"
 
 #include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>
@@ -533,8 +533,19 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       }
    }
 
-   /* @todo Provide missing arguments */
-   mongoc_structured_log_command_started_with_cmd (cmd, request_id, 0, false);
+   mongoc_structured_log (
+      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      "Command started",
+      MONGOC_STRUCTURED_LOG_INT32 ("requestId", request_id),
+      MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION (server_stream->sd,
+                                                (MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST |
+                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
+                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
+                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)),
+      MONGOC_STRUCTURED_LOG_CMD (cmd,
+                                 (MONGOC_STRUCTURED_LOG_CMD_DATABASE_NAME | MONGOC_STRUCTURED_LOG_CMD_COMMAND_NAME |
+                                  MONGOC_STRUCTURED_LOG_CMD_OPERATION_ID | MONGOC_STRUCTURED_LOG_CMD_COMMAND)));
 
    if (callbacks->started) {
       mongoc_apm_command_started_init_with_cmd (
@@ -559,15 +570,21 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
          bson_append_int32 (&fake_reply, "ok", 2, 1);
       }
 
-      /* @todo Provide missing arguments */
-      mongoc_structured_log_command_success (cmd->command_name,
-                                             cmd->operation_id,
-                                             cmd->is_acknowledged ? reply : &fake_reply,
-                                             duration,
-                                             request_id,
-                                             &server_stream->sd->host,
-                                             0,
-                                             false);
+      mongoc_structured_log (
+         MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+         "Command succeeded",
+         MONGOC_STRUCTURED_LOG_INT32 ("requestId", request_id),
+         MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION (server_stream->sd,
+                                                   (MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST |
+                                                    MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
+                                                    MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
+                                                    MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)),
+         MONGOC_STRUCTURED_LOG_CMD (cmd,
+                                    (MONGOC_STRUCTURED_LOG_CMD_DATABASE_NAME | MONGOC_STRUCTURED_LOG_CMD_COMMAND_NAME |
+                                     MONGOC_STRUCTURED_LOG_CMD_OPERATION_ID)),
+         MONGOC_STRUCTURED_LOG_INT64 ("durationMS", duration),
+         MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("reply", cmd->is_acknowledged ? reply : &fake_reply));
 
       if (callbacks->succeeded) {
          mongoc_apm_command_succeeded_init (&succeeded_event,
@@ -592,9 +609,21 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    } else {
       int64_t duration = bson_get_monotonic_time () - started;
 
-      /* @todo Provide missing arguments */
-      mongoc_structured_log_command_failure (
-         cmd->command_name, cmd->operation_id, reply, error, cluster->request_id, &server_stream->sd->host, 0, false);
+      mongoc_structured_log (
+         MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+         "Command failed",
+         MONGOC_STRUCTURED_LOG_INT32 ("requestId", request_id),
+         MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION (server_stream->sd,
+                                                   (MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST |
+                                                    MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
+                                                    MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
+                                                    MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)),
+         MONGOC_STRUCTURED_LOG_CMD (cmd,
+                                    (MONGOC_STRUCTURED_LOG_CMD_DATABASE_NAME | MONGOC_STRUCTURED_LOG_CMD_COMMAND_NAME |
+                                     MONGOC_STRUCTURED_LOG_CMD_OPERATION_ID)),
+         MONGOC_STRUCTURED_LOG_INT64 ("durationMS", duration),
+         MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("failure", reply));
 
       if (callbacks->failed) {
          mongoc_apm_command_failed_init (&failed_event,

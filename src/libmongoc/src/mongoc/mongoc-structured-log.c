@@ -20,7 +20,7 @@
 #include "mongoc-util-private.h"
 
 static void
-mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, void *user_data);
+mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entry, void *user_data);
 
 static bson_once_t once = BSON_ONCE_INIT;
 static bson_mutex_t gStructuredLogMutex;
@@ -35,38 +35,27 @@ static BSON_ONCE_FUN (_mongoc_ensure_mutex_once)
    BSON_ONCE_RETURN;
 }
 
-static void
-mongoc_structured_log_entry_destroy (mongoc_structured_log_entry_t *entry)
+bson_t *
+mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t *entry)
 {
-   if (entry->structured_message) {
-      bson_destroy (entry->structured_message);
+   bson_t *bson = bson_new ();
+   BSON_APPEND_UTF8 (bson, "message", entry->envelope.message);
+   for (const mongoc_structured_log_builder_stage_t *stage = entry->builder; stage->func; stage++) {
+      stage->func (bson, stage);
    }
-}
-
-const bson_t *
-mongoc_structured_log_entry_get_message (mongoc_structured_log_entry_t *entry)
-{
-   if (!entry->structured_message) {
-      entry->structured_message = BCON_NEW ("message", BCON_UTF8 (entry->message));
-
-      if (entry->build_message_func) {
-         entry->build_message_func (entry->component, entry->structured_log_data, entry->structured_message);
-      }
-   }
-
-   return entry->structured_message;
+   return bson;
 }
 
 mongoc_structured_log_level_t
 mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entry)
 {
-   return entry->level;
+   return entry->envelope.level;
 }
 
 mongoc_structured_log_component_t
 mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry)
 {
-   return entry->component;
+   return entry->envelope.component;
 }
 
 void
@@ -80,22 +69,19 @@ mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *
    bson_mutex_unlock (&gStructuredLogMutex);
 }
 
-void
-mongoc_structured_log (mongoc_structured_log_level_t level,
-                       mongoc_structured_log_component_t component,
-                       const char *message,
-                       mongoc_structured_log_build_message_t build_message_func,
-                       void *structured_message_data)
+bool
+_mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envelope)
 {
-   mongoc_structured_log_entry_t entry = {
-      level,
-      component,
-      message,
-      NULL,
-      build_message_func,
-      structured_message_data,
-   };
+   // @todo Implement early-out settings for limiting max log level
+   (void) envelope;
+   // Don't take mutex, no need for atomicity.
+   // This should be a low cost early-out when logging is disabled.
+   return gStructuredLogger != NULL;
+}
 
+void
+_mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry)
+{
    bson_once (&once, &_mongoc_ensure_mutex_once);
    bson_mutex_lock (&gStructuredLogMutex);
 
@@ -104,10 +90,8 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
       return;
    }
 
-   gStructuredLogger (&entry, gStructuredLoggerData);
+   gStructuredLogger (entry, gStructuredLoggerData);
    bson_mutex_unlock (&gStructuredLogMutex);
-
-   mongoc_structured_log_entry_destroy (&entry);
 }
 
 static mongoc_structured_log_level_t
@@ -183,9 +167,9 @@ _mongoc_structured_log_get_stream (void)
 }
 
 static void
-mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, void *user_data)
+mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
-   char *message;
+   // @todo This really needs a cache, we shouldn't be parsing env vars for each should_log check
    mongoc_structured_log_level_t log_level =
       _mongoc_structured_log_get_log_level (mongoc_structured_log_entry_get_component (entry));
 
@@ -193,15 +177,17 @@ mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, voi
       return;
    }
 
-   message = bson_as_legacy_extended_json (mongoc_structured_log_entry_get_message (entry), NULL);
+   bson_t *bson_message = mongoc_structured_log_entry_message_as_bson (entry);
+   char *json_message = bson_as_relaxed_extended_json (bson_message, NULL);
 
    fprintf (_mongoc_structured_log_get_stream (),
             "Structured log: %d, %d, %s\n",
             (int) mongoc_structured_log_entry_get_level (entry),
             (int) mongoc_structured_log_entry_get_component (entry),
-            message);
+            json_message);
 
-   bson_free (message);
+   bson_free (json_message);
+   bson_destroy (bson_message);
 }
 
 static int32_t
@@ -221,18 +207,140 @@ mongoc_structured_log_get_max_length (void)
 }
 
 char *
-mongoc_structured_log_document_to_json (const bson_t *document)
+mongoc_structured_log_document_to_json (const bson_t *document, size_t *length)
 {
    bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_CANONICAL, mongoc_structured_log_get_max_length ());
-   char *json = bson_as_json_with_opts (document, NULL, opts);
+   char *json = bson_as_json_with_opts (document, length, opts);
    bson_json_opts_destroy (opts);
    return json;
 }
 
-/* just for testing */
 void
-_mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
+mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
 {
    *log_func = gStructuredLogger;
    *user_data = gStructuredLoggerData;
+}
+
+void
+_mongoc_structured_log_append_utf8 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const char *key_or_null = stage->arg1.utf8;
+   if (key_or_null) {
+      bson_append_utf8 (bson, key_or_null, -1, stage->arg2.utf8, -1);
+   }
+}
+
+void
+_mongoc_structured_log_append_int32 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const char *key_or_null = stage->arg1.utf8;
+   if (key_or_null) {
+      bson_append_int32 (bson, key_or_null, -1, stage->arg2.int32);
+   }
+}
+
+void
+_mongoc_structured_log_append_int64 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const char *key_or_null = stage->arg1.utf8;
+   if (key_or_null) {
+      bson_append_int64 (bson, key_or_null, -1, stage->arg2.int64);
+   }
+}
+
+void
+_mongoc_structured_log_append_bool (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const char *key_or_null = stage->arg1.utf8;
+   if (key_or_null) {
+      bson_append_bool (bson, key_or_null, -1, stage->arg2.boolean);
+   }
+}
+
+void
+_mongoc_structured_log_append_oid_as_hex (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const char *key_or_null = stage->arg1.utf8;
+   if (key_or_null) {
+      char str[25];
+      bson_oid_to_string (stage->arg2.oid, str);
+      bson_append_utf8 (bson, key_or_null, -1, str, 24);
+   }
+}
+
+void
+_mongoc_structured_log_append_bson_as_json (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const char *key_or_null = stage->arg1.utf8;
+   if (key_or_null) {
+      size_t json_length;
+      char *json = mongoc_structured_log_document_to_json (stage->arg2.bson, &json_length);
+      if (json) {
+         bson_append_utf8 (bson, key_or_null, -1, json, json_length);
+         bson_free (json);
+      }
+   }
+}
+
+void
+_mongoc_structured_log_append_cmd (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const mongoc_cmd_t *cmd = stage->arg1.cmd;
+   const mongoc_structured_log_cmd_flags_t flags = stage->arg2.cmd_flags;
+
+   if (flags & MONGOC_STRUCTURED_LOG_CMD_DATABASE_NAME) {
+      BSON_APPEND_UTF8 (bson, "databaseName", cmd->db_name);
+   }
+   if (flags & MONGOC_STRUCTURED_LOG_CMD_COMMAND_NAME) {
+      BSON_APPEND_UTF8 (bson, "commandName", cmd->command_name);
+   }
+   if (flags & MONGOC_STRUCTURED_LOG_CMD_OPERATION_ID) {
+      BSON_APPEND_INT64 (bson, "operationId", cmd->operation_id);
+   }
+   if (flags & MONGOC_STRUCTURED_LOG_CMD_COMMAND) {
+      bson_t *command_copy = NULL;
+
+      // @todo This is a performance bottleneck, we shouldn't be copying
+      //       a potentially large command to serialize a potentially very
+      //       small part of it. We should be outputting JSON, constrained
+      //       by length limit, while visiting borrowed references to each
+      //       command attribute and each payload. CDRIVER-4814
+      if (cmd->payloads_count > 0) {
+         command_copy = bson_copy (cmd->command);
+         _mongoc_cmd_append_payload_as_array (cmd, command_copy);
+      }
+
+      size_t json_length;
+      char *json = mongoc_structured_log_document_to_json (command_copy ? command_copy : cmd->command, &json_length);
+      if (json) {
+         const char *key = "command";
+         bson_append_utf8 (bson, key, strlen (key), json, json_length);
+         bson_free (json);
+      }
+
+      bson_destroy (command_copy);
+   }
+}
+
+void
+_mongoc_structured_log_append_server_description (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const mongoc_server_description_t *sd = stage->arg1.server_description;
+   const mongoc_structured_log_server_description_flags_t flags = stage->arg2.server_description_flags;
+
+   if (flags & MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST) {
+      BSON_APPEND_UTF8 (bson, "serverHost", sd->host.host);
+   }
+   if (flags & MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT) {
+      BSON_APPEND_INT32 (bson, "serverPort", sd->host.port);
+   }
+   if (flags & MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID) {
+      BSON_APPEND_INT64 (bson, "serverConnectionId", sd->server_connection_id);
+   }
+   if (flags & MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID) {
+      char str[25];
+      bson_oid_to_string (&sd->service_id, str);
+      BSON_APPEND_UTF8 (bson, "serviceId", str);
+   }
 }

@@ -44,9 +44,9 @@ typedef enum {
    MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,
 } mongoc_structured_log_component_t;
 
-typedef struct _mongoc_structured_log_entry_t mongoc_structured_log_entry_t;
+typedef struct mongoc_structured_log_entry_t mongoc_structured_log_entry_t;
 
-typedef void (*mongoc_structured_log_func_t) (mongoc_structured_log_entry_t *entry, void *user_data);
+typedef void (*mongoc_structured_log_func_t) (const mongoc_structured_log_entry_t *entry, void *user_data);
 
 /**
  * mongoc_structured_log_set_handler:
@@ -54,51 +54,50 @@ typedef void (*mongoc_structured_log_func_t) (mongoc_structured_log_entry_t *ent
  * @user_data: User data for @log_func.
  *
  * Sets the function to be called to handle structured log messages.
+ *
+ * The callback is given a mongoc_structured_log_entry_t* as a handle for
+ * obtaining additional information about the log message.
+ *
+ * The entry pointer is only valid during a callback, because it's a low
+ * cost reference to temporary data. When the log message is extracted
+ * as a bson_t a new owned copy of this data must be made, and deferred
+ * transformations like bson_as_json take place.
+ *
+ * Callbacks may use mongoc_structured_log_entry_get_level and
+ * mongoc_structured_log_entry_get_component to filter log messages, and
+ * selectively call mongoc_structured_log_entry_message_as_bson to create
+ * a bson_t for log messages only when needed.
  */
 MONGOC_EXPORT (void)
 mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data);
 
 /**
- * mongoc_structured_log_entry_get_message:
- * @entry: A log entry to extract the message from
+ * mongoc_structured_log_entry_message_as_bson:
+ * @entry: A log entry to extract the message from.
  *
- * Returns the structured message as a bson_t pointer.
- *
- * When this function is called, the message is lazily generated if it hasn't
- * already been generated. Note that it is not safe to call this method outside
- * of a log handler, as the data needed to assemble the message may have been
- * freed already.
+ * Returns the structured message as a new allocated bson_t
+ * that must be freed by bson_destroy().
  */
-MONGOC_EXPORT (const bson_t *)
-mongoc_structured_log_entry_get_message (mongoc_structured_log_entry_t *entry);
+MONGOC_EXPORT (bson_t *)
+mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t *entry);
 
 /**
  * mongoc_structured_log_entry_get_level:
- * @entry: A log entry to read the level from
+ * @entry: A log entry to read the level from.
  *
- * Returns the severity level of the structured log entry
+ * Returns the severity level of the structured log entry.
  */
 MONGOC_EXPORT (mongoc_structured_log_level_t)
 mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entry);
 
 /**
  * mongoc_structured_log_entry_get_component:
- * @entry: A log entry to read the component from
+ * @entry: A log entry to read the component from.
  *
- * Returns the component of the structured log entry
+ * Returns the component of the structured log entry.
  */
 MONGOC_EXPORT (mongoc_structured_log_component_t)
 mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry);
-
-/**
- * mongoc_structured_log_document_to_json:
- * @document: A BSON document to be serialized
- *
- * Returns the extended JSON representation of the given BSON document,
- * respecting maximum logging length settings.
- */
-MONGOC_EXPORT (char *)
-mongoc_structured_log_document_to_json (const bson_t *document);
 
 BSON_END_DECLS
 
