@@ -40,8 +40,9 @@ mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t
 {
    bson_t *bson = bson_new ();
    BSON_APPEND_UTF8 (bson, "message", entry->envelope.message);
-   for (const mongoc_structured_log_builder_stage_t *stage = entry->builder; stage->func; stage++) {
-      stage->func (bson, stage);
+   const mongoc_structured_log_builder_stage_t *stage = entry->builder;
+   while (stage->func) {
+      stage = stage->func (bson, stage);
    }
    return bson;
 }
@@ -73,7 +74,7 @@ bool
 _mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envelope)
 {
    // @todo Implement early-out settings for limiting max log level
-   (void) envelope;
+   BSON_UNUSED (envelope);
    // Don't take mutex, no need for atomicity.
    // This should be a low cost early-out when logging is disabled.
    return gStructuredLogger != NULL;
@@ -222,43 +223,71 @@ mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void 
    *user_data = gStructuredLoggerData;
 }
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_utf8 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const char *key_or_null = stage->arg1.utf8;
    if (key_or_null) {
       bson_append_utf8 (bson, key_or_null, -1, stage->arg2.utf8, -1);
    }
+   return stage + 1;
 }
 
-void
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_utf8_n_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   BSON_ASSERT (stage[1].func == _mongoc_structured_log_append_utf8_n_stage1);
+   const char *key_or_null = stage[0].arg1.utf8;
+   int32_t key_len = stage[0].arg2.int32;
+   const char *value = stage[1].arg1.utf8;
+   int32_t value_len = stage[1].arg2.int32;
+   if (key_or_null) {
+      bson_append_utf8 (bson, key_or_null, key_len, value, value_len);
+   }
+   return stage + 2;
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_utf8_n_stage1 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   // Never called, marks the second stage in a two-stage utf8_n
+   BSON_UNUSED (bson);
+   BSON_UNUSED (stage);
+   BSON_ASSERT (false);
+   return NULL;
+}
+
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_int32 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const char *key_or_null = stage->arg1.utf8;
    if (key_or_null) {
       bson_append_int32 (bson, key_or_null, -1, stage->arg2.int32);
    }
+   return stage + 1;
 }
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_int64 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const char *key_or_null = stage->arg1.utf8;
    if (key_or_null) {
       bson_append_int64 (bson, key_or_null, -1, stage->arg2.int64);
    }
+   return stage + 1;
 }
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_bool (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const char *key_or_null = stage->arg1.utf8;
    if (key_or_null) {
       bson_append_bool (bson, key_or_null, -1, stage->arg2.boolean);
    }
+   return stage + 1;
 }
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_oid_as_hex (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const char *key_or_null = stage->arg1.utf8;
@@ -267,9 +296,10 @@ _mongoc_structured_log_append_oid_as_hex (bson_t *bson, const mongoc_structured_
       bson_oid_to_string (stage->arg2.oid, str);
       bson_append_utf8 (bson, key_or_null, -1, str, 24);
    }
+   return stage + 1;
 }
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_bson_as_json (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const char *key_or_null = stage->arg1.utf8;
@@ -281,9 +311,10 @@ _mongoc_structured_log_append_bson_as_json (bson_t *bson, const mongoc_structure
          bson_free (json);
       }
    }
+   return stage + 1;
 }
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_cmd (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const mongoc_cmd_t *cmd = stage->arg1.cmd;
@@ -321,9 +352,10 @@ _mongoc_structured_log_append_cmd (bson_t *bson, const mongoc_structured_log_bui
 
       bson_destroy (command_copy);
    }
+   return stage + 1;
 }
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_server_description (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const mongoc_server_description_t *sd = stage->arg1.server_description;
@@ -343,4 +375,5 @@ _mongoc_structured_log_append_server_description (bson_t *bson, const mongoc_str
       bson_oid_to_string (&sd->service_id, str);
       BSON_APPEND_UTF8 (bson, "serviceId", str);
    }
+   return stage + 1;
 }

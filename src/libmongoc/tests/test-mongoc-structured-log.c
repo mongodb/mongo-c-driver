@@ -128,27 +128,39 @@ test_log_entry_with_extra_data (void)
 void
 test_log_entry_with_all_data_types (void)
 {
+   const char non_terminated_test_string[] = {0, 1, 2, 3, 'a', '\\'};
+   bson_t *bson_str_n = bson_new ();
+   bson_append_utf8 (bson_str_n, "kStrN1", -1, non_terminated_test_string, sizeof non_terminated_test_string);
+   bson_append_utf8 (bson_str_n, "kStrN2", -1, non_terminated_test_string, sizeof non_terminated_test_string);
+
    struct log_assumption assumption = {
       .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
       .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       .expected_envelope.message = "Log entry with all data types",
       .expected_bson = BCON_NEW ("message",
                                  BCON_UTF8 ("Log entry with all data types"),
-                                 "k1",
+                                 "kStr",
                                  BCON_UTF8 ("string value"),
-                                 "k2",
+                                 "kNullStr",
                                  BCON_NULL,
-                                 "k3",
+                                 BCON (bson_str_n),
+                                 "kNullStrN1",
+                                 BCON_NULL,
+                                 "kNullStrN2",
+                                 BCON_NULL,
+                                 "kNullStrN3",
+                                 BCON_NULL,
+                                 "kInt32",
                                  BCON_INT32 (-12345),
-                                 "k4",
+                                 "kInt64",
                                  BCON_INT64 (0x76543210aabbccdd),
-                                 "k5",
+                                 "kTrue",
                                  BCON_BOOL (true),
-                                 "k6",
+                                 "kFalse",
                                  BCON_BOOL (false),
-                                 "k7",
+                                 "kJSON",
                                  BCON_UTF8 ("{ \"k\" : \"v\" }"),
-                                 "k8",
+                                 "kOID",
                                  BCON_UTF8 ("112233445566778899aabbcc"),
                                  "databaseName",
                                  BCON_UTF8 ("Some database"),
@@ -197,21 +209,27 @@ test_log_entry_with_all_data_types (void)
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Log entry with all data types",
       // Basic BSON types.
-      // Supports optional values (skip when key is NULL)
-      MONGOC_STRUCTURED_LOG_UTF8 ("k1", "string value"),
-      MONGOC_STRUCTURED_LOG_UTF8 ("k2", NULL),
+      // Most support optional values (skip when key is NULL)
+      MONGOC_STRUCTURED_LOG_UTF8 ("kStr", "string value"),
+      MONGOC_STRUCTURED_LOG_UTF8 ("kNullStr", NULL),
       MONGOC_STRUCTURED_LOG_UTF8 (NULL, NULL),
-      MONGOC_STRUCTURED_LOG_INT32 ("k3", -12345),
+      MONGOC_STRUCTURED_LOG_UTF8_NN ("kStrN1ZZZ", 6, non_terminated_test_string, sizeof non_terminated_test_string),
+      MONGOC_STRUCTURED_LOG_UTF8_N ("kStrN2", non_terminated_test_string, sizeof non_terminated_test_string),
+      MONGOC_STRUCTURED_LOG_UTF8_NN ("kNullStrN1ZZZ", 10, NULL, 12345),
+      MONGOC_STRUCTURED_LOG_UTF8_NN ("kNullStrN2", -1, NULL, 12345),
+      MONGOC_STRUCTURED_LOG_UTF8_NN (NULL, 999, NULL, 999),
+      MONGOC_STRUCTURED_LOG_UTF8_N ("kNullStrN3", NULL, 12345),
+      MONGOC_STRUCTURED_LOG_INT32 ("kInt32", -12345),
       MONGOC_STRUCTURED_LOG_INT32 (NULL, 9999),
-      MONGOC_STRUCTURED_LOG_INT64 ("k4", 0x76543210aabbccdd),
+      MONGOC_STRUCTURED_LOG_INT64 ("kInt64", 0x76543210aabbccdd),
       MONGOC_STRUCTURED_LOG_INT64 (NULL, -1),
-      MONGOC_STRUCTURED_LOG_BOOL ("k5", true),
-      MONGOC_STRUCTURED_LOG_BOOL ("k6", false),
+      MONGOC_STRUCTURED_LOG_BOOL ("kTrue", true),
+      MONGOC_STRUCTURED_LOG_BOOL ("kFalse", false),
       MONGOC_STRUCTURED_LOG_BOOL (NULL, true),
       // Deferred conversions
-      MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("k7", json_doc),
+      MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("kJSON", json_doc),
       MONGOC_STRUCTURED_LOG_BSON_AS_JSON (NULL, NULL),
-      MONGOC_STRUCTURED_LOG_OID_AS_HEX ("k8", &oid),
+      MONGOC_STRUCTURED_LOG_OID_AS_HEX ("kOID", &oid),
       MONGOC_STRUCTURED_LOG_OID_AS_HEX (NULL, NULL),
       // Common structures, with explicit set of keys to include
       MONGOC_STRUCTURED_LOG_CMD (&cmd,
@@ -228,6 +246,7 @@ test_log_entry_with_all_data_types (void)
    bson_destroy (assumption.expected_bson);
    bson_destroy (json_doc);
    bson_destroy (cmd_doc);
+   bson_destroy (bson_str_n);
 }
 
 void

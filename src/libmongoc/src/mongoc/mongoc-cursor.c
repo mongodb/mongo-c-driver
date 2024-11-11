@@ -645,7 +645,6 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
    ENTRY;
 
    client = cursor->client;
-   db = bson_strndup (cursor->ns, cursor->dblen);
 
    mongoc_structured_log (
       MONGOC_STRUCTURED_LOG_LEVEL_INFO,
@@ -657,16 +656,17 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
                                                  MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
                                                  MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
                                                  MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)),
-      MONGOC_STRUCTURED_LOG_UTF8 ("databaseName", db),
+      MONGOC_STRUCTURED_LOG_UTF8_N ("databaseName", cursor->ns, cursor->dblen),
       MONGOC_STRUCTURED_LOG_UTF8 ("commandName", cmd_name),
       MONGOC_STRUCTURED_LOG_INT64 ("operationId", cursor->operation_id),
       MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("command", cmd));
 
    if (!client->apm_callbacks.started) {
       /* successful */
-      bson_free (db);
       RETURN (true);
    }
+
+   db = bson_strndup (cursor->ns, cursor->dblen);
 
    mongoc_apm_command_started_init (&event,
                                     cmd,

@@ -43,34 +43,43 @@ BSON_BEGIN_DECLS
       }                                                                                                   \
    } while (0)
 
-#define MONGOC_STRUCTURED_LOG_UTF8(_key_or_null, _value_utf8)                                              \
-   {                                                                                                       \
-      .func = _mongoc_structured_log_append_utf8, .arg1.utf8 = (_key_or_null), .arg2.utf8 = (_value_utf8), \
+#define MONGOC_STRUCTURED_LOG_UTF8(_key_or_null, _value_utf8)                                             \
+   {                                                                                                      \
+      .func = _mongoc_structured_log_append_utf8, .arg1.utf8 = (_key_or_null), .arg2.utf8 = (_value_utf8) \
    }
 
-#define MONGOC_STRUCTURED_LOG_INT32(_key_or_null, _value_int32)                                               \
+#define MONGOC_STRUCTURED_LOG_UTF8_N(_key_literal, _value_utf8, _value_len) \
+   MONGOC_STRUCTURED_LOG_UTF8_NN (_key_literal, strlen (_key_literal), _value_utf8, _value_len)
+
+#define MONGOC_STRUCTURED_LOG_UTF8_NN(_key_or_null, _key_len, _value_utf8, _value_len)                            \
+   {.func = _mongoc_structured_log_append_utf8_n_stage0, .arg1.utf8 = (_key_or_null), .arg2.int32 = (_key_len)},  \
+   {                                                                                                              \
+      .func = _mongoc_structured_log_append_utf8_n_stage1, .arg1.utf8 = (_value_utf8), .arg2.int32 = (_value_len) \
+   }
+
+#define MONGOC_STRUCTURED_LOG_INT32(_key_or_null, _value_int32)                                              \
+   {                                                                                                         \
+      .func = _mongoc_structured_log_append_int32, .arg1.utf8 = (_key_or_null), .arg2.int32 = (_value_int32) \
+   }
+
+#define MONGOC_STRUCTURED_LOG_INT64(_key_or_null, _value_int64)                                              \
+   {                                                                                                         \
+      .func = _mongoc_structured_log_append_int64, .arg1.utf8 = (_key_or_null), .arg2.int64 = (_value_int64) \
+   }
+
+#define MONGOC_STRUCTURED_LOG_BOOL(_key_or_null, _value_bool)                                                \
+   {                                                                                                         \
+      .func = _mongoc_structured_log_append_bool, .arg1.utf8 = (_key_or_null), .arg2.boolean = (_value_bool) \
+   }
+
+#define MONGOC_STRUCTURED_LOG_OID_AS_HEX(_key_or_null, _value_oid)                                            \
    {                                                                                                          \
-      .func = _mongoc_structured_log_append_int32, .arg1.utf8 = (_key_or_null), .arg2.int32 = (_value_int32), \
+      .func = _mongoc_structured_log_append_oid_as_hex, .arg1.utf8 = (_key_or_null), .arg2.oid = (_value_oid) \
    }
 
-#define MONGOC_STRUCTURED_LOG_INT64(_key_or_null, _value_int64)                                               \
-   {                                                                                                          \
-      .func = _mongoc_structured_log_append_int64, .arg1.utf8 = (_key_or_null), .arg2.int64 = (_value_int64), \
-   }
-
-#define MONGOC_STRUCTURED_LOG_BOOL(_key_or_null, _value_bool)                                                 \
-   {                                                                                                          \
-      .func = _mongoc_structured_log_append_bool, .arg1.utf8 = (_key_or_null), .arg2.boolean = (_value_bool), \
-   }
-
-#define MONGOC_STRUCTURED_LOG_OID_AS_HEX(_key_or_null, _value_oid)                                             \
-   {                                                                                                           \
-      .func = _mongoc_structured_log_append_oid_as_hex, .arg1.utf8 = (_key_or_null), .arg2.oid = (_value_oid), \
-   }
-
-#define MONGOC_STRUCTURED_LOG_BSON_AS_JSON(_key_or_null, _value_bson)                                              \
-   {                                                                                                               \
-      .func = _mongoc_structured_log_append_bson_as_json, .arg1.utf8 = (_key_or_null), .arg2.bson = (_value_bson), \
+#define MONGOC_STRUCTURED_LOG_BSON_AS_JSON(_key_or_null, _value_bson)                                             \
+   {                                                                                                              \
+      .func = _mongoc_structured_log_append_bson_as_json, .arg1.utf8 = (_key_or_null), .arg2.bson = (_value_bson) \
    }
 
 #define MONGOC_STRUCTURED_LOG_CMD(_cmd, _flags)                                                 \
@@ -86,7 +95,8 @@ BSON_BEGIN_DECLS
 
 typedef struct mongoc_structured_log_builder_stage_t mongoc_structured_log_builder_stage_t;
 
-typedef void (*mongoc_structured_log_builder_func_t) (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
+typedef const mongoc_structured_log_builder_stage_t *(*mongoc_structured_log_builder_func_t) (
+   bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
 typedef enum {
    MONGOC_STRUCTURED_LOG_CMD_COMMAND = (1 << 0),
@@ -119,7 +129,7 @@ struct mongoc_structured_log_builder_stage_t {
       mongoc_structured_log_cmd_flags_t cmd_flags;
       mongoc_structured_log_server_description_flags_t server_description_flags;
    } arg2;
-   // Avoid adding an arg3, prefer to keep sizeof stage small
+   // Avoid adding an arg3, prefer to use additional stages
 };
 
 typedef struct mongoc_structured_log_envelope_t {
@@ -145,28 +155,34 @@ _mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envel
 void
 _mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry);
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_utf8 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
-void
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_utf8_n_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_utf8_n_stage1 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
+
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_int32 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_int64 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_bool (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_oid_as_hex (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_bson_as_json (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_cmd (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
-void
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_server_description (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
 BSON_END_DECLS
