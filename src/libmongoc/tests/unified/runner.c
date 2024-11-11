@@ -1723,5 +1723,5 @@ test_install_unified (TestSuite *suite)
 
    run_unified_tests (suite, JSON_DIR, "index-management");
 
-   run_unified_tests (suite, JSON_DIR, "command-logging-and-monitoring/monitoring");
+   run_unified_tests (suite, JSON_DIR, "command-logging-and-monitoring");
 }
