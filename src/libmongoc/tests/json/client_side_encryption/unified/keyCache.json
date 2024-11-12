@@ -1,5 +1,5 @@
 {
-  "description": "namedKMS-explicit",
+  "description": "keyCache-explicit",
   "schemaVersion": "1.18",
   "runOnRequirements": [
     {
@@ -22,8 +22,8 @@
           "keyVaultClient": "client0",
           "keyVaultNamespace": "keyvault.datakeys",
           "kmsProviders": {
-            "local:name2": {
-              "key": "local+name2+YUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6NmdWMDFBMUN3YkQ5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZGJkTXVyZG9uSjFk"
+            "local": {
+              "key": "OCTP9uKPPmvuqpHlqq83gPk4U6rUPxKVRRyVtrjFmVjdoa4Xzm1SzUbr7aIhNI42czkUBmrCtZKF31eaaJnxEBkqf0RFukA9Mo3NEHQWgAQ2cn9duOcRbaFUQo2z0/rB"
             }
           },
           "keyExpirationMS": 1
@@ -53,16 +53,14 @@
         {
           "_id": {
             "$binary": {
-              "base64": "local+name2+AAAAAAAAAA==",
+              "base64": "a+YWzdygTAG62/cNUkqZiQ==",
               "subType": "04"
             }
           },
-          "keyAltNames": [
-            "local:name2"
-          ],
+          "keyAltNames": [ ],
           "keyMaterial": {
             "$binary": {
-              "base64": "DX3iUuOlBsx6wBX9UZ3v/qXk1HNeBace2J+h/JwsDdF/vmSXLZ1l1VmZYIcpVFy6ODhdbzLjd4pNgg9wcm4etYig62KNkmtZ0/s1tAL5VsuW/s7/3PYnYGznZTFhLjIVcOH/RNoRj2eQb/sRTyivL85wePEpAU/JzuBj6qO9Y5txQgs1k0J3aNy10R9aQ8kC1NuSSpLAIXwE6DlNDDJXhw==",
+              "base64": "iocBkhO3YBokiJ+FtxDTS71/qKXQ7tSWhWbcnFTXBcMjarsepvALeJ5li+SdUd9ePuatjidxAdMo7vh1V2ZESLMkQWdpPJ9PaJjA67gKQKbbbB4Ik5F2uKjULvrMBnFNVRMup4JNUwWFQJpqbfMveXnUVcD06+pUpAkml/f+DSXrV3e5rxciiNVtz03dAG8wJrsKsFXWj6vTjFhsfknyBA==",
               "subType": "00"
             }
           },
@@ -80,7 +78,7 @@
             "$numberInt": "0"
           },
           "masterKey": {
-            "provider": "local:name2"
+            "provider": "local"
           }
         }
       ]
@@ -96,7 +94,7 @@
           "arguments": {
             "value": {
               "$binary": {
-                "base64": "AZaHGpfp2pntvgAAAAAAAAAC4yX2LTAuN253GAkEO2ZXp4GpCyM7yoVNJMQQl+6uzxMs03IprLC7DL2vr18x9LwOimjTS9YbMJhrnFkEPuNhbg==",
+                "base64": "AWvmFs3coEwButv3DVJKmYkCJ6lUzRX9R28WNlw5uyndb+8gurA+p8q14s7GZ04K2ZvghieRlAr5UwZbow3PMq27u5EIhDDczwBFcbdP1amllw==",
                 "subType": "06"
               }
             }
@@ -116,7 +114,7 @@
           "arguments": {
             "value": {
               "$binary": {
-                "base64": "AZaHGpfp2pntvgAAAAAAAAAC4yX2LTAuN253GAkEO2ZXp4GpCyM7yoVNJMQQl+6uzxMs03IprLC7DL2vr18x9LwOimjTS9YbMJhrnFkEPuNhbg==",
+                "base64": "AWvmFs3coEwButv3DVJKmYkCJ6lUzRX9R28WNlw5uyndb+8gurA+p8q14s7GZ04K2ZvghieRlAr5UwZbow3PMq27u5EIhDDczwBFcbdP1amllw==",
                 "subType": "06"
               }
             }
@@ -134,8 +132,25 @@
                 "command": {
                   "find": "datakeys",
                   "filter": {
-                    "$or": [ { "_id": { "$in": [ { "$binary": { "base64": "local+name2+AAAAAAAAAA==", "subType": "04" } } ] } },
-                      { "keyAltNames": { "$in": [ ] } } ]
+                    "$or": [
+                      {
+                        "_id": {
+                          "$in": [
+                            {
+                              "$binary": {
+                                "base64": "a+YWzdygTAG62/cNUkqZiQ==",
+                                "subType": "04"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "keyAltNames": {
+                          "$in": [ ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -146,8 +161,25 @@
                 "command": {
                   "find": "datakeys",
                   "filter": {
-                    "$or": [ { "_id": { "$in": [ { "$binary": { "base64": "local+name2+AAAAAAAAAA==", "subType": "04" } } ] } },
-                      { "keyAltNames": { "$in": [ ] } } ]
+                    "$or": [
+                      {
+                        "_id": {
+                          "$in": [
+                            {
+                              "$binary": {
+                                "base64": "a+YWzdygTAG62/cNUkqZiQ==",
+                                "subType": "04"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "keyAltNames": {
+                          "$in": [ ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
