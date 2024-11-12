@@ -146,6 +146,16 @@ MONGOC_EXPORT (const char *)
 mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level);
 
 /**
+ * mongoc_structured_log_get_named_level:
+ * @name: A log level name.
+ * @out: On success, writes a level here and returns true. Returns false if name is not recognized.
+ *
+ * Try to parse the string as a log level name. Case insensitive.
+ */
+MONGOC_EXPORT (bool)
+mongoc_structured_log_get_named_level (const char *name, mongoc_structured_log_level_t *out);
+
+/**
  * mongoc_structured_log_get_component_name:
  * @level: A log level code.
  *
@@ -154,6 +164,16 @@ mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level);
  */
 MONGOC_EXPORT (const char *)
 mongoc_structured_log_get_component_name (mongoc_structured_log_component_t component);
+
+/**
+ * mongoc_structured_log_get_named_component:
+ * @name: A log component name.
+ * @out: On success, writes a component here and returns true. Returns false if name is not recognized.
+ *
+ * Try to parse the string as a log component name. Case insensitive.
+ */
+MONGOC_EXPORT (bool)
+mongoc_structured_log_get_named_component (const char *name, mongoc_structured_log_component_t *out);
 
 BSON_END_DECLS
 

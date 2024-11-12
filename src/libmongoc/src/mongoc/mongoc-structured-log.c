@@ -25,6 +25,11 @@ mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entr
 
 #define STRUCTURED_LOG_COMPONENT_TABLE_SIZE (1 + (size_t) MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION)
 
+static const char *gStructuredLogLevelNames[] = {
+   "Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Informational", "Debug", "Trace"};
+
+static const char *gStructuredLogComponentNames[] = {"command", "topology", "serverSelection", "connection"};
+
 static struct {
    bson_mutex_t func_mutex; // Mutex prevents func reentrancy, ensures atomic updates to (func, user_data)
    mongoc_structured_log_func_t func;
@@ -129,49 +134,56 @@ static bool
 _mongoc_structured_log_get_log_level_from_env (const char *variable, mongoc_structured_log_level_t *out)
 {
    const char *level = getenv (variable);
-
    if (!level) {
       return false;
-   } else if (!strcasecmp (level, "trace")) {
-      *out = MONGOC_STRUCTURED_LOG_LEVEL_TRACE;
-   } else if (!strcasecmp (level, "debug")) {
-      *out = MONGOC_STRUCTURED_LOG_LEVEL_DEBUG;
-   } else if (!strcasecmp (level, "info")) {
-      *out = MONGOC_STRUCTURED_LOG_LEVEL_INFO;
-   } else if (!strcasecmp (level, "notice")) {
-      *out = MONGOC_STRUCTURED_LOG_LEVEL_NOTICE;
-   } else if (!strcasecmp (level, "warn")) {
-      *out = MONGOC_STRUCTURED_LOG_LEVEL_WARNING;
-   } else if (!strcasecmp (level, "error")) {
-      *out = MONGOC_STRUCTURED_LOG_LEVEL_ERROR;
-   } else if (!strcasecmp (level, "critical")) {
-      *out = MONGOC_STRUCTURED_LOG_LEVEL_CRITICAL;
-   } else if (!strcasecmp (level, "alert")) {
-      *out = MONGOC_STRUCTURED_LOG_LEVEL_ALERT;
-   } else if (!strcasecmp (level, "emergency")) {
-      *out = MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY;
-   } else {
-      MONGOC_ERROR ("Invalid log level %s read for variable %s", level, variable);
-      exit (EXIT_FAILURE);
    }
-   return true;
+   if (mongoc_structured_log_get_named_level (level, out)) {
+      return true;
+   }
+   MONGOC_ERROR ("Invalid log level '%s' read from environment variable %s", level, variable);
+   exit (EXIT_FAILURE);
 }
 
 const char *
 mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level)
 {
    unsigned table_index = (unsigned) level;
-   static const char *table[] = {
-      "Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Informational", "Debug", "Trace"};
-   return (table_index < (sizeof table / sizeof table[0])) ? table[table_index] : NULL;
+   const size_t table_size = sizeof gStructuredLogLevelNames / sizeof gStructuredLogLevelNames[0];
+   return table_index < table_size ? gStructuredLogLevelNames[table_index] : NULL;
+}
+
+bool
+mongoc_structured_log_get_named_level (const char *name, mongoc_structured_log_level_t *out)
+{
+   const size_t table_size = sizeof gStructuredLogLevelNames / sizeof gStructuredLogLevelNames[0];
+   for (unsigned table_index = 0; table_index < table_size; table_index++) {
+      if (!strcasecmp (name, gStructuredLogLevelNames[table_index])) {
+         *out = (mongoc_structured_log_level_t) table_index;
+         return true;
+      }
+   }
+   return false;
 }
 
 const char *
 mongoc_structured_log_get_component_name (mongoc_structured_log_component_t component)
 {
    unsigned table_index = (unsigned) component;
-   static const char *table[] = {"command", "topology", "serverSelection", "connection"};
-   return (table_index < (sizeof table / sizeof table[0])) ? table[table_index] : NULL;
+   const size_t table_size = sizeof gStructuredLogComponentNames / sizeof gStructuredLogComponentNames[0];
+   return table_index < table_size ? gStructuredLogComponentNames[table_index] : NULL;
+}
+
+bool
+mongoc_structured_log_get_named_component (const char *name, mongoc_structured_log_component_t *out)
+{
+   const size_t table_size = sizeof gStructuredLogComponentNames / sizeof gStructuredLogComponentNames[0];
+   for (unsigned table_index = 0; table_index < table_size; table_index++) {
+      if (!strcasecmp (name, gStructuredLogComponentNames[table_index])) {
+         *out = (mongoc_structured_log_component_t) table_index;
+         return true;
+      }
+   }
+   return false;
 }
 
 static int32_t
