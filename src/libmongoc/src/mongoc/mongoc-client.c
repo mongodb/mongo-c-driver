@@ -2167,7 +2167,7 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
    _mongoc_client_prepare_killcursors_command (cursor_id, collection, &doc);
 
    mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command started",
       int32 ("requestId", cluster->request_id),
@@ -2228,7 +2228,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
    bson_append_array_builder_end (&doc, cursors_unknown);
 
    mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command succeeded",
       int32 ("requestId", cluster->request_id),
@@ -2286,7 +2286,7 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
    bson_append_int32 (&doc, "ok", 2, 0);
 
    mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command failed",
       int32 ("requestId", cluster->request_id),

@@ -50,7 +50,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
    _mongoc_cursor_prepare_getmore_command (cursor, &doc);
 
    mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command started",
       int32 ("requestId", client->cluster.request_id),
