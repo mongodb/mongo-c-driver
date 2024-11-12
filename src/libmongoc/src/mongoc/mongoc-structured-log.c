@@ -26,10 +26,11 @@ mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entr
 #define STRUCTURED_LOG_COMPONENT_TABLE_SIZE (1 + (size_t) MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION)
 
 static struct {
+   bson_mutex_t func_mutex; // Mutex prevents func reentrancy, ensures atomic updates to (func, user_data)
    mongoc_structured_log_func_t func;
    void *user_data;
-   bson_mutex_t func_mutex; // Mutex prevents func reentrancy, ensures atomic updates to (func, user_data)
-   FILE *stream;
+   FILE *stream; // Only used by the default handler
+
    int32_t max_document_length;
    int component_level_table[STRUCTURED_LOG_COMPONENT_TABLE_SIZE]; // Really mongoc_structured_log_level_t; int typed to
                                                                    // support atomic fetch
@@ -109,10 +110,8 @@ mongoc_structured_log_get_max_level_for_component (mongoc_structured_log_compone
 bool
 _mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envelope)
 {
-   if (!mcommon_atomic_ptr_fetch ((void *) &gStructuredLog.func, mcommon_memory_order_relaxed)) {
-      return false;
-   }
-   return envelope->level <= mongoc_structured_log_get_max_level_for_component (envelope->component);
+   return mcommon_atomic_ptr_fetch ((void *) &gStructuredLog.func, mcommon_memory_order_relaxed) &&
+          envelope->level <= mongoc_structured_log_get_max_level_for_component (envelope->component);
 }
 
 void
