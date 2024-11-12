@@ -31,7 +31,6 @@ process.
    - [ ] Start Snyk Monitoring
    - [ ] Address and Report Vulnerabilities
    - [ ] Validate API Documentation
-   - [ ] Notify the PHP Driver Team
    - [ ] Get a GitHub API Token
    - [ ] Do the Release:
        - [ ] Start a Release Stopwatch (start time: HH:MM)
@@ -194,15 +193,6 @@ compat_report.html* artifact. In the *Added Symbols* section will be a list of
 all newly introduced APIs since the most release release version. Verify that
 documentation has been added for every symbol listed here. If no new symbols are
 added, then the documentation is up-to-date.
-
-
-Notify the PHP Driver Team
-##########################
-
-The PHP driver team consumes the C driver directly and will want to know when a
-new release is coming so that they can identify regressions in the APIs used by
-the PHP driver. Consider requesting that the PHP team test the PHP driver
-against the new release version before the C release is tagged and published.
 
 
 .. _release.github-token:
@@ -396,8 +386,9 @@ required for it to succeed:
 Once these prerequesites are met, creating the release archive can be done using
 the :any:`+signed-release` target.::
 
-   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$RELEASE_BRANCH --version=$NEW_VERSION
+   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$SBOM_BRANCH --version=$NEW_VERSION
 
+.. note:: `$SBOM_BRANCH` must be ``master`` for a minor release, or ``$RELEASE_BRANCH`` for a patch release.
 .. note:: `$NEW_VERSION` must correspond to the Git tag created by the release.
 
 The above command will create a `dist/` directory in the working directory that

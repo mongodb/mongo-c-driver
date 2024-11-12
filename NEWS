@@ -1,6 +1,9 @@
-libmongoc 1.29.0 (unreleased)
-=============================
+libmongoc 1.29.0
+================
 
+Improvements:
+
+  * Retry KMS requests on transient errors.
 
 Platform Support:
 
@@ -15,6 +18,16 @@ Deprecated:
 Notes:
 
   * Raise required version of libmongocrypt to 1.12.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+  * A future minor release will raise the minimum supported MongoDB Server version from 4.0 to 4.2. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles). **Support for MongoDB Server 4.0 will be dropped in a future release!**
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Micah Scott
+  * Adrian Dole
+  * Andreas Braun
+  * Joshua Siegel
 
 libmongoc 1.28.1
 ================

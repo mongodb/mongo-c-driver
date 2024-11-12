@@ -1,5 +1,5 @@
-libbson 1.29.0 (Unreleased)
-===========================
+libbson 1.29.0
+==============
 
 Deprecated:
 
@@ -8,6 +8,21 @@ Deprecated:
   * `bson_in_range_*` and `bson_cmp_*` functions.
   * `bson_atomic_*` and `bson_thrd_yield` functions.
   * `bson_as_json` and `bson_array_as_json` are deprecated due to producing non-portable Legacy Extended JSON. Prefer Canonical Extended JSON or Relaxed Extended JSON for portability. To continue using Legacy Extended JSON, use `bson_as_legacy_extended_json` and `bson_array_as_legacy_extended_json`.
+
+Fixes:
+
+  * Fix Relaxed Extended JSON encoding of dates after year 9999.
+
+Improvements:
+
+  * Improve performance of bson_utf8_escape_for_json
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Micah Scott
+  * Ezra Chung
+  * Joshua Siegel
 
 libbson 1.28.1
 ==============
