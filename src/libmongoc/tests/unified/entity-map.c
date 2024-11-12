@@ -1769,7 +1769,7 @@ entity_destroy (entity_t *entity)
       mongoc_client_t *client = NULL;
 
       client = (mongoc_client_t *) entity->value;
-      mongoc_structured_log_set_handler(NULL, NULL);
+      mongoc_structured_log_set_handler (NULL, NULL);
       mongoc_client_destroy (client);
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
       mongoc_client_encryption_t *ce = NULL;
