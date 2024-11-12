@@ -189,7 +189,8 @@ mongoc_structured_log_get_named_component (const char *name, mongoc_structured_l
 static int32_t
 _mongoc_structured_log_get_max_document_length_from_env (void)
 {
-   const char *max_length_str = getenv ("MONGODB_LOG_MAX_DOCUMENT_LENGTH");
+   const char *variable = "MONGODB_LOG_MAX_DOCUMENT_LENGTH";
+   const char *max_length_str = getenv (variable);
 
    if (!max_length_str) {
       return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
@@ -199,7 +200,14 @@ _mongoc_structured_log_get_max_document_length_from_env (void)
       return BSON_MAX_LEN_UNLIMITED;
    }
 
-   return strtoul (max_length_str, NULL, 10);
+   char *endptr;
+   long int_value = strtol (max_length_str, &endptr, 10);
+   if (int_value >= 0 && endptr != max_length_str && !*endptr) {
+      return (int32_t) int_value;
+   }
+
+   MONGOC_ERROR ("Invalid length '%s' read from environment variable %s", max_length_str, variable);
+   exit (EXIT_FAILURE);
 }
 
 void
