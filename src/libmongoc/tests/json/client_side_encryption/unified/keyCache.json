@@ -57,7 +57,7 @@
               "subType": "04"
             }
           },
-          "keyAltNames": [ ],
+          "keyAltNames": [],
           "keyMaterial": {
             "$binary": {
               "base64": "iocBkhO3YBokiJ+FtxDTS71/qKXQ7tSWhWbcnFTXBcMjarsepvALeJ5li+SdUd9ePuatjidxAdMo7vh1V2ZESLMkQWdpPJ9PaJjA67gKQKbbbB4Ik5F2uKjULvrMBnFNVRMup4JNUwWFQJpqbfMveXnUVcD06+pUpAkml/f+DSXrV3e5rxciiNVtz03dAG8wJrsKsFXWj6vTjFhsfknyBA==",
@@ -128,7 +128,6 @@
           "events": [
             {
               "commandStartedEvent": {
-                "databaseName": "keyvault",
                 "command": {
                   "find": "datakeys",
                   "filter": {
@@ -147,17 +146,20 @@
                       },
                       {
                         "keyAltNames": {
-                          "$in": [ ]
+                          "$in": []
                         }
                       }
                     ]
+                  },
+                  "$db": "keyvault",
+                  "readConcern": {
+                    "level": "majority"
                   }
                 }
               }
             },
             {
               "commandStartedEvent": {
-                "databaseName": "keyvault",
                 "command": {
                   "find": "datakeys",
                   "filter": {
@@ -176,10 +178,14 @@
                       },
                       {
                         "keyAltNames": {
-                          "$in": [ ]
+                          "$in": []
                         }
                       }
                     ]
+                  },
+                  "$db": "keyvault",
+                  "readConcern": {
+                    "level": "majority"
                   }
                 }
               }

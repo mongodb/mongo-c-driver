@@ -6,7 +6,7 @@
   ],
   "database_name": "default",
   "collection_name": "default",
-  "data": [ ],
+  "data": [],
   "json_schema": {
     "properties": {
       "encrypted_w_altname": {
@@ -103,7 +103,7 @@
       "clientOptions": {
         "autoEncryptOpts": {
           "kmsProviders": {
-            "aws": { }
+            "aws": {}
           },
           "keyExpirationMS": 1
         }
@@ -172,7 +172,7 @@
                   },
                   {
                     "keyAltNames": {
-                      "$in": [ ]
+                      "$in": []
                     }
                   }
                 ]
@@ -236,7 +236,7 @@
                   },
                   {
                     "keyAltNames": {
-                      "$in": [ ]
+                      "$in": []
                     }
                   }
                 ]
