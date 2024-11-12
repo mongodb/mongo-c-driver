@@ -3784,6 +3784,37 @@ done:
    return ret;
 }
 
+static bool
+operation_create_entities (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   bson_parser_t *bp = bson_parser_new ();
+   bson_t *entities = NULL;
+   bson_iter_t entity_iter;
+
+   bson_parser_array_optional (bp, "entities", &entities);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   BSON_FOREACH (entities, entity_iter)
+   {
+      bson_t entity;
+      bson_iter_bson (&entity_iter, &entity);
+      bool create_ret = entity_map_create (test->entity_map, &entity, error);
+      bson_destroy (&entity);
+      if (!create_ret) {
+         goto done;
+      }
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -3877,13 +3908,15 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"download", operation_download},
       {"upload", operation_upload},
 
-      /* Session operations. */
+      /* Session operations */
       {"endSession", operation_end_session},
       {"startTransaction", operation_start_transaction},
       {"commitTransaction", operation_commit_transaction},
       {"withTransaction", operation_with_transaction},
       {"abortTransaction", operation_abort_transaction},
 
+      /* Entity operations */
+      {"createEntities", operation_create_entities},
    };
    bool ret = false;
 
