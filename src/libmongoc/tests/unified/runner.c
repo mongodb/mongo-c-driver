@@ -1089,17 +1089,16 @@ static bool
 test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for_client, bson_error_t *error)
 {
    bool ret = false;
-   bson_parser_t *bp = NULL;
-   char *client_id = NULL;
-   bson_t *expected_events = NULL;
-   bool just_false = false;
-   bool *ignore_extra_events = &just_false;
+   bson_parser_t *bp;
+   char *client_id;
+   bson_t *expected_events;
+   bool *ignore_extra_events;
    entity_t *entity = NULL;
    bson_iter_t iter;
-   event_t *eiter = NULL;
+   event_t *eiter;
    uint32_t expected_num_events;
-   uint32_t actual_num_events = 0;
-   char *event_type = NULL;
+   uint32_t actual_num_events;
+   char *event_type;
 
    bp = bson_parser_new ();
    bson_parser_utf8 (bp, "client", &client_id);
