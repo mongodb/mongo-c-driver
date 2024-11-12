@@ -223,6 +223,9 @@ rst_prolog = rf"""
 
 .. _bson_lifetimes: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/guides/lifetimes/
 
+.. |ssl:naming| replace::
+    Though some API names include the term "ssl", the C driver only support TLS protocols, which supersede SSL.
+
 """
 
 
