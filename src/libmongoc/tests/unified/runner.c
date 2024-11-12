@@ -1176,15 +1176,6 @@ done:
 }
 
 static bool
-test_check_expected_log_messages_for_client (test_t *test,
-                                             bson_t *expected_log_messages_for_client,
-                                             bson_error_t *error)
-{
-   // @todo
-   return true;
-}
-
-static bool
 test_check_expected_events (test_t *test, bson_error_t *error)
 {
    bool ret = false;
@@ -1205,9 +1196,157 @@ test_check_expected_events (test_t *test, bson_error_t *error)
       }
    }
 
+   ret = true;
+done:
+   return ret;
+}
+
+static bool
+test_check_log_message (test_t *test, bson_t *expected, log_message_t *actual, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *expected_level_str;
+   char *expected_component_str;
+   bool *failure_is_redacted;
+   bson_t *expected_message_doc;
+   bson_parser_utf8 (bp, "level", &expected_level_str);
+   bson_parser_utf8 (bp, "component", &expected_component_str);
+   bson_parser_bool_optional (bp, "failureIsRedacted", &failure_is_redacted);
+   bson_parser_doc (bp, "data", &expected_message_doc);
+   if (!bson_parser_parse (bp, expected, error)) {
+      goto done;
+   }
+
+   const char *actual_level_str = mongoc_structured_log_get_level_name (actual->level);
+   if (0 != bson_strcasecmp (expected_level_str, actual_level_str)) {
+      test_set_error (error, "expected log level: %s, but got: %s", expected_level_str, actual_level_str);
+      goto done;
+   }
+
+   const char *actual_component_str = mongoc_structured_log_get_component_name (actual->component);
+   if (0 != bson_strcasecmp (expected_component_str, actual_component_str)) {
+      test_set_error (error, "expected log component: %s, but got: %s", expected_component_str, actual_component_str);
+      goto done;
+   }
+
+   // @todo
+   BSON_ASSERT (failure_is_redacted == 0 || *failure_is_redacted == false);
+
+   if (!bson_equal (expected_message_doc, actual->message)) {
+      char *expected_message_str = bson_as_relaxed_extended_json (expected_message_doc, NULL);
+      char *actual_message_str = bson_as_relaxed_extended_json (actual->message, NULL);
+      test_set_error (error, "expected log message: %s, but got: %s", expected_message_str, actual_message_str);
+      bson_free (expected_message_str);
+      bson_free (actual_message_str);
+      goto done;
+   }
 
    ret = true;
 done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static bool
+test_log_message_should_be_ignored (test_t *test,
+                                    log_message_t *message,
+                                    bson_t *optional_ignore_list,
+                                    bson_error_t *error)
+{
+   if (optional_ignore_list) {
+      bson_iter_t iter;
+      BSON_FOREACH (optional_ignore_list, iter)
+      {
+         bson_t expected;
+         bson_iter_bson (&iter, &expected);
+         bool is_match = test_check_log_message (test, &expected, message, error);
+         bson_destroy (&expected);
+         if (is_match) {
+            return true;
+         }
+      }
+   }
+   return false;
+}
+
+static bool
+test_check_expected_log_messages_for_client (test_t *test,
+                                             bson_t *expected_log_messages_for_client,
+                                             bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id;
+   bson_t *expected_messages;
+   bson_t *ignore_messages;
+   bool *ignore_extra_messages;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_array (bp, "messages", &expected_messages);
+   bson_parser_array_optional (bp, "ignoreMessages", &ignore_messages);
+   bson_parser_bool_optional (bp, "ignoreExtraMessages", &ignore_extra_messages);
+   if (!bson_parser_parse (bp, expected_log_messages_for_client, error)) {
+      goto done;
+   }
+
+   entity_t *entity = entity_map_get (test->entity_map, client_id, error);
+   if (0 != strcmp (entity->type, "client")) {
+      test_set_error (error, "expected entity %s to be client, got: %s", entity->id, entity->type);
+      goto done;
+   }
+
+   log_message_t *actual_message_iter = entity->log_messages;
+   bson_iter_t expected_message_iter;
+   bool expected_message_iter_ok =
+      bson_iter_init (&expected_message_iter, expected_messages) && bson_iter_next (&expected_message_iter);
+
+   while (actual_message_iter || expected_message_iter_ok) {
+      if (actual_message_iter &&
+          test_log_message_should_be_ignored (test, actual_message_iter, ignore_messages, error)) {
+         actual_message_iter = actual_message_iter->next;
+         continue;
+      }
+      if (!actual_message_iter) {
+         bson_t expected_message;
+         bson_iter_bson (&expected_message_iter, &expected_message);
+         test_diagnostics_error_info ("missing expected log message: %s", tmp_json (&expected_message));
+         test_set_error (error, "additional log messages expected beyond those collected");
+         bson_destroy (&expected_message);
+         goto done;
+      }
+      if (!expected_message_iter_ok) {
+         if (ignore_extra_messages && *ignore_extra_messages) {
+            break;
+         } else {
+            test_diagnostics_error_info ("extra log message: %s", tmp_json (actual_message_iter->message));
+            test_set_error (error, "unexpected extra log messages");
+            goto done;
+         }
+      }
+      bson_t expected_message;
+      bson_iter_bson (&expected_message_iter, &expected_message);
+      bool is_match = test_check_log_message (test, &expected_message, actual_message_iter, error);
+      if (!is_match) {
+         test_diagnostics_error_info ("expected log message: %s\nactual log message: %s, %s, %s",
+                                      tmp_json (&expected_message),
+                                      mongoc_structured_log_get_level_name (actual_message_iter->level),
+                                      mongoc_structured_log_get_component_name (actual_message_iter->component),
+                                      tmp_json (actual_message_iter->message));
+         test_set_error (error, "log message does not match expected");
+      }
+      bson_destroy (&expected_message);
+      if (!is_match) {
+         goto done;
+      }
+      actual_message_iter = actual_message_iter->next;
+      expected_message_iter_ok = bson_iter_next (&expected_message_iter);
+   }
+
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
    return ret;
 }
 
