@@ -130,7 +130,7 @@ done:
    return ret;
 }
 
-event_t *
+static event_t *
 event_new (const char *type)
 {
    event_t *event = NULL;
@@ -140,7 +140,7 @@ event_new (const char *type)
    return event;
 }
 
-void
+static void
 event_destroy (event_t *event)
 {
    if (!event) {
@@ -155,6 +155,29 @@ event_destroy (event_t *event)
    bson_free (event);
 }
 
+static log_message_t *
+log_message_new (const mongoc_structured_log_entry_t *entry)
+{
+   log_message_t *log_message = NULL;
+
+   log_message = bson_malloc0 (sizeof (log_message_t));
+   log_message->component = mongoc_structured_log_entry_get_component (entry);
+   log_message->level = mongoc_structured_log_entry_get_level (entry);
+   log_message->message = mongoc_structured_log_entry_message_as_bson (entry);
+   return log_message;
+}
+
+static void
+log_message_destroy (log_message_t *log_message)
+{
+   if (!log_message) {
+      return;
+   }
+
+   bson_destroy (log_message->message);
+   bson_free (log_message);
+}
+
 static entity_t *
 entity_new (entity_map_t *em, const char *type)
 {
@@ -165,6 +188,16 @@ entity_new (entity_map_t *em, const char *type)
    _mongoc_array_init (&entity->observe_events, sizeof (observe_event_t));
    _mongoc_array_init (&entity->store_events, sizeof (store_event_t));
    return entity;
+}
+
+static void
+structured_log_cb (const mongoc_structured_log_entry_t *entry, void *user_data)
+{
+   BSON_ASSERT_PARAM (entry);
+   BSON_ASSERT_PARAM (user_data);
+   entity_t *entity = (entity_t *) user_data;
+   log_message_t *log_message = log_message_new (entry);
+   LL_APPEND (entity->log_messages, log_message);
 }
 
 static bool
@@ -218,7 +251,6 @@ should_ignore_event (entity_t *client_entity, event_t *event)
    /* Sensitive commands need to be ignored */
    return is_sensitive_command (event);
 }
-
 
 typedef void *(*apm_func_void_t) (const void *);
 typedef const bson_t *(*apm_func_bson_t) (const void *);
@@ -726,6 +758,29 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                                       else (do (test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
                visitOthers (
                   errorf (err, "Unexpected field '%s' in storeEventsAsEntities", bson_iter_key (&bsonVisitIter)))))),
+      // Log messages to observe:
+      find (key ("observeLogMessages"),
+            if (not(type (doc)), then (error ("'observeLogMessages' must be a document"))),
+            do ({
+               // Initialize all components to the lowest available level, and install a handler.
+               mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY);
+               mongoc_structured_log_set_handler (structured_log_cb, entity);
+            }),
+            visitEach (
+               if (not(type (utf8)), then (error ("Every value in 'observeLogMessages' must be a log level string"))),
+               do ({
+                  const char *const component_name = bson_iter_key (&bsonVisitIter);
+                  mongoc_structured_log_component_t component;
+                  if (!mongoc_structured_log_get_named_component (component_name, &component)) {
+                     test_error ("Unknown log component '%s' given in 'observeLogMessages'", component_name);
+                  }
+                  const char *const level_name = bson_iter_utf8 (&bsonVisitIter, NULL);
+                  mongoc_structured_log_level_t level;
+                  if (!mongoc_structured_log_get_named_level (level_name, &level)) {
+                     test_error ("Unknown log level '%s' given in 'observeLogMessages'", component_name);
+                  }
+                  mongoc_structured_log_set_max_level_for_component (component, level);
+               }))),
       visitOthers (
          dupPath (errpath),
          errorf (err, "At [%s]: Unknown key '%s' given in entity options", errpath, bson_iter_key (&bsonVisitIter))));
@@ -1703,7 +1758,6 @@ static void
 entity_destroy (entity_t *entity)
 {
    event_t *event = NULL;
-   event_t *tmp = NULL;
 
    if (!entity) {
       return;
@@ -1715,6 +1769,7 @@ entity_destroy (entity_t *entity)
       mongoc_client_t *client = NULL;
 
       client = (mongoc_client_t *) entity->value;
+      mongoc_structured_log_set_handler(NULL, NULL);
       mongoc_client_destroy (client);
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
       mongoc_client_encryption_t *ce = NULL;
@@ -1773,9 +1828,19 @@ entity_destroy (entity_t *entity)
       test_error ("Attempting to destroy unrecognized entity type: %s, id: %s", entity->type, entity->id);
    }
 
-   LL_FOREACH_SAFE (entity->events, event, tmp)
    {
-      event_destroy (event);
+      event_t *tmp;
+      LL_FOREACH_SAFE (entity->events, event, tmp)
+      {
+         event_destroy (event);
+      }
+   }
+   {
+      log_message_t *log_message, *tmp;
+      LL_FOREACH_SAFE (entity->log_messages, log_message, tmp)
+      {
+         log_message_destroy (log_message);
+      }
    }
 
    _mongoc_array_destroy (&entity->observe_events);

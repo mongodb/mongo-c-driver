@@ -58,6 +58,7 @@ typedef struct {
    char *skip_reason;
    bson_t *operations;
    bson_t *expect_events;
+   bson_t *expect_log_messages;
    bson_t *outcome;
    entity_map_t *entity_map;
    failpoint_t *failpoints;

@@ -34,6 +34,13 @@ typedef struct _event_t {
    struct _event_t *next;
 } event_t;
 
+typedef struct _log_message_t {
+   struct _log_message_t *next;
+   mongoc_structured_log_component_t component;
+   mongoc_structured_log_level_t level;
+   bson_t *message;
+} log_message_t;
+
 typedef struct _observe_event_t {
    const char *type; // Non-owning. Type of event to observe.
 } observe_event_t;
@@ -51,6 +58,7 @@ typedef struct _entity_t {
    bool *observe_sensitive_commands;
    struct _entity_t *next;
    event_t *events;
+   log_message_t *log_messages;
    struct _entity_map_t *entity_map; // Parent entity map.
    mongoc_array_t observe_events;    // observe_event_t [N].
    mongoc_array_t store_events;      // store_event_t [N].

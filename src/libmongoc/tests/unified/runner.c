@@ -450,6 +450,7 @@ test_new (test_file_t *test_file, bson_t *bson)
    bson_parser_utf8_optional (parser, "skipReason", &test->skip_reason);
    bson_parser_array (parser, "operations", &test->operations);
    bson_parser_array_optional (parser, "expectEvents", &test->expect_events);
+   bson_parser_array_optional (parser, "expectLogMessages", &test->expect_log_messages);
    bson_parser_array_optional (parser, "outcome", &test->outcome);
    bson_parser_parse_or_assert (parser, bson);
    bson_parser_destroy (parser);
@@ -471,6 +472,7 @@ test_destroy (test_t *test)
    entity_map_destroy (test->entity_map);
    bson_destroy (test->outcome);
    bson_destroy (test->expect_events);
+   bson_destroy (test->expect_log_messages);
    bson_destroy (test->operations);
    bson_destroy (test->run_on_requirements);
    bson_free (test->description);
@@ -1175,6 +1177,15 @@ done:
 }
 
 static bool
+test_check_expected_log_messages_for_client (test_t *test,
+                                             bson_t *expected_log_messages_for_client,
+                                             bson_error_t *error)
+{
+   // @todo
+   return true;
+}
+
+static bool
 test_check_expected_events (test_t *test, bson_error_t *error)
 {
    bool ret = false;
@@ -1190,11 +1201,38 @@ test_check_expected_events (test_t *test, bson_error_t *error)
       bson_t expected_events_for_client;
       bson_iter_bson (&iter, &expected_events_for_client);
       if (!test_check_expected_events_for_client (test, &expected_events_for_client, error)) {
-         test_diagnostics_error_info ("checking expectations: %s", tmp_json (&expected_events_for_client));
+         test_diagnostics_error_info ("checking expected events: %s", tmp_json (&expected_events_for_client));
          goto done;
       }
    }
 
+
+   ret = true;
+done:
+   return ret;
+}
+
+static bool
+test_check_expected_log_messages (test_t *test, bson_error_t *error)
+{
+   bool ret = false;
+   bson_iter_t iter;
+
+   if (!test->expect_log_messages) {
+      ret = true;
+      goto done;
+   }
+
+   BSON_FOREACH (test->expect_log_messages, iter)
+   {
+      bson_t expected_log_messages_for_client;
+      bson_iter_bson (&iter, &expected_log_messages_for_client);
+      if (!test_check_expected_log_messages_for_client (test, &expected_log_messages_for_client, error)) {
+         test_diagnostics_error_info ("checking expected log messages: %s",
+                                      tmp_json (&expected_log_messages_for_client));
+         goto done;
+      }
+   }
 
    ret = true;
 done:
@@ -1607,7 +1645,12 @@ test_run (test_t *test, bson_error_t *error)
    entity_map_disable_event_listeners (test->entity_map);
 
    if (!test_check_expected_events (test, error)) {
-      test_diagnostics_error_info ("%s", "checking expectations");
+      test_diagnostics_error_info ("%s", "checking expected events");
+      goto done;
+   }
+
+   if (!test_check_expected_log_messages (test, error)) {
+      test_diagnostics_error_info ("%s", "checking expected log messages");
       goto done;
    }
 
