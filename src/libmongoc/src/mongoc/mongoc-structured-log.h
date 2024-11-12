@@ -38,10 +38,10 @@ typedef enum {
 } mongoc_structured_log_level_t;
 
 typedef enum {
-   MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-   MONGOC_STRUCTURED_LOG_COMPONENT_SDAM,
-   MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
-   MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,
+   MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND = 0,
+   MONGOC_STRUCTURED_LOG_COMPONENT_SDAM = 1,
+   MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION = 2,
+   MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION = 3,
 } mongoc_structured_log_component_t;
 
 typedef struct mongoc_structured_log_entry_t mongoc_structured_log_entry_t;
@@ -72,6 +72,33 @@ MONGOC_EXPORT (void)
 mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data);
 
 /**
+ * mongoc_structured_log_set_max_level_for_component:
+ * @level: Maximum log level for this component.
+ * @component: A logging component to set the level limit for.
+ *
+ * Sets the maximum log level per-component. Only log messages at or below
+ * this severity level will be passed to mongoc_structured_log_func_t.
+ *
+ * By default, each component's log level comes from the environment
+ * variables `MONGOC_LOGGING_<component>` captured during mongoc_init().
+ */
+MONGOC_EXPORT (void)
+mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_component_t component,
+                                                   mongoc_structured_log_level_t level);
+
+/**
+ * mongoc_structured_log_set_max_level_for_all_components:
+ * @level: Maximum log level for all components.
+ *
+ * Sets all per-component maximum log levels to the same value.
+ * Only log messages at or below this severity level will be passed to
+ * mongoc_structured_log_func_t. Effective even for logging components not
+ * known at compile-time.
+ */
+MONGOC_EXPORT (void)
+mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level);
+
+/**
  * mongoc_structured_log_entry_message_as_bson:
  * @entry: A log entry to extract the message from.
  *
@@ -98,6 +125,32 @@ mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entr
  */
 MONGOC_EXPORT (mongoc_structured_log_component_t)
 mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry);
+
+/**
+ * mongoc_structured_log_get_level_name:
+ * @level: A log level code.
+ *
+ * Returns the name for a log level code as a constant string that does
+ * not need to be deallocated, or NULL if the level has no known name.
+ *
+ * Strings are lower-case words:
+ * "emergency", "alert", "critical", "error", "warning", "notice", "info", "debug", "trace"
+ */
+MONGOC_EXPORT (const char *)
+mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level);
+
+/**
+ * mongoc_structured_log_get_component_name:
+ * @level: A log level code.
+ *
+ * Returns the short name for a component as a constant string that does
+ * not need to be deallocated, or NULL if the level has no known name.
+ *
+ * Strings are lower-case words or phrases:
+ * "command", "sdam", "server selection", "connection"
+ */
+MONGOC_EXPORT (const char *)
+mongoc_structured_log_get_component_name (mongoc_structured_log_component_t component);
 
 BSON_END_DECLS
 

@@ -18,22 +18,24 @@
 #include "mongoc-structured-log-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-util-private.h"
+#include "common-atomic-private.h"
 
 static void
 mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entry, void *user_data);
 
-static bson_once_t once = BSON_ONCE_INIT;
-static bson_mutex_t gStructuredLogMutex;
-static mongoc_structured_log_func_t gStructuredLogger = mongoc_structured_log_default_handler;
-static void *gStructuredLoggerData;
-static FILE *log_stream;
+#define STRUCTURED_LOG_COMPONENT_TABLE_SIZE (1 + (size_t) MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION)
 
-static BSON_ONCE_FUN (_mongoc_ensure_mutex_once)
-{
-   bson_mutex_init (&gStructuredLogMutex);
-
-   BSON_ONCE_RETURN;
-}
+static struct {
+   mongoc_structured_log_func_t func;
+   void *user_data;
+   bson_mutex_t func_mutex; // Mutex prevents func reentrancy, ensures atomic updates to (func, user_data)
+   FILE *stream;
+   int32_t max_document_length;
+   int component_level_table[STRUCTURED_LOG_COMPONENT_TABLE_SIZE]; // Really mongoc_structured_log_level_t; int typed to
+                                                                   // support atomic fetch
+} gStructuredLog = {
+   .func = mongoc_structured_log_default_handler,
+};
 
 bson_t *
 mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t *entry)
@@ -62,37 +64,35 @@ mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *
 void
 mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data)
 {
-   bson_once (&once, &_mongoc_ensure_mutex_once);
-
-   bson_mutex_lock (&gStructuredLogMutex);
-   gStructuredLogger = log_func;
-   gStructuredLoggerData = user_data;
-   bson_mutex_unlock (&gStructuredLogMutex);
+   bson_mutex_lock (&gStructuredLog.func_mutex);
+   mcommon_atomic_ptr_exchange ((void *) &gStructuredLog.func, (void *) log_func, mcommon_memory_order_relaxed);
+   gStructuredLog.user_data = user_data;
+   bson_mutex_unlock (&gStructuredLog.func_mutex);
 }
 
 bool
 _mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envelope)
 {
-   // @todo Implement early-out settings for limiting max log level
-   BSON_UNUSED (envelope);
-   // Don't take mutex, no need for atomicity.
-   // This should be a low cost early-out when logging is disabled.
-   return gStructuredLogger != NULL;
+   if (!mcommon_atomic_ptr_fetch ((void *) &gStructuredLog.func, mcommon_memory_order_relaxed)) {
+      return false;
+   }
+
+   mongoc_structured_log_component_t component = envelope->component;
+   mongoc_structured_log_level_t level = envelope->level;
+   BSON_ASSERT (component >= 0 && component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE);
+   return level <=
+          mcommon_atomic_int_fetch (&gStructuredLog.component_level_table[component], mcommon_memory_order_relaxed);
 }
 
 void
 _mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry)
 {
-   bson_once (&once, &_mongoc_ensure_mutex_once);
-   bson_mutex_lock (&gStructuredLogMutex);
-
-   if (!gStructuredLogger) {
-      bson_mutex_unlock (&gStructuredLogMutex);
-      return;
+   bson_mutex_lock (&gStructuredLog.func_mutex);
+   mongoc_structured_log_func_t func = gStructuredLog.func;
+   if (func) {
+      func (entry, gStructuredLog.user_data);
    }
-
-   gStructuredLogger (entry, gStructuredLoggerData);
-   bson_mutex_unlock (&gStructuredLogMutex);
+   bson_mutex_unlock (&gStructuredLog.func_mutex);
 }
 
 static mongoc_structured_log_level_t
@@ -126,73 +126,29 @@ _mongoc_structured_log_get_log_level_from_env (const char *variable)
    }
 }
 
-static mongoc_structured_log_level_t
-_mongoc_structured_log_get_log_level (mongoc_structured_log_component_t component)
+const char *
+mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level)
 {
-   switch (component) {
-   case MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND:
-      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_COMMAND");
-   case MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION:
-      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_CONNECTION");
-   case MONGOC_STRUCTURED_LOG_COMPONENT_SDAM:
-      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SDAM");
-   case MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION:
-      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SERVER_SELECTION");
-   default:
-      MONGOC_ERROR ("Requesting log level for unsupported component %d", (int) component);
-      exit (EXIT_FAILURE);
+   static const char *table[] = {
+      "emergency", "alert", "critical", "error", "warning", "notice", "info", "debug", "trace"};
+   if (level >= 0 && level < (sizeof table / sizeof table[0])) {
+      return table[level];
    }
+   return NULL;
 }
 
-static void
-_mongoc_structured_log_initialize_stream (void)
+const char *
+mongoc_structured_log_get_component_name (mongoc_structured_log_component_t component)
 {
-   const char *log_target = getenv ("MONGODB_LOGGING_PATH");
-   bool log_to_stderr = !log_target || !strcmp (log_target, "stderr");
-
-   log_stream = log_to_stderr ? stderr : fopen (log_target, "a");
-   if (!log_stream) {
-      MONGOC_ERROR ("Cannot open log file %s for writing", log_target);
-      exit (EXIT_FAILURE);
+   static const char *table[] = {"command", "sdam", "server selection", "connection"};
+   if (component >= 0 && component < (sizeof table / sizeof table[0])) {
+      return table[component];
    }
-}
-
-static FILE *
-_mongoc_structured_log_get_stream (void)
-{
-   if (!log_stream) {
-      _mongoc_structured_log_initialize_stream ();
-   }
-
-   return log_stream;
-}
-
-static void
-mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
-{
-   // @todo This really needs a cache, we shouldn't be parsing env vars for each should_log check
-   mongoc_structured_log_level_t log_level =
-      _mongoc_structured_log_get_log_level (mongoc_structured_log_entry_get_component (entry));
-
-   if (log_level < mongoc_structured_log_entry_get_level (entry)) {
-      return;
-   }
-
-   bson_t *bson_message = mongoc_structured_log_entry_message_as_bson (entry);
-   char *json_message = bson_as_relaxed_extended_json (bson_message, NULL);
-
-   fprintf (_mongoc_structured_log_get_stream (),
-            "Structured log: %d, %d, %s\n",
-            (int) mongoc_structured_log_entry_get_level (entry),
-            (int) mongoc_structured_log_entry_get_component (entry),
-            json_message);
-
-   bson_free (json_message);
-   bson_destroy (bson_message);
+   return NULL;
 }
 
 static int32_t
-mongoc_structured_log_get_max_length (void)
+_mongoc_structured_log_get_max_document_length_from_env (void)
 {
    const char *max_length_str = getenv ("MONGODB_LOGGING_MAX_DOCUMENT_LENGTH");
 
@@ -207,10 +163,88 @@ mongoc_structured_log_get_max_length (void)
    return strtoul (max_length_str, NULL, 10);
 }
 
+void
+mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_component_t component,
+                                                   mongoc_structured_log_level_t level)
+{
+   BSON_ASSERT (level >= MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY);
+   BSON_ASSERT (level <= MONGOC_STRUCTURED_LOG_LEVEL_TRACE);
+   BSON_ASSERT (component >= 0 && component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE);
+   mcommon_atomic_int_exchange (&gStructuredLog.component_level_table[component], level, mcommon_memory_order_relaxed);
+}
+
+void
+mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level)
+{
+   for (size_t component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
+      mongoc_structured_log_set_max_level_for_component (component, level);
+   }
+}
+
+void
+_mongoc_structured_log_init (void)
+{
+   bson_mutex_init (&gStructuredLog.func_mutex);
+   gStructuredLog.max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
+
+   mongoc_structured_log_set_max_level_for_component (
+      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_COMMAND"));
+   mongoc_structured_log_set_max_level_for_component (
+      MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,
+      _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_CONNECTION"));
+   mongoc_structured_log_set_max_level_for_component (
+      MONGOC_STRUCTURED_LOG_COMPONENT_SDAM, _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SDAM"));
+   mongoc_structured_log_set_max_level_for_component (
+      MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+      _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SERVER_SELECTION"));
+}
+
+static FILE *
+_mongoc_structured_log_open_stream (void)
+{
+   const char *log_target = getenv ("MONGODB_LOGGING_PATH");
+   bool log_to_stderr = !log_target || !strcmp (log_target, "stderr");
+   FILE *log_stream = log_to_stderr ? stderr : fopen (log_target, "a");
+   if (!log_stream) {
+      MONGOC_ERROR ("Cannot open log file %s for writing", log_target);
+      exit (EXIT_FAILURE);
+   }
+   return log_stream;
+}
+
+static FILE *
+_mongoc_structured_log_get_stream (void)
+{
+   FILE *log_stream = gStructuredLog.stream;
+   if (log_stream) {
+      return log_stream;
+   }
+   log_stream = _mongoc_structured_log_open_stream ();
+   gStructuredLog.stream = log_stream;
+   return log_stream;
+}
+
+static void
+mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
+{
+   bson_t *bson_message = mongoc_structured_log_entry_message_as_bson (entry);
+   char *json_message = bson_as_relaxed_extended_json (bson_message, NULL);
+
+   fprintf (_mongoc_structured_log_get_stream (),
+            "mongoc_structured_log -- %s -- %s -- %s\n",
+            mongoc_structured_log_get_level_name (mongoc_structured_log_entry_get_level (entry)),
+            mongoc_structured_log_get_component_name (mongoc_structured_log_entry_get_component (entry)),
+            json_message);
+
+   bson_free (json_message);
+   bson_destroy (bson_message);
+}
+
 char *
 mongoc_structured_log_document_to_json (const bson_t *document, size_t *length)
 {
-   bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_CANONICAL, mongoc_structured_log_get_max_length ());
+   bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_CANONICAL, gStructuredLog.max_document_length);
    char *json = bson_as_json_with_opts (document, length, opts);
    bson_json_opts_destroy (opts);
    return json;
@@ -219,8 +253,10 @@ mongoc_structured_log_document_to_json (const bson_t *document, size_t *length)
 void
 mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
 {
-   *log_func = gStructuredLogger;
-   *user_data = gStructuredLoggerData;
+   bson_mutex_lock (&gStructuredLog.func_mutex);
+   *log_func = gStructuredLog.func;
+   *user_data = gStructuredLog.user_data;
+   bson_mutex_unlock (&gStructuredLog.func_mutex);
 }
 
 const mongoc_structured_log_builder_stage_t *

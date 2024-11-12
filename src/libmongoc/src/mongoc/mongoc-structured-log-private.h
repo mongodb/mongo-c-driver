@@ -143,6 +143,9 @@ struct mongoc_structured_log_entry_t {
    const mongoc_structured_log_builder_stage_t *builder; // Required
 };
 
+void
+_mongoc_structured_log_init (void);
+
 char *
 mongoc_structured_log_document_to_json (const bson_t *document, size_t *length);
 
