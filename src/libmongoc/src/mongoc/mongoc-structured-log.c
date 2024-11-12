@@ -70,18 +70,49 @@ mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *
    bson_mutex_unlock (&gStructuredLog.func_mutex);
 }
 
+void
+mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
+{
+   bson_mutex_lock (&gStructuredLog.func_mutex);
+   *log_func = gStructuredLog.func;
+   *user_data = gStructuredLog.user_data;
+   bson_mutex_unlock (&gStructuredLog.func_mutex);
+}
+
+void
+mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_component_t component,
+                                                   mongoc_structured_log_level_t level)
+{
+   BSON_ASSERT (level >= MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY && level <= MONGOC_STRUCTURED_LOG_LEVEL_TRACE);
+   unsigned table_index = (unsigned) component;
+   BSON_ASSERT (table_index < STRUCTURED_LOG_COMPONENT_TABLE_SIZE);
+   mcommon_atomic_int_exchange (
+      &gStructuredLog.component_level_table[table_index], level, mcommon_memory_order_relaxed);
+}
+
+void
+mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level)
+{
+   for (int component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
+      mongoc_structured_log_set_max_level_for_component ((mongoc_structured_log_component_t) component, level);
+   }
+}
+
+mongoc_structured_log_level_t
+mongoc_structured_log_get_max_level_for_component (mongoc_structured_log_component_t component)
+{
+   unsigned table_index = (unsigned) component;
+   BSON_ASSERT (table_index < STRUCTURED_LOG_COMPONENT_TABLE_SIZE);
+   return mcommon_atomic_int_fetch (&gStructuredLog.component_level_table[table_index], mcommon_memory_order_relaxed);
+}
+
 bool
 _mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envelope)
 {
    if (!mcommon_atomic_ptr_fetch ((void *) &gStructuredLog.func, mcommon_memory_order_relaxed)) {
       return false;
    }
-
-   mongoc_structured_log_component_t component = envelope->component;
-   mongoc_structured_log_level_t level = envelope->level;
-   BSON_ASSERT (component >= 0 && component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE);
-   return level <=
-          mcommon_atomic_int_fetch (&gStructuredLog.component_level_table[component], mcommon_memory_order_relaxed);
+   return envelope->level <= mongoc_structured_log_get_max_level_for_component (envelope->component);
 }
 
 void
@@ -130,22 +161,18 @@ _mongoc_structured_log_get_log_level_from_env (const char *variable, mongoc_stru
 const char *
 mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level)
 {
+   unsigned table_index = (unsigned) level;
    static const char *table[] = {
       "Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Informational", "Debug", "Trace"};
-   if (level >= 0 && level < (sizeof table / sizeof table[0])) {
-      return table[level];
-   }
-   return NULL;
+   return (table_index < (sizeof table / sizeof table[0])) ? table[table_index] : NULL;
 }
 
 const char *
 mongoc_structured_log_get_component_name (mongoc_structured_log_component_t component)
 {
+   unsigned table_index = (unsigned) component;
    static const char *table[] = {"command", "topology", "serverSelection", "connection"};
-   if (component >= 0 && component < (sizeof table / sizeof table[0])) {
-      return table[component];
-   }
-   return NULL;
+   return (table_index < (sizeof table / sizeof table[0])) ? table[table_index] : NULL;
 }
 
 static int32_t
@@ -162,24 +189,6 @@ _mongoc_structured_log_get_max_document_length_from_env (void)
    }
 
    return strtoul (max_length_str, NULL, 10);
-}
-
-void
-mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_component_t component,
-                                                   mongoc_structured_log_level_t level)
-{
-   BSON_ASSERT (level >= MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY);
-   BSON_ASSERT (level <= MONGOC_STRUCTURED_LOG_LEVEL_TRACE);
-   BSON_ASSERT (component >= 0 && component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE);
-   mcommon_atomic_int_exchange (&gStructuredLog.component_level_table[component], level, mcommon_memory_order_relaxed);
-}
-
-void
-mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level)
-{
-   for (size_t component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
-      mongoc_structured_log_set_max_level_for_component (component, level);
-   }
 }
 
 void
@@ -256,15 +265,6 @@ mongoc_structured_log_document_to_json (const bson_t *document, size_t *length)
    char *json = bson_as_json_with_opts (document, length, opts);
    bson_json_opts_destroy (opts);
    return json;
-}
-
-void
-mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
-{
-   bson_mutex_lock (&gStructuredLog.func_mutex);
-   *log_func = gStructuredLog.func;
-   *user_data = gStructuredLog.user_data;
-   bson_mutex_unlock (&gStructuredLog.func_mutex);
 }
 
 const mongoc_structured_log_builder_stage_t *

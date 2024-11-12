@@ -80,7 +80,7 @@ mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *
  * this severity level will be passed to mongoc_structured_log_func_t.
  *
  * By default, each component's log level comes from the environment
- * variables `MONGOC_LOGGING_<component>` captured during mongoc_init().
+ * variables `MONGOC_LOG_<component>` captured during mongoc_init().
  */
 MONGOC_EXPORT (void)
 mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_component_t component,
@@ -97,6 +97,15 @@ mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_compone
  */
 MONGOC_EXPORT (void)
 mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level);
+
+/**
+ * mongoc_structured_log_get_max_level_for_component:
+ * @component: A logging component to check the log level limit for.
+ *
+ * Returns the current maximum log level for one component.
+ */
+MONGOC_EXPORT (mongoc_structured_log_level_t)
+mongoc_structured_log_get_max_level_for_component (mongoc_structured_log_component_t component);
 
 /**
  * mongoc_structured_log_entry_message_as_bson:
