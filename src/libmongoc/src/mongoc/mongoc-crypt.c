@@ -1352,7 +1352,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
                    mc_kms_credentials_callback creds_cb,
-                   int64_t cache_expiration_ms,
+                   mcd_optional_u64_t cache_expiration_ms,
                    bson_error_t *error)
 {
    _mongoc_crypt_t *crypt;
@@ -1429,8 +1429,8 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       goto fail;
    }
 
-   if (cache_expiration_ms >= 0) {
-      mongocrypt_setopt_key_expiration (crypt->handle, cache_expiration_ms);
+   if (cache_expiration_ms.set) {
+      mongocrypt_setopt_key_expiration (crypt->handle, cache_expiration_ms.value);
       if (!_crypt_check_error (crypt->handle, error, false)) {
          goto fail;
       }

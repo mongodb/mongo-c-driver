@@ -50,7 +50,7 @@ struct _mongoc_auto_encryption_opts_t {
    bool bypass_query_analysis;
    mc_kms_credentials_callback creds_cb;
    bson_t *extra;
-   int64_t cache_expiration_ms; /* <0 means unset */
+   mcd_optional_u64_t cache_expiration_ms;
 };
 
 static void
@@ -64,9 +64,7 @@ _set_creds_callback (mc_kms_credentials_callback *cb, mongoc_kms_credentials_pro
 mongoc_auto_encryption_opts_t *
 mongoc_auto_encryption_opts_new (void)
 {
-   mongoc_auto_encryption_opts_t *opts = bson_malloc0 (sizeof (mongoc_auto_encryption_opts_t));
-   opts->cache_expiration_ms = -1;
-   return opts;
+   return bson_malloc0 (sizeof (mongoc_auto_encryption_opts_t));
 }
 
 void
@@ -136,13 +134,14 @@ mongoc_auto_encryption_opts_set_kms_providers (mongoc_auto_encryption_opts_t *op
 }
 
 void
-mongoc_auto_encryption_opts_set_key_expiration (mongoc_auto_encryption_opts_t *opts, int32_t expiration)
+mongoc_auto_encryption_opts_set_key_expiration (mongoc_auto_encryption_opts_t *opts, uint64_t expiration)
 {
    if (!opts) {
       return;
    }
 
-   opts->cache_expiration_ms = expiration;
+   opts->cache_expiration_ms.set = true;
+   opts->cache_expiration_ms.value = expiration;
 }
 
 /* _bson_copy_or_null returns a copy of @bson or NULL if @bson is NULL */
@@ -244,15 +243,13 @@ struct _mongoc_client_encryption_opts_t {
    bson_t *kms_providers;
    bson_t *tls_opts;
    mc_kms_credentials_callback creds_cb;
-   int64_t cache_expiration_ms;
+   mcd_optional_u64_t cache_expiration_ms;
 };
 
 mongoc_client_encryption_opts_t *
 mongoc_client_encryption_opts_new (void)
 {
-   mongoc_client_encryption_opts_t *ret = bson_malloc0 (sizeof (mongoc_client_encryption_opts_t));
-   ret->cache_expiration_ms = -1;
-   return ret;
+   return bson_malloc0 (sizeof (mongoc_client_encryption_opts_t));
 }
 
 void
@@ -329,10 +326,11 @@ mongoc_client_encryption_opts_set_kms_credential_provider_callback (mongoc_clien
 }
 
 void
-mongoc_client_encryption_opts_set_key_expiration (mongoc_client_encryption_opts_t *opts, int64_t cache_expiration_ms)
+mongoc_client_encryption_opts_set_key_expiration (mongoc_client_encryption_opts_t *opts, uint64_t cache_expiration_ms)
 {
    BSON_ASSERT_PARAM (opts);
-   opts->cache_expiration_ms = cache_expiration_ms;
+   opts->cache_expiration_ms.set = true;
+   opts->cache_expiration_ms.value = cache_expiration_ms;
 }
 
 /*--------------------------------------------------------------------------
