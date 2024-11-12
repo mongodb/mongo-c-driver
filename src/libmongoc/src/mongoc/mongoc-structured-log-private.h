@@ -20,6 +20,7 @@
 #define MONGOC_STRUCTURED_LOG_PRIVATE_H
 
 #include <bson/bson.h>
+#include <common-bson-dsl-private.h>
 #include "mongoc-structured-log.h"
 #include "mongoc-cmd-private.h"
 #include "mongoc-server-description-private.h"
@@ -30,68 +31,65 @@ BSON_BEGIN_DECLS
 #define MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH 1000
 
 #define mongoc_structured_log(_level, _component, ...) \
-   _MONGOC_STRUCTURED_LOG (_level, _component, __VA_ARGS__, {.func = NULL})
+   _mongoc_structured_log_with_end_of_list (_level, _component, __VA_ARGS__, end_of_list ())
 
-#define _MONGOC_STRUCTURED_LOG(_level, _component, _message, ...)                                         \
+#define _mongoc_structured_log_with_end_of_list(_level, _component, _message, ...)                        \
    do {                                                                                                   \
       mongoc_structured_log_entry_t _entry = {                                                            \
          .envelope.level = (_level), .envelope.component = (_component), .envelope.message = (_message)}; \
       if (_mongoc_structured_log_should_log (&_entry.envelope)) {                                         \
-         const mongoc_structured_log_builder_stage_t _builder[] = {__VA_ARGS__};                          \
+         const mongoc_structured_log_builder_stage_t _builder[] = {                                       \
+            _mongoc_structured_log_tokens_to_stages (__VA_ARGS__)};                                       \
          _entry.builder = _builder;                                                                       \
          _mongoc_structured_log_with_entry (&_entry);                                                     \
       }                                                                                                   \
    } while (0)
 
-#define MONGOC_STRUCTURED_LOG_UTF8(_key_or_null, _value_utf8)                                             \
-   {                                                                                                      \
-      .func = _mongoc_structured_log_append_utf8, .arg1.utf8 = (_key_or_null), .arg2.utf8 = (_value_utf8) \
-   }
+#define _mongoc_structured_log_tokens_to_stages(...) \
+   _bsonDSL_eval (_bsonDSL_mapMacro (_mongoc_structured_log_token_to_stage, ~, __VA_ARGS__))
 
-#define MONGOC_STRUCTURED_LOG_UTF8_N(_key_literal, _value_utf8, _value_len) \
-   MONGOC_STRUCTURED_LOG_UTF8_NN (_key_literal, strlen (_key_literal), _value_utf8, _value_len)
+#define _mongoc_structured_log_flag_expr(_action, _constant, _counter) | (_constant##_##_action)
 
-#define MONGOC_STRUCTURED_LOG_UTF8_NN(_key_or_null, _key_len, _value_utf8, _value_len)                            \
-   {.func = _mongoc_structured_log_append_utf8_n_stage0, .arg1.utf8 = (_key_or_null), .arg2.int32 = (_key_len)},  \
-   {                                                                                                              \
-      .func = _mongoc_structured_log_append_utf8_n_stage1, .arg1.utf8 = (_value_utf8), .arg2.int32 = (_value_len) \
-   }
+#define _mongoc_structured_log_token_to_stage(_action, _constant, _counter) _mongoc_structured_log_token_##_action
 
-#define MONGOC_STRUCTURED_LOG_INT32(_key_or_null, _value_int32)                                              \
-   {                                                                                                         \
-      .func = _mongoc_structured_log_append_int32, .arg1.utf8 = (_key_or_null), .arg2.int32 = (_value_int32) \
-   }
+#define _mongoc_structured_log_token_end_of_list() {.func = NULL},
 
-#define MONGOC_STRUCTURED_LOG_INT64(_key_or_null, _value_int64)                                              \
-   {                                                                                                         \
-      .func = _mongoc_structured_log_append_int64, .arg1.utf8 = (_key_or_null), .arg2.int64 = (_value_int64) \
-   }
+#define _mongoc_structured_log_token_utf8(_key_or_null, _value_utf8) \
+   {.func = _mongoc_structured_log_append_utf8, .arg1.utf8 = (_key_or_null), .arg2.utf8 = (_value_utf8)},
 
-#define MONGOC_STRUCTURED_LOG_BOOL(_key_or_null, _value_bool)                                                \
-   {                                                                                                         \
-      .func = _mongoc_structured_log_append_bool, .arg1.utf8 = (_key_or_null), .arg2.boolean = (_value_bool) \
-   }
+#define _mongoc_structured_log_token_utf8_n(_key_literal, _value_utf8, _value_len) \
+   _mongoc_structured_log_token_utf8_nn (_key_literal, strlen (_key_literal), _value_utf8, _value_len)
 
-#define MONGOC_STRUCTURED_LOG_OID_AS_HEX(_key_or_null, _value_oid)                                            \
-   {                                                                                                          \
-      .func = _mongoc_structured_log_append_oid_as_hex, .arg1.utf8 = (_key_or_null), .arg2.oid = (_value_oid) \
-   }
+#define _mongoc_structured_log_token_utf8_nn(_key_or_null, _key_len, _value_utf8, _value_len)                    \
+   {.func = _mongoc_structured_log_append_utf8_n_stage0, .arg1.utf8 = (_key_or_null), .arg2.int32 = (_key_len)}, \
+      {.func = _mongoc_structured_log_append_utf8_n_stage1, .arg1.utf8 = (_value_utf8), .arg2.int32 = (_value_len)},
 
-#define MONGOC_STRUCTURED_LOG_BSON_AS_JSON(_key_or_null, _value_bson)                                             \
-   {                                                                                                              \
-      .func = _mongoc_structured_log_append_bson_as_json, .arg1.utf8 = (_key_or_null), .arg2.bson = (_value_bson) \
-   }
+#define _mongoc_structured_log_token_int32(_key_or_null, _value_int32) \
+   {.func = _mongoc_structured_log_append_int32, .arg1.utf8 = (_key_or_null), .arg2.int32 = (_value_int32)},
 
-#define MONGOC_STRUCTURED_LOG_CMD(_cmd, _flags)                                                 \
-   {                                                                                            \
-      .func = _mongoc_structured_log_append_cmd, .arg1.cmd = (_cmd), .arg2.cmd_flags = (_flags) \
-   }
+#define _mongoc_structured_log_token_int64(_key_or_null, _value_int64) \
+   {.func = _mongoc_structured_log_append_int64, .arg1.utf8 = (_key_or_null), .arg2.int64 = (_value_int64)},
 
-#define MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION(_server_description, _flags)                                     \
-   {                                                                                                              \
-      .func = _mongoc_structured_log_append_server_description, .arg1.server_description = (_server_description), \
-      .arg2.server_description_flags = (_flags)                                                                   \
-   }
+#define _mongoc_structured_log_token_boolean(_key_or_null, _value_boolean) \
+   {.func = _mongoc_structured_log_append_boolean, .arg1.utf8 = (_key_or_null), .arg2.boolean = (_value_boolean)},
+
+#define _mongoc_structured_log_token_oid_as_hex(_key_or_null, _value_oid) \
+   {.func = _mongoc_structured_log_append_oid_as_hex, .arg1.utf8 = (_key_or_null), .arg2.oid = (_value_oid)},
+
+#define _mongoc_structured_log_token_bson_as_json(_key_or_null, _value_bson) \
+   {.func = _mongoc_structured_log_append_bson_as_json, .arg1.utf8 = (_key_or_null), .arg2.bson = (_value_bson)},
+
+#define _mongoc_structured_log_token_cmd(_cmd, ...) \
+   {.func = _mongoc_structured_log_append_cmd,      \
+    .arg1.cmd = (_cmd),                             \
+    .arg2.cmd_flags =                               \
+       (0 _bsonDSL_mapMacro (_mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_CMD, __VA_ARGS__))},
+
+#define _mongoc_structured_log_token_server_description(_server_description, ...) \
+   {.func = _mongoc_structured_log_append_server_description,                     \
+    .arg1.server_description = (_server_description),                             \
+    .arg2.server_description_flags = (0 _bsonDSL_mapMacro (                       \
+       _mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION, __VA_ARGS__))},
 
 typedef struct mongoc_structured_log_builder_stage_t mongoc_structured_log_builder_stage_t;
 
@@ -174,7 +172,7 @@ const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_int64 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_bool (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
+_mongoc_structured_log_append_boolean (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_oid_as_hex (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);

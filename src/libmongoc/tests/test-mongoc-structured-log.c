@@ -118,7 +118,7 @@ test_log_entry_with_extra_data (void)
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
                           "Plain log entry",
-                          MONGOC_STRUCTURED_LOG_INT32 ("extra", 1));
+                          int32 ("extra", 1));
 
    ASSERT_CMPINT (assumption.calls, ==, 1);
    restore_state (old_state);
@@ -210,36 +210,30 @@ test_log_entry_with_all_data_types (void)
       "Log entry with all data types",
       // Basic BSON types.
       // Most support optional values (skip when key is NULL)
-      MONGOC_STRUCTURED_LOG_UTF8 ("kStr", "string value"),
-      MONGOC_STRUCTURED_LOG_UTF8 ("kNullStr", NULL),
-      MONGOC_STRUCTURED_LOG_UTF8 (NULL, NULL),
-      MONGOC_STRUCTURED_LOG_UTF8_NN ("kStrN1ZZZ", 6, non_terminated_test_string, sizeof non_terminated_test_string),
-      MONGOC_STRUCTURED_LOG_UTF8_N ("kStrN2", non_terminated_test_string, sizeof non_terminated_test_string),
-      MONGOC_STRUCTURED_LOG_UTF8_NN ("kNullStrN1ZZZ", 10, NULL, 12345),
-      MONGOC_STRUCTURED_LOG_UTF8_NN ("kNullStrN2", -1, NULL, 12345),
-      MONGOC_STRUCTURED_LOG_UTF8_NN (NULL, 999, NULL, 999),
-      MONGOC_STRUCTURED_LOG_UTF8_N ("kNullStrN3", NULL, 12345),
-      MONGOC_STRUCTURED_LOG_INT32 ("kInt32", -12345),
-      MONGOC_STRUCTURED_LOG_INT32 (NULL, 9999),
-      MONGOC_STRUCTURED_LOG_INT64 ("kInt64", 0x76543210aabbccdd),
-      MONGOC_STRUCTURED_LOG_INT64 (NULL, -1),
-      MONGOC_STRUCTURED_LOG_BOOL ("kTrue", true),
-      MONGOC_STRUCTURED_LOG_BOOL ("kFalse", false),
-      MONGOC_STRUCTURED_LOG_BOOL (NULL, true),
+      utf8 ("kStr", "string value"),
+      utf8 ("kNullStr", NULL),
+      utf8 (NULL, NULL),
+      utf8_nn ("kStrN1ZZZ", 6, non_terminated_test_string, sizeof non_terminated_test_string),
+      utf8_n ("kStrN2", non_terminated_test_string, sizeof non_terminated_test_string),
+      utf8_nn ("kNullStrN1ZZZ", 10, NULL, 12345),
+      utf8_nn ("kNullStrN2", -1, NULL, 12345),
+      utf8_nn (NULL, 999, NULL, 999),
+      utf8_n ("kNullStrN3", NULL, 12345),
+      int32 ("kInt32", -12345),
+      int32 (NULL, 9999),
+      int64 ("kInt64", 0x76543210aabbccdd),
+      int64 (NULL, -1),
+      boolean ("kTrue", true),
+      boolean ("kFalse", false),
+      boolean (NULL, true),
       // Deferred conversions
-      MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("kJSON", json_doc),
-      MONGOC_STRUCTURED_LOG_BSON_AS_JSON (NULL, NULL),
-      MONGOC_STRUCTURED_LOG_OID_AS_HEX ("kOID", &oid),
-      MONGOC_STRUCTURED_LOG_OID_AS_HEX (NULL, NULL),
+      bson_as_json ("kJSON", json_doc),
+      bson_as_json (NULL, NULL),
+      oid_as_hex ("kOID", &oid),
+      oid_as_hex (NULL, NULL),
       // Common structures, with explicit set of keys to include
-      MONGOC_STRUCTURED_LOG_CMD (&cmd,
-                                 (MONGOC_STRUCTURED_LOG_CMD_COMMAND | MONGOC_STRUCTURED_LOG_CMD_DATABASE_NAME |
-                                  MONGOC_STRUCTURED_LOG_CMD_COMMAND_NAME | MONGOC_STRUCTURED_LOG_CMD_OPERATION_ID)),
-      MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION (&server_description,
-                                                (MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)));
+      cmd (&cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID, COMMAND),
+      server_description (&server_description, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID));
 
    ASSERT_CMPINT (assumption.calls, ==, 1);
    restore_state (old_state);

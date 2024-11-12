@@ -53,16 +53,12 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
       MONGOC_STRUCTURED_LOG_LEVEL_INFO,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command started",
-      MONGOC_STRUCTURED_LOG_INT32 ("requestId", client->cluster.request_id),
-      MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION (server_stream->sd,
-                                                (MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)),
-      MONGOC_STRUCTURED_LOG_UTF8_N ("databaseName", cursor->ns, cursor->dblen),
-      MONGOC_STRUCTURED_LOG_UTF8 ("commandName", "getMore"),
-      MONGOC_STRUCTURED_LOG_INT64 ("operationId", cursor->operation_id),
-      MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("command", &doc));
+      int32 ("requestId", client->cluster.request_id),
+      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+      utf8_n ("databaseName", cursor->ns, cursor->dblen),
+      utf8 ("commandName", "getMore"),
+      int64 ("operationId", cursor->operation_id),
+      bson_as_json ("command", &doc));
 
    if (!client->apm_callbacks.started) {
       /* successful */

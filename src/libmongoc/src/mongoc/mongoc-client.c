@@ -2170,16 +2170,12 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
       MONGOC_STRUCTURED_LOG_LEVEL_INFO,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command started",
-      MONGOC_STRUCTURED_LOG_INT32 ("requestId", cluster->request_id),
-      MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION (server_stream->sd,
-                                                (MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)),
-      MONGOC_STRUCTURED_LOG_UTF8 ("databaseName", db),
-      MONGOC_STRUCTURED_LOG_UTF8 ("commandName", "killCursors"),
-      MONGOC_STRUCTURED_LOG_INT64 ("operationId", operation_id),
-      MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("command", &doc));
+      int32 ("requestId", cluster->request_id),
+      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+      utf8 ("databaseName", db),
+      utf8 ("commandName", "killCursors"),
+      int64 ("operationId", operation_id),
+      bson_as_json ("command", &doc));
 
    if (!client->apm_callbacks.started) {
       bson_destroy (&doc);
@@ -2235,17 +2231,13 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
       MONGOC_STRUCTURED_LOG_LEVEL_INFO,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command succeeded",
-      MONGOC_STRUCTURED_LOG_INT32 ("requestId", cluster->request_id),
-      MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION (server_stream->sd,
-                                                (MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)),
-      MONGOC_STRUCTURED_LOG_UTF8 ("databaseName", db),
-      MONGOC_STRUCTURED_LOG_UTF8 ("commandName", "killCursors"),
-      MONGOC_STRUCTURED_LOG_INT64 ("operationId", operation_id),
-      MONGOC_STRUCTURED_LOG_INT64 ("durationMS", duration),
-      MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("reply", &doc));
+      int32 ("requestId", cluster->request_id),
+      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+      utf8 ("databaseName", db),
+      utf8 ("commandName", "killCursors"),
+      int64 ("operationId", operation_id),
+      int64 ("durationMS", duration),
+      bson_as_json ("reply", &doc));
 
    if (!client->apm_callbacks.succeeded) {
       bson_destroy (&doc);
@@ -2297,17 +2289,13 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
       MONGOC_STRUCTURED_LOG_LEVEL_INFO,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command failed",
-      MONGOC_STRUCTURED_LOG_INT32 ("requestId", cluster->request_id),
-      MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION (server_stream->sd,
-                                                (MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID |
-                                                 MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID)),
-      MONGOC_STRUCTURED_LOG_UTF8 ("databaseName", db),
-      MONGOC_STRUCTURED_LOG_UTF8 ("commandName", "killCursors"),
-      MONGOC_STRUCTURED_LOG_INT64 ("operationId", operation_id),
-      MONGOC_STRUCTURED_LOG_INT64 ("durationMS", duration),
-      MONGOC_STRUCTURED_LOG_BSON_AS_JSON ("failure", &doc));
+      int32 ("requestId", cluster->request_id),
+      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+      utf8 ("databaseName", db),
+      utf8 ("commandName", "killCursors"),
+      int64 ("operationId", operation_id),
+      int64 ("durationMS", duration),
+      bson_as_json ("failure", &doc));
 
    if (!client->apm_callbacks.failed) {
       bson_destroy (&doc);

@@ -314,7 +314,7 @@ _mongoc_structured_log_append_int64 (bson_t *bson, const mongoc_structured_log_b
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_bool (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_boolean (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const char *key_or_null = stage->arg1.utf8;
    if (key_or_null) {
