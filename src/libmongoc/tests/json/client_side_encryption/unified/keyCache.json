@@ -1,6 +1,6 @@
 {
   "description": "keyCache-explicit",
-  "schemaVersion": "1.18",
+  "schemaVersion": "1.22",
   "runOnRequirements": [
     {
       "csfle": true
@@ -86,7 +86,7 @@
   ],
   "tests": [
     {
-      "description": "can explicitly decrypt with a named KMS provider",
+      "description": "decrypt, wait, and decrypt again",
       "operations": [
         {
           "name": "decrypt",
