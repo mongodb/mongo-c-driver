@@ -39,7 +39,7 @@ typedef enum {
 
 typedef enum {
    MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND = 0,
-   MONGOC_STRUCTURED_LOG_COMPONENT_SDAM = 1,
+   MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY = 1,
    MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION = 2,
    MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION = 3,
 } mongoc_structured_log_component_t;
@@ -130,11 +130,8 @@ mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *
  * mongoc_structured_log_get_level_name:
  * @level: A log level code.
  *
- * Returns the name for a log level code as a constant string that does
+ * Returns the canonical name for a log level as a constant string that does
  * not need to be deallocated, or NULL if the level has no known name.
- *
- * Strings are lower-case words:
- * "emergency", "alert", "critical", "error", "warning", "notice", "info", "debug", "trace"
  */
 MONGOC_EXPORT (const char *)
 mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level);
@@ -143,11 +140,8 @@ mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level);
  * mongoc_structured_log_get_component_name:
  * @level: A log level code.
  *
- * Returns the short name for a component as a constant string that does
+ * Returns the canonical name for a component as a constant string that does
  * not need to be deallocated, or NULL if the level has no known name.
- *
- * Strings are lower-case words or phrases:
- * "command", "sdam", "server selection", "connection"
  */
 MONGOC_EXPORT (const char *)
 mongoc_structured_log_get_component_name (mongoc_structured_log_component_t component);

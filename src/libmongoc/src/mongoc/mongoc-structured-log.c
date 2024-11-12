@@ -95,42 +95,43 @@ _mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry)
    bson_mutex_unlock (&gStructuredLog.func_mutex);
 }
 
-static mongoc_structured_log_level_t
-_mongoc_structured_log_get_log_level_from_env (const char *variable)
+static bool
+_mongoc_structured_log_get_log_level_from_env (const char *variable, mongoc_structured_log_level_t *out)
 {
    const char *level = getenv (variable);
 
    if (!level) {
-      return MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL;
+      return false;
    } else if (!strcasecmp (level, "trace")) {
-      return MONGOC_STRUCTURED_LOG_LEVEL_TRACE;
+      *out = MONGOC_STRUCTURED_LOG_LEVEL_TRACE;
    } else if (!strcasecmp (level, "debug")) {
-      return MONGOC_STRUCTURED_LOG_LEVEL_DEBUG;
+      *out = MONGOC_STRUCTURED_LOG_LEVEL_DEBUG;
    } else if (!strcasecmp (level, "info")) {
-      return MONGOC_STRUCTURED_LOG_LEVEL_INFO;
+      *out = MONGOC_STRUCTURED_LOG_LEVEL_INFO;
    } else if (!strcasecmp (level, "notice")) {
-      return MONGOC_STRUCTURED_LOG_LEVEL_NOTICE;
+      *out = MONGOC_STRUCTURED_LOG_LEVEL_NOTICE;
    } else if (!strcasecmp (level, "warn")) {
-      return MONGOC_STRUCTURED_LOG_LEVEL_WARNING;
+      *out = MONGOC_STRUCTURED_LOG_LEVEL_WARNING;
    } else if (!strcasecmp (level, "error")) {
-      return MONGOC_STRUCTURED_LOG_LEVEL_ERROR;
+      *out = MONGOC_STRUCTURED_LOG_LEVEL_ERROR;
    } else if (!strcasecmp (level, "critical")) {
-      return MONGOC_STRUCTURED_LOG_LEVEL_CRITICAL;
+      *out = MONGOC_STRUCTURED_LOG_LEVEL_CRITICAL;
    } else if (!strcasecmp (level, "alert")) {
-      return MONGOC_STRUCTURED_LOG_LEVEL_ALERT;
+      *out = MONGOC_STRUCTURED_LOG_LEVEL_ALERT;
    } else if (!strcasecmp (level, "emergency")) {
-      return MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY;
+      *out = MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY;
    } else {
       MONGOC_ERROR ("Invalid log level %s read for variable %s", level, variable);
       exit (EXIT_FAILURE);
    }
+   return true;
 }
 
 const char *
 mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level)
 {
    static const char *table[] = {
-      "emergency", "alert", "critical", "error", "warning", "notice", "info", "debug", "trace"};
+      "Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Informational", "Debug", "Trace"};
    if (level >= 0 && level < (sizeof table / sizeof table[0])) {
       return table[level];
    }
@@ -140,7 +141,7 @@ mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level)
 const char *
 mongoc_structured_log_get_component_name (mongoc_structured_log_component_t component)
 {
-   static const char *table[] = {"command", "sdam", "server selection", "connection"};
+   static const char *table[] = {"command", "topology", "serverSelection", "connection"};
    if (component >= 0 && component < (sizeof table / sizeof table[0])) {
       return table[component];
    }
@@ -150,7 +151,7 @@ mongoc_structured_log_get_component_name (mongoc_structured_log_component_t comp
 static int32_t
 _mongoc_structured_log_get_max_document_length_from_env (void)
 {
-   const char *max_length_str = getenv ("MONGODB_LOGGING_MAX_DOCUMENT_LENGTH");
+   const char *max_length_str = getenv ("MONGODB_LOG_MAX_DOCUMENT_LENGTH");
 
    if (!max_length_str) {
       return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
@@ -187,23 +188,30 @@ _mongoc_structured_log_init (void)
    bson_mutex_init (&gStructuredLog.func_mutex);
    gStructuredLog.max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
 
-   mongoc_structured_log_set_max_level_for_component (
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_COMMAND"));
-   mongoc_structured_log_set_max_level_for_component (
-      MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,
-      _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_CONNECTION"));
-   mongoc_structured_log_set_max_level_for_component (
-      MONGOC_STRUCTURED_LOG_COMPONENT_SDAM, _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SDAM"));
-   mongoc_structured_log_set_max_level_for_component (
-      MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
-      _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SERVER_SELECTION"));
+   mongoc_structured_log_level_t level;
+   if (!_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level)) {
+      level = MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL;
+   }
+   mongoc_structured_log_set_max_level_for_all_components (level);
+
+   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_COMMAND", &level)) {
+      mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, level);
+   }
+   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_CONNECTION", &level)) {
+      mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION, level);
+   }
+   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_TOPOLOGY", &level)) {
+      mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY, level);
+   }
+   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_SERVER_SELECTION", &level)) {
+      mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION, level);
+   }
 }
 
 static FILE *
 _mongoc_structured_log_open_stream (void)
 {
-   const char *log_target = getenv ("MONGODB_LOGGING_PATH");
+   const char *log_target = getenv ("MONGODB_LOG_PATH");
    bool log_to_stderr = !log_target || !strcmp (log_target, "stderr");
    FILE *log_stream = log_to_stderr ? stderr : fopen (log_target, "a");
    if (!log_stream) {
@@ -232,7 +240,7 @@ mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entr
    char *json_message = bson_as_relaxed_extended_json (bson_message, NULL);
 
    fprintf (_mongoc_structured_log_get_stream (),
-            "mongoc_structured_log -- %s -- %s -- %s\n",
+            "MONGODB_LOG %s %s %s\n",
             mongoc_structured_log_get_level_name (mongoc_structured_log_entry_get_level (entry)),
             mongoc_structured_log_get_component_name (mongoc_structured_log_entry_get_component (entry)),
             json_message);
