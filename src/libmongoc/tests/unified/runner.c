@@ -26,6 +26,7 @@
 #include "util.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>
+#include <common-oid-private.h>
 
 typedef struct {
    const char *file_description;
@@ -1052,11 +1053,9 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    }
 
    if (expected_has_service_id) {
-      char oid_str[25] = {0};
-      bool has_service_id = false;
-
+      bool has_service_id = !mcommon_oid_is_zero (&actual->service_id);
+      char oid_str[25];
       bson_oid_to_string (&actual->service_id, oid_str);
-      has_service_id = 0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
 
       if (*expected_has_service_id && !has_service_id) {
          test_error ("expected serviceId, but got none");

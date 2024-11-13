@@ -1,6 +1,7 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
+#include <common-oid-private.h>
 
 #include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-server-api-private.h"
@@ -595,12 +596,11 @@ test_invalid_cluster_node (void *ctx)
    ASSERT_OR_PRINT (sd, error);
    /* Both generations match, and are the first generation. */
    ASSERT_CMPINT32 (cluster_node->handshake_sd->generation, ==, 0);
-   ASSERT_CMPINT32 (mc_tpl_sd_get_generation (sd, &kZeroServiceId), ==, 0);
+   ASSERT_CMPINT32 (mc_tpl_sd_get_generation (sd, &kZeroObjectId), ==, 0);
 
    /* update the server's generation, simulating a connection pool clearing */
    tdmod = mc_tpld_modify_begin (client->topology);
-   mc_tpl_sd_increment_generation (mongoc_topology_description_server_by_id (tdmod.new_td, id, &error),
-                                   &kZeroServiceId);
+   mc_tpl_sd_increment_generation (mongoc_topology_description_server_by_id (tdmod.new_td, id, &error), &kZeroObjectId);
    mc_tpld_modify_commit (tdmod);
 
    /* cluster discards node and creates new one with the current generation */
@@ -656,7 +656,7 @@ test_max_wire_version_race_condition (void *ctx)
    tdmod = mc_tpld_modify_begin (client->topology);
    sd = mongoc_set_get (mc_tpld_servers (tdmod.new_td), id);
    BSON_ASSERT (sd);
-   mc_tpl_sd_increment_generation (sd, &kZeroServiceId);
+   mc_tpl_sd_increment_generation (sd, &kZeroObjectId);
    mongoc_server_description_reset (sd);
    mc_tpld_modify_commit (tdmod);
 

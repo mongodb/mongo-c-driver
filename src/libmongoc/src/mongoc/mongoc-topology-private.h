@@ -411,7 +411,7 @@ typedef enum {
  * @param generation The generation of the server description the caller was
  * using.
  * @param service_id A service ID for a load-balanced deployment. If not
- * applicable, pass kZeroServiceID.
+ * applicable, pass kZeroObjectId.
  * @return true If the topology was updated and the pool was cleared.
  * @return false If no modifications were made and the error was ignored.
  *
@@ -470,7 +470,7 @@ _mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *to
  * @param td The topology that contains the server
  * @param server_id The ID of the server to inspect
  * @param service_id The service ID of the connection if applicable, or
- * kZeroServiceID.
+ * kZeroObjectId.
  * @returns uint32_t A generation counter for the given server, or zero if the
  * server does not exist in the topology.
  */

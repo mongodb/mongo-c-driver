@@ -27,14 +27,11 @@
 
 #include <common-bson-dsl-private.h>
 #include <common-atomic-private.h>
+#include <common-oid-private.h>
 
 #include <stdio.h>
 
 #define ALPHA 0.2
-
-static bson_oid_t kObjectIdZero = {{0}};
-
-const bson_oid_t kZeroServiceId = {{0}};
 
 static bool
 _match_tag_set (const mongoc_server_description_t *sd, bson_iter_t *tag_set_iter);
@@ -96,8 +93,8 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->me = NULL;
    sd->current_primary = NULL;
    sd->set_version = MONGOC_NO_SET_VERSION;
-   bson_oid_copy_unsafe (&kObjectIdZero, &sd->election_id);
-   bson_oid_copy_unsafe (&kObjectIdZero, &sd->service_id);
+   mcommon_oid_set_zero (&sd->election_id);
+   mcommon_oid_set_zero (&sd->service_id);
    sd->server_connection_id = MONGOC_NO_SERVER_CONNECTION_ID;
 }
 
@@ -259,7 +256,7 @@ mongoc_server_description_has_set_version (const mongoc_server_description_t *de
 bool
 mongoc_server_description_has_election_id (const mongoc_server_description_t *description)
 {
-   return 0 != bson_oid_compare (&description->election_id, &kObjectIdZero);
+   return !mcommon_oid_is_zero (&description->election_id);
 }
 
 /*
@@ -462,7 +459,7 @@ mongoc_server_description_set_election_id (mongoc_server_description_t *descript
    if (election_id) {
       bson_oid_copy_unsafe (election_id, &description->election_id);
    } else {
-      bson_oid_copy_unsafe (&kObjectIdZero, &description->election_id);
+      mcommon_oid_set_zero (&description->election_id);
    }
 }
 
@@ -1222,8 +1219,5 @@ mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
 bool
 mongoc_server_description_has_service_id (const mongoc_server_description_t *description)
 {
-   if (0 == bson_oid_compare (&description->service_id, &kZeroServiceId)) {
-      return false;
-   }
-   return true;
+   return !mcommon_oid_is_zero (&description->service_id);
 }

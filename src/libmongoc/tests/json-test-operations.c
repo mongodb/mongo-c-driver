@@ -27,6 +27,7 @@
 #include "mongoc/mongoc-topology-private.h"
 #include "mongoc/mongoc-uri-private.h"
 #include "mongoc/mongoc-util-private.h"
+#include <common-oid-private.h>
 
 #include "json-test-operations.h"
 #include "json-test.h"
@@ -2009,7 +2010,7 @@ _get_total_pool_cleared_event (json_test_ctx_t *ctx)
       const mongoc_server_description_t *sd;
 
       sd = mongoc_set_get_item_const (mc_tpld_servers_const (td.ptr), i);
-      total += mc_tpl_sd_get_generation (sd, &kZeroServiceId);
+      total += mc_tpl_sd_get_generation (sd, &kZeroObjectId);
    }
    mc_tpld_drop_ref (&td);
    return total;

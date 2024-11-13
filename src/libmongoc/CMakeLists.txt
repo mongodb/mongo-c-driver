@@ -664,6 +664,7 @@ set (MONGOC_SOURCES
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-b64.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-md5.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-thread.c
 
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
@@ -1032,6 +1033,7 @@ endif ()
 set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-cmp.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-atomic.c

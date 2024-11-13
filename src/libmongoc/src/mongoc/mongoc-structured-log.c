@@ -19,6 +19,7 @@
 #include "mongoc-thread-private.h"
 #include "mongoc-util-private.h"
 #include "common-atomic-private.h"
+#include "common-oid-private.h"
 
 static void
 mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entry, void *user_data);
@@ -434,8 +435,7 @@ _mongoc_structured_log_append_server_description (bson_t *bson, const mongoc_str
       BSON_APPEND_INT64 (bson, "serverConnectionId", sd->server_connection_id);
    }
    if (flags & MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID) {
-      static const bson_oid_t oid_zero;
-      if (!bson_oid_equal (&sd->service_id, &oid_zero)) {
+      if (!mcommon_oid_is_zero (&sd->service_id)) {
          char str[25];
          bson_oid_to_string (&sd->service_id, str);
          BSON_APPEND_UTF8 (bson, "serviceId", str);

@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
+#include <common-oid-private.h>
 
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
@@ -172,7 +173,7 @@ _mongoc_topology_scanner_cb (
       /* Server monitoring: When a server check fails due to a network error
        * (including a network timeout), the client MUST clear its connection
        * pool for the server */
-      _mongoc_topology_description_clear_connection_pool (td, id, &kZeroServiceId);
+      _mongoc_topology_description_clear_connection_pool (td, id, &kZeroObjectId);
    }
 
    /* Server Discovery and Monitoring Spec: "Once a server is connected, the

@@ -60,6 +60,7 @@
 
 #include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>
+#include <common-oid-private.h>
 
 #include <inttypes.h>
 
@@ -2041,9 +2042,9 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       mongoc_topology_description_invalidate_server (tdmod.new_td, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       /* This is not load balanced mode, so there are no service IDs associated
-       * with connections. Pass kZeroServiceId to clear the entire connection
+       * with connections. Pass kZeroObjectId to clear the entire connection
        * pool to this server. */
-      _mongoc_topology_description_clear_connection_pool (tdmod.new_td, server_id, &kZeroServiceId);
+      _mongoc_topology_description_clear_connection_pool (tdmod.new_td, server_id, &kZeroObjectId);
 
       if (!topology->single_threaded) {
          _mongoc_topology_background_monitoring_cancel_check (topology, server_id);
