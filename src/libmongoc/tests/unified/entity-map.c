@@ -2117,18 +2117,17 @@ entity_map_add_size_t (entity_map_t *em, const char *id, size_t *value, bson_err
 
 /* implement $$sessionLsid */
 static bool
-special_session_lsid (bson_matcher_t *matcher,
+special_session_lsid (const bson_matcher_context_t *context,
                       const bson_t *assertion,
                       const bson_val_t *actual,
-                      void *ctx,
-                      const char *path,
+                      void *user_data,
                       bson_error_t *error)
 {
    bool ret = false;
    const char *id;
    bson_val_t *session_val = NULL;
    bson_t *lsid = NULL;
-   entity_map_t *em = (entity_map_t *) ctx;
+   entity_map_t *em = (entity_map_t *) user_data;
    bson_iter_t iter;
 
    bson_iter_init (&iter, assertion);
@@ -2146,10 +2145,9 @@ special_session_lsid (bson_matcher_t *matcher,
    }
 
    session_val = bson_val_from_bson (lsid);
-   if (!bson_matcher_match (matcher, session_val, actual, path, false, error)) {
+   if (!bson_matcher_match (context, session_val, actual, error)) {
       goto done;
    }
-
 
    ret = true;
 done:
@@ -2159,16 +2157,15 @@ done:
 
 /* implement $$matchesEntity */
 bool
-special_matches_entity (bson_matcher_t *matcher,
+special_matches_entity (const bson_matcher_context_t *context,
                         const bson_t *assertion,
                         const bson_val_t *actual,
-                        void *ctx,
-                        const char *path,
+                        void *user_data,
                         bson_error_t *error)
 {
    bool ret = false;
    bson_iter_t iter;
-   entity_map_t *em = (entity_map_t *) ctx;
+   entity_map_t *em = (entity_map_t *) user_data;
    bson_val_t *entity_val = NULL;
    const char *id;
 
@@ -2186,7 +2183,7 @@ special_matches_entity (bson_matcher_t *matcher,
       goto done;
    }
 
-   if (!bson_matcher_match (matcher, entity_val, actual, path, false, error)) {
+   if (!bson_matcher_match (context, entity_val, actual, error)) {
       goto done;
    }
 
@@ -2199,14 +2196,16 @@ bool
 entity_map_match (
    entity_map_t *em, const bson_val_t *expected, const bson_val_t *actual, bool array_of_root_docs, bson_error_t *error)
 {
-   bson_matcher_t *matcher;
-   bool ret;
-
-   matcher = bson_matcher_new ();
-   bson_matcher_add_special (matcher, "$$sessionLsid", special_session_lsid, em);
-   bson_matcher_add_special (matcher, "$$matchesEntity", special_matches_entity, em);
-   ret = bson_matcher_match (matcher, expected, actual, "", array_of_root_docs, error);
-   bson_matcher_destroy (matcher);
+   bson_matcher_context_t root_context = {
+      .matcher = bson_matcher_new (),
+      .path = "",
+      .is_root = true,
+      .array_of_root_docs = array_of_root_docs,
+   };
+   bson_matcher_add_special (root_context.matcher, "$$sessionLsid", special_session_lsid, em);
+   bson_matcher_add_special (root_context.matcher, "$$matchesEntity", special_matches_entity, em);
+   bool ret = bson_matcher_match (&root_context, expected, actual, error);
+   bson_matcher_destroy (root_context.matcher);
    return ret;
 }
 
