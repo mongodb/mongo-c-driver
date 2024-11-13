@@ -21,7 +21,7 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_as_json_with_opts()` encodes ``bson`` as a UTF-8 string in the `MongoDB Extended JSON format`_.
+:symbol:`bson_as_json_with_opts()` encodes ``bson`` as a UTF-8 string in the `MongoDB Extended JSON format`_ or :doc:`libbson's Legacy Extended JSON <legacy_extended_json>`.
 
 The caller is responsible for freeing the resulting UTF-8 encoded string by calling :symbol:`bson_free()` with the result.
 
@@ -39,17 +39,15 @@ Upon failure, NULL is returned.
 Example
 -------
 
-.. code-block:: c
-
-  bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_CANONICAL, BSON_MAX_LEN_UNLIMITED);
-  char *str = bson_as_json_with_opts (doc, NULL, opts);
-  printf ("%s\n", str);
-  bson_free (str);
-  bson_json_opts_destroy (opts);
+.. literalinclude:: ../examples/extended-json.c
+   :language: c
+   :start-after: // bson_as_json_with_opts ... begin
+   :end-before: // bson_as_json_with_opts ... end
+   :dedent: 6
 
 
 .. only:: html
 
   .. include:: includes/seealso/bson-as-json.txt
 
-.. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst
+.. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json/extended-json.md

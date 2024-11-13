@@ -6,9 +6,7 @@ mongoc_collection_find()
 .. warning::
    .. deprecated:: 1.5.0
 
-      This function is deprecated and should not be used in new code.
-
-Use the more convenient :symbol:`mongoc_collection_find_with_opts` instead.
+      Use :symbol:`mongoc_collection_find_with_opts` instead.
 
 Synopsis
 --------
@@ -23,9 +21,7 @@ Synopsis
                           uint32_t batch_size,
                           const bson_t *query,
                           const bson_t *fields,
-                          const mongoc_read_prefs_t *read_prefs)
-     BSON_GNUC_DEPRECATED_FOR (mongoc_collection_find_with_opts)
-        BSON_GNUC_WARN_UNUSED_RESULT;
+                          const mongoc_read_prefs_t *read_prefs);
 
 Parameters
 ----------

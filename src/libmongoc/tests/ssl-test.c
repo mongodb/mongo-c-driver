@@ -88,7 +88,7 @@ static BSON_THREAD_FUN (ssl_test_server, ptr)
       data->server_result->ssl_err = err;
       data->server_result->result = SSL_TEST_SSL_INIT;
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-      MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__, ERR_error_string (ERR_get_error (), NULL));
+      MONGOC_ERROR ("ERRORED (line: %d): %s\n", (int) (__LINE__), ERR_error_string (ERR_get_error (), NULL));
 #endif
       mongoc_stream_destroy (sock_stream);
       mongoc_socket_destroy (listen_sock);
@@ -102,7 +102,7 @@ static BSON_THREAD_FUN (ssl_test_server, ptr)
    if (!r) {
       unsigned long err = 43;
 
-      MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__, error.message);
+      MONGOC_ERROR ("ERRORED (line: %d): %s\n", (int) (__LINE__), error.message);
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
       MONGOC_ERROR ("msg: %s\n", ERR_error_string (ERR_get_error (), NULL));
 #endif
@@ -119,7 +119,7 @@ static BSON_THREAD_FUN (ssl_test_server, ptr)
    if (r < 0) {
       data->server_result->err = errno;
       data->server_result->result = SSL_TEST_TIMEOUT;
-      MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__, "mongoc_stream_readv failed.");
+      MONGOC_ERROR ("ERRORED (line: %d): %s\n", (int) (__LINE__), "mongoc_stream_readv failed.");
 
       mongoc_stream_destroy (ssl_stream);
       mongoc_socket_destroy (listen_sock);
@@ -207,7 +207,7 @@ static BSON_THREAD_FUN (ssl_test_client, ptr)
 
       data->client_result->ssl_err = err;
       data->client_result->result = SSL_TEST_SSL_INIT;
-      MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__, "mongoc_stream_tls_new_with_hostname failed.");
+      MONGOC_ERROR ("ERRORED (line: %d): %s\n", (int) (__LINE__), "mongoc_stream_tls_new_with_hostname failed.");
 
       mongoc_stream_destroy (sock_stream);
 
@@ -222,7 +222,7 @@ static BSON_THREAD_FUN (ssl_test_client, ptr)
 
       data->client_result->ssl_err = err;
       data->client_result->result = SSL_TEST_SSL_HANDSHAKE;
-      MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__, error.message);
+      MONGOC_ERROR ("ERRORED (line: %d): %s\n", (int) (__LINE__), error.message);
 
       mongoc_stream_destroy (ssl_stream);
       BSON_THREAD_RETURN;

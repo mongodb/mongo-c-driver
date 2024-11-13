@@ -6,9 +6,7 @@ mongoc_collection_find_indexes()
 .. warning::
    .. deprecated:: 1.9.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`mongoc_collection_find_indexes_with_opts()` in new code.
+      Use :symbol:`mongoc_collection_find_indexes_with_opts()` instead.
 
 Synopsis
 --------
@@ -18,8 +16,6 @@ Synopsis
   mongoc_cursor_t *
   mongoc_collection_find_indexes (mongoc_collection_t *collection,
                                   bson_error_t *error);
-     BSON_GNUC_WARN_UNUSED_RESULT
-     BSON_GNUC_DEPRECATED_FOR (mongoc_collection_find_indexes_with_opts);
 
 Fetches a cursor containing documents, each corresponding to an index on this collection.
 

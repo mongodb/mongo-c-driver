@@ -227,10 +227,6 @@ Some tests run against a local mock server, these can be skipped with:
 
 * `MONGOC_TEST_SKIP_MOCK=on`
 
-If you have started with MongoDB with `--ipv6`, you can test IPv6 with:
-
-* `MONGOC_CHECK_IPV6=on`
-
 The tests for mongodb+srv:// connection strings require some setup, see the
 Initial DNS Seedlist Discovery Spec. By default these connection strings are
 NOT tested, enable them with:

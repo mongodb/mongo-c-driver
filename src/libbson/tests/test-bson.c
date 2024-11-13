@@ -21,7 +21,7 @@
 #include <fcntl.h>
 #include <time.h>
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -1120,6 +1120,18 @@ test_bson_validate_dbpointer (void)
 
 
 static void
+test_bson_validate_with_error_and_offset (void)
+{
+   size_t err_offset = 12345;
+   bson_error_t err = {67890};
+   bson_t bson = {0};
+   ASSERT (!bson_validate_with_error_and_offset (&bson, BSON_VALIDATE_NONE, &err_offset, &err));
+   ASSERT_CMPSIZE_T (err_offset, ==, 0);
+   ASSERT_CMPUINT32 (err.domain, !=, 67890); // domain is overwritten.
+}
+
+
+static void
 test_bson_validate (void)
 {
    char filename[64];
@@ -1129,7 +1141,7 @@ test_bson_validate (void)
    bson_error_t error;
 
    for (i = 1; i <= 38; i++) {
-      bson_snprintf (filename, sizeof filename, "test%u.bson", i);
+      bson_snprintf (filename, sizeof filename, "test%d.bson", i);
       b = get_bson (filename);
       BSON_ASSERT (bson_validate (b, BSON_VALIDATE_NONE, &offset));
       bson_destroy (b);
@@ -2218,10 +2230,9 @@ test_bson_iter_key_len (void)
    BSON_ASSERT (bson_iter_init (&iter, bson));
    while (bson_iter_next (&iter)) {
       ASSERT_WITH_MSG (strlen (bson_iter_key (&iter)) == bson_iter_key_len (&iter),
-                       "iter_key_len differs from real key length. got %d but "
-                       "expected %d for key %s\n",
+                       "iter_key_len differs from real key length. got %" PRIu32 " but expected %zu for key %s\n",
                        bson_iter_key_len (&iter),
-                       (int) strlen (bson_iter_key (&iter)),
+                       strlen (bson_iter_key (&iter)),
                        bson_iter_key (&iter));
    }
 }
@@ -2250,8 +2261,8 @@ test_bson_iter_init_from_data_at_offset (void)
          for (i = 0; i < 2; i++) {
             fprintf (stderr, "iter %d: ", i);
             fprintf (stderr,
-                     "len=%d, off=%d, type=%d, key=%d, d1=%d, d2=%d, "
-                     "d3=%d, d4=%d, next_off=%d, err_off=%d\n",
+                     "len=%" PRIu32 ", off=%" PRIu32 ", type=%" PRIu32 ", key=%" PRIu32 ", d1=%" PRIu32 ", d2=%" PRIu32
+                     ", d3=%" PRIu32 ", d4=%" PRIu32 ", next_off=%" PRIu32 ", err_off=%" PRIu32 "\n",
                      iters[i]->len,
                      iters[i]->off,
                      iters[i]->type,
@@ -3228,6 +3239,7 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/validate/dbref", test_bson_validate_dbref);
    TestSuite_Add (suite, "/bson/validate/bool", test_bson_validate_bool);
    TestSuite_Add (suite, "/bson/validate/dbpointer", test_bson_validate_dbpointer);
+   TestSuite_Add (suite, "/bson/validate/with_error_and_offset", test_bson_validate_with_error_and_offset);
    TestSuite_Add (suite, "/bson/new_1mm", test_bson_new_1mm);
    TestSuite_Add (suite, "/bson/init_1mm", test_bson_init_1mm);
    TestSuite_Add (suite, "/bson/build_child", test_bson_build_child);

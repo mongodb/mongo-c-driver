@@ -27,4 +27,4 @@ The :symbol:`bson_json_mode_t` enumeration contains all available modes for enco
 
   | :symbol:`bson_as_json_with_opts()`
 
-.. _MongoDB Extended JSON: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst
+.. _MongoDB Extended JSON: https://github.com/mongodb/specifications/blob/master/source/extended-json/extended-json.md

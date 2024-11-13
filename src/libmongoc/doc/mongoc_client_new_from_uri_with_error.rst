@@ -10,8 +10,7 @@ Synopsis
 
   mongoc_client_t *
   mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
-                                         bson_error_t *error)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                                         bson_error_t *error);
 
 Creates a new :symbol:`mongoc_client_t` using the :symbol:`mongoc_uri_t` provided.
 

@@ -3,6 +3,12 @@
 mongoc_client_command()
 =======================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
+      This function is deprecated and should not be used in new code.
+      Use :symbol:`mongoc_client_command_simple()` instead.
+
 Synopsis
 --------
 
@@ -17,10 +23,7 @@ Synopsis
                          uint32_t batch_size,
                          const bson_t *query,
                          const bson_t *fields,
-                         const mongoc_read_prefs_t *read_prefs)
-     BSON_GNUC_WARN_UNUSED_RESULT;
-
-This function is superseded by :symbol:`mongoc_client_command_with_opts()`, :symbol:`mongoc_client_read_command_with_opts()`, :symbol:`mongoc_client_write_command_with_opts()`, and :symbol:`mongoc_client_read_write_command_with_opts()`.
+                         const mongoc_read_prefs_t *read_prefs);
 
 .. include:: includes/not-retryable-read.txt
 
@@ -43,6 +46,29 @@ Parameters
 * ``query``: A :symbol:`bson:bson_t` containing the command specification.
 * ``fields``: Unused.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
+
+Migrating
+---------
+
+:symbol:`mongoc_client_command` is deprecated.
+
+The following example uses :symbol:`mongoc_client_command`:
+
+.. literalinclude:: ../examples/migrating.c
+   :language: c
+   :dedent: 6
+   :start-after: // mongoc_client_command ... before ... begin
+   :end-before:  // mongoc_client_command ... before ... end
+   :caption: Before
+
+The above code block may be rewritten to use :symbol:`mongoc_client_command_simple` instead, as shown below:
+
+.. literalinclude:: ../examples/migrating.c
+   :language: c
+   :dedent: 6
+   :start-after: // mongoc_client_command ... after ... begin
+   :end-before:  // mongoc_client_command ... after ... end
+   :caption: After
 
 Returns
 -------

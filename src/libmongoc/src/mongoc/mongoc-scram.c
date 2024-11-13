@@ -31,6 +31,7 @@
 #include "mongoc-memcmp-private.h"
 #include "common-thread-private.h"
 #include <utf8proc.h>
+#include <common-cmp-private.h>
 
 typedef struct _mongoc_scram_cache_entry_t {
    /* book keeping */
@@ -663,7 +664,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    /* verify our nonce */
-   if (bson_cmp_less_us (val_r_len, scram->encoded_nonce_len) ||
+   if (mcommon_cmp_less_us (val_r_len, scram->encoded_nonce_len) ||
        mongoc_memcmp (val_r, scram->encoded_nonce, scram->encoded_nonce_len)) {
       bson_set_error (error,
                       MONGOC_ERROR_SCRAM,
@@ -807,7 +808,7 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram, uint8_t *verificat
 
    if (!*scram->server_key) {
       const size_t key_len = strlen (MONGOC_SCRAM_SERVER_KEY);
-      BSON_ASSERT (bson_in_range_unsigned (int, key_len));
+      BSON_ASSERT (mcommon_in_range_unsigned (int, key_len));
 
       /* ServerKey := HMAC(SaltedPassword, "Server Key") */
       mongoc_crypto_hmac (&scram->crypto,
@@ -1022,7 +1023,7 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    }
 
    /* convert to unicode. */
-   BSON_ASSERT (bson_cmp_less_equal_su (num_chars, SIZE_MAX / sizeof (uint32_t) - 1u));
+   BSON_ASSERT (mcommon_cmp_less_equal_su (num_chars, SIZE_MAX / sizeof (uint32_t) - 1u));
    utf8_codepoints = bson_malloc (sizeof (uint32_t) * ((size_t) num_chars + 1u)); /* add one for trailing 0 value. */
    const char *c = in_utf8;
 

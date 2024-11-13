@@ -32,34 +32,34 @@
    } else                                    \
       ((void) 0)
 
-#define ASSERT(Cond)                                                                                         \
-   if (1) {                                                                                                  \
-      if (!(Cond)) {                                                                                         \
-         MONGOC_STDERR_PRINTF (                                                                              \
-            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (Cond)); \
-         abort ();                                                                                           \
-      }                                                                                                      \
-   } else                                                                                                    \
+#define ASSERT(Cond)                                                                                                 \
+   if (1) {                                                                                                          \
+      if (!(Cond)) {                                                                                                 \
+         MONGOC_STDERR_PRINTF (                                                                                      \
+            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, (int) (__LINE__), BSON_FUNC, BSON_STR (Cond)); \
+         abort ();                                                                                                   \
+      }                                                                                                              \
+   } else                                                                                                            \
       ((void) 0)
 
-#define ASSERTF(Cond, Fmt, ...)                                                                              \
-   if (1) {                                                                                                  \
-      if (!(Cond)) {                                                                                         \
-         MONGOC_STDERR_PRINTF (                                                                              \
-            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (Cond)); \
-         MONGOC_STDERR_PRINTF ("MESSAGE: " Fmt "\n", __VA_ARGS__);                                           \
-         abort ();                                                                                           \
-      }                                                                                                      \
-   } else                                                                                                    \
+#define ASSERTF(Cond, Fmt, ...)                                                                                      \
+   if (1) {                                                                                                          \
+      if (!(Cond)) {                                                                                                 \
+         MONGOC_STDERR_PRINTF (                                                                                      \
+            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, (int) (__LINE__), BSON_FUNC, BSON_STR (Cond)); \
+         MONGOC_STDERR_PRINTF ("MESSAGE: " Fmt "\n", __VA_ARGS__);                                                   \
+         abort ();                                                                                                   \
+      }                                                                                                              \
+   } else                                                                                                            \
       ((void) 0)
 
-#define FAILF(Fmt, ...)                                                                                   \
-   if (1) {                                                                                               \
-      MONGOC_STDERR_PRINTF (                                                                              \
-         "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, __LINE__, BSON_FUNC, BSON_STR (Cond)); \
-      MONGOC_STDERR_PRINTF ("MESSAGE: " Fmt "\n", __VA_ARGS__);                                           \
-      abort ();                                                                                           \
-   } else                                                                                                 \
+#define FAILF(Fmt, ...)                                                                                           \
+   if (1) {                                                                                                       \
+      MONGOC_STDERR_PRINTF (                                                                                      \
+         "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, (int) (__LINE__), BSON_FUNC, BSON_STR (Cond)); \
+      MONGOC_STDERR_PRINTF ("MESSAGE: " Fmt "\n", __VA_ARGS__);                                                   \
+      abort ();                                                                                                   \
+   } else                                                                                                         \
       ((void) 0)
 
 static void

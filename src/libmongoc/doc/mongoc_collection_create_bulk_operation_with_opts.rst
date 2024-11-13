@@ -11,7 +11,7 @@ Synopsis
   mongoc_bulk_operation_t *
   mongoc_collection_create_bulk_operation_with_opts (
      mongoc_collection_t *collection,
-     const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
+     const bson_t *opts);
 
 Parameters
 ----------

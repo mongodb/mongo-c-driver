@@ -10,8 +10,7 @@ Synopsis
 
    const bson_t *
    mongoc_client_encryption_rewrap_many_datakey_result_get_bulk_write_result (
-      mongoc_client_encryption_rewrap_many_datakey_result_t *result)
-      BSON_GNUC_WARN_UNUSED_RESULT;
+      mongoc_client_encryption_rewrap_many_datakey_result_t *result);
 
 Get the bulk write result set by a successful call to :symbol:`mongoc_client_encryption_rewrap_many_datakey()`.
 

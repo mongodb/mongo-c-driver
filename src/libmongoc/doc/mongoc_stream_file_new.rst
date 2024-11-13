@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_stream_t *
-  mongoc_stream_file_new (int fd) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_stream_file_new (int fd);
 
 Parameters
 ----------

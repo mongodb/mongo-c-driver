@@ -12,7 +12,7 @@ Synopsis
   mongoc_gridfs_bucket_new (mongoc_database_t *db,
                             const bson_t *opts,
                             const mongoc_read_prefs_t *read_prefs,
-                            bson_error_t* error) BSON_GNUC_WARN_UNUSED_RESULT;
+                            bson_error_t* error);
 
 Parameters
 ----------

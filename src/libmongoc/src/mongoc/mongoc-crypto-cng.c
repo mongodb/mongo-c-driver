@@ -21,6 +21,7 @@
 #include "mongoc-crypto-cng-private.h"
 #include "mongoc-log.h"
 #include "mongoc-thread-private.h"
+#include <common-cmp-private.h>
 
 #include <windows.h>
 #include <stdio.h>
@@ -158,19 +159,19 @@ _bcrypt_derive_key_pbkdf2 (BCRYPT_ALG_HANDLE prf,
                            size_t output_len,
                            unsigned char *output)
 {
-   if (BSON_UNLIKELY (bson_cmp_greater_uu (password_len, ULONG_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_uu (password_len, ULONG_MAX))) {
       MONGOC_ERROR ("PBDKF2 HMAC password length exceeds ULONG_MAX");
       return false;
    }
 
-   if (BSON_UNLIKELY (bson_cmp_greater_uu (salt_len, ULONG_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_uu (salt_len, ULONG_MAX))) {
       MONGOC_ERROR ("PBDKF2 HMAC salt length exceeds ULONG_MAX");
       return false;
    }
 
    // `(ULONGLONG) iterations` is statically asserted above.
 
-   if (BSON_UNLIKELY (bson_cmp_greater_uu (output_len, ULONG_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_uu (output_len, ULONG_MAX))) {
       MONGOC_ERROR ("PBDKF2 HMAC output length exceeds ULONG_MAX");
       return false;
    }

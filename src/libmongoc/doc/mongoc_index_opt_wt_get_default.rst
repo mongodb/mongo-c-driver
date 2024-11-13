@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   const mongoc_index_opt_wt_t *
-  mongoc_index_opt_wt_get_default (void) BSON_GNUC_PURE;
+  mongoc_index_opt_wt_get_default (void);
 
 Returns
 -------

@@ -6,7 +6,7 @@ mongoc_collection_validate()
 .. warning::
    .. deprecated:: 1.10.0
 
-      This helper function is deprecated and should not be used in new code. Run the `validate <https://www.mongodb.com/docs/manual/reference/command/validate/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
+      Run the `validate <https://www.mongodb.com/docs/manual/reference/command/validate/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
 
 Synopsis
 --------
@@ -17,7 +17,7 @@ Synopsis
   mongoc_collection_validate (mongoc_collection_t *collection,
                               const bson_t *options,
                               bson_t *reply,
-                              bson_error_t *error) BSON_GNUC_DEPRECATED;
+                              bson_error_t *error);
 
 Parameters
 ----------

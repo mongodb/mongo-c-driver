@@ -16,8 +16,7 @@ Synopsis
   mongoc_gridfs_file_t *
   mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
                           const bson_t *query,
-                          bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT
-     BSON_GNUC_DEPRECATED_FOR (mongoc_gridfs_find_one_with_opts);
+                          bson_error_t *error);
 
 Parameters
 ----------

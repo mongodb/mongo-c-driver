@@ -169,19 +169,6 @@ typedef signed char bool;
 #endif
 
 
-#if defined(__GNUC__)
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
-#define bson_sync_synchronize() __sync_synchronize ()
-#elif defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64__)
-#define bson_sync_synchronize() asm volatile ("mfence" ::: "memory")
-#else
-#define bson_sync_synchronize() asm volatile ("sync" ::: "memory")
-#endif
-#elif defined(_MSC_VER)
-#define bson_sync_synchronize() MemoryBarrier ()
-#endif
-
-
 #if !defined(va_copy) && defined(__va_copy)
 #define va_copy(dst, src) __va_copy (dst, src)
 #endif

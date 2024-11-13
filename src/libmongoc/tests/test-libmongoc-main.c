@@ -30,6 +30,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_bson_corpus_install);
    TEST_INSTALL (test_bson_error_install);
    TEST_INSTALL (test_bson_install);
+   TEST_INSTALL (test_bson_sync_install);
    TEST_INSTALL (test_bson_version_install);
    TEST_INSTALL (test_clock_install);
    TEST_INSTALL (test_decimal128_install);
@@ -45,6 +46,8 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_writer_install);
    TEST_INSTALL (test_b64_install);
    TEST_INSTALL (test_bson_cmp_install);
+   TEST_INSTALL (test_mcommon_cmp_install);
+   TEST_INSTALL (test_mcommon_atomic_install);
 
    /* libmongoc */
 

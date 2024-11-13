@@ -17,8 +17,7 @@ Synopsis
         bson_t *out_options,
         const char *kms_provider,
         const bson_t *opt_masterKey,
-        bson_error_t *error)
-    BSON_GNUC_WARN_UNUSED_RESULT;
+        bson_error_t *error);
 
 Create a new collection with `Queryable Encryption <queryable-encryption_>`_
 enabled. Requires a valid :symbol:`mongoc_client_encryption_t` object to

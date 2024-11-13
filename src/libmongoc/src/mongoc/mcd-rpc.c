@@ -6,6 +6,7 @@
 #undef MONGOC_INSIDE
 
 #include <bson/bson.h>
+#include <common-cmp-private.h>
 
 
 typedef struct _mcd_rpc_message_header mcd_rpc_message_header;
@@ -282,7 +283,7 @@ _consume_bson_objects (const uint8_t **ptr, size_t *remaining_bytes, int32_t *nu
       }
 
       if (doc_len < MONGOC_RPC_MINIMUM_BSON_LENGTH ||
-          bson_cmp_greater_su (doc_len, *remaining_bytes + sizeof (int32_t))) {
+          mcommon_cmp_greater_su (doc_len, *remaining_bytes + sizeof (int32_t))) {
          *ptr -= sizeof (int32_t); // Revert so *data_end points to start of
                                    // document as invalid input.
          return false;
@@ -385,7 +386,7 @@ _consume_op_msg_section (
       // identifier field, but 4 bytes is sufficient to avoid unsigned integer
       // overflow when computing `remaining_section_bytes` and to encourage as
       // much progress is made parsing input data as able.
-      if (bson_cmp_less_su (section.payload.document_sequence.section_len, sizeof (int32_t))) {
+      if (mcommon_cmp_less_su (section.payload.document_sequence.section_len, sizeof (int32_t))) {
          *ptr -= sizeof (int32_t); // Revert so *data_end points to start of
                                    // document sequence as invalid input.
          return false;
@@ -785,7 +786,7 @@ _consume_op_kill_cursors (mcd_rpc_message *rpc, const uint8_t **ptr, size_t *rem
    if (op_kill_cursors->number_of_cursor_ids < 0 ||
        // Truncation may (deliberately) leave unparsed bytes that will later
        // trigger validation failure due to unexpected remaining bytes.
-       bson_cmp_greater_su (op_kill_cursors->number_of_cursor_ids, *remaining_bytes / sizeof (int64_t))) {
+       mcommon_cmp_greater_su (op_kill_cursors->number_of_cursor_ids, *remaining_bytes / sizeof (int64_t))) {
       *ptr -= sizeof (int32_t); // Revert so *data_len points to start of
                                 // numberOfCursorIds as invalid input.
       return false;
@@ -851,7 +852,7 @@ mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc, const void *data, size
    }
 
    if (rpc->msg_header.message_length < MONGOC_RPC_MINIMUM_MESSAGE_LENGTH ||
-       bson_cmp_greater_su (rpc->msg_header.message_length, remaining_bytes + sizeof (int32_t))) {
+       mcommon_cmp_greater_su (rpc->msg_header.message_length, remaining_bytes + sizeof (int32_t))) {
       ptr -= sizeof (int32_t); // Revert so *data_end points to start of
                                // messageLength as invalid input.
       goto fail;
@@ -1799,7 +1800,7 @@ mcd_rpc_op_compressed_set_compressed_message (mcd_rpc_message *rpc,
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, compressed_message_length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, compressed_message_length));
    rpc->op_compressed.compressed_message = compressed_message;
    rpc->op_compressed.compressed_message_len = compressed_message_length;
    return (int32_t) compressed_message_length;
@@ -1920,7 +1921,7 @@ mcd_rpc_op_msg_section_set_identifier (mcd_rpc_message *rpc, size_t index, const
    rpc->op_msg.sections[index].payload.document_sequence.identifier = identifier;
    rpc->op_msg.sections[index].payload.document_sequence.identifier_len = identifier_len;
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, identifier_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, identifier_len));
    return (int32_t) identifier_len;
 }
 
@@ -1956,7 +1957,7 @@ mcd_rpc_op_msg_section_set_document_sequence (mcd_rpc_message *rpc,
    rpc->op_msg.sections[index].payload.document_sequence.bson_objects = document_sequence;
    rpc->op_msg.sections[index].payload.document_sequence.bson_objects_len = bson_objects_len;
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, document_sequence_length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, document_sequence_length));
    return (int32_t) bson_objects_len;
 }
 
@@ -2103,7 +2104,7 @@ mcd_rpc_op_reply_set_documents (mcd_rpc_message *rpc, const void *documents, siz
    rpc->op_reply.documents = documents;
    rpc->op_reply.documents_len = documents_len;
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, documents_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, documents_len));
    return (int32_t) documents_len;
 }
 
@@ -2151,7 +2152,7 @@ mcd_rpc_op_update_set_full_collection_name (mcd_rpc_message *rpc, const char *fu
    rpc->op_update.full_collection_name = full_collection_name;
    rpc->op_update.full_collection_name_len = length;
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 
@@ -2232,7 +2233,7 @@ mcd_rpc_op_insert_set_full_collection_name (mcd_rpc_message *rpc, const char *fu
    rpc->op_insert.full_collection_name = full_collection_name;
    rpc->op_insert.full_collection_name_len = length;
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 
@@ -2245,7 +2246,7 @@ mcd_rpc_op_insert_set_documents (mcd_rpc_message *rpc, const void *documents, si
    rpc->op_insert.documents = documents;
    rpc->op_insert.documents_len = documents_len;
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, documents_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, documents_len));
    return (int32_t) documents_len;
 }
 
@@ -2318,7 +2319,7 @@ mcd_rpc_op_query_set_full_collection_name (mcd_rpc_message *rpc, const char *ful
    rpc->op_query.full_collection_name = full_collection_name;
    rpc->op_query.full_collection_name_len = length;
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 
@@ -2394,7 +2395,7 @@ mcd_rpc_op_get_more_set_full_collection_name (mcd_rpc_message *rpc, const char *
    rpc->op_get_more.full_collection_name = full_collection_name;
    rpc->op_get_more.full_collection_name_len = length;
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 
@@ -2452,7 +2453,7 @@ mcd_rpc_op_delete_set_full_collection_name (mcd_rpc_message *rpc, const char *fu
    rpc->op_delete.full_collection_name = full_collection_name;
    rpc->op_delete.full_collection_name_len = length;
 
-   BSON_ASSERT (bson_in_range_unsigned (int32_t, length));
+   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, length));
    return (int32_t) length;
 }
 
@@ -2496,7 +2497,7 @@ mcd_rpc_op_kill_cursors_set_cursor_ids (mcd_rpc_message *rpc, const int64_t *cur
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_KILL_CURSORS);
-   BSON_ASSERT (bson_cmp_less_su (number_of_cursor_ids, (size_t) INT32_MAX / sizeof (int64_t)));
+   BSON_ASSERT (mcommon_cmp_less_su (number_of_cursor_ids, (size_t) INT32_MAX / sizeof (int64_t)));
 
    const size_t cursor_ids_length = (size_t) number_of_cursor_ids * sizeof (int64_t);
 

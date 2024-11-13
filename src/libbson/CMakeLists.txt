@@ -157,9 +157,9 @@ target_include_directories(_libbson_build_interface INTERFACE
    # The generated src/
    ${PROJECT_BINARY_DIR}/src/
    # The source directories of the common lib:
-   ${mongo-c-driver_SOURCE_DIR}/src/common/
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/
    # Generated:
-   ${mongo-c-driver_BINARY_DIR}/src/common/
+   ${mongo-c-driver_BINARY_DIR}/src/common/src/
    )
 target_link_libraries(_libbson_build_interface INTERFACE mongo::detail::c_platform)
 
@@ -168,7 +168,7 @@ file(GLOB_RECURSE all_sources CONFIGURE_DEPENDS
    src/*.c src/*.h
    # Include common library source files within libbson itself (names
    # will be mangled with MCOMMON_NAME_PREFIX)
-   "${mongo-c-driver_SOURCE_DIR}/src/common/*.c"
+   "${mongo-c-driver_SOURCE_DIR}/src/common/src/*.c"
    )
 
 # List of the primary BSON library targets that we are building
@@ -223,6 +223,9 @@ mongo_target_requirements(
          MCOMMON_NAME_PREFIX=_bson_mcommon
    COMPILE_OPTIONS
       PRIVATE
+         # Enable unconditional warnings-as-errors for our source code.
+         ${mongoc-warning-options}
+
          # Macro constant INFINITY triggers constant arithmetic overflow warnings in
          # VS 2013, but VS 2013 doesn't support inline warning suppression.
          # Remove once support for VS 2013 is dropped.
@@ -267,6 +270,9 @@ if (ENABLE_EXAMPLES)
       add_executable (${bin} EXCLUDE_FROM_ALL ${src})
       add_dependencies (mongo_c_driver_examples ${bin})
 
+      # Enable unconditional warnings-as-errors for our source code.
+      target_compile_options (${bin} PRIVATE ${mongoc-warning-options})
+
       # Link against the shared lib like normal apps
       if(TARGET bson_shared)
          target_link_libraries (${bin} bson_shared)
@@ -289,6 +295,7 @@ if (ENABLE_EXAMPLES)
    add_example (json-to-bson examples/json-to-bson.c)
    add_example (bson-check-depth examples/bson-check-depth.c)
    add_example (creating examples/creating.c)
+   add_example (extended-json examples/extended-json.c)
 endif () # ENABLE_EXAMPLES
 
 

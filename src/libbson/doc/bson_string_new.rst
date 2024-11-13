@@ -3,6 +3,9 @@
 bson_string_new()
 =================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
 Synopsis
 --------
 

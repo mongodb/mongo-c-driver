@@ -29,6 +29,8 @@
 #include "mongoc-stream-tls-secure-channel-private.h"
 #include "mongoc-errno-private.h"
 #include "mongoc-error.h"
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -239,7 +241,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
 }
 
 void
-_bson_append_szoid (bson_string_t *retval, PCCERT_CONTEXT cert, const char *label, void *oid)
+_bson_append_szoid (mcommon_string_t *retval, PCCERT_CONTEXT cert, const char *label, void *oid)
 {
    DWORD oid_len = CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, NULL, 0);
 
@@ -247,14 +249,14 @@ _bson_append_szoid (bson_string_t *retval, PCCERT_CONTEXT cert, const char *labe
       char *tmp = bson_malloc0 (oid_len);
 
       CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, tmp, oid_len);
-      bson_string_append_printf (retval, "%s%s", label, tmp);
+      mcommon_string_append_printf (retval, "%s%s", label, tmp);
       bson_free (tmp);
    }
 }
 char *
 _mongoc_secure_channel_extract_subject (const char *filename, const char *passphrase)
 {
-   bson_string_t *retval;
+   mcommon_string_t *retval;
    PCCERT_CONTEXT cert;
 
    cert = mongoc_secure_channel_setup_certificate_from_file (filename);
@@ -262,7 +264,7 @@ _mongoc_secure_channel_extract_subject (const char *filename, const char *passph
       return NULL;
    }
 
-   retval = bson_string_new ("");
+   retval = mcommon_string_new ("");
    ;
    _bson_append_szoid (retval, cert, "C=", szOID_COUNTRY_NAME);
    _bson_append_szoid (retval, cert, ",ST=", szOID_STATE_OR_PROVINCE_NAME);
@@ -272,7 +274,7 @@ _mongoc_secure_channel_extract_subject (const char *filename, const char *passph
    _bson_append_szoid (retval, cert, ",CN=", szOID_COMMON_NAME);
    _bson_append_szoid (retval, cert, ",STREET=", szOID_STREET_ADDRESS);
 
-   return bson_string_free (retval, false);
+   return mcommon_string_free (retval, false);
 }
 
 bool
@@ -423,14 +425,14 @@ mongoc_secure_channel_read (mongoc_stream_tls_t *tls, void *data, size_t data_le
 {
    BSON_ASSERT_PARAM (tls);
 
-   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
+   if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
       MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
       return -1;
    }
 
    errno = 0;
-   TRACE ("Wanting to read: %zu, timeout is %" PRIu64, data_length, tls->timeout_msec);
+   TRACE ("Wanting to read: %zu, timeout is %" PRId64, data_length, tls->timeout_msec);
    /* 4th argument is minimum bytes, while the data_length is the
     * size of the buffer. We are totally fine with just one TLS record (few
     *bytes)
@@ -451,7 +453,7 @@ mongoc_secure_channel_write (mongoc_stream_tls_t *tls, const void *data, size_t 
 {
    BSON_ASSERT_PARAM (tls);
 
-   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
+   if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
       MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
       return -1;

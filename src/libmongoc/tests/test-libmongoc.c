@@ -30,6 +30,7 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
+#include <common-string-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -368,7 +369,7 @@ char *
 test_framework_get_unix_domain_socket_path_escaped (void)
 {
    char *path = test_framework_get_unix_domain_socket_path (), *c = path;
-   bson_string_t *escaped = bson_string_new (NULL);
+   mcommon_string_t *escaped = mcommon_string_new (NULL);
 
    /* Connection String Spec: "The host information cannot contain an unescaped
     * slash ("/"), if it does then an exception MUST be thrown informing users
@@ -379,16 +380,16 @@ test_framework_get_unix_domain_socket_path_escaped (void)
     */
    do {
       if (*c == '/') {
-         bson_string_append (escaped, "%2F");
+         mcommon_string_append (escaped, "%2F");
       } else {
-         bson_string_append_c (escaped, *c);
+         mcommon_string_append_c (escaped, *c);
       }
    } while (*(++c));
 
-   bson_string_append_c (escaped, '\0');
+   mcommon_string_append_c (escaped, '\0');
    bson_free (path);
 
-   return bson_string_free (escaped, false /* free_segment */);
+   return mcommon_string_free (escaped, false /* free_segment */);
 }
 
 static char *
@@ -927,7 +928,7 @@ set_name (bson_t *hello_response)
 
 
 static bool
-uri_str_has_db (bson_string_t *uri_string)
+uri_str_has_db (mcommon_string_t *uri_string)
 {
    BSON_ASSERT_PARAM (uri_string);
 
@@ -949,20 +950,20 @@ uri_str_has_db (bson_string_t *uri_string)
 
 
 static void
-add_option_to_uri_str (bson_string_t *uri_string, const char *option, const char *value)
+add_option_to_uri_str (mcommon_string_t *uri_string, const char *option, const char *value)
 {
    if (strchr (uri_string->str, '?')) {
       /* already has some options */
-      bson_string_append_c (uri_string, '&');
+      mcommon_string_append_c (uri_string, '&');
    } else if (uri_str_has_db (uri_string)) {
       /* like "mongodb://host/db" */
-      bson_string_append_c (uri_string, '?');
+      mcommon_string_append_c (uri_string, '?');
    } else {
       /* like "mongodb://host" */
-      bson_string_append_printf (uri_string, "/?");
+      mcommon_string_append_printf (uri_string, "/?");
    }
 
-   bson_string_append_printf (uri_string, "%s=%s", option, value);
+   mcommon_string_append_printf (uri_string, "%s=%s", option, value);
 }
 
 
@@ -993,7 +994,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
 {
    char *env_uri_str;
    bson_t hello_response;
-   bson_string_t *uri_string;
+   mcommon_string_t *uri_string;
    char *name;
    bson_iter_t iter;
    bson_iter_t hosts_iter;
@@ -1003,18 +1004,18 @@ test_framework_get_uri_str_no_auth (const char *database_name)
 
    env_uri_str = _uri_str_from_env ();
    if (env_uri_str) {
-      uri_string = bson_string_new (env_uri_str);
+      uri_string = mcommon_string_new (env_uri_str);
       if (database_name) {
          if (uri_string->str[uri_string->len - 1] != '/') {
-            bson_string_append (uri_string, "/");
+            mcommon_string_append (uri_string, "/");
          }
-         bson_string_append (uri_string, database_name);
+         mcommon_string_append (uri_string, database_name);
       }
       bson_free (env_uri_str);
    } else {
       /* construct a direct connection or replica set connection URI */
       call_hello (&hello_response);
-      uri_string = bson_string_new ("mongodb://");
+      uri_string = mcommon_string_new ("mongodb://");
 
       if ((name = set_name (&hello_response))) {
          /* make a replica set URI */
@@ -1026,16 +1027,16 @@ test_framework_get_uri_str_no_auth (const char *database_name)
          while (bson_iter_next (&hosts_iter)) {
             BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
             if (!first) {
-               bson_string_append (uri_string, ",");
+               mcommon_string_append (uri_string, ",");
             }
 
-            bson_string_append (uri_string, bson_iter_utf8 (&hosts_iter, NULL));
+            mcommon_string_append (uri_string, bson_iter_utf8 (&hosts_iter, NULL));
             first = false;
          }
 
-         bson_string_append (uri_string, "/");
+         mcommon_string_append (uri_string, "/");
          if (database_name) {
-            bson_string_append (uri_string, database_name);
+            mcommon_string_append (uri_string, database_name);
          }
 
          add_option_to_uri_str (uri_string, MONGOC_URI_REPLICASET, name);
@@ -1043,10 +1044,10 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       } else {
          host = test_framework_get_host ();
          port = test_framework_get_port ();
-         bson_string_append_printf (uri_string, "%s:%hu", host, port);
-         bson_string_append (uri_string, "/");
+         mcommon_string_append_printf (uri_string, "%s:%hu", host, port);
+         mcommon_string_append (uri_string, "/");
          if (database_name) {
-            bson_string_append (uri_string, database_name);
+            mcommon_string_append (uri_string, database_name);
          }
 
          bson_free (host);
@@ -1070,7 +1071,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    // runner, but make tests a little more resilient to transient errors.
    add_option_to_uri_str (uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
-   return bson_string_free (uri_string, false);
+   return mcommon_string_free (uri_string, false);
 }
 
 /*

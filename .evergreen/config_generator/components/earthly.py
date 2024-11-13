@@ -6,9 +6,9 @@ from typing import Iterable, Literal, Mapping, NamedTuple, TypeVar
 
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import BuiltInCommand, EvgCommandType, subprocess_exec
-from shrub.v3.evg_task import EvgTaskRef
+from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
-from ..etc.utils import Task, all_possible
+from ..etc.utils import all_possible
 
 T = TypeVar("T")
 
@@ -18,6 +18,7 @@ _CC_PARAM_NAME = "MONGOC_EARTHLY_C_COMPILER"
 
 
 EnvKey = Literal[
+    "u16",
     "u18",
     "u20",
     "u22",
@@ -26,6 +27,7 @@ EnvKey = Literal[
     "alpine3.18",
     "alpine3.19",
     "archlinux",
+    "centos7"
 ]
 "Identifiers for environments. These correspond to special 'env.*' targets in the Earthfile."
 CompilerName = Literal["gcc", "clang"]
@@ -36,7 +38,7 @@ SASLOption = Literal["Cyrus", "off"]
 "Valid options for the SASL configuration parameter"
 TLSOption = Literal["LibreSSL", "OpenSSL", "off"]
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["r3.8.0", "r3.9.0"]
+CxxVersion = Literal["r3.8.0", "r3.9.0", "none"]
 "C++ driver refs that are under CI test"
 
 # A separator character, since we cannot use whitespace
@@ -54,6 +56,8 @@ def os_split(env: EnvKey) -> tuple[str, None | str]:
         # Match 'u22', 'u20', 'u71' etc.
         case ubu if mat := re.match(r"u(\d\d)", ubu):
             return "Ubuntu", f"{mat[1]}.04"
+        case "centos7":
+            return "CentOS", "7.0"
         case _:
             raise ValueError(
                 f"Failed to split OS env key {env=} into a name+version pair (unrecognized)"
@@ -149,8 +153,17 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
         # Other sasl=off tasks we'll just ignore:
         case _, ("off", _tls, _cxx):
             return False
-        # Ubuntu does not ship with a LibreSSL package:
-        case e, (_sasl, "LibreSSL", _cxx) if e.display_name.startswith("Ubuntu"):
+        # Ubuntu and CentOS do not ship with a LibreSSL package:
+        case e, (_sasl, "LibreSSL", _cxx) if e.display_name.startswith("Ubuntu") or e.display_name.startswith("CentOS"):
+            return False
+        # u16 is not capable of building mongocxx
+        case e, (_, _, "none") if e.display_name.startswith("Ubuntu 16") or e.display_name.startswith("CentOS 7"):
+            return True
+         # Exclude u16 for all other configurations
+        case e, _ if e.display_name.startswith("Ubuntu 16") or e.display_name.startswith("CentOS 7"):
+            return False
+        # Exclude all other envs
+        case _, (_, _, "none"):
             return False
         # Anything else: Allow it to run:
         case _:
@@ -191,7 +204,7 @@ def earthly_task(
     name: str,
     targets: Iterable[str],
     config: Configuration,
-) -> Task | None:
+) -> EvgTask | None:
     """
     Create an EVG task which executes earthly using the given parameters. If this
     function returns `None`, then the task configuration is excluded from executing
@@ -212,7 +225,7 @@ def earthly_task(
         "env": f"${{{_ENV_PARAM_NAME}}}",
         "c_compiler": f"${{{_CC_PARAM_NAME}}}",
     }
-    return Task(
+    return EvgTask(
         name=name,
         commands=[
             # First, just build the "env-warmup" which will prepare the build environment.
@@ -242,18 +255,24 @@ CONTAINER_RUN_DISTROS = [
     "ubuntu2204-large",
     "ubuntu2004-small",
     "ubuntu2004",
-    "ubuntu1804-medium",
     "debian10",
     "debian11",
     "amazon2",
 ]
 
 
-def tasks() -> Iterable[Task]:
+def tasks() -> Iterable[EvgTask]:
     for conf in all_possible(Configuration):
+        # test-example is a target in all configurations
+        targets = ["test-example"]
+        
+        # test-cxx-driver is only a target in configurations with specified mongocxx versions
+        if conf.test_mongocxx_ref != "none":
+            targets.append("test-cxx-driver")
+        
         task = earthly_task(
             name=f"check:{conf.suffix}",
-            targets=("test-example", "test-cxx-driver"),
+            targets=targets,
             config=conf,
         )
         if task is not None:

@@ -88,7 +88,7 @@ main (int argc, char *argv[])
       return EXIT_FAILURE;
    }
 
-   str = bson_as_json (&reply, NULL);
+   str = bson_as_relaxed_extended_json (&reply, NULL);
    printf ("%s\n", str);
 
    insert = BCON_NEW ("hello", BCON_UTF8 ("world"));

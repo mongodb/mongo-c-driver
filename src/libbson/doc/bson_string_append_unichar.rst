@@ -3,6 +3,9 @@
 bson_string_append_unichar()
 ============================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
 Synopsis
 --------
 

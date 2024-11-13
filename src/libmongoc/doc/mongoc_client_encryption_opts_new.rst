@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_client_encryption_opts_t *
-  mongoc_client_encryption_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_client_encryption_opts_new (void);
 
 Returns
 -------

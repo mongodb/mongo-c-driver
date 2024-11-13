@@ -28,10 +28,6 @@
 #include <netinet/tcp.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
-#define BSON_INSIDE
-#include <bson/bson-string.h>
-#undef BSON_INSIDE
-
 #endif
 #endif
 
@@ -73,6 +69,11 @@
 #include "mongoc-openssl-private.h"
 #include "mongoc-stream-tls-private.h"
 #endif
+
+#include <common-string-private.h>
+#include <common-cmp-private.h>
+
+#include <inttypes.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client"
@@ -134,16 +135,16 @@ static bool
 txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
    DWORD i;
-   bson_string_t *txt;
+   mcommon_string_t *txt;
 
-   txt = bson_string_new (NULL);
+   txt = mcommon_string_new (NULL);
 
    for (i = 0; i < pdns->Data.TXT.dwStringCount; i++) {
-      bson_string_append (txt, pdns->Data.TXT.pStringArray[i]);
+      mcommon_string_append (txt, pdns->Data.TXT.pStringArray[i]);
    }
 
    rr_data->txt_record_opts = bson_strdup (txt->str);
-   bson_string_free (txt, true);
+   mcommon_string_free (txt, true);
 
    return true;
 }
@@ -331,7 +332,7 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
 {
    char s[256];
    const uint8_t *data;
-   bson_string_t *txt;
+   mcommon_string_t *txt;
    uint16_t pos, total;
    uint8_t len;
    bool ret = false;
@@ -345,7 +346,7 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
 
    /* a TXT record has one or more strings, each up to 255 chars, each is
     * prefixed by its length as 1 byte. thus endianness doesn't matter. */
-   txt = bson_string_new (NULL);
+   txt = mcommon_string_new (NULL);
    pos = 0;
    data = ns_rr_rdata (*rr);
 
@@ -353,12 +354,12 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
       memcpy (&len, data + pos, sizeof (uint8_t));
       pos++;
       bson_strncpy (s, (const char *) (data + pos), (size_t) len + 1);
-      bson_string_append (txt, s);
+      mcommon_string_append (txt, s);
       pos += len;
    }
 
    rr_data->txt_record_opts = bson_strdup (txt->str);
-   bson_string_free (txt, true);
+   mcommon_string_free (txt, true);
    ret = true;
 
 done:
@@ -624,7 +625,7 @@ mongoc_client_connect_tcp (int32_t connecttimeoutms, const mongoc_host_list_t *h
 
    // Expect no truncation.
    int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
-   BSON_ASSERT (bson_cmp_less_su (req, sizeof portstr));
+   BSON_ASSERT (mcommon_cmp_less_su (req, sizeof portstr));
 
    memset (&hints, 0, sizeof hints);
    hints.ai_family = host->family;
@@ -721,7 +722,7 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
    // Expect no truncation.
    int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
 
-   if (bson_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
+   if (mcommon_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
       bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
       RETURN (NULL);
    }
@@ -786,8 +787,11 @@ mongoc_client_connect (bool buffered,
       base_stream = mongoc_client_connect_unix (host, error);
       break;
    default:
-      bson_set_error (
-         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_TYPE, "Invalid address family: 0x%02x", host->family);
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_INVALID_TYPE,
+                      "Invalid address family: 0x%02x",
+                      (unsigned int) host->family);
       break;
    }
 

@@ -59,7 +59,6 @@ Example
 
 .. seealso::
 
-  | The `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_.
+  | The `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.md>`_.
 
   | The non spec-compliant :symbol:`mongoc_gridfs_t`.
-

@@ -11,7 +11,7 @@ Synopsis
   bool
   mongoc_client_session_get_dirty (const mongoc_client_session_t *session);
 
-Indicates whether ``session`` has been marked "dirty" as defined in the `driver sessions specification <https://github.com/mongodb/specifications/blob/master/source/sessions/driver-sessions.rst>`_.
+Indicates whether ``session`` has been marked "dirty" as defined in the `driver sessions specification <https://github.com/mongodb/specifications/blob/master/source/sessions/driver-sessions.md>`_.
 
 Parameters
 ----------

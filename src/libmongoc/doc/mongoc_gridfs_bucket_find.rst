@@ -11,7 +11,7 @@ Synopsis
   mongoc_cursor_t *
   mongoc_gridfs_bucket_find (mongoc_gridfs_bucket_t *bucket,
                              const bson_t *filter,
-                             const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
+                             const bson_t *opts);
 
 Parameters
 ----------

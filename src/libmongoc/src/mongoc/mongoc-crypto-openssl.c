@@ -21,6 +21,7 @@
 #include "mongoc-crypto-openssl-private.h"
 #include "mongoc-crypto-private.h"
 #include "mongoc-log.h"
+#include <common-cmp-private.h>
 
 #include <openssl/sha.h>
 #include <openssl/evp.h>
@@ -38,22 +39,22 @@ mongoc_crypto_openssl_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
 {
    BSON_UNUSED (crypto);
 
-   if (BSON_UNLIKELY (bson_cmp_greater_us (password_len, INT_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_us (password_len, INT_MAX))) {
       MONGOC_ERROR ("PBKDF2 HMAC password length exceeds INT_MAX");
       return false;
    }
 
-   if (BSON_UNLIKELY (bson_cmp_greater_us (salt_len, INT_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_us (salt_len, INT_MAX))) {
       MONGOC_ERROR ("PBKDF2 HMAC salt length exceeds INT_MAX");
       return false;
    }
 
-   if (BSON_UNLIKELY (bson_cmp_greater_us (iterations, INT_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_us (iterations, INT_MAX))) {
       MONGOC_ERROR ("PBKDF2 HMAC iteration count exceeds INT_MAX");
       return false;
    }
 
-   if (BSON_UNLIKELY (bson_cmp_greater_us (iterations, INT_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_us (iterations, INT_MAX))) {
       MONGOC_ERROR ("PBKDF2 HMAC output buffer length exceeds INT_MAX");
       return false;
    }
@@ -136,22 +137,22 @@ mongoc_crypto_openssl_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
 {
    BSON_UNUSED (crypto);
 
-   if (BSON_UNLIKELY (bson_cmp_greater_us (password_len, INT_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_us (password_len, INT_MAX))) {
       MONGOC_ERROR ("PBKDF2 HMAC password length exceeds INT_MAX");
       return false;
    }
 
-   if (BSON_UNLIKELY (bson_cmp_greater_us (salt_len, INT_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_us (salt_len, INT_MAX))) {
       MONGOC_ERROR ("PBKDF2 HMAC salt length exceeds INT_MAX");
       return false;
    }
 
-   if (BSON_UNLIKELY (bson_cmp_greater_us (iterations, INT_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_us (iterations, INT_MAX))) {
       MONGOC_ERROR ("PBKDF2 HMAC iteration count exceeds INT_MAX");
       return false;
    }
 
-   if (BSON_UNLIKELY (bson_cmp_greater_us (iterations, INT_MAX))) {
+   if (BSON_UNLIKELY (mcommon_cmp_greater_us (iterations, INT_MAX))) {
       MONGOC_ERROR ("PBKDF2 HMAC output buffer length exceeds INT_MAX");
       return false;
    }

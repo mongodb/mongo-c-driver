@@ -19,7 +19,7 @@
 #include <signal.h>
 #endif
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
 
 #include "mongoc.h"
 #include "mongoc-client-private.h"
@@ -30,6 +30,8 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-util-private.h"
+#include <common-string-private.h>
+#include <common-atomic-private.h>
 
 /*--------------------------------------------------------------------------
  * Auto Encryption options.
@@ -1317,25 +1319,25 @@ _uri_construction_error (bson_error_t *error)
 static bool
 _do_spawn (const char *path, char **args, bson_error_t *error)
 {
-   bson_string_t *command;
+   mcommon_string_t *command;
    char **arg;
    PROCESS_INFORMATION process_information;
    STARTUPINFO startup_info;
 
    /* Construct the full command, quote path and arguments. */
-   command = bson_string_new ("");
-   bson_string_append (command, "\"");
+   command = mcommon_string_new ("");
+   mcommon_string_append (command, "\"");
    if (path) {
-      bson_string_append (command, path);
+      mcommon_string_append (command, path);
    }
-   bson_string_append (command, "mongocryptd.exe");
-   bson_string_append (command, "\"");
+   mcommon_string_append (command, "mongocryptd.exe");
+   mcommon_string_append (command, "\"");
    /* skip the "mongocryptd" first arg. */
    arg = args + 1;
    while (*arg) {
-      bson_string_append (command, " \"");
-      bson_string_append (command, *arg);
-      bson_string_append (command, "\"");
+      mcommon_string_append (command, " \"");
+      mcommon_string_append (command, *arg);
+      mcommon_string_append (command, "\"");
       arg++;
    }
 
@@ -1372,11 +1374,11 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                       "failed to spawn mongocryptd: %s",
                       message);
       LocalFree (message);
-      bson_string_free (command, true);
+      mcommon_string_free (command, true);
       return false;
    }
 
-   bson_string_free (command, true);
+   mcommon_string_free (command, true);
    return true;
 }
 #else
@@ -1900,14 +1902,14 @@ _mongoc_cse_client_pool_enable_auto_encryption (mongoc_topology_t *topology,
       GOTO (fail);
    }
 
-   prev_cse_state = bson_atomic_int_compare_exchange_strong (
-      (int *) &topology->cse_state, MONGOC_CSE_DISABLED, MONGOC_CSE_STARTING, bson_memory_order_acquire);
+   prev_cse_state = mcommon_atomic_int_compare_exchange_strong (
+      (int *) &topology->cse_state, MONGOC_CSE_DISABLED, MONGOC_CSE_STARTING, mcommon_memory_order_acquire);
    while (prev_cse_state == MONGOC_CSE_STARTING) {
       /* Another thread is starting client-side encryption. It may take some
        * time to start, but don't continue until it is finished. */
       bson_thrd_yield ();
-      prev_cse_state = bson_atomic_int_compare_exchange_strong (
-         (int *) &topology->cse_state, MONGOC_CSE_DISABLED, MONGOC_CSE_STARTING, bson_memory_order_acquire);
+      prev_cse_state = mcommon_atomic_int_compare_exchange_strong (
+         (int *) &topology->cse_state, MONGOC_CSE_DISABLED, MONGOC_CSE_STARTING, mcommon_memory_order_acquire);
    }
 
    if (prev_cse_state == MONGOC_CSE_ENABLED) {
@@ -1973,7 +1975,7 @@ fail:
    if (prev_cse_state == MONGOC_CSE_DISABLED) {
       /* We need to set the new CSE state. */
       mongoc_topology_cse_state_t new_state = setup_okay ? MONGOC_CSE_ENABLED : MONGOC_CSE_DISABLED;
-      bson_atomic_int_exchange ((int *) &topology->cse_state, new_state, bson_memory_order_release);
+      mcommon_atomic_int_exchange ((int *) &topology->cse_state, new_state, mcommon_memory_order_release);
    }
    mongoc_uri_destroy (mongocryptd_uri);
    RETURN (setup_okay);
@@ -2756,7 +2758,7 @@ _mongoc_cse_is_enabled (mongoc_client_t *client)
 
    while (1) {
       mongoc_topology_cse_state_t state =
-         bson_atomic_int_fetch ((int *) &client->topology->cse_state, bson_memory_order_relaxed);
+         mcommon_atomic_int_fetch ((int *) &client->topology->cse_state, mcommon_memory_order_relaxed);
       if (state != MONGOC_CSE_STARTING) {
          return state == MONGOC_CSE_ENABLED;
       }

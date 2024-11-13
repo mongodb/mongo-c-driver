@@ -20,10 +20,11 @@
 
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
-#include <bson/bson-cmp.h>
-#include <bson/bson-string.h>
+#include <common-cmp-private.h>
+#include <common-string-private.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-utf8.h>
+#include <bson/bson-string-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -78,7 +79,7 @@ bson_string_ensure_space (bson_string_t *string, uint32_t needed)
  *
  * bson_string_new --
  *
- *       Create a new bson_string_t.
+ *       Create a new bson_string_t from an existing char *.
  *
  *       bson_string_t is a power-of-2 allocation growing string. Every
  *       time data is appended the next power of two size is chosen for
@@ -107,7 +108,7 @@ bson_string_new (const char *str) /* IN */
 
    ret = bson_malloc0 (sizeof *ret);
    const size_t len_sz = str == NULL ? 0u : strlen (str);
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len_sz));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len_sz));
    const uint32_t len_u32 = (uint32_t) len_sz;
    bson_string_ensure_space (ret, len_u32);
    if (str) {
@@ -116,7 +117,46 @@ bson_string_new (const char *str) /* IN */
 
    ret->str[len_u32] = '\0';
    ret->len = len_u32;
+   return ret;
+}
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _bson_string_alloc --
+ *
+ *       Create an empty bson_string_t and allocate memory for it.
+ *
+ *       The amount of memory allocated will be the next power-of-two if the
+ *       specified size is not already a power-of-two.
+ *
+ * Parameters:
+ *       @size: Size of the string to allocate
+ *
+ * Returns:
+ *       A newly allocated bson_string_t that should be freed with
+ *       bson_string_free().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bson_string_t *
+_bson_string_alloc (const size_t size)
+{
+   BSON_ASSERT (size < UINT32_MAX);
+
+   bson_string_t *ret;
+
+   ret = bson_malloc0 (sizeof *ret);
+
+   bson_string_ensure_space (ret, (uint32_t) size);
+
+   BSON_ASSERT (ret->alloc > 0);
+   ret->len = 0;
+   ret->str[ret->len] = '\0';
    return ret;
 }
 
@@ -145,6 +185,41 @@ bson_string_free (bson_string_t *string, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * _bson_string_append_ex --
+ *
+ *       Append the UTF-8 string @str of given length @len to @string.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_bson_string_append_ex (bson_string_t *string, /* IN */
+                        const char *str,       /* IN */
+                        const size_t len)      /* IN */
+{
+   BSON_ASSERT (string);
+   BSON_ASSERT (str);
+
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len));
+   const uint32_t len_u32 = (uint32_t) len;
+   BSON_ASSERT (len_u32 <= UINT32_MAX - string->len);
+   const uint32_t new_len = len_u32 + string->len;
+   bson_string_ensure_space (string, new_len);
+   memcpy (string->str + string->len, str, len);
+   string->str[new_len] = '\0';
+   string->len = new_len;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * bson_string_append --
  *
  *       Append the UTF-8 string @str to @string.
@@ -162,18 +237,9 @@ void
 bson_string_append (bson_string_t *string, /* IN */
                     const char *str)       /* IN */
 {
-   BSON_ASSERT (string);
-   BSON_ASSERT (str);
-
-   const size_t len_sz = strlen (str);
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len_sz));
-   const uint32_t len_u32 = (uint32_t) len_sz;
-   BSON_ASSERT (len_u32 <= UINT32_MAX - string->len);
-   const uint32_t new_len = len_u32 + string->len;
-   bson_string_ensure_space (string, new_len);
-   memcpy (string->str + string->len, str, len_sz);
-   string->str[new_len] = '\0';
-   string->len = new_len;
+   BSON_ASSERT_PARAM (string);
+   BSON_ASSERT_PARAM (str);
+   _bson_string_append_ex (string, str, strlen (str));
 }
 
 
@@ -207,7 +273,7 @@ bson_string_append_c (bson_string_t *string, /* IN */
    if (BSON_UNLIKELY (string->alloc == (string->len + 1))) {
       cc[0] = c;
       cc[1] = '\0';
-      bson_string_append (string, cc);
+      mcommon_string_append (string, cc);
       return;
    }
 
@@ -246,7 +312,7 @@ bson_string_append_unichar (bson_string_t *string,  /* IN */
 
    if (len <= 6) {
       str[len] = '\0';
-      bson_string_append (string, str);
+      mcommon_string_append (string, str);
    }
 }
 
@@ -279,7 +345,7 @@ bson_string_append_printf (bson_string_t *string, const char *format, ...)
    va_start (args, format);
    ret = bson_strdupv_printf (format, args);
    va_end (args);
-   bson_string_append (string, ret);
+   mcommon_string_append (string, ret);
    bson_free (ret);
 }
 

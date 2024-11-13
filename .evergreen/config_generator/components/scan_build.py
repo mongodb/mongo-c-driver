@@ -1,7 +1,7 @@
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_command import FunctionCall
-from shrub.v3.evg_task import EvgTaskRef
+from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
 from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 
@@ -10,7 +10,6 @@ from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import to_cc
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
-from config_generator.etc.utils import Task
 
 
 TAG = 'scan-build-matrix'
@@ -20,11 +19,8 @@ TAG = 'scan-build-matrix'
 # fmt: off
 MATRIX = [
     ('macos-1100',       'clang', None  ),
-    ('ubuntu1604-arm64', 'clang', None  ),
-    ('ubuntu1604',       'clang', 'i686'),
-    ('ubuntu1604',       'clang', None  ),
-    ('ubuntu1804-arm64', 'clang', None  ),
-    ('ubuntu1804',       'clang', 'i686'),
+    ('ubuntu2004-arm64', 'clang', None  ),
+    ('ubuntu2004',       'clang', 'i686'),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -71,7 +67,7 @@ def tasks():
         task_name = f'scan-build-{distro_str}'
 
         res.append(
-            Task(
+            EvgTask(
                 name=task_name,
                 run_on=distro.name,
                 tags=tags,

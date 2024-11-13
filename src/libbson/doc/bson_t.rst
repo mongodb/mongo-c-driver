@@ -192,10 +192,12 @@ BSON document contains duplicate keys.
     bson_append_value
     bson_array_as_canonical_extended_json
     bson_array_as_json
+    bson_array_as_legacy_extended_json
     bson_array_as_relaxed_extended_json
     bson_as_canonical_extended_json
     bson_as_json
     bson_as_json_with_opts
+    bson_as_legacy_extended_json
     bson_as_relaxed_extended_json
     bson_compare
     bson_concat
@@ -225,6 +227,7 @@ BSON document contains duplicate keys.
     bson_steal
     bson_validate
     bson_validate_with_error
+    bson_validate_with_error_and_offset
 
 Example
 -------

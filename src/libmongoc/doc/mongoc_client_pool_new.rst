@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_client_pool_t *
-  mongoc_client_pool_new (const mongoc_uri_t *uri) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_client_pool_new (const mongoc_uri_t *uri);
 
 This function creates a new :symbol:`mongoc_client_pool_t` using the :symbol:`mongoc_uri_t` provided.
 

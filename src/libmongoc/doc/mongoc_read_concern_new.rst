@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_read_concern_t *
-  mongoc_read_concern_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_read_concern_new (void);
 
 Returns
 -------

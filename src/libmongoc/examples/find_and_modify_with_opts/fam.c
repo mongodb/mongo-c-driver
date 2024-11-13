@@ -35,7 +35,7 @@ fam_bypass (mongoc_collection_t *collection)
       printf ("%s\n", str);
       bson_free (str);
    } else {
-      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
+      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, (int) (__LINE__));
    }
 
    bson_destroy (&reply);
@@ -83,7 +83,7 @@ fam_flags (mongoc_collection_t *collection)
       printf ("%s\n", str);
       bson_free (str);
    } else {
-      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
+      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, (int) (__LINE__));
    }
 
    bson_destroy (&reply);
@@ -129,7 +129,7 @@ fam_update (mongoc_collection_t *collection)
       printf ("%s\n", str);
       bson_free (str);
    } else {
-      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
+      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, (int) (__LINE__));
    }
 
    bson_destroy (&reply);
@@ -177,7 +177,7 @@ fam_fields (mongoc_collection_t *collection)
       printf ("%s\n", str);
       bson_free (str);
    } else {
-      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
+      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, (int) (__LINE__));
    }
 
    bson_destroy (&reply);
@@ -235,7 +235,7 @@ fam_opts (mongoc_collection_t *collection)
       printf ("%s\n", str);
       bson_free (str);
    } else {
-      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
+      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, (int) (__LINE__));
    }
 
    bson_destroy (&reply);
@@ -282,7 +282,7 @@ fam_sort (mongoc_collection_t *collection)
       printf ("%s\n", str);
       bson_free (str);
    } else {
-      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
+      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, (int) (__LINE__));
    }
 
    bson_destroy (&reply);
@@ -340,7 +340,7 @@ main (void)
 
    collection = mongoc_database_create_collection (database, "collectionName", options, &error);
    if (!collection) {
-      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
+      fprintf (stderr, "Got error: \"%s\" on line %d\n", error.message, (int) (__LINE__));
       return EXIT_FAILURE;
    }
 

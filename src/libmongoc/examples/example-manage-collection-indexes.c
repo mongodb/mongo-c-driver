@@ -4,13 +4,13 @@
 #include <mongoc/mongoc.h>
 #include <stdlib.h> // abort
 
-#define HANDLE_ERROR(...)                                         \
-   if (1) {                                                       \
-      fprintf (stderr, "Failure at %s:%d\n", __FILE__, __LINE__); \
-      fprintf (stderr, __VA_ARGS__);                              \
-      fprintf (stderr, "\n");                                     \
-      goto fail;                                                  \
-   } else                                                         \
+#define HANDLE_ERROR(...)                                                 \
+   if (1) {                                                               \
+      fprintf (stderr, "Failure at %s:%d\n", __FILE__, (int) (__LINE__)); \
+      fprintf (stderr, __VA_ARGS__);                                      \
+      fprintf (stderr, "\n");                                             \
+      goto fail;                                                          \
+   } else                                                                 \
       (void) 0
 
 int

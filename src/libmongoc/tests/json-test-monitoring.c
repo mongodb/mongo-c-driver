@@ -417,7 +417,7 @@ apm_match_visitor (match_ctx_t *ctx, bson_iter_t *pattern_iter, bson_iter_t *doc
       }
 
       if (fail) {
-         char *str = bson_as_json (&lsid, NULL);
+         char *str = bson_as_relaxed_extended_json (&lsid, NULL);
          match_err (ctx, "expected %s, but used session: %s", session_name, str);
          bson_free (str);
          return MATCH_ACTION_ABORT;

@@ -27,7 +27,9 @@ Parameters
 Description
 -----------
 
-Superseded by :symbol:`mongoc_collection_insert_one()` and :symbol:`mongoc_collection_insert_many()`.
+.. note::
+   
+   To pass additional options, use :symbol:`mongoc_collection_insert_one()` or :symbol:`mongoc_collection_insert_many()`.
 
 This function shall insert ``document`` into ``collection``.
 

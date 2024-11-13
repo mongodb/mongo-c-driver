@@ -40,7 +40,7 @@ try:
     import yaml
     import yamlordereddictloader  # type: ignore
 except ImportError:
-    sys.stderr.write("try 'pip install -r evergreen_config_generator/requirements.txt'\n")
+    sys.stderr.write("try 'poetry install --with=dev'\n")
     raise
 
 

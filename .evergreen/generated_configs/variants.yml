@@ -69,6 +69,20 @@ buildvariants:
       MONGOC_EARTHLY_ENV: archlinux
     tasks:
       - name: .archlinux-gcc
+  - name: centos7-clang
+    display_name: CentOS 7.0 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: centos7
+    tasks:
+      - name: .centos7-clang
+  - name: centos7-gcc
+    display_name: CentOS 7.0 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: centos7
+    tasks:
+      - name: .centos7-gcc
   - name: clang-format
     display_name: clang-format
     run_on:
@@ -87,7 +101,67 @@ buildvariants:
     expansions:
       CLIENT_SIDE_ENCRYPTION: "on"
     tasks:
-      - name: .cse-matrix-openssl
+      - name: cse-sasl-cyrus-openssl-debian10-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian92-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian92-gcc-compile
+      - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
+      - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+      - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-5.0-server-auth
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.2-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.4-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-5.0-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-6.0-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-4.4-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-5.0-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-6.0-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-7.0-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-8.0-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-4.4-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-5.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-6.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-7.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-7.0-server-auth
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-8.0-server-auth
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-server-auth
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-7.0-replica-auth
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-8.0-replica-auth
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-replica-auth
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-8.0-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-debian10-gcc-test-4.2-server-auth
+      - name: cse-sasl-cyrus-openssl-debian10-gcc-test-4.2-replica-auth
   - name: cse-matrix-winssl
     display_name: cse-matrix-winssl
     expansions:
@@ -149,7 +223,58 @@ buildvariants:
     display_name: sasl-matrix-openssl
     expansions: {}
     tasks:
-      - name: .sasl-matrix-openssl
+      - name: sasl-cyrus-openssl-debian10-gcc-compile
+      - name: sasl-cyrus-openssl-debian11-gcc-compile
+      - name: sasl-cyrus-openssl-debian92-clang-compile
+      - name: sasl-cyrus-openssl-debian92-gcc-compile
+      - name: sasl-cyrus-openssl-rhel80-gcc-compile
+      - name: sasl-cyrus-openssl-rhel81-power8-gcc-compile
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-ubuntu2004-clang-compile
+      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - name: sasl-cyrus-openssl-ubuntu2004-gcc-compile
+      - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-4.2-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-4.4-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-5.0-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-6.0-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-7.0-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-8.0-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-latest-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-5.0-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-6.0-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-7.0-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-8.0-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-server-auth
+        batchtime: 1440
+      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-4.4-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-5.0-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-6.0-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-7.0-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-8.0-server-auth
+      - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-latest-server-auth
+      - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
+      - name: sasl-cyrus-openssl-debian10-gcc-test-4.2-server-auth
+      - name: sasl-cyrus-openssl-debian10-gcc-test-4.2-replica-auth
   - name: sasl-matrix-winssl
     display_name: sasl-matrix-winssl
     expansions: {}
@@ -163,6 +288,20 @@ buildvariants:
     display_name: std-matrix
     tasks:
       - name: .std-matrix
+  - name: u16-clang
+    display_name: Ubuntu 16.04 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: u16
+    tasks:
+      - name: .u16-clang
+  - name: u16-gcc
+    display_name: Ubuntu 16.04 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: u16
+    tasks:
+      - name: .u16-gcc
   - name: u18-clang
     display_name: Ubuntu 18.04 (LLVM/Clang)
     expansions:

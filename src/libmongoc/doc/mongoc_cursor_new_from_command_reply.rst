@@ -6,9 +6,7 @@ mongoc_cursor_new_from_command_reply()
 .. warning::
    .. deprecated:: 1.11.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`mongoc_cursor_new_from_command_reply_with_opts()` in new code.
+      Use :symbol:`mongoc_cursor_new_from_command_reply_with_opts()` instead.
 
       When migrating from the deprecated :symbol:`mongoc_cursor_new_from_command_reply()` to :symbol:`mongoc_cursor_new_from_command_reply_with_opts()`,
       note that options previously passed to the ``reply`` argument (e.g. "batchSize") must instead be provided in the ``opts`` argument.
@@ -22,7 +20,6 @@ Synopsis
   mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
                                         bson_t *reply,
                                         uint32_t server_id);
-     BSON_GNUC_DEPRECATED_FOR (mongoc_cursor_new_from_command_reply_with_opts);
 
 Parameters
 ----------

@@ -21,6 +21,8 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 #include "mock_server/future-functions.h"
+#include <common-cmp-private.h>
+#include <common-atomic-private.h>
 
 /* test statistics counters excluding OP_INSERT, OP_UPDATE, and OP_DELETE since
  * those were superseded by write commands in 2.6. */
@@ -33,7 +35,7 @@
 
 /* helper to reset a prev_* counter */
 #define RESET(ident) \
-   bson_atomic_int32_exchange (&prev_##ident, mongoc_counter_##ident##_count (), bson_memory_order_seq_cst)
+   mcommon_atomic_int32_exchange (&prev_##ident, mongoc_counter_##ident##_count (), mcommon_memory_order_seq_cst)
 
 /* helper to compare and reset a prev_* counter. */
 #define DIFF_AND_RESET(ident, cmp, expected)                 \
@@ -1262,7 +1264,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    // Number of messages sent by background threads depend on the number of
    // members in the replica set.
    const size_t member_count_zu = test_framework_replset_member_count ();
-   ASSERT (bson_in_range_unsigned (int32_t, member_count_zu));
+   ASSERT (mcommon_in_range_unsigned (int32_t, member_count_zu));
    const int32_t member_count = (int32_t) member_count_zu;
 
    // MongoDB Handshake Spec: Since MongoDB server 4.4, the initial handshake

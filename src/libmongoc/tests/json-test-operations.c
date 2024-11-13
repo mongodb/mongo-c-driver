@@ -34,6 +34,8 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
+#include <inttypes.h>
+
 
 mongoc_client_session_t *
 session_from_name (json_test_ctx_t *ctx, const char *session_name)
@@ -264,7 +266,7 @@ value_to_str (const bson_value_t *value)
 
    if (value->value_type == BSON_TYPE_DOCUMENT || value->value_type == BSON_TYPE_ARRAY) {
       bson_init_from_value (&doc, value);
-      return bson_as_json (&doc, NULL);
+      return bson_as_relaxed_extended_json (&doc, NULL);
    } else {
       return bson_strdup_printf ("%" PRId64, bson_value_as_int64 (value));
    }
@@ -418,7 +420,7 @@ get_result (const bson_t *test, const bson_t *operation, bson_value_t *value)
 static void
 check_success_expected (const bson_t *operation, bool succeeded, bool expected, const bson_error_t *error)
 {
-   char *json = bson_as_json (operation, NULL);
+   char *json = bson_as_relaxed_extended_json (operation, NULL);
 
    if (!succeeded && expected) {
       test_error ("Expected success, got error \"%s\":\n%s", error->message, json);
@@ -474,7 +476,10 @@ check_error_code_name (const bson_t *operation, const bson_error_t *error)
    code_name = bson_lookup_utf8 (operation, "errorCodeName");
    expected_error_code = error_code_from_name (code_name);
    if (error->code != expected_error_code) {
-      test_error ("Expected error code %d : %s but got error code %d\n", expected_error_code, code_name, error->code);
+      test_error ("Expected error code %" PRIu32 " : %s but got error code %" PRIu32 "\n",
+                  expected_error_code,
+                  code_name,
+                  error->code);
    }
 }
 
@@ -520,7 +525,8 @@ check_error_labels_contain (const bson_t *operation, const bson_value_t *result)
    while (bson_iter_next (&expected_label)) {
       expected_label_str = bson_iter_utf8 (&expected_label, NULL);
       if (!mongoc_error_has_label (&reply, expected_label_str)) {
-         test_error ("Expected label \"%s\" not found in %s", expected_label_str, bson_as_json (&reply, NULL));
+         test_error (
+            "Expected label \"%s\" not found in %s", expected_label_str, bson_as_relaxed_extended_json (&reply, NULL));
       }
    }
 }
@@ -1071,7 +1077,7 @@ insert_many (mongoc_collection_t *collection,
       doc_ptrs[n] = bson_copy (&document);
       n++;
       if (n >= 100) {
-         test_error ("Too many documents: %s", bson_as_json (operation, NULL));
+         test_error ("Too many documents: %s", bson_as_relaxed_extended_json (operation, NULL));
       }
    }
 
@@ -2418,7 +2424,7 @@ json_test_operation (json_test_ctx_t *ctx,
          bson_destroy (reply);
          res = command (admin_db, test, operation, session, read_prefs, reply);
          if (!res) {
-            test_error ("admin command failed: %s", bson_as_json (reply, NULL));
+            test_error ("admin command failed: %s", bson_as_relaxed_extended_json (reply, NULL));
          }
          mongoc_database_destroy (admin_db);
          mongoc_client_destroy (client);
@@ -2501,7 +2507,7 @@ one_operation (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation
    if (ctx->verbose) {
       char *op_str;
 
-      op_str = bson_as_json (operation, NULL);
+      op_str = bson_as_relaxed_extended_json (operation, NULL);
       MONGOC_DEBUG ("     running operation %s : %s\n", op_name, op_str);
       bson_free (op_str);
    }

@@ -20,7 +20,9 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_as_relaxed_extended_json()` encodes ``bson`` as a UTF-8 string in the relaxed `MongoDB Extended JSON format`_, except the outermost element is encoded as a JSON array, rather than a JSON document.
+:symbol:`bson_as_relaxed_extended_json()` encodes ``bson`` as a UTF-8 string in the Relaxed Extended JSON.
+The outermost element is encoded as a JSON array (``[ ... ]``), rather than a JSON document (``{ ... }``).
+See `MongoDB Extended JSON format`_ for a description of Extended JSON formats.
 
 The caller is responsible for freeing the resulting UTF-8 encoded string by calling :symbol:`bson_free()` with the result.
 
@@ -36,35 +38,15 @@ Upon failure, NULL is returned.
 Example
 -------
 
-.. code-block:: c
-
-  #include <bson/bson.h>
-
-  int main ()
-  {
-     bson_t bson;
-     char *str;
-
-     bson_init (&bson);
-     /* BSON array is a normal BSON document with integer values for the keys,
-      * starting with 0 and continuing sequentially
-      */
-     BSON_APPEND_DOUBLE (&bson, "0", 3.14);
-     BSON_APPEND_UTF8 (&bson, "1", "bar");
-
-     str = bson_array_as_relaxed_extended_json (&bson, NULL);
-     /* Prints
-      * [ 3.14, "bar" ]
-      */
-     printf ("%s\n", str);
-     bson_free (str);
-
-     bson_destroy (&bson);
-  }
+.. literalinclude:: ../examples/extended-json.c
+   :language: c
+   :start-after: // bson_array_as_relaxed_extended_json ... begin
+   :end-before: // bson_array_as_relaxed_extended_json ... end
+   :dedent: 6
 
 
 .. only:: html
 
   .. include:: includes/seealso/bson-as-json.txt
 
-.. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst
+.. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json/extended-json.md

@@ -36,6 +36,8 @@
 #include "utlist.h"
 
 #include <stdint.h>
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
@@ -614,7 +616,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    size_t hl_array_size = 0u;
 
-   BSON_ASSERT (bson_in_range_signed (size_t, td->max_hosts));
+   BSON_ASSERT (mcommon_in_range_signed (size_t, td->max_hosts));
    const mongoc_host_list_t *const *hl_array = _mongoc_apply_srv_max_hosts (hl, (size_t) td->max_hosts, &hl_array_size);
 
    for (size_t idx = 0u; idx < hl_array_size; ++idx) {
@@ -1121,8 +1123,8 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    uint32_t server_id;
    mc_shared_tpld td = mc_tpld_take_ref (topology);
 
-   bson_string_t *topology_type = bson_string_new (". Topology type: ");
-   bson_string_append (topology_type, mongoc_topology_description_type (td.ptr));
+   mcommon_string_t *topology_type = mcommon_string_new (". Topology type: ");
+   mcommon_string_append (topology_type, mongoc_topology_description_type (td.ptr));
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
@@ -1330,7 +1332,7 @@ done:
          _mongoc_error_append (error, topology_type->str);
       }
    }
-   bson_string_free (topology_type, true);
+   mcommon_string_free (topology_type, true);
    mc_tpld_drop_ref (&td);
    return server_id;
 }
@@ -1579,7 +1581,7 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology, mongoc_server
    /**
     * ! note:
     * At time of writing, this diverges from the spec:
-    * https://github.com/mongodb/specifications/blob/df6be82f865e9b72444488fd62ae1eb5fca18569/source/sessions/driver-sessions.rst#algorithm-to-return-a-serversession-instance-to-the-server-session-pool
+    * https://github.com/mongodb/specifications/blob/master/source/sessions/driver-sessions.md#algorithm-to-return-a-serversession-instance-to-the-server-session-pool
     *
     * The spec notes that before returning a session, we should first inspect
     * the back of the pool for expired items and delete them. In this case, we
@@ -1868,10 +1870,10 @@ static void
 _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t *error_out)
 {
    const mongoc_server_description_t *server_description;
-   bson_string_t *error_message;
+   mcommon_string_t *error_message;
 
    memset (error_out, 0, sizeof (bson_error_t));
-   error_message = bson_string_new ("");
+   error_message = mcommon_string_new ("");
 
    for (size_t i = 0u; i < mc_tpld_servers_const (td)->items_len; i++) {
       const bson_error_t *error;
@@ -1880,9 +1882,9 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
       error = &server_description->error;
       if (error->code) {
          if (error_message->len > 0) {
-            bson_string_append_c (error_message, ' ');
+            mcommon_string_append_c (error_message, ' ');
          }
-         bson_string_append_printf (error_message, "[%s]", server_description->error.message);
+         mcommon_string_append_printf (error_message, "[%s]", server_description->error.message);
          /* The last error's code and domain wins. */
          error_out->code = error->code;
          error_out->domain = error->domain;
@@ -1890,7 +1892,7 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
    }
 
    bson_strncpy ((char *) &error_out->message, error_message->str, sizeof (error_out->message));
-   bson_string_free (error_message, true);
+   mcommon_string_free (error_message, true);
 }
 
 void

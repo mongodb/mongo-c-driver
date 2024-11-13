@@ -6,9 +6,7 @@ mongoc_collection_create_bulk_operation()
 .. warning::
    .. deprecated:: 1.9.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`mongoc_collection_create_bulk_operation_with_opts()` in new code.
+      Use :symbol:`mongoc_collection_create_bulk_operation_with_opts()` instead.
 
 Synopsis
 --------
@@ -19,8 +17,7 @@ Synopsis
   mongoc_collection_create_bulk_operation (
      mongoc_collection_t *collection,
      bool ordered,
-     const mongoc_write_concern_t *write_concern) BSON_GNUC_WARN_UNUSED_RESULT
-     BSON_GNUC_DEPRECATED_FOR (mongoc_collection_create_bulk_operation_with_opts);
+     const mongoc_write_concern_t *write_concern);
 
 Parameters
 ----------

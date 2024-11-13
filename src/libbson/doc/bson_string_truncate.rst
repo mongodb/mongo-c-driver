@@ -3,6 +3,10 @@
 bson_string_truncate()
 ======================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
+
 Synopsis
 --------
 

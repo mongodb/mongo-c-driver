@@ -12,8 +12,7 @@ Synopsis
   mongoc_client_get_handshake_description (mongoc_client_t *client,
                                            uint32_t server_id,
                                            bson_t *opts,
-                                           bson_error_t *error)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                                           bson_error_t *error);
 
 Returns a description constructed from the initial handshake response to a server.
 

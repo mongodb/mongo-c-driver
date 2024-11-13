@@ -42,7 +42,8 @@
 #include "mongoc-stream-tls-secure-channel.h"
 #endif
 #include "mongoc-stream-tls.h"
-#include "mongoc-util-private.h" // BEGIN_IGNORE_DEPRECATIONS
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-cmp-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"
@@ -109,7 +110,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
                return false;
             } else {
                const int64_t msec = remaining / 1000;
-               BSON_ASSERT (bson_in_range_signed (int32_t, msec));
+               BSON_ASSERT (mcommon_in_range_signed (int32_t, msec));
                timeout_msec = (int32_t) msec;
             }
          }

@@ -38,7 +38,8 @@
 #include "utlist.h"
 #include "mongoc-trace-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
+#include <common-string-private.h>
 
 struct _mongoc_uri_t {
    char *str;
@@ -719,9 +720,12 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_SOCKETCHECKINTERVALMS) || !strcasecmp (key, MONGOC_URI_SOCKETTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_LOCALTHRESHOLDMS) || !strcasecmp (key, MONGOC_URI_MAXPOOLSIZE) ||
           !strcasecmp (key, MONGOC_URI_MAXSTALENESSSECONDS) || !strcasecmp (key, MONGOC_URI_MINPOOLSIZE) ||
-          !strcasecmp (key, MONGOC_URI_MAXIDLETIMEMS) || !strcasecmp (key, MONGOC_URI_WAITQUEUEMULTIPLE) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) || !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) ||
           !strcasecmp (key, MONGOC_URI_SRVMAXHOSTS);
+   /* Not including deprecated unimplemented options:
+    * - MONGOC_URI_MAXIDLETIMEMS
+    * - MONGOC_URI_WAITQUEUEMULTIPLE
+    */
 }
 
 bool
@@ -741,7 +745,7 @@ mongoc_uri_option_is_bool (const char *key)
           !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) || !strcasecmp (key, MONGOC_URI_LOADBALANCED) ||
-          /* deprecated options */
+          /* deprecated options with canonical equivalents */
           !strcasecmp (key, MONGOC_URI_SSL) || !strcasecmp (key, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES) ||
           !strcasecmp (key, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES);
 }
@@ -753,7 +757,7 @@ mongoc_uri_option_is_utf8 (const char *key)
           !strcasecmp (key, MONGOC_URI_READPREFERENCE) || !strcasecmp (key, MONGOC_URI_SERVERMONITORINGMODE) ||
           !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) || !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
           !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD) || !strcasecmp (key, MONGOC_URI_TLSCAFILE) ||
-          /* deprecated options */
+          /* deprecated options with canonical equivalents */
           !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
           !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD) ||
           !strcasecmp (key, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE);
@@ -1164,7 +1168,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
           * Keys that aren't supported by a driver MUST be ignored.
           *
           * A WARN level logging message MUST be issued
-          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.rst#keys
+          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.md#keys
           */
          MONGOC_WARNING ("Unsupported URI option \"%s\"", key);
       }
@@ -2214,7 +2218,7 @@ char *
 mongoc_uri_unescape (const char *escaped_string)
 {
    bson_unichar_t c;
-   bson_string_t *str;
+   mcommon_string_t *str;
    unsigned int hex = 0;
    const char *ptr;
    const char *end;
@@ -2235,7 +2239,7 @@ mongoc_uri_unescape (const char *escaped_string)
 
    ptr = escaped_string;
    end = ptr + len;
-   str = bson_string_new (NULL);
+   str = mcommon_string_new (NULL);
 
    for (; *ptr; ptr = bson_utf8_next_char (ptr)) {
       c = bson_utf8_get_char (ptr);
@@ -2248,16 +2252,16 @@ mongoc_uri_unescape (const char *escaped_string)
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
              || 0 == hex) {
-            bson_string_free (str, true);
+            mcommon_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
          }
-         bson_string_append_c (str, hex);
+         mcommon_string_append_c (str, hex);
          ptr += 2;
          unescape_occurred = true;
          break;
       default:
-         bson_string_append_unichar (str, c);
+         mcommon_string_append_unichar (str, c);
          break;
       }
    }
@@ -2265,11 +2269,11 @@ mongoc_uri_unescape (const char *escaped_string)
    /* Check that after unescaping, it is still valid UTF-8 */
    if (unescape_occurred && !bson_utf8_validate (str->str, str->len, false)) {
       MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
-      bson_string_free (str, true);
+      mcommon_string_free (str, true);
       return NULL;
    }
 
-   return bson_string_free (str, false);
+   return mcommon_string_free (str, false);
 }
 
 

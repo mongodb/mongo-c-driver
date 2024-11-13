@@ -13,6 +13,8 @@
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
 
+#include <inttypes.h>
+
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster-test"
@@ -433,8 +435,8 @@ test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
          bson_iter_bson (&iter, &client_cluster_time);
          if (!bson_equal (test->cluster_time, &client_cluster_time)) {
             test_error ("Unequal clusterTimes.\nServer sent %s\nClient sent %s",
-                        bson_as_json (test->cluster_time, NULL),
-                        bson_as_json (&client_cluster_time, NULL));
+                        bson_as_relaxed_extended_json (test->cluster_time, NULL),
+                        bson_as_relaxed_extended_json (&client_cluster_time, NULL));
          }
 
          bson_destroy (&client_cluster_time);
@@ -785,7 +787,11 @@ receives_with_cluster_time (mock_server_t *server, uint32_t timestamp, uint32_t 
    BSON_ASSERT (BSON_ITER_HOLDS_TIMESTAMP (&cluster_time));
    bson_iter_timestamp (&cluster_time, &t, &i);
    if (t != timestamp || i != increment) {
-      test_error ("Expected Timestamp(%d, %d), got Timestamp(%d, %d)", timestamp, increment, t, i);
+      test_error ("Expected Timestamp(%" PRIu32 ", %" PRIu32 "), got Timestamp(%" PRIu32 ", %" PRIu32 ")",
+                  timestamp,
+                  increment,
+                  t,
+                  i);
    }
 
    return request;

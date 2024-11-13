@@ -25,18 +25,26 @@ To publish a new release Debian package, perform the following:
 
 1. Change to the packaging branch, ``git checkout debian/unstable``, and make sure
    the working directorty is clean, ``git status``, and up-to-date, ``git pull``.
-2. Merge the release tag, ``git merge 1.xx.y``; if there is a conflict (which
-   should be rare), then it may be better to pass some additional options,
-   ``git merge -sort -Xtheirs 1.xx.y``.
+2. Because it is possible to have divergences between release branches, some
+   special procedures are needed. Execute the following sequence of commands
+   (substituting version numbers as appropriate):
+
+.. code-block:: console
+
+   $ git merge --no-commit --no-ff 1.xx.y       # may result in conflicts
+   $ git checkout HEAD -- debian                # ensures debian/ dir is preserved
+   $ git add .                                  # prepare to resolve conflicts
+   $ git checkout --no-overlay 1.xx.y -- . ':!debian'   # resolve conflicts
+   $ git add .
+   $ git commit
+
 3. Verify that there are no extraneous differences from the release tag,
    ``git diff 1.xx.y..HEAD --stat -- . ':!debian'``; the command should produce
    no output, and if any output is shown then that indicates differences in
    files outside the ``debian/`` directory.
 4. If there were any files outside the ``debian/`` directory listed in the last
-   step then replace them, ``git checkout 1.xx.y -- path/to/file1 path/to/file2``.
-   Commit these changes,
-   ``git commit -m "Fix-up, post Merge tag '1.xx.y' into debian/unstable"`` and
-   repeat step 3.
+   step then something has gone wrong. Discard the changes on the branch and
+   start again.
 5. Create a new changelog entry (use the command ``dch -i`` to ensure proper
    formatting), then adjust the version number on the top line of the changelog
    as appropriate.
@@ -51,14 +59,18 @@ To publish a new release Debian package, perform the following:
    files are installed to the proper locations by the proper packages and also
    use ``lintian`` on the ``.changes`` file in order to confirm that there are no
    unexpected errors or warnings; the ``lintian`` used for this check should
-   always be the latest version as it is found in the unstable distribution)
+   always be the latest version as it is found in the unstable distribution).
 9. If any changes are needed, make them, commit them, and rebuild the package.
 
    .. note:: It may be desirable to squash multiple commits down to a single commit before building the final packages.
 
-10. Once the final packages are built, they can be signed and uploaded and the
-    version can be tagged using the ``--git-tag`` option of ``gbp buildpackage``.
-    The best approach is to build the packages, prepare everything and then
-    upload. Once the archive has accepted the upload, then execute
+10. Mark the package ready for release with the ``dch -r`` command, commit the
+    resulting changes (after inspecting them),
+    ``git commit debian/changelog -m 'mark ready for release'``.
+11. Build the final packages. Once the final packages are built, they can be
+    signed and uploaded and the version can be tagged using the ``--git-tag``
+    option of ``gbp buildpackage``. The best approach is to build the packages,
+    prepare everything and then upload. Once the archive has accepted the
+    upload, then execute
     ``gbp buildpackage --git-tag --git-tag-only --git-sign-tags`` and push the
     commits on the ``debian/unstable`` branch as well as the new signed tag.
