@@ -1085,6 +1085,24 @@ done:
    return ret;
 }
 
+bool
+test_count_matching_events_for_client (
+   test_t *test, entity_t *client, bson_t *expected_event, bson_error_t *error, int64_t *count_out)
+{
+   int64_t count = 0;
+
+   event_t *eiter;
+   LL_FOREACH (client->events, eiter)
+   {
+      if (test_check_event (test, expected_event, eiter, error)) {
+         count++;
+      }
+   }
+
+   *count_out = count;
+   return true;
+}
+
 static bool
 test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for_client, bson_error_t *error)
 {

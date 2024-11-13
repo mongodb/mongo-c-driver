@@ -3788,15 +3788,15 @@ static bool
 operation_create_entities (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
-   bson_parser_t *bp = bson_parser_new ();
-   bson_t *entities = NULL;
-   bson_iter_t entity_iter;
 
+   bson_parser_t *bp = bson_parser_new ();
+   bson_t *entities;
    bson_parser_array_optional (bp, "entities", &entities);
    if (!bson_parser_parse (bp, op->arguments, error)) {
       goto done;
    }
 
+   bson_iter_t entity_iter;
    BSON_FOREACH (entities, entity_iter)
    {
       bson_t entity;
@@ -3806,6 +3806,60 @@ operation_create_entities (test_t *test, operation_t *op, result_t *result, bson
       if (!create_ret) {
          goto done;
       }
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static bool
+operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   int64_t start_time = bson_get_monotonic_time ();
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id;
+   bson_t *expected_event;
+   int64_t *expected_count;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_doc (bp, "event", &expected_event);
+   bson_parser_int (bp, "count", &expected_count);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   entity_t *client = entity_map_get (test->entity_map, client_id, error);
+   if (!client) {
+      goto done;
+   }
+
+   // @todo CDRIVER-3525 test support for CMAP events once supported by libmongoc
+   bson_iter_t iter;
+   bson_iter_init (&iter, expected_event);
+   bson_iter_next (&iter);
+   const char *expected_event_type = bson_iter_key (&iter);
+   if (is_unsupported_event_type (expected_event_type)) {
+      MONGOC_DEBUG ("Skipping wait for unsupported event type '%s'", expected_event_type);
+      result_from_ok (result);
+      ret = true;
+      goto done;
+   }
+
+   while (true) {
+      int64_t count;
+      if (!test_count_matching_events_for_client (test, client, expected_event, error, &count)) {
+         goto done;
+      }
+      if (count >= *expected_count) {
+         break;
+      }
+      ASSERT_CMPINT64 (bson_get_monotonic_time () - start_time, <, (int64_t) 10 * 1000 * 1000);
+      // @todo waiting not implemented
+      BSON_ASSERT (false);
    }
 
    result_from_ok (result);
@@ -3833,6 +3887,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"listDatabases", operation_list_databases},
       {"listDatabaseNames", operation_list_database_names},
       {"clientBulkWrite", operation_client_bulkwrite},
+      {"waitForEvent", operation_wait_for_event},
 
       /* ClientEncryption operations */
       {"createDataKey", operation_create_datakey},
