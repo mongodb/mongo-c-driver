@@ -195,9 +195,11 @@ structured_log_cb (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
    BSON_ASSERT_PARAM (entry);
    BSON_ASSERT_PARAM (user_data);
-   entity_t *entity = (entity_t *) user_data;
-   log_message_t *log_message = log_message_new (entry);
-   LL_APPEND (entity->log_messages, log_message);
+   if (!test_is_suppressing_structured_logs ()) {
+      entity_t *entity = (entity_t *) user_data;
+      log_message_t *log_message = log_message_new (entry);
+      LL_APPEND (entity->log_messages, log_message);
+   }
 }
 
 static bool
