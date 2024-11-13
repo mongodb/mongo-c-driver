@@ -1231,15 +1231,21 @@ test_check_log_message (test_t *test, bson_t *expected, log_message_t *actual, b
       goto done;
    }
 
-   // @todo
-   BSON_ASSERT (failure_is_redacted == 0 || *failure_is_redacted == false);
+   // @todo; failureIsRedacted needs implementing
+   BSON_ASSERT (!failure_is_redacted);
 
-   if (!bson_equal (expected_message_doc, actual->message)) {
-      char *expected_message_str = bson_as_relaxed_extended_json (expected_message_doc, NULL);
-      char *actual_message_str = bson_as_relaxed_extended_json (actual->message, NULL);
-      test_set_error (error, "expected log message: %s, but got: %s", expected_message_str, actual_message_str);
-      bson_free (expected_message_str);
-      bson_free (actual_message_str);
+   bson_val_t *expected_val = bson_val_from_bson (expected_message_doc);
+   bson_val_t *actual_val = bson_val_from_bson (actual->message);
+   bool is_match = bson_match (expected_val, actual_val, false, error);
+   bson_val_destroy (actual_val);
+   bson_val_destroy (expected_val);
+
+   if (!is_match) {
+      char *expected_str = bson_as_relaxed_extended_json (expected_message_doc, NULL);
+      char *actual_str = bson_as_relaxed_extended_json (actual->message, NULL);
+      test_set_error (error, "expected log message: %s, but got: %s", expected_str, actual_str);
+      bson_free (actual_str);
+      bson_free (expected_str);
       goto done;
    }
 
