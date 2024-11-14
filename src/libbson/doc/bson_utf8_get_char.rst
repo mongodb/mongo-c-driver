@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``utf8``: A UTF-8 encoded string.
+* ``utf8``: A validated UTF-8 encoded string.
 
 Description
 -----------

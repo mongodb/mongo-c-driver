@@ -34,19 +34,6 @@
 #define strncasecmp _strnicmp
 #endif
 
-#if BSON_GNUC_CHECK_VERSION(4, 6)
-#define BEGIN_IGNORE_DEPRECATIONS \
-   _Pragma ("GCC diagnostic push") _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
-#define END_IGNORE_DEPRECATIONS _Pragma ("GCC diagnostic pop")
-#elif defined(__clang__)
-#define BEGIN_IGNORE_DEPRECATIONS \
-   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
-#define END_IGNORE_DEPRECATIONS _Pragma ("clang diagnostic pop")
-#else
-#define BEGIN_IGNORE_DEPRECATIONS
-#define END_IGNORE_DEPRECATIONS
-#endif
-
 #ifndef _WIN32
 #define MONGOC_PRINTF_FORMAT(a, b) __attribute__ ((format (__printf__, a, b)))
 #else

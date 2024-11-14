@@ -20,6 +20,7 @@
 #include "TestSuite.h"
 #include "common-thread-private.h"
 #include <signal.h>
+#include <common-string-private.h>
 
 typedef struct _msg_t {
    char *string;
@@ -38,47 +39,47 @@ static char *
 test_diagnostics_error_string (bson_error_t *error)
 {
    msg_t *msg_iter = NULL;
-   bson_string_t *str = NULL;
+   mcommon_string_t *str = NULL;
    test_diagnostics_t *td = &diagnostics;
 
    /* Give a large header / footer to make the error easily grep-able */
-   str = bson_string_new ("****************************** BEGIN_MONGOC_ERROR "
-                          "******************************\n");
+   str = mcommon_string_new ("****************************** BEGIN_MONGOC_ERROR "
+                             "******************************\n");
 
    bson_mutex_lock (&td->mutex);
    if (td->test_info) {
-      bson_string_append (str, "test info:\n");
+      mcommon_string_append (str, "test info:\n");
    }
 
    LL_FOREACH (td->test_info, msg_iter)
    {
-      bson_string_append (str, msg_iter->string);
-      bson_string_append (str, "\n");
+      mcommon_string_append (str, msg_iter->string);
+      mcommon_string_append (str, "\n");
    }
 
-   bson_string_append (str, "\n");
+   mcommon_string_append (str, "\n");
 
    if (td->error_info) {
-      bson_string_append (str, "error context:\n");
+      mcommon_string_append (str, "error context:\n");
    }
 
    LL_FOREACH (td->error_info, msg_iter)
    {
-      bson_string_append (str, msg_iter->string);
-      bson_string_append (str, "\n\n");
+      mcommon_string_append (str, msg_iter->string);
+      mcommon_string_append (str, "\n\n");
    }
 
    bson_mutex_unlock (&td->mutex);
 
    if (error && error->code != 0) {
-      bson_string_append_printf (str, "error: %s\n", error->message);
+      mcommon_string_append_printf (str, "error: %s\n", error->message);
    }
 
-   bson_string_append (str,
-                       "******************************* END_MONGOC_ERROR "
-                       "*******************************\n");
+   mcommon_string_append (str,
+                          "******************************* END_MONGOC_ERROR "
+                          "*******************************\n");
 
-   return bson_string_free (str, false);
+   return mcommon_string_free (str, false);
 }
 
 static void

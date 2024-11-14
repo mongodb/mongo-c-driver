@@ -18,6 +18,7 @@
 
 #include "TestSuite.h"
 #include "common-b64-private.h"
+#include <common-cmp-private.h>
 
 static void
 _test_encode_helper (char *input, size_t input_len, char *expected_output, int expected_output_len)
@@ -33,7 +34,7 @@ _test_encode_helper (char *input, size_t input_len, char *expected_output, int e
    ASSERT_CMPSIZE_T (target_size, ==, (size_t) expected_output_len + 1);
    /* returned value does not count trailing NULL. */
    ret = mcommon_b64_ntop ((uint8_t *) input, input_len, output, target_size);
-   ASSERT (bson_cmp_equal_us (target_size - 1u, ret));
+   ASSERT (mcommon_cmp_equal_us (target_size - 1u, ret));
    ASSERT_CMPSTR (output, expected_output);
    bson_free (output);
 }

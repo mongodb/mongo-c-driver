@@ -17,6 +17,7 @@
 #include "TestSuite.h"
 #include "mongoc-config.h"
 #include "test-conveniences.h"
+#include <common-string-private.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl-private.h"
@@ -140,7 +141,7 @@ test_mongoc_ssl_opts_from_bson (void)
 
    for (test = tests; test->bson != NULL; test++) {
       mongoc_ssl_opt_t ssl_opt = {0};
-      bson_string_t *errmsg = bson_string_new (NULL);
+      mcommon_string_t *errmsg = mcommon_string_new (NULL);
       bool ok = _mongoc_ssl_opts_from_bson (&ssl_opt, tmp_bson (test->bson), errmsg);
 
       MONGOC_DEBUG ("testcase: %s", test->bson);
@@ -185,7 +186,7 @@ test_mongoc_ssl_opts_from_bson (void)
       ASSERT (!ssl_opt.crl_file);
 
       _mongoc_ssl_opts_cleanup (&ssl_opt, true /* free_internal */);
-      bson_string_free (errmsg, true /* free_segment */);
+      mcommon_string_free (errmsg, true /* free_segment */);
    }
 }
 
@@ -199,6 +200,16 @@ test_mongoc_ssl_opts_cleanup_zero (void)
    _mongoc_ssl_opts_cleanup (&ssl_opt, false /* free_internal */);
 }
 
+// `test_non_existant_cafile` is a regression test for CDRIVER-5736.
+static void
+test_non_existant_cafile (void)
+{
+   mongoc_client_t *client = mongoc_client_new ("mongodb://localhost:27017/?tls=true&tlsCAFile=/nonexistant/ca.pem");
+   // Ignore return. May return true on Windows hosts. See CDRIVER-5747.
+   mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
+   mongoc_client_destroy (client);
+}
+
 #endif /* MONGOC_ENABLE_SSL */
 
 void
@@ -207,5 +218,6 @@ test_ssl_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/ssl_opt/from_bson", test_mongoc_ssl_opts_from_bson);
    TestSuite_Add (suite, "/ssl_opt/cleanup", test_mongoc_ssl_opts_cleanup_zero);
+   TestSuite_Add (suite, "/ssl_opt/non-existant-cafile", test_non_existant_cafile);
 #endif /* MONGOC_ENABLE_SSL */
 }

@@ -47,10 +47,10 @@ test_sample_command (sample_command_fn_t fn,
                      bool drop_collection)
 {
    char *example_name = bson_strdup_printf ("example %d", exampleno);
+
    capture_logs (true);
-
    fn (db);
-
+   capture_logs (false);
    ASSERT_NO_CAPTURED_LOGS (example_name);
 
    if (drop_collection) {
@@ -2483,13 +2483,23 @@ insert_pet (mongoc_collection_t *collection, bool is_adoptable)
 
    doc = BCON_NEW ("adoptable", BCON_BOOL (is_adoptable));
 
-   rc = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
+   // Insert with majority write concern. Snapshot read concern reads from majority committed data.
+   bson_t opts = BSON_INITIALIZER;
+   {
+      mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_write_concern_append (wc, &opts);
+      mongoc_write_concern_destroy (wc);
+   }
+
+   rc = mongoc_collection_insert_one (collection, doc, &opts, NULL, &error);
    if (!rc) {
       MONGOC_ERROR ("insert into pets.%s failed: %s", mongoc_collection_get_name (collection), error.message);
       goto cleanup;
    }
 
 cleanup:
+   bson_destroy (&opts);
    bson_destroy (doc);
    return rc;
 }
@@ -2590,15 +2600,15 @@ cleanup:
    return rc;
 }
 
-/*
- * JIRA: https://jira.mongodb.org/browse/DRIVERS-2181
- */
 static void
-test_example_59 (mongoc_database_t *db)
+test_snapshot_query_example_1 (void)
 {
-   BSON_UNUSED (db);
-
    if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_SNAPSHOT_READS)) {
+      MONGOC_DEBUG ("Skipping test. Server does not support snapshot reads\n");
       return;
    }
 
@@ -2661,7 +2671,7 @@ test_example_59 (mongoc_database_t *db)
    /* End Snapshot Query Example 1 */
 
    if (adoptable_pets_count != 2) {
-      MONGOC_ERROR ("there should be exatly 2 adoptable_pets_count, found: %" PRId64, adoptable_pets_count);
+      MONGOC_ERROR ("there should be exactly 2 adoptable_pets_count, found: %" PRId64, adoptable_pets_count);
    }
 
    /* Start Snapshot Query Example 1 Post */
@@ -2681,6 +2691,7 @@ retail_setup (mongoc_collection_t *sales_collection)
    bson_error_t error;
    struct timeval tv;
    int64_t unix_time_now = 0;
+   bson_t opts = BSON_INITIALIZER;
 
    if (bson_gettimeofday (&tv)) {
       MONGOC_ERROR ("could not get time of day");
@@ -2693,24 +2704,36 @@ retail_setup (mongoc_collection_t *sales_collection)
    doc =
       BCON_NEW ("shoeType", BCON_UTF8 ("boot"), "price", BCON_INT64 (30), "saleDate", BCON_DATE_TIME (unix_time_now));
 
-   ok = mongoc_collection_insert_one (sales_collection, doc, NULL, NULL, &error);
+   // Insert with majority write concern. Snapshot read concern reads from majority committed data.
+   {
+      mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_write_concern_append (wc, &opts);
+      mongoc_write_concern_destroy (wc);
+   }
+
+   ok = mongoc_collection_insert_one (sales_collection, doc, &opts, NULL, &error);
    if (!ok) {
       MONGOC_ERROR ("insert into retail.sales failed: %s", error.message);
       goto cleanup;
    }
 
 cleanup:
+   bson_destroy (&opts);
    bson_destroy (doc);
    return ok;
 }
 
 
 static void
-test_example_60 (mongoc_database_t *db)
+test_snapshot_query_example_2 (void)
 {
-   BSON_UNUSED (db);
-
    if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_SNAPSHOT_READS)) {
+      MONGOC_DEBUG ("Skipping test. Server does not support snapshot reads\n");
       return;
    }
 
@@ -2822,6 +2845,21 @@ cleanup:
    /* End Snapshot Query Example 2 Post */
 }
 
+// `test_snapshot_query_examples` examples for DRIVERS-2181.
+static void
+test_snapshot_query_examples (void)
+{
+   capture_logs (true);
+   test_snapshot_query_example_1 ();
+   capture_logs (false);
+   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_1");
+
+   capture_logs (true);
+   test_snapshot_query_example_2 ();
+   capture_logs (false);
+   ASSERT_NO_CAPTURED_LOGS ("test_snapshot_query_example_2");
+}
+
 /* clang-format off */
 
 typedef struct {
@@ -2883,6 +2921,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
       capture_logs (true);
       fn (db);
       ASSERT_NO_CAPTURED_LOGS ("change stream examples");
+      capture_logs (false);
 
       bson_mutex_lock (&ctx.lock);
       ctx.done = true;
@@ -3130,7 +3169,7 @@ test_sample_causal_consistency (mongoc_client_t *client)
 					      read_prefs);
 
    while (mongoc_cursor_next (cursor, &result)) {
-      json = bson_as_json (result, NULL);
+      json = bson_as_relaxed_extended_json (result, NULL);
       fprintf (stdout, "Document: %s\n", json);
       bson_free (json);
    }
@@ -3678,7 +3717,7 @@ commit_with_retry (mongoc_client_session_t *cs, bson_error_t *error)
        * mongoc_transaction_opts_set_write_concern */
       r = mongoc_client_session_commit_transaction (cs, &reply, error);
       if (r) {
-         MONGOC_INFO ("Transaction committed");
+         MONGOC_DEBUG ("Transaction committed");
          break;
       }
 
@@ -3826,6 +3865,7 @@ test_sample_txn_commands (mongoc_client_t *client)
    /* test transactions retry example 3 */
    example_func (client);
    ASSERT_NO_CAPTURED_LOGS ("transactions retry example 3");
+   capture_logs (false);
    find_and_match (employees, "{'employee': 3}", "{'status': 'Inactive'}");
 
    mongoc_collection_destroy (employees);
@@ -4276,7 +4316,7 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    /* This block not evaluated, but is inserted into documentation to represent the above reply.
     * Don't delete me! */
    /* Start Versioned API Example 6 */
-   char *str = bson_as_json (&reply, NULL /* length */);
+   char *str = bson_as_relaxed_extended_json (&reply, NULL /* length */);
    printf ("%s", str);
    /* Prints the server reply:
     * { "ok" : 0, "errmsg" : "Provided apiStrict:true, but the command count is not in API Version 1", "code" : 323, "codeName" : "APIStrictError" } */
@@ -4383,9 +4423,8 @@ test_sample_commands (void)
    test_sample_command (test_example_55, 55, db, collection, false);
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
+   // Run 56 after 57 and 58. 56 deletes all data. 57 and 58 expect data present.
    test_sample_command (test_example_56, 56, db, collection, true);
-   test_sample_command (test_example_59, 59, db, collection, true);
-   test_sample_command (test_example_60, 60, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
@@ -4393,6 +4432,7 @@ test_sample_commands (void)
    test_sample_indexes (db);
    test_sample_run_command (db);
    test_sample_txn_commands (client);
+   test_snapshot_query_examples ();
 
    if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_9)) {
       test_sample_versioned_api ();

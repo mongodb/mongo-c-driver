@@ -1,14 +1,73 @@
-libmongoc 1.28.0 (unreleased)
-=============================
+libmongoc 1.29.0
+================
+
+Improvements:
+
+  * Retry KMS requests on transient errors.
+
+Platform Support:
+
+  * Support for Visual Studio 2013 is dropped.
+
+Deprecated:
+
+  * `mongoc_client_command` is deprecated and planned for removal in a future release. Use `mongoc_client_command_simple` instead.
+  * `mongoc_database_command` is deprecated and planned for removal in a future release. Use `mongoc_database_command_simple` instead.
+  * `mongoc_collection_command` is deprecated and planned for removal in a future release. Use `mongoc_collection_command_simple` instead.
+
+Notes:
+
+  * Raise required version of libmongocrypt to 1.12.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+  * A future minor release will raise the minimum supported MongoDB Server version from 4.0 to 4.2. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles). **Support for MongoDB Server 4.0 will be dropped in a future release!**
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Micah Scott
+  * Adrian Dole
+  * Andreas Braun
+  * Joshua Siegel
+
+libmongoc 1.28.1
+================
+
+Fixes:
+
+  * Do not return result in `mongoc_bulkwritereturn_t` if there are no known successful writes.
+  * Validate lengths in ill-formed server responses.
+  * Do not override read preference when using aggregate with `$out/$merge` with unscanned servers.
+  * Remove unexpected warning if `authSource` in TXT record is overriden by URI option.
+  * Fix crash when non-existent CA file configured with OpenSSL.
+
+libmongoc 1.28.0
+================
 
 New features:
 
   * Support In-Use Encryption range queries.
+  * Include insert ID on result of `mongoc_collection_insert_one`.
+  * Add new bulk write API `mongoc_bulkwrite_t`. Requires MongoDB 8.0. Reduces round-trips for mixed writes.
+  - Add `serverMonitoringMode` URI option.
+
+Improvements:
+
+  * Improve performance of OpenSSL connection creation.
+  * Improve performance when trace logging is configured (`ENABLE_TRACING=ON`) but disabled at runtime.
+  * Prefer FIPS compliant functions for SCRAM-SHA-256 key derivation.
+  * Remove required slash to delimit options in MongoDB URI (e.g. `mongodb://example.com?w=1` parses the same as `mongodb://example.com/?w=1`).
+  * Include topology description in server selection timeout errors.
 
 Notes:
 
   * Bump minimum wire protocol version from 6 (MongoDB 3.6) to 7 (MongoDB 4.0).
   * Raise required version of libmongocrypt to 1.11.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+
+Build Configuration:
+
+  * Remove automatic ccache detection and usage (CCache.cmake).
+      * Set [`CMAKE_<LANG>_COMPILER_LAUNCHER`](https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html) to build with ccache.
+  * Remove `MONGO_USE_CCACHE` (no longer applicable; see above).
 
 Changed:
 
@@ -26,6 +85,30 @@ Deprecated:
     * `mongoc_cursor_get_hint` is deprecated for `mongoc_cursor_get_server_id`
 
   * A future minor release plans to drop support for Visual Studio 2013.
+  * `ENABLE_SSL=LIBRESSL` is deprecated along with `mongoc_stream_tls_libressl_new`. Support for LibreSSL may be dropped in a future major release.
+  * `ENABLE_SASL=CYRUS` on Windows platforms is deprecated. Support for `ENABLE_SASL=CYRUS` on Windows may be dropped in a future major release.
+    * The associated Windows-only option `CYRUS_PLUGIN_PATH_PREFIX` is deprecated.
+
+libmongoc 1.27.6
+================
+
+Fixes:
+
+  * Fix TSan warning.
+  * Fix C23 compile.
+
+Improvements:
+
+  * Document expected behavior of command errors in a transaction.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Adrian Dole
+  * Ezra Chung
+  * Joshua Siegel
+  * Kevin Albertson
+
+
 
 libmongoc 1.27.5
 ================

@@ -119,6 +119,8 @@ mongo_setting(
          message(WARNING "ENABLE_SSL=DARWIN is only supported on Apple platforms")
       elseif(ENABLE_SSL STREQUAL "WINDOWS" AND NOT WIN32)
          message(WARNING "ENABLE_SSL=WINDOWS is only supported on Windows platforms")
+      elseif (ENABLE_SSL STREQUAL "LIBRESSL")
+         message(DEPRECATION "ENABLE_SSL=LIBRESSL is deprecated and may be removed in a future major release")
       endif()
    ]]
 )
@@ -147,12 +149,20 @@ mongo_setting(
       if(ENABLE_SASL STREQUAL "SSPI" AND NOT WIN32)
          message(WARNING "ENABLE_SASL=SSPI is only supported on Windows platforms")
       endif()
+      if(ENABLE_SASL STREQUAL "CYRUS" AND WIN32)
+         message(DEPRECATION "ENABLE_SASL=CYRUS on Windows platforms is deprecated and may be removed in a future major release")
+      endif()
    ]]
 )
 
 mongo_setting(CYRUS_PLUGIN_PATH_PREFIX "An absolute path prefix to enable loading Cyrus SASL plugins on Windows"
    TYPE STRING
    VISIBLE_IF [[ENABLE_SASL STREQUAL "CYRUS" AND WIN32]]
+   VALIDATE CODE [[
+      if (CYRUS_PLUGIN_PATH_PREFIX)
+         message(DEPRECATION "CYRUS_PLUGIN_PATH_PREFIX is deprecated and may be removed in a future major release")
+      endif ()
+   ]]
 )
 
 mongo_setting(ENABLE_CLIENT_SIDE_ENCRYPTION "Enable In-Use Encryption support. Requires additional support libraries."
@@ -298,9 +308,6 @@ if(ENABLE_MAINTAINER_FLAGS)
       gnu-like:-Wall
       gnu-like:-Wempty-body
       gnu:not-gcc-lt7:-Wexpansion-to-defined
-      gnu-like:-Wformat
-      gnu-like:-Wformat-nonliteral
-      gnu-like:-Wformat-security
       gnu-like:-Winit-self
       gnu-like:-Wmissing-include-dirs
       gnu-like:-Wredundant-decls
@@ -314,9 +321,6 @@ if(ENABLE_MAINTAINER_FLAGS)
       gnu-like:-Wno-strict-aliasing
    )
 endif()
-
-# Enable CCache, if possible
-include (CCache)
 
 # Link with LLD, if possible
 if (NOT MSVC)
@@ -451,31 +455,7 @@ if (ENABLE_MONGOC)
       message (FATAL_ERROR "ENABLE_TESTS requires ENABLE_STATIC or ENABLE_STATIC_BUILD")
    endif ()
 
-   set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
-
-   set (UTF8PROC_SOURCES
-      ${SOURCE_DIR}/src/utf8proc-2.8.0/utf8proc.c
-   )
-
-   set (ZLIB_SOURCES
-      ${SOURCE_DIR}/src/zlib-1.3.1/adler32.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/crc32.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/deflate.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/infback.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/inffast.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/inflate.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/inftrees.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/trees.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/zutil.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/compress.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/uncompr.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/gzclose.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/gzlib.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/gzread.c
-      ${SOURCE_DIR}/src/zlib-1.3.1/gzwrite.c
-   )
-
-   set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
+   set (CPACK_RESOURCE_FILE_LICENSE "${mongo-c-driver_SOURCE_DIR}/COPYING")
 
    include (CPack)
 
@@ -486,28 +466,6 @@ if (ENABLE_MONGOC)
       # Until CDRIVER-520.
       add_definitions (-Wno-deprecated-declarations)
    endif ()
-
-   set (KMS_MSG_SOURCES
-      ${SOURCE_DIR}/src/kms-message/src/hexlify.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_b64.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_caller_identity_request.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_crypto_apple.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_crypto_libcrypto.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_crypto_none.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_crypto_windows.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_decrypt_request.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_encrypt_request.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_kmip_response_parser.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_kv_list.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_message.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_port.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_request.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_request_opt.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_request_str.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_response.c
-      ${SOURCE_DIR}/src/kms-message/src/kms_response_parser.c
-      ${SOURCE_DIR}/src/kms-message/src/sort.c
-   )
 
    if (NOT ENABLE_MONGODB_AWS_AUTH MATCHES "ON|OFF|AUTO")
       message (FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH option must be ON, AUTO, or OFF")

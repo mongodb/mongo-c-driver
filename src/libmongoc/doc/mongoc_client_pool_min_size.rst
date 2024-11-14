@@ -17,8 +17,7 @@ Synopsis
 
   void
   mongoc_client_pool_min_size (mongoc_client_pool_t *pool,
-                               uint32_t min_pool_size)
-     BSON_GNUC_DEPRECATED;
+                               uint32_t min_pool_size);
 
 This function sets the *maximum* number of idle clients to be kept in the pool. Any idle clients in excess of the maximum are destroyed.
 

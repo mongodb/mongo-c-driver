@@ -714,7 +714,7 @@ _check_any_server_less_than_wire_version_13 (const void *sd_, void *any_too_old_
 {
    const mongoc_server_description_t *sd = sd_;
    bool *any_too_old = any_too_old_;
-   if (sd->max_wire_version < WIRE_VERSION_5_0) {
+   if (sd->type != MONGOC_SERVER_UNKNOWN && sd->max_wire_version < WIRE_VERSION_5_0) {
       *any_too_old = true;
       return false /* Stop searching */;
    }
@@ -726,7 +726,7 @@ _check_any_server_less_than_wire_version_13 (const void *sd_, void *any_too_old_
  * @brief Calculate the read mode that we should be using, based on what was
  * requested and what is available in the topology.
  *
- * Per the CRUD spec, if the requested read mode is *not* primary, and *any*
+ * Per the CRUD spec, if the requested read mode is *not* primary, and *any* available
  * server in the topology has a wire version < server v5.0, we must override the
  * read mode preference with "primary." Server v5.0 indicates support on a
  * secondary server for using aggregate pipelines that contain writing stages
@@ -741,7 +741,7 @@ _must_use_primary (const mongoc_topology_description_t *td,
       /* We never alter from a primary read mode. This early-return is just an
        * optimization to skip scanning for old servers, as we would end up
        * returning MONGOC_READ_PRIMARY regardless. */
-      return requested_read_mode;
+      return true;
    }
    switch (optype) {
    case MONGOC_SS_WRITE:
@@ -751,7 +751,7 @@ _must_use_primary (const mongoc_topology_description_t *td,
       /* Maintain the requested read mode if it is a regular read operation */
       return false;
    case MONGOC_SS_AGGREGATE_WITH_WRITE: {
-      /* Check if any of the servers are too old to support the
+      /* Check if any of the available servers are too old to support the
        * aggregate-with-write on a secondary server */
       bool any_too_old = false;
       mongoc_set_for_each_const (mc_tpld_servers_const (td), _check_any_server_less_than_wire_version_13, &any_too_old);
@@ -1015,7 +1015,8 @@ mongoc_topology_description_select (const mongoc_topology_description_t *topolog
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
       mongoc_server_description_t const *const sd = mongoc_set_get_item_const (mc_tpld_servers_const (topology), 0);
 
-      if (optype == MONGOC_SS_AGGREGATE_WITH_WRITE && sd->max_wire_version < WIRE_VERSION_5_0) {
+      if (optype == MONGOC_SS_AGGREGATE_WITH_WRITE && sd->type != MONGOC_SERVER_UNKNOWN &&
+          sd->max_wire_version < WIRE_VERSION_5_0) {
          /* The single server may be part of an unseen replica set that may not
           * support aggr-with-write operations on secondaries. Force the read
           * preference to use a primary. */
@@ -2324,7 +2325,7 @@ mongoc_topology_description_type (const mongoc_topology_description_t *td)
       return "LoadBalanced";
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
-      fprintf (stderr, "ERROR: Unknown topology type %d\n", td->type);
+      fprintf (stderr, "ERROR: Unknown topology type %d\n", (int) td->type);
       BSON_ASSERT (0);
    }
 

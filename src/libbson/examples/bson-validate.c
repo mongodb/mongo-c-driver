@@ -73,7 +73,7 @@ main (int argc, char *argv[])
       while ((b = bson_reader_read (reader, NULL))) {
          docnum++;
          if (!bson_validate (b, (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL), &offset)) {
-            fprintf (stderr, "Document %u in \"%s\" is invalid at offset %u.\n", docnum, filename, (int) offset);
+            fprintf (stderr, "Document %d in \"%s\" is invalid at offset %zu.\n", docnum, filename, offset);
             bson_reader_destroy (reader);
             return 1;
          }

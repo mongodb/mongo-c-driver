@@ -63,7 +63,6 @@ def tasks():
 def variants():
     expansions = {
         'CLIENT_SIDE_ENCRYPTION': 'on',
-        'DEBUG': 'ON',
     }
 
     return [

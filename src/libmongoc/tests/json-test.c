@@ -1325,7 +1325,7 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
          } else if (BSON_ITER_HOLDS_INT (&iter)) {
             mongoc_write_concern_set_w (wc, (int32_t) bson_iter_as_int64 (&iter));
          } else {
-            test_error ("Unrecognized type for 'w': %d", bson_iter_type (&iter));
+            test_error ("Unrecognized type for 'w': %d", (int) bson_iter_type (&iter));
          }
 
          mongoc_uri_set_write_concern (uri, wc);
@@ -1352,7 +1352,7 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
       } else if (mongoc_uri_option_is_utf8 (key)) {
          mongoc_uri_set_option_as_utf8 (uri, key, bson_iter_utf8 (&iter, NULL));
       } else {
-         test_error ("Unsupported clientOptions field \"%s\" in %s", key, bson_as_json (opts, NULL));
+         test_error ("Unsupported clientOptions field \"%s\" in %s", key, bson_as_relaxed_extended_json (opts, NULL));
       }
    }
 }
@@ -1723,21 +1723,8 @@ run_json_general_test (const json_test_config_t *config)
          continue;
       }
 
-      if (config->skips) {
-         test_skip_t *iter;
-         bool should_skip = false;
-
-         for (iter = config->skips; iter->description != NULL; iter++) {
-            if (0 == strcmp (description, iter->description)) {
-               should_skip = true;
-               break;
-            }
-         }
-
-         if (should_skip) {
-            fprintf (stderr, " - %s SKIPPED, due to reason: %s\n", description, iter->reason);
-            continue;
-         }
+      if (test_should_be_skipped (config->skips, description)) {
+         continue;
       }
 
       uri = (config->uri_str != NULL) ? mongoc_uri_new (config->uri_str) : test_framework_get_uri ();
@@ -1986,4 +1973,31 @@ void
 install_json_test_suite (TestSuite *suite, const char *base, const char *subdir, test_hook callback)
 {
    install_json_test_suite_with_check (suite, base, subdir, callback, TestSuite_CheckLive);
+}
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * test_should_be_skipped --
+ *
+ *      Check a test description string against a list of description strings for
+ *      tests that should be skipped. "skips" is an optional NULL terminated array.
+ *
+ *      If the test should be skipped, returns 'true' and logs a reason to stderr.
+ *
+ *-----------------------------------------------------------------------
+ */
+bool
+test_should_be_skipped (const test_skip_t *skips, const char *description)
+{
+   if (skips) {
+      for (const test_skip_t *iter = skips; iter->description != NULL; iter++) {
+         if (0 == strcmp (description, iter->description)) {
+            fprintf (stderr, "  - %s SKIPPED, due to reason: %s\n", description, iter->reason);
+            return true;
+         }
+      }
+   }
+   return false;
 }

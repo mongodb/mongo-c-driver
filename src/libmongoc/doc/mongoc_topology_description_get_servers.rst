@@ -11,7 +11,7 @@ Synopsis
   mongoc_server_description_t **
   mongoc_topology_description_get_servers (
      const mongoc_topology_description_t *td,
-     size_t *n) BSON_GNUC_WARN_UNUSED_RESULT;
+     size_t *n);
 
 Fetches an array of :symbol:`mongoc_server_description_t` structs for all known servers in the topology.
 

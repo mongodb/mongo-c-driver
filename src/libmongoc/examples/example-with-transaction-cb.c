@@ -159,7 +159,7 @@ main (int argc, char *argv[])
       goto done;
    }
 
-   str = bson_as_json (&reply, NULL);
+   str = bson_as_relaxed_extended_json (&reply, NULL);
    printf ("%s\n", str);
 
    exit_code = EXIT_SUCCESS;

@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_client_t *
-  mongoc_client_new (const char *uri_string) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_client_new (const char *uri_string);
 
 Creates a new :symbol:`mongoc_client_t` using the URI string provided.
 

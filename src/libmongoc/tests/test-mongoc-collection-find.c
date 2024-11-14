@@ -9,6 +9,8 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 
+#include <inttypes.h>
+
 
 typedef struct {
    /* if do_live is true (the default), actually query the server using the
@@ -82,7 +84,7 @@ _check_cursor (mongoc_cursor_t *cursor, test_collection_find_t *test_data)
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    if (i != test_data->n_results) {
-      test_error ("expect %d results, got %d", test_data->n_results, i);
+      test_error ("expect %" PRIu32 " results, got %" PRIu32 "", test_data->n_results, i);
    }
 
    ASSERT (match_json (&actual_result,
@@ -243,7 +245,7 @@ _test_collection_find_command (test_collection_find_t *test_data)
    }
 
    if (i != test_data->n_results) {
-      test_error ("Expected %d results, got %d\n", test_data->n_results, i);
+      test_error ("Expected %" PRIu32 " results, got %" PRIu32 "\n", test_data->n_results, i);
    }
 
    ASSERT (match_json (&actual_result,

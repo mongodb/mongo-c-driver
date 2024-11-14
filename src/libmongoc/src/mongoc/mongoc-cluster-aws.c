@@ -29,6 +29,7 @@
 #include "mongoc-http-private.h"
 #include "mongoc-rand-private.h"
 #include "mongoc-ssl-private.h"
+#include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"
@@ -455,7 +456,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds, 
    const char *session_token = NULL;
    bson_error_t http_error;
    mongoc_stream_t *fstream = NULL;
-   bson_string_t *token_file_contents = NULL;
+   mcommon_string_t *token_file_contents = NULL;
    char *path_and_query = NULL;
 
    aws_web_identity_token_file = _mongoc_getenv ("AWS_WEB_IDENTITY_TOKEN_FILE");
@@ -485,7 +486,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds, 
                               strerror (errno));
       }
 
-      token_file_contents = bson_string_new (NULL);
+      token_file_contents = mcommon_string_new (NULL);
 
       for (;;) {
          char buf[128];
@@ -498,7 +499,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds, 
          if (got > 0) {
             // add null terminator.
             buf[got] = '\0';
-            bson_string_append (token_file_contents, (const char *) buf);
+            mcommon_string_append (token_file_contents, (const char *) buf);
          } else if (got == 0) {
             // EOF.
             break;
@@ -551,7 +552,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds, 
       if (!_mongoc_iter_document_as_bson (&Error_iter, &Error_bson, error)) {
          goto fail;
       }
-      char *Error_json = bson_as_json (&Error_bson, NULL);
+      char *Error_json = bson_as_relaxed_extended_json (&Error_bson, NULL);
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -620,7 +621,7 @@ fail:
    bson_destroy (response_bson);
    bson_free (http_response_headers);
    bson_free (http_response_body);
-   bson_string_free (token_file_contents, true /* free segment */);
+   mcommon_string_free (token_file_contents, true /* free segment */);
    mongoc_stream_destroy (fstream);
    bson_free (aws_role_session_name);
    bson_free (aws_role_arn);

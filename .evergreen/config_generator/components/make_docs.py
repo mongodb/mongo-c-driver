@@ -2,6 +2,8 @@ from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_command import s3_put
 from shrub.v3.evg_task import EvgTask
 
+from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+
 from config_generator.etc.function import Function
 from config_generator.etc.function import merge_defns
 from config_generator.etc.utils import bash_exec
@@ -132,6 +134,7 @@ def tasks():
         EvgTask(
             name="make-docs",
             commands=[
+                FindCMakeLatest.call(),
                 MakeDocs.call(),
                 UploadDocs.call(),
                 UploadManPages.call(),

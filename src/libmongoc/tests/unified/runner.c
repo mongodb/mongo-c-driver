@@ -24,7 +24,8 @@
 #include "test-diagnostics.h"
 #include "utlist.h"
 #include "util.h"
-
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
 typedef struct {
    const char *file_description;
@@ -576,6 +577,7 @@ check_schema_version (test_file_t *test_file)
    // 1.12 is partially supported (expectedError.errorResponse assertions)
    // 1.18 is partially supported (additional properties in kmsProviders)
    // 1.20 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
+   // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
    semver_t schema_version;
    semver_parse ("1.22", &schema_version);
@@ -763,11 +765,11 @@ check_run_on_requirement (test_runner_t *test_runner,
 static bool
 check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requirements, const char **reason)
 {
-   bson_string_t *fail_reasons = NULL;
+   mcommon_string_t *fail_reasons = NULL;
    bool requirements_satisfied = false;
    bson_iter_t iter;
 
-   fail_reasons = bson_string_new ("");
+   fail_reasons = mcommon_string_new ("");
    BSON_FOREACH (run_on_requirements, iter)
    {
       bson_t run_on_requirement;
@@ -784,7 +786,7 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
          break;
       }
 
-      bson_string_append_printf (
+      mcommon_string_append_printf (
          fail_reasons, "- Requirement %s failed because: %s\n", bson_iter_key (&iter), fail_reason);
       bson_free (fail_reason);
    }
@@ -793,7 +795,7 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
    if (!requirements_satisfied) {
       (*reason) = tmp_str ("runOnRequirements not satisfied:\n%s", fail_reasons->str);
    }
-   bson_string_free (fail_reasons, true);
+   mcommon_string_free (fail_reasons, true);
    return requirements_satisfied;
 }
 
@@ -1332,7 +1334,7 @@ done:
 static void
 append_size_t (bson_t *doc, const char *key, size_t value)
 {
-   BSON_ASSERT (bson_in_range_unsigned (int64_t, value));
+   BSON_ASSERT (mcommon_in_range_unsigned (int64_t, value));
    BSON_ASSERT (BSON_APPEND_INT64 (doc, key, (int64_t) value));
 }
 
@@ -1409,8 +1411,8 @@ test_generate_atlas_results (test_t *test, bson_error_t *error)
 
    size_t events_json_len = 0u;
    size_t results_json_len = 0u;
-   char *const events_json = bson_as_json (&events_doc, &events_json_len);
-   char *const results_json = bson_as_json (&results_doc, &results_json_len);
+   char *const events_json = bson_as_relaxed_extended_json (&events_doc, &events_json_len);
+   char *const results_json = bson_as_relaxed_extended_json (&results_doc, &results_json_len);
 
    ASSERT_WITH_MSG (events_json, "failed to convert events BSON document to JSON");
    ASSERT_WITH_MSG (results_json, "failed to convert results BSON document to JSON");

@@ -31,7 +31,6 @@ process.
    - [ ] Start Snyk Monitoring
    - [ ] Address and Report Vulnerabilities
    - [ ] Validate API Documentation
-   - [ ] Notify the PHP Driver Team
    - [ ] Get a GitHub API Token
    - [ ] Do the Release:
        - [ ] Start a Release Stopwatch (start time: HH:MM)
@@ -95,6 +94,38 @@ Check that the `etc/purls.txt` file is up-to-date with the set of
 :term:`vendored dependencies <vendored dependency>`. If any items need to be
 updated, refer to `sbom-lite-updating`.
 
+Create a New Clone of ``mongo-c-driver``
+****************************************
+
+To prevent publishing unwanted changes and to preserve local changes, create a
+fresh clone of the C driver. We will clone into a new arbitrary directory which
+we will refer to as ``$RELEASE_CLONE`` ::
+
+   $ git clone "git@github.com:mongodb/mongo-c-driver.git" $RELEASE_CLONE
+
+.. note:: Unless otherwise noted, all commands below should be executed from within
+   the ``$RELEASE_CLONE`` directory.
+
+Switch to a branch that corresponds to the release version:
+
+- **If performing a minor release (x.y.0)**, create a new branch for the
+  major+minor release version. For example: If the major version is ``5`` and
+  the minor version is ``42``, create a branch ``r5.42``::
+
+      $ git checkout master      # Ensure we are on the `master` branch to begin
+      $ git checkout -b "r5.42"  # Create and switch to a new branch
+
+  Push the newly created branch into the remote::
+
+      $ git push origin "r5.42"
+
+- **If performing a patch release (x.y.z)**, there should already exist a
+  release branch corresponding to the major+minor version of the patch. For
+  example, if we are releasing patch version ``7.8.9``, then there should
+  already exist a branch ``r7.8``. Switch to that branch now::
+
+      $ git checkout --track origin/r7.8
+
 .. _releasing.snyk:
 
 Start Snyk Monitoring
@@ -112,8 +143,8 @@ To enable Snyk monitoring for a release, execute the `+snyk-monitor-snapshot`
 Earthly target for the release branch to be monitored. Be sure to specify the
 correct branch name with `--branch`, and use `--name` to identify the snapshot
 as belonging to the new release version. Let ``$RELEASE_BRANCH`` being the name
-of the branch from which we are releasing, and let ``$NEW_VERSION`` be the new
-release version that we are posting:
+of the branch from which we are releasing (e.g. ``r1.27``), and let ``$NEW_VERSION`` be the new
+release version that we are posting (e.g. ``1.27.6``):
 
 .. code-block:: console
 
@@ -162,15 +193,6 @@ compat_report.html* artifact. In the *Added Symbols* section will be a list of
 all newly introduced APIs since the most release release version. Verify that
 documentation has been added for every symbol listed here. If no new symbols are
 added, then the documentation is up-to-date.
-
-
-Notify the PHP Driver Team
-##########################
-
-The PHP driver team consumes the C driver directly and will want to know when a
-new release is coming so that they can identify regressions in the APIs used by
-the PHP driver. Consider requesting that the PHP team test the PHP driver
-against the new release version before the C release is tagged and published.
 
 
 .. _release.github-token:
@@ -264,39 +286,6 @@ called `$CDRIVER_TOOLS`::
 Install the Python requirements for the driver tools::
 
    $ pip install -r $CDRIVER_TOOLS/requirements.txt
-
-
-Create a New Clone of ``mongo-c-driver``
-****************************************
-
-To prevent publishing unwanted changes and to preserve local changes, create a
-fresh clone of the C driver. We will clone into a new arbitrary directory which
-we will refer to as `$RELEASE_CLONE`\ ::
-
-   $ git clone "git@github.com:mongodb/mongo-c-driver.git" $RELEASE_CLONE
-
-.. note:: Unless otherwise noted, all commands below should be executed from within
-   the `$RELEASE_CLONE` directory.
-
-Switch to a branch that corresponds to the release version:
-
-- **If performing a minor release (x.y.0)**, create a new branch for the
-  major+minor release version. For example: If the major version is ``5`` and
-  the minor version is ``42``, create a branch ``r5.42``::
-
-      $ git checkout master      # Ensure we are on the `master` branch to begin
-      $ git checkout -b "r5.42"  # Create and switch to a new branch
-
-  Push the newly created branch into the remote::
-
-      $ git push origin "r5.42"
-
-- **If performing a patch release (x.y.z)**, there should already exist a
-  release branch corresponding to the major+minor version of the patch. For
-  example, if we are releasing patch version ``7.8.9``, then there should
-  already exist a branch ``r7.8``. Switch to that branch now::
-
-      $ git checkout --track origin/r7.8
 
 
 **For Patch Releases**: Check Consistency with the Jira Release
@@ -395,11 +384,11 @@ required for it to succeed:
    :any:`+sbom-download` targets.
 
 Once these prerequesites are met, creating the release archive can be done using
-the :any:`+signed-release` target. Let `$BRANCH` be the name of the Git branch
-from which the release is being made::
+the :any:`+signed-release` target.::
 
-   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$BRANCH --version=$NEW_VERSION
+   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$SBOM_BRANCH --version=$NEW_VERSION
 
+.. note:: `$SBOM_BRANCH` must be ``master`` for a minor release, or ``$RELEASE_BRANCH`` for a patch release.
 .. note:: `$NEW_VERSION` must correspond to the Git tag created by the release.
 
 The above command will create a `dist/` directory in the working directory that
@@ -476,6 +465,9 @@ arbitrary.)
 Manually update the ``NEWS`` and ``src/libbson/NEWS`` files with the content
 from the release branch that we just published. Commit these changes to the new
 branch.
+
+For a minor release, manually update the ``VERSION_CURRENT`` file. Example if
+``1.28.0`` was just released, update to ``1.29.0-dev``.
 
 Push this branch to your fork of the repository::
 

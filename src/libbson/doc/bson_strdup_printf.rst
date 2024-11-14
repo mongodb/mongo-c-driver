@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   char *
-  bson_strdup_printf (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
+  bson_strdup_printf (const char *format, ...);
 
 Parameters
 ----------

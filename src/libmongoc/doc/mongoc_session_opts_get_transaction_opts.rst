@@ -10,7 +10,7 @@ Synopsis
 
   mongoc_transaction_opt_t *
   mongoc_session_opts_get_transaction_opts (
-     const mongoc_client_session_t *session) BSON_GNUC_WARN_UNUSED_RESULT;
+     const mongoc_client_session_t *session);
 
 The options for the current transaction started with this session.
 

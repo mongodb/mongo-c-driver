@@ -15,8 +15,6 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('windows-64-vs2013', 'vs2013x64', None, [       'cyrus',       ]),
-    ('windows-64-vs2013', 'vs2013x86', None, ['off',                ]),
     ('windows-64-vs2015', 'vs2015x64', None, [       'cyrus',       ]),
     ('windows-64-vs2015', 'vs2015x86', None, ['off',                ]),
     ('windows-vsCurrent', 'mingw',     None, [                'sspi']),
@@ -78,9 +76,7 @@ def tasks():
 
 
 def variants():
-    expansions = {
-        'DEBUG': 'ON'
-    }
+    expansions = {}
 
     return [
         BuildVariant(

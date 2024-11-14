@@ -22,6 +22,9 @@
 #include "mongoc-stream-gridfs-upload-private.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-util-private.h"
+#include <common-cmp-private.h>
+
+#include <inttypes.h>
 
 /* Returns the minimum of two numbers */
 static size_t
@@ -283,7 +286,7 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
       bson_set_error (&file->err,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "Chunk %d expected to have size %" PRId64 " but is size %d.",
+                      "Chunk %d expected to have size %" PRId64 " but is size %" PRIu32 ".",
                       file->curr_chunk,
                       expected_size,
                       data_len);
@@ -328,7 +331,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file, const mong
       }
    }
 
-   BSON_ASSERT (bson_in_range_signed (size_t, file->chunk_size));
+   BSON_ASSERT (mcommon_in_range_signed (size_t, file->chunk_size));
    const size_t chunk_size = (size_t) file->chunk_size;
 
    for (size_t i = 0u; i < iovcnt; i++) {
@@ -352,7 +355,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file, const mong
       }
    }
 
-   BSON_ASSERT (bson_in_range_unsigned (ssize_t, total));
+   BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, total));
    return (ssize_t) total;
 }
 
@@ -396,14 +399,14 @@ _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file, mongoc_iove
             }
             if (file->finished) {
                /* There's nothing left to read */
-               BSON_ASSERT (bson_in_range_unsigned (ssize_t, total));
+               BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, total));
                RETURN ((ssize_t) total);
             }
          }
       }
    }
 
-   BSON_ASSERT (bson_in_range_unsigned (ssize_t, total));
+   BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, total));
    RETURN ((ssize_t) total);
 }
 

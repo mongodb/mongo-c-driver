@@ -6,9 +6,7 @@ mongoc_bulk_operation_get_hint()
 .. warning::
    .. deprecated:: 1.28.0
 
-      This function is deprecated and should not be used in new code.
-
-      Please use :symbol:`mongoc_bulk_operation_get_server_id()` in new code.
+      Use :symbol:`mongoc_bulk_operation_get_server_id()` instead.
 
 Synopsis
 --------
@@ -16,8 +14,7 @@ Synopsis
 .. code-block:: c
 
   uint32_t
-  mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk)
-    BSON_GNUC_DEPRECATED_FOR (mongoc_bulk_operation_get_server_id);
+  mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk);
 
 Parameters
 ----------

@@ -10,8 +10,7 @@ Synopsis
 
   mongoc_gridfs_file_t *
   mongoc_gridfs_create_file (mongoc_gridfs_t *gridfs,
-                             mongoc_gridfs_file_opt_t *opt)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                             mongoc_gridfs_file_opt_t *opt);
 
 Parameters
 ----------

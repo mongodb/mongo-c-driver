@@ -35,6 +35,8 @@
 #include <strings.h>
 #endif
 
+#include <inttypes.h>
+
 
 static bool gConveniencesInitialized = false;
 static mongoc_array_t gTmpBsonArray;
@@ -1273,7 +1275,7 @@ bson_value_as_int64 (const bson_value_t *value)
    } else if (value->value_type == BSON_TYPE_INT64) {
       return value->value.v_int64;
    } else {
-      test_error ("bson_value_as_int64 called on value of type %d", value->value_type);
+      test_error ("bson_value_as_int64 called on value of type %d", (int) value->value_type);
    }
 }
 
@@ -1468,7 +1470,7 @@ match_bson_value (const bson_value_t *doc, const bson_value_t *pattern, match_ct
       }
       break;
    default:
-      test_error ("unexpected value type %d: %s", doc->value_type, _mongoc_bson_type_to_str (doc->value_type));
+      test_error ("unexpected value type %d: %s", (int) doc->value_type, _mongoc_bson_type_to_str (doc->value_type));
    }
 
    if (!ret) {
@@ -1583,7 +1585,8 @@ assert_no_duplicate_keys (const bson_t *doc)
 
    while (bson_iter_next (&iter)) {
       if (mongoc_set_find_item (keys, find_key, (void *) bson_iter_key (&iter))) {
-         test_error ("Duplicate key \"%s\" in document:\n%s", bson_iter_key (&iter), bson_as_json (doc, NULL));
+         test_error (
+            "Duplicate key \"%s\" in document:\n%s", bson_iter_key (&iter), bson_as_relaxed_extended_json (doc, NULL));
       }
 
       mongoc_set_add (keys, 0 /* index */, (void *) bson_iter_key (&iter));

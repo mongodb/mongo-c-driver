@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_database_t *
-  mongoc_database_copy (mongoc_database_t *database) BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_database_copy (mongoc_database_t *database);
 
 Parameters
 ----------

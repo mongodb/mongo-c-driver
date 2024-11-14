@@ -3,6 +3,12 @@
 mongoc_collection_command()
 ===========================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
+      This function is deprecated and should not be used in new code.
+      Use :symbol:`mongoc_collection_command_simple()` instead.
+
 Synopsis
 --------
 
@@ -16,10 +22,7 @@ Synopsis
                              uint32_t batch_size,
                              const bson_t *command,
                              const bson_t *fields,
-                             const mongoc_read_prefs_t *read_prefs)
-     BSON_GNUC_WARN_UNUSED_RESULT;
-
-This function is superseded by :symbol:`mongoc_collection_command_with_opts()`, :symbol:`mongoc_collection_read_command_with_opts()`, :symbol:`mongoc_collection_write_command_with_opts()`, and :symbol:`mongoc_collection_read_write_command_with_opts()`.
+                             const mongoc_read_prefs_t *read_prefs);
 
 .. include:: includes/not-retryable-read.txt
 
@@ -27,13 +30,36 @@ Parameters
 ----------
 
 * ``collection``: A :symbol:`mongoc_collection_t`.
-* ``flags``: A :symbol:`mongoc_query_flags_t`.
-* ``skip``: A uint32_t with the number of documents to skip or zero.
-* ``limit``: A uint32_t with the max number of documents to return or zero.
-* ``batch_size``: A uint32_t with the number of documents in each batch or zero. Default is 100.
+* ``flags``: Unused.
+* ``skip``: Unused.
+* ``limit``: Unused.
+* ``batch_size``: Unused.
 * ``command``: A :symbol:`bson:bson_t` containing the command to execute.
-* ``fields``: A :symbol:`bson:bson_t` containing the fields to return or ``NULL``. Not all commands support this option.
+* ``fields``: Unused.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
+
+Migrating
+---------
+
+:symbol:`mongoc_collection_command` is deprecated.
+
+The following example uses :symbol:`mongoc_collection_command`:
+
+.. literalinclude:: ../examples/migrating.c
+   :language: c
+   :dedent: 6
+   :start-after: // mongoc_collection_command ... before ... begin
+   :end-before:  // mongoc_collection_command ... before ... end
+   :caption: Before
+
+The above code block may be rewritten to use :symbol:`mongoc_collection_command_simple` instead, as shown below:
+
+.. literalinclude:: ../examples/migrating.c
+   :language: c
+   :dedent: 6
+   :start-after: // mongoc_collection_command ... after ... begin
+   :end-before:  // mongoc_collection_command ... after ... end
+   :caption: After
 
 Returns
 -------

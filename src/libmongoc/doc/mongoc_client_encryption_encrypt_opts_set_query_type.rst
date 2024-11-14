@@ -11,9 +11,8 @@ Synopsis
    #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
    #define MONGOC_ENCRYPT_QUERY_TYPE_RANGE "range"
 
-   MONGOC_EXPORT (void)
-    mongoc_client_encryption_encrypt_opts_set_query_type (
-        mongoc_client_encryption_encrypt_opts_t *opts, const char* query_type);
+   void mongoc_client_encryption_encrypt_opts_set_query_type (
+      mongoc_client_encryption_encrypt_opts_t *opts, const char* query_type);
 
 .. versionadded:: 1.22.0
 

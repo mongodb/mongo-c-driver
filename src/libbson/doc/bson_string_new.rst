@@ -3,6 +3,9 @@
 bson_string_new()
 =================
 
+.. warning::
+   .. deprecated:: 1.29.0
+
 Synopsis
 --------
 
@@ -21,7 +24,7 @@ Description
 
 Creates a new string builder, which uses power-of-two growth of buffers. Use the various bson_string_append*() functions to append to the string.
 
-.. warning:: This function will abort if the length of the resulting string (including the NULL terminator) would exceed ``UINT32_MAX``.
+.. warning:: The length of the resulting string (including the ``NULL`` terminator) MUST NOT exceed ``UINT32_MAX``.
 
 Returns
 -------

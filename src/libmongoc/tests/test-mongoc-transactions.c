@@ -12,6 +12,7 @@
 #include "mongoc/mongoc-host-list-private.h"
 #include "mongoc/mongoc-read-concern-private.h"
 #include "mongoc/mongoc-write-concern-private.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 /* Reset server state by disabling failpoints, killing sessions, and... running
  * a distinct command. */
@@ -440,7 +441,7 @@ _test_transient_txn_err (bool hangup)
       if (!mongoc_error_has_label ((_b), "TransientTransactionError")) { \
          test_error ("Reply lacks TransientTransactionError label: %s\n" \
                      "Running %s",                                       \
-                     bson_as_json ((_b), NULL),                          \
+                     bson_as_relaxed_extended_json ((_b), NULL),         \
                      #_expr);                                            \
       }                                                                  \
    } while (0)
@@ -583,11 +584,12 @@ test_unknown_commit_result (void)
    BSON_ASSERT (!r);
 
    if (!mongoc_error_has_label (&reply, "UnknownTransactionCommitResult")) {
-      test_error ("Reply lacks UnknownTransactionCommitResult label: %s", bson_as_json (&reply, NULL));
+      test_error ("Reply lacks UnknownTransactionCommitResult label: %s", bson_as_relaxed_extended_json (&reply, NULL));
    }
 
    if (mongoc_error_has_label (&reply, "TransientTransactionError")) {
-      test_error ("Reply shouldn't have TransientTransactionError label: %s", bson_as_json (&reply, NULL));
+      test_error ("Reply shouldn't have TransientTransactionError label: %s",
+                  bson_as_relaxed_extended_json (&reply, NULL));
    }
 
    bson_destroy (&reply);

@@ -9,8 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_stream_t *
-  mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+  mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file);
 
 Parameters
 ----------

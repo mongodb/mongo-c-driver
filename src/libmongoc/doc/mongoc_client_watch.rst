@@ -11,7 +11,7 @@ Synopsis
   mongoc_change_stream_t*
   mongoc_client_watch (mongoc_client_t *client,
                        const bson_t *pipeline,
-                       const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
+                       const bson_t *opts);
 
 A helper function to create a change stream. It is preferred to call this
 function over using a raw aggregation to create a change stream.

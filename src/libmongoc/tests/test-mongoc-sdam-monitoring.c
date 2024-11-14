@@ -9,6 +9,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "json-test-monitoring.h"
+#include <common-cmp-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -134,7 +135,7 @@ td_to_bson (const mongoc_topology_description_t *td, bson_t *bson)
    mongoc_set_t const *servers_set = mc_tpld_servers_const (td);
 
    for (size_t i = 0; i < servers_set->items_len; i++) {
-      BSON_ASSERT (bson_in_range_unsigned (uint32_t, i));
+      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, i));
       bson_uint32_to_string ((uint32_t) i, &key, str, sizeof str);
       sd_to_bson (mongoc_set_get_item_const (servers_set, i), &server);
       BSON_APPEND_DOCUMENT (&servers, key, &server);
@@ -958,6 +959,240 @@ test_no_duplicates (void)
    mongoc_client_pool_destroy (pool);
 }
 
+static const char *SERVER_HEARTBEAT_STARTED = "started";
+static const char *SERVER_HEARTBEAT_SUCCEEDED = "succeeded";
+static const char *SERVER_HEARTBEAT_FAILED = "failed";
+
+typedef struct {
+   bool awaited;
+   const char *type;
+} smm_event_t;
+
+// `smm_t` is a test fixture for serverMonitoringMode tests
+#define MAX_EVENTS 3
+typedef struct {
+   bson_mutex_t lock;
+   smm_event_t events[MAX_EVENTS];
+   size_t events_len;
+   mongoc_client_pool_t *pool;
+} smm_t;
+
+static void
+handle_heartbeat_event (smm_t *t, bool awaited, const char *event_type)
+{
+   bson_mutex_lock (&t->lock);
+
+   // Store the most recent awaited value (if room)
+   if (t->events_len < MAX_EVENTS) {
+      smm_event_t new_event;
+      new_event.awaited = awaited;
+      new_event.type = event_type;
+      t->events[t->events_len] = new_event;
+      t->events_len++;
+   }
+
+   bson_mutex_unlock (&t->lock);
+}
+
+static void
+heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
+{
+   smm_t *t = mongoc_apm_server_heartbeat_started_get_context (event);
+   bool awaited = mongoc_apm_server_heartbeat_started_get_awaited (event);
+   handle_heartbeat_event (t, awaited, SERVER_HEARTBEAT_STARTED);
+}
+
+static void
+heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   smm_t *t = mongoc_apm_server_heartbeat_succeeded_get_context (event);
+   bool awaited = mongoc_apm_server_heartbeat_succeeded_get_awaited (event);
+   handle_heartbeat_event (t, awaited, SERVER_HEARTBEAT_SUCCEEDED);
+}
+
+static void
+heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   smm_t *t = mongoc_apm_server_heartbeat_failed_get_context (event);
+   bool awaited = mongoc_apm_server_heartbeat_failed_get_awaited (event);
+   handle_heartbeat_event (t, awaited, SERVER_HEARTBEAT_FAILED);
+}
+
+
+static smm_t *
+smm_new (const char *mode)
+{
+   smm_t *t = bson_malloc0 (sizeof (smm_t));
+   bson_mutex_init (&t->lock);
+
+   // Create client pool
+   {
+      mongoc_uri_t *uri = test_framework_get_uri ();
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500); // To speed up test.
+      mongoc_uri_set_server_monitoring_mode (uri, mode);
+      t->pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      test_framework_set_pool_ssl_opts (t->pool);
+      mongoc_uri_destroy (uri);
+   }
+
+   // Capture heartbeat events
+   {
+      mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new ();
+      mongoc_apm_set_server_heartbeat_started_cb (cbs, heartbeat_started);
+      mongoc_apm_set_server_heartbeat_succeeded_cb (cbs, heartbeat_succeeded);
+      mongoc_apm_set_server_heartbeat_failed_cb (cbs, heartbeat_failed);
+      mongoc_client_pool_set_apm_callbacks (t->pool, cbs, t);
+      mongoc_apm_callbacks_destroy (cbs);
+   }
+
+   // Pop and push a client to start monitoring
+   {
+      mongoc_client_t *client = mongoc_client_pool_pop (t->pool);
+      mongoc_client_pool_push (t->pool, client);
+   }
+
+   return t;
+}
+
+// `smm_wait` waits for `count` heartbeat events.
+static bool
+smm_wait (smm_t *t, size_t count)
+{
+   int64_t started = bson_get_monotonic_time ();
+   while (true) {
+      bson_mutex_lock (&t->lock);
+      if (t->events_len >= count) {
+         bson_mutex_unlock (&t->lock);
+         return true;
+      }
+      bson_mutex_unlock (&t->lock);
+
+      int64_t now = bson_get_monotonic_time ();
+      // Timeout
+      if (now - started > 10 * 1000 * 1000) {
+         break;
+      }
+      _mongoc_usleep (500 * 1000); // Sleep for 500ms.
+   }
+   return false;
+}
+
+
+#define smm_assert(t, stream)                                                               \
+   if (1) {                                                                                 \
+      bson_mutex_lock (&t->lock);                                                           \
+                                                                                            \
+      /* First two events should always be a non-awaited heartbeat started and succeeded */ \
+      ASSERT_CMPSIZE_T (t->events_len, ==, 3);                                              \
+      ASSERT_CMPSTR (t->events[0].type, SERVER_HEARTBEAT_STARTED);                          \
+      ASSERT (!t->events[0].awaited);                                                       \
+      ASSERT_CMPSTR (t->events[1].type, SERVER_HEARTBEAT_SUCCEEDED);                        \
+      ASSERT (!t->events[1].awaited);                                                       \
+      ASSERT_CMPSTR (t->events[2].type, SERVER_HEARTBEAT_STARTED);                          \
+      ASSERT (stream == t->events[2].awaited); /* check for stream or pool */               \
+      bson_mutex_unlock (&t->lock);                                                         \
+   } else                                                                                   \
+      (void) 0
+
+static void
+smm_destroy (smm_t *t)
+{
+   if (!t) {
+      return;
+   }
+   mongoc_client_pool_destroy (t->pool);
+   bson_mutex_destroy (&t->lock);
+   bson_free (t);
+}
+
+// `test_serverMonitoringMode` implements spec tests from serverMonitoringMode.yml
+// The spec test needs a client pool for stream monitoring. The unified test runner only uses single-threaded
+// clients.
+static void
+test_serverMonitoringMode (void)
+{
+   if (test_framework_is_replset ()) {
+      printf ("Test is skipped. SDAM events are non-deterministic when monitoring multiple servers.");
+      return;
+   }
+
+   smm_t *t = NULL;
+   mongoc_handshake_t *md = _mongoc_handshake_get ();
+
+   if (test_framework_get_server_version () >= test_framework_str_to_version ("4.4.0")) {
+      printf ("'connect with serverMonitoringMode=auto >=4.4' ... begin\n");
+
+      t = smm_new ("auto");
+      ASSERT (smm_wait (t, 3));
+      smm_assert (t, true);
+      smm_destroy (t);
+
+      printf ("'connect with serverMonitoringMode=auto >=4.4' ... end\n");
+
+      printf ("'connect with serverMonitoringMode=stream >=4.4' ... begin\n");
+
+      t = smm_new ("stream");
+      ASSERT (smm_wait (t, 3));
+      smm_assert (t, true);
+      smm_destroy (t);
+
+      printf ("'connect with serverMonitoringMode=stream >=4.4' ... end\n");
+
+      // Additional tests checking behavior when in a FAAS env
+      mongoc_handshake_env_t prev_env = md->env;
+      md->env = MONGOC_HANDSHAKE_ENV_AWS;
+
+      printf ("'connect with serverMonitoringMode=auto >=4.4 and in FAAS env' ... begin\n");
+
+      t = smm_new ("auto");
+      ASSERT (smm_wait (t, 3));
+      smm_assert (t, false);
+      smm_destroy (t);
+
+      printf ("'connect with serverMonitoringMode=auto >=4.4 and in FAAS env' ... end\n");
+
+      printf ("'connect with serverMonitoringMode=stream >=4.4 and in FAAS env' ... begin\n");
+
+      t = smm_new ("stream");
+      ASSERT (smm_wait (t, 3));
+      smm_assert (t, true);
+      smm_destroy (t);
+
+      printf ("'connect with serverMonitoringMode=stream >=4.4 and in FAAS env' ... end\n");
+
+      md->env = prev_env;
+   }
+
+   if (test_framework_get_server_version () <= test_framework_str_to_version ("4.2.99")) {
+      printf ("'connect with serverMonitoringMode=auto <4.4' ... begin\n");
+
+      t = smm_new ("auto");
+      ASSERT (smm_wait (t, 3));
+      smm_assert (t, false);
+      smm_destroy (t);
+
+      printf ("'connect with serverMonitoringMode=auto <4.4' ... end\n");
+
+      printf ("'connect with serverMonitoringMode=stream <4.4' ... begin\n");
+
+      t = smm_new ("stream");
+      ASSERT (smm_wait (t, 3));
+      smm_assert (t, false);
+      smm_destroy (t);
+
+      printf ("'connect with serverMonitoringMode=stream <4.4' ... end\n");
+   }
+
+   printf ("'connect with serverMonitoringMode=poll' ... begin\n");
+
+   t = smm_new ("poll");
+   ASSERT (smm_wait (t, 3));
+   smm_assert (t, false);
+   smm_destroy (t);
+
+   printf ("'connect with serverMonitoringMode=poll' ... end\n");
+}
+
 void
 test_sdam_monitoring_install (TestSuite *suite)
 {
@@ -986,4 +1221,6 @@ test_sdam_monitoring_install (TestSuite *suite)
       suite, "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns", test_heartbeat_fails_dns_pooled);
    TestSuite_AddMockServerTest (
       suite, "/server_discovery_and_monitoring/monitoring/no_duplicates", test_no_duplicates, NULL, NULL);
+   TestSuite_AddLive (
+      suite, "/server_discovery_and_monitoring/monitoring/serverMonitoringMode", test_serverMonitoringMode);
 }

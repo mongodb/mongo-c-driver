@@ -22,6 +22,8 @@ This method has an internal time limit of 120 seconds, and will retry until that
 
 ``cb`` should not attempt to start new transactions, but should simply run operations meant to be contained within a transaction. The ``cb`` does not need to commit transactions; this is handled by the :symbol:`mongoc_client_session_with_transaction`. If ``cb`` does commit or abort a transaction, however, this method will return without taking further action.
 
+If a command inside ``cb`` fails, it may cause the transaction on the server to be aborted. This situation is normally handled transparently by the driver. However, if the application does not return that error from ``cb``, the driver will not be able to determine whether the transaction was aborted or not. The driver will then retry ``cb`` indefinitely. To avoid this situation, the application MUST NOT silently handle errors within ``cb``. If the application needs to handle errors within ``cb``, it MUST return them after doing so.
+
 The parameter ``reply`` is initialized even upon failure to simplify memory management.
 
 Parameters

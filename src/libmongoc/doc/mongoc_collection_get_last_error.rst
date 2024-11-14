@@ -3,6 +3,22 @@
 mongoc_collection_get_last_error()
 ==================================
 
+.. warning::
+   .. deprecated:: 1.9.0
+
+    To get write results from write operations, instead use:
+
+    - :symbol:`mongoc_collection_update_one`
+    - :symbol:`mongoc_collection_update_many`
+    - :symbol:`mongoc_collection_replace_one`
+    - :symbol:`mongoc_collection_delete_one`
+    - :symbol:`mongoc_collection_delete_many`
+    - :symbol:`mongoc_collection_insert_one`
+    - :symbol:`mongoc_collection_insert_many`
+    - :symbol:`mongoc_bulkwrite_t`
+    - :symbol:`mongoc_bulk_operation_t`
+
+
 Synopsis
 --------
 
@@ -19,12 +35,17 @@ Parameters
 Description
 -----------
 
-The mongoc_collection_get_last_error() function returns a bulk result. See `Bulk Write Operations <bulk_>`_ for examples of bulk results.
+:symbol:`mongoc_collection_get_last_error` returns write results from some operations:
 
-A write_concern must be at least ``MONGOC_WRITE_CONCERN_W_DEFAULT`` in last command execution for this to be available.
+- :symbol:`mongoc_collection_update`
+- :symbol:`mongoc_collection_remove`
+- :symbol:`mongoc_collection_delete`
+- :symbol:`mongoc_collection_insert_bulk`
+- :symbol:`mongoc_collection_insert`
 
 Returns
 -------
 
-A :symbol:`bson:bson_t` that should not be modified or ``NULL``.
+A :symbol:`bson:bson_t` that should not be modified or ``NULL``. The returned :symbol:`bson:bson_t` is may be
+invalidated by the next operation on ``collection``.
 

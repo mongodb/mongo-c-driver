@@ -23,6 +23,7 @@
 #include "test-conveniences.h"
 #include "util.h"
 #include "TestSuite.h"
+#include <common-string-private.h>
 
 struct _result_t {
    bool ok;
@@ -49,27 +50,27 @@ result_new (void)
 static void
 _result_init (result_t *result, const bson_val_t *value, const bson_t *reply, const bson_error_t *error)
 {
-   bson_string_t *str;
+   mcommon_string_t *str;
 
-   str = bson_string_new ("");
+   str = mcommon_string_new ("");
 
    if (value) {
       result->value = bson_val_copy (value);
-      bson_string_append_printf (str, "value=%s ", bson_val_to_json (value));
+      mcommon_string_append_printf (str, "value=%s ", bson_val_to_json (value));
    }
 
    if (reply) {
       char *reply_str = bson_as_canonical_extended_json (reply, NULL);
 
-      bson_string_append_printf (str, "reply=%s ", reply_str);
+      mcommon_string_append_printf (str, "reply=%s ", reply_str);
       result->reply = bson_copy (reply);
       bson_free (reply_str);
    }
 
-   bson_string_append_printf (str, "bson_error=%s", error->message);
+   mcommon_string_append_printf (str, "bson_error=%s", error->message);
    memcpy (&result->error, error, sizeof (bson_error_t));
    result->ok = (error->code == 0);
-   result->str = bson_string_free (str, false);
+   result->str = mcommon_string_free (str, false);
    result->write_errors = bson_new ();
    result->write_concern_errors = bson_new ();
 }
@@ -560,7 +561,7 @@ result_check (result_t *result, entity_map_t *em, bson_val_t *expect_result, bso
          if (!bson_match (error_response, val_to_match, result->array_of_root_docs, error)) {
             test_diagnostics_error_info ("error.errorResponse mismatch:\nExpected: %s\nActual: %s\n",
                                          bson_val_to_json (error_response),
-                                         bson_as_json (result->reply, NULL));
+                                         bson_as_relaxed_extended_json (result->reply, NULL));
             bson_val_destroy (val_to_match);
             bson_destroy (&doc_to_match);
             goto done;

@@ -21,6 +21,7 @@
 #include <process.h>
 #elif defined(__APPLE__)
 #include <pthread.h>
+#include <AvailabilityMacros.h>
 #elif defined(__FreeBSD__)
 #include <sys/thr.h>
 #elif defined(__NetBSD__)
@@ -34,6 +35,7 @@
 #include "mongoc-log.h"
 #include "mongoc-log-private.h"
 #include "mongoc-thread-private.h"
+#include <common-string-private.h>
 
 
 static bson_once_t once = BSON_ONCE_INIT;
@@ -197,9 +199,15 @@ mongoc_log_default_handler (mongoc_log_level_t log_level, const char *log_domain
 #elif defined(__NetBSD__)
    pid = (int) _lwp_self ();
 #elif defined(__APPLE__)
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1070
+   // libc on macOS < 10.7 does not support `pthread_threadid_np`
+   mach_port_t tid = pthread_mach_thread_np (pthread_self ());
+   pid = (int) tid;
+#else
    uint64_t tid;
    pthread_threadid_np (0, &tid);
    pid = (int) tid;
+#endif
 #else
    pid = (int) getpid ();
 #endif
@@ -217,12 +225,10 @@ mongoc_log_default_handler (mongoc_log_level_t log_level, const char *log_domain
 void
 mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
 {
-   if (!_mongoc_log_trace_is_enabled ()) {
-      return;
-   }
+   STOP_LOGGING_CHECK;
 
-   bson_string_t *const str = bson_string_new (NULL);
-   bson_string_t *const astr = bson_string_new (NULL);
+   mcommon_string_t *const str = mcommon_string_new (NULL);
+   mcommon_string_t *const astr = mcommon_string_new (NULL);
 
    size_t _i;
    for (_i = 0u; _i < _l; _i++) {
@@ -230,23 +236,23 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
       const size_t rem = _i % 16u;
 
       if (rem == 0u) {
-         bson_string_append_printf (str, "%05zx: ", _i);
+         mcommon_string_append_printf (str, "%05zx: ", _i);
       }
 
-      bson_string_append_printf (str, " %02x", _v);
+      mcommon_string_append_printf (str, " %02x", _v);
       if (isprint (_v)) {
-         bson_string_append_printf (astr, " %c", _v);
+         mcommon_string_append_printf (astr, " %c", _v);
       } else {
-         bson_string_append (astr, " .");
+         mcommon_string_append (astr, " .");
       }
 
       if (rem == 15u) {
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
-         bson_string_truncate (str, 0);
-         bson_string_truncate (astr, 0);
+         mcommon_string_truncate (str, 0);
+         mcommon_string_truncate (astr, 0);
       } else if (rem == 7u) {
-         bson_string_append (str, " ");
-         bson_string_append (astr, " ");
+         mcommon_string_append (str, " ");
+         mcommon_string_append (astr, " ");
       }
    }
 
@@ -254,14 +260,14 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
       mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
    }
 
-   bson_string_free (str, true);
-   bson_string_free (astr, true);
+   mcommon_string_free (str, true);
+   mcommon_string_free (astr, true);
 }
 
 void
 mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _iovcnt)
 {
-   bson_string_t *str, *astr;
+   mcommon_string_t *str, *astr;
    const char *_b;
    unsigned _i = 0;
    unsigned _j = 0;
@@ -269,17 +275,15 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
    size_t _l = 0;
    uint8_t _v;
 
-   if (!_mongoc_log_trace_is_enabled ()) {
-      return;
-   }
+   STOP_LOGGING_CHECK;
 
    for (_i = 0; _i < _iovcnt; _i++) {
       _l += _iov[_i].iov_len;
    }
 
    _i = 0;
-   str = bson_string_new (NULL);
-   astr = bson_string_new (NULL);
+   str = mcommon_string_new (NULL);
+   astr = mcommon_string_new (NULL);
 
    for (_j = 0; _j < _iovcnt; _j++) {
       _b = (char *) _iov[_j].iov_base;
@@ -288,23 +292,23 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
       for (_k = 0; _k < _l; _k++, _i++) {
          _v = *(_b + _k);
          if ((_i % 16) == 0) {
-            bson_string_append_printf (str, "%05x: ", _i);
+            mcommon_string_append_printf (str, "%05x: ", _i);
          }
 
-         bson_string_append_printf (str, " %02x", _v);
+         mcommon_string_append_printf (str, " %02x", _v);
          if (isprint (_v)) {
-            bson_string_append_printf (astr, " %c", _v);
+            mcommon_string_append_printf (astr, " %c", _v);
          } else {
-            bson_string_append (astr, " .");
+            mcommon_string_append (astr, " .");
          }
 
          if ((_i % 16) == 15) {
             mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
-            bson_string_truncate (str, 0);
-            bson_string_truncate (astr, 0);
+            mcommon_string_truncate (str, 0);
+            mcommon_string_truncate (astr, 0);
          } else if ((_i % 16) == 7) {
-            bson_string_append (str, " ");
-            bson_string_append (astr, " ");
+            mcommon_string_append (str, " ");
+            mcommon_string_append (astr, " ");
          }
       }
    }
@@ -313,6 +317,6 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
       mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
    }
 
-   bson_string_free (str, true);
-   bson_string_free (astr, true);
+   mcommon_string_free (str, true);
+   mcommon_string_free (astr, true);
 }

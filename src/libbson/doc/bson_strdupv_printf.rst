@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   char *
-  bson_strdupv_printf (const char *format, va_list args) BSON_GNUC_PRINTF (1, 0);
+  bson_strdupv_printf (const char *format, va_list args);
 
 Parameters
 ----------

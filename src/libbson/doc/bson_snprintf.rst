@@ -9,8 +9,7 @@ Synopsis
 .. code-block:: c
 
   int
-  bson_snprintf (char *str, size_t size, const char *format, ...)
-     BSON_GNUC_PRINTF (3, 4);
+  bson_snprintf (char *str, size_t size, const char *format, ...);
 
 Parameters
 ----------

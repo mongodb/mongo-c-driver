@@ -155,7 +155,7 @@ all_functions = OD([
     )),
     ('compile coverage', Function(
         shell_mongoc(r'''
-        COVERAGE=ON DEBUG=ON .evergreen/scripts/compile.sh
+        COVERAGE=ON .evergreen/scripts/compile.sh
         ''', add_expansions_to_env=True),
     )),
     ('build mongohouse', Function(
@@ -191,7 +191,7 @@ all_functions = OD([
         echo "Waiting for mongohouse to start... done."
         pgrep -a "mongohouse"
         export RUN_MONGOHOUSE_TESTS=ON
-        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
+        ./cmake-build/src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
         '''),
     )),
     ('run aws tests', Function(

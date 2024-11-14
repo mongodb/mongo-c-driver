@@ -41,8 +41,10 @@
 #include "mongoc-write-command-private.h"
 #include "mongoc-error-private.h"
 #include "mongoc-database-private.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
+#include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -1187,7 +1189,7 @@ mongoc_collection_drop_index_with_opts (mongoc_collection_t *collection,
 char *
 mongoc_collection_keys_to_index_string (const bson_t *keys)
 {
-   bson_string_t *s;
+   mcommon_string_t *s;
    bson_iter_t iter;
    bson_type_t type;
    int i = 0;
@@ -1198,25 +1200,26 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
       return NULL;
    }
 
-   s = bson_string_new (NULL);
+   s = mcommon_string_new (NULL);
 
    while (bson_iter_next (&iter)) {
       /* Index type can be specified as a string ("2d") or as an integer
        * representing direction */
       type = bson_iter_type (&iter);
       if (type == BSON_TYPE_UTF8) {
-         bson_string_append_printf (s, (i++ ? "_%s_%s" : "%s_%s"), bson_iter_key (&iter), bson_iter_utf8 (&iter, NULL));
+         mcommon_string_append_printf (
+            s, (i++ ? "_%s_%s" : "%s_%s"), bson_iter_key (&iter), bson_iter_utf8 (&iter, NULL));
       } else if (type == BSON_TYPE_INT32) {
-         bson_string_append_printf (s, (i++ ? "_%s_%d" : "%s_%d"), bson_iter_key (&iter), bson_iter_int32 (&iter));
+         mcommon_string_append_printf (s, (i++ ? "_%s_%d" : "%s_%d"), bson_iter_key (&iter), bson_iter_int32 (&iter));
       } else if (type == BSON_TYPE_INT64) {
-         bson_string_append_printf (
+         mcommon_string_append_printf (
             s, (i++ ? "_%s_%" PRId64 : "%s_%" PRId64), bson_iter_key (&iter), bson_iter_int64 (&iter));
       } else {
-         bson_string_free (s, true);
+         mcommon_string_free (s, true);
          return NULL;
       }
    }
-   return bson_string_free (s, false);
+   return mcommon_string_free (s, false);
 }
 
 
@@ -1616,7 +1619,7 @@ mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection, const
 
    if (mongoc_cursor_error (cursor, &error) && error.code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
       /* collection does not exist. from spec: return no documents but no err:
-       * https://github.com/mongodb/specifications/blob/master/source/enumerate-indexes.rst#enumeration-getting-index-information
+       * https://github.com/mongodb/specifications/blob/master/source/enumerate-collections/enumerate-collections.md#getting-full-collection-information
        */
       _mongoc_cursor_set_empty (cursor);
    }
@@ -1931,31 +1934,6 @@ done:
 
    RETURN (ret);
 }
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_update --
- *
- *       Updates one or more documents matching @selector with @update.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @flags: The flags for the update.
- *       @selector: A bson_t containing your selector.
- *       @update: A bson_t containing your update document.
- *       @write_concern: The write concern or NULL.
- *       @error: A location for an error or NULL.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @collection->gle is setup, depending on write_concern->w value.
- *       @error is setup upon failure.
- *
- *--------------------------------------------------------------------------
- */
 
 bool
 mongoc_collection_update (mongoc_collection_t *collection,
@@ -2359,38 +2337,6 @@ mongoc_collection_save (mongoc_collection_t *collection,
    return ret;
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_remove --
- *
- *       Delete one or more items from a collection. If you want to
- *       limit to a single delete, provided MONGOC_REMOVE_SINGLE_REMOVE
- *       for @flags.
- *
- *       Superseded by mongoc_collection_delete_one/many.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @flags: the delete flags or 0.
- *       @selector: A selector of documents to delete.
- *       @write_concern: A write concern or NULL. If NULL, the default
- *                       write concern for the collection will be used.
- *       @error: A location for an error or NULL.
- *
- * Returns:
- *       true if successful; otherwise false and error is set.
- *
- *       If the write concern does not dictate checking the result, this
- *       function may return true even if it failed.
- *
- * Side effects:
- *       @collection->gle is setup, depending on write_concern->w value.
- *       @error is setup upon failure.
- *
- *--------------------------------------------------------------------------
- */
 
 bool
 mongoc_collection_remove (mongoc_collection_t *collection,

@@ -42,6 +42,8 @@
 #include "mongoc-stream-tls-secure-channel.h"
 #endif
 #include "mongoc-stream-tls.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-cmp-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"
@@ -108,7 +110,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
                return false;
             } else {
                const int64_t msec = remaining / 1000;
-               BSON_ASSERT (bson_in_range_signed (int32_t, msec));
+               BSON_ASSERT (mcommon_in_range_signed (int32_t, msec));
                timeout_msec = (int32_t) msec;
             }
          }
@@ -206,7 +208,9 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    return mongoc_stream_tls_openssl_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+   BEGIN_IGNORE_DEPRECATIONS
    return mongoc_stream_tls_libressl_new (base_stream, host, opt, client);
+   END_IGNORE_DEPRECATIONS
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    return mongoc_stream_tls_secure_transport_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)

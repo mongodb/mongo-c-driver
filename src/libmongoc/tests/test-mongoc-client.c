@@ -23,6 +23,7 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 
 #ifdef BSON_HAVE_STRINGS_H
@@ -2222,8 +2223,9 @@ test_client_buildinfo_hang (void)
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 
 static void
-test_mongoc_client_change_openssl_ctx_before_ops (void)
+test_mongoc_client_change_openssl_ctx_before_ops (void *unused)
 {
+   BSON_UNUSED (unused);
    mongoc_client_t *client;
    const mongoc_ssl_opt_t *ssl_opts;
    bson_error_t error;
@@ -2243,8 +2245,9 @@ test_mongoc_client_change_openssl_ctx_before_ops (void)
 }
 
 static void
-test_mongoc_client_change_openssl_ctx_between_ops (void)
+test_mongoc_client_change_openssl_ctx_between_ops (void *unused)
 {
+   BSON_UNUSED (unused);
    mongoc_client_t *client;
    const mongoc_ssl_opt_t *ssl_opts;
    bson_error_t error;
@@ -3957,13 +3960,8 @@ test_failure_to_auth (void)
 void
 test_client_install (TestSuite *suite)
 {
-   if (test_framework_getenv_bool ("MONGOC_CHECK_IPV6")) {
-      /* try to validate ipv6 too */
-      TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_single);
-
-      /* try to validate ipv6 too */
-      TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_pooled);
-   }
+   TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_single);
+   TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_pooled);
 
    TestSuite_AddFull (
       suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, test_framework_skip_if_no_auth);
@@ -4139,9 +4137,17 @@ test_client_install (TestSuite *suite)
       suite, "/Client/resends_handshake_on_network_error", test_mongoc_client_resends_handshake_on_network_error);
    TestSuite_Add (suite, "/Client/failure_to_auth", test_failure_to_auth);
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
-   TestSuite_Add (
-      suite, "/Client/openssl/change_ssl_opts_before_ops", test_mongoc_client_change_openssl_ctx_before_ops);
-   TestSuite_Add (
-      suite, "/Client/openssl/change_ssl_opts_after_ops", test_mongoc_client_change_openssl_ctx_between_ops);
+   TestSuite_AddFull (suite,
+                      "/Client/openssl/change_ssl_opts_before_ops",
+                      test_mongoc_client_change_openssl_ctx_before_ops,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_server_ssl);
+   TestSuite_AddFull (suite,
+                      "/Client/openssl/change_ssl_opts_after_ops",
+                      test_mongoc_client_change_openssl_ctx_between_ops,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_server_ssl);
 #endif
 }

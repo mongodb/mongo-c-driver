@@ -18,6 +18,7 @@
 
 #include "test-conveniences.h"
 #include "TestSuite.h"
+#include <common-cmp-private.h>
 
 static int
 cmp_key (const void *a, const void *b)
@@ -53,10 +54,10 @@ bson_copy_and_sort (const bson_t *in)
 typedef struct {
    const char *str;
    bson_type_t type;
-} bson_string_and_type_t;
+} mcommon_string_and_type_t;
 
 /* List of aliases: https://www.mongodb.com/docs/manual/reference/bson-types/ */
-bson_string_and_type_t bson_type_map[] = {
+mcommon_string_and_type_t bson_type_map[] = {
    {"double", BSON_TYPE_DOUBLE},   {"string", BSON_TYPE_UTF8},
    {"object", BSON_TYPE_DOCUMENT}, {"array", BSON_TYPE_ARRAY},
    {"binData", BSON_TYPE_BINARY},  {"undefined", BSON_TYPE_UNDEFINED},
@@ -148,8 +149,8 @@ usecs_since_epoch (void)
    struct timeval tv;
    BSON_ASSERT (bson_gettimeofday (&tv) == 0);
 
-   BSON_ASSERT (bson_in_range_signed (int64_t, tv.tv_sec));
-   BSON_ASSERT (bson_in_range_signed (int64_t, tv.tv_usec));
+   BSON_ASSERT (mcommon_in_range_signed (int64_t, tv.tv_sec));
+   BSON_ASSERT (mcommon_in_range_signed (int64_t, tv.tv_usec));
 
    const int64_t secs = (int64_t) tv.tv_sec;
    const int64_t usecs = (int64_t) tv.tv_usec;

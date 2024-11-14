@@ -41,7 +41,10 @@
 #include "mongoc-log.h"
 #include "mongoc-error.h"
 
-#include "common-macros-private.h"
+#include <common-macros-private.h>
+#include <common-cmp-private.h>
+
+#include <inttypes.h>
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -209,7 +212,7 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls, char *buf, size_t bu
       expire = bson_get_monotonic_time () + (tls->timeout_msec * 1000);
    }
 
-   BSON_ASSERT (bson_in_range_unsigned (int, buf_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, buf_len));
    ret = BIO_write (openssl->bio, buf, (int) buf_len);
 
    if (ret <= 0) {
@@ -220,7 +223,7 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls, char *buf, size_t bu
       now = bson_get_monotonic_time ();
 
       if ((expire - now) < 0) {
-         if (bson_cmp_less_su (ret, buf_len)) {
+         if (mcommon_cmp_less_su (ret, buf_len)) {
             mongoc_counter_streams_timeout_inc ();
          }
 
@@ -331,13 +334,13 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov,
              * if we didn't buffer and have to send out of the iovec */
 
             child_ret = _mongoc_stream_tls_openssl_write (tls, to_write, to_write_len);
-            if (bson_cmp_not_equal_su (child_ret, to_write_len)) {
-               TRACE ("Got child_ret: %zu while to_write_len is: %zu", child_ret, to_write_len);
+            if (mcommon_cmp_not_equal_su (child_ret, to_write_len)) {
+               TRACE ("Got child_ret: %zd while to_write_len is: %zu", child_ret, to_write_len);
             }
 
             if (child_ret < 0) {
-               TRACE ("Returning what I had (%zu) as apposed to the error "
-                      "(%zu, errno:%d)",
+               TRACE ("Returning what I had (%zd) as apposed to the error "
+                      "(%zd, errno:%d)",
                       ret,
                       child_ret,
                       errno);
@@ -346,7 +349,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov,
 
             ret += child_ret;
 
-            if (bson_cmp_less_su (child_ret, to_write_len)) {
+            if (mcommon_cmp_less_su (child_ret, to_write_len)) {
                /* we timed out, so send back what we could send */
 
                RETURN (ret);
@@ -882,7 +885,10 @@ mongoc_stream_t *
 mongoc_stream_tls_openssl_new_with_context (
    mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
 {
-   BSON_ASSERT_PARAM (ssl_ctx);
+   // `ssl_ctx` may be NULL if creating the context failed. Return NULL to signal failure.
+   if (!ssl_ctx) {
+      return NULL;
+   }
    SSL_CTX_up_ref (ssl_ctx);
 
    return create_stream_with_ctx (base_stream, host, opt, client, ssl_ctx);

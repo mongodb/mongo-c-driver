@@ -12,8 +12,7 @@ Synopsis
   mongoc_database_aggregate (mongoc_database_t *database,
                              const bson_t *pipeline,
                              const bson_t *opts,
-                             const mongoc_read_prefs_t *read_prefs)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+                             const mongoc_read_prefs_t *read_prefs);
 
 Parameters
 ----------

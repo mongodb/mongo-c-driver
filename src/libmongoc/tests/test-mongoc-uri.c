@@ -10,6 +10,7 @@
 
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
+#include <common-string-private.h>
 
 static void
 test_mongoc_uri_new (void)
@@ -253,6 +254,14 @@ test_mongoc_uri_new (void)
    uri = mongoc_uri_new ("mongodb://christian%40realm:pwd@localhost:27017");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "christian@realm");
+   mongoc_uri_destroy (uri);
+
+   /* should recognize a question mark in the userpass instead of mistaking it for the beginning of options */
+   uri = mongoc_uri_new ("mongodb://us?r:pa?s@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1");
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_username (uri), "us?r");
+   ASSERT_CMPSTR (mongoc_uri_get_password (uri), "pa?s");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
    mongoc_uri_destroy (uri);
 
    /* should fail on invalid escaped characters */
@@ -1839,14 +1848,24 @@ test_mongoc_uri_dns_options (void)
    mongoc_uri_destroy (uri);
    uri = mongoc_uri_new ("mongodb+srv://user@a.b.c/?authSource=db1&replicaSet=rs1");
 
-   capture_logs (true);
-   /* parse_options returns true, but logs warnings */
-   BSON_ASSERT (mongoc_uri_parse_options (uri, "authSource=db2&replicaSet=db2", true, NULL));
-   ASSERT_CAPTURED_LOG ("parsing TXT record", MONGOC_LOG_LEVEL_WARNING, "Cannot override URI option \"authSource\"");
-   ASSERT_CAPTURED_LOG ("parsing TXT record", MONGOC_LOG_LEVEL_WARNING, "Cannot override URI option \"replicaSet\"");
-   capture_logs (false);
-   ASSERT_MATCH (mongoc_uri_get_credentials (uri), "{'authsource': 'db1'}");
-   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'replicaset': 'rs1'}");
+   // test that parsing warns if replicaSet is ignored from TXT records.
+   {
+      capture_logs (true);
+      ASSERT (mongoc_uri_parse_options (uri, "replicaSet=db2", true, NULL));
+      ASSERT_CAPTURED_LOG (
+         "parsing replicaSet from TXT", MONGOC_LOG_LEVEL_WARNING, "Ignoring URI option \"replicaSet\"");
+      capture_logs (false);
+      ASSERT_MATCH (mongoc_uri_get_options (uri), "{'replicaset': 'rs1'}");
+   }
+
+   // test that parsing does not warn if authSource is ignored from TXT records.
+   {
+      capture_logs (true);
+      ASSERT (mongoc_uri_parse_options (uri, "authSource=db2", true, NULL));
+      ASSERT_NO_CAPTURED_LOGS ("parsing authSource from TXT");
+      capture_logs (false);
+      ASSERT_MATCH (mongoc_uri_get_credentials (uri), "{'authsource': 'db1'}");
+   }
 
    mongoc_uri_destroy (uri);
 }
@@ -1969,10 +1988,6 @@ test_mongoc_uri_duplicates (void)
    ASSERT_LOG_DUPE (MONGOC_URI_LOCALTHRESHOLDMS);
    BSON_ASSERT (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 0) == 2);
 
-   RECREATE_URI (MONGOC_URI_MAXIDLETIMEMS "=1&" MONGOC_URI_MAXIDLETIMEMS "=2");
-   ASSERT_LOG_DUPE (MONGOC_URI_MAXIDLETIMEMS);
-   BSON_ASSERT (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXIDLETIMEMS, 0) == 2);
-
    RECREATE_URI (MONGOC_URI_MAXPOOLSIZE "=1&" MONGOC_URI_MAXPOOLSIZE "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_MAXPOOLSIZE);
    BSON_ASSERT (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXPOOLSIZE, 0) == 2);
@@ -2018,6 +2033,11 @@ test_mongoc_uri_duplicates (void)
    RECREATE_URI (MONGOC_URI_SAFE "=false&" MONGOC_URI_SAFE "=true");
    ASSERT_LOG_DUPE (MONGOC_URI_SAFE);
    BSON_ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SAFE, false));
+
+   RECREATE_URI (MONGOC_URI_SERVERMONITORINGMODE "=auto&" MONGOC_URI_SERVERMONITORINGMODE "=stream");
+   ASSERT_LOG_DUPE (MONGOC_URI_SERVERMONITORINGMODE);
+   str = mongoc_uri_get_server_monitoring_mode (uri);
+   BSON_ASSERT (strcmp (str, "stream") == 0);
 
    RECREATE_URI (MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=1&" MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_SERVERSELECTIONTIMEOUTMS);
@@ -2068,10 +2088,6 @@ test_mongoc_uri_duplicates (void)
    ASSERT_LOG_DUPE (MONGOC_URI_W);
    wc = mongoc_uri_get_write_concern (uri);
    BSON_ASSERT (mongoc_write_concern_get_w (wc) == MONGOC_WRITE_CONCERN_W_MAJORITY);
-
-   RECREATE_URI (MONGOC_URI_WAITQUEUEMULTIPLE "=1&" MONGOC_URI_WAITQUEUEMULTIPLE "=2");
-   ASSERT_LOG_DUPE (MONGOC_URI_WAITQUEUEMULTIPLE);
-   BSON_ASSERT (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WAITQUEUEMULTIPLE, 0) == 2);
 
    RECREATE_URI (MONGOC_URI_WAITQUEUETIMEOUTMS "=1&" MONGOC_URI_WAITQUEUETIMEOUTMS "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_WAITQUEUETIMEOUTMS);
@@ -2227,10 +2243,10 @@ test_parses_long_ipv6 (void)
    // Test the largest permitted IPv6 literal.
    {
       // Construct a string of repeating `:`.
-      bson_string_t *host = bson_string_new (NULL);
+      mcommon_string_t *host = mcommon_string_new (NULL);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2; i++) {
          // Max IPv6 literal is two less due to including `[` and `]`.
-         bson_string_append (host, ":");
+         mcommon_string_append (host, ":");
       }
 
       char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
@@ -2246,15 +2262,15 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      bson_string_free (host, true /* free_segment */);
+      mcommon_string_free (host, true /* free_segment */);
    }
 
    // Test one character more than the largest IPv6 literal.
    {
       // Construct a string of repeating `:`.
-      bson_string_t *host = bson_string_new (NULL);
+      mcommon_string_t *host = mcommon_string_new (NULL);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2 + 1; i++) {
-         bson_string_append (host, ":");
+         mcommon_string_append (host, ":");
       }
 
       char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
@@ -2273,7 +2289,39 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      bson_string_free (host, true /* free_segment */);
+      mcommon_string_free (host, true /* free_segment */);
+   }
+}
+
+void
+test_uri_depr (void)
+{
+   // Test behavior of deprecated URI options.
+   // Regression test for CDRIVER-3769 Deprecate unimplemented URI options
+
+   // Test an unsupported option warns.
+   {
+      capture_logs (true);
+      mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?foo=bar");
+      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported");
+      capture_logs (false);
+      mongoc_uri_destroy (uri);
+   }
+   // Test that waitQueueMultiple warns.
+   {
+      capture_logs (true);
+      mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?waitQueueMultiple=123");
+      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported");
+      capture_logs (false);
+      mongoc_uri_destroy (uri);
+   }
+   // Test that maxIdleTimeMS warns.
+   {
+      capture_logs (true);
+      mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?maxIdleTimeMS=123");
+      ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported");
+      capture_logs (false);
+      mongoc_uri_destroy (uri);
    }
 }
 
@@ -2304,4 +2352,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/one_tls_option_enables_tls", test_one_tls_option_enables_tls);
    TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
    TestSuite_Add (suite, "/Uri/parses_long_ipv6", test_parses_long_ipv6);
+   TestSuite_Add (suite, "/Uri/depr", test_uri_depr);
 }

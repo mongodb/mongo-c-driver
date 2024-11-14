@@ -22,7 +22,7 @@ Description
 
 Parses the string containing ascii encoded Decimal128 and initialize the bytes
 in ``dec``. See the `Decimal128 specification
-<https://github.com/mongodb/specifications/blob/master/source/bson-decimal128/decimal128.rst>`_
+<https://github.com/mongodb/specifications/blob/master/source/bson-decimal128/decimal128.md>`_
 for the exact string format.
 
 Returns
@@ -38,4 +38,3 @@ Example
 
   bson_decimal128_t dec;
   bson_decimal128_from_string ("1.00", &dec);
-

@@ -22,6 +22,8 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-buffer-private.h"
 #include "mcd-time.h"
+#include <common-string-private.h>
+#include <common-cmp-private.h>
 
 void
 _mongoc_http_request_init (mongoc_http_request_t *request)
@@ -45,7 +47,7 @@ _mongoc_http_response_cleanup (mongoc_http_response_t *response)
    bson_free (response->body);
 }
 
-bson_string_t *
+mcommon_string_t *
 _mongoc_http_render_request_head (const mongoc_http_request_t *req)
 {
    BSON_ASSERT_PARAM (req);
@@ -63,27 +65,27 @@ _mongoc_http_render_request_head (const mongoc_http_request_t *req)
       path = bson_strdup (req->path);
    }
 
-   bson_string_t *const string = bson_string_new ("");
+   mcommon_string_t *const string = mcommon_string_new ("");
    // Set the request line
-   bson_string_append_printf (string, "%s %s HTTP/1.0\r\n", req->method, path);
+   mcommon_string_append_printf (string, "%s %s HTTP/1.0\r\n", req->method, path);
    // (We're done with the path string:)
    bson_free (path);
 
    /* Always add Host header. */
-   bson_string_append_printf (string, "Host: %s:%d\r\n", req->host, req->port);
+   mcommon_string_append_printf (string, "Host: %s:%d\r\n", req->host, req->port);
    /* Always add Connection: close header to ensure server closes connection. */
-   bson_string_append_printf (string, "Connection: close\r\n");
+   mcommon_string_append_printf (string, "Connection: close\r\n");
    /* Add Content-Length if body is included. */
    if (req->body_len) {
-      bson_string_append_printf (string, "Content-Length: %d\r\n", req->body_len);
+      mcommon_string_append_printf (string, "Content-Length: %d\r\n", req->body_len);
    }
    // Add any extra headers
    if (req->extra_headers) {
-      bson_string_append (string, req->extra_headers);
+      mcommon_string_append (string, req->extra_headers);
    }
 
    // Final terminator
-   bson_string_append (string, "\r\n");
+   mcommon_string_append (string, "\r\n");
    return string;
 }
 
@@ -91,7 +93,7 @@ static int32_t
 _mongoc_http_msec_remaining (mcd_timer timer)
 {
    const int64_t msec = mcd_get_milliseconds (mcd_timer_remaining (timer));
-   BSON_ASSERT (bson_in_range_signed (int32_t, msec));
+   BSON_ASSERT (mcommon_in_range_signed (int32_t, msec));
    return (int32_t) msec;
 }
 
@@ -108,7 +110,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    bool ret = false;
    mongoc_iovec_t iovec;
    char *path = NULL;
-   bson_string_t *http_request = NULL;
+   mcommon_string_t *http_request = NULL;
    mongoc_buffer_t http_response_buf;
    char *http_response_str;
    char *ptr;
@@ -265,10 +267,10 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    }
 
    const size_t headers_len = (size_t) (ptr - http_response_str);
-   BSON_ASSERT (bson_in_range_unsigned (int, headers_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, headers_len));
 
    const size_t body_len = http_response_buf.len - headers_len - strlen (header_delimiter);
-   BSON_ASSERT (bson_in_range_unsigned (int, body_len));
+   BSON_ASSERT (mcommon_in_range_unsigned (int, body_len));
 
    res->headers_len = (int) headers_len;
    res->headers = bson_strndup (http_response_str, (size_t) headers_len);
@@ -281,7 +283,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
 fail:
    mongoc_stream_destroy (stream);
    if (http_request) {
-      bson_string_free (http_request, true);
+      mcommon_string_free (http_request, true);
    }
    _mongoc_buffer_destroy (&http_response_buf);
    bson_free (path);

@@ -316,12 +316,17 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
       **Do not** use the organization ID of **mongodb-default**.
 
+      The `SNYK_ORGANIZATION` may be obtained from the `Snyk organization page
+      <https://app.snyk.io/org/dev-prod/manage/settings>`_.
+
       .. _snyk: https://app.snyk.io
 
    .. envvar:: SNYK_TOKEN
 
       Set this to the value of an API token for accessing Snyk in the given
-      `SNYK_ORGANIZATION`. [#creds]_
+      `SNYK_ORGANIZATION`.
+
+      The `SNYK_TOKEN` may be obtained from the `Snyk account page <https://app.snyk.io/account>`_.
 
 .. program:: +snyk-test
 .. earthly-target:: +snyk-test
@@ -379,4 +384,6 @@ during execution. Your ``.secret`` file will look something like this:
 
 .. [#creds]
 
-   Details on obtaining credentials will not be found in this documentation.
+   Credentials are expected to be available in `AWS Secrets Manager
+   <https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets>`_ under
+   ``drivers/c-driver``.

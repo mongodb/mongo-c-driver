@@ -20,7 +20,8 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_as_relaxed_extended_json()` encodes ``bson`` as a UTF-8 string in the relaxed `MongoDB Extended JSON format`_.
+:symbol:`bson_as_relaxed_extended_json()` encodes ``bson`` as a UTF-8 string in Relaxed Extended JSON.
+See `MongoDB Extended JSON format`_ for a description of Extended JSON formats.
 
 The caller is responsible for freeing the resulting UTF-8 encoded string by calling :symbol:`bson_free()` with the result.
 
@@ -36,15 +37,14 @@ Upon failure, NULL is returned.
 Example
 -------
 
-.. code-block:: c
-
-  char *str = bson_as_relaxed_extended_json (doc, NULL);
-  printf ("%s\n", str);
-  bson_free (str);
-
+.. literalinclude:: ../examples/extended-json.c
+   :language: c
+   :start-after: // bson_as_relaxed_extended_json ... begin
+   :end-before: // bson_as_relaxed_extended_json ... end
+   :dedent: 6
 
 .. only:: html
 
   .. include:: includes/seealso/bson-as-json.txt
 
-.. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst
+.. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json/extended-json.md

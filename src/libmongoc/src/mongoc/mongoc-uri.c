@@ -36,8 +36,10 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-compression-private.h"
 #include "utlist.h"
+#include "mongoc-trace-private.h"
 
-#include <bson-dsl.h>
+#include <common-bson-dsl-private.h>
+#include <common-string-private.h>
 
 struct _mongoc_uri_t {
    char *str;
@@ -718,9 +720,12 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_SOCKETCHECKINTERVALMS) || !strcasecmp (key, MONGOC_URI_SOCKETTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_LOCALTHRESHOLDMS) || !strcasecmp (key, MONGOC_URI_MAXPOOLSIZE) ||
           !strcasecmp (key, MONGOC_URI_MAXSTALENESSSECONDS) || !strcasecmp (key, MONGOC_URI_MINPOOLSIZE) ||
-          !strcasecmp (key, MONGOC_URI_MAXIDLETIMEMS) || !strcasecmp (key, MONGOC_URI_WAITQUEUEMULTIPLE) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) || !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) ||
           !strcasecmp (key, MONGOC_URI_SRVMAXHOSTS);
+   /* Not including deprecated unimplemented options:
+    * - MONGOC_URI_MAXIDLETIMEMS
+    * - MONGOC_URI_WAITQUEUEMULTIPLE
+    */
 }
 
 bool
@@ -740,7 +745,7 @@ mongoc_uri_option_is_bool (const char *key)
           !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) || !strcasecmp (key, MONGOC_URI_LOADBALANCED) ||
-          /* deprecated options */
+          /* deprecated options with canonical equivalents */
           !strcasecmp (key, MONGOC_URI_SSL) || !strcasecmp (key, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES) ||
           !strcasecmp (key, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES);
 }
@@ -749,10 +754,10 @@ bool
 mongoc_uri_option_is_utf8 (const char *key)
 {
    return !strcasecmp (key, MONGOC_URI_APPNAME) || !strcasecmp (key, MONGOC_URI_REPLICASET) ||
-          !strcasecmp (key, MONGOC_URI_READPREFERENCE) || !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) ||
-          !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
+          !strcasecmp (key, MONGOC_URI_READPREFERENCE) || !strcasecmp (key, MONGOC_URI_SERVERMONITORINGMODE) ||
+          !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) || !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
           !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD) || !strcasecmp (key, MONGOC_URI_TLSCAFILE) ||
-          /* deprecated options */
+          /* deprecated options with canonical equivalents */
           !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
           !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD) ||
           !strcasecmp (key, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE);
@@ -897,7 +902,15 @@ mongoc_uri_split_option (mongoc_uri_t *uri, bson_t *options, const char *str, bo
        * through TXT records." So, do NOT override existing options with TXT
        * options. */
       if (from_dns) {
-         MONGOC_WARNING ("Cannot override URI option \"%s\" from TXT record \"%s\"", key, str);
+         if (0 == strcmp (lkey, MONGOC_URI_AUTHSOURCE)) {
+            // Treat `authSource` as a special case. A server may support authentication with multiple mechanisms.
+            // MONGODB-X509 requires authSource=$external. SCRAM-SHA-256 requires authSource=admin.
+            // Only log a trace message since this may be expected.
+            TRACE ("Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
+         } else {
+            MONGOC_WARNING (
+               "Ignoring URI option \"%s\" from TXT record \"%s\". Option is already present in URI", key, str);
+         }
          ret = true;
          goto CLEANUP;
       }
@@ -1142,6 +1155,11 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
             goto UNSUPPORTED_VALUE;
          }
 
+      } else if (!strcmp (key, MONGOC_URI_SERVERMONITORINGMODE)) {
+         if (!mongoc_uri_set_server_monitoring_mode (uri, value)) {
+            goto UNSUPPORTED_VALUE;
+         }
+
       } else if (mongoc_uri_option_is_utf8 (key)) {
          mongoc_uri_bson_append_or_replace_key (&uri->options, canon, value);
 
@@ -1150,7 +1168,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
           * Keys that aren't supported by a driver MUST be ignored.
           *
           * A WARN level logging message MUST be issued
-          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.rst#keys
+          * https://github.com/mongodb/specifications/blob/master/source/connection-string/connection-string-spec.md#keys
           */
          MONGOC_WARNING ("Unsupported URI option \"%s\"", key);
       }
@@ -1425,6 +1443,32 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 
    before_slash = scan_to_unichar (str, '/', "", &tmp);
    if (!before_slash) {
+      // Handle cases of optional delimiting slash
+      char *userpass = NULL;
+      char *hosts = NULL;
+
+      // Skip any "?"s that exist in the userpass
+      userpass = scan_to_unichar (str, '@', "", &tmp);
+      if (!userpass) {
+         // If none found, safely check for "?" indicating beginning of options
+         before_slash = scan_to_unichar (str, '?', "", &tmp);
+      } else {
+         const size_t userpass_len = (size_t) (tmp - str);
+         // Otherwise, see if options exist after userpass and concatenate result
+         hosts = scan_to_unichar (tmp, '?', "", &tmp);
+
+         if (hosts) {
+            const size_t hosts_len = (size_t) (tmp - str) - userpass_len;
+
+            before_slash = bson_strndup (str, userpass_len + hosts_len);
+         }
+      }
+
+      bson_free (userpass);
+      bson_free (hosts);
+   }
+
+   if (!before_slash) {
       before_slash = bson_strdup (str);
       str += strlen (before_slash);
    } else {
@@ -1438,7 +1482,14 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    BSON_ASSERT (str);
 
    if (*str) {
+      // Check for valid end of hostname delimeter (skip slash if necessary)
+      if (*str != '/' && *str != '?') {
+         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
+         goto error;
+      }
+
       if (*str == '/') {
+         // Try to parse database.
          str++;
          if (*str) {
             if (!mongoc_uri_parse_database (uri, str, &str)) {
@@ -1446,18 +1497,16 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
                goto error;
             }
          }
+      }
 
-         if (*str == '?') {
-            str++;
-            if (*str) {
-               if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
-                  goto error;
-               }
+      if (*str == '?') {
+         // Try to parse options.
+         str++;
+         if (*str) {
+            if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
+               goto error;
             }
          }
-      } else {
-         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
-         goto error;
       }
    }
 
@@ -2169,7 +2218,7 @@ char *
 mongoc_uri_unescape (const char *escaped_string)
 {
    bson_unichar_t c;
-   bson_string_t *str;
+   mcommon_string_t *str;
    unsigned int hex = 0;
    const char *ptr;
    const char *end;
@@ -2190,7 +2239,7 @@ mongoc_uri_unescape (const char *escaped_string)
 
    ptr = escaped_string;
    end = ptr + len;
-   str = bson_string_new (NULL);
+   str = mcommon_string_new (NULL);
 
    for (; *ptr; ptr = bson_utf8_next_char (ptr)) {
       c = bson_utf8_get_char (ptr);
@@ -2203,16 +2252,16 @@ mongoc_uri_unescape (const char *escaped_string)
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
              || 0 == hex) {
-            bson_string_free (str, true);
+            mcommon_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
          }
-         bson_string_append_c (str, hex);
+         mcommon_string_append_c (str, hex);
          ptr += 2;
          unescape_occurred = true;
          break;
       default:
-         bson_string_append_unichar (str, c);
+         mcommon_string_append_unichar (str, c);
          break;
       }
    }
@@ -2220,11 +2269,11 @@ mongoc_uri_unescape (const char *escaped_string)
    /* Check that after unescaping, it is still valid UTF-8 */
    if (unescape_occurred && !bson_utf8_validate (str->str, str->len, false)) {
       MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
-      bson_string_free (str, true);
+      mcommon_string_free (str, true);
       return NULL;
    }
 
-   return bson_string_free (str, false);
+   return mcommon_string_free (str, false);
 }
 
 
@@ -2317,6 +2366,30 @@ bool
 mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
 {
    return mongoc_uri_get_tls (uri);
+}
+
+const char *
+mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)
+{
+   BSON_ASSERT_PARAM (uri);
+
+   return mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_SERVERMONITORINGMODE, "auto");
+}
+
+
+bool
+mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value)
+{
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (value);
+
+   // Check for valid value
+   if (strcmp (value, "stream") && strcmp (value, "poll") && strcmp (value, "auto")) {
+      return false;
+   }
+
+   mongoc_uri_bson_append_or_replace_key (&uri->options, MONGOC_URI_SERVERMONITORINGMODE, value);
+   return true;
 }
 
 /*
@@ -2855,6 +2928,8 @@ mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri, const char *option_orig, const
    }
    if (!bson_strcasecmp (option, MONGOC_URI_APPNAME)) {
       return mongoc_uri_set_appname (uri, value);
+   } else if (!bson_strcasecmp (option, MONGOC_URI_SERVERMONITORINGMODE)) {
+      return mongoc_uri_set_server_monitoring_mode (uri, value);
    } else {
       option_lowercase = lowercase_str_new (option);
       mongoc_uri_bson_append_or_replace_key (&uri->options, option_lowercase, value);
