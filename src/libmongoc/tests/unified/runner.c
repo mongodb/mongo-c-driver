@@ -576,8 +576,9 @@ check_schema_version (test_file_t *test_file)
    // 1.12 is partially supported (expectedError.errorResponse assertions)
    // 1.18 is partially supported (additional properties in kmsProviders)
    // 1.20 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
+   // 1.22 is partially supported (keyExpirationMS in client encryption options)
    semver_t schema_version;
-   semver_parse ("1.20", &schema_version);
+   semver_parse ("1.22", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
