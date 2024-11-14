@@ -32,7 +32,7 @@ typedef void (*test_hook) (void *test);
 
 typedef struct {
    const char *description;
-   bool check_substring;
+   bool check_substring; // If true, check that `description` matches a substring of the test description.
    const char *reason;
 } test_skip_t;
 
