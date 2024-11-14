@@ -2505,7 +2505,9 @@ operation_failpoint (test_t *test, operation_t *op, result_t *result, bson_error
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
+   test_begin_suppressing_structured_logs ();
    mongoc_client_command_simple (client, "admin", failpoint, rp, &op_reply, &op_error);
+   test_end_suppressing_structured_logs ();
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -2563,7 +2565,9 @@ operation_targeted_failpoint (test_t *test, operation_t *op, result_t *result, b
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
+   test_begin_suppressing_structured_logs ();
    mongoc_client_command_simple_with_server_id (client, "admin", failpoint, rp, server_id, &op_reply, &op_error);
+   test_end_suppressing_structured_logs ();
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
