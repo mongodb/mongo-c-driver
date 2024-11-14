@@ -157,6 +157,7 @@ echo "Authenticating using PLAIN"
 LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_plain:?}@${auth_host}/?authMechanism=PLAIN&${c_timeout}"
 
 echo "Authenticating using default auth mechanism"
+# Though the auth source is named "mongodb-cr", authentication uses the default mechanism (currently SCRAM-SHA-1).
 LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_mongodbcr:?}@${auth_host}/mongodb-cr?${c_timeout}"
 
 if [[ "${sasl}" != "OFF" ]]; then
