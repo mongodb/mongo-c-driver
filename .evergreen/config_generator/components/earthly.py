@@ -228,6 +228,15 @@ def earthly_task(
     return EvgTask(
         name=name,
         commands=[
+            # Ensure subsequent Docker commands are authenticated.
+            subprocess_exec(
+                binary='bash',
+                command_type="setup",
+                args=[
+                    "-c",
+                    'docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"'
+                ],
+            ),
             # First, just build the "env-warmup" which will prepare the build environment.
             # This won't generate any output, but allows EVG to track it as a separate build step
             # for timing and logging purposes. The subequent build step will cache-hit the
@@ -251,12 +260,9 @@ def earthly_task(
 
 
 CONTAINER_RUN_DISTROS = [
-    "ubuntu2204-small",
     "ubuntu2204-large",
-    "ubuntu2004-small",
-    "ubuntu2004",
-    "debian10",
-    "debian11",
+    "debian10-large",
+    "debian11-large",
     "amazon2",
 ]
 
@@ -265,11 +271,11 @@ def tasks() -> Iterable[EvgTask]:
     for conf in all_possible(Configuration):
         # test-example is a target in all configurations
         targets = ["test-example"]
-        
+
         # test-cxx-driver is only a target in configurations with specified mongocxx versions
         if conf.test_mongocxx_ref != "none":
             targets.append("test-cxx-driver")
-        
+
         task = earthly_task(
             name=f"check:{conf.suffix}",
             targets=targets,
