@@ -32,6 +32,7 @@ typedef void (*test_hook) (void *test);
 
 typedef struct {
    const char *description;
+   bool check_substring;
    const char *reason;
 } test_skip_t;
 

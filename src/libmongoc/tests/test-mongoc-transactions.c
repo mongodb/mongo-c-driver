@@ -216,8 +216,9 @@ transactions_test_run_operation (json_test_ctx_t *ctx, const bson_t *test, const
 }
 
 
-static test_skip_t skips[] = {
-   {"callback is not retried after non-transient error (DuplicateKeyError)", "Waiting on CDRIVER-4811"}, {0}};
+static test_skip_t skips[] = {{.description = "callback is not retried after non-transient error (DuplicateKeyError)",
+                               .reason = "Waiting on CDRIVER-4811"},
+                              {0}};
 
 
 static void
