@@ -102,13 +102,13 @@ test_structured_log_plain (void)
 }
 
 void
-test_structured_log_with_extra_data (void)
+test_structured_log_plain_with_extra_data (void)
 {
    struct log_assumption assumption = {
       .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
       .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      .expected_envelope.message = "Plain log entry",
-      .expected_bson = BCON_NEW ("message", BCON_UTF8 ("Plain log entry"), "extra", BCON_INT32 (1)),
+      .expected_envelope.message = "Plain log entry with extra data",
+      .expected_bson = BCON_NEW ("message", BCON_UTF8 ("Plain log entry with extra data"), "extra", BCON_INT32 (1)),
       .expected_calls = 1,
    };
 
@@ -117,7 +117,7 @@ test_structured_log_with_extra_data (void)
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-                          "Plain log entry",
+                          "Plain log entry with extra data",
                           int32 ("extra", 1));
 
    ASSERT_CMPINT (assumption.calls, ==, 1);
@@ -332,6 +332,8 @@ test_structured_log_command (void)
       .expected_envelope.message = "Log entry with command and reply fields",
       .expected_bson = BCON_NEW ("message",
                                  BCON_UTF8 ("Log entry with command and reply fields"),
+                                 "commandName",
+                                 BCON_UTF8 ("Not a command"),
                                  "databaseName",
                                  BCON_UTF8 ("Some database"),
                                  "commandName",
@@ -395,6 +397,7 @@ test_structured_log_command (void)
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
                           "Log entry with command and reply fields",
+                          cmd (&cmd, COMMAND_NAME),
                           cmd (&cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID, COMMAND),
                           cmd_reply ("ping", reply_doc),
                           cmd_reply ("authenticate", reply_doc),
@@ -413,7 +416,7 @@ void
 test_structured_log_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/structured_log/plain", test_structured_log_plain);
-   TestSuite_Add (suite, "/structured_log/with_extra_data", test_structured_log_with_extra_data);
+   TestSuite_Add (suite, "/structured_log/plain_with_extra_data", test_structured_log_plain_with_extra_data);
    TestSuite_Add (suite, "/structured_log/basic_data_types", test_structured_log_basic_data_types);
    TestSuite_Add (suite, "/structured_log/json", test_structured_log_json);
    TestSuite_Add (suite, "/structured_log/oid", test_structured_log_oid);
