@@ -343,7 +343,7 @@ test_structured_log_command (void)
                                  "command",
                                  BCON_UTF8 ("{ \"c\" : \"d\" }"),
                                  "reply", // Un-redacted successful reply
-                                 BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : { \"$numberInt\" : \"1\" } }"),
+                                 BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
                                  "reply", // Redacted successful reply
                                  BCON_UTF8 ("{}"),
                                  "failure", // Un-redacted server side error

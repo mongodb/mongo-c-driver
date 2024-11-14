@@ -282,7 +282,7 @@ mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entr
 char *
 mongoc_structured_log_document_to_json (const bson_t *document, size_t *length)
 {
-   bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_CANONICAL, gStructuredLog.max_document_length);
+   bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_RELAXED, gStructuredLog.max_document_length);
    char *json = bson_as_json_with_opts (document, length, opts);
    bson_json_opts_destroy (opts);
    return json;
