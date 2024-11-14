@@ -98,6 +98,11 @@ BSON_BEGIN_DECLS
     .arg2.server_description_flags = (0 _bsonDSL_mapMacro (                      \
        _mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION, __VA_ARGS__))},
 
+// @todo Is the (CLAM) spec asking for only the highest resolution available, or that plus milliseconds?
+#define _mongoc_structured_log_item_monotonic_time_duration(_duration)              \
+   _mongoc_structured_log_item_int32 ("durationMS", (int32_t) ((_duration) / 1000)) \
+      _mongoc_structured_log_item_int64 ("durationMicros", (_duration))
+
 typedef struct mongoc_structured_log_builder_stage_t mongoc_structured_log_builder_stage_t;
 
 typedef const mongoc_structured_log_builder_stage_t *(*mongoc_structured_log_builder_func_t) (

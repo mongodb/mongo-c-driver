@@ -413,6 +413,45 @@ test_structured_log_command (void)
 }
 
 void
+test_structured_log_duration (void)
+{
+   struct log_assumption assumption = {
+      .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      .expected_envelope.message = "Log entry with duration",
+      .expected_bson = BCON_NEW ("message",
+                                 BCON_UTF8 ("Log entry with duration"),
+                                 "durationMS",
+                                 BCON_INT32 (1),
+                                 "durationMicros",
+                                 BCON_INT64 (1999),
+                                 "durationMS",
+                                 BCON_INT32 (0),
+                                 "durationMicros",
+                                 BCON_INT64 (10),
+                                 "durationMS",
+                                 BCON_INT32 (10000000),
+                                 "durationMicros",
+                                 BCON_INT64 (10000000999)),
+      .expected_calls = 1,
+   };
+
+   structured_log_state old_state = save_state ();
+   mongoc_structured_log_set_handler (structured_log_func, &assumption);
+
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Log entry with duration",
+                          monotonic_time_duration (1999),
+                          monotonic_time_duration (10),
+                          monotonic_time_duration (10000000999));
+
+   ASSERT_CMPINT (assumption.calls, ==, 1);
+   restore_state (old_state);
+   bson_destroy (assumption.expected_bson);
+}
+
+void
 test_structured_log_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/structured_log/plain", test_structured_log_plain);
@@ -422,4 +461,5 @@ test_structured_log_install (TestSuite *suite)
    TestSuite_Add (suite, "/structured_log/oid", test_structured_log_oid);
    TestSuite_Add (suite, "/structured_log/server_description", test_structured_log_server_description);
    TestSuite_Add (suite, "/structured_log/command", test_structured_log_command);
+   TestSuite_Add (suite, "/structured_log/duration", test_structured_log_duration);
 }

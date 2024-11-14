@@ -747,7 +747,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                           utf8 ("databaseName", db),
                           utf8 ("commandName", cmd_name),
                           int64 ("operationId", cursor->operation_id),
-                          int64 ("durationMS", duration),
+                          monotonic_time_duration (duration),
                           cmd_reply (cmd_name, &reply));
 
    if (client->apm_callbacks.succeeded) {
@@ -804,7 +804,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
                           utf8 ("databaseName", db),
                           utf8 ("commandName", cmd_name),
                           int64 ("operationId", cursor->operation_id),
-                          int64 ("durationMS", duration),
+                          monotonic_time_duration (duration),
                           bson_as_json ("failure", &reply));
 
    if (client->apm_callbacks.failed) {

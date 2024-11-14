@@ -570,7 +570,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
          "Command succeeded",
          int32 ("requestId", request_id),
-         int64 ("durationMS", duration),
+         monotonic_time_duration (duration),
          server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
          cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID),
          cmd_reply (cmd->command_name, cmd->is_acknowledged ? reply : &fake_reply));
@@ -603,7 +603,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
          "Command failed",
          int32 ("requestId", request_id),
-         int64 ("durationMS", duration),
+         monotonic_time_duration (duration),
          server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
          cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID),
          cmd_failure (cmd->command_name, reply, error));
