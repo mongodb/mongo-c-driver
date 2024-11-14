@@ -1989,7 +1989,7 @@ test_should_be_skipped (const test_skip_t *skips, const char *description)
          if (iter->check_substring) {
             if (NULL != strstr (description, iter->description)) {
                fprintf (stderr,
-                        "  - %s contiains '%s' and is SKIPPED, due to reason: %s\n",
+                        "  - %s SKIPPED (contains '%s'), due to reason: %s\n",
                         description,
                         iter->description,
                         iter->reason);
