@@ -1239,8 +1239,9 @@ entity_client_encryption_new (entity_map_t *entity_map, bson_t *bson, bson_error
          mongoc_client_encryption_opts_set_keyvault_namespace (ce_opts, db, coll);
       }
 
-      if (key_expiration && *key_expiration >= 0) {
-         mongoc_client_encryption_opts_set_key_expiration (ce_opts, *key_expiration);
+      if (key_expiration) {
+         BSON_ASSERT (*key_expiration >= 0);
+         mongoc_client_encryption_opts_set_key_expiration (ce_opts, (uint64_t) *key_expiration);
       }
 
       if (!_parse_and_set_kms_providers (ce_opts, kms, error)) {
