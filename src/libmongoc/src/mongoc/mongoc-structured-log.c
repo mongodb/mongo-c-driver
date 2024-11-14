@@ -356,10 +356,15 @@ const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_oid_as_hex (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const char *key_or_null = stage->arg1.utf8;
+   const bson_oid_t *oid_or_null = stage->arg2.oid;
    if (key_or_null) {
-      char str[25];
-      bson_oid_to_string (stage->arg2.oid, str);
-      bson_append_utf8 (bson, key_or_null, -1, str, 24);
+      if (oid_or_null) {
+         char str[25];
+         bson_oid_to_string (oid_or_null, str);
+         bson_append_utf8 (bson, key_or_null, -1, str, 24);
+      } else {
+         bson_append_null (bson, key_or_null, -1);
+      }
    }
    return stage + 1;
 }
@@ -368,12 +373,17 @@ const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_bson_as_json (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    const char *key_or_null = stage->arg1.utf8;
+   const bson_t *bson_or_null = stage->arg2.bson;
    if (key_or_null) {
-      size_t json_length;
-      char *json = mongoc_structured_log_document_to_json (stage->arg2.bson, &json_length);
-      if (json) {
-         bson_append_utf8 (bson, key_or_null, -1, json, json_length);
-         bson_free (json);
+      if (bson_or_null) {
+         size_t json_length;
+         char *json = mongoc_structured_log_document_to_json (bson_or_null, &json_length);
+         if (json) {
+            bson_append_utf8 (bson, key_or_null, -1, json, json_length);
+            bson_free (json);
+         }
+      } else {
+         bson_append_null (bson, key_or_null, -1);
       }
    }
    return stage + 1;
@@ -426,16 +436,10 @@ _mongoc_structured_log_append_cmd (bson_t *bson, const mongoc_structured_log_bui
    return stage + 1;
 }
 
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_reply (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+static void
+_mongoc_structured_log_append_redacted_cmd_reply (bson_t *bson, bool is_sensitive, const bson_t *reply)
 {
-   const char *cmd_name = stage->arg1.utf8;
-   const bson_t *reply = stage->arg2.bson;
-
-   BSON_ASSERT (cmd_name);
-   BSON_ASSERT (reply);
-
-   if (mongoc_apm_is_sensitive_command_message (cmd_name, reply)) {
+   if (is_sensitive) {
       BSON_APPEND_UTF8 (bson, "reply", "{}");
    } else {
       size_t json_length;
@@ -446,25 +450,45 @@ _mongoc_structured_log_append_cmd_reply (bson_t *bson, const mongoc_structured_l
          bson_free (json);
       }
    }
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_reply (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const mongoc_cmd_t *cmd = stage->arg1.cmd;
+   const bson_t *reply = stage->arg2.bson;
+
+   BSON_ASSERT (cmd);
+   BSON_ASSERT (reply);
+
+   bool is_sensitive = mongoc_apm_is_sensitive_command_message (cmd->command_name, cmd->command) ||
+                       mongoc_apm_is_sensitive_command_message (cmd->command_name, reply);
+   _mongoc_structured_log_append_redacted_cmd_reply (bson, is_sensitive, reply);
    return stage + 1;
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_cmd_name_reply (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
-   BSON_ASSERT (stage[1].func == _mongoc_structured_log_append_cmd_failure_stage1);
-   const char *cmd_name = stage[0].arg1.utf8;
-   const bson_t *reply = stage[0].arg2.bson;
-   const bson_error_t *error = stage[1].arg1.error;
+   const char *cmd_name = stage->arg1.utf8;
+   const bson_t *reply = stage->arg2.bson;
 
    BSON_ASSERT (cmd_name);
    BSON_ASSERT (reply);
-   BSON_ASSERT (error);
 
+   bool is_sensitive = mongoc_apm_is_sensitive_command_message (cmd_name, reply);
+   _mongoc_structured_log_append_redacted_cmd_reply (bson, is_sensitive, reply);
+   return stage + 1;
+}
+
+static void
+_mongoc_structured_log_append_redacted_cmd_failure (bson_t *bson,
+                                                    bool is_sensitive,
+                                                    const bson_t *reply,
+                                                    const bson_error_t *error)
+{
    bool is_server_side = error->domain == MONGOC_ERROR_SERVER || error->domain == MONGOC_ERROR_WRITE_CONCERN_ERROR;
    if (is_server_side) {
-      bool is_sensitive = mongoc_apm_is_sensitive_command_message (cmd_name, reply);
-
       if (is_sensitive) {
          // Redacted server-side message, must be a document with at most 'code', 'codeName', 'errorLabels'
          bson_t failure;
@@ -478,12 +502,10 @@ _mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson, const mongoc_str
             }
          }
          BSON_ASSERT (bson_append_document_end (bson, &failure));
-
       } else {
          // Non-redacted server side message, pass through
          BSON_APPEND_DOCUMENT (bson, "failure", reply);
       }
-
    } else {
       // Client-side errors converted directly from bson_error_t, never redacted
       bson_t failure;
@@ -493,6 +515,23 @@ _mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson, const mongoc_str
       BSON_APPEND_UTF8 (&failure, "message", error->message);
       BSON_ASSERT (bson_append_document_end (bson, &failure));
    }
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   BSON_ASSERT (stage[1].func == _mongoc_structured_log_append_cmd_failure_stage1);
+   const mongoc_cmd_t *cmd = stage[0].arg1.cmd;
+   const bson_t *reply = stage[0].arg2.bson;
+   const bson_error_t *error = stage[1].arg1.error;
+
+   BSON_ASSERT (cmd);
+   BSON_ASSERT (reply);
+   BSON_ASSERT (error);
+
+   bool is_sensitive = mongoc_apm_is_sensitive_command_message (cmd->command_name, cmd->command) ||
+                       mongoc_apm_is_sensitive_command_message (cmd->command_name, reply);
+   _mongoc_structured_log_append_redacted_cmd_failure (bson, is_sensitive, reply, error);
    return stage + 2;
 }
 
@@ -500,6 +539,33 @@ const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_cmd_failure_stage1 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
    // Never called, marks the second stage in a two-stage cmd_failure
+   BSON_UNUSED (bson);
+   BSON_UNUSED (stage);
+   BSON_ASSERT (false);
+   return NULL;
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_name_failure_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   BSON_ASSERT (stage[1].func == _mongoc_structured_log_append_cmd_name_failure_stage1);
+   const char *cmd_name = stage[0].arg1.utf8;
+   const bson_t *reply = stage[0].arg2.bson;
+   const bson_error_t *error = stage[1].arg1.error;
+
+   BSON_ASSERT (cmd_name);
+   BSON_ASSERT (reply);
+   BSON_ASSERT (error);
+
+   bool is_sensitive = mongoc_apm_is_sensitive_command_message (cmd_name, reply);
+   _mongoc_structured_log_append_redacted_cmd_failure (bson, is_sensitive, reply, error);
+   return stage + 2;
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_name_failure_stage1 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   // Never called, marks the second stage in a two-stage cmd_name_failure
    BSON_UNUSED (bson);
    BSON_UNUSED (stage);
    BSON_ASSERT (false);

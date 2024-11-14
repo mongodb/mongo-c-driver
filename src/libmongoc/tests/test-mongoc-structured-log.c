@@ -197,8 +197,12 @@ test_structured_log_json (void)
       .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
       .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       .expected_envelope.message = "Log entry with deferred BSON-to-JSON",
-      .expected_bson = BCON_NEW (
-         "message", BCON_UTF8 ("Log entry with deferred BSON-to-JSON"), "kJSON", BCON_UTF8 ("{ \"k\" : \"v\" }")),
+      .expected_bson = BCON_NEW ("message",
+                                 BCON_UTF8 ("Log entry with deferred BSON-to-JSON"),
+                                 "kJSON",
+                                 BCON_UTF8 ("{ \"k\" : \"v\" }"),
+                                 "kNull",
+                                 BCON_NULL),
       .expected_calls = 1,
    };
 
@@ -211,6 +215,7 @@ test_structured_log_json (void)
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
                           "Log entry with deferred BSON-to-JSON",
                           bson_as_json ("kJSON", json_doc),
+                          bson_as_json ("kNull", NULL),
                           bson_as_json (NULL, NULL));
 
    ASSERT_CMPINT (assumption.calls, ==, 1);
@@ -229,7 +234,9 @@ test_structured_log_oid (void)
       .expected_bson = BCON_NEW ("message",
                                  BCON_UTF8 ("Log entry with deferred OID-to-hex conversion"),
                                  "kOID",
-                                 BCON_UTF8 ("112233445566778899aabbcc")),
+                                 BCON_UTF8 ("112233445566778899aabbcc"),
+                                 "kNull",
+                                 BCON_NULL),
       .expected_calls = 1,
    };
 
@@ -243,6 +250,7 @@ test_structured_log_oid (void)
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
                           "Log entry with deferred OID-to-hex conversion",
                           oid_as_hex ("kOID", &oid),
+                          oid_as_hex ("kNull", NULL),
                           oid_as_hex (NULL, NULL));
 
    ASSERT_CMPINT (assumption.calls, ==, 1);
@@ -342,18 +350,27 @@ test_structured_log_command (void)
                                  BCON_INT64 (0x12345678eeff0011),
                                  "command",
                                  BCON_UTF8 ("{ \"c\" : \"d\" }"),
-                                 "reply", // Un-redacted successful reply
+                                 "reply", // Un-redacted successful reply (not-a-command)
                                  BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
-                                 "reply", // Redacted successful reply
+                                 "reply", // Un-redacted successful reply (ping)
+                                 BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
+                                 "reply", // Redacted successful reply (auth)
                                  BCON_UTF8 ("{}"),
-                                 "failure", // Un-redacted server side error
+                                 "failure", // Un-redacted server side error (not-a-command)
                                  "{",
                                  "r",
                                  BCON_UTF8 ("s"),
                                  "code",
                                  BCON_INT32 (1),
                                  "}",
-                                 "failure", // Redacted server side error
+                                 "failure", // Un-redacted server side error (ping)
+                                 "{",
+                                 "r",
+                                 BCON_UTF8 ("s"),
+                                 "code",
+                                 BCON_INT32 (1),
+                                 "}",
+                                 "failure", // Redacted server side error (auth)
                                  "{",
                                  "code",
                                  BCON_INT32 (1),
@@ -399,11 +416,13 @@ test_structured_log_command (void)
                           "Log entry with command and reply fields",
                           cmd (&cmd, COMMAND_NAME),
                           cmd (&cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID, COMMAND),
-                          cmd_reply ("ping", reply_doc),
-                          cmd_reply ("authenticate", reply_doc),
-                          cmd_failure ("ping", reply_doc, &server_error),
-                          cmd_failure ("authenticate", reply_doc, &server_error),
-                          cmd_failure ("authenticate", reply_doc, &client_error));
+                          cmd_reply (&cmd, reply_doc),
+                          cmd_name_reply ("ping", reply_doc),
+                          cmd_name_reply ("authenticate", reply_doc),
+                          cmd_failure (&cmd, reply_doc, &server_error),
+                          cmd_name_failure ("ping", reply_doc, &server_error),
+                          cmd_name_failure ("authenticate", reply_doc, &server_error),
+                          cmd_name_failure ("authenticate", reply_doc, &client_error));
 
    ASSERT_CMPINT (assumption.calls, ==, 1);
    restore_state (old_state);

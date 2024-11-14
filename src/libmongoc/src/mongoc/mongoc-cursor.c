@@ -748,7 +748,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                           utf8 ("commandName", cmd_name),
                           int64 ("operationId", cursor->operation_id),
                           monotonic_time_duration (duration),
-                          cmd_reply (cmd_name, &reply));
+                          cmd_name_reply (cmd_name, &reply));
 
    if (client->apm_callbacks.succeeded) {
       mongoc_apm_command_succeeded_init (&event,
