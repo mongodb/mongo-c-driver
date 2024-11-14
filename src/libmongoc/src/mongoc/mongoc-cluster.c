@@ -510,7 +510,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    bson_t encrypted = BSON_INITIALIZER;
    bson_t decrypted = BSON_INITIALIZER;
    mongoc_cmd_t encrypted_cmd;
-   bool is_redacted = false;
+   bool is_redacted_by_apm = false;
 
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
@@ -544,7 +544,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
 
    if (callbacks->started) {
       mongoc_apm_command_started_init_with_cmd (
-         &started_event, cmd, request_id, &is_redacted, cluster->client->apm_context);
+         &started_event, cmd, request_id, &is_redacted_by_apm, cluster->client->apm_context);
 
       callbacks->started (&started_event);
       mongoc_apm_command_started_cleanup (&started_event);
@@ -570,10 +570,10 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
          "Command succeeded",
          int32 ("requestId", request_id),
+         int64 ("durationMS", duration),
          server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
          cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID),
-         int64 ("durationMS", duration),
-         bson_as_json ("reply", cmd->is_acknowledged ? reply : &fake_reply));
+         cmd_reply (cmd->command_name, cmd->is_acknowledged ? reply : &fake_reply));
 
       if (callbacks->succeeded) {
          mongoc_apm_command_succeeded_init (&succeeded_event,
@@ -587,7 +587,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
                                             server_id,
                                             &server_stream->sd->service_id,
                                             server_stream->sd->server_connection_id,
-                                            is_redacted,
+                                            is_redacted_by_apm,
                                             cluster->client->apm_context);
 
          callbacks->succeeded (&succeeded_event);
@@ -603,10 +603,10 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
          "Command failed",
          int32 ("requestId", request_id),
+         int64 ("durationMS", duration),
          server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
          cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID),
-         int64 ("durationMS", duration),
-         bson_as_json ("failure", reply));
+         cmd_failure (cmd->command_name, reply, error));
 
       if (callbacks->failed) {
          mongoc_apm_command_failed_init (&failed_event,
@@ -621,7 +621,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
                                          server_id,
                                          &server_stream->sd->service_id,
                                          server_stream->sd->server_connection_id,
-                                         is_redacted,
+                                         is_redacted_by_apm,
                                          cluster->client->apm_context);
 
          callbacks->failed (&failed_event);

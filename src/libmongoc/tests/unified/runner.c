@@ -1220,6 +1220,59 @@ done:
 }
 
 static bool
+check_failure_is_redacted (const bson_iter_t *failure_iter, bson_error_t *error)
+{
+   if (BSON_ITER_HOLDS_UTF8 (failure_iter)) {
+      test_diagnostics_error_info ("%s", "expected redacted 'failure', found string message (not allowed)");
+      return false;
+   }
+   if (!BSON_ITER_HOLDS_DOCUMENT (failure_iter)) {
+      test_diagnostics_error_info ("%s", "expected redacted 'failure' document, found unexpected type");
+      return false;
+   }
+
+   bson_t failure;
+   bson_iter_bson (failure_iter, &failure);
+
+   bson_parser_t *bp = bson_parser_new ();
+   int64_t *failure_code;
+   char *failure_code_name;
+   bson_t *failure_error_labels;
+   bson_parser_int_optional (bp, "code", &failure_code);
+   bson_parser_utf8_optional (bp, "codeName", &failure_code_name);
+   bson_parser_array_optional (bp, "errorLabels", &failure_error_labels);
+   bool parse_result = bson_parser_parse (bp, &failure, error);
+   bson_parser_destroy_with_parsed_fields (bp);
+
+   bson_destroy (&failure);
+   return parse_result;
+}
+
+static bool
+check_failure_is_detailed (const bson_iter_t *failure_iter, bson_error_t *error)
+{
+   if (BSON_ITER_HOLDS_UTF8 (failure_iter)) {
+      // Strings are fine, that's enough proof that the failure was not redacted
+      return true;
+   }
+   if (!BSON_ITER_HOLDS_DOCUMENT (failure_iter)) {
+      test_diagnostics_error_info ("%s", "expected non-redacted 'failure' document, found unexpected type");
+      return false;
+   }
+
+   // Look for keys that indicate an un-redacted message
+   bson_iter_t child;
+   BSON_ASSERT (bson_iter_recurse (failure_iter, &child));
+   while (bson_iter_next (&child)) {
+      const char *key = bson_iter_key (&child);
+      if (!strcmp (key, "message") || !strcmp (key, "details")) {
+         return true;
+      }
+   }
+   return false;
+}
+
+static bool
 test_check_log_message (test_t *test, bson_t *expected, log_message_t *actual, bson_error_t *error)
 {
    bool ret = false;
@@ -1249,21 +1302,35 @@ test_check_log_message (test_t *test, bson_t *expected, log_message_t *actual, b
       goto done;
    }
 
-   // @todo; failureIsRedacted needs implementing
-   BSON_ASSERT (!failure_is_redacted);
+   if (failure_is_redacted) {
+      bson_iter_t failure_iter;
+      if (!bson_iter_init_find (&failure_iter, actual->message, "failure")) {
+         test_set_error (error, "expected log 'failure' to exist");
+         goto done;
+      };
+      if (*failure_is_redacted) {
+         if (!check_failure_is_redacted (&failure_iter, error)) {
+            test_diagnostics_error_info ("actual log message: %s", tmp_json (actual->message));
+            test_set_error (error, "expected log 'failure' to be redacted");
+            goto done;
+         }
+      } else {
+         if (!check_failure_is_detailed (&failure_iter, error)) {
+            test_diagnostics_error_info ("actual log message: %s", tmp_json (actual->message));
+            test_set_error (error, "expected a complete un-redacted 'failure'");
+            goto done;
+         }
+      }
+   }
 
    bson_val_t *expected_val = bson_val_from_bson (expected_message_doc);
    bson_val_t *actual_val = bson_val_from_bson (actual->message);
    bool is_match = bson_match (expected_val, actual_val, false, error);
    bson_val_destroy (actual_val);
    bson_val_destroy (expected_val);
-
    if (!is_match) {
-      char *expected_str = bson_as_relaxed_extended_json (expected_message_doc, NULL);
-      char *actual_str = bson_as_relaxed_extended_json (actual->message, NULL);
-      test_set_error (error, "expected log message: %s, but got: %s", expected_str, actual_str);
-      bson_free (actual_str);
-      bson_free (expected_str);
+      test_set_error (
+         error, "expected log message: %s, but got: %s", tmp_json (expected_message_doc), tmp_json (actual->message));
       goto done;
    }
 

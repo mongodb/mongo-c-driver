@@ -80,7 +80,7 @@ structured_log_func (const mongoc_structured_log_entry_t *entry, void *user_data
 }
 
 void
-test_plain_log_entry (void)
+test_structured_log_plain (void)
 {
    struct log_assumption assumption = {
       .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
@@ -102,7 +102,7 @@ test_plain_log_entry (void)
 }
 
 void
-test_log_entry_with_extra_data (void)
+test_structured_log_with_extra_data (void)
 {
    struct log_assumption assumption = {
       .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
@@ -126,7 +126,7 @@ test_log_entry_with_extra_data (void)
 }
 
 void
-test_log_entry_with_all_data_types (void)
+test_structured_log_basic_data_types (void)
 {
    const char non_terminated_test_string[] = {0, 1, 2, 3, 'a', '\\'};
    bson_t *bson_str_n = bson_new ();
@@ -136,9 +136,9 @@ test_log_entry_with_all_data_types (void)
    struct log_assumption assumption = {
       .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
       .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      .expected_envelope.message = "Log entry with all data types",
+      .expected_envelope.message = "Log entry with all basic data types",
       .expected_bson = BCON_NEW ("message",
-                                 BCON_UTF8 ("Log entry with all data types"),
+                                 BCON_UTF8 ("Log entry with all basic data types"),
                                  "kStr",
                                  BCON_UTF8 ("string value"),
                                  "kNullStr",
@@ -157,11 +157,181 @@ test_log_entry_with_all_data_types (void)
                                  "kTrue",
                                  BCON_BOOL (true),
                                  "kFalse",
-                                 BCON_BOOL (false),
-                                 "kJSON",
-                                 BCON_UTF8 ("{ \"k\" : \"v\" }"),
+                                 BCON_BOOL (false)),
+      .expected_calls = 1,
+   };
+
+   structured_log_state old_state = save_state ();
+   mongoc_structured_log_set_handler (structured_log_func, &assumption);
+
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Log entry with all basic data types",
+                          utf8 ("kStr", "string value"),
+                          utf8 ("kNullStr", NULL),
+                          utf8 (NULL, NULL),
+                          utf8_nn ("kStrN1ZZZ", 6, non_terminated_test_string, sizeof non_terminated_test_string),
+                          utf8_n ("kStrN2", non_terminated_test_string, sizeof non_terminated_test_string),
+                          utf8_nn ("kNullStrN1ZZZ", 10, NULL, 12345),
+                          utf8_nn ("kNullStrN2", -1, NULL, 12345),
+                          utf8_nn (NULL, 999, NULL, 999),
+                          utf8_n ("kNullStrN3", NULL, 12345),
+                          int32 ("kInt32", -12345),
+                          int32 (NULL, 9999),
+                          int64 ("kInt64", 0x76543210aabbccdd),
+                          int64 (NULL, -1),
+                          boolean ("kTrue", true),
+                          boolean ("kFalse", false),
+                          boolean (NULL, true));
+
+   ASSERT_CMPINT (assumption.calls, ==, 1);
+   restore_state (old_state);
+   bson_destroy (assumption.expected_bson);
+   bson_destroy (bson_str_n);
+}
+
+void
+test_structured_log_json (void)
+{
+   struct log_assumption assumption = {
+      .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      .expected_envelope.message = "Log entry with deferred BSON-to-JSON",
+      .expected_bson = BCON_NEW (
+         "message", BCON_UTF8 ("Log entry with deferred BSON-to-JSON"), "kJSON", BCON_UTF8 ("{ \"k\" : \"v\" }")),
+      .expected_calls = 1,
+   };
+
+   bson_t *json_doc = BCON_NEW ("k", BCON_UTF8 ("v"));
+
+   structured_log_state old_state = save_state ();
+   mongoc_structured_log_set_handler (structured_log_func, &assumption);
+
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Log entry with deferred BSON-to-JSON",
+                          bson_as_json ("kJSON", json_doc),
+                          bson_as_json (NULL, NULL));
+
+   ASSERT_CMPINT (assumption.calls, ==, 1);
+   restore_state (old_state);
+   bson_destroy (assumption.expected_bson);
+   bson_destroy (json_doc);
+}
+
+void
+test_structured_log_oid (void)
+{
+   struct log_assumption assumption = {
+      .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      .expected_envelope.message = "Log entry with deferred OID-to-hex conversion",
+      .expected_bson = BCON_NEW ("message",
+                                 BCON_UTF8 ("Log entry with deferred OID-to-hex conversion"),
                                  "kOID",
-                                 BCON_UTF8 ("112233445566778899aabbcc"),
+                                 BCON_UTF8 ("112233445566778899aabbcc")),
+      .expected_calls = 1,
+   };
+
+   bson_oid_t oid;
+   bson_oid_init_from_string (&oid, "112233445566778899aabbcc");
+
+   structured_log_state old_state = save_state ();
+   mongoc_structured_log_set_handler (structured_log_func, &assumption);
+
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Log entry with deferred OID-to-hex conversion",
+                          oid_as_hex ("kOID", &oid),
+                          oid_as_hex (NULL, NULL));
+
+   ASSERT_CMPINT (assumption.calls, ==, 1);
+   restore_state (old_state);
+   bson_destroy (assumption.expected_bson);
+}
+
+void
+test_structured_log_server_description (void)
+{
+   struct log_assumption assumption = {
+      .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      .expected_envelope.message = "Log entry with server description",
+      .expected_bson = BCON_NEW ("message",
+                                 BCON_UTF8 ("Log entry with server description"),
+                                 "serverHost",
+                                 BCON_UTF8 ("db1.example.com"),
+                                 "serverHost",
+                                 BCON_UTF8 ("db2.example.com"),
+                                 "serverPort",
+                                 BCON_INT32 (2340),
+                                 "serverConnectionId",
+                                 BCON_INT64 (0x3deeff00112233f0),
+                                 "serverHost",
+                                 BCON_UTF8 ("db1.example.com"),
+                                 "serverPort",
+                                 BCON_INT32 (2340),
+                                 "serverHost",
+                                 BCON_UTF8 ("db1.example.com"),
+                                 "serverPort",
+                                 BCON_INT32 (2340),
+                                 "serverConnectionId",
+                                 BCON_INT64 (0x3deeff00112233f0),
+                                 "serviceId",
+                                 BCON_UTF8 ("2233445566778899aabbccdd"),
+                                 "serverHost",
+                                 BCON_UTF8 ("db2.example.com"),
+                                 "serverPort",
+                                 BCON_INT32 (2341),
+                                 "serverConnectionId",
+                                 BCON_INT64 (0x3deeff00112233f1)),
+      .expected_calls = 1,
+   };
+
+   mongoc_server_description_t server_description_1 = {
+      .host.host = "db1.example.com",
+      .host.port = 2340,
+      .server_connection_id = 0x3deeff00112233f0,
+   };
+   bson_oid_init_from_string (&server_description_1.service_id, "2233445566778899aabbccdd");
+
+   mongoc_server_description_t server_description_2 = {
+      .host.host = "db2.example.com",
+      .host.port = 2341,
+      .server_connection_id = 0x3deeff00112233f1,
+      .service_id = {{0}},
+   };
+
+   structured_log_state old_state = save_state ();
+   mongoc_structured_log_set_handler (structured_log_func, &assumption);
+
+   mongoc_structured_log (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      "Log entry with server description",
+      server_description (&server_description_1, SERVER_HOST),
+      server_description (&server_description_2, SERVICE_ID),
+      server_description (&server_description_2, SERVER_HOST),
+      server_description (&server_description_1, SERVER_PORT),
+      server_description (&server_description_1, SERVER_CONNECTION_ID),
+      server_description (&server_description_1, SERVER_HOST, SERVER_PORT),
+      server_description (&server_description_1, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+      server_description (&server_description_2, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID));
+
+   ASSERT_CMPINT (assumption.calls, ==, 1);
+   restore_state (old_state);
+   bson_destroy (assumption.expected_bson);
+}
+
+void
+test_structured_log_command (void)
+{
+   struct log_assumption assumption = {
+      .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      .expected_envelope.message = "Log entry with command and reply fields",
+      .expected_bson = BCON_NEW ("message",
+                                 BCON_UTF8 ("Log entry with command and reply fields"),
                                  "databaseName",
                                  BCON_UTF8 ("Some database"),
                                  "commandName",
@@ -170,22 +340,47 @@ test_log_entry_with_all_data_types (void)
                                  BCON_INT64 (0x12345678eeff0011),
                                  "command",
                                  BCON_UTF8 ("{ \"c\" : \"d\" }"),
-                                 "serverHost",
-                                 BCON_UTF8 ("db.example.com"),
-                                 "serverPort",
-                                 BCON_INT32 (2345),
-                                 "serverConnectionId",
-                                 BCON_INT64 (0x3deeff0011223345),
-                                 "serviceId",
-                                 BCON_UTF8 ("2233445566778899aabbccdd")),
+                                 "reply", // Un-redacted successful reply
+                                 BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : { \"$numberInt\" : \"1\" } }"),
+                                 "reply", // Redacted successful reply
+                                 BCON_UTF8 ("{}"),
+                                 "failure", // Un-redacted server side error
+                                 "{",
+                                 "r",
+                                 BCON_UTF8 ("s"),
+                                 "code",
+                                 BCON_INT32 (1),
+                                 "}",
+                                 "failure", // Redacted server side error
+                                 "{",
+                                 "code",
+                                 BCON_INT32 (1),
+                                 "}",
+                                 "failure", // Client side error
+                                 "{",
+                                 "code",
+                                 BCON_INT32 (123),
+                                 "domain",
+                                 BCON_INT32 (456),
+                                 "message",
+                                 BCON_UTF8 ("oh no"),
+                                 "}"),
       .expected_calls = 1,
    };
 
-   bson_t *json_doc = BCON_NEW ("k", BCON_UTF8 ("v"));
    bson_t *cmd_doc = BCON_NEW ("c", BCON_UTF8 ("d"));
+   bson_t *reply_doc = BCON_NEW ("r", BCON_UTF8 ("s"), "code", BCON_INT32 (1));
 
-   bson_oid_t oid;
-   bson_oid_init_from_string (&oid, "112233445566778899aabbcc");
+   const bson_error_t server_error = {
+      .domain = MONGOC_ERROR_SERVER,
+      .code = 99,
+      .message = "unused",
+   };
+   const bson_error_t client_error = {
+      .domain = 456,
+      .code = 123,
+      .message = "oh no",
+   };
 
    mongoc_cmd_t cmd = {
       .db_name = "Some database",
@@ -194,59 +389,34 @@ test_log_entry_with_all_data_types (void)
       .command = cmd_doc,
    };
 
-   mongoc_server_description_t server_description = {
-      .host.host = "db.example.com",
-      .host.port = 2345,
-      .server_connection_id = 0x3deeff0011223345,
-   };
-   bson_oid_init_from_string (&server_description.service_id, "2233445566778899aabbccdd");
-
    structured_log_state old_state = save_state ();
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
 
-   mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Log entry with all data types",
-      // Basic BSON types.
-      // Most support optional values (skip when key is NULL)
-      utf8 ("kStr", "string value"),
-      utf8 ("kNullStr", NULL),
-      utf8 (NULL, NULL),
-      utf8_nn ("kStrN1ZZZ", 6, non_terminated_test_string, sizeof non_terminated_test_string),
-      utf8_n ("kStrN2", non_terminated_test_string, sizeof non_terminated_test_string),
-      utf8_nn ("kNullStrN1ZZZ", 10, NULL, 12345),
-      utf8_nn ("kNullStrN2", -1, NULL, 12345),
-      utf8_nn (NULL, 999, NULL, 999),
-      utf8_n ("kNullStrN3", NULL, 12345),
-      int32 ("kInt32", -12345),
-      int32 (NULL, 9999),
-      int64 ("kInt64", 0x76543210aabbccdd),
-      int64 (NULL, -1),
-      boolean ("kTrue", true),
-      boolean ("kFalse", false),
-      boolean (NULL, true),
-      // Deferred conversions
-      bson_as_json ("kJSON", json_doc),
-      bson_as_json (NULL, NULL),
-      oid_as_hex ("kOID", &oid),
-      oid_as_hex (NULL, NULL),
-      // Common structures, with explicit set of keys to include
-      cmd (&cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID, COMMAND),
-      server_description (&server_description, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID));
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Log entry with command and reply fields",
+                          cmd (&cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID, COMMAND),
+                          cmd_reply ("ping", reply_doc),
+                          cmd_reply ("authenticate", reply_doc),
+                          cmd_failure ("ping", reply_doc, &server_error),
+                          cmd_failure ("authenticate", reply_doc, &server_error),
+                          cmd_failure ("authenticate", reply_doc, &client_error));
 
    ASSERT_CMPINT (assumption.calls, ==, 1);
    restore_state (old_state);
    bson_destroy (assumption.expected_bson);
-   bson_destroy (json_doc);
    bson_destroy (cmd_doc);
-   bson_destroy (bson_str_n);
+   bson_destroy (reply_doc);
 }
 
 void
 test_structured_log_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/structured_log/plain", test_plain_log_entry);
-   TestSuite_Add (suite, "/structured_log/with_extra_data", test_log_entry_with_extra_data);
-   TestSuite_Add (suite, "/structured_log/with_all_data_types", test_log_entry_with_all_data_types);
+   TestSuite_Add (suite, "/structured_log/plain", test_structured_log_plain);
+   TestSuite_Add (suite, "/structured_log/with_extra_data", test_structured_log_with_extra_data);
+   TestSuite_Add (suite, "/structured_log/basic_data_types", test_structured_log_basic_data_types);
+   TestSuite_Add (suite, "/structured_log/json", test_structured_log_json);
+   TestSuite_Add (suite, "/structured_log/oid", test_structured_log_oid);
+   TestSuite_Add (suite, "/structured_log/server_description", test_structured_log_server_description);
+   TestSuite_Add (suite, "/structured_log/command", test_structured_log_command);
 }

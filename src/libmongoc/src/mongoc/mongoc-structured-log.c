@@ -18,6 +18,7 @@
 #include "mongoc-structured-log-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-apm-private.h"
 #include "common-atomic-private.h"
 #include "common-oid-private.h"
 
@@ -384,6 +385,8 @@ _mongoc_structured_log_append_cmd (bson_t *bson, const mongoc_structured_log_bui
    const mongoc_cmd_t *cmd = stage->arg1.cmd;
    const mongoc_structured_log_cmd_flags_t flags = stage->arg2.cmd_flags;
 
+   BSON_ASSERT (cmd);
+
    if (flags & MONGOC_STRUCTURED_LOG_CMD_DATABASE_NAME) {
       BSON_APPEND_UTF8 (bson, "databaseName", cmd->db_name);
    }
@@ -394,29 +397,113 @@ _mongoc_structured_log_append_cmd (bson_t *bson, const mongoc_structured_log_bui
       BSON_APPEND_INT64 (bson, "operationId", cmd->operation_id);
    }
    if (flags & MONGOC_STRUCTURED_LOG_CMD_COMMAND) {
-      bson_t *command_copy = NULL;
+      if (mongoc_apm_is_sensitive_command_message (cmd->command_name, cmd->command)) {
+         BSON_APPEND_UTF8 (bson, "command", "{}");
+      } else {
+         bson_t *command_copy = NULL;
 
-      // @todo This is a performance bottleneck, we shouldn't be copying
-      //       a potentially large command to serialize a potentially very
-      //       small part of it. We should be outputting JSON, constrained
-      //       by length limit, while visiting borrowed references to each
-      //       command attribute and each payload. CDRIVER-4814
-      if (cmd->payloads_count > 0) {
-         command_copy = bson_copy (cmd->command);
-         _mongoc_cmd_append_payload_as_array (cmd, command_copy);
+         if (cmd->payloads_count > 0) {
+            // @todo This is a performance bottleneck, we shouldn't be copying
+            //       a potentially large command to serialize a potentially very
+            //       small part of it. We should be appending JSON to a single buffer
+            //       for all nesting levels, constrained by length limit, while visiting
+            //       borrowed references to each command attribute and each payload. CDRIVER-4814
+            command_copy = bson_copy (cmd->command);
+            _mongoc_cmd_append_payload_as_array (cmd, command_copy);
+         }
+
+         size_t json_length;
+         char *json = mongoc_structured_log_document_to_json (command_copy ? command_copy : cmd->command, &json_length);
+         if (json) {
+            const char *key = "command";
+            bson_append_utf8 (bson, key, strlen (key), json, json_length);
+            bson_free (json);
+         }
+
+         bson_destroy (command_copy);
       }
+   }
+   return stage + 1;
+}
 
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_reply (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const char *cmd_name = stage->arg1.utf8;
+   const bson_t *reply = stage->arg2.bson;
+
+   BSON_ASSERT (cmd_name);
+   BSON_ASSERT (reply);
+
+   if (mongoc_apm_is_sensitive_command_message (cmd_name, reply)) {
+      BSON_APPEND_UTF8 (bson, "reply", "{}");
+   } else {
       size_t json_length;
-      char *json = mongoc_structured_log_document_to_json (command_copy ? command_copy : cmd->command, &json_length);
+      char *json = mongoc_structured_log_document_to_json (reply, &json_length);
       if (json) {
-         const char *key = "command";
+         const char *key = "reply";
          bson_append_utf8 (bson, key, strlen (key), json, json_length);
          bson_free (json);
       }
-
-      bson_destroy (command_copy);
    }
    return stage + 1;
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   BSON_ASSERT (stage[1].func == _mongoc_structured_log_append_cmd_failure_stage1);
+   const char *cmd_name = stage[0].arg1.utf8;
+   const bson_t *reply = stage[0].arg2.bson;
+   const bson_error_t *error = stage[1].arg1.error;
+
+   BSON_ASSERT (cmd_name);
+   BSON_ASSERT (reply);
+   BSON_ASSERT (error);
+
+   bool is_server_side = error->domain == MONGOC_ERROR_SERVER || error->domain == MONGOC_ERROR_WRITE_CONCERN_ERROR;
+   if (is_server_side) {
+      bool is_sensitive = mongoc_apm_is_sensitive_command_message (cmd_name, reply);
+
+      if (is_sensitive) {
+         // Redacted server-side message, must be a document with at most 'code', 'codeName', 'errorLabels'
+         bson_t failure;
+         bson_iter_t iter;
+         BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (bson, "failure", &failure));
+         bson_iter_init (&iter, reply);
+         while (bson_iter_next (&iter)) {
+            const char *key = bson_iter_key (&iter);
+            if (!strcmp (key, "code") || !strcmp (key, "codeName") || !strcmp (key, "errorLabels")) {
+               bson_append_iter (&failure, key, bson_iter_key_len (&iter), &iter);
+            }
+         }
+         BSON_ASSERT (bson_append_document_end (bson, &failure));
+
+      } else {
+         // Non-redacted server side message, pass through
+         BSON_APPEND_DOCUMENT (bson, "failure", reply);
+      }
+
+   } else {
+      // Client-side errors converted directly from bson_error_t, never redacted
+      bson_t failure;
+      BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (bson, "failure", &failure));
+      BSON_APPEND_INT32 (&failure, "code", error->code);
+      BSON_APPEND_INT32 (&failure, "domain", error->domain);
+      BSON_APPEND_UTF8 (&failure, "message", error->message);
+      BSON_ASSERT (bson_append_document_end (bson, &failure));
+   }
+   return stage + 2;
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_failure_stage1 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   // Never called, marks the second stage in a two-stage cmd_failure
+   BSON_UNUSED (bson);
+   BSON_UNUSED (stage);
+   BSON_ASSERT (false);
+   return NULL;
 }
 
 const mongoc_structured_log_builder_stage_t *
@@ -424,6 +511,8 @@ _mongoc_structured_log_append_server_description (bson_t *bson, const mongoc_str
 {
    const mongoc_server_description_t *sd = stage->arg1.server_description;
    const mongoc_structured_log_server_description_flags_t flags = stage->arg2.server_description_flags;
+
+   BSON_ASSERT (sd);
 
    if (flags & MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST) {
       BSON_APPEND_UTF8 (bson, "serverHost", sd->host.host);

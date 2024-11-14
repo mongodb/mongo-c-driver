@@ -2237,7 +2237,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
       utf8 ("commandName", "killCursors"),
       int64 ("operationId", operation_id),
       int64 ("durationMS", duration),
-      bson_as_json ("reply", &doc));
+      cmd_reply ("killCursors", &doc));
 
    if (!client->apm_callbacks.succeeded) {
       bson_destroy (&doc);

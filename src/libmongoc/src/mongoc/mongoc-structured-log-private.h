@@ -85,6 +85,13 @@ BSON_BEGIN_DECLS
     .arg2.cmd_flags =                              \
        (0 _bsonDSL_mapMacro (_mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_CMD, __VA_ARGS__))},
 
+#define _mongoc_structured_log_item_cmd_reply(_cmd_name, _reply_bson) \
+   {.func = _mongoc_structured_log_append_cmd_reply, .arg1.utf8 = (_cmd_name), .arg2.bson = (_reply_bson)},
+
+#define _mongoc_structured_log_item_cmd_failure(_cmd_name, _reply_bson, _error)                                      \
+   {.func = _mongoc_structured_log_append_cmd_failure_stage0, .arg1.utf8 = (_cmd_name), .arg2.bson = (_reply_bson)}, \
+      {.func = _mongoc_structured_log_append_cmd_failure_stage1, .arg1.error = (_error)},
+
 #define _mongoc_structured_log_item_server_description(_server_description, ...) \
    {.func = _mongoc_structured_log_append_server_description,                    \
     .arg1.server_description = (_server_description),                            \
@@ -119,6 +126,7 @@ struct mongoc_structured_log_builder_stage_t {
    // pointers unused and set to placeholder values which can be checked.
    mongoc_structured_log_builder_func_t func; // NULL sentinel here
    union {
+      const bson_error_t *error;
       const mongoc_cmd_t *cmd;
       const mongoc_server_description_t *server_description;
       const void *utf8;
@@ -188,6 +196,15 @@ _mongoc_structured_log_append_bson_as_json (bson_t *bson, const mongoc_structure
 
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_cmd (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_reply (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_cmd_failure_stage1 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_server_description (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
