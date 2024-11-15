@@ -2813,19 +2813,19 @@ assert_lsid_on_last_two_commands (test_t *test, operation_t *op, result_t *resul
       goto done;
    }
 
-   if (!bson_iter_init_find (&iter, a->command, "lsid")) {
-      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (a->command));
+   if (bson_iter_init (&iter, a->serialized) && bson_iter_find_descendant (&iter, "command.lsid", &iter)) {
+      bson_iter_bson (&iter, &a_lsid);
+   } else {
+      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (a->serialized));
       goto done;
    }
 
-   bson_iter_bson (&iter, &a_lsid);
-
-   if (!bson_iter_init_find (&iter, b->command, "lsid")) {
-      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (b->command));
+   if (bson_iter_init (&iter, b->serialized) && bson_iter_find_descendant (&iter, "command.lsid", &iter)) {
+      bson_iter_bson (&iter, &b_lsid);
+   } else {
+      test_set_error (error, "unable to find lsid in last commandStartedEvent: %s", tmp_json (b->serialized));
       goto done;
    }
-
-   bson_iter_bson (&iter, &b_lsid);
 
    if (check_same != bson_equal (&a_lsid, &b_lsid)) {
       test_set_error (error,
@@ -3864,7 +3864,22 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
       if (count >= *expected_count) {
          break;
       }
-      ASSERT_CMPINT64 (bson_get_monotonic_time () - start_time, <, (int64_t) WAIT_FOR_EVENT_TIMEOUT_MS * 1000);
+
+      int64_t duration = bson_get_monotonic_time () - start_time;
+      if (duration >= (int64_t) WAIT_FOR_EVENT_TIMEOUT_MS * 1000) {
+         char *event_list_string = event_list_to_string (client->events);
+         test_diagnostics_error_info ("all captured events for client:\n%s", event_list_string);
+         bson_free (event_list_string);
+         test_diagnostics_error_info ("checking for expected event: %s\n", tmp_json (expected_event));
+         test_set_error (error,
+                         "waitForEvent timed out with %" PRId64 " of %" PRId64
+                         " matches needed. waited %dms (max %dms)",
+                         count,
+                         *expected_count,
+                         (int) (duration / 1000),
+                         (int) WAIT_FOR_EVENT_TIMEOUT_MS);
+         goto done;
+      };
 
       // If any events are coming, they will be from a different thread.
       // To keep the tests simple, this polls until match or timeout.

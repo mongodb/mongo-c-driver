@@ -986,6 +986,11 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    bool *expected_has_service_id = NULL;
    bool *expected_has_server_connection_id = NULL;
 
+   BSON_ASSERT_PARAM (test);
+   BSON_ASSERT_PARAM (expected);
+   BSON_ASSERT_PARAM (actual);
+   BSON_ASSERT_PARAM (error);
+
    if (bson_count_keys (expected) != 1) {
       test_set_error (error, "expected 1 key in expected event, but got: %s", tmp_json (expected));
       goto done;
@@ -1017,71 +1022,115 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    }
 
    if (expected_command) {
-      bson_val_t *expected_val;
-      bson_val_t *actual_val;
-
-      if (!actual || !actual->command) {
-         test_set_error (error, "Expected a value but got NULL");
+      if (!bson_iter_init_find (&iter, actual->serialized, "command")) {
+         test_set_error (error, "event.command expected but missing");
          goto done;
       }
-
-      expected_val = bson_val_from_bson (expected_command);
-      actual_val = bson_val_from_bson (actual->command);
-
-      if (!entity_map_match (test->entity_map, expected_val, actual_val, false, error)) {
-         bson_val_destroy (expected_val);
-         bson_val_destroy (actual_val);
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         test_set_error (error, "Unexpected type event.command, should be document");
          goto done;
       }
+      bson_val_t *expected_val = bson_val_from_bson (expected_command);
+      bson_val_t *actual_val = bson_val_from_iter (&iter);
+      bool is_match = entity_map_match (test->entity_map, expected_val, actual_val, false, error);
       bson_val_destroy (expected_val);
       bson_val_destroy (actual_val);
+      if (!is_match) {
+         goto done;
+      }
    }
 
-   if (expected_command_name && 0 != strcmp (expected_command_name, actual->command_name)) {
-      test_set_error (error, "expected commandName: %s, but got: %s", expected_command_name, actual->command_name);
-      goto done;
+   if (expected_command_name) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "commandName")) {
+         test_set_error (error, "event.commandName expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         test_set_error (error, "Unexpected type for event.commandName, should be string");
+         goto done;
+      }
+      const char *actual_command_name = bson_iter_utf8 (&iter, NULL);
+      if (0 != strcmp (expected_command_name, actual_command_name)) {
+         test_set_error (error, "expected commandName: %s, but got: %s", expected_command_name, actual_command_name);
+         goto done;
+      }
    }
 
-   if (expected_database_name && 0 != strcmp (expected_database_name, actual->database_name)) {
-      test_set_error (error, "expected databaseName: %s, but got: %s", expected_database_name, actual->database_name);
-      goto done;
+   if (expected_database_name) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "databaseName")) {
+         test_set_error (error, "event.databaseName expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         test_set_error (error, "Unexpected type for event.databaseName, should be string");
+         goto done;
+      }
+      const char *actual_database_name = bson_iter_utf8 (&iter, NULL);
+      if (0 != strcmp (expected_database_name, actual_database_name)) {
+         test_set_error (error, "expected databaseName: %s, but got: %s", expected_database_name, actual_database_name);
+         goto done;
+      }
    }
 
    if (expected_reply) {
-      bson_val_t *expected_val = bson_val_from_bson (expected_reply);
-      bson_val_t *actual_val = bson_val_from_bson (actual->reply);
-      if (!entity_map_match (test->entity_map, expected_val, actual_val, false, error)) {
-         bson_val_destroy (expected_val);
-         bson_val_destroy (actual_val);
+      if (!bson_iter_init_find (&iter, actual->serialized, "reply")) {
+         test_set_error (error, "event.reply expected but missing");
          goto done;
       }
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         test_set_error (error, "Unexpected type for event.reply, should be document");
+         goto done;
+      }
+      bson_val_t *expected_val = bson_val_from_bson (expected_reply);
+      bson_val_t *actual_val = bson_val_from_iter (&iter);
+      bool is_match = entity_map_match (test->entity_map, expected_val, actual_val, false, error);
       bson_val_destroy (expected_val);
       bson_val_destroy (actual_val);
+      if (!is_match) {
+         goto done;
+      }
    }
 
    if (expected_has_service_id) {
-      bool has_service_id = !mcommon_oid_is_zero (&actual->service_id);
-      char oid_str[25];
-      bson_oid_to_string (&actual->service_id, oid_str);
-
-      if (*expected_has_service_id && !has_service_id) {
-         test_error ("expected serviceId, but got none");
+      if (!bson_iter_init_find (&iter, actual->serialized, "serviceId")) {
+         test_set_error (error, "event.serviceId field expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_OID (&iter)) {
+         test_set_error (error, "Unexpected type for event.serviceId, should be ObjectId");
+         goto done;
       }
 
-      if (!*expected_has_service_id && has_service_id) {
-         test_error ("expected no serviceId, but got %s", oid_str);
+      const bson_oid_t *actual_oid = bson_iter_oid (&iter);
+      bool actual_has_service_id = !mcommon_oid_is_zero (actual_oid);
+      char actual_oid_str[25];
+      bson_oid_to_string (actual_oid, actual_oid_str);
+
+      if (*expected_has_service_id && !actual_has_service_id) {
+         test_error ("expected nonzero serviceId, but found zero");
+      }
+      if (!*expected_has_service_id && actual_has_service_id) {
+         test_error ("expected zeroed serviceId, but found nonzero value: %s", actual_oid_str);
       }
    }
 
    if (expected_has_server_connection_id) {
-      const bool has_server_connection_id = actual->server_connection_id != MONGOC_NO_SERVER_CONNECTION_ID;
+      if (!bson_iter_init_find (&iter, actual->serialized, "serverConnectionId")) {
+         test_set_error (error, "event.serverConnectionId expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_INT64 (&iter)) {
+         test_set_error (error, "Unexpected type for event.serverConnectionId, should be int64");
+         goto done;
+      }
+      int64_t actual_server_connection_id = bson_iter_int64 (&iter);
+      const bool has_server_connection_id = actual_server_connection_id != MONGOC_NO_SERVER_CONNECTION_ID;
 
       if (*expected_has_server_connection_id && !has_server_connection_id) {
-         test_error ("expected server connectionId, but got none");
+         test_error ("expected server connectionId, but got MONGOC_NO_SERVER_CONNECTION_ID");
       }
-
       if (!*expected_has_server_connection_id && has_server_connection_id) {
-         test_error ("expected no server connectionId, but got %" PRId64, actual->server_connection_id);
+         test_error ("expected MONGOC_NO_SERVER_CONNECTION_ID, but got %" PRId64, actual_server_connection_id);
       }
    }
 
@@ -1188,9 +1237,7 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
 done:
    if (!ret) {
       if (entity && entity->events) {
-         char *event_list_string = NULL;
-
-         event_list_string = event_list_to_string (entity->events);
+         char *event_list_string = event_list_to_string (entity->events);
          test_diagnostics_error_info ("all captured events:\n%s", event_list_string);
          bson_free (event_list_string);
       }

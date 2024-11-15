@@ -24,14 +24,10 @@
 #include "test-diagnostics.h"
 
 typedef struct _event_t {
-   char *type;
-   char *command_name;
-   char *database_name;
-   bson_t *command;
-   bson_t *reply;
-   bson_oid_t service_id;
-   int64_t server_connection_id;
    struct _event_t *next;
+   const char *type; // Non-owning
+   bson_t *serialized;
+   bool is_sensitive_command;
 } event_t;
 
 typedef struct _log_message_t {
