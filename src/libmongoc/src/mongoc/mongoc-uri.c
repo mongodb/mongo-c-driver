@@ -1961,7 +1961,7 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
    /* Auth spec:
     * "For GSSAPI and MONGODB-X509 authMechanisms the authSource defaults to
     * $external. For PLAIN the authSource defaults to the database name if
-    * supplied on the connection string or $external. For MONGODB-CR,
+    * supplied on the connection string or $external. For
     * SCRAM-SHA-1 and SCRAM-SHA-256 authMechanisms, the authSource defaults to
     * the database name if supplied on the connection string or admin."
     */

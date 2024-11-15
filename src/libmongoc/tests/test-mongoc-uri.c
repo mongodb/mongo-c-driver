@@ -338,14 +338,6 @@ test_mongoc_uri_new (void)
    ASSERT (uri);
    mongoc_uri_destroy (uri);
 
-   /* MONGODB-CR */
-
-   /* should recognize this mechanism */
-   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-CR");
-   ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-CR");
-   mongoc_uri_destroy (uri);
-
    /* X509 */
 
    /* should recognize this mechanism, and use $external as the source */
@@ -408,9 +400,6 @@ test_mongoc_uri_authmechanismproperties (void)
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
    ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
    ASSERT_MATCH (&props, "{'a': 'one', 'b': 'two'}");
-
-   ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-CR"));
-   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-CR");
 
    /* prohibited */
    ASSERT (!mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_AUTHMECHANISM, "SCRAM-SHA1"));
