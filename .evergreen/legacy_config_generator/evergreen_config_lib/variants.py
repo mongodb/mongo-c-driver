@@ -284,9 +284,9 @@ all_variants = [
     ),
     Variant("mingw", "MinGW-W64", "windows-vsCurrent-large", ["debug-compile-no-align"], {"CC": "mingw"}),
     Variant(
-        "power8-rhel81",
-        "Power8 (ppc64le) (RHEL 8.1)",
-        "rhel81-power8-test",
+        "rhel8-power",
+        "Power (ppc64le) (RHEL 8)",
+        "rhel8-power-large",
         [
             "release-compile",
             "debug-compile-nosasl-nossl",

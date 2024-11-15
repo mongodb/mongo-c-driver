@@ -22,17 +22,17 @@ COMPILE_MATRIX = [
     ('debian92',          'clang',      None, ['cyrus']),
     ('debian92',          'gcc',        None, ['cyrus']),
     ('rhel80',            'gcc',        None, ['cyrus']),
-    ('rhel81-power8',     'gcc',        None, ['cyrus']),
+    ('rhel8-power',       'gcc',        None, ['cyrus']),
     ('rhel8-zseries',     'gcc',        None, ['cyrus']),
-    ('ubuntu2004',        'clang',        None, ['cyrus']),
+    ('ubuntu2004',        'clang',      None, ['cyrus']),
     ('ubuntu2004-arm64',  'gcc',        None, ['cyrus']),
     ('ubuntu2004',        'gcc',        None, ['cyrus']),
     ('windows-vsCurrent', 'vs2017x64',  None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('rhel81-power8',     'gcc',       None, 'cyrus', ['auth'], ['server',          ], [       '4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-    ('rhel8-zseries',     'gcc',       None, 'cyrus', ['auth'], ['server',          ], [                     '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('rhel8-power',  'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server'], [              '5.0', '6.0', '7.0', '8.0', 'latest']),
 
     ('ubuntu2004-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
     ('ubuntu2004',        'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
@@ -75,7 +75,7 @@ def tasks():
 
     # PowerPC and zSeries are limited resources.
     for task in res:
-        if any(pattern in task.run_on for pattern in ["power8", "zseries"]):
+        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
             task.patchable = False
 
     return res
@@ -88,7 +88,7 @@ def variants():
 
     # PowerPC and zSeries are limited resources.
     for task in TASKS:
-        if any(pattern in task.run_on for pattern in ["power8", "zseries"]):
+        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
             tasks.append(
                 TaskRef(
                     name=task.name,

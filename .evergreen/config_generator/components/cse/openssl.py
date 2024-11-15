@@ -80,7 +80,7 @@ def tasks():
 
     # PowerPC and zSeries are limited resources.
     for task in res:
-        if any(pattern in task.run_on for pattern in ["power8", "zseries"]):
+        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
             task.patchable = False
 
     return res
@@ -95,7 +95,7 @@ def variants():
 
     # PowerPC and zSeries are limited resources.
     for task in TASKS:
-        if any(pattern in task.run_on for pattern in ["power8", "zseries"]):
+        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
             tasks.append(
                 TaskRef(
                     name=task.name,

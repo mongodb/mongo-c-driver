@@ -228,7 +228,7 @@ buildvariants:
       - name: sasl-cyrus-openssl-debian92-clang-compile
       - name: sasl-cyrus-openssl-debian92-gcc-compile
       - name: sasl-cyrus-openssl-rhel80-gcc-compile
-      - name: sasl-cyrus-openssl-rhel81-power8-gcc-compile
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-compile
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
         batchtime: 1440
@@ -236,19 +236,19 @@ buildvariants:
       - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
       - name: sasl-cyrus-openssl-ubuntu2004-gcc-compile
       - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
-      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-4.2-server-auth
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.2-server-auth
         batchtime: 1440
-      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-4.4-server-auth
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.4-server-auth
         batchtime: 1440
-      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-5.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-test-5.0-server-auth
         batchtime: 1440
-      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-6.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-test-6.0-server-auth
         batchtime: 1440
-      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-7.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-test-7.0-server-auth
         batchtime: 1440
-      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-8.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-test-8.0-server-auth
         batchtime: 1440
-      - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-latest-server-auth
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-test-latest-server-auth
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-server-auth
         batchtime: 1440

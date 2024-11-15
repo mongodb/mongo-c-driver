@@ -16605,11 +16605,11 @@ buildvariants:
   run_on: windows-vsCurrent-large
   tasks:
   - debug-compile-no-align
-- name: power8-rhel81
-  display_name: Power8 (ppc64le) (RHEL 8.1)
+- name: rhel8-power
+  display_name: Power (ppc64le) (RHEL 8)
   expansions:
     CC: gcc
-  run_on: rhel81-power8-test
+  run_on: rhel8-power-large
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
