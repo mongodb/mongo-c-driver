@@ -23,7 +23,7 @@ COMPILE_MATRIX = [
     ('debian92',          'gcc',        None, ['cyrus']),
     ('rhel80',            'gcc',        None, ['cyrus']),
     ('rhel81-power8',     'gcc',        None, ['cyrus']),
-    ('rhel83-zseries',    'gcc',        None, ['cyrus']),
+    ('rhel8-zseries',     'gcc',        None, ['cyrus']),
     ('ubuntu2004',        'clang',        None, ['cyrus']),
     ('ubuntu2004-arm64',  'gcc',        None, ['cyrus']),
     ('ubuntu2004',        'gcc',        None, ['cyrus']),
@@ -32,7 +32,7 @@ COMPILE_MATRIX = [
 
 TEST_MATRIX = [
     ('rhel81-power8',     'gcc',       None, 'cyrus', ['auth'], ['server',          ], [       '4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server',          ], [                     '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('rhel8-zseries',     'gcc',       None, 'cyrus', ['auth'], ['server',          ], [                     '5.0', '6.0', '7.0', '8.0', 'latest']),
 
     ('ubuntu2004-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
     ('ubuntu2004',        'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),

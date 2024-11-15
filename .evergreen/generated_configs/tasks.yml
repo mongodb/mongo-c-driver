@@ -1763,18 +1763,9 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
-  - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
-    run_on: rhel80-large
-    tags: [cse-matrix-openssl, compile, rhel80, gcc, cse, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: cse-sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
-    run_on: rhel83-zseries-large
-    tags: [cse-matrix-openssl, compile, rhel83-zseries, gcc, cse, sasl-cyrus]
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
+    run_on: rhel8-zseries-large
+    tags: [cse-matrix-openssl, compile, rhel8-zseries, gcc, cse, sasl-cyrus]
     patchable: false
     commands:
       - func: find-cmake-latest
@@ -1782,15 +1773,15 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
-  - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-5.0-server-auth
-    run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-server-auth
+    run_on: rhel8-zseries-small
+    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
     patchable: false
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
       - command: expansions.update
         params:
           updates:
@@ -1803,15 +1794,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-7.0-replica-auth
-    run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-replica-auth
+    run_on: rhel8-zseries-small
+    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
     patchable: false
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
       - command: expansions.update
         params:
           updates:
@@ -1824,15 +1815,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-7.0-server-auth
-    run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-server-auth
+    run_on: rhel8-zseries-small
+    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
     patchable: false
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
       - command: expansions.update
         params:
           updates:
@@ -1845,15 +1836,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-8.0-replica-auth
-    run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, "8.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-replica-auth
+    run_on: rhel8-zseries-small
+    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, replica, "8.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
     patchable: false
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
       - command: expansions.update
         params:
           updates:
@@ -1866,15 +1857,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-8.0-server-auth
-    run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, "8.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-server-auth
+    run_on: rhel8-zseries-small
+    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, server, "8.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
     patchable: false
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
       - command: expansions.update
         params:
           updates:
@@ -1887,15 +1878,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-replica-auth
-    run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-replica-auth
+    run_on: rhel8-zseries-small
+    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
     patchable: false
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
       - command: expansions.update
         params:
           updates:
@@ -1908,15 +1899,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-server-auth
-    run_on: rhel83-zseries-small
-    tags: [cse-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
+    run_on: rhel8-zseries-small
+    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
     patchable: false
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel83-zseries-gcc-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
       - command: expansions.update
         params:
           updates:
@@ -1929,6 +1920,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
+    run_on: rhel80-large
+    tags: [cse-matrix-openssl, compile, rhel80, gcc, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+      - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
     run_on: ubuntu2004-arm64-large
     tags: [cse-matrix-openssl, compile, ubuntu2004-arm64, gcc, cse, sasl-cyrus]
@@ -3460,6 +3460,121 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
+  - name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
+    run_on: rhel8-zseries-large
+    tags: [sasl-matrix-openssl, compile, rhel8-zseries, gcc, sasl-cyrus]
+    patchable: false
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+      - func: upload-build
+  - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-server-auth
+    run_on: rhel8-zseries-small
+    tags: [sasl-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, auth, server, "5.0", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
+    patchable: false
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-6.0-server-auth
+    run_on: rhel8-zseries-small
+    tags: [sasl-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, auth, server, "6.0", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
+    patchable: false
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-server-auth
+    run_on: rhel8-zseries-small
+    tags: [sasl-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, auth, server, "7.0", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
+    patchable: false
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-server-auth
+    run_on: rhel8-zseries-small
+    tags: [sasl-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, auth, server, "8.0", openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
+    patchable: false
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "8.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
+    run_on: rhel8-zseries-small
+    tags: [sasl-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, auth, server, latest, openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
+    patchable: false
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: sasl-cyrus-openssl-rhel80-gcc-compile
     run_on: rhel80-large
     tags: [sasl-matrix-openssl, compile, rhel80, gcc, sasl-cyrus]
@@ -3614,121 +3729,6 @@ tasks:
       - func: fetch-build
         vars:
           BUILD_NAME: sasl-cyrus-openssl-rhel81-power8-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: latest }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile
-    run_on: rhel83-zseries-large
-    tags: [sasl-matrix-openssl, compile, rhel83-zseries, gcc, sasl-cyrus]
-    patchable: false
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-5.0-server-auth
-    run_on: rhel83-zseries-small
-    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "5.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-rhel83-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-6.0-server-auth
-    run_on: rhel83-zseries-small
-    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "6.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-rhel83-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-7.0-server-auth
-    run_on: rhel83-zseries-small
-    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "7.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-rhel83-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "7.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-8.0-server-auth
-    run_on: rhel83-zseries-small
-    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, "8.0", openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-rhel83-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "8.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
-  - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-server-auth
-    run_on: rhel83-zseries-small
-    tags: [sasl-matrix-openssl, test, rhel83-zseries, gcc, sasl-cyrus, auth, server, latest, openssl]
-    depends_on: [{ name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-openssl-rhel83-zseries-gcc-compile
       - command: expansions.update
         params:
           updates:

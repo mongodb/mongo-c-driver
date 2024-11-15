@@ -83,8 +83,8 @@ RHEL_POWER8_DISTROS = [
 ]
 
 RHEL_ZSERIES_DISTROS = [
-    Distro(name='rhel83-zseries-large', os='rhel', os_type='linux', os_ver='8.3', size='large', arch='zseries'),
-    Distro(name='rhel83-zseries-small', os='rhel', os_type='linux', os_ver='8.3', size='small', arch='zseries'),
+    Distro(name='rhel8-zseries-large', os='rhel', os_type='linux', os_ver='8', size='large', arch='zseries'),
+    Distro(name='rhel8-zseries-small', os='rhel', os_type='linux', os_ver='8', size='small', arch='zseries'),
 ]
 
 UBUNTU_DISTROS = [

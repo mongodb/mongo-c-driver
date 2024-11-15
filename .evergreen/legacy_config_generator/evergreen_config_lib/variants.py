@@ -317,9 +317,9 @@ all_variants = [
         batchtime=days(1),
     ),
     Variant(
-        "zseries-rhel83",
+        "zseries-rhel8",
         "*zSeries",
-        "rhel83-zseries-small",
+        "rhel8-zseries-large",
         [
             "release-compile",
             #      '.compression', --> TODO: waiting on ticket CDRIVER-3258

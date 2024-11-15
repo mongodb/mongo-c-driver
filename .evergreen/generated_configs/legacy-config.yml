@@ -16634,11 +16634,11 @@ buildvariants:
   - .latest .nossl
   - test-dns-openssl
   batchtime: 1440
-- name: zseries-rhel83
+- name: zseries-rhel8
   display_name: '*zSeries'
   expansions:
     CC: gcc
-  run_on: rhel83-zseries-small
+  run_on: rhel8-zseries-large
   tasks:
   - release-compile
   - debug-compile-no-align
