@@ -436,6 +436,7 @@ struct _mongoc_bulkwrite_replaceoneopts_t {
    bson_t *collation;
    bson_value_t hint;
    mongoc_optional_t upsert;
+   bson_t *sort;
 };
 
 mongoc_bulkwrite_replaceoneopts_t *
@@ -464,6 +465,13 @@ mongoc_bulkwrite_replaceoneopts_set_upsert (mongoc_bulkwrite_replaceoneopts_t *s
    mongoc_optional_set_value (&self->upsert, upsert);
 }
 void
+mongoc_bulkwrite_replaceoneopts_set_sort (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *sort)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_OPTIONAL_PARAM (sort);
+   set_bson_opt (&self->sort, sort);
+}
+void
 mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self)
 {
    if (!self) {
@@ -471,6 +479,7 @@ mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self
    }
    bson_destroy (self->collation);
    bson_value_destroy (&self->hint);
+   bson_destroy (self->sort);
    bson_free (self);
 }
 
@@ -541,6 +550,9 @@ mongoc_bulkwrite_append_replaceone (mongoc_bulkwrite_t *self,
    }
    if (mongoc_optional_is_set (&opts->upsert)) {
       BSON_ASSERT (BSON_APPEND_BOOL (&op, "upsert", mongoc_optional_value (&opts->upsert)));
+   }
+   if (opts->sort) {
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "sort", opts->sort));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));

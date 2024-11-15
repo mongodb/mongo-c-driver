@@ -191,6 +191,8 @@ mongoc_bulkwrite_replaceoneopts_set_hint (mongoc_bulkwrite_replaceoneopts_t *sel
 MONGOC_EXPORT (void)
 mongoc_bulkwrite_replaceoneopts_set_upsert (mongoc_bulkwrite_replaceoneopts_t *self, bool upsert);
 MONGOC_EXPORT (void)
+mongoc_bulkwrite_replaceoneopts_set_sort (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *sort);
+MONGOC_EXPORT (void)
 mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self);
 MONGOC_EXPORT (bool)
 mongoc_bulkwrite_append_replaceone (mongoc_bulkwrite_t *self,
