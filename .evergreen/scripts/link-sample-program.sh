@@ -170,7 +170,7 @@ else
   fi
 fi
 
-if [ "$OS" = "darwin" ]; then
+if [ "$OS" = "darwin" && "${HOSTTYPE:?}" != "arm64" ]; then
   if test -f $INSTALL_DIR/bin/mongoc-stat; then
     echo "mongoc-stat shouldn't have been installed"
     exit 1
