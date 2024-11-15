@@ -9,4 +9,5 @@
 * ``collation``: Configure textual comparisons. See `Setting Collation Order <setting_collation_order_>`_, and `the MongoDB Manual entry on Collation <https://www.mongodb.com/docs/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.
 * ``hint``: A document or string that specifies the index to use to support the query predicate.
 * ``upsert``: If true, insert a document if none match ``selector``.
+* ``sort``: Specify a sort order when matching documents.
 * ``arrayFilters``: An array of filters specifying to which array elements an update should apply.
