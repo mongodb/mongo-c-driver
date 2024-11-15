@@ -214,6 +214,7 @@ opts_structs = OrderedDict([
     ('mongoc_update_one_opts_t', Struct([
         ('update', {'type': 'mongoc_update_opts_t'}),
         array_filters_option,
+        ('sort', {'type': 'document', 'help': 'Specify a sort order when matching documents.'})
     ], validate='_mongoc_default_update_vflags')),
 
     ('mongoc_update_many_opts_t', Struct([
@@ -223,6 +224,7 @@ opts_structs = OrderedDict([
 
     ('mongoc_replace_one_opts_t', Struct([
         ('update', {'type': 'mongoc_update_opts_t'}),
+        ('sort', {'type': 'document', 'help': 'Specify a sort order when matching documents.'})
     ], validate='_mongoc_default_replace_vflags')),
 
     ('mongoc_bulk_opts_t', Struct([
