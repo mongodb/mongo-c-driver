@@ -3819,6 +3819,9 @@ done:
    return ret;
 }
 
+#define WAIT_FOR_EVENT_TIMEOUT_MS (10 * 1000) // Specified by test runner spec
+#define WAIT_FOR_EVENT_TICK_MS 10             // Same tick size as used in non-unified json test
+
 static bool
 operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
@@ -3861,9 +3864,12 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
       if (count >= *expected_count) {
          break;
       }
-      ASSERT_CMPINT64 (bson_get_monotonic_time () - start_time, <, (int64_t) 10 * 1000 * 1000);
-      // @todo waiting not implemented
-      BSON_ASSERT (false);
+      ASSERT_CMPINT64 (bson_get_monotonic_time () - start_time, <, (int64_t) WAIT_FOR_EVENT_TIMEOUT_MS * 1000);
+
+      // If any events are coming, they will be from a different thread.
+      // To keep the tests simple, this polls until match or timeout.
+      // (Same approach used by json-test-operations, outside the unified tests)
+      _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
    }
 
    result_from_ok (result);
