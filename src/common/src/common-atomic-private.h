@@ -57,7 +57,6 @@ enum mcommon_memory_order {
 #ifdef MCOMMON_USE_LEGACY_GCC_ATOMICS
 #undef BSON_IF_GNU_LIKE
 #define BSON_IF_GNU_LIKE(...)
-#define BSON_IF_MSVC(...)
 #define MCOMMON_IF_GNU_LEGACY_ATOMICS(...) __VA_ARGS__
 #else
 #define MCOMMON_IF_GNU_LEGACY_ATOMICS(...)
