@@ -145,6 +145,11 @@ event_new (const char *type, bson_t *serialized, bool is_sensitive_command)
    BSON_APPEND_UTF8 (serialized, "name", type);
    BSON_APPEND_DOUBLE (serialized, "observedAt", secs);
 
+   MONGOC_DEBUG ("new event: %s %s (%s)",
+                 type,
+                 tmp_json (serialized),
+                 is_sensitive_command ? "marked SENSITIVE" : "not sensitive");
+
    event_t *event = bson_malloc0 (sizeof *event);
    event->type = type;             // Borrowed
    event->serialized = serialized; // Takes ownership
@@ -172,6 +177,12 @@ log_message_new (const mongoc_structured_log_entry_t *entry)
    log_message->component = mongoc_structured_log_entry_get_component (entry);
    log_message->level = mongoc_structured_log_entry_get_level (entry);
    log_message->message = mongoc_structured_log_entry_message_as_bson (entry);
+
+   MONGOC_DEBUG ("new structured log: %s %s %s",
+                 mongoc_structured_log_get_level_name (log_message->level),
+                 mongoc_structured_log_get_component_name (log_message->component),
+                 tmp_json (log_message->message));
+
    return log_message;
 }
 
