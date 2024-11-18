@@ -268,14 +268,19 @@ _mongoc_structured_log_init (void)
 static FILE *
 _mongoc_structured_log_open_stream (void)
 {
-   const char *log_target = getenv ("MONGODB_LOG_PATH");
-   bool log_to_stderr = !log_target || !strcmp (log_target, "stderr");
-   FILE *log_stream = log_to_stderr ? stderr : fopen (log_target, "a");
-   if (!log_stream) {
-      MONGOC_ERROR ("Cannot open log file %s for writing", log_target);
+   const char *path = getenv ("MONGODB_LOG_PATH");
+   if (!path || !strcmp (path, "stderr")) {
+      return stderr;
+   }
+   if (!strcmp (path, "stdout")) {
+      return stdout;
+   }
+   FILE *file = fopen (path, "a");
+   if (!file) {
+      MONGOC_ERROR ("Cannot open log file %s for writing", path);
       exit (EXIT_FAILURE);
    }
-   return log_stream;
+   return file;
 }
 
 static FILE *
@@ -285,6 +290,8 @@ _mongoc_structured_log_get_stream (void)
    if (log_stream) {
       return log_stream;
    }
+   // Note that log_stream may be the global stderr/stdout streams,
+   // or an allocated FILE that is never closed.
    log_stream = _mongoc_structured_log_open_stream ();
    gStructuredLog.stream = log_stream;
    return log_stream;
