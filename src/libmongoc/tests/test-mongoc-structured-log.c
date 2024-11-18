@@ -471,6 +471,97 @@ test_structured_log_duration (void)
 }
 
 void
+test_structured_log_level_names (void)
+{
+   mongoc_structured_log_level_t level = (mongoc_structured_log_level_t) -1;
+
+   // Alias, off = 0
+   ASSERT (mongoc_structured_log_get_named_level ("off", &level));
+   ASSERT_CMPINT (0, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Emergency");
+
+   ASSERT (mongoc_structured_log_get_named_level ("emergency", &level));
+   ASSERT_CMPINT (0, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Emergency");
+
+   ASSERT (mongoc_structured_log_get_named_level ("alert", &level));
+   ASSERT_CMPINT (1, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_ALERT, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Alert");
+
+   ASSERT (mongoc_structured_log_get_named_level ("critical", &level));
+   ASSERT_CMPINT (2, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_CRITICAL, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Critical");
+
+   ASSERT (mongoc_structured_log_get_named_level ("error", &level));
+   ASSERT_CMPINT (3, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_ERROR, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Error");
+
+   // Alias, warn = Warning
+   ASSERT (mongoc_structured_log_get_named_level ("warn", &level));
+   ASSERT_CMPINT (4, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_WARNING, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Warning");
+
+   ASSERT (mongoc_structured_log_get_named_level ("warning", &level));
+   ASSERT_CMPINT (4, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_WARNING, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Warning");
+
+   ASSERT (mongoc_structured_log_get_named_level ("notice", &level));
+   ASSERT_CMPINT (5, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_NOTICE, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Notice");
+
+   // Alias, info = Informational
+   ASSERT (mongoc_structured_log_get_named_level ("info", &level));
+   ASSERT_CMPINT (6, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_INFO, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Informational");
+
+   ASSERT (mongoc_structured_log_get_named_level ("informational", &level));
+   ASSERT_CMPINT (6, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_INFO, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Informational");
+
+   ASSERT (mongoc_structured_log_get_named_level ("debug", &level));
+   ASSERT_CMPINT (7, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Debug");
+
+   ASSERT (mongoc_structured_log_get_named_level ("trace", &level));
+   ASSERT_CMPINT (8, ==, level);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_LEVEL_TRACE, ==, level);
+   ASSERT_CMPSTR (mongoc_structured_log_get_level_name (level), "Trace");
+}
+
+void
+test_structured_log_component_names (void)
+{
+   mongoc_structured_log_component_t component = (mongoc_structured_log_component_t) -1;
+
+   ASSERT (mongoc_structured_log_get_named_component ("Command", &component));
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, ==, component);
+   ASSERT_CMPSTR (mongoc_structured_log_get_component_name (component), "command");
+
+   ASSERT (mongoc_structured_log_get_named_component ("Topology", &component));
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY, ==, component);
+   ASSERT_CMPSTR (mongoc_structured_log_get_component_name (component), "topology");
+
+   ASSERT (mongoc_structured_log_get_named_component ("ServerSelection", &component));
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION, ==, component);
+   ASSERT_CMPSTR (mongoc_structured_log_get_component_name (component), "serverSelection");
+
+   ASSERT (mongoc_structured_log_get_named_component ("Connection", &component));
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION, ==, component);
+   ASSERT_CMPSTR (mongoc_structured_log_get_component_name (component), "connection");
+}
+
+void
 test_structured_log_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/structured_log/plain", test_structured_log_plain);
@@ -481,4 +572,6 @@ test_structured_log_install (TestSuite *suite)
    TestSuite_Add (suite, "/structured_log/server_description", test_structured_log_server_description);
    TestSuite_Add (suite, "/structured_log/command", test_structured_log_command);
    TestSuite_Add (suite, "/structured_log/duration", test_structured_log_duration);
+   TestSuite_Add (suite, "/structured_log/level_names", test_structured_log_level_names);
+   TestSuite_Add (suite, "/structured_log/component_names", test_structured_log_component_names);
 }

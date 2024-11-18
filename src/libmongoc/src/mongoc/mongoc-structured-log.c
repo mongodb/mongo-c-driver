@@ -27,10 +27,20 @@ mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entr
 
 #define STRUCTURED_LOG_COMPONENT_TABLE_SIZE (1 + (size_t) MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION)
 
+// Canonical names for log components
+static const char *gStructuredLogComponentNames[] = {"command", "topology", "serverSelection", "connection"};
+
+// Canonical names for log levels
 static const char *gStructuredLogLevelNames[] = {
    "Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Informational", "Debug", "Trace"};
 
-static const char *gStructuredLogComponentNames[] = {"command", "topology", "serverSelection", "connection"};
+// Additional valid names for log levels
+static const struct {
+   const char *name;
+   mongoc_structured_log_level_t level;
+} gStructuredLogLevelAliases[] = {{.name = "off", .level = (mongoc_structured_log_level_t) 0},
+                                  {.name = "warn", .level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING},
+                                  {.name = "info", .level = MONGOC_STRUCTURED_LOG_LEVEL_INFO}};
 
 static struct {
    bson_mutex_t func_mutex; // Mutex prevents func reentrancy, ensures atomic updates to (func, user_data)
@@ -159,11 +169,26 @@ mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level)
 bool
 mongoc_structured_log_get_named_level (const char *name, mongoc_structured_log_level_t *out)
 {
-   const size_t table_size = sizeof gStructuredLogLevelNames / sizeof gStructuredLogLevelNames[0];
-   for (unsigned table_index = 0; table_index < table_size; table_index++) {
-      if (!strcasecmp (name, gStructuredLogLevelNames[table_index])) {
-         *out = (mongoc_structured_log_level_t) table_index;
-         return true;
+   // First check canonical names
+   {
+      const size_t table_size = sizeof gStructuredLogLevelNames / sizeof gStructuredLogLevelNames[0];
+      for (unsigned table_index = 0; table_index < table_size; table_index++) {
+         if (!strcasecmp (name, gStructuredLogLevelNames[table_index])) {
+            *out = (mongoc_structured_log_level_t) table_index;
+            return true;
+         }
+      }
+   }
+   // Check additional acceptable names
+   {
+      const size_t table_size = sizeof gStructuredLogLevelAliases / sizeof gStructuredLogLevelAliases[0];
+      for (unsigned table_index = 0; table_index < table_size; table_index++) {
+         const char *alias = gStructuredLogLevelAliases[table_index].name;
+         mongoc_structured_log_level_t level = gStructuredLogLevelAliases[table_index].level;
+         if (!strcasecmp (name, alias)) {
+            *out = level;
+            return true;
+         }
       }
    }
    return false;
