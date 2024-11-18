@@ -52,7 +52,7 @@ BSON_BEGIN_DECLS
  * once the table is built.
  */
 #define mongoc_structured_log(_level, _component, ...) \
-   _mongoc_structured_log_with_end_of_list (_level, _component, __VA_ARGS__, end_of_list ())
+   _bsonDSL_eval (_mongoc_structured_log_with_end_of_list (_level, _component, __VA_ARGS__, end_of_list ()))
 
 #define _mongoc_structured_log_with_end_of_list(_level, _component, _message, ...)                        \
    do {                                                                                                   \
@@ -67,7 +67,7 @@ BSON_BEGIN_DECLS
    } while (0)
 
 #define _mongoc_structured_log_items_to_stages(...) \
-   _bsonDSL_eval (_bsonDSL_mapMacro (_mongoc_structured_log_item_to_stages, ~, __VA_ARGS__))
+   _bsonDSL_mapMacro (_mongoc_structured_log_item_to_stages, ~, __VA_ARGS__)
 
 #define _mongoc_structured_log_flag_expr(_action, _constant, _counter) | (_constant##_##_action)
 
