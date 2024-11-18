@@ -460,16 +460,14 @@ is_supported_event_type (const char *type)
 static void
 add_observe_event (entity_t *entity, const char *type)
 {
-   observe_event_t event = {.type = type};
-
+   observe_event_t event = {.type = bson_strdup (type)};
    _mongoc_array_append_val (&entity->observe_events, event);
 }
 
 static void
 add_store_event (entity_t *entity, const char *type, const char *entity_id)
 {
-   store_event_t event = {.type = type, .entity_id = entity_id};
-
+   store_event_t event = {.type = bson_strdup (type), .entity_id = bson_strdup (entity_id)};
    _mongoc_array_append_val (&entity->store_events, event);
 }
 
@@ -653,6 +651,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
+      // @todo This option is needed for both single-threaded and pooled clients, but only works on pooled
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, REDUCED_HEARTBEAT_FREQUENCY_MS);
    }
 
@@ -663,6 +662,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    mongoc_client_set_apm_callbacks (client, callbacks, entity);
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
+      // @todo Examine whether this is needed in addition to the URI param above
       client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
    }
 
@@ -1671,8 +1671,24 @@ entity_destroy (entity_t *entity)
       }
    }
 
-   _mongoc_array_destroy (&entity->observe_events);
-   _mongoc_array_destroy (&entity->store_events);
+   {
+      observe_event_t *const begin = (observe_event_t *) entity->observe_events.data;
+      observe_event_t *const end = begin + entity->observe_events.len;
+      for (observe_event_t *iter = begin; iter != end; ++iter) {
+         bson_free (iter->type);
+      }
+      _mongoc_array_destroy (&entity->observe_events);
+   }
+   {
+      store_event_t *const begin = (store_event_t *) entity->store_events.data;
+      store_event_t *const end = begin + entity->store_events.len;
+      for (store_event_t *iter = begin; iter != end; ++iter) {
+         bson_free (iter->type);
+         bson_free (iter->entity_id);
+      }
+      _mongoc_array_destroy (&entity->store_events);
+   }
+
    bson_destroy (entity->ignore_command_monitoring_events);
    bson_free (entity->type);
    bson_free (entity->id);

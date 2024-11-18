@@ -38,12 +38,12 @@ typedef struct _log_message_t {
 } log_message_t;
 
 typedef struct _observe_event_t {
-   const char *type; // Non-owning. Type of event to observe.
+   char *type; // Type of event to observe.
 } observe_event_t;
 
 typedef struct _store_event_t {
-   const char *entity_id; // Non-owning. Target entity to store event.
-   const char *type;      // Non-owning. Type of event to store.
+   char *entity_id; // Target entity to store event.
+   char *type;      // Type of event to store.
 } store_event_t;
 
 typedef struct _entity_t {
