@@ -3881,9 +3881,20 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
          goto done;
       };
 
-      // If any events are coming, they will be from a different thread.
-      // To keep the tests simple, this polls until match or timeout.
-      // (Same approach used by json-test-operations, outside the unified tests)
+      // @todo Re-examine this once we have support for connection pools in the unified test
+      //    runner. Without pooling, all events we could be waiting on would be coming
+      //    from single-threaded (blocking) topology scans. There's no reason for those
+      //    to happen without some explicit activity, and the tests aren't written to account
+      //    for this. We could work around it by sending a command (and hiding its excess events/logs)
+      //    or by directly initiating a scan.
+      {
+         mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
+         if (!mc_client) {
+            goto done;
+         }
+         _mongoc_topology_do_blocking_scan (mc_client->topology, error);
+      }
+
       _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
    }
 
