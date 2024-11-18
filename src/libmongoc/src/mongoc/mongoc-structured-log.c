@@ -36,7 +36,8 @@ static struct {
    bson_mutex_t func_mutex; // Mutex prevents func reentrancy, ensures atomic updates to (func, user_data)
    mongoc_structured_log_func_t func;
    void *user_data;
-   FILE *stream; // Only used by the default handler
+   FILE *stream;            // Only used by the default handler
+   int func_is_null_atomic; // Always (func == NULL), effectively bool. Portably atomic to read without mutex.
 
    int32_t max_document_length;
    int component_level_table[STRUCTURED_LOG_COMPONENT_TABLE_SIZE]; // Really mongoc_structured_log_level_t; int typed to
@@ -73,8 +74,9 @@ void
 mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data)
 {
    bson_mutex_lock (&gStructuredLog.func_mutex);
-   mcommon_atomic_ptr_exchange ((void *) &gStructuredLog.func, (void *) log_func, mcommon_memory_order_relaxed);
+   gStructuredLog.func = log_func;
    gStructuredLog.user_data = user_data;
+   mcommon_atomic_int_exchange (&gStructuredLog.func_is_null_atomic, log_func == NULL, mcommon_memory_order_relaxed);
    bson_mutex_unlock (&gStructuredLog.func_mutex);
 }
 
@@ -117,7 +119,7 @@ mongoc_structured_log_get_max_level_for_component (mongoc_structured_log_compone
 bool
 _mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envelope)
 {
-   return mcommon_atomic_ptr_fetch ((void *) &gStructuredLog.func, mcommon_memory_order_relaxed) &&
+   return !mcommon_atomic_int_fetch ((void *) &gStructuredLog.func_is_null_atomic, mcommon_memory_order_relaxed) &&
           envelope->level <= mongoc_structured_log_get_max_level_for_component (envelope->component);
 }
 
