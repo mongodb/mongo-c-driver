@@ -621,7 +621,10 @@ _mongoc_structured_log_append_server_description (bson_t *bson, const mongoc_str
       BSON_APPEND_INT32 (bson, "serverPort", sd->host.port);
    }
    if (flags & MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID) {
-      BSON_APPEND_INT64 (bson, "serverConnectionId", sd->server_connection_id);
+      int64_t server_connection_id = sd->server_connection_id;
+      if (MONGOC_NO_SERVER_CONNECTION_ID != server_connection_id) {
+         BSON_APPEND_INT64 (bson, "serverConnectionId", server_connection_id);
+      }
    }
    if (flags & MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID) {
       if (!mcommon_oid_is_zero (&sd->service_id)) {
