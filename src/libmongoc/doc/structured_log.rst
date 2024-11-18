@@ -107,6 +107,12 @@ This results in a standalone document that may be retained for any amount of tim
 
   mongoc_structured_log_entry_t
 
+Example
+-------
+.. literalinclude:: ../examples/example-structured-log.c
+   :language: c
+   :caption: example-structured-log.c
+
 .. seealso::
 
   mongoc_structured_log_entry_get_component
