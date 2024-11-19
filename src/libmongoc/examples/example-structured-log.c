@@ -52,11 +52,6 @@ main (void)
    mongoc_client_t *client = NULL;
 
    /*
-    * Initialize libmongoc before configuring logs
-    */
-   mongoc_init ();
-
-   /*
     * For demonstration purposes, set up a handler that receives all possible log messages.
     */
    pthread_mutex_init (&handler_mutex, NULL);
@@ -71,6 +66,12 @@ main (void)
     * your own defaults.
     */
    mongoc_structured_log_set_max_levels_from_env ();
+
+   /*
+    * This is the main libmongoc initialization, but structured logging
+    * can be used earlier. It's automatically initialized on first use.
+    */
+   mongoc_init ();
 
    /*
     * Create a MongoDB URI object. This example assumes a local server.

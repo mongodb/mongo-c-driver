@@ -79,8 +79,8 @@ mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *
  * Sets the maximum log level per-component. Only log messages at or below
  * this severity level will be passed to mongoc_structured_log_func_t.
  *
- * By default, each component's log level comes from the environment
- * variables `MONGOC_LOG_<component>` captured during mongoc_init().
+ * By default, each component's log level may be set by environment variables.
+ * See mongoc_structured_log_set_max_levels_from_env().
  */
 MONGOC_EXPORT (void)
 mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_component_t component,
@@ -107,9 +107,10 @@ mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_le
  *
  * Component levels with no valid environment variable setting will be left unmodified.
  *
- * Normally this happens automatically during mongoc_init(), and it provides defaults
- * that can be overridden programmatically by calls to mongoc_structured_log_set_max_level_for_component()
- * and mongoc_structured_log_set_max_level_for_all_components().
+ * Normally this happens automatically when log levels are automatically initialized on
+ * first use. The resulting default values can be overridden programmatically by calls
+ * to mongoc_structured_log_set_max_level_for_component() and
+ * mongoc_structured_log_set_max_level_for_all_components().
  *
  * For applications that desire the opposite behavior, where environment variables may
  * override programmatic settings, they may call mongoc_structured_log_set_max_levels_from_env()

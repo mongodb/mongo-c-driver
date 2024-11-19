@@ -97,8 +97,6 @@ mongoc_cyrus_mutex_free (void *mutex)
 
 static BSON_ONCE_FUN (_mongoc_do_init)
 {
-   _mongoc_structured_log_init ();
-
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    int status;
 #endif

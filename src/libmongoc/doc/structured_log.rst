@@ -6,12 +6,12 @@ Structured Logging
 This document describes a newer "structured" logging facility which reports messages from the driver itself using a BSON format defined across driver implementations by the `MongoDB Logging Specification <https://specifications.readthedocs.io/en/latest/logging/logging/>`_.
 See :doc:`unstructured_log` for the original freeform logging facility.
 
-These two systems are configured and used independently. The structured logging system has independent settings for handler and log levels. 
+These two systems are configured and used independently. The structured logging system has independent settings for handler and log levels.
 
 Defaults
 --------
 
-During :symbol:`mongoc_init`:
+When the structured logging subsystem is first used, possibly before or during :symbol:`mongoc_init`:
 
 * Default log levels are set from the environment variables ``MONGODB_LOG_ALL``, ``MONGODB_LOG_COMMAND``, ``MONGODB_LOG_TOPOLOGY``, ``MONGODB_LOG_SERVER_SELECTION``, expecting a value from the `severity level table <https://specifications.readthedocs.io/en/latest/logging/logging/#log-severity-levels>`_: ``off``, ``emergency``, ``alert``, ``critical``, ``error``, ``warning``, ``warn``, ``notice``, ``informational``, ``info``, ``debug``, ``trace``.
 * A default handler is installed, which logs text representations of each message to a file given by ``MONGODB_LOG_PATH``, which may be a full path or one of the special values ``stdout`` or ``stderr``. If no valid path is given, logs are written to stderr.
