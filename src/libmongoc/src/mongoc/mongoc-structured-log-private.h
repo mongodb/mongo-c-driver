@@ -31,7 +31,7 @@ BSON_BEGIN_DECLS
 #define MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH 1000
 
 /**
- * @def mognoc_structured_log(level, component, message, ...)
+ * @def mongoc_structured_log(level, component, message, ...)
  * @brief Write to the libmongoc structured log.
  *
  * @param level Log level, as a mongoc_structured_log_level_t expression
