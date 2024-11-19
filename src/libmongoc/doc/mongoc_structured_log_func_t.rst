@@ -12,7 +12,8 @@ Synopsis
   (const mongoc_structured_log_entry_t *entry, void *user_data);
 
 Callback function for :symbol:`mongoc_structured_log_set_handler`.
-Not required to be re-entrant, mutual exclusion is provided by the logging facility.
+Structured log handlers must be thread-safe.
+Logging may occur simultaneously on multiple application threads and/or background threads.
 
 Handlers may use any operating system or ``libbson`` functions but MUST not use any ``libmongoc`` functions except:
 

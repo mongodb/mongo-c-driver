@@ -82,8 +82,11 @@ Log Handlers
 
 There can be one global log handler set at a time.
 This handler is called with a :symbol:`mongoc_structured_log_entry_t` that can be queried for further details.
-Log handlers need not be re-entrant.
-The logging subsystem will ensure mutual exclusion.
+
+.. note::
+
+        Structured log handlers must be thread-safe.
+        This differs from unstructured logging, which provides a global mutex.
 
 .. toctree::
   :titlesonly:

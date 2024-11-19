@@ -206,6 +206,7 @@ entity_new (entity_map_t *em, const char *type)
    entity->entity_map = em;
    _mongoc_array_init (&entity->observe_events, sizeof (observe_event_t));
    _mongoc_array_init (&entity->store_events, sizeof (store_event_t));
+   bson_mutex_init (&entity->log_messages_mutex);
    return entity;
 }
 
@@ -217,7 +218,9 @@ structured_log_cb (const mongoc_structured_log_entry_t *entry, void *user_data)
    if (!test_is_suppressing_structured_logs ()) {
       entity_t *entity = (entity_t *) user_data;
       log_message_t *log_message = log_message_new (entry);
+      bson_mutex_lock (&entity->log_messages_mutex);
       LL_APPEND (entity->log_messages, log_message);
+      bson_mutex_unlock (&entity->log_messages_mutex);
    }
 }
 
@@ -1664,6 +1667,7 @@ entity_destroy (entity_t *entity)
       }
    }
    {
+      // No reason to take the log_messages_mutex here; log handlers are stopped above when we delete clients.
       log_message_t *log_message, *tmp;
       LL_FOREACH_SAFE (entity->log_messages, log_message, tmp)
       {
@@ -1689,6 +1693,7 @@ entity_destroy (entity_t *entity)
       _mongoc_array_destroy (&entity->store_events);
    }
 
+   bson_mutex_destroy (&entity->log_messages_mutex);
    bson_destroy (entity->ignore_command_monitoring_events);
    bson_free (entity->type);
    bson_free (entity->id);

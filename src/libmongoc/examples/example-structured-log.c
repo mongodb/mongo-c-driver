@@ -2,14 +2,25 @@
  *     $(pkg-config --cflags --libs libmongoc-1.0) */
 
 #include <mongoc/mongoc.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+static pthread_mutex_t handler_mutex;
 
 static void
 example_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
    mongoc_structured_log_component_t component = mongoc_structured_log_entry_get_component (entry);
    mongoc_structured_log_level_t level = mongoc_structured_log_entry_get_level (entry);
+
+   /*
+    * Structured log handlers need to be thread-safe.
+    * Many apps will be happy to use a global mutex in their logging handler,
+    * but high performance multithreaded apps may prefer dispatching log
+    * messages asynchronously with thread-safe data structures.
+    */
+   pthread_mutex_lock (&handler_mutex);
 
    printf ("Log component=%s level=%s\n",
            mongoc_structured_log_get_component_name (component),
@@ -27,6 +38,8 @@ example_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
       bson_destroy (message);
       bson_free (json);
    }
+
+   pthread_mutex_unlock (&handler_mutex);
 }
 
 int
@@ -49,6 +62,7 @@ main (void)
     * source or simply use the default behavior which sets them from environment
     * variables.
     */
+   pthread_mutex_init (&handler_mutex, NULL);
    mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_TRACE);
    mongoc_structured_log_set_handler (example_handler, NULL);
 

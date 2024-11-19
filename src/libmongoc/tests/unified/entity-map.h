@@ -20,6 +20,7 @@
 #include "bson/bson.h"
 #include "mongoc/mongoc.h"
 #include "mongoc-array-private.h"
+#include "common-thread-private.h"
 #include "bsonutil/bson-match.h"
 #include "test-diagnostics.h"
 
@@ -54,6 +55,7 @@ typedef struct _entity_t {
    bool *observe_sensitive_commands;
    struct _entity_t *next;
    event_t *events;
+   bson_mutex_t log_messages_mutex;
    log_message_t *log_messages;
    struct _entity_map_t *entity_map; // Parent entity map.
    mongoc_array_t observe_events;    // observe_event_t [N].

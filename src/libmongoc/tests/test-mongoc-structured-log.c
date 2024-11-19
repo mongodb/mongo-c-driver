@@ -15,6 +15,7 @@
  */
 
 #include <mongoc/mongoc.h>
+#include <common-atomic-private.h>
 
 #include "mongoc/mongoc-structured-log-private.h"
 #include "TestSuite.h"
@@ -23,7 +24,7 @@ typedef struct log_assumption {
    mongoc_structured_log_envelope_t expected_envelope;
    bson_t *expected_bson;
    int expected_calls;
-   int calls;
+   int calls_atomic;
 } log_assumption;
 
 typedef struct structured_log_state {
@@ -50,9 +51,8 @@ structured_log_func (const mongoc_structured_log_entry_t *entry, void *user_data
 {
    struct log_assumption *assumption = (struct log_assumption *) user_data;
 
-   assumption->calls++;
-
-   ASSERT_CMPINT (assumption->calls, <=, assumption->expected_calls);
+   int calls = 1 + mcommon_atomic_int_fetch_add (&assumption->calls_atomic, 1, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, <=, assumption->expected_calls);
 
    ASSERT_CMPINT (entry->envelope.level, ==, assumption->expected_envelope.level);
    ASSERT_CMPINT (entry->envelope.component, ==, assumption->expected_envelope.component);
@@ -96,7 +96,8 @@ test_structured_log_plain (void)
    mongoc_structured_log (
       MONGOC_STRUCTURED_LOG_LEVEL_WARNING, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, "Plain log entry");
 
-   ASSERT_CMPINT (assumption.calls, ==, 1);
+   int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, ==, 1);
    restore_state (old_state);
    bson_destroy (assumption.expected_bson);
 }
@@ -120,7 +121,8 @@ test_structured_log_plain_with_extra_data (void)
                           "Plain log entry with extra data",
                           int32 ("extra", 1));
 
-   ASSERT_CMPINT (assumption.calls, ==, 1);
+   int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, ==, 1);
    restore_state (old_state);
    bson_destroy (assumption.expected_bson);
 }
@@ -184,7 +186,8 @@ test_structured_log_basic_data_types (void)
                           boolean ("kFalse", false),
                           boolean (NULL, true));
 
-   ASSERT_CMPINT (assumption.calls, ==, 1);
+   int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, ==, 1);
    restore_state (old_state);
    bson_destroy (assumption.expected_bson);
    bson_destroy (bson_str_n);
@@ -218,7 +221,8 @@ test_structured_log_json (void)
                           bson_as_json ("kNull", NULL),
                           bson_as_json (NULL, NULL));
 
-   ASSERT_CMPINT (assumption.calls, ==, 1);
+   int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, ==, 1);
    restore_state (old_state);
    bson_destroy (assumption.expected_bson);
    bson_destroy (json_doc);
@@ -253,7 +257,8 @@ test_structured_log_oid (void)
                           oid_as_hex ("kNull", NULL),
                           oid_as_hex (NULL, NULL));
 
-   ASSERT_CMPINT (assumption.calls, ==, 1);
+   int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, ==, 1);
    restore_state (old_state);
    bson_destroy (assumption.expected_bson);
 }
@@ -326,7 +331,8 @@ test_structured_log_server_description (void)
       server_description (&server_description_1, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
       server_description (&server_description_2, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID));
 
-   ASSERT_CMPINT (assumption.calls, ==, 1);
+   int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, ==, 1);
    restore_state (old_state);
    bson_destroy (assumption.expected_bson);
 }
@@ -424,7 +430,8 @@ test_structured_log_command (void)
                           cmd_name_failure ("authenticate", reply_doc, &server_error),
                           cmd_name_failure ("authenticate", reply_doc, &client_error));
 
-   ASSERT_CMPINT (assumption.calls, ==, 1);
+   int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, ==, 1);
    restore_state (old_state);
    bson_destroy (assumption.expected_bson);
    bson_destroy (cmd_doc);
@@ -465,7 +472,8 @@ test_structured_log_duration (void)
                           monotonic_time_duration (10),
                           monotonic_time_duration (10000000999));
 
-   ASSERT_CMPINT (assumption.calls, ==, 1);
+   int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, ==, 1);
    restore_state (old_state);
    bson_destroy (assumption.expected_bson);
 }

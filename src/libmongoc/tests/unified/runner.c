@@ -1421,6 +1421,7 @@ test_check_expected_log_messages_for_client (test_t *test,
                                              bson_error_t *error)
 {
    bool ret = false;
+   bson_mutex_t *locked = NULL;
 
    bson_parser_t *bp = bson_parser_new ();
    char *client_id;
@@ -1440,6 +1441,9 @@ test_check_expected_log_messages_for_client (test_t *test,
       test_set_error (error, "expected entity %s to be client, got: %s", entity->id, entity->type);
       goto done;
    }
+
+   locked = &entity->log_messages_mutex;
+   bson_mutex_lock (locked);
 
    log_message_t *actual_message_iter = entity->log_messages;
    bson_iter_t expected_message_iter;
@@ -1490,6 +1494,9 @@ test_check_expected_log_messages_for_client (test_t *test,
 
    ret = true;
 done:
+   if (locked) {
+      bson_mutex_unlock (locked);
+   }
    bson_parser_destroy_with_parsed_fields (bp);
    return ret;
 }

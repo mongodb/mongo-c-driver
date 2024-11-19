@@ -20,6 +20,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-apm-private.h"
 #include "common-atomic-private.h"
+#include "common-thread-private.h"
 #include "common-oid-private.h"
 
 static void
@@ -43,7 +44,8 @@ static const struct {
                                   {.name = "info", .level = MONGOC_STRUCTURED_LOG_LEVEL_INFO}};
 
 static struct {
-   bson_mutex_t func_mutex; // Mutex prevents func reentrancy, ensures atomic updates to (func, user_data)
+   bson_shared_mutex_t func_mutex; // Handlers run concurrently, but updates to (func, user_data) synchronized
+   bson_mutex_t stream_mutex;      // Only used by the default handler
    mongoc_structured_log_func_t func;
    void *user_data;
    FILE *stream;            // Only used by the default handler
@@ -83,20 +85,20 @@ mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *
 void
 mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data)
 {
-   bson_mutex_lock (&gStructuredLog.func_mutex);
+   bson_shared_mutex_lock (&gStructuredLog.func_mutex); // Waits for handler invocations to end
    gStructuredLog.func = log_func;
    gStructuredLog.user_data = user_data;
    mcommon_atomic_int_exchange (&gStructuredLog.func_is_null_atomic, log_func == NULL, mcommon_memory_order_relaxed);
-   bson_mutex_unlock (&gStructuredLog.func_mutex);
+   bson_shared_mutex_unlock (&gStructuredLog.func_mutex);
 }
 
 void
 mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
 {
-   bson_mutex_lock (&gStructuredLog.func_mutex);
+   bson_shared_mutex_lock_shared (&gStructuredLog.func_mutex);
    *log_func = gStructuredLog.func;
    *user_data = gStructuredLog.user_data;
-   bson_mutex_unlock (&gStructuredLog.func_mutex);
+   bson_shared_mutex_unlock_shared (&gStructuredLog.func_mutex);
 }
 
 void
@@ -136,12 +138,12 @@ _mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envel
 void
 _mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry)
 {
-   bson_mutex_lock (&gStructuredLog.func_mutex);
+   bson_shared_mutex_lock_shared (&gStructuredLog.func_mutex);
    mongoc_structured_log_func_t func = gStructuredLog.func;
    if (func) {
       func (entry, gStructuredLog.user_data);
    }
-   bson_mutex_unlock (&gStructuredLog.func_mutex);
+   bson_shared_mutex_unlock_shared (&gStructuredLog.func_mutex);
 }
 
 static bool
@@ -242,7 +244,8 @@ _mongoc_structured_log_get_max_document_length_from_env (void)
 void
 _mongoc_structured_log_init (void)
 {
-   bson_mutex_init (&gStructuredLog.func_mutex);
+   bson_shared_mutex_init (&gStructuredLog.func_mutex);
+   bson_mutex_init (&gStructuredLog.stream_mutex);
    gStructuredLog.max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
 
    mongoc_structured_log_level_t level;
@@ -286,6 +289,7 @@ _mongoc_structured_log_open_stream (void)
 static FILE *
 _mongoc_structured_log_get_stream (void)
 {
+   // Not re-entrant; protected by the stream_lock.
    FILE *log_stream = gStructuredLog.stream;
    if (log_stream) {
       return log_stream;
@@ -300,17 +304,20 @@ _mongoc_structured_log_get_stream (void)
 static void
 mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
+   // We can serialize the message before taking the stream lock
    bson_t *bson_message = mongoc_structured_log_entry_message_as_bson (entry);
    char *json_message = bson_as_relaxed_extended_json (bson_message, NULL);
+   bson_destroy (bson_message);
 
-   fprintf (_mongoc_structured_log_get_stream (),
-            "MONGODB_LOG %s %s %s\n",
-            mongoc_structured_log_get_level_name (mongoc_structured_log_entry_get_level (entry)),
-            mongoc_structured_log_get_component_name (mongoc_structured_log_entry_get_component (entry)),
-            json_message);
+   const char *level_name = mongoc_structured_log_get_level_name (mongoc_structured_log_entry_get_level (entry));
+   const char *component_name =
+      mongoc_structured_log_get_component_name (mongoc_structured_log_entry_get_component (entry));
+
+   bson_mutex_lock (&gStructuredLog.stream_mutex);
+   fprintf (_mongoc_structured_log_get_stream (), "MONGODB_LOG %s %s %s\n", level_name, component_name, json_message);
+   bson_mutex_unlock (&gStructuredLog.stream_mutex);
 
    bson_free (json_message);
-   bson_destroy (bson_message);
 }
 
 char *
