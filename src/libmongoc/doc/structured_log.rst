@@ -11,10 +11,13 @@ These two systems are configured and used independently. The structured logging 
 Defaults
 --------
 
-By default, it follows the behavior outlined by the common `MongoDB Logging Specification <https://specifications.readthedocs.io/en/latest/logging/logging/>`_:
+During :symbol:`mongoc_init`:
 
-* Log levels are set from the environment variables ``MONGODB_LOG_ALL``, ``MONGODB_LOG_COMMAND``, ``MONGODB_LOG_TOPOLOGY``, ``MONGODB_LOG_SERVER_SELECTION``, expecting a value from the `severity level table <https://specifications.readthedocs.io/en/latest/logging/logging/#log-severity-levels>`_: ``off``, ``emergency``, ``alert``, ``critical``, ``error``, ``warning``, ``warn``, ``notice``, ``informational``, ``info``, ``debug``, ``trace``.
-* A default handler is installed, which logs text representations of each message to a file given by ``MONGODB_LOG_PATH``, which may be a full path or one of the special values ``stdout`` or ``stderr``. By default, logs go to stderr.
+* Default log levels are set from the environment variables ``MONGODB_LOG_ALL``, ``MONGODB_LOG_COMMAND``, ``MONGODB_LOG_TOPOLOGY``, ``MONGODB_LOG_SERVER_SELECTION``, expecting a value from the `severity level table <https://specifications.readthedocs.io/en/latest/logging/logging/#log-severity-levels>`_: ``off``, ``emergency``, ``alert``, ``critical``, ``error``, ``warning``, ``warn``, ``notice``, ``informational``, ``info``, ``debug``, ``trace``.
+* A default handler is installed, which logs text representations of each message to a file given by ``MONGODB_LOG_PATH``, which may be a full path or one of the special values ``stdout`` or ``stderr``. If no valid path is given, logs are written to stderr.
+
+Normally environment variables provide defaults that can be overridden programmatically.
+To request the opposite behavior, where your programmatic defaults can be overridden by the environment, see :symbol:`mongoc_structured_log_set_max_levels_from_env`.
 
 Levels and Components
 ---------------------
@@ -75,6 +78,7 @@ If it's possible to filter messages based on only their component and level, thi
 
   mongoc_structured_log_set_max_level_for_all_components
   mongoc_structured_log_set_max_level_for_component
+  mongoc_structured_log_set_max_levels_from_env
   mongoc_structured_log_get_max_level_for_component
 
 Log Handlers

@@ -57,14 +57,20 @@ main (void)
    mongoc_init ();
 
    /*
-    * For demonstration purposes, set up a handler that receives all possible
-    * log messages. In a real app, you would set this from some configurable
-    * source or simply use the default behavior which sets them from environment
-    * variables.
+    * For demonstration purposes, set up a handler that receives all possible log messages.
     */
    pthread_mutex_init (&handler_mutex, NULL);
    mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_TRACE);
    mongoc_structured_log_set_handler (example_handler, NULL);
+
+   /*
+    * By default libmongoc proceses log options from the environment first,
+    * and then allows you to apply programmatic overrides. To request the
+    * opposite behavior, allowing the environment to override programmatic
+    * defaults, you can ask for the environment to be re-read after setting
+    * your own defaults.
+    */
+   mongoc_structured_log_set_max_levels_from_env ();
 
    /*
     * Create a MongoDB URI object. This example assumes a local server.

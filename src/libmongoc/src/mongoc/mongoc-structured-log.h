@@ -99,6 +99,29 @@ MONGOC_EXPORT (void)
 mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level);
 
 /**
+ * mongoc_structured_log_set_max_levels_from_env:
+ *
+ * Sets any maximum log levels requested by environment variables: "MONGODB_LOG_ALL"
+ * for all components, followed by per-component log levels "MONGODB_LOG_COMMAND",
+ * "MONGODB_LOG_CONNECTION", "MONGODB_LOG_TOPOLOGY", and "MONGODB_LOG_SERVER_SELECTION".
+ *
+ * Component levels with no valid environment variable setting will be left unmodified.
+ *
+ * Normally this happens automatically during mongoc_init(), and it provides defaults
+ * that can be overridden programmatically by calls to mongoc_structured_log_set_max_level_for_component()
+ * and mongoc_structured_log_set_max_level_for_all_components().
+ *
+ * For applications that desire the opposite behavior, where environment variables may
+ * override programmatic settings, they may call mongoc_structured_log_set_max_levels_from_env()
+ * after calling mongoc_structured_log_set_max_level_for_component() and
+ * mongoc_structured_log_set_max_level_for_all_components(). This will process the environment
+ * a second time, allowing it to override customized defaults.
+ */
+
+MONGOC_EXPORT (void)
+mongoc_structured_log_set_max_levels_from_env (void);
+
+/**
  * mongoc_structured_log_get_max_level_for_component:
  * @component: A logging component to check the log level limit for.
  *

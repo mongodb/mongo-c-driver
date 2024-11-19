@@ -147,7 +147,9 @@ _mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry)
 }
 
 static bool
-_mongoc_structured_log_get_log_level_from_env (const char *variable, mongoc_structured_log_level_t *out)
+_mongoc_structured_log_get_log_level_from_env (const char *variable,
+                                               mongoc_structured_log_level_t *out,
+                                               int volatile *err_count_atomic)
 {
    const char *level = getenv (variable);
    if (!level) {
@@ -156,8 +158,11 @@ _mongoc_structured_log_get_log_level_from_env (const char *variable, mongoc_stru
    if (mongoc_structured_log_get_named_level (level, out)) {
       return true;
    }
-   MONGOC_ERROR ("Invalid log level '%s' read from environment variable %s", level, variable);
-   exit (EXIT_FAILURE);
+   // Only report the first instance of each error
+   if (0 == mcommon_atomic_int_fetch_add (err_count_atomic, 1, mcommon_memory_order_seq_cst)) {
+      MONGOC_ERROR ("Invalid log level '%s' read from environment variable %s", level, variable);
+   }
+   return false;
 }
 
 const char *
@@ -238,7 +243,7 @@ _mongoc_structured_log_get_max_document_length_from_env (void)
    }
 
    MONGOC_ERROR ("Invalid length '%s' read from environment variable %s", max_length_str, variable);
-   exit (EXIT_FAILURE);
+   return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
 }
 
 void
@@ -247,24 +252,43 @@ _mongoc_structured_log_init (void)
    bson_shared_mutex_init (&gStructuredLog.func_mutex);
    bson_mutex_init (&gStructuredLog.stream_mutex);
    gStructuredLog.max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL);
+   mongoc_structured_log_set_max_levels_from_env ();
+}
 
+void
+mongoc_structured_log_set_max_levels_from_env (void)
+{
    mongoc_structured_log_level_t level;
-   if (!_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level)) {
-      level = MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL;
+   {
+      static int err_count_atomic = 0;
+      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level, &err_count_atomic)) {
+         mongoc_structured_log_set_max_level_for_all_components (level);
+      }
    }
-   mongoc_structured_log_set_max_level_for_all_components (level);
-
-   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_COMMAND", &level)) {
-      mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, level);
+   {
+      static int err_count_atomic = 0;
+      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_COMMAND", &level, &err_count_atomic)) {
+         mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, level);
+      }
    }
-   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_CONNECTION", &level)) {
-      mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION, level);
+   {
+      static int err_count_atomic = 0;
+      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_CONNECTION", &level, &err_count_atomic)) {
+         mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION, level);
+      }
    }
-   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_TOPOLOGY", &level)) {
-      mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY, level);
+   {
+      static int err_count_atomic = 0;
+      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_TOPOLOGY", &level, &err_count_atomic)) {
+         mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY, level);
+      }
    }
-   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_SERVER_SELECTION", &level)) {
-      mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION, level);
+   {
+      static int err_count_atomic = 0;
+      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_SERVER_SELECTION", &level, &err_count_atomic)) {
+         mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION, level);
+      }
    }
 }
 
@@ -281,7 +305,7 @@ _mongoc_structured_log_open_stream (void)
    FILE *file = fopen (path, "a");
    if (!file) {
       MONGOC_ERROR ("Cannot open log file %s for writing", path);
-      exit (EXIT_FAILURE);
+      return stderr;
    }
    return file;
 }

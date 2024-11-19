@@ -15,7 +15,8 @@ Synopsis
 Sets the maximum log level per-component.
 Only log messages at or below this severity level will be passed to :symbol:`mongoc_structured_log_func_t`.
 
-By default, each component's log level comes from the environment variables ``MONGOC_LOG_<component>`` and ``MONGOC_LOG_ALL``.
+By default, each component's log level may come from environment variables.
+See :symbol:`mongoc_structured_log_set_max_levels_from_env`.
 
 Parameters
 ----------
