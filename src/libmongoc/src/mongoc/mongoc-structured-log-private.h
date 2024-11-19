@@ -288,13 +288,13 @@ struct mongoc_structured_log_builder_stage_t {
       const bson_error_t *error;
       const mongoc_cmd_t *cmd;
       const mongoc_server_description_t *server_description;
-      const void *utf8;
+      const char *utf8;
    } arg1;
    union {
       bool boolean;
       bson_oid_t *oid;
       const bson_t *bson;
-      const void *utf8;
+      const char *utf8;
       int32_t int32;
       int64_t int64;
       mongoc_structured_log_cmd_flags_t cmd_flags;
