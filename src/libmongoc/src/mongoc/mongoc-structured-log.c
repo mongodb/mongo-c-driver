@@ -160,7 +160,7 @@ _mongoc_structured_log_get_log_level_from_env (const char *variable,
    }
    // Only report the first instance of each error
    if (0 == mcommon_atomic_int_fetch_add (err_count_atomic, 1, mcommon_memory_order_seq_cst)) {
-      MONGOC_ERROR ("Invalid log level '%s' read from environment variable %s", level, variable);
+      MONGOC_WARNING ("Invalid log level '%s' read from environment variable %s. Ignoring it.", level, variable);
    }
    return false;
 }
@@ -242,7 +242,7 @@ _mongoc_structured_log_get_max_document_length_from_env (void)
       return (int32_t) int_value;
    }
 
-   MONGOC_ERROR ("Invalid length '%s' read from environment variable %s", max_length_str, variable);
+   MONGOC_WARNING ("Invalid length '%s' read from environment variable %s. Ignoring it.", max_length_str, variable);
    return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
 }
 
@@ -304,7 +304,7 @@ _mongoc_structured_log_open_stream (void)
    }
    FILE *file = fopen (path, "a");
    if (!file) {
-      MONGOC_ERROR ("Cannot open log file %s for writing", path);
+      MONGOC_WARNING ("Cannot open log file '%s' for writing. Logging to stderr instead.", path);
       return stderr;
    }
    return file;
