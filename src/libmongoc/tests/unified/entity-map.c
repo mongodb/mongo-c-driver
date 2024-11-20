@@ -423,10 +423,12 @@ set_server_changed_cb (mongoc_apm_callbacks_t *callbacks)
    mongoc_apm_set_server_changed_cb (callbacks, server_changed);
 }
 
-// Note: multiple invocations of this function is okay, since all it does
-// is set the appropriate pointer in `callbacks`, and the callback function(s)
-// being used is always the same for a given type.
-static void
+/* Set a callback for the indicated event type in a mongoc_apm_callbacks_t.
+ * Safe to call multiple times for the same event: callbacks for a specific
+ * event type are always the same. Returns 'true' if the event is known and
+ * 'false' if unknown. If 'callbacks' is NULL, validates the 'type' without
+ * taking any other action. */
+static bool
 set_event_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
 {
    typedef void (*set_func_t) (mongoc_apm_callbacks_t *);
@@ -446,18 +448,19 @@ set_event_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
 
    for (const command_to_cb_t *iter = commands; iter->type; ++iter) {
       if (bson_strcasecmp (type, iter->type) == 0) {
-         iter->set (callbacks);
-         return;
+         if (callbacks) {
+            iter->set (callbacks);
+         }
+         return true;
       }
    }
+   return false;
 }
 
 static bool
 is_supported_event_type (const char *type)
 {
-   return (0 == bson_strcasecmp (type, "commandStartedEvent") || 0 == bson_strcasecmp (type, "commandFailedEvent") ||
-           0 == bson_strcasecmp (type, "commandSucceededEvent") ||
-           0 == bson_strcasecmp (type, "serverDescriptionChangedEvent"));
+   return set_event_callback (NULL, type);
 }
 
 static void
