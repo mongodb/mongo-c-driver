@@ -18,7 +18,7 @@ Parse errors may cause a warning message.
 
 Component levels with no valid environment variable setting will be left unmodified.
 
-Normally this happens automatically when log levels are automatically initialized on first use.
+Normally this happens automatically when log levels are initialized on first use.
 The resulting default values can be overridden programmatically by calls to :symbol:`mongoc_structured_log_set_max_level_for_component` and :symbol:`mongoc_structured_log_set_max_level_for_all_components`.
 
 For applications that desire the opposite behavior, where environment variables may override programmatic settings, they may call ``mongoc_structured_log_set_max_levels_from_env()`` after calling :symbol:`mongoc_structured_log_set_max_level_for_component` and :symbol:`mongoc_structured_log_set_max_level_for_all_components`.
