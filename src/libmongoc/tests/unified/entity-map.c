@@ -401,6 +401,40 @@ server_changed (const mongoc_apm_server_changed_t *changed)
 }
 
 static void
+topology_description_serialize (bson_t *doc, const mongoc_topology_description_t *td)
+{
+   // A subset of fields defined by the Server Discovery And Monitoring spec
+   const char *type = mongoc_topology_description_type (td);
+   BSON_APPEND_UTF8 (doc, "type", type);
+}
+
+static void
+topology_changed (const mongoc_apm_topology_changed_t *changed)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_topology_changed_get_context (changed);
+   bson_oid_t topology_id;
+   mongoc_apm_topology_changed_get_topology_id (changed, &topology_id);
+
+   bson_t *serialized = bson_new ();
+   bson_t previous_description = BSON_INITIALIZER;
+   bson_t new_description = BSON_INITIALIZER;
+
+   topology_description_serialize (&previous_description,
+                                   mongoc_apm_topology_changed_get_previous_description (changed));
+   topology_description_serialize (&new_description, mongoc_apm_topology_changed_get_new_description (changed));
+
+   bsonBuildAppend (*serialized,
+                    kv ("topologyId", oid (&topology_id)),
+                    kv ("previousDescription", bson (previous_description)),
+                    kv ("newDescription", bson (new_description)));
+
+   bson_destroy (&previous_description);
+   bson_destroy (&new_description);
+   event_store_or_destroy (entity, event_new ("topologyDescriptionChangedEvent", serialized, false));
+}
+
+
+static void
 set_command_started_cb (mongoc_apm_callbacks_t *callbacks)
 {
    mongoc_apm_set_command_started_cb (callbacks, command_started);
@@ -424,6 +458,12 @@ set_server_changed_cb (mongoc_apm_callbacks_t *callbacks)
    mongoc_apm_set_server_changed_cb (callbacks, server_changed);
 }
 
+static void
+set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_topology_changed_cb (callbacks, topology_changed);
+}
+
 /* Set a callback for the indicated event type in a mongoc_apm_callbacks_t.
  * Safe to call multiple times for the same event: callbacks for a specific
  * event type are always the same. Returns 'true' if the event is known and
@@ -444,6 +484,7 @@ set_event_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
       {.type = "commandFailedEvent", .set = set_command_failed_cb},
       {.type = "commandSucceededEvent", .set = set_command_succeeded_cb},
       {.type = "serverDescriptionChangedEvent", .set = set_server_changed_cb},
+      {.type = "topologyDescriptionChangedEvent", .set = set_topology_changed_cb},
       {.type = NULL, .set = NULL},
    };
 
