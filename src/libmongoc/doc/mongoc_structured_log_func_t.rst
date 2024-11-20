@@ -20,6 +20,11 @@ Handlers may use any operating system or ``libbson`` functions but MUST not use 
 * :symbol:`mongoc_structured_log_entry_get_component`
 * :symbol:`mongoc_structured_log_entry_get_level`
 * :symbol:`mongoc_structured_log_entry_message_as_bson`
+* :symbol:`mongoc_structured_log_get_level_name`
+* :symbol:`mongoc_structured_log_get_named_level`
+* :symbol:`mongoc_structured_log_get_component_name`
+* :symbol:`mongoc_structured_log_get_named_component`
+* :symbol:`mongoc_structured_log_get_max_level_for_component`
 
 Parameters
 ----------
