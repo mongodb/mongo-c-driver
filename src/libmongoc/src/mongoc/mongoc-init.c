@@ -19,7 +19,6 @@
 
 #include "mongoc-config.h"
 #include "mongoc-counters-private.h"
-#include "mongoc-structured-log-private.h"
 #include "mongoc-init.h"
 
 #include "mongoc-handshake-private.h"
