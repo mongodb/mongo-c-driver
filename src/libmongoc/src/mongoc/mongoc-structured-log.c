@@ -42,17 +42,25 @@ static const struct {
                                   {.name = "warn", .level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING},
                                   {.name = "info", .level = MONGOC_STRUCTURED_LOG_LEVEL_INFO}};
 
-// Values for gStructuredLog.state_atomic
+// Values for gStructuredLog.handler.state
 typedef enum {
-   MONGOC_STRUCTURED_LOG_STATE_UNINITIALIZED = 0, // Must _mongoc_structured_log_ensure_init
-   MONGOC_STRUCTURED_LOG_STATE_INACTIVE = 1,      // Early out
-   MONGOC_STRUCTURED_LOG_STATE_ACTIVE = 2,        // Maybe active, log level added to this base
+   MONGOC_STRUCTURED_LOG_STATE_UNINITIALIZED = 0, // Must ensure_init. This state is never re-entered once exited.
+   MONGOC_STRUCTURED_LOG_STATE_INACTIVE = 1,      // Handler disabled. Always < MONGOC_STRUCTURED_LOG_STATE_ACTIVE.
+   MONGOC_STRUCTURED_LOG_STATE_ACTIVE = 2,        // Maybe active. Value is also a base to which log levels are added.
 } mongoc_structured_log_state_t;
 
 static struct {
-   /* Pre-computed table combining state_atomic and component_level_table.
+   /* Pre-computed table combining handler.state and component_level_table.
     * Individual values are atomic, read with relaxed memory order.
-    * Table rebuilds are protected by a mutex. */
+    *
+    * Table rebuilds are protected by a mutex. The build_mutex should
+    * be held while updating the table and while performing the instigating
+    * level or handler change.
+    *
+    * When acquiring both the build_mutex and an exclusive lock on handler.mutex
+    * to update the handler, the build mutex must always be acquired first.
+    * Log handlers must not be allowed to call functions that acquire the build_mutex.
+    */
    struct {
       int component_level_plus_state[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
       bson_mutex_t build_mutex;
@@ -63,6 +71,7 @@ static struct {
       bson_shared_mutex_t mutex;
       mongoc_structured_log_func_t func;
       void *user_data;
+      mongoc_structured_log_state_t state;
    } handler;
 
    // State only used by the default handler
@@ -79,11 +88,6 @@ static struct {
     * Used only for getting/setting individual component levels.
     * Not used directly by should_log, which relies on 'combined_table'. */
    int component_level_table[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
-
-   /* Tracks whether we might be uninitialized or have no handler.
-    * Set when updating 'handler', read when recomputing 'combined_table'.
-    * Atomic mongoc_structured_log_state_t, seq_cst memory order. */
-   int state_atomic;
 } gStructuredLog;
 
 static BSON_INLINE void
@@ -135,20 +139,19 @@ mongoc_structured_log_get_max_level_for_component (mongoc_structured_log_compone
 static void
 _mongoc_structured_log_update_level_plus_state (void)
 {
+   // The caller MUST be holding the build_mutex throughout the operation which caused this table update.
    // Pre-calculate a table of values that combine per-component level and global state.
    // Needs to be updated when the handler is set/unset or when any level setting changes.
-   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
-   int state = mcommon_atomic_int_fetch (&gStructuredLog.state_atomic, mcommon_memory_order_seq_cst);
+   mongoc_structured_log_state_t handler_state = gStructuredLog.handler.state;
    for (unsigned table_index = 0; table_index < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; table_index++) {
       mongoc_structured_log_component_t component = (mongoc_structured_log_component_t) table_index;
       mcommon_atomic_int_exchange (&gStructuredLog.combined_table.component_level_plus_state[table_index],
-                                   state == MONGOC_STRUCTURED_LOG_STATE_ACTIVE
-                                      ? (int) state +
+                                   handler_state == MONGOC_STRUCTURED_LOG_STATE_ACTIVE
+                                      ? (int) MONGOC_STRUCTURED_LOG_STATE_ACTIVE +
                                            (int) _mongoc_structured_log_get_max_level_for_component (component)
-                                      : (int) state,
+                                      : (int) handler_state,
                                    mcommon_memory_order_relaxed);
    }
-   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
 }
 
 static void
@@ -157,10 +160,8 @@ _mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void 
    bson_shared_mutex_lock (&gStructuredLog.handler.mutex); // Waits for handler invocations to end
    gStructuredLog.handler.func = log_func;
    gStructuredLog.handler.user_data = user_data;
-   mcommon_atomic_int_exchange (&gStructuredLog.state_atomic,
-                                log_func == NULL ? MONGOC_STRUCTURED_LOG_STATE_INACTIVE
-                                                 : MONGOC_STRUCTURED_LOG_STATE_ACTIVE,
-                                mcommon_memory_order_seq_cst);
+   gStructuredLog.handler.state =
+      log_func == NULL ? MONGOC_STRUCTURED_LOG_STATE_INACTIVE : MONGOC_STRUCTURED_LOG_STATE_ACTIVE;
    bson_shared_mutex_unlock (&gStructuredLog.handler.mutex);
 }
 
@@ -168,14 +169,18 @@ void
 mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data)
 {
    _mongoc_structured_log_ensure_init ();
+
+   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
    _mongoc_structured_log_set_handler (log_func, user_data);
    _mongoc_structured_log_update_level_plus_state ();
+   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
 }
 
 void
 mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
 {
    _mongoc_structured_log_ensure_init ();
+
    bson_shared_mutex_lock_shared (&gStructuredLog.handler.mutex);
    *log_func = gStructuredLog.handler.func;
    *user_data = gStructuredLog.handler.user_data;
@@ -198,8 +203,11 @@ mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_compone
                                                    mongoc_structured_log_level_t level)
 {
    _mongoc_structured_log_ensure_init ();
+
+   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
    _mongoc_structured_log_set_max_level_for_component (component, level);
    _mongoc_structured_log_update_level_plus_state ();
+   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
 }
 
 static void
@@ -214,8 +222,11 @@ void
 mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level)
 {
    _mongoc_structured_log_ensure_init ();
+
+   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
    _mongoc_structured_log_set_max_level_for_all_components (level);
    _mongoc_structured_log_update_level_plus_state ();
+   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
 }
 
 bool
@@ -388,8 +399,11 @@ void
 mongoc_structured_log_set_max_levels_from_env (void)
 {
    _mongoc_structured_log_ensure_init ();
+
+   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
    _mongoc_structured_log_set_max_levels_from_env ();
    _mongoc_structured_log_update_level_plus_state ();
+   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
 }
 
 static FILE *
@@ -452,12 +466,18 @@ static BSON_ONCE_FUN (_mongoc_structured_log_init_once)
 
    gStructuredLog.max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
 
+   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
+
    _mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL);
    _mongoc_structured_log_set_max_levels_from_env ();
 
-   // The default handler replaces MONGOC_STRUCTURED_LOG_STATE_MAYBE_UNINITIALIZED, this must be last.
+   // The default handler replaces MONGOC_STRUCTURED_LOG_STATE_MAYBE_UNINITIALIZED.
+   // Other threads may immediately submit log entries, so this must happen after
+   // log level setup and just before we unlock the build_mutex and return.
    _mongoc_structured_log_set_handler (mongoc_structured_log_default_handler, NULL);
    _mongoc_structured_log_update_level_plus_state ();
+
+   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
 
    BSON_ONCE_RETURN;
 }
