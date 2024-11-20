@@ -126,27 +126,35 @@ if [[ -d /usr/local/Cellar/llvm ]]; then
   done
 fi
 
-scan_build_directories+=(
-  # Prefer toolchain scan-build if available.
-  "/opt/mongodbtoolchain/v4/bin"
-  "/opt/mongodbtoolchain/v3/bin"
+if command -v scan-build && clmmand -v clang && command -v clang++; then
+  scan_build_binary="scan-build"
+  CC="clang"
+  CXX="clang++"
+else
+  scan_build_directories+=(
+    # Prefer toolchain scan-build if available.
+    "/opt/mongodbtoolchain/v4/bin"
+    "/opt/mongodbtoolchain/v3/bin"
 
-  # Use system scan-build otherwise.
-  "/usr/bin"
-)
+    # Use system scan-build otherwise.
+    "/usr/bin"
+  )
 
-declare scan_build_binary
-for dir in "${scan_build_directories[@]}"; do
-  if command -v "${dir}/scan-build" && command -v "${dir}/clang" && command -v "${dir}/clang++"; then
-    # Ensure compilers are consistent with scan-build binary. All three binaries
-    # should be present in the same directory.
-    scan_build_binary="${dir}/scan-build"
-    CC="${dir}/clang"
-    CXX="${dir}/clang++"
-    break
-  fi
-done
+  declare scan_build_binary
+  for dir in "${scan_build_directories[@]}"; do
+    if command -v "${dir}/scan-build" && command -v "${dir}/clang" && command -v "${dir}/clang++"; then
+      # Ensure compilers are consistent with scan-build binary. All three binaries
+      # should be present in the same directory.
+      scan_build_binary="${dir}/scan-build"
+      CC="${dir}/clang"
+      CXX="${dir}/clang++"
+      break
+    fi
+  done
+fi
 : "${scan_build_binary:?"could not find a scan-build binary!"}"
+: "${CC:?}"
+: "${CXX:?}"
 
 # Use ccache if able.
 . "${script_dir:?}/find-ccache.sh"

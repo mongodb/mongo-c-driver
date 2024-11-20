@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.28.1
+%global up_version   1.29.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -53,7 +53,7 @@ BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
 # grep VERSION_LESS src/*/CMakeLists.txt
-BuildRequires: cmake(mongocrypt) >= 1.11.0
+BuildRequires: cmake(mongocrypt) >= 1.12.0
 %endif
 BuildRequires: perl-interpreter
 # From man pages
@@ -255,9 +255,14 @@ exit $ret
 %{_libdir}/cmake/bson-%{libver}
 %{_libdir}/pkgconfig/libbson-*.pc
 %{_mandir}/man3/bson*
+%{_mandir}/man3/libbson*
 
 
 %changelog
+* Thu Nov  7 2024 Remi Collet <remi@remirepo.net> - 1.29.0-1
+- update to 1.29.0
+- raise dependency to libmongocrypt 1.12.0
+
 * Thu Oct 10 2024 Remi Collet <remi@remirepo.net> - 1.28.1-1
 - update to 1.28.1
 

@@ -1986,7 +1986,16 @@ test_should_be_skipped (const test_skip_t *skips, const char *description)
 {
    if (skips) {
       for (const test_skip_t *iter = skips; iter->description != NULL; iter++) {
-         if (0 == strcmp (description, iter->description)) {
+         if (iter->check_substring) {
+            if (NULL != strstr (description, iter->description)) {
+               fprintf (stderr,
+                        "  - %s SKIPPED (contains '%s'), due to reason: %s\n",
+                        description,
+                        iter->description,
+                        iter->reason);
+               return true;
+            }
+         } else if (0 == strcmp (description, iter->description)) {
             fprintf (stderr, "  - %s SKIPPED, due to reason: %s\n", description, iter->reason);
             return true;
          }
