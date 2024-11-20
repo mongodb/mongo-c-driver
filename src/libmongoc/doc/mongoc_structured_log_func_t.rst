@@ -26,6 +26,10 @@ Handlers may use any operating system or ``libbson`` functions but MUST not use 
 * :symbol:`mongoc_structured_log_get_named_component`
 * :symbol:`mongoc_structured_log_get_max_level_for_component`
 
+Use of other ``libmongoc`` APIs will have undefined consequences, including deadlocks and unbounded recursion.
+
+Applications that wish to use MongoDB itself as a logging destination will need to store the serialized messages temporarily and insert them asynchronously from outside the log handler.
+
 Parameters
 ----------
 

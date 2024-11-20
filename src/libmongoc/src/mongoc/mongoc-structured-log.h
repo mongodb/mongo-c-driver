@@ -67,6 +67,15 @@ typedef void (*mongoc_structured_log_func_t) (const mongoc_structured_log_entry_
  * mongoc_structured_log_entry_get_component to filter log messages, and
  * selectively call mongoc_structured_log_entry_message_as_bson to create
  * a bson_t for log messages only when needed.
+ *
+ * Any operating system or libbson APIs may be used by the callback, but
+ * libmongoc must be used only in limited ways to prevent deadlocks or
+ * unbounded recursion. See libmongoc/doc/mongoc_structured_log_func_t.rst
+ * for a complete list of allowed APIs for handlers to use.
+ *
+ * Applications that wish to use MongoDB itself as a logging destination will
+ * need to store the serialized messages temporarily and insert them later
+ * from outside the log handler.
  */
 MONGOC_EXPORT (void)
 mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data);
