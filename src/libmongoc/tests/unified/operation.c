@@ -3881,21 +3881,19 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
          goto done;
       };
 
+      _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
+
       // @todo Re-examine this once we have support for connection pools in the unified test
       //    runner. Without pooling, all events we could be waiting on would be coming
-      //    from single-threaded (blocking) topology scans. There's no reason for those
-      //    to happen without some explicit activity, and the tests aren't written to account
-      //    for this. We could work around it by sending a command (and hiding its excess events/logs)
-      //    or by directly initiating a scan.
+      //    from single-threaded (blocking) topology scans, or from lazily opening the topology
+      //    description when it's first used. Request server selection after blocking, to
+      //    handle either of these cases.
       {
          mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
-         if (!mc_client) {
-            goto done;
+         if (mc_client) {
+            mongoc_topology_select_server_id (mc_client->topology, MONGOC_SS_READ, NULL, NULL, NULL, error);
          }
-         _mongoc_topology_do_blocking_scan (mc_client->topology, error);
       }
-
-      _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
    }
 
    result_from_ok (result);
