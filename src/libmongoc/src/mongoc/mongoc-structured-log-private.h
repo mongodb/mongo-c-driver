@@ -139,6 +139,18 @@ BSON_BEGIN_DECLS
    {.func = _mongoc_structured_log_append_boolean, .arg1.utf8 = (_key_or_null), .arg2.boolean = (_value_boolean)},
 
 /**
+ * @def error(key, value)
+ * @brief Structured log item, bson_error_t document
+ *
+ * Serializes the fields of a bson_error_t as a subdocument with the indicated key.
+ *
+ * @param key Key as a NULL-terminated const char * expression, or NULL to skip this item.
+ * @param value Error as a const bson_error_t * expression, or NULL for a null value.
+ */
+#define _mongoc_structured_log_item_error(_key_or_null, _error_or_null) \
+   {.func = _mongoc_structured_log_append_error, .arg1.utf8 = (_key_or_null), .arg2.error = (_error_or_null)},
+
+/**
  * @def oid_as_hex(key, value)
  * @brief Structured log item, bson_oid_t converted to a hex string
  *
@@ -286,13 +298,14 @@ struct mongoc_structured_log_builder_stage_t {
    mongoc_structured_log_builder_func_t func; // NULL sentinel here
    union {
       const bson_error_t *error;
+      const char *utf8;
       const mongoc_cmd_t *cmd;
       const mongoc_server_description_t *server_description;
-      const char *utf8;
    } arg1;
    union {
       bool boolean;
       bson_oid_t *oid;
+      const bson_error_t *error;
       const bson_t *bson;
       const char *utf8;
       int32_t int32;
@@ -343,6 +356,9 @@ _mongoc_structured_log_append_int64 (bson_t *bson, const mongoc_structured_log_b
 
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_boolean (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_error (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
 
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_oid_as_hex (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);

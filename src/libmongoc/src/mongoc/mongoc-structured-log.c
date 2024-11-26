@@ -685,6 +685,32 @@ _mongoc_structured_log_append_cmd_name_reply (bson_t *bson, const mongoc_structu
 }
 
 static void
+_mongoc_structured_log_append_error_contents (bson_t *bson, const bson_error_t *error)
+{
+   BSON_APPEND_INT32 (bson, "code", error->code);
+   BSON_APPEND_INT32 (bson, "domain", error->domain);
+   BSON_APPEND_UTF8 (bson, "message", error->message);
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_error (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+{
+   const char *key_or_null = stage->arg1.utf8;
+   const bson_error_t *error_or_null = stage->arg2.error;
+   if (key_or_null) {
+      if (error_or_null) {
+         bson_t child;
+         BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (bson, key_or_null, &child));
+         _mongoc_structured_log_append_error_contents (&child, error_or_null);
+         BSON_ASSERT (bson_append_document_end (bson, &child));
+      } else {
+         bson_append_null (bson, key_or_null, -1);
+      }
+   }
+   return stage + 1;
+}
+
+static void
 _mongoc_structured_log_append_redacted_cmd_failure (bson_t *bson,
                                                     bool is_sensitive,
                                                     const bson_t *reply,
@@ -713,9 +739,7 @@ _mongoc_structured_log_append_redacted_cmd_failure (bson_t *bson,
       // Client-side errors converted directly from bson_error_t, never redacted
       bson_t failure;
       BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (bson, "failure", &failure));
-      BSON_APPEND_INT32 (&failure, "code", error->code);
-      BSON_APPEND_INT32 (&failure, "domain", error->domain);
-      BSON_APPEND_UTF8 (&failure, "message", error->message);
+      _mongoc_structured_log_append_error_contents (&failure, error);
       BSON_ASSERT (bson_append_document_end (bson, &failure));
    }
 }

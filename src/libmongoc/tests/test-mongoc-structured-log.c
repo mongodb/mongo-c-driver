@@ -44,6 +44,8 @@ static BSON_INLINE void
 restore_state (structured_log_state state)
 {
    mongoc_structured_log_set_handler (state.handler, state.data);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+   mongoc_structured_log_set_max_levels_from_env ();
 }
 
 static void
@@ -92,6 +94,7 @@ test_structured_log_plain (void)
 
    structured_log_state old_state = save_state ();
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
 
    mongoc_structured_log (
       MONGOC_STRUCTURED_LOG_LEVEL_WARNING, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, "Plain log entry");
@@ -115,6 +118,7 @@ test_structured_log_plain_with_extra_data (void)
 
    structured_log_state old_state = save_state ();
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
@@ -165,6 +169,7 @@ test_structured_log_basic_data_types (void)
 
    structured_log_state old_state = save_state ();
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
@@ -213,6 +218,7 @@ test_structured_log_json (void)
 
    structured_log_state old_state = save_state ();
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
@@ -249,6 +255,7 @@ test_structured_log_oid (void)
 
    structured_log_state old_state = save_state ();
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
@@ -256,6 +263,52 @@ test_structured_log_oid (void)
                           oid_as_hex ("kOID", &oid),
                           oid_as_hex ("kNull", NULL),
                           oid_as_hex (NULL, NULL));
+
+   int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
+   ASSERT_CMPINT (calls, ==, 1);
+   restore_state (old_state);
+   bson_destroy (assumption.expected_bson);
+}
+
+void
+test_structured_log_error (void)
+{
+   struct log_assumption assumption = {
+      .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+      .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+      .expected_envelope.message = "Log entry with bson_error_t values",
+      .expected_bson = BCON_NEW ("message",
+                                 BCON_UTF8 ("Log entry with bson_error_t values"),
+                                 "failure",
+                                 "{",
+                                 "code",
+                                 BCON_INT32 (0xabab5555),
+                                 "domain",
+                                 BCON_INT32 (0x87654321),
+                                 "message",
+                                 BCON_UTF8 ("Some Text"),
+                                 "}",
+                                 "null",
+                                 BCON_NULL),
+      .expected_calls = 1,
+   };
+
+   const bson_error_t err = {
+      .domain = 0x87654321,
+      .code = 0xabab5555,
+      .message = "Some Text",
+   };
+
+   structured_log_state old_state = save_state ();
+   mongoc_structured_log_set_handler (structured_log_func, &assumption);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_INFO);
+
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                          "Log entry with bson_error_t values",
+                          error ("failure", &err),
+                          error (NULL, NULL),
+                          error ("null", NULL));
 
    int calls = mcommon_atomic_int_fetch (&assumption.calls_atomic, mcommon_memory_order_seq_cst);
    ASSERT_CMPINT (calls, ==, 1);
@@ -317,6 +370,7 @@ test_structured_log_server_description (void)
 
    structured_log_state old_state = save_state ();
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
 
    mongoc_structured_log (
       MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
@@ -416,6 +470,7 @@ test_structured_log_command (void)
 
    structured_log_state old_state = save_state ();
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
@@ -464,6 +519,7 @@ test_structured_log_duration (void)
 
    structured_log_state old_state = save_state ();
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
+   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
@@ -577,6 +633,7 @@ test_structured_log_install (TestSuite *suite)
    TestSuite_Add (suite, "/structured_log/basic_data_types", test_structured_log_basic_data_types);
    TestSuite_Add (suite, "/structured_log/json", test_structured_log_json);
    TestSuite_Add (suite, "/structured_log/oid", test_structured_log_oid);
+   TestSuite_Add (suite, "/structured_log/error", test_structured_log_error);
    TestSuite_Add (suite, "/structured_log/server_description", test_structured_log_server_description);
    TestSuite_Add (suite, "/structured_log/command", test_structured_log_command);
    TestSuite_Add (suite, "/structured_log/duration", test_structured_log_duration);
