@@ -387,25 +387,20 @@ server_changed (const mongoc_apm_server_changed_t *changed)
    mongoc_apm_server_changed_get_topology_id (changed, &topology_id);
 
    bson_t *serialized = bson_new ();
+   const mongoc_server_description_t *previous_sd = mongoc_apm_server_changed_get_previous_description (changed);
+   const mongoc_server_description_t *new_sd = mongoc_apm_server_changed_get_new_description (changed);
+
+   // Limited to fields defined in the unified test schema
+   mongoc_server_description_content_flags_t sd_flags = MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_TYPE;
    bsonBuildAppend (
       *serialized,
-      kv ("address", cstr (mongoc_apm_server_changed_get_host (changed)->host_and_port)),
-      kv ("topologyId", oid (&topology_id)),
-      kv ("previousDescription",
-          bson (
-             *mongoc_server_description_hello_response (mongoc_apm_server_changed_get_previous_description (changed)))),
+      kv ("previousDescription", doc (do ({
+             mongoc_server_description_append_contents_to_bson (previous_sd, bsonBuildContext.doc, sd_flags);
+          }))),
       kv ("newDescription",
-          bson (*mongoc_server_description_hello_response (mongoc_apm_server_changed_get_new_description (changed)))));
+          doc (do ({ mongoc_server_description_append_contents_to_bson (new_sd, bsonBuildContext.doc, sd_flags); }))));
 
    event_store_or_destroy (entity, event_new ("serverDescriptionChangedEvent", serialized, false));
-}
-
-static void
-topology_description_serialize (bson_t *doc, const mongoc_topology_description_t *td)
-{
-   // A subset of fields defined by the Server Discovery And Monitoring spec
-   const char *type = mongoc_topology_description_type (td);
-   BSON_APPEND_UTF8 (doc, "type", type);
 }
 
 static void
@@ -416,20 +411,22 @@ topology_changed (const mongoc_apm_topology_changed_t *changed)
    mongoc_apm_topology_changed_get_topology_id (changed, &topology_id);
 
    bson_t *serialized = bson_new ();
-   bson_t previous_description = BSON_INITIALIZER;
-   bson_t new_description = BSON_INITIALIZER;
+   const mongoc_topology_description_t *previous_td = mongoc_apm_topology_changed_get_previous_description (changed);
+   const mongoc_topology_description_t *new_td = mongoc_apm_topology_changed_get_new_description (changed);
 
-   topology_description_serialize (&previous_description,
-                                   mongoc_apm_topology_changed_get_previous_description (changed));
-   topology_description_serialize (&new_description, mongoc_apm_topology_changed_get_new_description (changed));
-
+   // Limited to fields defined in the unified test schema
+   mongoc_topology_description_content_flags_t td_flags = MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_TYPE;
+   mongoc_server_description_content_flags_t sd_flags = 0;
    bsonBuildAppend (*serialized,
-                    kv ("topologyId", oid (&topology_id)),
-                    kv ("previousDescription", bson (previous_description)),
-                    kv ("newDescription", bson (new_description)));
+                    kv ("previousDescription", doc (do ({
+                           mongoc_topology_description_append_contents_to_bson (
+                              previous_td, bsonBuildContext.doc, td_flags, sd_flags);
+                        }))),
+                    kv ("newDescription", doc (do ({
+                           mongoc_topology_description_append_contents_to_bson (
+                              new_td, bsonBuildContext.doc, td_flags, sd_flags);
+                        }))));
 
-   bson_destroy (&previous_description);
-   bson_destroy (&new_description);
    event_store_or_destroy (entity, event_new ("topologyDescriptionChangedEvent", serialized, false));
 }
 

@@ -1256,5 +1256,9 @@ mongoc_server_description_append_contents_to_bson (const mongoc_server_descripti
          }
       }
    }
+   if ((flags & MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_TYPE) &&
+       !BSON_APPEND_UTF8 (bson, "type", mongoc_server_description_type (sd))) {
+      return false;
+   }
    return true;
 }

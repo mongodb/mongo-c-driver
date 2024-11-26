@@ -21,6 +21,7 @@
 
 #include "mongoc-set-private.h"
 #include "mongoc-server-description.h"
+#include "mongoc-server-description-private.h"
 #include "mongoc-array-private.h"
 #include "mongoc-topology-description.h"
 #include "mongoc-apm-private.h"
@@ -179,5 +180,23 @@ void
 mongoc_deprioritized_servers_add_if_sharded (mongoc_deprioritized_servers_t *ds,
                                              mongoc_topology_description_type_t topology_type,
                                              const mongoc_server_description_t *sd);
+
+typedef enum {
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_TYPE = (1 << 0),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SET_NAME = (1 << 1),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_ELECTION_ID = (1 << 2),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_SET_VERSION = (1 << 3),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SERVERS = (1 << 4),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_STALE = (1 << 5),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBLE = (1 << 6),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBILITY_ERROR = (1 << 7),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_LOGICAL_SESSION_TIMEOUT_MINUTES = (1 << 8),
+} mongoc_topology_description_content_flags_t;
+
+bool
+mongoc_topology_description_append_contents_to_bson (const mongoc_topology_description_t *td,
+                                                     bson_t *bson,
+                                                     mongoc_topology_description_content_flags_t flags,
+                                                     mongoc_server_description_content_flags_t servers_flags);
 
 #endif /* MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H */
