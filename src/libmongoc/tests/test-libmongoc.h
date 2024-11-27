@@ -288,4 +288,10 @@ test_framework_is_loadbalanced (void);
 int
 test_framework_skip_if_no_server_ssl (void);
 
+
+// `skip_if_no_large_allocations` skip tests requiring large allocations.
+// Large allocations were observed to fail when run with TSan, and are time consuming with ASan.
+int
+skip_if_no_large_allocations (void);
+
 #endif
