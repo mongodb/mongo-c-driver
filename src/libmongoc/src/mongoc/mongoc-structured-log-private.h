@@ -21,9 +21,10 @@
 
 #include <bson/bson.h>
 #include <common-bson-dsl-private.h>
-#include "mongoc-structured-log.h"
 #include "mongoc-cmd-private.h"
+#include "mongoc-error-private.h"
 #include "mongoc-server-description-private.h"
+#include "mongoc-structured-log.h"
 
 BSON_BEGIN_DECLS
 
@@ -184,7 +185,7 @@ BSON_BEGIN_DECLS
    {.func = _mongoc_structured_log_append_cmd,     \
     .arg1.cmd = (_cmd),                            \
     .arg2.cmd_flags =                              \
-       (0 _bsonDSL_mapMacro (_mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_CMD, __VA_ARGS__))},
+       (0 _bsonDSL_mapMacro (_mongoc_structured_log_flag_expr, MONGOC_LOGGED_CMD_CONTENT_FLAG, __VA_ARGS__))},
 
 /**
  * @def cmd_reply(cmd, reply)
@@ -255,8 +256,8 @@ BSON_BEGIN_DECLS
 #define _mongoc_structured_log_item_server_description(_server_description, ...) \
    {.func = _mongoc_structured_log_append_server_description,                    \
     .arg1.server_description = (_server_description),                            \
-    .arg2.server_description_flags = (0 _bsonDSL_mapMacro (                      \
-       _mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION, __VA_ARGS__))},
+    .arg2.server_description_flags =                                             \
+       (0 _bsonDSL_mapMacro (_mongoc_structured_log_flag_expr, MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG, __VA_ARGS__))},
 
 /**
  * @def monotonic_time_duration(duration)
@@ -273,20 +274,6 @@ typedef struct mongoc_structured_log_builder_stage_t mongoc_structured_log_build
 
 typedef const mongoc_structured_log_builder_stage_t *(*mongoc_structured_log_builder_func_t) (
    bson_t *bson, const mongoc_structured_log_builder_stage_t *stage);
-
-typedef enum {
-   MONGOC_STRUCTURED_LOG_CMD_COMMAND = (1 << 0),
-   MONGOC_STRUCTURED_LOG_CMD_DATABASE_NAME = (1 << 1),
-   MONGOC_STRUCTURED_LOG_CMD_COMMAND_NAME = (1 << 2),
-   MONGOC_STRUCTURED_LOG_CMD_OPERATION_ID = (1 << 3),
-} mongoc_structured_log_cmd_flags_t;
-
-typedef enum {
-   MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_HOST = (1 << 0),
-   MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_PORT = (1 << 1),
-   MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVER_CONNECTION_ID = (1 << 2),
-   MONGOC_STRUCTURED_LOG_SERVER_DESCRIPTION_SERVICE_ID = (1 << 3),
-} mongoc_structured_log_server_description_flags_t;
 
 struct mongoc_structured_log_builder_stage_t {
    // Why "stages" instead of a variable size argument list per item?
@@ -310,8 +297,9 @@ struct mongoc_structured_log_builder_stage_t {
       const char *utf8;
       int32_t int32;
       int64_t int64;
-      mongoc_structured_log_cmd_flags_t cmd_flags;
-      mongoc_structured_log_server_description_flags_t server_description_flags;
+      mongoc_error_content_flags_t error_flags;
+      mongoc_logged_cmd_content_flags_t cmd_flags;
+      mongoc_server_description_content_flags_t server_description_flags;
    } arg2;
    // Avoid adding an arg3, prefer to use additional stages
 };

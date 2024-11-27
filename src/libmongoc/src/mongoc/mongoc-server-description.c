@@ -1221,3 +1221,39 @@ mongoc_server_description_has_service_id (const mongoc_server_description_t *des
 {
    return !mcommon_oid_is_zero (&description->service_id);
 }
+
+bool
+mongoc_server_description_append_contents_to_bson (const mongoc_server_description_t *sd,
+                                                   bson_t *bson,
+                                                   mongoc_server_description_content_flags_t flags)
+{
+   BSON_ASSERT_PARAM (sd);
+   BSON_ASSERT_PARAM (bson);
+
+   if ((flags & MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_SERVER_HOST) &&
+       !BSON_APPEND_UTF8 (bson, "serverHost", sd->host.host)) {
+      return false;
+   }
+   if ((flags & MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_SERVER_PORT) &&
+       !BSON_APPEND_INT32 (bson, "serverPort", sd->host.port)) {
+      return false;
+   }
+   if (flags & MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_SERVER_CONNECTION_ID) {
+      int64_t server_connection_id = sd->server_connection_id;
+      if (MONGOC_NO_SERVER_CONNECTION_ID != server_connection_id) {
+         if (!BSON_APPEND_INT64 (bson, "serverConnectionId", server_connection_id)) {
+            return false;
+         }
+      }
+   }
+   if (flags & MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_SERVICE_ID) {
+      if (mongoc_server_description_has_service_id (sd)) {
+         char str[25];
+         bson_oid_to_string (&sd->service_id, str);
+         if (!BSON_APPEND_UTF8 (bson, "serviceId", str)) {
+            return false;
+         }
+      }
+   }
+   return true;
+}

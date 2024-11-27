@@ -322,10 +322,19 @@ _mongoc_error_append (bson_error_t *error, const char *s)
 }
 
 bool
-_mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson)
+mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, mongoc_error_content_flags_t flags)
 {
    BSON_ASSERT_PARAM (error);
    BSON_ASSERT_PARAM (bson);
-   return (BSON_APPEND_INT32 (bson, "code", error->code) && BSON_APPEND_INT32 (bson, "domain", error->domain) &&
-           BSON_APPEND_UTF8 (bson, "message", error->message));
+
+   if ((flags & MONGOC_ERROR_CONTENT_FLAG_CODE) && !BSON_APPEND_INT32 (bson, "code", error->code)) {
+      return false;
+   }
+   if ((flags & MONGOC_ERROR_CONTENT_FLAG_DOMAIN) && !BSON_APPEND_INT32 (bson, "domain", error->domain)) {
+      return false;
+   }
+   if ((flags & MONGOC_ERROR_CONTENT_FLAG_MESSAGE) && !BSON_APPEND_UTF8 (bson, "message", error->message)) {
+      return false;
+   }
+   return true;
 }
