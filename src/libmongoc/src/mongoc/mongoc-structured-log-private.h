@@ -89,7 +89,7 @@ BSON_BEGIN_DECLS
  * @def utf8_n(key, value, value_len)
  * @brief Structured log item, referencing a utf8 string value with explicit length.
  *
- * @param key Document key as a NULL-terminated const char * expression, or NULL to skip this item.
+ * @param key Document key as a NUL-terminated const char * expression, or NULL to skip this item.
  * @param value UTF8 value as a const char * expression, or NULL for a null value. May have embedded NUL bytes.
  * @param value_len UTF8 value length in bytes, as an int32_t expression.
  */
@@ -100,7 +100,7 @@ BSON_BEGIN_DECLS
  * @def utf8_nn(key, key_len, value, value_len)
  * @brief Structured log item, referencing a utf8 string with explicit key and value lengths.
  *
- * @param key Key as a NULL-terminated const char * expression, or NULL to skip this item.
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
  * @param value UTF8 value as a const char * expression, or NULL for a null value. May have embedded NUL bytes.
  * @param value_len UTF8 value length in bytes, as an int32_t expression.
  */
@@ -112,7 +112,7 @@ BSON_BEGIN_DECLS
  * @def int32(key, value)
  * @brief Structured log item, 32-bit integer
  *
- * @param key Key as a NULL-terminated const char * expression, or NULL to skip this item.
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
  * @param value Value as an int32_t expression.
  */
 #define _mongoc_structured_log_item_int32(_key_or_null, _value_int32) \
@@ -122,7 +122,7 @@ BSON_BEGIN_DECLS
  * @def int64(key, value)
  * @brief Structured log item, 64-bit integer
  *
- * @param key Key as a NULL-terminated const char * expression, or NULL to skip this item.
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
  * @param value Value as an int64_t expression.
  */
 #define _mongoc_structured_log_item_int64(_key_or_null, _value_int64) \
@@ -132,7 +132,7 @@ BSON_BEGIN_DECLS
  * @def boolean(key, value)
  * @brief Structured log item, boolean
  *
- * @param key Key as a NULL-terminated const char * expression, or NULL to skip this item.
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
  * @param value Value as a bool expression.
  */
 #define _mongoc_structured_log_item_boolean(_key_or_null, _value_boolean) \
@@ -144,7 +144,7 @@ BSON_BEGIN_DECLS
  *
  * Serializes the fields of a bson_error_t as a subdocument with the indicated key.
  *
- * @param key Key as a NULL-terminated const char * expression, or NULL to skip this item.
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
  * @param value Error as a const bson_error_t * expression, or NULL for a null value.
  */
 #define _mongoc_structured_log_item_error(_key_or_null, _error_or_null) \
@@ -154,7 +154,7 @@ BSON_BEGIN_DECLS
  * @def oid_as_hex(key, value)
  * @brief Structured log item, bson_oid_t converted to a hex string
  *
- * @param key Key as a NULL-terminated const char * expression, or NULL to skip this item.
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
  * @param value OID to convert as a const bson_oid_t * expression, or NULL for a null value.
  */
 #define _mongoc_structured_log_item_oid_as_hex(_key_or_null, _value_oid) \
@@ -167,7 +167,7 @@ BSON_BEGIN_DECLS
  * Always uses relaxed extended JSON format, and the current applicable
  * maximum document length for structured logging.
  *
- * @param key Key as a NULL-terminated const char * expression, or NULL to skip this item.
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
  * @param value BSON to convert as a const bson_t * expression, or NULL for a null value.
  */
 #define _mongoc_structured_log_item_bson_as_json(_key_or_null, _value_bson) \
