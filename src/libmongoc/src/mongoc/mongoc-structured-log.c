@@ -692,9 +692,10 @@ _mongoc_structured_log_append_error (bson_t *bson, const mongoc_structured_log_b
    if (key_or_null) {
       if (error_or_null) {
          bson_t child;
-         BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (bson, key_or_null, &child));
-         BSON_ASSERT (_mongoc_error_append_contents_to_bson (error_or_null, &child));
-         BSON_ASSERT (bson_append_document_end (bson, &child));
+         if (BSON_APPEND_DOCUMENT_BEGIN (bson, key_or_null, &child)) {
+            _mongoc_error_append_contents_to_bson (error_or_null, &child);
+            bson_append_document_end (bson, &child);
+         }
       } else {
          bson_append_null (bson, key_or_null, -1);
       }
@@ -714,15 +715,16 @@ _mongoc_structured_log_append_redacted_cmd_failure (bson_t *bson,
          // Redacted server-side message, must be a document with at most 'code', 'codeName', 'errorLabels'
          bson_t failure;
          bson_iter_t iter;
-         BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (bson, "failure", &failure));
-         bson_iter_init (&iter, reply);
-         while (bson_iter_next (&iter)) {
-            const char *key = bson_iter_key (&iter);
-            if (!strcmp (key, "code") || !strcmp (key, "codeName") || !strcmp (key, "errorLabels")) {
-               bson_append_iter (&failure, key, bson_iter_key_len (&iter), &iter);
+         if (BSON_APPEND_DOCUMENT_BEGIN (bson, "failure", &failure)) {
+            bson_iter_init (&iter, reply);
+            while (bson_iter_next (&iter)) {
+               const char *key = bson_iter_key (&iter);
+               if (!strcmp (key, "code") || !strcmp (key, "codeName") || !strcmp (key, "errorLabels")) {
+                  bson_append_iter (&failure, key, bson_iter_key_len (&iter), &iter);
+               }
             }
+            bson_append_document_end (bson, &failure);
          }
-         BSON_ASSERT (bson_append_document_end (bson, &failure));
       } else {
          // Non-redacted server side message, pass through
          BSON_APPEND_DOCUMENT (bson, "failure", reply);
@@ -730,9 +732,10 @@ _mongoc_structured_log_append_redacted_cmd_failure (bson_t *bson,
    } else {
       // Client-side errors converted directly from bson_error_t, never redacted
       bson_t failure;
-      BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (bson, "failure", &failure));
-      BSON_ASSERT (_mongoc_error_append_contents_to_bson (error, &failure));
-      BSON_ASSERT (bson_append_document_end (bson, &failure));
+      if (BSON_APPEND_DOCUMENT_BEGIN (bson, "failure", &failure)) {
+         _mongoc_error_append_contents_to_bson (error, &failure);
+         bson_append_document_end (bson, &failure);
+      }
    }
 }
 
