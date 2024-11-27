@@ -140,7 +140,7 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    failpoint_t *iter = NULL;
    mongoc_read_prefs_t *rp = NULL;
 
-   rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+   rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    LL_FOREACH (test->failpoints, iter)
    {
