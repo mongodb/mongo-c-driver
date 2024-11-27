@@ -93,4 +93,7 @@ _mongoc_error_is_auth (const bson_error_t *error);
 void
 _mongoc_error_append (bson_error_t *error, const char *s);
 
+bool
+_mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *doc_in_out);
+
 BSON_END_DECLS

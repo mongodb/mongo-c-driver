@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-structured-log.h"
-#include "mongoc-structured-log-private.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-apm-private.h"
 #include "common-atomic-private.h"
-#include "common-thread-private.h"
 #include "common-oid-private.h"
+#include "common-thread-private.h"
+#include "mongoc-apm-private.h"
+#include "mongoc-error-private.h"
+#include "mongoc-structured-log-private.h"
+#include "mongoc-structured-log.h"
+#include "mongoc-util-private.h"
 
 #define STRUCTURED_LOG_COMPONENT_TABLE_SIZE (1 + (size_t) MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION)
 
@@ -684,14 +684,6 @@ _mongoc_structured_log_append_cmd_name_reply (bson_t *bson, const mongoc_structu
    return stage + 1;
 }
 
-static void
-_mongoc_structured_log_append_error_contents (bson_t *bson, const bson_error_t *error)
-{
-   BSON_APPEND_INT32 (bson, "code", error->code);
-   BSON_APPEND_INT32 (bson, "domain", error->domain);
-   BSON_APPEND_UTF8 (bson, "message", error->message);
-}
-
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_error (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
 {
@@ -701,7 +693,7 @@ _mongoc_structured_log_append_error (bson_t *bson, const mongoc_structured_log_b
       if (error_or_null) {
          bson_t child;
          BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (bson, key_or_null, &child));
-         _mongoc_structured_log_append_error_contents (&child, error_or_null);
+         BSON_ASSERT (_mongoc_error_append_contents_to_bson (error_or_null, &child));
          BSON_ASSERT (bson_append_document_end (bson, &child));
       } else {
          bson_append_null (bson, key_or_null, -1);
@@ -739,7 +731,7 @@ _mongoc_structured_log_append_redacted_cmd_failure (bson_t *bson,
       // Client-side errors converted directly from bson_error_t, never redacted
       bson_t failure;
       BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (bson, "failure", &failure));
-      _mongoc_structured_log_append_error_contents (&failure, error);
+      BSON_ASSERT (_mongoc_error_append_contents_to_bson (error, &failure));
       BSON_ASSERT (bson_append_document_end (bson, &failure));
    }
 }
