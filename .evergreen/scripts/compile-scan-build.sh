@@ -126,7 +126,7 @@ if [[ -d /usr/local/Cellar/llvm ]]; then
   done
 fi
 
-if command -v scan-build && clmmand -v clang && command -v clang++; then
+if command -v scan-build && command -v clang && command -v clang++; then
   scan_build_binary="scan-build"
   CC="clang"
   CXX="clang++"
