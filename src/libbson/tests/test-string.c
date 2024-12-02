@@ -482,14 +482,6 @@ test_bson_string_alloc (void)
    bson_string_free (str, true);
 }
 
-static int
-skip_if_no_large_allocations (void)
-{
-   // Skip tests requiring large allocations.
-   // Large allocations were observed to fail when run with TSan, and are time consuming with ASan.
-   return test_framework_getenv_bool ("MONGOC_TEST_LARGE_ALLOCATIONS");
-}
-
 void
 test_string_install (TestSuite *suite)
 {
