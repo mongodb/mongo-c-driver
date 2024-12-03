@@ -576,7 +576,6 @@ check_schema_version (test_file_t *test_file)
    // 1.8 is fully supported. Later minor versions are partially supported.
    // 1.12 is partially supported (expectedError.errorResponse assertions)
    // 1.18 is partially supported (additional properties in kmsProviders)
-   // 1.20 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
    // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
    semver_t schema_version;
