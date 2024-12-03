@@ -245,6 +245,11 @@ hex_to_bin (const char *hex, uint32_t *len);
 char *
 bin_to_hex (const uint8_t *bin, uint32_t len);
 
+typedef struct {
+   bool set;
+   uint64_t value;
+} mcd_optional_u64_t;
+
 BSON_END_DECLS
 
 #endif /* MONGOC_UTIL_PRIVATE_H */
