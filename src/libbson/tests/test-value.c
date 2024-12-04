@@ -19,6 +19,7 @@
 #include <bson/bson.h>
 
 #include "TestSuite.h"
+#include "test-libmongoc.h" // skip_if_no_large_allocations
 
 
 static void
@@ -128,10 +129,25 @@ test_value_decimal128 (void)
    bson_destroy (&other);
 }
 
+static void
+test_value_big_copy (void *unused)
+{
+   BSON_UNUSED (unused);
+   char *big_string = bson_malloc (UINT32_MAX);
+   ASSERT (big_string);
+   memset (big_string, UINT32_MAX, 'a'); // `big_string` is not NULL-terminated.
+
+   bson_value_t dst;
+   bson_value_t src = {.value_type = BSON_TYPE_UTF8, .value = {.v_utf8 = {.str = big_string, .len = UINT32_MAX}}};
+   bson_value_copy (&src, &dst);
+   bson_free (big_string);
+   bson_value_destroy (&dst);
+}
 
 void
 test_value_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/bson/value/basic", test_value_basic);
    TestSuite_Add (suite, "/bson/value/decimal128", test_value_decimal128);
+   TestSuite_AddFull (suite, "/bson/value/big_copy", test_value_big_copy, NULL, NULL, skip_if_no_large_allocations);
 }

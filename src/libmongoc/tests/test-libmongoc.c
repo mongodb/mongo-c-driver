@@ -2664,3 +2664,9 @@ test_framework_skip_if_no_server_ssl (void)
    }
    return 0; // Skip.
 }
+
+int
+skip_if_no_large_allocations (void)
+{
+   return test_framework_getenv_bool ("MONGOC_TEST_LARGE_ALLOCATIONS");
+}

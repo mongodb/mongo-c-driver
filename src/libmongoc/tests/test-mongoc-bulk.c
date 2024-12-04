@@ -4726,6 +4726,46 @@ test_bulk_write_set_client_after_operation (void)
    mongoc_client_destroy (client);
 }
 
+// regression test for CDRIVER-5819
+static void
+test_bulk_write_set_client_updates_operation_id_when_client_changes (void)
+{
+   mock_server_t *mock_server;
+   mongoc_client_t *client, *client2;
+   mongoc_bulk_operation_t *bulk;
+   int64_t last_operation_id;
+
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
+   mock_server_run (mock_server);
+
+   client = test_framework_client_new_from_uri (mock_server_get_uri (mock_server), NULL);
+   BSON_ASSERT (client);
+   bulk = mongoc_bulk_operation_new (true /* ordered */);
+
+   // operation_id is fetched from the client
+   mongoc_bulk_operation_set_client (bulk, client);
+   ASSERT_CMPINT64 (bulk->operation_id, ==, client->cluster.operation_id);
+   last_operation_id = bulk->operation_id;
+
+   // operation_id is not changed when the client remains the same
+   mongoc_bulk_operation_set_client (bulk, client);
+   ASSERT_CMPINT64 (bulk->operation_id, ==, last_operation_id);
+   ASSERT_CMPINT64 (bulk->operation_id, ==, client->cluster.operation_id);
+
+   // operation_id is updated when the client changes
+   client2 = test_framework_client_new_from_uri (mock_server_get_uri (mock_server), NULL);
+   BSON_ASSERT (client2);
+
+   mongoc_bulk_operation_set_client (bulk, client2);
+   ASSERT_CMPINT64 (bulk->operation_id, !=, last_operation_id);
+   ASSERT_CMPINT64 (bulk->operation_id, ==, client2->cluster.operation_id);
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_client_destroy (client);
+   mongoc_client_destroy (client2);
+   mock_server_destroy (mock_server);
+}
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -4901,4 +4941,7 @@ test_bulk_install (TestSuite *suite)
                       /* Require server 4.2 for failCommand appName */
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddLive (suite, "/BulkOperation/set_client_after_operation", test_bulk_write_set_client_after_operation);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/set_client_updates_operation_id_when_client_changes",
+                                test_bulk_write_set_client_updates_operation_id_when_client_changes);
 }

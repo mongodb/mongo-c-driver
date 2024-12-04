@@ -32,7 +32,7 @@ class Distro(BaseModel):
         'vsMulti',
     ] | None = None
     size: Literal['small', 'large'] | None = None
-    arch: Literal['arm64', 'power8', 'zseries'] | None = None
+    arch: Literal['arm64', 'power', 'zseries'] | None = None
 
     @validator('os_ver')
     @classmethod
@@ -52,11 +52,12 @@ DEBIAN_DISTROS = [
 ]
 
 MACOS_DISTROS = [
-    Distro(name='macos-1100', os='macos', os_type='macos', os_ver='11.00'),
+    Distro(name='macos-14', os='macos', os_type='macos', os_ver='14'),
 ]
 
 MACOS_ARM64_DISTROS = [
-    Distro(name='macos-1100-arm64', os='macos', os_type='macos', os_ver='11.00', arch='arm64'),
+    Distro(name='macos-11-arm64', os='macos', os_type='macos', os_ver='11', arch='arm64'),
+    Distro(name='macos-14-arm64', os='macos', os_type='macos', os_ver='14', arch='arm64'),
 ]
 
 RHEL_DISTROS = [
@@ -77,14 +78,18 @@ RHEL_ARM64_DISTROS = [
     Distro(name='rhel92-arm64-small', os='rhel', os_type='linux', os_ver='9.0', size='small', arch='arm64'),
 ]
 
-RHEL_POWER8_DISTROS = [
-    Distro(name='rhel81-power8-large', os='rhel', os_type='linux', os_ver='8.1', size='large', arch='power8'),
-    Distro(name='rhel81-power8-small', os='rhel', os_type='linux', os_ver='8.1', size='small', arch='power8'),
+RHEL_POWER_DISTROS = [
+    Distro(name='rhel8-power-large', os='rhel', os_type='linux', os_ver='8', size='large', arch='power'),
+    Distro(name='rhel8-power-small', os='rhel', os_type='linux', os_ver='8', size='small', arch='power'),
+    Distro(name='rhel9-power-large', os='rhel', os_type='linux', os_ver='9', size='large', arch='power'),
+    Distro(name='rhel9-power-small', os='rhel', os_type='linux', os_ver='9', size='small', arch='power'),
 ]
 
 RHEL_ZSERIES_DISTROS = [
-    Distro(name='rhel83-zseries-large', os='rhel', os_type='linux', os_ver='8.3', size='large', arch='zseries'),
-    Distro(name='rhel83-zseries-small', os='rhel', os_type='linux', os_ver='8.3', size='small', arch='zseries'),
+    Distro(name='rhel8-zseries-large', os='rhel', os_type='linux', os_ver='8', size='large', arch='zseries'),
+    Distro(name='rhel8-zseries-small', os='rhel', os_type='linux', os_ver='8', size='small', arch='zseries'),
+    Distro(name='rhel9-zseries-large', os='rhel', os_type='linux', os_ver='9', size='large', arch='zseries'),
+    Distro(name='rhel9-zseries-small', os='rhel', os_type='linux', os_ver='9', size='small', arch='zseries'),
 ]
 
 UBUNTU_DISTROS = [
@@ -134,7 +139,7 @@ ALL_DISTROS = [] + \
     MACOS_ARM64_DISTROS + \
     RHEL_DISTROS + \
     RHEL_ARM64_DISTROS + \
-    RHEL_POWER8_DISTROS + \
+    RHEL_POWER_DISTROS + \
     RHEL_ZSERIES_DISTROS + \
     UBUNTU_DISTROS + \
     UBUNTU_ARM64_DISTROS + \

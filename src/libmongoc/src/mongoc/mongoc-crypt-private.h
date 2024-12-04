@@ -20,6 +20,7 @@
 #define MONGOC_CRYPT_PRIVATE_H
 
 #include "mongoc-config.h"
+#include "mongoc-util-private.h"
 
 #include "mongoc.h"
 
@@ -48,6 +49,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
                    mc_kms_credentials_callback creds_cb,
+                   mcd_optional_u64_t cache_expiration_ms,
                    bson_error_t *error);
 
 void

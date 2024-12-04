@@ -1,6 +1,6 @@
 {
   "description": "client bulkWrite retryable writes",
-  "schemaVersion": "1.20",
+  "schemaVersion": "1.21",
   "runOnRequirements": [
     {
       "minServerVersion": "8.0",
@@ -8,7 +8,8 @@
         "replicaset",
         "sharded",
         "load-balanced"
-      ]
+      ],
+      "serverless": "forbid"
     }
   ],
   "createEntities": [
@@ -427,7 +428,10 @@
                     {
                       "ns": "retryable-writes-tests.coll0"
                     }
-                  ]
+                  ],
+                  "txnNumber": {
+                    "$$exists": false
+                  }
                 }
               }
             }
@@ -778,7 +782,10 @@
                     {
                       "ns": "retryable-writes-tests.coll0"
                     }
-                  ]
+                  ],
+                  "txnNumber": {
+                    "$$exists": false
+                  }
                 }
               }
             }
@@ -860,7 +867,10 @@
                     {
                       "ns": "retryable-writes-tests.coll0"
                     }
-                  ]
+                  ],
+                  "txnNumber": {
+                    "$$exists": false
+                  }
                 }
               }
             }
