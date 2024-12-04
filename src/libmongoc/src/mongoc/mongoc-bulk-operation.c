@@ -885,14 +885,14 @@ mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk, void *client)
       BSON_ASSERT (bulk->session->client == client);
    }
 
-   bulk->client = (mongoc_client_t *) client;
-
-   /* if you call set_client, bulk was likely made by mongoc_bulk_operation_new,
-    * not mongoc_collection_create_bulk_operation_with_opts(), so operation_id
-    * is 0. */
-   if (!bulk->operation_id) {
-      bulk->operation_id = ++bulk->client->cluster.operation_id;
+   /* NOP if the client is not changing; otherwise, assign it and increment and
+    * fetch its operation_id. */
+   if ((void *) bulk->client == client) {
+      return;
    }
+
+   bulk->client = (mongoc_client_t *) client;
+   bulk->operation_id = ++bulk->client->cluster.operation_id;
 }
 
 
