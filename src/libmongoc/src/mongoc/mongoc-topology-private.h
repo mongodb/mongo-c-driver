@@ -30,6 +30,7 @@
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
 #include "mongoc-sleep.h"
+#include "mongoc-structured-log-private.h"
 #include <common-atomic-private.h>
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
@@ -209,6 +210,8 @@ typedef struct _mongoc_topology_t {
    mongoc_set_t *rtt_monitors;
    bson_mutex_t apm_mutex;
 
+   mongoc_structured_log_instance_t *structured_log;
+
    /* This is overridable for SRV polling tests to mock DNS records. */
    _mongoc_rr_resolver_fn rr_resolver;
 
@@ -236,6 +239,10 @@ mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
                                    mongoc_topology_description_t *td,
                                    mongoc_apm_callbacks_t const *callbacks,
                                    void *context);
+
+void
+mongoc_topology_set_structured_log_opts (mongoc_topology_t *topology, const mongoc_structured_log_opts_t *opts);
+
 
 void
 mongoc_topology_destroy (mongoc_topology_t *topology);

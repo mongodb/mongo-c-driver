@@ -535,6 +535,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    }
 
    mongoc_structured_log (
+      cluster->client->topology->structured_log,
       MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command started",
@@ -566,6 +567,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       }
 
       mongoc_structured_log (
+         cluster->client->topology->structured_log,
          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
          "Command succeeded",
@@ -599,6 +601,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       int64_t duration = bson_get_monotonic_time () - started;
 
       mongoc_structured_log (
+         cluster->client->topology->structured_log,
          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
          "Command failed",

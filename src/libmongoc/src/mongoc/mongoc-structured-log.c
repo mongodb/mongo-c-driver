@@ -25,7 +25,9 @@
 
 #define STRUCTURED_LOG_COMPONENT_TABLE_SIZE (1 + (size_t) MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION)
 
-static BSON_ONCE_FUN (_mongoc_structured_log_init_once);
+// Environment variables with default level for each log component
+static const char *gStructuredLogComponentEnvVars[] = {
+   "MONGODB_LOG_COMMAND", "MONGODB_LOG_TOPOLOGY", "MONGODB_LOG_SERVER_SELECTION", "MONGODB_LOG_CONNECTION"};
 
 // Canonical names for log components
 static const char *gStructuredLogComponentNames[] = {"command", "topology", "serverSelection", "connection"};
@@ -42,69 +44,36 @@ static const struct {
                                   {.name = "warn", .level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING},
                                   {.name = "info", .level = MONGOC_STRUCTURED_LOG_LEVEL_INFO}};
 
-// Values for gStructuredLog.handler.state
-typedef enum {
-   MONGOC_STRUCTURED_LOG_STATE_UNINITIALIZED = 0, // Must ensure_init. This state is never re-entered once exited.
-   MONGOC_STRUCTURED_LOG_STATE_INACTIVE = 1,      // Handler disabled. Always < MONGOC_STRUCTURED_LOG_STATE_ACTIVE.
-   MONGOC_STRUCTURED_LOG_STATE_ACTIVE = 2,        // Maybe active. Value is also a base to which log levels are added.
-} mongoc_structured_log_state_t;
+// Shared mutable data for the default handler
+typedef struct mongoc_structured_log_default_handler_shared_t {
+   bson_mutex_t mutex;
+   FILE *stream;
+   bool stream_fclose_on_destroy;
+} mongoc_structured_log_default_handler_shared_t;
 
-static struct {
-   /* Pre-computed table combining handler.state and component_level_table.
-    * Individual values are atomic, read with relaxed memory order.
-    *
-    * Table rebuilds are protected by a mutex. The build_mutex should
-    * be held while updating the table and while performing the instigating
-    * level or handler change.
-    *
-    * When acquiring both the build_mutex and an exclusive lock on handler.mutex
-    * to update the handler, the build mutex must always be acquired first.
-    * Log handlers must not be allowed to call functions that acquire the build_mutex.
-    */
-   struct {
-      int component_level_plus_state[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
-      bson_mutex_t build_mutex;
-   } combined_table;
-
-   // Handler state, updated under exclusive lock, callable/gettable with shared lock
-   struct {
-      bson_shared_mutex_t mutex;
-      mongoc_structured_log_func_t func;
-      void *user_data;
-      mongoc_structured_log_state_t state;
-   } handler;
-
-   // State only used by the default handler
-   struct {
-      bson_mutex_t stream_mutex;
-      FILE *stream;
-   } default_handler;
-
-   // Configured max document length, only modified during initialization
+struct mongoc_structured_log_opts_t {
+   mongoc_structured_log_func_t handler_func;
+   void *handler_user_data;
+   mongoc_structured_log_level_t max_level_per_component[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
    int32_t max_document_length;
+   char *default_handler_path;
+};
 
-   /* Main storage for public per-component max log levels.
-    * Atomic mongoc_structured_log_level_t, seq_cst memory order.
-    * Used only for getting/setting individual component levels.
-    * Not used directly by should_log, which relies on 'combined_table'. */
-   int component_level_table[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
-} gStructuredLog;
-
-static BSON_INLINE void
-_mongoc_structured_log_ensure_init (void)
-{
-   static bson_once_t init_once = BSON_ONCE_INIT;
-   bson_once (&init_once, &_mongoc_structured_log_init_once);
-}
+struct mongoc_structured_log_instance_t {
+   struct mongoc_structured_log_opts_t opts;                              // Immutable capture of log_opts, func != NULL
+   mongoc_structured_log_default_handler_shared_t default_handler_shared; // Inner mutability
+};
 
 bson_t *
 mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t *entry)
 {
+   BSON_ASSERT_PARAM (entry);
    bson_t *bson = bson_new ();
    BSON_APPEND_UTF8 (bson, "message", entry->envelope.message);
    const mongoc_structured_log_builder_stage_t *stage = entry->builder;
+   const mongoc_structured_log_opts_t *opts = &entry->envelope.instance->opts;
    while (stage->func) {
-      stage = stage->func (bson, stage);
+      stage = stage->func (bson, stage, opts);
    }
    return bson;
 }
@@ -112,151 +81,100 @@ mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t
 mongoc_structured_log_level_t
 mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entry)
 {
+   BSON_ASSERT_PARAM (entry);
    return entry->envelope.level;
 }
 
 mongoc_structured_log_component_t
 mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry)
 {
+   BSON_ASSERT_PARAM (entry);
    return entry->envelope.component;
 }
 
-static BSON_INLINE mongoc_structured_log_level_t
-_mongoc_structured_log_get_max_level_for_component (mongoc_structured_log_component_t component)
-{
-   unsigned table_index = (unsigned) component;
-   BSON_ASSERT (table_index < STRUCTURED_LOG_COMPONENT_TABLE_SIZE);
-   return mcommon_atomic_int_fetch (&gStructuredLog.component_level_table[table_index], mcommon_memory_order_seq_cst);
-}
-
 mongoc_structured_log_level_t
-mongoc_structured_log_get_max_level_for_component (mongoc_structured_log_component_t component)
+mongoc_structured_log_opts_get_max_level_for_component (const mongoc_structured_log_opts_t *opts,
+                                                        mongoc_structured_log_component_t component)
 {
-   _mongoc_structured_log_ensure_init ();
-   return _mongoc_structured_log_get_max_level_for_component (component);
-}
-
-static void
-_mongoc_structured_log_update_level_plus_state (void)
-{
-   // The caller MUST be holding the build_mutex throughout the operation which caused this table update.
-   // Pre-calculate a table of values that combine per-component level and global state.
-   // Needs to be updated when the handler is set/unset or when any level setting changes.
-   mongoc_structured_log_state_t handler_state = gStructuredLog.handler.state;
-   for (unsigned table_index = 0; table_index < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; table_index++) {
-      mongoc_structured_log_component_t component = (mongoc_structured_log_component_t) table_index;
-      mcommon_atomic_int_exchange (&gStructuredLog.combined_table.component_level_plus_state[table_index],
-                                   handler_state == MONGOC_STRUCTURED_LOG_STATE_ACTIVE
-                                      ? (int) MONGOC_STRUCTURED_LOG_STATE_ACTIVE +
-                                           (int) _mongoc_structured_log_get_max_level_for_component (component)
-                                      : (int) handler_state,
-                                   mcommon_memory_order_relaxed);
-   }
-}
-
-static void
-_mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data)
-{
-   bson_shared_mutex_lock (&gStructuredLog.handler.mutex); // Waits for handler invocations to end
-   gStructuredLog.handler.func = log_func;
-   gStructuredLog.handler.user_data = user_data;
-   gStructuredLog.handler.state =
-      log_func == NULL ? MONGOC_STRUCTURED_LOG_STATE_INACTIVE : MONGOC_STRUCTURED_LOG_STATE_ACTIVE;
-   bson_shared_mutex_unlock (&gStructuredLog.handler.mutex);
-}
-
-void
-mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data)
-{
-   _mongoc_structured_log_ensure_init ();
-
-   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
-   _mongoc_structured_log_set_handler (log_func, user_data);
-   _mongoc_structured_log_update_level_plus_state ();
-   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
-}
-
-void
-mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
-{
-   _mongoc_structured_log_ensure_init ();
-
-   bson_shared_mutex_lock_shared (&gStructuredLog.handler.mutex);
-   *log_func = gStructuredLog.handler.func;
-   *user_data = gStructuredLog.handler.user_data;
-   bson_shared_mutex_unlock_shared (&gStructuredLog.handler.mutex);
-}
-
-static void
-_mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_component_t component,
-                                                    mongoc_structured_log_level_t level)
-{
-   BSON_ASSERT (level >= MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY && level <= MONGOC_STRUCTURED_LOG_LEVEL_TRACE);
+   BSON_ASSERT_PARAM (opts);
    unsigned table_index = (unsigned) component;
-   BSON_ASSERT (table_index < STRUCTURED_LOG_COMPONENT_TABLE_SIZE);
-   mcommon_atomic_int_exchange (
-      &gStructuredLog.component_level_table[table_index], level, mcommon_memory_order_seq_cst);
-}
-
-void
-mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_component_t component,
-                                                   mongoc_structured_log_level_t level)
-{
-   _mongoc_structured_log_ensure_init ();
-
-   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
-   _mongoc_structured_log_set_max_level_for_component (component, level);
-   _mongoc_structured_log_update_level_plus_state ();
-   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
-}
-
-static void
-_mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level)
-{
-   for (int component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
-      _mongoc_structured_log_set_max_level_for_component ((mongoc_structured_log_component_t) component, level);
+   if (table_index < STRUCTURED_LOG_COMPONENT_TABLE_SIZE) {
+      return opts->max_level_per_component[table_index];
+   } else {
+      // As documented, unknown component enums return the lowest possible log level.
+      return MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY;
    }
 }
 
 void
-mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level)
+mongoc_structured_log_opts_set_handler (mongoc_structured_log_opts_t *opts,
+                                        mongoc_structured_log_func_t log_func,
+                                        void *user_data)
 {
-   _mongoc_structured_log_ensure_init ();
+   BSON_ASSERT_PARAM (opts);
+   opts->handler_func = log_func;
+   opts->handler_user_data = user_data;
+}
 
-   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
-   _mongoc_structured_log_set_max_level_for_all_components (level);
-   _mongoc_structured_log_update_level_plus_state ();
-   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
+void
+mongoc_structured_log_get_handler (const mongoc_structured_log_opts_t *opts,
+                                   mongoc_structured_log_func_t *log_func,
+                                   void **user_data)
+{
+   BSON_ASSERT_PARAM (opts);
+   *log_func = opts->handler_func;
+   *user_data = opts->handler_user_data;
+}
+
+bool
+mongoc_structured_log_opts_set_max_level_for_component (mongoc_structured_log_opts_t *opts,
+                                                        mongoc_structured_log_component_t component,
+                                                        mongoc_structured_log_level_t level)
+{
+   BSON_ASSERT_PARAM (opts);
+   if (level >= MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY && level <= MONGOC_STRUCTURED_LOG_LEVEL_TRACE) {
+      unsigned table_index = (unsigned) component;
+      if (table_index < STRUCTURED_LOG_COMPONENT_TABLE_SIZE) {
+         opts->max_level_per_component[table_index] = level;
+         return true;
+      }
+   }
+   return false;
+}
+
+bool
+mongoc_structured_log_opts_set_max_level_for_all_components (mongoc_structured_log_opts_t *opts,
+                                                             mongoc_structured_log_level_t level)
+{
+   BSON_ASSERT_PARAM (opts);
+   for (int component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
+      if (!mongoc_structured_log_opts_set_max_level_for_component (
+             opts, (mongoc_structured_log_component_t) component, level)) {
+         // Fine to stop on the first error, always means 'level' is wrong and none of these will succeed.
+         return false;
+      }
+   }
+   return true;
 }
 
 bool
 _mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envelope)
 {
+   // Note that the instance's max_level_per_component table will also be
+   // set to zeroes if logging is disabled. See mongoc_structured_log_instance_new.
    unsigned table_index = (unsigned) envelope->component;
    BSON_ASSERT (table_index < STRUCTURED_LOG_COMPONENT_TABLE_SIZE);
-   const int volatile *level_plus_state_ptr = &gStructuredLog.combined_table.component_level_plus_state[table_index];
-
-   // One atomic fetch gives us the per-component level, the global
-   // enable/disable state, and lets us detect whether initialization is needed.
-   int level_plus_state = mcommon_atomic_int_fetch (level_plus_state_ptr, mcommon_memory_order_relaxed);
-   if (BSON_UNLIKELY (level_plus_state == (int) MONGOC_STRUCTURED_LOG_STATE_UNINITIALIZED)) {
-      _mongoc_structured_log_ensure_init ();
-      level_plus_state = mcommon_atomic_int_fetch (level_plus_state_ptr, mcommon_memory_order_relaxed);
-   }
-   return envelope->level + MONGOC_STRUCTURED_LOG_STATE_ACTIVE <= level_plus_state;
+   return envelope->level <= envelope->instance->opts.max_level_per_component[table_index];
 }
 
 void
 _mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry)
 {
-   // should_log has guaranteed that we've run init by now.
-   // No guarantee that there's actually a handler set but it's likely.
-   bson_shared_mutex_lock_shared (&gStructuredLog.handler.mutex);
-   mongoc_structured_log_func_t func = gStructuredLog.handler.func;
-   if (BSON_LIKELY (func)) {
-      func (entry, gStructuredLog.handler.user_data);
-   }
-   bson_shared_mutex_unlock_shared (&gStructuredLog.handler.mutex);
+   // By now, func is not allowed to be NULL. See mongoc_structured_log_instance_new.
+   mongoc_structured_log_instance_t *instance = entry->envelope.instance;
+   mongoc_structured_log_func_t func = instance->opts.handler_func;
+   BSON_ASSERT (func);
+   func (entry, instance->opts.handler_user_data);
 }
 
 static bool
@@ -271,7 +189,7 @@ _mongoc_structured_log_get_log_level_from_env (const char *variable,
    if (mongoc_structured_log_get_named_level (level, out)) {
       return true;
    }
-   // Only report the first instance of each error
+   // Only log the first instance of each error per process
    if (0 == mcommon_atomic_int_fetch_add (err_count_atomic, 1, mcommon_memory_order_seq_cst)) {
       MONGOC_WARNING ("Invalid log level '%s' read from environment variable %s. Ignoring it.", level, variable);
    }
@@ -289,6 +207,9 @@ mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level)
 bool
 mongoc_structured_log_get_named_level (const char *name, mongoc_structured_log_level_t *out)
 {
+   BSON_ASSERT_PARAM (name);
+   BSON_ASSERT_PARAM (out);
+
    // First check canonical names
    {
       const size_t table_size = sizeof gStructuredLogLevelNames / sizeof gStructuredLogLevelNames[0];
@@ -325,6 +246,9 @@ mongoc_structured_log_get_component_name (mongoc_structured_log_component_t comp
 bool
 mongoc_structured_log_get_named_component (const char *name, mongoc_structured_log_component_t *out)
 {
+   BSON_ASSERT_PARAM (name);
+   BSON_ASSERT_PARAM (out);
+
    const size_t table_size = sizeof gStructuredLogComponentNames / sizeof gStructuredLogComponentNames[0];
    for (unsigned table_index = 0; table_index < table_size; table_index++) {
       if (!strcasecmp (name, gStructuredLogComponentNames[table_index])) {
@@ -355,94 +279,98 @@ _mongoc_structured_log_get_max_document_length_from_env (void)
       return (int32_t) int_value;
    }
 
-   MONGOC_WARNING ("Invalid length '%s' read from environment variable %s. Ignoring it.", max_length_str, variable);
+   // Only log the first instance of each error per process
+   static int err_count_atomic;
+   if (0 == mcommon_atomic_int_fetch_add (&err_count_atomic, 1, mcommon_memory_order_seq_cst)) {
+      MONGOC_WARNING ("Invalid length '%s' read from environment variable %s. Ignoring it.", max_length_str, variable);
+   }
    return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
 }
 
-static void
-_mongoc_structured_log_set_max_levels_from_env (void)
+bool
+mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t *opts)
 {
+   BSON_ASSERT_PARAM (opts);
+
+   bool all_ok = true;
    mongoc_structured_log_level_t level;
-   {
-      static int err_count_atomic = 0;
-      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level, &err_count_atomic)) {
-         _mongoc_structured_log_set_max_level_for_all_components (level);
+
+   // Errors are not fatal by detault; always reported by return value, and reported the first time only via a log
+   // warning.
+   static int err_count_all_atomic;
+   static int err_count_per_component_atomic[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
+
+   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level, &err_count_all_atomic)) {
+      mongoc_structured_log_opts_set_max_level_for_all_components (opts, level);
+   } else {
+      all_ok = false;
+   }
+
+   for (int component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
+      if (_mongoc_structured_log_get_log_level_from_env (
+             gStructuredLogComponentEnvVars[component], &level, &err_count_per_component_atomic[component])) {
+         mongoc_structured_log_opts_set_max_level_for_component (
+            opts, (mongoc_structured_log_component_t) component, level);
+      } else {
+         all_ok = false;
       }
    }
-   {
-      static int err_count_atomic = 0;
-      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_COMMAND", &level, &err_count_atomic)) {
-         _mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, level);
-      }
-   }
-   {
-      static int err_count_atomic = 0;
-      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_CONNECTION", &level, &err_count_atomic)) {
-         _mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION, level);
-      }
-   }
-   {
-      static int err_count_atomic = 0;
-      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_TOPOLOGY", &level, &err_count_atomic)) {
-         _mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY, level);
-      }
-   }
-   {
-      static int err_count_atomic = 0;
-      if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_SERVER_SELECTION", &level, &err_count_atomic)) {
-         _mongoc_structured_log_set_max_level_for_component (MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION, level);
-      }
-   }
+
+   return all_ok;
 }
 
-void
-mongoc_structured_log_set_max_levels_from_env (void)
+static void
+_mongoc_structured_log_default_handler_open_stream (mongoc_structured_log_default_handler_shared_t *shared,
+                                                    const char *path)
 {
-   _mongoc_structured_log_ensure_init ();
+   // shared->mutex must already be locked
 
-   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
-   _mongoc_structured_log_set_max_levels_from_env ();
-   _mongoc_structured_log_update_level_plus_state ();
-   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
-}
-
-static FILE *
-_mongoc_structured_log_open_stream (void)
-{
-   const char *path = getenv ("MONGODB_LOG_PATH");
    if (!path || !strcmp (path, "stderr")) {
-      return stderr;
+      // Default or explicit stderr
+      shared->stream = stderr;
+      shared->stream_fclose_on_destroy = false;
+   } else if (!strcmp (path, "stdout")) {
+      shared->stream = stdout;
+      shared->stream_fclose_on_destroy = false;
+   } else {
+      FILE *file = fopen (path, "a");
+      if (file) {
+         shared->stream = file;
+         shared->stream_fclose_on_destroy = true;
+      } else {
+         MONGOC_WARNING ("Cannot open log file '%s' for writing. Logging to stderr instead.", path);
+         shared->stream = stderr;
+         shared->stream_fclose_on_destroy = false;
+      }
    }
-   if (!strcmp (path, "stdout")) {
-      return stdout;
-   }
-   FILE *file = fopen (path, "a");
-   if (!file) {
-      MONGOC_WARNING ("Cannot open log file '%s' for writing. Logging to stderr instead.", path);
-      return stderr;
-   }
-   return file;
 }
 
 static FILE *
-_mongoc_structured_log_get_stream (void)
+_mongoc_structured_log_default_handler_get_stream (mongoc_structured_log_instance_t *instance)
 {
-   // Not re-entrant; protected by the default_handler.stream_mutex.
-   FILE *log_stream = gStructuredLog.default_handler.stream;
-   if (log_stream) {
+   // instance->default_handler_shared->mutex must already be locked
+   {
+      FILE *log_stream = instance->default_handler_shared.stream;
+      if (log_stream) {
+         return log_stream;
+      }
+   }
+   _mongoc_structured_log_default_handler_open_stream (&instance->default_handler_shared,
+                                                       instance->opts.default_handler_path);
+   {
+      FILE *log_stream = instance->default_handler_shared.stream;
+      BSON_ASSERT (log_stream);
       return log_stream;
    }
-   // Note that log_stream may be the global stderr/stdout streams,
-   // or an allocated FILE that is never closed.
-   log_stream = _mongoc_structured_log_open_stream ();
-   gStructuredLog.default_handler.stream = log_stream;
-   return log_stream;
 }
 
 static void
-mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
+_mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
-   // We can serialize the message before taking the stream lock
+   BSON_UNUSED (user_data);
+   mongoc_structured_log_instance_t *instance = entry->envelope.instance;
+
+   // We can serialize the message before taking the default_handler_shared mutex
    bson_t *bson_message = mongoc_structured_log_entry_message_as_bson (entry);
    char *json_message = bson_as_relaxed_extended_json (bson_message, NULL);
    bson_destroy (bson_message);
@@ -451,49 +379,119 @@ mongoc_structured_log_default_handler (const mongoc_structured_log_entry_t *entr
    const char *component_name =
       mongoc_structured_log_get_component_name (mongoc_structured_log_entry_get_component (entry));
 
-   bson_mutex_lock (&gStructuredLog.default_handler.stream_mutex);
-   fprintf (_mongoc_structured_log_get_stream (), "MONGODB_LOG %s %s %s\n", level_name, component_name, json_message);
-   bson_mutex_unlock (&gStructuredLog.default_handler.stream_mutex);
+   bson_mutex_lock (&instance->default_handler_shared.mutex);
+   fprintf (_mongoc_structured_log_default_handler_get_stream (instance),
+            "MONGODB_LOG %s %s %s\n",
+            level_name,
+            component_name,
+            json_message);
+   bson_mutex_unlock (&instance->default_handler_shared.mutex);
 
    bson_free (json_message);
 }
 
-static BSON_ONCE_FUN (_mongoc_structured_log_init_once)
+static void
+_mongoc_structured_log_no_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
-   bson_shared_mutex_init (&gStructuredLog.handler.mutex);
-   bson_mutex_init (&gStructuredLog.default_handler.stream_mutex);
-   bson_mutex_init (&gStructuredLog.combined_table.build_mutex);
-
-   gStructuredLog.max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
-
-   bson_mutex_lock (&gStructuredLog.combined_table.build_mutex);
-
-   _mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL);
-   _mongoc_structured_log_set_max_levels_from_env ();
-
-   // The default handler replaces MONGOC_STRUCTURED_LOG_STATE_MAYBE_UNINITIALIZED.
-   // Other threads may immediately submit log entries, so this must happen after
-   // log level setup and just before we unlock the build_mutex and return.
-   _mongoc_structured_log_set_handler (mongoc_structured_log_default_handler, NULL);
-   _mongoc_structured_log_update_level_plus_state ();
-
-   bson_mutex_unlock (&gStructuredLog.combined_table.build_mutex);
-
-   BSON_ONCE_RETURN;
+   // Stub, for when logging is disabled. Only possible to call at MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY.
+   BSON_UNUSED (entry);
+   BSON_UNUSED (user_data);
 }
 
-char *
-mongoc_structured_log_document_to_json (const bson_t *document, size_t *length)
+mongoc_structured_log_opts_t *
+mongoc_structured_log_opts_new (void)
 {
-   bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_RELAXED, gStructuredLog.max_document_length);
-   char *json = bson_as_json_with_opts (document, length, opts);
-   bson_json_opts_destroy (opts);
+   mongoc_structured_log_opts_t *opts = (mongoc_structured_log_opts_t *) bson_malloc0 (sizeof *opts);
+
+   // Capture default state from the environment now
+   opts->default_handler_path = bson_strdup (getenv ("MONGODB_LOG_PATH"));
+   opts->max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
+   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL);
+   mongoc_structured_log_opts_set_max_levels_from_env (opts);
+
+   // Set default handler. Its shared state is allocated later, as part of instance_t.
+   mongoc_structured_log_opts_set_handler (opts, _mongoc_structured_log_default_handler, NULL);
+
+   return opts;
+}
+
+void
+mongoc_structured_log_opts_destroy (mongoc_structured_log_opts_t *opts)
+{
+   if (opts) {
+      bson_free (opts->default_handler_path);
+      bson_free (opts);
+   }
+}
+
+mongoc_structured_log_instance_t *
+mongoc_structured_log_instance_new (const mongoc_structured_log_opts_t *opts)
+{
+   /* Creating the instance captures an immutable copy of the options.
+    * We also make a transformation that simplifies the critical path in
+    * _mongoc_structured_log_should_log so that it only needs to check the
+    * per-component table: In the instance, NULL handlers are no longer
+    * allowed. If structured logging is disabled, the per-component table
+    * will be set to the lowest possible levels and a stub handler function
+    * is set in case of 'emergency' logs.
+    *
+    * 'opts' is optional; if NULL, structured logging is disabled.
+    * (To request default options, you still need to use
+    * mongoc_structured_log_opts_new) */
+
+   mongoc_structured_log_instance_t *instance = (mongoc_structured_log_instance_t *) bson_malloc0 (sizeof *instance);
+   bson_mutex_init (&instance->default_handler_shared.mutex);
+
+   if (opts) {
+      instance->opts.default_handler_path = bson_strdup (opts->default_handler_path);
+      instance->opts.max_document_length = opts->max_document_length;
+      instance->opts.handler_func = opts->handler_func;
+      instance->opts.handler_user_data = opts->handler_user_data;
+   }
+   if (instance->opts.handler_func) {
+      if (opts) {
+         memcpy (instance->opts.max_level_per_component,
+                 opts->max_level_per_component,
+                 sizeof instance->opts.max_level_per_component);
+      }
+   } else {
+      // No handler; leave the max_level_per_component table zero'ed, and add a stub handler for emergency level only.
+      instance->opts.handler_func = _mongoc_structured_log_no_handler;
+   }
+
+   return instance;
+}
+
+void
+mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instance)
+{
+   if (instance) {
+      bson_mutex_destroy (&instance->default_handler_shared.mutex);
+      bson_free (instance->opts.default_handler_path);
+      if (instance->default_handler_shared.stream_fclose_on_destroy) {
+         fclose (instance->default_handler_shared.stream);
+      }
+      bson_free (instance);
+   }
+}
+
+static char *
+_mongoc_structured_log_inner_document_to_json (const bson_t *document,
+                                               size_t *length,
+                                               const mongoc_structured_log_opts_t *opts)
+{
+   bson_json_opts_t *json_opts = bson_json_opts_new (BSON_JSON_MODE_RELAXED, opts->max_document_length);
+   char *json = bson_as_json_with_opts (document, length, json_opts);
+   bson_json_opts_destroy (json_opts);
    return json;
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_utf8 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_utf8 (bson_t *bson,
+                                    const mongoc_structured_log_builder_stage_t *stage,
+                                    const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    const char *key_or_null = stage->arg1.utf8;
    if (key_or_null) {
       bson_append_utf8 (bson, key_or_null, -1, stage->arg2.utf8, -1);
@@ -502,8 +500,11 @@ _mongoc_structured_log_append_utf8 (bson_t *bson, const mongoc_structured_log_bu
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_utf8_n_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_utf8_n_stage0 (bson_t *bson,
+                                             const mongoc_structured_log_builder_stage_t *stage,
+                                             const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    BSON_ASSERT (stage[1].func == _mongoc_structured_log_append_utf8_n_stage1);
    const char *key_or_null = stage[0].arg1.utf8;
    int32_t key_len = stage[0].arg2.int32;
@@ -516,18 +517,24 @@ _mongoc_structured_log_append_utf8_n_stage0 (bson_t *bson, const mongoc_structur
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_utf8_n_stage1 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_utf8_n_stage1 (bson_t *bson,
+                                             const mongoc_structured_log_builder_stage_t *stage,
+                                             const mongoc_structured_log_opts_t *opts)
 {
    // Never called, marks the second stage in a two-stage utf8_n
    BSON_UNUSED (bson);
    BSON_UNUSED (stage);
+   BSON_UNUSED (opts);
    BSON_ASSERT (false);
    return NULL;
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_int32 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_int32 (bson_t *bson,
+                                     const mongoc_structured_log_builder_stage_t *stage,
+                                     const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    const char *key_or_null = stage->arg1.utf8;
    if (key_or_null) {
       bson_append_int32 (bson, key_or_null, -1, stage->arg2.int32);
@@ -536,8 +543,11 @@ _mongoc_structured_log_append_int32 (bson_t *bson, const mongoc_structured_log_b
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_int64 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_int64 (bson_t *bson,
+                                     const mongoc_structured_log_builder_stage_t *stage,
+                                     const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    const char *key_or_null = stage->arg1.utf8;
    if (key_or_null) {
       bson_append_int64 (bson, key_or_null, -1, stage->arg2.int64);
@@ -546,8 +556,11 @@ _mongoc_structured_log_append_int64 (bson_t *bson, const mongoc_structured_log_b
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_boolean (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_boolean (bson_t *bson,
+                                       const mongoc_structured_log_builder_stage_t *stage,
+                                       const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    const char *key_or_null = stage->arg1.utf8;
    if (key_or_null) {
       bson_append_bool (bson, key_or_null, -1, stage->arg2.boolean);
@@ -556,8 +569,11 @@ _mongoc_structured_log_append_boolean (bson_t *bson, const mongoc_structured_log
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_oid_as_hex (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_oid_as_hex (bson_t *bson,
+                                          const mongoc_structured_log_builder_stage_t *stage,
+                                          const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    const char *key_or_null = stage->arg1.utf8;
    const bson_oid_t *oid_or_null = stage->arg2.oid;
    if (key_or_null) {
@@ -573,14 +589,16 @@ _mongoc_structured_log_append_oid_as_hex (bson_t *bson, const mongoc_structured_
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_bson_as_json (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_bson_as_json (bson_t *bson,
+                                            const mongoc_structured_log_builder_stage_t *stage,
+                                            const mongoc_structured_log_opts_t *opts)
 {
    const char *key_or_null = stage->arg1.utf8;
    const bson_t *bson_or_null = stage->arg2.bson;
    if (key_or_null) {
       if (bson_or_null) {
          size_t json_length;
-         char *json = mongoc_structured_log_document_to_json (bson_or_null, &json_length);
+         char *json = _mongoc_structured_log_inner_document_to_json (bson_or_null, &json_length, opts);
          if (json) {
             bson_append_utf8 (bson, key_or_null, -1, json, json_length);
             bson_free (json);
@@ -593,22 +611,65 @@ _mongoc_structured_log_append_bson_as_json (bson_t *bson, const mongoc_structure
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_cmd (bson_t *bson,
+                                   const mongoc_structured_log_builder_stage_t *stage,
+                                   const mongoc_structured_log_opts_t *opts)
 {
    const mongoc_cmd_t *cmd = stage->arg1.cmd;
-   const mongoc_logged_cmd_content_flags_t flags = stage->arg2.cmd_flags;
-   mongoc_cmd_append_logged_contents_to_bson (cmd, bson, flags);
+   const mongoc_structured_log_cmd_content_flags_t flags = stage->arg2.cmd_flags;
+   BSON_ASSERT (cmd);
+
+   if (flags & MONGOC_STRUCTURED_LOG_CMD_CONTENT_FLAG_DATABASE_NAME) {
+      BSON_APPEND_UTF8 (bson, "databaseName", cmd->db_name);
+   }
+   if (flags & MONGOC_STRUCTURED_LOG_CMD_CONTENT_FLAG_COMMAND_NAME) {
+      BSON_APPEND_UTF8 (bson, "commandName", cmd->command_name);
+   }
+   if (flags & MONGOC_STRUCTURED_LOG_CMD_CONTENT_FLAG_OPERATION_ID) {
+      BSON_APPEND_INT64 (bson, "operationId", cmd->operation_id);
+   }
+   if (flags & MONGOC_STRUCTURED_LOG_CMD_CONTENT_FLAG_COMMAND) {
+      if (mongoc_apm_is_sensitive_command_message (cmd->command_name, cmd->command)) {
+         BSON_APPEND_UTF8 (bson, "command", "{}");
+      } else {
+         bson_t *command_copy = NULL;
+
+         if (cmd->payloads_count > 0) {
+            // @todo This is a performance bottleneck, we shouldn't be copying
+            //       a potentially large command to serialize a potentially very
+            //       small part of it. We should be appending JSON to a single buffer
+            //       for all nesting levels, constrained by length limit, while visiting
+            //       borrowed references to each command attribute and each payload. CDRIVER-4814
+            command_copy = bson_copy (cmd->command);
+            _mongoc_cmd_append_payload_as_array (cmd, command_copy);
+         }
+
+         size_t json_length;
+         char *json = _mongoc_structured_log_inner_document_to_json (
+            command_copy ? command_copy : cmd->command, &json_length, opts);
+         if (json) {
+            const char *key = "command";
+            bson_append_utf8 (bson, key, strlen (key), json, json_length);
+            bson_free (json);
+         }
+         bson_destroy (command_copy);
+      }
+   }
+
    return stage + 1;
 }
 
 static void
-_mongoc_structured_log_append_redacted_cmd_reply (bson_t *bson, bool is_sensitive, const bson_t *reply)
+_mongoc_structured_log_append_redacted_cmd_reply (bson_t *bson,
+                                                  bool is_sensitive,
+                                                  const bson_t *reply,
+                                                  const mongoc_structured_log_opts_t *opts)
 {
    if (is_sensitive) {
       BSON_APPEND_UTF8 (bson, "reply", "{}");
    } else {
       size_t json_length;
-      char *json = mongoc_structured_log_document_to_json (reply, &json_length);
+      char *json = _mongoc_structured_log_inner_document_to_json (reply, &json_length, opts);
       if (json) {
          const char *key = "reply";
          bson_append_utf8 (bson, key, strlen (key), json, json_length);
@@ -618,7 +679,9 @@ _mongoc_structured_log_append_redacted_cmd_reply (bson_t *bson, bool is_sensitiv
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_reply (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_cmd_reply (bson_t *bson,
+                                         const mongoc_structured_log_builder_stage_t *stage,
+                                         const mongoc_structured_log_opts_t *opts)
 {
    const mongoc_cmd_t *cmd = stage->arg1.cmd;
    const bson_t *reply = stage->arg2.bson;
@@ -628,12 +691,14 @@ _mongoc_structured_log_append_cmd_reply (bson_t *bson, const mongoc_structured_l
 
    bool is_sensitive = mongoc_apm_is_sensitive_command_message (cmd->command_name, cmd->command) ||
                        mongoc_apm_is_sensitive_command_message (cmd->command_name, reply);
-   _mongoc_structured_log_append_redacted_cmd_reply (bson, is_sensitive, reply);
+   _mongoc_structured_log_append_redacted_cmd_reply (bson, is_sensitive, reply, opts);
    return stage + 1;
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_name_reply (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_cmd_name_reply (bson_t *bson,
+                                              const mongoc_structured_log_builder_stage_t *stage,
+                                              const mongoc_structured_log_opts_t *opts)
 {
    const char *cmd_name = stage->arg1.utf8;
    const bson_t *reply = stage->arg2.bson;
@@ -642,12 +707,14 @@ _mongoc_structured_log_append_cmd_name_reply (bson_t *bson, const mongoc_structu
    BSON_ASSERT (reply);
 
    bool is_sensitive = mongoc_apm_is_sensitive_command_message (cmd_name, reply);
-   _mongoc_structured_log_append_redacted_cmd_reply (bson, is_sensitive, reply);
+   _mongoc_structured_log_append_redacted_cmd_reply (bson, is_sensitive, reply, opts);
    return stage + 1;
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_error (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_error (bson_t *bson,
+                                     const mongoc_structured_log_builder_stage_t *stage,
+                                     const mongoc_structured_log_opts_t *opts)
 {
    const char *key_or_null = stage->arg1.utf8;
    const bson_error_t *error_or_null = stage->arg2.error;
@@ -708,8 +775,11 @@ _mongoc_structured_log_append_redacted_cmd_failure (bson_t *bson,
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson,
+                                                  const mongoc_structured_log_builder_stage_t *stage,
+                                                  const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    BSON_ASSERT (stage[1].func == _mongoc_structured_log_append_cmd_failure_stage1);
    const mongoc_cmd_t *cmd = stage[0].arg1.cmd;
    const bson_t *reply = stage[0].arg2.bson;
@@ -726,18 +796,24 @@ _mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson, const mongoc_str
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_failure_stage1 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_cmd_failure_stage1 (bson_t *bson,
+                                                  const mongoc_structured_log_builder_stage_t *stage,
+                                                  const mongoc_structured_log_opts_t *opts)
 {
    // Never called, marks the second stage in a two-stage cmd_failure
    BSON_UNUSED (bson);
    BSON_UNUSED (stage);
+   BSON_UNUSED (opts);
    BSON_ASSERT (false);
    return NULL;
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_name_failure_stage0 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_cmd_name_failure_stage0 (bson_t *bson,
+                                                       const mongoc_structured_log_builder_stage_t *stage,
+                                                       const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    BSON_ASSERT (stage[1].func == _mongoc_structured_log_append_cmd_name_failure_stage1);
    const char *cmd_name = stage[0].arg1.utf8;
    const bson_t *reply = stage[0].arg2.bson;
@@ -753,18 +829,24 @@ _mongoc_structured_log_append_cmd_name_failure_stage0 (bson_t *bson, const mongo
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_name_failure_stage1 (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_cmd_name_failure_stage1 (bson_t *bson,
+                                                       const mongoc_structured_log_builder_stage_t *stage,
+                                                       const mongoc_structured_log_opts_t *opts)
 {
    // Never called, marks the second stage in a two-stage cmd_name_failure
    BSON_UNUSED (bson);
    BSON_UNUSED (stage);
+   BSON_UNUSED (opts);
    BSON_ASSERT (false);
    return NULL;
 }
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_server_description (bson_t *bson, const mongoc_structured_log_builder_stage_t *stage)
+_mongoc_structured_log_append_server_description (bson_t *bson,
+                                                  const mongoc_structured_log_builder_stage_t *stage,
+                                                  const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    const mongoc_server_description_t *sd = stage->arg1.server_description;
    const mongoc_server_description_content_flags_t flags = stage->arg2.server_description_flags;
    mongoc_server_description_append_contents_to_bson (sd, bson, flags);

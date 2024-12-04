@@ -1,7 +1,7 @@
 :man_page: mongoc_structured_log_get_named_component
 
-mongoc_structured_log_get_named_component
-=========================================
+mongoc_structured_log_get_named_component()
+===========================================
 
 Synopsis
 --------

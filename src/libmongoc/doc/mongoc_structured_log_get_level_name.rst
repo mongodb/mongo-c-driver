@@ -1,7 +1,7 @@
 :man_page: mongoc_structured_log_get_level_name
 
-mongoc_structured_log_get_level_name
-====================================
+mongoc_structured_log_get_level_name()
+======================================
 
 Synopsis
 --------

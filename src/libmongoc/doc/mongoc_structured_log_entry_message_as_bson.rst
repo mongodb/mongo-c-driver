@@ -1,7 +1,7 @@
 :man_page: mongoc_structured_log_entry_message_as_bson
 
-mongoc_structured_log_entry_message_as_bson
-===========================================
+mongoc_structured_log_entry_message_as_bson()
+=============================================
 
 Synopsis
 --------

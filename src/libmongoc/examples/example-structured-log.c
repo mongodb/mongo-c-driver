@@ -15,10 +15,18 @@ example_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
    mongoc_structured_log_level_t level = mongoc_structured_log_entry_get_level (entry);
 
    /*
-    * Structured log handlers need to be thread-safe.
-    * Many apps will be happy to use a global mutex in their logging handler,
-    * but high performance multithreaded apps may prefer dispatching log
-    * messages asynchronously with thread-safe data structures.
+    * With a single-threaded mongoc_client_t, handlers will always be called
+    * by the thread that owns the client. On a mongoc_client_pool_t, handlers
+    * are shared by multiple threads and must be reentrant.
+    *
+    * Note that unstructured logging includes a global mutex in the API,
+    * but structured logging allows applications to avoid lock contention
+    * even when multiple threads are issuing commands simultaneously.
+    *
+    * Simple apps like this example can achieve thread safety by adding their
+    * own global mutex. For other apps, this would be a performance bottleneck
+    * and it would be more appropriate for handlers to process their log
+    * messages concurrently.
     */
    pthread_mutex_lock (&handler_mutex);
 
@@ -49,14 +57,33 @@ main (void)
    int result = EXIT_FAILURE;
    bson_error_t error;
    mongoc_uri_t *uri = NULL;
+   mongoc_structured_log_opts_t *log_opts = NULL;
    mongoc_client_t *client = NULL;
+   mongoc_client_pool_t *pool = NULL;
+
+   /*
+    * Note that structured logging only applies per-client or per-pool,
+    * and it won't be used during or before mongoc_init.
+    */
+   mongoc_init ();
+
+   /*
+    * Logging options are represented by a mongoc_structured_log_opts_t,
+    * which can be copied into a mongoc_client_t or mongoc_client_pool_t
+    * using mongoc_client_set_structured_log_opts() or
+    * mongoc_client_pool_set_structured_log_opts(), respectively.
+    *
+    * Default settings are captured from the environment into
+    * this structure when it's constructed.
+    */
+   log_opts = mongoc_structured_log_opts_new ();
 
    /*
     * For demonstration purposes, set up a handler that receives all possible log messages.
     */
    pthread_mutex_init (&handler_mutex, NULL);
-   mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_TRACE);
-   mongoc_structured_log_set_handler (example_handler, NULL);
+   mongoc_structured_log_opts_set_max_level_for_all_components (log_opts, MONGOC_STRUCTURED_LOG_LEVEL_TRACE);
+   mongoc_structured_log_opts_set_handler (log_opts, example_handler, NULL);
 
    /*
     * By default libmongoc proceses log options from the environment first,
@@ -65,13 +92,7 @@ main (void)
     * defaults, you can ask for the environment to be re-read after setting
     * your own defaults.
     */
-   mongoc_structured_log_set_max_levels_from_env ();
-
-   /*
-    * This is the main libmongoc initialization, but structured logging
-    * can be used earlier. It's automatically initialized on first use.
-    */
-   mongoc_init ();
+   mongoc_structured_log_opts_set_max_levels_from_env (log_opts);
 
    /*
     * Create a MongoDB URI object. This example assumes a local server.
@@ -83,21 +104,35 @@ main (void)
    }
 
    /*
-    * Create a new client instance.
+    * Create a new client pool.
     */
-   client = mongoc_client_new_from_uri (uri);
-   if (!client) {
+   pool = mongoc_client_pool_new (uri);
+   if (!pool) {
       goto done;
    }
 
    /*
-    * Do some work that we'll see logs from. This example just sends a 'ping' command.
+    * Set the client pool's log options.
+    * This must happen only once, and only before the first mongoc_client_pool_pop.
+    * There's no need to keep log_opts after this point.
     */
+   mongoc_client_pool_set_structured_log_opts (pool, log_opts);
+
+   /*
+    * Check out a client, and do some work that we'll see logs from.
+    * This example just sends a 'ping' command.
+    */
+   client = mongoc_client_pool_pop (pool);
+   if (!client) {
+      goto done;
+   }
+
    bson_t *command = BCON_NEW ("ping", BCON_INT32 (1));
    bson_t reply;
    bool command_ret = mongoc_client_command_simple (client, "admin", command, NULL, &reply, &error);
    bson_destroy (command);
    bson_destroy (&reply);
+   mongoc_client_pool_push (pool, client);
    if (!command_ret) {
       fprintf (stderr, "Command error: %s\n", error.message);
       goto done;
@@ -106,7 +141,8 @@ main (void)
    result = EXIT_SUCCESS;
 done:
    mongoc_uri_destroy (uri);
-   mongoc_client_destroy (client);
+   mongoc_structured_log_opts_destroy (log_opts);
+   mongoc_client_pool_destroy (pool);
    mongoc_cleanup ();
    return result;
 }

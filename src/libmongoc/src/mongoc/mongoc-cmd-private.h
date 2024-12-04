@@ -143,18 +143,6 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out);
 void
 _mongoc_cmd_append_server_api (bson_t *command_body, const mongoc_server_api_t *api);
 
-typedef enum {
-   MONGOC_LOGGED_CMD_CONTENT_FLAG_COMMAND = (1 << 0),
-   MONGOC_LOGGED_CMD_CONTENT_FLAG_DATABASE_NAME = (1 << 1),
-   MONGOC_LOGGED_CMD_CONTENT_FLAG_COMMAND_NAME = (1 << 2),
-   MONGOC_LOGGED_CMD_CONTENT_FLAG_OPERATION_ID = (1 << 3),
-} mongoc_logged_cmd_content_flags_t;
-
-bool
-mongoc_cmd_append_logged_contents_to_bson (const mongoc_cmd_t *cmd,
-                                           bson_t *bson,
-                                           mongoc_logged_cmd_content_flags_t flags);
-
 BSON_END_DECLS
 
 

@@ -17,7 +17,7 @@ Synopsis
 
 ``mongoc_structured_log_component_t`` enumerates the structured logging components.
 Applications should never rely on having an exhaustive list of all log components.
-Instead, use :symbol:`mongoc_structured_log_set_max_level_for_all_components` to set a default level if needed.
+Instead, use :symbol:`mongoc_structured_log_opts_set_max_level_for_all_components` to set a default level if needed.
 
 Functions
 ---------

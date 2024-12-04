@@ -486,6 +486,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    bool ret = false;
    mongoc_apm_callbacks_t *callbacks = NULL;
    bson_t *uri_options = NULL;
+   mongoc_structured_log_opts_t *log_opts = mongoc_structured_log_opts_new ();
    bool use_multiple_mongoses = false;
    bool use_multiple_mongoses_set = false;
    bool can_reduce_heartbeat = false;
@@ -595,8 +596,9 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
             if (not(type (doc)), then (error ("'observeLogMessages' must be a document"))),
             do ({
                // Initialize all components to the lowest available level, and install a handler.
-               mongoc_structured_log_set_max_level_for_all_components (MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY);
-               mongoc_structured_log_set_handler (structured_log_cb, entity);
+               mongoc_structured_log_opts_set_max_level_for_all_components (log_opts,
+                                                                            MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY);
+               mongoc_structured_log_opts_set_handler (log_opts, structured_log_cb, entity);
             }),
             visitEach (
                if (not(type (utf8)), then (error ("Every value in 'observeLogMessages' must be a log level string"))),
@@ -611,7 +613,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                   if (!mongoc_structured_log_get_named_level (level_name, &level)) {
                      test_error ("Unknown log level '%s' given in 'observeLogMessages'", component_name);
                   }
-                  mongoc_structured_log_set_max_level_for_component (component, level);
+                  mongoc_structured_log_opts_set_max_level_for_component (log_opts, component, level);
                }))),
       visitOthers (
          dupPath (errpath),
@@ -666,6 +668,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;
    mongoc_client_set_apm_callbacks (client, callbacks, entity);
+   mongoc_client_set_structured_log_opts (client, log_opts);
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       // @todo Examine whether this is needed in addition to the URI param above
@@ -677,6 +680,7 @@ done:
    mongoc_uri_destroy (uri);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_server_api_destroy (api);
+   mongoc_structured_log_opts_destroy (log_opts);
    bson_destroy (uri_options);
    if (!ret) {
       entity_destroy (entity);
@@ -1603,7 +1607,6 @@ entity_destroy (entity_t *entity)
       mongoc_client_t *client = NULL;
 
       client = (mongoc_client_t *) entity->value;
-      mongoc_structured_log_set_handler (NULL, NULL);
       mongoc_client_destroy (client);
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
       mongoc_client_encryption_t *ce = NULL;

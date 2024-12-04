@@ -47,16 +47,17 @@ struct _mongoc_client_pool_t {
    uint32_t max_pool_size;
    uint32_t size;
 #ifdef MONGOC_ENABLE_SSL
-   bool ssl_opts_set;
    mongoc_ssl_opt_t ssl_opts;
+   bool ssl_opts_set;
 #endif
    bool apm_callbacks_set;
+   bool error_api_set;
+   bool structured_log_opts_set;
+   bool client_initialized;
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
    int32_t error_api_version;
-   bool error_api_set;
    mongoc_server_api_t *api;
-   bool client_initialized;
    // `last_known_serverids` is a sorted array of uint32_t.
    mongoc_array_t last_known_serverids;
 };
@@ -281,7 +282,6 @@ _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
       client, pool->topology->scanner->initiator, pool->topology->scanner->initiator_context);
 
    pool->client_initialized = true;
-   client->is_pooled = true;
    client->error_api_version = pool->error_api_version;
    _mongoc_client_set_apm_callbacks_private (client, &pool->apm_callbacks, pool->apm_context);
 
@@ -606,6 +606,26 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool, mongoc_apm_cal
    mc_tpld_modify_commit (tdmod);
 
    return true;
+}
+
+void
+mongoc_client_pool_set_structured_log_opts (mongoc_client_pool_t *pool, const mongoc_structured_log_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (pool);
+   // opts is optional
+
+   /* The documented restriction for most pool options: They can be set at most once,
+    * and only before the first client is initialized. Structured logging is generally
+    * expected to warn but not quit when encountering initialization errors. */
+   if (pool->structured_log_opts_set) {
+      MONGOC_WARNING ("mongoc_client_pool_set_structured_log_opts can only be called once per pool");
+   } else if (pool->client_initialized) {
+      MONGOC_WARNING ("mongoc_client_pool_set_structured_log_opts can only be called before mongoc_client_pool_pop");
+   } else {
+      // Now we can be sure no other threads are relying on concurrent access to the instance yet.
+      mongoc_topology_set_structured_log_opts (pool->topology, opts);
+      pool->structured_log_opts_set = true;
+   }
 }
 
 bool

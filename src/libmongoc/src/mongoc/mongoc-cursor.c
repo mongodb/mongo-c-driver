@@ -647,6 +647,7 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
    client = cursor->client;
 
    mongoc_structured_log (
+      client->topology->structured_log,
       MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command started",
@@ -739,7 +740,8 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
 
    bson_destroy (&docs_array);
 
-   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+   mongoc_structured_log (client->topology->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
                           "Command succeeded",
                           int32 ("requestId", client->cluster.request_id),
@@ -796,7 +798,8 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
    bsonBuildDecl (reply, kv ("ok", int32 (0)));
    char *db = bson_strndup (cursor->ns, cursor->dblen);
 
-   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+   mongoc_structured_log (client->topology->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
                           "Command failed",
                           int32 ("requestId", client->cluster.request_id),

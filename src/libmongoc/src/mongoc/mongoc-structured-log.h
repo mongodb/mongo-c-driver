@@ -46,165 +46,55 @@ typedef enum {
 
 typedef struct mongoc_structured_log_entry_t mongoc_structured_log_entry_t;
 
+typedef struct mongoc_structured_log_opts_t mongoc_structured_log_opts_t;
+
 typedef void (*mongoc_structured_log_func_t) (const mongoc_structured_log_entry_t *entry, void *user_data);
 
-/**
- * mongoc_structured_log_set_handler:
- * @log_func: A function to handle structured messages.
- * @user_data: User data for @log_func.
- *
- * Sets the function to be called to handle structured log messages.
- *
- * The callback is given a mongoc_structured_log_entry_t* as a handle for
- * obtaining additional information about the log message.
- *
- * The entry pointer is only valid during a callback, because it's a low
- * cost reference to temporary data. When the log message is extracted
- * as a bson_t a new owned copy of this data must be made, and deferred
- * transformations like bson_as_json take place.
- *
- * Callbacks may use mongoc_structured_log_entry_get_level and
- * mongoc_structured_log_entry_get_component to filter log messages, and
- * selectively call mongoc_structured_log_entry_message_as_bson to create
- * a bson_t for log messages only when needed.
- *
- * Any operating system or libbson APIs may be used by the callback, but
- * libmongoc must be used only in limited ways to prevent deadlocks or
- * unbounded recursion. See libmongoc/doc/mongoc_structured_log_func_t.rst
- * for a complete list of allowed APIs for handlers to use.
- *
- * Applications that wish to use MongoDB itself as a logging destination will
- * need to store the serialized messages temporarily and insert them later
- * from outside the log handler.
- */
-MONGOC_EXPORT (void)
-mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data);
-
-/**
- * mongoc_structured_log_set_max_level_for_component:
- * @level: Maximum log level for this component.
- * @component: A logging component to set the level limit for.
- *
- * Sets the maximum log level per-component. Only log messages at or below
- * this severity level will be passed to mongoc_structured_log_func_t.
- *
- * By default, each component's log level may be set by environment variables.
- * See mongoc_structured_log_set_max_levels_from_env().
- */
-MONGOC_EXPORT (void)
-mongoc_structured_log_set_max_level_for_component (mongoc_structured_log_component_t component,
-                                                   mongoc_structured_log_level_t level);
-
-/**
- * mongoc_structured_log_set_max_level_for_all_components:
- * @level: Maximum log level for all components.
- *
- * Sets all per-component maximum log levels to the same value.
- * Only log messages at or below this severity level will be passed to
- * mongoc_structured_log_func_t. Effective even for logging components not
- * known at compile-time.
- */
-MONGOC_EXPORT (void)
-mongoc_structured_log_set_max_level_for_all_components (mongoc_structured_log_level_t level);
-
-/**
- * mongoc_structured_log_set_max_levels_from_env:
- *
- * Sets any maximum log levels requested by environment variables: "MONGODB_LOG_ALL"
- * for all components, followed by per-component log levels "MONGODB_LOG_COMMAND",
- * "MONGODB_LOG_CONNECTION", "MONGODB_LOG_TOPOLOGY", and "MONGODB_LOG_SERVER_SELECTION".
- *
- * Component levels with no valid environment variable setting will be left unmodified.
- *
- * Normally this happens automatically when log levels are automatically initialized on
- * first use. The resulting default values can be overridden programmatically by calls
- * to mongoc_structured_log_set_max_level_for_component() and
- * mongoc_structured_log_set_max_level_for_all_components().
- *
- * For applications that desire the opposite behavior, where environment variables may
- * override programmatic settings, they may call mongoc_structured_log_set_max_levels_from_env()
- * after calling mongoc_structured_log_set_max_level_for_component() and
- * mongoc_structured_log_set_max_level_for_all_components(). This will process the environment
- * a second time, allowing it to override customized defaults.
- */
+MONGOC_EXPORT (mongoc_structured_log_opts_t *)
+mongoc_structured_log_opts_new (void);
 
 MONGOC_EXPORT (void)
-mongoc_structured_log_set_max_levels_from_env (void);
+mongoc_structured_log_opts_destroy (mongoc_structured_log_opts_t *opts);
 
-/**
- * mongoc_structured_log_get_max_level_for_component:
- * @component: A logging component to check the log level limit for.
- *
- * Returns the current maximum log level for one component.
- */
+MONGOC_EXPORT (void)
+mongoc_structured_log_opts_set_handler (mongoc_structured_log_opts_t *opts,
+                                        mongoc_structured_log_func_t log_func,
+                                        void *user_data);
+
+MONGOC_EXPORT (bool)
+mongoc_structured_log_opts_set_max_level_for_component (mongoc_structured_log_opts_t *opts,
+                                                        mongoc_structured_log_component_t component,
+                                                        mongoc_structured_log_level_t level);
+
+MONGOC_EXPORT (bool)
+mongoc_structured_log_opts_set_max_level_for_all_components (mongoc_structured_log_opts_t *opts,
+                                                             mongoc_structured_log_level_t level);
+
+MONGOC_EXPORT (bool)
+mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t *opts);
+
 MONGOC_EXPORT (mongoc_structured_log_level_t)
-mongoc_structured_log_get_max_level_for_component (mongoc_structured_log_component_t component);
+mongoc_structured_log_opts_get_max_level_for_component (const mongoc_structured_log_opts_t *opts,
+                                                        mongoc_structured_log_component_t component);
 
-/**
- * mongoc_structured_log_entry_message_as_bson:
- * @entry: A log entry to extract the message from.
- *
- * Returns the structured message as a new allocated bson_t
- * that must be freed by bson_destroy().
- */
 MONGOC_EXPORT (bson_t *)
 mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t *entry);
 
-/**
- * mongoc_structured_log_entry_get_level:
- * @entry: A log entry to read the level from.
- *
- * Returns the severity level of the structured log entry.
- */
 MONGOC_EXPORT (mongoc_structured_log_level_t)
 mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entry);
 
-/**
- * mongoc_structured_log_entry_get_component:
- * @entry: A log entry to read the component from.
- *
- * Returns the component of the structured log entry.
- */
 MONGOC_EXPORT (mongoc_structured_log_component_t)
 mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry);
 
-/**
- * mongoc_structured_log_get_level_name:
- * @level: A log level code.
- *
- * Returns the canonical name for a log level as a constant string that does
- * not need to be deallocated, or NULL if the level has no known name.
- */
 MONGOC_EXPORT (const char *)
 mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level);
 
-/**
- * mongoc_structured_log_get_named_level:
- * @name: A log level name.
- * @out: On success, writes a level here and returns true. Returns false if name is not recognized.
- *
- * Try to parse the string as a log level name. Case insensitive.
- */
 MONGOC_EXPORT (bool)
 mongoc_structured_log_get_named_level (const char *name, mongoc_structured_log_level_t *out);
 
-/**
- * mongoc_structured_log_get_component_name:
- * @level: A log level code.
- *
- * Returns the canonical name for a component as a constant string that does
- * not need to be deallocated, or NULL if the level has no known name.
- */
 MONGOC_EXPORT (const char *)
 mongoc_structured_log_get_component_name (mongoc_structured_log_component_t component);
 
-/**
- * mongoc_structured_log_get_named_component:
- * @name: A log component name.
- * @out: On success, writes a component here and returns true. Returns false if name is not recognized.
- *
- * Try to parse the string as a log component name. Case insensitive.
- */
 MONGOC_EXPORT (bool)
 mongoc_structured_log_get_named_component (const char *name, mongoc_structured_log_component_t *out);
 

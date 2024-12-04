@@ -1123,8 +1123,10 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    }
 #endif
 
-   mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG, MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION, "Client created");
+   mongoc_structured_log (topology->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,
+                          "Client created");
 
    mongoc_counter_clients_active_inc ();
 
@@ -2167,6 +2169,7 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
    _mongoc_client_prepare_killcursors_command (cursor_id, collection, &doc);
 
    mongoc_structured_log (
+      cluster->client->topology->structured_log,
       MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command started",
@@ -2228,6 +2231,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
    bson_append_array_builder_end (&doc, cursors_unknown);
 
    mongoc_structured_log (
+      client->topology->structured_log,
       MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command succeeded",
@@ -2286,6 +2290,7 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
    bson_append_int32 (&doc, "ok", 2, 0);
 
    mongoc_structured_log (
+      client->topology->structured_log,
       MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command failed",
@@ -2647,6 +2652,22 @@ mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t
    return _mongoc_client_set_apm_callbacks_private (client, callbacks, context);
 }
 
+
+void
+mongoc_client_set_structured_log_opts (mongoc_client_t *client, const mongoc_structured_log_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (client);
+   // opts is optional
+
+   if (client->topology->single_threaded) {
+      mongoc_topology_set_structured_log_opts (client->topology, opts);
+   } else {
+      MONGOC_WARNING ("Cannot set structured log options on a pooled client, use "
+                      "mongoc_client_pool_set_structured_log_opts before the first mongoc_client_pool_pop");
+   }
+}
+
+
 mongoc_server_description_t *
 mongoc_client_get_server_description (mongoc_client_t *client, uint32_t server_id)
 {
@@ -2963,7 +2984,7 @@ mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t
    BSON_ASSERT_PARAM (client);
    BSON_ASSERT_PARAM (api);
 
-   if (client->is_pooled) {
+   if (!client->topology->single_threaded) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_API_FROM_POOL,

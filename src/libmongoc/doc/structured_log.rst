@@ -6,18 +6,37 @@ Structured Logging
 This document describes a newer "structured" logging facility which reports messages from the driver itself using a BSON format defined across driver implementations by the `MongoDB Logging Specification <https://specifications.readthedocs.io/en/latest/logging/logging/>`_.
 See :doc:`unstructured_log` for the original freeform logging facility.
 
-These two systems are configured and used independently. The structured logging system has independent settings for handler and log levels.
+These two systems are configured and used independently.
 
-Defaults
---------
+Unstructured logging is global to the entire process, but structured logging is configured separately for each :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t`.
+See :symbol:`mongoc_client_set_structured_log_opts` and :symbol:`mongoc_client_pool_set_structured_log_opts`.
 
-When the structured logging subsystem is first used, possibly before or during :symbol:`mongoc_init`:
+Options
+-------
 
-* Default log levels are set from the environment variables ``MONGODB_LOG_ALL``, ``MONGODB_LOG_COMMAND``, ``MONGODB_LOG_TOPOLOGY``, ``MONGODB_LOG_SERVER_SELECTION``, expecting a value from the `severity level table <https://specifications.readthedocs.io/en/latest/logging/logging/#log-severity-levels>`_: ``off``, ``emergency``, ``alert``, ``critical``, ``error``, ``warning``, ``warn``, ``notice``, ``informational``, ``info``, ``debug``, ``trace``.
-* A default handler is installed, which logs text representations of each message to a file given by ``MONGODB_LOG_PATH``, which may be a full path or one of the special values ``stdout`` or ``stderr``. If no valid path is given, logs are written to stderr.
+Structured log settings are tracked explicitly by a :symbol:`mongoc_structured_log_opts_t` instance.
+
+Like other drivers supporting structured logging, we take default settings from environment variables and offer additional optional programmatic configuration.
+Environment variables are captured during :symbol:`mongoc_structured_log_opts_new`, refer there for a full list of the supported variables.
 
 Normally environment variables provide defaults that can be overridden programmatically.
-To request the opposite behavior, where your programmatic defaults can be overridden by the environment, see :symbol:`mongoc_structured_log_set_max_levels_from_env`.
+To request the opposite behavior, where your programmatic defaults can be overridden by the environment, see :symbol:`mongoc_structured_log_opts_set_max_levels_from_env`.
+
+Structured log messages may be filtered in arbitrary ways by the handler, but as both a performance optimization and a convenience, a built-in filter limits the maximum log level of reported messages with a per-component setting.
+
+.. toctree::
+  :titlesonly:
+  :maxdepth: 1
+
+  mongoc_structured_log_opts_t
+  mongoc_structured_log_opts_new
+  mongoc_structured_log_opts_destroy
+  mongoc_structured_log_opts_set_handler
+  mongoc_structured_log_opts_get_max_level_for_component
+  mongoc_structured_log_opts_set_max_level_for_component
+  mongoc_structured_log_opts_set_max_level_for_all_components
+  mongoc_structured_log_opts_set_max_levels_from_env
+
 
 Levels and Components
 ---------------------
@@ -60,44 +79,23 @@ Log levels and components are defined as :symbol:`mongoc_structured_log_level_t`
   mongoc_structured_log_get_named_component
 
 
-Log Filtering
--------------
-
-Structured log messages may be filtered in two ways:
-
-* A maximum log level can be set per-component.
-* A log handler function can ignore messages based on any criteria.
-
-The max level settings are configured by the environment variables above, and they may be altered or queried by applications.
-To reduce overhead for unwanted logging, messages should be ignored as early as possible.
-If it's possible to filter messages based on only their component and level, this should be done by handlers before requesting BSON serialization by calling :symbol:`mongoc_structured_log_entry_message_as_bson`.
-
-.. toctree::
-  :titlesonly:
-  :maxdepth: 1
-
-  mongoc_structured_log_set_max_level_for_all_components
-  mongoc_structured_log_set_max_level_for_component
-  mongoc_structured_log_set_max_levels_from_env
-  mongoc_structured_log_get_max_level_for_component
-
 Log Handlers
 ------------
 
-There can be one global log handler set at a time.
-This handler is called with a :symbol:`mongoc_structured_log_entry_t` that can be queried for further details.
+Each :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` has its own instance of the structured logging subsystem, with its own settings and handler.
 
-.. note::
+When using :symbol:`mongoc_client_pool_t`, the pooled clients all share a common logging instance. Handlers must be thread-safe.
 
-        Structured log handlers must be thread-safe.
-        This differs from unstructured logging, which provides a global mutex.
+The handler is called for each log entry with a level no greater than its component's maximum.
+A :symbol:`mongoc_structured_log_entry_t` pointer provides access to further details, during the handler only.
+
+Handlers must take care not to re-enter ``libmongoc`` with the same :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` that the handler has been called by.
 
 .. toctree::
   :titlesonly:
   :maxdepth: 1
 
   mongoc_structured_log_func_t
-  mongoc_structured_log_set_handler
 
 Log Entries
 -----------

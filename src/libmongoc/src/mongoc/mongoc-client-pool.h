@@ -28,6 +28,7 @@
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #endif
+#include "mongoc-structured-log.h"
 #include "mongoc-uri.h"
 
 
@@ -69,6 +70,8 @@ mongoc_client_pool_enable_auto_encryption (mongoc_client_pool_t *pool,
                                            bson_error_t *error);
 MONGOC_EXPORT (bool)
 mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool, const mongoc_server_api_t *api, bson_error_t *error);
+MONGOC_EXPORT (void)
+mongoc_client_pool_set_structured_log_opts (mongoc_client_pool_t *pool, const mongoc_structured_log_opts_t *opts);
 
 BSON_END_DECLS
 
