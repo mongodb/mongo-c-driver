@@ -17,7 +17,7 @@ Parameters
 ----------
 
 * ``opts``: The :symbol:`mongoc_auto_encryption_opts_t`
-* ``cache_expiration_ms``: The data encryption key cache expiration time in milliseconds.
+* ``cache_expiration_ms``: The data encryption key cache expiration time in milliseconds. 0 means "never expire".
 
 .. seealso::
 
