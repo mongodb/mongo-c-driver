@@ -46,22 +46,22 @@ Log levels and components are defined as :symbol:`mongoc_structured_log_level_t`
 .. code-block:: c
 
   typedef enum {
-    MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY = 0,
-    MONGOC_STRUCTURED_LOG_LEVEL_ALERT = 1,
-    MONGOC_STRUCTURED_LOG_LEVEL_CRITICAL = 2,
-    MONGOC_STRUCTURED_LOG_LEVEL_ERROR = 3,
-    MONGOC_STRUCTURED_LOG_LEVEL_WARNING = 4,
-    MONGOC_STRUCTURED_LOG_LEVEL_NOTICE = 5,
-    MONGOC_STRUCTURED_LOG_LEVEL_INFO = 6,
-    MONGOC_STRUCTURED_LOG_LEVEL_DEBUG = 7,
-    MONGOC_STRUCTURED_LOG_LEVEL_TRACE = 8,
+    MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY = 0,  // "Emergency" ("off" also accepted)
+    MONGOC_STRUCTURED_LOG_LEVEL_ALERT = 1,      // "Alert"
+    MONGOC_STRUCTURED_LOG_LEVEL_CRITICAL = 2,   // "Critical"
+    MONGOC_STRUCTURED_LOG_LEVEL_ERROR = 3,      // "Error"
+    MONGOC_STRUCTURED_LOG_LEVEL_WARNING = 4,    // "Warning" ("warn" also accepted)
+    MONGOC_STRUCTURED_LOG_LEVEL_NOTICE = 5,     // "Notice"
+    MONGOC_STRUCTURED_LOG_LEVEL_INFO = 6,       // "Informational" ("info" also accepted)
+    MONGOC_STRUCTURED_LOG_LEVEL_DEBUG = 7,      // "Debug"
+    MONGOC_STRUCTURED_LOG_LEVEL_TRACE = 8,      // "Trace"
   } mongoc_structured_log_level_t;
 
   typedef enum {
-    MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND = 0,
-    MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY = 1,
-    MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION = 2,
-    MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION = 3,
+    MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND = 0,           // "command"
+    MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY = 1,          // "topology"
+    MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION = 2,  // "serverSelection"
+    MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION = 3,        // "connection"
   } mongoc_structured_log_component_t;
 
 .. toctree::
