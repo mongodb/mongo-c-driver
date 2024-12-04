@@ -2165,26 +2165,12 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
 
    client = cluster->client;
 
-   bson_init (&doc);
-   _mongoc_client_prepare_killcursors_command (cursor_id, collection, &doc);
-
-   mongoc_structured_log (
-      cluster->client->topology->structured_log,
-      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Command started",
-      int32 ("requestId", cluster->request_id),
-      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
-      utf8 ("databaseName", db),
-      utf8 ("commandName", "killCursors"),
-      int64 ("operationId", operation_id),
-      bson_as_json ("command", &doc));
-
    if (!client->apm_callbacks.started) {
-      bson_destroy (&doc);
       return;
    }
 
+   bson_init (&doc);
+   _mongoc_client_prepare_killcursors_command (cursor_id, collection, &doc);
    mongoc_apm_command_started_init (&event,
                                     &doc,
                                     db,
@@ -2223,30 +2209,16 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
 
    client = cluster->client;
 
+   if (!client->apm_callbacks.succeeded) {
+      EXIT;
+   }
+
    /* fake server reply to killCursors command: {ok: 1, cursorsUnknown: [42]} */
    bson_init (&doc);
    bson_append_int32 (&doc, "ok", 2, 1);
    bson_append_array_builder_begin (&doc, "cursorsUnknown", 14, &cursors_unknown);
    bson_array_builder_append_int64 (cursors_unknown, cursor_id);
    bson_append_array_builder_end (&doc, cursors_unknown);
-
-   mongoc_structured_log (
-      client->topology->structured_log,
-      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Command succeeded",
-      int32 ("requestId", cluster->request_id),
-      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
-      utf8 ("databaseName", db),
-      utf8 ("commandName", "killCursors"),
-      int64 ("operationId", operation_id),
-      monotonic_time_duration (duration),
-      cmd_name_reply ("killCursors", &doc));
-
-   if (!client->apm_callbacks.succeeded) {
-      bson_destroy (&doc);
-      EXIT;
-   }
 
    mongoc_apm_command_succeeded_init (&event,
                                       duration,
@@ -2285,27 +2257,13 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
 
    client = cluster->client;
 
+   if (!client->apm_callbacks.failed) {
+      EXIT;
+   }
+
    /* fake server reply to killCursors command: {ok: 0} */
    bson_init (&doc);
    bson_append_int32 (&doc, "ok", 2, 0);
-
-   mongoc_structured_log (
-      client->topology->structured_log,
-      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Command failed",
-      int32 ("requestId", cluster->request_id),
-      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
-      utf8 ("databaseName", db),
-      utf8 ("commandName", "killCursors"),
-      int64 ("operationId", operation_id),
-      monotonic_time_duration (duration),
-      bson_as_json ("failure", &doc));
-
-   if (!client->apm_callbacks.failed) {
-      bson_destroy (&doc);
-      EXIT;
-   }
 
    mongoc_apm_command_failed_init (&event,
                                    duration,
