@@ -295,7 +295,7 @@ special_match_as_document (const bson_matcher_context_t *context,
                            bson_error_t *error)
 {
    bool ret = false;
-   bson_t actual_as_bson;
+   bson_t actual_as_bson = BSON_INITIALIZER;
    BSON_UNUSED (user_data);
 
    bson_iter_t iter;
