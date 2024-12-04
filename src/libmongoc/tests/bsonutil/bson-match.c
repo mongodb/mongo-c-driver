@@ -327,7 +327,7 @@ special_match_as_document (const bson_matcher_context_t *context,
    bson_val_destroy (actual_val);
    bson_val_destroy (expected_val);
    bson_destroy (&actual_as_bson);
-   
+
 done:
 
    return ret;
