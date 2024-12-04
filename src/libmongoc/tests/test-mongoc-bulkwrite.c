@@ -591,6 +591,43 @@ test_bulkwrite_many_namespaces (void *ctx)
    mongoc_client_destroy (client);
 }
 
+static void
+test_bulkwrite_execute_requires_client (void *ctx)
+{
+   BSON_UNUSED (ctx);
+   bool ok;
+   bson_error_t error;
+
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_bulkwrite_t *bw = mongoc_bulkwrite_new ();
+   ok = mongoc_bulkwrite_append_insertone (bw, "db.coll", tmp_bson ("{}"), NULL, &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   // Attempt execution without assigning a client
+   {
+      mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+      ASSERT (bwr.exc);
+      ASSERT (mongoc_bulkwriteexception_error (bwr.exc, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "bulk write requires a client and one has not been set");
+      mongoc_bulkwriteexception_destroy (bwr.exc);
+      mongoc_bulkwriteresult_destroy (bwr.res);
+   }
+
+   // Assign a client and execute successfully
+   {
+      mongoc_bulkwrite_set_client (bw, client);
+      mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+      ASSERT_NO_BULKWRITEEXCEPTION (bwr);
+      mongoc_bulkwriteresult_destroy (bwr.res);
+      mongoc_bulkwriteexception_destroy (bwr.exc);
+   }
+
+   mongoc_bulkwrite_destroy (bw);
+   mongoc_client_destroy (client);
+}
 
 void
 test_bulkwrite_install (TestSuite *suite)
@@ -676,5 +713,13 @@ test_bulkwrite_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
                       test_framework_skip_if_mongos // Creating 100k collections is very slow (~5 minutes) on mongos.
+   );
+
+   TestSuite_AddFull (suite,
+                      "/bulkwrite/execute_requires_client",
+                      test_bulkwrite_execute_requires_client,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
    );
 }
