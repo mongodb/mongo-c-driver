@@ -169,11 +169,18 @@ mongoc_bulkwrite_t *
 mongoc_client_bulkwrite_new (mongoc_client_t *self)
 {
    BSON_ASSERT_PARAM (self);
-   mongoc_bulkwrite_t *bw = bson_malloc0 (sizeof (mongoc_bulkwrite_t));
+   mongoc_bulkwrite_t *bw = mongoc_bulkwrite_new ();
    bw->client = self;
+   bw->operation_id = ++self->cluster.operation_id;
+   return bw;
+}
+
+mongoc_bulkwrite_t *
+mongoc_bulkwrite_new (void)
+{
+   mongoc_bulkwrite_t *bw = bson_malloc0 (sizeof (mongoc_bulkwrite_t));
    _mongoc_buffer_init (&bw->ops, NULL, 0, NULL, NULL);
    _mongoc_array_init (&bw->arrayof_modeldata, sizeof (modeldata_t));
-   bw->operation_id = ++self->cluster.operation_id;
    return bw;
 }
 
@@ -1463,6 +1470,26 @@ _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
 }
 
 void
+mongoc_bulkwrite_set_client (mongoc_bulkwrite_t *self, mongoc_client_t *client)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (client);
+
+   if (self->session) {
+      BSON_ASSERT (self->session->client == client);
+   }
+
+   /* NOP if the client is not changing; otherwise, assign it and increment and
+    * fetch its operation_id. */
+   if (self->client == client) {
+      return;
+   }
+
+   self->client = client;
+   self->operation_id = ++client->cluster.operation_id;
+}
+
+void
 mongoc_bulkwrite_set_session (mongoc_bulkwrite_t *self, mongoc_client_session_t *session)
 {
    BSON_ASSERT_PARAM (self);
@@ -1494,6 +1521,15 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    // Create empty result and exception to collect results/errors from batches.
    ret.res = _bulkwriteresult_new ();
    ret.exc = _bulkwriteexception_new ();
+
+   if (!self->client) {
+      bson_set_error (&error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "bulk write requires a client and one has not been set");
+      _bulkwriteexception_set_error (ret.exc, &error);
+      goto fail;
+   }
 
    if (self->executed) {
       bson_set_error (&error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "bulk write already executed");
