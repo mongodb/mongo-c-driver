@@ -82,7 +82,7 @@ Log levels and components are defined as :symbol:`mongoc_structured_log_level_t`
 Log Handlers
 ------------
 
-Each :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` has its own instance of the structured logging subsystem, with its own settings and handler.
+Each :symbol:`mongoc_client_pool_t` or standalone :symbol:`mongoc_client_t` has its own instance of the structured logging subsystem, with its own settings and handler.
 
 When using :symbol:`mongoc_client_pool_t`, the pooled clients all share a common logging instance. Handlers must be thread-safe.
 
