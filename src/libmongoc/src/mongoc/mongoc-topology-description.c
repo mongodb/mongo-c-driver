@@ -2562,12 +2562,10 @@ mongoc_topology_description_append_contents_to_bson (const mongoc_topology_descr
        !mcommon_oid_is_zero (&td->max_election_id) && !BSON_APPEND_OID (bson, "maxElectionId", &td->max_election_id)) {
       return false;
    }
-   if (flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_SET_VERSION) {
-      const char *key = "maxSetVersion";
-      if (MONGOC_NO_SET_VERSION == td->max_set_version ? !BSON_APPEND_NULL (bson, key)
-                                                       : !BSON_APPEND_INT64 (bson, key, td->max_set_version)) {
-         return false;
-      }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_SET_VERSION) &&
+       MONGOC_NO_SET_VERSION != td->max_set_version &&
+       !BSON_APPEND_INT64 (bson, "maxSetVersion", td->max_set_version)) {
+      return false;
    }
    if (flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SERVERS) {
       const mongoc_set_t *const set = mc_tpld_servers_const (BSON_ASSERT_PTR_INLINE (td));
@@ -2598,20 +2596,14 @@ mongoc_topology_description_append_contents_to_bson (const mongoc_topology_descr
        !BSON_APPEND_BOOL (bson, "compatible", td->compatibility_error.code == 0)) {
       return false;
    }
-   if (flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBILITY_ERROR) {
-      const char *key = "compatibilityError";
-      if (td->compatibility_error.code == 0 ? !BSON_APPEND_NULL (bson, key)
-                                            : !BSON_APPEND_UTF8 (bson, key, td->compatibility_error.message)) {
-         return false;
-      }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBILITY_ERROR) && 0 != td->compatibility_error.code &&
+       !BSON_APPEND_UTF8 (bson, "compatibilityError", td->compatibility_error.message)) {
+      return false;
    }
-   if (flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_LOGICAL_SESSION_TIMEOUT_MINUTES) {
-      const char *key = "logicalSessionTimeoutMinutes";
-      if (MONGOC_NO_SESSIONS == td->session_timeout_minutes
-             ? !BSON_APPEND_NULL (bson, key)
-             : !BSON_APPEND_INT64 (bson, key, td->session_timeout_minutes)) {
-         return false;
-      }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_LOGICAL_SESSION_TIMEOUT_MINUTES) &&
+       MONGOC_NO_SESSIONS != td->session_timeout_minutes &&
+       !BSON_APPEND_INT64 (bson, "logicalSessionTimeoutMinutes", td->session_timeout_minutes)) {
+      return false;
    }
    return true;
 }

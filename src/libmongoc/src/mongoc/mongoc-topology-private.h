@@ -30,7 +30,6 @@
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
 #include "mongoc-sleep.h"
-#include "mongoc-structured-log-private.h"
 #include <common-atomic-private.h>
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
@@ -56,6 +55,7 @@ typedef enum mongoc_topology_cse_state_t {
 
 struct _mongoc_background_monitor_t;
 struct _mongoc_client_pool_t;
+struct mongoc_structured_log_instance_t;
 
 typedef enum { MONGOC_RR_SRV, MONGOC_RR_TXT } mongoc_rr_type_t;
 
@@ -210,7 +210,7 @@ typedef struct _mongoc_topology_t {
    mongoc_set_t *rtt_monitors;
    bson_mutex_t apm_mutex;
 
-   mongoc_structured_log_instance_t *structured_log;
+   struct mongoc_structured_log_instance_t *structured_log;
 
    /* This is overridable for SRV polling tests to mock DNS records. */
    _mongoc_rr_resolver_fn rr_resolver;
@@ -266,6 +266,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
  *
  * @param topology The topology to inspect and/or update.
  * @param optype The operation that is intended to be performed.
+ * @param log_context Additional contextual information used only to support standardized logging.
  * @param read_prefs The read preferences for the command.
  * @param must_use_primary An optional output parameter. Server selection might
  * need to override the caller's read preferences' read mode to 'primary'.
@@ -282,6 +283,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
 mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
+                        const mongoc_ss_log_context_t *log_context,
                         const mongoc_read_prefs_t *read_prefs,
                         bool *must_use_primary,
                         bson_error_t *error);
@@ -294,6 +296,7 @@ mongoc_topology_select (mongoc_topology_t *topology,
  *
  * @param topology The topology to inspect and/or update.
  * @param optype The operation that is intended to be performed.
+ * @param log_context Additional contextual information used only to support standardized logging.
  * @param read_prefs The read preferences for the command.
  * @param must_use_primary An optional output parameter. Server selection might
  * need to override the caller's read preferences' read mode to 'primary'.
@@ -309,6 +312,7 @@ mongoc_topology_select (mongoc_topology_t *topology,
 uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
+                                  const mongoc_ss_log_context_t *log_context,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bool *must_use_primary,
                                   const mongoc_deprioritized_servers_t *ds,
@@ -363,7 +367,9 @@ void
 _mongoc_topology_update_cluster_time (mongoc_topology_t *topology, const bson_t *reply);
 
 mongoc_server_session_t *
-_mongoc_topology_pop_server_session (mongoc_topology_t *topology, bson_error_t *error);
+_mongoc_topology_pop_server_session (mongoc_topology_t *topology,
+                                     const mongoc_ss_log_context_t *log_context,
+                                     bson_error_t *error);
 
 void
 _mongoc_topology_push_server_session (mongoc_topology_t *topology, mongoc_server_session_t *server_session);

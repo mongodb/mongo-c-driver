@@ -69,7 +69,9 @@ selects_server (mongoc_client_t *client, mongoc_read_prefs_t *read_prefs, mock_s
 
    ASSERT (client);
 
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, read_prefs, NULL, &error);
+
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_topology_selects_server"};
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, read_prefs, NULL, &error);
 
    if (!sd) {
       fprintf (stderr, "%s\n", error.message);
@@ -234,7 +236,9 @@ _test_topology_reconcile_sharded (bool pooled)
    }
 
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_read_prefs, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_topology_reconcile_sharded"};
+   future =
+      future_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, primary_read_prefs, NULL, &error);
 
    /* mongos */
    request = mock_server_receives_any_hello (mongos);

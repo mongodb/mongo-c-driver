@@ -152,8 +152,10 @@ test_getmore_iteration (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_getmore_iteration"};
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  &ss_log_context,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,
@@ -239,8 +241,10 @@ test_not_primary_keep_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_not_primary_keep_pool"};
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  &ss_log_context,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,
@@ -310,8 +314,10 @@ test_not_primary_reset_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_not_primary_reset_pool"};
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  &ss_log_context,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,
@@ -385,8 +391,10 @@ test_shutdown_reset_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_shutdown_reset_pool"};
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  &ss_log_context,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,
@@ -454,8 +462,10 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_interrupted_shutdown_reset_pool"};
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  &ss_log_context,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,

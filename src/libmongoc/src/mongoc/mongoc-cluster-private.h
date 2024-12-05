@@ -120,6 +120,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
  */
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
+                                 const mongoc_ss_log_context_t *log_context,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
                                  const mongoc_deprioritized_servers_t *ds,
@@ -139,6 +140,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
  */
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
+                                  const mongoc_ss_log_context_t *log_context,
                                   mongoc_client_session_t *cs,
                                   const mongoc_deprioritized_servers_t *ds,
                                   bson_t *reply,
@@ -158,6 +160,7 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
  */
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_aggr_with_write (mongoc_cluster_t *cluster,
+                                           const mongoc_ss_log_context_t *log_context,
                                            const mongoc_read_prefs_t *read_prefs,
                                            mongoc_client_session_t *cs,
                                            bson_t *reply,

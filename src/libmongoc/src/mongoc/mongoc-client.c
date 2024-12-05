@@ -1240,7 +1240,8 @@ mongoc_client_start_session (mongoc_client_t *client, const mongoc_session_opt_t
 
    ENTRY;
 
-   ss = _mongoc_client_pop_server_session (client, error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "startSession"};
+   ss = _mongoc_client_pop_server_session (client, &ss_log_context, error);
    if (!ss) {
       RETURN (NULL);
    }
@@ -1662,8 +1663,13 @@ retry:
             mongoc_deprioritized_servers_add_if_sharded (ds, server_stream->topology_type, server_stream->sd);
          }
 
+         const mongoc_ss_log_context_t ss_log_context = {
+            .operation = parts->assembled.command_name,
+            .has_operation_id = true,
+            .operation_id = parts->assembled.operation_id,
+         };
          retry_server_stream = mongoc_cluster_stream_for_reads (
-            &client->cluster, parts->read_prefs, parts->assembled.session, ds, NULL, &ignored_error);
+            &client->cluster, &ss_log_context, parts->read_prefs, parts->assembled.session, ds, NULL, &ignored_error);
 
          mongoc_deprioritized_servers_destroy (ds);
       }
@@ -1762,7 +1768,8 @@ mongoc_client_command_simple (mongoc_client_t *client,
     * configuration. The generic command method SHOULD allow an optional read
     * preference argument."
     */
-   server_stream = mongoc_cluster_stream_for_reads (cluster, read_prefs, NULL, NULL, reply, error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_get_command_name (command)};
+   server_stream = mongoc_cluster_stream_for_reads (cluster, &ss_log_context, read_prefs, NULL, NULL, reply, error);
 
    if (server_stream) {
       ret = _mongoc_client_command_with_stream (client, &parts, read_prefs, server_stream, reply, error);
@@ -1896,6 +1903,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       prefs = NULL;
    }
 
+   const mongoc_ss_log_context_t ss_log_context = {.operation = command_name};
    if (read_write_opts.serverId) {
       /* "serverId" passed in opts */
       server_stream = mongoc_cluster_stream_for_server (
@@ -1905,9 +1913,9 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
          parts.user_query_flags |= MONGOC_QUERY_SECONDARY_OK;
       }
    } else if (parts.is_write_command) {
-      server_stream = mongoc_cluster_stream_for_writes (cluster, cs, NULL, reply_ptr, error);
+      server_stream = mongoc_cluster_stream_for_writes (cluster, &ss_log_context, cs, NULL, reply_ptr, error);
    } else {
-      server_stream = mongoc_cluster_stream_for_reads (cluster, prefs, cs, NULL, reply_ptr, error);
+      server_stream = mongoc_cluster_stream_for_reads (cluster, &ss_log_context, prefs, cs, NULL, reply_ptr, error);
    }
 
    if (!server_stream) {
@@ -2692,7 +2700,8 @@ mongoc_client_select_server (mongoc_client_t *client,
       return NULL;
    }
 
-   sd = mongoc_topology_select (client->topology, optype, prefs, NULL /* chosen read mode */, error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "mongoc_client_select_server"};
+   sd = mongoc_topology_select (client->topology, optype, &ss_log_context, prefs, NULL /* chosen read mode */, error);
    if (!sd) {
       return NULL;
    }
@@ -2704,7 +2713,7 @@ mongoc_client_select_server (mongoc_client_t *client,
 
    /* check failed, retry once */
    mongoc_server_description_destroy (sd);
-   sd = mongoc_topology_select (client->topology, optype, prefs, NULL /* chosen read mode */, error);
+   sd = mongoc_topology_select (client->topology, optype, &ss_log_context, prefs, NULL /* chosen read mode */, error);
    if (sd) {
       return sd;
    }
@@ -2753,11 +2762,13 @@ mongoc_client_set_appname (mongoc_client_t *client, const char *appname)
 }
 
 mongoc_server_session_t *
-_mongoc_client_pop_server_session (mongoc_client_t *client, bson_error_t *error)
+_mongoc_client_pop_server_session (mongoc_client_t *client,
+                                   const mongoc_ss_log_context_t *log_context,
+                                   bson_error_t *error)
 {
    BSON_ASSERT_PARAM (client);
 
-   return _mongoc_topology_pop_server_session (client->topology, error);
+   return _mongoc_topology_pop_server_session (client->topology, log_context, error);
 }
 
 /*
@@ -2846,8 +2857,15 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
 
    while (!mongoc_server_session_pool_is_empty (t->session_pool)) {
       prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
-      server_id = mongoc_topology_select_server_id (
-         t, MONGOC_SS_READ, prefs, NULL /* chosen read mode */, NULL /* deprioritized servers */, &error);
+      const mongoc_ss_log_context_t ss_log_context = {
+         .operation = "endSessions", .has_operation_id = true, .operation_id = 1 + cluster->operation_id};
+      server_id = mongoc_topology_select_server_id (t,
+                                                    MONGOC_SS_READ,
+                                                    &ss_log_context,
+                                                    prefs,
+                                                    NULL /* chosen read mode */,
+                                                    NULL /* deprioritized servers */,
+                                                    &error);
 
       mongoc_read_prefs_destroy (prefs);
       if (!server_id) {

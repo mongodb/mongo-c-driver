@@ -3884,7 +3884,8 @@ server_id_for_read_mode (mongoc_client_t *client, mongoc_read_mode_t read_mode)
    ASSERT (client);
 
    prefs = mongoc_read_prefs_new (read_mode);
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_mongoc_bulk"};
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, prefs, NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
    server_id = sd->id;

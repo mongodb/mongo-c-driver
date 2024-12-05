@@ -24,6 +24,7 @@
 #include "mongoc-cmd-private.h"
 #include "mongoc-error-private.h"
 #include "mongoc-server-description-private.h"
+#include "mongoc-read-prefs-private.h"
 #include "mongoc-structured-log.h"
 
 BSON_BEGIN_DECLS
@@ -182,6 +183,18 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
    {.func = _mongoc_structured_log_append_error, .arg1.utf8 = (_key_or_null), .arg2.error = (_error_or_null)},
 
 /**
+ * @def read_prefs(key, value)
+ * @brief Structured log item, mongoc_read_prefs_t document
+ *
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
+ * @param value Error as a const mongoc_read_prefs_t * expression. NULL is equivalent to Primary read preference.
+ * */
+#define _mongoc_structured_log_item_read_prefs(_key_or_null, _value_read_prefs) \
+   {.func = _mongoc_structured_log_append_read_prefs,                           \
+    .arg1.utf8 = (_key_or_null),                                                \
+    .arg2.read_prefs = (_value_read_prefs)},
+
+/**
  * @def oid_as_hex(key, value)
  * @brief Structured log item, bson_oid_t converted to a hex string
  *
@@ -203,6 +216,18 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
  */
 #define _mongoc_structured_log_item_bson_as_json(_key_or_null, _value_bson) \
    {.func = _mongoc_structured_log_append_bson_as_json, .arg1.utf8 = (_key_or_null), .arg2.bson = (_value_bson)},
+
+/**
+ * @def topology_as_description_json(key, topology)
+ * @brief Structured log item, current description from a mongoc_topology_t serialized into a json string
+ *
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
+ * @param topology Topology as a const mongoc_topology_t * expression, or NULL for a null value.
+ */
+#define _mongoc_structured_log_item_topology_as_description_json(_key_or_null, _topology) \
+   {.func = _mongoc_structured_log_append_topology_as_description_json,                   \
+    .arg1.utf8 = (_key_or_null),                                                          \
+    .arg2.topology = (_topology)},
 
 typedef enum {
    MONGOC_STRUCTURED_LOG_CMD_CONTENT_FLAG_COMMAND = (1 << 0),
@@ -241,6 +266,7 @@ typedef enum {
  * For cases where a mongo_cmd_t is not available; makes redaction decisions based
  * on command name but not body, so it's unsuitable for the "hello" reply.
  *
+ * @param cmd_name Command name as a const char * expression. Required.
  * @param cmd_name Command name as a const char * expression. Required.
  * @param reply Borrowed reference to reply document, as a const bson_t * expression. Required.
  */
@@ -287,7 +313,7 @@ typedef enum {
  * @brief Structured log item, mongoc_server_description_t fields
  *
  * @param sd Borrowed server description reference, as a const mongoc_server_description_t * expression. Required.
- * @param ... Fields to include. Order is not significant. Any of: SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID,
+ * @param ... Fields to include. Order is not significant. Any of: TYPE, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID,
  * SERVICE_ID.
  * */
 #define _mongoc_structured_log_item_server_description(_server_description, ...) \
@@ -332,11 +358,13 @@ struct mongoc_structured_log_builder_stage_t {
       const bson_error_t *error;
       const bson_t *bson;
       const char *utf8;
+      const mongoc_read_prefs_t *read_prefs;
+      const struct _mongoc_topology_t *topology;
       int32_t int32;
       int64_t int64;
       mongoc_error_content_flags_t error_flags;
-      mongoc_structured_log_cmd_content_flags_t cmd_flags;
       mongoc_server_description_content_flags_t server_description_flags;
+      mongoc_structured_log_cmd_content_flags_t cmd_flags;
    } arg2;
    // Avoid adding an arg3, prefer to use additional stages
 };
@@ -448,6 +476,16 @@ const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_server_description (bson_t *bson,
                                                   const mongoc_structured_log_builder_stage_t *stage,
                                                   const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_topology_as_description_json (bson_t *bson,
+                                                            const mongoc_structured_log_builder_stage_t *stage,
+                                                            const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_read_prefs (bson_t *bson,
+                                          const mongoc_structured_log_builder_stage_t *stage,
+                                          const mongoc_structured_log_opts_t *opts);
 
 BSON_END_DECLS
 

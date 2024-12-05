@@ -73,7 +73,8 @@ test_sasl_canonicalize_hostname (void *ctx)
    BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
-   ss = mongoc_cluster_stream_for_reads (&client->cluster, NULL, NULL, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_sasl_canonicalize_hostname"};
+   ss = mongoc_cluster_stream_for_reads (&client->cluster, &ss_log_context, NULL, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (ss, error);
 
    BSON_ASSERT (_mongoc_sasl_get_canonicalized_name (ss->stream, real_name, sizeof real_name));

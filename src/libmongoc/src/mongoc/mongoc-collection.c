@@ -60,7 +60,11 @@ _mongoc_collection_write_command_execute (mongoc_write_command_t *command,
 
    ENTRY;
 
-   server_stream = mongoc_cluster_stream_for_writes (&collection->client->cluster, cs, NULL, NULL, &result->error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (command),
+                                                   .has_operation_id = true,
+                                                   .operation_id = command->operation_id};
+   server_stream =
+      mongoc_cluster_stream_for_writes (&collection->client->cluster, &ss_log_context, cs, NULL, NULL, &result->error);
 
    if (!server_stream) {
       /* result->error has been filled out */
@@ -94,8 +98,11 @@ _mongoc_collection_write_command_execute_idl (mongoc_write_command_t *command,
 
    ENTRY;
 
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (command),
+                                                   .has_operation_id = true,
+                                                   .operation_id = command->operation_id};
    server_stream = mongoc_cluster_stream_for_writes (
-      &collection->client->cluster, crud->client_session, NULL, &reply, &result->error);
+      &collection->client->cluster, &ss_log_context, crud->client_session, NULL, &reply, &result->error);
 
    if (!server_stream) {
       /* result->error and reply have been filled out */
@@ -1522,8 +1529,9 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    bson_array_builder_append_document_end (ar, &doc);
    bson_append_array_builder_end (&cmd, ar);
 
-   server_stream =
-      mongoc_cluster_stream_for_writes (&collection->client->cluster, parsed.client_session, NULL, reply, error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "createIndexes"};
+   server_stream = mongoc_cluster_stream_for_writes (
+      &collection->client->cluster, &ss_log_context, parsed.client_session, NULL, reply, error);
 
    if (!server_stream) {
       reply_initialized = true;
@@ -2080,8 +2088,11 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       command.flags.has_update_hint = true;
    }
 
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (&command),
+                                                   .has_operation_id = true,
+                                                   .operation_id = command.operation_id};
    server_stream = mongoc_cluster_stream_for_writes (
-      &collection->client->cluster, update_opts->crud.client_session, NULL, reply, error);
+      &collection->client->cluster, &ss_log_context, update_opts->crud.client_session, NULL, reply, error);
 
    if (!server_stream) {
       /* mongoc_cluster_stream_for_writes inits reply on error */
@@ -3119,7 +3130,9 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
       GOTO (done);
    }
 
-   server_stream = mongoc_cluster_stream_for_writes (cluster, appended_opts.client_session, NULL, &ss_reply, error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "findAndModify"};
+   server_stream =
+      mongoc_cluster_stream_for_writes (cluster, &ss_log_context, appended_opts.client_session, NULL, &ss_reply, error);
 
    if (!server_stream) {
       bson_concat (reply, &ss_reply);
@@ -3412,7 +3425,9 @@ mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
 
    // Check for commitQuorum option.
    if (opts && bson_has_field (opts, "commitQuorum")) {
+      const mongoc_ss_log_context_t ss_log_context = {.operation = "createIndexes"};
       server_stream = mongoc_cluster_stream_for_writes (&collection->client->cluster,
+                                                        &ss_log_context,
                                                         NULL /* mongoc_client_session_t */,
                                                         NULL /* deprioritized servers */,
                                                         reply_ptr,

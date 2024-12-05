@@ -225,7 +225,8 @@ _test_last_write_date (bool pooled)
    ASSERT_OR_PRINT (r, error);
 
    _mongoc_usleep (1000 * 1000);
-   s0 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_last_write_date"};
+   s0 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, &error);
    ASSERT_OR_PRINT (s0, error);
 
    _mongoc_usleep (1000 * 1000);
@@ -233,7 +234,7 @@ _test_last_write_date (bool pooled)
    ASSERT_OR_PRINT (r, error);
 
    _mongoc_usleep (1000 * 1000);
-   s1 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   s1 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, &error);
    ASSERT_OR_PRINT (s1, error);
    ASSERT_CMPINT64 (s1->last_write_date_ms, !=, (int64_t) -1);
 
@@ -290,7 +291,8 @@ _test_last_write_date_absent (bool pooled)
       client = test_framework_new_default_client ();
    }
 
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_last_write_date_absent"};
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, NULL, NULL, &error);
    ASSERT_OR_PRINT (sd, error);
 
    /* lastWriteDate absent */

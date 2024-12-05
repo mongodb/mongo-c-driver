@@ -326,30 +326,13 @@ static void
 _mongoc_cmd_parts_add_read_prefs (bson_t *query, const mongoc_read_prefs_t *prefs)
 {
    bson_t child;
-   const char *mode_str;
-   const bson_t *tags;
-   int64_t stale;
-   const bson_t *hedge;
-
-   mode_str = _mongoc_read_mode_as_str (mongoc_read_prefs_get_mode (prefs));
-   tags = mongoc_read_prefs_get_tags (prefs);
-   stale = mongoc_read_prefs_get_max_staleness_seconds (prefs);
-   hedge = mongoc_read_prefs_get_hedge (prefs);
 
    bson_append_document_begin (query, "$readPreference", 15, &child);
-   bson_append_utf8 (&child, "mode", 4, mode_str, -1);
-   if (!bson_empty0 (tags)) {
-      bson_append_array (&child, "tags", 4, tags);
-   }
-
-   if (stale != MONGOC_NO_MAX_STALENESS) {
-      bson_append_int64 (&child, "maxStalenessSeconds", 19, stale);
-   }
-
-   if (!bson_empty0 (hedge)) {
-      bson_append_document (&child, "hedge", 5, hedge);
-   }
-
+   mongoc_read_prefs_append_contents_to_bson (
+      prefs,
+      &child,
+      MONGOC_READ_PREFS_CONTENT_FLAG_MODE | MONGOC_READ_PREFS_CONTENT_FLAG_TAGS |
+         MONGOC_READ_PREFS_CONTENT_FLAG_MAX_STALENESS_SECONDS | MONGOC_READ_PREFS_CONTENT_FLAG_HEDGE);
    bson_append_document_end (query, &child);
 }
 

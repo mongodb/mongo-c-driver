@@ -337,6 +337,13 @@ _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
 }
 
 
+const char *
+_mongoc_write_command_get_name (const mongoc_write_command_t *command)
+{
+   return gCommandNames[command->type];
+}
+
+
 /* takes initialized bson_t *doc and begins formatting a write command */
 void
 _mongoc_write_command_init (bson_t *doc, mongoc_write_command_t *command, const char *collection)
@@ -347,7 +354,7 @@ _mongoc_write_command_init (bson_t *doc, mongoc_write_command_t *command, const 
       EXIT;
    }
 
-   BSON_APPEND_UTF8 (doc, gCommandNames[command->type], collection);
+   BSON_APPEND_UTF8 (doc, _mongoc_write_command_get_name (command), collection);
    BSON_APPEND_BOOL (doc, "ordered", command->flags.ordered);
 
    if (command->flags.bypass_document_validation) {
@@ -399,8 +406,11 @@ _empty_error (mongoc_write_command_t *command, bson_error_t *error)
                                     MONGOC_ERROR_COLLECTION_INSERT_FAILED,
                                     MONGOC_ERROR_COLLECTION_UPDATE_FAILED};
 
-   bson_set_error (
-      error, MONGOC_ERROR_COLLECTION, codes[command->type], "Cannot do an empty %s", gCommandNames[command->type]);
+   bson_set_error (error,
+                   MONGOC_ERROR_COLLECTION,
+                   codes[command->type],
+                   "Cannot do an empty %s",
+                   _mongoc_write_command_get_name (command));
 }
 
 

@@ -193,7 +193,9 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   bson_error_t *error);
 
 mongoc_server_session_t *
-_mongoc_client_pop_server_session (mongoc_client_t *client, bson_error_t *error);
+_mongoc_client_pop_server_session (mongoc_client_t *client,
+                                   const mongoc_ss_log_context_t *log_context,
+                                   bson_error_t *error);
 
 bool
 _mongoc_client_lookup_session (const mongoc_client_t *client,

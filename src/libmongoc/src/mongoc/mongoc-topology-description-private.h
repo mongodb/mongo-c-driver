@@ -67,6 +67,18 @@ struct _mongoc_topology_description_t {
 
 typedef enum { MONGOC_SS_READ, MONGOC_SS_WRITE, MONGOC_SS_AGGREGATE_WITH_WRITE } mongoc_ss_optype_t;
 
+/**
+ * @brief Contextual information for logging during server selection
+ *
+ * Required to support the "common fields" defined in the Server Selection Logging specification.
+ * The 'operation' string is borrowed for the lifetime of the mongoc_ss_log_context_t.
+ */
+typedef struct _mongoc_ss_log_context_t {
+   const char *operation; // Required
+   int64_t operation_id;
+   bool has_operation_id;
+} mongoc_ss_log_context_t;
+
 void
 mongoc_topology_description_init (mongoc_topology_description_t *description, int64_t heartbeat_msec);
 

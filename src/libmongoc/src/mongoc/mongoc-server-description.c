@@ -1239,6 +1239,10 @@ mongoc_server_description_append_contents_to_bson (const mongoc_server_descripti
        !BSON_APPEND_INT32 (bson, "serverPort", sd->host.port)) {
       return false;
    }
+   if ((flags & MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_ADDRESS) &&
+       !BSON_APPEND_UTF8 (bson, "address", sd->host.host_and_port)) {
+      return false;
+   }
    if (flags & MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_SERVER_CONNECTION_ID) {
       int64_t server_connection_id = sd->server_connection_id;
       if (MONGOC_NO_SERVER_CONNECTION_ID != server_connection_id) {
