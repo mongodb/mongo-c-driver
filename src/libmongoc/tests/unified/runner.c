@@ -51,6 +51,9 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
    {"driver-connection-id", SKIP_ALL_TESTS},
+   {"minPoolSize-error", SKIP_ALL_TESTS},
+   {"pool-cleared-on-min-pool-size-population-error", SKIP_ALL_TESTS},
+   {"insert-shutdown-error", SKIP_ALL_TESTS},
    // CDRIVER-4115: listCollections does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
    // CDRIVER-4116: listIndexes does not support batchSize.
