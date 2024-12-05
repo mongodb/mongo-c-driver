@@ -2130,4 +2130,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "command-logging-and-monitoring");
 
    run_unified_tests (suite, JSON_DIR, "server_selection/logging");
+
+   run_unified_tests (suite, JSON_DIR, "server_discovery_and_monitoring/unified");
 }
