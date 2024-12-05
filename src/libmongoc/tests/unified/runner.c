@@ -1353,15 +1353,30 @@ test_check_log_message (test_t *test, bson_t *expected, log_message_t *actual, b
       goto done;
    }
 
-   const char *actual_level_str = mongoc_structured_log_get_level_name (actual->level);
-   if (0 != bson_strcasecmp (expected_level_str, actual_level_str)) {
-      test_set_error (error, "expected log level: %s, but got: %s", expected_level_str, actual_level_str);
+   mongoc_structured_log_level_t expected_level;
+   if (!mongoc_structured_log_get_named_level (expected_level_str, &expected_level)) {
+      test_set_error (error, "expected log level '%s' is not recognized", expected_level_str);
+      goto done;
+   }
+   mongoc_structured_log_component_t expected_component;
+   if (!mongoc_structured_log_get_named_component (expected_component_str, &expected_component)) {
+      test_set_error (error, "expected log component '%s' is not recognized", expected_component_str);
       goto done;
    }
 
-   const char *actual_component_str = mongoc_structured_log_get_component_name (actual->component);
-   if (0 != bson_strcasecmp (expected_component_str, actual_component_str)) {
-      test_set_error (error, "expected log component: %s, but got: %s", expected_component_str, actual_component_str);
+   if (expected_level != actual->level) {
+      test_set_error (error,
+                      "expected log level: %s, but got: %s",
+                      mongoc_structured_log_get_level_name (expected_level),
+                      mongoc_structured_log_get_level_name (actual->level));
+      goto done;
+   }
+
+   if (expected_component != actual->component) {
+      test_set_error (error,
+                      "expected log component: %s, but got: %s",
+                      mongoc_structured_log_get_component_name (expected_component),
+                      mongoc_structured_log_get_component_name (actual->component));
       goto done;
    }
 
