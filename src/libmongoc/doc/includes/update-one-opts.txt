@@ -15,3 +15,4 @@
 * ``upsert``: When true, creates a new document if no document matches the query.
 * ``let``: A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language.
 * ``arrayFilters``: An array of filters specifying to which array elements an update should apply.
+* ``sort``: Specify a sort order when matching documents.
