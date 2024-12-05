@@ -240,7 +240,7 @@ typedef enum {
  * For cases where a mongo_cmd_t is not available; makes redaction decisions based
  * on command name but not body, so it's unsuitable for the "hello" reply.
  *
- * @param cmd Command name as a const char * expression. Required.
+ * @param cmd_name Command name as a const char * expression. Required.
  * @param reply Borrowed reference to reply document, as a const bson_t * expression. Required.
  */
 #define _mongoc_structured_log_item_cmd_name_reply(_cmd_name, _reply_bson) \
@@ -271,7 +271,7 @@ typedef enum {
  * The 'error' is examined to determine whether this is a client-side or server-side failure.
  * The command's name and body may influence the reply's redaction.
  *
- * @param cmd Command name as a const char * expression. Required.
+ * @param cmd_name Command name as a const char * expression. Required.
  * @param reply Borrowed reference to reply document, as a const bson_t * expression. Required.
  * @param error Borrowed reference to a libmongoc error, as a const bson_error_t * expression. Required.
  */
@@ -285,7 +285,7 @@ typedef enum {
  * @def server_description(sd, ...)
  * @brief Structured log item, mongoc_server_description_t fields
  *
- * @param cmd Borrowed server description reference, as a const mongoc_server_description_t * expression. Required.
+ * @param sd Borrowed server description reference, as a const mongoc_server_description_t * expression. Required.
  * @param ... Fields to include. Order is not significant. Any of: SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID,
  * SERVICE_ID.
  * */
