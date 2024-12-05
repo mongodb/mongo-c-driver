@@ -1158,6 +1158,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    bool try_once;
    int64_t sleep_usec;
    bool tried_once;
+   bool logged_waiting_for_suitable_server = false;
    bson_error_t scanner_error = {0};
    int64_t heartbeat_msec;
    uint32_t server_id;
@@ -1243,6 +1244,19 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
                   server_id = 0;
                   goto done;
+               }
+               if (!logged_waiting_for_suitable_server) {
+                  logged_waiting_for_suitable_server = true;
+                  mongoc_structured_log (
+                     topology->structured_log,
+                     MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                     MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                     "Waiting for suitable server to become available",
+                     read_prefs ("selector", read_prefs),
+                     utf8 ("operation", log_context->operation),
+                     int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                     topology_as_description_json ("topologyDescription", topology),
+                     int64 ("remainingTimeMS", (expire_at - loop_end) / 1000));
                }
                topology->usleep_fn (sleep_usec, topology->usleep_data);
             }
@@ -1333,6 +1347,18 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
              _mongoc_read_mode_as_str (mongoc_read_prefs_get_mode (read_prefs)));
       _mongoc_topology_request_scan (topology);
 
+      if (!logged_waiting_for_suitable_server) {
+         logged_waiting_for_suitable_server = true;
+         mongoc_structured_log (topology->structured_log,
+                                MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                                MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                                "Waiting for suitable server to become available",
+                                read_prefs ("selector", read_prefs),
+                                utf8 ("operation", log_context->operation),
+                                int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                                topology_as_description_json ("topologyDescription", topology),
+                                int64 ("remainingTimeMS", (expire_at - loop_start) / 1000));
+      }
       TRACE ("server selection about to wait for %" PRId64 "ms", (expire_at - loop_start) / 1000);
       r = mongoc_cond_timedwait (
          &topology->cond_client, &topology->tpld_modification_mtx, (expire_at - loop_start) / 1000);
