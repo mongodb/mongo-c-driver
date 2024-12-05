@@ -1492,7 +1492,6 @@ test_check_expected_log_messages_for_client (test_t *test,
                                       mongoc_structured_log_get_level_name (actual_message_iter->level),
                                       mongoc_structured_log_get_component_name (actual_message_iter->component),
                                       tmp_json (actual_message_iter->message));
-         test_set_error (error, "log message does not match expected");
       }
       bson_destroy (&expected_message);
       if (!is_match) {
