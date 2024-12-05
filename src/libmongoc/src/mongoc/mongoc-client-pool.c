@@ -612,7 +612,7 @@ void
 mongoc_client_pool_set_structured_log_opts (mongoc_client_pool_t *pool, const mongoc_structured_log_opts_t *opts)
 {
    BSON_ASSERT_PARAM (pool);
-   // opts is optional
+   BSON_OPTIONAL_PARAM (opts);
 
    /* The documented restriction for most pool options: They can be set at most once,
     * and only before the first client is initialized. Structured logging is generally

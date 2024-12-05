@@ -2615,7 +2615,7 @@ void
 mongoc_client_set_structured_log_opts (mongoc_client_t *client, const mongoc_structured_log_opts_t *opts)
 {
    BSON_ASSERT_PARAM (client);
-   // opts is optional
+   BSON_OPTIONAL_PARAM (opts);
 
    if (client->topology->single_threaded) {
       mongoc_topology_set_structured_log_opts (client->topology, opts);

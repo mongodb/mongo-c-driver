@@ -688,7 +688,7 @@ void
 mongoc_topology_set_structured_log_opts (mongoc_topology_t *topology, const mongoc_structured_log_opts_t *opts)
 {
    BSON_ASSERT_PARAM (topology);
-   // opts is optional
+   BSON_OPTIONAL_PARAM (opts);
 
    mongoc_structured_log_instance_destroy (topology->structured_log);
    topology->structured_log = mongoc_structured_log_instance_new (opts);
