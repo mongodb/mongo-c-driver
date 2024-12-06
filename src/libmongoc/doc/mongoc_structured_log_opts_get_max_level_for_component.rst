@@ -21,7 +21,7 @@ Parameters
 Returns
 -------
 
-Returns the configured maximum log level for a specific component.
+Returns the configured maximum log level for a specific component, as a :symbol:`mongoc_structured_log_level_t`.
 This may be the last value set with :symbol:`mongoc_structured_log_opts_set_max_level_for_component` or :symbol:`mongoc_structured_log_opts_set_max_level_for_all_components`, or it may be the default obtained from environment variables.
 If an invalid or unknown component enum is given, returns the lowest log level.
 
