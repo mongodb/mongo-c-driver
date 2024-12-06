@@ -56,9 +56,11 @@
 #include "mongoc-handshake-private.h"
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-error-private.h"
+#include "mongoc-structured-log-private.h"
 
 #include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>
+#include <common-oid-private.h>
 
 #include <inttypes.h>
 
@@ -508,7 +510,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    bson_t encrypted = BSON_INITIALIZER;
    bson_t decrypted = BSON_INITIALIZER;
    mongoc_cmd_t encrypted_cmd;
-   bool is_redacted = false;
+   bool is_redacted_by_apm = false;
 
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
@@ -532,9 +534,18 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       }
    }
 
+   mongoc_structured_log (
+      cluster->client->topology->structured_log,
+      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      "Command started",
+      int32 ("requestId", request_id),
+      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+      cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID, COMMAND));
+
    if (callbacks->started) {
       mongoc_apm_command_started_init_with_cmd (
-         &started_event, cmd, request_id, &is_redacted, cluster->client->apm_context);
+         &started_event, cmd, request_id, &is_redacted_by_apm, cluster->client->apm_context);
 
       callbacks->started (&started_event);
       mongoc_apm_command_started_cleanup (&started_event);
@@ -542,8 +553,10 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
 
    retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
 
-   if (retval && callbacks->succeeded) {
+   if (retval) {
       bson_t fake_reply = BSON_INITIALIZER;
+      int64_t duration = bson_get_monotonic_time () - started;
+
       /*
        * Unacknowledged writes must provide a CommandSucceededEvent with an
        * {ok: 1} reply.
@@ -552,42 +565,71 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       if (!cmd->is_acknowledged) {
          bson_append_int32 (&fake_reply, "ok", 2, 1);
       }
-      mongoc_apm_command_succeeded_init (&succeeded_event,
-                                         bson_get_monotonic_time () - started,
-                                         cmd->is_acknowledged ? reply : &fake_reply,
+
+      mongoc_structured_log (
+         cluster->client->topology->structured_log,
+         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+         "Command succeeded",
+         int32 ("requestId", request_id),
+         monotonic_time_duration (duration),
+         server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+         cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID),
+         cmd_reply (cmd, cmd->is_acknowledged ? reply : &fake_reply));
+
+      if (callbacks->succeeded) {
+         mongoc_apm_command_succeeded_init (&succeeded_event,
+                                            duration,
+                                            cmd->is_acknowledged ? reply : &fake_reply,
+                                            cmd->command_name,
+                                            cmd->db_name,
+                                            request_id,
+                                            cmd->operation_id,
+                                            &server_stream->sd->host,
+                                            server_id,
+                                            &server_stream->sd->service_id,
+                                            server_stream->sd->server_connection_id,
+                                            is_redacted_by_apm,
+                                            cluster->client->apm_context);
+
+         callbacks->succeeded (&succeeded_event);
+         mongoc_apm_command_succeeded_cleanup (&succeeded_event);
+      }
+
+      bson_destroy (&fake_reply);
+   } else {
+      int64_t duration = bson_get_monotonic_time () - started;
+
+      mongoc_structured_log (
+         cluster->client->topology->structured_log,
+         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+         "Command failed",
+         int32 ("requestId", request_id),
+         monotonic_time_duration (duration),
+         server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+         cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID),
+         cmd_failure (cmd, reply, error));
+
+      if (callbacks->failed) {
+         mongoc_apm_command_failed_init (&failed_event,
+                                         duration,
                                          cmd->command_name,
                                          cmd->db_name,
+                                         error,
+                                         reply,
                                          request_id,
                                          cmd->operation_id,
                                          &server_stream->sd->host,
                                          server_id,
                                          &server_stream->sd->service_id,
                                          server_stream->sd->server_connection_id,
-                                         is_redacted,
+                                         is_redacted_by_apm,
                                          cluster->client->apm_context);
 
-      callbacks->succeeded (&succeeded_event);
-      mongoc_apm_command_succeeded_cleanup (&succeeded_event);
-      bson_destroy (&fake_reply);
-   }
-   if (!retval && callbacks->failed) {
-      mongoc_apm_command_failed_init (&failed_event,
-                                      bson_get_monotonic_time () - started,
-                                      cmd->command_name,
-                                      cmd->db_name,
-                                      error,
-                                      reply,
-                                      request_id,
-                                      cmd->operation_id,
-                                      &server_stream->sd->host,
-                                      server_id,
-                                      &server_stream->sd->service_id,
-                                      server_stream->sd->server_connection_id,
-                                      is_redacted,
-                                      cluster->client->apm_context);
-
-      callbacks->failed (&failed_event);
-      mongoc_apm_command_failed_cleanup (&failed_event);
+         callbacks->failed (&failed_event);
+         mongoc_apm_command_failed_cleanup (&failed_event);
+      }
    }
 
    if (retval && _mongoc_cse_is_enabled (cluster->client)) {
@@ -2003,9 +2045,9 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       mongoc_topology_description_invalidate_server (tdmod.new_td, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       /* This is not load balanced mode, so there are no service IDs associated
-       * with connections. Pass kZeroServiceId to clear the entire connection
+       * with connections. Pass kZeroObjectId to clear the entire connection
        * pool to this server. */
-      _mongoc_topology_description_clear_connection_pool (tdmod.new_td, server_id, &kZeroServiceId);
+      _mongoc_topology_description_clear_connection_pool (tdmod.new_td, server_id, &kZeroObjectId);
 
       if (!topology->single_threaded) {
          _mongoc_topology_background_monitoring_cancel_check (topology, server_id);

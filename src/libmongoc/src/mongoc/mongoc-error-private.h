@@ -16,6 +16,9 @@
 
 #include "mongoc-prelude.h"
 
+#ifndef MONGOC_ERROR_PRIVATE_H
+#define MONGOC_ERROR_PRIVATE_H
+
 #include <bson/bson.h>
 #include <stddef.h>
 
@@ -93,4 +96,15 @@ _mongoc_error_is_auth (const bson_error_t *error);
 void
 _mongoc_error_append (bson_error_t *error, const char *s);
 
+typedef enum {
+   MONGOC_ERROR_CONTENT_FLAG_CODE = (1 << 0),
+   MONGOC_ERROR_CONTENT_FLAG_DOMAIN = (1 << 1),
+   MONGOC_ERROR_CONTENT_FLAG_MESSAGE = (1 << 2),
+} mongoc_error_content_flags_t;
+
+bool
+mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, mongoc_error_content_flags_t flags);
+
 BSON_END_DECLS
+
+#endif /* MONGOC_ERROR_PRIVATE_H */

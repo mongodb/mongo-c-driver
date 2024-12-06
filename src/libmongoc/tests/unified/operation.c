@@ -2514,7 +2514,9 @@ operation_failpoint (test_t *test, operation_t *op, result_t *result, bson_error
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
+   test_begin_suppressing_structured_logs ();
    mongoc_client_command_simple (client, "admin", failpoint, rp, &op_reply, &op_error);
+   test_end_suppressing_structured_logs ();
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -2572,7 +2574,9 @@ operation_targeted_failpoint (test_t *test, operation_t *op, result_t *result, b
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
+   test_begin_suppressing_structured_logs ();
    mongoc_client_command_simple_with_server_id (client, "admin", failpoint, rp, server_id, &op_reply, &op_error);
+   test_end_suppressing_structured_logs ();
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -2818,19 +2822,19 @@ assert_lsid_on_last_two_commands (test_t *test, operation_t *op, result_t *resul
       goto done;
    }
 
-   if (!bson_iter_init_find (&iter, a->command, "lsid")) {
-      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (a->command));
+   if (bson_iter_init (&iter, a->serialized) && bson_iter_find_descendant (&iter, "command.lsid", &iter)) {
+      bson_iter_bson (&iter, &a_lsid);
+   } else {
+      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (a->serialized));
       goto done;
    }
 
-   bson_iter_bson (&iter, &a_lsid);
-
-   if (!bson_iter_init_find (&iter, b->command, "lsid")) {
-      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (b->command));
+   if (bson_iter_init (&iter, b->serialized) && bson_iter_find_descendant (&iter, "command.lsid", &iter)) {
+      bson_iter_bson (&iter, &b_lsid);
+   } else {
+      test_set_error (error, "unable to find lsid in last commandStartedEvent: %s", tmp_json (b->serialized));
       goto done;
    }
-
-   bson_iter_bson (&iter, &b_lsid);
 
    if (check_same != bson_equal (&a_lsid, &b_lsid)) {
       test_set_error (error,
@@ -3809,6 +3813,121 @@ done:
    return ret;
 }
 
+static bool
+operation_create_entities (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   bson_t *entities;
+   bson_parser_array_optional (bp, "entities", &entities);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   bson_iter_t entity_iter;
+   BSON_FOREACH (entities, entity_iter)
+   {
+      bson_t entity;
+      bson_iter_bson (&entity_iter, &entity);
+      bool create_ret = entity_map_create (test->entity_map, &entity, error);
+      bson_destroy (&entity);
+      if (!create_ret) {
+         goto done;
+      }
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+#define WAIT_FOR_EVENT_TIMEOUT_MS (10 * 1000) // Specified by test runner spec
+#define WAIT_FOR_EVENT_TICK_MS 10             // Same tick size as used in non-unified json test
+
+static bool
+operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   int64_t start_time = bson_get_monotonic_time ();
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id;
+   bson_t *expected_event;
+   int64_t *expected_count;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_doc (bp, "event", &expected_event);
+   bson_parser_int (bp, "count", &expected_count);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   entity_t *client = entity_map_get (test->entity_map, client_id, error);
+   if (!client) {
+      goto done;
+   }
+
+   // @todo CDRIVER-3525 test support for CMAP events once supported by libmongoc
+   bson_iter_t iter;
+   bson_iter_init (&iter, expected_event);
+   bson_iter_next (&iter);
+   const char *expected_event_type = bson_iter_key (&iter);
+   if (is_unsupported_event_type (expected_event_type)) {
+      MONGOC_DEBUG ("Skipping wait for unsupported event type '%s'", expected_event_type);
+      result_from_ok (result);
+      ret = true;
+      goto done;
+   }
+
+   while (true) {
+      int64_t count;
+      if (!test_count_matching_events_for_client (test, client, expected_event, error, &count)) {
+         goto done;
+      }
+      if (count >= *expected_count) {
+         break;
+      }
+
+      int64_t duration = bson_get_monotonic_time () - start_time;
+      if (duration >= (int64_t) WAIT_FOR_EVENT_TIMEOUT_MS * 1000) {
+         char *event_list_string = event_list_to_string (client->events);
+         test_diagnostics_error_info ("all captured events for client:\n%s", event_list_string);
+         bson_free (event_list_string);
+         test_diagnostics_error_info ("checking for expected event: %s\n", tmp_json (expected_event));
+         test_set_error (error,
+                         "waitForEvent timed out with %" PRId64 " of %" PRId64
+                         " matches needed. waited %dms (max %dms)",
+                         count,
+                         *expected_count,
+                         (int) (duration / 1000),
+                         (int) WAIT_FOR_EVENT_TIMEOUT_MS);
+         goto done;
+      };
+
+      _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
+
+      // @todo Re-examine this once we have support for connection pools in the unified test
+      //    runner. Without pooling, all events we could be waiting on would be coming
+      //    from single-threaded (blocking) topology scans, or from lazily opening the topology
+      //    description when it's first used. Request server selection after blocking, to
+      //    handle either of these cases.
+      {
+         mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
+         if (mc_client) {
+            mongoc_topology_select_server_id (mc_client->topology, MONGOC_SS_READ, NULL, NULL, NULL, error);
+         }
+      }
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -3827,6 +3946,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"listDatabases", operation_list_databases},
       {"listDatabaseNames", operation_list_database_names},
       {"clientBulkWrite", operation_client_bulkwrite},
+      {"waitForEvent", operation_wait_for_event},
 
       /* ClientEncryption operations */
       {"createDataKey", operation_create_datakey},
@@ -3903,13 +4023,15 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"download", operation_download},
       {"upload", operation_upload},
 
-      /* Session operations. */
+      /* Session operations */
       {"endSession", operation_end_session},
       {"startTransaction", operation_start_transaction},
       {"commitTransaction", operation_commit_transaction},
       {"withTransaction", operation_with_transaction},
       {"abortTransaction", operation_abort_transaction},
 
+      /* Entity operations */
+      {"createEntities", operation_create_entities},
    };
    bool ret = false;
 
