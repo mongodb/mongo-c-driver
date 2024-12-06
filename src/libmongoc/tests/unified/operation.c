@@ -105,6 +105,10 @@ operation_create_change_stream (test_t *test, operation_t *op, result_t *result,
 
    if (0 == strcmp (entity->type, "client")) {
       mongoc_client_t *client = (mongoc_client_t *) entity->value;
+      if (!client) {
+         test_set_error (error, "client '%s' is closed", entity->id);
+         goto done;
+      }
       changestream = mongoc_client_watch (client, pipeline, opts);
    } else if (0 == strcmp (entity->type, "database")) {
       mongoc_database_t *db = (mongoc_database_t *) entity->value;
@@ -2432,12 +2436,9 @@ operation_close (test_t *test, operation_t *op, result_t *result, bson_error_t *
       goto done;
    }
 
-   if (0 != strcmp (entity->type, "findcursor") && 0 != strcmp (entity->type, "changestream")) {
-      test_set_error (error, "attempting to close an unsupported entity: %s", entity->type);
+   if (!entity_map_close (test->entity_map, op->object, error)) {
       goto done;
    }
-
-   entity_map_delete (test->entity_map, op->object, error);
 
    result_from_ok (result);
 

@@ -1144,6 +1144,10 @@ entity_client_encryption_new (entity_map_t *entity_map, bson_t *bson, bson_error
          if (!client_entity) {
             goto ce_opts_done;
          }
+         if (!client_entity->value) {
+            test_set_error (error, "client '%s' is closed", client_id);
+            goto ce_opts_done;
+         }
 
          BSON_ASSERT ((client = (mongoc_client_t *) client_entity->value));
 
@@ -1277,6 +1281,10 @@ entity_database_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error
 
    client_entity = entity_map_get (entity_map, client_id, error);
    if (!client_entity) {
+      goto done;
+   }
+   if (!client_entity) {
+      test_set_error (error, "client '%s' is closed", client_id);
       goto done;
    }
 
@@ -1471,6 +1479,7 @@ entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    }
    client = (mongoc_client_t *) client_entity->value;
    if (!client) {
+      test_set_error (error, "client '%s' is closed", client_id);
       goto done;
    }
    if (session_opts_bson) {
@@ -1639,6 +1648,38 @@ done:
    return ret;
 }
 
+static bool
+entity_close (entity_t *entity, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (entity);
+
+   /* Note that the unified test spec says tests SHOULD avoid using entities
+    * after close, but the SDAM tests do require access to clients after close
+    * for good reason: to check the log messages emitted over a full client
+    * life cycle.
+    *
+    * For the entity types that require 'close' support, the closed state is
+    * represented in this driver by value == NULL. */
+
+   if (0 == strcmp ("client", entity->type)) {
+      mongoc_client_t *client = (mongoc_client_t *) entity->value;
+      mongoc_client_destroy (client);
+   } else if (0 == strcmp ("changestream", entity->type)) {
+      mongoc_change_stream_t *changestream = (mongoc_change_stream_t *) entity->value;
+      mongoc_change_stream_destroy (changestream);
+   } else if (0 == strcmp ("findcursor", entity->type)) {
+      entity_findcursor_t *findcursor = (entity_findcursor_t *) entity->value;
+      mongoc_cursor_destroy (findcursor->cursor);
+      bson_free (findcursor);
+   } else {
+      test_set_error (error, "Attempting to close unsupported entity type: %s, id: %s", entity->type, entity->id);
+      return false;
+   }
+
+   entity->value = NULL;
+   return true;
+}
+
 static void
 entity_destroy (entity_t *entity)
 {
@@ -1650,11 +1691,11 @@ entity_destroy (entity_t *entity)
 
    BSON_ASSERT (entity->type);
 
-   if (0 == strcmp ("client", entity->type)) {
-      mongoc_client_t *client = NULL;
+   // Note that entities which can be 'close'd chain their destructors via close,
+   // to avoid proliferating duplicates of the per-type finalization steps.
 
-      client = (mongoc_client_t *) entity->value;
-      mongoc_client_destroy (client);
+   if (0 == strcmp ("client", entity->type)) {
+      BSON_ASSERT (entity_close (entity, NULL));
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
       mongoc_client_encryption_t *ce = NULL;
 
@@ -1676,10 +1717,7 @@ entity_destroy (entity_t *entity)
       sess = (mongoc_client_session_t *) entity->value;
       mongoc_client_session_destroy (sess);
    } else if (0 == strcmp ("changestream", entity->type)) {
-      mongoc_change_stream_t *changestream = NULL;
-
-      changestream = (mongoc_change_stream_t *) entity->value;
-      mongoc_change_stream_destroy (changestream);
+      BSON_ASSERT (entity_close (entity, NULL));
    } else if (0 == strcmp ("bson", entity->type)) {
       bson_val_t *value = entity->value;
 
@@ -1689,10 +1727,7 @@ entity_destroy (entity_t *entity)
 
       mongoc_gridfs_bucket_destroy (bucket);
    } else if (0 == strcmp ("findcursor", entity->type)) {
-      entity_findcursor_t *findcursor = entity->value;
-
-      mongoc_cursor_destroy (findcursor->cursor);
-      bson_free (findcursor);
+      BSON_ASSERT (entity_close (entity, NULL));
    } else if (0 == strcmp ("bson_array", entity->type)) {
       mongoc_array_t *array = entity->value;
 
@@ -1772,17 +1807,14 @@ entity_map_get (entity_map_t *entity_map, const char *id, bson_error_t *error)
 }
 
 bool
-entity_map_delete (entity_map_t *em, const char *id, bson_error_t *error)
+entity_map_close (entity_map_t *em, const char *id, bson_error_t *error)
 {
    entity_t *entity = entity_map_get (em, id, error);
    if (!entity) {
       return false;
    }
 
-   LL_DELETE (em->entities, entity);
-   entity_destroy (entity);
-
-   return true;
+   return entity_close (entity, error);
 }
 
 static entity_t *
@@ -1808,6 +1840,9 @@ entity_map_get_client (entity_map_t *entity_map, const char *id, bson_error_t *e
    entity_t *entity = _entity_map_get_by_type (entity_map, id, "client", error);
    if (!entity) {
       return NULL;
+   }
+   if (!entity->value) {
+      test_set_error (error, "client '%s' is closed", id);
    }
    return (mongoc_client_t *) entity->value;
 }
@@ -1849,6 +1884,9 @@ entity_map_get_changestream (entity_map_t *entity_map, const char *id, bson_erro
    if (!entity) {
       return NULL;
    }
+   if (!entity->value) {
+      test_set_error (error, "changestream '%s' is closed", id);
+   }
    return (mongoc_change_stream_t *) entity->value;
 }
 
@@ -1858,6 +1896,9 @@ entity_map_get_findcursor (entity_map_t *entity_map, const char *id, bson_error_
    entity_t *entity = _entity_map_get_by_type (entity_map, id, "findcursor", error);
    if (!entity) {
       return NULL;
+   }
+   if (!entity->value) {
+      test_set_error (error, "findcursor '%s' is closed", id);
    }
    return (entity_findcursor_t *) entity->value;
 }
@@ -2188,8 +2229,9 @@ entity_map_disable_event_listeners (entity_map_t *em)
    {
       if (0 == strcmp (eiter->type, "client")) {
          mongoc_client_t *client = (mongoc_client_t *) eiter->value;
-
-         mongoc_client_set_apm_callbacks (client, NULL, NULL);
+         if (client) {
+            mongoc_client_set_apm_callbacks (client, NULL, NULL);
+         }
       }
    }
 }

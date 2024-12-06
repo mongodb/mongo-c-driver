@@ -114,10 +114,11 @@ entity_map_add_size_t (entity_map_t *em, const char *id, size_t *value, bson_err
 entity_t *
 entity_map_get (entity_map_t *em, const char *id, bson_error_t *error);
 
-/* Removes an entity from the entity map. Returns false and sets @error if @id
- * does not map to an entry. */
+/* Implements the 'close' operation. Doesn't fully remove the entity.
+ * Returns false and sets @error if @id does not map to an entry, or
+ * if the entity type does not support 'close' operations. */
 bool
-entity_map_delete (entity_map_t *em, const char *id, bson_error_t *error);
+entity_map_close (entity_map_t *em, const char *id, bson_error_t *error);
 
 mongoc_client_t *
 entity_map_get_client (entity_map_t *entity_map, const char *id, bson_error_t *error);
