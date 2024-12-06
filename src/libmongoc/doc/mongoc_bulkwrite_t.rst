@@ -50,6 +50,8 @@ to execute the operation.
     mongoc_bulkwrite_deletemanyopts_t
     mongoc_bulkwrite_append_deletemany
     mongoc_bulkwritereturn_t
+    mongoc_bulkwrite_new
+    mongoc_bulkwrite_set_client
     mongoc_bulkwrite_set_session
     mongoc_bulkwrite_execute
     mongoc_bulkwrite_destroy
