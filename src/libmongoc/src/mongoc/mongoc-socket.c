@@ -27,6 +27,7 @@
 #ifdef _WIN32
 #include <Mstcpip.h>
 #include <process.h>
+#pragma comment(lib, "Advapi32.lib")
 #endif
 #include <common-cmp-private.h>
 
