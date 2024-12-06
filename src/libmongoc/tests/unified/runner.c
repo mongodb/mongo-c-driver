@@ -1256,8 +1256,12 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
    }
 
    entity = entity_map_get (test->entity_map, client_id, error);
+   if (!entity) {
+      test_set_error (error, "missing entity '%s', expected client", client_id);
+      goto done;
+   }
    if (0 != strcmp (entity->type, "client")) {
-      test_set_error (error, "expected entity %s to be client, got: %s", entity->id, entity->type);
+      test_set_error (error, "expected entity '%s' to be client, got: %s", entity->id, entity->type);
       goto done;
    }
 
@@ -1513,8 +1517,12 @@ test_check_expected_log_messages_for_client (test_t *test,
    }
 
    entity_t *entity = entity_map_get (test->entity_map, client_id, error);
+   if (!entity) {
+      test_set_error (error, "missing entity '%s', expected client", client_id);
+      goto done;
+   }
    if (0 != strcmp (entity->type, "client")) {
-      test_set_error (error, "expected entity %s to be client, got: %s", entity->id, entity->type);
+      test_set_error (error, "expected entity '%s' to be client, got: %s", entity->id, entity->type);
       goto done;
    }
 
