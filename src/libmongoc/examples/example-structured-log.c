@@ -13,6 +13,7 @@ example_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
    mongoc_structured_log_component_t component = mongoc_structured_log_entry_get_component (entry);
    mongoc_structured_log_level_t level = mongoc_structured_log_entry_get_level (entry);
+   const char *message_string = mongoc_structured_log_entry_get_message_string (entry);
 
    /*
     * With a single-threaded mongoc_client_t, handlers will always be called
@@ -30,9 +31,10 @@ example_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
     */
    pthread_mutex_lock (&handler_mutex);
 
-   printf ("Log component=%s level=%s\n",
+   printf ("Log entry with component=%s level=%s message_string='%s'\n",
            mongoc_structured_log_get_component_name (component),
-           mongoc_structured_log_get_level_name (level));
+           mongoc_structured_log_get_level_name (level),
+           message_string);
 
    /*
     * At this point, the handler might make additional filtering decisions
@@ -42,7 +44,7 @@ example_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
    if (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND) {
       bson_t *message = mongoc_structured_log_entry_message_as_bson (entry);
       char *json = bson_as_relaxed_extended_json (message, NULL);
-      printf ("Log body: %s\n", json);
+      printf ("Full log message, as json: %s\n", json);
       bson_destroy (message);
       bson_free (json);
    }

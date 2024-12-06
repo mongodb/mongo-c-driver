@@ -92,6 +92,15 @@ mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *
    return entry->envelope.component;
 }
 
+const char *
+mongoc_structured_log_entry_get_message_string (const mongoc_structured_log_entry_t *entry)
+{
+   // Note that 'message' happens to have static lifetime right now (all messages are literals)
+   // but our API only guarantees a lifetime that matches 'entry'.
+   BSON_ASSERT_PARAM (entry);
+   return entry->envelope.message;
+}
+
 mongoc_structured_log_level_t
 mongoc_structured_log_opts_get_max_level_for_component (const mongoc_structured_log_opts_t *opts,
                                                         mongoc_structured_log_component_t component)

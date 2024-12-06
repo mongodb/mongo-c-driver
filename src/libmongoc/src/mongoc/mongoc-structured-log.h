@@ -87,6 +87,9 @@ MONGOC_EXPORT (mongoc_structured_log_component_t)
 mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry);
 
 MONGOC_EXPORT (const char *)
+mongoc_structured_log_entry_get_message_string (const mongoc_structured_log_entry_t *entry);
+
+MONGOC_EXPORT (const char *)
 mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level);
 
 MONGOC_EXPORT (bool)

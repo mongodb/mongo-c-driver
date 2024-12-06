@@ -23,6 +23,7 @@ Functions
 
   mongoc_structured_log_entry_get_component
   mongoc_structured_log_entry_get_level
+  mongoc_structured_log_entry_get_message_string
   mongoc_structured_log_entry_message_as_bson
 
 .. seealso::
