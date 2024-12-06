@@ -45,6 +45,7 @@ typedef struct he_testcase_state {
    mock_server_t *mock_server;
    mongoc_host_list_t host;
    mongoc_topology_scanner_t *ts;
+   mongoc_log_and_monitor_instance_t log_and_monitor;
    int64_t start;
    int last_duration; /* set if timing fails, so it can be retried once. */
 } he_testcase_state_t;
@@ -246,7 +247,9 @@ _testcase_setup (he_testcase_t *testcase)
 
    _init_host (&testcase->state.host, mock_server_get_port (mock_server), testcase->client.type);
 
-   testcase->state.ts = mongoc_topology_scanner_new (NULL, NULL, &_test_scanner_callback, testcase, TIMEOUT);
+   mongoc_log_and_monitor_instance_init (&testcase->state.log_and_monitor);
+   testcase->state.ts = mongoc_topology_scanner_new (
+      NULL, &testcase->state.log_and_monitor, NULL, &_test_scanner_callback, testcase, TIMEOUT);
 
    testcase->state.mock_server = mock_server;
 
@@ -260,6 +263,7 @@ _testcase_teardown (he_testcase_t *testcase)
 {
    mock_server_destroy (testcase->state.mock_server);
    mongoc_topology_scanner_destroy (testcase->state.ts);
+   mongoc_log_and_monitor_instance_destroy_contents (&testcase->state.log_and_monitor);
 }
 
 static void

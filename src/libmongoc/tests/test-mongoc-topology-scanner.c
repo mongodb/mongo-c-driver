@@ -49,7 +49,6 @@ static void
 _test_topology_scanner (bool with_ssl)
 {
    mock_server_t *servers[NSERVERS];
-   mongoc_topology_scanner_t *topology_scanner;
    int i;
    bson_t q = BSON_INITIALIZER;
    int finished = NSERVERS * 3;
@@ -59,7 +58,10 @@ _test_topology_scanner (bool with_ssl)
    mongoc_ssl_opt_t copt = {0};
 #endif
 
-   topology_scanner = mongoc_topology_scanner_new (NULL, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
+   mongoc_log_and_monitor_instance_t log_and_monitor;
+   mongoc_log_and_monitor_instance_init (&log_and_monitor);
+   mongoc_topology_scanner_t *topology_scanner =
+      mongoc_topology_scanner_new (NULL, &log_and_monitor, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
@@ -98,6 +100,7 @@ _test_topology_scanner (bool with_ssl)
    BSON_ASSERT (finished == 0);
 
    mongoc_topology_scanner_destroy (topology_scanner);
+   mongoc_log_and_monitor_instance_destroy_contents (&log_and_monitor);
 
    bson_destroy (&q);
 
@@ -463,8 +466,12 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
    mongoc_socket_t *sock;
    mongoc_topology_scanner_node_t *node;
 
+   mongoc_log_and_monitor_instance_t log_and_monitor;
+   mongoc_log_and_monitor_instance_init (&log_and_monitor);
+
    server = _mock_server_listening_on (testcase->server_bind_to);
-   ts = mongoc_topology_scanner_new (NULL, NULL, &_test_topology_scanner_dns_helper, testcase, TIMEOUT);
+   ts =
+      mongoc_topology_scanner_new (NULL, &log_and_monitor, NULL, &_test_topology_scanner_dns_helper, testcase, TIMEOUT);
    host_str = bson_strdup_printf ("%s:%d", testcase->client_hostname, mock_server_get_port (server));
    BSON_ASSERT (_mongoc_host_list_from_string (&host, host_str));
    /* we should only have one host. */
@@ -493,6 +500,7 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
 
    mongoc_topology_scanner_destroy (ts);
    mock_server_destroy (server);
+   mongoc_log_and_monitor_instance_destroy_contents (&log_and_monitor);
 }
 
 /* test when clients try connecting to servers varying the DNS results of the
@@ -569,7 +577,10 @@ test_topology_retired_fails_to_initiate (void)
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
 
-   scanner = mongoc_topology_scanner_new (NULL, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
+   mongoc_log_and_monitor_instance_t log_and_monitor;
+   mongoc_log_and_monitor_instance_init (&log_and_monitor);
+
+   scanner = mongoc_topology_scanner_new (NULL, &log_and_monitor, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
 
    BSON_ASSERT (_mongoc_host_list_from_string (&host_list, mock_server_get_host_and_port (server)));
 
@@ -590,6 +601,7 @@ test_topology_retired_fails_to_initiate (void)
 
    mongoc_topology_scanner_destroy (scanner);
    mock_server_destroy (server);
+   mongoc_log_and_monitor_instance_destroy_contents (&log_and_monitor);
 }
 
 static void

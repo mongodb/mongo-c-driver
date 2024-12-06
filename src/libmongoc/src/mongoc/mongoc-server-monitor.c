@@ -83,8 +83,6 @@ struct _mongoc_server_monitor_t {
    mongoc_stream_initiator_t initiator;
    void *initiator_context;
    int32_t request_id;
-   mongoc_apm_callbacks_t apm_callbacks;
-   void *apm_context;
 
    mongoc_stream_t *stream;
    bool more_to_come;
@@ -131,19 +129,21 @@ static void
 _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor, bool awaited)
 {
    mongoc_apm_server_heartbeat_started_t event;
-   MONGOC_DEBUG_ASSERT (!mcommon_mutex_is_locked (&server_monitor->topology->apm_mutex));
+   mongoc_log_and_monitor_instance_t *log_and_monitor = &server_monitor->topology->log_and_monitor;
 
-   if (!server_monitor->apm_callbacks.server_heartbeat_started) {
+   MONGOC_DEBUG_ASSERT (!mcommon_mutex_is_locked (&log_and_monitor->apm_mutex));
+
+   if (!log_and_monitor->apm_callbacks.server_heartbeat_started) {
       return;
    }
 
    event.host = &server_monitor->description->host;
-   event.context = server_monitor->apm_context;
+   event.context = log_and_monitor->apm_context;
    MONITOR_LOG (server_monitor, "%s heartbeat started", awaited ? "awaitable" : "regular");
    event.awaited = awaited;
-   bson_mutex_lock (&server_monitor->topology->apm_mutex);
-   server_monitor->apm_callbacks.server_heartbeat_started (&event);
-   bson_mutex_unlock (&server_monitor->topology->apm_mutex);
+   bson_mutex_lock (&log_and_monitor->apm_mutex);
+   log_and_monitor->apm_callbacks.server_heartbeat_started (&event);
+   bson_mutex_unlock (&log_and_monitor->apm_mutex);
 }
 
 static void
@@ -153,20 +153,21 @@ _server_monitor_heartbeat_succeeded (mongoc_server_monitor_t *server_monitor,
                                      bool awaited)
 {
    mongoc_apm_server_heartbeat_succeeded_t event;
+   mongoc_log_and_monitor_instance_t *log_and_monitor = &server_monitor->topology->log_and_monitor;
 
-   if (!server_monitor->apm_callbacks.server_heartbeat_succeeded) {
+   if (!log_and_monitor->apm_callbacks.server_heartbeat_succeeded) {
       return;
    }
 
    event.host = &server_monitor->description->host;
-   event.context = server_monitor->apm_context;
+   event.context = log_and_monitor->apm_context;
    event.reply = reply;
    event.duration_usec = duration_usec;
    MONITOR_LOG (server_monitor, "%s heartbeat succeeded", awaited ? "awaitable" : "regular");
    event.awaited = awaited;
-   bson_mutex_lock (&server_monitor->topology->apm_mutex);
-   server_monitor->apm_callbacks.server_heartbeat_succeeded (&event);
-   bson_mutex_unlock (&server_monitor->topology->apm_mutex);
+   bson_mutex_lock (&log_and_monitor->apm_mutex);
+   log_and_monitor->apm_callbacks.server_heartbeat_succeeded (&event);
+   bson_mutex_unlock (&log_and_monitor->apm_mutex);
 }
 
 static void
@@ -176,20 +177,21 @@ _server_monitor_heartbeat_failed (mongoc_server_monitor_t *server_monitor,
                                   bool awaited)
 {
    mongoc_apm_server_heartbeat_failed_t event;
+   mongoc_log_and_monitor_instance_t *log_and_monitor = &server_monitor->topology->log_and_monitor;
 
-   if (!server_monitor->apm_callbacks.server_heartbeat_failed) {
+   if (!log_and_monitor->apm_callbacks.server_heartbeat_failed) {
       return;
    }
 
    event.host = &server_monitor->description->host;
-   event.context = server_monitor->apm_context;
+   event.context = log_and_monitor->apm_context;
    event.error = error;
    event.duration_usec = duration_usec;
    MONITOR_LOG (server_monitor, "%s heartbeat failed", awaited ? "awaitable" : "regular");
    event.awaited = awaited;
-   bson_mutex_lock (&server_monitor->topology->apm_mutex);
-   server_monitor->apm_callbacks.server_heartbeat_failed (&event);
-   bson_mutex_unlock (&server_monitor->topology->apm_mutex);
+   bson_mutex_lock (&log_and_monitor->apm_mutex);
+   log_and_monitor->apm_callbacks.server_heartbeat_failed (&event);
+   bson_mutex_unlock (&log_and_monitor->apm_mutex);
 }
 
 static void
@@ -784,8 +786,12 @@ _update_topology_description (mongoc_server_monitor_t *server_monitor, mongoc_se
    bson_mutex_lock (&server_monitor->shared.mutex);
    server_monitor->shared.scan_requested = false;
    bson_mutex_unlock (&server_monitor->shared.mutex);
-   mongoc_topology_description_handle_hello (
-      tdmod.new_td, server_monitor->server_id, hello_response, description->round_trip_time_msec, &description->error);
+   mongoc_topology_description_handle_hello (tdmod.new_td,
+                                             &topology->log_and_monitor,
+                                             server_monitor->server_id,
+                                             hello_response,
+                                             description->round_trip_time_msec,
+                                             &description->error);
    /* Reconcile server monitors. */
    _mongoc_topology_background_monitoring_reconcile (topology, tdmod.new_td);
    /* Wake threads performing server selection. */
@@ -838,8 +844,6 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
       _mongoc_ssl_opts_copy_to (topology->scanner->ssl_opts, server_monitor->ssl_opts, true);
    }
 #endif
-   memcpy (&server_monitor->apm_callbacks, &td->apm_callbacks, sizeof (mongoc_apm_callbacks_t));
-   server_monitor->apm_context = td->apm_context;
    server_monitor->initiator = topology->scanner->initiator;
    server_monitor->initiator_context = topology->scanner->initiator_context;
    server_monitor->mode = _server_monitor_get_mode_enum (server_monitor);

@@ -165,7 +165,7 @@ test_sdam_cb (void *test_vp)
     * when SDAM monitoring begins. Force an opening, which would occur on the
     * first operation on the client. */
    tdmod = mc_tpld_modify_begin (client->topology);
-   _mongoc_topology_description_monitor_opening (tdmod.new_td);
+   _mongoc_topology_description_monitor_opening (tdmod.new_td, &client->topology->log_and_monitor);
    mc_tpld_modify_commit (tdmod);
 
    while (bson_iter_next (&phase_iter)) {

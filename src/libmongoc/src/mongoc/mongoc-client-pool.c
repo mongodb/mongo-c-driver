@@ -23,6 +23,7 @@
 #include <mongoc/mongoc-client-pool.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-log-and-monitor-private.h>
 #include <mongoc/mongoc-queue-private.h>
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-topology-private.h>
@@ -54,8 +55,6 @@ struct _mongoc_client_pool_t {
    bool error_api_set;
    bool structured_log_opts_set;
    bool client_initialized;
-   mongoc_apm_callbacks_t apm_callbacks;
-   void *apm_context;
    int32_t error_api_version;
    mongoc_server_api_t *api;
    // `last_known_serverids` is a sorted array of uint32_t.
@@ -283,7 +282,6 @@ _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
 
    pool->client_initialized = true;
    client->error_api_version = pool->error_api_version;
-   _mongoc_client_set_apm_callbacks_private (client, &pool->apm_callbacks, pool->apm_context);
 
    client->api = mongoc_server_api_copy (pool->api);
 
@@ -577,33 +575,17 @@ bool
 mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool, mongoc_apm_callbacks_t *callbacks, void *context)
 {
    BSON_ASSERT_PARAM (pool);
-
-   mongoc_topology_t *const topology = BSON_ASSERT_PTR_INLINE (pool)->topology;
-   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+   BSON_OPTIONAL_PARAM (callbacks);
+   BSON_OPTIONAL_PARAM (context);
 
    // Prevent setting callbacks more than once
    if (pool->apm_callbacks_set) {
-      mc_tpld_modify_drop (tdmod);
       MONGOC_ERROR ("Can only set callbacks once");
       return false;
    }
 
-   // Update callbacks on the pool
-   if (callbacks) {
-      pool->apm_callbacks = *callbacks;
-   } else {
-      pool->apm_callbacks = (mongoc_apm_callbacks_t){0};
-   }
-   pool->apm_context = context;
-
-   // Update callbacks on the topology
-   mongoc_topology_set_apm_callbacks (topology, tdmod.new_td, callbacks, context);
-
-   // Signal that we have already set the callbacks
+   mongoc_log_and_monitor_instance_set_apm_callbacks (&pool->topology->log_and_monitor, callbacks, context);
    pool->apm_callbacks_set = true;
-
-   // Save our updated topology
-   mc_tpld_modify_commit (tdmod);
 
    return true;
 }
@@ -625,7 +607,7 @@ mongoc_client_pool_set_structured_log_opts (mongoc_client_pool_t *pool, const mo
       return false;
    } else {
       // Now we can be sure no other threads are relying on concurrent access to the instance yet.
-      mongoc_topology_set_structured_log_opts (pool->topology, opts);
+      mongoc_log_and_monitor_instance_set_structured_log_opts (&pool->topology->log_and_monitor, opts);
       pool->structured_log_opts_set = true;
       return true;
    }

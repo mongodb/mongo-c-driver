@@ -134,8 +134,6 @@ typedef struct mongoc_topology_scanner {
    SSL_CTX *openssl_ctx;
 #endif
 
-   mongoc_apm_callbacks_t apm_callbacks;
-   void *apm_context;
    int64_t dns_cache_timeout_ms;
    /* only used by single-threaded clients to negotiate auth mechanisms. */
    bool negotiate_sasl_supported_mechs;
@@ -143,11 +141,13 @@ typedef struct mongoc_topology_scanner {
    bool speculative_authentication;
 
    mongoc_server_api_t *api;
+   mongoc_log_and_monitor_instance_t *log_and_monitor;
    bool loadbalanced;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
 mongoc_topology_scanner_new (const mongoc_uri_t *uri,
+                             mongoc_log_and_monitor_instance_t *log_and_monitor,
                              mongoc_topology_scanner_setup_err_cb_t setup_err_cb,
                              mongoc_topology_scanner_cb_t cb,
                              void *data,

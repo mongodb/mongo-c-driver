@@ -1122,7 +1122,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    }
 #endif
 
-   mongoc_structured_log (topology->structured_log,
+   mongoc_structured_log (topology->log_and_monitor.structured_log,
                           MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
                           MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,
                           "Client created");
@@ -2165,14 +2165,14 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
                                        const char *collection)
 {
    bson_t doc;
-   mongoc_client_t *client;
    mongoc_apm_command_started_t event;
 
    ENTRY;
 
-   client = cluster->client;
+   mongoc_client_t *client = cluster->client;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
 
-   if (!client->apm_callbacks.started) {
+   if (!log_and_monitor->apm_callbacks.started) {
       return;
    }
 
@@ -2189,9 +2189,9 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
                                     &server_stream->sd->service_id,
                                     server_stream->sd->server_connection_id,
                                     NULL,
-                                    client->apm_context);
+                                    log_and_monitor->apm_context);
 
-   client->apm_callbacks.started (&event);
+   log_and_monitor->apm_callbacks.started (&event);
    mongoc_apm_command_started_cleanup (&event);
    bson_destroy (&doc);
 
@@ -2207,16 +2207,16 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
                                                  int64_t operation_id,
                                                  const char *db)
 {
-   mongoc_client_t *client;
    bson_t doc;
    bson_array_builder_t *cursors_unknown;
    mongoc_apm_command_succeeded_t event;
 
    ENTRY;
 
-   client = cluster->client;
+   mongoc_client_t *client = cluster->client;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
 
-   if (!client->apm_callbacks.succeeded) {
+   if (!log_and_monitor->apm_callbacks.succeeded) {
       EXIT;
    }
 
@@ -2239,9 +2239,9 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
                                       &server_stream->sd->service_id,
                                       server_stream->sd->server_connection_id,
                                       false,
-                                      client->apm_context);
+                                      log_and_monitor->apm_context);
 
-   client->apm_callbacks.succeeded (&event);
+   log_and_monitor->apm_callbacks.succeeded (&event);
 
    mongoc_apm_command_succeeded_cleanup (&event);
    bson_destroy (&doc);
@@ -2256,15 +2256,15 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
                                               int64_t operation_id,
                                               const char *db)
 {
-   mongoc_client_t *client;
    bson_t doc;
    mongoc_apm_command_failed_t event;
 
    ENTRY;
 
-   client = cluster->client;
+   mongoc_client_t *client = cluster->client;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
 
-   if (!client->apm_callbacks.failed) {
+   if (!log_and_monitor->apm_callbacks.failed) {
       EXIT;
    }
 
@@ -2285,9 +2285,9 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
                                    &server_stream->sd->service_id,
                                    server_stream->sd->server_connection_id,
                                    false,
-                                   client->apm_context);
+                                   log_and_monitor->apm_context);
 
-   client->apm_callbacks.failed (&event);
+   log_and_monitor->apm_callbacks.failed (&event);
 
    mongoc_apm_command_failed_cleanup (&event);
    bson_destroy (&doc);
@@ -2577,33 +2577,6 @@ mongoc_client_set_stream_initiator (mongoc_client_t *client, mongoc_stream_initi
 
 
 bool
-_mongoc_client_set_apm_callbacks_private (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context)
-{
-   BSON_ASSERT_PARAM (client);
-
-   if (callbacks) {
-      memcpy (&client->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
-   } else {
-      memset (&client->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
-   }
-
-   client->apm_context = context;
-
-   /* A client pool sets APM callbacks for the entire pool. */
-   if (client->topology->single_threaded) {
-      mongoc_topology_set_apm_callbacks (client->topology,
-                                         /* We are safe to modify the shared_descr directly, since we are
-                                          * single-threaded */
-                                         mc_tpld_unsafe_get_mutable (client->topology),
-                                         callbacks,
-                                         context);
-   }
-
-   return true;
-}
-
-
-bool
 mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context)
 {
    BSON_ASSERT_PARAM (client);
@@ -2614,7 +2587,9 @@ mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t
       return false;
    }
 
-   return _mongoc_client_set_apm_callbacks_private (client, callbacks, context);
+   mongoc_log_and_monitor_instance_set_apm_callbacks (&client->topology->log_and_monitor, callbacks, context);
+
+   return true;
 }
 
 
@@ -2625,7 +2600,7 @@ mongoc_client_set_structured_log_opts (mongoc_client_t *client, const mongoc_str
    BSON_OPTIONAL_PARAM (opts);
 
    if (client->topology->single_threaded) {
-      mongoc_topology_set_structured_log_opts (client->topology, opts);
+      mongoc_log_and_monitor_instance_set_structured_log_opts (&client->topology->log_and_monitor, opts);
       return true;
    } else {
       MONGOC_WARNING ("Cannot set structured log options on a pooled client, use "

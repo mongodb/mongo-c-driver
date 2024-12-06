@@ -646,16 +646,16 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
                                 const bson_t *cmd,
                                 const char *cmd_name)
 {
-   mongoc_client_t *client;
    mongoc_apm_command_started_t event;
    char *db;
 
    ENTRY;
 
-   client = cursor->client;
+   mongoc_client_t *client = cursor->client;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
 
    mongoc_structured_log (
-      client->topology->structured_log,
+      log_and_monitor->structured_log,
       MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command started",
@@ -666,7 +666,7 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
       int64 ("operationId", cursor->operation_id),
       bson_as_json ("command", cmd));
 
-   if (!client->apm_callbacks.started) {
+   if (!log_and_monitor->apm_callbacks.started) {
       /* successful */
       RETURN (true);
    }
@@ -684,9 +684,9 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
                                     &server_stream->sd->service_id,
                                     server_stream->sd->server_connection_id,
                                     NULL,
-                                    client->apm_context);
+                                    log_and_monitor->apm_context);
 
-   client->apm_callbacks.started (&event);
+   log_and_monitor->apm_callbacks.started (&event);
    mongoc_apm_command_started_cleanup (&event);
    bson_free (db);
 
@@ -726,11 +726,11 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
 {
    bson_t docs_array;
    mongoc_apm_command_succeeded_t event;
-   mongoc_client_t *client;
 
    ENTRY;
 
-   client = cursor->client;
+   mongoc_client_t *client = cursor->client;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
 
    /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
     * {ok: 1, cursor: {id: 17, ns: "...", first/nextBatch: [ ... docs ... ]}}
@@ -748,7 +748,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
 
    bson_destroy (&docs_array);
 
-   mongoc_structured_log (client->topology->structured_log,
+   mongoc_structured_log (log_and_monitor->structured_log,
                           MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
                           "Command succeeded",
@@ -760,7 +760,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                           monotonic_time_duration (duration),
                           cmd_name_reply (cmd_name, &reply));
 
-   if (client->apm_callbacks.succeeded) {
+   if (log_and_monitor->apm_callbacks.succeeded) {
       mongoc_apm_command_succeeded_init (&event,
                                          duration,
                                          &reply,
@@ -773,9 +773,9 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                                          &stream->sd->service_id,
                                          stream->sd->server_connection_id,
                                          false,
-                                         client->apm_context);
+                                         log_and_monitor->apm_context);
 
-      client->apm_callbacks.succeeded (&event);
+      log_and_monitor->apm_callbacks.succeeded (&event);
 
       mongoc_apm_command_succeeded_cleanup (&event);
    }
@@ -794,11 +794,11 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
                                const char *cmd_name)
 {
    mongoc_apm_command_failed_t event;
-   mongoc_client_t *client;
 
    ENTRY;
 
-   client = cursor->client;
+   mongoc_client_t *client = cursor->client;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
 
    /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
     * {ok: 0}
@@ -806,7 +806,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
    bsonBuildDecl (reply, kv ("ok", int32 (0)));
    char *db = bson_strndup (cursor->ns, cursor->dblen);
 
-   mongoc_structured_log (client->topology->structured_log,
+   mongoc_structured_log (log_and_monitor->structured_log,
                           MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
                           "Command failed",
@@ -818,7 +818,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
                           monotonic_time_duration (duration),
                           bson_as_json ("failure", &reply));
 
-   if (client->apm_callbacks.failed) {
+   if (log_and_monitor->apm_callbacks.failed) {
       mongoc_apm_command_failed_init (&event,
                                       duration,
                                       cmd_name,
@@ -832,9 +832,9 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
                                       &stream->sd->service_id,
                                       stream->sd->server_connection_id,
                                       false,
-                                      client->apm_context);
+                                      log_and_monitor->apm_context);
 
-      client->apm_callbacks.failed (&event);
+      log_and_monitor->apm_callbacks.failed (&event);
 
       mongoc_apm_command_failed_cleanup (&event);
    }

@@ -411,6 +411,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
 mongoc_topology_scanner_t *
 mongoc_topology_scanner_new (const mongoc_uri_t *uri,
+                             mongoc_log_and_monitor_instance_t *log_and_monitor,
                              mongoc_topology_scanner_setup_err_cb_t setup_err_cb,
                              mongoc_topology_scanner_cb_t cb,
                              void *data,
@@ -425,6 +426,7 @@ mongoc_topology_scanner_new (const mongoc_uri_t *uri,
    ts->cb_data = data;
    ts->uri = uri;
    ts->appname = NULL;
+   ts->log_and_monitor = log_and_monitor;
    ts->api = NULL;
    ts->handshake_state = HANDSHAKE_CMD_UNINITIALIZED;
    ts->connect_timeout_msec = connect_timeout_msec;
@@ -1276,12 +1278,12 @@ _mongoc_topology_scanner_set_cluster_time (mongoc_topology_scanner_t *ts, const 
 static void
 _mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanner_t *ts, const mongoc_host_list_t *host)
 {
-   if (ts->apm_callbacks.server_heartbeat_started) {
+   if (ts->log_and_monitor->apm_callbacks.server_heartbeat_started) {
       mongoc_apm_server_heartbeat_started_t event;
       event.host = host;
-      event.context = ts->apm_context;
+      event.context = ts->log_and_monitor->apm_context;
       event.awaited = false;
-      ts->apm_callbacks.server_heartbeat_started (&event);
+      ts->log_and_monitor->apm_callbacks.server_heartbeat_started (&event);
    }
 }
 
@@ -1292,7 +1294,7 @@ _mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scan
                                                       const bson_t *reply,
                                                       int64_t duration_usec)
 {
-   if (ts->apm_callbacks.server_heartbeat_succeeded) {
+   if (ts->log_and_monitor->apm_callbacks.server_heartbeat_succeeded) {
       mongoc_apm_server_heartbeat_succeeded_t event;
       bson_t hello_redacted;
 
@@ -1300,11 +1302,11 @@ _mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scan
       bson_copy_to_excluding_noinit (reply, &hello_redacted, "speculativeAuthenticate", NULL);
 
       event.host = host;
-      event.context = ts->apm_context;
+      event.context = ts->log_and_monitor->apm_context;
       event.reply = reply;
       event.duration_usec = duration_usec;
       event.awaited = false;
-      ts->apm_callbacks.server_heartbeat_succeeded (&event);
+      ts->log_and_monitor->apm_callbacks.server_heartbeat_succeeded (&event);
 
       bson_destroy (&hello_redacted);
    }
@@ -1317,14 +1319,14 @@ _mongoc_topology_scanner_monitor_heartbeat_failed (const mongoc_topology_scanner
                                                    const bson_error_t *error,
                                                    int64_t duration_usec)
 {
-   if (ts->apm_callbacks.server_heartbeat_failed) {
+   if (ts->log_and_monitor->apm_callbacks.server_heartbeat_failed) {
       mongoc_apm_server_heartbeat_failed_t event;
       event.host = host;
-      event.context = ts->apm_context;
+      event.context = ts->log_and_monitor->apm_context;
       event.error = error;
       event.duration_usec = duration_usec;
       event.awaited = false;
-      ts->apm_callbacks.server_heartbeat_failed (&event);
+      ts->log_and_monitor->apm_callbacks.server_heartbeat_failed (&event);
    }
 }
 
