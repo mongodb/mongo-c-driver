@@ -911,7 +911,7 @@ mongoc_client_encryption_get_key_by_alt_name (mongoc_client_encryption_t *client
 }
 
 
-MONGOC_EXPORT (mongoc_client_encryption_t *)
+mongoc_client_encryption_t *
 mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts, bson_error_t *error)
 {
    BSON_UNUSED (opts);

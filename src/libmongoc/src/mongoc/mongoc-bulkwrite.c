@@ -1462,7 +1462,7 @@ _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
    return true;
 }
 
-BSON_EXPORT (void)
+void
 mongoc_bulkwrite_set_session (mongoc_bulkwrite_t *self, mongoc_client_session_t *session)
 {
    BSON_ASSERT_PARAM (self);
