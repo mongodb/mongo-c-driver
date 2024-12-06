@@ -29,13 +29,6 @@ Structured log messages may be filtered in arbitrary ways by the handler, but as
   :maxdepth: 1
 
   mongoc_structured_log_opts_t
-  mongoc_structured_log_opts_new
-  mongoc_structured_log_opts_destroy
-  mongoc_structured_log_opts_set_handler
-  mongoc_structured_log_opts_get_max_level_for_component
-  mongoc_structured_log_opts_set_max_level_for_component
-  mongoc_structured_log_opts_set_max_level_for_all_components
-  mongoc_structured_log_opts_set_max_levels_from_env
 
 
 Levels and Components
@@ -97,6 +90,7 @@ Handlers must take care not to re-enter ``libmongoc`` with the same :symbol:`mon
 
   mongoc_structured_log_func_t
 
+
 Log Entries
 -----------
 
@@ -111,6 +105,7 @@ This results in a standalone document that may be retained for any amount of tim
   :maxdepth: 1
 
   mongoc_structured_log_entry_t
+
 
 Example
 -------
