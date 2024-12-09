@@ -158,6 +158,14 @@ _mongoc_topology_description_monitor_changed (const mongoc_topology_description_
                                               const mongoc_topology_description_t *new_td,
                                               const mongoc_log_and_monitor_instance_t *log_and_monitor)
 {
+   mongoc_structured_log (log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Topology description changed",
+                          oid ("topologyId", &new_td->topology_id),
+                          topology_description_as_json ("previousDescription", prev_td),
+                          topology_description_as_json ("newDescription", new_td));
+
    if (log_and_monitor->apm_callbacks.topology_changed) {
       mongoc_apm_topology_changed_t event;
 
