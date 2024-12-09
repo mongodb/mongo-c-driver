@@ -1541,6 +1541,7 @@ test_check_expected_log_messages_for_client (test_t *test,
    while (actual_message_iter || expected_message_iter_ok) {
       if (actual_message_iter &&
           test_log_message_should_be_ignored (test, actual_message_iter, ignore_messages, error)) {
+         MONGOC_DEBUG ("log message ignored, %s", tmp_json (actual_message_iter->message));
          actual_message_iter = actual_message_iter->next;
          continue;
       }
@@ -1564,13 +1565,11 @@ test_check_expected_log_messages_for_client (test_t *test,
       bson_t expected_message;
       bson_iter_bson (&expected_message_iter, &expected_message);
       bool is_match = test_check_log_message (test, &expected_message, actual_message_iter, error);
-      if (!is_match) {
-         test_diagnostics_error_info ("expected log message: %s\nactual log message: %s, %s, %s",
-                                      tmp_json (&expected_message),
-                                      mongoc_structured_log_get_level_name (actual_message_iter->level),
-                                      mongoc_structured_log_get_component_name (actual_message_iter->component),
-                                      tmp_json (actual_message_iter->message));
-      }
+      MONGOC_DEBUG ("log message check %s %s, expected: %s, actual: %s",
+                    is_match ? "MATCHED" : "FAILED",
+                    error && !is_match ? error->message : "",
+                    tmp_json (&expected_message),
+                    tmp_json (actual_message_iter->message));
       bson_destroy (&expected_message);
       if (!is_match) {
          goto done;
