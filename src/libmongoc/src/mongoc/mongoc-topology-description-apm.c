@@ -33,6 +33,14 @@ _mongoc_topology_description_monitor_server_opening (const mongoc_topology_descr
 {
    if (!sd->opened) {
       sd->opened = true;
+
+      mongoc_structured_log (log_and_monitor->structured_log,
+                             MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                             MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                             "Starting server monitoring",
+                             oid ("topologyId", &td->topology_id),
+                             server_description (sd, SERVER_HOST, SERVER_PORT));
+
       if (log_and_monitor->apm_callbacks.server_opening) {
          mongoc_apm_server_opening_t event;
 
