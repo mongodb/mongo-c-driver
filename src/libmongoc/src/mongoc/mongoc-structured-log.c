@@ -334,7 +334,7 @@ _mongoc_structured_log_default_handler_open_stream (mongoc_structured_log_defaul
 {
    // shared->mutex must already be locked
 
-   if (!path || !strcmp (path, "stderr")) {
+   if (!path || !strcasecmp (path, "stderr")) {
       // Default or explicit stderr
       shared->stream = stderr;
       shared->stream_fclose_on_destroy = false;
