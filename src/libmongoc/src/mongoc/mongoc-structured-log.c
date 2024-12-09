@@ -347,7 +347,9 @@ _mongoc_structured_log_default_handler_open_stream (mongoc_structured_log_defaul
          shared->stream = file;
          shared->stream_fclose_on_destroy = true;
       } else {
-         MONGOC_WARNING ("Cannot open log file '%s' for writing. Logging to stderr instead.", path);
+         char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+         const char *errmsg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
+         MONGOC_WARNING ("Failed to open log file '%s' with error: '%s'. Logging to stderr instead.", path, errmsg);
          shared->stream = stderr;
          shared->stream_fclose_on_destroy = false;
       }
