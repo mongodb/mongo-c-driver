@@ -31,14 +31,16 @@ _mongoc_topology_description_monitor_server_opening (const mongoc_topology_descr
                                                      const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                      mongoc_server_description_t *sd)
 {
-   if (log_and_monitor->apm_callbacks.server_opening && !sd->opened) {
-      mongoc_apm_server_opening_t event;
-
-      bson_oid_copy (&td->topology_id, &event.topology_id);
-      event.host = &sd->host;
-      event.context = log_and_monitor->apm_context;
+   if (!sd->opened) {
       sd->opened = true;
-      log_and_monitor->apm_callbacks.server_opening (&event);
+      if (log_and_monitor->apm_callbacks.server_opening) {
+         mongoc_apm_server_opening_t event;
+
+         bson_oid_copy (&td->topology_id, &event.topology_id);
+         event.host = &sd->host;
+         event.context = log_and_monitor->apm_context;
+         log_and_monitor->apm_callbacks.server_opening (&event);
+      }
    }
 }
 
@@ -92,11 +94,9 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
       return;
    }
 
-   if (log_and_monitor->apm_callbacks.topology_changed) {
-      /* prepare to call monitor_changed */
-      prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
-      mongoc_topology_description_init (prev_td, td->heartbeat_msec);
-   }
+   // Track new and previous description for monitor and logging purposes
+   prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
+   mongoc_topology_description_init (prev_td, td->heartbeat_msec);
 
    td->opened = true;
 
@@ -114,10 +114,8 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
       log_and_monitor->apm_callbacks.topology_opening (&event);
    }
 
-   if (log_and_monitor->apm_callbacks.topology_changed) {
-      /* send initial description-changed event */
-      _mongoc_topology_description_monitor_changed (prev_td, td, log_and_monitor);
-   }
+   /* send initial description-changed event */
+   _mongoc_topology_description_monitor_changed (prev_td, td, log_and_monitor);
 
    for (size_t i = 0u; i < mc_tpld_servers (td)->items_len; i++) {
       sd = mongoc_set_get_item (mc_tpld_servers (td), i);
@@ -138,16 +136,14 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
       sd = mongoc_set_get_item (mc_tpld_servers (td), 0);
       prev_sd = mongoc_server_description_new_copy (sd);
       BSON_ASSERT (prev_sd);
-      if (log_and_monitor->apm_callbacks.topology_changed) {
-         mongoc_topology_description_cleanup (prev_td);
-         _mongoc_topology_description_copy_to (td, prev_td);
-      }
+
+      mongoc_topology_description_cleanup (prev_td);
+      _mongoc_topology_description_copy_to (td, prev_td);
+
       sd->type = MONGOC_SERVER_LOAD_BALANCER;
       _mongoc_topology_description_monitor_server_changed (td, log_and_monitor, prev_sd, sd);
       mongoc_server_description_destroy (prev_sd);
-      if (log_and_monitor->apm_callbacks.topology_changed) {
-         _mongoc_topology_description_monitor_changed (prev_td, td, log_and_monitor);
-      }
+      _mongoc_topology_description_monitor_changed (prev_td, td, log_and_monitor);
    }
 
    if (prev_td) {
