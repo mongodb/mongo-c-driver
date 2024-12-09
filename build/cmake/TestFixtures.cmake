@@ -41,7 +41,7 @@ endfunction ()
 # Create a fixture that runs a fake Azure IMDS server
 mongo_define_subprocess_fixture(
     mongoc/fixtures/fake_imds
-    SPAWN_WAIT 0.2
+    SPAWN_WAIT 1
     COMMAND
         "$<TARGET_FILE:Python3::Interpreter>" -u --
         "${_MONGOC_BUILD_SCRIPT_DIR}/bottle.py" fake_kms_provider_server:kms_provider
