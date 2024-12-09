@@ -16,6 +16,7 @@
 
 #include <mongoc/mongoc-topology-description-apm-private.h>
 #include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 
 /* Application Performance Monitoring for topology events, complies with the
  * SDAM Monitoring Spec:
@@ -98,6 +99,12 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
    }
 
    td->opened = true;
+
+   mongoc_structured_log (log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Starting topology monitoring",
+                          oid ("topologyId", &td->topology_id));
 
    if (log_and_monitor->apm_callbacks.topology_opening) {
       mongoc_apm_topology_opening_t event;
