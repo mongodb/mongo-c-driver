@@ -69,8 +69,8 @@ Custom Log Handlers
 -------------------
 
 The default log handler prints a timestamp and the log message to ``stdout``, or to ``stderr`` for warnings, critical messages, and errors.
-    You can override the handler with ``mongoc_log_set_handler()``.
-    Your handler function is called in a mutex for thread safety.
+You can override the handler with ``mongoc_log_set_handler()``.
+Your handler function is called in a mutex for thread safety.
 
 For example, you could register a custom handler to suppress messages at INFO level and below:
 
