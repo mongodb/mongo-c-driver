@@ -78,6 +78,13 @@ _mongoc_topology_description_monitor_server_closed (const mongoc_topology_descri
                                                     const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                     const mongoc_server_description_t *sd)
 {
+   mongoc_structured_log (log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Stopped server monitoring",
+                          oid ("topologyId", &td->topology_id),
+                          server_description (sd, SERVER_HOST, SERVER_PORT));
+
    if (log_and_monitor->apm_callbacks.server_closed) {
       mongoc_apm_server_closed_t event;
 
@@ -192,17 +199,17 @@ void
 _mongoc_topology_description_monitor_closed (const mongoc_topology_description_t *td,
                                              const mongoc_log_and_monitor_instance_t *log_and_monitor)
 {
+   if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      const mongoc_server_description_t *sd;
+
+      /* LoadBalanced deployments must have exactly one host listed. */
+      BSON_ASSERT (mc_tpld_servers_const (td)->items_len == 1);
+      sd = mongoc_set_get_item_const (mc_tpld_servers_const (td), 0);
+      _mongoc_topology_description_monitor_server_closed (td, log_and_monitor, sd);
+   }
+
    if (log_and_monitor->apm_callbacks.topology_closed) {
       mongoc_apm_topology_closed_t event;
-
-      if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-         const mongoc_server_description_t *sd;
-
-         /* LoadBalanced deployments must have exactly one host listed. */
-         BSON_ASSERT (mc_tpld_servers_const (td)->items_len == 1);
-         sd = mongoc_set_get_item_const (mc_tpld_servers_const (td), 0);
-         _mongoc_topology_description_monitor_server_closed (td, log_and_monitor, sd);
-      }
       bson_oid_copy (&td->topology_id, &event.topology_id);
       event.context = log_and_monitor->apm_context;
       log_and_monitor->apm_callbacks.topology_closed (&event);
