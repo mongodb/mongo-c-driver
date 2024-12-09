@@ -131,6 +131,7 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
  * @brief Structured log item, referencing a utf8 string with explicit key and value lengths.
  *
  * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
+ * @param key_len UTF8 value length in bytes, as an int32_t expression.
  * @param value UTF8 value as a const char * expression, or NULL for a null value. May have embedded NUL bytes.
  * @param value_len UTF8 value length in bytes, as an int32_t expression.
  */
