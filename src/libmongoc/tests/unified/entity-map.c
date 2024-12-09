@@ -216,7 +216,14 @@ structured_log_cb (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
    BSON_ASSERT_PARAM (entry);
    BSON_ASSERT_PARAM (user_data);
-   if (!test_is_suppressing_structured_logs ()) {
+   if (test_is_suppressing_structured_logs ()) {
+      bson_t *message_bson = mongoc_structured_log_entry_message_as_bson (entry);
+      MONGOC_DEBUG ("test IGNORED structured log: %s %s %s",
+                    mongoc_structured_log_get_level_name (mongoc_structured_log_entry_get_level (entry)),
+                    mongoc_structured_log_get_component_name (mongoc_structured_log_entry_get_component (entry)),
+                    tmp_json (message_bson));
+      bson_destroy (message_bson);
+   } else {
       entity_t *entity = (entity_t *) user_data;
       log_message_t *log_message = log_message_new (entry);
       bson_mutex_lock (&entity->log_messages_mutex);
