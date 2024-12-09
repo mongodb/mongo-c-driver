@@ -310,6 +310,9 @@ test_structured_log_json (void)
 void
 test_structured_log_oid (void)
 {
+   bson_oid_t oid;
+   bson_oid_init_from_string (&oid, "112233445566778899aabbcc");
+
    struct log_assumption assumption = {
       .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
       .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
@@ -317,14 +320,15 @@ test_structured_log_oid (void)
       .expected_bson = BCON_NEW ("message",
                                  BCON_UTF8 ("Log entry with deferred OID-to-hex conversion"),
                                  "kOID",
+                                 BCON_OID (&oid),
+                                 "kNull1",
+                                 BCON_NULL,
+                                 "kOIDHex",
                                  BCON_UTF8 ("112233445566778899aabbcc"),
-                                 "kNull",
+                                 "kNull2",
                                  BCON_NULL),
       .expected_calls = 1,
    };
-
-   bson_oid_t oid;
-   bson_oid_init_from_string (&oid, "112233445566778899aabbcc");
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
@@ -338,8 +342,11 @@ test_structured_log_oid (void)
                           MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
                           "Log entry with deferred OID-to-hex conversion",
-                          oid_as_hex ("kOID", &oid),
-                          oid_as_hex ("kNull", NULL),
+                          oid ("kOID", &oid),
+                          oid ("kNull1", NULL),
+                          oid (NULL, NULL),
+                          oid_as_hex ("kOIDHex", &oid),
+                          oid_as_hex ("kNull2", NULL),
                           oid_as_hex (NULL, NULL));
 
    mongoc_structured_log_instance_destroy (instance);

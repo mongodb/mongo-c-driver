@@ -743,6 +743,24 @@ _mongoc_structured_log_append_boolean (bson_t *bson,
 }
 
 const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_oid (bson_t *bson,
+                                   const mongoc_structured_log_builder_stage_t *stage,
+                                   const mongoc_structured_log_opts_t *opts)
+{
+   BSON_UNUSED (opts);
+   const char *key_or_null = stage->arg1.utf8;
+   const bson_oid_t *oid_or_null = stage->arg2.oid;
+   if (key_or_null) {
+      if (oid_or_null) {
+         bson_append_oid (bson, key_or_null, -1, oid_or_null);
+      } else {
+         bson_append_null (bson, key_or_null, -1);
+      }
+   }
+   return stage + 1;
+}
+
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_oid_as_hex (bson_t *bson,
                                           const mongoc_structured_log_builder_stage_t *stage,
                                           const mongoc_structured_log_opts_t *opts)

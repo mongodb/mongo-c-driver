@@ -217,6 +217,16 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
     .arg2.read_prefs = (_value_read_prefs)},
 
 /**
+ * @def oid(key, value)
+ * @brief Structured log item, bson_oid_t
+ *
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
+ * @param value OID as a const bson_oid_t * expression, or NULL for a null value.
+ */
+#define _mongoc_structured_log_item_oid(_key_or_null, _value_oid) \
+   {.func = _mongoc_structured_log_append_oid, .arg1.utf8 = (_key_or_null), .arg2.oid = (_value_oid)},
+
+/**
  * @def oid_as_hex(key, value)
  * @brief Structured log item, bson_oid_t converted to a hex string
  *
@@ -372,8 +382,8 @@ struct mongoc_structured_log_builder_stage_t {
    } arg1;
    union {
       bool boolean;
-      bson_oid_t *oid;
       const bson_error_t *error;
+      const bson_oid_t *oid;
       const bson_t *bson;
       const char *utf8;
       const mongoc_read_prefs_t *read_prefs;
@@ -455,6 +465,11 @@ const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_oid_as_hex (bson_t *bson,
                                           const mongoc_structured_log_builder_stage_t *stage,
                                           const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_oid (bson_t *bson,
+                                   const mongoc_structured_log_builder_stage_t *stage,
+                                   const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_bson_as_json (bson_t *bson,
