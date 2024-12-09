@@ -250,6 +250,18 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
    {.func = _mongoc_structured_log_append_bson_as_json, .arg1.utf8 = (_key_or_null), .arg2.bson = (_value_bson)},
 
 /**
+ * @def topology_description_as_json(key, value)
+ * @brief Structured log item, mongoc_topology_description_t serialized into a json string
+ *
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
+ * @param value Topology description as a const mongoc_topology_description_t * expression, or NULL for a null value.
+ */
+#define _mongoc_structured_log_item_topology_description_as_json(_key_or_null, _value_topology_description) \
+   {.func = _mongoc_structured_log_append_topology_description_as_json,                                     \
+    .arg1.utf8 = (_key_or_null),                                                                            \
+    .arg2.topology_description = (_value_topology_description)},
+
+/**
  * @def topology_as_description_json(key, topology)
  * @brief Structured log item, current description from a mongoc_topology_t serialized into a json string
  *
@@ -387,6 +399,7 @@ struct mongoc_structured_log_builder_stage_t {
       const bson_t *bson;
       const char *utf8;
       const mongoc_read_prefs_t *read_prefs;
+      const struct _mongoc_topology_description_t *topology_description;
       const struct _mongoc_topology_t *topology;
       double double_value;
       int32_t int32;
@@ -515,6 +528,11 @@ const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_server_description (bson_t *bson,
                                                   const mongoc_structured_log_builder_stage_t *stage,
                                                   const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_topology_description_as_json (bson_t *bson,
+                                                            const mongoc_structured_log_builder_stage_t *stage,
+                                                            const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_topology_as_description_json (bson_t *bson,
