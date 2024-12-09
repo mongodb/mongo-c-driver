@@ -38,7 +38,7 @@ structured_log_func (const mongoc_structured_log_entry_t *entry, void *user_data
    ASSERT_CMPINT (entry->envelope.component, ==, assumption->expected_envelope.component);
    ASSERT_CMPSTR (entry->envelope.message, assumption->expected_envelope.message);
 
-   ASSERT_CMPSTR (entry->envelope.message, mongoc_structured_log_entry_get_message_string(entry));
+   ASSERT_CMPSTR (entry->envelope.message, mongoc_structured_log_entry_get_message_string (entry));
    ASSERT_CMPINT (entry->envelope.level, ==, mongoc_structured_log_entry_get_level (entry));
    ASSERT_CMPINT (entry->envelope.component, ==, mongoc_structured_log_entry_get_component (entry));
 
