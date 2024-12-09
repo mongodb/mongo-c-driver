@@ -21,6 +21,7 @@
 
 #include <mongoc/mongoc-server-description.h>
 #include <mongoc/mongoc-generation-map-private.h>
+#include <mongoc/mongoc-log-and-monitor-private.h>
 
 
 #define MONGOC_DEFAULT_WIRE_VERSION 0
@@ -76,8 +77,8 @@ struct _mongoc_server_description_t {
     */
    const char *me;
 
-   /* whether an APM server-opened callback has been fired before */
-   bool opened;
+   // Has this been 'opened' by a log_and_monitor instance?
+   mongoc_log_and_monitor_serial_t opened_by_log_and_monitor;
 
    const char *set_name;
    bson_error_t error;

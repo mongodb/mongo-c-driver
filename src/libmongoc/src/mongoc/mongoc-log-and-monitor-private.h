@@ -26,6 +26,18 @@ struct mongoc_structured_log_instance_t;
 struct mongoc_structured_log_opts_t;
 
 /*
+ * @brief Serial number for log and monitor settings
+ *
+ * Unique to the process only, and zero is a reserved value.
+ * Any time the log and monitor instance is modified, this serial number
+ * changes. It's used to implement the concept of an object being
+ * 'opened' or not by a particular monitor. Without this tracking, open
+ * events generated prior to assigning a log-and-monitor handler would
+ * be missed.
+ */
+typedef uint64_t mongoc_log_and_monitor_serial_t;
+
+/*
  * @brief Logging and monitoring instance
  *
  * Includes APM callbacks, APM callback context, and the structured logging instance.
@@ -37,6 +49,7 @@ typedef struct _mongoc_log_and_monitor_instance_t {
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
    struct mongoc_structured_log_instance_t *structured_log;
+   mongoc_log_and_monitor_serial_t serial;
 } mongoc_log_and_monitor_instance_t;
 
 void

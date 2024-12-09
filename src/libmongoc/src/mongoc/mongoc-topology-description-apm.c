@@ -31,8 +31,8 @@ _mongoc_topology_description_monitor_server_opening (const mongoc_topology_descr
                                                      const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                      mongoc_server_description_t *sd)
 {
-   if (!sd->opened) {
-      sd->opened = true;
+   if (sd->opened_by_log_and_monitor != log_and_monitor->serial) {
+      sd->opened_by_log_and_monitor = log_and_monitor->serial;
 
       mongoc_structured_log (log_and_monitor->structured_log,
                              MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
@@ -98,7 +98,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
    mongoc_topology_description_t *prev_td = NULL;
    mongoc_server_description_t *sd;
 
-   if (td->opened) {
+   if (td->opened_by_log_and_monitor == log_and_monitor->serial) {
       return;
    }
 
@@ -106,7 +106,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
    prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
    mongoc_topology_description_init (prev_td, td->heartbeat_msec);
 
-   td->opened = true;
+   td->opened_by_log_and_monitor = log_and_monitor->serial;
 
    mongoc_structured_log (log_and_monitor->structured_log,
                           MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,

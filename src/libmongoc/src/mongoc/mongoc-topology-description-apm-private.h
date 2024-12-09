@@ -46,7 +46,7 @@ _mongoc_topology_description_monitor_server_closed (const mongoc_topology_descri
                                                     const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                     const mongoc_server_description_t *sd);
 
-/* td is not const: we set its "opened" field here */
+/* td is not const: we set its "opened_by_log_and_monitor" field here */
 void
 _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
                                               const mongoc_log_and_monitor_instance_t *log_and_monitor);

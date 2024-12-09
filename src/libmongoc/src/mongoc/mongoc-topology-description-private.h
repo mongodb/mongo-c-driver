@@ -41,7 +41,6 @@ typedef enum {
 
 struct _mongoc_topology_description_t {
    bson_oid_t topology_id;
-   bool opened;
    mongoc_topology_description_type_t type;
    int64_t heartbeat_msec;
    mongoc_set_t *_servers_;
@@ -53,6 +52,9 @@ struct _mongoc_topology_description_t {
    int32_t max_hosts; /* srvMaxHosts */
    bool stale;
    unsigned int rand_seed;
+
+   // Has this been 'opened' by a log_and_monitor instance?
+   mongoc_log_and_monitor_serial_t opened_by_log_and_monitor;
 
    /* the greatest seen cluster time, for a MongoDB 3.6+ sharded cluster.
     * see Driver Sessions Spec. */

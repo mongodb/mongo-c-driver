@@ -1015,12 +1015,13 @@ _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology, bso
    BSON_ASSERT (td.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED);
 
    /* Emit the opening SDAM events if they have not emitted already. */
-   if (!td.ptr->opened) {
+   {
       mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
       _mongoc_topology_description_monitor_opening (tdmod.new_td, &topology->log_and_monitor);
       mc_tpld_modify_commit (tdmod);
       mc_tpld_renew_ref (&td, topology);
    }
+
    selected_server = mongoc_topology_description_select (td.ptr,
                                                          MONGOC_SS_WRITE,
                                                          NULL /* read prefs */,
@@ -1155,13 +1156,11 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    expire_at = loop_start + ((int64_t) topology->server_selection_timeout_msec * 1000);
 
    if (topology->single_threaded) {
-      if (!td.ptr->opened) {
-         // Use `mc_tpld_unsafe_get_mutable` to get a mutable topology
-         // description without locking. This block only applies to
-         // single-threaded clients.
-         _mongoc_topology_description_monitor_opening (mc_tpld_unsafe_get_mutable (topology), log_and_monitor);
-         mc_tpld_renew_ref (&td, topology);
-      }
+      // Use `mc_tpld_unsafe_get_mutable` to get a mutable topology
+      // description without locking. This block only applies to
+      // single-threaded clients.
+      _mongoc_topology_description_monitor_opening (mc_tpld_unsafe_get_mutable (topology), log_and_monitor);
+      mc_tpld_renew_ref (&td, topology);
 
       tried_once = false;
       next_update = topology->last_scan + heartbeat_msec * 1000;
