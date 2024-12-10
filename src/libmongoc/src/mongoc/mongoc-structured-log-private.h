@@ -301,8 +301,8 @@ typedef enum {
  * @brief Structured log item, standard format for a duration in monotonic time.
  * @param duration Duration in microseconds, as an int64_t expression.
  *
- * @todo Is the (CLAM) spec asking for only the highest resolution available, or that plus milliseconds?
- * */
+ * Includes milliseconds for consistency across drivers, and microseconds as the highest available resolution.
+ */
 #define _mongoc_structured_log_item_monotonic_time_duration(_duration)              \
    _mongoc_structured_log_item_int32 ("durationMS", (int32_t) ((_duration) / 1000)) \
       _mongoc_structured_log_item_int64 ("durationMicros", (_duration))
