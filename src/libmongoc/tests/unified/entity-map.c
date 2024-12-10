@@ -660,7 +660,6 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
-      // @todo This option is needed for both single-threaded and pooled clients, but only works on pooled
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, REDUCED_HEARTBEAT_FREQUENCY_MS);
    }
 
