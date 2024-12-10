@@ -671,7 +671,6 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    mongoc_client_set_structured_log_opts (client, log_opts);
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
-      // @todo Examine whether this is needed in addition to the URI param above
       client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
    }
 
