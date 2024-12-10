@@ -262,6 +262,12 @@ Generate a UTF-8 value from the given null-terminated character array beginning
 at `zstr`.
 
 
+#### `oid(const bson_oid_t* oid)`
+
+Generate an ObjectId value from the given C expression that evaluates to
+a bson_oid_t pointer.
+
+
 #### `utf8_w_len(const char* str, int len)`
 
 Generate a UTF-8 value from the character array beginning at `str`, with length

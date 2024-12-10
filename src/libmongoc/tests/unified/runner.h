@@ -58,6 +58,7 @@ typedef struct {
    char *skip_reason;
    bson_t *operations;
    bson_t *expect_events;
+   bson_t *expect_log_messages;
    bson_t *outcome;
    entity_map_t *entity_map;
    failpoint_t *failpoints;
@@ -67,6 +68,10 @@ typedef struct {
 /* Set server_id to 0 if the failpoint was not against a pinned mongos. */
 void
 register_failpoint (test_t *test, char *failpoint, char *client_id, uint32_t server_id);
+
+bool
+test_count_matching_events_for_client (
+   test_t *test, entity_t *client, bson_t *expected_event, bson_error_t *error, int64_t *count_out);
 
 /* Run a directory of test files through the unified test runner. */
 void

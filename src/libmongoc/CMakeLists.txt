@@ -647,6 +647,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-download.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-upload.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-timeout.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-background-monitoring.c
@@ -663,6 +664,7 @@ set (MONGOC_SOURCES
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-b64.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-md5.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-thread.c
 
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
@@ -761,6 +763,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-file.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
@@ -1030,6 +1033,7 @@ endif ()
 set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-cmp.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-atomic.c
@@ -1140,6 +1144,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ssl.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-streamable-hello.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-thread.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-timeout.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-description.c
@@ -1291,7 +1296,9 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    mongoc_add_example (example-gridfs ${PROJECT_SOURCE_DIR}/examples/example-gridfs.c)
    mongoc_add_example (example-gridfs-bucket ${PROJECT_SOURCE_DIR}/examples/example-gridfs-bucket.c)
    if (NOT WIN32 AND ENABLE_EXAMPLES)
+      # Examples that use pthreads
       mongoc_add_example (example-pool ${PROJECT_SOURCE_DIR}/examples/example-pool.c)
+      mongoc_add_example (example-structured-log ${PROJECT_SOURCE_DIR}/examples/example-structured-log.c)
    endif ()
    mongoc_add_example (example-scram ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
    mongoc_add_example (example-sdam-monitoring ${PROJECT_SOURCE_DIR}/examples/example-sdam-monitoring.c)

@@ -122,7 +122,7 @@ struct _mongoc_server_description_t {
    /* _generation_map_ stores all generations for all service IDs associated
     * with this server. _generation_map_ is only accessed on the server
     * description for monitoring. In non-load-balanced mode, there are no
-    * service IDs. The only server generation is mapped from kZeroServiceID */
+    * service IDs. The only server generation is mapped from kZeroObjectId */
    mongoc_generation_map_t *_generation_map_;
    bson_oid_t service_id;
    int64_t server_connection_id;
@@ -218,9 +218,19 @@ mongoc_server_description_topology_version_cmp (const bson_t *tv1, const bson_t 
 void
 mongoc_server_description_set_topology_version (mongoc_server_description_t *sd, const bson_t *tv);
 
-extern const bson_oid_t kZeroServiceId;
-
 bool
 mongoc_server_description_has_service_id (const mongoc_server_description_t *description);
+
+typedef enum {
+   MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_SERVER_HOST = (1 << 0),
+   MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_SERVER_PORT = (1 << 1),
+   MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_SERVER_CONNECTION_ID = (1 << 2),
+   MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_SERVICE_ID = (1 << 3),
+} mongoc_server_description_content_flags_t;
+
+bool
+mongoc_server_description_append_contents_to_bson (const mongoc_server_description_t *sd,
+                                                   bson_t *bson,
+                                                   mongoc_server_description_content_flags_t flags);
 
 #endif
