@@ -1,3 +1,18 @@
+libbson 1.29.1
+==============
+
+Fixes:
+
+  * Fix result of `bson_strerror_r` on macOS.
+  * Fix max length string handling `bson_value_copy`.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libbson 1.29.0
 ==============
 
