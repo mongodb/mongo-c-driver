@@ -1222,7 +1222,7 @@ if (ENABLE_TESTS)
 
       target_link_libraries (${test}
          PUBLIC
-            $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
+            $<$<PLATFORM_ID:Windows>:DbgHelp.lib>
             mongoc_static
       )
       # We have tests that test our deprecated api.
