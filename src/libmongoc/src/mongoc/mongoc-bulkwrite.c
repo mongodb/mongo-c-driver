@@ -1444,6 +1444,10 @@ mongoc_bulkwrite_set_session (mongoc_bulkwrite_t *self, mongoc_client_session_t 
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (session);
 
+   if (self->client && session) {
+      BSON_ASSERT (self->client == session->client);
+   }
+
    self->session = session;
 }
 

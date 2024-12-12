@@ -1,3 +1,17 @@
+libmongoc 1.29.1
+================
+
+Fixes:
+
+  * Assert session is consistent with client in `mongoc_bulkwrite_set_session`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Jeremy Mikola
+  * Kevin Albertson
+
+
+
 libmongoc 1.29.0
 ================
 
