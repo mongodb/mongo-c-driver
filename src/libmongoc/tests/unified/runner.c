@@ -140,7 +140,7 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    failpoint_t *iter = NULL;
    mongoc_read_prefs_t *rp = NULL;
 
-   rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+   rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    LL_FOREACH (test->failpoints, iter)
    {
@@ -156,12 +156,10 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
       if (iter->server_id != 0) {
          if (!mongoc_client_command_simple_with_server_id (
                 client, "admin", disable_cmd, rp, iter->server_id, NULL /* reply */, error)) {
-            bson_destroy (disable_cmd);
             goto done;
          }
       } else {
          if (!mongoc_client_command_simple (client, "admin", disable_cmd, rp, NULL /* reply */, error)) {
-            bson_destroy (disable_cmd);
             goto done;
          }
       }
@@ -339,7 +337,6 @@ test_runner_new (void)
    {
       mongoc_uri_t *const uri = test_framework_get_uri ();
 
-      test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
 
       /* In load balanced mode, the internal client must use the
        * SINGLE_LB_MONGOS_URI. */
@@ -350,6 +347,8 @@ test_runner_new (void)
             test_error ("error applying multiple mongos: %s", error.message);
          }
       }
+
+      test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
 
       mongoc_uri_destroy (uri);
    }
@@ -577,8 +576,9 @@ check_schema_version (test_file_t *test_file)
    // 1.12 is partially supported (expectedError.errorResponse assertions)
    // 1.18 is partially supported (additional properties in kmsProviders)
    // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
+   // 1.22 is partially supported (keyExpirationMS in client encryption options)
    semver_t schema_version;
-   semver_parse ("1.21", &schema_version);
+   semver_parse ("1.22", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -823,8 +823,8 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       mongoc_bulk_operation_t *bulk_insert = NULL;
       mongoc_write_concern_t *wc = NULL;
       bson_t *bulk_opts = NULL;
-      bson_t *drop_opts = NULL;
-      bson_t *create_opts = NULL;
+      bson_t *drop_opts = bson_new ();
+      bson_t *create_opts = bson_new ();
       bool ret = false;
 
       bson_iter_bson (&initial_data_iter, &collection_data);
@@ -845,11 +845,16 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       /* Check if the server supports majority write concern on 'drop' and
        * 'create'. */
       if (semver_cmp_str (&test_runner->server_version, "3.4") >= 0) {
-         drop_opts = bson_new ();
          mongoc_write_concern_append (wc, drop_opts);
-         create_opts = bson_new ();
          mongoc_write_concern_append (wc, create_opts);
       }
+
+      if (is_topology_type_sharded (test_runner->topology_type)) {
+         // From spec: "test runner SHOULD use a single mongos for handling initialData"
+         BSON_APPEND_INT32 (drop_opts, "serverId", 1);
+         BSON_APPEND_INT32 (create_opts, "serverId", 1);
+      }
+
       coll = mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name);
       if (!mongoc_collection_drop_with_opts (coll, drop_opts, error)) {
          if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
@@ -865,6 +870,11 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          bson_iter_t documents_iter;
 
          bulk_insert = mongoc_collection_create_bulk_operation_with_opts (coll, bulk_opts);
+
+         if (is_topology_type_sharded (test_runner->topology_type)) {
+            // From spec: "test runner SHOULD use a single mongos for handling initialData"
+            mongoc_bulk_operation_set_server_id (bulk_insert, 1u);
+         }
 
          BSON_FOREACH (documents, documents_iter)
          {
@@ -1625,7 +1635,7 @@ test_run (test_t *test, bson_error_t *error)
 done:
    /* always clean up failpoints, even on test failure */
    if (!cleanup_failpoints (test, &nonfatal_error)) {
-      MONGOC_DEBUG ("error cleaning up failpoints: %s", nonfatal_error.message);
+      test_error ("error cleaning up failpoints: %s", nonfatal_error.message);
    }
    /* always terminate transactions, even on test failure. */
    if (!test_runner_terminate_open_transactions (test_runner, &nonfatal_error)) {

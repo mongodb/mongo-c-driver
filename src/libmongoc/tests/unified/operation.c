@@ -238,6 +238,7 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
    bson_val_t *hint = NULL;
    bool *upsert = NULL;
    bson_t *arrayFilters = NULL;
+   bson_t *sort = NULL;
    bson_parser_t *parser = bson_parser_new ();
 
    // Expect exactly one root key to identify the model (e.g. "insertOne"):
@@ -275,6 +276,7 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
       bson_parser_doc_optional (parser, "collation", &collation);
       bson_parser_any_optional (parser, "hint", &hint);
       bson_parser_bool_optional (parser, "upsert", &upsert);
+      bson_parser_doc_optional (parser, "sort", &sort);
       if (!bson_parser_parse (parser, &model_bson, error)) {
          goto done;
       }
@@ -287,6 +289,9 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
       }
       if (upsert) {
          mongoc_bulkwrite_updateoneopts_set_upsert (opts, *upsert);
+      }
+      if (sort) {
+         mongoc_bulkwrite_updateoneopts_set_sort (opts, sort);
       }
 
       if (!mongoc_bulkwrite_append_updateone (bw, namespace, filter, update, opts, error)) {
@@ -372,6 +377,7 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
       bson_parser_doc_optional (parser, "collation", &collation);
       bson_parser_bool_optional (parser, "upsert", &upsert);
       bson_parser_any_optional (parser, "hint", &hint);
+      bson_parser_doc_optional (parser, "sort", &sort);
       if (!bson_parser_parse (parser, &model_bson, error)) {
          goto done;
       }
@@ -383,6 +389,9 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
       }
       if (upsert) {
          mongoc_bulkwrite_replaceoneopts_set_upsert (opts, *upsert);
+      }
+      if (sort) {
+         mongoc_bulkwrite_replaceoneopts_set_sort (opts, sort);
       }
 
       if (!mongoc_bulkwrite_append_replaceone (bw, namespace, filter, replacement, opts, error)) {
@@ -3547,6 +3556,22 @@ operation_assert_number_connections_checked_out (test_t *test, operation_t *op, 
 }
 
 static bool
+operation_wait (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   BSON_UNUSED (test);
+   BSON_UNUSED (error);
+
+   bson_iter_t iter;
+   bson_iter_init_find (&iter, op->arguments, "ms");
+   ASSERT (BSON_ITER_HOLDS_INT (&iter));
+   const int64_t sleep_msec = bson_iter_as_int64 (&iter);
+   _mongoc_usleep (sleep_msec * 1000);
+
+   result_from_ok (result);
+   return true;
+}
+
+static bool
 operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    // First validate the arguments
@@ -3871,6 +3896,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"assertSessionUnpinned", operation_assert_session_unpinned},
       {"loop", operation_loop},
       {"assertNumberConnectionsCheckedOut", operation_assert_number_connections_checked_out},
+      {"wait", operation_wait},
 
       /* GridFS operations */
       {"delete", operation_delete},

@@ -38,11 +38,18 @@ bson_value_copy (const bson_value_t *src, /* IN */
    case BSON_TYPE_UTF8:
       BSON_ASSERT (mcommon_in_range_size_t_unsigned (src->value.v_utf8.len));
       size_t utf8_len_sz = (size_t) src->value.v_utf8.len;
-      BSON_ASSERT (utf8_len_sz <= SIZE_MAX - 1);
-      dst->value.v_utf8.len = src->value.v_utf8.len;
-      dst->value.v_utf8.str = bson_malloc (utf8_len_sz + 1);
-      memcpy (dst->value.v_utf8.str, src->value.v_utf8.str, dst->value.v_utf8.len);
-      dst->value.v_utf8.str[dst->value.v_utf8.len] = '\0';
+      if (utf8_len_sz == SIZE_MAX) {
+         // If the string is at maximum length, do not NULL terminate. The source necessarily cannot fit it.
+         dst->value.v_utf8.len = src->value.v_utf8.len;
+         dst->value.v_utf8.str = bson_malloc (utf8_len_sz);
+         memcpy (dst->value.v_utf8.str, src->value.v_utf8.str, dst->value.v_utf8.len);
+      } else {
+         // There is room in destination to NULL terminate.
+         dst->value.v_utf8.len = src->value.v_utf8.len;
+         dst->value.v_utf8.str = bson_malloc (utf8_len_sz + 1);
+         memcpy (dst->value.v_utf8.str, src->value.v_utf8.str, dst->value.v_utf8.len);
+         dst->value.v_utf8.str[dst->value.v_utf8.len] = '\0';
+      }
       break;
    case BSON_TYPE_DOCUMENT:
    case BSON_TYPE_ARRAY:

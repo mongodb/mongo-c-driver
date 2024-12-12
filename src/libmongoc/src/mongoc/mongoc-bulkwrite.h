@@ -127,6 +127,7 @@ mongoc_bulkwriteexception_destroy (mongoc_bulkwriteexception_t *self);
 typedef struct _mongoc_bulkwrite_t mongoc_bulkwrite_t;
 MONGOC_EXPORT (mongoc_bulkwrite_t *)
 mongoc_client_bulkwrite_new (mongoc_client_t *self);
+
 typedef struct _mongoc_bulkwrite_insertoneopts_t mongoc_bulkwrite_insertoneopts_t;
 MONGOC_EXPORT (mongoc_bulkwrite_insertoneopts_t *)
 mongoc_bulkwrite_insertoneopts_new (void);
@@ -150,6 +151,8 @@ MONGOC_EXPORT (void)
 mongoc_bulkwrite_updateoneopts_set_hint (mongoc_bulkwrite_updateoneopts_t *self, const bson_value_t *hint);
 MONGOC_EXPORT (void)
 mongoc_bulkwrite_updateoneopts_set_upsert (mongoc_bulkwrite_updateoneopts_t *self, bool upsert);
+MONGOC_EXPORT (void)
+mongoc_bulkwrite_updateoneopts_set_sort (mongoc_bulkwrite_updateoneopts_t *self, const bson_t *sort);
 MONGOC_EXPORT (void)
 mongoc_bulkwrite_updateoneopts_destroy (mongoc_bulkwrite_updateoneopts_t *self);
 MONGOC_EXPORT (bool)
@@ -190,6 +193,8 @@ MONGOC_EXPORT (void)
 mongoc_bulkwrite_replaceoneopts_set_hint (mongoc_bulkwrite_replaceoneopts_t *self, const bson_value_t *hint);
 MONGOC_EXPORT (void)
 mongoc_bulkwrite_replaceoneopts_set_upsert (mongoc_bulkwrite_replaceoneopts_t *self, bool upsert);
+MONGOC_EXPORT (void)
+mongoc_bulkwrite_replaceoneopts_set_sort (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *sort);
 MONGOC_EXPORT (void)
 mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self);
 MONGOC_EXPORT (bool)
@@ -239,6 +244,13 @@ typedef struct {
    mongoc_bulkwriteexception_t *exc; // NULL if no error.
 } mongoc_bulkwritereturn_t;
 
+// `mongoc_bulkwrite_new` and `mongoc_bulkwrite_set_client` may be used by
+// language bindings that want to assemble a `mongoc_bulkwrite_t` and defer
+// `mongoc_client_t` assignment to execution time.
+MONGOC_EXPORT (mongoc_bulkwrite_t *)
+mongoc_bulkwrite_new (void);
+MONGOC_EXPORT (void)
+mongoc_bulkwrite_set_client (mongoc_bulkwrite_t *self, mongoc_client_t *client);
 // `mongoc_bulkwrite_set_session` sets an optional explicit session.
 // `*session` may be modified when `mongoc_bulkwrite_execute` is called.
 MONGOC_EXPORT (void)

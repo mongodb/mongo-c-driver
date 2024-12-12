@@ -45,6 +45,7 @@ process.
        - [ ] Announce the Release on the Community Forums
        - [ ] Copy the Release Updates to the ``master`` Branch
        - [ ] Close the Jira Release
+       - [ ] Update the GitHub Webhook
        - [ ] Comment on the Generated DOCSP Ticket
        - [ ] Update the EVG Project
        - [ ] Stop the Release Stopwatch (end time: HH:MM)
@@ -360,7 +361,7 @@ Publish Additional Artifacts
 
 
 .. warning::
-   The below steps should be run using the ``master`` branch, regardless of
+   This step should be run using the ``master`` branch, regardless of
    which branch is used for the release.
 
 We publish a release archive that contains a snapshot of the repository and some
@@ -439,6 +440,7 @@ __ https://www.mongodb.com/community/forums/c/announcements/driver-releases/110
 
 To generate the release template text, use the following::
 
+   $ git checkout $RELEASE_BRANCH
    $ python $CDRIVER_TOOLS/release.py announce -t community $NEW_VERSION
 
 Update/fix-up the generated text for the new release and publish the new post.
@@ -488,6 +490,20 @@ Return to the `Jira releases`_ page and open the release for the release
 version. Close the *Release x.y.z* ticket that corresponds to the release and
 "Release" that version in Jira, ensuring that the release date is correct. (Do
 not use the "Build and Release" option)
+
+
+Update GitHub Webhook
+*********************
+
+For a non-patch release, update the `Github Webhook <https://wiki.corp.mongodb.com/display/INTX/Githook>`_
+to include the new branch.
+
+Navigate to the `Webhook Settings <https://github.com/mongodb/mongo-c-driver/settings/hooks>`_.
+
+Click ``Edit`` on the hook for ``https://githook.mongodb.com/``.
+
+Add the new release branch to the ``Payload URL``. Remove unmaintained
+release branches.
 
 
 Comment on the Generated DOCSP Ticket

@@ -169,11 +169,18 @@ mongoc_bulkwrite_t *
 mongoc_client_bulkwrite_new (mongoc_client_t *self)
 {
    BSON_ASSERT_PARAM (self);
-   mongoc_bulkwrite_t *bw = bson_malloc0 (sizeof (mongoc_bulkwrite_t));
+   mongoc_bulkwrite_t *bw = mongoc_bulkwrite_new ();
    bw->client = self;
+   bw->operation_id = ++self->cluster.operation_id;
+   return bw;
+}
+
+mongoc_bulkwrite_t *
+mongoc_bulkwrite_new (void)
+{
+   mongoc_bulkwrite_t *bw = bson_malloc0 (sizeof (mongoc_bulkwrite_t));
    _mongoc_buffer_init (&bw->ops, NULL, 0, NULL, NULL);
    _mongoc_array_init (&bw->arrayof_modeldata, sizeof (modeldata_t));
-   bw->operation_id = ++self->cluster.operation_id;
    return bw;
 }
 
@@ -326,6 +333,7 @@ struct _mongoc_bulkwrite_updateoneopts_t {
    bson_t *collation;
    bson_value_t hint;
    mongoc_optional_t upsert;
+   bson_t *sort;
 };
 
 mongoc_bulkwrite_updateoneopts_t *
@@ -361,6 +369,13 @@ mongoc_bulkwrite_updateoneopts_set_upsert (mongoc_bulkwrite_updateoneopts_t *sel
    mongoc_optional_set_value (&self->upsert, upsert);
 }
 void
+mongoc_bulkwrite_updateoneopts_set_sort (mongoc_bulkwrite_updateoneopts_t *self, const bson_t *sort)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_OPTIONAL_PARAM (sort);
+   set_bson_opt (&self->sort, sort);
+}
+void
 mongoc_bulkwrite_updateoneopts_destroy (mongoc_bulkwrite_updateoneopts_t *self)
 {
    if (!self) {
@@ -369,6 +384,7 @@ mongoc_bulkwrite_updateoneopts_destroy (mongoc_bulkwrite_updateoneopts_t *self)
    bson_destroy (self->arrayfilters);
    bson_destroy (self->collation);
    bson_value_destroy (&self->hint);
+   bson_destroy (self->sort);
    bson_free (self);
 }
 
@@ -422,6 +438,9 @@ mongoc_bulkwrite_append_updateone (mongoc_bulkwrite_t *self,
    if (mongoc_optional_is_set (&opts->upsert)) {
       BSON_ASSERT (BSON_APPEND_BOOL (&op, "upsert", mongoc_optional_value (&opts->upsert)));
    }
+   if (opts->sort) {
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "sort", opts->sort));
+   }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
 
@@ -436,6 +455,7 @@ struct _mongoc_bulkwrite_replaceoneopts_t {
    bson_t *collation;
    bson_value_t hint;
    mongoc_optional_t upsert;
+   bson_t *sort;
 };
 
 mongoc_bulkwrite_replaceoneopts_t *
@@ -464,6 +484,13 @@ mongoc_bulkwrite_replaceoneopts_set_upsert (mongoc_bulkwrite_replaceoneopts_t *s
    mongoc_optional_set_value (&self->upsert, upsert);
 }
 void
+mongoc_bulkwrite_replaceoneopts_set_sort (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *sort)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_OPTIONAL_PARAM (sort);
+   set_bson_opt (&self->sort, sort);
+}
+void
 mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self)
 {
    if (!self) {
@@ -471,6 +498,7 @@ mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self
    }
    bson_destroy (self->collation);
    bson_value_destroy (&self->hint);
+   bson_destroy (self->sort);
    bson_free (self);
 }
 
@@ -541,6 +569,9 @@ mongoc_bulkwrite_append_replaceone (mongoc_bulkwrite_t *self,
    }
    if (mongoc_optional_is_set (&opts->upsert)) {
       BSON_ASSERT (BSON_APPEND_BOOL (&op, "upsert", mongoc_optional_value (&opts->upsert)));
+   }
+   if (opts->sort) {
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "sort", opts->sort));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -1438,11 +1469,35 @@ _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
    return true;
 }
 
-BSON_EXPORT (void)
+void
+mongoc_bulkwrite_set_client (mongoc_bulkwrite_t *self, mongoc_client_t *client)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (client);
+
+   if (self->session) {
+      BSON_ASSERT (self->session->client == client);
+   }
+
+   /* NOP if the client is not changing; otherwise, assign it and increment and
+    * fetch its operation_id. */
+   if (self->client == client) {
+      return;
+   }
+
+   self->client = client;
+   self->operation_id = ++client->cluster.operation_id;
+}
+
+void
 mongoc_bulkwrite_set_session (mongoc_bulkwrite_t *self, mongoc_client_session_t *session)
 {
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (session);
+
+   if (self->client && session) {
+      BSON_ASSERT (self->client == session->client);
+   }
 
    self->session = session;
 }
@@ -1470,6 +1525,15 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    // Create empty result and exception to collect results/errors from batches.
    ret.res = _bulkwriteresult_new ();
    ret.exc = _bulkwriteexception_new ();
+
+   if (!self->client) {
+      bson_set_error (&error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "bulk write requires a client and one has not been set");
+      _bulkwriteexception_set_error (ret.exc, &error);
+      goto fail;
+   }
 
    if (self->executed) {
       bson_set_error (&error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "bulk write already executed");

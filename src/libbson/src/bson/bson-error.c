@@ -130,6 +130,7 @@ bson_strerror_r (int err_code,                    /* IN */
    // required) by the POSIX spec (see:
    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/strerror.html#tag_16_574_08).
    (void) strerror_r (err_code, buf, buflen);
+   ret = buf;
 #elif defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700
    // The behavior (of `strerror_l`) is undefined if the locale argument to
    // `strerror_l()` is the special locale object LC_GLOBAL_LOCALE or is not a
