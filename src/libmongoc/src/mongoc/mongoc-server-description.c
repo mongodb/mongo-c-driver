@@ -1151,7 +1151,8 @@ _mongoc_server_description_equal (mongoc_server_description_t *sd1, mongoc_serve
       return false;
    }
 
-   if (0 != memcmp (&sd1->error, &sd2->error, sizeof (bson_error_t))) {
+   /* error may have uninitialized bytes after terminating '\0' */
+   if (0 != strncmp (&sd1->error, &sd2->error, sizeof (bson_error_t))) {
       return false;
    }
 
