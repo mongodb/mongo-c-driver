@@ -23,4 +23,5 @@ Synopsis
     mongoc_bulkwrite_replaceoneopts_set_collation
     mongoc_bulkwrite_replaceoneopts_set_hint
     mongoc_bulkwrite_replaceoneopts_set_upsert
+    mongoc_bulkwrite_replaceoneopts_set_sort
     mongoc_bulkwrite_replaceoneopts_destroy

@@ -30,9 +30,20 @@ test_bson_error_basic (void)
    ASSERT_CMPUINT32 (error.code, ==, 456u);
 }
 
+static void
+test_bson_strerror_r (void)
+{
+   FILE *f = fopen ("file-that-does-not-exist", "r");
+   ASSERT (!f);
+   char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+   char *errmsg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
+   // Check a message is returned. Do not check platform-dependent contents:
+   ASSERT (errmsg);
+}
 
 void
 test_bson_error_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/bson/error/basic", test_bson_error_basic);
+   TestSuite_Add (suite, "/bson/strerror_r", test_bson_strerror_r);
 }

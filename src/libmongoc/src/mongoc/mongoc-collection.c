@@ -2017,6 +2017,7 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
                                       bool multi,
                                       bool bypass,
                                       const bson_t *array_filters,
+                                      const bson_t *sort,
                                       bson_t *extra,
                                       bson_t *reply,
                                       bson_error_t *error)
@@ -2056,6 +2057,10 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
 
    if (!bson_empty0 (array_filters)) {
       bson_append_array (extra, "arrayFilters", 12, array_filters);
+   }
+
+   if (!bson_empty0 (sort)) {
+      bson_append_document (extra, "sort", 4, sort);
    }
 
    if (multi) {
@@ -2180,6 +2185,7 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
                                                false /* multi */,
                                                update_one_opts.update.bypass,
                                                &update_one_opts.arrayFilters,
+                                               &update_one_opts.sort,
                                                &update_one_opts.extra,
                                                reply,
                                                error);
@@ -2224,6 +2230,7 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
                                                true /* multi */,
                                                update_many_opts.update.bypass,
                                                &update_many_opts.arrayFilters,
+                                               NULL /* sort */,
                                                &update_many_opts.extra,
                                                reply,
                                                error);
@@ -2268,6 +2275,7 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
                                                false /* multi */,
                                                replace_one_opts.update.bypass,
                                                NULL,
+                                               &replace_one_opts.sort,
                                                &replace_one_opts.extra,
                                                reply,
                                                error);

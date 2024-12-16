@@ -361,7 +361,7 @@ Publish Additional Artifacts
 
 
 .. warning::
-   The below steps should be run using the ``master`` branch, regardless of
+   This step should be run using the ``master`` branch, regardless of
    which branch is used for the release.
 
 We publish a release archive that contains a snapshot of the repository and some
@@ -440,6 +440,7 @@ __ https://www.mongodb.com/community/forums/c/announcements/driver-releases/110
 
 To generate the release template text, use the following::
 
+   $ git checkout $RELEASE_BRANCH
    $ python $CDRIVER_TOOLS/release.py announce -t community $NEW_VERSION
 
 Update/fix-up the generated text for the new release and publish the new post.

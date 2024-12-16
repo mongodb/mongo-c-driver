@@ -78,7 +78,6 @@ enum BSON_GNUC_DEPRECATED bson_memory_order {
 #ifdef BSON_USE_LEGACY_GCC_ATOMICS
 #undef BSON_IF_GNU_LIKE
 #define BSON_IF_GNU_LIKE(...)
-#define BSON_IF_MSVC(...)
 #define BSON_IF_GNU_LEGACY_ATOMICS(...) __VA_ARGS__
 #else
 #define BSON_IF_GNU_LEGACY_ATOMICS(...)

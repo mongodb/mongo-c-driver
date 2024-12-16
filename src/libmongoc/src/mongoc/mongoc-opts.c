@@ -520,6 +520,7 @@ _mongoc_update_one_opts_parse (
    mongoc_update_one_opts->update.upsert = false;
    bson_init (&mongoc_update_one_opts->update.let);
    bson_init (&mongoc_update_one_opts->arrayFilters);
+   bson_init (&mongoc_update_one_opts->sort);
    bson_init (&mongoc_update_one_opts->extra);
 
    if (!opts) {
@@ -627,6 +628,15 @@ _mongoc_update_one_opts_parse (
             return false;
          }
       }
+      else if (!strcmp (bson_iter_key (&iter), "sort")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_update_one_opts->sort,
+               error)) {
+            return false;
+         }
+      }
       else {
          /* unrecognized values are copied to "extra" */
          if (!BSON_APPEND_VALUE (
@@ -656,6 +666,7 @@ _mongoc_update_one_opts_cleanup (mongoc_update_one_opts_t *mongoc_update_one_opt
    bson_value_destroy (&mongoc_update_one_opts->update.hint);
    bson_destroy (&mongoc_update_one_opts->update.let);
    bson_destroy (&mongoc_update_one_opts->arrayFilters);
+   bson_destroy (&mongoc_update_one_opts->sort);
    bson_destroy (&mongoc_update_one_opts->extra);
 }
 
@@ -841,6 +852,7 @@ _mongoc_replace_one_opts_parse (
    memset (&mongoc_replace_one_opts->update.hint, 0, sizeof (bson_value_t));
    mongoc_replace_one_opts->update.upsert = false;
    bson_init (&mongoc_replace_one_opts->update.let);
+   bson_init (&mongoc_replace_one_opts->sort);
    bson_init (&mongoc_replace_one_opts->extra);
 
    if (!opts) {
@@ -939,6 +951,15 @@ _mongoc_replace_one_opts_parse (
             return false;
          }
       }
+      else if (!strcmp (bson_iter_key (&iter), "sort")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_replace_one_opts->sort,
+               error)) {
+            return false;
+         }
+      }
       else {
          /* unrecognized values are copied to "extra" */
          if (!BSON_APPEND_VALUE (
@@ -967,6 +988,7 @@ _mongoc_replace_one_opts_cleanup (mongoc_replace_one_opts_t *mongoc_replace_one_
    bson_destroy (&mongoc_replace_one_opts->update.collation);
    bson_value_destroy (&mongoc_replace_one_opts->update.hint);
    bson_destroy (&mongoc_replace_one_opts->update.let);
+   bson_destroy (&mongoc_replace_one_opts->sort);
    bson_destroy (&mongoc_replace_one_opts->extra);
 }
 
@@ -1144,6 +1166,7 @@ _mongoc_bulk_update_one_opts_parse (
    memset (&mongoc_bulk_update_one_opts->update.hint, 0, sizeof (bson_value_t));
    mongoc_bulk_update_one_opts->update.upsert = false;
    mongoc_bulk_update_one_opts->update.multi = false;
+   bson_init (&mongoc_bulk_update_one_opts->sort);
    bson_init (&mongoc_bulk_update_one_opts->arrayFilters);
    bson_init (&mongoc_bulk_update_one_opts->extra);
 
@@ -1205,6 +1228,15 @@ _mongoc_bulk_update_one_opts_parse (
             return false;
          }
       }
+      else if (!strcmp (bson_iter_key (&iter), "sort")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_bulk_update_one_opts->sort,
+               error)) {
+            return false;
+         }
+      }
       else if (!strcmp (bson_iter_key (&iter), "arrayFilters")) {
          if (!_mongoc_convert_array (
                client,
@@ -1232,6 +1264,7 @@ _mongoc_bulk_update_one_opts_cleanup (mongoc_bulk_update_one_opts_t *mongoc_bulk
 {
    bson_destroy (&mongoc_bulk_update_one_opts->update.collation);
    bson_value_destroy (&mongoc_bulk_update_one_opts->update.hint);
+   bson_destroy (&mongoc_bulk_update_one_opts->sort);
    bson_destroy (&mongoc_bulk_update_one_opts->arrayFilters);
    bson_destroy (&mongoc_bulk_update_one_opts->extra);
 }
@@ -1360,6 +1393,7 @@ _mongoc_bulk_replace_one_opts_parse (
    memset (&mongoc_bulk_replace_one_opts->update.hint, 0, sizeof (bson_value_t));
    mongoc_bulk_replace_one_opts->update.upsert = false;
    mongoc_bulk_replace_one_opts->update.multi = false;
+   bson_init (&mongoc_bulk_replace_one_opts->sort);
    bson_init (&mongoc_bulk_replace_one_opts->extra);
 
    if (!opts) {
@@ -1420,6 +1454,15 @@ _mongoc_bulk_replace_one_opts_parse (
             return false;
          }
       }
+      else if (!strcmp (bson_iter_key (&iter), "sort")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_bulk_replace_one_opts->sort,
+               error)) {
+            return false;
+         }
+      }
       else {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -1438,6 +1481,7 @@ _mongoc_bulk_replace_one_opts_cleanup (mongoc_bulk_replace_one_opts_t *mongoc_bu
 {
    bson_destroy (&mongoc_bulk_replace_one_opts->update.collation);
    bson_value_destroy (&mongoc_bulk_replace_one_opts->update.hint);
+   bson_destroy (&mongoc_bulk_replace_one_opts->sort);
    bson_destroy (&mongoc_bulk_replace_one_opts->extra);
 }
 
