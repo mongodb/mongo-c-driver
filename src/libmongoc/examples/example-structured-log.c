@@ -28,10 +28,17 @@ example_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
     * own global mutex. For other apps, this would be a performance bottleneck
     * and it would be more appropriate for handlers to process their log
     * messages concurrently.
+    *
+    * In this example, our mutex protects access to a global log counter.
+    * In a real application, you may need to protect access to a shared stream
+    * or queue.
     */
    pthread_mutex_lock (&handler_mutex);
 
-   printf ("Log entry with component=%s level=%s message_string='%s'\n",
+   static unsigned log_serial_number = 0;
+
+   printf ("%u. Log entry with component=%s level=%s message_string='%s'\n",
+           ++log_serial_number,
            mongoc_structured_log_get_component_name (component),
            mongoc_structured_log_get_level_name (level),
            message_string);
