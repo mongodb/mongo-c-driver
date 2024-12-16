@@ -284,7 +284,7 @@ _mongoc_structured_log_get_max_document_length_from_env (void)
 
    char *endptr;
    long int_value = strtol (max_length_str, &endptr, 10);
-   if (int_value >= 0 && endptr != max_length_str && !*endptr) {
+   if (int_value >= 0 && int_value <= INT32_MAX && endptr != max_length_str && !*endptr) {
       return (int32_t) int_value;
    }
 
