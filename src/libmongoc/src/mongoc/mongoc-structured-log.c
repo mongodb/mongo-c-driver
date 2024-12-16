@@ -304,7 +304,7 @@ mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t
    bool all_ok = true;
    mongoc_structured_log_level_t level;
 
-   // Errors are not fatal by detault; always reported by return value, and reported the first time only via a log
+   // Errors are not fatal by default; always reported by return value, and reported the first time only via a log
    // warning.
    static int err_count_all_atomic;
    static int err_count_per_component_atomic[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
