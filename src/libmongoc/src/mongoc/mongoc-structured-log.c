@@ -278,7 +278,7 @@ _mongoc_structured_log_get_max_document_length_from_env (void)
       return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
    }
 
-   if (!strcmp (max_length_str, "unlimited")) {
+   if (!strcasecmp (max_length_str, "unlimited")) {
       return BSON_MAX_LEN_UNLIMITED;
    }
 

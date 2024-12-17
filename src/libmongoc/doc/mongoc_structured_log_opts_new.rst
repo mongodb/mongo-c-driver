@@ -31,11 +31,11 @@ Environment Variables
 This is a full list of the captured environment variables.
 
 * ``MONGODB_LOG_MAX_DOCUMENT_LENGTH``: Maximum length for JSON-serialized documents that appear within a log message.
-  It may be a number, in bytes, or ``unlimited``.
+  It may be a number, in bytes, or ``unlimited`` (case insensitive).
   By default, the limit is 1000 bytes.
   This limit affects interior documents like commands and replies, not the total length of a structured log message.
 
-* ``MONGODB_LOG_PATH``: A file path or one of the special strings ``stderr`` or ``stdout``, specifying the destination for structured logs seen by the default handler.
+* ``MONGODB_LOG_PATH``: A file path or one of the special strings ``stderr`` or ``stdout`` (case insensitive) specifying the destination for structured logs seen by the default handler.
   By default, it writes to ``stderr``.
   This path will be captured during ``mongoc_structured_log_opts_new()``, but it will not immediately be opened.
   If the file can't be opened, a warning is then written to the unstructured log and the handler writes structured logs to ``stderr`` instead.
