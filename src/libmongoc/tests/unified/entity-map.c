@@ -614,7 +614,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                   if (!mongoc_structured_log_get_named_level (level_name, &level)) {
                      test_error ("Unknown log level '%s' given in 'observeLogMessages'", component_name);
                   }
-                  mongoc_structured_log_opts_set_max_level_for_component (log_opts, component, level);
+                  BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_component (log_opts, component, level));
                }))),
       visitOthers (
          dupPath (errpath),

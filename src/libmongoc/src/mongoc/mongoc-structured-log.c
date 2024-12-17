@@ -318,8 +318,8 @@ mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t
    for (int component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
       if (_mongoc_structured_log_get_log_level_from_env (
              gStructuredLogComponentEnvVars[component], &level, &err_count_per_component_atomic[component])) {
-         mongoc_structured_log_opts_set_max_level_for_component (
-            opts, (mongoc_structured_log_component_t) component, level);
+         BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_component (
+            opts, (mongoc_structured_log_component_t) component, level));
       } else {
          all_ok = false;
       }
