@@ -414,11 +414,14 @@ mongoc_structured_log_opts_new (void)
 {
    mongoc_structured_log_opts_t *opts = (mongoc_structured_log_opts_t *) bson_malloc0 (sizeof *opts);
 
-   // Capture default state from the environment now
+   /* Capture default state from the environment now.
+    * Note that error return values from mongoc_structured_log_opts_set_* must be ignored here.
+    * If environment variables can't be parsed, warnings will be logged once but we must, by specification,
+    * continue to provide structured logging using whatever valid or default settings remain. */
    opts->default_handler_path = bson_strdup (getenv ("MONGODB_LOG_PATH"));
    opts->max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL);
-   mongoc_structured_log_opts_set_max_levels_from_env (opts);
+   (void) mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL);
+   (void) mongoc_structured_log_opts_set_max_levels_from_env (opts);
 
    // Set default handler. Its shared state is allocated later, as part of instance_t.
    mongoc_structured_log_opts_set_handler (opts, _mongoc_structured_log_default_handler, NULL);
