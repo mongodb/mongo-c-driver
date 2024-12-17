@@ -668,7 +668,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;
    mongoc_client_set_apm_callbacks (client, callbacks, entity);
-   mongoc_client_set_structured_log_opts (client, log_opts);
+   BSON_ASSERT (mongoc_client_set_structured_log_opts (client, log_opts));
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;

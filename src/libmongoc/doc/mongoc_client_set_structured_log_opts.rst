@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  void
+  bool
   mongoc_client_set_structured_log_opts (mongoc_client_t *client,
                                          const mongoc_structured_log_opts_t *opts);
 
@@ -30,6 +30,11 @@ Parameters
 
 * ``client``: A :symbol:`mongoc_client_t`.
 * ``opts``: A :symbol:`mongoc_structured_log_opts_t` allocated with :symbol:`mongoc_structured_log_opts_new`, or NULL to disable structured logging.
+
+Returns
+-------
+
+Returns true when used correctly. If called on a pooled client, returns false and logs a warning.
 
 .. seealso::
 

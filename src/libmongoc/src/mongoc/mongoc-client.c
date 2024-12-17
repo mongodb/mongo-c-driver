@@ -2611,7 +2611,7 @@ mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t
 }
 
 
-void
+bool
 mongoc_client_set_structured_log_opts (mongoc_client_t *client, const mongoc_structured_log_opts_t *opts)
 {
    BSON_ASSERT_PARAM (client);
@@ -2619,9 +2619,11 @@ mongoc_client_set_structured_log_opts (mongoc_client_t *client, const mongoc_str
 
    if (client->topology->single_threaded) {
       mongoc_topology_set_structured_log_opts (client->topology, opts);
+      return true;
    } else {
       MONGOC_WARNING ("Cannot set structured log options on a pooled client, use "
                       "mongoc_client_pool_set_structured_log_opts before the first mongoc_client_pool_pop");
+      return false;
    }
 }
 

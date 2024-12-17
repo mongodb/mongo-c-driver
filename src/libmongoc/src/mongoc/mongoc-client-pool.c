@@ -608,7 +608,7 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool, mongoc_apm_cal
    return true;
 }
 
-void
+bool
 mongoc_client_pool_set_structured_log_opts (mongoc_client_pool_t *pool, const mongoc_structured_log_opts_t *opts)
 {
    BSON_ASSERT_PARAM (pool);
@@ -619,12 +619,15 @@ mongoc_client_pool_set_structured_log_opts (mongoc_client_pool_t *pool, const mo
     * expected to warn but not quit when encountering initialization errors. */
    if (pool->structured_log_opts_set) {
       MONGOC_WARNING ("mongoc_client_pool_set_structured_log_opts can only be called once per pool");
+      return false;
    } else if (pool->client_initialized) {
       MONGOC_WARNING ("mongoc_client_pool_set_structured_log_opts can only be called before mongoc_client_pool_pop");
+      return false;
    } else {
       // Now we can be sure no other threads are relying on concurrent access to the instance yet.
       mongoc_topology_set_structured_log_opts (pool->topology, opts);
       pool->structured_log_opts_set = true;
+      return true;
    }
 }
 
