@@ -773,13 +773,19 @@ _mongoc_structured_log_append_redacted_cmd_failure (bson_t *bson,
          BSON_APPEND_DOCUMENT (bson, "failure", reply);
       }
    } else {
-      // Client-side errors converted directly from bson_error_t, never redacted
+      /* Client-side errors converted directly from bson_error_t, never redacted.
+       * In addition to the bson_error_t fields, client side errors may include errorLabels:
+       * https://mongoc.org/libmongoc/current/errors.html#error-labels */
       bson_t failure;
       if (BSON_APPEND_DOCUMENT_BEGIN (bson, "failure", &failure)) {
          mongoc_error_append_contents_to_bson (error,
                                                &failure,
                                                MONGOC_ERROR_CONTENT_FLAG_MESSAGE | MONGOC_ERROR_CONTENT_FLAG_CODE |
                                                   MONGOC_ERROR_CONTENT_FLAG_DOMAIN);
+         bson_iter_t iter;
+         if (bson_iter_init_find (&iter, reply, "errorLabels")) {
+            bson_append_iter (&failure, bson_iter_key (&iter), bson_iter_key_len (&iter), &iter);
+         }
          bson_append_document_end (bson, &failure);
       }
    }
