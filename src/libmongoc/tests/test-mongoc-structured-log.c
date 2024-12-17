@@ -142,7 +142,7 @@ test_structured_log_plain (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
    mongoc_structured_log_opts_destroy (opts);
@@ -168,7 +168,7 @@ test_structured_log_plain_with_extra_data (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
    mongoc_structured_log_opts_destroy (opts);
@@ -222,7 +222,7 @@ test_structured_log_basic_data_types (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
    mongoc_structured_log_opts_destroy (opts);
@@ -274,7 +274,7 @@ test_structured_log_json (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
    mongoc_structured_log_opts_destroy (opts);
@@ -314,7 +314,7 @@ test_structured_log_oid (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
    mongoc_structured_log_opts_destroy (opts);
@@ -363,7 +363,7 @@ test_structured_log_error (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_INFO);
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_INFO));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
    mongoc_structured_log_opts_destroy (opts);
@@ -435,7 +435,7 @@ test_structured_log_server_description (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
    mongoc_structured_log_opts_destroy (opts);
@@ -538,7 +538,7 @@ test_structured_log_command (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
    mongoc_structured_log_opts_destroy (opts);
@@ -590,7 +590,7 @@ test_structured_log_duration (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
-   mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
    mongoc_structured_log_opts_destroy (opts);

@@ -597,8 +597,8 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
             if (not(type (doc)), then (error ("'observeLogMessages' must be a document"))),
             do ({
                // Initialize all components to the lowest available level, and install a handler.
-               mongoc_structured_log_opts_set_max_level_for_all_components (log_opts,
-                                                                            MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY);
+               BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (
+                  log_opts, MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY));
                mongoc_structured_log_opts_set_handler (log_opts, structured_log_cb, entity);
             }),
             visitEach (

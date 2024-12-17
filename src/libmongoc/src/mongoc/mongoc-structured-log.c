@@ -310,7 +310,7 @@ mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t
    static int err_count_per_component_atomic[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
 
    if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level, &err_count_all_atomic)) {
-      mongoc_structured_log_opts_set_max_level_for_all_components (opts, level);
+      BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, level));
    } else {
       all_ok = false;
    }
