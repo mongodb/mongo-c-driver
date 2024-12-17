@@ -1151,8 +1151,8 @@ _mongoc_server_description_equal (mongoc_server_description_t *sd1, mongoc_serve
       return false;
    }
 
-   /* error may have uninitialized bytes after terminating '\0' */
-   if (0 != strncmp (&sd1->error, &sd2->error, sizeof (bson_error_t))) {
+   if (sd1->error.domain != sd2->error.domain || sd1->error.code != sd2->error.code ||
+       0 != strncmp (sd1->error.message, sd2->error.message, BSON_ERROR_BUFFER_SIZE)) {
       return false;
    }
 
