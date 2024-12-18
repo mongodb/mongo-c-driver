@@ -5,6 +5,7 @@
 #include "mongoc/mongoc-client-pool-private.h"
 #include "mongoc/mongoc-topology-background-monitoring-private.h"
 #include "mongoc/mongoc-uri-private.h"
+#include <common-oid-private.h>
 
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
@@ -1669,8 +1670,7 @@ test_cluster_stream_invalidation_single (void)
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    tdmod = mc_tpld_modify_begin (client->topology);
-   _mongoc_topology_description_clear_connection_pool (
-      tdmod.new_td, mongoc_server_description_id (sd), &kZeroServiceId);
+   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, mongoc_server_description_id (sd), &kZeroObjectId);
    mc_tpld_modify_commit (tdmod);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
@@ -1720,8 +1720,7 @@ test_cluster_stream_invalidation_pooled (void)
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    tdmod = mc_tpld_modify_begin (client->topology);
-   _mongoc_topology_description_clear_connection_pool (
-      tdmod.new_td, mongoc_server_description_id (sd), &kZeroServiceId);
+   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, mongoc_server_description_id (sd), &kZeroObjectId);
    mc_tpld_modify_commit (tdmod);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
