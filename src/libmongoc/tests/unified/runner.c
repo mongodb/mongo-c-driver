@@ -763,11 +763,12 @@ check_run_on_requirement (test_runner_t *test_runner,
 static bool
 check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requirements, const char **reason)
 {
-   mcommon_string_t *fail_reasons = NULL;
    bool requirements_satisfied = false;
    bson_iter_t iter;
 
-   fail_reasons = mcommon_string_new ("");
+   mcommon_string_append_t fail_reasons;
+   mcommon_string_append_new (&fail_reasons);
+
    BSON_FOREACH (run_on_requirements, iter)
    {
       bson_t run_on_requirement;
@@ -785,15 +786,16 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
       }
 
       mcommon_string_append_printf (
-         fail_reasons, "- Requirement %s failed because: %s\n", bson_iter_key (&iter), fail_reason);
+         &fail_reasons, "- Requirement %s failed because: %s\n", bson_iter_key (&iter), fail_reason);
       bson_free (fail_reason);
    }
 
    *reason = NULL;
    if (!requirements_satisfied) {
-      (*reason) = tmp_str ("runOnRequirements not satisfied:\n%s", fail_reasons->str);
+      *reason =
+         tmp_str ("runOnRequirements not satisfied:\n%s", mcommon_string_append_destination (&fail_reasons)->str);
    }
-   mcommon_string_free (fail_reasons, true);
+   mcommon_string_append_destination_destroy (&fail_reasons);
    return requirements_satisfied;
 }
 

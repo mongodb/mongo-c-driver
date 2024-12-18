@@ -8,7 +8,9 @@
 #include "test-conveniences.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>
+#include <common-json-private.h>
 #include <bson/bson-iso8601-private.h>
+#include <bson/bson-json-private.h>
 
 static ssize_t
 test_bson_json_read_cb_helper (void *string, uint8_t *buf, size_t len)
@@ -754,8 +756,7 @@ static void
 test_bson_json_read_buffering (void)
 {
    bson_t **bsons;
-   char *json_tmp;
-   mcommon_string_t *json;
+   mcommon_string_append_t json;
    bson_error_t error;
    bson_t bson_out = BSON_INITIALIZER;
    int i;
@@ -767,7 +768,7 @@ test_bson_json_read_buffering (void)
    bson_json_reader_t *reader;
    int r;
 
-   json = mcommon_string_new (NULL);
+   mcommon_string_append_new (&json);
 
    /* parse between 1 and 10 JSON objects */
    for (n_docs = 1; n_docs < 10; n_docs++) {
@@ -786,16 +787,16 @@ test_bson_json_read_buffering (void)
             }
 
             /* append the BSON document's JSON representation to "json" */
-            json_tmp = bson_as_legacy_extended_json (bsons[docs_idx], NULL);
-            BSON_ASSERT (json_tmp);
-            mcommon_string_append (json, json_tmp);
-            bson_free (json_tmp);
+            BSON_ASSERT (
+               mcommon_json_append_bson_document (&json, bsons[docs_idx], BSON_JSON_MODE_LEGACY, BSON_MAX_RECURSION));
          }
 
          reader = bson_json_data_reader_new (true /* "allow_multiple" is unused */,
                                              (size_t) RAND_R (&seed) % 100 /* bufsize*/);
 
-         bson_json_data_reader_ingest (reader, (uint8_t *) json->str, json->len);
+         bson_json_data_reader_ingest (reader,
+                                       (uint8_t *) mcommon_string_append_destination (&json)->str,
+                                       mcommon_string_append_destination (&json)->len);
 
          for (docs_idx = 0; docs_idx < n_docs; docs_idx++) {
             bson_reinit (&bson_out);
@@ -813,7 +814,7 @@ test_bson_json_read_buffering (void)
          ASSERT_CMPINT (0, ==, bson_json_reader_read (reader, &bson_out, &error));
 
          bson_json_reader_destroy (reader);
-         mcommon_string_truncate (json, 0);
+         mcommon_string_clear (mcommon_string_append_destination (&json));
 
          for (docs_idx = 0; docs_idx < n_docs; docs_idx++) {
             bson_destroy (bsons[docs_idx]);
@@ -823,7 +824,7 @@ test_bson_json_read_buffering (void)
       }
    }
 
-   mcommon_string_free (json, true);
+   mcommon_string_append_destination_destroy (&json);
    bson_destroy (&bson_out);
 }
 

@@ -20,6 +20,7 @@
 #define MONGOC_SSL_PRIVATE_H
 
 #include <bson/bson.h>
+#include <common-string-private.h>
 #include "mongoc-uri-private.h"
 
 
@@ -51,10 +52,10 @@ _mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t *opt, bool free_internal);
  * from a BSON document. It is used to parse TLS options for the KMIP KMS
  * provider in CSFLE.
  * - ssl_opt must be a zero'd out ssl_opt struct.
- * - errmsg must be an initialized bson_string_t.
+ * - errmsg must be an initialized mcommon_string_append_t.
  * - Returns false on error and appends to errmsg. */
 bool
-_mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, bson_string_t *errmsg);
+_mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, mcommon_string_append_t *errmsg);
 
 BSON_END_DECLS
 

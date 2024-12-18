@@ -43,6 +43,7 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 #include <common-string-private.h>
+#include <common-json-private.h>
 
 #define SKIP_LINE_BUFFER_SIZE 1024
 
@@ -203,7 +204,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       } else if (!strcmp (mock_server_log, "stderr")) {
          suite->mock_server_log = stderr;
       } else if (!strcmp (mock_server_log, "json")) {
-         suite->mock_server_log_buf = mcommon_string_new (NULL);
+         suite->mock_server_log_buf = mcommon_string_new_with_capacity ("", 0, 4096);
       } else {
          test_error ("Unrecognized option: MONGOC_TEST_SERVER_LOG=%s", mock_server_log);
       }
@@ -506,8 +507,9 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
    if (suite->mock_server_log_buf) {
       close (pipefd[1]);
       while ((nread = read (pipefd[0], buf, sizeof (buf) - 1)) > 0) {
-         buf[nread] = '\0';
-         mcommon_string_append (suite->mock_server_log_buf, buf);
+         mcommon_string_append_t append;
+         mcommon_string_append_init (&append, suite->mock_server_log_buf);
+         mcommon_string_append_bytes (&append, buf, nread);
       }
    }
 
@@ -520,16 +522,6 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
 #endif
 
 
-/* replace " with \", newline with \n, tab with four spaces */
-static void
-_append_json_escaped (mcommon_string_t *buf, const char *s)
-{
-   char *escaped = bson_utf8_escape_for_json (s, -1);
-   mcommon_string_append (buf, escaped);
-   bson_free (escaped);
-}
-
-
 /* returns 1 on failure, 0 on success */
 static int
 TestSuite_RunTest (TestSuite *suite, /* IN */
@@ -538,14 +530,14 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 {
    int64_t t1, t2, t3;
    char name[MAX_TEST_NAME_LENGTH];
-   mcommon_string_t *buf;
+   mcommon_string_append_t buf;
    mcommon_string_t *mock_server_log_buf;
    size_t i;
    int status = 0;
 
    bson_snprintf (name, sizeof name, "%s%s", suite->name, test->name);
 
-   buf = mcommon_string_new (NULL);
+   mcommon_string_append_new (&buf);
 
    if (suite->flags & TEST_DEBUGOUTPUT) {
       test_msg ("Begin %s, seed %u", name, test->seed);
@@ -559,15 +551,15 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
             test_msg ("@@ctest-skipped@@");
          }
          if (!suite->silent) {
-            mcommon_string_append_printf (buf,
+            mcommon_string_append_printf (&buf,
                                           "    { \"status\": \"skip\", \"test_file\": \"%s\","
                                           " \"reason\": \"%s\" }%s",
                                           test->name,
                                           skip->reason,
                                           ((*count) == 1) ? "" : ",");
-            test_msg ("%s", buf->str);
+            test_msg ("%s", mcommon_string_append_destination (&buf)->str);
             if (suite->outfile) {
-               fprintf (suite->outfile, "%s", buf->str);
+               fprintf (suite->outfile, "%s", mcommon_string_append_destination (&buf)->str);
                fflush (suite->outfile);
             }
          }
@@ -584,10 +576,10 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
          }
          if (!suite->silent) {
             mcommon_string_append_printf (
-               buf, "    { \"status\": \"skip\", \"test_file\": \"%s\" }%s", test->name, ((*count) == 1) ? "" : ",");
-            test_msg ("%s", buf->str);
+               &buf, "    { \"status\": \"skip\", \"test_file\": \"%s\" }%s", test->name, ((*count) == 1) ? "" : ",");
+            test_msg ("%s", mcommon_string_append_destination (&buf)->str);
             if (suite->outfile) {
-               fprintf (suite->outfile, "%s", buf->str);
+               fprintf (suite->outfile, "%s", mcommon_string_append_destination (&buf)->str);
                fflush (suite->outfile);
             }
          }
@@ -626,7 +618,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    ASSERT_CMPINT64 (t2, >=, t1);
    t3 = t2 - t1;
 
-   mcommon_string_append_printf (buf,
+   mcommon_string_append_printf (&buf,
                                  "    { \"status\": \"%s\", "
                                  "\"test_file\": \"%s\", "
                                  "\"seed\": \"%u\", "
@@ -645,28 +637,27 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 
    mock_server_log_buf = suite->mock_server_log_buf;
 
-   if (mock_server_log_buf && mock_server_log_buf->len) {
-      mcommon_string_append (buf, ", \"log_raw\": \"");
-      _append_json_escaped (buf, mock_server_log_buf->str);
-      mcommon_string_append (buf, "\"");
-
-      mcommon_string_truncate (mock_server_log_buf, 0);
+   if (mock_server_log_buf && !mcommon_string_is_empty (mock_server_log_buf)) {
+      mcommon_string_append (&buf, ", \"log_raw\": \"");
+      mcommon_json_append_escaped (&buf, mock_server_log_buf->str, mock_server_log_buf->len, true);
+      mcommon_string_append (&buf, "\"");
+      mcommon_string_clear (mock_server_log_buf);
    }
 
-   mcommon_string_append_printf (buf, " }");
+   mcommon_string_append (&buf, " }");
 
    if (*count > 1) {
-      mcommon_string_append_printf (buf, ",");
+      mcommon_string_append (&buf, ",");
    }
 
-   test_msg ("%s", buf->str);
+   test_msg ("%s", mcommon_string_append_destination (&buf)->str);
    if (suite->outfile) {
-      fprintf (suite->outfile, "%s", buf->str);
+      fprintf (suite->outfile, "%s", mcommon_string_append_destination (&buf)->str);
       fflush (suite->outfile);
    }
 
 done:
-   mcommon_string_free (buf, true);
+   mcommon_string_append_destination_destroy (&buf);
 
    return status ? 1 : 0;
 }
@@ -1123,9 +1114,7 @@ TestSuite_Destroy (TestSuite *suite)
       fclose (suite->outfile);
    }
 
-   if (suite->mock_server_log_buf) {
-      mcommon_string_free (suite->mock_server_log_buf, true);
-   }
+   mcommon_string_destroy (suite->mock_server_log_buf);
 
    bson_free (suite->name);
    bson_free (suite->prgname);
@@ -1166,24 +1155,25 @@ MONGOC_PRINTF_FORMAT (1, 2)
 void
 test_suite_mock_server_log (const char *msg, ...)
 {
-   va_list ap;
-   char *formatted_msg;
-
    bson_mutex_lock (&gTestMutex);
 
-   if (gTestSuite->mock_server_log || gTestSuite->mock_server_log_buf) {
+   if (gTestSuite->mock_server_log_buf) {
+      mcommon_string_append_t append;
+      mcommon_string_append_init (&append, gTestSuite->mock_server_log_buf);
+
+      va_list ap;
       va_start (ap, msg);
-      formatted_msg = bson_strdupv_printf (msg, ap);
+      mcommon_string_append_vprintf (&append, msg, ap);
       va_end (ap);
+      mcommon_string_append (&append, "\n");
 
-      if (gTestSuite->mock_server_log_buf) {
-         mcommon_string_append_printf (gTestSuite->mock_server_log_buf, "%s\n", formatted_msg);
-      } else {
-         fprintf (gTestSuite->mock_server_log, "%s\n", formatted_msg);
-         fflush (gTestSuite->mock_server_log);
-      }
-
-      bson_free (formatted_msg);
+   } else if (gTestSuite->mock_server_log) {
+      va_list ap;
+      va_start (ap, msg);
+      vfprintf (gTestSuite->mock_server_log, msg, ap);
+      va_end (ap);
+      fwrite ("\n", 1, 1, gTestSuite->mock_server_log);
+      fflush (gTestSuite->mock_server_log);
    }
 
    bson_mutex_unlock (&gTestMutex);

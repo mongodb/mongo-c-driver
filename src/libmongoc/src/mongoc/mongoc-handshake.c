@@ -201,13 +201,13 @@ _mongoc_handshake_get_config_hex_string (void)
       _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SRV);
    }
 
-   mcommon_string_t *const str = mcommon_string_new ("0x");
+   mcommon_string_append_t append;
+   mcommon_string_append_init (&append, mcommon_string_new_with_capacity ("0x", 2, 2 + byte_count * 2));
    for (uint32_t i = 0u; i < byte_count; i++) {
-      mcommon_string_append_printf (str, "%02x", bf[i]);
+      mcommon_string_append_printf (&append, "%02x", bf[i]);
    }
    bson_free (bf);
-   /* free the mcommon_string_t, but keep the underlying char* alive. */
-   return mcommon_string_free (str, false);
+   return mcommon_string_append_destination_destroy_into_buffer (&append);
 }
 
 static char *
@@ -378,11 +378,7 @@ _free_driver_info (mongoc_handshake_t *handshake)
 static void
 _set_platform_string (mongoc_handshake_t *handshake)
 {
-   mcommon_string_t *str;
-
-   str = mcommon_string_new ("");
-
-   handshake->platform = mcommon_string_free (str, false);
+   handshake->platform = bson_strdup ("");
 }
 
 static void
@@ -474,47 +470,44 @@ cleanup:
 static void
 _set_compiler_info (mongoc_handshake_t *handshake)
 {
-   mcommon_string_t *str;
-   char *config_str;
+   mcommon_string_append_t append;
+   mcommon_string_append_new (&append);
 
-   str = mcommon_string_new ("");
-
-   config_str = _mongoc_handshake_get_config_hex_string ();
-   mcommon_string_append_printf (str, "cfg=%s", config_str);
+   char *config_str = _mongoc_handshake_get_config_hex_string ();
+   mcommon_string_append_printf (&append, "cfg=%s", config_str);
    bson_free (config_str);
 
 #ifdef _POSIX_VERSION
-   mcommon_string_append_printf (str, " posix=%ld", _POSIX_VERSION);
+   mcommon_string_append_printf (&append, " posix=%ld", _POSIX_VERSION);
 #endif
 
 #ifdef __STDC_VERSION__
-   mcommon_string_append_printf (str, " stdc=%ld", __STDC_VERSION__);
+   mcommon_string_append_printf (&append, " stdc=%ld", __STDC_VERSION__);
 #endif
 
-   mcommon_string_append_printf (str, " CC=%s", MONGOC_COMPILER);
+   mcommon_string_append_printf (&append, " CC=%s", MONGOC_COMPILER);
 
 #ifdef MONGOC_COMPILER_VERSION
-   mcommon_string_append_printf (str, " %s", MONGOC_COMPILER_VERSION);
+   mcommon_string_append_printf (&append, " %s", MONGOC_COMPILER_VERSION);
 #endif
-   handshake->compiler_info = mcommon_string_free (str, false);
+   handshake->compiler_info = mcommon_string_append_destination_destroy_into_buffer (&append);
 }
 
 static void
 _set_flags (mongoc_handshake_t *handshake)
 {
-   mcommon_string_t *str;
-
-   str = mcommon_string_new ("");
+   mcommon_string_append_t append;
+   mcommon_string_append_new (&append);
 
    if (strlen (MONGOC_EVALUATE_STR (MONGOC_USER_SET_CFLAGS)) > 0) {
-      mcommon_string_append_printf (str, " CFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_CFLAGS));
+      mcommon_string_append_printf (&append, " CFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_CFLAGS));
    }
 
    if (strlen (MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS)) > 0) {
-      mcommon_string_append_printf (str, " LDFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS));
+      mcommon_string_append_printf (&append, " LDFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS));
    }
 
-   handshake->flags = mcommon_string_free (str, false);
+   handshake->flags = mcommon_string_append_destination_destroy_into_buffer (&append);
 }
 
 static void
@@ -557,44 +550,36 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
 {
    char *compiler_info = _mongoc_handshake_get ()->compiler_info;
    char *flags = _mongoc_handshake_get ()->flags;
-   mcommon_string_t *combined_platform = mcommon_string_new (platform);
 
-   /* Compute space left for platform field */
-   const int max_platform_str_size = HANDSHAKE_MAX_SIZE - ((int) doc->len +
-                                                           /* 1 byte for utf8 tag */
-                                                           1 +
+   const uint32_t overhead = (/* 1 byte for utf8 tag */
+                              1 +
+                              /* key size */
+                              (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
+                              /* 4 bytes for length of string */
+                              4 +
+                              /* NUL terminator */
+                              1);
 
-                                                           /* key size */
-                                                           (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
-
-                                                           /* 4 bytes for length of string */
-                                                           4);
-
-   if (truncate && max_platform_str_size <= 0) {
-      mcommon_string_free (combined_platform, true);
+   if (truncate && doc->len >= HANDSHAKE_MAX_SIZE - overhead) {
       return;
    }
 
-   /* We opt to drop compiler info and flags if they can't fit, while the
-    * platform information is truncated
-    * Try to drop flags first, and if there is still not enough space also
-    * drop compiler info */
-   if (!truncate ||
-       mcommon_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (compiler_info) + 1u)) {
-      mcommon_string_append (combined_platform, compiler_info);
-   }
-   if (!truncate ||
-       mcommon_cmp_greater_equal_su (max_platform_str_size, combined_platform->len + strlen (flags) + 1u)) {
-      mcommon_string_append (combined_platform, flags);
-   }
+   mcommon_string_append_t combined_platform;
+   mcommon_string_append_init_with_limit (&combined_platform,
+                                          mcommon_string_new_with_capacity ("", 0, HANDSHAKE_MAX_SIZE - overhead),
+                                          truncate ? HANDSHAKE_MAX_SIZE - overhead - doc->len : UINT32_MAX - 1u);
 
-   /* We use the flags_index field to check if the CLAGS/LDFLAGS need to be
-    * truncated, and if so we drop them altogether */
-   BSON_ASSERT (mcommon_in_range_unsigned (int, combined_platform->len));
-   int length = truncate ? BSON_MIN (max_platform_str_size - 1, (int) combined_platform->len) : -1;
-   bson_append_utf8 (doc, HANDSHAKE_PLATFORM_FIELD, -1, combined_platform->str, length);
+   mcommon_string_append (&combined_platform, platform);
+   mcommon_string_append_atomic (&combined_platform, compiler_info);
+   mcommon_string_append_atomic (&combined_platform, flags);
 
-   mcommon_string_free (combined_platform, true);
+   bson_append_utf8 (doc,
+                     HANDSHAKE_PLATFORM_FIELD,
+                     strlen (HANDSHAKE_PLATFORM_FIELD),
+                     mcommon_string_append_destination (&combined_platform)->str,
+                     mcommon_string_append_destination (&combined_platform)->len);
+
+   mcommon_string_append_destination_destroy (&combined_platform);
 }
 
 static bool

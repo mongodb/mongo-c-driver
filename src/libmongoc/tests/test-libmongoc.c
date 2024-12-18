@@ -369,7 +369,9 @@ char *
 test_framework_get_unix_domain_socket_path_escaped (void)
 {
    char *path = test_framework_get_unix_domain_socket_path (), *c = path;
-   mcommon_string_t *escaped = mcommon_string_new (NULL);
+
+   mcommon_string_append_t escaped;
+   mcommon_string_append_new (&escaped);
 
    /* Connection String Spec: "The host information cannot contain an unescaped
     * slash ("/"), if it does then an exception MUST be thrown informing users
@@ -380,16 +382,15 @@ test_framework_get_unix_domain_socket_path_escaped (void)
     */
    do {
       if (*c == '/') {
-         mcommon_string_append (escaped, "%2F");
+         mcommon_string_append (&escaped, "%2F");
       } else {
-         mcommon_string_append_c (escaped, *c);
+         mcommon_string_append_bytes (&escaped, c, 1);
       }
    } while (*(++c));
 
-   mcommon_string_append_c (escaped, '\0');
    bson_free (path);
 
-   return mcommon_string_free (escaped, false /* free_segment */);
+   return mcommon_string_append_destination_destroy_into_buffer (&escaped);
 }
 
 static char *
@@ -950,17 +951,17 @@ uri_str_has_db (mcommon_string_t *uri_string)
 
 
 static void
-add_option_to_uri_str (mcommon_string_t *uri_string, const char *option, const char *value)
+add_option_to_uri_str (mcommon_string_append_t *uri_string, const char *option, const char *value)
 {
-   if (strchr (uri_string->str, '?')) {
+   if (strchr (mcommon_string_append_destination (uri_string)->str, '?')) {
       /* already has some options */
-      mcommon_string_append_c (uri_string, '&');
-   } else if (uri_str_has_db (uri_string)) {
+      mcommon_string_append (uri_string, "&");
+   } else if (uri_str_has_db (mcommon_string_append_destination (uri_string))) {
       /* like "mongodb://host/db" */
-      mcommon_string_append_c (uri_string, '?');
+      mcommon_string_append (uri_string, "?");
    } else {
       /* like "mongodb://host" */
-      mcommon_string_append_printf (uri_string, "/?");
+      mcommon_string_append (uri_string, "/?");
    }
 
    mcommon_string_append_printf (uri_string, "%s=%s", option, value);
@@ -994,7 +995,6 @@ test_framework_get_uri_str_no_auth (const char *database_name)
 {
    char *env_uri_str;
    bson_t hello_response;
-   mcommon_string_t *uri_string;
    char *name;
    bson_iter_t iter;
    bson_iter_t hosts_iter;
@@ -1002,20 +1002,23 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    char *host;
    uint16_t port;
 
+   mcommon_string_append_t uri_string;
+   mcommon_string_append_new (&uri_string);
+
    env_uri_str = _uri_str_from_env ();
    if (env_uri_str) {
-      uri_string = mcommon_string_new (env_uri_str);
+      mcommon_string_append (&uri_string, env_uri_str);
       if (database_name) {
-         if (uri_string->str[uri_string->len - 1] != '/') {
-            mcommon_string_append (uri_string, "/");
+         if (!mcommon_string_append_ends_with_str (&uri_string, "/")) {
+            mcommon_string_append (&uri_string, "/");
          }
-         mcommon_string_append (uri_string, database_name);
+         mcommon_string_append (&uri_string, database_name);
       }
       bson_free (env_uri_str);
    } else {
       /* construct a direct connection or replica set connection URI */
       call_hello (&hello_response);
-      uri_string = mcommon_string_new ("mongodb://");
+      mcommon_string_append (&uri_string, "mongodb://");
 
       if ((name = set_name (&hello_response))) {
          /* make a replica set URI */
@@ -1027,34 +1030,34 @@ test_framework_get_uri_str_no_auth (const char *database_name)
          while (bson_iter_next (&hosts_iter)) {
             BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
             if (!first) {
-               mcommon_string_append (uri_string, ",");
+               mcommon_string_append (&uri_string, ",");
             }
 
-            mcommon_string_append (uri_string, bson_iter_utf8 (&hosts_iter, NULL));
+            mcommon_string_append (&uri_string, bson_iter_utf8 (&hosts_iter, NULL));
             first = false;
          }
 
-         mcommon_string_append (uri_string, "/");
+         mcommon_string_append (&uri_string, "/");
          if (database_name) {
-            mcommon_string_append (uri_string, database_name);
+            mcommon_string_append (&uri_string, database_name);
          }
 
-         add_option_to_uri_str (uri_string, MONGOC_URI_REPLICASET, name);
+         add_option_to_uri_str (&uri_string, MONGOC_URI_REPLICASET, name);
          bson_free (name);
       } else {
          host = test_framework_get_host ();
          port = test_framework_get_port ();
-         mcommon_string_append_printf (uri_string, "%s:%hu", host, port);
-         mcommon_string_append (uri_string, "/");
+         mcommon_string_append_printf (&uri_string, "%s:%hu", host, port);
+         mcommon_string_append (&uri_string, "/");
          if (database_name) {
-            mcommon_string_append (uri_string, database_name);
+            mcommon_string_append (&uri_string, database_name);
          }
 
          bson_free (host);
       }
 
       if (test_framework_get_ssl ()) {
-         add_option_to_uri_str (uri_string, MONGOC_URI_SSL, "true");
+         add_option_to_uri_str (&uri_string, MONGOC_URI_SSL, "true");
       }
 
       bson_destroy (&hello_response);
@@ -1063,15 +1066,15 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    if (test_framework_has_compressors ()) {
       char *compressors = test_framework_get_compressors ();
 
-      add_option_to_uri_str (uri_string, MONGOC_URI_COMPRESSORS, compressors);
+      add_option_to_uri_str (&uri_string, MONGOC_URI_COMPRESSORS, compressors);
       bson_free (compressors);
    }
 
    // Required by test-atlas-executor. Not required by normal unified test
    // runner, but make tests a little more resilient to transient errors.
-   add_option_to_uri_str (uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
+   add_option_to_uri_str (&uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
-   return mcommon_string_free (uri_string, false);
+   return mcommon_string_append_destination_destroy_into_buffer (&uri_string);
 }
 
 /*

@@ -67,18 +67,19 @@ char *
 hosts (mongoc_array_t *servers)
 {
    const char *host_and_port;
-   mcommon_string_t *hosts_str = mcommon_string_new ("");
+   mcommon_string_append_t hosts_str;
+   mcommon_string_append_new (&hosts_str);
 
    for (size_t i = 0u; i < servers->len; i++) {
       host_and_port = mock_server_get_host_and_port (get_server (servers, i));
-      mcommon_string_append_printf (hosts_str, "\"%s\"", host_and_port);
+      mcommon_string_append_printf (&hosts_str, "\"%s\"", host_and_port);
 
       if (i + 1u < servers->len) {
-         mcommon_string_append_printf (hosts_str, ", ");
+         mcommon_string_append_printf (&hosts_str, ", ");
       }
    }
 
-   return mcommon_string_free (hosts_str, false); /* detach buffer */
+   return mcommon_string_append_destination_destroy_into_buffer (&hosts_str);
 }
 
 
@@ -86,28 +87,31 @@ mongoc_uri_t *
 make_uri (mongoc_array_t *servers)
 {
    const char *host_and_port;
-   mcommon_string_t *uri_str = mcommon_string_new ("mongodb://");
+   mcommon_string_append_t uri_str;
+   mcommon_string_append_new (&uri_str);
    mongoc_uri_t *uri;
+
+   mcommon_string_append (&uri_str, "mongodb://");
 
    for (size_t i = 0u; i < servers->len; i++) {
       host_and_port = mock_server_get_host_and_port (get_server (servers, i));
-      mcommon_string_append_printf (uri_str, "%s", host_and_port);
+      mcommon_string_append (&uri_str, host_and_port);
 
       if (i + 1u < servers->len) {
-         mcommon_string_append_printf (uri_str, ",");
+         mcommon_string_append (&uri_str, ",");
       }
    }
 
-   mcommon_string_append_printf (uri_str, "/?replicaSet=rs");
+   mcommon_string_append_printf (&uri_str, "/?replicaSet=rs");
 
-   uri = mongoc_uri_new (uri_str->str);
+   uri = mongoc_uri_new (mcommon_string_append_destination (&uri_str)->str);
 
    // Many mock server tests do not expect retryable handshakes. Disable by
    // default: tests that expect or require retryable handshakes must opt-in.
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, false);
 
-   mcommon_string_free (uri_str, true);
+   mcommon_string_append_destination_destroy (&uri_str);
 
    return uri;
 }
