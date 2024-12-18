@@ -358,6 +358,21 @@ test_bson_string_truncate (void)
       ASSERT_CMPUINT32 (str->alloc, ==, 4u);
       bson_string_free (str, true);
    }
+
+   // Test truncating in the middle of a UTF-8 sequence, producing invalid UTF-8 as output.
+   // This is not especially desirable, but the behavior is maintained for compatibility.
+   {
+      // From RFC-3629 examples, "A<NOT IDENTICAL TO><ALPHA>."
+      bson_string_t *str = bson_string_new ("\x41\xe2\x89\xa2\xce\x91\x2e");
+      ASSERT_CMPSIZE_T (str->len, ==, 7u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+
+      bson_string_truncate (str, 3);
+      ASSERT_CMPSTR (str->str, "\x41\xe2\x89");
+      ASSERT_CMPSIZE_T (str->len, ==, 3u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 4u);
+      bson_string_free (str, true);
+   }
 }
 
 static void
