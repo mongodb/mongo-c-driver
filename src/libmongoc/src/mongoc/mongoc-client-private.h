@@ -92,7 +92,6 @@ struct _mongoc_client_t {
    mongoc_uri_t *uri;
    mongoc_cluster_t cluster;
    bool in_exhaust;
-   bool is_pooled;
 
    mongoc_stream_initiator_t initiator;
    void *initiator_data;

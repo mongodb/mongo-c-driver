@@ -21,6 +21,7 @@
 #include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-uri-private.h"
 #include "mongoc/mongoc-client-side-encryption.h"
+#include <common-oid-private.h>
 
 #include "json-test.h"
 #include "json-test-operations.h"
@@ -265,7 +266,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
             generation = bson_iter_int32 (&app_error_field_iter);
          } else {
             /* Default to the current generation. */
-            generation = mc_tpl_sd_get_generation (sd, &kZeroServiceId);
+            generation = mc_tpl_sd_get_generation (sd, &kZeroObjectId);
          }
 
          BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "maxWireVersion"));
@@ -304,7 +305,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          memset (&err, 0, sizeof (bson_error_t));
          _mongoc_topology_handle_app_error (
-            topology, sd->id, handshake_complete, type, &response, &err, max_wire_version, generation, &kZeroServiceId);
+            topology, sd->id, handshake_complete, type, &response, &err, max_wire_version, generation, &kZeroObjectId);
          mc_tpld_drop_ref (&td);
       }
    }
