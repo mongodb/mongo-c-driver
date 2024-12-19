@@ -21,7 +21,7 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_init_static()` function shall shall initialize a read-only :symbol:`bson_t` on the stack using the data provided. No copies of the data will be made and therefore must remain valid for the lifetime of the :symbol:`bson_t`.
+The :symbol:`bson_init_static()` function shall initialize a read-only :symbol:`bson_t` on the stack using the data provided. No copies of the data will be made and therefore must remain valid for the lifetime of the :symbol:`bson_t`.
 
 The resulting `bson_t` has internal references and therefore must not be copied to avoid dangling pointers in the copy.
 
