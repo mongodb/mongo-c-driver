@@ -154,6 +154,7 @@ endif()
 add_library(_mongoc-dependencies INTERFACE)
 add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
 target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform)
+target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform $<$<PLATFORM_ID:Windows>:advapi32.lib>)
 install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
 set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
 
