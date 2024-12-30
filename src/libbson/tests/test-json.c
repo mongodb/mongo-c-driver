@@ -2739,6 +2739,9 @@ truncate_string (const char *str, size_t len)
    return truncated;
 }
 
+/* Run multiple tests against a particular bson_t and bson_json_mode_t, with expected output.
+ * This test assumes naive string truncation (not UTF-8 preserving) so it's unsuitable
+ * when expected json output includes multi-byte UTF-8 sequences. */
 static void
 run_bson_as_json_with_opts_tests (bson_t *bson, bson_json_mode_t mode, const char *expected)
 {
@@ -3192,6 +3195,114 @@ test_bson_as_json_with_opts_all_types (void)
 
    bson_destroy (&b);
    bson_destroy (&scope);
+}
+
+// Helper for test_bson_as_json_with_opts_utf8_truncation. Takes a variable length (-1) terminated list of integers
+// that we expect not to truncate at.
+static void
+_test_bson_json_utf8_truncation (bson_t *test_doc, bson_json_mode_t mode, const char *expected, ...)
+{
+   size_t expected_len = expected ? strlen (expected) : 64;
+   size_t last_valid_truncation = 0;
+
+   for (size_t checking_len = 0; checking_len < expected_len; checking_len++) {
+      bool expect_truncation_here = true;
+      va_list ap;
+      va_start (ap, expected);
+      while (true) {
+         int arg = va_arg (ap, int);
+         if (arg < 0) {
+            BSON_ASSERT (arg == -1);
+            break;
+         } else if (arg == checking_len) {
+            expect_truncation_here = false;
+         }
+      }
+      va_end (ap);
+      if (expect_truncation_here) {
+         last_valid_truncation = checking_len;
+      }
+
+      bson_json_opts_t *opts = bson_json_opts_new (mode, checking_len);
+      size_t json_len;
+      char *str = bson_as_json_with_opts (test_doc, &json_len, opts);
+      bson_json_opts_destroy (opts);
+
+      if (str) {
+         BSON_ASSERT (expected);
+         ASSERT_CMPSIZE_T (json_len, ==, last_valid_truncation);
+
+         char *str_trunc = bson_strndup (str, json_len);
+         char *expected_trunc = bson_strndup (expected, last_valid_truncation);
+         ASSERT_CMPSTR (str_trunc, expected_trunc);
+         bson_free (str_trunc);
+         bson_free (expected_trunc);
+
+         bson_free (str);
+      } else {
+         BSON_ASSERT (!expected);
+      }
+   }
+
+   bson_destroy (test_doc);
+}
+
+static void
+test_bson_as_json_with_opts_utf8_truncation (void)
+{
+   // Plain ASCII, in a subdocument. Just checking that all truncations here are okay.
+   _test_bson_json_utf8_truncation (BCON_NEW ("doc", "{", "a", BCON_UTF8 ("b"), "}"),
+                                    BSON_JSON_MODE_CANONICAL,
+                                    "{ \"doc\" : { \"a\" : \"b\" } }",
+                                    -1);
+
+   // Escape sequences, also fine to truncate anywhere
+   _test_bson_json_utf8_truncation (BCON_NEW ("doc", "{", "\x01", BCON_UTF8 ("\xc0\x80"), "}"),
+                                    BSON_JSON_MODE_CANONICAL,
+                                    "{ \"doc\" : { \"\\u0001\" : \"\\u0000\" } }",
+                                    -1);
+
+   // Invalid UTF-8 sequence, rejected by bson_as_json_with_opts
+   _test_bson_json_utf8_truncation (
+      BCON_NEW ("foo\xff\xff bar", "{", "a", BCON_UTF8 ("b"), "}"), BSON_JSON_MODE_CANONICAL, NULL, -1);
+
+   // Valid 2-byte UTF-8 sequence
+   _test_bson_json_utf8_truncation (BCON_NEW ("foo \xc2\xa9", "{", "\xc2\xa9 bar", BCON_UTF8 ("foo \xc2\xa9 bar"), "}"),
+                                    BSON_JSON_MODE_CANONICAL,
+                                    "{ \"foo \xc2\xa9\" : { \"\xc2\xa9 bar\" : \"foo \xc2\xa9 bar\" } }",
+                                    8,
+                                    17,
+                                    32,
+                                    -1);
+
+   // Valid 3-byte UTF-8 sequence
+   _test_bson_json_utf8_truncation (
+      BCON_NEW ("foo \xef\xbf\xbd", "{", "\xef\xbf\xbd bar", BCON_UTF8 ("foo \xef\xbf\xbd bar"), "}"),
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"foo \xef\xbf\xbd\" : { \"\xef\xbf\xbd bar\" : \"foo \xef\xbf\xbd bar\" } }",
+      8,
+      9,
+      18,
+      19,
+      34,
+      35,
+      -1);
+
+   // Valid 4-byte UTF-8 sequence
+   _test_bson_json_utf8_truncation (
+      BCON_NEW ("foo \xf4\x8f\xbf\xbf", "{", "\xf4\x8f\xbf\xbf bar", BCON_UTF8 ("foo \xf4\x8f\xbf\xbf bar"), "}"),
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"foo \xf4\x8f\xbf\xbf\" : { \"\xf4\x8f\xbf\xbf bar\" : \"foo \xf4\x8f\xbf\xbf bar\" } }",
+      8,
+      9,
+      10,
+      19,
+      20,
+      21,
+      36,
+      37,
+      38,
+      -1);
 }
 
 static void
@@ -3783,6 +3894,7 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/as_json_with_opts/maxkey", test_bson_as_json_with_opts_maxkey);
    TestSuite_Add (suite, "/bson/as_json_with_opts/decimal128", test_bson_as_json_with_opts_decimal128);
    TestSuite_Add (suite, "/bson/as_json_with_opts/all_types", test_bson_as_json_with_opts_all_types);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/utf8_truncation", test_bson_as_json_with_opts_utf8_truncation);
    TestSuite_Add (suite, "/bson/parse_array", test_parse_array);
    TestSuite_Add (suite, "/bson/decimal128_overflowing_exponent", test_decimal128_overflowing_exponent);
    TestSuite_Add (suite, "/bson/as_json/all_formats", test_bson_as_json_all_formats);
