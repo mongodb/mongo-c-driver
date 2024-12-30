@@ -380,7 +380,7 @@ test_bson_string_truncate (void)
 bson_string_t *
 _bson_string_alloc (const size_t size)
 {
-   BSON_ASSERT (mcommon_in_range_signed (uint32_t, size) && (uint32_t) size < UINT32_MAX);
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, size) && (uint32_t) size < UINT32_MAX);
 
    /* New mcommon_string behavior is to use power of two rounding for resize but not for initial allocation.
     * This emulates the old behavior. */
@@ -465,7 +465,7 @@ test_bson_string_capacity (void *unused)
 static void
 _bson_string_append_ex (bson_string_t *string, const char *str, const size_t len)
 {
-   BSON_ASSERT (mcommon_in_range_signed (uint32_t, len));
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len));
    mcommon_string_append_t append;
    mcommon_string_append_init (&append, (mcommon_string_t *) string);
    mcommon_string_append_bytes (&append, str, (uint32_t) len);

@@ -111,7 +111,7 @@ mcommon_string_new (const char *str)
 {
    BSON_ASSERT_PARAM (str);
    size_t length = strlen (str);
-   BSON_ASSERT (mcommon_in_range_signed (uint32_t, length) && (uint32_t) length < UINT32_MAX);
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, length) && (uint32_t) length < UINT32_MAX);
    return mcommon_string_new_with_capacity (str, (uint32_t) length, 0);
 }
 
@@ -175,7 +175,7 @@ mcommon_string_starts_with_str (const mcommon_string_t *string, const char *subs
 {
    size_t substring_len = strlen (substring);
    uint32_t string_len = string->len;
-   if (mcommon_in_range_signed (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
+   if (mcommon_in_range_unsigned (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
       return 0 == memcmp (string->str, substring, substring_len);
    } else {
       return false;
@@ -192,7 +192,7 @@ mcommon_string_ends_with_str (const mcommon_string_t *string, const char *substr
 {
    size_t substring_len = strlen (substring);
    uint32_t string_len = string->len;
-   if (mcommon_in_range_signed (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
+   if (mcommon_in_range_unsigned (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
       uint32_t offset = string_len - (uint32_t) substring_len;
       return 0 == memcmp (string->str + offset, substring, substring_len);
    } else {
