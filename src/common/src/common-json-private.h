@@ -235,7 +235,7 @@ bool
 mcommon_json_append_value_oid (mcommon_string_append_t *append, const bson_oid_t *value);
 
 /**
- * @brief Append the JSON serialization of an BSON binary value
+ * @brief Append the JSON serialization of a BSON binary value
  * @param append A bounded string append, initialized with mcommon_string_append_init()
  * @param subtype Subtype code, identifying the format within the base64-encoded binary block
  * @param bytes Bytes to be base64 encoded
