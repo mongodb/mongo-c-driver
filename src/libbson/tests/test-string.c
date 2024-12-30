@@ -112,6 +112,31 @@ test_bson_string_append_printf (void)
 
 
 static void
+test_bson_string_append_printf_truncate (void)
+{
+   // mcommon_string_append_printf will always truncate strings between UTF-8 code points.
+   // Also see /bson/as_json_with_opts/utf8_truncation. Both tests exercise functionality implemented by
+   // mcommon_utf8_truncate_len(), but printf() uses a different path through mcommon_string.
+
+   for (uint32_t limit = 0; limit < 13; limit++) {
+      mcommon_string_append_t append;
+      mcommon_string_append_init_with_limit (&append, mcommon_string_new (""), limit);
+      mcommon_string_append_printf (&append, "foo \xf4%s%c%c bar", "\x8f", '\xbf', '\xbf');
+      const char *expected = "foo \xf4\x8f\xbf\xbf bar";
+      const char *str = mcommon_string_append_destination (&append)->str;
+      uint32_t len = mcommon_string_append_destination (&append)->len;
+      if (limit >= 4 && limit < 8) {
+         BSON_ASSERT (len == 4);
+      } else {
+         BSON_ASSERT (len == limit);
+      }
+      BSON_ASSERT (0 == memcmp (str, expected, len));
+      mcommon_string_append_destination_destroy (&append);
+   }
+}
+
+
+static void
 test_bson_string_append_unichar (void)
 {
    static const unsigned char test1[] = {0xe2, 0x82, 0xac, 0};
@@ -527,6 +552,7 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/append", test_bson_string_append);
    TestSuite_Add (suite, "/bson/string/append_c", test_bson_string_append_c);
    TestSuite_Add (suite, "/bson/string/append_printf", test_bson_string_append_printf);
+   TestSuite_Add (suite, "/bson/string/append_printf_truncate", test_bson_string_append_printf_truncate);
    TestSuite_Add (suite, "/bson/string/append_unichar", test_bson_string_append_unichar);
    TestSuite_Add (suite, "/bson/string/strdup", test_bson_strdup);
    TestSuite_Add (suite, "/bson/string/strdup_printf", test_bson_strdup_printf);
