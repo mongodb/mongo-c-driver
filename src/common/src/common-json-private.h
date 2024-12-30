@@ -49,7 +49,7 @@
 /**
  * @brief Append an ISO 8601 formatted date, given 64-bit milliseconds since the epoch
  * @param append A bounded string append, initialized with mcommon_string_append_init()
- * @param mses_since_epoch Milliseconds since Jan 1 1970 UTC
+ * @param msec_since_epoch Milliseconds since Jan 1 1970 UTC
  * @returns true on success, false if this 'append' has exceeded its max length
  */
 bool
