@@ -315,7 +315,7 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
           (uint32_t) format_result <= actual_format_buffer_capacity) {
          // Successful result, no truncation.
          format_buffer[format_result] = '\0';
-         string->len = old_len + format_result;
+         string->len = old_len + (uint32_t) format_result;
          BSON_ASSERT (string->len <= append->_max_len);
          BSON_ASSERT (append->_max_len_exceeded == false);
          return true;
@@ -324,7 +324,8 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
       if (actual_format_buffer_capacity == max_append_len) {
          // No more space to grow into, this must be the final result.
 
-         if (format_result > -1 && format_result < UINT32_MAX) {
+         if (format_result > -1 && mcommon_in_range_signed (uint32_t, format_result) &&
+             (uint32_t) format_result < UINT32_MAX) {
             // We have truncated output from vsnprintf. Clean it up by removing
             // any partial UTF-8 sequences that might be left on the end.
             uint32_t truncated_append_len = mcommon_utf8_truncate_len (
@@ -341,7 +342,8 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
       }
 
       // Choose a larger format_buffer_len and try again. Length will be clamped to max_append_len above.
-      if (format_result > -1 && format_result < UINT32_MAX) {
+      if (format_result > -1 && mcommon_in_range_signed (uint32_t, format_result) &&
+          (uint32_t) format_result < UINT32_MAX) {
          min_format_buffer_capacity = (uint32_t) format_result + 1u;
       } else if (min_format_buffer_capacity < UINT32_MAX / 2) {
          min_format_buffer_capacity *= 2;
