@@ -34,6 +34,18 @@ typedef struct mongoc_structured_log_instance_t mongoc_structured_log_instance_t
 #define MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH 1000
 
 /**
+ * @brief maximum possible value of the 'maximum document length' setting, enforced when reading settings from the
+ * environment.
+ *
+ * Maximum document length applies to a single serialized JSON document within the log.
+ * The overall log document, when serialized as BSON, will be subject to BSON_MAX_SIZE.
+ * At a minimum we should leave room for BSON headers and for the JSON truncation marker ("...").
+ * Choose to leave a little more room, as it's more useful to truncate the huge document early
+ * rather than fail in bson_append_utf8().
+ */
+#define MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH ((uint32_t) BSON_MAX_SIZE - 4096u)
+
+/**
  * @brief Allocate a new instance of the structured logging system
  * @param opts Options, copied into the new instance.
  *

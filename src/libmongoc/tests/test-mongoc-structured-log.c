@@ -466,52 +466,56 @@ test_structured_log_command (void)
       .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
       .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       .expected_envelope.message = "Log entry with command and reply fields",
-      .expected_bson = BCON_NEW ("message",
-                                 BCON_UTF8 ("Log entry with command and reply fields"),
-                                 "commandName",
-                                 BCON_UTF8 ("Not a command"),
-                                 "databaseName",
-                                 BCON_UTF8 ("Some database"),
-                                 "commandName",
-                                 BCON_UTF8 ("Not a command"),
-                                 "operationId",
-                                 BCON_INT64 (0x12345678eeff0011),
-                                 "command",
-                                 BCON_UTF8 ("{ \"c\" : \"d\" }"),
-                                 "reply", // Un-redacted successful reply (not-a-command)
-                                 BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
-                                 "reply", // Un-redacted successful reply (ping)
-                                 BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
-                                 "reply", // Redacted successful reply (auth)
-                                 BCON_UTF8 ("{}"),
-                                 "failure", // Un-redacted server side error (not-a-command)
-                                 "{",
-                                 "r",
-                                 BCON_UTF8 ("s"),
-                                 "code",
-                                 BCON_INT32 (1),
-                                 "}",
-                                 "failure", // Un-redacted server side error (ping)
-                                 "{",
-                                 "r",
-                                 BCON_UTF8 ("s"),
-                                 "code",
-                                 BCON_INT32 (1),
-                                 "}",
-                                 "failure", // Redacted server side error (auth)
-                                 "{",
-                                 "code",
-                                 BCON_INT32 (1),
-                                 "}",
-                                 "failure", // Client side error
-                                 "{",
-                                 "code",
-                                 BCON_INT32 (123),
-                                 "domain",
-                                 BCON_INT32 (456),
-                                 "message",
-                                 BCON_UTF8 ("oh no"),
-                                 "}"),
+      .expected_bson =
+         BCON_NEW ("message",
+                   BCON_UTF8 ("Log entry with command and reply fields"),
+                   "commandName",
+                   BCON_UTF8 ("Not a command"),
+                   "databaseName",
+                   BCON_UTF8 ("Some database"),
+                   "commandName",
+                   BCON_UTF8 ("Not a command"),
+                   "operationId",
+                   BCON_INT64 (0x12345678eeff0011),
+                   "command",
+                   BCON_UTF8 ("{ \"c\" : \"d\", \"first_payload\" : [ { \"i\" : 0, \"x\" : 0 }, { \"i\" : 0, \"x\" : 1 "
+                              "}, { \"i\" : 0, \"x\" : 2 }, { \"i\" : 0, \"x\" : 3 }, { \"i\" : 0, \"x\" : 4 } ], "
+                              "\"second_payload\" : [ { \"i\" : 1, \"x\" : 0 }, { \"i\" : 1, \"x\" : 1 }, { \"i\" : 1, "
+                              "\"x\" : 2 }, { \"i\" : 1, \"x\" : 3 }, { \"i\" : 1, \"x\" : 4 } ] }"),
+                   "reply", // Un-redacted successful reply (not-a-command)
+                   BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
+                   "reply", // Un-redacted successful reply (ping)
+                   BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
+                   "reply", // Redacted successful reply (auth)
+                   BCON_UTF8 ("{}"),
+                   "failure", // Un-redacted server side error (not-a-command)
+                   "{",
+                   "r",
+                   BCON_UTF8 ("s"),
+                   "code",
+                   BCON_INT32 (1),
+                   "}",
+                   "failure", // Un-redacted server side error (ping)
+                   "{",
+                   "r",
+                   BCON_UTF8 ("s"),
+                   "code",
+                   BCON_INT32 (1),
+                   "}",
+                   "failure", // Redacted server side error (auth)
+                   "{",
+                   "code",
+                   BCON_INT32 (1),
+                   "}",
+                   "failure", // Client side error
+                   "{",
+                   "code",
+                   BCON_INT32 (123),
+                   "domain",
+                   BCON_INT32 (456),
+                   "message",
+                   BCON_UTF8 ("oh no"),
+                   "}"),
       .expected_calls = 1,
    };
 
@@ -529,12 +533,43 @@ test_structured_log_command (void)
       .message = "oh no",
    };
 
+   // Current value of MONGOC_CMD_PAYLOADS_COUNT_MAX is 2.
+   // Write two payloads, each with multiple documents in sequence.
+   uint8_t *payload_buf[2] = {NULL, NULL};
+   size_t payload_buflen[2] = {0, 0};
+   bson_writer_t *payload_writer[2] = {
+      bson_writer_new (&payload_buf[0], &payload_buflen[0], 0, bson_realloc_ctx, NULL),
+      bson_writer_new (&payload_buf[1], &payload_buflen[1], 0, bson_realloc_ctx, NULL),
+   };
+   for (unsigned x = 0; x < 5; x++) {
+      for (unsigned i = 0; i < sizeof payload_writer / sizeof payload_writer[0]; i++) {
+         bson_t *doc;
+         bson_writer_begin (payload_writer[i], &doc);
+         BCON_APPEND (doc, "i", BCON_INT32 (i), "x", BCON_INT32 (x));
+         bson_writer_end (payload_writer[i]);
+      }
+   }
+
    mongoc_cmd_t cmd = {
       .db_name = "Some database",
       .command_name = "Not a command",
       .operation_id = 0x12345678eeff0011,
       .command = cmd_doc,
+      .payloads =
+         {
+            {.identifier = "first_payload",
+             .documents = payload_buf[0],
+             .size = bson_writer_get_length (payload_writer[0])},
+            {.identifier = "second_payload",
+             .documents = payload_buf[1],
+             .size = bson_writer_get_length (payload_writer[0])},
+         },
+      .payloads_count = 2,
    };
+
+   for (unsigned i = 0; i < sizeof payload_writer / sizeof payload_writer[0]; i++) {
+      bson_writer_destroy (payload_writer[i]);
+   }
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
@@ -562,6 +597,9 @@ test_structured_log_command (void)
    bson_destroy (assumption.expected_bson);
    bson_destroy (cmd_doc);
    bson_destroy (reply_doc);
+   for (unsigned i = 0; i < sizeof payload_buf / sizeof payload_buf[0]; i++) {
+      bson_free (payload_buf[i]);
+   }
 }
 
 void
