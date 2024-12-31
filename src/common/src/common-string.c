@@ -311,7 +311,8 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
       int format_result = bson_vsnprintf (format_buffer, format_buffer_alloc, format, args_copy);
       va_end (args_copy);
 
-      if (format_result > -1 && format_result <= actual_format_buffer_capacity) {
+      if (format_result > -1 && mcommon_in_range_signed (uint32_t, format_result) &&
+          (uint32_t) format_result <= actual_format_buffer_capacity) {
          // Successful result, no truncation.
          format_buffer[format_result] = '\0';
          string->len = old_len + format_result;
