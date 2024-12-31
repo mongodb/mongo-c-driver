@@ -339,7 +339,7 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
    }
 
    /* a TXT record has one or more strings, each up to 255 chars, each is prefixed by its length as 1 byte.
-    * In this usage, they are all concatenated without any spacers. Use the RR */
+    * In this usage, they are all concatenated without any spacers. */
    mcommon_string_append_t txt;
    mcommon_string_append_init (&txt, mcommon_string_new_with_capacity ("", 0, total));
    uint16_t pos = 0;
@@ -347,6 +347,13 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
 
    while (pos < total) {
       uint8_t len = data[pos++];
+      if (total - pos < (uint16_t) len) {
+         DNS_ERROR ("Invalid TXT string size %hu at %hu in %hu-byte TXT record for \"%s\"",
+                    (uint16_t) len,
+                    pos,
+                    total,
+                    hostname);
+      }
       mcommon_string_append_bytes (&txt, (const char *) (data + pos), (uint32_t) len);
       pos += len;
    }
