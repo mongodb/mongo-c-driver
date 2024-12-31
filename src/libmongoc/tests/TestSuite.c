@@ -1172,7 +1172,7 @@ test_suite_mock_server_log (const char *msg, ...)
       va_start (ap, msg);
       vfprintf (gTestSuite->mock_server_log, msg, ap);
       va_end (ap);
-      fwrite ("\n", 1, 1, gTestSuite->mock_server_log);
+      fputc ('\n', gTestSuite->mock_server_log);
       fflush (gTestSuite->mock_server_log);
    }
 
