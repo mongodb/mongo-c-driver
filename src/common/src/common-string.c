@@ -255,8 +255,8 @@ mcommon_string_append_selected_chars (mcommon_string_append_t *append,
                                       const char *selector,
                                       size_t selector_len)
 {
-   for (char template_char; (template_char = *template); template ++) {
-      BSON_ASSERT (template_char <= '\x7f');
+   for (uint8_t template_char; (template_char = (uint8_t) * template); template ++) {
+      BSON_ASSERT (template_char <= 0x7f);
       if (memchr (selector, template_char, selector_len) && !mcommon_string_append_unichar (append, template_char)) {
          return false;
       }
