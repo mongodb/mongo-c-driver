@@ -582,7 +582,6 @@ request_from_query (request_t *request)
    }
 
    mcommon_string_append (&query_as_str, " flags=");
-
    query_flags_str (&query_as_str, request_flags);
 
    if (request_skip) {
