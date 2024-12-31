@@ -3197,8 +3197,8 @@ test_bson_as_json_with_opts_all_types (void)
    bson_destroy (&scope);
 }
 
-// Helper for test_bson_as_json_with_opts_utf8_truncation. Takes a variable length (-1) terminated list of integers
-// that we expect not to truncate at.
+/* Helper for test_bson_as_json_with_opts_utf8_truncation. Expects to be able to truncate the
+ * string output at all lengths except those identified in a variable-length (-1) terminated integer argument list. */
 static void
 _test_bson_json_utf8_truncation (bson_t *test_doc, bson_json_mode_t mode, const char *expected, ...)
 {
