@@ -24,7 +24,6 @@
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-error.h>
-#include <mongoc/mongoc-error-private.h> // _mongoc_write_error_handle_labels
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-util-private.h> // _mongoc_iter_document_as_bson
 #include <mongoc/mongoc-optional.h>
