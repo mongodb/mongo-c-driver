@@ -16,7 +16,8 @@
 
 
 #include <bson/bson.h>
-#include <bson/bson-string-private.h>
+#include <common-string-private.h>
+#include <common-bits-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -107,6 +108,31 @@ test_bson_string_append_printf (void)
    bson_string_truncate (str, 2);
    BSON_ASSERT (!strcmp (str->str, "ab"));
    bson_string_free (str, true);
+}
+
+
+static void
+test_bson_string_append_printf_truncate (void)
+{
+   // mcommon_string_append_printf will always truncate strings between UTF-8 code points.
+   // Also see /bson/as_json_with_opts/utf8_truncation. Both tests exercise functionality implemented by
+   // mcommon_utf8_truncate_len(), but printf() uses a different path through mcommon_string.
+
+   for (uint32_t limit = 0; limit < 13; limit++) {
+      mcommon_string_append_t append;
+      mcommon_string_append_init_with_limit (&append, mcommon_string_new (""), limit);
+      mcommon_string_append_printf (&append, "foo \xf4%s%c%c bar", "\x8f", '\xbf', '\xbf');
+      const char *expected = "foo \xf4\x8f\xbf\xbf bar";
+      const char *str = mcommon_string_append_destination (&append)->str;
+      uint32_t len = mcommon_string_append_destination (&append)->len;
+      if (limit >= 4 && limit < 8) {
+         BSON_ASSERT (len == 4);
+      } else {
+         BSON_ASSERT (len == limit);
+      }
+      BSON_ASSERT (0 == memcmp (str, expected, len));
+      mcommon_string_append_destination_destroy (&append);
+   }
 }
 
 
@@ -358,6 +384,33 @@ test_bson_string_truncate (void)
       ASSERT_CMPUINT32 (str->alloc, ==, 4u);
       bson_string_free (str, true);
    }
+
+   // Test truncating in the middle of a UTF-8 sequence, producing invalid UTF-8 as output.
+   // This is not especially desirable, but the behavior is maintained for compatibility.
+   {
+      // From RFC-3629 examples, "A<NOT IDENTICAL TO><ALPHA>."
+      bson_string_t *str = bson_string_new ("\x41\xe2\x89\xa2\xce\x91\x2e");
+      ASSERT_CMPSIZE_T (str->len, ==, 7u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 8u);
+
+      bson_string_truncate (str, 3);
+      ASSERT_CMPSTR (str->str, "\x41\xe2\x89");
+      ASSERT_CMPSIZE_T (str->len, ==, 3u);
+      ASSERT_CMPSIZE_T (str->alloc, ==, 4u);
+      bson_string_free (str, true);
+   }
+}
+
+// Compatibility wrapper; deprecated private API.
+bson_string_t *
+_bson_string_alloc (const size_t size)
+{
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, size) && (uint32_t) size < UINT32_MAX);
+
+   /* New mcommon_string behavior is to use power of two rounding for resize but not for initial allocation.
+    * This emulates the old behavior. */
+   uint32_t alloc = mcommon_next_power_of_two_u32 ((uint32_t) size + 1);
+   return (bson_string_t *) mcommon_string_new_with_capacity ("", 0, alloc - 1);
 }
 
 static void
@@ -433,6 +486,16 @@ test_bson_string_capacity (void *unused)
    bson_free (large_str);
 }
 
+// Compatibility wrapper; deprecated private API.
+static void
+_bson_string_append_ex (bson_string_t *string, const char *str, const size_t len)
+{
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len));
+   mcommon_string_append_t append;
+   mcommon_string_append_init (&append, (mcommon_string_t *) string);
+   mcommon_string_append_bytes (&append, str, (uint32_t) len);
+}
+
 static void
 test_bson_string_append_ex (void)
 {
@@ -489,6 +552,7 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/append", test_bson_string_append);
    TestSuite_Add (suite, "/bson/string/append_c", test_bson_string_append_c);
    TestSuite_Add (suite, "/bson/string/append_printf", test_bson_string_append_printf);
+   TestSuite_Add (suite, "/bson/string/append_printf_truncate", test_bson_string_append_printf_truncate);
    TestSuite_Add (suite, "/bson/string/append_unichar", test_bson_string_append_unichar);
    TestSuite_Add (suite, "/bson/string/strdup", test_bson_strdup);
    TestSuite_Add (suite, "/bson/string/strdup_printf", test_bson_strdup_printf);

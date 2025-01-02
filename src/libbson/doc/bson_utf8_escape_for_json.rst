@@ -28,6 +28,9 @@ Both " and \\ characters will be backslash-escaped. If a NUL
 byte is found before ``utf8_len`` bytes, it is converted to
 "\\u0000". Other non-ASCII characters in the input are preserved.
 
+The two-byte sequence "C0 80" is also interpreted as an internal NUL, for historical reasons.
+This sequence is considered invalid according to RFC3629.
+
 Returns
 -------
 

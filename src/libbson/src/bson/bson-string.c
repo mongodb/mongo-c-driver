@@ -22,9 +22,9 @@
 #include <bson/bson-config.h>
 #include <common-cmp-private.h>
 #include <common-string-private.h>
+#include <common-bits-private.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-utf8.h>
-#include <bson/bson-string-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -32,365 +32,114 @@
 #include <string.h>
 #endif
 
-// `bson_next_power_of_two_u32` returns 0 on overflow.
-static BSON_INLINE uint32_t
-bson_next_power_of_two_u32 (uint32_t v)
-{
-   BSON_ASSERT (v > 0);
-
-   // https://graphics.stanford.edu/%7Eseander/bithacks.html#RoundUpPowerOf2
-   v--;
-   v |= v >> 1;
-   v |= v >> 2;
-   v |= v >> 4;
-   v |= v >> 8;
-   v |= v >> 16;
-   v++;
-
-   return v;
-}
-
-// `bson_string_ensure_space` ensures `string` has enough room for `needed` + a null terminator.
-static void
-bson_string_ensure_space (bson_string_t *string, uint32_t needed)
-{
-   BSON_ASSERT_PARAM (string);
-   BSON_ASSERT (needed <= UINT32_MAX - 1u);
-   needed += 1u; // Add one for trailing NULL byte.
-   if (string->alloc >= needed) {
-      return;
-   }
-   // Get the next largest power of 2 if possible.
-   uint32_t alloc = bson_next_power_of_two_u32 (needed);
-   if (alloc == 0) {
-      // Overflowed: saturate at UINT32_MAX.
-      alloc = UINT32_MAX;
-   }
-   if (!string->str) {
-      string->str = bson_malloc (alloc);
-   } else {
-      string->str = bson_realloc (string->str, alloc);
-   }
-   string->alloc = alloc;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * bson_string_new --
- *
- *       Create a new bson_string_t from an existing char *.
- *
- *       bson_string_t is a power-of-2 allocation growing string. Every
- *       time data is appended the next power of two size is chosen for
- *       the allocation. Pretty standard stuff.
- *
- *       It is UTF-8 aware through the use of bson_string_append_unichar().
- *       The proper UTF-8 character sequence will be used.
- *
- * Parameters:
- *       @str: a string to copy or NULL.
- *
- * Returns:
- *       A newly allocated bson_string_t that should be freed with
- *       bson_string_free().
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 
 bson_string_t *
 bson_string_new (const char *str) /* IN */
 {
-   bson_string_t *ret;
-
-   ret = bson_malloc0 (sizeof *ret);
-   const size_t len_sz = str == NULL ? 0u : strlen (str);
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len_sz));
-   const uint32_t len_u32 = (uint32_t) len_sz;
-   bson_string_ensure_space (ret, len_u32);
-   if (str) {
-      memcpy (ret->str, str, len_sz);
-   }
-
-   ret->str[len_u32] = '\0';
-   ret->len = len_u32;
-   return ret;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _bson_string_alloc --
- *
- *       Create an empty bson_string_t and allocate memory for it.
- *
- *       The amount of memory allocated will be the next power-of-two if the
- *       specified size is not already a power-of-two.
- *
- * Parameters:
- *       @size: Size of the string to allocate
- *
- * Returns:
- *       A newly allocated bson_string_t that should be freed with
- *       bson_string_free().
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-bson_string_t *
-_bson_string_alloc (const size_t size)
-{
-   BSON_ASSERT (size < UINT32_MAX);
-
-   bson_string_t *ret;
-
-   ret = bson_malloc0 (sizeof *ret);
-
-   bson_string_ensure_space (ret, (uint32_t) size);
-
-   BSON_ASSERT (ret->alloc > 0);
-   ret->len = 0;
-   ret->str[ret->len] = '\0';
-   return ret;
+   /* Compatibility wrapper; deprecated.
+    * New mcommon_string behavior is to use power of two rounding for resize but not for initial allocation unless
+    * extra capacity is explicitly requested. This emulates the old behavior, padding the allocation of all new strings.
+    */
+   size_t len = str ? strlen (str) : 0;
+   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len) && (uint32_t) len < UINT32_MAX);
+   uint32_t alloc = mcommon_next_power_of_two_u32 ((uint32_t) len + 1);
+   return (bson_string_t *) mcommon_string_new_with_capacity (str ? str : "", (uint32_t) len, alloc - 1);
 }
 
 char *
 bson_string_free (bson_string_t *string, /* IN */
                   bool free_segment)     /* IN */
 {
-   char *ret = NULL;
-
-   if (!string) {
+   // Compatibility wrapper; deprecated.
+   if (free_segment) {
+      mcommon_string_destroy ((mcommon_string_t *) string);
       return NULL;
-   }
-
-   if (!free_segment) {
-      ret = string->str;
    } else {
-      bson_free (string->str);
+      return mcommon_string_destroy_into_buffer ((mcommon_string_t *) string);
    }
-
-   bson_free (string);
-
-   return ret;
 }
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * _bson_string_append_ex --
- *
- *       Append the UTF-8 string @str of given length @len to @string.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-_bson_string_append_ex (bson_string_t *string, /* IN */
-                        const char *str,       /* IN */
-                        const size_t len)      /* IN */
-{
-   BSON_ASSERT (string);
-   BSON_ASSERT (str);
-
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len));
-   const uint32_t len_u32 = (uint32_t) len;
-   BSON_ASSERT (len_u32 <= UINT32_MAX - string->len);
-   const uint32_t new_len = len_u32 + string->len;
-   bson_string_ensure_space (string, new_len);
-   memcpy (string->str + string->len, str, len);
-   string->str[new_len] = '\0';
-   string->len = new_len;
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * bson_string_append --
- *
- *       Append the UTF-8 string @str to @string.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 
 void
 bson_string_append (bson_string_t *string, /* IN */
                     const char *str)       /* IN */
 {
+   // Compatibility wrapper; deprecated.
    BSON_ASSERT_PARAM (string);
    BSON_ASSERT_PARAM (str);
-   _bson_string_append_ex (string, str, strlen (str));
+
+   mcommon_string_append_t append;
+   mcommon_string_append_init (&append, (mcommon_string_t *) string);
+   (void) mcommon_string_append (&append, str);
 }
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * bson_string_append_c --
- *
- *       Append the ASCII character @c to @string.
- *
- *       Do not use this if you are working with UTF-8 sequences,
- *       use bson_string_append_unichar().
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-bson_string_append_c (bson_string_t *string, /* IN */
-                      char c)                /* IN */
-{
-   char cc[2];
-
-   BSON_ASSERT (string);
-
-   if (BSON_UNLIKELY (string->alloc == (string->len + 1))) {
-      cc[0] = c;
-      cc[1] = '\0';
-      mcommon_string_append (string, cc);
-      return;
-   }
-
-   string->str[string->len++] = c;
-   string->str[string->len] = '\0';
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * bson_string_append_unichar --
- *
- *       Append the bson_unichar_t @unichar to the string @string.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 
 void
 bson_string_append_unichar (bson_string_t *string,  /* IN */
                             bson_unichar_t unichar) /* IN */
 {
-   uint32_t len;
-   char str[8];
+   // Compatibility wrapper; deprecated.
+   BSON_ASSERT_PARAM (string);
 
-   BSON_ASSERT (string);
-   BSON_ASSERT (unichar);
-
-   bson_utf8_from_unichar (unichar, str, &len);
-
-   if (len <= 6) {
-      str[len] = '\0';
-      mcommon_string_append (string, str);
-   }
+   mcommon_string_append_t append;
+   mcommon_string_append_init (&append, (mcommon_string_t *) string);
+   (void) mcommon_string_append_unichar (&append, unichar);
 }
 
+void
+bson_string_append_c (bson_string_t *string, /* IN */
+                      char c)                /* IN */
+{
+   // Compatibility wrapper; deprecated.
+   BSON_ASSERT_PARAM (string);
 
-/*
- *--------------------------------------------------------------------------
- *
- * bson_string_append_printf --
- *
- *       Format a string according to @format and append it to @string.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
+   mcommon_string_append_t append;
+   mcommon_string_append_init (&append, (mcommon_string_t *) string);
+   (void) mcommon_string_append_bytes (&append, &c, 1);
+}
 
 void
 bson_string_append_printf (bson_string_t *string, const char *format, ...)
 {
+   // Compatibility wrapper; deprecated.
+   BSON_ASSERT_PARAM (string);
+   BSON_ASSERT_PARAM (format);
+
    va_list args;
-   char *ret;
-
-   BSON_ASSERT (string);
-   BSON_ASSERT (format);
-
+   mcommon_string_append_t append;
+   mcommon_string_append_init (&append, (mcommon_string_t *) string);
    va_start (args, format);
-   ret = bson_strdupv_printf (format, args);
+   (void) mcommon_string_append_vprintf (&append, format, args);
    va_end (args);
-   mcommon_string_append (string, ret);
-   bson_free (ret);
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * bson_string_truncate --
- *
- *       Truncate the string @string to @len bytes.
- *
- *       The underlying memory will be released via realloc() down to
- *       the minimum required size (at power-of-two boundary) specified by @len.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 
 void
 bson_string_truncate (bson_string_t *string, /* IN */
                       uint32_t len)          /* IN */
 {
+   /* Does not preserve UTF-8 validity; deprecated.
+    * Although the documentation only describes truncation as decreasing the length, we have undocumented requirements:
+    * the string may grow or shrink, and the buffer is expected to be allocated using the same power-of-two scheme as
+    * when growing to append. No effect if 'string' already has the requested length, regardless of the allocation size.
+    * When extending string length, this implementation is guaranteed to fill with NUL bytes. Previous versions left the
+    * new buffer contents undefined.
+    */
    BSON_ASSERT_PARAM (string);
-   if (len == string->len) {
-      return;
-   }
-   uint32_t needed = len;
-   BSON_ASSERT (needed < UINT32_MAX);
-   needed += 1u; // Add one for trailing NULL byte.
-   uint32_t alloc = bson_next_power_of_two_u32 (needed);
-   if (alloc == 0) {
-      // Overflowed: saturate at UINT32_MAX.
-      alloc = UINT32_MAX;
-   }
+   BSON_ASSERT (len < UINT32_MAX);
 
-   string->str = bson_realloc (string->str, alloc);
-   string->alloc = alloc;
-   string->len = len;
+   uint32_t old_len = string->len;
+   if (len != old_len) {
+      uint32_t alloc = mcommon_next_power_of_two_u32 (len + 1u);
+      char *buffer = bson_realloc (string->str, alloc);
+      string->str = buffer;
+      string->alloc = alloc;
+      string->len = len;
 
-   string->str[string->len] = '\0';
+      if (len < old_len) {
+         buffer[len] = '\0';
+      } else {
+         memset (buffer + old_len, 0, len + 1 - old_len);
+      }
+   }
 }
 
 

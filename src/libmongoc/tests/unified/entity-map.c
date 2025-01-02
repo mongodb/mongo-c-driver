@@ -2154,28 +2154,29 @@ entity_map_match (
 char *
 event_list_to_string (event_t *events)
 {
-   mcommon_string_t *str = NULL;
    event_t *eiter = NULL;
 
-   str = mcommon_string_new ("");
+   mcommon_string_append_t str;
+   mcommon_string_append_new (&str);
+
    LL_FOREACH (events, eiter)
    {
-      mcommon_string_append_printf (str, "- %s:", eiter->type);
+      mcommon_string_append_printf (&str, "- %s:", eiter->type);
       if (eiter->command_name) {
-         mcommon_string_append_printf (str, " cmd=%s", eiter->command_name);
+         mcommon_string_append_printf (&str, " cmd=%s", eiter->command_name);
       }
       if (eiter->database_name) {
-         mcommon_string_append_printf (str, " db=%s", eiter->database_name);
+         mcommon_string_append_printf (&str, " db=%s", eiter->database_name);
       }
       if (eiter->command) {
-         mcommon_string_append_printf (str, " sent %s", tmp_json (eiter->command));
+         mcommon_string_append_printf (&str, " sent %s", tmp_json (eiter->command));
       }
       if (eiter->reply) {
-         mcommon_string_append_printf (str, " received %s", tmp_json (eiter->reply));
+         mcommon_string_append_printf (&str, " received %s", tmp_json (eiter->reply));
       }
-      mcommon_string_append (str, "\n");
+      mcommon_string_append (&str, "\n");
    }
-   return mcommon_string_free (str, false);
+   return mcommon_string_append_destination_destroy_into_buffer (&str);
 }
 
 

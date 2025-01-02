@@ -47,46 +47,43 @@ _mongoc_http_response_cleanup (mongoc_http_response_t *response)
    bson_free (response->body);
 }
 
-mcommon_string_t *
-_mongoc_http_render_request_head (const mongoc_http_request_t *req)
+void
+_mongoc_http_render_request_head (mcommon_string_append_t *append, const mongoc_http_request_t *req)
 {
    BSON_ASSERT_PARAM (req);
-   char *path = NULL;
+
+   mcommon_string_append_printf (append, "%s ", req->method);
 
    // Default paths
    if (!req->path) {
       // Top path:
-      path = bson_strdup ("/");
+      mcommon_string_append (append, "/");
    } else if (req->path[0] != '/') {
       // Path MUST be prefixed with a separator
-      path = bson_strdup_printf ("/%s", req->path);
+      mcommon_string_append (append, "/");
+      mcommon_string_append (append, req->path);
    } else {
       // Just copy the path
-      path = bson_strdup (req->path);
+      mcommon_string_append (append, req->path);
    }
 
-   mcommon_string_t *const string = mcommon_string_new ("");
-   // Set the request line
-   mcommon_string_append_printf (string, "%s %s HTTP/1.0\r\n", req->method, path);
-   // (We're done with the path string:)
-   bson_free (path);
+   mcommon_string_append (append, " HTTP/1.0\r\n");
 
    /* Always add Host header. */
-   mcommon_string_append_printf (string, "Host: %s:%d\r\n", req->host, req->port);
+   mcommon_string_append_printf (append, "Host: %s:%d\r\n", req->host, req->port);
    /* Always add Connection: close header to ensure server closes connection. */
-   mcommon_string_append_printf (string, "Connection: close\r\n");
+   mcommon_string_append (append, "Connection: close\r\n");
    /* Add Content-Length if body is included. */
    if (req->body_len) {
-      mcommon_string_append_printf (string, "Content-Length: %d\r\n", req->body_len);
+      mcommon_string_append_printf (append, "Content-Length: %d\r\n", req->body_len);
    }
    // Add any extra headers
    if (req->extra_headers) {
-      mcommon_string_append (string, req->extra_headers);
+      mcommon_string_append (append, req->extra_headers);
    }
 
    // Final terminator
-   mcommon_string_append (string, "\r\n");
-   return string;
+   mcommon_string_append (append, "\r\n");
 }
 
 static int32_t
@@ -110,13 +107,15 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    bool ret = false;
    mongoc_iovec_t iovec;
    char *path = NULL;
-   mcommon_string_t *http_request = NULL;
    mongoc_buffer_t http_response_buf;
    char *http_response_str;
    char *ptr;
    const char *header_delimiter = "\r\n\r\n";
 
    const mcd_timer timer = mcd_timer_expire_after (mcd_milliseconds (timeout_ms));
+
+   mcommon_string_append_t http_request;
+   mcommon_string_append_new (&http_request);
 
    memset (res, 0, sizeof (*res));
    _mongoc_buffer_init (&http_response_buf, NULL, 0, NULL, NULL);
@@ -171,9 +170,10 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       path = bson_strdup (req->path);
    }
 
-   http_request = _mongoc_http_render_request_head (req);
-   iovec.iov_base = http_request->str;
-   iovec.iov_len = http_request->len;
+   _mongoc_http_render_request_head (&http_request, req);
+
+   iovec.iov_base = mcommon_string_append_destination (&http_request)->str;
+   iovec.iov_len = mcommon_string_append_destination (&http_request)->len;
 
    if (!_mongoc_stream_writev_full (stream, &iovec, 1, _mongoc_http_msec_remaining (timer), error)) {
       goto fail;
@@ -282,9 +282,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
 
 fail:
    mongoc_stream_destroy (stream);
-   if (http_request) {
-      mcommon_string_free (http_request, true);
-   }
+   mcommon_string_append_destination_destroy (&http_request);
    _mongoc_buffer_destroy (&http_response_buf);
    bson_free (path);
    return ret;

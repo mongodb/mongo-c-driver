@@ -21,6 +21,7 @@
 #include <bson/bson-iso8601-private.h>
 #include <bson/bson-json.h>
 #include <bson/bson-timegm-private.h>
+#include <common-string-private.h>
 
 
 static bool
@@ -278,40 +279,4 @@ _bson_iso8601_date_parse (const char *str, int32_t len, int64_t *out, bson_error
    *out = millis;
 
    return true;
-}
-
-
-void
-_bson_iso8601_date_format (int64_t msec_since_epoch, mcommon_string_t *str)
-{
-   time_t t;
-   int64_t msecs_part;
-   char buf[64];
-
-   msecs_part = msec_since_epoch % 1000;
-   t = (time_t) (msec_since_epoch / 1000);
-
-#ifdef BSON_HAVE_GMTIME_R
-   {
-      struct tm posix_date;
-      gmtime_r (&t, &posix_date);
-      strftime (buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", &posix_date);
-   }
-#elif defined(_MSC_VER)
-   {
-      /* Windows gmtime_s is thread-safe */
-      struct tm time_buf;
-      gmtime_s (&time_buf, &t);
-      strftime (buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", &time_buf);
-   }
-#else
-   strftime (buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", gmtime (&t));
-#endif
-
-   if (msecs_part) {
-      mcommon_string_append_printf (str, "%s.%03" PRId64 "Z", buf, msecs_part);
-   } else {
-      mcommon_string_append (str, buf);
-      mcommon_string_append_c (str, 'Z');
-   }
 }

@@ -1744,7 +1744,7 @@ typedef struct {
 
 
 static void
-_make_reply_batch (mcommon_string_t *reply, uint32_t n_docs, bool first_batch, bool finished)
+_make_reply_batch (mcommon_string_append_t *reply, uint32_t n_docs, bool first_batch, bool finished)
 {
    uint32_t j;
 
@@ -1778,7 +1778,6 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
    future_t *future;
    int j;
    int reply_no;
-   mcommon_string_t *reply;
    bool cursor_finished;
 
    BSON_APPEND_UTF8 (&find_cmd, "find", "coll");
@@ -1801,10 +1800,13 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
    assert_match_bson (request_get_doc (request, 0), &find_cmd, true);
 
-   reply = mcommon_string_new (NULL);
-   _make_reply_batch (reply, (uint32_t) test->reply_length[0], true, false);
-   reply_to_request_simple (request, reply->str);
-   mcommon_string_free (reply, true);
+   {
+      mcommon_string_append_t reply;
+      mcommon_string_append_new (&reply);
+      _make_reply_batch (&reply, (uint32_t) test->reply_length[0], true, false);
+      reply_to_request_simple (request, mcommon_string_append_destination (&reply)->str);
+      mcommon_string_append_destination_destroy (&reply);
+   }
 
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -1830,12 +1832,14 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
       assert_match_bson (request_get_doc (request, 0), &getmore_cmd, true);
 
-      reply = mcommon_string_new (NULL);
-      cursor_finished = (reply_no == 2);
-      _make_reply_batch (reply, (uint32_t) test->reply_length[reply_no], false, cursor_finished);
-
-      reply_to_request_simple (request, reply->str);
-      mcommon_string_free (reply, true);
+      {
+         mcommon_string_append_t reply;
+         mcommon_string_append_new (&reply);
+         cursor_finished = (reply_no == 2);
+         _make_reply_batch (&reply, (uint32_t) test->reply_length[reply_no], false, cursor_finished);
+         reply_to_request_simple (request, mcommon_string_append_destination (&reply)->str);
+         mcommon_string_append_destination_destroy (&reply);
+      }
 
       ASSERT (future_get_bool (future));
       future_destroy (future);

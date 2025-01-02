@@ -1139,10 +1139,10 @@ _parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t 
    bson_t tls_opts_doc;
    const uint8_t *data;
    uint32_t len;
-   mcommon_string_t *errmsg;
+   mcommon_string_append_t errmsg;
    bson_iter_t permitted_iter;
 
-   errmsg = mcommon_string_new (NULL);
+   mcommon_string_append_new (&errmsg);
    kms_provider = bson_iter_key (iter);
    memset (out_opt, 0, sizeof (mongoc_ssl_opt_t));
 
@@ -1194,19 +1194,19 @@ _parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t 
       goto fail;
    }
 
-   if (!_mongoc_ssl_opts_from_bson (out_opt, &tls_opts_doc, errmsg)) {
+   if (!_mongoc_ssl_opts_from_bson (out_opt, &tls_opts_doc, &errmsg)) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
                       "Error parsing TLS options for %s: %s",
                       kms_provider,
-                      errmsg->str);
+                      mcommon_string_append_destination (&errmsg)->str);
       goto fail;
    }
 
    ok = true;
 fail:
-   mcommon_string_free (errmsg, true /* free_segment */);
+   mcommon_string_append_destination_destroy (&errmsg);
    return ok;
 }
 
