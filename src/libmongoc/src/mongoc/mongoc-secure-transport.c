@@ -353,7 +353,7 @@ mongoc_secure_transport_setup_certificate (mongoc_stream_tls_secure_transport_t 
    }
 
    if (type != kSecItemTypeAggregate) {
-      MONGOC_ERROR ("Cannot work with keys of type %s (%" PRIu32 "). Please file a JIRA",
+      MONGOC_ERROR ("Cannot work with keys of type %s (%" PRIu32 "). Type is not supported",
                     SecExternalItemType_to_string (type),
                     type);
       CFRelease (items);
