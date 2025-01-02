@@ -332,7 +332,7 @@ mongoc_secure_transport_setup_certificate (mongoc_stream_tls_secure_transport_t 
    }
 
    if (type != kSecItemTypeAggregate) {
-      MONGOC_ERROR ("Cannot work with keys of type \"%d\". Please file a JIRA", type);
+      MONGOC_ERROR ("Cannot work with keys of type \"%" PRIu32 "\". Please file a JIRA", type);
       CFRelease (items);
       return false;
    }
