@@ -2,6 +2,7 @@
 #include "mongoc/mongoc-set-private.h"
 #include "mongoc/mongoc-client-pool-private.h"
 #include "mongoc/mongoc-client-private.h"
+#include <common-oid-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -258,11 +259,11 @@ test_topology_pool_clear (void)
    topology = mongoc_topology_new (uri, true);
    tdmod = mc_tpld_modify_begin (topology);
 
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroServiceId));
-   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, 1, &kZeroServiceId);
-   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroObjectId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroObjectId));
+   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, 1, &kZeroObjectId);
+   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroObjectId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroObjectId));
 
    mongoc_uri_destroy (uri);
    mc_tpld_modify_drop (tdmod);
