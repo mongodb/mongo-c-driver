@@ -108,6 +108,9 @@ void
 set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts);
 
 void
+set_auto_encryption_opts (mongoc_client_t *client, bson_t *opts);
+
+void
 insert_data (const char *db_name, const char *collection_name, const bson_t *scenario);
 
 bool

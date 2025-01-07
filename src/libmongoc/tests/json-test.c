@@ -26,6 +26,7 @@
 #include "json-test-operations.h"
 #include "json-test-monitoring.h"
 #include "TestSuite.h"
+#include "test-conveniences.h"
 #include "test-libmongoc.h"
 
 #ifdef _MSC_VER
@@ -1357,10 +1358,9 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
    }
 }
 
-static void
-set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
+void
+set_auto_encryption_opts (mongoc_client_t *client, bson_t *opts)
 {
-   bson_t opts;
    bson_iter_t iter;
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
    bson_error_t error;
@@ -1369,14 +1369,9 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 
    ASSERT (client);
 
-   if (!bson_has_field (test, "clientOptions.autoEncryptOpts")) {
-      return;
-   }
-
-   bson_lookup_doc (test, "clientOptions.autoEncryptOpts", &opts);
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
 
-   if (bson_iter_init_find (&iter, &opts, "kmsProviders")) {
+   if (bson_iter_init_find (&iter, opts, "kmsProviders")) {
       bson_t kms_providers;
       bson_t tls_opts = BSON_INITIALIZER;
       bson_t tmp;
@@ -1386,7 +1381,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          &tmp, &kms_providers, "aws", "awsTemporary", "awsTemporaryNoSessionToken", "azure", "gcp", "kmip", NULL);
 
       /* AWS credentials are set from environment variables. */
-      if (bson_has_field (&opts, "kmsProviders.aws")) {
+      if (bson_has_field (opts, "kmsProviders.aws")) {
          char *const secret_access_key = test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
          char *const access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
 
@@ -1411,9 +1406,9 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          bson_free (access_key_id);
       }
 
-      const bool need_aws_with_session_token = bson_has_field (&opts, "kmsProviders.awsTemporary");
+      const bool need_aws_with_session_token = bson_has_field (opts, "kmsProviders.awsTemporary");
       const bool need_aws_with_temp_creds =
-         need_aws_with_session_token || bson_has_field (&opts, "kmsProviders.awsTemporaryNoSessionToken");
+         need_aws_with_session_token || bson_has_field (opts, "kmsProviders.awsTemporaryNoSessionToken");
 
       if (need_aws_with_temp_creds) {
          char *const secret_access_key = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY");
@@ -1452,7 +1447,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          bson_free (session_token);
       }
 
-      if (bson_has_field (&opts, "kmsProviders.azure")) {
+      if (bson_has_field (opts, "kmsProviders.azure")) {
          char *azure_tenant_id;
          char *azure_client_id;
          char *azure_client_secret;
@@ -1480,7 +1475,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          bson_free (azure_client_secret);
       }
 
-      if (bson_has_field (&opts, "kmsProviders.gcp")) {
+      if (bson_has_field (opts, "kmsProviders.gcp")) {
          char *gcp_email;
          char *gcp_privatekey;
 
@@ -1500,7 +1495,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          bson_free (gcp_privatekey);
       }
 
-      if (bson_has_field (&opts, "kmsProviders.kmip")) {
+      if (bson_has_field (opts, "kmsProviders.kmip")) {
          char *kmip_tls_ca_file;
          char *kmip_tls_certificate_key_file;
 
@@ -1530,7 +1525,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_destroy (&tls_opts);
    }
 
-   if (bson_iter_init_find (&iter, &opts, "schemaMap")) {
+   if (bson_iter_init_find (&iter, opts, "schemaMap")) {
       bson_t schema_map;
 
       bson_iter_bson (&iter, &schema_map);
@@ -1538,15 +1533,15 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_destroy (&schema_map);
    }
 
-   if (bson_iter_init_find (&iter, &opts, "bypassAutoEncryption")) {
+   if (bson_iter_init_find (&iter, opts, "bypassAutoEncryption")) {
       mongoc_auto_encryption_opts_set_bypass_auto_encryption (auto_encryption_opts, bson_iter_as_bool (&iter));
    }
 
-   if (bson_iter_init_find (&iter, &opts, "bypassQueryAnalysis")) {
+   if (bson_iter_init_find (&iter, opts, "bypassQueryAnalysis")) {
       mongoc_auto_encryption_opts_set_bypass_query_analysis (auto_encryption_opts, bson_iter_as_bool (&iter));
    }
 
-   if (bson_iter_init_find (&iter, &opts, "keyVaultNamespace")) {
+   if (bson_iter_init_find (&iter, opts, "keyVaultNamespace")) {
       const char *keyvault_ns;
       char *db_name;
       char *coll_name;
@@ -1568,7 +1563,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       mongoc_auto_encryption_opts_set_keyvault_namespace (auto_encryption_opts, "keyvault", "datakeys");
    }
 
-   if (bson_iter_init_find (&iter, &opts, "extra")) {
+   if (bson_iter_init_find (&iter, opts, "extra")) {
       bson_t tmp;
 
       bson_iter_bson (&iter, &tmp);
@@ -1577,7 +1572,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_init (&extra);
    }
 
-   if (bson_iter_init_find (&iter, &opts, "encryptedFieldsMap")) {
+   if (bson_iter_init_find (&iter, opts, "encryptedFieldsMap")) {
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
       bson_t efm;
 
@@ -1599,7 +1594,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_free (env_cryptSharedLibPath);
    }
 
-   if (bson_iter_init_find (&iter, &opts, "keyExpirationMS")) {
+   if (bson_iter_init_find (&iter, opts, "keyExpirationMS")) {
       BSON_ASSERT (BSON_ITER_HOLDS_INT (&iter));
       const int expiration = bson_iter_as_int64 (&iter);
       BSON_ASSERT (expiration > 0);
@@ -1770,7 +1765,12 @@ run_json_general_test (const json_test_config_t *config)
          MONGOC_WARNING ("Error in killAllSessions: %s", error.message);
       }
 
-      set_auto_encryption_opts (client, &test);
+      if (bson_has_field (&test, "clientOptions.autoEncryptOpts")) {
+         bson_t opts;
+         bson_lookup_doc (&test, "clientOptions.autoEncryptOpts", &opts);
+         set_auto_encryption_opts (client, &opts);
+      }
+
       /* Drop and recreate test database/collection if necessary. */
       if (!test_framework_is_mongohouse ()) {
          // mongohouse test user is not authorized to run `drop`.

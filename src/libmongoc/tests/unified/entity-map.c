@@ -34,6 +34,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-topology-private.h"
 #include <common-string-private.h>
+#include "json-test.h"
 
 #define REDUCED_HEARTBEAT_FREQUENCY_MS 500
 #define REDUCED_MIN_HEARTBEAT_FREQUENCY_MS 50
@@ -618,6 +619,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    bool ret = false;
    mongoc_apm_callbacks_t *callbacks = NULL;
    bson_t *uri_options = NULL;
+   bson_t *auto_encryption_opts = NULL;
    bool use_multiple_mongoses = false;
    bool use_multiple_mongoses_set = false;
    bool can_reduce_heartbeat = false;
@@ -727,6 +729,9 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                                       else (do (test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
                visitOthers (
                   errorf (err, "Unexpected field '%s' in storeEventsAsEntities", bson_iter_key (&bsonVisitIter)))))),
+      find (key ("autoEncryptOpts"),
+            if (not(type (doc)), then (error ("'autoEncryptOpts' must be a document value"))),
+            storeDocDupPtr (auto_encryption_opts)),
       visitOthers (
          dupPath (errpath),
          errorf (err, "At [%s]: Unknown key '%s' given in entity options", errpath, bson_iter_key (&bsonVisitIter))));
@@ -782,6 +787,10 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
+   }
+
+   if (auto_encryption_opts) {
+      set_auto_encryption_opts (client, auto_encryption_opts);
    }
 
    ret = true;
