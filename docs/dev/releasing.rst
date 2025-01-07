@@ -96,7 +96,7 @@ Check that the `etc/purls.txt` file is up-to-date with the set of
 updated, refer to `sbom-lite-updating`.
 
 Create a New Clone of ``mongo-c-driver``
-****************************************
+########################################
 
 To prevent publishing unwanted changes and to preserve local changes, create a
 fresh clone of the C driver. We will clone into a new arbitrary directory which
