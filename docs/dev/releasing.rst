@@ -27,6 +27,7 @@ process.
 
    - [ ] Check Static Analysis
    - [ ] Check that Tests Are Passing
+   - [ ] Create a new **mongo-c-driver** clone
    - [ ] Check and Update the SBOM Lite
    - [ ] Start Snyk Monitoring
    - [ ] Address and Report Vulnerabilities
@@ -35,7 +36,6 @@ process.
    - [ ] Do the Release:
        - [ ] Start a Release Stopwatch (start time: HH:MM)
        - [ ] Clone the Driver Tools
-       - [ ] Create a new **mongo-c-driver** clone
        - [ ] If patch release: Check consistency with [the Jira release](https://jira.mongodb.org/projects/CDRIVER/versions/XXXXXX)
        - [ ] Run the Release Script
        - [ ] Fixup the `NEWS` Pages
