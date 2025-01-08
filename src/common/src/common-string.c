@@ -86,6 +86,7 @@ bool
 mcommon_string_append_bytes_internal (mcommon_string_append_t *append, const char *str, uint32_t len)
 {
    mcommon_string_t *string = append->_string;
+   BSON_ASSERT (string);
    uint32_t old_len = string->len;
    uint32_t max_len = append->_max_len;
    BSON_ASSERT (max_len < UINT32_MAX);
@@ -114,11 +115,15 @@ mcommon_string_append_bytes_internal (mcommon_string_append_t *append, const cha
 bool
 mcommon_string_append_bytes_atomic (mcommon_string_append_t *append, const char *str, uint32_t len)
 {
+   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM (str);
+
    if (BSON_UNLIKELY (!mcommon_string_append_status (append))) {
       return false;
    }
 
    mcommon_string_t *string = append->_string;
+   BSON_ASSERT (string);
    uint32_t old_len = string->len;
    uint32_t max_len = append->_max_len;
    BSON_ASSERT (max_len < UINT32_MAX);
@@ -175,6 +180,9 @@ mcommon_string_append_unichar_internal (mcommon_string_append_t *append, bson_un
 bool
 mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint8_t *bytes, uint32_t len)
 {
+   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM (bytes);
+
    if (BSON_UNLIKELY (!mcommon_string_append_status (append))) {
       return false;
    }
@@ -244,6 +252,9 @@ mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint
 bool
 mcommon_string_append_oid_as_hex (mcommon_string_append_t *append, const bson_oid_t *value)
 {
+   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM (value);
+
    char oid_str[25];
    bson_oid_to_string (value, oid_str);
    return mcommon_string_append (append, oid_str);
@@ -255,6 +266,10 @@ mcommon_string_append_selected_chars (mcommon_string_append_t *append,
                                       const char *selector,
                                       size_t selector_len)
 {
+   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM (template);
+   BSON_ASSERT_PARAM (selector);
+
    for (uint8_t template_char; (template_char = (uint8_t) * template); template ++) {
       BSON_ASSERT (template_char <= 0x7f);
       if (memchr (selector, template_char, selector_len) && !mcommon_string_append_unichar (append, template_char)) {
@@ -267,8 +282,10 @@ mcommon_string_append_selected_chars (mcommon_string_append_t *append,
 bool
 mcommon_string_append_printf (mcommon_string_append_t *append, const char *format, ...)
 {
-   va_list args;
+   BSON_ASSERT_PARAM (append);
    BSON_ASSERT_PARAM (format);
+
+   va_list args;
    va_start (args, format);
    bool ret = mcommon_string_append_vprintf (append, format, args);
    va_end (args);
@@ -278,6 +295,9 @@ mcommon_string_append_printf (mcommon_string_append_t *append, const char *forma
 bool
 mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *format, va_list args)
 {
+   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM (format);
+
    if (BSON_UNLIKELY (!mcommon_string_append_status (append))) {
       return false;
    }
