@@ -27,6 +27,7 @@ process.
 
    - [ ] Check Static Analysis
    - [ ] Check that Tests Are Passing
+   - [ ] Create a new **mongo-c-driver** clone
    - [ ] Check and Update the SBOM Lite
    - [ ] Start Snyk Monitoring
    - [ ] Address and Report Vulnerabilities
@@ -35,7 +36,6 @@ process.
    - [ ] Do the Release:
        - [ ] Start a Release Stopwatch (start time: HH:MM)
        - [ ] Clone the Driver Tools
-       - [ ] Create a new **mongo-c-driver** clone
        - [ ] If patch release: Check consistency with [the Jira release](https://jira.mongodb.org/projects/CDRIVER/versions/XXXXXX)
        - [ ] Run the Release Script
        - [ ] Fixup the `NEWS` Pages
@@ -96,7 +96,7 @@ Check that the `etc/purls.txt` file is up-to-date with the set of
 updated, refer to `sbom-lite-updating`.
 
 Create a New Clone of ``mongo-c-driver``
-****************************************
+########################################
 
 To prevent publishing unwanted changes and to preserve local changes, create a
 fresh clone of the C driver. We will clone into a new arbitrary directory which
