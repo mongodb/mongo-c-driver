@@ -11,7 +11,7 @@ Synopsis
   bson_t *
   mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t *entry);
 
-Make a new copy, as a bson_t, of the log entry's standardized BSON representation.
+Make a new copy, as a :symbol:`bson_t`, of the log entry's standardized BSON representation.
 When possible, a log handler should avoid serializing log messages that will be discarded.
 Each call allocates an independent copy of the message that must be freed.
 
