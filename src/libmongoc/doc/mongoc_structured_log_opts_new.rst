@@ -40,6 +40,10 @@ This is a full list of the captured environment variables.
   This path will be captured during ``mongoc_structured_log_opts_new()``, but it will not immediately be opened.
   If the file can't be opened, a warning is then written to the unstructured log and the handler writes structured logs to ``stderr`` instead.
 
+  .. warning:: When a file path is given for ``MONGODB_LOG_PATH``, each log instance (one stand-alone client or pool) will separately open this file for append.
+    The results are operating system specific. On UNIX-like platforms each instance's output will be interleaved, in most cases without splitting individual log messages. Notably on Windows the file will be opened in exclusive mode by the first instance and subsequent instances will fail, falling back on the default of ``stderr``.
+    Applications that use multiple processes or multiple client pools will likely want to supply a log handler that annotates each message with information about its originating log instance.
+
 * ``MONGODB_LOG_COMMAND``: A log level name to set as the maximum for ``MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND``.
 * ``MONGODB_LOG_TOPOLOGY``: A log level name to set as the maximum for ``MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY``.
 * ``MONGODB_LOG_SERVER_SELECTION``: A log level name to set as the maximum for ``MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION``.
