@@ -55,7 +55,7 @@ bson_string_free (bson_string_t *string, /* IN */
       mcommon_string_destroy ((mcommon_string_t *) string);
       return NULL;
    } else {
-      return mcommon_string_destroy_into_buffer ((mcommon_string_t *) string);
+      return mcommon_string_destroy_with_steal ((mcommon_string_t *) string);
    }
 }
 

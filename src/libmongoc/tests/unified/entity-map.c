@@ -2176,7 +2176,7 @@ event_list_to_string (event_t *events)
       }
       mcommon_string_append (&str, "\n");
    }
-   return mcommon_string_append_destination_destroy_into_buffer (&str);
+   return mcommon_string_append_destination_destroy_with_steal (&str);
 }
 
 

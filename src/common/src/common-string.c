@@ -51,12 +51,12 @@ void
 mcommon_string_destroy (mcommon_string_t *string)
 {
    if (string) {
-      bson_free (mcommon_string_destroy_into_buffer (string));
+      bson_free (mcommon_string_destroy_with_steal (string));
    }
 }
 
 char *
-mcommon_string_destroy_into_buffer (mcommon_string_t *string)
+mcommon_string_destroy_with_steal (mcommon_string_t *string)
 {
    if (string) {
       char *buffer = string->str;

@@ -235,7 +235,7 @@ get_time_as_string (const bson_oid_t *oid)
    time_t time = bson_oid_get_time_t (oid);
 
    mcommon_iso8601_string_append (&str, time * 1000);
-   return mcommon_string_append_destination_destroy_into_buffer (&str);
+   return mcommon_string_append_destination_destroy_with_steal (&str);
 }
 
 

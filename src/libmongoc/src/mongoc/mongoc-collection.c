@@ -1220,7 +1220,7 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
          return NULL;
       }
    }
-   return mcommon_string_append_destination_destroy_into_buffer (&append);
+   return mcommon_string_append_destination_destroy_with_steal (&append);
 }
 
 

@@ -66,7 +66,7 @@ typedef struct mcommon_string_append_t {
 #define mcommon_string_new_with_capacity COMMON_NAME (string_new_with_capacity)
 #define mcommon_string_new_with_buffer COMMON_NAME (string_new_with_buffer)
 #define mcommon_string_destroy COMMON_NAME (string_destroy)
-#define mcommon_string_destroy_into_buffer COMMON_NAME (string_destroy_into_buffer)
+#define mcommon_string_destroy_with_steal COMMON_NAME (string_destroy_with_steal)
 #define mcommon_string_grow_to_capacity COMMON_NAME (string_grow_to_capacity)
 #define mcommon_string_append_selected_chars COMMON_NAME (string_append_selected_chars)
 #define mcommon_string_append_bytes_internal COMMON_NAME (string_append_bytes_internal)
@@ -92,7 +92,7 @@ mcommon_string_append_unichar_internal (mcommon_string_append_t *append, bson_un
  * @param min_capacity Minimum string capacity, in bytes, the buffer must be able to store without reallocating. Does
  * not include the NUL terminator. Must be less than UINT32_MAX.
  * @returns A new mcommon_string_t that must be freed with mcommon_string_destroy() or
- * mcommon_string_destroy_into_buffer() and bson_free(). It will hold 'str' in its entirety, even if the requested
+ * mcommon_string_destroy_with_steal() and bson_free(). It will hold 'str' in its entirety, even if the requested
  * min_capacity was smaller.
  */
 mcommon_string_t *
@@ -104,7 +104,7 @@ mcommon_string_new_with_capacity (const char *str, uint32_t length, uint32_t min
  * @param str NUL terminated string, should be valid UTF-8. Must be less than UINT32_MAX bytes long, overlong input
  * causes a runtime assertion failure.
  * @returns A new mcommon_string_t that must be freed with mcommon_string_destroy() or
- * mcommon_string_destroy_into_buffer() and bson_free().
+ * mcommon_string_destroy_with_steal() and bson_free().
  */
 static BSON_INLINE mcommon_string_t *
 mcommon_string_new (const char *str)
@@ -123,7 +123,7 @@ mcommon_string_new (const char *str)
  * present, it should be valid UTF-8.
  * @param alloc Actual allocated size of the buffer, in bytes, including room for NUL termination.
  * @returns A new mcommon_string_t that must be freed with mcommon_string_destroy() or
- * mcommon_string_destroy_into_buffer() and bson_free().
+ * mcommon_string_destroy_with_steal() and bson_free().
  */
 mcommon_string_t *
 mcommon_string_new_with_buffer (char *buffer, uint32_t length, uint32_t alloc);
@@ -142,7 +142,7 @@ mcommon_string_destroy (mcommon_string_t *string);
  * was NULL.
  */
 char *
-mcommon_string_destroy_into_buffer (mcommon_string_t *string);
+mcommon_string_destroy_with_steal (mcommon_string_t *string);
 
 /**
  * @brief Truncate the string to zero length without deallocating the buffer
@@ -350,11 +350,11 @@ mcommon_string_append_destination_destroy (const mcommon_string_append_t *append
  * The append operation will no longer be usable after this call.
  */
 static BSON_INLINE char *
-mcommon_string_append_destination_destroy_into_buffer (const mcommon_string_append_t *append)
+mcommon_string_append_destination_destroy_with_steal (const mcommon_string_append_t *append)
 {
    BSON_ASSERT_PARAM (append);
 
-   return mcommon_string_destroy_into_buffer (mcommon_string_append_destination (append));
+   return mcommon_string_destroy_with_steal (mcommon_string_append_destination (append));
 }
 
 /**

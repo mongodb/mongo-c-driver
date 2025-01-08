@@ -143,7 +143,7 @@ txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data,
       mcommon_string_append (&txt, pdns->Data.TXT.pStringArray[i]);
    }
 
-   rr_data->txt_record_opts = mcommon_string_append_destination_destroy_into_buffer (&txt);
+   rr_data->txt_record_opts = mcommon_string_append_destination_destroy_with_steal (&txt);
 
    return true;
 }
@@ -358,7 +358,7 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
       pos += len;
    }
 
-   rr_data->txt_record_opts = mcommon_string_append_destination_destroy_into_buffer (&txt);
+   rr_data->txt_record_opts = mcommon_string_append_destination_destroy_with_steal (&txt);
    ret = true;
 
 done:

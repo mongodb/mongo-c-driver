@@ -274,7 +274,7 @@ _mongoc_secure_channel_extract_subject (const char *filename, const char *passph
    _bson_append_szoid (&retval, cert, ",CN=", szOID_COMMON_NAME);
    _bson_append_szoid (&retval, cert, ",STREET=", szOID_STREET_ADDRESS);
 
-   return mcommon_string_append_destination_destroy_into_buffer (&retval);
+   return mcommon_string_append_destination_destroy_with_steal (&retval);
 }
 
 bool

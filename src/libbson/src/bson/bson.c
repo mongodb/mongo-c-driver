@@ -2350,7 +2350,7 @@ bson_as_json_with_opts (const bson_t *bson, size_t *length, const bson_json_opts
       if (length) {
          *length = (size_t) mcommon_string_append_destination (&append)->len;
       }
-      return mcommon_string_append_destination_destroy_into_buffer (&append);
+      return mcommon_string_append_destination_destroy_with_steal (&append);
    } else {
       if (length) {
          *length = 0;

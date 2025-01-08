@@ -82,7 +82,7 @@ test_diagnostics_error_string (bson_error_t *error)
                           "******************************* END_MONGOC_ERROR "
                           "*******************************\n");
 
-   return mcommon_string_append_destination_destroy_into_buffer (&str);
+   return mcommon_string_append_destination_destroy_with_steal (&str);
 }
 
 static void

@@ -592,7 +592,7 @@ request_from_query (request_t *request)
       mcommon_string_append_printf (&query_as_str, " n_return=%" PRId32, request_return);
    }
 
-   request->as_str = mcommon_string_append_destination_destroy_into_buffer (&query_as_str);
+   request->as_str = mcommon_string_append_destination_destroy_with_steal (&query_as_str);
 }
 
 
@@ -674,7 +674,7 @@ request_from_op_msg (request_t *request)
       }
    }
 
-   request->as_str = mcommon_string_append_destination_destroy_into_buffer (&msg_as_str);
+   request->as_str = mcommon_string_append_destination_destroy_with_steal (&msg_as_str);
    request->is_command = true; /* true for all OP_MSG requests */
 
    if (request->docs.len) {

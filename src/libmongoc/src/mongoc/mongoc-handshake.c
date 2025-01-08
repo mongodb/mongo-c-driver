@@ -207,7 +207,7 @@ _mongoc_handshake_get_config_hex_string (void)
       mcommon_string_append_printf (&append, "%02x", bf[i]);
    }
    bson_free (bf);
-   return mcommon_string_append_destination_destroy_into_buffer (&append);
+   return mcommon_string_append_destination_destroy_with_steal (&append);
 }
 
 static char *
@@ -490,7 +490,7 @@ _set_compiler_info (mongoc_handshake_t *handshake)
 #ifdef MONGOC_COMPILER_VERSION
    mcommon_string_append_printf (&append, " %s", MONGOC_COMPILER_VERSION);
 #endif
-   handshake->compiler_info = mcommon_string_append_destination_destroy_into_buffer (&append);
+   handshake->compiler_info = mcommon_string_append_destination_destroy_with_steal (&append);
 }
 
 static void
@@ -507,7 +507,7 @@ _set_flags (mongoc_handshake_t *handshake)
       mcommon_string_append_printf (&append, " LDFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS));
    }
 
-   handshake->flags = mcommon_string_append_destination_destroy_into_buffer (&append);
+   handshake->flags = mcommon_string_append_destination_destroy_with_steal (&append);
 }
 
 static void

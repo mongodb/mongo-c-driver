@@ -390,7 +390,7 @@ test_framework_get_unix_domain_socket_path_escaped (void)
 
    bson_free (path);
 
-   return mcommon_string_append_destination_destroy_into_buffer (&escaped);
+   return mcommon_string_append_destination_destroy_with_steal (&escaped);
 }
 
 static char *
@@ -1074,7 +1074,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    // runner, but make tests a little more resilient to transient errors.
    add_option_to_uri_str (&uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
-   return mcommon_string_append_destination_destroy_into_buffer (&uri_string);
+   return mcommon_string_append_destination_destroy_with_steal (&uri_string);
 }
 
 /*

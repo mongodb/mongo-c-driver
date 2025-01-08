@@ -479,7 +479,7 @@ explain_trust_result (SecTrustRef trust, SecTrustResultType trust_result)
    mcommon_string_append (&reason, "No trust failure reason available");
 done:
    CFReleaseSafe (cfprops);
-   return mcommon_string_append_destination_destroy_into_buffer (&reason);
+   return mcommon_string_append_destination_destroy_with_steal (&reason);
 }
 
 /* Returns a boolean indicating success. If false is returned, then an error is

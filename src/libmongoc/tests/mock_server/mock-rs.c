@@ -79,7 +79,7 @@ hosts (mongoc_array_t *servers)
       }
    }
 
-   return mcommon_string_append_destination_destroy_into_buffer (&hosts_str);
+   return mcommon_string_append_destination_destroy_with_steal (&hosts_str);
 }
 
 

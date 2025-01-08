@@ -69,7 +69,7 @@ _result_init (result_t *result, const bson_val_t *value, const bson_t *reply, co
    mcommon_string_append_printf (&str, "bson_error=%s", error->message);
    memcpy (&result->error, error, sizeof (bson_error_t));
    result->ok = (error->code == 0);
-   result->str = mcommon_string_append_destination_destroy_into_buffer (&str);
+   result->str = mcommon_string_append_destination_destroy_with_steal (&str);
    result->write_errors = bson_new ();
    result->write_concern_errors = bson_new ();
 }

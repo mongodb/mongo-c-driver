@@ -2279,7 +2279,7 @@ mongoc_uri_unescape (const char *escaped_string)
       return NULL;
    }
 
-   return mcommon_string_append_destination_destroy_into_buffer (&append);
+   return mcommon_string_append_destination_destroy_with_steal (&append);
 }
 
 

@@ -187,7 +187,7 @@ _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
    _bson_append_cftyperef (&retval, ",STREET", value);
 
    CFRelease (cert_dict);
-   return mcommon_string_append_destination_destroy_into_buffer (&retval);
+   return mcommon_string_append_destination_destroy_with_steal (&retval);
 }
 
 
