@@ -236,7 +236,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
    /* The new private implementation of mcommon_json_append_escaped() avoids
     * parsing UTF-8 sequences at all in most cases. It preserves the validity
-    * of valid documents, but it will not catch most UTF-8 errors. For compatibility
+    * of valid sequences, but it will not catch most UTF-8 errors. For compatibility
     * at the expense of performance, we emulate the old behavior in this wrapper.
     */
    if (!bson_utf8_validate (utf8, (size_t) len32, allow_nul)) {
