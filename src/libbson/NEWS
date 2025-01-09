@@ -1,3 +1,10 @@
+libbson 1.29.2
+==============
+
+No changes since 1.29.1. Version incremented to match the libmongoc version.
+
+
+
 libbson 1.29.1
 ==============
 

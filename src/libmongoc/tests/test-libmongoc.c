@@ -2476,10 +2476,17 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
    STACKFRAME64 stack_frame;
    memset (&stack_frame, 0, sizeof (stack_frame));
 #if defined(_WIN64)
+#if defined(_M_ARM64)
+   int machine_type = IMAGE_FILE_MACHINE_ARM64;
+   stack_frame.AddrPC.Offset = context_record.Pc;
+   stack_frame.AddrFrame.Offset = context_record.Fp;
+   stack_frame.AddrStack.Offset = context_record.Sp;
+#else
    int machine_type = IMAGE_FILE_MACHINE_AMD64;
    stack_frame.AddrPC.Offset = context_record.Rip;
    stack_frame.AddrFrame.Offset = context_record.Rbp;
    stack_frame.AddrStack.Offset = context_record.Rsp;
+#endif
 #else
    int machine_type = IMAGE_FILE_MACHINE_I386;
    stack_frame.AddrPC.Offset = context_record.Eip;
@@ -2522,7 +2529,7 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
       line.SizeOfStruct = sizeof (IMAGEHLP_LINE);
 
       DWORD offset_ln = 0;
-      if (SymGetLineFromAddr (process, (DWORD64) stack_frame.AddrPC.Offset, &offset_ln, &line)) {
+      if (SymGetLineFromAddr64 (process, (DWORD64) stack_frame.AddrPC.Offset, &offset_ln, &line)) {
          fprintf (stderr, " %s:%d ", line.FileName, line.LineNumber);
       }
 
