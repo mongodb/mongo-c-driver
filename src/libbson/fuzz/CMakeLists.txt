@@ -5,8 +5,10 @@ set_property(TARGET fuzz_test_properties APPEND PROPERTY INTERFACE_LINK_OPTIONS 
 add_executable(fuzz_test_init_from_json EXCLUDE_FROM_ALL fuzz_test_init_from_json.c)
 target_link_libraries(fuzz_test_init_from_json PRIVATE fuzz_test_properties)
 
-add_executable(fuzz_test_validate EXCLUDE_FROM_ALL fuzz_test_validate.c)
+add_executable(fuzz_test_validate EXCLUDE_FROM_ALL fuzz_test_validate.cpp)
+add_executable(validate-repro EXCLUDE_FROM_ALL validate-repro.cpp)
 target_link_libraries(fuzz_test_validate PRIVATE fuzz_test_properties)
+target_link_libraries(validate-repro PRIVATE bson_static)
 
 add_executable(fuzz_test_bson_utf8_escape_for_json EXCLUDE_FROM_ALL fuzz_test_bson_utf8_escape_for_json.c)
 target_link_libraries(fuzz_test_bson_utf8_escape_for_json PRIVATE fuzz_test_properties)
