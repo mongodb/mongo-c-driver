@@ -6,7 +6,7 @@ Files: *
 Copyright: 2009-2017 MongoDB, Inc.
 License: Apache-2.0
 
-Files: src/common/common-b64.c
+Files: src/common/src/common-b64.c
 Copyright: 1996, 1998 Internet Software Consortium
            1995 International Business Machines, Inc.
 License: ISC or Other-IBM
