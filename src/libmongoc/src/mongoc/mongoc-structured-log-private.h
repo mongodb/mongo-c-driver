@@ -312,8 +312,8 @@ typedef enum {
  * @brief Structured log item, mongoc_server_description_t fields
  *
  * @param sd Borrowed server description reference, as a const mongoc_server_description_t * expression. Required.
- * @param ... Fields to include. Order is not significant. Any of: TYPE, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID,
- * SERVICE_ID.
+ * @param ... Fields to include. Order is not significant. Any of: TYPE, ADDRESS, SERVER_HOST, SERVER_PORT,
+ * SERVER_CONNECTION_ID, SERVICE_ID.
  * */
 #define _mongoc_structured_log_item_server_description(_server_description, ...) \
    {.func = _mongoc_structured_log_append_server_description,                    \
