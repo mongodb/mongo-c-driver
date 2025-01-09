@@ -1,6 +1,6 @@
 # remirepo/fedora spec file for mongo-c-driver
 #
-# SPDX-FileCopyrightText:  Copyright 2024 Remi Collet
+# SPDX-FileCopyrightText:  Copyright 2015-2025 Remi Collet
 # SPDX-License-Identifier: CECILL-2.1
 # http://www.cecill.info/licences/Licence_CeCILL_V2-en.txt
 #
@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.29.1
+%global up_version   1.29.2
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -259,6 +259,9 @@ exit $ret
 
 
 %changelog
+* Tue Jan  7 2025 Remi Collet <remi@remirepo.net> - 1.29.2-1
+- update to 1.29.2
+
 * Thu Dec 12 2024 Remi Collet <remi@remirepo.net> - 1.29.1-1
 - update to 1.29.1
 - re-license spec file to CECILL-2.1
