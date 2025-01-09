@@ -32,6 +32,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-rpc-private.h"
+#include "mongoc-structured-log-private.h"
 
 #include <common-bson-dsl-private.h>
 
@@ -46,12 +47,25 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
    ENTRY;
 
    client = cursor->client;
+   _mongoc_cursor_prepare_getmore_command (cursor, &doc);
+
+   mongoc_structured_log (
+      client->topology->structured_log,
+      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      "Command started",
+      int32 ("requestId", client->cluster.request_id),
+      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+      utf8_n ("databaseName", cursor->ns, cursor->dblen),
+      utf8 ("commandName", "getMore"),
+      int64 ("operationId", cursor->operation_id),
+      bson_as_json ("command", &doc));
+
    if (!client->apm_callbacks.started) {
       /* successful */
+      bson_destroy (&doc);
       RETURN (true);
    }
-
-   _mongoc_cursor_prepare_getmore_command (cursor, &doc);
 
    db = bson_strndup (cursor->ns, cursor->dblen);
    mongoc_apm_command_started_init (&event,
@@ -82,17 +96,10 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
                                      mongoc_server_stream_t *server_stream)
 {
    bson_t doc;
-   mongoc_client_t *client;
    char *db;
    bool r;
 
    ENTRY;
-
-   client = cursor->client;
-   if (!client->apm_callbacks.started) {
-      /* successful */
-      RETURN (true);
-   }
 
    bson_init (&doc);
    db = bson_strndup (cursor->ns, cursor->dblen);

@@ -57,6 +57,7 @@
 #include "mongoc-change-stream-private.h"
 #include "mongoc-client-session-private.h"
 #include "mongoc-cursor-private.h"
+#include "mongoc-structured-log-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
@@ -1121,6 +1122,11 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
       _mongoc_client_set_internal_tls_opts (client, &internal_tls_opts);
    }
 #endif
+
+   mongoc_structured_log (topology->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,
+                          "Client created");
 
    mongoc_counter_clients_active_inc ();
 
@@ -2604,6 +2610,24 @@ mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t
    return _mongoc_client_set_apm_callbacks_private (client, callbacks, context);
 }
 
+
+bool
+mongoc_client_set_structured_log_opts (mongoc_client_t *client, const mongoc_structured_log_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (client);
+   BSON_OPTIONAL_PARAM (opts);
+
+   if (client->topology->single_threaded) {
+      mongoc_topology_set_structured_log_opts (client->topology, opts);
+      return true;
+   } else {
+      MONGOC_WARNING ("Cannot set structured log options on a pooled client, use "
+                      "mongoc_client_pool_set_structured_log_opts before the first mongoc_client_pool_pop");
+      return false;
+   }
+}
+
+
 mongoc_server_description_t *
 mongoc_client_get_server_description (mongoc_client_t *client, uint32_t server_id)
 {
@@ -2920,7 +2944,7 @@ mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t
    BSON_ASSERT_PARAM (client);
    BSON_ASSERT_PARAM (api);
 
-   if (client->is_pooled) {
+   if (!client->topology->single_threaded) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_API_FROM_POOL,

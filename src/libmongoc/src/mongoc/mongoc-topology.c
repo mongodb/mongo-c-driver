@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
+#include <common-oid-private.h>
 
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
@@ -172,7 +173,7 @@ _mongoc_topology_scanner_cb (
       /* Server monitoring: When a server check fails due to a network error
        * (including a network timeout), the client MUST clear its connection
        * pool for the server */
-      _mongoc_topology_description_clear_connection_pool (td, id, &kZeroServiceId);
+      _mongoc_topology_description_clear_connection_pool (td, id, &kZeroObjectId);
    }
 
    /* Server Discovery and Monitoring Spec: "Once a server is connected, the
@@ -399,6 +400,11 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    topology->usleep_fn = mongoc_usleep_default_impl;
    topology->session_pool = mongoc_server_session_pool_new_with_params (
       _server_session_init, _server_session_destroy, _server_session_should_prune, topology);
+
+   // Capture default structured log options from the environment
+   mongoc_structured_log_opts_t *structured_log_opts = mongoc_structured_log_opts_new ();
+   topology->structured_log = mongoc_structured_log_instance_new (structured_log_opts);
+   mongoc_structured_log_opts_destroy (structured_log_opts);
 
    topology->valid = false;
 
@@ -663,6 +669,35 @@ mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
 /*
  *-------------------------------------------------------------------------
  *
+ * mongoc_topology_set_structured_log_opts --
+ *
+ *       Replace the topology's structured logging options. Options are copied.
+ *       The structured log instance used by a client or client pool in the public
+ *       API is internally owned by a mongoc_topology_t.
+ *
+ *       This is only safe to call when no other threads may be accessing the
+ *       structured log. On a single-threaded topology it can be used on the
+ *       thread that owns that topology. On a multi-threaded topology it can
+ *       only be used during initialization, before clients have been created.
+ *       This limitation is enforced by mongoc_client_pool_set_structured_log_opts.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+mongoc_topology_set_structured_log_opts (mongoc_topology_t *topology, const mongoc_structured_log_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (topology);
+   BSON_OPTIONAL_PARAM (opts);
+
+   mongoc_structured_log_instance_destroy (topology->structured_log);
+   topology->structured_log = mongoc_structured_log_instance_new (opts);
+}
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
  * mongoc_topology_destroy --
  *
  *       Free the memory associated with this topology object.
@@ -713,6 +748,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_topology_scanner_destroy (topology->scanner);
    mongoc_server_session_pool_free (topology->session_pool);
    bson_free (topology->clientSideEncryption.autoOptions.extraOptions.cryptSharedLibPath);
+   mongoc_structured_log_instance_destroy (topology->structured_log);
 
    mongoc_cond_destroy (&topology->cond_client);
    bson_mutex_destroy (&topology->tpld_modification_mtx);

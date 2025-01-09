@@ -1,6 +1,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mongoc/mongoc-set-private.h>
+#include <common-oid-private.h>
 
 #include "json-test.h"
 
@@ -84,7 +85,7 @@ _topology_has_description (const mongoc_topology_description_t *topology, bson_t
          BSON_ASSERT (bson_iter_recurse (&server_iter, &iter));
          BSON_ASSERT (bson_iter_find (&iter, "generation") && BSON_ITER_HOLDS_INT32 (&iter));
          expected_generation = bson_iter_int32 (&iter);
-         ASSERT_CMPINT32 (expected_generation, ==, mc_tpl_sd_get_generation (sd, &kZeroServiceId));
+         ASSERT_CMPINT32 (expected_generation, ==, mc_tpl_sd_get_generation (sd, &kZeroObjectId));
       } else if (strcmp ("logicalSessionTimeoutMinutes", bson_iter_key (&server_iter)) == 0) {
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
             if (sd->session_timeout_minutes != MONGOC_NO_SESSIONS) {
