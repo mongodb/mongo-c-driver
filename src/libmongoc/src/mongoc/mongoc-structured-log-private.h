@@ -187,7 +187,7 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
  * @brief Structured log item, mongoc_read_prefs_t document
  *
  * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
- * @param value Error as a const mongoc_read_prefs_t * expression. NULL is equivalent to Primary read preference.
+ * @param value Value as a const mongoc_read_prefs_t * expression. NULL is equivalent to Primary read preference.
  * */
 #define _mongoc_structured_log_item_read_prefs(_key_or_null, _value_read_prefs) \
    {.func = _mongoc_structured_log_append_read_prefs,                           \
