@@ -16,6 +16,7 @@ main (int argc, char **argv)
    std::ifstream infile{argv[1], std::ios::binary};
    if (!infile) {
       std::fprintf (stderr, "Failed to open file [%s]: %s\n", argv[1], std::strerror (errno));
+      return 3;
    }
    std::stringstream sbuf;
    sbuf << infile.rdbuf ();
