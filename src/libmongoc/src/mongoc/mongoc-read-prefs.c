@@ -320,7 +320,7 @@ mongoc_read_prefs_append_contents_to_bson (const mongoc_read_prefs_t *read_prefs
           !BSON_APPEND_INT64 (bson, "maxStalenessSeconds", max_staleness_seconds)) {
          return false;
       }
-      if ((flags & MONGOC_READ_PREFS_CONTENT_FLAG_HEDGE) && !bson_empty0 (hedge) &&
+      if ((flags & MONGOC_READ_PREFS_CONTENT_FLAG_HEDGE) && !bson_empty (hedge) &&
           !BSON_APPEND_DOCUMENT (bson, "hedge", hedge)) {
          return false;
       }
