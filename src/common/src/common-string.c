@@ -214,7 +214,7 @@ mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint
        * Encoding only produces single-byte UTF-8 sequences, so the result always has exactly the maximum length.
        *
        * mcommon_b64_ntop() can't truncate without failing. To do this without allocating a full size temporary buffer
-       * or rewriting mcommon_b64_ntop, we can parititon the write into three parts: a 'direct' portion made from entire
+       * or rewriting mcommon_b64_ntop, we can partition the write into three parts: a 'direct' portion made from entire
        * non-truncated units of 3 bytes in and 4 characters out, a truncated 'remainder', and an ignored portion.
        * Remainders longer than 3 bytes in / 4 bytes out are never necessary, and further portions of the input data
        * will not be used.
