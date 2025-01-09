@@ -937,8 +937,7 @@ _test_cursor_new_from_command (const char *cmd_json, const char *collection_name
    ASSERT_OR_PRINT (r, error);
 
    const bson_t *cmd_bson = tmp_bson (cmd_json);
-   const char *cmd_name = _mongoc_get_command_name (cmd_bson);
-   const mongoc_ss_log_context_t ss_log_context = {.operation = cmd_name};
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_get_command_name (cmd_bson)};
    sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
