@@ -1037,7 +1037,7 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
          goto done;
       }
       if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         test_set_error (error, "Unexpected type event.command, should be document");
+         test_set_error (error, "Unexpected type for event.command, should be document");
          goto done;
       }
       bson_val_t *expected_val = bson_val_from_bson (expected_command);
