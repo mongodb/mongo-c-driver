@@ -267,7 +267,6 @@ typedef enum {
  * on command name but not body, so it's unsuitable for the "hello" reply.
  *
  * @param cmd_name Command name as a const char * expression. Required.
- * @param cmd_name Command name as a const char * expression. Required.
  * @param reply Borrowed reference to reply document, as a const bson_t * expression. Required.
  */
 #define _mongoc_structured_log_item_cmd_name_reply(_cmd_name, _reply_bson) \
