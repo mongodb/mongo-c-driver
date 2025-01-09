@@ -21,7 +21,6 @@
 #include <bson/bson-iso8601-private.h>
 #include <bson/bson-json.h>
 #include <bson/bson-timegm-private.h>
-#include <common-string-private.h>
 
 
 static bool
