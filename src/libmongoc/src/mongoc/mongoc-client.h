@@ -36,6 +36,7 @@
 #include "mongoc-ssl.h"
 #endif
 #include "mongoc-stream.h"
+#include "mongoc-structured-log.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-read-concern.h"
@@ -228,6 +229,8 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opt
 #endif
 MONGOC_EXPORT (bool)
 mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context);
+MONGOC_EXPORT (bool)
+mongoc_client_set_structured_log_opts (mongoc_client_t *client, const mongoc_structured_log_opts_t *opts);
 MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_client_get_server_description (mongoc_client_t *client, uint32_t server_id) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_server_description_t **)

@@ -56,6 +56,7 @@
 #include "mongoc-stream-file.h"
 #include "mongoc-stream-gridfs.h"
 #include "mongoc-stream-socket.h"
+#include "mongoc-structured-log.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-version.h"

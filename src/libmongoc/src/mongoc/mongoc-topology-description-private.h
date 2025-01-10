@@ -165,7 +165,7 @@ mongoc_topology_description_reconcile (mongoc_topology_description_t *td, mongoc
  * @param td The topology description that will be updated.
  * @param server_id The ID of the server to invalidate.
  * @param service_id A service ID for load-balanced deployments. Use
- * kZeroServiceID if not applicable.
+ * kZeroObjectId if not applicable.
  *
  * @note Not applicable to single-threaded clients, which only maintain a
  * single connection per server and therefore have no connection pool.

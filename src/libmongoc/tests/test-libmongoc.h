@@ -36,6 +36,12 @@ char *
 gen_collection_name (const char *prefix);
 mongoc_collection_t *
 get_test_collection (mongoc_client_t *client, const char *prefix);
+bool
+test_is_suppressing_structured_logs (void);
+void
+test_begin_suppressing_structured_logs (void);
+void
+test_end_suppressing_structured_logs (void);
 void
 capture_logs (bool capture);
 void

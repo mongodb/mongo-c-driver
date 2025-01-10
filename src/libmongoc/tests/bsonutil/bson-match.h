@@ -30,12 +30,21 @@ typedef struct _bson_matcher_t bson_matcher_t;
 bson_matcher_t *
 bson_matcher_new (void);
 
-typedef bool (*special_fn) (bson_matcher_t *matcher,
+/* Current state of an ongoing match operation, of interest to custom operators.
+ * Each recursion level has its own instance on the stack. */
+typedef struct bson_matcher_context_t {
+   bson_matcher_t *matcher;
+   const char *path;
+   bool is_root;
+   bool array_of_root_docs;
+} bson_matcher_context_t;
+
+typedef bool (*special_fn) (const bson_matcher_context_t *context,
                             const bson_t *assertion,
                             const bson_val_t *actual,
-                            void *ctx,
-                            const char *path,
+                            void *user_data,
                             bson_error_t *error);
+
 
 /* Adds a handler function for matching a special $$ operator.
  *
@@ -45,14 +54,12 @@ typedef bool (*special_fn) (bson_matcher_t *matcher,
  * expectation.
  */
 void
-bson_matcher_add_special (bson_matcher_t *matcher, const char *keyword, special_fn special, void *ctx);
+bson_matcher_add_special (bson_matcher_t *matcher, const char *keyword, special_fn special, void *user_data);
 
 bool
-bson_matcher_match (bson_matcher_t *matcher,
+bson_matcher_match (const bson_matcher_context_t *context,
                     const bson_val_t *expected,
                     const bson_val_t *actual,
-                    const char *path,
-                    bool array_of_root_docs,
                     bson_error_t *error);
 
 void

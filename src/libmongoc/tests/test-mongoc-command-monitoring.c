@@ -97,6 +97,7 @@ test_command_monitoring_cb (void *scenario)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
+   // Newer versions of the 'unified' tests have migrated to command-logging-and-monitoring
    run_unified_tests (suite, JSON_DIR, "command_monitoring/unified");
    install_json_test_suite (suite, JSON_DIR, "command_monitoring/legacy", &test_command_monitoring_cb);
 }

@@ -30,6 +30,7 @@
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
 #include "mongoc-sleep.h"
+#include "mongoc-structured-log-private.h"
 #include <common-atomic-private.h>
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
@@ -209,6 +210,8 @@ typedef struct _mongoc_topology_t {
    mongoc_set_t *rtt_monitors;
    bson_mutex_t apm_mutex;
 
+   mongoc_structured_log_instance_t *structured_log;
+
    /* This is overridable for SRV polling tests to mock DNS records. */
    _mongoc_rr_resolver_fn rr_resolver;
 
@@ -236,6 +239,10 @@ mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
                                    mongoc_topology_description_t *td,
                                    mongoc_apm_callbacks_t const *callbacks,
                                    void *context);
+
+void
+mongoc_topology_set_structured_log_opts (mongoc_topology_t *topology, const mongoc_structured_log_opts_t *opts);
+
 
 void
 mongoc_topology_destroy (mongoc_topology_t *topology);
@@ -411,7 +418,7 @@ typedef enum {
  * @param generation The generation of the server description the caller was
  * using.
  * @param service_id A service ID for a load-balanced deployment. If not
- * applicable, pass kZeroServiceID.
+ * applicable, pass kZeroObjectId.
  * @return true If the topology was updated and the pool was cleared.
  * @return false If no modifications were made and the error was ignored.
  *
@@ -470,7 +477,7 @@ _mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *to
  * @param td The topology that contains the server
  * @param server_id The ID of the server to inspect
  * @param service_id The service ID of the connection if applicable, or
- * kZeroServiceID.
+ * kZeroObjectId.
  * @returns uint32_t A generation counter for the given server, or zero if the
  * server does not exist in the topology.
  */
