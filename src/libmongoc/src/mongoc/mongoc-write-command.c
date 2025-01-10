@@ -340,6 +340,8 @@ _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
 const char *
 _mongoc_write_command_get_name (const mongoc_write_command_t *command)
 {
+   BSON_ASSERT_PARAM (command);
+   BSON_ASSERT (command->type >= 0 && command->type < (int) (sizeof gCommandNames / sizeof gCommandNames[0]));
    return gCommandNames[command->type];
 }
 
