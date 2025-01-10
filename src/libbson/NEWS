@@ -1,3 +1,11 @@
+libbson 1.30.0 (Unreleased)
+===========================
+
+Fixes:
+
+  * Truncated output of `bson_as_json_with_opts` is changed to no longer split valid UTF-8 sequences.
+
+
 libbson 1.29.1
 ==============
 
