@@ -28,8 +28,7 @@ server_id_for_reads (mongoc_cluster_t *cluster)
    mongoc_server_stream_t *server_stream;
    uint32_t id;
 
-   const mongoc_ss_log_context_t ss_log_context = {.operation = "cluster-test"};
-   server_stream = mongoc_cluster_stream_for_reads (cluster, &ss_log_context, NULL, NULL, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_reads (cluster, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
 
@@ -1667,9 +1666,8 @@ test_cluster_stream_invalidation_single (void)
 
    /* Test "clearing the pool". This should invalidate existing server streams.
     */
-   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_cluster_stream_invalidation_single"};
    stream = mongoc_cluster_stream_for_writes (&client->cluster,
-                                              &ss_log_context,
+                                              TEST_SS_LOG_CONTEXT,
                                               NULL /* session */,
                                               NULL /* deprioritized servers */,
                                               NULL /* reply */,
@@ -1685,7 +1683,7 @@ test_cluster_stream_invalidation_single (void)
    /* Test closing the connection. This should invalidate existing server
     * streams. */
    stream = mongoc_cluster_stream_for_writes (&client->cluster,
-                                              &ss_log_context,
+                                              TEST_SS_LOG_CONTEXT,
                                               NULL /* session */,
                                               NULL /* deprioritized servers */,
                                               NULL /* reply */,
@@ -1698,7 +1696,7 @@ test_cluster_stream_invalidation_single (void)
 
    /* Test that a new stream is considered valid. */
    stream = mongoc_cluster_stream_for_writes (&client->cluster,
-                                              &ss_log_context,
+                                              TEST_SS_LOG_CONTEXT,
                                               NULL /* session */,
                                               NULL /* deprioritized servers */,
                                               NULL /* reply */,
@@ -1730,9 +1728,8 @@ test_cluster_stream_invalidation_pooled (void)
 
    /* Test "clearing the pool". This should invalidate existing server streams.
     */
-   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_cluster_stream_invalidation_pooled"};
    stream = mongoc_cluster_stream_for_writes (&client->cluster,
-                                              &ss_log_context,
+                                              TEST_SS_LOG_CONTEXT,
                                               NULL /* session */,
                                               NULL /* deprioritized servers */,
                                               NULL /* reply */,
@@ -1748,7 +1745,7 @@ test_cluster_stream_invalidation_pooled (void)
    /* Test closing the connection. This should invalidate existing server
     * streams. */
    stream = mongoc_cluster_stream_for_writes (&client->cluster,
-                                              &ss_log_context,
+                                              TEST_SS_LOG_CONTEXT,
                                               NULL /* session */,
                                               NULL /* deprioritized servers */,
                                               NULL /* reply */,
@@ -1761,7 +1758,7 @@ test_cluster_stream_invalidation_pooled (void)
 
    /* Test that a new stream is considered valid. */
    stream = mongoc_cluster_stream_for_writes (&client->cluster,
-                                              &ss_log_context,
+                                              TEST_SS_LOG_CONTEXT,
                                               NULL /* session */,
                                               NULL /* deprioritized servers */,
                                               NULL /* reply */,

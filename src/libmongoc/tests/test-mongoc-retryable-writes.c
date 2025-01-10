@@ -143,9 +143,8 @@ test_command_with_opts (void *ctx)
    mongoc_uri_destroy (uri);
 
    /* clean up in case a previous test aborted */
-   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_mongoc_retryable_writes"};
-   server_id =
-      mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, NULL, &error);
+   server_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_WRITE, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 

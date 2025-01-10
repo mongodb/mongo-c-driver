@@ -857,9 +857,8 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (0 == mongoc_client_session_get_server_id (session));
 
-   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_selected_server_is_pinned_to_mongos"};
-   expected_id =
-      mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, NULL, &error);
+   expected_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_WRITE, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (expected_id, error);
 
    /* session should still be unpinned */

@@ -293,4 +293,9 @@ semver_to_string (semver_t *str);
 #define TEST_ERROR_CODE 654321
 #define test_set_error(error, ...) bson_set_error (error, TEST_ERROR_DOMAIN, TEST_ERROR_CODE, __VA_ARGS__)
 
+/* An arbitrary traceable mongoc_ss_log_context_t for tests.
+ * Logs the function name and file:line as the "operation". */
+#define TEST_SS_LOG_CONTEXT \
+   (&(mongoc_ss_log_context_t){.operation = tmp_str ("%s() %s:%d", BSON_FUNC, __FILE__, (int) __LINE__)})
+
 #endif /* TEST_CONVENIENCES_H */

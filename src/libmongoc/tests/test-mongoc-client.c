@@ -1873,8 +1873,8 @@ test_recovering (void *ctx)
    /* recovering member matches no read mode */
    for (read_mode = MONGOC_READ_PRIMARY; read_mode <= MONGOC_READ_NEAREST; read_mode++) {
       mongoc_read_prefs_set_mode (prefs, read_mode);
-      const mongoc_ss_log_context_t ss_log_context = {.operation = "test_recovering"};
-      BSON_ASSERT (!mongoc_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, prefs, NULL, &error));
+      BSON_ASSERT (
+         !mongoc_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, prefs, NULL, &error));
    }
 
    mongoc_read_prefs_destroy (prefs);

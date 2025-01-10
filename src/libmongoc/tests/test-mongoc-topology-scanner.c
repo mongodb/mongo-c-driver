@@ -173,8 +173,8 @@ test_topology_scanner_discovery (void)
    client = test_framework_client_new (uri_str, NULL);
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
-   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_topology_scanner_discovery"};
-   future = future_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, secondary_pref, NULL, &error);
+   future =
+      future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, secondary_pref, NULL, &error);
 
    /* a single scan discovers *and* checks the secondary */
    request = mock_server_receives_any_hello (primary);
@@ -248,8 +248,7 @@ test_topology_scanner_oscillate (void)
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    BSON_ASSERT (!scanner->async->ncmds);
-   const mongoc_ss_log_context_t ss_log_context = {.operation = "test_topology_scanner_oscillate"};
-   future = future_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
 
    /* a single scan discovers servers 0 and 1 */
    request = mock_server_receives_any_hello (server0);
