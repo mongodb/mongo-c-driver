@@ -172,7 +172,7 @@ _mongoc_cursor_flags_to_opts (mongoc_query_flags_t qflags, bson_t *opts, bool *s
 bool
 _mongoc_cursor_translate_dollar_query_opts (const bson_t *query, bson_t *opts, bson_t *unwrapped, bson_error_t *error);
 mongoc_server_stream_t *
-_mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor);
+_mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor, const mongoc_ss_log_context_t *log_context);
 void
 _mongoc_cursor_collection (const mongoc_cursor_t *cursor, const char **collection, int *collection_len);
 bool

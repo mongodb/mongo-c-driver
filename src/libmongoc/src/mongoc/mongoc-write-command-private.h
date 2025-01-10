@@ -181,6 +181,8 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
                                    uint32_t offset,
                                    const struct _mongoc_crud_opts_t *crud,
                                    mongoc_write_result_t *result);
+const char *
+_mongoc_write_command_get_name (const mongoc_write_command_t *command);
 void
 _mongoc_write_result_init (mongoc_write_result_t *result);
 #define MONGOC_WRITE_RESULT_COMPLETE(_result, ...) _mongoc_write_result_complete (_result, __VA_ARGS__, NULL)

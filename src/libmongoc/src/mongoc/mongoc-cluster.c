@@ -2449,6 +2449,7 @@ static uint32_t
 _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
                                   mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
+                                  const mongoc_ss_log_context_t *log_context,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bool *must_use_primary,
                                   const mongoc_deprioritized_servers_t *ds,
@@ -2465,13 +2466,15 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
    if (_in_sharded_txn (cs)) {
       server_id = cs->server_id;
       if (!server_id) {
-         server_id = mongoc_topology_select_server_id (topology, optype, read_prefs, must_use_primary, ds, error);
+         server_id =
+            mongoc_topology_select_server_id (topology, optype, log_context, read_prefs, must_use_primary, ds, error);
          if (server_id) {
             _mongoc_client_session_pin (cs, server_id);
          }
       }
    } else {
-      server_id = mongoc_topology_select_server_id (topology, optype, read_prefs, must_use_primary, ds, error);
+      server_id =
+         mongoc_topology_select_server_id (topology, optype, log_context, read_prefs, must_use_primary, ds, error);
       /* Transactions Spec: Additionally, any non-transaction operation using a
        * pinned ClientSession MUST unpin the session and the operation MUST
        * perform normal server selection. */
@@ -2504,6 +2507,7 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
 static mongoc_server_stream_t *
 _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
                                    mongoc_ss_optype_t optype,
+                                   const mongoc_ss_log_context_t *log_context,
                                    const mongoc_read_prefs_t *read_prefs,
                                    mongoc_client_session_t *cs,
                                    bool is_retryable,
@@ -2526,7 +2530,8 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 
    BSON_ASSERT (cluster);
 
-   server_id = _mongoc_cluster_select_server_id (cs, topology, optype, read_prefs, &must_use_primary, ds, error);
+   server_id =
+      _mongoc_cluster_select_server_id (cs, topology, optype, log_context, read_prefs, &must_use_primary, ds, error);
 
    if (!server_id) {
       if (reply) {
@@ -2538,7 +2543,8 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 
    if (!mongoc_cluster_check_interval (cluster, server_id)) {
       /* Server Selection Spec: try once more */
-      server_id = _mongoc_cluster_select_server_id (cs, topology, optype, read_prefs, &must_use_primary, ds, error);
+      server_id =
+         _mongoc_cluster_select_server_id (cs, topology, optype, log_context, read_prefs, &must_use_primary, ds, error);
 
       if (!server_id) {
          if (reply) {
@@ -2610,6 +2616,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
+                                 const mongoc_ss_log_context_t *log_context,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
                                  const mongoc_deprioritized_servers_t *ds,
@@ -2626,11 +2633,12 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
       mongoc_uri_get_option_as_bool (cluster->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
 
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_READ, prefs_override, cs, is_retryable, ds, reply, error);
+      cluster, MONGOC_SS_READ, log_context, prefs_override, cs, is_retryable, ds, reply, error);
 }
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
+                                  const mongoc_ss_log_context_t *log_context,
                                   mongoc_client_session_t *cs,
                                   const mongoc_deprioritized_servers_t *ds,
                                   bson_t *reply,
@@ -2639,11 +2647,13 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
    const bool is_retryable =
       mongoc_uri_get_option_as_bool (cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
 
-   return _mongoc_cluster_stream_for_optype (cluster, MONGOC_SS_WRITE, NULL, cs, is_retryable, ds, reply, error);
+   return _mongoc_cluster_stream_for_optype (
+      cluster, MONGOC_SS_WRITE, log_context, NULL, cs, is_retryable, ds, reply, error);
 }
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_aggr_with_write (mongoc_cluster_t *cluster,
+                                           const mongoc_ss_log_context_t *log_context,
                                            const mongoc_read_prefs_t *read_prefs,
                                            mongoc_client_session_t *cs,
                                            bson_t *reply,
@@ -2656,7 +2666,7 @@ mongoc_cluster_stream_for_aggr_with_write (mongoc_cluster_t *cluster,
       mongoc_uri_get_option_as_bool (cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
 
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_AGGREGATE_WITH_WRITE, prefs_override, cs, is_retryable, NULL, reply, error);
+      cluster, MONGOC_SS_AGGREGATE_WITH_WRITE, log_context, prefs_override, cs, is_retryable, NULL, reply, error);
 }
 
 static bool
@@ -3615,8 +3625,10 @@ retry:
          // If talking to a sharded cluster, deprioritize the just-used mongos to prefer a new mongos for the retry.
          mongoc_deprioritized_servers_add_if_sharded (ds, cmd->server_stream->topology_type, cmd->server_stream->sd);
 
-         *retry_server_stream =
-            mongoc_cluster_stream_for_writes (cluster, cmd->session, ds, NULL /* reply */, &ignored_error);
+         const mongoc_ss_log_context_t ss_log_context = {
+            .operation = cmd->command_name, .has_operation_id = true, .operation_id = cmd->operation_id};
+         *retry_server_stream = mongoc_cluster_stream_for_writes (
+            cluster, &ss_log_context, cmd->session, ds, NULL /* reply */, &ignored_error);
 
          mongoc_deprioritized_servers_destroy (ds);
       }

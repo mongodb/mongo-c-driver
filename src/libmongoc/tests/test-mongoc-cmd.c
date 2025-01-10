@@ -105,8 +105,9 @@ test_cmd_with_two_payload1 (void *ctx)
    // Create the `mongoc_cmd_t`.
    mongoc_cmd_parts_t parts;
    mongoc_cmd_parts_init (&parts, client, "admin", MONGOC_QUERY_NONE, payload0);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "bulkWrite"};
    mongoc_server_stream_t *server_stream = mongoc_cluster_stream_for_writes (
-      cluster, NULL /* session */, NULL /* deprioritized servers */, NULL /* reply */, &error);
+      cluster, &ss_log_context, NULL /* session */, NULL /* deprioritized servers */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (server_stream, error);
    bool ok = mongoc_cmd_parts_assemble (&parts, server_stream, &error);
    ASSERT_OR_PRINT (ok, error);

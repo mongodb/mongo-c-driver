@@ -489,6 +489,7 @@ future_topology_select (
 
    mongoc_topology_ptr topology,
    mongoc_ss_optype_t optype,
+   const_mongoc_ss_log_context_ptr log_context,
    const_mongoc_read_prefs_ptr read_prefs,
    bool_ptr must_use_primary,
    bson_error_ptr error

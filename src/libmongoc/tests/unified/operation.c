@@ -3916,7 +3916,11 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
       {
          mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
          if (mc_client) {
-            mongoc_topology_select_server_id (mc_client->topology, MONGOC_SS_READ, NULL, NULL, NULL, error);
+            const mongoc_ss_log_context_t ss_log_context = {.operation = "waitForEvent"};
+            test_begin_suppressing_structured_logs ();
+            mongoc_topology_select_server_id (
+               mc_client->topology, MONGOC_SS_READ, &ss_log_context, NULL, NULL, NULL, error);
+            test_end_suppressing_structured_logs ();
          }
       }
    }

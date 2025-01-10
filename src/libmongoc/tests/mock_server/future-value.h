@@ -49,6 +49,7 @@ typedef const mongoc_find_and_modify_opts_t * const_mongoc_find_and_modify_opts_
 typedef const mongoc_iovec_t * const_mongoc_iovec_ptr;
 typedef const mongoc_read_prefs_t * const_mongoc_read_prefs_ptr;
 typedef const mongoc_write_concern_t * const_mongoc_write_concern_ptr;
+typedef const mongoc_ss_log_context_t * const_mongoc_ss_log_context_ptr;
 
 typedef enum {
    future_value_no_type = 0,
@@ -93,6 +94,7 @@ typedef enum {
    future_value_const_mongoc_iovec_ptr_type,
    future_value_const_mongoc_read_prefs_ptr_type,
    future_value_const_mongoc_write_concern_ptr_type,
+   future_value_const_mongoc_ss_log_context_ptr_type,
    future_value_void_type,
 
 } future_value_type_t;
@@ -142,6 +144,7 @@ typedef struct _future_value_t
       const_mongoc_iovec_ptr const_mongoc_iovec_ptr_value;
       const_mongoc_read_prefs_ptr const_mongoc_read_prefs_ptr_value;
       const_mongoc_write_concern_ptr const_mongoc_write_concern_ptr_value;
+      const_mongoc_ss_log_context_ptr const_mongoc_ss_log_context_ptr_value;
 
    } value;
 } future_value_t;
@@ -525,6 +528,15 @@ future_value_set_const_mongoc_write_concern_ptr(
 
 const_mongoc_write_concern_ptr
 future_value_get_const_mongoc_write_concern_ptr (
+   future_value_t *future_value);
+
+void
+future_value_set_const_mongoc_ss_log_context_ptr(
+   future_value_t *future_value,
+   const_mongoc_ss_log_context_ptr value);
+
+const_mongoc_ss_log_context_ptr
+future_value_get_const_mongoc_ss_log_context_ptr (
    future_value_t *future_value);
 
 

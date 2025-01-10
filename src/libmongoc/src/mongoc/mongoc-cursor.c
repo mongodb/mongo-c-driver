@@ -584,7 +584,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
 
 mongoc_server_stream_t *
-_mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
+_mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor, const mongoc_ss_log_context_t *log_context)
 {
    mongoc_server_stream_t *server_stream;
    bson_t reply;
@@ -606,12 +606,20 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
          server_stream->must_use_primary = cursor->must_use_primary;
       }
    } else {
-      server_stream =
-         cursor->is_aggr_with_write_stage
-            ? mongoc_cluster_stream_for_aggr_with_write (
-                 &cursor->client->cluster, cursor->read_prefs, cursor->client_session, &reply, &cursor->error)
-            : mongoc_cluster_stream_for_reads (
-                 &cursor->client->cluster, cursor->read_prefs, cursor->client_session, NULL, &reply, &cursor->error);
+      server_stream = cursor->is_aggr_with_write_stage
+                         ? mongoc_cluster_stream_for_aggr_with_write (&cursor->client->cluster,
+                                                                      log_context,
+                                                                      cursor->read_prefs,
+                                                                      cursor->client_session,
+                                                                      &reply,
+                                                                      &cursor->error)
+                         : mongoc_cluster_stream_for_reads (&cursor->client->cluster,
+                                                            log_context,
+                                                            cursor->read_prefs,
+                                                            cursor->client_session,
+                                                            NULL,
+                                                            &reply,
+                                                            &cursor->error);
 
       if (server_stream) {
          /* Remember the selected server_id and whether primary read mode was
@@ -912,7 +920,6 @@ _mongoc_cursor_run_command (
    mongoc_server_stream_t *server_stream;
    bson_iter_t iter;
    mongoc_cmd_parts_t parts;
-   const char *cmd_name;
    bool is_primary;
    mongoc_read_prefs_t *prefs = NULL;
    char *db = NULL;
@@ -922,11 +929,16 @@ _mongoc_cursor_run_command (
 
    ENTRY;
 
+   const char *cmd_name = _mongoc_get_command_name (command);
+
    mongoc_cmd_parts_init (&parts, cursor->client, db, MONGOC_QUERY_NONE, command);
    parts.is_read_command = true;
    parts.read_prefs = cursor->read_prefs;
    parts.assembled.operation_id = cursor->operation_id;
-   server_stream = _mongoc_cursor_fetch_stream (cursor);
+
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = cmd_name, .has_operation_id = true, .operation_id = parts.assembled.operation_id};
+   server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
 
    if (!server_stream) {
       _mongoc_bson_init_if_set (reply);
@@ -1008,7 +1020,6 @@ _mongoc_cursor_run_command (
     * OP_QUERY we handle this by setting secondaryOk. here we use
     * $readPreference.
     */
-   cmd_name = _mongoc_get_command_name (command);
    is_primary = !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
 
    if (strcmp (cmd_name, "getMore") != 0 && is_primary && parts.user_query_flags & MONGOC_QUERY_SECONDARY_OK) {
@@ -1063,8 +1074,13 @@ retry:
 
          BSON_ASSERT (!cursor->is_aggr_with_write_stage && "Cannot attempt a retry on an aggregate operation that "
                                                            "contains write stages");
-         server_stream = mongoc_cluster_stream_for_reads (
-            &cursor->client->cluster, cursor->read_prefs, cursor->client_session, ds, reply, &cursor->error);
+         server_stream = mongoc_cluster_stream_for_reads (&cursor->client->cluster,
+                                                          &ss_log_context,
+                                                          cursor->read_prefs,
+                                                          cursor->client_session,
+                                                          ds,
+                                                          reply,
+                                                          &cursor->error);
 
          mongoc_deprioritized_servers_destroy (ds);
       }
@@ -1713,7 +1729,8 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor, bson_t *command
        *
        * Since this function has no error reporting, we also no-op if we cannot
        * fetch a stream. */
-      server_stream = _mongoc_cursor_fetch_stream (cursor);
+      const mongoc_ss_log_context_t ss_log_context = {.operation = "getMore"};
+      server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
 
       if (server_stream != NULL && server_stream->sd->max_wire_version >= WIRE_VERSION_4_4) {
          bson_append_value (command, MONGOC_CURSOR_COMMENT, MONGOC_CURSOR_COMMENT_LEN, comment);

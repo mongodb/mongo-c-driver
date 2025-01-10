@@ -102,6 +102,8 @@ typedef_list = [
     typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
     typedef("const_mongoc_write_concern_ptr",
             "const mongoc_write_concern_t *"),
+    typedef("const_mongoc_ss_log_context_ptr",
+            "const mongoc_ss_log_context_t *"),
 ]
 
 type_list = [T.name for T in typedef_list]
@@ -453,6 +455,7 @@ future_functions = [
                     "mongoc_topology_select",
                     [param("mongoc_topology_ptr", "topology"),
                      param("mongoc_ss_optype_t", "optype"),
+                     param("const_mongoc_ss_log_context_ptr", "log_context"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
                      param("bool_ptr", "must_use_primary"),
                      param("bson_error_ptr", "error")]),

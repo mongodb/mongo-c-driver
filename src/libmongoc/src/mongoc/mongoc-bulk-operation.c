@@ -777,19 +777,22 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
    }
 
    for (size_t i = 0u; i < bulk->commands.len; i++) {
+      command = &_mongoc_array_index (&bulk->commands, mongoc_write_command_t, i);
+
       if (bulk->server_id) {
          server_stream = mongoc_cluster_stream_for_server (
             cluster, bulk->server_id, true /* reconnect_ok */, bulk->session, reply, error);
       } else {
-         server_stream = mongoc_cluster_stream_for_writes (cluster, bulk->session, NULL, reply, error);
+         const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (command),
+                                                         .has_operation_id = true,
+                                                         .operation_id = command->operation_id};
+         server_stream = mongoc_cluster_stream_for_writes (cluster, &ss_log_context, bulk->session, NULL, reply, error);
       }
 
       if (!server_stream) {
          /* stream_for_server and stream_for_writes initialize reply on error */
          RETURN (false);
       }
-
-      command = &_mongoc_array_index (&bulk->commands, mongoc_write_command_t, i);
 
       _mongoc_write_command_execute (command,
                                      bulk->client,

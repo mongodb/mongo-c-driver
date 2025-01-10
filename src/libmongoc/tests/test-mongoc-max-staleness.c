@@ -6,6 +6,7 @@
 #include "TestSuite.h"
 #include "json-test.h"
 #include "test-libmongoc.h"
+#include "test-conveniences.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future-functions.h"
 
@@ -225,7 +226,7 @@ _test_last_write_date (bool pooled)
    ASSERT_OR_PRINT (r, error);
 
    _mongoc_usleep (1000 * 1000);
-   s0 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   s0 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, TEST_SS_LOG_CONTEXT, NULL, NULL, &error);
    ASSERT_OR_PRINT (s0, error);
 
    _mongoc_usleep (1000 * 1000);
@@ -233,7 +234,7 @@ _test_last_write_date (bool pooled)
    ASSERT_OR_PRINT (r, error);
 
    _mongoc_usleep (1000 * 1000);
-   s1 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   s1 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, TEST_SS_LOG_CONTEXT, NULL, NULL, &error);
    ASSERT_OR_PRINT (s1, error);
    ASSERT_CMPINT64 (s1->last_write_date_ms, !=, (int64_t) -1);
 
@@ -290,7 +291,7 @@ _test_last_write_date_absent (bool pooled)
       client = test_framework_new_default_client ();
    }
 
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, NULL, &error);
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, NULL, NULL, &error);
    ASSERT_OR_PRINT (sd, error);
 
    /* lastWriteDate absent */

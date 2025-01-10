@@ -226,7 +226,6 @@ _apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
    mongoc_read_mode_t mode;
    const bson_t *tags = NULL;
    bson_t child;
-   const char *mode_str;
    int64_t max_staleness_seconds = MONGOC_NO_MAX_STALENESS;
    const bson_t *hedge = NULL;
 
@@ -281,23 +280,54 @@ _apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
       }
 
       bson_append_document_begin (result->assembled_query, "$readPreference", 15, &child);
-      mode_str = _mongoc_read_mode_as_str (mode);
-      bson_append_utf8 (&child, "mode", 4, mode_str, -1);
-      if (!bson_empty0 (tags)) {
-         bson_append_array (&child, "tags", 4, tags);
-      }
-
-      if (max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
-         bson_append_int64 (&child, "maxStalenessSeconds", 19, max_staleness_seconds);
-      }
-
-      if (!bson_empty0 (hedge)) {
-         bson_append_document (&child, "hedge", 5, hedge);
-      }
-
+      mongoc_read_prefs_append_contents_to_bson (
+         read_prefs,
+         &child,
+         MONGOC_READ_PREFS_CONTENT_FLAG_MODE | MONGOC_READ_PREFS_CONTENT_FLAG_TAGS |
+            MONGOC_READ_PREFS_CONTENT_FLAG_MAX_STALENESS_SECONDS | MONGOC_READ_PREFS_CONTENT_FLAG_HEDGE);
       bson_append_document_end (result->assembled_query, &child);
    }
 }
+
+bool
+mongoc_read_prefs_append_contents_to_bson (const mongoc_read_prefs_t *read_prefs,
+                                           bson_t *bson,
+                                           mongoc_read_prefs_content_flags_t flags)
+{
+   BSON_OPTIONAL_PARAM (read_prefs);
+   BSON_ASSERT_PARAM (bson);
+
+   if (flags & MONGOC_READ_PREFS_CONTENT_FLAG_MODE) {
+      // 'mode' will be Primary when read_prefs==NULL.
+      mongoc_read_mode_t mode = mongoc_read_prefs_get_mode (read_prefs);
+      const char *mode_str = _mongoc_read_mode_as_str (mode);
+      if (!BSON_APPEND_UTF8 (bson, "mode", mode_str)) {
+         return false;
+      }
+   }
+   if (read_prefs) {
+      // Other content is only available for non-NULL read_prefs
+      int64_t max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
+      const bson_t *hedge = mongoc_read_prefs_get_hedge (read_prefs);
+      const bson_t *tags = mongoc_read_prefs_get_tags (read_prefs);
+
+      if ((flags & MONGOC_READ_PREFS_CONTENT_FLAG_TAGS) && !bson_empty (tags) &&
+          !BSON_APPEND_ARRAY (bson, "tags", tags)) {
+         return false;
+      }
+      if ((flags & MONGOC_READ_PREFS_CONTENT_FLAG_MAX_STALENESS_SECONDS) &&
+          max_staleness_seconds != MONGOC_NO_MAX_STALENESS &&
+          !BSON_APPEND_INT64 (bson, "maxStalenessSeconds", max_staleness_seconds)) {
+         return false;
+      }
+      if ((flags & MONGOC_READ_PREFS_CONTENT_FLAG_HEDGE) && !bson_empty (hedge) &&
+          !BSON_APPEND_DOCUMENT (bson, "hedge", hedge)) {
+         return false;
+      }
+   }
+   return true;
+}
+
 
 /*
  *--------------------------------------------------------------------------

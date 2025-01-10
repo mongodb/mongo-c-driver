@@ -37,7 +37,9 @@ _prime (mongoc_cursor_t *cursor)
    data_find_t *data = (data_find_t *) cursor->impl.data;
 
    /* determine if this should be a command or op_query cursor. */
-   server_stream = _mongoc_cursor_fetch_stream (cursor);
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = "find", .has_operation_id = true, .operation_id = cursor->operation_id};
+   server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
    if (!server_stream) {
       return DONE;
    }
