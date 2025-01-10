@@ -899,8 +899,14 @@ _mongoc_structured_log_append_topology_as_description_json (bson_t *bson,
          mongoc_topology_description_append_contents_to_bson (td.ptr, &inner_bson, td_flags, server_flags);
          size_t json_length;
          char *json = _mongoc_structured_log_inner_document_to_json (&inner_bson, &json_length, opts);
+         /* TODO: This will be replaced shortly with a spec compliant string truncation implementation.
+          *    Note the INT_MAX size limit specific to bson_append_utf8(), vs the UINT32_MAX-1 internal limits.
+          *    This check will move as part of centralizing truncation behavior, with the benefits of
+          *    preserving UTF-8 sequence integrity and consistently inserting "..." when truncating.
+          */
          if (json) {
-            bson_append_utf8 (bson, key_or_null, -1, json, json_length);
+            bson_append_utf8 (
+               bson, key_or_null, -1, json, json_length > (size_t) INT_MAX ? INT_MAX : (int) json_length);
             bson_free (json);
          }
          bson_destroy (&inner_bson);
