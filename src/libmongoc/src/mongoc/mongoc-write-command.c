@@ -994,7 +994,7 @@ _set_error_from_response (bson_t *bson_array,
    uint32_t n_keys, i;
 
    mcommon_string_append_t compound_err;
-   mcommon_string_append_new_fixed_capacity (&compound_err, sizeof error->message - 1);
+   mcommon_string_new_as_fixed_capacity_append (&compound_err, sizeof error->message - 1);
 
    n_keys = bson_count_keys (bson_array);
    if (n_keys > 1) {
@@ -1032,12 +1032,12 @@ _set_error_from_response (bson_t *bson_array,
          }
       }
 
-      if (code && !mcommon_string_append_is_empty (&compound_err)) {
-         bson_set_error (error, domain, (uint32_t) code, "%s", mcommon_string_append_destination (&compound_err)->str);
+      if (code && !mcommon_string_from_append_is_empty (&compound_err)) {
+         bson_set_error (error, domain, (uint32_t) code, "%s", mcommon_string_from_append (&compound_err)->str);
       }
    }
 
-   mcommon_string_append_destination_destroy (&compound_err);
+   mcommon_string_from_append_destroy (&compound_err);
 }
 
 

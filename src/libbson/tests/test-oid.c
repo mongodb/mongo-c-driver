@@ -231,11 +231,11 @@ static char *
 get_time_as_string (const bson_oid_t *oid)
 {
    mcommon_string_append_t str;
-   mcommon_string_append_new (&str);
+   mcommon_string_new_as_append (&str);
    time_t time = bson_oid_get_time_t (oid);
 
    mcommon_iso8601_string_append (&str, time * 1000);
-   return mcommon_string_append_destination_destroy_with_steal (&str);
+   return mcommon_string_from_append_destroy_with_steal (&str);
 }
 
 

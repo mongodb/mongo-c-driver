@@ -68,7 +68,7 @@ bson_string_append (bson_string_t *string, /* IN */
    BSON_ASSERT_PARAM (str);
 
    mcommon_string_append_t append;
-   mcommon_string_append_init (&append, (mcommon_string_t *) string);
+   mcommon_string_set_append ((mcommon_string_t *) string, &append);
    (void) mcommon_string_append (&append, str);
 }
 
@@ -80,7 +80,7 @@ bson_string_append_unichar (bson_string_t *string,  /* IN */
    BSON_ASSERT_PARAM (string);
 
    mcommon_string_append_t append;
-   mcommon_string_append_init (&append, (mcommon_string_t *) string);
+   mcommon_string_set_append ((mcommon_string_t *) string, &append);
    (void) mcommon_string_append_unichar (&append, unichar);
 }
 
@@ -92,7 +92,7 @@ bson_string_append_c (bson_string_t *string, /* IN */
    BSON_ASSERT_PARAM (string);
 
    mcommon_string_append_t append;
-   mcommon_string_append_init (&append, (mcommon_string_t *) string);
+   mcommon_string_set_append ((mcommon_string_t *) string, &append);
    (void) mcommon_string_append_bytes (&append, &c, 1);
 }
 
@@ -105,7 +105,7 @@ bson_string_append_printf (bson_string_t *string, const char *format, ...)
 
    va_list args;
    mcommon_string_append_t append;
-   mcommon_string_append_init (&append, (mcommon_string_t *) string);
+   mcommon_string_set_append ((mcommon_string_t *) string, &append);
    va_start (args, format);
    (void) mcommon_string_append_vprintf (&append, format, args);
    va_end (args);

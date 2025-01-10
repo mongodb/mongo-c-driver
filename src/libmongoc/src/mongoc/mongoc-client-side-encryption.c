@@ -1346,7 +1346,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    STARTUPINFO startup_info;
 
    /* Construct the full command, quote path and arguments. */
-   mcommon_string_append_new (&command);
+   mcommon_string_new_as_append (&command);
    mcommon_string_append (&command, "\"");
    if (path) {
       mcommon_string_append (&command, path);
@@ -1368,7 +1368,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    startup_info.cb = sizeof (startup_info);
 
    if (!CreateProcessA (NULL,
-                        mcommon_string_append_destination (&command)->str,
+                        mcommon_string_from_append (&command)->str,
                         NULL,
                         NULL,
                         false /* inherit descriptors */,
@@ -1395,11 +1395,11 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                       "failed to spawn mongocryptd: %s",
                       message);
       LocalFree (message);
-      mcommon_string_append_destination_destroy (&command);
+      mcommon_string_from_append_destroy (&command);
       return false;
    }
 
-   mcommon_string_append_destination_destroy (&command);
+   mcommon_string_from_append_destroy (&command);
    return true;
 }
 #else

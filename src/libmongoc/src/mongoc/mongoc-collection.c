@@ -1200,7 +1200,7 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
       return NULL;
    }
 
-   mcommon_string_append_new (&append);
+   mcommon_string_new_as_append (&append);
 
    while (bson_iter_next (&iter)) {
       /* Index type can be specified as a string ("2d") or as an integer
@@ -1216,11 +1216,11 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
          mcommon_string_append_printf (
             &append, (i++ ? "_%s_%" PRId64 : "%s_%" PRId64), bson_iter_key (&iter), bson_iter_int64 (&iter));
       } else {
-         mcommon_string_append_destination_destroy (&append);
+         mcommon_string_from_append_destroy (&append);
          return NULL;
       }
    }
-   return mcommon_string_append_destination_destroy_with_steal (&append);
+   return mcommon_string_from_append_destroy_with_steal (&append);
 }
 
 

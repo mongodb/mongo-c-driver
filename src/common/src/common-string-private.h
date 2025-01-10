@@ -224,9 +224,9 @@ void
 mcommon_string_grow_to_capacity (mcommon_string_t *string, uint32_t capacity);
 
 /**
- * @brief Begin appending to an mcommon_string_t, with an explicit length limit
- * @param new_append Pointer to an uninitialized mcommon_string_append_t
+ * @brief Set an append operation for this string, with an explicit length limit
  * @param string String allocated with mcommon_string_new
+ * @param new_append Pointer to an uninitialized mcommon_string_append_t
  * @param max_len Maximum allowed length for the resulting string, in bytes. Must be less than UINT32_MAX.
  *
  * The mcommon_string_append_t does not need to be deallocated. It is no longer usable if the underlying
@@ -236,10 +236,10 @@ mcommon_string_grow_to_capacity (mcommon_string_t *string, uint32_t capacity);
  * lengthen the string beyond max_len. Truncations are guaranteed to happen at UTF-8 code point boundaries.
  */
 static BSON_INLINE void
-mcommon_string_append_init_with_limit (mcommon_string_append_t *new_append, mcommon_string_t *string, uint32_t max_len)
+mcommon_string_set_append_with_limit (mcommon_string_t *string, mcommon_string_append_t *new_append, uint32_t max_len)
 {
-   BSON_ASSERT_PARAM (new_append);
    BSON_ASSERT_PARAM (string);
+   BSON_ASSERT_PARAM (new_append);
    BSON_ASSERT (max_len < UINT32_MAX);
 
    new_append->_string = string;
@@ -248,9 +248,9 @@ mcommon_string_append_init_with_limit (mcommon_string_append_t *new_append, mcom
 }
 
 /**
- * @brief Begin appending to an mcommon_string_t
- * @param new_append Pointer to an uninitialized mcommon_string_append_t
+ * @brief Set an append operation for this string
  * @param string String allocated with mcommon_string_new
+ * @param new_append Pointer to an uninitialized mcommon_string_append_t
  *
  * The mcommon_string_append_t does not need to be deallocated. It is no longer usable if the underlying
  * mcommon_string_t is freed.
@@ -258,16 +258,17 @@ mcommon_string_append_init_with_limit (mcommon_string_append_t *new_append, mcom
  * The maximum string length will be set to the largest representable by the data type, UINT32_MAX - 1.
  */
 static BSON_INLINE void
-mcommon_string_append_init (mcommon_string_append_t *new_append, mcommon_string_t *string)
+mcommon_string_set_append (mcommon_string_t *string, mcommon_string_append_t *new_append)
 {
-   BSON_ASSERT_PARAM (new_append);
    BSON_ASSERT_PARAM (string);
+   BSON_ASSERT_PARAM (new_append);
 
-   mcommon_string_append_init_with_limit (new_append, string, UINT32_MAX - 1u);
+   mcommon_string_set_append_with_limit (string, new_append, UINT32_MAX - 1u);
 }
 
 /**
- * @brief Begin appending to a new empty mcommon_string_t with default initial capacity and maximum length
+ * @brief Allocate a new empty mcommon_string_t with default initial capacity, and set an append operation for it with
+ * maximum length
  * @param new_append Pointer to an uninitialized mcommon_string_append_t
  *
  * Allocates a new mcommon_string_t, which will need to be deallocated by the caller.
@@ -278,14 +279,14 @@ mcommon_string_append_init (mcommon_string_append_t *new_append, mcommon_string_
  *
  * This method is intended to be the most convenient way to start growing a string. If a reasonable guess
  * can be made about the final size of the string, it's better to call mcommon_string_new_with_capacity()
- * and mcommon_string_append_init() directly.
+ * and mcommon_string_set_append() or mcommon_string_set_append_with_limit() directly.
  */
 static BSON_INLINE void
-mcommon_string_append_new (mcommon_string_append_t *new_append)
+mcommon_string_new_as_append (mcommon_string_append_t *new_append)
 {
    BSON_ASSERT_PARAM (new_append);
 
-   mcommon_string_append_init (new_append, mcommon_string_new_with_capacity ("", 0, 32));
+   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, 32), new_append);
 }
 
 /**
@@ -296,20 +297,20 @@ mcommon_string_append_new (mcommon_string_append_t *new_append)
  * The mcommon_string_append_t itself does not need to be deallocated.
  */
 static BSON_INLINE void
-mcommon_string_append_new_fixed_capacity (mcommon_string_append_t *new_append, uint32_t capacity)
+mcommon_string_new_as_fixed_capacity_append (mcommon_string_append_t *new_append, uint32_t capacity)
 {
    BSON_ASSERT_PARAM (new_append);
 
-   mcommon_string_append_init_with_limit (new_append, mcommon_string_new_with_capacity ("", 0, capacity), capacity);
+   mcommon_string_set_append_with_limit (mcommon_string_new_with_capacity ("", 0, capacity), new_append, capacity);
 }
 
 /**
  * @brief Check the status of an append operation
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  */
 static BSON_INLINE bool
-mcommon_string_append_status (const mcommon_string_append_t *append)
+mcommon_string_status_from_append (const mcommon_string_append_t *append)
 {
    BSON_ASSERT_PARAM (append);
 
@@ -317,12 +318,12 @@ mcommon_string_append_status (const mcommon_string_append_t *append)
 }
 
 /**
- * @brief Get a reference to the string being appended to
- * @param append Append operation, initialized with mcommon_string_append_init
- * @returns Pointer to the mcommon_string_t being written to
+ * @brief Get a mcommon_string_t pointer to a mcommon_string_append_t destination
+ * @param append Append operation, initialized with mcommon_string_set_append
+ * @returns Pointer to the mcommon_string_t destination.
  */
 static BSON_INLINE mcommon_string_t *
-mcommon_string_append_destination (const mcommon_string_append_t *append)
+mcommon_string_from_append (const mcommon_string_append_t *append)
 {
    BSON_ASSERT_PARAM (append);
 
@@ -331,30 +332,30 @@ mcommon_string_append_destination (const mcommon_string_append_t *append)
 
 /**
  * @brief Deallocate the mcommon_string_t destination associated with an mcommon_string_append_t
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * The append operation will no longer be usable after this call.
  */
 static BSON_INLINE void
-mcommon_string_append_destination_destroy (const mcommon_string_append_t *append)
+mcommon_string_from_append_destroy (const mcommon_string_append_t *append)
 {
    BSON_ASSERT_PARAM (append);
 
-   mcommon_string_destroy (mcommon_string_append_destination (append));
+   mcommon_string_destroy (mcommon_string_from_append (append));
 }
 
 /**
  * @brief Deallocate the mcommon_string_t destination associated with an mcommon_string_append_t and return its internal
  * buffer
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @returns A freestanding NUL-terminated string in a buffer that must be freed with bson_free()
  * The append operation will no longer be usable after this call.
  */
 static BSON_INLINE char *
-mcommon_string_append_destination_destroy_with_steal (const mcommon_string_append_t *append)
+mcommon_string_from_append_destroy_with_steal (const mcommon_string_append_t *append)
 {
    BSON_ASSERT_PARAM (append);
 
-   return mcommon_string_destroy_with_steal (mcommon_string_append_destination (append));
+   return mcommon_string_destroy_with_steal (mcommon_string_from_append (append));
 }
 
 /**
@@ -363,12 +364,12 @@ mcommon_string_append_destination_destroy_with_steal (const mcommon_string_appen
  * @param substring suffix to match, as a NUL terminated C string.
  */
 static BSON_INLINE bool
-mcommon_string_append_ends_with_str (const mcommon_string_append_t *append, const char *substring)
+mcommon_string_from_append_ends_with_str (const mcommon_string_append_t *append, const char *substring)
 {
    BSON_ASSERT_PARAM (append);
    BSON_ASSERT_PARAM (substring);
 
-   return mcommon_string_ends_with_str (mcommon_string_append_destination (append), substring);
+   return mcommon_string_ends_with_str (mcommon_string_from_append (append), substring);
 }
 
 /**
@@ -376,23 +377,23 @@ mcommon_string_append_ends_with_str (const mcommon_string_append_t *append, cons
  * @param string mcommon_string_append_t with the string to test
  */
 static BSON_INLINE bool
-mcommon_string_append_is_empty (const mcommon_string_append_t *append)
+mcommon_string_from_append_is_empty (const mcommon_string_append_t *append)
 {
    BSON_ASSERT_PARAM (append);
 
-   return mcommon_string_is_empty (mcommon_string_append_destination (append));
+   return mcommon_string_is_empty (mcommon_string_from_append (append));
 }
 
 /**
  * @brief Signal an explicit overflow during string append
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  *
- * Future calls to mcommon_string_append_status() return false, exactly as if an overlong append was attempted and
+ * Future calls to mcommon_string_status_from_append() return false, exactly as if an overlong append was attempted and
  * failed. This should be used for cases when a logical overflow is occurring but it was detected early enough that no
  * actual append was attempted.
  */
 static BSON_INLINE void
-mcommon_string_append_set_overflow (mcommon_string_append_t *append)
+mcommon_string_append_overflow (mcommon_string_append_t *append)
 {
    BSON_ASSERT_PARAM (append);
 
@@ -401,7 +402,7 @@ mcommon_string_append_set_overflow (mcommon_string_append_t *append)
 
 /**
  * @brief Append selected characters from a template
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param template UTF-8 string listing allowed characters in the desired order
  * @param selector UTF-8 string that chooses which template characters are appended
  * @param selector_len Length of the selector string, in bytes
@@ -418,13 +419,13 @@ mcommon_string_append_selected_chars (mcommon_string_append_t *append,
 
 /**
  * @brief Append a string with known length to the mcommon_string_t
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param str String to append a copy of, should be valid UTF-8
  * @param len Length of 'str', in bytes
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  *
- * If the string must be truncated to fit in the limit set by mcommon_string_append_init, it will always be split
- * in-between UTF-8 code points.
+ * If the string must be truncated to fit in the limit set by mcommon_string_set_append_with_limit, it will always be
+ * split in-between UTF-8 code points.
  */
 static BSON_INLINE bool
 mcommon_string_append_bytes (mcommon_string_append_t *append, const char *str, uint32_t len)
@@ -432,7 +433,7 @@ mcommon_string_append_bytes (mcommon_string_append_t *append, const char *str, u
    BSON_ASSERT_PARAM (append);
    BSON_ASSERT_PARAM (str);
 
-   if (BSON_UNLIKELY (!mcommon_string_append_status (append))) {
+   if (BSON_UNLIKELY (!mcommon_string_status_from_append (append))) {
       return false;
    }
 
@@ -458,12 +459,12 @@ mcommon_string_append_bytes (mcommon_string_append_t *append, const char *str, u
 
 /**
  * @brief Append a NUL-terminated UTF-8 string to the mcommon_string_t
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param str NUL-terminated string to append a copy of
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  *
- * If the string must be truncated to fit in the limit set by mcommon_string_append_init, it will always be split
- * in-between UTF-8 code points.
+ * If the string must be truncated to fit in the limit set by mcommon_string_set_append_with_limit, it will always be
+ * split in-between UTF-8 code points.
  */
 static BSON_INLINE bool
 mcommon_string_append (mcommon_string_append_t *append, const char *str)
@@ -476,7 +477,7 @@ mcommon_string_append (mcommon_string_append_t *append, const char *str)
 
 /**
  * @brief Atomically append a string with known length to the mcommon_string_t
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param str UTF-8 string to append a copy of
  * @param len Length of 'str', in bytes
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
@@ -489,7 +490,7 @@ mcommon_string_append_bytes_atomic (mcommon_string_append_t *append, const char 
 
 /**
  * @brief Atomically append a NUL-terminated UTF-8 string to the mcommon_string_t
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param str NUL-terminated UTF-8 sequence to append a copy of
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  *
@@ -507,7 +508,7 @@ mcommon_string_append_atomic (mcommon_string_append_t *append, const char *str)
 
 /**
  * @brief Append base64 encoded bytes to an mcommon_string_t
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param bytes Bytes to be encoded
  * @param len Number of bytes to encoded
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
@@ -517,7 +518,7 @@ mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint
 
 /**
  * @brief Append an ObjectId as a hex string
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param value bson_oid_t value to copy
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  */
@@ -526,7 +527,7 @@ mcommon_string_append_oid_as_hex (mcommon_string_append_t *append, const bson_oi
 
 /**
  * @brief Append printf() formatted text to a mcommon_string_t
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param format printf() format string
  * @param ... Format string arguments
  * @returns true if the append operation has no permanent error status, and this operation has succeeded. false if the
@@ -534,15 +535,15 @@ mcommon_string_append_oid_as_hex (mcommon_string_append_t *append, const bson_oi
  *
  * Writes the printf() result directly into the mcommon_string_t buffer, growing it as needed.
  *
- * If the string must be truncated to fit in the limit set by mcommon_string_append_init, it will always be split
- * in-between UTF-8 code points.
+ * If the string must be truncated to fit in the limit set by mcommon_string_set_append_with_limit, it will always be
+ * split in-between UTF-8 code points.
  */
 bool
 mcommon_string_append_printf (mcommon_string_append_t *append, const char *format, ...) BSON_GNUC_PRINTF (2, 3);
 
 /**
  * @brief Variant of mcommon_string_append_printf() that takes a va_list
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param format printf() format string
  * @param args Format string arguments
  * @returns true if the append operation has no permanent error status, and this operation has succeeded. false if the
@@ -550,8 +551,8 @@ mcommon_string_append_printf (mcommon_string_append_t *append, const char *forma
  *
  * Writes the printf() result directly into the mcommon_string_t buffer, growing it as needed.
  *
- * If the string must be truncated to fit in the limit set by mcommon_string_append_init, it will always be split
- * in-between UTF-8 code points.
+ * If the string must be truncated to fit in the limit set by mcommon_string_set_append_with_limit, it will always be
+ * split in-between UTF-8 code points.
  */
 bool
 mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *format, va_list args)
@@ -559,7 +560,7 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
 
 /**
  * @brief Append one code point to a mcommon_string_t
- * @param append Append operation, initialized with mcommon_string_append_init
+ * @param append Append operation, initialized with mcommon_string_set_append
  * @param unichar Code point to append, as a bson_unichar_t
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  *
@@ -570,7 +571,7 @@ mcommon_string_append_unichar (mcommon_string_append_t *append, bson_unichar_t u
 {
    BSON_ASSERT_PARAM (append);
 
-   if (BSON_UNLIKELY (!mcommon_string_append_status (append))) {
+   if (BSON_UNLIKELY (!mcommon_string_status_from_append (append))) {
       return false;
    }
 

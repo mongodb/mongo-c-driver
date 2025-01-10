@@ -1993,7 +1993,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
    }
 
    mcommon_string_append_t docs_json;
-   mcommon_string_append_new (&docs_json);
+   mcommon_string_new_as_append (&docs_json);
    for (int i = 0; i < n_docs; i++) {
       mcommon_json_append_bson_document (&docs_json, &docs[i], BSON_JSON_MODE_RELAXED, BSON_MAX_RECURSION);
       if (i < n_docs - 1) {
@@ -2008,7 +2008,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
                                reply->client_port,
                                mock_server_get_port (server),
                                is_op_msg ? "OP_MSG" : "OP_REPLY",
-                               mcommon_string_append_destination (&docs_json)->str);
+                               mcommon_string_from_append (&docs_json)->str);
 
    len = 0;
 
@@ -2069,7 +2069,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
 
    bson_free (iov);
    mcd_rpc_message_destroy (rpc);
-   mcommon_string_append_destination_destroy (&docs_json);
+   mcommon_string_from_append_destroy (&docs_json);
    bson_free (buf);
 }
 
@@ -2101,7 +2101,7 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
                     WIRE_VERSION_MIN);
 
    mcommon_string_append_t hosts;
-   mcommon_string_append_new (&hosts);
+   mcommon_string_new_as_append (&hosts);
 
    va_start (ap, has_tags);
 
@@ -2135,7 +2135,7 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
                            has_tags ? "'key': 'value'" : "",
                            WIRE_VERSION_MIN,
                            max_wire_version,
-                           mcommon_string_append_destination (&hosts)->str);
+                           mcommon_string_from_append (&hosts)->str);
 
-   mcommon_string_append_destination_destroy (&hosts);
+   mcommon_string_from_append_destroy (&hosts);
 }

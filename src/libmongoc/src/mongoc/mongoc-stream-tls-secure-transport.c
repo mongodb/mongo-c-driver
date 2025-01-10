@@ -414,7 +414,7 @@ explain_trust_result (SecTrustRef trust, SecTrustResultType trust_result)
    CFIndex count, i;
 
    mcommon_string_append_t reason;
-   mcommon_string_append_new (&reason);
+   mcommon_string_new_as_append (&reason);
 
    switch (trust_result) {
    case kSecTrustResultDeny:
@@ -479,7 +479,7 @@ explain_trust_result (SecTrustRef trust, SecTrustResultType trust_result)
    mcommon_string_append (&reason, "No trust failure reason available");
 done:
    CFReleaseSafe (cfprops);
-   return mcommon_string_append_destination_destroy_with_steal (&reason);
+   return mcommon_string_from_append_destroy_with_steal (&reason);
 }
 
 /* Returns a boolean indicating success. If false is returned, then an error is

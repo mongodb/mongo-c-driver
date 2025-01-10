@@ -228,8 +228,8 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
    STOP_LOGGING_CHECK;
 
    mcommon_string_append_t str, astr;
-   mcommon_string_append_new (&str);
-   mcommon_string_append_new (&astr);
+   mcommon_string_new_as_append (&str);
+   mcommon_string_new_as_append (&astr);
 
    size_t _i;
    for (_i = 0u; _i < _l; _i++) {
@@ -251,10 +251,10 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
          mongoc_log (MONGOC_LOG_LEVEL_TRACE,
                      domain,
                      "%s %s",
-                     mcommon_string_append_destination (&str)->str,
-                     mcommon_string_append_destination (&astr)->str);
-         mcommon_string_clear (mcommon_string_append_destination (&str));
-         mcommon_string_clear (mcommon_string_append_destination (&astr));
+                     mcommon_string_from_append (&str)->str,
+                     mcommon_string_from_append (&astr)->str);
+         mcommon_string_clear (mcommon_string_from_append (&str));
+         mcommon_string_clear (mcommon_string_from_append (&astr));
       } else if (rem == 7u) {
          mcommon_string_append (&str, " ");
          mcommon_string_append (&astr, " ");
@@ -265,12 +265,12 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
       mongoc_log (MONGOC_LOG_LEVEL_TRACE,
                   domain,
                   "%-56s %s",
-                  mcommon_string_append_destination (&str)->str,
-                  mcommon_string_append_destination (&astr)->str);
+                  mcommon_string_from_append (&str)->str,
+                  mcommon_string_from_append (&astr)->str);
    }
 
-   mcommon_string_append_destination_destroy (&str);
-   mcommon_string_append_destination_destroy (&astr);
+   mcommon_string_from_append_destroy (&str);
+   mcommon_string_from_append_destroy (&astr);
 }
 
 void
@@ -292,8 +292,8 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
    _i = 0;
 
    mcommon_string_append_t str, astr;
-   mcommon_string_append_new (&str);
-   mcommon_string_append_new (&astr);
+   mcommon_string_new_as_append (&str);
+   mcommon_string_new_as_append (&astr);
 
    for (_j = 0; _j < _iovcnt; _j++) {
       _b = (char *) _iov[_j].iov_base;
@@ -316,10 +316,10 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
             mongoc_log (MONGOC_LOG_LEVEL_TRACE,
                         domain,
                         "%s %s",
-                        mcommon_string_append_destination (&str)->str,
-                        mcommon_string_append_destination (&astr)->str);
-            mcommon_string_clear (mcommon_string_append_destination (&str));
-            mcommon_string_clear (mcommon_string_append_destination (&astr));
+                        mcommon_string_from_append (&str)->str,
+                        mcommon_string_from_append (&astr)->str);
+            mcommon_string_clear (mcommon_string_from_append (&str));
+            mcommon_string_clear (mcommon_string_from_append (&astr));
          } else if ((_i % 16) == 7) {
             mcommon_string_append (&str, " ");
             mcommon_string_append (&astr, " ");
@@ -331,10 +331,10 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
       mongoc_log (MONGOC_LOG_LEVEL_TRACE,
                   domain,
                   "%-56s %s",
-                  mcommon_string_append_destination (&str)->str,
-                  mcommon_string_append_destination (&astr)->str);
+                  mcommon_string_from_append (&str)->str,
+                  mcommon_string_from_append (&astr)->str);
    }
 
-   mcommon_string_append_destination_destroy (&str);
-   mcommon_string_append_destination_destroy (&astr);
+   mcommon_string_from_append_destroy (&str);
+   mcommon_string_from_append_destroy (&astr);
 }

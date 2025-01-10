@@ -130,17 +130,17 @@ assert_request_matches_flags (const request_t *request, uint32_t flags)
    const int32_t request_flags = mcd_rpc_op_query_get_flags (request->rpc);
    if (mcommon_cmp_not_equal_su (request_flags, flags)) {
       mcommon_string_append_t str_request_flags, str_flags;
-      mcommon_string_append_new (&str_request_flags);
-      mcommon_string_append_new (&str_flags);
+      mcommon_string_new_as_append (&str_request_flags);
+      mcommon_string_new_as_append (&str_flags);
       query_flags_str (&str_request_flags, request_flags);
       query_flags_str (&str_flags, (int32_t) flags);
 
       test_error ("request's query flags are %s, expected %s",
-                  mcommon_string_append_destination (&str_request_flags)->str,
-                  mcommon_string_append_destination (&str_flags)->str);
+                  mcommon_string_from_append (&str_request_flags)->str,
+                  mcommon_string_from_append (&str_flags)->str);
 
-      mcommon_string_append_destination_destroy (&str_request_flags);
-      mcommon_string_append_destination_destroy (&str_flags);
+      mcommon_string_from_append_destroy (&str_request_flags);
+      mcommon_string_from_append_destroy (&str_flags);
    }
 }
 
@@ -540,7 +540,7 @@ request_from_query (request_t *request)
 {
    bson_iter_t iter;
    mcommon_string_append_t query_as_str;
-   mcommon_string_append_new (&query_as_str);
+   mcommon_string_new_as_append (&query_as_str);
    mcommon_string_append (&query_as_str, "OP_QUERY ");
 
    const int32_t request_flags = mcd_rpc_op_query_get_flags (request->rpc);
@@ -592,7 +592,7 @@ request_from_query (request_t *request)
       mcommon_string_append_printf (&query_as_str, " n_return=%" PRId32, request_return);
    }
 
-   request->as_str = mcommon_string_append_destination_destroy_with_steal (&query_as_str);
+   request->as_str = mcommon_string_from_append_destroy_with_steal (&query_as_str);
 }
 
 
@@ -641,7 +641,7 @@ static void
 request_from_op_msg (request_t *request)
 {
    mcommon_string_append_t msg_as_str;
-   mcommon_string_append_new (&msg_as_str);
+   mcommon_string_new_as_append (&msg_as_str);
    mcommon_string_append (&msg_as_str, "OP_MSG");
 
    const size_t sections_count = mcd_rpc_op_msg_get_sections_count (request->rpc);
@@ -674,7 +674,7 @@ request_from_op_msg (request_t *request)
       }
    }
 
-   request->as_str = mcommon_string_append_destination_destroy_with_steal (&msg_as_str);
+   request->as_str = mcommon_string_from_append_destroy_with_steal (&msg_as_str);
    request->is_command = true; /* true for all OP_MSG requests */
 
    if (request->docs.len) {

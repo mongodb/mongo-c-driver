@@ -768,7 +768,7 @@ test_bson_json_read_buffering (void)
    bson_json_reader_t *reader;
    int r;
 
-   mcommon_string_append_new (&json);
+   mcommon_string_new_as_append (&json);
 
    /* parse between 1 and 10 JSON objects */
    for (n_docs = 1; n_docs < 10; n_docs++) {
@@ -794,9 +794,8 @@ test_bson_json_read_buffering (void)
          reader = bson_json_data_reader_new (true /* "allow_multiple" is unused */,
                                              (size_t) RAND_R (&seed) % 100 /* bufsize*/);
 
-         bson_json_data_reader_ingest (reader,
-                                       (uint8_t *) mcommon_string_append_destination (&json)->str,
-                                       mcommon_string_append_destination (&json)->len);
+         bson_json_data_reader_ingest (
+            reader, (uint8_t *) mcommon_string_from_append (&json)->str, mcommon_string_from_append (&json)->len);
 
          for (docs_idx = 0; docs_idx < n_docs; docs_idx++) {
             bson_reinit (&bson_out);
@@ -814,7 +813,7 @@ test_bson_json_read_buffering (void)
          ASSERT_CMPINT (0, ==, bson_json_reader_read (reader, &bson_out, &error));
 
          bson_json_reader_destroy (reader);
-         mcommon_string_clear (mcommon_string_append_destination (&json));
+         mcommon_string_clear (mcommon_string_from_append (&json));
 
          for (docs_idx = 0; docs_idx < n_docs; docs_idx++) {
             bson_destroy (bsons[docs_idx]);
@@ -824,7 +823,7 @@ test_bson_json_read_buffering (void)
       }
    }
 
-   mcommon_string_append_destination_destroy (&json);
+   mcommon_string_from_append_destroy (&json);
    bson_destroy (&bson_out);
 }
 

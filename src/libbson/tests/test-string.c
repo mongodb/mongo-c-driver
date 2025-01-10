@@ -120,18 +120,18 @@ test_bson_string_append_printf_truncate (void)
 
    for (uint32_t limit = 0; limit < 13; limit++) {
       mcommon_string_append_t append;
-      mcommon_string_append_init_with_limit (&append, mcommon_string_new (""), limit);
+      mcommon_string_set_append_with_limit (mcommon_string_new (""), &append, limit);
       mcommon_string_append_printf (&append, "foo \xf4%s%c%c bar", "\x8f", '\xbf', '\xbf');
       const char *expected = "foo \xf4\x8f\xbf\xbf bar";
-      const char *str = mcommon_string_append_destination (&append)->str;
-      uint32_t len = mcommon_string_append_destination (&append)->len;
+      const char *str = mcommon_string_from_append (&append)->str;
+      uint32_t len = mcommon_string_from_append (&append)->len;
       if (limit >= 4 && limit < 8) {
          BSON_ASSERT (len == 4);
       } else {
          BSON_ASSERT (len == limit);
       }
       BSON_ASSERT (0 == memcmp (str, expected, len));
-      mcommon_string_append_destination_destroy (&append);
+      mcommon_string_from_append_destroy (&append);
    }
 }
 

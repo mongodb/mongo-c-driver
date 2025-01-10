@@ -2233,12 +2233,12 @@ test_parses_long_ipv6 (void)
    {
       // Construct a string of repeating `:`.
       mcommon_string_append_t host;
-      mcommon_string_append_new (&host);
+      mcommon_string_new_as_append (&host);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2; i++) {
          // Max IPv6 literal is two less due to including `[` and `]`.
          mcommon_string_append (&host, ":");
       }
-      const char *host_str = mcommon_string_append_destination (&host)->str;
+      const char *host_str = mcommon_string_from_append (&host)->str;
 
       char *host_and_port = bson_strdup_printf ("[%s]:27017", host_str);
       char *uri_string = bson_strdup_printf ("mongodb://%s", host_and_port);
@@ -2253,18 +2253,18 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      mcommon_string_append_destination_destroy (&host);
+      mcommon_string_from_append_destroy (&host);
    }
 
    // Test one character more than the largest IPv6 literal.
    {
       // Construct a string of repeating `:`.
       mcommon_string_append_t host;
-      mcommon_string_append_new (&host);
+      mcommon_string_new_as_append (&host);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2 + 1; i++) {
          mcommon_string_append (&host, ":");
       }
-      const char *host_str = mcommon_string_append_destination (&host)->str;
+      const char *host_str = mcommon_string_from_append (&host)->str;
 
       char *host_and_port = bson_strdup_printf ("[%s]:27017", host_str);
       char *uri_string = bson_strdup_printf ("mongodb://%s", host_and_port);
@@ -2282,7 +2282,7 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      mcommon_string_append_destination_destroy (&host);
+      mcommon_string_from_append_destroy (&host);
    }
 }
 

@@ -146,7 +146,7 @@ _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
    }
 
    mcommon_string_append_t retval;
-   mcommon_string_append_new (&retval);
+   mcommon_string_new_as_append (&retval);
 
    value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDCountryName);
    _bson_append_cftyperef (&retval, "C=", value);
@@ -187,7 +187,7 @@ _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
    _bson_append_cftyperef (&retval, ",STREET", value);
 
    CFRelease (cert_dict);
-   return mcommon_string_append_destination_destroy_with_steal (&retval);
+   return mcommon_string_from_append_destroy_with_steal (&retval);
 }
 
 

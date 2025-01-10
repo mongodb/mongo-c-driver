@@ -767,7 +767,7 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
    bson_iter_t iter;
 
    mcommon_string_append_t fail_reasons;
-   mcommon_string_append_new (&fail_reasons);
+   mcommon_string_new_as_append (&fail_reasons);
 
    BSON_FOREACH (run_on_requirements, iter)
    {
@@ -792,10 +792,9 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
 
    *reason = NULL;
    if (!requirements_satisfied) {
-      *reason =
-         tmp_str ("runOnRequirements not satisfied:\n%s", mcommon_string_append_destination (&fail_reasons)->str);
+      *reason = tmp_str ("runOnRequirements not satisfied:\n%s", mcommon_string_from_append (&fail_reasons)->str);
    }
-   mcommon_string_append_destination_destroy (&fail_reasons);
+   mcommon_string_from_append_destroy (&fail_reasons);
    return requirements_satisfied;
 }
 

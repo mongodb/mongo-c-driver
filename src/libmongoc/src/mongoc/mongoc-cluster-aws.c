@@ -487,7 +487,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds, 
       }
 
       mcommon_string_append_t append;
-      mcommon_string_append_new (&append);
+      mcommon_string_new_as_append (&append);
       for (;;) {
          char buf[128];
          ssize_t got = mongoc_stream_read (fstream,
@@ -507,7 +507,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds, 
                                  strerror (errno));
          }
       }
-      token_file_contents = mcommon_string_append_destination (&append);
+      token_file_contents = mcommon_string_from_append (&append);
    }
 
    path_and_query = bson_strdup_printf ("/?Action=AssumeRoleWithWebIdentity"

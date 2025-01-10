@@ -264,7 +264,7 @@ _mongoc_secure_channel_extract_subject (const char *filename, const char *passph
    }
 
    mcommon_string_append_t retval;
-   mcommon_string_append_new (&retval);
+   mcommon_string_new_as_append (&retval);
 
    _bson_append_szoid (&retval, cert, "C=", szOID_COUNTRY_NAME);
    _bson_append_szoid (&retval, cert, ",ST=", szOID_STATE_OR_PROVINCE_NAME);
@@ -274,7 +274,7 @@ _mongoc_secure_channel_extract_subject (const char *filename, const char *passph
    _bson_append_szoid (&retval, cert, ",CN=", szOID_COMMON_NAME);
    _bson_append_szoid (&retval, cert, ",STREET=", szOID_STREET_ADDRESS);
 
-   return mcommon_string_append_destination_destroy_with_steal (&retval);
+   return mcommon_string_from_append_destroy_with_steal (&retval);
 }
 
 bool

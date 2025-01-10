@@ -2240,7 +2240,7 @@ mongoc_uri_unescape (const char *escaped_string)
    end = ptr + len;
 
    mcommon_string_append_t append;
-   mcommon_string_append_init (&append, mcommon_string_new_with_capacity ("", 0, len));
+   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, len), &append);
 
    for (; *ptr; ptr = bson_utf8_next_char (ptr)) {
       c = bson_utf8_get_char (ptr);
@@ -2253,7 +2253,7 @@ mongoc_uri_unescape (const char *escaped_string)
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
              || 0 == hex) {
-            mcommon_string_append_destination_destroy (&append);
+            mcommon_string_from_append_destroy (&append);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
          }
@@ -2271,15 +2271,15 @@ mongoc_uri_unescape (const char *escaped_string)
    }
 
    /* Check that after unescaping, it is still valid UTF-8 */
-   if (unescape_occurred && !bson_utf8_validate (mcommon_string_append_destination (&append)->str,
-                                                 mcommon_string_append_destination (&append)->len,
+   if (unescape_occurred && !bson_utf8_validate (mcommon_string_from_append (&append)->str,
+                                                 mcommon_string_from_append (&append)->len,
                                                  false)) {
       MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
-      mcommon_string_append_destination_destroy (&append);
+      mcommon_string_from_append_destroy (&append);
       return NULL;
    }
 
-   return mcommon_string_append_destination_destroy_with_steal (&append);
+   return mcommon_string_from_append_destroy_with_steal (&append);
 }
 
 

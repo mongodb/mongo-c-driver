@@ -244,12 +244,11 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
    }
 
    mcommon_string_append_t append;
-   mcommon_string_append_init (&append, mcommon_string_new_with_capacity ("", 0, len32));
-
+   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, len32), &append);
    if (mcommon_json_append_escaped (&append, utf8, len32, allow_nul)) {
-      return mcommon_string_append_destination_destroy_with_steal (&append);
+      return mcommon_string_from_append_destroy_with_steal (&append);
    } else {
-      mcommon_string_append_destination_destroy (&append);
+      mcommon_string_from_append_destroy (&append);
       return NULL;
    }
 }

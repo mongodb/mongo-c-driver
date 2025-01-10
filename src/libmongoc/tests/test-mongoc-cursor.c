@@ -1802,10 +1802,10 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
    {
       mcommon_string_append_t reply;
-      mcommon_string_append_new (&reply);
+      mcommon_string_new_as_append (&reply);
       _make_reply_batch (&reply, (uint32_t) test->reply_length[0], true, false);
-      reply_to_request_simple (request, mcommon_string_append_destination (&reply)->str);
-      mcommon_string_append_destination_destroy (&reply);
+      reply_to_request_simple (request, mcommon_string_from_append (&reply)->str);
+      mcommon_string_from_append_destroy (&reply);
    }
 
    ASSERT (future_get_bool (future));
@@ -1834,11 +1834,11 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
       {
          mcommon_string_append_t reply;
-         mcommon_string_append_new (&reply);
+         mcommon_string_new_as_append (&reply);
          cursor_finished = (reply_no == 2);
          _make_reply_batch (&reply, (uint32_t) test->reply_length[reply_no], false, cursor_finished);
-         reply_to_request_simple (request, mcommon_string_append_destination (&reply)->str);
-         mcommon_string_append_destination_destroy (&reply);
+         reply_to_request_simple (request, mcommon_string_from_append (&reply)->str);
+         mcommon_string_from_append_destroy (&reply);
       }
 
       ASSERT (future_get_bool (future));

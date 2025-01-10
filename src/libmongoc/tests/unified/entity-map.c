@@ -2157,7 +2157,7 @@ event_list_to_string (event_t *events)
    event_t *eiter = NULL;
 
    mcommon_string_append_t str;
-   mcommon_string_append_new (&str);
+   mcommon_string_new_as_append (&str);
 
    LL_FOREACH (events, eiter)
    {
@@ -2176,7 +2176,7 @@ event_list_to_string (event_t *events)
       }
       mcommon_string_append (&str, "\n");
    }
-   return mcommon_string_append_destination_destroy_with_steal (&str);
+   return mcommon_string_from_append_destroy_with_steal (&str);
 }
 
 

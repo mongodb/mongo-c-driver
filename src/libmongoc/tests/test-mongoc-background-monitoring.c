@@ -73,7 +73,7 @@ tf_dump (test_fixture_t *tf)
    printf ("sd_type=%d\n", (int) tf->observations->sd_type);
 
    printf ("-- Test fixture logs --\n");
-   printf ("%s", mcommon_string_append_destination (&tf->logs)->str);
+   printf ("%s", mcommon_string_from_append (&tf->logs)->str);
    printf ("== End dump ==\n");
 }
 
@@ -239,7 +239,7 @@ tf_new (tf_flags_t flags)
       mock_server_autoresponds (tf->server, auto_respond_polling_hello, NULL, NULL);
    }
    tf->flags = flags;
-   mcommon_string_append_new (&tf->logs);
+   mcommon_string_new_as_append (&tf->logs);
    tf->client = mongoc_client_pool_pop (tf->pool);
    return tf;
 }
@@ -250,7 +250,7 @@ tf_destroy (test_fixture_t *tf)
    mock_server_destroy (tf->server);
    mongoc_client_pool_push (tf->pool, tf->client);
    mongoc_client_pool_destroy (tf->pool);
-   mcommon_string_append_destination_destroy (&tf->logs);
+   mcommon_string_from_append_destroy (&tf->logs);
    bson_mutex_destroy (&tf->mutex);
    mongoc_cond_destroy (&tf->cond);
    bson_free (tf->observations);

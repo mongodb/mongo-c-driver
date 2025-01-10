@@ -115,7 +115,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    const mcd_timer timer = mcd_timer_expire_after (mcd_milliseconds (timeout_ms));
 
    mcommon_string_append_t http_request;
-   mcommon_string_append_new (&http_request);
+   mcommon_string_new_as_append (&http_request);
 
    memset (res, 0, sizeof (*res));
    _mongoc_buffer_init (&http_response_buf, NULL, 0, NULL, NULL);
@@ -172,8 +172,8 @@ _mongoc_http_send (const mongoc_http_request_t *req,
 
    _mongoc_http_render_request_head (&http_request, req);
 
-   iovec.iov_base = mcommon_string_append_destination (&http_request)->str;
-   iovec.iov_len = mcommon_string_append_destination (&http_request)->len;
+   iovec.iov_base = mcommon_string_from_append (&http_request)->str;
+   iovec.iov_len = mcommon_string_from_append (&http_request)->len;
 
    if (!_mongoc_stream_writev_full (stream, &iovec, 1, _mongoc_http_msec_remaining (timer), error)) {
       goto fail;
@@ -282,7 +282,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
 
 fail:
    mongoc_stream_destroy (stream);
-   mcommon_string_append_destination_destroy (&http_request);
+   mcommon_string_from_append_destroy (&http_request);
    _mongoc_buffer_destroy (&http_response_buf);
    bson_free (path);
    return ret;

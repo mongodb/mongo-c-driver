@@ -42,7 +42,7 @@ test_diagnostics_error_string (bson_error_t *error)
    test_diagnostics_t *td = &diagnostics;
 
    mcommon_string_append_t str;
-   mcommon_string_append_new (&str);
+   mcommon_string_new_as_append (&str);
 
    /* Give a large header / footer to make the error easily grep-able */
    mcommon_string_append (&str,
@@ -82,7 +82,7 @@ test_diagnostics_error_string (bson_error_t *error)
                           "******************************* END_MONGOC_ERROR "
                           "*******************************\n");
 
-   return mcommon_string_append_destination_destroy_with_steal (&str);
+   return mcommon_string_from_append_destroy_with_steal (&str);
 }
 
 static void

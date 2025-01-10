@@ -46,12 +46,12 @@ compare_data (const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len
    uint32_t i;
 
    if (a_len != b_len || memcmp (a, b, (size_t) a_len)) {
-      mcommon_string_append_new (&a_str);
+      mcommon_string_new_as_append (&a_str);
       for (i = 0; i < a_len; i++) {
          mcommon_string_append_printf (&a_str, "%02" PRIx8, a[i]);
       }
 
-      mcommon_string_append_new (&b_str);
+      mcommon_string_new_as_append (&b_str);
       for (i = 0; i < b_len; i++) {
          mcommon_string_append_printf (&b_str, "%02" PRIx8, b[i]);
       }
@@ -60,8 +60,8 @@ compare_data (const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len
                "unequal data of length %" PRIu32 " and %" PRIu32 ":\n%s\n%s\n",
                a_len,
                b_len,
-               mcommon_string_append_destination (&a_str)->str,
-               mcommon_string_append_destination (&b_str)->str);
+               mcommon_string_from_append (&a_str)->str,
+               mcommon_string_from_append (&b_str)->str);
 
       abort ();
    }

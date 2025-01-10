@@ -48,7 +48,7 @@
 
 /**
  * @brief Append an ISO 8601 formatted date, given 64-bit milliseconds since the epoch
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param msec_since_epoch Milliseconds since Jan 1 1970 UTC
  * @returns true on success, false if this 'append' has exceeded its max length
  */
@@ -58,7 +58,7 @@ mcommon_iso8601_string_append (mcommon_string_append_t *append, int64_t msec_sin
 /**
  * @brief Append a UTF-8 string with all special characters escaped
  *
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param str UTF-8 string to escape and append
  * @param len Length of 'str' in bytes
  * @param allow_nul true if internal "00" bytes or "C0 80" sequences should be encoded as "\u0000", false to treat
@@ -75,7 +75,7 @@ mcommon_json_append_escaped (mcommon_string_append_t *append, const char *str, u
 
 /**
  * @brief Append a comma separator string to appear between values
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @returns true on success, false if this 'append' has exceeded its max length
  */
 static BSON_INLINE bool
@@ -86,7 +86,7 @@ mcommon_json_append_separator (mcommon_string_append_t *append)
 
 /**
  * @brief Append a quoted and escaped key and key-value separator
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param str UTF-8 string to escape and append
  * @param len Length of 'str' in bytes
  * @returns true on success, false if this 'append' has exceeded its max length or if we encountered invalid UTF-8 or
@@ -103,7 +103,7 @@ mcommon_json_append_key (mcommon_string_append_t *append, const char *str, uint3
 
 /**
  * @brief Append a quoted and escaped string
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param str UTF-8 string to escape and append
  * @param len Length of 'str' in bytes
  * @param allow_nul true if internal "00" bytes or "C0 80" sequences should be encoded as "\u0000", false to treat them
@@ -122,7 +122,7 @@ mcommon_json_append_value_utf8 (mcommon_string_append_t *append, const char *str
 
 /**
  * @brief Append an int32_t value, serialized according to a bson_json_mode_t
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param value Integer value
  * @param mode One of the JSON serialization modes, as a bson_json_mode_t.
  * @returns true on success, false if this 'append' has exceeded its max length
@@ -137,7 +137,7 @@ mcommon_json_append_value_int32 (mcommon_string_append_t *append, int32_t value,
 
 /**
  * @brief Append an int64_t value, serialized according to a bson_json_mode_t
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param value Integer value
  * @param mode One of the JSON serialization modes, as a bson_json_mode_t.
  * @returns true on success, false if this 'append' has exceeded its max length
@@ -152,7 +152,7 @@ mcommon_json_append_value_int64 (mcommon_string_append_t *append, int64_t value,
 
 /**
  * @brief Append a JSON compatible bool value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param bool Boolean value
  * @returns true on success, false if this 'append' has exceeded its max length
  */
@@ -164,7 +164,7 @@ mcommon_json_append_value_bool (mcommon_string_append_t *append, bool value)
 
 /**
  * @brief Append an $undefined value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @returns true on success, false if this 'append' has exceeded its max length
  */
 static BSON_INLINE bool
@@ -175,7 +175,7 @@ mcommon_json_append_value_undefined (mcommon_string_append_t *append)
 
 /**
  * @brief Append a null value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @returns true on success, false if this 'append' has exceeded its max length
  */
 static BSON_INLINE bool
@@ -186,7 +186,7 @@ mcommon_json_append_value_null (mcommon_string_append_t *append)
 
 /**
  * @brief Append a $minKey value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @returns true on success, false if this 'append' has exceeded its max length
  */
 static BSON_INLINE bool
@@ -197,7 +197,7 @@ mcommon_json_append_value_minkey (mcommon_string_append_t *append)
 
 /**
  * @brief Append a $maxKey value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @returns true on success, false if this 'append' has exceeded its max length
  */
 static BSON_INLINE bool
@@ -208,7 +208,7 @@ mcommon_json_append_value_maxkey (mcommon_string_append_t *append)
 
 /**
  * @brief Append a double-precision floating point value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param value Double-precision floating point value
  * @param mode One of the JSON serialization modes, as a bson_json_mode_t.
  * @returns true on success, false if this 'append' has exceeded its max length
@@ -218,7 +218,7 @@ mcommon_json_append_value_double (mcommon_string_append_t *append, double value,
 
 /**
  * @brief Append a decimal128 value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param value decimal128 value to copy
  * @returns true on success, false if this 'append' has exceeded its max length
  */
@@ -227,7 +227,7 @@ mcommon_json_append_value_decimal128 (mcommon_string_append_t *append, const bso
 
 /**
  * @brief Append the $oid JSON serialization of an ObjectId value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param value bson_oid_t value to copy
  * @returns true on success, false if this 'append' has exceeded its max length
  */
@@ -236,7 +236,7 @@ mcommon_json_append_value_oid (mcommon_string_append_t *append, const bson_oid_t
 
 /**
  * @brief Append the JSON serialization of a BSON binary value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param subtype Subtype code, identifying the format within the base64-encoded binary block
  * @param bytes Bytes to be base64 encoded
  * @param byte_count Number of bytes
@@ -252,7 +252,7 @@ mcommon_json_append_value_binary (mcommon_string_append_t *append,
 
 /**
  * @brief Append the JSON serialization of a BSON date and time
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param msec_since_epoch Milliseconds since Jan 1 1970
  * @param mode One of the JSON serialization modes, as a bson_json_mode_t
  * @returns true on success, false if this 'append' has exceeded its max length
@@ -262,7 +262,7 @@ mcommon_json_append_value_date_time (mcommon_string_append_t *append, int64_t ms
 
 /**
  * @brief Append the JSON serialization of a BSON timestamp value
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param timestamp 32-bit timestamp value
  * @param increment 32-bit increment value
  * @returns true on success, false if this 'append' has exceeded its max length
@@ -272,7 +272,7 @@ mcommon_json_append_value_timestamp (mcommon_string_append_t *append, uint32_t t
 
 /**
  * @brief Append the JSON serialization of a BSON regular expression
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param pattern Regular expression pattern, as a UTF-8 string
  * @param pattern_len Length of pattern string, in bytes
  * @param options Regular expression options, as a UTF-8 string
@@ -290,7 +290,7 @@ mcommon_json_append_value_regex (mcommon_string_append_t *append,
 
 /**
  * @brief Append the JSON serialization of a BSON legacy DBPointer
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param collection Collection name, as a UTF-8 string
  * @param collection_len Length of collection name string, in bytes
  * @param oid Optional ObjectId reference, or NULL
@@ -306,7 +306,7 @@ mcommon_json_append_value_dbpointer (mcommon_string_append_t *append,
 
 /**
  * @brief Append the JSON serialization of a BSON legacy code object
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param code Code string, in UTF-8
  * @param code_len Length of code string, in bytes
  * @returns true on success, false if this 'append' has exceeded its max length
@@ -316,7 +316,7 @@ mcommon_json_append_value_code (mcommon_string_append_t *append, const char *cod
 
 /**
  * @brief Append the JSON serialization of a BSON legacy code-with-scope object
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param code Code string, in UTF-8
  * @param code_len Length of code string, in bytes
  * @param scope Scope as a bson_t document
@@ -334,7 +334,7 @@ mcommon_json_append_value_codewscope (mcommon_string_append_t *append,
 
 /**
  * @brief Append the JSON serialization of a BSON legacy symbol object
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param symbol Symbol string, in UTF-8
  * @param symbol_len Length of symbol string, in bytes
  * @param mode One of the JSON serialization modes, as a bson_json_mode_t.
@@ -348,7 +348,7 @@ mcommon_json_append_value_symbol (mcommon_string_append_t *append,
 
 /**
  * @brief Append all JSON-serialized values from a bson_t
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param bson bson_t document or array
  * @param mode One of the JSON serialization modes, as a bson_json_mode_t
  * @param has_keys true if this is a document, false if this is an array
@@ -357,7 +357,7 @@ mcommon_json_append_value_symbol (mcommon_string_append_t *append,
  *
  * This generates keys, values, and separators but does not enclose the result in {} or [].
  * Note that the return value reflects the status of BSON decoding, not string appending.
- * The append status can be read using mcommon_string_append_status() if needed.
+ * The append status can be read using mcommon_string_status_from_append() if needed.
  * If encoding was stopped early due to the max depth limit or max length, invalid input may go unnoticed.
  */
 bool
@@ -366,7 +366,7 @@ mcommon_json_append_bson_values (
 
 /**
  * @brief Append a BSON document serialized as a JSON document
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param bson bson_t document
  * @param mode One of the JSON serialization modes, as a bson_json_mode_t
  * @param max_depth Maximum allowed number of document/array nesting levels *including* this one. If zero, appends "{
@@ -381,7 +381,7 @@ mcommon_json_append_bson_document (mcommon_string_append_t *append,
 
 /**
  * @brief Append a BSON document serialized as a JSON array
- * @param append A bounded string append, initialized with mcommon_string_append_init()
+ * @param append A bounded string append, initialized with mcommon_string_set_append()
  * @param bson bson_t to interpret as an array
  * @param mode One of the JSON serialization modes, as a bson_json_mode_t
  * @param max_depth Maximum allowed number of document/array nesting levels *including* this one. If zero, appends "[

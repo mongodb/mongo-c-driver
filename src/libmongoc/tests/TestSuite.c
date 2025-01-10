@@ -508,7 +508,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
       close (pipefd[1]);
       while ((nread = read (pipefd[0], buf, sizeof (buf) - 1)) > 0) {
          mcommon_string_append_t append;
-         mcommon_string_append_init (&append, suite->mock_server_log_buf);
+         mcommon_string_set_append (suite->mock_server_log_buf, &append);
          mcommon_string_append_bytes (&append, buf, nread);
       }
    }
@@ -537,7 +537,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 
    bson_snprintf (name, sizeof name, "%s%s", suite->name, test->name);
 
-   mcommon_string_append_new (&buf);
+   mcommon_string_new_as_append (&buf);
 
    if (suite->flags & TEST_DEBUGOUTPUT) {
       test_msg ("Begin %s, seed %u", name, test->seed);
@@ -557,9 +557,9 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
                                           test->name,
                                           skip->reason,
                                           ((*count) == 1) ? "" : ",");
-            test_msg ("%s", mcommon_string_append_destination (&buf)->str);
+            test_msg ("%s", mcommon_string_from_append (&buf)->str);
             if (suite->outfile) {
-               fprintf (suite->outfile, "%s", mcommon_string_append_destination (&buf)->str);
+               fprintf (suite->outfile, "%s", mcommon_string_from_append (&buf)->str);
                fflush (suite->outfile);
             }
          }
@@ -577,9 +577,9 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
          if (!suite->silent) {
             mcommon_string_append_printf (
                &buf, "    { \"status\": \"skip\", \"test_file\": \"%s\" }%s", test->name, ((*count) == 1) ? "" : ",");
-            test_msg ("%s", mcommon_string_append_destination (&buf)->str);
+            test_msg ("%s", mcommon_string_from_append (&buf)->str);
             if (suite->outfile) {
-               fprintf (suite->outfile, "%s", mcommon_string_append_destination (&buf)->str);
+               fprintf (suite->outfile, "%s", mcommon_string_from_append (&buf)->str);
                fflush (suite->outfile);
             }
          }
@@ -650,14 +650,14 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
       mcommon_string_append (&buf, ",");
    }
 
-   test_msg ("%s", mcommon_string_append_destination (&buf)->str);
+   test_msg ("%s", mcommon_string_from_append (&buf)->str);
    if (suite->outfile) {
-      fprintf (suite->outfile, "%s", mcommon_string_append_destination (&buf)->str);
+      fprintf (suite->outfile, "%s", mcommon_string_from_append (&buf)->str);
       fflush (suite->outfile);
    }
 
 done:
-   mcommon_string_append_destination_destroy (&buf);
+   mcommon_string_from_append_destroy (&buf);
 
    return status ? 1 : 0;
 }
@@ -1159,7 +1159,7 @@ test_suite_mock_server_log (const char *msg, ...)
 
    if (gTestSuite->mock_server_log_buf) {
       mcommon_string_append_t append;
-      mcommon_string_append_init (&append, gTestSuite->mock_server_log_buf);
+      mcommon_string_set_append (gTestSuite->mock_server_log_buf, &append);
 
       va_list ap;
       va_start (ap, msg);

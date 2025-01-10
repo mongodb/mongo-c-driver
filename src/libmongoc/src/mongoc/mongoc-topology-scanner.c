@@ -1176,12 +1176,12 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
    memset (&ts->error, 0, sizeof (bson_error_t));
 
    mcommon_string_append_t msg;
-   mcommon_string_append_new_fixed_capacity (&msg, sizeof error->message - 1);
+   mcommon_string_new_as_fixed_capacity_append (&msg, sizeof error->message - 1);
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
       if (node->last_error.code) {
-         if (!mcommon_string_append_is_empty (&msg)) {
+         if (!mcommon_string_from_append_is_empty (&msg)) {
             mcommon_string_append (&msg, " ");
          }
 
@@ -1193,8 +1193,8 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
       }
    }
 
-   bson_strncpy ((char *) &error->message, mcommon_string_append_destination (&msg)->str, sizeof error->message);
-   mcommon_string_append_destination_destroy (&msg);
+   bson_strncpy ((char *) &error->message, mcommon_string_from_append (&msg)->str, sizeof error->message);
+   mcommon_string_from_append_destroy (&msg);
 
    _delete_retired_nodes (ts);
 }

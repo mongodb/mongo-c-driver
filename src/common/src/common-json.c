@@ -41,7 +41,7 @@ mcommon_json_append_visit_utf8 (
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
    if (!mcommon_in_range_unsigned (uint32_t, v_utf8_len)) {
-      mcommon_string_append_set_overflow (state->append);
+      mcommon_string_append_overflow (state->append);
       return true;
    }
    return !mcommon_json_append_value_utf8 (state->append, v_utf8, (uint32_t) v_utf8_len, true);
@@ -125,7 +125,7 @@ mcommon_json_append_visit_binary (const bson_iter_t *iter,
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
    if (!mcommon_in_range_unsigned (uint32_t, v_binary_len)) {
-      mcommon_string_append_set_overflow (state->append);
+      mcommon_string_append_overflow (state->append);
       return true;
    }
    return !mcommon_json_append_value_binary (state->append, v_subtype, v_binary, (uint32_t) v_binary_len, state->mode);
@@ -159,7 +159,7 @@ mcommon_json_append_visit_regex (
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
    if (!mcommon_in_range_unsigned (uint32_t, v_regex_len)) {
-      mcommon_string_append_set_overflow (state->append);
+      mcommon_string_append_overflow (state->append);
       return true;
    }
    return !mcommon_json_append_value_regex (
@@ -188,7 +188,7 @@ mcommon_json_append_visit_dbpointer (const bson_iter_t *iter,
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
    if (!mcommon_in_range_unsigned (uint32_t, v_collection_len)) {
-      mcommon_string_append_set_overflow (state->append);
+      mcommon_string_append_overflow (state->append);
       return true;
    }
    return !mcommon_json_append_value_dbpointer (
@@ -219,7 +219,7 @@ mcommon_json_append_visit_before (const bson_iter_t *iter, const char *key, void
    mcommon_json_append_visit_t *state = data;
    BSON_UNUSED (iter);
 
-   if (!mcommon_string_append_status (state->append)) {
+   if (!mcommon_string_status_from_append (state->append)) {
       return true;
    }
 
@@ -234,7 +234,7 @@ mcommon_json_append_visit_before (const bson_iter_t *iter, const char *key, void
    if (state->has_keys) {
       size_t key_len = strlen (key);
       if (!mcommon_in_range_unsigned (uint32_t, key_len)) {
-         mcommon_string_append_set_overflow (state->append);
+         mcommon_string_append_overflow (state->append);
          return true;
       }
       if (!mcommon_json_append_key (state->append, key, (uint32_t) key_len)) {
@@ -251,7 +251,7 @@ mcommon_json_append_visit_after (const bson_iter_t *iter, const char *key, void 
    mcommon_json_append_visit_t *state = data;
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
-   return !mcommon_string_append_status (state->append);
+   return !mcommon_string_status_from_append (state->append);
 }
 
 static void
@@ -270,7 +270,7 @@ mcommon_json_append_visit_code (
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
    if (!mcommon_in_range_unsigned (uint32_t, v_code_len)) {
-      mcommon_string_append_set_overflow (state->append);
+      mcommon_string_append_overflow (state->append);
       return true;
    }
    return !mcommon_json_append_value_code (state->append, v_code, (uint32_t) v_code_len);
@@ -284,7 +284,7 @@ mcommon_json_append_visit_symbol (
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
    if (!mcommon_in_range_unsigned (uint32_t, v_symbol_len)) {
-      mcommon_string_append_set_overflow (state->append);
+      mcommon_string_append_overflow (state->append);
       return true;
    }
    return !mcommon_json_append_value_symbol (state->append, v_symbol, (uint32_t) v_symbol_len, state->mode);
@@ -298,12 +298,12 @@ mcommon_json_append_visit_codewscope (
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
    if (!mcommon_in_range_unsigned (uint32_t, v_code_len)) {
-      mcommon_string_append_set_overflow (state->append);
+      mcommon_string_append_overflow (state->append);
       return true;
    }
    if (mcommon_json_append_value_codewscope (
           state->append, v_code, (uint32_t) v_code_len, v_scope, state->mode, state->max_depth)) {
-      return !mcommon_string_append_status (state->append);
+      return !mcommon_string_status_from_append (state->append);
    } else {
       state->is_corrupt = true;
       return true;
@@ -317,7 +317,7 @@ mcommon_json_append_visit_document (const bson_iter_t *iter, const char *key, co
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
    if (mcommon_json_append_bson_document (state->append, v_document, state->mode, state->max_depth)) {
-      return !mcommon_string_append_status (state->append);
+      return !mcommon_string_status_from_append (state->append);
    } else {
       state->is_corrupt = true;
       return true;
@@ -331,7 +331,7 @@ mcommon_json_append_visit_array (const bson_iter_t *iter, const char *key, const
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
    if (mcommon_json_append_bson_array (state->append, v_array, state->mode, state->max_depth)) {
-      return !mcommon_string_append_status (state->append);
+      return !mcommon_string_status_from_append (state->append);
    } else {
       state->is_corrupt = true;
       return true;
@@ -544,7 +544,7 @@ mcommon_json_append_escaped (mcommon_string_append_t *append, const char *str, u
          non_special_len = mcommon_json_append_escaped_count_non_special_bytes (str, len);
       }
    }
-   return mcommon_string_append_status (append);
+   return mcommon_string_status_from_append (append);
 }
 
 bool
@@ -603,7 +603,7 @@ mcommon_json_append_value_double (mcommon_string_append_t *append, double value,
          mcommon_string_append (append, "-Infinity");
       }
    } else {
-      const mcommon_string_t *str = mcommon_string_append_destination (append);
+      const mcommon_string_t *str = mcommon_string_from_append (append);
       uint32_t start_len = str->len;
       if (mcommon_string_append_printf (append, "%.20g", value)) {
          /* ensure trailing ".0" to distinguish "3" from "3.0" */
@@ -617,7 +617,7 @@ mcommon_json_append_value_double (mcommon_string_append_t *append, double value,
       mcommon_string_append (append, "\" }");
    }
 
-   return mcommon_string_append_status (append);
+   return mcommon_string_status_from_append (append);
 }
 
 bool

@@ -1438,7 +1438,7 @@ bson_append_regex_w_len (
    size_t options_len = strlen (options);
    mcommon_string_t *const options_sorted = mcommon_string_new_with_capacity ("", 0, options_len);
    mcommon_string_append_t options_sorted_append;
-   mcommon_string_append_init (&options_sorted_append, options_sorted);
+   mcommon_string_set_append (options_sorted, &options_sorted_append);
    if (!mcommon_string_append_selected_chars (
           &options_sorted_append, BSON_REGEX_OPTIONS_SORTED, options, options_len)) {
       goto append_failure;
@@ -2343,19 +2343,19 @@ bson_as_json_with_opts (const bson_t *bson, size_t *length, const bson_json_opts
 
    // Use the bson length as an initial buffer capacity guess
    mcommon_string_append_t append;
-   mcommon_string_append_init_with_limit (&append, mcommon_string_new_with_capacity ("", 0, bson->len), limit_u32);
+   mcommon_string_set_append_with_limit (mcommon_string_new_with_capacity ("", 0, bson->len), &append, limit_u32);
 
    if (opts->is_outermost_array ? mcommon_json_append_bson_array (&append, bson, opts->mode, BSON_MAX_RECURSION)
                                 : mcommon_json_append_bson_document (&append, bson, opts->mode, BSON_MAX_RECURSION)) {
       if (length) {
-         *length = (size_t) mcommon_string_append_destination (&append)->len;
+         *length = (size_t) mcommon_string_from_append (&append)->len;
       }
-      return mcommon_string_append_destination_destroy_with_steal (&append);
+      return mcommon_string_from_append_destroy_with_steal (&append);
    } else {
       if (length) {
          *length = 0;
       }
-      mcommon_string_append_destination_destroy (&append);
+      mcommon_string_from_append_destroy (&append);
       return NULL;
    }
 }

@@ -108,7 +108,7 @@ mcommon_string_append_bytes_internal (mcommon_string_append_t *append, const cha
    buffer[new_len] = '\0';
    string->len = new_len;
 
-   return mcommon_string_append_status (append);
+   return mcommon_string_status_from_append (append);
 }
 
 // Variant of mcommon_string_append_bytes() that grows but never truncates
@@ -118,7 +118,7 @@ mcommon_string_append_bytes_atomic (mcommon_string_append_t *append, const char 
    BSON_ASSERT_PARAM (append);
    BSON_ASSERT_PARAM (str);
 
-   if (BSON_UNLIKELY (!mcommon_string_append_status (append))) {
+   if (BSON_UNLIKELY (!mcommon_string_status_from_append (append))) {
       return false;
    }
 
@@ -143,7 +143,7 @@ mcommon_string_append_bytes_atomic (mcommon_string_append_t *append, const char 
    buffer[new_len] = '\0';
    string->len = new_len;
 
-   return mcommon_string_append_status (append);
+   return mcommon_string_status_from_append (append);
 }
 
 bool
@@ -183,7 +183,7 @@ mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint
    BSON_ASSERT_PARAM (append);
    BSON_ASSERT_PARAM (bytes);
 
-   if (BSON_UNLIKELY (!mcommon_string_append_status (append))) {
+   if (BSON_UNLIKELY (!mcommon_string_status_from_append (append))) {
       return false;
    }
 
@@ -207,7 +207,7 @@ mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint
       return true;
    } else if (max_append_len == 0) {
       // Truncation to a zero-length append
-      mcommon_string_append_set_overflow (append);
+      mcommon_string_append_overflow (append);
       return false;
    } else {
       /* We expect to append at least one byte, and truncate.
@@ -244,7 +244,7 @@ mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint
       BSON_ASSERT (old_len + direct_encoded_len + remainder_truncated_len == max_len);
       buffer[max_len] = '\0';
       string->len = max_len;
-      mcommon_string_append_set_overflow (append);
+      mcommon_string_append_overflow (append);
       return false;
    }
 }
@@ -276,7 +276,7 @@ mcommon_string_append_selected_chars (mcommon_string_append_t *append,
          return false;
       }
    }
-   return mcommon_string_append_status (append);
+   return mcommon_string_status_from_append (append);
 }
 
 bool
@@ -298,7 +298,7 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
    BSON_ASSERT_PARAM (append);
    BSON_ASSERT_PARAM (format);
 
-   if (BSON_UNLIKELY (!mcommon_string_append_status (append))) {
+   if (BSON_UNLIKELY (!mcommon_string_status_from_append (append))) {
       return false;
    }
 

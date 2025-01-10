@@ -371,7 +371,7 @@ test_framework_get_unix_domain_socket_path_escaped (void)
    char *path = test_framework_get_unix_domain_socket_path (), *c = path;
 
    mcommon_string_append_t escaped;
-   mcommon_string_append_new (&escaped);
+   mcommon_string_new_as_append (&escaped);
 
    /* Connection String Spec: "The host information cannot contain an unescaped
     * slash ("/"), if it does then an exception MUST be thrown informing users
@@ -390,7 +390,7 @@ test_framework_get_unix_domain_socket_path_escaped (void)
 
    bson_free (path);
 
-   return mcommon_string_append_destination_destroy_with_steal (&escaped);
+   return mcommon_string_from_append_destroy_with_steal (&escaped);
 }
 
 static char *
@@ -953,10 +953,10 @@ uri_str_has_db (mcommon_string_t *uri_string)
 static void
 add_option_to_uri_str (mcommon_string_append_t *uri_string, const char *option, const char *value)
 {
-   if (strchr (mcommon_string_append_destination (uri_string)->str, '?')) {
+   if (strchr (mcommon_string_from_append (uri_string)->str, '?')) {
       /* already has some options */
       mcommon_string_append (uri_string, "&");
-   } else if (uri_str_has_db (mcommon_string_append_destination (uri_string))) {
+   } else if (uri_str_has_db (mcommon_string_from_append (uri_string))) {
       /* like "mongodb://host/db" */
       mcommon_string_append (uri_string, "?");
    } else {
@@ -1003,13 +1003,13 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    uint16_t port;
 
    mcommon_string_append_t uri_string;
-   mcommon_string_append_new (&uri_string);
+   mcommon_string_new_as_append (&uri_string);
 
    env_uri_str = _uri_str_from_env ();
    if (env_uri_str) {
       mcommon_string_append (&uri_string, env_uri_str);
       if (database_name) {
-         if (!mcommon_string_append_ends_with_str (&uri_string, "/")) {
+         if (!mcommon_string_from_append_ends_with_str (&uri_string, "/")) {
             mcommon_string_append (&uri_string, "/");
          }
          mcommon_string_append (&uri_string, database_name);
@@ -1074,7 +1074,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    // runner, but make tests a little more resilient to transient errors.
    add_option_to_uri_str (&uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
-   return mcommon_string_append_destination_destroy_with_steal (&uri_string);
+   return mcommon_string_from_append_destroy_with_steal (&uri_string);
 }
 
 /*

@@ -137,13 +137,13 @@ txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data,
    DWORD i;
 
    mcommon_string_append_t txt;
-   mcommon_string_append_init (&txt, mcommon_string_new_with_capacity ("", 0, pdns->wDataLength));
+   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, pdns->wDataLength), &txt);
 
    for (i = 0; i < pdns->Data.TXT.dwStringCount; i++) {
       mcommon_string_append (&txt, pdns->Data.TXT.pStringArray[i]);
    }
 
-   rr_data->txt_record_opts = mcommon_string_append_destination_destroy_with_steal (&txt);
+   rr_data->txt_record_opts = mcommon_string_from_append_destroy_with_steal (&txt);
 
    return true;
 }
@@ -341,7 +341,7 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
    /* a TXT record has one or more strings, each up to 255 chars, each is prefixed by its length as 1 byte.
     * In this usage, they are all concatenated without any spacers. */
    mcommon_string_append_t txt;
-   mcommon_string_append_init (&txt, mcommon_string_new_with_capacity ("", 0, total));
+   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, total), &txt);
    uint16_t pos = 0;
    const uint8_t *data = ns_rr_rdata (*rr);
 
@@ -358,7 +358,7 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
       pos += len;
    }
 
-   rr_data->txt_record_opts = mcommon_string_append_destination_destroy_with_steal (&txt);
+   rr_data->txt_record_opts = mcommon_string_from_append_destroy_with_steal (&txt);
    ret = true;
 
 done:

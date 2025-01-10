@@ -35,7 +35,7 @@ bool
 _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl, const char *mechanism, bson_error_t *error)
 {
    mcommon_string_append_t available_mechs_str;
-   mcommon_string_append_new (&available_mechs_str);
+   mcommon_string_new_as_append (&available_mechs_str);
    const char **mechs = sasl_global_listmech ();
    int i = 0;
    bool ok = false;
@@ -63,10 +63,10 @@ _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl, const char *mechanism, bson_e
                       "SASL Failure: Unsupported mechanism by client: %s. "
                       "Available mechanisms: %s",
                       mechanism,
-                      mcommon_string_append_destination (&available_mechs_str)->str);
+                      mcommon_string_from_append (&available_mechs_str)->str);
    }
 
-   mcommon_string_append_destination_destroy (&available_mechs_str);
+   mcommon_string_from_append_destroy (&available_mechs_str);
    return ok;
 }
 
@@ -278,7 +278,7 @@ _mongoc_cyrus_is_failure (int status, bson_error_t *error)
          break;
       case SASL_NOMECH: {
          mcommon_string_append_t available_mechs_str;
-         mcommon_string_append_new (&available_mechs_str);
+         mcommon_string_new_as_append (&available_mechs_str);
          const char **mechs = sasl_global_listmech ();
          int i = 0;
 
@@ -292,8 +292,8 @@ _mongoc_cyrus_is_failure (int status, bson_error_t *error)
                          MONGOC_ERROR_SASL,
                          status,
                          "SASL Failure: failure to negotiate mechanism (available mechanisms: %s)",
-                         mcommon_string_append_destination (&available_mechs_str)->str);
-         mcommon_string_append_destination_destroy (&available_mechs_str);
+                         mcommon_string_from_append (&available_mechs_str)->str);
+         mcommon_string_from_append_destroy (&available_mechs_str);
       } break;
       case SASL_BADPARAM:
          bson_set_error (error,

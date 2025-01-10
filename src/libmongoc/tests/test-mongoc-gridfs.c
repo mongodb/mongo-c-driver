@@ -1507,7 +1507,7 @@ test_reading_multiple_chunks (void)
       // Read the entire file.
       {
          mcommon_string_append_t str;
-         mcommon_string_append_new (&str);
+         mcommon_string_new_as_append (&str);
          uint8_t buf[7] = {0};
          mongoc_iovec_t iov = {.iov_base = (void *) buf, .iov_len = sizeof (buf)};
          mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename (gridfs, "test_file", &error);
@@ -1533,8 +1533,8 @@ test_reading_multiple_chunks (void)
             ASSERT_CMPSSIZE_T (got, ==, 3);
          }
 
-         ASSERT_CMPSTR (mcommon_string_append_destination (&str)->str, "foobar");
-         mcommon_string_append_destination_destroy (&str);
+         ASSERT_CMPSTR (mcommon_string_from_append (&str)->str, "foobar");
+         mcommon_string_from_append_destroy (&str);
          mongoc_gridfs_file_destroy (file);
       }
 
