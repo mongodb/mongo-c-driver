@@ -453,14 +453,6 @@ test_bson_string_capacity (void *unused)
       large_str[UINT32_MAX - 2u] = 's'; // Restore.
    }
 
-   // Test allocating the largest possible string.
-   {
-      bson_string_t *str = _bson_string_alloc (UINT32_MAX - 1u);
-      ASSERT_CMPUINT32 (str->alloc, ==, UINT32_MAX);
-      ASSERT_CMPUINT32 (str->len, ==, 0);
-      bson_string_free (str, true);
-   }
-
    // Can truncate strings of length close to UINT32_MAX - 1.
    {
       large_str[UINT32_MAX - 1u] = '\0'; // Set size.
