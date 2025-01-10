@@ -3,7 +3,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "./fuzz_test_validate.hpp"
+#include "validate.hpp"
 
 int
 main (int argc, char **argv)

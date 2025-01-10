@@ -42,7 +42,7 @@ validate_one_input (const uint8_t *data, size_t size)
    // Treat the first byte as the flags, and the BSON data is what remains:
    const uint8_t *bson_doc_data = data + 1;
    const size_t bson_data_size = size - 1;
-   if (bson_data_size > INT32_MAX) {
+   if (bson_data_size > static_cast<size_t> (INT32_MAX)) {
       // This is very unlikely to happen, but reject this
       return -1;
    }
