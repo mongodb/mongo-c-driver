@@ -296,6 +296,6 @@ semver_to_string (semver_t *str);
 /* An arbitrary traceable mongoc_ss_log_context_t for tests.
  * Logs the function name and file:line as the "operation". */
 #define TEST_SS_LOG_CONTEXT \
-   (&(mongoc_ss_log_context_t){.operation = tmp_str ("%s() %s:%d", BSON_FUNC, __FILE__, (int) __LINE__)})
+   (&(mongoc_ss_log_context_t){.operation = tmp_str ("%s:%d: %s", __FILE__, (int) __LINE__, BSON_FUNC)})
 
 #endif /* TEST_CONVENIENCES_H */
