@@ -311,7 +311,7 @@ mongoc_read_prefs_append_contents_to_bson (const mongoc_read_prefs_t *read_prefs
       const bson_t *hedge = mongoc_read_prefs_get_hedge (read_prefs);
       const bson_t *tags = mongoc_read_prefs_get_tags (read_prefs);
 
-      if ((flags & MONGOC_READ_PREFS_CONTENT_FLAG_TAGS) && !bson_empty0 (tags) &&
+      if ((flags & MONGOC_READ_PREFS_CONTENT_FLAG_TAGS) && !bson_empty (tags) &&
           !BSON_APPEND_ARRAY (bson, "tags", tags)) {
          return false;
       }
