@@ -917,6 +917,7 @@ _mongoc_structured_log_append_read_prefs (bson_t *bson,
                                           const mongoc_structured_log_builder_stage_t *stage,
                                           const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    const char *key_or_null = stage->arg1.utf8;
    const mongoc_read_prefs_t *read_prefs = stage->arg2.read_prefs;
    if (key_or_null) {
