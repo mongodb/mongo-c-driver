@@ -12,12 +12,12 @@ mongo_setting (
       ]])
 
 mongo_bool_setting(
-    MONGO_FUZZ "Enable LibFuzzer integration"
+    MONGO_FUZZ "Enable libFuzzer integration (Requires a C++ compiler)"
     DEFAULT VALUE OFF
     VALIDATE CODE [[
         if (MONGO_FUZZ AND NOT ENABLE_STATIC)
-	    message (FATAL_ERROR "MONGO_FUZZ requires ENABLE_STATIC=ON or ENABLE_STATIC=BUILD_ONLY")
-	endif ()
+            message (FATAL_ERROR "MONGO_FUZZ requires ENABLE_STATIC=ON or ENABLE_STATIC=BUILD_ONLY")
+        endif ()
     ]]
 )
 
