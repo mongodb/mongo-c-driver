@@ -65,7 +65,7 @@ def flatten(b: BytesIter) -> bytes:
 
 
 def len_prefix(b: BytesIter) -> bytes:
-    """Prepend a u32le byte-length prefix to a set of bytes"""
+    """Prepend an i32le byte-length prefix to a set of bytes"""
     b = flatten(b)
     length = len(b)
     return encode_value(length) + b
@@ -283,16 +283,10 @@ LineItem = Entry | Comment | Line
 def escape(b: bytes) -> Iterable[str]:
     s = b.decode("ascii", "backslashreplace")
     for u8 in b:
-        try:
-            s = chr(u8)
-            s.encode("ascii")  # Try to encode as ASCII
-        except ValueError:
-            # Byte is not valid UTF-8, or not valid ASCII
-            pass
-        else:
-            if s.isprintable():
-                yield s
-                continue
+        s = chr(u8)  # 0 <= u8 and u8 <= 255
+        if s.isascii() and s.isprintable():
+            yield s
+            continue
         # Byte is not valid ASCII, or is not a printable char
         yield f"\\x{u8:0>2x}"
 

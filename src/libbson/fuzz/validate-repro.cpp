@@ -25,7 +25,7 @@ main (int argc, char **argv)
    if (rc == 0) {
       std::fprintf (stderr, "Validation returned normally (no bug?)\n");
    } else if (rc == -1) {
-      std::fprintf (stderr, "Test case is was rejected by the fuzzer (not a valid corpus item?)\n");
+      std::fprintf (stderr, "Test case was rejected by the fuzzer (not a valid corpus item?)\n");
    } else {
       std::fprintf (stderr, "Test case returned unexpected result code %d (huh?)\n", rc);
    }
