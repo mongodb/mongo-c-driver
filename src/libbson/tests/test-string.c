@@ -401,18 +401,6 @@ test_bson_string_truncate (void)
    }
 }
 
-// Compatibility wrapper; deprecated private API.
-bson_string_t *
-_bson_string_alloc (const size_t size)
-{
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, size) && (uint32_t) size < UINT32_MAX);
-
-   /* New mcommon_string behavior is to use power of two rounding for resize but not for initial allocation.
-    * This emulates the old behavior. */
-   uint32_t alloc = mcommon_next_power_of_two_u32 ((uint32_t) size + 1);
-   return (bson_string_t *) mcommon_string_new_with_capacity ("", 0, alloc - 1);
-}
-
 static void
 test_bson_string_capacity (void *unused)
 {
@@ -486,65 +474,6 @@ test_bson_string_capacity (void *unused)
    bson_free (large_str);
 }
 
-// Compatibility wrapper; deprecated private API.
-static void
-_bson_string_append_ex (bson_string_t *string, const char *str, const size_t len)
-{
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len));
-   mcommon_string_append_t append;
-   mcommon_string_append_init (&append, (mcommon_string_t *) string);
-   mcommon_string_append_bytes (&append, str, (uint32_t) len);
-}
-
-static void
-test_bson_string_append_ex (void)
-{
-   bson_string_t *str;
-
-   str = bson_string_new (NULL);
-   _bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 10);
-   ASSERT_CMPSTR (str->str, "the quick ");
-   bson_string_free (str, true);
-
-   str = bson_string_new (NULL);
-   _bson_string_append_ex (str, "the quick brown fox jumps over the lazy dog", 0);
-   ASSERT_CMPSTR (str->str, "");
-   bson_string_free (str, true);
-
-   str = bson_string_new (NULL);
-   _bson_string_append_ex (str, "the quick\n brown fox jumps over the lazy dog", 10);
-   _bson_string_append_ex (str, "the\n quick brown fox jumps over the lazy dog", 5);
-   ASSERT_CMPSTR (str->str, "the quick\nthe\n ");
-   bson_string_free (str, true);
-}
-
-static void
-test_bson_string_alloc (void)
-{
-   bson_string_t *str;
-
-   str = _bson_string_alloc (0);
-   ASSERT_CMPUINT32 (str->alloc, ==, 1);
-   ASSERT_CMPUINT32 (str->len, ==, 0);
-   bson_string_free (str, true);
-
-
-   str = _bson_string_alloc (1);
-   ASSERT_CMPUINT32 (str->alloc, ==, 2);
-   ASSERT_CMPUINT32 (str->len, ==, 0);
-   bson_string_free (str, true);
-
-   str = _bson_string_alloc (2);
-   ASSERT_CMPUINT32 (str->alloc, ==, 4);
-   ASSERT_CMPUINT32 (str->len, ==, 0);
-   bson_string_free (str, true);
-
-   str = _bson_string_alloc (10);
-   ASSERT_CMPUINT32 (str->alloc, ==, 16);
-   ASSERT_CMPUINT32 (str->len, ==, 0);
-   bson_string_free (str, true);
-}
-
 void
 test_string_install (TestSuite *suite)
 {
@@ -564,7 +493,5 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/strcasecmp", test_bson_strcasecmp);
    TestSuite_AddFull (
       suite, "/bson/string/capacity", test_bson_string_capacity, NULL, NULL, skip_if_no_large_allocations);
-   TestSuite_Add (suite, "/bson/string/append_ex", test_bson_string_append_ex);
-   TestSuite_Add (suite, "/bson/string/alloc", test_bson_string_alloc);
    TestSuite_Add (suite, "/bson/string/truncate", test_bson_string_truncate);
 }
