@@ -1401,13 +1401,11 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    }
 
 done:
-   if (error && server_id == 0) {
-      /* server_id set to zero indicates that an error has occured and that `error` is initialized */
-      if (error->domain == MONGOC_ERROR_SERVER_SELECTION) {
+   /* server_id set to zero indicates an error has occured and that `error` should be initialized */
+   if (server_id == 0) {
+      if (error && error->domain == MONGOC_ERROR_SERVER_SELECTION) {
          _mongoc_error_append (error, topology_type->str);
       }
-   }
-   if (server_id == 0) {
       mongoc_structured_log (topology->structured_log,
                              MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
                              MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
