@@ -29,6 +29,7 @@
 #include "../test-libmongoc.h"
 #include "../TestSuite.h"
 #include <common-string-private.h>
+#include <common-json-private.h>
 #include <common-cmp-private.h>
 
 #ifdef BSON_HAVE_STRINGS_H
@@ -1967,8 +1968,6 @@ reply_to_request_with_multiple_docs (
 static void
 _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_stream_t *client)
 {
-   char *doc_json;
-   mcommon_string_t *docs_json;
    uint8_t *buf;
    uint8_t *ptr;
    size_t len;
@@ -1993,13 +1992,12 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
       return;
    }
 
-   docs_json = mcommon_string_new ("");
+   mcommon_string_append_t docs_json;
+   mcommon_string_new_as_append (&docs_json);
    for (int i = 0; i < n_docs; i++) {
-      doc_json = bson_as_relaxed_extended_json (&docs[i], NULL);
-      mcommon_string_append (docs_json, doc_json);
-      bson_free (doc_json);
+      mcommon_json_append_bson_document (&docs_json, &docs[i], BSON_JSON_MODE_RELAXED, BSON_MAX_RECURSION);
       if (i < n_docs - 1) {
-         mcommon_string_append (docs_json, ", ");
+         mcommon_string_append (&docs_json, ", ");
       }
    }
 
@@ -2010,7 +2008,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
                                reply->client_port,
                                mock_server_get_port (server),
                                is_op_msg ? "OP_MSG" : "OP_REPLY",
-                               docs_json->str);
+                               mcommon_str_from_append (&docs_json));
 
    len = 0;
 
@@ -2071,7 +2069,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
 
    bson_free (iov);
    mcd_rpc_message_destroy (rpc);
-   mcommon_string_free (docs_json, true);
+   mcommon_string_from_append_destroy (&docs_json);
    bson_free (buf);
 }
 
@@ -2094,7 +2092,6 @@ void
 rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary, int has_tags, ...)
 {
    va_list ap;
-   mcommon_string_t *hosts;
    bool first;
    mock_server_t *host;
 
@@ -2103,7 +2100,8 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
                     max_wire_version,
                     WIRE_VERSION_MIN);
 
-   hosts = mcommon_string_new ("");
+   mcommon_string_append_t hosts;
+   mcommon_string_new_as_append (&hosts);
 
    va_start (ap, has_tags);
 
@@ -2112,10 +2110,10 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
       if (first) {
          first = false;
       } else {
-         mcommon_string_append (hosts, ",");
+         mcommon_string_append (&hosts, ",");
       }
 
-      mcommon_string_append_printf (hosts, "'%s'", mock_server_get_host_and_port (host));
+      mcommon_string_append_printf (&hosts, "'%s'", mock_server_get_host_and_port (host));
    }
 
    va_end (ap);
@@ -2137,7 +2135,7 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
                            has_tags ? "'key': 'value'" : "",
                            WIRE_VERSION_MIN,
                            max_wire_version,
-                           hosts->str);
+                           mcommon_str_from_append (&hosts));
 
-   mcommon_string_free (hosts, true);
+   mcommon_string_from_append_destroy (&hosts);
 }

@@ -1340,25 +1340,25 @@ _uri_construction_error (bson_error_t *error)
 static bool
 _do_spawn (const char *path, char **args, bson_error_t *error)
 {
-   mcommon_string_t *command;
+   mcommon_string_append_t command;
    char **arg;
    PROCESS_INFORMATION process_information;
    STARTUPINFO startup_info;
 
    /* Construct the full command, quote path and arguments. */
-   command = mcommon_string_new ("");
-   mcommon_string_append (command, "\"");
+   mcommon_string_new_as_append (&command);
+   mcommon_string_append (&command, "\"");
    if (path) {
-      mcommon_string_append (command, path);
+      mcommon_string_append (&command, path);
    }
-   mcommon_string_append (command, "mongocryptd.exe");
-   mcommon_string_append (command, "\"");
+   mcommon_string_append (&command, "mongocryptd.exe");
+   mcommon_string_append (&command, "\"");
    /* skip the "mongocryptd" first arg. */
    arg = args + 1;
    while (*arg) {
-      mcommon_string_append (command, " \"");
-      mcommon_string_append (command, *arg);
-      mcommon_string_append (command, "\"");
+      mcommon_string_append (&command, " \"");
+      mcommon_string_append (&command, *arg);
+      mcommon_string_append (&command, "\"");
       arg++;
    }
 
@@ -1368,7 +1368,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    startup_info.cb = sizeof (startup_info);
 
    if (!CreateProcessA (NULL,
-                        command->str,
+                        mcommon_str_from_append (&command),
                         NULL,
                         NULL,
                         false /* inherit descriptors */,
@@ -1395,11 +1395,11 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                       "failed to spawn mongocryptd: %s",
                       message);
       LocalFree (message);
-      mcommon_string_free (command, true);
+      mcommon_string_from_append_destroy (&command);
       return false;
    }
 
-   mcommon_string_free (command, true);
+   mcommon_string_from_append_destroy (&command);
    return true;
 }
 #else

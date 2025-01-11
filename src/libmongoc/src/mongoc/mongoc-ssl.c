@@ -168,7 +168,7 @@ _mongoc_ssl_opts_disable_ocsp_endpoint_check (const mongoc_ssl_opt_t *ssl_opt)
 }
 
 bool
-_mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, mcommon_string_t *errmsg)
+_mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, mcommon_string_append_t *errmsg)
 {
    bson_iter_t iter;
 

@@ -34,7 +34,8 @@
 bool
 _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl, const char *mechanism, bson_error_t *error)
 {
-   mcommon_string_t *str = mcommon_string_new ("");
+   mcommon_string_append_t available_mechs_str;
+   mcommon_string_new_as_append (&available_mechs_str);
    const char **mechs = sasl_global_listmech ();
    int i = 0;
    bool ok = false;
@@ -46,9 +47,9 @@ _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl, const char *mechanism, bson_e
          ok = true;
          break;
       }
-      mcommon_string_append (str, mechs[i]);
+      mcommon_string_append (&available_mechs_str, mechs[i]);
       if (mechs[i + 1]) {
-         mcommon_string_append (str, ",");
+         mcommon_string_append (&available_mechs_str, ",");
       }
    }
 
@@ -62,10 +63,10 @@ _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl, const char *mechanism, bson_e
                       "SASL Failure: Unsupported mechanism by client: %s. "
                       "Available mechanisms: %s",
                       mechanism,
-                      str->str);
+                      mcommon_str_from_append (&available_mechs_str));
    }
 
-   mcommon_string_free (str, true);
+   mcommon_string_from_append_destroy (&available_mechs_str);
    return ok;
 }
 
@@ -276,19 +277,23 @@ _mongoc_cyrus_is_failure (int status, bson_error_t *error)
          bson_set_error (error, MONGOC_ERROR_SASL, status, "SASL Failure: insufficient memory.");
          break;
       case SASL_NOMECH: {
-         mcommon_string_t *str = mcommon_string_new ("available mechanisms: ");
+         mcommon_string_append_t available_mechs_str;
+         mcommon_string_new_as_append (&available_mechs_str);
          const char **mechs = sasl_global_listmech ();
          int i = 0;
 
          for (i = 0; mechs[i]; i++) {
-            mcommon_string_append (str, mechs[i]);
+            mcommon_string_append (&available_mechs_str, mechs[i]);
             if (mechs[i + 1]) {
-               mcommon_string_append (str, ",");
+               mcommon_string_append (&available_mechs_str, ",");
             }
          }
-         bson_set_error (
-            error, MONGOC_ERROR_SASL, status, "SASL Failure: failure to negotiate mechanism (%s)", str->str);
-         mcommon_string_free (str, 0);
+         bson_set_error (error,
+                         MONGOC_ERROR_SASL,
+                         status,
+                         "SASL Failure: failure to negotiate mechanism (available mechanisms: %s)",
+                         mcommon_str_from_append (&available_mechs_str));
+         mcommon_string_from_append_destroy (&available_mechs_str);
       } break;
       case SASL_BADPARAM:
          bson_set_error (error,
