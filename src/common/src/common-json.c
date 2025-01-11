@@ -603,11 +603,11 @@ mcommon_json_append_value_double (mcommon_string_append_t *append, double value,
          mcommon_string_append (append, "-Infinity");
       }
    } else {
-      const mcommon_string_t *str = mcommon_string_from_append (append);
-      uint32_t start_len = str->len;
+      const mcommon_string_t *string = mcommon_string_from_append (append);
+      uint32_t start_len = string->len;
       if (mcommon_string_append_printf (append, "%.20g", value)) {
          /* ensure trailing ".0" to distinguish "3" from "3.0" */
-         if (strspn (&str->str[start_len], "0123456789-") == str->len - start_len) {
+         if (strspn (&string->str[start_len], "0123456789-") == string->len - start_len) {
             mcommon_string_append (append, ".0");
          }
       }
