@@ -1912,7 +1912,7 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
    memset (error_out, 0, sizeof (bson_error_t));
 
    mcommon_string_append_t error_message;
-   mcommon_string_new_as_fixed_capacity_append (&error_message, sizeof error_out->message - 1);
+   mcommon_string_new_as_fixed_capacity_append (&error_message, sizeof error_out->message - 1u);
 
    for (size_t i = 0u; i < mc_tpld_servers_const (td)->items_len; i++) {
       const bson_error_t *error;

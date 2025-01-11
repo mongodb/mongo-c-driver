@@ -1176,7 +1176,7 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
    memset (&ts->error, 0, sizeof (bson_error_t));
 
    mcommon_string_append_t msg;
-   mcommon_string_new_as_fixed_capacity_append (&msg, sizeof error->message - 1);
+   mcommon_string_new_as_fixed_capacity_append (&msg, sizeof error->message - 1u);
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
