@@ -795,7 +795,7 @@ test_bson_json_read_buffering (void)
                                              (size_t) RAND_R (&seed) % 100 /* bufsize*/);
 
          bson_json_data_reader_ingest (
-            reader, (uint8_t *) mcommon_string_from_append (&json)->str, mcommon_string_from_append (&json)->len);
+            reader, (uint8_t *) mcommon_str_from_append (&json), mcommon_strlen_from_append (&json));
 
          for (docs_idx = 0; docs_idx < n_docs; docs_idx++) {
             bson_reinit (&bson_out);

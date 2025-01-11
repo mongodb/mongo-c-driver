@@ -1200,7 +1200,7 @@ _parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t 
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
                       "Error parsing TLS options for %s: %s",
                       kms_provider,
-                      mcommon_string_from_append (&errmsg)->str);
+                      mcommon_str_from_append (&errmsg));
       goto fail;
    }
 

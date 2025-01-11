@@ -172,8 +172,8 @@ _mongoc_http_send (const mongoc_http_request_t *req,
 
    _mongoc_http_render_request_head (&http_request, req);
 
-   iovec.iov_base = mcommon_string_from_append (&http_request)->str;
-   iovec.iov_len = mcommon_string_from_append (&http_request)->len;
+   iovec.iov_base = mcommon_str_from_append (&http_request);
+   iovec.iov_len = mcommon_strlen_from_append (&http_request);
 
    if (!_mongoc_stream_writev_full (stream, &iovec, 1, _mongoc_http_msec_remaining (timer), error)) {
       goto fail;

@@ -1033,7 +1033,7 @@ _set_error_from_response (bson_t *bson_array,
       }
 
       if (code && !mcommon_string_from_append_is_empty (&compound_err)) {
-         bson_set_error (error, domain, (uint32_t) code, "%s", mcommon_string_from_append (&compound_err)->str);
+         bson_set_error (error, domain, (uint32_t) code, "%s", mcommon_str_from_append (&compound_err));
       }
    }
 

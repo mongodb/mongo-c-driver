@@ -576,8 +576,8 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
    bson_append_utf8 (doc,
                      HANDSHAKE_PLATFORM_FIELD,
                      strlen (HANDSHAKE_PLATFORM_FIELD),
-                     mcommon_string_from_append (&combined_platform)->str,
-                     mcommon_string_from_append (&combined_platform)->len);
+                     mcommon_str_from_append (&combined_platform),
+                     mcommon_strlen_from_append (&combined_platform));
 
    mcommon_string_from_append_destroy (&combined_platform);
 }

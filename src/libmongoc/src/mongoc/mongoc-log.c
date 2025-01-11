@@ -248,11 +248,8 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
       }
 
       if (rem == 15u) {
-         mongoc_log (MONGOC_LOG_LEVEL_TRACE,
-                     domain,
-                     "%s %s",
-                     mcommon_string_from_append (&str)->str,
-                     mcommon_string_from_append (&astr)->str);
+         mongoc_log (
+            MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", mcommon_str_from_append (&str), mcommon_str_from_append (&astr));
          mcommon_string_clear (mcommon_string_from_append (&str));
          mcommon_string_clear (mcommon_string_from_append (&astr));
       } else if (rem == 7u) {
@@ -262,11 +259,8 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
    }
 
    if (_i != 16u) {
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE,
-                  domain,
-                  "%-56s %s",
-                  mcommon_string_from_append (&str)->str,
-                  mcommon_string_from_append (&astr)->str);
+      mongoc_log (
+         MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", mcommon_str_from_append (&str), mcommon_str_from_append (&astr));
    }
 
    mcommon_string_from_append_destroy (&str);
@@ -316,8 +310,8 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
             mongoc_log (MONGOC_LOG_LEVEL_TRACE,
                         domain,
                         "%s %s",
-                        mcommon_string_from_append (&str)->str,
-                        mcommon_string_from_append (&astr)->str);
+                        mcommon_str_from_append (&str),
+                        mcommon_str_from_append (&astr));
             mcommon_string_clear (mcommon_string_from_append (&str));
             mcommon_string_clear (mcommon_string_from_append (&astr));
          } else if ((_i % 16) == 7) {
@@ -328,11 +322,8 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
    }
 
    if (_i != 16) {
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE,
-                  domain,
-                  "%-56s %s",
-                  mcommon_string_from_append (&str)->str,
-                  mcommon_string_from_append (&astr)->str);
+      mongoc_log (
+         MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", mcommon_str_from_append (&str), mcommon_str_from_append (&astr));
    }
 
    mcommon_string_from_append_destroy (&str);

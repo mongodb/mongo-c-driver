@@ -557,9 +557,9 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
                                           test->name,
                                           skip->reason,
                                           ((*count) == 1) ? "" : ",");
-            test_msg ("%s", mcommon_string_from_append (&buf)->str);
+            test_msg ("%s", mcommon_str_from_append (&buf));
             if (suite->outfile) {
-               fprintf (suite->outfile, "%s", mcommon_string_from_append (&buf)->str);
+               fprintf (suite->outfile, "%s", mcommon_str_from_append (&buf));
                fflush (suite->outfile);
             }
          }
@@ -577,9 +577,9 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
          if (!suite->silent) {
             mcommon_string_append_printf (
                &buf, "    { \"status\": \"skip\", \"test_file\": \"%s\" }%s", test->name, ((*count) == 1) ? "" : ",");
-            test_msg ("%s", mcommon_string_from_append (&buf)->str);
+            test_msg ("%s", mcommon_str_from_append (&buf));
             if (suite->outfile) {
-               fprintf (suite->outfile, "%s", mcommon_string_from_append (&buf)->str);
+               fprintf (suite->outfile, "%s", mcommon_str_from_append (&buf));
                fflush (suite->outfile);
             }
          }
@@ -650,9 +650,9 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
       mcommon_string_append (&buf, ",");
    }
 
-   test_msg ("%s", mcommon_string_from_append (&buf)->str);
+   test_msg ("%s", mcommon_str_from_append (&buf));
    if (suite->outfile) {
-      fprintf (suite->outfile, "%s", mcommon_string_from_append (&buf)->str);
+      fprintf (suite->outfile, "%s", mcommon_str_from_append (&buf));
       fflush (suite->outfile);
    }
 

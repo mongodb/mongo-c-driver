@@ -60,8 +60,8 @@ compare_data (const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len
                "unequal data of length %" PRIu32 " and %" PRIu32 ":\n%s\n%s\n",
                a_len,
                b_len,
-               mcommon_string_from_append (&a_str)->str,
-               mcommon_string_from_append (&b_str)->str);
+               mcommon_str_from_append (&a_str),
+               mcommon_str_from_append (&b_str));
 
       abort ();
    }

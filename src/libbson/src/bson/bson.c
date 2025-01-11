@@ -2348,7 +2348,7 @@ bson_as_json_with_opts (const bson_t *bson, size_t *length, const bson_json_opts
    if (opts->is_outermost_array ? mcommon_json_append_bson_array (&append, bson, opts->mode, BSON_MAX_RECURSION)
                                 : mcommon_json_append_bson_document (&append, bson, opts->mode, BSON_MAX_RECURSION)) {
       if (length) {
-         *length = (size_t) mcommon_string_from_append (&append)->len;
+         *length = (size_t) mcommon_strlen_from_append (&append);
       }
       return mcommon_string_from_append_destroy_with_steal (&append);
    } else {

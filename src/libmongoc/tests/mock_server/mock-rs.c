@@ -104,7 +104,7 @@ make_uri (mongoc_array_t *servers)
 
    mcommon_string_append (&uri_str, "/?replicaSet=rs");
 
-   uri = mongoc_uri_new (mcommon_string_from_append (&uri_str)->str);
+   uri = mongoc_uri_new (mcommon_str_from_append (&uri_str));
 
    // Many mock server tests do not expect retryable handshakes. Disable by
    // default: tests that expect or require retryable handshakes must opt-in.

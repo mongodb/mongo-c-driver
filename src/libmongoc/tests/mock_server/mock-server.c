@@ -2008,7 +2008,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
                                reply->client_port,
                                mock_server_get_port (server),
                                is_op_msg ? "OP_MSG" : "OP_REPLY",
-                               mcommon_string_from_append (&docs_json)->str);
+                               mcommon_str_from_append (&docs_json));
 
    len = 0;
 
@@ -2135,7 +2135,7 @@ rs_response_to_hello (mock_server_t *server, int max_wire_version, bool primary,
                            has_tags ? "'key': 'value'" : "",
                            WIRE_VERSION_MIN,
                            max_wire_version,
-                           mcommon_string_from_append (&hosts)->str);
+                           mcommon_str_from_append (&hosts));
 
    mcommon_string_from_append_destroy (&hosts);
 }

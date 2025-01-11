@@ -136,8 +136,8 @@ assert_request_matches_flags (const request_t *request, uint32_t flags)
       query_flags_str (&str_flags, (int32_t) flags);
 
       test_error ("request's query flags are %s, expected %s",
-                  mcommon_string_from_append (&str_request_flags)->str,
-                  mcommon_string_from_append (&str_flags)->str);
+                  mcommon_str_from_append (&str_request_flags),
+                  mcommon_str_from_append (&str_flags));
 
       mcommon_string_from_append_destroy (&str_request_flags);
       mcommon_string_from_append_destroy (&str_flags);

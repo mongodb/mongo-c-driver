@@ -982,7 +982,7 @@ uri_str_has_db (mcommon_string_t *uri_string)
 static void
 add_option_to_uri_str (mcommon_string_append_t *uri_string, const char *option, const char *value)
 {
-   if (strchr (mcommon_string_from_append (uri_string)->str, '?')) {
+   if (strchr (mcommon_str_from_append (uri_string), '?')) {
       /* already has some options */
       mcommon_string_append (uri_string, "&");
    } else if (uri_str_has_db (mcommon_string_from_append (uri_string))) {

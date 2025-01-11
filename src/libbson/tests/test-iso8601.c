@@ -40,7 +40,7 @@ test_date_io (const char *str_in, const char *str_out, int64_t millis)
    mcommon_string_append_t bson_str;
    mcommon_string_new_as_append (&bson_str);
    mcommon_iso8601_string_append (&bson_str, millis);
-   ASSERT_CMPSTR (mcommon_string_from_append (&bson_str)->str, str_out);
+   ASSERT_CMPSTR (mcommon_str_from_append (&bson_str), str_out);
    mcommon_string_from_append_destroy (&bson_str);
 }
 

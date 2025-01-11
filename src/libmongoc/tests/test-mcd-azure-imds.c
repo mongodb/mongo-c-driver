@@ -45,7 +45,7 @@ _test_http_req (void)
    _mongoc_http_render_request_head (&req_str, &req.req);
    mcd_azure_imds_request_destroy (&req);
    // Assert that we composed exactly the request that we expected
-   ASSERT_CMPSTR (mcommon_string_from_append (&req_str)->str,
+   ASSERT_CMPSTR (mcommon_str_from_append (&req_str),
                   "GET "
                   "/metadata/identity/oauth2/"
                   "token?api-version=2018-02-01&resource=https%3A%2F%2Fvault."

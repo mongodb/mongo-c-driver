@@ -73,7 +73,7 @@ tf_dump (test_fixture_t *tf)
    printf ("sd_type=%d\n", (int) tf->observations->sd_type);
 
    printf ("-- Test fixture logs --\n");
-   printf ("%s", mcommon_string_from_append (&tf->logs)->str);
+   printf ("%s", mcommon_str_from_append (&tf->logs));
    printf ("== End dump ==\n");
 }
 

@@ -306,7 +306,7 @@ mcommon_string_new_as_fixed_capacity_append (mcommon_string_append_t *new_append
 }
 
 /**
- * @brief Check the status of an append operation
+ * @brief Check the status of an append operation.
  * @param append Append operation, initialized with mcommon_string_set_append
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  */
@@ -319,7 +319,7 @@ mcommon_string_status_from_append (const mcommon_string_append_t *append)
 }
 
 /**
- * @brief Get a mcommon_string_t pointer to a mcommon_string_append_t destination
+ * @brief Get a mcommon_string_t pointer to a mcommon_string_append_t destination.
  * @param append Append operation, initialized with mcommon_string_set_append
  * @returns Pointer to the mcommon_string_t destination.
  *
@@ -332,6 +332,37 @@ mcommon_string_from_append (const mcommon_string_append_t *append)
    BSON_ASSERT_PARAM (append);
 
    return append->_string;
+}
+
+/**
+ * @brief Get the current string buffer for an mcommon_string_append_t destination.
+ * @param append Append operation, initialized with mcommon_string_set_append
+ * @returns String buffer pointer, NUL terminated, invalidated if the string is destroyed and by any operation that may
+ * grow the string.
+ *
+ * Shortcut for mcommon_string_from_append(append)->str
+ */
+static BSON_INLINE char *
+mcommon_str_from_append (const mcommon_string_append_t *append)
+{
+   BSON_ASSERT_PARAM (append);
+
+   return mcommon_string_from_append (append)->str;
+}
+
+/**
+ * @brief Get the current string length for an mcommon_string_append_t destination.
+ * @param append Append operation, initialized with mcommon_string_set_append
+ * @returns Snapshot of the current string length
+ *
+ * Shortcut for mcommon_string_from_append(append)->len
+ */
+static BSON_INLINE uint32_t
+mcommon_strlen_from_append (const mcommon_string_append_t *append)
+{
+   BSON_ASSERT_PARAM (append);
+
+   return mcommon_string_from_append (append)->len;
 }
 
 /**

@@ -1367,7 +1367,7 @@ done:
    if (error && server_id == 0) {
       /* server_id set to zero indicates that an error has occured and that `error` is initialized */
       if (error->domain == MONGOC_ERROR_SERVER_SELECTION) {
-         _mongoc_error_append (error, mcommon_string_from_append (&topology_type)->str);
+         _mongoc_error_append (error, mcommon_str_from_append (&topology_type));
       }
    }
    mcommon_string_from_append_destroy (&topology_type);
@@ -1930,8 +1930,7 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
       }
    }
 
-   bson_strncpy (
-      (char *) &error_out->message, mcommon_string_from_append (&error_message)->str, sizeof (error_out->message));
+   bson_strncpy ((char *) &error_out->message, mcommon_str_from_append (&error_message), sizeof (error_out->message));
    mcommon_string_from_append_destroy (&error_message);
 }
 

@@ -1193,7 +1193,7 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
       }
    }
 
-   bson_strncpy ((char *) &error->message, mcommon_string_from_append (&msg)->str, sizeof error->message);
+   bson_strncpy ((char *) &error->message, mcommon_str_from_append (&msg), sizeof error->message);
    mcommon_string_from_append_destroy (&msg);
 
    _delete_retired_nodes (ts);

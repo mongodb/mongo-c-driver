@@ -2271,9 +2271,8 @@ mongoc_uri_unescape (const char *escaped_string)
    }
 
    /* Check that after unescaping, it is still valid UTF-8 */
-   if (unescape_occurred && !bson_utf8_validate (mcommon_string_from_append (&append)->str,
-                                                 mcommon_string_from_append (&append)->len,
-                                                 false)) {
+   if (unescape_occurred &&
+       !bson_utf8_validate (mcommon_str_from_append (&append), mcommon_strlen_from_append (&append), false)) {
       MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
       mcommon_string_from_append_destroy (&append);
       return NULL;

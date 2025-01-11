@@ -1533,7 +1533,7 @@ test_reading_multiple_chunks (void)
             ASSERT_CMPSSIZE_T (got, ==, 3);
          }
 
-         ASSERT_CMPSTR (mcommon_string_from_append (&str)->str, "foobar");
+         ASSERT_CMPSTR (mcommon_str_from_append (&str), "foobar");
          mcommon_string_from_append_destroy (&str);
          mongoc_gridfs_file_destroy (file);
       }

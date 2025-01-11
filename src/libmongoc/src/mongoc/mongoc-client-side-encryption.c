@@ -1368,7 +1368,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    startup_info.cb = sizeof (startup_info);
 
    if (!CreateProcessA (NULL,
-                        mcommon_string_from_append (&command)->str,
+                        mcommon_str_from_append (&command),
                         NULL,
                         NULL,
                         false /* inherit descriptors */,

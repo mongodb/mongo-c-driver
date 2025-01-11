@@ -47,7 +47,7 @@ _test_gcp_http_request (void)
    mcommon_string_new_as_append (&req_str);
    _mongoc_http_render_request_head (&req_str, &req.req);
    gcp_request_destroy (&req);
-   ASSERT_CMPSTR (mcommon_string_from_append (&req_str)->str,
+   ASSERT_CMPSTR (mcommon_str_from_append (&req_str),
                   "GET "
                   "/computeMetadata/v1/instance/service-accounts/default/token HTTP/1.0\r\n"
                   "Host: helloworld.com:1234\r\n"

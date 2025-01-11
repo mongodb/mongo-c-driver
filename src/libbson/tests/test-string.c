@@ -123,8 +123,8 @@ test_bson_string_append_printf_truncate (void)
       mcommon_string_set_append_with_limit (mcommon_string_new (""), &append, limit);
       mcommon_string_append_printf (&append, "foo \xf4%s%c%c bar", "\x8f", '\xbf', '\xbf');
       const char *expected = "foo \xf4\x8f\xbf\xbf bar";
-      const char *str = mcommon_string_from_append (&append)->str;
-      uint32_t len = mcommon_string_from_append (&append)->len;
+      const char *str = mcommon_str_from_append (&append);
+      uint32_t len = mcommon_strlen_from_append (&append);
       if (limit >= 4 && limit < 8) {
          BSON_ASSERT (len == 4);
       } else {

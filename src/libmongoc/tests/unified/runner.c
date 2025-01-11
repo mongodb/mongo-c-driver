@@ -802,7 +802,7 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
 
    *reason = NULL;
    if (!requirements_satisfied) {
-      *reason = tmp_str ("runOnRequirements not satisfied:\n%s", mcommon_string_from_append (&fail_reasons)->str);
+      *reason = tmp_str ("runOnRequirements not satisfied:\n%s", mcommon_str_from_append (&fail_reasons));
    }
    mcommon_string_from_append_destroy (&fail_reasons);
    return requirements_satisfied;
