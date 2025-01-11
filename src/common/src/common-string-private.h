@@ -322,6 +322,9 @@ mcommon_string_status_from_append (const mcommon_string_append_t *append)
  * @brief Get a mcommon_string_t pointer to a mcommon_string_append_t destination
  * @param append Append operation, initialized with mcommon_string_set_append
  * @returns Pointer to the mcommon_string_t destination.
+ *
+ * The mcommon_string_append_t includes a plain mcommon_string_t pointer with no fixed ownership semantics.
+ * Depending on usage, it may be a string with borrowed ownership or the append operation may be its primary owner.
  */
 static BSON_INLINE mcommon_string_t *
 mcommon_string_from_append (const mcommon_string_append_t *append)
