@@ -292,6 +292,7 @@ mcommon_string_new_as_append (mcommon_string_append_t *new_append)
 /**
  * @brief Begin appending to a new empty mcommon_string_t with a given capacity and a matching max append length.
  * @param new_append Pointer to an uninitialized mcommon_string_append_t
+ * @param capacity Fixed capacity for the string, in bytes, not including NUL termination
  *
  * Allocates a new mcommon_string_t, which will need to be deallocated by the caller.
  * The mcommon_string_append_t itself does not need to be deallocated.
