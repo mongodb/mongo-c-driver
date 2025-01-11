@@ -994,7 +994,7 @@ _set_error_from_response (bson_t *bson_array,
    uint32_t n_keys, i;
 
    mcommon_string_append_t compound_err;
-   mcommon_string_new_as_fixed_capacity_append (&compound_err, sizeof error->message - 1);
+   mcommon_string_new_as_fixed_capacity_append (&compound_err, sizeof error->message - 1u);
 
    n_keys = bson_count_keys (bson_array);
    if (n_keys > 1) {
