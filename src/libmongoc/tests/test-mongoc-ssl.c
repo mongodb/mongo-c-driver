@@ -141,18 +141,17 @@ test_mongoc_ssl_opts_from_bson (void)
 
    for (test = tests; test->bson != NULL; test++) {
       mongoc_ssl_opt_t ssl_opt = {0};
-      mcommon_string_t *errmsg = mcommon_string_new ("");
-      mcommon_string_append_t errmsg_append;
-      mcommon_string_set_append (errmsg, &errmsg_append);
-      bool ok = _mongoc_ssl_opts_from_bson (&ssl_opt, tmp_bson (test->bson), &errmsg_append);
+      mcommon_string_append_t errmsg;
+      mcommon_string_new_as_append (&errmsg);
+      bool ok = _mongoc_ssl_opts_from_bson (&ssl_opt, tmp_bson (test->bson), &errmsg);
 
       MONGOC_DEBUG ("testcase: %s", test->bson);
       if (test->expect_error) {
-         ASSERT_CONTAINS (errmsg->str, test->expect_error);
+         ASSERT_CONTAINS (mcommon_str_from_append (&errmsg), test->expect_error);
          ASSERT (!ok);
       } else {
          if (!ok) {
-            test_error ("unexpected error parsing: %s", errmsg->str);
+            test_error ("unexpected error parsing: %s", mcommon_str_from_append (&errmsg));
          }
       }
 
@@ -188,7 +187,7 @@ test_mongoc_ssl_opts_from_bson (void)
       ASSERT (!ssl_opt.crl_file);
 
       _mongoc_ssl_opts_cleanup (&ssl_opt, true /* free_internal */);
-      mcommon_string_destroy (errmsg);
+      mcommon_string_from_append_destroy (&errmsg);
    }
 }
 
