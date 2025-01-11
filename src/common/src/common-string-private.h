@@ -379,6 +379,19 @@ mcommon_string_from_append_destroy (const mcommon_string_append_t *append)
 }
 
 /**
+ * @brief Truncate the append destination string to zero length without deallocating its buffer.
+ * @param append Append operation, initialized with mcommon_string_set_append
+ * This is equivalent to mcommon_string_clear() combined with mcommon_string_from_append().
+ */
+static BSON_INLINE void
+mcommon_string_from_append_clear (const mcommon_string_append_t *append)
+{
+   BSON_ASSERT_PARAM (append);
+
+   mcommon_string_clear (mcommon_string_from_append (append));
+}
+
+/**
  * @brief Deallocate the mcommon_string_t destination associated with an mcommon_string_append_t and return its internal
  * buffer
  * @param append Append operation, initialized with mcommon_string_set_append

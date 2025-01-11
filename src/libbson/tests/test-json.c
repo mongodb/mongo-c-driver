@@ -813,7 +813,7 @@ test_bson_json_read_buffering (void)
          ASSERT_CMPINT (0, ==, bson_json_reader_read (reader, &bson_out, &error));
 
          bson_json_reader_destroy (reader);
-         mcommon_string_clear (mcommon_string_from_append (&json));
+         mcommon_string_from_append_clear (&json);
 
          for (docs_idx = 0; docs_idx < n_docs; docs_idx++) {
             bson_destroy (bsons[docs_idx]);

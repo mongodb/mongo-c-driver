@@ -250,8 +250,8 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
       if (rem == 15u) {
          mongoc_log (
             MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", mcommon_str_from_append (&str), mcommon_str_from_append (&astr));
-         mcommon_string_clear (mcommon_string_from_append (&str));
-         mcommon_string_clear (mcommon_string_from_append (&astr));
+         mcommon_string_from_append_clear (&str);
+         mcommon_string_from_append_clear (&astr);
       } else if (rem == 7u) {
          mcommon_string_append (&str, " ");
          mcommon_string_append (&astr, " ");
@@ -312,8 +312,8 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
                         "%s %s",
                         mcommon_str_from_append (&str),
                         mcommon_str_from_append (&astr));
-            mcommon_string_clear (mcommon_string_from_append (&str));
-            mcommon_string_clear (mcommon_string_from_append (&astr));
+            mcommon_string_from_append_clear (&str);
+            mcommon_string_from_append_clear (&astr);
          } else if ((_i % 16) == 7) {
             mcommon_string_append (&str, " ");
             mcommon_string_append (&astr, " ");
