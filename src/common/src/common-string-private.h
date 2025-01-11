@@ -267,7 +267,30 @@ mcommon_string_set_append (mcommon_string_t *string, mcommon_string_append_t *ne
 }
 
 /**
- * @brief Allocate a new empty mcommon_string_t with default initial capacity, and set an append operation for it with
+ * @brief Allocate an empty mcommon_string_t with the specified initial capacity, and set an append operation for it
+ * with maximum length
+ * @param new_append Pointer to an uninitialized mcommon_string_append_t
+ * @param capacity Initial capacity for the string, in bytes, not including NUL termination
+ *
+ * Allocates a new mcommon_string_t, which will need to be deallocated by the caller.
+ * The mcommon_string_append_t itself does not need to be deallocated.
+ *
+ * The initial mcommon_string_t buffer will be allocated to have room for the given number of string bytes, not
+ * including the NUL terminator. The maximum append length will be set to the largest representable by the data type,
+ * UINT32_MAX - 1.
+ *
+ * This is a shortcut for mcommon_string_new_with_capacity() combined with mcommon_string_set_append().
+ */
+static BSON_INLINE void
+mcommon_string_new_with_capacity_as_append (mcommon_string_append_t *new_append, uint32_t capacity)
+{
+   BSON_ASSERT_PARAM (new_append);
+
+   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, capacity), new_append);
+}
+
+/**
+ * @brief Allocate an empty mcommon_string_t with default initial capacity, and set an append operation for it with
  * maximum length
  * @param new_append Pointer to an uninitialized mcommon_string_append_t
  *
@@ -278,15 +301,15 @@ mcommon_string_set_append (mcommon_string_t *string, mcommon_string_append_t *ne
  * The new string will be allocated with a small default capacity.
  *
  * This method is intended to be the most convenient way to start growing a string. If a reasonable guess
- * can be made about the final size of the string, it's better to call mcommon_string_new_with_capacity()
- * and mcommon_string_set_append() or mcommon_string_set_append_with_limit() directly.
+ * can be made about the final size of the string, it's better to call mcommon_string_new_with_capacity_as_append()
+ * or mcommon_string_new_with_capacity() and mcommon_string_set_append().
  */
 static BSON_INLINE void
 mcommon_string_new_as_append (mcommon_string_append_t *new_append)
 {
    BSON_ASSERT_PARAM (new_append);
 
-   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, 32), new_append);
+   mcommon_string_new_with_capacity_as_append (new_append, 32);
 }
 
 /**
@@ -296,6 +319,7 @@ mcommon_string_new_as_append (mcommon_string_append_t *new_append)
  *
  * Allocates a new mcommon_string_t, which will need to be deallocated by the caller.
  * The mcommon_string_append_t itself does not need to be deallocated.
+ * The string buffer will not need to resize for operations performed through the resulting mcommon_string_append_t.
  */
 static BSON_INLINE void
 mcommon_string_new_as_fixed_capacity_append (mcommon_string_append_t *new_append, uint32_t capacity)

@@ -1436,11 +1436,9 @@ bson_append_regex_w_len (
    }
 
    size_t options_len = strlen (options);
-   mcommon_string_t *const options_sorted = mcommon_string_new_with_capacity ("", 0, options_len);
-   mcommon_string_append_t options_sorted_append;
-   mcommon_string_set_append (options_sorted, &options_sorted_append);
-   if (!mcommon_string_append_selected_chars (
-          &options_sorted_append, BSON_REGEX_OPTIONS_SORTED, options, options_len)) {
+   mcommon_string_append_t options_sorted;
+   mcommon_string_new_with_capacity_as_append (&options_sorted, (uint32_t) options_len);
+   if (!mcommon_string_append_selected_chars (&options_sorted, BSON_REGEX_OPTIONS_SORTED, options, options_len)) {
       goto append_failure;
    }
 
@@ -1451,14 +1449,15 @@ bson_append_regex_w_len (
    BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
    BSON_APPEND_BYTES_ADD_CHECKED_STRING (args, regex, regex_length);
    BSON_APPEND_BYTES_ADD_ARGUMENT (args, &gZero, sizeof (gZero));
-   BSON_APPEND_BYTES_ADD_ARGUMENT (args, options_sorted->str, (options_sorted->len + 1u));
+   BSON_APPEND_BYTES_ADD_ARGUMENT (
+      args, mcommon_str_from_append (&options_sorted), 1u + mcommon_strlen_from_append (&options_sorted));
 
    BSON_APPEND_BYTES_APPLY_ARGUMENTS (bson, args);
 
    ret = true;
 
 append_failure:
-   mcommon_string_destroy (options_sorted);
+   mcommon_string_from_append_destroy (&options_sorted);
 
    return ret;
 }

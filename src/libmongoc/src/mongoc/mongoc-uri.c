@@ -2240,7 +2240,7 @@ mongoc_uri_unescape (const char *escaped_string)
    end = ptr + len;
 
    mcommon_string_append_t append;
-   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, len), &append);
+   mcommon_string_new_with_capacity_as_append (&append, len);
 
    for (; *ptr; ptr = bson_utf8_next_char (ptr)) {
       c = bson_utf8_get_char (ptr);

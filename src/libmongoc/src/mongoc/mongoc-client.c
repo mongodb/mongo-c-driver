@@ -138,7 +138,7 @@ txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data,
    DWORD i;
 
    mcommon_string_append_t txt;
-   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, pdns->wDataLength), &txt);
+   mcommon_string_new_with_capacity_as_append (&txt, pdns->wDataLength);
 
    for (i = 0; i < pdns->Data.TXT.dwStringCount; i++) {
       mcommon_string_append (&txt, pdns->Data.TXT.pStringArray[i]);
@@ -342,7 +342,7 @@ txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
    /* a TXT record has one or more strings, each up to 255 chars, each is prefixed by its length as 1 byte.
     * In this usage, they are all concatenated without any spacers. */
    mcommon_string_append_t txt;
-   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, total), &txt);
+   mcommon_string_new_with_capacity_as_append (&txt, total);
    uint16_t pos = 0;
    const uint8_t *data = ns_rr_rdata (*rr);
 
