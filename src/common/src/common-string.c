@@ -113,7 +113,7 @@ mcommon_string_append_bytes_internal (mcommon_string_append_t *append, const cha
 
 // Variant of mcommon_string_append_bytes() that grows but never truncates
 bool
-mcommon_string_append_bytes_atomic (mcommon_string_append_t *append, const char *str, uint32_t len)
+mcommon_string_append_bytes_all_or_none (mcommon_string_append_t *append, const char *str, uint32_t len)
 {
    BSON_ASSERT_PARAM (append);
    BSON_ASSERT_PARAM (str);

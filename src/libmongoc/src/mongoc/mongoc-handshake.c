@@ -570,8 +570,8 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
                                          truncate ? HANDSHAKE_MAX_SIZE - overhead - doc->len : UINT32_MAX - 1u);
 
    mcommon_string_append (&combined_platform, platform);
-   mcommon_string_append_atomic (&combined_platform, compiler_info);
-   mcommon_string_append_atomic (&combined_platform, flags);
+   mcommon_string_append_all_or_none (&combined_platform, compiler_info);
+   mcommon_string_append_all_or_none (&combined_platform, flags);
 
    bson_append_utf8 (doc,
                      HANDSHAKE_PLATFORM_FIELD,

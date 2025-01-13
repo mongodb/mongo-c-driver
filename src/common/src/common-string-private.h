@@ -70,7 +70,7 @@ typedef struct mcommon_string_append_t {
 #define mcommon_string_grow_to_capacity COMMON_NAME (string_grow_to_capacity)
 #define mcommon_string_append_selected_chars COMMON_NAME (string_append_selected_chars)
 #define mcommon_string_append_bytes_internal COMMON_NAME (string_append_bytes_internal)
-#define mcommon_string_append_bytes_atomic COMMON_NAME (string_append_bytes_atomic)
+#define mcommon_string_append_bytes_all_or_none COMMON_NAME (string_append_bytes_all_or_none)
 #define mcommon_string_append_unichar_internal COMMON_NAME (string_append_unichar_internal)
 #define mcommon_string_append_base64_encode COMMON_NAME (string_append_base64_encode)
 #define mcommon_string_append_oid_as_hex COMMON_NAME (string_append_oid_as_hex)
@@ -548,7 +548,7 @@ mcommon_string_append (mcommon_string_append_t *append, const char *str)
 }
 
 /**
- * @brief Atomically append a string with known length to the mcommon_string_t
+ * @brief Append an entire string with known length to the mcommon_string_t or fail, without truncating.
  * @param append Append operation, initialized with mcommon_string_set_append
  * @param str UTF-8 string to append a copy of
  * @param len Length of 'str', in bytes
@@ -558,10 +558,10 @@ mcommon_string_append (mcommon_string_append_t *append, const char *str)
  * The destination string is only modified if the entire append operation can be completed.
  */
 bool
-mcommon_string_append_bytes_atomic (mcommon_string_append_t *append, const char *str, uint32_t len);
+mcommon_string_append_bytes_all_or_none (mcommon_string_append_t *append, const char *str, uint32_t len);
 
 /**
- * @brief Atomically append a NUL-terminated UTF-8 string to the mcommon_string_t
+ * @brief Append an entire NUL-terminated UTF-8 string to the mcommon_string_t or fail, without truncating.
  * @param append Append operation, initialized with mcommon_string_set_append
  * @param str NUL-terminated UTF-8 sequence to append a copy of
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
@@ -570,12 +570,12 @@ mcommon_string_append_bytes_atomic (mcommon_string_append_t *append, const char 
  * The destination string is only modified if the entire append operation can be completed.
  */
 static BSON_INLINE bool
-mcommon_string_append_atomic (mcommon_string_append_t *append, const char *str)
+mcommon_string_append_all_or_none (mcommon_string_append_t *append, const char *str)
 {
    BSON_ASSERT_PARAM (append);
    BSON_ASSERT_PARAM (str);
 
-   return mcommon_string_append_bytes_atomic (append, str, strlen (str));
+   return mcommon_string_append_bytes_all_or_none (append, str, strlen (str));
 }
 
 /**
