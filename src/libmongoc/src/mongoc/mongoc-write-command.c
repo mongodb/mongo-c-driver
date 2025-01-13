@@ -989,15 +989,16 @@ _set_error_from_response (bson_t *bson_array,
 {
    bson_iter_t array_iter;
    bson_iter_t doc_iter;
-   mcommon_string_t *compound_err;
    const char *errmsg = NULL;
    int32_t code = 0;
    uint32_t n_keys, i;
 
-   compound_err = mcommon_string_new (NULL);
+   mcommon_string_append_t compound_err;
+   mcommon_string_new_as_fixed_capacity_append (&compound_err, sizeof error->message - 1u);
+
    n_keys = bson_count_keys (bson_array);
    if (n_keys > 1) {
-      mcommon_string_append_printf (compound_err, "Multiple %s errors: ", error_type);
+      mcommon_string_append_printf (&compound_err, "Multiple %s errors: ", error_type);
    }
 
    if (!bson_empty0 (bson_array) && bson_iter_init (&array_iter, bson_array)) {
@@ -1016,13 +1017,13 @@ _set_error_from_response (bson_t *bson_array,
 
                   /* build message like 'Multiple write errors: "foo", "bar"' */
                   if (n_keys > 1) {
-                     mcommon_string_append_printf (compound_err, "\"%s\"", errmsg);
+                     mcommon_string_append_printf (&compound_err, "\"%s\"", errmsg);
                      if (i < n_keys - 1) {
-                        mcommon_string_append (compound_err, ", ");
+                        mcommon_string_append (&compound_err, ", ");
                      }
                   } else {
                      /* single error message */
-                     mcommon_string_append (compound_err, errmsg);
+                     mcommon_string_append (&compound_err, errmsg);
                   }
                }
             }
@@ -1031,12 +1032,12 @@ _set_error_from_response (bson_t *bson_array,
          }
       }
 
-      if (code && compound_err->len) {
-         bson_set_error (error, domain, (uint32_t) code, "%s", compound_err->str);
+      if (code && !mcommon_string_from_append_is_empty (&compound_err)) {
+         bson_set_error (error, domain, (uint32_t) code, "%s", mcommon_str_from_append (&compound_err));
       }
    }
 
-   mcommon_string_free (compound_err, true);
+   mcommon_string_from_append_destroy (&compound_err);
 }
 
 

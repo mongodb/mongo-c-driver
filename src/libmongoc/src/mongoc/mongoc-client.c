@@ -136,16 +136,15 @@ static bool
 txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
    DWORD i;
-   mcommon_string_t *txt;
 
-   txt = mcommon_string_new (NULL);
+   mcommon_string_append_t txt;
+   mcommon_string_new_with_capacity_as_append (&txt, pdns->wDataLength);
 
    for (i = 0; i < pdns->Data.TXT.dwStringCount; i++) {
-      mcommon_string_append (txt, pdns->Data.TXT.pStringArray[i]);
+      mcommon_string_append (&txt, pdns->Data.TXT.pStringArray[i]);
    }
 
-   rr_data->txt_record_opts = bson_strdup (txt->str);
-   mcommon_string_free (txt, true);
+   rr_data->txt_record_opts = mcommon_string_from_append_destroy_with_steal (&txt);
 
    return true;
 }
@@ -331,36 +330,36 @@ done:
 static bool
 txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
-   char s[256];
-   const uint8_t *data;
-   mcommon_string_t *txt;
-   uint16_t pos, total;
-   uint8_t len;
    bool ret = false;
 
    BSON_UNUSED (ns_answer);
 
-   total = (uint16_t) ns_rr_rdlen (*rr);
+   uint16_t total = (uint16_t) ns_rr_rdlen (*rr);
    if (total < 1 || total > 255) {
       DNS_ERROR ("Invalid TXT record size %hu for \"%s\"", total, hostname);
    }
 
-   /* a TXT record has one or more strings, each up to 255 chars, each is
-    * prefixed by its length as 1 byte. thus endianness doesn't matter. */
-   txt = mcommon_string_new (NULL);
-   pos = 0;
-   data = ns_rr_rdata (*rr);
+   /* a TXT record has one or more strings, each up to 255 chars, each is prefixed by its length as 1 byte.
+    * In this usage, they are all concatenated without any spacers. */
+   mcommon_string_append_t txt;
+   mcommon_string_new_with_capacity_as_append (&txt, total);
+   uint16_t pos = 0;
+   const uint8_t *data = ns_rr_rdata (*rr);
 
    while (pos < total) {
-      memcpy (&len, data + pos, sizeof (uint8_t));
-      pos++;
-      bson_strncpy (s, (const char *) (data + pos), (size_t) len + 1);
-      mcommon_string_append (txt, s);
+      uint8_t len = data[pos++];
+      if (total - pos < (uint16_t) len) {
+         DNS_ERROR ("Invalid TXT string size %hu at %hu in %hu-byte TXT record for \"%s\"",
+                    (uint16_t) len,
+                    pos,
+                    total,
+                    hostname);
+      }
+      mcommon_string_append_bytes (&txt, (const char *) (data + pos), (uint32_t) len);
       pos += len;
    }
 
-   rr_data->txt_record_opts = bson_strdup (txt->str);
-   mcommon_string_free (txt, true);
+   rr_data->txt_record_opts = mcommon_string_from_append_destroy_with_steal (&txt);
    ret = true;
 
 done:

@@ -1171,21 +1171,21 @@ void
 _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
-   bson_error_t *error = &ts->error;
-   mcommon_string_t *msg;
 
+   bson_error_t *error = &ts->error;
    memset (&ts->error, 0, sizeof (bson_error_t));
 
-   msg = mcommon_string_new (NULL);
+   mcommon_string_append_t msg;
+   mcommon_string_new_as_fixed_capacity_append (&msg, sizeof error->message - 1u);
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
       if (node->last_error.code) {
-         if (msg->len) {
-            mcommon_string_append_c (msg, ' ');
+         if (!mcommon_string_from_append_is_empty (&msg)) {
+            mcommon_string_append (&msg, " ");
          }
 
-         mcommon_string_append_printf (msg, "[%s]", node->last_error.message);
+         mcommon_string_append_printf (&msg, "[%s]", node->last_error.message);
 
          /* last error domain and code win */
          error->domain = node->last_error.domain;
@@ -1193,8 +1193,8 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
       }
    }
 
-   bson_strncpy ((char *) &error->message, msg->str, sizeof (error->message));
-   mcommon_string_free (msg, true);
+   bson_strncpy ((char *) &error->message, mcommon_str_from_append (&msg), sizeof error->message);
+   mcommon_string_from_append_destroy (&msg);
 
    _delete_retired_nodes (ts);
 }

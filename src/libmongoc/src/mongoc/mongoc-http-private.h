@@ -18,6 +18,7 @@
 #include "mongoc-ssl.h"
 
 #include "mongoc-prelude.h"
+#include <common-string-private.h>
 
 #ifndef MONGOC_HTTP_PRIVATE_H
 #define MONGOC_HTTP_PRIVATE_H
@@ -52,17 +53,15 @@ _mongoc_http_response_cleanup (mongoc_http_response_t *response);
 /**
  * @brief Render the HTTP request head based on the given HTTP parameters.
  *
+ * @param append Destination for the HTTP request head, as an mcommon_string_append_t initialized with
+ * mcommon_string_set_append().
  * @param req The request to render (required)
- * @return bson_string_t* A new bson_string_t that contains the HTTP request
- * head
  *
  * @note The request body (if applicable) is not included in the resulting
  * string.
- * @note The returned bson_string_t must be freed, including the internal
- * segment.
  */
-bson_string_t *
-_mongoc_http_render_request_head (const mongoc_http_request_t *req);
+void
+_mongoc_http_render_request_head (mcommon_string_append_t *append, const mongoc_http_request_t *req);
 
 
 /**

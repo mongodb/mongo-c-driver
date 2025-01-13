@@ -43,16 +43,18 @@ _test_gcp_http_request (void)
    // Test that we correctly build a http request for the GCP metadata server
    gcp_request req;
    gcp_request_init (&req, "helloworld.com", 1234, NULL);
-   mcommon_string_t *req_str = _mongoc_http_render_request_head (&req.req);
+   mcommon_string_append_t req_str;
+   mcommon_string_new_as_append (&req_str);
+   _mongoc_http_render_request_head (&req_str, &req.req);
    gcp_request_destroy (&req);
-   ASSERT_CMPSTR (req_str->str,
+   ASSERT_CMPSTR (mcommon_str_from_append (&req_str),
                   "GET "
                   "/computeMetadata/v1/instance/service-accounts/default/token HTTP/1.0\r\n"
                   "Host: helloworld.com:1234\r\n"
                   "Connection: close\r\n"
                   "Metadata-Flavor: Google\r\n"
                   "\r\n");
-   mcommon_string_free (req_str, true);
+   mcommon_string_from_append_destroy (&req_str);
 }
 
 static const char *

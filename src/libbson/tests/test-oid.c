@@ -30,6 +30,7 @@
 
 #include "TestSuite.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-json-private.h>
 
 #define N_THREADS 4
 
@@ -229,11 +230,12 @@ test_bson_oid_init_sequence (void)
 static char *
 get_time_as_string (const bson_oid_t *oid)
 {
-   mcommon_string_t *str = mcommon_string_new (NULL);
+   mcommon_string_append_t str;
+   mcommon_string_new_as_append (&str);
    time_t time = bson_oid_get_time_t (oid);
 
-   _bson_iso8601_date_format (time * 1000, str);
-   return mcommon_string_free (str, false);
+   mcommon_iso8601_string_append (&str, time * 1000);
+   return mcommon_string_from_append_destroy_with_steal (&str);
 }
 
 
