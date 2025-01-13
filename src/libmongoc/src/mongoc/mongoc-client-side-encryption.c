@@ -24,6 +24,7 @@
 #include "mongoc.h"
 #include "mongoc-client-private.h"
 #include "mongoc-client-side-encryption-private.h"
+#include "mongoc-error-private.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-topology-private.h"
@@ -723,12 +724,12 @@ mongoc_client_encryption_rewrap_many_datakey_result_get_bulk_write_result (
 static bool
 _disabled_error (bson_error_t *error)
 {
-   bson_set_error (error,
-                   MONGOC_ERROR_CLIENT,
-                   MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                   "libmongoc is not built with support for Client-Side Field "
-                   "Level Encryption. Configure with "
-                   "ENABLE_CLIENT_SIDE_ENCRYPTION=ON.");
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                      "libmongoc is not built with support for Client-Side Field "
+                      "Level Encryption. Configure with "
+                      "ENABLE_CLIENT_SIDE_ENCRYPTION=ON.");
    return false;
 }
 
@@ -1217,11 +1218,11 @@ _mongoc_cse_auto_encrypt (mongoc_client_t *client_encrypted,
    }
 
    if (cmd->server_stream->sd->max_wire_version < WIRE_VERSION_CSE) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "%s",
-                      "Auto-encryption requires a minimum MongoDB version of 4.2");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "%s",
+                         "Auto-encryption requires a minimum MongoDB version of 4.2");
       GOTO (fail);
    }
 
@@ -1329,10 +1330,10 @@ fail:
 static void
 _uri_construction_error (bson_error_t *error)
 {
-   bson_set_error (error,
-                   MONGOC_ERROR_CLIENT,
-                   MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                   "Error constructing URI to mongocryptd");
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                      "Error constructing URI to mongocryptd");
 }
 
 
@@ -1389,11 +1390,11 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                       0,
                       NULL);
 
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                      "failed to spawn mongocryptd: %s",
-                      message);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "failed to spawn mongocryptd: %s",
+                         message);
       LocalFree (message);
       mcommon_string_free (command, true);
       return false;
@@ -1457,12 +1458,12 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
     * child. */
    pid = fork ();
    if (pid < 0) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                      "failed to fork (errno=%d) '%s'",
-                      errno,
-                      strerror (errno));
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "failed to fork (errno=%d) '%s'",
+                         errno,
+                         strerror (errno));
       bson_free (to_exec);
       return false;
    } else if (pid > 0) {
@@ -1471,12 +1472,12 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
       /* Child will spawn mongocryptd and immediately terminate to turn
        * mongocryptd into an orphan. */
       if (waitpid (pid, &child_status, 0 /* options */) < 0) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "failed to wait for child (errno=%d) '%s'",
-                         errno,
-                         strerror (errno));
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "failed to wait for child (errno=%d) '%s'",
+                            errno,
+                            strerror (errno));
          bson_free (to_exec);
          return false;
       }
@@ -1589,10 +1590,10 @@ _spawn_mongocryptd (const char *mongocryptd_spawn_path, const bson_t *mongocrypt
       bson_iter_init (&iter, mongocryptd_spawn_args);
       while (bson_iter_next (&iter)) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "invalid argument for mongocryptd, must be string");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                               "invalid argument for mongocryptd, must be string");
             return false;
          }
          /* Check if the arg starts with --idleShutdownTimeoutSecs= or is equal
@@ -1645,20 +1646,20 @@ _parse_extra (const bson_t *extra, mongoc_topology_t *topology, mongoc_uri_t **u
    if (extra) {
       if (bson_iter_init_find (&iter, extra, "mongocryptdBypassSpawn")) {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected bool for option 'mongocryptdBypassSpawn'");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                               "Expected bool for option 'mongocryptdBypassSpawn'");
             GOTO (fail);
          }
          topology->mongocryptd_bypass_spawn = bson_iter_bool (&iter);
       }
       if (bson_iter_init_find (&iter, extra, "mongocryptdSpawnPath")) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected string for option 'mongocryptdSpawnPath'");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                               "Expected string for option 'mongocryptdSpawnPath'");
             GOTO (fail);
          }
          topology->mongocryptd_spawn_path = bson_strdup (bson_iter_utf8 (&iter, NULL));
@@ -1668,10 +1669,10 @@ _parse_extra (const bson_t *extra, mongoc_topology_t *topology, mongoc_uri_t **u
          const uint8_t *array_data;
 
          if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected array for option 'mongocryptdSpawnArgs'");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                               "Expected array for option 'mongocryptdSpawnArgs'");
             GOTO (fail);
          }
          bson_iter_array (&iter, &array_len, &array_data);
@@ -1680,10 +1681,10 @@ _parse_extra (const bson_t *extra, mongoc_topology_t *topology, mongoc_uri_t **u
 
       if (bson_iter_init_find (&iter, extra, "mongocryptdURI")) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected string for option 'mongocryptdURI'");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                               "Expected string for option 'mongocryptdURI'");
             GOTO (fail);
          }
          *uri = mongoc_uri_new_with_error (bson_iter_utf8 (&iter, NULL), error);
@@ -1694,10 +1695,10 @@ _parse_extra (const bson_t *extra, mongoc_topology_t *topology, mongoc_uri_t **u
 
       if (bson_iter_init_find (&iter, extra, "cryptSharedLibPath")) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected a string for 'cryptSharedLibPath'");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                               "Expected a string for 'cryptSharedLibPath'");
             GOTO (fail);
          }
          size_t len;
@@ -1708,10 +1709,10 @@ _parse_extra (const bson_t *extra, mongoc_topology_t *topology, mongoc_uri_t **u
 
       if (bson_iter_init_find (&iter, extra, "cryptSharedLibRequired")) {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected a bool for 'cryptSharedLibRequired'");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                               "Expected a bool for 'cryptSharedLibRequired'");
             GOTO (fail);
          }
          topology->clientSideEncryption.autoOptions.extraOptions.cryptSharedLibRequired = bson_iter_bool_unsafe (&iter);
@@ -1749,52 +1750,50 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
 
    BSON_ASSERT (client);
    if (!client->topology->single_threaded) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "Automatic encryption on pooled clients must be set on the pool");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "Automatic encryption on pooled clients must be set on the pool");
       GOTO (fail);
    }
 
    if (!opts) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "Auto encryption options required");
       GOTO (fail);
    }
 
    if (opts->keyvault_client_pool) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "The key vault client pool only applies to a client "
-                      "pool, not a single threaded client");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "The key vault client pool only applies to a client pool, not a single threaded client");
       GOTO (fail);
    }
 
    if (opts->keyvault_client && !opts->keyvault_client->topology->single_threaded) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "The key vault client must be single threaded, not be "
-                      "from a client pool");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "The key vault client must be single threaded, not be from a client pool");
       GOTO (fail);
    }
 
    /* Check for required options */
    if (!opts->keyvault_db || !opts->keyvault_coll) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "Key vault namespace option required");
       GOTO (fail);
    }
 
    if (!opts->kms_providers) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "KMS providers option required");
       GOTO (fail);
    }
 
    if (client->topology->cse_state != MONGOC_CSE_DISABLED) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE, "Automatic encryption already set");
       GOTO (fail);
    } else {
@@ -1848,10 +1847,10 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       client->topology->mongocryptd_client = mongoc_client_new_from_uri (mongocryptd_uri);
 
       if (!client->topology->mongocryptd_client) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "Unable to create client to mongocryptd");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "Unable to create client to mongocryptd");
          GOTO (fail);
       }
       /* Similarly, single threaded clients will by default wait for 5 second
@@ -1897,29 +1896,29 @@ _mongoc_cse_client_pool_enable_auto_encryption (mongoc_topology_t *topology,
 
    BSON_ASSERT (topology);
    if (!opts) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "Auto encryption options required");
       GOTO (fail);
    }
 
    if (opts->keyvault_client) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "The key vault client only applies to a single threaded "
-                      "client not a client pool. Set a key vault client pool");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "The key vault client only applies to a single threaded "
+                         "client not a client pool. Set a key vault client pool");
       GOTO (fail);
    }
 
    /* Check for required options */
    if (!opts->keyvault_db || !opts->keyvault_coll) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "Key vault namespace option required");
       GOTO (fail);
    }
 
    if (!opts->kms_providers) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "KMS providers option required");
       GOTO (fail);
    }
@@ -1935,7 +1934,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (mongoc_topology_t *topology,
    }
 
    if (prev_cse_state == MONGOC_CSE_ENABLED) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE, "Automatic encryption already set");
       GOTO (fail);
    }
@@ -1974,10 +1973,10 @@ _mongoc_cse_client_pool_enable_auto_encryption (mongoc_topology_t *topology,
       topology->mongocryptd_client_pool = mongoc_client_pool_new (mongocryptd_uri);
 
       if (!topology->mongocryptd_client_pool) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "Unable to create client pool to mongocryptd");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "Unable to create client pool to mongocryptd");
          GOTO (fail);
       }
    }
@@ -2020,15 +2019,15 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts, bson_error_
 
    /* Check for required options */
    if (!opts || !opts->keyvault_client || !opts->keyvault_db || !opts->keyvault_coll) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "Key vault client and namespace option required");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "Key vault client and namespace option required");
       goto fail;
    }
 
    if (!opts->kms_providers) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "KMS providers option required");
       goto fail;
    }
@@ -2117,7 +2116,8 @@ mongoc_client_encryption_create_datakey (mongoc_client_encryption_t *client_encr
    BSON_ASSERT (_coll_has_write_concern_majority (client_encryption->keyvault_coll));
 
    if (!opts) {
-      bson_set_error (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "required 'opts' unset");
+      _mongoc_set_error (
+         error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "required 'opts' unset");
       GOTO (fail);
    }
 
@@ -2150,16 +2150,16 @@ mongoc_client_encryption_create_datakey (mongoc_client_encryption_t *client_encr
       const bson_value_t *id_value;
 
       if (!bson_iter_init_find (&iter, &datakey, "_id")) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "data key not did not contain _id");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "data key not did not contain _id");
          GOTO (fail);
       } else if (!BSON_ITER_HOLDS_BINARY (&iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "data key _id does not contain binary");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "data key _id does not contain binary");
          GOTO (fail);
       } else {
          id_value = bson_iter_value (&iter);
@@ -2201,10 +2201,10 @@ mongoc_client_encryption_rewrap_many_datakey (mongoc_client_encryption_t *client
    bson_reinit (bulk_write_result);
 
    if (master_key && !provider) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "expected 'provider' to be set to identify type of 'master_key'");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "expected 'provider' to be set to identify type of 'master_key'");
       GOTO (fail);
    }
 
@@ -2225,18 +2225,18 @@ mongoc_client_encryption_rewrap_many_datakey (mongoc_client_encryption_t *client
    BSON_ASSERT (bulk);
 
    if (!bson_iter_init_find (&iter, &keys, "v")) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                      "result did not contain expected field 'v'");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "result did not contain expected field 'v'");
       GOTO (fail);
    }
 
    if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                      "result did not return an array as expected");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "result did not return an array as expected");
       GOTO (fail);
    }
 
@@ -2255,30 +2255,30 @@ mongoc_client_encryption_rewrap_many_datakey (mongoc_client_encryption_t *client
       bson_iter_document (&iter, &len, &data);
 
       if (!data || !bson_init_static (&key, data, len)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "element is not a valid BSON document");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "element is not a valid BSON document");
          goto doc_done;
       }
 
       /* Find _id and use as selector. */
       {
          if (!bson_iter_init_find (&key_iter, &key, "_id")) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                            "could not find _id in key document");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                               "could not find _id in key document");
             goto doc_done;
          }
 
          bson_iter_binary (&key_iter, &subtype, &len, &data);
 
          if (!data || subtype != BSON_SUBTYPE_UUID) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                            "expected _id in key document to be a UUID");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                               "expected _id in key document to be a UUID");
             goto doc_done;
          }
 
@@ -2488,10 +2488,10 @@ mongoc_client_encryption_add_key_alt_name (mongoc_client_encryption_t *client_en
             bson_copy_to (&bson, key_doc);
             bson_destroy (&bson);
          } else {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                            "expected field value to be a document or null");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                               "expected field value to be a document or null");
             ret = false;
          }
       }
@@ -2585,10 +2585,10 @@ mongoc_client_encryption_remove_key_alt_name (mongoc_client_encryption_t *client
             bson_copy_to (&bson, key_doc);
             bson_destroy (&bson);
          } else {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                            "expected field value to be a document or null");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                               "expected field value to be a document or null");
             ret = false;
          }
       }
@@ -2656,7 +2656,7 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
    BSON_ASSERT (client_encryption);
 
    if (!ciphertext) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "required 'ciphertext' unset");
       GOTO (fail);
    }
@@ -2665,7 +2665,8 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
    ciphertext->value_type = BSON_TYPE_EOD;
 
    if (!opts) {
-      bson_set_error (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "required 'opts' unset");
+      _mongoc_set_error (
+         error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "required 'opts' unset");
       GOTO (fail);
    }
 
@@ -2749,7 +2750,8 @@ mongoc_client_encryption_decrypt (mongoc_client_encryption_t *client_encryption,
    BSON_ASSERT (client_encryption);
 
    if (!value) {
-      bson_set_error (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "required 'value' unset");
+      _mongoc_set_error (
+         error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "required 'value' unset");
       GOTO (fail);
    }
 
@@ -2758,10 +2760,10 @@ mongoc_client_encryption_decrypt (mongoc_client_encryption_t *client_encryption,
    value->value_type = BSON_TYPE_EOD;
 
    if (ciphertext->value_type != BSON_TYPE_BINARY || ciphertext->value.v_binary.subtype != BSON_SUBTYPE_ENCRYPTED) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "ciphertext must be BSON binary subtype 6");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "ciphertext must be BSON binary subtype 6");
       GOTO (fail);
    }
 
@@ -2858,12 +2860,12 @@ mongoc_client_encryption_create_encrypted_collection (mongoc_client_encryption_t
    }
 
    if (bson_empty (&in_encryptedFields)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "No 'encryptedFields' are defined for the creation of "
-                      "the '%s' collection",
-                      name);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "No 'encryptedFields' are defined for the creation of "
+                         "the '%s' collection",
+                         name);
       goto done;
    }
 
@@ -2905,11 +2907,11 @@ mongoc_client_encryption_create_encrypted_collection (mongoc_client_encryption_t
               kv ("encryptedFields", bson (new_encryptedFields)));
    if (bsonBuildError) {
       // Error while building the new options.
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Error while building new createCollection options: %s",
-                      bsonBuildError);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Error while building new createCollection options: %s",
+                         bsonBuildError);
       goto done;
    }
 
@@ -2987,11 +2989,11 @@ _init_encryptedFields (
       // The factory/internal code did not set error, so we may have to set it
       // for an error while BSON parsing/generating.
       if (bsonParseError) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Error while generating datakeys: %s", bsonParseError);
       }
       if (bsonBuildError) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Error while generating datakeys: %s", bsonBuildError);
       }
    }

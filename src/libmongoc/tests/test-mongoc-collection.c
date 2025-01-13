@@ -3434,7 +3434,7 @@ _test_insert_validate (insert_fn_t insert_fn)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+                          "invalid document for insert: bson: keys cannot contain \".\": \"a.a\"");
 
    /* {validate: true} is still prohibited */
    BSON_ASSERT (!insert_fn (collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'validate': true}"), &error));
@@ -4919,7 +4919,7 @@ _test_update_validate (update_fn_t update_fn)
    /* bson_validate_with_error will yield a different error message than the
     * standard key check in _mongoc_validate_replace */
    if (update_fn == mongoc_collection_replace_one) {
-      msg = "invalid argument for replace: keys cannot begin with \"$\": \"$set\"";
+      msg = "invalid argument for replace: bson: keys cannot begin with \"$\": \"$set\"";
    }
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);

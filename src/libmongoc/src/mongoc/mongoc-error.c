@@ -338,3 +338,24 @@ mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, m
    }
    return true;
 }
+
+void
+_mongoc_set_error (bson_error_t *error, uint32_t domain, uint32_t code, const char *format, ...)
+{
+   const char prefix[] = "mongoc: ";
+   const size_t prefix_len = sizeof (prefix) - 1u; // Exclude null terminator.
+
+   if (error) {
+      error->domain = domain;
+      error->code = code;
+
+      size_t remaining = sizeof error->message;
+      bson_snprintf (error->message, remaining, "%s", prefix);
+      remaining -= prefix_len;
+
+      va_list args;
+      va_start (args, format);
+      bson_vsnprintf (error->message + prefix_len, remaining, format, args);
+      va_end (args);
+   }
+}

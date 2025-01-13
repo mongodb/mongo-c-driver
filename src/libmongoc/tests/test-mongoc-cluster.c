@@ -1397,7 +1397,7 @@ test_cluster_command_error (void)
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
                           "Failed to send \"ping\" command with database "
-                          "\"db\": Failed to read 4 bytes: socket error or "
+                          "\"db\": mongoc: Failed to read 4 bytes: socket error or "
                           "timeout");
    mock_server_destroy (server);
    mongoc_client_destroy (client);

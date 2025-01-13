@@ -21,6 +21,7 @@
 #include "mongoc-cyrus-private.h"
 #include "mongoc-cluster-cyrus-private.h"
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-trace-private.h"
 
 bool
@@ -105,10 +106,10 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
       if (!bson_iter_init_find (&iter, &reply, "payload") || !BSON_ITER_HOLDS_UTF8 (&iter)) {
          MONGOC_DEBUG ("SASL: authentication failed");
          bson_destroy (&reply);
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "Received invalid SASL reply from MongoDB server.");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                            "Received invalid SASL reply from MongoDB server.");
          goto failure;
       }
 

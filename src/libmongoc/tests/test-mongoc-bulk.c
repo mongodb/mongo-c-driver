@@ -836,7 +836,7 @@ test_update_with_opts_validate (void)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "invalid argument for update: keys cannot contain \".\": \"a.a\"");
+                             "invalid argument for update: bson: keys cannot contain \".\": \"a.a\"");
       mongoc_bulk_operation_destroy (bulk);
 
       /* Test a valid update_one with explicit validation on the server. */
@@ -1175,7 +1175,7 @@ test_replace_one_with_opts_validate (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid argument for replace: keys cannot contain \".\": \"a.a\"");
+                          "invalid argument for replace: bson: keys cannot contain \".\": \"a.a\"");
 
    mongoc_bulk_operation_destroy (bulk);
 
@@ -1916,7 +1916,7 @@ test_insert_with_opts_validate (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+                          "invalid document for insert: bson: keys cannot contain \".\": \"a.a\"");
 
    mongoc_bulk_operation_destroy (bulk);
 
@@ -1970,7 +1970,7 @@ _test_remove_validate (remove_validate_test_t *test)
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "Bulk operation is invalid from prior error: "
-                             "invalid document for insert: empty key");
+                             "mongoc: invalid document for insert: bson: empty key");
    } else {
       test->remove (bulk, tmp_bson (NULL));
    }
@@ -1983,7 +1983,7 @@ _test_remove_validate (remove_validate_test_t *test)
    BSON_ASSERT (!r);
    BSON_ASSERT (bson_empty (&reply));
    ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid document for insert: empty key");
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid document for insert: bson: empty key");
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -2652,7 +2652,8 @@ _test_write_concern (bool ordered, bool multi_err)
                     first_err,
                     second_err);
 
-      ASSERT_CMPSTR ("Multiple write concern errors: \"foo\", \"bar\"", error.message);
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_WRITE_CONCERN, first_err, "Multiple write concern errors: \"foo\", \"bar\"");
    } else {
       ASSERT_MATCH (&reply,
                     "{'nInserted': 1,"
@@ -2664,7 +2665,7 @@ _test_write_concern (bool ordered, bool multi_err)
                     " 'writeConcernErrors': ["
                     "     {'code': %d, 'errmsg': 'foo'}]}",
                     first_err);
-      ASSERT_CMPSTR ("foo", error.message);
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, first_err, "foo");
    }
 
    ASSERT_CMPINT (MONGOC_ERROR_WRITE_CONCERN, ==, error.domain);

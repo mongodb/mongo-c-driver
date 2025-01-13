@@ -16,6 +16,7 @@
 
 #include "./service-gcp.h"
 
+#include "mongoc-error-private.h"
 #include "mongoc-util-private.h"
 
 #define HOST "metadata.google.internal"
@@ -97,13 +98,13 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out, const char
    const char *const token_type = !found ? NULL : bson_iter_utf8 (&iter, NULL);
 
    if (!(access_token && token_type)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_GCP,
-                      MONGOC_ERROR_KMS_SERVER_BAD_JSON,
-                      "One or more required JSON properties are "
-                      "missing/invalid: data: %.*s",
-                      len,
-                      json);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_GCP,
+                         MONGOC_ERROR_KMS_SERVER_BAD_JSON,
+                         "One or more required JSON properties are "
+                         "missing/invalid: data: %.*s",
+                         len,
+                         json);
       goto done;
    }
 
@@ -148,13 +149,13 @@ gcp_access_token_from_gcp_server (gcp_service_account_token *out,
 
    // Only accept an HTTP 200 as success
    if (resp.status != 200) {
-      bson_set_error (error,
-                      MONGOC_ERROR_GCP,
-                      MONGOC_ERROR_KMS_SERVER_HTTP,
-                      "Error from the GCP metadata server while looking for "
-                      "access token: %.*s",
-                      resp.body_len,
-                      resp.body);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_GCP,
+                         MONGOC_ERROR_KMS_SERVER_HTTP,
+                         "Error from the GCP metadata server while looking for "
+                         "access token: %.*s",
+                         resp.body_len,
+                         resp.body);
       goto fail;
    }
 

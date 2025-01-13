@@ -126,9 +126,9 @@ _bson_iso8601_date_parse (const char *str, int32_t len, int64_t *out, bson_error
 
    struct bson_tm posix_date = {0};
 
-#define DATE_PARSE_ERR(msg)                                                                                     \
-   bson_set_error (                                                                                             \
-      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Could not parse \"%s\" as date: " msg, str); \
+#define DATE_PARSE_ERR(msg)                                                                                           \
+   bson_set_error (                                                                                                   \
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "bson: Could not parse \"%s\" as date: " msg, str); \
    return false
 
 #define DEFAULT_DATE_PARSE_ERR                                                 \

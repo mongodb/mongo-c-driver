@@ -131,16 +131,12 @@ test_stream_writev_full (void)
    r = _mongoc_stream_writev_full (error_stream, iov, 2, 100, &error);
 
    BSON_ASSERT (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET);
-   ASSERT_STARTSWITH (error.message, error_message);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, error_message);
 
    errno = 0;
    r = _mongoc_stream_writev_full (short_stream, iov, 2, 100, &error);
    BSON_ASSERT (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET);
-   ASSERT_CMPSTR (error.message, short_message);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, short_message);
 
    errno = 0;
    r = _mongoc_stream_writev_full (success_stream, iov, 2, 100, &error);
