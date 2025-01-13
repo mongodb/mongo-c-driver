@@ -1940,8 +1940,7 @@ test_get_database_names (void)
 
    names = future_get_char_ptr_ptr (future);
    BSON_ASSERT (!names);
-   ASSERT_CMPINT (MONGOC_ERROR_QUERY, ==, error.domain);
-   ASSERT_CMPSTR ("err", error.message);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_QUERY, MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND, "err");
 
    request_destroy (request);
    future_destroy (future);
