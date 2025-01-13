@@ -21,6 +21,7 @@
 #include "mongoc-stream-gridfs-download-private.h"
 #include "mongoc-stream-gridfs-upload-private.h"
 #include "mongoc-collection-private.h"
+#include "mongoc-error-private.h"
 #include "mongoc-util-private.h"
 #include <common-cmp-private.h>
 
@@ -240,36 +241,36 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
    }
 
    if (!r) {
-      bson_set_error (
+      _mongoc_set_error (
          &file->err, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CHUNK_MISSING, "Missing chunk %d.", file->curr_chunk);
       return false;
    }
 
    r = bson_iter_init_find (&iter, next, "n");
    if (!r) {
-      bson_set_error (&file->err,
-                      MONGOC_ERROR_GRIDFS,
-                      MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "Chunk %d missing a required field 'n'.",
-                      file->curr_chunk);
+      _mongoc_set_error (&file->err,
+                         MONGOC_ERROR_GRIDFS,
+                         MONGOC_ERROR_GRIDFS_CORRUPT,
+                         "Chunk %d missing a required field 'n'.",
+                         file->curr_chunk);
       return false;
    }
 
    n = bson_iter_int32 (&iter);
 
    if (n != file->curr_chunk) {
-      bson_set_error (
+      _mongoc_set_error (
          &file->err, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CHUNK_MISSING, "Missing chunk %d.", file->curr_chunk);
       return false;
    }
 
    r = bson_iter_init_find (&iter, next, "data");
    if (!r) {
-      bson_set_error (&file->err,
-                      MONGOC_ERROR_GRIDFS,
-                      MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "Chunk %d missing a required field 'data'.",
-                      file->curr_chunk);
+      _mongoc_set_error (&file->err,
+                         MONGOC_ERROR_GRIDFS,
+                         MONGOC_ERROR_GRIDFS_CORRUPT,
+                         "Chunk %d missing a required field 'data'.",
+                         file->curr_chunk);
       return false;
    }
 
@@ -283,13 +284,13 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
    }
 
    if (data_len != expected_size) {
-      bson_set_error (&file->err,
-                      MONGOC_ERROR_GRIDFS,
-                      MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "Chunk %d expected to have size %" PRId64 " but is size %" PRIu32 ".",
-                      file->curr_chunk,
-                      expected_size,
-                      data_len);
+      _mongoc_set_error (&file->err,
+                         MONGOC_ERROR_GRIDFS,
+                         MONGOC_ERROR_GRIDFS_CORRUPT,
+                         "Chunk %d expected to have size %" PRId64 " but is size %" PRIu32 ".",
+                         file->curr_chunk,
+                         expected_size,
+                         data_len);
       return false;
    }
 
@@ -315,10 +316,10 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file, const mong
    }
 
    if (file->saved) {
-      bson_set_error (&file->err,
-                      MONGOC_ERROR_GRIDFS,
-                      MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR,
-                      "Cannot write after saving/aborting on a GridFS file.");
+      _mongoc_set_error (&file->err,
+                         MONGOC_ERROR_GRIDFS,
+                         MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR,
+                         "Cannot write after saving/aborting on a GridFS file.");
       return -1;
    }
 

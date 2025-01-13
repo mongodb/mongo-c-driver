@@ -20,6 +20,7 @@
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-errno-private.h"
 #include "mongoc-flags.h"
 #include "mongoc-log.h"
@@ -416,11 +417,11 @@ _mongoc_stream_writev_full (
 
    if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, timeout_msec))) {
       // CDRIVER-4589
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
-                      timeout_msec);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
+                         timeout_msec);
       RETURN (false);
    }
 
@@ -434,26 +435,26 @@ _mongoc_stream_writev_full (
 
          errstr = bson_strerror_r (errno, buf, sizeof (buf));
 
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "Failure during socket delivery: %s (%d)",
-                         errstr,
-                         errno);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_SOCKET,
+                            "Failure during socket delivery: %s (%d)",
+                            errstr,
+                            errno);
       }
 
       RETURN (false);
    }
 
    if (mcommon_cmp_not_equal_su (r, total_bytes)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failure to send all requested bytes (only sent: %" PRIu64 "/%zu in %" PRId64
-                      "ms) during socket delivery",
-                      (uint64_t) r,
-                      total_bytes,
-                      timeout_msec);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Failure to send all requested bytes (only sent: %" PRIu64 "/%zu in %" PRId64
+                         "ms) during socket delivery",
+                         (uint64_t) r,
+                         total_bytes,
+                         timeout_msec);
 
       RETURN (false);
    }

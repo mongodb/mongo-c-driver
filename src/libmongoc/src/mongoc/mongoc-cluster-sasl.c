@@ -24,6 +24,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-util-private.h"
 
 #ifdef MONGOC_ENABLE_SASL
@@ -88,11 +89,11 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
                                 bson_error_t *error)
 {
 #ifndef MONGOC_ENABLE_SASL
-   bson_set_error (error,
-                   MONGOC_ERROR_CLIENT,
-                   MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                   "The GSSAPI authentication mechanism requires libmongoc "
-                   "built with ENABLE_SASL");
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "The GSSAPI authentication mechanism requires libmongoc "
+                      "built with ENABLE_SASL");
    return false;
 #elif defined(MONGOC_ENABLE_SASL_CYRUS)
    return _mongoc_cluster_auth_node_cyrus (cluster, stream, sd, error);

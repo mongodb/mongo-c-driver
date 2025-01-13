@@ -788,7 +788,7 @@ bson_reader_new_from_file (const char *path,    /* IN */
 
    if (fd == -1) {
       errmsg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
-      bson_set_error (error, BSON_ERROR_READER, BSON_ERROR_READER_BADFD, "%s", errmsg);
+      bson_set_error (error, BSON_ERROR_READER, BSON_ERROR_READER_BADFD, "bson: %s", errmsg);
       return NULL;
    }
 

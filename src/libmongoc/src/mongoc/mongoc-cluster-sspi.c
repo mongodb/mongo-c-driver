@@ -23,6 +23,7 @@
 #include "mongoc-sasl-private.h"
 #include "mongoc-sspi-private.h"
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-util-private.h"
 
 
@@ -140,7 +141,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    state = _mongoc_cluster_sspi_new (cluster->uri, stream, sd->host.host);
 
    if (!state) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Couldn't initialize SSPI service.");
       goto failure;
    }
@@ -163,7 +164,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       }
 
       if (res == MONGOC_SSPI_AUTH_GSS_ERROR) {
-         bson_set_error (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Received invalid SSPI data.");
+         _mongoc_set_error (
+            error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Received invalid SSPI data.");
 
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
@@ -211,10 +213,10 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
       if (!bson_iter_init_find (&iter, &reply, "payload") || !BSON_ITER_HOLDS_UTF8 (&iter)) {
          bson_destroy (&reply);
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "Received invalid SASL reply from MongoDB server.");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                            "Received invalid SASL reply from MongoDB server.");
          goto failure;
       }
 
