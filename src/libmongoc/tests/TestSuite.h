@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include <common-string-private.h>
+
 #include "mongoc/mongoc-array-private.h"
 #include "mongoc/mongoc-util-private.h"
 
@@ -672,7 +674,7 @@ struct _TestSuite {
    FILE *outfile;
    int flags;
    int silent;
-   bson_string_t *mock_server_log_buf;
+   mcommon_string_t *mock_server_log_buf;
    FILE *mock_server_log;
    mongoc_array_t failing_flaky_skips;
 };

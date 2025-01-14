@@ -1164,8 +1164,10 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    uint32_t server_id;
    mc_shared_tpld td = mc_tpld_take_ref (topology);
 
-   mcommon_string_t *topology_type = mcommon_string_new (". Topology type: ");
-   mcommon_string_append (topology_type, mongoc_topology_description_type (td.ptr));
+   mcommon_string_append_t topology_type;
+   mcommon_string_new_as_append (&topology_type);
+   mcommon_string_append (&topology_type, ". Topology type: ");
+   mcommon_string_append (&topology_type, mongoc_topology_description_type (td.ptr));
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
@@ -1404,7 +1406,7 @@ done:
    /* server_id set to zero indicates an error has occured and that `error` should be initialized */
    if (server_id == 0) {
       if (error && error->domain == MONGOC_ERROR_SERVER_SELECTION) {
-         _mongoc_error_append (error, topology_type->str);
+         _mongoc_error_append (error, mcommon_str_from_append (&topology_type));
       }
       mongoc_structured_log (topology->structured_log,
                              MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
@@ -1428,7 +1430,7 @@ done:
          server_description (
             mongoc_topology_description_server_by_id_const (td.ptr, server_id, NULL), SERVER_HOST, SERVER_PORT));
    }
-   mcommon_string_free (topology_type, true);
+   mcommon_string_from_append_destroy (&topology_type);
    mc_tpld_drop_ref (&td);
    return server_id;
 }
@@ -1969,10 +1971,11 @@ static void
 _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t *error_out)
 {
    const mongoc_server_description_t *server_description;
-   mcommon_string_t *error_message;
 
    memset (error_out, 0, sizeof (bson_error_t));
-   error_message = mcommon_string_new ("");
+
+   mcommon_string_append_t error_message;
+   mcommon_string_new_as_fixed_capacity_append (&error_message, sizeof error_out->message - 1u);
 
    for (size_t i = 0u; i < mc_tpld_servers_const (td)->items_len; i++) {
       const bson_error_t *error;
@@ -1980,18 +1983,18 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
       server_description = mc_tpld_servers_const (td)->items[i].item;
       error = &server_description->error;
       if (error->code) {
-         if (error_message->len > 0) {
-            mcommon_string_append_c (error_message, ' ');
+         if (!mcommon_string_from_append_is_empty (&error_message)) {
+            mcommon_string_append (&error_message, " ");
          }
-         mcommon_string_append_printf (error_message, "[%s]", server_description->error.message);
+         mcommon_string_append_printf (&error_message, "[%s]", server_description->error.message);
          /* The last error's code and domain wins. */
          error_out->code = error->code;
          error_out->domain = error->domain;
       }
    }
 
-   bson_strncpy ((char *) &error_out->message, error_message->str, sizeof (error_out->message));
-   mcommon_string_free (error_message, true);
+   bson_strncpy ((char *) &error_out->message, mcommon_str_from_append (&error_message), sizeof (error_out->message));
+   mcommon_string_from_append_destroy (&error_message);
 }
 
 void

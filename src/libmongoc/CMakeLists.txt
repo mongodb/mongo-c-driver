@@ -665,6 +665,8 @@ set (MONGOC_SOURCES
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-b64.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-md5.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-json.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-string.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-thread.c
 

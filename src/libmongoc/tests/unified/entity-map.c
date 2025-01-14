@@ -2109,19 +2109,20 @@ entity_map_match (
 char *
 event_list_to_string (event_t *events)
 {
-   mcommon_string_t *str = NULL;
    event_t *eiter = NULL;
 
-   str = mcommon_string_new ("");
+   mcommon_string_append_t str;
+   mcommon_string_new_as_append (&str);
+
    LL_FOREACH (events, eiter)
    {
-      mcommon_string_append_printf (str,
+      mcommon_string_append_printf (&str,
                                     "- %s: %s (%s)\n",
                                     eiter->type,
                                     tmp_json (eiter->serialized),
                                     eiter->is_sensitive_command ? "marked SENSITIVE" : "not sensitive");
    }
-   return mcommon_string_free (str, false);
+   return mcommon_string_from_append_destroy_with_steal (&str);
 }
 
 

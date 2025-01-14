@@ -50,27 +50,26 @@ result_new (void)
 static void
 _result_init (result_t *result, const bson_val_t *value, const bson_t *reply, const bson_error_t *error)
 {
-   mcommon_string_t *str;
-
-   str = mcommon_string_new ("");
+   mcommon_string_append_t str;
+   mcommon_string_new_as_append (&str);
 
    if (value) {
       result->value = bson_val_copy (value);
-      mcommon_string_append_printf (str, "value=%s ", bson_val_to_json (value));
+      mcommon_string_append_printf (&str, "value=%s ", bson_val_to_json (value));
    }
 
    if (reply) {
       char *reply_str = bson_as_canonical_extended_json (reply, NULL);
 
-      mcommon_string_append_printf (str, "reply=%s ", reply_str);
+      mcommon_string_append_printf (&str, "reply=%s ", reply_str);
       result->reply = bson_copy (reply);
       bson_free (reply_str);
    }
 
-   mcommon_string_append_printf (str, "bson_error=%s", error->message);
+   mcommon_string_append_printf (&str, "bson_error=%s", error->message);
    memcpy (&result->error, error, sizeof (bson_error_t));
    result->ok = (error->code == 0);
-   result->str = mcommon_string_free (str, false);
+   result->str = mcommon_string_from_append_destroy_with_steal (&str);
    result->write_errors = bson_new ();
    result->write_concern_errors = bson_new ();
 }
