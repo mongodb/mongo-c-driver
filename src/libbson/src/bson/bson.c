@@ -3189,7 +3189,8 @@ bson_array_as_canonical_extended_json (const bson_t *bson, size_t *length)
 }
 
 
-#define VALIDATION_ERR(_flag, _msg, ...) bson_set_error (&state->error, BSON_ERROR_INVALID, _flag, _msg, __VA_ARGS__)
+#define VALIDATION_ERR(_flag, _msg, ...) \
+   bson_set_error (&state->error, BSON_ERROR_INVALID, _flag, "bson: " _msg, __VA_ARGS__)
 
 static bool
 _bson_iter_validate_utf8 (const bson_iter_t *iter, const char *key, size_t v_utf8_len, const char *v_utf8, void *data)

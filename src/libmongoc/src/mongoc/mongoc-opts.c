@@ -1,6 +1,7 @@
 #include "mongoc-opts-helpers-private.h"
 #include "mongoc-opts-private.h"
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-client-private.h"
 
@@ -38,10 +39,10 @@ _mongoc_insert_one_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -99,10 +100,10 @@ _mongoc_insert_one_opts_parse (
                &mongoc_insert_one_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -146,10 +147,10 @@ _mongoc_insert_many_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -216,10 +217,10 @@ _mongoc_insert_many_opts_parse (
                &mongoc_insert_many_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -264,10 +265,10 @@ _mongoc_delete_one_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -343,10 +344,10 @@ _mongoc_delete_one_opts_parse (
                &mongoc_delete_one_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -394,10 +395,10 @@ _mongoc_delete_many_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -473,10 +474,10 @@ _mongoc_delete_many_opts_parse (
                &mongoc_delete_many_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -528,10 +529,10 @@ _mongoc_update_one_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -643,10 +644,10 @@ _mongoc_update_one_opts_parse (
                &mongoc_update_one_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -699,10 +700,10 @@ _mongoc_update_many_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -805,10 +806,10 @@ _mongoc_update_many_opts_parse (
                &mongoc_update_many_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -860,10 +861,10 @@ _mongoc_replace_one_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -966,10 +967,10 @@ _mongoc_replace_one_opts_parse (
                &mongoc_replace_one_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -1016,10 +1017,10 @@ _mongoc_bulk_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1072,11 +1073,11 @@ _mongoc_bulk_opts_parse (
          }
       }
       else {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid option '%s'",
-                         bson_iter_key (&iter));
+         _mongoc_set_error (error,
+                           MONGOC_ERROR_COMMAND,
+                           MONGOC_ERROR_COMMAND_INVALID_ARG,
+                           "Invalid option '%s'",
+                           bson_iter_key (&iter));
          return false;
       }
    }
@@ -1114,10 +1115,10 @@ _mongoc_bulk_insert_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1132,11 +1133,11 @@ _mongoc_bulk_insert_opts_parse (
          }
       }
       else {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid option '%s'",
-                         bson_iter_key (&iter));
+         _mongoc_set_error (error,
+                           MONGOC_ERROR_COMMAND,
+                           MONGOC_ERROR_COMMAND_INVALID_ARG,
+                           "Invalid option '%s'",
+                           bson_iter_key (&iter));
          return false;
       }
    }
@@ -1175,10 +1176,10 @@ _mongoc_bulk_update_one_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1247,11 +1248,11 @@ _mongoc_bulk_update_one_opts_parse (
          }
       }
       else {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid option '%s'",
-                         bson_iter_key (&iter));
+         _mongoc_set_error (error,
+                           MONGOC_ERROR_COMMAND,
+                           MONGOC_ERROR_COMMAND_INVALID_ARG,
+                           "Invalid option '%s'",
+                           bson_iter_key (&iter));
          return false;
       }
    }
@@ -1293,10 +1294,10 @@ _mongoc_bulk_update_many_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1356,11 +1357,11 @@ _mongoc_bulk_update_many_opts_parse (
          }
       }
       else {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid option '%s'",
-                         bson_iter_key (&iter));
+         _mongoc_set_error (error,
+                           MONGOC_ERROR_COMMAND,
+                           MONGOC_ERROR_COMMAND_INVALID_ARG,
+                           "Invalid option '%s'",
+                           bson_iter_key (&iter));
          return false;
       }
    }
@@ -1401,10 +1402,10 @@ _mongoc_bulk_replace_one_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1464,11 +1465,11 @@ _mongoc_bulk_replace_one_opts_parse (
          }
       }
       else {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid option '%s'",
-                         bson_iter_key (&iter));
+         _mongoc_set_error (error,
+                           MONGOC_ERROR_COMMAND,
+                           MONGOC_ERROR_COMMAND_INVALID_ARG,
+                           "Invalid option '%s'",
+                           bson_iter_key (&iter));
          return false;
       }
    }
@@ -1506,10 +1507,10 @@ _mongoc_bulk_remove_one_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1542,11 +1543,11 @@ _mongoc_bulk_remove_one_opts_parse (
          }
       }
       else {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid option '%s'",
-                         bson_iter_key (&iter));
+         _mongoc_set_error (error,
+                           MONGOC_ERROR_COMMAND,
+                           MONGOC_ERROR_COMMAND_INVALID_ARG,
+                           "Invalid option '%s'",
+                           bson_iter_key (&iter));
          return false;
       }
    }
@@ -1583,10 +1584,10 @@ _mongoc_bulk_remove_many_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1619,11 +1620,11 @@ _mongoc_bulk_remove_many_opts_parse (
          }
       }
       else {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid option '%s'",
-                         bson_iter_key (&iter));
+         _mongoc_set_error (error,
+                           MONGOC_ERROR_COMMAND,
+                           MONGOC_ERROR_COMMAND_INVALID_ARG,
+                           "Invalid option '%s'",
+                           bson_iter_key (&iter));
          return false;
       }
    }
@@ -1666,10 +1667,10 @@ _mongoc_change_stream_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1761,10 +1762,10 @@ _mongoc_change_stream_opts_parse (
                &mongoc_change_stream_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -1803,10 +1804,10 @@ _mongoc_create_index_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1837,10 +1838,10 @@ _mongoc_create_index_opts_parse (
                &mongoc_create_index_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -1882,10 +1883,10 @@ _mongoc_read_write_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -1943,10 +1944,10 @@ _mongoc_read_write_opts_parse (
                &mongoc_read_write_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -1989,10 +1990,10 @@ _mongoc_gridfs_bucket_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -2041,10 +2042,10 @@ _mongoc_gridfs_bucket_opts_parse (
                &mongoc_gridfs_bucket_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -2083,10 +2084,10 @@ _mongoc_gridfs_bucket_upload_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -2115,10 +2116,10 @@ _mongoc_gridfs_bucket_upload_opts_parse (
                &mongoc_gridfs_bucket_upload_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -2164,10 +2165,10 @@ _mongoc_aggregate_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -2272,10 +2273,10 @@ _mongoc_aggregate_opts_parse (
                &mongoc_aggregate_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -2322,10 +2323,10 @@ _mongoc_find_and_modify_appended_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -2383,10 +2384,10 @@ _mongoc_find_and_modify_appended_opts_parse (
                &mongoc_find_and_modify_appended_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }
@@ -2433,10 +2434,10 @@ _mongoc_count_document_opts_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                        MONGOC_ERROR_BSON,
+                        MONGOC_ERROR_BSON_INVALID,
+                        "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -2519,10 +2520,10 @@ _mongoc_count_document_opts_parse (
                &mongoc_count_document_opts->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                              MONGOC_ERROR_BSON,
+                              MONGOC_ERROR_BSON_INVALID,
+                              "Invalid 'opts' parameter.");
             return false;
          }
       }

@@ -27,6 +27,7 @@
 #include "mongoc-uri.h"
 #include "mongoc-client-session-private.h"
 #include "mongoc-crypt-private.h"
+#include "mongoc-error-private.h"
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
 #include "mongoc-sleep.h"
@@ -623,7 +624,7 @@ _mongoc_topology_invalidate_server (mongoc_topology_t *td, uint32_t server_id)
 {
    bson_error_t error;
    mc_tpld_modification tdmod = mc_tpld_modify_begin (td);
-   bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
+   _mongoc_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
    mongoc_topology_description_invalidate_server (tdmod.new_td, server_id, &error);
    mc_tpld_modify_commit (tdmod);
 }

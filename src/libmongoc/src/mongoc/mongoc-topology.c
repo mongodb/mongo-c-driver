@@ -20,6 +20,7 @@
 #include "mongoc-handshake-private.h"
 
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
 #include "mongoc-topology-private.h"
@@ -789,10 +790,10 @@ mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
       mongoc_topology_description_reconcile (td, valid_hosts);
       had_valid_hosts = true;
    } else {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                      "SRV response did not contain any valid hosts");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                         "SRV response did not contain any valid hosts");
    }
 
    _mongoc_host_list_destroy_all (valid_hosts);
@@ -1000,7 +1001,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
    if (max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
       /* shouldn't happen if we've properly enforced wire version */
       if (!mongoc_topology_description_all_sds_have_write_date (td)) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "Not all servers have lastWriteDate");
          return false;
       }
@@ -1018,14 +1019,14 @@ static void
 _mongoc_server_selection_error (const char *msg, const bson_error_t *scanner_error, bson_error_t *error)
 {
    if (scanner_error && scanner_error->code) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SERVER_SELECTION,
-                      MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                      "%s: %s",
-                      msg,
-                      scanner_error->message);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SERVER_SELECTION,
+                         MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                         "%s: %s",
+                         msg,
+                         scanner_error->message);
    } else {
-      bson_set_error (error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "%s", msg);
+      _mongoc_set_error (error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "%s", msg);
    }
 }
 
@@ -1114,18 +1115,18 @@ _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology, bso
       /* Use the same error domain / code that is returned in mongoc-cluster.c
        * when fetching a stream fails. */
       if (scanner_error.code) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not establish stream for node %s: %s",
-                         node->host.host_and_port,
-                         scanner_error.message);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                            "Could not establish stream for node %s: %s",
+                            node->host.host_and_port,
+                            scanner_error.message);
       } else {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not establish stream for node %s",
-                         node->host.host_and_port);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                            "Could not establish stream for node %s",
+                            node->host.host_and_port);
       }
       selected_server_id = 0;
       goto done;
@@ -1341,12 +1342,12 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          server_id = 0;
          goto done;
       } else if (r) {
-         bson_set_error (error,
-                         MONGOC_ERROR_SERVER_SELECTION,
-                         MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                         "Unknown error '%d' received while waiting on "
-                         "thread condition",
-                         r);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_SERVER_SELECTION,
+                            MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                            "Unknown error '%d' received while waiting on "
+                            "thread condition",
+                            r);
          server_id = 0;
          goto done;
       }
@@ -1585,7 +1586,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology, bson_error_t *
       }
 
       if (timeout == MONGOC_NO_SESSIONS) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_SESSION_FAILURE, "Server does not support sessions");
          ss = NULL;
          goto done;
@@ -1909,7 +1910,7 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
    mcommon_string_t *error_message;
 
    memset (error_out, 0, sizeof (bson_error_t));
-   error_message = mcommon_string_new ("");
+   error_message = mcommon_string_new ("mongoc:");
 
    for (size_t i = 0u; i < mc_tpld_servers_const (td)->items_len; i++) {
       const bson_error_t *error;
@@ -1917,9 +1918,7 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
       server_description = mc_tpld_servers_const (td)->items[i].item;
       error = &server_description->error;
       if (error->code) {
-         if (error_message->len > 0) {
-            mcommon_string_append_c (error_message, ' ');
-         }
+         mcommon_string_append_c (error_message, ' ');
          mcommon_string_append_printf (error_message, "[%s]", server_description->error.message);
          /* The last error's code and domain wins. */
          error_out->code = error->code;
@@ -1927,7 +1926,7 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
       }
    }
 
-   bson_strncpy ((char *) &error_out->message, error_message->str, sizeof (error_out->message));
+   bson_strncpy (error_out->message, error_message->str, sizeof (error_out->message));
    mcommon_string_free (error_message, true);
 }
 

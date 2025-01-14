@@ -25,6 +25,7 @@
 #include "mongoc-log.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 
 #include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-private.h"
@@ -106,7 +107,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
             const int64_t now = bson_get_monotonic_time ();
             const int64_t remaining = expire - now;
             if (remaining < 0) {
-               bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake timed out.");
+               _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake timed out.");
                return false;
             } else {
                const int64_t msec = remaining / 1000;
@@ -119,7 +120,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
    } while (events && ret > 0);
 
    if (error && !error->code) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed.");
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed.");
    }
    return false;
 }

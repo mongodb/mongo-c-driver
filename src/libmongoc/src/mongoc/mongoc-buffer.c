@@ -19,6 +19,7 @@
 #include <stdarg.h>
 
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-trace-private.h"
 #include <common-cmp-private.h>
@@ -188,21 +189,21 @@ _mongoc_buffer_append_from_stream (
 
    if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, timeout_msec))) {
       // CDRIVER-4589
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
-                      timeout_msec);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
+                         timeout_msec);
       RETURN (false);
    }
 
    ret = mongoc_stream_read (stream, buf, size, size, (int32_t) timeout_msec);
    if (mcommon_cmp_not_equal_su (ret, size)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to read %zu bytes: socket error or timeout",
-                      size);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Failed to read %zu bytes: socket error or timeout",
+                         size);
       RETURN (false);
    }
 
@@ -251,30 +252,31 @@ _mongoc_buffer_fill (
 
    if (BSON_UNLIKELY (!mcommon_in_range_signed (int32_t, timeout_msec))) {
       // CDRIVER-4589
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
-                      timeout_msec);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
+                         timeout_msec);
       RETURN (false);
    }
 
    ret = mongoc_stream_read (stream, &buffer->data[buffer->len], avail_bytes, min_bytes, (int32_t) timeout_msec);
 
    if (ret < 0) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to buffer %zu bytes", min_bytes);
+      _mongoc_set_error (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to buffer %zu bytes", min_bytes);
       RETURN (-1);
    }
 
    buffer->len += (size_t) ret;
 
    if (buffer->len < min_bytes) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Could only buffer %zu of %zu bytes",
-                      buffer->len,
-                      min_bytes);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Could only buffer %zu of %zu bytes",
+                         buffer->len,
+                         min_bytes);
       RETURN (-1);
    }
 

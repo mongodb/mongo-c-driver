@@ -381,14 +381,14 @@ _mongoc_write_command_init (bson_t *doc, mongoc_write_command_t *command, const 
 static void
 _mongoc_write_command_too_large_error (bson_error_t *error, int32_t idx, int32_t len, int32_t max_bson_size)
 {
-   bson_set_error (error,
-                   MONGOC_ERROR_BSON,
-                   MONGOC_ERROR_BSON_INVALID,
-                   "Document %" PRId32 " is too large for the cluster. "
-                   "Document is %" PRId32 " bytes, max is %" PRId32 ".",
-                   idx,
-                   len,
-                   max_bson_size);
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Document %" PRId32 " is too large for the cluster. "
+                      "Document is %" PRId32 " bytes, max is %" PRId32 ".",
+                      idx,
+                      len,
+                      max_bson_size);
 }
 
 
@@ -399,7 +399,7 @@ _empty_error (mongoc_write_command_t *command, bson_error_t *error)
                                     MONGOC_ERROR_COLLECTION_INSERT_FAILED,
                                     MONGOC_ERROR_COLLECTION_UPDATE_FAILED};
 
-   bson_set_error (
+   _mongoc_set_error (
       error, MONGOC_ERROR_COLLECTION, codes[command->type], "Cannot do an empty %s", gCommandNames[command->type]);
 }
 
@@ -808,7 +808,7 @@ _mongoc_write_command_execute (mongoc_write_command_t *command,             /* I
    }
 
    if (!mongoc_write_concern_is_valid (write_concern)) {
-      bson_set_error (
+      _mongoc_set_error (
          &result->error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "The write concern is invalid.");
       result->failed = true;
       EXIT;
@@ -843,10 +843,10 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.has_collation) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          result->failed = true;
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot set collation for unacknowledged writes");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot set collation for unacknowledged writes");
          EXIT;
       }
    }
@@ -854,10 +854,10 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.has_array_filters) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          result->failed = true;
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot use array filters with unacknowledged writes");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot use array filters with unacknowledged writes");
          EXIT;
       }
    }
@@ -865,10 +865,10 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.has_update_hint) {
       if (server_stream->sd->max_wire_version < WIRE_VERSION_UPDATE_HINT &&
           !mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support hint for update");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "The selected server does not support hint for update");
          result->failed = true;
          EXIT;
       }
@@ -877,10 +877,10 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.has_delete_hint) {
       if (server_stream->sd->max_wire_version < WIRE_VERSION_DELETE_HINT &&
           !mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support hint for delete");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "The selected server does not support hint for delete");
          result->failed = true;
          EXIT;
       }
@@ -889,20 +889,20 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.bypass_document_validation) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          result->failed = true;
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot set bypassDocumentValidation for unacknowledged writes");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot set bypassDocumentValidation for unacknowledged writes");
          EXIT;
       }
    }
 
    if (crud->client_session && !mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
       result->failed = true;
-      bson_set_error (&result->error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Cannot use client session with unacknowledged writes");
+      _mongoc_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot use client session with unacknowledged writes");
       EXIT;
    }
 
@@ -1032,7 +1032,7 @@ _set_error_from_response (bson_t *bson_array,
       }
 
       if (code && compound_err->len) {
-         bson_set_error (error, domain, (uint32_t) code, "%s", compound_err->str);
+         bson_set_error (error, domain, (uint32_t) code, "server: %s", compound_err->str);
       }
    }
 
@@ -1215,12 +1215,13 @@ _mongoc_write_error_update_if_unsupported_storage_engine (bool cmd_ret, bson_err
       return false;
    }
 
-   if (server_error.code == 20 && strstr (server_error.message, "Transaction numbers") == server_error.message) {
+   if (server_error.code == 20 &&
+       strstr (server_error.message, "server: Transaction numbers") == server_error.message) {
       const char *replacement = "This MongoDB deployment does not support "
                                 "retryable writes. Please add "
                                 "retryWrites=false to your connection string.";
 
-      strcpy (cmd_err->message, replacement);
+      bson_snprintf (cmd_err->message, sizeof cmd_err->message, "mongoc: %s", replacement);
 
       if (reply) {
          bson_t *new_reply = bson_new ();

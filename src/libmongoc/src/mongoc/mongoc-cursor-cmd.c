@@ -16,6 +16,7 @@
 #include "mongoc.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-error-private.h"
 
 typedef enum { NONE, CMD_RESPONSE, OP_GETMORE_RESPONSE } reading_from_t;
 typedef enum { UNKNOWN, GETMORE_CMD, OP_GETMORE } getmore_type_t;
@@ -200,7 +201,7 @@ _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client, const bson_t *cmd, c
    }
 
    if (!_mongoc_cursor_start_reading_response (cursor, &data->response)) {
-      bson_set_error (
+      _mongoc_set_error (
          &cursor->error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Couldn't parse cursor document");
    }
 
@@ -210,14 +211,14 @@ _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client, const bson_t *cmd, c
       // identifies the server with the cursor.
       // The server with the cursor is required to send a "getMore" or
       // "killCursors" command.
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_CURSOR,
-                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                      "Expected `serverId` option to identify server with open cursor "
-                      "(cursor ID is %" PRId64 "). "
-                      "Consider using `mongoc_client_select_server` and using the "
-                      "resulting server ID to create the cursor.",
-                      cursor->cursor_id);
+      _mongoc_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "Expected `serverId` option to identify server with open cursor "
+                         "(cursor ID is %" PRId64 "). "
+                         "Consider using `mongoc_client_select_server` and using the "
+                         "resulting server ID to create the cursor.",
+                         cursor->cursor_id);
       // Reset cursor_id to 0 to avoid an assertion error in
       // `mongoc_cursor_destroy` when attempting to send "killCursors".
       cursor->cursor_id = 0;

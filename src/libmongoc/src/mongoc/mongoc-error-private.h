@@ -105,6 +105,10 @@ typedef enum {
 bool
 mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, mongoc_error_content_flags_t flags);
 
+void
+_mongoc_set_error (bson_error_t *error, uint32_t domain, uint32_t code, const char *format, ...)
+   BSON_GNUC_PRINTF (4, 5);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_ERROR_PRIVATE_H */

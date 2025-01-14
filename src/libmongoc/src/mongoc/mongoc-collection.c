@@ -29,6 +29,7 @@
 #include "mongoc-collection-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-index.h"
 #include "mongoc-log.h"
 #include "mongoc-trace-private.h"
@@ -105,10 +106,10 @@ _mongoc_collection_write_command_execute_idl (mongoc_write_command_t *command,
    }
 
    if (_mongoc_client_session_in_txn (crud->client_session) && crud->writeConcern) {
-      bson_set_error (&result->error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Cannot set write concern after starting transaction");
+      _mongoc_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set write concern after starting transaction");
       mongoc_server_stream_cleanup (server_stream);
       EXIT;
    }
@@ -775,10 +776,10 @@ mongoc_collection_estimated_document_count (mongoc_collection_t *coll,
 
    // No sessionId allowed
    if (opts && bson_has_field (opts, "sessionId")) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Collection count must not specify explicit session");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Collection count must not specify explicit session");
       RETURN (-1);
    }
 
@@ -1113,7 +1114,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection, const bson_t 
    // to drop this collection:
    bsonBuildAppend (opts_without_encryptedFields, if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
    if (bsonBuildError) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Error while updating drop options: %s", bsonBuildError);
       goto done;
    }
@@ -1348,10 +1349,10 @@ _mongoc_collection_create_index_if_not_exists (mongoc_collection_t *collection,
       char *alloc_name = mongoc_collection_keys_to_index_string (keys);
 
       if (!alloc_name) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Cannot generate index name from invalid `keys` argument");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Cannot generate index name from invalid `keys` argument");
          GOTO (done);
       }
 
@@ -1434,10 +1435,10 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
       if (alloc_name) {
          name = alloc_name;
       } else {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Cannot generate index name from invalid `keys` argument");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Cannot generate index name from invalid `keys` argument");
          GOTO (done);
       }
    }
@@ -1536,7 +1537,7 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
 
    parts.assembled.session = parsed.client_session;
    if (!bson_concat (&parts.extra, &parsed.extra)) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "'opts' is too large");
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "'opts' is too large");
       GOTO (done);
    }
 
@@ -2091,19 +2092,19 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
 
    if (!bson_empty0 (array_filters)) {
       if (!mongoc_write_concern_is_acknowledged (update_opts->crud.writeConcern)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Cannot use array filters with unacknowledged writes");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "Cannot use array filters with unacknowledged writes");
          GOTO (done);
       }
    }
 
    if (_mongoc_client_session_in_txn (update_opts->crud.client_session) && update_opts->crud.writeConcern) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Cannot set write concern after starting transaction");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set write concern after starting transaction");
       GOTO (done);
    }
 
@@ -2325,7 +2326,7 @@ mongoc_collection_save (mongoc_collection_t *collection,
 
    bson_init (&selector);
    if (!bson_append_iter (&selector, NULL, 0, &iter)) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Failed to append bson to create update.");
       bson_destroy (&selector);
       return false;
@@ -2806,7 +2807,7 @@ mongoc_collection_validate (mongoc_collection_t *collection, /* IN */
    BSON_ASSERT_PARAM (collection);
 
    if (options && bson_iter_init_find (&iter, options, "full") && !BSON_ITER_HOLDS_BOOL (&iter)) {
-      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "'full' must be a boolean value.");
+      _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "'full' must be a boolean value.");
       goto cleanup;
    }
 
@@ -2879,11 +2880,11 @@ mongoc_collection_rename_with_opts (mongoc_collection_t *collection,
    BSON_ASSERT_PARAM (new_name);
 
    if (strchr (new_name, '$')) {
-      bson_set_error (error,
-                      MONGOC_ERROR_NAMESPACE,
-                      MONGOC_ERROR_NAMESPACE_INVALID,
-                      "\"%s\" is an invalid collection name.",
-                      new_name);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_NAMESPACE,
+                         MONGOC_ERROR_NAMESPACE_INVALID,
+                         "\"%s\" is an invalid collection name.",
+                         new_name);
       return false;
    }
 
@@ -2963,7 +2964,7 @@ mongoc_collection_stats (mongoc_collection_t *collection, const bson_t *options,
    BSON_ASSERT_PARAM (collection);
 
    if (options && bson_iter_init_find (&iter, options, "scale") && !BSON_ITER_HOLDS_INT32 (&iter)) {
-      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "'scale' must be an int32 value.");
+      _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "'scale' must be an int32 value.");
       return false;
    }
 
@@ -3003,7 +3004,7 @@ mongoc_collection_create_bulk_operation (mongoc_collection_t *collection,
    bson_destroy (&opts);
 
    if (!wc_ok) {
-      bson_set_error (
+      _mongoc_set_error (
          &bulk->result.error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid writeConcern");
    }
 
@@ -3043,10 +3044,10 @@ mongoc_collection_create_bulk_operation_with_opts (mongoc_collection_t *collecti
       memcpy (&bulk->result.error, &err, sizeof (bson_error_t));
    } else if (_mongoc_client_session_in_txn (bulk_opts.client_session) &&
               !mongoc_write_concern_is_default (bulk_opts.writeConcern)) {
-      bson_set_error (&bulk->result.error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Cannot set write concern after starting transaction");
+      _mongoc_set_error (&bulk->result.error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set write concern after starting transaction");
    }
 
    _mongoc_bulk_opts_cleanup (&bulk_opts);
@@ -3175,10 +3176,10 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
 
    if (appended_opts.writeConcern) {
       if (_mongoc_client_session_in_txn (parts.assembled.session)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot set write concern after starting transaction");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot set write concern after starting transaction");
          GOTO (done);
       }
 
@@ -3187,7 +3188,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
    /* inherit write concern from collection if not in transaction */
    else if (!_mongoc_client_session_in_txn (parts.assembled.session)) {
       if (!mongoc_write_concern_is_valid (collection->write_concern)) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "The write concern is invalid.");
          GOTO (done);
       }
@@ -3201,10 +3202,10 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
                                 : WIRE_VERSION_FIND_AND_MODIFY_HINT;
 
       if (server_stream->sd->max_wire_version < max_wire_version) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support hint for findAndModify");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "The selected server does not support hint for findAndModify");
          GOTO (done);
       }
 
@@ -3254,7 +3255,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
             errmsg = bson_iter_utf8 (&inner, NULL);
          }
       }
-      bson_set_error (error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
+      _mongoc_set_error (error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
       ret = false;
    }
 
@@ -3421,10 +3422,10 @@ mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
          // Raise an error required by the specification:
          // "Drivers MUST manually raise an error if this option is specified
          // when creating an index on a pre 4.4 server."
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support the commitQuorum option");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "The selected server does not support the commitQuorum option");
          GOTO (fail);
       }
    }

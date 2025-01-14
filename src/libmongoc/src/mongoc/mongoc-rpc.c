@@ -18,6 +18,7 @@
 #include "mongoc-rpc-private.h"
 
 #include "mongoc-counters-private.h"
+#include "mongoc-error-private.h"
 #include "mongoc-trace-private.h"
 
 
@@ -172,7 +173,7 @@ _mongoc_cmd_check_ok (const bson_t *doc, int32_t error_api_version, bson_error_t
       code = MONGOC_ERROR_QUERY_FAILURE;
    }
 
-   bson_set_error (error, domain, code, "%s", msg);
+   _mongoc_set_error (error, domain, code, "%s", msg);
 
    /* there was a command error */
    RETURN (false);
@@ -215,11 +216,13 @@ _mongoc_cmd_check_ok_no_wce (const bson_t *doc, int32_t error_api_version, bson_
 
    if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
       code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
-   } else if (code == 0) {
+      bson_set_error (error, domain, code, "server: %s", msg);
+   } else if (code != 0) {
+      bson_set_error (error, domain, code, "server: %s", msg);
+   } else {
       code = MONGOC_ERROR_QUERY_FAILURE;
+      _mongoc_set_error (error, domain, code, "%s", msg);
    }
-
-   bson_set_error (error, domain, code, "%s", msg);
 
    /* there was a command error */
    RETURN (false);
@@ -249,7 +252,7 @@ _mongoc_populate_query_error (const bson_t *doc, int32_t error_api_version, bson
       msg = bson_iter_utf8 (&iter, NULL);
    }
 
-   bson_set_error (error, domain, code, "%s", msg);
+   _mongoc_set_error (error, domain, code, "%s", msg);
 
    EXIT;
 }
@@ -265,7 +268,7 @@ mcd_rpc_message_check_ok (mcd_rpc_message *rpc,
    ENTRY;
 
    if (mcd_rpc_header_get_op_code (rpc) != MONGOC_OP_CODE_REPLY) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Received rpc other than OP_REPLY.");
       RETURN (false);
    }
@@ -285,14 +288,14 @@ mcd_rpc_message_check_ok (mcd_rpc_message *rpc,
 
          bson_destroy (&body);
       } else {
-         bson_set_error (error, MONGOC_ERROR_QUERY, MONGOC_ERROR_QUERY_FAILURE, "Unknown query failure.");
+         _mongoc_set_error (error, MONGOC_ERROR_QUERY, MONGOC_ERROR_QUERY_FAILURE, "Unknown query failure.");
       }
 
       RETURN (false);
    }
 
    if (flags & MONGOC_OP_REPLY_RESPONSE_FLAG_CURSOR_NOT_FOUND) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "The cursor is invalid or has expired.");
 
       RETURN (false);

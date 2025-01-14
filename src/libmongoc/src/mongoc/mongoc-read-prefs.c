@@ -16,6 +16,7 @@
 
 
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-trace-private.h"
 #include <common-cmp-private.h>
@@ -404,7 +405,7 @@ bool
 _mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs, bson_error_t *error)
 {
    if (read_prefs && !mongoc_read_prefs_is_valid (read_prefs)) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid mongoc_read_prefs_t");
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid mongoc_read_prefs_t");
       return false;
    }
    return true;

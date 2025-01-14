@@ -417,15 +417,21 @@ _bson_json_read_set_error (bson_json_reader_t *reader, /* IN */
                            const char *fmt,            /* IN */
                            ...)
 {
-   va_list ap;
+   const char prefix[] = "bson: ";
+   const size_t prefix_len = sizeof (prefix) - 1u; // Exclude null terminator.
 
    if (reader->error) {
       reader->error->domain = BSON_ERROR_JSON;
       reader->error->code = BSON_JSON_ERROR_READ_INVALID_PARAM;
+
+      size_t remaining = sizeof reader->error->message;
+      bson_snprintf (reader->error->message, remaining, "%s", prefix);
+      remaining -= prefix_len;
+
+      va_list ap;
       va_start (ap, fmt);
-      bson_vsnprintf (reader->error->message, sizeof reader->error->message, fmt, ap);
+      bson_vsnprintf (reader->error->message + prefix_len, remaining, fmt, ap);
       va_end (ap);
-      reader->error->message[sizeof reader->error->message - 1] = '\0';
    }
 
    reader->bson.read_state = BSON_JSON_ERROR;
@@ -442,13 +448,20 @@ _bson_json_read_corrupt (bson_json_reader_t *reader, /* IN */
                          const char *fmt,            /* IN */
                          ...)
 {
-   va_list ap;
+   const char prefix[] = "bson: ";
+   const size_t prefix_len = sizeof (prefix) - 1u; // Exclude null terminator.
 
    if (reader->error) {
       reader->error->domain = BSON_ERROR_JSON;
       reader->error->code = BSON_JSON_ERROR_READ_CORRUPT_JS;
+
+      size_t remaining = sizeof reader->error->message;
+      bson_snprintf (reader->error->message, remaining, "%s", prefix);
+      remaining -= prefix_len;
+
+      va_list ap;
       va_start (ap, fmt);
-      bson_vsnprintf (reader->error->message, sizeof reader->error->message, fmt, ap);
+      bson_vsnprintf (reader->error->message + prefix_len, remaining, fmt, ap);
       va_end (ap);
       reader->error->message[sizeof reader->error->message - 1] = '\0';
    }
@@ -1815,7 +1828,7 @@ _bson_json_unescape (bson_json_reader_t *reader, struct jsonsl_state_st *state, 
       bson_set_error (reader->error,
                       BSON_ERROR_JSON,
                       BSON_JSON_ERROR_READ_CORRUPT_JS,
-                      "error near position %d: \"%s\"",
+                      "bson: error near position %d: \"%s\"",
                       (int) state->pos_begin,
                       jsonsl_strerror (err));
       return false;
@@ -1970,7 +1983,7 @@ _error_callback (jsonsl_t json, jsonsl_error_t err, struct jsonsl_state_st *stat
    bson_set_error (reader->error,
                    BSON_ERROR_JSON,
                    BSON_JSON_ERROR_READ_CORRUPT_JS,
-                   "Got parse error at \"%c\", position %d: \"%s\"",
+                   "bson: Got parse error at \"%c\", position %d: \"%s\"",
                    *errat,
                    (int) json->pos,
                    jsonsl_strerror (err));
@@ -2040,7 +2053,7 @@ bson_json_reader_read (bson_json_reader_t *reader, /* IN */
 
       if (r < 0) {
          if (error) {
-            bson_set_error (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CB_FAILURE, "reader cb failed");
+            bson_set_error (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CB_FAILURE, "bson: reader cb failed");
          }
          ret = -1;
          goto cleanup;
@@ -2255,7 +2268,7 @@ bson_new_from_json (const uint8_t *data, /* IN */
    bson_json_reader_destroy (reader);
 
    if (r == 0) {
-      bson_set_error (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Empty JSON string");
+      bson_set_error (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "bson: Empty JSON string");
    }
 
    if (r != 1) {
@@ -2291,7 +2304,7 @@ bson_init_from_json (bson_t *bson,        /* OUT */
    bson_json_reader_destroy (reader);
 
    if (r == 0) {
-      bson_set_error (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Empty JSON string");
+      bson_set_error (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "bson: Empty JSON string");
    }
 
    if (r != 1) {
@@ -2380,7 +2393,7 @@ bson_json_reader_new_from_file (const char *path,    /* IN */
 
    if (fd == -1) {
       errmsg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
-      bson_set_error (error, BSON_ERROR_READER, BSON_ERROR_READER_BADFD, "%s", errmsg);
+      bson_set_error (error, BSON_ERROR_READER, BSON_ERROR_READER_BADFD, "bson: %s", errmsg);
       return NULL;
    }
 
