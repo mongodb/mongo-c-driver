@@ -1046,8 +1046,8 @@ test_multiple_selection_errors (void)
     */
    ASSERT_CONTAINS (error.message, "No suitable servers found");
    /* either "connection error" or "connection timeout" calling hello */
-   ASSERT_CONTAINS (error.message, "[Failed to resolve 'doesntexist.invalid']");
-   ASSERT_CONTAINS (error.message, "[Failed to resolve 'example.invalid']");
+   ASSERT_CONTAINS (error.message, "[mongoc: Failed to resolve 'doesntexist.invalid']");
+   ASSERT_CONTAINS (error.message, "[mongoc: Failed to resolve 'example.invalid']");
 
    bson_destroy (&reply);
    mongoc_client_destroy (client);
@@ -1064,7 +1064,7 @@ test_invalid_server_id (void)
 
    BSON_ASSERT (
       !mongoc_topology_description_server_by_id_const (mc_tpld_unsafe_get_const (client->topology), 99999, &error));
-   ASSERT_STARTSWITH (error.message, "Could not find description for node");
+   ASSERT_CONTAINS (error.message, "Could not find description for node");
 
    mongoc_client_destroy (client);
 }
@@ -1911,7 +1911,7 @@ _test_request_scan_on_error (
       if (pooled) {
          if (sd->type == MONGOC_SERVER_UNKNOWN) {
             if (server_err) {
-               ASSERT_CMPSTR (server_err, sd->error.message);
+               ASSERT_CONTAINS (sd->error.message, server_err);
             }
          }
       } else {
@@ -1923,7 +1923,7 @@ _test_request_scan_on_error (
          /* check that the error on the server description matches the error
           * message in the response. */
          if (server_err) {
-            ASSERT_CMPSTR (server_err, sd->error.message);
+            ASSERT_CONTAINS (sd->error.message, server_err);
          }
       }
    } else {

@@ -60,7 +60,7 @@ server_selection_error_dns (const char *uri_str, const char *errmsg, bool expect
    ASSERT_OR_PRINT (success == expect_success, error);
 
    if (!success && errmsg) {
-      ASSERT_CMPSTR (error.message, errmsg);
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, errmsg);
    }
 
    bson_destroy (&reply);
@@ -80,7 +80,7 @@ static void
 test_server_selection_error_dns_direct_single (void)
 {
    server_selection_error_dns ("mongodb://example-localhost.invalid:27017/",
-                               "No suitable servers found (`serverSelectionTryOnce` set): "
+                               "No suitable servers found (`serverSelectionTryOnce` set): mongoc: "
                                "[Fake error for 'example-localhost.invalid']"
                                ". Topology type: Single",
                                false,
@@ -93,7 +93,7 @@ test_server_selection_error_dns_direct_pooled (void *ctx)
    BSON_UNUSED (ctx);
 
    server_selection_error_dns ("mongodb://example-localhost.invalid:27017/",
-                               "No suitable servers found: `serverSelectionTimeoutMS` expired: "
+                               "No suitable servers found: `serverSelectionTimeoutMS` expired: mongoc: "
                                "[Fake error for 'example-localhost.invalid']"
                                ". Topology type: Single",
                                false,
@@ -105,7 +105,7 @@ test_server_selection_error_dns_multi_fail_single (void)
 {
    server_selection_error_dns ("mongodb://"
                                "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
-                               "No suitable servers found (`serverSelectionTryOnce` set):"
+                               "No suitable servers found (`serverSelectionTryOnce` set): mongoc:"
                                " [Fake error for 'example-localhost.invalid']"
                                " [Fake error for 'other-example-localhost.invalid']"
                                ". Topology type: Unknown",
@@ -120,7 +120,7 @@ test_server_selection_error_dns_multi_fail_pooled (void *ctx)
 
    server_selection_error_dns ("mongodb://"
                                "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
-                               "No suitable servers found: `serverSelectionTimeoutMS` expired:"
+                               "No suitable servers found: `serverSelectionTimeoutMS` expired: mongoc:"
                                " [Fake error for 'example-localhost.invalid']"
                                " [Fake error for 'other-example-localhost.invalid']"
                                ". Topology type: Unknown",
