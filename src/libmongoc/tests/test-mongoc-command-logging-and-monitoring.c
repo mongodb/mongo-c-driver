@@ -353,7 +353,7 @@ prose_test_3 (void)
 void
 test_command_logging_and_monitoring_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/command-logging-and-monitoring/logging/prose_test_1", prose_test_1);
-   TestSuite_Add (suite, "/command-logging-and-monitoring/logging/prose_test_2", prose_test_2);
-   TestSuite_Add (suite, "/command-logging-and-monitoring/logging/prose_test_3", prose_test_3);
+   TestSuite_AddLive (suite, "/command-logging-and-monitoring/logging/prose_test_1", prose_test_1);
+   TestSuite_AddLive (suite, "/command-logging-and-monitoring/logging/prose_test_2", prose_test_2);
+   TestSuite_AddLive (suite, "/command-logging-and-monitoring/logging/prose_test_3", prose_test_3);
 }
