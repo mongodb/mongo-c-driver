@@ -1,7 +1,7 @@
-:man_page: :man_page: mongoc_structured_log_opts_set_max_document_length
+:man_page: mongoc_structured_log_opts_set_max_document_length
 
-:man_page: mongoc_structured_log_opts_set_max_document_length()
-===============================================================
+mongoc_structured_log_opts_set_max_document_length()
+====================================================
 
 Synopsis
 --------
