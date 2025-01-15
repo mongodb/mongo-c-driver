@@ -37,12 +37,12 @@ prose_test_1 (void)
    {
       mongoc_structured_log_opts_t *log_opts = mongoc_structured_log_opts_new ();
 
-      mongoc_structured_log_opts_set_max_level_for_component (
-         log_opts, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+      ASSERT (mongoc_structured_log_opts_set_max_level_for_component (
+         log_opts, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
       mongoc_structured_log_opts_set_handler (log_opts, stored_log_handler, &stored_log);
 
-      mongoc_client_set_structured_log_opts (client, log_opts);
+      ASSERT (mongoc_client_set_structured_log_opts (client, log_opts));
       mongoc_structured_log_opts_destroy (log_opts);
    }
    mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
@@ -151,13 +151,13 @@ prose_test_2 (void)
    {
       mongoc_structured_log_opts_t *log_opts = mongoc_structured_log_opts_new ();
 
-      mongoc_structured_log_opts_set_max_document_length (log_opts, 5);
-      mongoc_structured_log_opts_set_max_level_for_component (
-         log_opts, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+      ASSERT (mongoc_structured_log_opts_set_max_document_length (log_opts, 5));
+      ASSERT (mongoc_structured_log_opts_set_max_level_for_component (
+         log_opts, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
       mongoc_structured_log_opts_set_handler (log_opts, stored_log_handler, &stored_log);
 
-      mongoc_client_set_structured_log_opts (client, log_opts);
+      ASSERT (mongoc_client_set_structured_log_opts (client, log_opts));
       mongoc_structured_log_opts_destroy (log_opts);
    }
 
@@ -305,14 +305,14 @@ prose_test_3 (void)
 
       // Set up the log options for each command, to test this new max_document_length
       mongoc_structured_log_opts_t *log_opts = mongoc_structured_log_opts_new ();
-      mongoc_structured_log_opts_set_max_document_length (log_opts, test_length);
-      mongoc_structured_log_opts_set_max_level_for_component (
-         log_opts, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+      ASSERT (mongoc_structured_log_opts_set_max_document_length (log_opts, test_length));
+      ASSERT (mongoc_structured_log_opts_set_max_level_for_component (
+         log_opts, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
       mongoc_array_t stored_log;
       _mongoc_array_init (&stored_log, sizeof (bson_t *));
       mongoc_structured_log_opts_set_handler (log_opts, stored_log_handler, &stored_log);
-      mongoc_client_set_structured_log_opts (client, log_opts);
+      ASSERT (mongoc_client_set_structured_log_opts (client, log_opts));
       mongoc_structured_log_opts_destroy (log_opts);
 
       ASSERT (!mongoc_client_command_simple (client, "db", &command, NULL, NULL, NULL));
@@ -341,7 +341,7 @@ prose_test_3 (void)
       ASSERT_CMPSTR (command, mcommon_str_from_append (&expected_json_truncated));
       mcommon_string_from_append_destroy (&expected_json_truncated);
 
-      mongoc_client_set_structured_log_opts (client, NULL);
+      ASSERT (mongoc_client_set_structured_log_opts (client, NULL));
       stored_log_clear (&stored_log);
       _mongoc_array_destroy (&stored_log);
    }
