@@ -114,7 +114,7 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          mongoc_uri_set_option_as_int64 (uri, key, bson_iter_int64 (&iter));
       } else if (mongoc_uri_option_is_bool (key)) {
          mongoc_uri_set_option_as_bool (uri, key, bson_iter_bool (&iter));
-      } else if (0 == strcmp ("appname", key)) {
+      } else if (0 == bson_strcasecmp ("appname", key)) {
          mongoc_uri_set_appname (uri, bson_iter_utf8 (&iter, NULL));
       } else {
          test_set_error (error, "Unimplemented test runner support for URI option: %s", key);
@@ -387,18 +387,49 @@ server_changed (const mongoc_apm_server_changed_t *changed)
    mongoc_apm_server_changed_get_topology_id (changed, &topology_id);
 
    bson_t *serialized = bson_new ();
+   const mongoc_server_description_t *previous_sd = mongoc_apm_server_changed_get_previous_description (changed);
+   const mongoc_server_description_t *new_sd = mongoc_apm_server_changed_get_new_description (changed);
+
+   // Limited to fields defined in the unified test schema
+   mongoc_server_description_content_flags_t sd_flags = MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_TYPE;
    bsonBuildAppend (
       *serialized,
-      kv ("address", cstr (mongoc_apm_server_changed_get_host (changed)->host_and_port)),
-      kv ("topologyId", oid (&topology_id)),
-      kv ("previousDescription",
-          bson (
-             *mongoc_server_description_hello_response (mongoc_apm_server_changed_get_previous_description (changed)))),
+      kv ("previousDescription", doc (do ({
+             mongoc_server_description_append_contents_to_bson (previous_sd, bsonBuildContext.doc, sd_flags);
+          }))),
       kv ("newDescription",
-          bson (*mongoc_server_description_hello_response (mongoc_apm_server_changed_get_new_description (changed)))));
+          doc (do ({ mongoc_server_description_append_contents_to_bson (new_sd, bsonBuildContext.doc, sd_flags); }))));
 
    event_store_or_destroy (entity, event_new ("serverDescriptionChangedEvent", serialized, false));
 }
+
+static void
+topology_changed (const mongoc_apm_topology_changed_t *changed)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_topology_changed_get_context (changed);
+   bson_oid_t topology_id;
+   mongoc_apm_topology_changed_get_topology_id (changed, &topology_id);
+
+   bson_t *serialized = bson_new ();
+   const mongoc_topology_description_t *previous_td = mongoc_apm_topology_changed_get_previous_description (changed);
+   const mongoc_topology_description_t *new_td = mongoc_apm_topology_changed_get_new_description (changed);
+
+   // Limited to fields defined in the unified test schema
+   mongoc_topology_description_content_flags_t td_flags = MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_TYPE;
+   mongoc_server_description_content_flags_t sd_flags = 0;
+   bsonBuildAppend (*serialized,
+                    kv ("previousDescription", doc (do ({
+                           mongoc_topology_description_append_contents_to_bson (
+                              previous_td, bsonBuildContext.doc, td_flags, sd_flags);
+                        }))),
+                    kv ("newDescription", doc (do ({
+                           mongoc_topology_description_append_contents_to_bson (
+                              new_td, bsonBuildContext.doc, td_flags, sd_flags);
+                        }))));
+
+   event_store_or_destroy (entity, event_new ("topologyDescriptionChangedEvent", serialized, false));
+}
+
 
 static void
 set_command_started_cb (mongoc_apm_callbacks_t *callbacks)
@@ -424,6 +455,12 @@ set_server_changed_cb (mongoc_apm_callbacks_t *callbacks)
    mongoc_apm_set_server_changed_cb (callbacks, server_changed);
 }
 
+static void
+set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_topology_changed_cb (callbacks, topology_changed);
+}
+
 /* Set a callback for the indicated event type in a mongoc_apm_callbacks_t.
  * Safe to call multiple times for the same event: callbacks for a specific
  * event type are always the same. Returns 'true' if the event is known and
@@ -444,6 +481,7 @@ set_event_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
       {.type = "commandFailedEvent", .set = set_command_failed_cb},
       {.type = "commandSucceededEvent", .set = set_command_succeeded_cb},
       {.type = "serverDescriptionChangedEvent", .set = set_server_changed_cb},
+      {.type = "topologyDescriptionChangedEvent", .set = set_topology_changed_cb},
       {.type = NULL, .set = NULL},
    };
 

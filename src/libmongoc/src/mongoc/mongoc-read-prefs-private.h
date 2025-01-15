@@ -63,6 +63,18 @@ assemble_query_result_cleanup (mongoc_assemble_query_result_t *result);
 bool
 _mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs, bson_error_t *error);
 
+typedef enum {
+   MONGOC_READ_PREFS_CONTENT_FLAG_MODE = (1 << 0),
+   MONGOC_READ_PREFS_CONTENT_FLAG_TAGS = (1 << 1),
+   MONGOC_READ_PREFS_CONTENT_FLAG_MAX_STALENESS_SECONDS = (1 << 2),
+   MONGOC_READ_PREFS_CONTENT_FLAG_HEDGE = (1 << 3),
+} mongoc_read_prefs_content_flags_t;
+
+bool
+mongoc_read_prefs_append_contents_to_bson (const mongoc_read_prefs_t *read_prefs,
+                                           bson_t *bson,
+                                           mongoc_read_prefs_content_flags_t flags);
+
 #define IS_PREF_PRIMARY(_pref) (!(_pref) || ((_pref)->mode == MONGOC_READ_PRIMARY))
 
 BSON_END_DECLS

@@ -42,7 +42,9 @@ _getmore_type (mongoc_cursor_t *cursor)
    if (data->getmore_type != UNKNOWN) {
       return data->getmore_type;
    }
-   server_stream = _mongoc_cursor_fetch_stream (cursor);
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = "getMore", .has_operation_id = true, .operation_id = cursor->operation_id};
+   server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
    if (!server_stream) {
       return UNKNOWN;
    }

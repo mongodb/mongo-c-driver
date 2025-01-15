@@ -1558,6 +1558,9 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       goto fail;
    }
 
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = "bulkWrite", .has_operation_id = true, .operation_id = self->operation_id};
+
    // Select a stream.
    {
       bson_t reply;
@@ -1567,7 +1570,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             &self->client->cluster, opts->serverid, true /* reconnect_ok */, self->session, &reply, &error);
       } else {
          ss = mongoc_cluster_stream_for_writes (
-            &self->client->cluster, self->session, NULL /* deprioritized servers */, &reply, &error);
+            &self->client->cluster, &ss_log_context, self->session, NULL /* deprioritized servers */, &reply, &error);
       }
 
       if (!ss) {
@@ -1815,8 +1818,12 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             bson_t reply;
             // Select a server and create a stream again.
             mongoc_server_stream_cleanup (ss);
-            ss = mongoc_cluster_stream_for_writes (
-               &self->client->cluster, NULL /* session */, NULL /* deprioritized servers */, &reply, &error);
+            ss = mongoc_cluster_stream_for_writes (&self->client->cluster,
+                                                   &ss_log_context,
+                                                   NULL /* session */,
+                                                   NULL /* deprioritized servers */,
+                                                   &reply,
+                                                   &error);
 
             if (ss) {
                parts.assembled.server_stream = ss;

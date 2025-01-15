@@ -168,7 +168,9 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor, mongoc_cursor_response_legac
 
    const int64_t started = bson_get_monotonic_time ();
 
-   mongoc_server_stream_t *const server_stream = _mongoc_cursor_fetch_stream (cursor);
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = "getMore", .has_operation_id = true, .operation_id = cursor->operation_id};
+   mongoc_server_stream_t *const server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
 
    if (!server_stream) {
       GOTO (done);
@@ -543,7 +545,9 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor, bson_t *filter, mongoc_cu
 
    bool ret = false;
 
-   mongoc_server_stream_t *const server_stream = _mongoc_cursor_fetch_stream (cursor);
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = "find", .has_operation_id = true, .operation_id = cursor->operation_id};
+   mongoc_server_stream_t *const server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
 
    if (!server_stream) {
       RETURN (false);

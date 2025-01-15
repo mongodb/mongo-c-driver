@@ -32,6 +32,7 @@
 #include "mongoc-error-private.h"
 #include "mongoc-topology-background-monitoring-private.h"
 #include "mongoc-read-prefs-private.h"
+#include "mongoc-structured-log-private.h"
 
 #include "utlist.h"
 
@@ -1033,11 +1034,13 @@ _mongoc_server_selection_error (const char *msg, const bson_error_t *scanner_err
 mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
+                        const mongoc_ss_log_context_t *log_context,
                         const mongoc_read_prefs_t *read_prefs,
                         bool *must_use_primary,
                         bson_error_t *error)
 {
-   uint32_t server_id = mongoc_topology_select_server_id (topology, optype, read_prefs, must_use_primary, NULL, error);
+   uint32_t server_id =
+      mongoc_topology_select_server_id (topology, optype, log_context, read_prefs, must_use_primary, NULL, error);
 
    if (server_id) {
       /* new copy of the server description */
@@ -1140,6 +1143,7 @@ done:
 uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
+                                  const mongoc_ss_log_context_t *log_context,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bool *must_use_primary,
                                   const mongoc_deprioritized_servers_t *ds,
@@ -1154,6 +1158,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    bool try_once;
    int64_t sleep_usec;
    bool tried_once;
+   bool logged_waiting_for_suitable_server = false;
    bson_error_t scanner_error = {0};
    int64_t heartbeat_msec;
    uint32_t server_id;
@@ -1173,6 +1178,15 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
    BSON_ASSERT (topology);
    ts = topology->scanner;
+
+   mongoc_structured_log (topology->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                          "Server selection started",
+                          read_prefs ("selector", read_prefs),
+                          utf8 ("operation", log_context->operation),
+                          int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                          topology_as_description_json ("topologyDescription", topology));
 
    if (!mongoc_topology_scanner_valid (ts)) {
       if (error) {
@@ -1232,6 +1246,19 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
                   server_id = 0;
                   goto done;
+               }
+               if (!logged_waiting_for_suitable_server) {
+                  logged_waiting_for_suitable_server = true;
+                  mongoc_structured_log (
+                     topology->structured_log,
+                     MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                     MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                     "Waiting for suitable server to become available",
+                     read_prefs ("selector", read_prefs),
+                     utf8 ("operation", log_context->operation),
+                     int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                     topology_as_description_json ("topologyDescription", topology),
+                     int64 ("remainingTimeMS", (expire_at - loop_end) / 1000));
                }
                topology->usleep_fn (sleep_usec, topology->usleep_data);
             }
@@ -1322,6 +1349,18 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
              _mongoc_read_mode_as_str (mongoc_read_prefs_get_mode (read_prefs)));
       _mongoc_topology_request_scan (topology);
 
+      if (!logged_waiting_for_suitable_server) {
+         logged_waiting_for_suitable_server = true;
+         mongoc_structured_log (topology->structured_log,
+                                MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                                MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                                "Waiting for suitable server to become available",
+                                read_prefs ("selector", read_prefs),
+                                utf8 ("operation", log_context->operation),
+                                int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                                topology_as_description_json ("topologyDescription", topology),
+                                int64 ("remainingTimeMS", (expire_at - loop_start) / 1000));
+      }
       TRACE ("server selection about to wait for %" PRId64 "ms", (expire_at - loop_start) / 1000);
       r = mongoc_cond_timedwait (
          &topology->cond_client, &topology->tpld_modification_mtx, (expire_at - loop_start) / 1000);
@@ -1364,11 +1403,32 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    }
 
 done:
-   if (error && server_id == 0) {
-      /* server_id set to zero indicates that an error has occured and that `error` is initialized */
-      if (error->domain == MONGOC_ERROR_SERVER_SELECTION) {
+   /* server_id set to zero indicates an error has occured and that `error` should be initialized */
+   if (server_id == 0) {
+      if (error && error->domain == MONGOC_ERROR_SERVER_SELECTION) {
          _mongoc_error_append (error, mcommon_str_from_append (&topology_type));
       }
+      mongoc_structured_log (topology->structured_log,
+                             MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                             MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                             "Server selection failed",
+                             read_prefs ("selector", read_prefs),
+                             utf8 ("operation", log_context->operation),
+                             int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                             topology_as_description_json ("topologyDescription", topology),
+                             error ("failure", error));
+   } else {
+      mongoc_structured_log (
+         topology->structured_log,
+         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+         MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+         "Server selection succeeded",
+         read_prefs ("selector", read_prefs),
+         utf8 ("operation", log_context->operation),
+         int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+         topology_as_description_json ("topologyDescription", topology),
+         server_description (
+            mongoc_topology_description_server_by_id_const (td.ptr, server_id, NULL), SERVER_HOST, SERVER_PORT));
    }
    mcommon_string_from_append_destroy (&topology_type);
    mc_tpld_drop_ref (&td);
@@ -1554,7 +1614,9 @@ _mongoc_topology_update_cluster_time (mongoc_topology_t *topology, const bson_t 
  */
 
 mongoc_server_session_t *
-_mongoc_topology_pop_server_session (mongoc_topology_t *topology, bson_error_t *error)
+_mongoc_topology_pop_server_session (mongoc_topology_t *topology,
+                                     const mongoc_ss_log_context_t *log_context,
+                                     bson_error_t *error)
 {
    int64_t timeout;
    mongoc_server_session_t *ss = NULL;
@@ -1572,6 +1634,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology, bson_error_t *
       if (!mongoc_topology_description_has_data_node (td.ptr)) {
          if (!mongoc_topology_select_server_id (topology,
                                                 MONGOC_SS_READ,
+                                                log_context,
                                                 NULL /* read prefs */,
                                                 NULL /* chosen read mode */,
                                                 NULL /* deprioritized servers */,
