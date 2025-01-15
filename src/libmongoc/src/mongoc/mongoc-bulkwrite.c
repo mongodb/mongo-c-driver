@@ -1325,6 +1325,7 @@ _bulkwritereturn_apply_reply (mongoc_bulkwritereturn_t *self, const bson_t *cmd_
          if (!_mongoc_iter_document_as_bson (&wce_iter, &errInfo, &error)) {
             _bulkwriteexception_set_error (self->exc, &error);
             _bulkwriteexception_set_error_reply (self->exc, cmd_reply);
+            return false;
          }
       }
 
