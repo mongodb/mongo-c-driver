@@ -29,6 +29,9 @@ Functions
   mongoc_structured_log_opts_set_max_level_for_all_components
   mongoc_structured_log_opts_set_max_levels_from_env
   mongoc_structured_log_opts_get_max_level_for_component
+  mongoc_structured_log_opts_set_max_document_length
+  mongoc_structured_log_opts_set_max_document_length_from_env
+  mongoc_structured_log_opts_get_max_document_length
 
 .. seealso::
 

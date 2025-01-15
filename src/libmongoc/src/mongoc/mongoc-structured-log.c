@@ -270,25 +270,46 @@ mongoc_structured_log_get_named_component (const char *name, mongoc_structured_l
    return false;
 }
 
-static uint32_t
-_mongoc_structured_log_get_max_document_length_from_env (void)
+size_t
+mongoc_structured_log_opts_get_max_document_length (const mongoc_structured_log_opts_t *opts)
 {
+   return (size_t) opts->max_document_length;
+}
+
+bool
+mongoc_structured_log_opts_set_max_document_length (mongoc_structured_log_opts_t *opts, size_t max_document_length)
+{
+   if (max_document_length <= (size_t) MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH) {
+      opts->max_document_length = (uint32_t) max_document_length;
+      return true;
+   } else {
+      return false;
+   }
+}
+
+bool
+mongoc_structured_log_opts_set_max_document_length_from_env (mongoc_structured_log_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (opts);
+
    const char *variable = "MONGODB_LOG_MAX_DOCUMENT_LENGTH";
    const char *max_length_str = getenv (variable);
 
    if (!max_length_str) {
-      return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
+      return true;
    }
 
    if (!strcasecmp (max_length_str, "unlimited")) {
-      return MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH;
+      BSON_ASSERT (
+         mongoc_structured_log_opts_set_max_document_length (opts, MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH));
+      return true;
    }
 
    char *endptr;
    long int_value = strtol (max_length_str, &endptr, 10);
-   if (int_value >= 0 && int_value <= (long) MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH &&
-       endptr != max_length_str && !*endptr) {
-      return (uint32_t) int_value;
+   if (int_value >= 0 && endptr != max_length_str && !*endptr && mcommon_in_range_signed (size_t, int_value) &&
+       mongoc_structured_log_opts_set_max_document_length (opts, (size_t) int_value)) {
+      return true;
    }
 
    // Only log the first instance of each error per process
@@ -296,7 +317,7 @@ _mongoc_structured_log_get_max_document_length_from_env (void)
    if (0 == mcommon_atomic_int_fetch_add (&err_count_atomic, 1, mcommon_memory_order_seq_cst)) {
       MONGOC_WARNING ("Invalid length '%s' read from environment variable %s. Ignoring it.", max_length_str, variable);
    }
-   return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
+   return false;
 }
 
 bool
@@ -422,7 +443,8 @@ mongoc_structured_log_opts_new (void)
     * If environment variables can't be parsed, warnings will be logged once but we must, by specification,
     * continue to provide structured logging using whatever valid or default settings remain. */
    opts->default_handler_path = bson_strdup (getenv ("MONGODB_LOG_PATH"));
-   opts->max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
+   opts->max_document_length = MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
+   (void) mongoc_structured_log_opts_set_max_document_length_from_env (opts);
    (void) mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL);
    (void) mongoc_structured_log_opts_set_max_levels_from_env (opts);
 

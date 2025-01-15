@@ -738,6 +738,22 @@ test_structured_log_component_names (void)
 }
 
 void
+test_structured_log_max_document_length (void)
+{
+   mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
+
+   // Test assumes no environment variable option is set
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH, ==, mongoc_structured_log_opts_get_max_document_length (opts));
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 0));
+   ASSERT (!mongoc_structured_log_opts_set_max_document_length (opts, INT_MAX));
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, INT_MAX / 2));
+   ASSERT_CMPINT (INT_MAX / 2, ==, mongoc_structured_log_opts_get_max_document_length (opts));
+
+   mongoc_structured_log_opts_destroy (opts);
+}
+
+void
 test_structured_log_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/structured_log/opts", test_structured_log_opts);
@@ -752,4 +768,5 @@ test_structured_log_install (TestSuite *suite)
    TestSuite_Add (suite, "/structured_log/duration", test_structured_log_duration);
    TestSuite_Add (suite, "/structured_log/level_names", test_structured_log_level_names);
    TestSuite_Add (suite, "/structured_log/component_names", test_structured_log_component_names);
+   TestSuite_Add (suite, "/structured_log/max_document_length", test_structured_log_max_document_length);
 }
