@@ -681,10 +681,27 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       mongoc_cond_destroy (&topology->srv_polling_cond);
    }
 
-   if (topology->valid) {
-      /* Do not emit a topology_closed event. A topology opening event was not
-       * emitted. */
-      _mongoc_topology_description_monitor_closed (mc_tpld_unsafe_get_const (topology), &topology->log_and_monitor);
+   /* Before reporting this topology as closed, life cycle rules expect us to close
+    * all servers and transition to an unknown topology. */
+   {
+      mc_shared_tpld td = mc_tpld_take_ref (topology);
+
+      for (size_t i = 0u; i < mc_tpld_servers_const (td.ptr)->items_len; i++) {
+         const mongoc_server_description_t *sd = mongoc_set_get_item_const (mc_tpld_servers_const (td.ptr), i);
+         _mongoc_topology_description_monitor_server_closed (td.ptr, &topology->log_and_monitor, sd);
+      }
+
+      // Transition to an "Unknown" td that will exist only for monitoring purposes just before closing
+      mongoc_topology_description_t next_td;
+      mongoc_topology_description_init (&next_td, td.ptr->heartbeat_msec);
+      bson_oid_copy (&td.ptr->topology_id, &next_td.topology_id);
+      next_td.opened_by_log_and_monitor = td.ptr->opened_by_log_and_monitor;
+
+      _mongoc_topology_description_monitor_changed (td.ptr, &next_td, &topology->log_and_monitor);
+      _mongoc_topology_description_monitor_closed (&next_td, &topology->log_and_monitor);
+
+      mc_tpld_drop_ref (&td);
+      mongoc_topology_description_cleanup (&next_td);
    }
 
    mongoc_uri_destroy (topology->uri);

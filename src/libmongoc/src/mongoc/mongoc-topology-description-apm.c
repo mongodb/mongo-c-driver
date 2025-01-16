@@ -78,6 +78,10 @@ _mongoc_topology_description_monitor_server_closed (const mongoc_topology_descri
                                                     const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                     const mongoc_server_description_t *sd)
 {
+   if (sd->opened_by_log_and_monitor != log_and_monitor->serial) {
+      return;
+   }
+
    mongoc_structured_log (log_and_monitor->structured_log,
                           MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
                           MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
@@ -97,7 +101,7 @@ _mongoc_topology_description_monitor_server_closed (const mongoc_topology_descri
 
 
 /* Send TopologyOpeningEvent when first called on this topology description.
- * td is not const: we set its "opened" field here */
+ * td is not const: we mark it as "opened" by the current log-and-monitor instance. */
 void
 _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
                                               const mongoc_log_and_monitor_instance_t *log_and_monitor)
@@ -199,14 +203,18 @@ void
 _mongoc_topology_description_monitor_closed (const mongoc_topology_description_t *td,
                                              const mongoc_log_and_monitor_instance_t *log_and_monitor)
 {
-   if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-      const mongoc_server_description_t *sd;
+   BSON_ASSERT (td->type == MONGOC_TOPOLOGY_UNKNOWN);
+   BSON_ASSERT (mc_tpld_servers_const (td)->items_len == 0);
 
-      /* LoadBalanced deployments must have exactly one host listed. */
-      BSON_ASSERT (mc_tpld_servers_const (td)->items_len == 1);
-      sd = mongoc_set_get_item_const (mc_tpld_servers_const (td), 0);
-      _mongoc_topology_description_monitor_server_closed (td, log_and_monitor, sd);
+   if (td->opened_by_log_and_monitor != log_and_monitor->serial) {
+      return;
    }
+
+   mongoc_structured_log (log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Stopped topology monitoring",
+                          oid ("topologyId", &td->topology_id));
 
    if (log_and_monitor->apm_callbacks.topology_closed) {
       mongoc_apm_topology_closed_t event;
