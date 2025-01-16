@@ -617,6 +617,10 @@ _mongoc_structured_log_command_with_payloads_as_truncated_json (const mongoc_cmd
          }
          doc_ptr += doc_len;
       }
+      if (doc_ptr != doc_end) {
+         invalid_document = true;
+         goto done;
+      }
 
       if (!mcommon_string_append (&append, " ]")) {
          goto done;
