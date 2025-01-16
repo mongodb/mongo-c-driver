@@ -17,6 +17,7 @@
 #include <mongoc/mongoc.h>
 
 #include "mongoc/mongoc-structured-log-private.h"
+#include "test-libmongoc.h"
 #include "TestSuite.h"
 
 typedef struct log_assumption {
@@ -742,15 +743,65 @@ test_structured_log_max_document_length (void)
 {
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
 
-   // Test requires the environment variable option is unset, so we see the default.
-   ASSERT (getenv ("MONGODB_LOG_MAX_DOCUMENT_LENGTH") == NULL);
    ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH, ==, 1000);
-   ASSERT_CMPINT (1000, ==, mongoc_structured_log_opts_get_max_document_length (opts));
 
    ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 0));
    ASSERT (!mongoc_structured_log_opts_set_max_document_length (opts, INT_MAX));
    ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, INT_MAX / 2));
    ASSERT_CMPINT (INT_MAX / 2, ==, mongoc_structured_log_opts_get_max_document_length (opts));
+
+   mongoc_structured_log_opts_destroy (opts);
+}
+
+int
+check_test_structured_log_env_defaults (void)
+{
+   // Skip testing env defaults if any options have been set externally
+   const char *expected_unset[] = {
+      "MONGODB_LOG_MAX_DOCUMENT_LENGTH",
+      "MONGODB_LOG_COMMAND",
+      "MONGODB_LOG_TOPOLOGY",
+      "MONGODB_LOG_SERVER_SELECTION",
+      "MONGODB_LOG_CONNECTION",
+      "MONGODB_LOG_ALL",
+   };
+
+   for (size_t i = 0u; i < sizeof expected_unset / sizeof expected_unset[0]; i++) {
+      const char *var = expected_unset[i];
+      char *value = test_framework_getenv (var);
+      bson_free (value);
+      if (value) {
+         MONGOC_DEBUG ("Skipping test because environment var '%s' is set", var);
+         return 0;
+      }
+   }
+   return 1;
+}
+
+void
+test_structured_log_env_defaults (void)
+{
+   mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
+
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      ==,
+      mongoc_structured_log_opts_get_max_level_for_component (opts, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND));
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      ==,
+      mongoc_structured_log_opts_get_max_level_for_component (opts, MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION));
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      ==,
+      mongoc_structured_log_opts_get_max_level_for_component (opts, MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION));
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      ==,
+      mongoc_structured_log_opts_get_max_level_for_component (opts, MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY));
+
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH, ==, mongoc_structured_log_opts_get_max_document_length (opts));
 
    mongoc_structured_log_opts_destroy (opts);
 }
@@ -771,4 +822,10 @@ test_structured_log_install (TestSuite *suite)
    TestSuite_Add (suite, "/structured_log/level_names", test_structured_log_level_names);
    TestSuite_Add (suite, "/structured_log/component_names", test_structured_log_component_names);
    TestSuite_Add (suite, "/structured_log/max_document_length", test_structured_log_max_document_length);
+   TestSuite_AddFullWithTestFn (suite,
+                                "/structured_log/env_defaults",
+                                TestSuite_AddHelper,
+                                NULL,
+                                test_structured_log_env_defaults,
+                                check_test_structured_log_env_defaults);
 }

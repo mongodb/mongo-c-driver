@@ -248,7 +248,7 @@ TestSuite_CheckMockServerAllowed (void)
    return 1;
 }
 
-static void
+void
 TestSuite_AddHelper (void *ctx)
 {
    ((TestFnCtx *) ctx)->test_fn ();

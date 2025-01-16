@@ -194,18 +194,19 @@ _mongoc_structured_log_get_log_level_from_env (const char *variable,
                                                mongoc_structured_log_level_t *out,
                                                int volatile *err_flag_atomic)
 {
-   const char *level = getenv (variable);
+   char *level = _mongoc_getenv (variable);
    if (!level) {
       return false;
    }
-   if (mongoc_structured_log_get_named_level (level, out)) {
-      return true;
+   bool result = mongoc_structured_log_get_named_level (level, out);
+   if (!result) {
+      // Only log the first instance of each error per process
+      if (0 == mcommon_atomic_int_compare_exchange_strong (err_flag_atomic, 0, 1, mcommon_memory_order_seq_cst)) {
+         MONGOC_WARNING ("Invalid log level '%s' read from environment variable %s. Ignoring it.", level, variable);
+      }
    }
-   // Only log the first instance of each error per process
-   if (0 == mcommon_atomic_int_compare_exchange_strong (err_flag_atomic, 0, 1, mcommon_memory_order_seq_cst)) {
-      MONGOC_WARNING ("Invalid log level '%s' read from environment variable %s. Ignoring it.", level, variable);
-   }
-   return false;
+   bson_free (level);
+   return result;
 }
 
 const char *
@@ -294,31 +295,39 @@ mongoc_structured_log_opts_set_max_document_length_from_env (mongoc_structured_l
    BSON_ASSERT_PARAM (opts);
 
    const char *variable = "MONGODB_LOG_MAX_DOCUMENT_LENGTH";
-   const char *max_length_str = getenv (variable);
+   char *max_length_str = _mongoc_getenv (variable);
 
    if (!max_length_str) {
       return true;
    }
 
+   bool result = false;
+
    if (!strcasecmp (max_length_str, "unlimited")) {
       BSON_ASSERT (
          mongoc_structured_log_opts_set_max_document_length (opts, MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH));
-      return true;
+      result = true;
+   } else {
+      char *endptr;
+      long int_value = strtol (max_length_str, &endptr, 10);
+      if (int_value >= 0 && endptr != max_length_str && *endptr == '\0' &&
+          mcommon_in_range_signed (size_t, int_value) &&
+          mongoc_structured_log_opts_set_max_document_length (opts, (size_t) int_value)) {
+         result = true;
+      }
    }
 
-   char *endptr;
-   long int_value = strtol (max_length_str, &endptr, 10);
-   if (int_value >= 0 && endptr != max_length_str && *endptr == '\0' && mcommon_in_range_signed (size_t, int_value) &&
-       mongoc_structured_log_opts_set_max_document_length (opts, (size_t) int_value)) {
-      return true;
+   if (!result) {
+      // Only log the first instance of each error per process
+      static int err_flag_atomic;
+      if (0 == mcommon_atomic_int_compare_exchange_strong (&err_flag_atomic, 0, 1, mcommon_memory_order_seq_cst)) {
+         MONGOC_WARNING (
+            "Invalid length '%s' read from environment variable %s. Ignoring it.", max_length_str, variable);
+      }
    }
 
-   // Only log the first instance of each error per process
-   static int err_flag_atomic;
-   if (0 == mcommon_atomic_int_compare_exchange_strong (&err_flag_atomic, 0, 1, mcommon_memory_order_seq_cst)) {
-      MONGOC_WARNING ("Invalid length '%s' read from environment variable %s. Ignoring it.", max_length_str, variable);
-   }
-   return false;
+   bson_free (max_length_str);
+   return result;
 }
 
 bool
@@ -443,7 +452,7 @@ mongoc_structured_log_opts_new (void)
     * Note that error return values from mongoc_structured_log_opts_set_* must be ignored here.
     * If environment variables can't be parsed, warnings will be logged once but we must, by specification,
     * continue to provide structured logging using whatever valid or default settings remain. */
-   opts->default_handler_path = bson_strdup (getenv ("MONGODB_LOG_PATH"));
+   opts->default_handler_path = _mongoc_getenv ("MONGODB_LOG_PATH");
    opts->max_document_length = MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
    (void) mongoc_structured_log_opts_set_max_document_length_from_env (opts);
    (void) mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL);
