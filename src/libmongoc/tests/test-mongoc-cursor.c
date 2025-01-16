@@ -936,11 +936,13 @@ _test_cursor_new_from_command (const char *cmd_json, const char *collection_name
    r = (0 != mongoc_bulk_operation_execute (bulk, NULL, &error));
    ASSERT_OR_PRINT (r, error);
 
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, NULL, &error);
+   const bson_t *cmd_bson = tmp_bson (cmd_json);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_get_command_name (cmd_bson)};
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
    server_id = sd->id;
-   mongoc_client_command_simple_with_server_id (client, "test", tmp_bson (cmd_json), NULL, server_id, &reply, &error);
+   mongoc_client_command_simple_with_server_id (client, "test", cmd_bson, NULL, server_id, &reply, &error);
    cmd_cursor =
       mongoc_cursor_new_from_command_reply_with_opts (client, &reply, tmp_bson ("{'serverId': %d}", server_id));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cmd_cursor, &error), error);
@@ -1380,7 +1382,7 @@ server_id_for_read_mode (mongoc_client_t *client, mongoc_read_mode_t read_mode)
    uint32_t server_id;
 
    prefs = mongoc_read_prefs_new (read_mode);
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs, NULL, &error);
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, prefs, NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
    server_id = sd->id;

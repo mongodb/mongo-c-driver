@@ -22,6 +22,7 @@
 #include "mongoc-apm-private.h"
 #include "mongoc-error-private.h"
 #include "mongoc-structured-log-private.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-structured-log.h"
 #include "mongoc-util-private.h"
 
@@ -992,5 +993,71 @@ _mongoc_structured_log_append_server_description (bson_t *bson,
    const mongoc_server_description_t *sd = stage->arg1.server_description;
    const mongoc_server_description_content_flags_t flags = stage->arg2.server_description_flags;
    mongoc_server_description_append_contents_to_bson (sd, bson, flags);
+   return stage + 1;
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_topology_as_description_json (bson_t *bson,
+                                                            const mongoc_structured_log_builder_stage_t *stage,
+                                                            const mongoc_structured_log_opts_t *opts)
+{
+   const mongoc_topology_description_content_flags_t td_flags =
+      MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_TYPE | MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SET_NAME |
+      MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_ELECTION_ID |
+      MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_SET_VERSION | MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SERVERS |
+      MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_STALE | MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBLE |
+      MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBILITY_ERROR |
+      MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_LOGICAL_SESSION_TIMEOUT_MINUTES;
+
+   const mongoc_server_description_content_flags_t server_flags =
+      MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_TYPE | MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_ADDRESS;
+
+   const char *key_or_null = stage->arg1.utf8;
+   const mongoc_topology_t *topology_or_null = stage->arg2.topology;
+   if (key_or_null) {
+      if (topology_or_null) {
+         mc_shared_tpld td = mc_tpld_take_ref (topology_or_null);
+         bson_t inner_bson = BSON_INITIALIZER;
+         mongoc_topology_description_append_contents_to_bson (td.ptr, &inner_bson, td_flags, server_flags);
+         size_t json_length;
+         char *json = _mongoc_structured_log_inner_document_to_json (&inner_bson, &json_length, opts);
+         /* TODO: This will be replaced shortly with a spec compliant string truncation implementation.
+          *    Note the INT_MAX size limit specific to bson_append_utf8(), vs the UINT32_MAX-1 internal limits.
+          *    This check will move as part of centralizing truncation behavior, with the benefits of
+          *    preserving UTF-8 sequence integrity and consistently inserting "..." when truncating.
+          */
+         if (json) {
+            bson_append_utf8 (
+               bson, key_or_null, -1, json, json_length > (size_t) INT_MAX ? INT_MAX : (int) json_length);
+            bson_free (json);
+         }
+         bson_destroy (&inner_bson);
+         mc_tpld_drop_ref (&td);
+      } else {
+         bson_append_null (bson, key_or_null, -1);
+      }
+   }
+   return stage + 1;
+}
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_read_prefs (bson_t *bson,
+                                          const mongoc_structured_log_builder_stage_t *stage,
+                                          const mongoc_structured_log_opts_t *opts)
+{
+   BSON_UNUSED (opts);
+   const char *key_or_null = stage->arg1.utf8;
+   const mongoc_read_prefs_t *read_prefs = stage->arg2.read_prefs;
+   if (key_or_null) {
+      bson_t child;
+      if (BSON_APPEND_DOCUMENT_BEGIN (bson, key_or_null, &child)) {
+         mongoc_read_prefs_append_contents_to_bson (
+            read_prefs,
+            &child,
+            MONGOC_READ_PREFS_CONTENT_FLAG_MODE | MONGOC_READ_PREFS_CONTENT_FLAG_TAGS |
+               MONGOC_READ_PREFS_CONTENT_FLAG_MAX_STALENESS_SECONDS | MONGOC_READ_PREFS_CONTENT_FLAG_HEDGE);
+         bson_append_document_end (bson, &child);
+      }
+   }
    return stage + 1;
 }

@@ -53,7 +53,10 @@ test_split_insert (void)
       _mongoc_write_command_insert_append (&command, docs[i]);
    }
 
-   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (&command),
+                                                   .has_operation_id = true,
+                                                   .operation_id = command.operation_id};
+   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, &ss_log_context, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    _mongoc_write_command_execute (
       &command, client, server_stream, collection->db, collection->collection, NULL, 0, NULL, &result);
@@ -110,7 +113,10 @@ test_invalid_write_concern (void)
 
    _mongoc_write_command_init_insert (&command, doc, NULL, write_flags, ++client->cluster.operation_id);
    _mongoc_write_result_init (&result);
-   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (&command),
+                                                   .has_operation_id = true,
+                                                   .operation_id = command.operation_id};
+   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, &ss_log_context, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    _mongoc_write_command_execute (
       &command, client, server_stream, collection->db, collection->collection, write_concern, 0, NULL, &result);

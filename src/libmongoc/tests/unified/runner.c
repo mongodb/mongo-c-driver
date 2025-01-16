@@ -985,6 +985,11 @@ done:
 static bool
 test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t *error)
 {
+   /* Note: With events serialized into the same format as the 'expected' documents,
+    * this test is effectively the same as a single top-level entity_map_match but with
+    * somewhat more verbose error messages. If this becomes too much of a maintenance
+    * burden, consider replacing it with a single match. */
+
    bool ret = false;
    bson_iter_t iter;
    bson_t expected_bson;
@@ -996,6 +1001,8 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    bson_t *expected_reply = NULL;
    bool *expected_has_service_id = NULL;
    bool *expected_has_server_connection_id = NULL;
+   bson_t *expected_previous_description = NULL;
+   bson_t *expected_new_description = NULL;
 
    BSON_ASSERT_PARAM (test);
    BSON_ASSERT_PARAM (expected);
@@ -1028,6 +1035,8 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    bson_parser_doc_optional (bp, "reply", &expected_reply);
    bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
    bson_parser_bool_optional (bp, "hasServerConnectionId", &expected_has_server_connection_id);
+   bson_parser_doc_optional (bp, "previousDescription", &expected_previous_description);
+   bson_parser_doc_optional (bp, "newDescription", &expected_new_description);
    if (!bson_parser_parse (bp, &expected_bson, error)) {
       goto done;
    }
@@ -1142,6 +1151,44 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
       }
       if (!*expected_has_server_connection_id && has_server_connection_id) {
          test_error ("expected MONGOC_NO_SERVER_CONNECTION_ID, but got %" PRId64, actual_server_connection_id);
+      }
+   }
+
+   if (expected_previous_description) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "previousDescription")) {
+         test_set_error (error, "event.previousDescription expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         test_set_error (error, "Unexpected type for event.previousDescription, should be document");
+         goto done;
+      }
+      bson_val_t *expected_val = bson_val_from_bson (expected_previous_description);
+      bson_val_t *actual_val = bson_val_from_iter (&iter);
+      bool is_match = entity_map_match (test->entity_map, expected_val, actual_val, false, error);
+      bson_val_destroy (expected_val);
+      bson_val_destroy (actual_val);
+      if (!is_match) {
+         goto done;
+      }
+   }
+
+   if (expected_new_description) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "newDescription")) {
+         test_set_error (error, "event.newDescription expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         test_set_error (error, "Unexpected type for event.newDescription, should be document");
+         goto done;
+      }
+      bson_val_t *expected_val = bson_val_from_bson (expected_new_description);
+      bson_val_t *actual_val = bson_val_from_iter (&iter);
+      bool is_match = entity_map_match (test->entity_map, expected_val, actual_val, false, error);
+      bson_val_destroy (expected_val);
+      bson_val_destroy (actual_val);
+      if (!is_match) {
+         goto done;
       }
    }
 
@@ -2081,4 +2128,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "index-management");
 
    run_unified_tests (suite, JSON_DIR, "command-logging-and-monitoring");
+
+   run_unified_tests (suite, JSON_DIR, "server_selection/logging");
 }

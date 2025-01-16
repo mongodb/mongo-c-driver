@@ -1038,7 +1038,9 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
 
    // Check the wire version to ensure server is 7.0.0 or newer.
    {
+      const mongoc_ss_log_context_t ss_log_context = {.operation = "createCollection"};
       mongoc_server_stream_t *stream = mongoc_cluster_stream_for_writes (&database->client->cluster,
+                                                                         &ss_log_context,
                                                                          NULL /* client session */,
                                                                          NULL /* deprioritized servers */,
                                                                          NULL /* reply */,
