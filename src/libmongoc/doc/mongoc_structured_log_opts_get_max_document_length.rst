@@ -19,7 +19,7 @@ Parameters
 Returns
 -------
 
-Returns the current maximum document length set in ``opts``, as a ``size_t``. Always succeeds.
+Returns the current maximum document length set in ``opts``, as a ``size_t``.
 
 .. seealso::
 
