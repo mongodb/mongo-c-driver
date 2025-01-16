@@ -128,7 +128,6 @@ prose_test_1 (void)
       uint32_t reply_len;
       const char *reply = bson_iter_utf8 (&iter, &reply_len);
       ASSERT (reply);
-      printf ("rep %s\n", reply);
       ASSERT_CMPUINT32 (reply_len, ==, 1003);
    }
 
