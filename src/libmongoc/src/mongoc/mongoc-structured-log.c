@@ -192,7 +192,7 @@ _mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry)
 static bool
 _mongoc_structured_log_get_log_level_from_env (const char *variable,
                                                mongoc_structured_log_level_t *out,
-                                               int volatile *err_count_atomic)
+                                               int volatile *err_flag_atomic)
 {
    const char *level = getenv (variable);
    if (!level) {
@@ -202,7 +202,7 @@ _mongoc_structured_log_get_log_level_from_env (const char *variable,
       return true;
    }
    // Only log the first instance of each error per process
-   if (0 == mcommon_atomic_int_fetch_add (err_count_atomic, 1, mcommon_memory_order_seq_cst)) {
+   if (0 == mcommon_atomic_int_compare_exchange_strong (err_flag_atomic, 0, 1, mcommon_memory_order_seq_cst)) {
       MONGOC_WARNING ("Invalid log level '%s' read from environment variable %s. Ignoring it.", level, variable);
    }
    return false;
@@ -314,8 +314,8 @@ mongoc_structured_log_opts_set_max_document_length_from_env (mongoc_structured_l
    }
 
    // Only log the first instance of each error per process
-   static int err_count_atomic;
-   if (0 == mcommon_atomic_int_fetch_add (&err_count_atomic, 1, mcommon_memory_order_seq_cst)) {
+   static int err_flag_atomic;
+   if (0 == mcommon_atomic_int_compare_exchange_strong (&err_flag_atomic, 0, 1, mcommon_memory_order_seq_cst)) {
       MONGOC_WARNING ("Invalid length '%s' read from environment variable %s. Ignoring it.", max_length_str, variable);
    }
    return false;
@@ -331,10 +331,10 @@ mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t
 
    // Errors are not fatal by default; always reported by return value, and reported the first time only via a log
    // warning.
-   static int err_count_all_atomic;
-   static int err_count_per_component_atomic[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
+   static int err_flag_all_atomic;
+   static int err_flag_per_component_atomic[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
 
-   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level, &err_count_all_atomic)) {
+   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level, &err_flag_all_atomic)) {
       BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, level));
    } else {
       all_ok = false;
@@ -342,7 +342,7 @@ mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t
 
    for (int component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
       if (_mongoc_structured_log_get_log_level_from_env (
-             gStructuredLogComponentEnvVars[component], &level, &err_count_per_component_atomic[component])) {
+             gStructuredLogComponentEnvVars[component], &level, &err_flag_per_component_atomic[component])) {
          BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_component (
             opts, (mongoc_structured_log_component_t) component, level));
       } else {
