@@ -1019,18 +1019,13 @@ _mongoc_structured_log_append_topology_as_description_json (bson_t *bson,
          mc_shared_tpld td = mc_tpld_take_ref (topology_or_null);
          bson_t inner_bson = BSON_INITIALIZER;
          mongoc_topology_description_append_contents_to_bson (td.ptr, &inner_bson, td_flags, server_flags);
-         size_t json_length;
-         char *json = _mongoc_structured_log_inner_document_to_json (&inner_bson, &json_length, opts);
-         /* TODO: This will be replaced shortly with a spec compliant string truncation implementation.
-          *    Note the INT_MAX size limit specific to bson_append_utf8(), vs the UINT32_MAX-1 internal limits.
-          *    This check will move as part of centralizing truncation behavior, with the benefits of
-          *    preserving UTF-8 sequence integrity and consistently inserting "..." when truncating.
-          */
+         mcommon_string_t *json = _mongoc_structured_log_document_as_truncated_json (&inner_bson, opts);
          if (json) {
-            bson_append_utf8 (
-               bson, key_or_null, -1, json, json_length > (size_t) INT_MAX ? INT_MAX : (int) json_length);
-            bson_free (json);
+            BSON_ASSERT (json->len <= (uint32_t) INT_MAX);
+            bson_append_utf8 (bson, key_or_null, -1, json->str, (int) json->len);
+            mcommon_string_destroy (json);
          }
+         // If invalid BSON was found in the input, the key is not logged.
          bson_destroy (&inner_bson);
          mc_tpld_drop_ref (&td);
       } else {
