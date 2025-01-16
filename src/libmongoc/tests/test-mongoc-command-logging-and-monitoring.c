@@ -326,10 +326,10 @@ prose_test_3 (void)
       ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "Command started");
       ASSERT (bson_iter_find (&iter, "command"));
       ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
-      uint32_t command_len;
-      const char *command = bson_iter_utf8 (&iter, &command_len);
-      ASSERT (command);
-      ASSERT_CMPUINT32 (command_len, ==, expected_length + 3);
+      uint32_t logged_command_len;
+      const char *logged_command_str = bson_iter_utf8 (&iter, &logged_command_len);
+      ASSERT (logged_command_str);
+      ASSERT_CMPUINT32 (logged_command_len, ==, expected_length + 3);
 
       // Note that here we do not use mcommon_string to truncate, just as a convenient way to represent the
       // expected string with ellipsis for ASSERT_CMPSTR. (The code under test internally uses mcommon_string_append_t
@@ -338,7 +338,7 @@ prose_test_3 (void)
       mcommon_string_new_as_append (&expected_json_truncated);
       mcommon_string_append_bytes (&expected_json_truncated, expected_json, expected_length);
       mcommon_string_append (&expected_json_truncated, "...");
-      ASSERT_CMPSTR (command, mcommon_str_from_append (&expected_json_truncated));
+      ASSERT_CMPSTR (logged_command_str, mcommon_str_from_append (&expected_json_truncated));
       mcommon_string_from_append_destroy (&expected_json_truncated);
 
       ASSERT (mongoc_client_set_structured_log_opts (client, NULL));
