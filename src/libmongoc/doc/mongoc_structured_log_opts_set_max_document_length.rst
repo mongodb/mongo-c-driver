@@ -30,3 +30,4 @@ Returns ``true`` on success, or ``false`` if the supplied maximum length is too 
 .. seealso::
 
   | :doc:`structured_log`
+  | :symbol:`mongoc_structured_log_opts_set_max_document_length_from_env`
