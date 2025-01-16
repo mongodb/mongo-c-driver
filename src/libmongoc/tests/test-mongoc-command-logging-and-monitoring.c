@@ -261,7 +261,7 @@ prose_test_3 (void)
    // codepoint are handled gracefully."
    //
    // For libmongoc, our max length is in bytes and truncation will round lengths down if necessary to avoid splitting a
-   // valid UTF-8 sequence. This test repeatedly sends a fake command to the mock server using every possible maximum
+   // valid UTF-8 sequence. This test repeatedly sends a fake command to the server using every possible maximum
    // length, checking for the expected truncations.
 
    bson_t command = BSON_INITIALIZER;
