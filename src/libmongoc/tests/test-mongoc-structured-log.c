@@ -742,9 +742,11 @@ test_structured_log_max_document_length (void)
 {
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
 
-   // Test assumes no environment variable option is set
-   ASSERT_CMPINT (
-      MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH, ==, mongoc_structured_log_opts_get_max_document_length (opts));
+   // Test requires the environment variable option is unset, so we see the default.
+   ASSERT (getenv ("MONGODB_LOG_MAX_DOCUMENT_LENGTH") == NULL);
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH, ==, 1000);
+   ASSERT_CMPINT (1000, ==, mongoc_structured_log_opts_get_max_document_length (opts));
+
    ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 0));
    ASSERT (!mongoc_structured_log_opts_set_max_document_length (opts, INT_MAX));
    ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, INT_MAX / 2));
