@@ -638,6 +638,9 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (
                   log_opts, MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY));
                mongoc_structured_log_opts_set_handler (log_opts, structured_log_cb, entity);
+               // From the Command Logging and Monitoring / Testing spec, unified tests MUST be run with their max
+               // document length set to "a large value e.g. 10,000". Note that the default setting is 1000.
+               mongoc_structured_log_opts_set_max_document_length (log_opts, 10000);
             }),
             visitEach (
                if (not(type (utf8)), then (error ("Every value in 'observeLogMessages' must be a log level string"))),

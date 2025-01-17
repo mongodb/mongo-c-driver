@@ -16,6 +16,8 @@
 
 #include "common-atomic-private.h"
 #include "common-oid-private.h"
+#include "common-string-private.h"
+#include "common-json-private.h"
 #include "common-thread-private.h"
 #include "mongoc-apm-private.h"
 #include "mongoc-error-private.h"
@@ -56,7 +58,7 @@ struct mongoc_structured_log_opts_t {
    mongoc_structured_log_func_t handler_func;
    void *handler_user_data;
    mongoc_structured_log_level_t max_level_per_component[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
-   int32_t max_document_length;
+   uint32_t max_document_length;
    char *default_handler_path;
 };
 
@@ -190,20 +192,21 @@ _mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry)
 static bool
 _mongoc_structured_log_get_log_level_from_env (const char *variable,
                                                mongoc_structured_log_level_t *out,
-                                               int volatile *err_count_atomic)
+                                               int volatile *err_flag_atomic)
 {
-   const char *level = getenv (variable);
+   char *level = _mongoc_getenv (variable);
    if (!level) {
       return false;
    }
-   if (mongoc_structured_log_get_named_level (level, out)) {
-      return true;
+   bool result = mongoc_structured_log_get_named_level (level, out);
+   if (!result) {
+      // Only log the first instance of each error per process
+      if (0 == mcommon_atomic_int_compare_exchange_strong (err_flag_atomic, 0, 1, mcommon_memory_order_seq_cst)) {
+         MONGOC_WARNING ("Invalid log level '%s' read from environment variable %s. Ignoring it.", level, variable);
+      }
    }
-   // Only log the first instance of each error per process
-   if (0 == mcommon_atomic_int_fetch_add (err_count_atomic, 1, mcommon_memory_order_seq_cst)) {
-      MONGOC_WARNING ("Invalid log level '%s' read from environment variable %s. Ignoring it.", level, variable);
-   }
-   return false;
+   bson_free (level);
+   return result;
 }
 
 const char *
@@ -269,32 +272,62 @@ mongoc_structured_log_get_named_component (const char *name, mongoc_structured_l
    return false;
 }
 
-static int32_t
-_mongoc_structured_log_get_max_document_length_from_env (void)
+size_t
+mongoc_structured_log_opts_get_max_document_length (const mongoc_structured_log_opts_t *opts)
 {
+   return (size_t) opts->max_document_length;
+}
+
+bool
+mongoc_structured_log_opts_set_max_document_length (mongoc_structured_log_opts_t *opts, size_t max_document_length)
+{
+   if (max_document_length <= (size_t) MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH) {
+      opts->max_document_length = (uint32_t) max_document_length;
+      return true;
+   } else {
+      return false;
+   }
+}
+
+bool
+mongoc_structured_log_opts_set_max_document_length_from_env (mongoc_structured_log_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (opts);
+
    const char *variable = "MONGODB_LOG_MAX_DOCUMENT_LENGTH";
-   const char *max_length_str = getenv (variable);
+   char *max_length_str = _mongoc_getenv (variable);
 
    if (!max_length_str) {
-      return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
+      return true;
    }
+
+   bool result = false;
 
    if (!strcasecmp (max_length_str, "unlimited")) {
-      return BSON_MAX_LEN_UNLIMITED;
+      BSON_ASSERT (
+         mongoc_structured_log_opts_set_max_document_length (opts, MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH));
+      result = true;
+   } else {
+      char *endptr;
+      long int_value = strtol (max_length_str, &endptr, 10);
+      if (int_value >= 0 && endptr != max_length_str && *endptr == '\0' &&
+          mcommon_in_range_signed (size_t, int_value) &&
+          mongoc_structured_log_opts_set_max_document_length (opts, (size_t) int_value)) {
+         result = true;
+      }
    }
 
-   char *endptr;
-   long int_value = strtol (max_length_str, &endptr, 10);
-   if (int_value >= 0 && int_value <= INT32_MAX && endptr != max_length_str && !*endptr) {
-      return (int32_t) int_value;
+   if (!result) {
+      // Only log the first instance of each error per process
+      static int err_flag_atomic;
+      if (0 == mcommon_atomic_int_compare_exchange_strong (&err_flag_atomic, 0, 1, mcommon_memory_order_seq_cst)) {
+         MONGOC_WARNING (
+            "Invalid length '%s' read from environment variable %s. Ignoring it.", max_length_str, variable);
+      }
    }
 
-   // Only log the first instance of each error per process
-   static int err_count_atomic;
-   if (0 == mcommon_atomic_int_fetch_add (&err_count_atomic, 1, mcommon_memory_order_seq_cst)) {
-      MONGOC_WARNING ("Invalid length '%s' read from environment variable %s. Ignoring it.", max_length_str, variable);
-   }
-   return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
+   bson_free (max_length_str);
+   return result;
 }
 
 bool
@@ -307,10 +340,10 @@ mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t
 
    // Errors are not fatal by default; always reported by return value, and reported the first time only via a log
    // warning.
-   static int err_count_all_atomic;
-   static int err_count_per_component_atomic[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
+   static int err_flag_all_atomic;
+   static int err_flag_per_component_atomic[STRUCTURED_LOG_COMPONENT_TABLE_SIZE];
 
-   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level, &err_count_all_atomic)) {
+   if (_mongoc_structured_log_get_log_level_from_env ("MONGODB_LOG_ALL", &level, &err_flag_all_atomic)) {
       BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, level));
    } else {
       all_ok = false;
@@ -318,7 +351,7 @@ mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t
 
    for (int component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
       if (_mongoc_structured_log_get_log_level_from_env (
-             gStructuredLogComponentEnvVars[component], &level, &err_count_per_component_atomic[component])) {
+             gStructuredLogComponentEnvVars[component], &level, &err_flag_per_component_atomic[component])) {
          BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_component (
             opts, (mongoc_structured_log_component_t) component, level));
       } else {
@@ -419,8 +452,9 @@ mongoc_structured_log_opts_new (void)
     * Note that error return values from mongoc_structured_log_opts_set_* must be ignored here.
     * If environment variables can't be parsed, warnings will be logged once but we must, by specification,
     * continue to provide structured logging using whatever valid or default settings remain. */
-   opts->default_handler_path = bson_strdup (getenv ("MONGODB_LOG_PATH"));
-   opts->max_document_length = _mongoc_structured_log_get_max_document_length_from_env ();
+   opts->default_handler_path = _mongoc_getenv ("MONGODB_LOG_PATH");
+   opts->max_document_length = MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
+   (void) mongoc_structured_log_opts_set_max_document_length_from_env (opts);
    (void) mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL);
    (void) mongoc_structured_log_opts_set_max_levels_from_env (opts);
 
@@ -490,15 +524,127 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
    }
 }
 
-static char *
-_mongoc_structured_log_inner_document_to_json (const bson_t *document,
-                                               size_t *length,
-                                               const mongoc_structured_log_opts_t *opts)
+static mcommon_string_t *
+_mongoc_structured_log_append_json_truncation_marker (mcommon_string_append_t *append)
 {
-   bson_json_opts_t *json_opts = bson_json_opts_new (BSON_JSON_MODE_RELAXED, opts->max_document_length);
-   char *json = bson_as_json_with_opts (document, length, json_opts);
-   bson_json_opts_destroy (json_opts);
-   return json;
+   if (!mcommon_string_status_from_append (append)) {
+      mcommon_string_append_t marker_append;
+      mcommon_string_set_append (mcommon_string_from_append (append), &marker_append);
+      mcommon_string_append (&marker_append, "...");
+   }
+   // Guaranteed due to choice of MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH
+   BSON_ASSERT (mcommon_strlen_from_append (append) <= (uint32_t) BSON_MAX_SIZE);
+   return mcommon_string_from_append (append);
+}
+
+// Generic bson-to-json for documents that appear within a structured log message as truncated JSON
+static mcommon_string_t *
+_mongoc_structured_log_document_as_truncated_json (const bson_t *document, const mongoc_structured_log_opts_t *opts)
+{
+   // Use the bson_t document length as an initial buffer capacity guess
+   mcommon_string_append_t append;
+   mcommon_string_set_append_with_limit (
+      mcommon_string_new_with_capacity ("", 0, document->len), &append, opts->max_document_length);
+
+   if (mcommon_json_append_bson_document (&append, document, BSON_JSON_MODE_RELAXED, BSON_MAX_RECURSION)) {
+      return _mongoc_structured_log_append_json_truncation_marker (&append);
+   } else {
+      mcommon_string_from_append_destroy (&append);
+      return NULL;
+   }
+}
+
+/**
+ * @brief Specialized bson-to-json conversion for mongoc_cmd_t
+ * @returns A new allocated mcommon_string_t, limited to the maximum document length from 'opts' plus the space for a
+ * possible truncation marker. Returns NULL if an invalid BSON document is encountered. This is equivalent to
+ * _mongoc_cmd_append_payload_as_array() combined with _mongoc_structured_log_document_as_truncated_json(), but it
+ * avoids ever assembling a BSON representation of the complete logged JSON document. Each payload is serialized
+ * separately using the mcommon_json_* functions. If we reach the maximum document length, unused portions of the input
+ * command will not be read.
+ */
+static mcommon_string_t *
+_mongoc_structured_log_command_with_payloads_as_truncated_json (const mongoc_cmd_t *cmd,
+                                                                const mongoc_structured_log_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (cmd);
+   BSON_ASSERT (!bson_empty0 (cmd->command));
+   BSON_ASSERT (cmd->payloads_count <= MONGOC_CMD_PAYLOADS_COUNT_MAX);
+
+   // Use the bson length of the command itself as an initial buffer capacity guess.
+   bool invalid_document = false;
+   mcommon_string_append_t append;
+   mcommon_string_set_append_with_limit (
+      mcommon_string_new_with_capacity ("", 0, cmd->command->len), &append, opts->max_document_length);
+
+   if (!mcommon_string_append (&append, "{ ")) {
+      goto done;
+   }
+
+   if (!mcommon_json_append_bson_values (
+          &append, cmd->command, BSON_JSON_MODE_RELAXED, true, BSON_MAX_RECURSION - 1u)) {
+      invalid_document = true;
+      goto done;
+   }
+
+   for (size_t i = 0; i < cmd->payloads_count; i++) {
+      const char *field_name = cmd->payloads[i].identifier;
+      BSON_ASSERT (field_name);
+
+      // Each payload is an appended key containing a non-empty sequence of documents
+      if (!mcommon_json_append_separator (&append) ||
+          !mcommon_json_append_key (&append, field_name, strlen (field_name)) ||
+          !mcommon_string_append (&append, "[ ")) {
+         goto done;
+      }
+
+      const uint8_t *doc_begin = cmd->payloads[i].documents;
+      BSON_ASSERT (doc_begin);
+      const uint8_t *doc_end = doc_begin + cmd->payloads[i].size;
+      BSON_ASSERT (doc_begin != doc_end);
+
+      const uint8_t *doc_ptr = doc_begin;
+      int32_t doc_len;
+
+      while (doc_ptr + sizeof doc_len <= doc_end) {
+         memcpy (&doc_len, doc_ptr, sizeof doc_len);
+         doc_len = BSON_UINT32_FROM_LE (doc_len);
+
+         bson_t doc;
+         if (doc_len < 5 || (size_t) doc_len > (size_t) (doc_end - doc_ptr) ||
+             !bson_init_static (&doc, doc_ptr, (size_t) doc_len)) {
+            invalid_document = true;
+            goto done;
+         }
+
+         if (doc_ptr != doc_begin) {
+            mcommon_json_append_separator (&append);
+         }
+         if (!mcommon_json_append_bson_document (&append, &doc, BSON_JSON_MODE_RELAXED, BSON_MAX_RECURSION - 2u)) {
+            invalid_document = true;
+            goto done;
+         }
+         doc_ptr += doc_len;
+      }
+      if (doc_ptr != doc_end) {
+         invalid_document = true;
+         goto done;
+      }
+
+      if (!mcommon_string_append (&append, " ]")) {
+         goto done;
+      }
+   }
+
+   mcommon_string_append (&append, " }");
+
+done:
+   if (invalid_document) {
+      mcommon_string_from_append_destroy (&append);
+      return NULL;
+   } else {
+      return _mongoc_structured_log_append_json_truncation_marker (&append);
+   }
 }
 
 const mongoc_structured_log_builder_stage_t *
@@ -612,12 +758,13 @@ _mongoc_structured_log_append_bson_as_json (bson_t *bson,
    const bson_t *bson_or_null = stage->arg2.bson;
    if (key_or_null) {
       if (bson_or_null) {
-         size_t json_length;
-         char *json = _mongoc_structured_log_inner_document_to_json (bson_or_null, &json_length, opts);
+         mcommon_string_t *json = _mongoc_structured_log_document_as_truncated_json (bson_or_null, opts);
          if (json) {
-            bson_append_utf8 (bson, key_or_null, -1, json, json_length);
-            bson_free (json);
+            BSON_ASSERT (json->len <= (uint32_t) INT_MAX);
+            bson_append_utf8 (bson, key_or_null, -1, json->str, (int) json->len);
+            mcommon_string_destroy (json);
          }
+         // If invalid BSON was found in the input, the key is not logged.
       } else {
          bson_append_null (bson, key_or_null, -1);
       }
@@ -647,27 +794,14 @@ _mongoc_structured_log_append_cmd (bson_t *bson,
       if (mongoc_apm_is_sensitive_command_message (cmd->command_name, cmd->command)) {
          BSON_APPEND_UTF8 (bson, "command", "{}");
       } else {
-         bson_t *command_copy = NULL;
-
-         if (cmd->payloads_count > 0) {
-            // @todo This is a performance bottleneck, we shouldn't be copying
-            //       a potentially large command to serialize a potentially very
-            //       small part of it. We should be appending JSON to a single buffer
-            //       for all nesting levels, constrained by length limit, while visiting
-            //       borrowed references to each command attribute and each payload. CDRIVER-4814
-            command_copy = bson_copy (cmd->command);
-            _mongoc_cmd_append_payload_as_array (cmd, command_copy);
-         }
-
-         size_t json_length;
-         char *json = _mongoc_structured_log_inner_document_to_json (
-            command_copy ? command_copy : cmd->command, &json_length, opts);
+         mcommon_string_t *json = _mongoc_structured_log_command_with_payloads_as_truncated_json (cmd, opts);
          if (json) {
             const char *key = "command";
-            bson_append_utf8 (bson, key, strlen (key), json, json_length);
-            bson_free (json);
+            BSON_ASSERT (json->len <= (uint32_t) INT_MAX);
+            bson_append_utf8 (bson, key, strlen (key), json->str, (int) json->len);
+            mcommon_string_destroy (json);
          }
-         bson_destroy (command_copy);
+         // If invalid BSON was found in the input, the key is not logged.
       }
    }
 
@@ -683,13 +817,14 @@ _mongoc_structured_log_append_redacted_cmd_reply (bson_t *bson,
    if (is_sensitive) {
       BSON_APPEND_UTF8 (bson, "reply", "{}");
    } else {
-      size_t json_length;
-      char *json = _mongoc_structured_log_inner_document_to_json (reply, &json_length, opts);
+      mcommon_string_t *json = _mongoc_structured_log_document_as_truncated_json (reply, opts);
       if (json) {
          const char *key = "reply";
-         bson_append_utf8 (bson, key, strlen (key), json, json_length);
-         bson_free (json);
+         BSON_ASSERT (json->len <= (uint32_t) INT_MAX);
+         bson_append_utf8 (bson, key, strlen (key), json->str, (int) json->len);
+         mcommon_string_destroy (json);
       }
+      // If invalid BSON was found in the input, the key is not logged.
    }
 }
 
@@ -897,18 +1032,13 @@ _mongoc_structured_log_append_topology_as_description_json (bson_t *bson,
          mc_shared_tpld td = mc_tpld_take_ref (topology_or_null);
          bson_t inner_bson = BSON_INITIALIZER;
          mongoc_topology_description_append_contents_to_bson (td.ptr, &inner_bson, td_flags, server_flags);
-         size_t json_length;
-         char *json = _mongoc_structured_log_inner_document_to_json (&inner_bson, &json_length, opts);
-         /* TODO: This will be replaced shortly with a spec compliant string truncation implementation.
-          *    Note the INT_MAX size limit specific to bson_append_utf8(), vs the UINT32_MAX-1 internal limits.
-          *    This check will move as part of centralizing truncation behavior, with the benefits of
-          *    preserving UTF-8 sequence integrity and consistently inserting "..." when truncating.
-          */
+         mcommon_string_t *json = _mongoc_structured_log_document_as_truncated_json (&inner_bson, opts);
          if (json) {
-            bson_append_utf8 (
-               bson, key_or_null, -1, json, json_length > (size_t) INT_MAX ? INT_MAX : (int) json_length);
-            bson_free (json);
+            BSON_ASSERT (json->len <= (uint32_t) INT_MAX);
+            bson_append_utf8 (bson, key_or_null, -1, json->str, (int) json->len);
+            mcommon_string_destroy (json);
          }
+         // If invalid BSON was found in the input, the key is not logged.
          bson_destroy (&inner_bson);
          mc_tpld_drop_ref (&td);
       } else {
