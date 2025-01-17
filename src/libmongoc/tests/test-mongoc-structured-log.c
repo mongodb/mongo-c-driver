@@ -143,6 +143,11 @@ test_structured_log_plain (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+
+   /* Note about these max_document_length settings: We want a consistent value so the test is isolated from external
+    * environment variable settings. The default (MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH) is verified as 1000
+    * bytes elsewhere. The Command Logging and Monitoring spec recommends that tests run with a larger-than-default
+    * setting of 10000 bytes. We choose that value here, but it's really quite arbitrary. */
    ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
