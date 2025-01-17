@@ -754,7 +754,7 @@ test_structured_log_max_document_length (void)
 }
 
 int
-check_test_structured_log_env_defaults (void)
+test_structured_log_skip_if_env_not_default (void)
 {
    // Skip testing env defaults if any options have been set externally
    const char *expected_unset[] = {
@@ -779,8 +779,10 @@ check_test_structured_log_env_defaults (void)
 }
 
 void
-test_structured_log_env_defaults (void)
+test_structured_log_env_defaults (void *test_context)
 {
+   BSON_UNUSED (test_context);
+
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
 
    ASSERT_CMPINT (
@@ -822,10 +824,11 @@ test_structured_log_install (TestSuite *suite)
    TestSuite_Add (suite, "/structured_log/level_names", test_structured_log_level_names);
    TestSuite_Add (suite, "/structured_log/component_names", test_structured_log_component_names);
    TestSuite_Add (suite, "/structured_log/max_document_length", test_structured_log_max_document_length);
-   TestSuite_AddFullWithTestFn (suite,
-                                "/structured_log/env_defaults",
-                                TestSuite_AddHelper,
-                                NULL,
-                                test_structured_log_env_defaults,
-                                check_test_structured_log_env_defaults);
+   TestSuite_AddFull (suite,
+                      "/structured_log/env_defaults",
+                      test_structured_log_env_defaults,
+                      NULL,
+                      NULL,
+                      test_structured_log_skip_if_env_not_default,
+                      NULL);
 }

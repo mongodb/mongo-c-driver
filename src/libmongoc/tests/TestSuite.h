@@ -714,8 +714,6 @@ void
 _TestSuite_AddFull (TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, ...);
 void
 _TestSuite_TestFnCtxDtor (void *ctx);
-void
-TestSuite_AddHelper (void *ctx);
 #define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
    _TestSuite_AddFull (_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
 #define TestSuite_AddFullWithTestFn(_suite, _name, _func, _dtor, _test_fn, ...)                    \
