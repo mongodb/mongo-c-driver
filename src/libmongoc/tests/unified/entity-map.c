@@ -114,8 +114,10 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          mongoc_uri_set_option_as_int64 (uri, key, bson_iter_int64 (&iter));
       } else if (mongoc_uri_option_is_bool (key)) {
          mongoc_uri_set_option_as_bool (uri, key, bson_iter_bool (&iter));
-      } else if (0 == bson_strcasecmp ("appname", key)) {
+      } else if (0 == bson_strcasecmp (MONGOC_URI_APPNAME, key)) {
          mongoc_uri_set_appname (uri, bson_iter_utf8 (&iter, NULL));
+      } else if (0 == bson_strcasecmp (MONGOC_URI_SERVERMONITORINGMODE, key)) {
+         mongoc_uri_set_option_as_utf8 (uri, key, bson_iter_utf8 (&iter, NULL));
       } else {
          test_set_error (error, "Unimplemented test runner support for URI option: %s", key);
          goto done;
