@@ -1308,10 +1308,12 @@ operation_run_command (test_t *test, operation_t *op, result_t *result, bson_err
       mongoc_write_concern_append (wc, opts);
    }
 
-   bson_destroy (&op_reply);
    mongoc_database_command_with_opts (db, command, rp, opts, &op_reply, &op_error);
 
-   result_from_val_and_reply (result, NULL, &op_reply, &op_error);
+   // For a generic command, the reply is also the result value
+   bson_val_t *op_reply_val = bson_val_from_bson (&op_reply);
+   result_from_val_and_reply (result, op_reply_val, &op_reply, &op_error);
+   bson_val_destroy (op_reply_val);
 
    ret = true;
 done:
