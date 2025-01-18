@@ -1268,7 +1268,7 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
           * supported. */
          ret = true;
          goto done;
-      } else if (0 != strcmp (event_type, "command")) {
+      } else if (0 != strcmp (event_type, "command") && 0 != strcmp (event_type, "sdam")) {
          test_set_error (error, "unexpected event type: %s", event_type);
          goto done;
       }
