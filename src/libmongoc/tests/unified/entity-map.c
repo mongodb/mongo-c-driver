@@ -437,6 +437,39 @@ topology_changed (const mongoc_apm_topology_changed_t *changed)
    event_store_or_destroy (entity, event_new ("topologyDescriptionChangedEvent", serialized, false));
 }
 
+static void
+server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *started)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_server_heartbeat_started_get_context (started);
+   bson_t *serialized = bson_new ();
+
+   bsonBuildAppend (*serialized, kv ("awaited", boolean (mongoc_apm_server_heartbeat_started_get_awaited (started))));
+
+   event_store_or_destroy (entity, event_new ("serverHeartbeatStartedEvent", serialized, false));
+}
+
+static void
+server_heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *succeeded)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_server_heartbeat_succeeded_get_context (succeeded);
+   bson_t *serialized = bson_new ();
+
+   bsonBuildAppend (*serialized,
+                    kv ("awaited", boolean (mongoc_apm_server_heartbeat_succeeded_get_awaited (succeeded))));
+
+   event_store_or_destroy (entity, event_new ("serverHeartbeatSucceededEvent", serialized, false));
+}
+
+static void
+server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *failed)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_server_heartbeat_failed_get_context (failed);
+   bson_t *serialized = bson_new ();
+
+   bsonBuildAppend (*serialized, kv ("awaited", boolean (mongoc_apm_server_heartbeat_failed_get_awaited (failed))));
+
+   event_store_or_destroy (entity, event_new ("serverHeartbeatFailedEvent", serialized, false));
+}
 
 static void
 set_command_started_cb (mongoc_apm_callbacks_t *callbacks)
@@ -468,6 +501,24 @@ set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks)
    mongoc_apm_set_topology_changed_cb (callbacks, topology_changed);
 }
 
+static void
+set_server_heartbeat_started_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_server_heartbeat_started_cb (callbacks, server_heartbeat_started);
+}
+
+static void
+set_server_heartbeat_succeeded_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks, server_heartbeat_succeeded);
+}
+
+static void
+set_server_heartbeat_failed_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_server_heartbeat_failed_cb (callbacks, server_heartbeat_failed);
+}
+
 /* Set a callback for the indicated event type in a mongoc_apm_callbacks_t.
  * Safe to call multiple times for the same event: callbacks for a specific
  * event type are always the same. Returns 'true' if the event is known and
@@ -489,6 +540,9 @@ set_event_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
       {.type = "commandSucceededEvent", .set = set_command_succeeded_cb},
       {.type = "serverDescriptionChangedEvent", .set = set_server_changed_cb},
       {.type = "topologyDescriptionChangedEvent", .set = set_topology_changed_cb},
+      {.type = "serverHeartbeatStartedEvent", .set = set_server_heartbeat_started_cb},
+      {.type = "serverHeartbeatSucceededEvent", .set = set_server_heartbeat_succeeded_cb},
+      {.type = "serverHeartbeatFailedEvent", .set = set_server_heartbeat_failed_cb},
       {.type = NULL, .set = NULL},
    };
 

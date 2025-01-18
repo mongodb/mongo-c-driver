@@ -1002,6 +1002,7 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    char *expected_command_name = NULL;
    char *expected_database_name = NULL;
    bson_t *expected_reply = NULL;
+   bool *expected_awaited = NULL;
    bool *expected_has_service_id = NULL;
    bool *expected_has_server_connection_id = NULL;
    bson_t *expected_previous_description = NULL;
@@ -1036,6 +1037,7 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    bson_parser_utf8_optional (bp, "commandName", &expected_command_name);
    bson_parser_utf8_optional (bp, "databaseName", &expected_database_name);
    bson_parser_doc_optional (bp, "reply", &expected_reply);
+   bson_parser_bool_optional (bp, "awaited", &expected_awaited);
    bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
    bson_parser_bool_optional (bp, "hasServerConnectionId", &expected_has_server_connection_id);
    bson_parser_doc_optional (bp, "previousDescription", &expected_previous_description);
@@ -1111,6 +1113,23 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
       bson_val_destroy (actual_val);
       if (!is_match) {
          goto done;
+      }
+   }
+
+   if (expected_awaited) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "awaited")) {
+         test_set_error (error, "event.awaited field expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_BOOL (&iter)) {
+         test_set_error (error, "Unexpected type for event.awaited, should be boolean");
+         goto done;
+      }
+      bool actual_awaited = bson_iter_bool (&iter);
+      if (*expected_awaited != actual_awaited) {
+         test_error ("expected event.awaited=%s, found event.awaited=%s",
+                     *expected_awaited ? "true" : "false",
+                     actual_awaited ? "true" : "false");
       }
    }
 
