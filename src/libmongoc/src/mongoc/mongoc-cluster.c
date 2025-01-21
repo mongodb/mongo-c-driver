@@ -2159,7 +2159,8 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    }
 
    if (scanner_node->stream) {
-      handshake_sd = mongoc_server_description_new_copy (scanner_node->handshake_sd);
+      // Copy server description without accessing mutable RTT. RTT is not needed, and may be expensive to copy.
+      handshake_sd = mongoc_server_description_new_copy_without_rtt (scanner_node->handshake_sd);
    } else {
       if (!reconnect_ok) {
          stream_not_found (td, server_id, scanner_node->host.host_and_port, error);
@@ -2183,7 +2184,8 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
       }
       bson_free (address);
 
-      handshake_sd = mongoc_server_description_new_copy (scanner_node->handshake_sd);
+      // Copy server description without accessing mutable RTT. RTT is not needed, and may be expensive to copy.
+      handshake_sd = mongoc_server_description_new_copy_without_rtt (scanner_node->handshake_sd);
    }
 
    if (handshake_sd->type == MONGOC_SERVER_UNKNOWN) {
@@ -2288,7 +2290,8 @@ _mongoc_cluster_create_server_stream (mongoc_topology_description_t const *td,
                                       const mongoc_server_description_t *handshake_sd,
                                       mongoc_stream_t *stream)
 {
-   mongoc_server_description_t *const sd = mongoc_server_description_new_copy (handshake_sd);
+   // Copy server description without accessing mutable RTT. RTT is not needed, and may be expensive to copy.
+   mongoc_server_description_t *sd = mongoc_server_description_new_copy_without_rtt (handshake_sd);
    /* can't just use mongoc_topology_server_by_id(), since we must hold the
     * lock while copying topology->shared_descr.ptr->logical_time below */
    return mongoc_server_stream_new (td, sd, stream);
