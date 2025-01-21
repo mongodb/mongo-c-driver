@@ -26,6 +26,7 @@
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 #include <common-atomic-private.h>
 
 #include <inttypes.h>
@@ -131,6 +132,22 @@ _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor, bool
    mongoc_apm_server_heartbeat_started_t event;
    mongoc_log_and_monitor_instance_t *log_and_monitor = &server_monitor->topology->log_and_monitor;
 
+   {
+      mc_shared_tpld td = mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (server_monitor)->topology);
+      bson_oid_t topology_id;
+      bson_oid_copy (&td.ptr->topology_id, &topology_id);
+      mc_tpld_drop_ref (&td);
+
+      mongoc_structured_log (
+         log_and_monitor->structured_log,
+         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+         MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+         "Server heartbeat started",
+         oid ("topologyId", &topology_id),
+         server_description (server_monitor->description, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID),
+         boolean ("awaited", awaited));
+   }
+
    MONGOC_DEBUG_ASSERT (!mcommon_mutex_is_locked (&log_and_monitor->apm_mutex));
 
    if (!log_and_monitor->apm_callbacks.server_heartbeat_started) {
@@ -155,6 +172,24 @@ _server_monitor_heartbeat_succeeded (mongoc_server_monitor_t *server_monitor,
    mongoc_apm_server_heartbeat_succeeded_t event;
    mongoc_log_and_monitor_instance_t *log_and_monitor = &server_monitor->topology->log_and_monitor;
 
+   {
+      mc_shared_tpld td = mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (server_monitor)->topology);
+      bson_oid_t topology_id;
+      bson_oid_copy (&td.ptr->topology_id, &topology_id);
+      mc_tpld_drop_ref (&td);
+
+      mongoc_structured_log (
+         log_and_monitor->structured_log,
+         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+         MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+         "Server heartbeat succeeded",
+         oid ("topologyId", &topology_id),
+         server_description (server_monitor->description, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID),
+         boolean ("awaited", awaited),
+         monotonic_time_duration (duration_usec),
+         bson_as_json ("reply", reply));
+   }
+
    if (!log_and_monitor->apm_callbacks.server_heartbeat_succeeded) {
       return;
    }
@@ -178,6 +213,24 @@ _server_monitor_heartbeat_failed (mongoc_server_monitor_t *server_monitor,
 {
    mongoc_apm_server_heartbeat_failed_t event;
    mongoc_log_and_monitor_instance_t *log_and_monitor = &server_monitor->topology->log_and_monitor;
+
+   {
+      mc_shared_tpld td = mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (server_monitor)->topology);
+      bson_oid_t topology_id;
+      bson_oid_copy (&td.ptr->topology_id, &topology_id);
+      mc_tpld_drop_ref (&td);
+
+      mongoc_structured_log (
+         log_and_monitor->structured_log,
+         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+         MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+         "Server heartbeat failed",
+         oid ("topologyId", &topology_id),
+         server_description (server_monitor->description, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID),
+         boolean ("awaited", awaited),
+         monotonic_time_duration (duration_usec),
+         error ("failure", error));
+   }
 
    if (!log_and_monitor->apm_callbacks.server_heartbeat_failed) {
       return;
