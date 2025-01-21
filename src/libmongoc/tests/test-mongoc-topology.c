@@ -449,7 +449,6 @@ _test_topology_invalidate_server (bool pooled)
    mongoc_host_list_t fake_host_list;
    uint32_t fake_id = 42;
    uint32_t id;
-   mongoc_server_stream_t *server_stream;
    checks_t checks;
    mc_shared_tpld td;
    mc_tpld_modification tdmod;
@@ -481,15 +480,14 @@ _test_topology_invalidate_server (bool pooled)
    }
 
    /* call explicitly */
-   server_stream =
-      mongoc_cluster_stream_for_reads (&client->cluster, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, NULL, &error);
-   ASSERT_OR_PRINT (server_stream, error);
-   sd = server_stream->sd;
-   id = server_stream->sd->id;
-   BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE || sd->type == MONGOC_SERVER_RS_PRIMARY ||
-                sd->type == MONGOC_SERVER_MONGOS);
+   mongoc_server_description_t *selected_sd = mongoc_client_select_server (client, false, NULL, &error);
+   ASSERT_OR_PRINT (selected_sd, error);
+   id = selected_sd->id;
+   BSON_ASSERT (selected_sd->type == MONGOC_SERVER_STANDALONE || selected_sd->type == MONGOC_SERVER_RS_PRIMARY ||
+                selected_sd->type == MONGOC_SERVER_MONGOS);
 
-   ASSERT_CMPINT64 (sd->round_trip_time_msec, !=, (int64_t) -1);
+   ASSERT_CMPINT64 (selected_sd->round_trip_time_msec, !=, (int64_t) -1);
+   mongoc_server_description_destroy (selected_sd);
 
    _mongoc_topology_invalidate_server (client->topology, id);
    td = mc_tpld_take_ref (client->topology);
@@ -532,7 +530,6 @@ _test_topology_invalidate_server (bool pooled)
       BSON_ASSERT (bson_empty (&sd->compressors));
    }
 
-   mongoc_server_stream_cleanup (server_stream);
    mongoc_uri_destroy (uri);
 
    if (pooled) {
