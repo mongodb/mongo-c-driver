@@ -460,6 +460,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_OFF;
    topology->scanner = mongoc_topology_scanner_new (topology->uri,
+                                                    &td->topology_id,
                                                     &topology->log_and_monitor,
                                                     _mongoc_topology_scanner_setup_err_cb,
                                                     _mongoc_topology_scanner_cb,

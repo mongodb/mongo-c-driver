@@ -115,6 +115,7 @@ typedef struct mongoc_topology_scanner {
    bson_t *handshake_cmd;
    handshake_state_t handshake_state;
    bson_t cluster_time;
+   bson_oid_t topology_id;
    const char *appname;
 
    mongoc_topology_scanner_setup_err_cb_t setup_err_cb;
@@ -147,6 +148,7 @@ typedef struct mongoc_topology_scanner {
 
 mongoc_topology_scanner_t *
 mongoc_topology_scanner_new (const mongoc_uri_t *uri,
+                             const bson_oid_t *topology_id,
                              mongoc_log_and_monitor_instance_t *log_and_monitor,
                              mongoc_topology_scanner_setup_err_cb_t setup_err_cb,
                              mongoc_topology_scanner_cb_t cb,

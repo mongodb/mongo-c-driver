@@ -6,6 +6,7 @@
 
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include "common-oid-private.h"
 
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
@@ -58,10 +59,12 @@ _test_topology_scanner (bool with_ssl)
    mongoc_ssl_opt_t copt = {0};
 #endif
 
+   bson_oid_t topology_id;
+   mcommon_oid_set_zero (&topology_id);
    mongoc_log_and_monitor_instance_t log_and_monitor;
    mongoc_log_and_monitor_instance_init (&log_and_monitor);
-   mongoc_topology_scanner_t *topology_scanner =
-      mongoc_topology_scanner_new (NULL, &log_and_monitor, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
+   mongoc_topology_scanner_t *topology_scanner = mongoc_topology_scanner_new (
+      NULL, &topology_id, &log_and_monitor, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
@@ -466,12 +469,14 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
    mongoc_socket_t *sock;
    mongoc_topology_scanner_node_t *node;
 
+   bson_oid_t topology_id;
+   mcommon_oid_set_zero (&topology_id);
    mongoc_log_and_monitor_instance_t log_and_monitor;
    mongoc_log_and_monitor_instance_init (&log_and_monitor);
 
    server = _mock_server_listening_on (testcase->server_bind_to);
-   ts =
-      mongoc_topology_scanner_new (NULL, &log_and_monitor, NULL, &_test_topology_scanner_dns_helper, testcase, TIMEOUT);
+   ts = mongoc_topology_scanner_new (
+      NULL, &topology_id, &log_and_monitor, NULL, &_test_topology_scanner_dns_helper, testcase, TIMEOUT);
    host_str = bson_strdup_printf ("%s:%d", testcase->client_hostname, mock_server_get_port (server));
    BSON_ASSERT (_mongoc_host_list_from_string (&host, host_str));
    /* we should only have one host. */
@@ -577,10 +582,13 @@ test_topology_retired_fails_to_initiate (void)
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
 
+   bson_oid_t topology_id;
+   mcommon_oid_set_zero (&topology_id);
    mongoc_log_and_monitor_instance_t log_and_monitor;
    mongoc_log_and_monitor_instance_init (&log_and_monitor);
 
-   scanner = mongoc_topology_scanner_new (NULL, &log_and_monitor, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
+   scanner = mongoc_topology_scanner_new (
+      NULL, &topology_id, &log_and_monitor, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
 
    BSON_ASSERT (_mongoc_host_list_from_string (&host_list, mock_server_get_host_and_port (server)));
 
