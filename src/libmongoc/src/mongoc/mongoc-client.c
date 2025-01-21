@@ -1646,8 +1646,6 @@ retry:
     * server does not support retryable reads, fall through and allow the
     * original error to be reported. */
    if (is_retryable && _mongoc_read_error_get_type (ret, error, reply) == MONGOC_READ_ERR_RETRY) {
-      bson_error_t ignored_error;
-
       /* each read command may be retried at most once */
       is_retryable = false;
 
@@ -1667,8 +1665,13 @@ retry:
             .has_operation_id = true,
             .operation_id = parts->assembled.operation_id,
          };
-         retry_server_stream = mongoc_cluster_stream_for_reads (
-            &client->cluster, &ss_log_context, parts->read_prefs, parts->assembled.session, ds, NULL, &ignored_error);
+         retry_server_stream = mongoc_cluster_stream_for_reads (&client->cluster,
+                                                                &ss_log_context,
+                                                                parts->read_prefs,
+                                                                parts->assembled.session,
+                                                                ds,
+                                                                NULL /* reply */,
+                                                                NULL /* error */);
 
          mongoc_deprioritized_servers_destroy (ds);
       }

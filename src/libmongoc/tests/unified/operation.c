@@ -3914,15 +3914,24 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
       // @todo Re-examine this once we have support for connection pools in the unified test
       //    runner. Without pooling, all events we could be waiting on would be coming
       //    from single-threaded (blocking) topology scans, or from lazily opening the topology
-      //    description when it's first used. Request server selection after blocking, to
+      //    description when it's first used. Request stream selection after blocking, to
       //    handle either of these cases.
+
       {
          mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
          if (mc_client) {
             const mongoc_ss_log_context_t ss_log_context = {.operation = "waitForEvent"};
             test_begin_suppressing_structured_logs ();
-            mongoc_topology_select_server_id (
-               mc_client->topology, MONGOC_SS_READ, &ss_log_context, NULL, NULL, NULL, error);
+            mongoc_server_stream_t *stream = mongoc_cluster_stream_for_reads (&mc_client->cluster,
+                                                                              &ss_log_context,
+                                                                              NULL /* read_prefs */,
+                                                                              NULL /* client session */,
+                                                                              NULL /* deprioritized servers */,
+                                                                              NULL /* reply */,
+                                                                              NULL /* error */);
+            if (stream) {
+               mongoc_server_stream_cleanup (stream);
+            }
             test_end_suppressing_structured_logs ();
          }
       }

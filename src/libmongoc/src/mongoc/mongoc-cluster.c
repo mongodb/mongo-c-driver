@@ -3614,8 +3614,6 @@ retry:
    // selection fails or the selected server does not support retryable writes, fall through and allow the original
    // error to be reported.
    if (can_retry && _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
-      bson_error_t ignored_error;
-
       can_retry = false; // Only retry once.
 
       // Select a server.
@@ -3628,7 +3626,7 @@ retry:
          const mongoc_ss_log_context_t ss_log_context = {
             .operation = cmd->command_name, .has_operation_id = true, .operation_id = cmd->operation_id};
          *retry_server_stream = mongoc_cluster_stream_for_writes (
-            cluster, &ss_log_context, cmd->session, ds, NULL /* reply */, &ignored_error);
+            cluster, &ss_log_context, cmd->session, ds, NULL /* reply */, NULL /* error */);
 
          mongoc_deprioritized_servers_destroy (ds);
       }
