@@ -756,17 +756,10 @@ authfailure:
    EXIT;
 }
 
-/*
- *-------------------------------------------------------------------------
- *
- * mongoc_server_description_new_copy --
- *
- *       A copy of a server description that you must destroy, or NULL.
- *
- *-------------------------------------------------------------------------
- */
-mongoc_server_description_t *
-mongoc_server_description_new_copy (const mongoc_server_description_t *description)
+// `mongoc_server_description_new_copy_with_rtt` is a helper to copy a server description with a specified RTT.
+// Enables skipping copying the RTT (to avoid atomic accesses).
+static mongoc_server_description_t *
+mongoc_server_description_new_copy_with_rtt (const mongoc_server_description_t *description, int32_t rtt_ms)
 {
    mongoc_server_description_t *copy;
 
@@ -794,10 +787,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
 
    if (description->has_hello_response) {
       /* calls mongoc_server_description_reset */
-      int64_t last_rtt_ms =
-         mcommon_atomic_int64_fetch (&description->round_trip_time_msec, mcommon_memory_order_relaxed);
-      mongoc_server_description_handle_hello (
-         copy, &description->last_hello_response, last_rtt_ms, &description->error);
+      mongoc_server_description_handle_hello (copy, &description->last_hello_response, rtt_ms, &description->error);
    } else {
       mongoc_server_description_reset (copy);
       /* preserve the original server description type, which is manually set
@@ -813,49 +803,30 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    return copy;
 }
 
+/*
+ *-------------------------------------------------------------------------
+ *
+ * mongoc_server_description_new_copy --
+ *
+ *       A copy of a server description that you must destroy, or NULL.
+ *
+ *-------------------------------------------------------------------------
+ */
 mongoc_server_description_t *
-mongoc_server_description_new_copy_without_rtt (const mongoc_server_description_t *description)
+mongoc_server_description_new_copy (const mongoc_server_description_t *description)
 {
-   mongoc_server_description_t *copy;
-
    if (!description) {
       return NULL;
    }
 
-   copy = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
+   int64_t last_rtt_ms = mcommon_atomic_int64_fetch (&description->round_trip_time_msec, mcommon_memory_order_relaxed);
+   return mongoc_server_description_new_copy_with_rtt (description, last_rtt_ms);
+}
 
-   copy->id = description->id;
-   copy->opened = description->opened;
-   memcpy (&copy->host, &description->host, sizeof (copy->host));
-   copy->round_trip_time_msec = MONGOC_RTT_UNSET;
-
-   copy->connection_address = copy->host.host_and_port;
-   bson_init (&copy->last_hello_response);
-   bson_init (&copy->hosts);
-   bson_init (&copy->passives);
-   bson_init (&copy->arbiters);
-   bson_init (&copy->tags);
-   bson_init (&copy->compressors);
-   bson_copy_to (&description->topology_version, &copy->topology_version);
-   bson_oid_copy (&description->service_id, &copy->service_id);
-   copy->server_connection_id = description->server_connection_id;
-
-   if (description->has_hello_response) {
-      mongoc_server_description_handle_hello (
-         copy, &description->last_hello_response, MONGOC_RTT_UNSET, &description->error);
-   } else {
-      mongoc_server_description_reset (copy);
-      /* preserve the original server description type, which is manually set
-       * for a LoadBalancer server */
-      copy->type = description->type;
-   }
-
-   /* Preserve the error */
-   memcpy (&copy->error, &description->error, sizeof copy->error);
-
-   copy->generation = description->generation;
-   copy->_generation_map_ = mongoc_generation_map_copy (mc_tpl_sd_generation_map_const (description));
-   return copy;
+mongoc_server_description_t *
+mongoc_server_description_new_copy_without_rtt (const mongoc_server_description_t *description)
+{
+   return mongoc_server_description_new_copy_with_rtt (description, MONGOC_RTT_UNSET);
 }
 
 /*
