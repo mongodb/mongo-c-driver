@@ -235,4 +235,8 @@ mongoc_server_description_append_contents_to_bson (const mongoc_server_descripti
                                                    bson_t *bson,
                                                    mongoc_server_description_content_flags_t flags);
 
+mongoc_server_description_t *
+mongoc_server_description_new_copy_without_rtt (const mongoc_server_description_t *description)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+
 #endif
