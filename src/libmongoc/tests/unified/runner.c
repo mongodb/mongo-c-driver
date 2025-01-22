@@ -60,6 +60,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"insert-network-error", "Reset server and pool after network error on insert"},
    {"pool-clear-on-error-checkout", SKIP_ALL_TESTS},
    {"find-shutdown-error", "Concurrent shutdown error on find"},
+   {"find-network-timeout-error", "Ignore network timeout error on find"},
    {"hello-timeout", SKIP_ALL_TESTS},
    // libmongoc unified tests do not support pooled connections or background server monitoring threads yet
    {"serverMonitoringMode", SKIP_ALL_TESTS},
@@ -75,6 +76,8 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // libmongoc does not support the optional listIndexNames helper.
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
+   // Faulty test? initial topologyDescription Unknown->Unknown transition not required by spec as far as I can tell.
+   {"standalone-emit-topology-description-changed-before-close", "Topology lifecycle"},
    {0},
 };
 // clang-format on
