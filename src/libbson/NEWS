@@ -4,7 +4,10 @@ libbson 1.30.0 (Unreleased)
 Fixes:
 
   * Truncated output of `bson_as_json_with_opts` is changed to no longer split valid UTF-8 sequences.
-
+  * Changes were made to the generated JSON text in some cases:
+      * Previously, empty arrays and documents would contain one space when serialized alone or two spaces when serialized as a nested item. Empty arrays and documents now uniformly use one space.
+      * Previously, an array omitted due to the maximum recursion limit would serialize to "{ ... }", as if it were a document. Omitted arrays now serialize to "[ ... ]".
+      * The maximum recursion limit now applies to legacy codewscope documents. Deeply nested scope documents will now be omitted like any other deeply nested document.
 
 
 libbson 1.29.2
