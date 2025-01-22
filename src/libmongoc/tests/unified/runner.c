@@ -1232,6 +1232,14 @@ done:
    return ret;
 }
 
+static bool
+event_matches_eventtype (const event_t *event, const char *eventType)
+{
+   BSON_ASSERT_PARAM (event);
+   BSON_OPTIONAL_PARAM (eventType);
+   return 0 == bson_strcasecmp (event->eventType, eventType ? eventType : "command");
+}
+
 bool
 test_count_matching_events_for_client (
    test_t *test, entity_t *client, bson_t *expected_event, bson_error_t *error, int64_t *count_out)
@@ -1254,36 +1262,19 @@ static bool
 test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for_client, bson_error_t *error)
 {
    bool ret = false;
-   bson_parser_t *bp;
+   entity_t *entity = NULL;
+
    char *client_id;
    bson_t *expected_events;
    bool *ignore_extra_events;
-   entity_t *entity = NULL;
-   bson_iter_t iter;
-   event_t *eiter;
-   uint32_t expected_num_events;
-   uint32_t actual_num_events;
    char *event_type;
-
-   bp = bson_parser_new ();
+   bson_parser_t *bp = bson_parser_new ();
    bson_parser_utf8 (bp, "client", &client_id);
    bson_parser_array (bp, "events", &expected_events);
    bson_parser_bool_optional (bp, "ignoreExtraEvents", &ignore_extra_events);
    bson_parser_utf8_optional (bp, "eventType", &event_type);
    if (!bson_parser_parse (bp, expected_events_for_client, error)) {
       goto done;
-   }
-
-   if (event_type) {
-      if (0 == strcmp (event_type, "cmap")) {
-         /* TODO: (CDRIVER-3525) Explicitly ignore cmap events until CMAP is
-          * supported. */
-         ret = true;
-         goto done;
-      } else if (0 != strcmp (event_type, "command") && 0 != strcmp (event_type, "sdam")) {
-         test_set_error (error, "unexpected event type: %s", event_type);
-         goto done;
-      }
    }
 
    entity = entity_map_get (test->entity_map, client_id, error);
@@ -1296,8 +1287,17 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
       goto done;
    }
 
-   expected_num_events = bson_count_keys (expected_events);
-   LL_COUNT (entity->events, eiter, actual_num_events);
+   uint32_t expected_num_events = bson_count_keys (expected_events);
+   uint32_t actual_num_events = 0;
+
+   event_t *eiter;
+   LL_FOREACH (entity->events, eiter)
+   {
+      if (event_matches_eventtype (eiter, event_type)) {
+         actual_num_events++;
+      }
+   }
+
    if (expected_num_events != actual_num_events) {
       bool too_many_events = actual_num_events > expected_num_events;
       if (ignore_extra_events && *ignore_extra_events) {
@@ -1313,10 +1313,13 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
    }
 
    eiter = entity->events;
+   bson_iter_t iter;
    BSON_FOREACH (expected_events, iter)
    {
+      while (eiter && !event_matches_eventtype (eiter, event_type)) {
+         eiter = eiter->next;
+      }
       bson_t expected_event;
-
       bson_iter_bson (&iter, &expected_event);
       if (!eiter) {
          test_set_error (error, "could not find event: %s", tmp_json (&expected_event));

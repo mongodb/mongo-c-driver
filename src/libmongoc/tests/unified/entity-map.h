@@ -26,7 +26,8 @@
 
 typedef struct _event_t {
    struct _event_t *next;
-   const char *type; // Non-owning
+   const char *type;      // Non-owning
+   const char *eventType; // Non-owning
    bson_t *serialized;
    bool is_sensitive_command;
 } event_t;

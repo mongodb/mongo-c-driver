@@ -135,10 +135,14 @@ done:
    return ret;
 }
 
+/* Consider refactoring the names, this is confusing. "type" has been the name of the specific event
+ * type. "eventType" is more like what's called the "component" in structured logging, but here it's
+ * named after the field in expectedEventsForClient. */
 static event_t *
-event_new (const char *type, bson_t *serialized, bool is_sensitive_command)
+event_new (const char *type, const char *eventType, bson_t *serialized, bool is_sensitive_command)
 {
    BSON_ASSERT_PARAM (type);
+   BSON_ASSERT_PARAM (eventType);
    BSON_ASSERT_PARAM (serialized);
 
    const int64_t usecs = usecs_since_epoch ();
@@ -148,13 +152,15 @@ event_new (const char *type, bson_t *serialized, bool is_sensitive_command)
    BSON_APPEND_UTF8 (serialized, "name", type);
    BSON_APPEND_DOUBLE (serialized, "observedAt", secs);
 
-   MONGOC_DEBUG ("new event: %s %s (%s)",
+   MONGOC_DEBUG ("new %s event: %s %s (%s)",
+                 eventType,
                  type,
                  tmp_json (serialized),
                  is_sensitive_command ? "marked SENSITIVE" : "not sensitive");
 
    event_t *event = bson_malloc0 (sizeof *event);
    event->type = type;             // Borrowed
+   event->eventType = eventType;   // Borrowed
    event->serialized = serialized; // Takes ownership
    event->is_sensitive_command = is_sensitive_command;
    return event;
@@ -335,7 +341,7 @@ command_started (const mongoc_apm_command_started_t *started)
       if (service_id, then (kv ("serviceId", oid (service_id)))),
       kv ("command", bson (*mongoc_apm_command_started_get_command (started))));
 
-   event_store_or_destroy (entity, event_new ("commandStartedEvent", serialized, is_sensitive));
+   event_store_or_destroy (entity, event_new ("commandStartedEvent", "command", serialized, is_sensitive));
 }
 
 static void
@@ -361,7 +367,7 @@ command_failed (const mongoc_apm_command_failed_t *failed)
       if (service_id, then (kv ("serviceId", oid (service_id)))),
       kv ("failure", cstr (error.message)));
 
-   event_store_or_destroy (entity, event_new ("commandFailedEvent", serialized, is_sensitive));
+   event_store_or_destroy (entity, event_new ("commandFailedEvent", "command", serialized, is_sensitive));
 }
 
 static void
@@ -385,7 +391,7 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
       if (service_id, then (kv ("serviceId", oid (service_id)))),
       kv ("reply", bson (*mongoc_apm_command_succeeded_get_reply (succeeded))));
 
-   event_store_or_destroy (entity, event_new ("commandSucceededEvent", serialized, is_sensitive));
+   event_store_or_destroy (entity, event_new ("commandSucceededEvent", "command", serialized, is_sensitive));
 }
 
 static void
@@ -409,7 +415,7 @@ server_changed (const mongoc_apm_server_changed_t *changed)
       kv ("newDescription",
           doc (do ({ mongoc_server_description_append_contents_to_bson (new_sd, bsonBuildContext.doc, sd_flags); }))));
 
-   event_store_or_destroy (entity, event_new ("serverDescriptionChangedEvent", serialized, false));
+   event_store_or_destroy (entity, event_new ("serverDescriptionChangedEvent", "sdam", serialized, false));
 }
 
 static void
@@ -436,7 +442,7 @@ topology_changed (const mongoc_apm_topology_changed_t *changed)
                               new_td, bsonBuildContext.doc, td_flags, sd_flags);
                         }))));
 
-   event_store_or_destroy (entity, event_new ("topologyDescriptionChangedEvent", serialized, false));
+   event_store_or_destroy (entity, event_new ("topologyDescriptionChangedEvent", "sdam", serialized, false));
 }
 
 static void
@@ -449,7 +455,7 @@ topology_opening (const mongoc_apm_topology_opening_t *opening)
    bson_t *serialized = bson_new ();
    bsonBuildAppend (*serialized, kv ("topologyId", oid (&topology_id)));
 
-   event_store_or_destroy (entity, event_new ("topologyOpeningEvent", serialized, false));
+   event_store_or_destroy (entity, event_new ("topologyOpeningEvent", "sdam", serialized, false));
 }
 
 static void
@@ -462,7 +468,7 @@ topology_closed (const mongoc_apm_topology_closed_t *closed)
    bson_t *serialized = bson_new ();
    bsonBuildAppend (*serialized, kv ("topologyId", oid (&topology_id)));
 
-   event_store_or_destroy (entity, event_new ("topologyClosedEvent", serialized, false));
+   event_store_or_destroy (entity, event_new ("topologyClosedEvent", "sdam", serialized, false));
 }
 
 static void
@@ -473,7 +479,7 @@ server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *started)
 
    bsonBuildAppend (*serialized, kv ("awaited", boolean (mongoc_apm_server_heartbeat_started_get_awaited (started))));
 
-   event_store_or_destroy (entity, event_new ("serverHeartbeatStartedEvent", serialized, false));
+   event_store_or_destroy (entity, event_new ("serverHeartbeatStartedEvent", "sdam", serialized, false));
 }
 
 static void
@@ -485,7 +491,7 @@ server_heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *succe
    bsonBuildAppend (*serialized,
                     kv ("awaited", boolean (mongoc_apm_server_heartbeat_succeeded_get_awaited (succeeded))));
 
-   event_store_or_destroy (entity, event_new ("serverHeartbeatSucceededEvent", serialized, false));
+   event_store_or_destroy (entity, event_new ("serverHeartbeatSucceededEvent", "sdam", serialized, false));
 }
 
 static void
@@ -496,7 +502,7 @@ server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *failed)
 
    bsonBuildAppend (*serialized, kv ("awaited", boolean (mongoc_apm_server_heartbeat_failed_get_awaited (failed))));
 
-   event_store_or_destroy (entity, event_new ("serverHeartbeatFailedEvent", serialized, false));
+   event_store_or_destroy (entity, event_new ("serverHeartbeatFailedEvent", "sdam", serialized, false));
 }
 
 static void
