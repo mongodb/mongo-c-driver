@@ -3916,12 +3916,15 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
       //    from single-threaded (blocking) topology scans, or from lazily opening the topology
       //    description when it's first used. Request stream selection after blocking, to
       //    handle either of these cases.
+      //
+      // Structured logs can not be fully suppressed here, because we do need to emit topology
+      // lifecycle events. We could filter out the "waitForEvent" server selection operation if
+      // it becomes a problem.
 
       {
          mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
          if (mc_client) {
             const mongoc_ss_log_context_t ss_log_context = {.operation = "waitForEvent"};
-            test_begin_suppressing_structured_logs ();
             mongoc_server_stream_t *stream = mongoc_cluster_stream_for_reads (&mc_client->cluster,
                                                                               &ss_log_context,
                                                                               NULL /* read_prefs */,
@@ -3932,7 +3935,6 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
             if (stream) {
                mongoc_server_stream_cleanup (stream);
             }
-            test_end_suppressing_structured_logs ();
          }
       }
    }
