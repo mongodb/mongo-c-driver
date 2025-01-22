@@ -440,6 +440,32 @@ topology_changed (const mongoc_apm_topology_changed_t *changed)
 }
 
 static void
+topology_opening (const mongoc_apm_topology_opening_t *opening)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_topology_opening_get_context (opening);
+   bson_oid_t topology_id;
+   mongoc_apm_topology_opening_get_topology_id (opening, &topology_id);
+
+   bson_t *serialized = bson_new ();
+   bsonBuildAppend (*serialized, kv ("topologyId", oid (&topology_id)));
+
+   event_store_or_destroy (entity, event_new ("topologyOpeningEvent", serialized, false));
+}
+
+static void
+topology_closed (const mongoc_apm_topology_closed_t *closed)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_topology_closed_get_context (closed);
+   bson_oid_t topology_id;
+   mongoc_apm_topology_closed_get_topology_id (closed, &topology_id);
+
+   bson_t *serialized = bson_new ();
+   bsonBuildAppend (*serialized, kv ("topologyId", oid (&topology_id)));
+
+   event_store_or_destroy (entity, event_new ("topologyClosedEvent", serialized, false));
+}
+
+static void
 server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *started)
 {
    entity_t *entity = (entity_t *) mongoc_apm_server_heartbeat_started_get_context (started);
@@ -504,6 +530,18 @@ set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks)
 }
 
 static void
+set_topology_opening_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_topology_opening_cb (callbacks, topology_opening);
+}
+
+static void
+set_topology_closed_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_topology_closed_cb (callbacks, topology_closed);
+}
+
+static void
 set_server_heartbeat_started_cb (mongoc_apm_callbacks_t *callbacks)
 {
    mongoc_apm_set_server_heartbeat_started_cb (callbacks, server_heartbeat_started);
@@ -542,6 +580,8 @@ set_event_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
       {.type = "commandSucceededEvent", .set = set_command_succeeded_cb},
       {.type = "serverDescriptionChangedEvent", .set = set_server_changed_cb},
       {.type = "topologyDescriptionChangedEvent", .set = set_topology_changed_cb},
+      {.type = "topologyOpeningEvent", .set = set_topology_opening_cb},
+      {.type = "topologyClosedEvent", .set = set_topology_closed_cb},
       {.type = "serverHeartbeatStartedEvent", .set = set_server_heartbeat_started_cb},
       {.type = "serverHeartbeatSucceededEvent", .set = set_server_heartbeat_succeeded_cb},
       {.type = "serverHeartbeatFailedEvent", .set = set_server_heartbeat_failed_cb},
