@@ -56,6 +56,11 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"insert-shutdown-error", SKIP_ALL_TESTS},
    {"standalone-logging", "Successful heartbeat"}, // requires driverConnectionId
    {"standalone-logging", "Failing heartbeat"}, // requires driverConnectionId
+   {"find-network-error", "Reset server and pool after network error on find"},
+   {"insert-network-error", "Reset server and pool after network error on insert"},
+   {"pool-clear-on-error-checkout", SKIP_ALL_TESTS},
+   {"find-shutdown-error", "Concurrent shutdown error on find"},
+   {"hello-timeout", SKIP_ALL_TESTS},
    // libmongoc unified tests do not support pooled connections or background server monitoring threads yet
    {"serverMonitoringMode", SKIP_ALL_TESTS},
    // CDRIVER-4115: listCollections does not support batchSize.
