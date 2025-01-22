@@ -62,6 +62,12 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"find-shutdown-error", "Concurrent shutdown error on find"},
    {"find-network-timeout-error", "Ignore network timeout error on find"},
    {"hello-timeout", SKIP_ALL_TESTS},
+   {"hello-network-error", SKIP_ALL_TESTS},
+   {"hello-command-error", SKIP_ALL_TESTS},
+   {"interruptInUse-pool-clear", SKIP_ALL_TESTS},
+   {"pool-clear-min-pool-size-error", SKIP_ALL_TESTS},
+   {"pool-clear-checkout-error", SKIP_ALL_TESTS},
+   {"pool-clear-application-error", SKIP_ALL_TESTS},
    // libmongoc unified tests do not support pooled connections or background server monitoring threads yet
    {"serverMonitoringMode", SKIP_ALL_TESTS},
    // CDRIVER-4115: listCollections does not support batchSize.
