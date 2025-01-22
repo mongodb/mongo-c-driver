@@ -54,6 +54,8 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"minPoolSize-error", SKIP_ALL_TESTS},
    {"pool-cleared-on-min-pool-size-population-error", SKIP_ALL_TESTS},
    {"insert-shutdown-error", SKIP_ALL_TESTS},
+   {"standalone-logging", "Successful heartbeat"}, // requires driverConnectionId
+   {"standalone-logging", "Failing heartbeat"}, // requires driverConnectionId
    // libmongoc unified tests do not support pooled connections or background server monitoring threads yet
    {"serverMonitoringMode", SKIP_ALL_TESTS},
    // CDRIVER-4115: listCollections does not support batchSize.
