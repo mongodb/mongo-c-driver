@@ -113,7 +113,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
       return;
    }
 
-   // Track new and previous description for monitor and logging purposes
+   // The initial 'previous' topology description, with Unknown type
    prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
    mongoc_topology_description_init (prev_td, td->heartbeat_msec);
 
