@@ -3946,6 +3946,50 @@ done:
    return ret;
 }
 
+static bool
+operation_assert_event_count (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id;
+   bson_t *expected_event;
+   int64_t *expected_count;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_doc (bp, "event", &expected_event);
+   bson_parser_int (bp, "count", &expected_count);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   entity_t *client = entity_map_get (test->entity_map, client_id, error);
+   if (!client) {
+      goto done;
+   }
+
+   int64_t actual_count;
+   if (!test_count_matching_events_for_client (test, client, expected_event, error, &actual_count)) {
+      goto done;
+   }
+   if (actual_count != *expected_count) {
+      char *event_list_string = event_list_to_string (client->events);
+      test_diagnostics_error_info ("all captured events for client:\n%s", event_list_string);
+      bson_free (event_list_string);
+      test_diagnostics_error_info ("checking for expected event: %s\n", tmp_json (expected_event));
+      test_set_error (error,
+                      "assertEventCount found %" PRId64 " matches, required exactly %" PRId64 " matches",
+                      actual_count,
+                      *expected_count);
+      goto done;
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -3965,6 +4009,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"listDatabaseNames", operation_list_database_names},
       {"clientBulkWrite", operation_client_bulkwrite},
       {"waitForEvent", operation_wait_for_event},
+      {"assertEventCount", operation_assert_event_count},
 
       /* ClientEncryption operations */
       {"createDataKey", operation_create_datakey},
