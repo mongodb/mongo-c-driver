@@ -1096,6 +1096,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find-with-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-command-logging-and-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-command-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-connection-uri.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-counters.c

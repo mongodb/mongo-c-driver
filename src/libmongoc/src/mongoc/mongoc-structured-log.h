@@ -77,6 +77,15 @@ MONGOC_EXPORT (mongoc_structured_log_level_t)
 mongoc_structured_log_opts_get_max_level_for_component (const mongoc_structured_log_opts_t *opts,
                                                         mongoc_structured_log_component_t component);
 
+MONGOC_EXPORT (size_t)
+mongoc_structured_log_opts_get_max_document_length (const mongoc_structured_log_opts_t *opts);
+
+MONGOC_EXPORT (bool)
+mongoc_structured_log_opts_set_max_document_length_from_env (mongoc_structured_log_opts_t *opts);
+
+MONGOC_EXPORT (bool)
+mongoc_structured_log_opts_set_max_document_length (mongoc_structured_log_opts_t *opts, size_t max_document_length);
+
 MONGOC_EXPORT (bson_t *)
 mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t *entry);
 

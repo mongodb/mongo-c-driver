@@ -31,7 +31,7 @@ Environment Variables
 This is a full list of the captured environment variables.
 
 * ``MONGODB_LOG_MAX_DOCUMENT_LENGTH``: Maximum length for JSON-serialized documents that appear within a log message.
-  It may be a number, in bytes, or ``unlimited`` (case insensitive).
+  It may be a number, in bytes, or ``unlimited`` (case insensitive) to choose an implementation-specific value near the maximum representable length.
   By default, the limit is 1000 bytes.
   This limit affects interior documents like commands and replies, not the total length of a structured log message.
 

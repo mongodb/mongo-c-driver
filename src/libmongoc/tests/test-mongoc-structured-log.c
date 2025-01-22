@@ -17,6 +17,7 @@
 #include <mongoc/mongoc.h>
 
 #include "mongoc/mongoc-structured-log-private.h"
+#include "test-libmongoc.h"
 #include "TestSuite.h"
 
 typedef struct log_assumption {
@@ -65,6 +66,7 @@ test_structured_log_opts (void)
 {
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
 
+   ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_WARNING));
    ASSERT_CMPINT (
       MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
       ==,
@@ -88,7 +90,6 @@ test_structured_log_opts (void)
 
    ASSERT (!mongoc_structured_log_opts_set_max_level_for_all_components (opts, (mongoc_structured_log_level_t) -1));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_INFO));
-
    ASSERT_CMPINT (
       MONGOC_STRUCTURED_LOG_LEVEL_INFO,
       ==,
@@ -142,6 +143,12 @@ test_structured_log_plain (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+
+   /* Note about these max_document_length settings: We want a consistent value so the test is isolated from external
+    * environment variable settings. The default (MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH) is verified as 1000
+    * bytes elsewhere. The Command Logging and Monitoring spec recommends that tests run with a larger-than-default
+    * setting of 10000 bytes. We choose that value here, but it's really quite arbitrary. */
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
@@ -168,6 +175,7 @@ test_structured_log_plain_with_extra_data (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
@@ -222,6 +230,7 @@ test_structured_log_basic_data_types (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
@@ -274,6 +283,7 @@ test_structured_log_json (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
@@ -314,6 +324,7 @@ test_structured_log_oid (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
@@ -363,6 +374,7 @@ test_structured_log_error (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_INFO));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
@@ -435,6 +447,7 @@ test_structured_log_server_description (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
@@ -466,52 +479,56 @@ test_structured_log_command (void)
       .expected_envelope.level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
       .expected_envelope.component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       .expected_envelope.message = "Log entry with command and reply fields",
-      .expected_bson = BCON_NEW ("message",
-                                 BCON_UTF8 ("Log entry with command and reply fields"),
-                                 "commandName",
-                                 BCON_UTF8 ("Not a command"),
-                                 "databaseName",
-                                 BCON_UTF8 ("Some database"),
-                                 "commandName",
-                                 BCON_UTF8 ("Not a command"),
-                                 "operationId",
-                                 BCON_INT64 (0x12345678eeff0011),
-                                 "command",
-                                 BCON_UTF8 ("{ \"c\" : \"d\" }"),
-                                 "reply", // Un-redacted successful reply (not-a-command)
-                                 BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
-                                 "reply", // Un-redacted successful reply (ping)
-                                 BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
-                                 "reply", // Redacted successful reply (auth)
-                                 BCON_UTF8 ("{}"),
-                                 "failure", // Un-redacted server side error (not-a-command)
-                                 "{",
-                                 "r",
-                                 BCON_UTF8 ("s"),
-                                 "code",
-                                 BCON_INT32 (1),
-                                 "}",
-                                 "failure", // Un-redacted server side error (ping)
-                                 "{",
-                                 "r",
-                                 BCON_UTF8 ("s"),
-                                 "code",
-                                 BCON_INT32 (1),
-                                 "}",
-                                 "failure", // Redacted server side error (auth)
-                                 "{",
-                                 "code",
-                                 BCON_INT32 (1),
-                                 "}",
-                                 "failure", // Client side error
-                                 "{",
-                                 "code",
-                                 BCON_INT32 (123),
-                                 "domain",
-                                 BCON_INT32 (456),
-                                 "message",
-                                 BCON_UTF8 ("oh no"),
-                                 "}"),
+      .expected_bson =
+         BCON_NEW ("message",
+                   BCON_UTF8 ("Log entry with command and reply fields"),
+                   "commandName",
+                   BCON_UTF8 ("Not a command"),
+                   "databaseName",
+                   BCON_UTF8 ("Some database"),
+                   "commandName",
+                   BCON_UTF8 ("Not a command"),
+                   "operationId",
+                   BCON_INT64 (0x12345678eeff0011),
+                   "command",
+                   BCON_UTF8 ("{ \"c\" : \"d\", \"first_payload\" : [ { \"i\" : 0, \"x\" : 0 }, { \"i\" : 0, \"x\" : 1 "
+                              "}, { \"i\" : 0, \"x\" : 2 }, { \"i\" : 0, \"x\" : 3 }, { \"i\" : 0, \"x\" : 4 } ], "
+                              "\"second_payload\" : [ { \"i\" : 1, \"x\" : 0 }, { \"i\" : 1, \"x\" : 1 }, { \"i\" : 1, "
+                              "\"x\" : 2 }, { \"i\" : 1, \"x\" : 3 }, { \"i\" : 1, \"x\" : 4 } ] }"),
+                   "reply", // Un-redacted successful reply (not-a-command)
+                   BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
+                   "reply", // Un-redacted successful reply (ping)
+                   BCON_UTF8 ("{ \"r\" : \"s\", \"code\" : 1 }"),
+                   "reply", // Redacted successful reply (auth)
+                   BCON_UTF8 ("{}"),
+                   "failure", // Un-redacted server side error (not-a-command)
+                   "{",
+                   "r",
+                   BCON_UTF8 ("s"),
+                   "code",
+                   BCON_INT32 (1),
+                   "}",
+                   "failure", // Un-redacted server side error (ping)
+                   "{",
+                   "r",
+                   BCON_UTF8 ("s"),
+                   "code",
+                   BCON_INT32 (1),
+                   "}",
+                   "failure", // Redacted server side error (auth)
+                   "{",
+                   "code",
+                   BCON_INT32 (1),
+                   "}",
+                   "failure", // Client side error
+                   "{",
+                   "code",
+                   BCON_INT32 (123),
+                   "domain",
+                   BCON_INT32 (456),
+                   "message",
+                   BCON_UTF8 ("oh no"),
+                   "}"),
       .expected_calls = 1,
    };
 
@@ -529,15 +546,47 @@ test_structured_log_command (void)
       .message = "oh no",
    };
 
+   // Current value of MONGOC_CMD_PAYLOADS_COUNT_MAX is 2.
+   // Write two payloads, each with multiple documents in sequence.
+   uint8_t *payload_buf[2] = {NULL, NULL};
+   size_t payload_buflen[2] = {0, 0};
+   bson_writer_t *payload_writer[2] = {
+      bson_writer_new (&payload_buf[0], &payload_buflen[0], 0, bson_realloc_ctx, NULL),
+      bson_writer_new (&payload_buf[1], &payload_buflen[1], 0, bson_realloc_ctx, NULL),
+   };
+   for (unsigned x = 0; x < 5; x++) {
+      for (unsigned i = 0; i < sizeof payload_writer / sizeof payload_writer[0]; i++) {
+         bson_t *doc;
+         bson_writer_begin (payload_writer[i], &doc);
+         BCON_APPEND (doc, "i", BCON_INT32 (i), "x", BCON_INT32 (x));
+         bson_writer_end (payload_writer[i]);
+      }
+   }
+
    mongoc_cmd_t cmd = {
       .db_name = "Some database",
       .command_name = "Not a command",
       .operation_id = 0x12345678eeff0011,
       .command = cmd_doc,
+      .payloads =
+         {
+            {.identifier = "first_payload",
+             .documents = payload_buf[0],
+             .size = bson_writer_get_length (payload_writer[0])},
+            {.identifier = "second_payload",
+             .documents = payload_buf[1],
+             .size = bson_writer_get_length (payload_writer[0])},
+         },
+      .payloads_count = 2,
    };
+
+   for (unsigned i = 0; i < sizeof payload_writer / sizeof payload_writer[0]; i++) {
+      bson_writer_destroy (payload_writer[i]);
+   }
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
@@ -562,6 +611,9 @@ test_structured_log_command (void)
    bson_destroy (assumption.expected_bson);
    bson_destroy (cmd_doc);
    bson_destroy (reply_doc);
+   for (unsigned i = 0; i < sizeof payload_buf / sizeof payload_buf[0]; i++) {
+      bson_free (payload_buf[i]);
+   }
 }
 
 void
@@ -590,6 +642,7 @@ test_structured_log_duration (void)
 
    mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
    mongoc_structured_log_opts_set_handler (opts, structured_log_func, &assumption);
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 10000));
    ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG));
 
    mongoc_structured_log_instance_t *instance = mongoc_structured_log_instance_new (opts);
@@ -700,6 +753,76 @@ test_structured_log_component_names (void)
 }
 
 void
+test_structured_log_max_document_length (void)
+{
+   mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
+
+   ASSERT_CMPINT (MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH, ==, 1000);
+
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, 0));
+   ASSERT (!mongoc_structured_log_opts_set_max_document_length (opts, INT_MAX));
+   ASSERT (mongoc_structured_log_opts_set_max_document_length (opts, INT_MAX / 2));
+   ASSERT_CMPINT (INT_MAX / 2, ==, mongoc_structured_log_opts_get_max_document_length (opts));
+
+   mongoc_structured_log_opts_destroy (opts);
+}
+
+int
+test_structured_log_skip_if_env_not_default (void)
+{
+   // Skip testing env defaults if any options have been set externally
+   const char *expected_unset[] = {
+      "MONGODB_LOG_MAX_DOCUMENT_LENGTH",
+      "MONGODB_LOG_COMMAND",
+      "MONGODB_LOG_TOPOLOGY",
+      "MONGODB_LOG_SERVER_SELECTION",
+      "MONGODB_LOG_CONNECTION",
+      "MONGODB_LOG_ALL",
+   };
+
+   for (size_t i = 0u; i < sizeof expected_unset / sizeof expected_unset[0]; i++) {
+      const char *var = expected_unset[i];
+      char *value = test_framework_getenv (var);
+      bson_free (value);
+      if (value) {
+         MONGOC_DEBUG ("Skipping test because environment var '%s' is set", var);
+         return 0;
+      }
+   }
+   return 1;
+}
+
+void
+test_structured_log_env_defaults (void *test_context)
+{
+   BSON_UNUSED (test_context);
+
+   mongoc_structured_log_opts_t *opts = mongoc_structured_log_opts_new ();
+
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      ==,
+      mongoc_structured_log_opts_get_max_level_for_component (opts, MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND));
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      ==,
+      mongoc_structured_log_opts_get_max_level_for_component (opts, MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION));
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      ==,
+      mongoc_structured_log_opts_get_max_level_for_component (opts, MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION));
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+      ==,
+      mongoc_structured_log_opts_get_max_level_for_component (opts, MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY));
+
+   ASSERT_CMPINT (
+      MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH, ==, mongoc_structured_log_opts_get_max_document_length (opts));
+
+   mongoc_structured_log_opts_destroy (opts);
+}
+
+void
 test_structured_log_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/structured_log/opts", test_structured_log_opts);
@@ -714,4 +837,11 @@ test_structured_log_install (TestSuite *suite)
    TestSuite_Add (suite, "/structured_log/duration", test_structured_log_duration);
    TestSuite_Add (suite, "/structured_log/level_names", test_structured_log_level_names);
    TestSuite_Add (suite, "/structured_log/component_names", test_structured_log_component_names);
+   TestSuite_Add (suite, "/structured_log/max_document_length", test_structured_log_max_document_length);
+   TestSuite_AddFull (suite,
+                      "/structured_log/env_defaults",
+                      test_structured_log_env_defaults,
+                      NULL,
+                      NULL,
+                      test_structured_log_skip_if_env_not_default);
 }
