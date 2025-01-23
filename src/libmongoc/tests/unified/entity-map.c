@@ -16,6 +16,7 @@
 
 #include "entity-map.h"
 
+#include "bson/bson.h"
 #include "bsonutil/bson-parser.h"
 #include "TestSuite.h"
 #include "mongoc.h"
@@ -1287,6 +1288,7 @@ typedef struct {
    mongoc_read_concern_t *rc;
    mongoc_write_concern_t *wc;
    mongoc_read_prefs_t *rp;
+   bson_t *encrypted_fields;
 } coll_or_db_opts_t;
 
 static coll_or_db_opts_t *
@@ -1304,6 +1306,7 @@ coll_or_db_opts_destroy (coll_or_db_opts_t *opts)
    mongoc_read_concern_destroy (opts->rc);
    mongoc_read_prefs_destroy (opts->rp);
    mongoc_write_concern_destroy (opts->wc);
+   bson_destroy (opts->encrypted_fields);
    bson_free (opts);
 }
 
@@ -1317,6 +1320,7 @@ coll_or_db_opts_parse (coll_or_db_opts_t *opts, bson_t *in, bson_error_t *error)
    bson_parser_read_concern_optional (parser, &opts->rc);
    bson_parser_read_prefs_optional (parser, &opts->rp);
    bson_parser_write_concern_optional (parser, &opts->wc);
+   bson_parser_doc_optional (parser, "encryptedFields", &opts->encrypted_fields);
    if (!bson_parser_parse (parser, in, error)) {
       goto done;
    }
@@ -1403,6 +1407,7 @@ entity_collection_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *err
    char *database_id = NULL;
    char *collection_name = NULL;
    bson_t *collection_opts = NULL;
+   bson_t *opts = NULL;
    coll_or_db_opts_t *coll_or_db_opts = NULL;
 
    entity = entity_new (entity_map, "collection");
@@ -1427,6 +1432,20 @@ entity_collection_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *err
       if (!coll_or_db_opts_parse (coll_or_db_opts, collection_opts, error)) {
          goto done;
       }
+      if (coll_or_db_opts->encrypted_fields) {
+         opts = BCON_NEW (opts, "encryptedFields", BCON_DOCUMENT (coll_or_db_opts->encrypted_fields));
+      }
+   }
+
+   if (!mongoc_collection_drop_with_opts (coll, opts, error)) {
+      goto done;
+   }
+   coll = mongoc_database_create_collection (database, collection_name, opts, error);
+   if (!coll) {
+      goto done;
+   }
+
+   if (collection_opts) {
       if (coll_or_db_opts->rc) {
          mongoc_collection_set_read_concern (coll, coll_or_db_opts->rc);
       }
@@ -1443,6 +1462,7 @@ done:
    bson_free (database_id);
    bson_parser_destroy (parser);
    bson_destroy (collection_opts);
+   bson_destroy (opts);
    coll_or_db_opts_destroy (coll_or_db_opts);
    if (!ret) {
       entity_destroy (entity);

@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#include "bsonutil/bson-match.h"
 #include "bsonutil/bson-parser.h"
+#include "bsonutil/bson-val.h"
 #include "entity-map.h"
 #include "json-test.h"
 #include "operation.h"
@@ -578,7 +580,7 @@ check_schema_version (test_file_t *test_file)
    // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
    semver_t schema_version;
-   semver_parse ("1.22", &schema_version);
+   semver_parse ("1.23", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -1287,16 +1289,24 @@ test_check_outcome_collection (test_t *test, bson_t *collection_data, bson_error
       bson_iter_bson (&eiter, &expected);
       expected_sorted = bson_copy_and_sort (&expected);
 
+      bson_val_t *actual_v = bson_val_from_bson (actual_sorted);
+      bson_val_t *expected_v = bson_val_from_bson (expected_sorted);
 
-      if (!bson_equal (actual_sorted, expected_sorted)) {
+      bson_matcher_t *matcher = bson_matcher_new ();
+      if (!bson_matcher_match (matcher, expected_v, actual_v, "", false, error)) {
          test_set_error (error, "expected %s, but got %s", tmp_json (expected_sorted), tmp_json (actual_sorted));
+         const char *got = tmp_json (actual_sorted);
+         printf ("this: %s", got);
          bson_destroy (actual_sorted);
          bson_destroy (expected_sorted);
          goto done;
       }
 
+      bson_matcher_destroy (matcher);
       bson_destroy (actual_sorted);
       bson_destroy (expected_sorted);
+      bson_val_destroy (actual_v);
+      bson_val_destroy (expected_v);
 
       bson_iter_next (&eiter);
    }
