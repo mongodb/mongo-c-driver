@@ -189,11 +189,12 @@ _prefix_keyvault_error (bson_error_t *error)
 static void
 _status_to_error (mongocrypt_status_t *status, bson_error_t *error)
 {
-   bson_set_error (error,
-                   MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                   mongocrypt_status_code (status),
-                   "%s",
-                   mongocrypt_status_message (status, NULL));
+   _mongoc_set_error_with_category (error,
+                                    MONGOC_ERROR_CATEGORY_CRYPT,
+                                    MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                                    mongocrypt_status_code (status),
+                                    "%s",
+                                    mongocrypt_status_message (status, NULL));
 }
 
 /* Checks for an error on mongocrypt context.
