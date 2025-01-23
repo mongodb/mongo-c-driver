@@ -338,3 +338,34 @@ mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, m
    }
    return true;
 }
+
+void
+_mongoc_set_error (bson_error_t *error, uint32_t domain, uint32_t code, const char *format, ...)
+{
+   if (error) {
+      error->domain = domain;
+      error->code = code;
+      _mongoc_set_error_category (error, MONGOC_ERROR_CATEGORY);
+
+      va_list args;
+      va_start (args, format);
+      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      va_end (args);
+   }
+}
+
+void
+_mongoc_set_error_with_category (
+   bson_error_t *error, uint8_t category, uint32_t domain, uint32_t code, const char *format, ...)
+{
+   if (error) {
+      error->domain = domain;
+      error->code = code;
+      _mongoc_set_error_category (error, category);
+
+      va_list args;
+      va_start (args, format);
+      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      va_end (args);
+   }
+}

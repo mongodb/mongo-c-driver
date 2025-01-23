@@ -105,6 +105,28 @@ typedef enum {
 bool
 mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, mongoc_error_content_flags_t flags);
 
+void
+_mongoc_set_error (bson_error_t *error, uint32_t domain, uint32_t code, const char *format, ...)
+   BSON_GNUC_PRINTF (4, 5);
+
+void
+_mongoc_set_error_with_category (
+   bson_error_t *error, uint8_t category, uint32_t domain, uint32_t code, const char *format, ...)
+   BSON_GNUC_PRINTF (5, 6);
+
+#define MONGOC_ERROR_CATEGORY_BSON 1 // BSON_ERROR_CATEGORY
+#define MONGOC_ERROR_CATEGORY 2
+#define MONGOC_ERROR_CATEGORY_SERVER 3
+#define MONGOC_ERROR_CATEGORY_CRYPT 4
+#define MONGOC_ERROR_CATEGORY_SASL 5
+
+static BSON_INLINE void
+_mongoc_set_error_category (bson_error_t *error, uint8_t category)
+{
+   BSON_ASSERT_PARAM (error);
+   error->reserved = category;
+}
+
 BSON_END_DECLS
 
 #endif /* MONGOC_ERROR_PRIVATE_H */
