@@ -19,6 +19,8 @@
 #ifndef MONGOC_ERROR_PRIVATE_H
 #define MONGOC_ERROR_PRIVATE_H
 
+#include "mongoc-error.h"
+
 #include <bson/bson.h>
 #include <stddef.h>
 
