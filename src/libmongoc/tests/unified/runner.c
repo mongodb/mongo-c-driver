@@ -1297,7 +1297,7 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
       /* Full CMAP support (CDRIVER-3525) is not currently planned for this driver.
        * Many tests that would otherwise need to be skipped can be partially executed
        * by letting checks for CMAP events artificially pass. */
-      MONGOC_DEBUG("SKIPPING expectEvents check for unsupported \"cmap\" events\n");
+      MONGOC_DEBUG ("SKIPPING expectEvents check for unsupported \"cmap\" events\n");
       ret = true;
       goto done;
    }

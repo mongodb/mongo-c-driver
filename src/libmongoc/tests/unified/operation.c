@@ -3895,7 +3895,7 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
    bson_iter_next (&iter);
    const char *expected_event_type = bson_iter_key (&iter);
    if (is_unsupported_event_type (expected_event_type)) {
-      MONGOC_DEBUG ("SKIPPING wait for unsupported event type '%s'", expected_event_type);
+      MONGOC_DEBUG ("SKIPPING waitForEvent for unsupported event type '%s'", expected_event_type);
       result_from_ok (result);
       ret = true;
       goto done;
@@ -3967,6 +3967,23 @@ done:
    return ret;
 }
 
+/* Test for an event match document containing an unsupported event type as defined by is_unsupported_event_type(). If
+ * the match document has an unexpected format, returns false. */
+static bool
+is_unsupported_event_match_document (const bson_t *event_match)
+{
+   BSON_ASSERT_PARAM (event_match);
+
+   if (bson_count_keys (event_match) == 1) {
+      bson_iter_t iter;
+      bson_iter_init (&iter, event_match);
+      bson_iter_next (&iter);
+      return is_unsupported_event_type (bson_iter_key (&iter));
+   } else {
+      return false;
+   }
+}
+
 static bool
 operation_assert_event_count (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
@@ -3980,6 +3997,13 @@ operation_assert_event_count (test_t *test, operation_t *op, result_t *result, b
    bson_parser_doc (bp, "event", &expected_event);
    bson_parser_int (bp, "count", &expected_count);
    if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   if (is_unsupported_event_match_document (expected_event)) {
+      MONGOC_DEBUG ("SKIPPING assertEventCount for unsupported event %s", tmp_json (expected_event));
+      result_from_ok (result);
+      ret = true;
       goto done;
    }
 
