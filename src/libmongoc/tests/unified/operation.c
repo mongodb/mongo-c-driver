@@ -3895,7 +3895,7 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
    bson_iter_next (&iter);
    const char *expected_event_type = bson_iter_key (&iter);
    if (is_unsupported_event_type (expected_event_type)) {
-      MONGOC_DEBUG ("Skipping wait for unsupported event type '%s'", expected_event_type);
+      MONGOC_DEBUG ("SKIPPING wait for unsupported event type '%s'", expected_event_type);
       result_from_ok (result);
       ret = true;
       goto done;
