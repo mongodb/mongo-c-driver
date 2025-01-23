@@ -148,32 +148,38 @@ _parse_error_reply (const bson_t *doc, bool check_wce, uint32_t *code, const cha
 bool
 _mongoc_cmd_check_ok (const bson_t *doc, int32_t error_api_version, bson_error_t *error)
 {
-   mongoc_error_domain_t domain =
-      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
-   uint32_t code;
-   bson_iter_t iter;
-   const char *msg = "Unknown command error";
-
    ENTRY;
 
    BSON_ASSERT (doc);
 
-   if (bson_iter_init_find (&iter, doc, "ok") && bson_iter_as_bool (&iter)) {
-      /* no error */
-      RETURN (true);
+   {
+      bson_iter_t iter;
+
+      if (bson_iter_init_find (&iter, doc, "ok") && bson_iter_as_bool (&iter)) {
+         /* no error */
+         RETURN (true);
+      }
    }
+
+   uint32_t code;
+   uint8_t category = MONGOC_ERROR_CATEGORY_SERVER;
+   const char *msg = "Unknown command error";
 
    if (!_parse_error_reply (doc, false /* check_wce */, &code, &msg)) {
       RETURN (true);
    }
 
-   if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
-      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
-   } else if (code == 0) {
+   if (code == 0) {
       code = MONGOC_ERROR_QUERY_FAILURE;
+      category = MONGOC_ERROR_CATEGORY;
+   } else if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
+      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
    }
 
-   bson_set_error (error, domain, code, "%s", msg);
+   const mongoc_error_domain_t domain =
+      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
+
+   _mongoc_set_error_with_category (error, category, domain, code, "%s", msg);
 
    /* there was a command error */
    RETURN (false);
@@ -201,26 +207,29 @@ _mongoc_cmd_check_ok (const bson_t *doc, int32_t error_api_version, bson_error_t
 bool
 _mongoc_cmd_check_ok_no_wce (const bson_t *doc, int32_t error_api_version, bson_error_t *error)
 {
-   mongoc_error_domain_t domain =
-      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
-   uint32_t code;
-   const char *msg = "Unknown command error";
-
    ENTRY;
 
    BSON_ASSERT (doc);
+
+   uint32_t code;
+   uint8_t category = MONGOC_ERROR_CATEGORY_SERVER;
+   const char *msg = "Unknown command error";
 
    if (!_parse_error_reply (doc, true /* check_wce */, &code, &msg)) {
       RETURN (true);
    }
 
-   if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
-      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
-   } else if (code == 0) {
+   if (code == 0) {
       code = MONGOC_ERROR_QUERY_FAILURE;
+      category = MONGOC_ERROR_CATEGORY;
+   } else if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
+      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
    }
 
-   bson_set_error (error, domain, code, "%s", msg);
+   const mongoc_error_domain_t domain =
+      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
+
+   _mongoc_set_error_with_category (error, category, domain, code, "%s", msg);
 
    /* there was a command error */
    RETURN (false);
@@ -231,18 +240,25 @@ _mongoc_cmd_check_ok_no_wce (const bson_t *doc, int32_t error_api_version, bson_
 static void
 _mongoc_populate_query_error (const bson_t *doc, int32_t error_api_version, bson_error_t *error)
 {
-   mongoc_error_domain_t domain =
-      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
-   uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
-   bson_iter_t iter;
-   const char *msg = "Unknown query failure";
-
    ENTRY;
 
    BSON_ASSERT (doc);
 
+   if (!error) {
+      return;
+   }
+
+   bson_iter_t iter;
+
+   const uint32_t domain = error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
+
+   uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
+   uint8_t category = MONGOC_ERROR_CATEGORY;
+   const char *msg = "Unknown query failure";
+
    if (bson_iter_init_find (&iter, doc, "code") && BSON_ITER_HOLDS_NUMBER (&iter)) {
       code = (uint32_t) bson_iter_as_int64 (&iter);
+      category = MONGOC_ERROR_CATEGORY_SERVER;
       BSON_ASSERT (code);
    }
 
@@ -250,7 +266,7 @@ _mongoc_populate_query_error (const bson_t *doc, int32_t error_api_version, bson
       msg = bson_iter_utf8 (&iter, NULL);
    }
 
-   bson_set_error (error, domain, code, "%s", msg);
+   _mongoc_set_error_with_category (error, category, domain, code, "%s", msg);
 
    EXIT;
 }

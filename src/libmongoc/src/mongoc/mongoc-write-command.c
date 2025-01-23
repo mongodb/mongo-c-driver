@@ -1044,7 +1044,12 @@ _set_error_from_response (bson_t *bson_array,
       }
 
       if (code && !mcommon_string_from_append_is_empty (&compound_err)) {
-         bson_set_error (error, domain, (uint32_t) code, "%s", mcommon_str_from_append (&compound_err));
+         _mongoc_set_error_with_category (error,
+                                          MONGOC_ERROR_CATEGORY_SERVER,
+                                          domain,
+                                          (uint32_t) code,
+                                          "%s",
+                                          mcommon_str_from_append (&compound_err));
       }
    }
 

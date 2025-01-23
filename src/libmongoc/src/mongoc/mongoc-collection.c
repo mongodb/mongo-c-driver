@@ -3257,7 +3257,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
 
    if (bson_iter_init_find (&iter, reply, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       const char *errmsg = NULL;
-      int32_t code = 0;
+      uint32_t code = 0;
 
       BSON_ASSERT (bson_iter_recurse (&iter, &inner));
       while (bson_iter_next (&inner)) {
@@ -3267,7 +3267,8 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
             errmsg = bson_iter_utf8 (&inner, NULL);
          }
       }
-      bson_set_error (error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
+      _mongoc_set_error_with_category (
+         error, MONGOC_ERROR_CATEGORY_SERVER, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
       ret = false;
    }
 
