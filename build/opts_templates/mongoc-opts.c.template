@@ -1,6 +1,6 @@
 #include "mongoc-opts-helpers-private.h"
 #include "mongoc-opts-private.h"
-#include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-client-private.h"
 
@@ -54,10 +54,10 @@ _{{ struct_name }}_parse (
    }
 
    if (!bson_iter_init (&iter, opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid 'opts' parameter.");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Invalid 'opts' parameter.");
       return false;
    }
 
@@ -100,18 +100,18 @@ _{{ struct_name }}_parse (
                &{{ struct_name }}->extra,
                bson_iter_key (&iter),
                bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_BSON,
+                               MONGOC_ERROR_BSON_INVALID,
+                               "Invalid 'opts' parameter.");
             return false;
          }
 {% else %}
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid option '%s'",
-                         bson_iter_key (&iter));
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Invalid option '%s'",
+                            bson_iter_key (&iter));
          return false;
 {% endif %}
       }

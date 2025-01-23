@@ -24,7 +24,7 @@
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-counters-private.h"
-#include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-log.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-read-concern-private.h"
@@ -200,23 +200,23 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor, mongoc_cursor_response_legac
 
    const int32_t op_code = mcd_rpc_header_get_op_code (response->rpc);
    if (op_code != MONGOC_OP_CODE_REPLY) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid opcode for OP_GET_MORE: expected %" PRId32 ", got %" PRId32,
-                      MONGOC_OP_CODE_REPLY,
-                      op_code);
+      _mongoc_set_error (&cursor->error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid opcode for OP_GET_MORE: expected %" PRId32 ", got %" PRId32,
+                         MONGOC_OP_CODE_REPLY,
+                         op_code);
       GOTO (fail);
    }
 
    const int32_t response_to = mcd_rpc_header_get_response_to (response->rpc);
    if (response_to != request_id) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid response_to for OP_GET_MORE: expected %" PRId32 ", got %" PRId32,
-                      request_id,
-                      response_to);
+      _mongoc_set_error (&cursor->error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid response_to for OP_GET_MORE: expected %" PRId32 ", got %" PRId32,
+                         request_id,
+                         response_to);
       GOTO (fail);
    }
 
@@ -257,44 +257,44 @@ done:
 }
 
 
-#define OPT_CHECK(_type)                                         \
-   do {                                                          \
-      if (!BSON_ITER_HOLDS_##_type (&iter)) {                    \
-         bson_set_error (&cursor->error,                         \
-                         MONGOC_ERROR_COMMAND,                   \
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,       \
-                         "invalid option %s, should be type %s", \
-                         key,                                    \
-                         #_type);                                \
-         return NULL;                                            \
-      }                                                          \
+#define OPT_CHECK(_type)                                            \
+   do {                                                             \
+      if (!BSON_ITER_HOLDS_##_type (&iter)) {                       \
+         _mongoc_set_error (&cursor->error,                         \
+                            MONGOC_ERROR_COMMAND,                   \
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,       \
+                            "invalid option %s, should be type %s", \
+                            key,                                    \
+                            #_type);                                \
+         return NULL;                                               \
+      }                                                             \
    } while (false)
 
 
-#define OPT_CHECK_INT()                                          \
-   do {                                                          \
-      if (!BSON_ITER_HOLDS_INT (&iter)) {                        \
-         bson_set_error (&cursor->error,                         \
-                         MONGOC_ERROR_COMMAND,                   \
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,       \
-                         "invalid option %s, should be integer", \
-                         key);                                   \
-         return NULL;                                            \
-      }                                                          \
+#define OPT_CHECK_INT()                                             \
+   do {                                                             \
+      if (!BSON_ITER_HOLDS_INT (&iter)) {                           \
+         _mongoc_set_error (&cursor->error,                         \
+                            MONGOC_ERROR_COMMAND,                   \
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,       \
+                            "invalid option %s, should be integer", \
+                            key);                                   \
+         return NULL;                                               \
+      }                                                             \
    } while (false)
 
 
-#define OPT_ERR(_msg)                                                                                \
-   do {                                                                                              \
-      bson_set_error (&cursor->error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, _msg); \
-      return NULL;                                                                                   \
+#define OPT_ERR(_msg)                                                                                   \
+   do {                                                                                                 \
+      _mongoc_set_error (&cursor->error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, _msg); \
+      return NULL;                                                                                      \
    } while (false)
 
 
-#define OPT_BSON_ERR(_msg)                                                                 \
-   do {                                                                                    \
-      bson_set_error (&cursor->error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, _msg); \
-      return NULL;                                                                         \
+#define OPT_BSON_ERR(_msg)                                                                    \
+   do {                                                                                       \
+      _mongoc_set_error (&cursor->error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, _msg); \
+      return NULL;                                                                            \
    } while (false)
 
 
@@ -424,10 +424,10 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
          PUSH_DOLLAR_QUERY ();
          BSON_APPEND_BOOL (query, "$snapshot", bson_iter_as_bool (&iter));
       } else if (!strcmp (key, MONGOC_CURSOR_COLLATION)) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support collation");
+         _mongoc_set_error (&cursor->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "The selected server does not support collation");
          return NULL;
       }
       /* singleBatch limit and batchSize are handled in _mongoc_n_return,
@@ -443,11 +443,11 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
          PUSH_DOLLAR_QUERY ();
          dollar_modifier = bson_strdup_printf ("$%s", key);
          if (!bson_append_iter (query, dollar_modifier, -1, &iter)) {
-            bson_set_error (&cursor->error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Error adding \"%s\" to query",
-                            dollar_modifier);
+            _mongoc_set_error (&cursor->error,
+                               MONGOC_ERROR_BSON,
+                               MONGOC_ERROR_BSON_INVALID,
+                               "Error adding \"%s\" to query",
+                               dollar_modifier);
             bson_free (dollar_modifier);
             return NULL;
          }
@@ -570,23 +570,23 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor, bson_t *filter, mongoc_cu
 
    const int32_t op_code = mcd_rpc_header_get_op_code (response->rpc);
    if (op_code != MONGOC_OP_CODE_REPLY) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid opcode for OP_QUERY: expected %" PRId32 ", got %" PRId32,
-                      MONGOC_OP_CODE_REPLY,
-                      op_code);
+      _mongoc_set_error (&cursor->error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid opcode for OP_QUERY: expected %" PRId32 ", got %" PRId32,
+                         MONGOC_OP_CODE_REPLY,
+                         op_code);
       GOTO (done);
    }
 
    const int32_t response_to = mcd_rpc_header_get_response_to (response->rpc);
    if (response_to != request_id) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid response_to for OP_QUERY: expected %" PRId32 ", got %" PRId32,
-                      request_id,
-                      response_to);
+      _mongoc_set_error (&cursor->error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid response_to for OP_QUERY: expected %" PRId32 ", got %" PRId32,
+                         request_id,
+                         response_to);
       GOTO (done);
    }
 

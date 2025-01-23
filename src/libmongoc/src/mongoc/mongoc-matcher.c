@@ -17,7 +17,7 @@
 
 #include <stdlib.h>
 
-#include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-matcher.h"
 #include "mongoc-matcher-private.h"
 #include "mongoc-matcher-op-private.h"
@@ -62,7 +62,8 @@ _mongoc_matcher_parse_compare (bson_iter_t *iter,   /* IN */
 
    if (bson_iter_type (iter) == BSON_TYPE_DOCUMENT) {
       if (!bson_iter_recurse (iter, &child) || !bson_iter_next (&child)) {
-         bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Document contains no operations.");
+         _mongoc_set_error (
+            error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Document contains no operations.");
          return NULL;
       }
 
@@ -94,7 +95,7 @@ _mongoc_matcher_parse_compare (bson_iter_t *iter,   /* IN */
       } else if (strcmp (key, "$type") == 0) {
          op = _mongoc_matcher_op_type_new (path, bson_iter_type (&child));
       } else {
-         bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid operator \"%s\"", key);
+         _mongoc_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid operator \"%s\"", key);
          return NULL;
       }
    } else {
@@ -141,7 +142,7 @@ _mongoc_matcher_parse (bson_iter_t *iter,   /* IN */
       BSON_ASSERT (bson_iter_type (iter) == BSON_TYPE_ARRAY);
 
       if (!bson_iter_recurse (iter, &child)) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid value for operator \"%s\"", key);
          return NULL;
       }
@@ -155,7 +156,7 @@ _mongoc_matcher_parse (bson_iter_t *iter,   /* IN */
       }
    }
 
-   bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid operator \"%s\"", key);
+   _mongoc_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid operator \"%s\"", key);
 
    return NULL;
 }
@@ -200,7 +201,7 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode, /* IN */
    BSON_ASSERT (iter);
 
    if (!bson_iter_next (iter)) {
-      bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid logical operator.");
+      _mongoc_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid logical operator.");
       return NULL;
    }
 
@@ -210,17 +211,17 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode, /* IN */
       }
    } else {
       if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
-         bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Expected document in value.");
+         _mongoc_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Expected document in value.");
          return NULL;
       }
 
       if (!bson_iter_recurse (iter, &child)) {
-         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "corrupt BSON");
+         _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "corrupt BSON");
          return NULL;
       }
 
       if (!bson_iter_next (&child)) {
-         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "corrupt BSON");
+         _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "corrupt BSON");
          return NULL;
       }
 
@@ -239,17 +240,17 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode, /* IN */
       }
    } else {
       if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
-         bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Expected document in value.");
+         _mongoc_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Expected document in value.");
          return NULL;
       }
 
       if (!bson_iter_recurse (iter, &child)) {
-         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "bson_iter_recurse failed.");
+         _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "bson_iter_recurse failed.");
          return NULL;
       }
 
       if (!bson_iter_next (&child)) {
-         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "corrupt BSON");
+         _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "corrupt BSON");
          return NULL;
       }
 

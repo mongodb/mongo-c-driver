@@ -22,11 +22,10 @@
 #include "mongoc-client-session-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-database-private.h"
-#include "mongoc-error.h"
 #include "mongoc-error-private.h"
 
 #define CHANGE_STREAM_ERR(_str) \
-   bson_set_error (&stream->err, MONGOC_ERROR_CURSOR, MONGOC_ERROR_BSON, "Could not set " _str)
+   _mongoc_set_error (&stream->err, MONGOC_ERROR_CURSOR, MONGOC_ERROR_BSON, "Could not set " _str)
 
 /* the caller knows either a client or server error has occurred.
  * `reply` contains the server reply or an empty document. */
@@ -531,11 +530,11 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
    stream->has_returned_results = true;
 
    if (!bson_iter_init_find (&iter, *bson, "_id") || !BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      bson_set_error (&stream->err,
-                      MONGOC_ERROR_CURSOR,
-                      MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
-                      "Cannot provide resume functionality when the resume "
-                      "token is missing");
+      _mongoc_set_error (&stream->err,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
+                         "Cannot provide resume functionality when the resume "
+                         "token is missing");
       goto end;
    }
 

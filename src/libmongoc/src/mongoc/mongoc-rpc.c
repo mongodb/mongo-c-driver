@@ -18,6 +18,7 @@
 #include "mongoc-rpc-private.h"
 
 #include "mongoc-counters-private.h"
+#include "mongoc-error-private.h"
 #include "mongoc-trace-private.h"
 
 
@@ -265,7 +266,7 @@ mcd_rpc_message_check_ok (mcd_rpc_message *rpc,
    ENTRY;
 
    if (mcd_rpc_header_get_op_code (rpc) != MONGOC_OP_CODE_REPLY) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Received rpc other than OP_REPLY.");
       RETURN (false);
    }
@@ -285,14 +286,14 @@ mcd_rpc_message_check_ok (mcd_rpc_message *rpc,
 
          bson_destroy (&body);
       } else {
-         bson_set_error (error, MONGOC_ERROR_QUERY, MONGOC_ERROR_QUERY_FAILURE, "Unknown query failure.");
+         _mongoc_set_error (error, MONGOC_ERROR_QUERY, MONGOC_ERROR_QUERY_FAILURE, "Unknown query failure.");
       }
 
       RETURN (false);
    }
 
    if (flags & MONGOC_OP_REPLY_RESPONSE_FLAG_CURSOR_NOT_FOUND) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "The cursor is invalid or has expired.");
 
       RETURN (false);

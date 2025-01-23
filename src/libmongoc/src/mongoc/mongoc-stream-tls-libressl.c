@@ -29,7 +29,7 @@
 #include "mongoc-libressl-private.h"
 #include "mongoc-ssl.h"
 #include "mongoc-ssl-private.h"
-#include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-stream-socket.h"
 #include "mongoc-socket-private.h"
@@ -399,7 +399,7 @@ mongoc_stream_tls_libressl_handshake (mongoc_stream_t *stream, const char *host,
       *events = POLLOUT;
    } else if (ret < 0) {
       *events = 0;
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed: %s", tls_error (libressl->ctx));
       RETURN (false);
    } else {

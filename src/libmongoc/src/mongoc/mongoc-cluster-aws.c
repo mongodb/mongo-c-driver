@@ -20,6 +20,7 @@
 #include "mcd-time.h"
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-error-private.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-rand-private.h"
 #include "mongoc-stream-private.h"
@@ -34,10 +35,10 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"
 
-#define AUTH_ERROR_AND_FAIL(...)                                                                  \
-   do {                                                                                           \
-      bson_set_error (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, __VA_ARGS__); \
-      goto fail;                                                                                  \
+#define AUTH_ERROR_AND_FAIL(...)                                                                     \
+   do {                                                                                              \
+      _mongoc_set_error (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, __VA_ARGS__); \
+      goto fail;                                                                                     \
    } while (0)
 
 
@@ -552,11 +553,11 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds, 
          goto fail;
       }
       char *Error_json = bson_as_relaxed_extended_json (&Error_bson, NULL);
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "Response to AssumeRoleWithWebIdentity contains 'Error': %s",
-                      Error_json);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "Response to AssumeRoleWithWebIdentity contains 'Error': %s",
+                         Error_json);
       bson_free (Error_json);
       goto fail;
    }

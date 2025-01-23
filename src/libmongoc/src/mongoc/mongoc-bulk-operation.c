@@ -18,6 +18,7 @@
 #include "mongoc-bulk-operation.h"
 #include "mongoc-bulk-operation-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-error-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-util-private.h"
@@ -121,18 +122,18 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
       }                                \
    } while (0)
 
-#define BULK_RETURN_IF_PRIOR_ERROR                                            \
-   do {                                                                       \
-      if (bulk->result.error.domain) {                                        \
-         if (error != &bulk->result.error) {                                  \
-            bson_set_error (error,                                            \
-                            MONGOC_ERROR_COMMAND,                             \
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,                 \
-                            "Bulk operation is invalid from prior error: %s", \
-                            bulk->result.error.message);                      \
-         };                                                                   \
-         return false;                                                        \
-      };                                                                      \
+#define BULK_RETURN_IF_PRIOR_ERROR                                               \
+   do {                                                                          \
+      if (bulk->result.error.domain) {                                           \
+         if (error != &bulk->result.error) {                                     \
+            _mongoc_set_error (error,                                            \
+                               MONGOC_ERROR_COMMAND,                             \
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,                 \
+                               "Bulk operation is invalid from prior error: %s", \
+                               bulk->result.error.message);                      \
+         };                                                                      \
+         return false;                                                           \
+      };                                                                         \
    } while (0)
 
 
@@ -160,13 +161,13 @@ _mongoc_bulk_operation_remove_with_opts (mongoc_bulk_operation_t *bulk,
 
    /* allow "limit" in opts, but it must be the correct limit */
    if (remove_opts->limit != limit) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Invalid \"limit\" in opts: %" PRId32 "."
-                      " The value must be %" PRId32 ", or omitted.",
-                      remove_opts->limit,
-                      limit);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Invalid \"limit\" in opts: %" PRId32 "."
+                         " The value must be %" PRId32 ", or omitted.",
+                         remove_opts->limit,
+                         limit);
       GOTO (done);
    }
 
@@ -503,13 +504,13 @@ _mongoc_bulk_operation_update_with_opts (mongoc_bulk_operation_t *bulk,
 
    /* allow "multi" in opts, but it must be the correct multi */
    if (update_opts->multi != multi) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Invalid \"multi\" in opts: %s."
-                      " The value must be %s, or omitted.",
-                      update_opts->multi ? "true" : "false",
-                      multi ? "true" : "false");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Invalid \"multi\" in opts: %s."
+                         " The value must be %s, or omitted.",
+                         update_opts->multi ? "true" : "false",
+                         multi ? "true" : "false");
       RETURN (false);
    }
 
@@ -673,12 +674,12 @@ mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
 
    /* allow "multi" in opts, but it must be the correct multi */
    if (update_opts->multi) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Invalid \"multi\": true in opts for"
-                      " mongoc_bulk_operation_replace_one_with_opts."
-                      " The value must be true, or omitted.");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Invalid \"multi\": true in opts for"
+                         " mongoc_bulk_operation_replace_one_with_opts."
+                         " The value must be true, or omitted.");
       GOTO (done);
    }
 
@@ -729,11 +730,11 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
    BSON_ASSERT_PARAM (bulk);
 
    if (!bulk->client) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "mongoc_bulk_operation_execute() requires a client "
-                      "and one has not been set.");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "mongoc_bulk_operation_execute() requires a client "
+                         "and one has not been set.");
       GOTO (err);
    }
    cluster = &bulk->client->cluster;
@@ -746,18 +747,18 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
    bulk->executed = true;
 
    if (!bulk->database) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "mongoc_bulk_operation_execute() requires a database "
-                      "and one has not been set.");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "mongoc_bulk_operation_execute() requires a database "
+                         "and one has not been set.");
       GOTO (err);
    } else if (!bulk->collection) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "mongoc_bulk_operation_execute() requires a collection "
-                      "and one has not been set.");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "mongoc_bulk_operation_execute() requires a collection "
+                         "and one has not been set.");
       GOTO (err);
    }
 
@@ -772,7 +773,8 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
    }
 
    if (!bulk->commands.len) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Cannot do an empty bulk write");
+      _mongoc_set_error (
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Cannot do an empty bulk write");
       GOTO (err);
    }
 

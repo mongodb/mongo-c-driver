@@ -16,7 +16,7 @@
 
 #include "common-oid-private.h"
 #include "mongoc-array-private.h"
-#include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-apm-private.h"
 #include "mongoc-trace-private.h"
@@ -686,24 +686,24 @@ _mongoc_topology_description_validate_max_staleness (const mongoc_topology_descr
    }
 
    if (max_staleness_seconds * 1000 < td->heartbeat_msec + MONGOC_IDLE_WRITE_PERIOD_MS) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "maxStalenessSeconds is set to %" PRId64 ", it must be at least heartbeatFrequencyMS (%" PRId64
-                      ") + server's idle write period (%d seconds)",
-                      max_staleness_seconds,
-                      td->heartbeat_msec,
-                      MONGOC_IDLE_WRITE_PERIOD_MS / 1000);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "maxStalenessSeconds is set to %" PRId64 ", it must be at least heartbeatFrequencyMS (%" PRId64
+                         ") + server's idle write period (%d seconds)",
+                         max_staleness_seconds,
+                         td->heartbeat_msec,
+                         MONGOC_IDLE_WRITE_PERIOD_MS / 1000);
       return false;
    }
 
    if (max_staleness_seconds < MONGOC_SMALLEST_MAX_STALENESS_SECONDS) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "maxStalenessSeconds is set to %" PRId64 ", it must be at least %d seconds",
-                      max_staleness_seconds,
-                      MONGOC_SMALLEST_MAX_STALENESS_SECONDS);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "maxStalenessSeconds is set to %" PRId64 ", it must be at least %d seconds",
+                         max_staleness_seconds,
+                         MONGOC_SMALLEST_MAX_STALENESS_SECONDS);
       return false;
    }
 
@@ -1097,7 +1097,7 @@ mongoc_topology_description_server_by_id_const (const mongoc_topology_descriptio
 
    sd = mongoc_set_get_const (mc_tpld_servers_const (td), id);
    if (!sd) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NOT_ESTABLISHED, "Could not find description for node %u", id);
    }
 
@@ -1638,7 +1638,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
          _mongoc_topology_description_set_max_set_version (topology, server);
 
       } else {
-         bson_set_error (
+         _mongoc_set_error (
             &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "member's setVersion or electionId is stale");
          mongoc_topology_description_invalidate_server (topology, server->id, &error);
          _update_rs_type (topology);
@@ -1654,7 +1654,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
           */
          if (_mongoc_topology_description_later_election (topology, server)) {
             // stale primary code return:
-            bson_set_error (
+            _mongoc_set_error (
                &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "member's setVersion or electionId is stale");
             mongoc_topology_description_invalidate_server (topology, server->id, &error);
             _update_rs_type (topology);
@@ -2076,24 +2076,24 @@ _mongoc_topology_description_check_compatible (mongoc_topology_description_t *td
       }
 
       if (sd->min_wire_version > WIRE_VERSION_MAX) {
-         bson_set_error (&td->compatibility_error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Server at %s requires wire version %d,"
-                         " but this version of libmongoc only supports up to %d",
-                         sd->host.host_and_port,
-                         sd->min_wire_version,
-                         WIRE_VERSION_MAX);
+         _mongoc_set_error (&td->compatibility_error,
+                            MONGOC_ERROR_PROTOCOL,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "Server at %s requires wire version %d,"
+                            " but this version of libmongoc only supports up to %d",
+                            sd->host.host_and_port,
+                            sd->min_wire_version,
+                            WIRE_VERSION_MAX);
       } else if (sd->max_wire_version < WIRE_VERSION_MIN) {
-         bson_set_error (&td->compatibility_error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Server at %s reports wire version %d, but this"
-                         " version of libmongoc requires at least %d (MongoDB %s)",
-                         sd->host.host_and_port,
-                         sd->max_wire_version,
-                         WIRE_VERSION_MIN,
-                         _mongoc_wire_version_to_server_version (WIRE_VERSION_MIN));
+         _mongoc_set_error (&td->compatibility_error,
+                            MONGOC_ERROR_PROTOCOL,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "Server at %s reports wire version %d, but this"
+                            " version of libmongoc requires at least %d (MongoDB %s)",
+                            sd->host.host_and_port,
+                            sd->max_wire_version,
+                            WIRE_VERSION_MIN,
+                            _mongoc_wire_version_to_server_version (WIRE_VERSION_MIN));
       }
    }
 }
@@ -2177,19 +2177,19 @@ mongoc_topology_description_handle_hello (mongoc_topology_description_t *topolog
 
       if (!sd->set_name) {
          wrong_set_name = true;
-         bson_set_error (&set_name_err,
-                         MONGOC_ERROR_SERVER_SELECTION,
-                         MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                         "no reported set name, but expected '%s'",
-                         topology->set_name);
+         _mongoc_set_error (&set_name_err,
+                            MONGOC_ERROR_SERVER_SELECTION,
+                            MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                            "no reported set name, but expected '%s'",
+                            topology->set_name);
       } else if (0 != strcmp (sd->set_name, topology->set_name)) {
          wrong_set_name = true;
-         bson_set_error (&set_name_err,
-                         MONGOC_ERROR_SERVER_SELECTION,
-                         MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                         "reported set name '%s' does not match '%s'",
-                         sd->set_name,
-                         topology->set_name);
+         _mongoc_set_error (&set_name_err,
+                            MONGOC_ERROR_SERVER_SELECTION,
+                            MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                            "reported set name '%s' does not match '%s'",
+                            sd->set_name,
+                            topology->set_name);
       }
 
       if (wrong_set_name) {

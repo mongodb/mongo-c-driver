@@ -22,7 +22,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
-#include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-index.h"
 #include "mongoc-gridfs.h"
 #include "mongoc-gridfs-private.h"
@@ -385,7 +385,7 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs, const char *filename,
    BSON_ASSERT (gridfs);
 
    if (!filename) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_INVALID_FILENAME, "A non-NULL filename must be specified.");
       return false;
    }
