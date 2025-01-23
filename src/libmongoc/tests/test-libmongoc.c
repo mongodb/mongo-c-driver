@@ -115,15 +115,18 @@ test_structured_log_filter_push (structured_log_filter_func_t *func, void *user_
 }
 
 /**
- * @brief Pop the most recent structured log filter from the stack
- * The stack must not be empty.
+ * @brief Pop the most recent structured log filter from the stack, which must match
+ * @param func Filter function, must match the value given to test_structured_log_filter_push
+ * @param user_data Must match the corresponding user_data value from test_structured_log_filter_push
  */
 void
-test_structured_log_filter_pop ()
+test_structured_log_filter_pop (structured_log_filter_func_t *func, void *user_data)
 {
    bson_mutex_lock (&structured_log_filter_mutex);
    structured_log_filter_t *old_entry = structured_log_filters;
    BSON_ASSERT (old_entry);
+   BSON_ASSERT (old_entry->func == func);
+   BSON_ASSERT (old_entry->user_data == user_data);
    structured_log_filters = old_entry->next;
    bson_mutex_unlock (&structured_log_filter_mutex);
    bson_free (old_entry);

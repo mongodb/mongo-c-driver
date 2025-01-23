@@ -193,7 +193,7 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    ret = true;
 done:
    mongoc_read_prefs_destroy (rp);
-   test_structured_log_filter_pop ();
+   test_structured_log_filter_pop (NULL, NULL);
    return ret;
 }
 
@@ -347,7 +347,7 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner, bson_error_
 
    ret = true;
 done:
-   test_structured_log_filter_pop ();
+   test_structured_log_filter_pop (NULL, NULL);
    return ret;
 }
 

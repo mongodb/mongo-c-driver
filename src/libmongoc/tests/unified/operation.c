@@ -2519,7 +2519,7 @@ operation_failpoint (test_t *test, operation_t *op, result_t *result, bson_error
    bson_destroy (&op_reply);
    test_structured_log_filter_push (NULL, NULL);
    mongoc_client_command_simple (client, "admin", failpoint, rp, &op_reply, &op_error);
-   test_structured_log_filter_pop ();
+   test_structured_log_filter_pop (NULL, NULL);
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -2579,7 +2579,7 @@ operation_targeted_failpoint (test_t *test, operation_t *op, result_t *result, b
    bson_destroy (&op_reply);
    test_structured_log_filter_push (NULL, NULL);
    mongoc_client_command_simple_with_server_id (client, "admin", failpoint, rp, server_id, &op_reply, &op_error);
-   test_structured_log_filter_pop ();
+   test_structured_log_filter_pop (NULL, NULL);
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -3957,7 +3957,7 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
          }
       }
 
-      test_structured_log_filter_pop ();
+      test_structured_log_filter_pop (log_filter_hide_wait_for_event_server_selection, NULL);
    }
 
    result_from_ok (result);

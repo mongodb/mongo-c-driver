@@ -43,7 +43,7 @@ test_structured_log_filter_accepts (const mongoc_structured_log_entry_t *entry);
 void
 test_structured_log_filter_push (structured_log_filter_func_t *func, void *user_data);
 void
-test_structured_log_filter_pop (void);
+test_structured_log_filter_pop (structured_log_filter_func_t *func, void *user_data);
 
 void
 capture_logs (bool capture);
