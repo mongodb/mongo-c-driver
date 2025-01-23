@@ -1402,7 +1402,7 @@ test_find_one_empty (void)
 {
    mongoc_gridfs_t *gridfs;
    mongoc_client_t *client;
-   bson_error_t error = {1, 2, "hello"};
+   bson_error_t error = {1, 2, "hello", 0};
 
    client = test_framework_new_default_client ();
    gridfs = get_test_gridfs (client, "list", &error);
@@ -1410,9 +1410,10 @@ test_find_one_empty (void)
    ASSERT (!mongoc_gridfs_find_one (gridfs, tmp_bson ("{'x': 'doesntexist'}"), &error));
 
    /* ensure "error" is cleared if we successfully find no file */
-   ASSERT_CMPINT (error.domain, ==, 0);
-   ASSERT_CMPINT (error.code, ==, 0);
+   ASSERT_CMPUINT32 (error.domain, ==, 0);
+   ASSERT_CMPUINT32 (error.code, ==, 0);
    ASSERT_CMPSTR (error.message, "");
+   ASSERT_CMPUINT (error.reserved, ==, 0);
 
    mongoc_gridfs_destroy (gridfs);
    mongoc_client_destroy (client);
