@@ -2517,9 +2517,9 @@ operation_failpoint (test_t *test, operation_t *op, result_t *result, bson_error
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
-   test_begin_suppressing_structured_logs ();
+   test_structured_log_filter_push (NULL, NULL);
    mongoc_client_command_simple (client, "admin", failpoint, rp, &op_reply, &op_error);
-   test_end_suppressing_structured_logs ();
+   test_structured_log_filter_pop ();
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -2577,9 +2577,9 @@ operation_targeted_failpoint (test_t *test, operation_t *op, result_t *result, b
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
-   test_begin_suppressing_structured_logs ();
+   test_structured_log_filter_push (NULL, NULL);
    mongoc_client_command_simple_with_server_id (client, "admin", failpoint, rp, server_id, &op_reply, &op_error);
-   test_end_suppressing_structured_logs ();
+   test_structured_log_filter_pop ();
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -3851,6 +3851,23 @@ done:
 #define WAIT_FOR_EVENT_TICK_MS 10             // Same tick size as used in non-unified json test
 
 static bool
+log_filter_hide_wait_for_event_server_selection (const mongoc_structured_log_entry_t *entry, void *user_data)
+{
+   BSON_ASSERT_PARAM (entry);
+   BSON_OPTIONAL_PARAM (user_data);
+   if (mongoc_structured_log_entry_get_component (entry) == MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION) {
+      bson_t *bson = mongoc_structured_log_entry_message_as_bson (entry);
+      bson_iter_t iter;
+      BSON_ASSERT (bson_iter_init_find (&iter, bson, "operation"));
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+      BSON_ASSERT (0 == strcmp ("waitForEvent", bson_iter_utf8 (&iter, NULL)));
+      bson_destroy (bson);
+      return false;
+   }
+   return true;
+}
+
+static bool
 operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
@@ -3918,8 +3935,10 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
       //    handle either of these cases.
       //
       // Structured logs can not be fully suppressed here, because we do need to emit topology
-      // lifecycle events. We could filter out the "waitForEvent" server selection operation if
-      // it becomes a problem.
+      // lifecycle events. Filter out only the server selection operation here, and ASSERT
+      // that it's the waitForEvent we expect.
+
+      test_structured_log_filter_push (log_filter_hide_wait_for_event_server_selection, NULL);
 
       {
          mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
@@ -3937,6 +3956,8 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
             }
          }
       }
+
+      test_structured_log_filter_pop ();
    }
 
    result_from_ok (result);

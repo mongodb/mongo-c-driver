@@ -163,7 +163,7 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    failpoint_t *iter = NULL;
    mongoc_read_prefs_t *rp = NULL;
 
-   test_begin_suppressing_structured_logs ();
+   test_structured_log_filter_push (NULL, NULL);
 
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
@@ -193,7 +193,7 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    ret = true;
 done:
    mongoc_read_prefs_destroy (rp);
-   test_end_suppressing_structured_logs ();
+   test_structured_log_filter_pop ();
    return ret;
 }
 
@@ -293,7 +293,7 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner, bson_error_
    bool cmd_ret = false;
    bson_error_t cmd_error = {0};
 
-   test_begin_suppressing_structured_logs ();
+   test_structured_log_filter_push (NULL, NULL);
 
    if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
       // Not applicable when running as test-atlas-executor.
@@ -347,7 +347,7 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner, bson_error_
 
    ret = true;
 done:
-   test_end_suppressing_structured_logs ();
+   test_structured_log_filter_pop ();
    return ret;
 }
 
