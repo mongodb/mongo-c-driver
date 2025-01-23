@@ -173,6 +173,16 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
    {.func = _mongoc_structured_log_append_int64, .arg1.utf8 = (_key_or_null), .arg2.int64 = (_value_int64)},
 
 /**
+ * @def double(key, value)
+ * @brief Structured log item, double precision floating point
+ *
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
+ * @param value Value as a double expression.
+ */
+#define _mongoc_structured_log_item_double(_key_or_null, _value_double) \
+   {.func = _mongoc_structured_log_append_double, .arg1.utf8 = (_key_or_null), .arg2.double_value = (_value_double)},
+
+/**
  * @def boolean(key, value)
  * @brief Structured log item, boolean
  *
@@ -337,12 +347,9 @@ typedef enum {
  * @def monotonic_time_duration(duration)
  * @brief Structured log item, standard format for a duration in monotonic time.
  * @param duration Duration in microseconds, as an int64_t expression.
- *
- * Includes milliseconds for consistency across drivers, and microseconds as the highest available resolution.
  */
-#define _mongoc_structured_log_item_monotonic_time_duration(_duration)              \
-   _mongoc_structured_log_item_int32 ("durationMS", (int32_t) ((_duration) / 1000)) \
-      _mongoc_structured_log_item_int64 ("durationMicros", (_duration))
+#define _mongoc_structured_log_item_monotonic_time_duration(_duration) \
+   _mongoc_structured_log_item_double ("durationMS", (_duration) * 1e-3)
 
 typedef struct mongoc_structured_log_builder_stage_t mongoc_structured_log_builder_stage_t;
 
@@ -371,6 +378,7 @@ struct mongoc_structured_log_builder_stage_t {
       const char *utf8;
       const mongoc_read_prefs_t *read_prefs;
       const struct _mongoc_topology_t *topology;
+      double double_value;
       int32_t int32;
       int64_t int64;
       mongoc_error_content_flags_t error_flags;
@@ -427,6 +435,11 @@ const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_int64 (bson_t *bson,
                                      const mongoc_structured_log_builder_stage_t *stage,
                                      const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_double (bson_t *bson,
+                                      const mongoc_structured_log_builder_stage_t *stage,
+                                      const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_boolean (bson_t *bson,

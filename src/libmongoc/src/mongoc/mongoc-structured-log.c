@@ -717,6 +717,19 @@ _mongoc_structured_log_append_int64 (bson_t *bson,
 }
 
 const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_double (bson_t *bson,
+                                      const mongoc_structured_log_builder_stage_t *stage,
+                                      const mongoc_structured_log_opts_t *opts)
+{
+   BSON_UNUSED (opts);
+   const char *key_or_null = stage->arg1.utf8;
+   if (key_or_null) {
+      bson_append_double (bson, key_or_null, -1, stage->arg2.double_value);
+   }
+   return stage + 1;
+}
+
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_boolean (bson_t *bson,
                                        const mongoc_structured_log_builder_stage_t *stage,
                                        const mongoc_structured_log_opts_t *opts)
