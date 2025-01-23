@@ -316,41 +316,6 @@ _mongoc_wire_version_to_server_version (int32_t version)
 }
 
 
-/* Get "serverId" from opts. Sets *server_id to the serverId from "opts" or 0
- * if absent. On error, fills out *error with domain and code and return false.
- */
-bool
-_mongoc_get_server_id_from_opts (
-   const bson_t *opts, mongoc_error_domain_t domain, mongoc_error_code_t code, uint32_t *server_id, bson_error_t *error)
-{
-   bson_iter_t iter;
-
-   ENTRY;
-
-   BSON_ASSERT (server_id);
-
-   *server_id = 0;
-
-   if (!opts || !bson_iter_init_find (&iter, opts, "serverId")) {
-      RETURN (true);
-   }
-
-   if (!BSON_ITER_HOLDS_INT (&iter)) {
-      bson_set_error (error, domain, code, "The serverId option must be an integer");
-      RETURN (false);
-   }
-
-   if (bson_iter_as_int64 (&iter) <= 0) {
-      bson_set_error (error, domain, code, "The serverId option must be >= 1");
-      RETURN (false);
-   }
-
-   *server_id = (uint32_t) bson_iter_as_int64 (&iter);
-
-   RETURN (true);
-}
-
-
 bool
 _mongoc_validate_new_document (const bson_t *doc, bson_validate_flags_t vflags, bson_error_t *error)
 {
