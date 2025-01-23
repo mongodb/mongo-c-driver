@@ -308,9 +308,9 @@ _state_machine_destroy (_state_machine_t *state_machine)
    bson_free (state_machine);
 }
 
-/* State handler MONGOCRYPT_CTX_NEED_MONGO_COLLINFO */
+/* State handler MONGOCRYPT_CTX_NEED_MONGO_COLLINFO{_WITH_DB} */
 static bool
-_state_need_mongo_collinfo (_state_machine_t *state_machine, bson_error_t *error)
+_state_need_mongo_collinfo (_state_machine_t *state_machine, bool with_db, bson_error_t *error)
 {
    mongoc_database_t *db = NULL;
    mongoc_cursor_t *cursor = NULL;
@@ -334,7 +334,13 @@ _state_need_mongo_collinfo (_state_machine_t *state_machine, bson_error_t *error
    }
 
    bson_append_document (&opts, "filter", -1, &filter_bson);
-   db = mongoc_client_get_database (state_machine->collinfo_client, state_machine->db_name);
+   const char *db_name = with_db ? mongocrypt_ctx_mongo_db (state_machine->ctx) : state_machine->db_name;
+   if (!db_name) {
+      _ctx_check_error (state_machine->ctx, error, true);
+      goto fail;
+   }
+   db = mongoc_client_get_database (state_machine->collinfo_client, db_name);
+
    cursor = mongoc_database_find_collections_with_opts (db, &opts);
    if (mongoc_cursor_error (cursor, error)) {
       goto fail;
@@ -1073,7 +1079,7 @@ _state_machine_run (_state_machine_t *state_machine, bson_t *result, bson_error_
          _ctx_check_error (state_machine->ctx, error, true);
          goto fail;
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
-         if (!_state_need_mongo_collinfo (state_machine, error)) {
+         if (!_state_need_mongo_collinfo (state_machine, false, error)) {
             goto fail;
          }
          break;
@@ -1107,12 +1113,9 @@ _state_machine_run (_state_machine_t *state_machine, bson_t *result, bson_error_
          goto success;
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB is "
-                         "unimplemented");
+         if (!_state_need_mongo_collinfo (state_machine, true, error)) {
          goto fail;
+         }
          break;
       }
    }
@@ -1395,6 +1398,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    crypt->kmsid_to_tlsopts = mcd_mapof_kmsid_to_tlsopts_new ();
    crypt->handle = mongocrypt_new ();
    mongocrypt_setopt_retry_kms (crypt->handle, true);
+   mongocrypt_setopt_use_need_mongo_collinfo_with_db_state (crypt->handle);
 
    // Stash away a copy of the user's kmsProviders in case we need to lazily
    // load credentials.
