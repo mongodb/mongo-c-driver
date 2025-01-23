@@ -1234,7 +1234,7 @@ mongoc_topology_scanner_get_error (mongoc_topology_scanner_t *ts, bson_error_t *
    BSON_ASSERT (ts);
    BSON_ASSERT (error);
 
-   memcpy (error, &ts->error, sizeof (bson_error_t));
+   *error = ts->error;
 }
 
 /*
