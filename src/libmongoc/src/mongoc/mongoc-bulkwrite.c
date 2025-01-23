@@ -1548,15 +1548,6 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       goto fail;
    }
 
-   if (_mongoc_cse_is_enabled (self->client)) {
-      bson_set_error (&error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "bulkWrite does not currently support automatic encryption");
-      _bulkwriteexception_set_error (ret.exc, &error);
-      goto fail;
-   }
-
    // Select a stream.
    {
       bson_t reply;
@@ -1680,8 +1671,11 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       }
    }
 
-   int32_t maxWriteBatchSize = mongoc_server_stream_max_write_batch_size (ss);
+   const int32_t maxWriteBatchSize = mongoc_server_stream_max_write_batch_size (ss);
    int32_t maxMessageSizeBytes = mongoc_server_stream_max_msg_size (ss);
+   if (_mongoc_cse_is_enabled (self->client)) {
+      maxMessageSizeBytes = MONGOC_REDUCED_MAX_MSG_SIZE_FOR_FLE;
+   }
    // `ops_doc_offset` is an offset into the `ops` document sequence. Counts the number of documents sent.
    size_t ops_doc_offset = 0;
    // `ops_byte_offset` is an offset into the `ops` document sequence. Counts the number of bytes sent.
