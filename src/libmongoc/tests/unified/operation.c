@@ -2517,9 +2517,9 @@ operation_failpoint (test_t *test, operation_t *op, result_t *result, bson_error
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
-   test_structured_log_filter_push (NULL, NULL);
+   entity_map_log_filter_push (test->entity_map, client_id, NULL, NULL);
    mongoc_client_command_simple (client, "admin", failpoint, rp, &op_reply, &op_error);
-   test_structured_log_filter_pop (NULL, NULL);
+   entity_map_log_filter_pop (test->entity_map, client_id, NULL, NULL);
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -2577,9 +2577,9 @@ operation_targeted_failpoint (test_t *test, operation_t *op, result_t *result, b
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
-   test_structured_log_filter_push (NULL, NULL);
+   entity_map_log_filter_push (test->entity_map, client_id, NULL, NULL);
    mongoc_client_command_simple_with_server_id (client, "admin", failpoint, rp, server_id, &op_reply, &op_error);
-   test_structured_log_filter_pop (NULL, NULL);
+   entity_map_log_filter_pop (test->entity_map, client_id, NULL, NULL);
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -3938,7 +3938,7 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
       // lifecycle events. Filter out only the server selection operation here, and ASSERT
       // that it's the waitForEvent we expect.
 
-      test_structured_log_filter_push (log_filter_hide_wait_for_event_server_selection, NULL);
+      entity_log_filter_push (client, log_filter_hide_wait_for_event_server_selection, NULL);
 
       {
          mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
@@ -3957,7 +3957,7 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
          }
       }
 
-      test_structured_log_filter_pop (log_filter_hide_wait_for_event_server_selection, NULL);
+      entity_log_filter_pop (client, log_filter_hide_wait_for_event_server_selection, NULL);
    }
 
    result_from_ok (result);

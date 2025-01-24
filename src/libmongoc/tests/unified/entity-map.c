@@ -177,6 +177,96 @@ event_destroy (event_t *event)
    bson_free (event);
 }
 
+/**
+ * @brief Test whether a structured log entry is accepted by all active filters
+ * @returns true if all filters have returned true in response to this entry, or if no filters were active
+ * @param entity Client entity with the filter stack to query
+ * @param entry Borrowed constant reference to the log entry
+ *
+ * Filters will run in stack order, from most recently pushed to least.
+ *
+ * log_mutex must already be held.
+ */
+static bool
+_entity_log_filter_accepts (const entity_t *entity, const mongoc_structured_log_entry_t *entry)
+{
+   bool result = true;
+   for (log_filter_t *filter = entity->log_filters; filter; filter = filter->next) {
+      if (!filter->func || !filter->func (entry, filter->user_data)) {
+         result = false;
+         break;
+      }
+   }
+   return result;
+}
+
+/**
+ * @brief Push a new structured log filter function onto the stack
+ * @param entity Client entity to modify the filter stack for
+ * @param func Filter function, returns true to accept a log or false to reject. May be NULL to reject all logs.
+ * @param user_data Optional user_data pointer, passed to 'func'.
+ *
+ * Must be paired with entity_log_filter_pop.
+ *
+ * Briefly acquires log_mutex.
+ */
+void
+entity_log_filter_push (entity_t *entity, log_filter_func_t *func, void *user_data)
+{
+   BSON_ASSERT_PARAM (entity);
+   BSON_OPTIONAL_PARAM (func);
+   BSON_OPTIONAL_PARAM (user_data);
+
+   log_filter_t *new_entry = bson_malloc0 (sizeof *new_entry);
+   bson_mutex_lock (&entity->log_mutex);
+   new_entry->next = entity->log_filters;
+   new_entry->func = func;
+   new_entry->user_data = user_data;
+   entity->log_filters = new_entry;
+   bson_mutex_unlock (&entity->log_mutex);
+}
+
+/**
+ * @brief Pop the most recent structured log filter from the stack, which must match
+ * @param entity Client entity to modify the filter stack for
+ * @param func Filter function, must match the value given to entity_log_filter_push
+ * @param user_data Must match the corresponding user_data value from entity_log_filter_push
+ *
+ * Briefly acquires log_mutex.
+ */
+void
+entity_log_filter_pop (entity_t *entity, log_filter_func_t *func, void *user_data)
+{
+   BSON_ASSERT_PARAM (entity);
+   BSON_OPTIONAL_PARAM (func);
+   BSON_OPTIONAL_PARAM (user_data);
+
+   bson_mutex_lock (&entity->log_mutex);
+   log_filter_t *old_entry = entity->log_filters;
+   BSON_ASSERT (old_entry);
+   BSON_ASSERT (old_entry->func == func);
+   BSON_ASSERT (old_entry->user_data == user_data);
+   entity->log_filters = old_entry->next;
+   bson_mutex_unlock (&entity->log_mutex);
+   bson_free (old_entry);
+}
+
+void
+entity_map_log_filter_push (entity_map_t *entity_map, const char *entity_id, log_filter_func_t *func, void *user_data)
+{
+   entity_t *entity = entity_map_get (entity_map, entity_id, NULL);
+   BSON_ASSERT (entity);
+   entity_log_filter_push (entity, func, user_data);
+}
+
+void
+entity_map_log_filter_pop (entity_map_t *entity_map, const char *entity_id, log_filter_func_t *func, void *user_data)
+{
+   entity_t *entity = entity_map_get (entity_map, entity_id, NULL);
+   BSON_ASSERT (entity);
+   entity_log_filter_pop (entity, func, user_data);
+}
+
 static log_message_t *
 log_message_new (const mongoc_structured_log_entry_t *entry)
 {
@@ -215,7 +305,7 @@ entity_new (entity_map_t *em, const char *type)
    entity->entity_map = em;
    _mongoc_array_init (&entity->observe_events, sizeof (observe_event_t));
    _mongoc_array_init (&entity->store_events, sizeof (store_event_t));
-   bson_mutex_init (&entity->log_messages_mutex);
+   bson_mutex_init (&entity->log_mutex);
    return entity;
 }
 
@@ -224,13 +314,15 @@ structured_log_cb (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
    BSON_ASSERT_PARAM (entry);
    BSON_ASSERT_PARAM (user_data);
-   if (test_structured_log_filter_accepts (entry)) {
-      entity_t *entity = (entity_t *) user_data;
+   entity_t *entity = (entity_t *) user_data;
+
+   bson_mutex_lock (&entity->log_mutex);
+   if (_entity_log_filter_accepts (entity, entry)) {
       log_message_t *log_message = log_message_new (entry);
-      bson_mutex_lock (&entity->log_messages_mutex);
       LL_APPEND (entity->log_messages, log_message);
-      bson_mutex_unlock (&entity->log_messages_mutex);
+      bson_mutex_unlock (&entity->log_mutex);
    } else {
+      bson_mutex_unlock (&entity->log_mutex);
       bson_t *message_bson = mongoc_structured_log_entry_message_as_bson (entry);
       MONGOC_DEBUG ("test IGNORED structured log: %s %s %s",
                     mongoc_structured_log_get_level_name (mongoc_structured_log_entry_get_level (entry)),
@@ -1890,7 +1982,8 @@ entity_destroy (entity_t *entity)
       _mongoc_array_destroy (&entity->store_events);
    }
 
-   bson_mutex_destroy (&entity->log_messages_mutex);
+   BSON_ASSERT (NULL == entity->log_filters);
+   bson_mutex_destroy (&entity->log_mutex);
    bson_destroy (entity->ignore_command_monitoring_events);
    bson_free (entity->type);
    bson_free (entity->id);

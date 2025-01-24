@@ -32,12 +32,20 @@ typedef struct _event_t {
    bool is_sensitive_command;
 } event_t;
 
+typedef bool (log_filter_func_t) (const mongoc_structured_log_entry_t *entry, void *user_data);
+
 typedef struct _log_message_t {
    struct _log_message_t *next;
    mongoc_structured_log_component_t component;
    mongoc_structured_log_level_t level;
    bson_t *message;
 } log_message_t;
+
+typedef struct _log_filter_t {
+   struct _log_filter_t *next;
+   log_filter_func_t *func;
+   void *user_data;
+} log_filter_t;
 
 typedef struct _observe_event_t {
    char *type; // Type of event to observe.
@@ -56,8 +64,9 @@ typedef struct _entity_t {
    bool *observe_sensitive_commands;
    struct _entity_t *next;
    event_t *events;
-   bson_mutex_t log_messages_mutex;
+   bson_mutex_t log_mutex;
    log_message_t *log_messages;
+   log_filter_t *log_filters;
    struct _entity_map_t *entity_map; // Parent entity map.
    mongoc_array_t observe_events;    // observe_event_t [N].
    mongoc_array_t store_events;      // store_event_t [N].
@@ -178,4 +187,18 @@ entity_map_set_reduced_heartbeat (entity_map_t *em, bool val);
 
 void
 entity_map_disable_event_listeners (entity_map_t *em);
+
+void
+entity_log_filter_push (entity_t *entity, log_filter_func_t *func, void *user_data);
+
+void
+entity_log_filter_pop (entity_t *entity, log_filter_func_t *func, void *user_data);
+
+void
+entity_map_log_filter_push (entity_map_t *entity_map, const char *entity_id, log_filter_func_t *func, void *user_data);
+
+void
+entity_map_log_filter_pop (entity_map_t *entity_map, const char *entity_id, log_filter_func_t *func, void *user_data);
+
+
 #endif /* UNIFIED_ENTITY_MAP_H */

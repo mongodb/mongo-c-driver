@@ -60,77 +60,10 @@ static bson_mutex_t captured_logs_mutex;
 static mongoc_array_t captured_logs;
 static bool capturing_logs;
 
-typedef struct structured_log_filter_t {
-   struct structured_log_filter_t *next;
-   structured_log_filter_func_t *func;
-   void *user_data;
-} structured_log_filter_t;
-
-static bson_mutex_t structured_log_filter_mutex;
-static structured_log_filter_t *structured_log_filters;
-
 #ifdef MONGOC_ENABLE_SSL
 static mongoc_ssl_opt_t gSSLOptions;
 #endif
 
-/**
- * @brief Test whether a structured log entry is accepted by all active filters
- * @returns true if all filters have returned true in response to this entry, or if no filters were active
- * @param entry Borrowed constant reference to the log entry
- *
- * Filters will run in stack order, from most recently pushed to least.
- */
-bool
-test_structured_log_filter_accepts (const mongoc_structured_log_entry_t *entry)
-{
-   bson_mutex_lock (&structured_log_filter_mutex);
-   bool result = true;
-   for (structured_log_filter_t *filter = structured_log_filters; filter; filter = filter->next) {
-      if (!filter->func || !filter->func (entry, filter->user_data)) {
-         result = false;
-         break;
-      }
-   }
-   bson_mutex_unlock (&structured_log_filter_mutex);
-   return result;
-}
-
-/**
- * @brief Push a new structured log filter function onto the stack
- * @param func Filter function, returns true to accept a log or false to reject. May be NULL to reject all logs.
- * @param user_data Optional user_data pointer, passed to 'func'.
- *
- * Must be paired with test_structured_log_filter_pop.
- */
-void
-test_structured_log_filter_push (structured_log_filter_func_t *func, void *user_data)
-{
-   structured_log_filter_t *new_entry = bson_malloc0 (sizeof *new_entry);
-   bson_mutex_lock (&structured_log_filter_mutex);
-   new_entry->next = structured_log_filters;
-   new_entry->func = func;
-   new_entry->user_data = user_data;
-   structured_log_filters = new_entry;
-   bson_mutex_unlock (&structured_log_filter_mutex);
-}
-
-/**
- * @brief Pop the most recent structured log filter from the stack, which must match
- * @param func Filter function, must match the value given to test_structured_log_filter_push
- * @param user_data Must match the corresponding user_data value from test_structured_log_filter_push
- */
-void
-test_structured_log_filter_pop (structured_log_filter_func_t *func, void *user_data)
-{
-   bson_mutex_lock (&structured_log_filter_mutex);
-   structured_log_filter_t *old_entry = structured_log_filters;
-   BSON_ASSERT (old_entry);
-   BSON_ASSERT (old_entry->func == func);
-   BSON_ASSERT (old_entry->user_data == user_data);
-   structured_log_filters = old_entry->next;
-   bson_mutex_unlock (&structured_log_filter_mutex);
-   bson_free (old_entry);
-}
 
 static log_entry_t *
 log_entry_create (mongoc_log_level_t level, const char *msg)
@@ -2629,9 +2562,6 @@ test_libmongoc_init (TestSuite *suite, BSON_MAYBE_UNUSED const char *name, int a
    _mongoc_array_init (&captured_logs, sizeof (log_entry_t *));
    mongoc_log_set_handler (log_handler, (void *) suite);
 
-   bson_mutex_init (&structured_log_filter_mutex);
-   BSON_ASSERT (NULL == structured_log_filters);
-
 #ifdef MONGOC_ENABLE_SSL
    test_framework_global_ssl_opts_init ();
    atexit (test_framework_global_ssl_opts_cleanup);
@@ -2648,8 +2578,6 @@ test_libmongoc_destroy (TestSuite *suite)
    TestSuite_Destroy (suite);
    capture_logs (false); /* clear entries */
    _mongoc_array_destroy (&captured_logs);
-   BSON_ASSERT (NULL == structured_log_filters);
-   bson_mutex_destroy (&structured_log_filter_mutex);
    bson_mutex_destroy (&captured_logs_mutex);
    mongoc_cleanup ();
 }

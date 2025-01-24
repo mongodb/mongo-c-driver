@@ -163,8 +163,6 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    failpoint_t *iter = NULL;
    mongoc_read_prefs_t *rp = NULL;
 
-   test_structured_log_filter_push (NULL, NULL);
-
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    LL_FOREACH (test->failpoints, iter)
@@ -179,12 +177,18 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
 
       disable_cmd = tmp_bson ("{'configureFailPoint': '%s', 'mode': 'off' }", iter->name);
       if (iter->server_id != 0) {
-         if (!mongoc_client_command_simple_with_server_id (
-                client, "admin", disable_cmd, rp, iter->server_id, NULL /* reply */, error)) {
+         entity_map_log_filter_push (test->entity_map, iter->client_id, NULL, NULL);
+         bool command_ok = mongoc_client_command_simple_with_server_id (
+            client, "admin", disable_cmd, rp, iter->server_id, NULL /* reply */, error);
+         entity_map_log_filter_pop (test->entity_map, iter->client_id, NULL, NULL);
+         if (!command_ok) {
             goto done;
          }
       } else {
-         if (!mongoc_client_command_simple (client, "admin", disable_cmd, rp, NULL /* reply */, error)) {
+         entity_map_log_filter_push (test->entity_map, iter->client_id, NULL, NULL);
+         bool command_ok = mongoc_client_command_simple (client, "admin", disable_cmd, rp, NULL /* reply */, error);
+         entity_map_log_filter_pop (test->entity_map, iter->client_id, NULL, NULL);
+         if (!command_ok) {
             goto done;
          }
       }
@@ -193,7 +197,6 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    ret = true;
 done:
    mongoc_read_prefs_destroy (rp);
-   test_structured_log_filter_pop (NULL, NULL);
    return ret;
 }
 
@@ -293,8 +296,6 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner, bson_error_
    bool cmd_ret = false;
    bson_error_t cmd_error = {0};
 
-   test_structured_log_filter_push (NULL, NULL);
-
    if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
       // Not applicable when running as test-atlas-executor.
       return true;
@@ -347,7 +348,6 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner, bson_error_
 
    ret = true;
 done:
-   test_structured_log_filter_pop (NULL, NULL);
    return ret;
 }
 
@@ -1579,7 +1579,7 @@ test_check_expected_log_messages_for_client (test_t *test,
     * but some tests do for checking lifecycle logging.
     * See /server_discovery_and_monitoring/unified/logging-standalone */
 
-   locked = &entity->log_messages_mutex;
+   locked = &entity->log_mutex;
    bson_mutex_lock (locked);
 
    log_message_t *actual_message_iter = entity->log_messages;

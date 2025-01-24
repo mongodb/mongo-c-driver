@@ -37,14 +37,6 @@ gen_collection_name (const char *prefix);
 mongoc_collection_t *
 get_test_collection (mongoc_client_t *client, const char *prefix);
 
-typedef bool (structured_log_filter_func_t) (const mongoc_structured_log_entry_t *entry, void *user_data);
-bool
-test_structured_log_filter_accepts (const mongoc_structured_log_entry_t *entry);
-void
-test_structured_log_filter_push (structured_log_filter_func_t *func, void *user_data);
-void
-test_structured_log_filter_pop (structured_log_filter_func_t *func, void *user_data);
-
 void
 capture_logs (bool capture);
 void
