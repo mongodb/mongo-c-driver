@@ -84,6 +84,8 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
    // Faulty test? initial topologyDescription Unknown->Unknown transition not required by spec as far as I can tell.
    {"standalone-emit-topology-description-changed-before-close", "Topology lifecycle"},
+   // libmongoc does not include insertId in InsertOneResult
+   {"cancel-server-check", SKIP_ALL_TESTS},
    {0},
 };
 // clang-format on
