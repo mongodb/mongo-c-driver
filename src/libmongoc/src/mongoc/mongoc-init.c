@@ -52,7 +52,7 @@
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
-#include <mongoc-cyrus-private.h> // _mongoc_cyrus_verifyfile_cb
+#include "mongoc-cyrus-private.h" // _mongoc_cyrus_verifyfile_cb
 
 static void *
 mongoc_cyrus_mutex_alloc (void)

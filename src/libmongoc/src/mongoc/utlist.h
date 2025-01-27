@@ -17,7 +17,7 @@
 #ifndef MONGOC_UTLIST_H
 #define MONGOC_UTLIST_H
 
-#include <mongoc-prelude.h>
+#include "mongoc-prelude.h"
 
 #include <uthash-2.3.0/utlist.h>
 
