@@ -190,14 +190,12 @@ event_destroy (event_t *event)
 static bool
 _entity_log_filter_accepts (const entity_t *entity, const mongoc_structured_log_entry_t *entry)
 {
-   bool result = true;
    for (log_filter_t *filter = entity->log_filters; filter; filter = filter->next) {
       if (!filter->func || !filter->func (entry, filter->user_data)) {
-         result = false;
-         break;
+         return false;
       }
    }
-   return result;
+   return true;
 }
 
 /**
