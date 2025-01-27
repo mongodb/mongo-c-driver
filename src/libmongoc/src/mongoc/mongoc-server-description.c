@@ -784,8 +784,10 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    if (1) {                                                                                                          \
       if (!bson_empty (&description->FIELD)) {                                                                       \
          ptrdiff_t offset = bson_get_data (&description->FIELD) - bson_get_data (&description->last_hello_response); \
+         MONGOC_DEBUG_ASSERT (offset >= 0);                                                                          \
          const uint8_t *data = bson_get_data (&copy->last_hello_response) + offset;                                  \
          uint32_t len = description->FIELD.len;                                                                      \
+         MONGOC_DEBUG_ASSERT (offset + len <= copy->last_hello_response.len);                                        \
          bson_init_static (&copy->FIELD, data, len);                                                                 \
       } else {                                                                                                       \
          bson_init (&copy->FIELD);                                                                                   \
@@ -798,7 +800,9 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    if (1) {                                                                                                           \
       if (description->FIELD) {                                                                                       \
          ptrdiff_t offset = (char *) description->FIELD - (char *) bson_get_data (&description->last_hello_response); \
+         MONGOC_DEBUG_ASSERT (offset >= 0);                                                                           \
          copy->FIELD = (char *) bson_get_data (&copy->last_hello_response) + offset;                                  \
+         MONGOC_DEBUG_ASSERT (offset + strlen (description->FIELD) <= copy->last_hello_response.len);                 \
       } else {                                                                                                        \
          copy->FIELD = NULL;                                                                                          \
       }                                                                                                               \
