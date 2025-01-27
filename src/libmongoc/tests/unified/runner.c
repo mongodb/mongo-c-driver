@@ -87,7 +87,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // libmongoc does not support the optional listIndexNames helper.
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
-   // Faulty test? initial topologyDescription Unknown->Unknown transition not required by spec as far as I can tell.
+   // libmongoc single-host non-replicaSet URI first transitions Unknown->Single, not Unknown->Unknown
    {"standalone-emit-topology-description-changed-before-close", "Topology lifecycle"},
    // libmongoc does not include insertId in InsertOneResult
    {"cancel-server-check", SKIP_ALL_TESTS},
