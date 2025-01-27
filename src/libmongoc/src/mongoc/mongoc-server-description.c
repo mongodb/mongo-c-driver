@@ -775,7 +775,6 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
 
 #define COPY_BSON_FIELD(FIELD)                          \
    if (1) {                                             \
-      bson_init (&copy->FIELD);                         \
       bson_copy_to (&description->FIELD, &copy->FIELD); \
    } else                                               \
       (void) 0
