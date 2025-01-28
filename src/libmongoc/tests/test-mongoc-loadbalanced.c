@@ -119,6 +119,14 @@ set_client_callbacks (mongoc_client_t *client)
    cbs = make_callbacks ();
    mongoc_client_set_apm_callbacks (client, cbs, stats);
    mongoc_apm_callbacks_destroy (cbs);
+
+   if (test_suite_debug_output ()) {
+      mongoc_structured_log_opts_t *log_opts = mongoc_structured_log_opts_new ();
+      mongoc_structured_log_opts_set_max_level_for_all_components (log_opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+      mongoc_client_set_structured_log_opts (client, log_opts);
+      mongoc_structured_log_opts_destroy (log_opts);
+   }
+
    return stats;
 }
 
