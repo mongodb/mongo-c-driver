@@ -85,6 +85,9 @@ mongoc_add_warning_options (
      # Definite use of uninitialized value
      gnu-like:-Werror=uninitialized msvc:/we4700
 
+     # Disable warnings about passing no arguments to a trailing elipsis on a variadic macro
+     gnu-like:-Wno-gnu-zero-variadic-macro-arguments
+
      # Format strings.
      gnu-like:-Werror=format
      gnu-like:-Werror=format=2

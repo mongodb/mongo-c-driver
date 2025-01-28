@@ -2,6 +2,7 @@
 
 #include <mlib/intutil.h>
 #include <mlib/config.h>
+#include <mlib/cmp.h>
 
 #include <stddef.h>
 
@@ -73,10 +74,53 @@ _test_upsize (void)
 }
 
 void
+_test_cmp (void)
+{
+   ASSERT (mlib_cmp (1, 2) == mlib_less);
+   ASSERT (mlib_cmp (1, 2) < 0);
+   ASSERT (mlib_cmp (1, <, 2));
+   ASSERT (mlib_cmp (2, 1) == mlib_greater);
+   ASSERT (mlib_cmp (2, 1) > 0);
+   ASSERT (mlib_cmp (2, >, 1));
+   ASSERT (mlib_cmp (1, 1) == mlib_equal);
+   ASSERT (mlib_cmp (1, 1) == 0);
+   ASSERT (mlib_cmp (1, ==, 1));
+
+   size_t big_size = SIZE_MAX;
+   ASSERT (mlib_cmp (42, big_size) == mlib_less);
+   ASSERT (mlib_cmp (big_size, big_size) == mlib_equal);
+   ASSERT (mlib_cmp (big_size, SSIZE_MIN) == mlib_greater);
+   uint8_t smol = 7;
+   ASSERT (mlib_cmp (smol, SIZE_MAX) == mlib_less);
+   int8_t ismol = -4;
+   ASSERT (mlib_cmp (ismol, big_size) == mlib_less);
+
+   /// Example: Getting the correct answer:
+   // Unintuitive result due to integer promotion:
+   ASSERT (-27 > 20u);
+   // mlib_cmp produces the correct answer:
+   ASSERT (mlib_cmp (-27, <, 20u));
+}
+
+void
+_test_in_range (void)
+{
+   ASSERT (!mlib_in_range (int8_t, 1729));
+   ASSERT (!mlib_in_range (int, SIZE_MAX));
+   ASSERT (mlib_in_range (size_t, SIZE_MAX));
+   ASSERT (!mlib_in_range (size_t, -42));
+   ASSERT (mlib_in_range (int8_t, -42));
+   ASSERT (mlib_in_range (int8_t, -128));
+   ASSERT (!mlib_in_range (int8_t, -129));
+}
+
+void
 test_mlib_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/mlib/intutil/minmax", _test_minmax);
    TestSuite_Add (suite, "/mlib/intutil/upsize", _test_upsize);
+   TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
+   TestSuite_Add (suite, "/mlib/in-range", _test_in_range);
 }
 
 mlib_diagnostic_pop ();
