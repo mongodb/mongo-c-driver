@@ -101,10 +101,12 @@ buildvariants:
     expansions:
       CLIENT_SIDE_ENCRYPTION: "on"
     tasks:
-      - name: cse-sasl-cyrus-openssl-debian10-gcc-compile
-      - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
       - name: cse-sasl-cyrus-openssl-debian92-clang-compile
       - name: cse-sasl-cyrus-openssl-debian92-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian10-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian10-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian11-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
       - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
         batchtime: 1440
@@ -223,10 +225,10 @@ buildvariants:
     display_name: sasl-matrix-openssl
     expansions: {}
     tasks:
-      - name: sasl-cyrus-openssl-debian10-gcc-compile
-      - name: sasl-cyrus-openssl-debian11-gcc-compile
       - name: sasl-cyrus-openssl-debian92-clang-compile
       - name: sasl-cyrus-openssl-debian92-gcc-compile
+      - name: sasl-cyrus-openssl-debian10-gcc-compile
+      - name: sasl-cyrus-openssl-debian11-gcc-compile
       - name: sasl-cyrus-openssl-rhel80-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-power-gcc-compile
         batchtime: 1440
