@@ -1,45 +1,51 @@
 #include "TestSuite.h"
 
 #include <mlib/intutil.h>
+#include <mlib/config.h>
 
 #include <stddef.h>
+
+mlib_diagnostic_push (); // We don't set any diagnostics, we just want to make sure it compiles
+
+// Not relevant, we just want to test that it compiles:
+mlib_msvc_warning (disable : 4507);
 
 static void
 _test_minmax (void)
 {
-   ASSERT (mlib_minof (unsigned) == 0);
+   mlib_static_assert (mlib_minof (unsigned) == 0);
    // Ambiguous signedness, still works:
-   ASSERT (mlib_minof (char) == CHAR_MIN);
-   ASSERT (mlib_maxof (char) == CHAR_MAX);
+   mlib_static_assert (mlib_minof (char) == CHAR_MIN);
+   mlib_static_assert (mlib_maxof (char) == CHAR_MAX);
 
-   ASSERT (mlib_minof (uint8_t) == 0);
-   ASSERT (mlib_maxof (uint8_t) == UINT8_MAX);
-   ASSERT (mlib_minof (uint16_t) == 0);
-   ASSERT (mlib_maxof (uint16_t) == UINT16_MAX);
-   ASSERT (mlib_minof (uint32_t) == 0);
-   ASSERT (mlib_maxof (uint32_t) == UINT32_MAX);
-   ASSERT (mlib_minof (uint64_t) == 0);
-   ASSERT (mlib_maxof (uint64_t) == UINT64_MAX);
+   mlib_static_assert (mlib_minof (uint8_t) == 0);
+   mlib_static_assert (mlib_maxof (uint8_t) == UINT8_MAX);
+   mlib_static_assert (mlib_minof (uint16_t) == 0);
+   mlib_static_assert (mlib_maxof (uint16_t) == UINT16_MAX);
+   mlib_static_assert (mlib_minof (uint32_t) == 0);
+   mlib_static_assert (mlib_maxof (uint32_t) == UINT32_MAX);
+   mlib_static_assert (mlib_minof (uint64_t) == 0);
+   mlib_static_assert (mlib_maxof (uint64_t) == UINT64_MAX);
 
-   ASSERT (mlib_maxof (size_t) == SIZE_MAX);
-   ASSERT (mlib_maxof (ptrdiff_t) == PTRDIFF_MAX);
+   mlib_static_assert (mlib_maxof (size_t) == SIZE_MAX);
+   mlib_static_assert (mlib_maxof (ptrdiff_t) == PTRDIFF_MAX);
 
-   ASSERT (mlib_minof (int) == INT_MIN);
-   ASSERT (mlib_maxof (int) == INT_MAX);
-   ASSERT (mlib_maxof (unsigned) == UINT_MAX);
+   mlib_static_assert (mlib_minof (int) == INT_MIN);
+   mlib_static_assert (mlib_maxof (int) == INT_MAX);
+   mlib_static_assert (mlib_maxof (unsigned) == UINT_MAX);
 
-   ASSERT (mlib_is_signed (int));
-   ASSERT (mlib_is_signed (signed char));
-   ASSERT (mlib_is_signed (int8_t));
-   ASSERT (!mlib_is_signed (uint8_t));
-   ASSERT (mlib_is_signed (int16_t));
-   ASSERT (!mlib_is_signed (uint16_t));
-   ASSERT (mlib_is_signed (int32_t));
-   ASSERT (!mlib_is_signed (uint32_t));
-   ASSERT (mlib_is_signed (int64_t));
-   ASSERT (!mlib_is_signed (uint64_t));
+   mlib_static_assert (mlib_is_signed (int));
+   mlib_static_assert (mlib_is_signed (signed char));
+   mlib_static_assert (mlib_is_signed (int8_t));
+   mlib_static_assert (!mlib_is_signed (uint8_t));
+   mlib_static_assert (mlib_is_signed (int16_t));
+   mlib_static_assert (!mlib_is_signed (uint16_t));
+   mlib_static_assert (mlib_is_signed (int32_t));
+   mlib_static_assert (!mlib_is_signed (uint32_t));
+   mlib_static_assert (mlib_is_signed (int64_t));
+   mlib_static_assert (!mlib_is_signed (uint64_t));
    // Ambiguous signedness:
-   ASSERT (mlib_is_signed (char) || !mlib_is_signed (char));
+   mlib_static_assert (mlib_is_signed (char) || !mlib_is_signed (char));
 }
 
 static void
@@ -72,3 +78,5 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/intutil/minmax", _test_minmax);
    TestSuite_Add (suite, "/mlib/intutil/upsize", _test_upsize);
 }
+
+mlib_diagnostic_pop ();
