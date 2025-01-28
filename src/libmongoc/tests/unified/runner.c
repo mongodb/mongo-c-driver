@@ -56,6 +56,8 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"insert-shutdown-error", SKIP_ALL_TESTS},
    {"standalone-logging", "Successful heartbeat"}, // requires driverConnectionId
    {"standalone-logging", "Failing heartbeat"}, // requires driverConnectionId
+   {"replicaset-logging", SKIP_ALL_TESTS }, // requires driverConnectionId
+   {"sharded-logging", SKIP_ALL_TESTS }, // requires driverConnectionId
    {"find-network-error", "Reset server and pool after network error on find"},
    {"insert-network-error", "Reset server and pool after network error on insert"},
    {"pool-clear-on-error-checkout", SKIP_ALL_TESTS},
