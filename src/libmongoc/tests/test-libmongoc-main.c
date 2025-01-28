@@ -49,6 +49,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_mcommon_cmp_install);
    TEST_INSTALL (test_mcommon_atomic_install);
    TEST_INSTALL (test_mcommon_oid_install);
+   TEST_INSTALL (test_mlib_install);
 
    /* libmongoc */
 
