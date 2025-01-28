@@ -4041,6 +4041,20 @@ done:
    return ret;
 }
 
+static const char *
+tmp_topology_description_json (const mongoc_topology_description_t *td)
+{
+   bson_t bson = BSON_INITIALIZER;
+   BSON_ASSERT (mongoc_topology_description_append_contents_to_bson (
+      td,
+      &bson,
+      MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_TYPE | MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SERVERS,
+      MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_ADDRESS | MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_TYPE));
+   const char *result = tmp_json (&bson);
+   bson_destroy (&bson);
+   return result;
+}
+
 static bool
 operation_record_topology_description (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
@@ -4063,6 +4077,8 @@ operation_record_topology_description (test_t *test, operation_t *op, result_t *
    mc_shared_tpld td = mc_tpld_take_ref (client->topology);
    _mongoc_topology_description_copy_to (td.ptr, td_copy);
    mc_tpld_drop_ref (&td);
+
+   MONGOC_DEBUG ("Recording topology description '%s': %s", td_id, tmp_topology_description_json (td_copy));
 
    if (!entity_map_add_topology_description (test->entity_map, td_id, td_copy, error)) {
       mongoc_topology_description_destroy (td_copy);
@@ -4100,9 +4116,10 @@ operation_assert_topology_type (test_t *test, operation_t *op, result_t *result,
 
    if (0 != strcmp (expected_topology_type, actual_topology_type)) {
       test_set_error (error,
-                      "assertTopologyType failed, expected '%s' and found type '%s'",
+                      "assertTopologyType failed, expected '%s' but found type '%s' in topology description: %s",
                       expected_topology_type,
-                      actual_topology_type);
+                      actual_topology_type,
+                      tmp_topology_description_json (td));
       goto done;
    }
 
@@ -4151,24 +4168,33 @@ operation_wait_for_primary_change (test_t *test, operation_t *op, result_t *resu
    while (true) {
       mc_shared_tpld td = mc_tpld_take_ref (mc_client->topology);
       const mongoc_server_description_t *primary = _mongoc_topology_description_has_primary (td.ptr);
-      mc_tpld_drop_ref (&td);
 
       if (!prior_primary && primary) {
-         // Succeeded by transitioning from none to any
+         MONGOC_DEBUG ("waitForPrimaryChange succeeded by transitioning from none to any");
+         mc_tpld_drop_ref (&td);
          break;
       }
 
       if (prior_primary && primary && !_mongoc_server_description_equal (prior_primary, primary)) {
-         // A different server is primary
+         MONGOC_DEBUG ("waitForPrimaryChange succeeded by switching to a different primary server");
+         mc_tpld_drop_ref (&td);
          break;
       }
 
       int64_t duration = bson_get_monotonic_time () - start_time;
       if (duration >= timeout) {
-         test_set_error (
-            error, "waitForPrimaryChange timed out. waited %fms (max %fms)", duration / 1000.0, timeout / 1000.0);
+         test_set_error (error,
+                         "waitForPrimaryChange timed out. waited %fms (max %fms). \nprior topology description: "
+                         "%s\ncurrent topology description: %s",
+                         duration / 1000.0,
+                         timeout / 1000.0,
+                         tmp_topology_description_json (prior_td),
+                         tmp_topology_description_json (td.ptr));
+
+         mc_tpld_drop_ref (&td);
          goto done;
       }
+      mc_tpld_drop_ref (&td);
 
       _operation_hidden_wait (test, client, "waitForPrimaryChange");
    }
