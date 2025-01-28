@@ -1678,6 +1678,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-debian10-clang-compile
+    run_on: debian10-large
+    tags: [cse-matrix-openssl, compile, debian10, clang, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
   - name: cse-sasl-cyrus-openssl-debian10-gcc-compile
     run_on: debian10-large
     tags: [cse-matrix-openssl, compile, debian10, gcc, cse, sasl-cyrus]
@@ -1727,6 +1736,15 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-debian11-clang-compile
+    run_on: debian11-large
+    tags: [cse-matrix-openssl, compile, debian11, clang, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
   - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
     run_on: debian11-large
     tags: [cse-matrix-openssl, compile, debian11, gcc, cse, sasl-cyrus]
@@ -3530,6 +3548,24 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
+      - func: upload-build
+  - name: sasl-cyrus-openssl-debian92-clang-compile
+    run_on: debian92-large
+    tags: [sasl-matrix-openssl, compile, debian92, clang, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: sasl-cyrus-openssl-debian92-gcc-compile
+    run_on: debian92-large
+    tags: [sasl-matrix-openssl, compile, debian92, gcc, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
       - func: upload-build
   - name: sasl-cyrus-openssl-debian92-gcc-compile
     run_on: debian92-large

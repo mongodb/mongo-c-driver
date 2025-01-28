@@ -43,6 +43,8 @@ class Distro(BaseModel):
 # pylint: disable=line-too-long
 #fmt: off
 DEBIAN_DISTROS = [
+    Distro(name='debian92-large', os='debian', os_type='linux', os_ver='9.2', size='large'), # CDRIVER-5873
+    Distro(name='debian92-small', os='debian', os_type='linux', os_ver='9.2', size='small'), # CDRIVER-5873
     Distro(name='debian10-large', os='debian', os_type='linux', os_ver='10', size='large'),
     Distro(name='debian10-small', os='debian', os_type='linux', os_ver='10', size='small'),
     Distro(name='debian11-large', os='debian', os_type='linux', os_ver='11', size='large'),
