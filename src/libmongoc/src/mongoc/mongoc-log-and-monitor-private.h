@@ -19,8 +19,8 @@
 #ifndef MONGOC_LOG_AND_MONITOR_PRIVATE_H
 #define MONGOC_LOG_AND_MONITOR_PRIVATE_H
 
-#include "mongoc-thread-private.h"
-#include "mongoc-apm-private.h"
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-apm-private.h>
 
 struct mongoc_structured_log_instance_t;
 struct mongoc_structured_log_opts_t;

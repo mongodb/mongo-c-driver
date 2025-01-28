@@ -15,9 +15,9 @@
  */
 
 
-#include "mongoc-log-and-monitor-private.h"
-#include "mongoc-structured-log-private.h"
-#include "common-atomic-private.h"
+#include <mongoc/mongoc-log-and-monitor-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
+#include <common-atomic-private.h>
 
 static mongoc_log_and_monitor_serial_t
 _mongoc_log_and_monitor_instance_new_serial (void)
