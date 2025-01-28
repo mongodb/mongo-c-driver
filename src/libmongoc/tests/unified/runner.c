@@ -64,7 +64,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"hello-timeout", SKIP_ALL_TESTS},
    {"hello-network-error", SKIP_ALL_TESTS},
    {"hello-command-error", SKIP_ALL_TESTS},
-   {"interruptInUse-pool-clear", SKIP_ALL_TESTS},
+   {"interruptInUse", SKIP_ALL_TESTS},
    {"pool-clear-min-pool-size-error", SKIP_ALL_TESTS},
    {"pool-clear-checkout-error", SKIP_ALL_TESTS},
    {"pool-clear-application-error", SKIP_ALL_TESTS},
