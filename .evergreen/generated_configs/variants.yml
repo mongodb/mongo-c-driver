@@ -229,8 +229,6 @@ buildvariants:
       - name: sasl-cyrus-openssl-debian92-gcc-compile
       - name: sasl-cyrus-openssl-debian10-gcc-compile
       - name: sasl-cyrus-openssl-debian11-gcc-compile
-      - name: sasl-cyrus-openssl-debian92-clang-compile
-      - name: sasl-cyrus-openssl-debian92-gcc-compile
       - name: sasl-cyrus-openssl-rhel80-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-power-gcc-compile
         batchtime: 1440

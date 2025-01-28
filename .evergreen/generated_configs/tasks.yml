@@ -3549,24 +3549,6 @@ tasks:
         vars:
           CC: clang
       - func: upload-build
-  - name: sasl-cyrus-openssl-debian92-clang-compile
-    run_on: debian92-large
-    tags: [sasl-matrix-openssl, compile, debian92, clang, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-cyrus-openssl-debian92-gcc-compile
-    run_on: debian92-large
-    tags: [sasl-matrix-openssl, compile, debian92, gcc, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
   - name: sasl-cyrus-openssl-debian92-gcc-compile
     run_on: debian92-large
     tags: [sasl-matrix-openssl, compile, debian92, gcc, sasl-cyrus]
