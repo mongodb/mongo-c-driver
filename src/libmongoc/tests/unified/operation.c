@@ -4198,11 +4198,6 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"listDatabases", operation_list_databases},
       {"listDatabaseNames", operation_list_database_names},
       {"clientBulkWrite", operation_client_bulkwrite},
-      {"waitForEvent", operation_wait_for_event},
-      {"assertEventCount", operation_assert_event_count},
-      {"recordTopologyDescription", operation_record_topology_description},
-      {"assertTopologyType", operation_assert_topology_type},
-      {"waitForPrimaryChange", operation_wait_for_primary_change},
 
       /* ClientEncryption operations */
       {"createDataKey", operation_create_datakey},
@@ -4273,6 +4268,11 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"loop", operation_loop},
       {"assertNumberConnectionsCheckedOut", operation_assert_number_connections_checked_out},
       {"wait", operation_wait},
+      {"waitForEvent", operation_wait_for_event},
+      {"assertEventCount", operation_assert_event_count},
+      {"recordTopologyDescription", operation_record_topology_description},
+      {"assertTopologyType", operation_assert_topology_type},
+      {"waitForPrimaryChange", operation_wait_for_primary_change},
 
       /* GridFS operations */
       {"delete", operation_delete},
