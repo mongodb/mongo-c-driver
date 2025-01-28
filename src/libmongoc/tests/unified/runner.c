@@ -73,6 +73,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"auth-network-error", "Reset server and pool after network error during authentication"},
    {"auth-misc-command-error", "Reset server and pool after misc command error"},
    {"auth-shutdown-error", "Reset server and pool after shutdown error during authentication"},
+   {"auth-network-timeout-error", "Reset server and pool after network timeout error during authentication"},
    // libmongoc unified tests do not support pooled connections or background server monitoring threads yet
    {"serverMonitoringMode", SKIP_ALL_TESTS},
    // CDRIVER-4115: listCollections does not support batchSize.
