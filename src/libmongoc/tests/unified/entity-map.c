@@ -1868,8 +1868,10 @@ entity_close (entity_t *entity, bson_error_t *error)
       mongoc_change_stream_destroy (changestream);
    } else if (0 == strcmp ("findcursor", entity->type)) {
       entity_findcursor_t *findcursor = (entity_findcursor_t *) entity->value;
-      mongoc_cursor_destroy (findcursor->cursor);
-      bson_free (findcursor);
+      if (findcursor) {
+         mongoc_cursor_destroy (findcursor->cursor);
+         bson_free (findcursor);
+      }
    } else {
       test_set_error (error, "Attempting to close unsupported entity type: %s, id: %s", entity->type, entity->id);
       return false;
