@@ -21,7 +21,7 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 #include "mock_server/future-functions.h"
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-atomic-private.h>
 
 /* test statistics counters excluding OP_INSERT, OP_UPDATE, and OP_DELETE since
@@ -1264,7 +1264,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    // Number of messages sent by background threads depend on the number of
    // members in the replica set.
    const size_t member_count_zu = test_framework_replset_member_count ();
-   ASSERT (mcommon_in_range_unsigned (int32_t, member_count_zu));
+   ASSERT (mlib_in_range (int32_t, member_count_zu));
    const int32_t member_count = (int32_t) member_count_zu;
 
    // MongoDB Handshake Spec: Since MongoDB server 4.4, the initial handshake

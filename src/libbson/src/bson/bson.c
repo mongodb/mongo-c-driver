@@ -22,7 +22,7 @@
 #include <common-string-private.h>
 #include <common-json-private.h>
 #include <bson/bson-iso8601-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #include <string.h>
 #include <math.h>

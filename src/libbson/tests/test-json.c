@@ -7,7 +7,7 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-json-private.h>
 #include <bson/bson-iso8601-private.h>
 #include <bson/bson-json-private.h>
@@ -2718,7 +2718,7 @@ test_bson_as_json_with_opts (bson_t *bson, bson_json_mode_t mode, int max_len, c
    ASSERT_CMPSIZE_T (json_len, ==, strlen (expected));
 
    if (max_len != BSON_MAX_LEN_UNLIMITED) {
-      ASSERT (mcommon_in_range_signed (size_t, max_len));
+      ASSERT (mlib_in_range (size_t, max_len));
       ASSERT_CMPSIZE_T (json_len, <=, (size_t) max_len);
    }
 
@@ -2747,7 +2747,7 @@ run_bson_as_json_with_opts_tests (bson_t *bson, bson_json_mode_t mode, const cha
    const size_t ulen = strlen (expected);
    char *truncated;
 
-   BSON_ASSERT (mcommon_in_range_unsigned (int, ulen));
+   BSON_ASSERT (mlib_in_range (int, ulen));
    const int len = (int) ulen;
 
    /* Test with 0 length (empty string). */

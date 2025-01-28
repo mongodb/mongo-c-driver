@@ -59,7 +59,7 @@
 #include <mongoc/mongoc-structured-log-private.h>
 
 #include <common-bson-dsl-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-oid-private.h>
 
 #include <inttypes.h>
@@ -173,7 +173,7 @@ _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov, size_t iovcnt, int skip, char
    size_t difference = 0;
 
    for (size_t n = 0u; n < iovcnt; n++) {
-      BSON_ASSERT (mcommon_in_range_unsigned (int, iov[n].iov_len));
+      BSON_ASSERT (mlib_in_range (int, iov[n].iov_len));
       const int iov_len = (int) iov[n].iov_len;
 
       total_iov_len += iov_len;
@@ -3131,10 +3131,10 @@ _mongoc_cluster_run_opmsg_send (
       for (size_t i = 0; i < cmd->payloads_count; i++) {
          const mongoc_cmd_payload_t payload = cmd->payloads[i];
 
-         BSON_ASSERT (mcommon_in_range_signed (size_t, payload.size));
+         BSON_ASSERT (mlib_in_range (size_t, payload.size));
 
          const size_t section_length = sizeof (int32_t) + strlen (payload.identifier) + 1u + (size_t) payload.size;
-         BSON_ASSERT (mcommon_in_range_unsigned (int32_t, section_length));
+         BSON_ASSERT (mlib_in_range (int32_t, section_length));
 
          size_t section_idx = 1u + i;
          message_length += mcd_rpc_op_msg_section_set_kind (rpc, section_idx, 1);
@@ -3393,7 +3393,7 @@ mcd_rpc_message_compress (mcd_rpc_message *rpc,
    // compressedMessage does not include msgHeader fields.
    BSON_ASSERT (original_message_length >= message_header_length);
    const size_t uncompressed_size = (size_t) (original_message_length - message_header_length);
-   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, uncompressed_size));
+   BSON_ASSERT (mlib_in_range (int32_t, uncompressed_size));
 
    const size_t estimated_compressed_size = mongoc_compressor_max_compressed_length (compressor_id, uncompressed_size);
 

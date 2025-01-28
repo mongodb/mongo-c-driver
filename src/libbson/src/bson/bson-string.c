@@ -20,7 +20,7 @@
 
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-string-private.h>
 #include <common-bits-private.h>
 #include <bson/bson-memory.h>
@@ -41,7 +41,7 @@ bson_string_new (const char *str) /* IN */
     * extra capacity is explicitly requested. This emulates the old behavior, padding the allocation of all new strings.
     */
    size_t len = str ? strlen (str) : 0;
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len) && (uint32_t) len < UINT32_MAX);
+   BSON_ASSERT (mlib_in_range (uint32_t, len) && (uint32_t) len < UINT32_MAX);
    uint32_t alloc = mcommon_next_power_of_two_u32 ((uint32_t) len + 1);
    return (bson_string_t *) mcommon_string_new_with_capacity (str ? str : "", (uint32_t) len, alloc - 1);
 }

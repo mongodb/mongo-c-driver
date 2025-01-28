@@ -18,7 +18,7 @@
 #include <common-bits-private.h>
 #include <common-utf8-private.h>
 #include <common-b64-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 
 mcommon_string_t *
@@ -202,7 +202,7 @@ mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint
       mcommon_string_grow_to_capacity (string, old_len + encoded_target_len);
       BSON_ASSERT (encoded_target_len ==
                    mcommon_b64_ntop (bytes, (size_t) len, string->str + old_len, encoded_target_len + 1));
-      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, encoded_target_len));
+      BSON_ASSERT (mlib_in_range (uint32_t, encoded_target_len));
       string->len = old_len + (uint32_t) encoded_target_len;
       return true;
    } else if (max_append_len == 0) {
@@ -270,7 +270,7 @@ mcommon_string_append_selected_chars (mcommon_string_append_t *append,
    BSON_ASSERT_PARAM (template);
    BSON_ASSERT_PARAM (selector);
 
-   for (uint8_t template_char; (template_char = (uint8_t) * template); template ++) {
+   for (uint8_t template_char; (template_char = (uint8_t) *template); template ++) {
       BSON_ASSERT (template_char <= 0x7f);
       if (memchr (selector, template_char, selector_len) && !mcommon_string_append_unichar (append, template_char)) {
          return false;
@@ -331,7 +331,7 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
       int format_result = bson_vsnprintf (format_buffer, format_buffer_alloc, format, args_copy);
       va_end (args_copy);
 
-      if (format_result > -1 && mcommon_in_range_signed (uint32_t, format_result) &&
+      if (format_result > -1 && mlib_in_range (uint32_t, format_result) &&
           (uint32_t) format_result <= actual_format_buffer_capacity) {
          // Successful result, no truncation.
          format_buffer[format_result] = '\0';
@@ -344,8 +344,7 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
       if (actual_format_buffer_capacity == max_append_len) {
          // No more space to grow into, this must be the final result.
 
-         if (format_result > -1 && mcommon_in_range_signed (uint32_t, format_result) &&
-             (uint32_t) format_result < UINT32_MAX) {
+         if (format_result > -1 && mlib_in_range (uint32_t, format_result) && (uint32_t) format_result < UINT32_MAX) {
             // We have truncated output from vsnprintf. Clean it up by removing
             // any partial UTF-8 sequences that might be left on the end.
             uint32_t truncated_append_len = mcommon_utf8_truncate_len (
@@ -362,8 +361,7 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
       }
 
       // Choose a larger format_buffer_len and try again. Length will be clamped to max_append_len above.
-      if (format_result > -1 && mcommon_in_range_signed (uint32_t, format_result) &&
-          (uint32_t) format_result < UINT32_MAX) {
+      if (format_result > -1 && mlib_in_range (uint32_t, format_result) && (uint32_t) format_result < UINT32_MAX) {
          min_format_buffer_capacity = (uint32_t) format_result + 1u;
       } else if (min_format_buffer_capacity < UINT32_MAX / 2) {
          min_format_buffer_capacity *= 2;

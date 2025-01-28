@@ -38,7 +38,7 @@
 
 #include <stdint.h>
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-oid-private.h>
 
 static void
@@ -623,7 +623,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    size_t hl_array_size = 0u;
 
-   BSON_ASSERT (mcommon_in_range_signed (size_t, td->max_hosts));
+   BSON_ASSERT (mlib_in_range (size_t, td->max_hosts));
    const mongoc_host_list_t *const *hl_array = _mongoc_apply_srv_max_hosts (hl, (size_t) td->max_hosts, &hl_array_size);
 
    for (size_t idx = 0u; idx < hl_array_size; ++idx) {

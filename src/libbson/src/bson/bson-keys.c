@@ -19,7 +19,7 @@
 
 #include <bson/bson-keys.h>
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 
 static const char *gUint32Strs[] = {
@@ -145,6 +145,6 @@ bson_uint32_to_string (uint32_t value,      /* IN */
    int ret = bson_snprintf (str, size, "%u", value);
    // Truncation is OK.
    BSON_ASSERT (ret > 0);
-   BSON_ASSERT (mcommon_in_range_size_t_signed (ret));
+   BSON_ASSERT (mlib_in_range (size_t, ret));
    return (size_t) ret;
 }

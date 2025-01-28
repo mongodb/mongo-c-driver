@@ -43,7 +43,7 @@
 #endif
 #include <mongoc/mongoc-stream-tls.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"
@@ -110,7 +110,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
                return false;
             } else {
                const int64_t msec = remaining / 1000;
-               BSON_ASSERT (mcommon_in_range_signed (int32_t, msec));
+               BSON_ASSERT (mlib_in_range (int32_t, msec));
                timeout_msec = (int32_t) msec;
             }
          }

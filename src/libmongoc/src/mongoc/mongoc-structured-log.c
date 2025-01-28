@@ -310,8 +310,7 @@ mongoc_structured_log_opts_set_max_document_length_from_env (mongoc_structured_l
    } else {
       char *endptr;
       long int_value = strtol (max_length_str, &endptr, 10);
-      if (int_value >= 0 && endptr != max_length_str && *endptr == '\0' &&
-          mcommon_in_range_signed (size_t, int_value) &&
+      if (int_value >= 0 && endptr != max_length_str && *endptr == '\0' && mlib_in_range (size_t, int_value) &&
           mongoc_structured_log_opts_set_max_document_length (opts, (size_t) int_value)) {
          result = true;
       }

@@ -18,7 +18,7 @@
 
 #include "test-conveniences.h"
 #include "TestSuite.h"
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 static int
 cmp_key (const void *a, const void *b)
@@ -149,8 +149,8 @@ usecs_since_epoch (void)
    struct timeval tv;
    BSON_ASSERT (bson_gettimeofday (&tv) == 0);
 
-   BSON_ASSERT (mcommon_in_range_signed (int64_t, tv.tv_sec));
-   BSON_ASSERT (mcommon_in_range_signed (int64_t, tv.tv_usec));
+   BSON_ASSERT (mlib_in_range (int64_t, tv.tv_sec));
+   BSON_ASSERT (mlib_in_range (int64_t, tv.tv_usec));
 
    const int64_t secs = (int64_t) tv.tv_sec;
    const int64_t usecs = (int64_t) tv.tv_usec;

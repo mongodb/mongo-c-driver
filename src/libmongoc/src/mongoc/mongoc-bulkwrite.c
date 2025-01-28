@@ -27,7 +27,7 @@
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-util-private.h> // _mongoc_iter_document_as_bson
 #include <mongoc/mongoc-optional.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 MC_ENABLE_CONVERSION_WARNING_BEGIN
 
@@ -282,7 +282,7 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
    // Store an iterator to the document's `_id` in the persisted payload:
    bson_iter_t persisted_id_iter;
    {
-      BSON_ASSERT (mcommon_in_range_size_t_unsigned (op.len));
+      BSON_ASSERT (mlib_in_range (size_t, op.len));
       size_t start = self->ops.len - (size_t) op.len;
       BSON_ASSERT (bson_iter_init_from_data_at_offset (
          &persisted_id_iter, self->ops.data + start, (size_t) op.len, persisted_id_offset, strlen ("_id")));
@@ -1371,7 +1371,7 @@ _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
       }
    }
 
-   BSON_ASSERT (mcommon_in_range_size_t_signed (idx));
+   BSON_ASSERT (mlib_in_range (size_t, idx));
    // `models_idx` is the index of the model that produced this result.
    size_t models_idx = (size_t) idx + ops_doc_offset;
    if (ok == 0) {
@@ -1645,8 +1645,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             _bulkwriteexception_set_error (ret.exc, &error);
             goto fail;
          }
-         if (!mongoc_write_concern_is_acknowledged (wc) &&
-             mcommon_cmp_greater_us (self->max_insert_len, maxBsonObjectSize)) {
+         if (!mongoc_write_concern_is_acknowledged (wc) && mlib_cmp (self->max_insert_len, >, maxBsonObjectSize)) {
             bson_set_error (&error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1798,7 +1797,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             mongoc_cmd_payload_t *payload = &parts.assembled.payloads[0];
             const mongoc_buffer_t *nsinfo_docseq = mcd_nsinfo_as_document_sequence (nsinfo);
             payload->documents = nsinfo_docseq->data;
-            BSON_ASSERT (mcommon_in_range_int32_t_unsigned (nsinfo_docseq->len));
+            BSON_ASSERT (mlib_in_range (int32_t, nsinfo_docseq->len));
             payload->size = (int32_t) nsinfo_docseq->len;
             payload->identifier = "nsInfo";
          }
@@ -1808,7 +1807,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             mongoc_cmd_payload_t *payload = &parts.assembled.payloads[1];
             payload->identifier = "ops";
             payload->documents = self->ops.data + ops_byte_offset;
-            BSON_ASSERT (mcommon_in_range_int32_t_unsigned (ops_byte_len));
+            BSON_ASSERT (mlib_in_range (int32_t, ops_byte_len));
             payload->size = (int32_t) ops_byte_len;
          }
 
@@ -1870,7 +1869,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                bson_t cursor_opts = BSON_INITIALIZER;
                {
                   uint32_t serverid = parts.assembled.server_stream->sd->id;
-                  BSON_ASSERT (mcommon_in_range_int32_t_unsigned (serverid));
+                  BSON_ASSERT (mlib_in_range (int32_t, serverid));
                   int32_t serverid_i32 = (int32_t) serverid;
                   BSON_ASSERT (BSON_APPEND_INT32 (&cursor_opts, "serverId", serverid_i32));
                   // Use same session if one was applied.
@@ -1947,7 +1946,7 @@ fail:
          has_successful_results = true;
       }
    } else {
-      BSON_ASSERT (mcommon_in_range_size_t_signed (ret.res->errorscount));
+      BSON_ASSERT (mlib_in_range (size_t, ret.res->errorscount));
       size_t errorscount_sz = (size_t) ret.res->errorscount;
       if (errorscount_sz < self->n_ops) {
          has_successful_results = true;

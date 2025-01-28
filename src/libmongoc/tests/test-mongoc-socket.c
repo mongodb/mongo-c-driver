@@ -6,7 +6,7 @@
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-errno-private.h>
 #include "TestSuite.h"
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #include "test-libmongoc.h"
 
@@ -232,10 +232,10 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
 
    /* Start reading everything off the socket to unblock the client */
    do {
-      ASSERT (mcommon_in_range_signed (size_t, amount));
+      ASSERT (mlib_in_range (size_t, amount));
       const ssize_t r = mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
       if (r > 0) {
-         ASSERT (mcommon_in_range_signed (int, r));
+         ASSERT (mlib_in_range (int, r));
          amount -= (int) r;
       }
    } while (amount > 0);
@@ -252,10 +252,10 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
    bson_mutex_unlock (&data->cond_mutex);
 
    do {
-      ASSERT (mcommon_in_range_signed (size_t, amount));
+      ASSERT (mlib_in_range (size_t, amount));
       const ssize_t r = mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
       if (r > 0) {
-         ASSERT (mcommon_in_range_signed (int, r));
+         ASSERT (mlib_in_range (int, r));
          amount -= (int) r;
       }
    } while (amount > 0);
@@ -311,11 +311,11 @@ static BSON_THREAD_FUN (sendv_test_client, data_)
       const ssize_t r = mongoc_stream_writev (stream, &iov, 1, WAIT);
 
       if (r > 0) {
-         BSON_ASSERT (mcommon_in_range_signed (int, r));
+         BSON_ASSERT (mlib_in_range (int, r));
          amount += (int) r;
       }
 
-      if (mcommon_cmp_not_equal_su (r, gFourMB)) {
+      if (mlib_cmp (r, !=, gFourMB)) {
          if (!done) {
             bson_mutex_lock (&data->cond_mutex);
             data->amount = amount;

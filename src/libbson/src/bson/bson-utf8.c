@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include <bson/bson-memory.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-json-private.h>
 #include <common-macros-private.h>
 #include <common-string-private.h>
@@ -226,7 +226,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
          return NULL;
       }
    } else {
-      if (mcommon_in_range_signed (uint32_t, utf8_len) && (uint32_t) utf8_len < UINT32_MAX) {
+      if (mlib_in_range (uint32_t, utf8_len) && (uint32_t) utf8_len < UINT32_MAX) {
          len32 = utf8_len;
          allow_nul = true;
       } else {
