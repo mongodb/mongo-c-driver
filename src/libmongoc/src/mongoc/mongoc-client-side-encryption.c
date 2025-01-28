@@ -21,16 +21,16 @@
 
 #include <common-bson-dsl-private.h>
 
-#include "mongoc.h"
-#include "mongoc-client-private.h"
-#include "mongoc-client-side-encryption-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-database-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-util-private.h>
 #include <common-string-private.h>
 #include <common-atomic-private.h>
 

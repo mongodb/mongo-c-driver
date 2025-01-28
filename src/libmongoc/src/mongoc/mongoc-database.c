@@ -15,20 +15,20 @@
  */
 
 
-#include "mongoc-aggregate-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-collection.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-cursor.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-database.h"
-#include "mongoc-database-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-log.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-change-stream-private.h"
+#include <mongoc/mongoc-aggregate-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-database.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
 
 #include <common-bson-dsl-private.h>
 

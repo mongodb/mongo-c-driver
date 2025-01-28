@@ -19,11 +19,11 @@
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-flags-private.h"
-#include "mongoc/mongoc-uri.h"
+#include <mongoc/mongoc-flags-private.h>
+#include <mongoc/mongoc-uri.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl.h"
+#include <mongoc/mongoc-ssl.h>
 #endif
 
 #include "request.h"

@@ -15,7 +15,7 @@
  */
 
 #include <bson/bson.h>
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #ifdef MONGOC_HAVE_DNSAPI
 /* for DnsQuery_UTF8 */
 #include <Windows.h>
@@ -31,43 +31,43 @@
 #endif
 #endif
 
-#include "mongoc-client-private.h"
-#include "mongoc-client-side-encryption-private.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-counters-private.h"
-#include "mongoc-database-private.h"
-#include "mongoc-gridfs-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-log.h"
-#include "mongoc-queue-private.h"
-#include "mongoc-socket.h"
-#include "mongoc-stream-buffered.h"
-#include "mongoc-stream-socket.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-uri-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-set-private.h"
-#include "mongoc-log.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-change-stream-private.h"
-#include "mongoc-client-session-private.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-structured-log-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-gridfs-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-queue-private.h>
+#include <mongoc/mongoc-socket.h>
+#include <mongoc/mongoc-stream-buffered.h>
+#include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-stream-tls.h"
-#include "mongoc-ssl-private.h"
-#include "mongoc-cmd-private.h"
-#include "mongoc-opts-private.h"
+#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-cmd-private.h>
+#include <mongoc/mongoc-opts-private.h>
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-#include "mongoc-openssl-private.h"
-#include "mongoc-stream-tls-private.h"
+#include <mongoc/mongoc-openssl-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
 #endif
 
 #include <common-string-private.h>

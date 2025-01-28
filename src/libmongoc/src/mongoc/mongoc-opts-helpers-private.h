@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #include <bson/bson.h>
-#include "mongoc-client-session-private.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-write-command-private.h"
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-write-command-private.h>
 
 #ifndef LIBMONGOC_MONGOC_OPTS_HELPERS_H
 #define LIBMONGOC_MONGOC_OPTS_HELPERS_H

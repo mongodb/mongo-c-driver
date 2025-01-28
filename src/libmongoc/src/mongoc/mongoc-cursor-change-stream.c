@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "mongoc.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-error-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-error-private.h>
 
 typedef struct _data_change_stream_t {
    mongoc_cursor_response_t response;

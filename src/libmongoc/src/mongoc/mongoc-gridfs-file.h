@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_GRIDFS_FILE_H
 #define MONGOC_GRIDFS_FILE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-macros.h"
-#include "mongoc-socket.h"
+#include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-socket.h>
 
 BSON_BEGIN_DECLS
 

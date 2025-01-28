@@ -17,18 +17,18 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-array-private.h"
-#include "mongoc-buffer-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-errno-private.h"
-#include "mongoc-flags.h"
-#include "mongoc-log.h"
-#include "mongoc-opcode.h"
-#include "mongoc-rpc-private.h"
-#include "mongoc-stream.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-errno-private.h>
+#include <mongoc/mongoc-flags.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-opcode.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
 #include <common-cmp-private.h>
 
 

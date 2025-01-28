@@ -16,10 +16,10 @@
 
 #include "result.h"
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 #include "bsonutil/bson-parser.h"
 #include "bsonutil/bson-match.h"
-#include "mongoc-error-private.h"
+#include <mongoc/mongoc-error-private.h>
 #include "test-conveniences.h"
 #include "util.h"
 #include "TestSuite.h"

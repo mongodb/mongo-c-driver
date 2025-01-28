@@ -14,9 +14,9 @@
  * controlling the server from the main thread.
  */
 
-#include "mongoc/mongoc-topology-private.h"
+#include <mongoc/mongoc-topology-private.h>
 
-#include "future-functions.h"
+#include "mock_server/future-functions.h"
 
 {% for F in future_functions %}
 static
@@ -41,8 +41,8 @@ BSON_THREAD_FUN (background_{{ F.name }}, data)
    BSON_THREAD_RETURN;
 }
 {% endfor %}
-
 {% for F in future_functions %}
+
 future_t *
 {{ F|future_function_name }} ({% for P in F.params %}
    {{ P.type_name }} {{ P.name }}{% if not loop.last %},{% endif %}{% endfor %})
@@ -56,5 +56,4 @@ future_t *
    future_start (future, background_{{ F.name }});
    return future;
 }
-{% endfor %}
-
+{%- endfor %}

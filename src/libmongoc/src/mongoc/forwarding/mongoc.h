@@ -15,4 +15,4 @@
  */
 
 /* Including mongoc.h is superseded. Use mongoc/mongoc.h instead. */
-#include "mongoc/mongoc.h"
+#include <mongoc/mongoc.h>

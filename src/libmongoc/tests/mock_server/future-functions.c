@@ -21,9 +21,9 @@
  * controlling the server from the main thread.
  */
 
-#include "mongoc/mongoc-topology-private.h"
+#include <mongoc/mongoc-topology-private.h>
 
-#include "future-functions.h"
+#include "mock_server/future-functions.h"
 
 
 static
@@ -2928,5 +2928,3 @@ future_collection_estimated_document_count (
    future_start (future, background_mongoc_collection_estimated_document_count);
    return future;
 }
-
-

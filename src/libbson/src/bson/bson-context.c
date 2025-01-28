@@ -27,7 +27,7 @@
 #include <bson/bson-context.h>
 #include <bson/bson-context-private.h>
 #include <bson/bson-memory.h>
-#include "common-thread-private.h"
+#include <common-thread-private.h>
 
 
 #ifndef HOST_NAME_MAX

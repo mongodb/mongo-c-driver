@@ -1,13 +1,13 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
 
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-async-private.h"
-#include "mongoc/mongoc-async-cmd-private.h"
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-async-private.h>
+#include <mongoc/mongoc-async-cmd-private.h>
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future-functions.h"
-#include "mongoc/mongoc-errno-private.h"
+#include <mongoc/mongoc-errno-private.h>
 #include "test-libmongoc.h"
 
 #undef MONGOC_LOG_DOMAIN

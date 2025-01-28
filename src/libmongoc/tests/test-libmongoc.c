@@ -19,13 +19,13 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-host-list-private.h>
 
-#include "mongoc/mongoc-server-description.h"
-#include "mongoc/mongoc-server-description-private.h"
-#include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-linux-distro-scanner-private.h"
+#include <mongoc/mongoc-server-description.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-linux-distro-scanner-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -48,7 +48,7 @@
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-#include "mongoc/mongoc-openssl-private.h"
+#include <mongoc/mongoc-openssl-private.h>
 #endif
 
 typedef struct {

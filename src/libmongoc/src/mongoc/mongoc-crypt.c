@@ -16,23 +16,23 @@
 
 #define MONGOC_LOG_DOMAIN "client-side-encryption"
 
-#include "mongoc-crypt-private.h"
+#include <mongoc/mongoc-crypt-private.h>
 
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
 #include <mongocrypt/mongocrypt.h>
 
-#include "mongoc-client-private.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-ssl-private.h"
-#include "mongoc-cluster-aws-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-http-private.h"
-#include "mcd-azure.h"
-#include "mcd-time.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-http-private.h>
+#include <mongoc/mcd-azure.h>
+#include <mongoc/mcd-time.h>
 #include "service-gcp.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>

@@ -1,6 +1,6 @@
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-collection-private.h"
+#include <mongoc/mongoc-collection-private.h>
 
 #include "json-test.h"
 #include "test-libmongoc.h"

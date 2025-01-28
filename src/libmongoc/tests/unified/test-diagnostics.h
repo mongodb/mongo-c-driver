@@ -17,7 +17,7 @@
 #ifndef UNIFIED_TEST_DIAGNOSTICS
 #define UNIFIED_TEST_DIAGNOSTICS
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 
 void
 _test_diagnostics_add (bool fail, const char *fmt, ...) BSON_GNUC_PRINTF (2, 3);

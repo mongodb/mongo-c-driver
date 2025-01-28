@@ -49,24 +49,24 @@
  * Thanks for code and inspiration!
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
 #include <bson/bson.h>
 
-#include "mongoc-trace-private.h"
-#include "mongoc-log.h"
-#include "mongoc-stream-tls.h"
-#include "mongoc-stream-tls-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-stream-tls-secure-channel-private.h"
-#include "mongoc-secure-channel-private.h"
-#include "mongoc-ssl.h"
-#include "mongoc-ssl-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-counters-private.h"
-#include "mongoc-errno-private.h"
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#include <mongoc/mongoc-secure-channel-private.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-errno-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure-channel"

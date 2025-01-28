@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_TOPOLOGY_SCANNER_PRIVATE_H
 #define MONGOC_TOPOLOGY_SCANNER_PRIVATE_H
@@ -25,16 +25,16 @@
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #endif
-#include "mongoc-async-private.h"
-#include "mongoc-async-cmd-private.h"
-#include "mongoc-handshake-private.h"
-#include "mongoc-host-list.h"
-#include "mongoc-apm-private.h"
-#include "mongoc-scram-private.h"
-#include "mongoc-ssl.h"
-#include "mongoc-crypto-private.h"
-#include "mongoc-server-description-private.h"
-#include "common-thread-private.h"
+#include <mongoc/mongoc-async-private.h>
+#include <mongoc/mongoc-async-cmd-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <common-thread-private.h>
 
 BSON_BEGIN_DECLS
 

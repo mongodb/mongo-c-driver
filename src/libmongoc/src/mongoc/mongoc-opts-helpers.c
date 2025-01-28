@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc-opts-helpers-private.h"
-#include "mongoc-client-session-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-read-concern-private.h"
+#include <mongoc/mongoc-opts-helpers-private.h>
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
 #include <common-cmp-private.h>
 
 #define BSON_ERR(...)                                                                       \

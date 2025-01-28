@@ -1,5 +1,5 @@
 #include <mongoc/mongoc.h>
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-util-private.h>
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 #include <mock_server/mock-server.h>

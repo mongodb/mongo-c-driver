@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SASL_SSPI
-#include "mongoc-client-private.h"
-#include "mongoc-cluster-sspi-private.h"
-#include "mongoc-cluster-sasl-private.h"
-#include "mongoc-sasl-private.h"
-#include "mongoc-sspi-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cluster-sspi-private.h>
+#include <mongoc/mongoc-cluster-sasl-private.h>
+#include <mongoc/mongoc-sasl-private.h>
+#include <mongoc/mongoc-sspi-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 
 static mongoc_sspi_client_state_t *

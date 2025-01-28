@@ -20,15 +20,15 @@
 #include <sys/types.h>
 #include <math.h>
 
-#include "bson.h"
+#include <bson/bson.h>
 #include <bson/bson-config.h>
 #include <bson/bson-error-private.h>
 #include <bson/bson-json.h>
 #include <bson/bson-json-private.h>
 #include <bson/bson-iso8601-private.h>
 
-#include "common-b64-private.h"
-#include "jsonsl/jsonsl.h"
+#include <common-b64-private.h>
+#include <jsonsl/jsonsl.h>
 #include <common-cmp-private.h>
 
 #ifdef _WIN32

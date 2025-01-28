@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "bson/bson.h"
-#include "mongoc.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-database-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-gridfs-bucket-private.h"
-#include "mongoc-gridfs-bucket-file-private.h"
-#include "mongoc-opts-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-stream-gridfs-download-private.h"
-#include "mongoc-stream-gridfs-upload-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-write-concern-private.h"
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-gridfs-bucket-private.h>
+#include <mongoc/mongoc-gridfs-bucket-file-private.h>
+#include <mongoc/mongoc-opts-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-stream-gridfs-download-private.h>
+#include <mongoc/mongoc-stream-gridfs-upload-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
 
 /*--------------------------------------------------------------------------
  *

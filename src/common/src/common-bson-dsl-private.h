@@ -1,4 +1,4 @@
-#include "common-prelude.h"
+#include <common-prelude.h>
 
 #ifndef MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H
 #define MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H
@@ -13,7 +13,7 @@
  * For more information about using this DSL, refer to `bson-dsl.md`.
  */
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 #include <common-cmp-private.h>
 
 enum {

@@ -15,10 +15,12 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('debian10',          'gcc',       None, ['cyrus']),
-    ('debian11',          'gcc',       None, ['cyrus']),
-    ('debian92',          'clang',     None, ['cyrus']),
-    ('debian92',          'gcc',       None, ['cyrus']),
+    ('debian92', 'clang', None, ['cyrus']),
+    ('debian92', 'gcc',   None, ['cyrus']),
+    ('debian10', 'clang', None, ['cyrus']),
+    ('debian10', 'gcc',   None, ['cyrus']),
+    ('debian11', 'clang', None, ['cyrus']),
+    ('debian11', 'gcc',   None, ['cyrus']),
     ('rhel80',            'gcc',       None, ['cyrus']),
     ('rhel8-zseries',     'gcc',       None, ['cyrus']),
     ('ubuntu2004',        'clang',     None, ['cyrus']),
@@ -31,7 +33,7 @@ COMPILE_MATRIX = [
 TEST_MATRIX = [
     # 4.2 and 4.4 not available on rhel8-zseries.
     ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server'], ['5.0']),
-    
+
     ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0' ]),
 
     # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
@@ -42,7 +44,6 @@ TEST_MATRIX = [
 
     # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
     ('debian10',          'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2']),
-    
 ]
 # fmt: on
 # pylint: enable=line-too-long

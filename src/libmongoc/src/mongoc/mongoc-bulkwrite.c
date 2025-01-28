@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <mongoc-bulkwrite.h>
+#include <mongoc/mongoc-bulkwrite.h>
 
 #include <bson/bson.h>
 #include <common-macros-private.h> // MC_ENABLE_CONVERSION_WARNING_BEGIN

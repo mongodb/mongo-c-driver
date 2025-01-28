@@ -17,7 +17,7 @@
 #ifndef MCD_AZURE_H_INCLUDED
 #define MCD_AZURE_H_INCLUDED
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #include <mongoc/mongoc.h>
 

@@ -934,9 +934,7 @@ if (ENABLE_SHARED)
       mongoc_shared
       PUBLIC
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common/src>
@@ -1015,9 +1013,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       mongoc_static
       PUBLIC
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common/src>

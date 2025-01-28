@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "./service-gcp.h"
+#include <mongoc/service-gcp.h>
 
-#include "mongoc-error-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #define HOST "metadata.google.internal"
 

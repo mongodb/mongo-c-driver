@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <mcd-nsinfo.h>
+#include <mongoc/mcd-nsinfo.h>
 
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mongoc-error-private.h>

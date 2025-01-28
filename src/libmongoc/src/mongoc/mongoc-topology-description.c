@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "common-oid-private.h"
-#include "mongoc-array-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-description-apm-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-set-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-host-list-private.h"
-#include "utlist.h"
+#include <common-oid-private.h>
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/utlist.h>
 
 
 static bool

@@ -27,8 +27,8 @@
 
 #include <common-string-private.h>
 
-#include "mongoc/mongoc-array-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 
 #ifdef __cplusplus

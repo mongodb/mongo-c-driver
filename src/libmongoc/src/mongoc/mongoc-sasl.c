@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SASL
-#include "mongoc-sasl-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-sasl-private.h>
+#include <mongoc/mongoc-util-private.h>
 
-#include "mongoc-trace-private.h"
-#include "mongoc-change-stream-private.h"
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "SASL"

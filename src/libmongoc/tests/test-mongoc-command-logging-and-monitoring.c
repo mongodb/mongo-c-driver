@@ -2,7 +2,7 @@
 
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
-#include "mongoc/mongoc-array-private.h"
+#include <mongoc/mongoc-array-private.h>
 #include "TestSuite.h"
 
 static void

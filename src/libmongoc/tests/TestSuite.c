@@ -20,7 +20,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 
-#include "mongoc/mongoc-thread-private.h"
+#include <mongoc/mongoc-thread-private.h>
 
 #include <stdio.h>
 #include <stdlib.h>

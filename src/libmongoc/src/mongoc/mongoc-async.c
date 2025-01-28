@@ -17,13 +17,13 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-async-private.h"
-#include "mongoc-async-cmd-private.h"
-#include "utlist.h"
-#include "mongoc.h"
-#include "mongoc-error-private.h"
-#include "mongoc-socket-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-async-private.h>
+#include <mongoc/mongoc-async-cmd-private.h>
+#include <mongoc/utlist.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-socket-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async"

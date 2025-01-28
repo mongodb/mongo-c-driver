@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc-http-private.h"
+#include <mongoc/mongoc-http-private.h>
 
-#include "mongoc-client-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-stream-tls.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-buffer-private.h"
-#include "mcd-time.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mcd-time.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
 

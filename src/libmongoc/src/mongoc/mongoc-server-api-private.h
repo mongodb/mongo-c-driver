@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_SERVER_API_PRIVATE_H
 #define MONGOC_SERVER_API_PRIVATE_H
 
-#include "mongoc-server-api.h"
+#include <mongoc/mongoc-server-api.h>
 
 struct _mongoc_server_api_t {
    mongoc_server_api_version_t version;

@@ -15,9 +15,9 @@
  */
 
 
-#include "mongoc-cluster-private.h"
-#include "mongoc-server-stream-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-server-stream-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "server-stream"
