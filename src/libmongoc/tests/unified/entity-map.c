@@ -1898,34 +1898,24 @@ entity_destroy (entity_t *entity)
    if (0 == strcmp ("client", entity->type)) {
       BSON_ASSERT (entity_close (entity, NULL));
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
-      mongoc_client_encryption_t *ce = NULL;
-
-      ce = (mongoc_client_encryption_t *) entity->value;
+      mongoc_client_encryption_t *ce = (mongoc_client_encryption_t *) entity->value;
       mongoc_client_encryption_destroy (ce);
    } else if (0 == strcmp ("database", entity->type)) {
-      mongoc_database_t *db = NULL;
-
-      db = (mongoc_database_t *) entity->value;
+      mongoc_database_t *db = (mongoc_database_t *) entity->value;
       mongoc_database_destroy (db);
    } else if (0 == strcmp ("collection", entity->type)) {
-      mongoc_collection_t *coll = NULL;
-
-      coll = (mongoc_collection_t *) entity->value;
+      mongoc_collection_t *coll = (mongoc_collection_t *) entity->value;
       mongoc_collection_destroy (coll);
    } else if (0 == strcmp ("session", entity->type)) {
-      mongoc_client_session_t *sess = NULL;
-
-      sess = (mongoc_client_session_t *) entity->value;
+      mongoc_client_session_t *sess = (mongoc_client_session_t *) entity->value;
       mongoc_client_session_destroy (sess);
    } else if (0 == strcmp ("changestream", entity->type)) {
       BSON_ASSERT (entity_close (entity, NULL));
    } else if (0 == strcmp ("bson", entity->type)) {
       bson_val_t *value = entity->value;
-
       bson_val_destroy (value);
    } else if (0 == strcmp ("bucket", entity->type)) {
       mongoc_gridfs_bucket_t *bucket = entity->value;
-
       mongoc_gridfs_bucket_destroy (bucket);
    } else if (0 == strcmp ("findcursor", entity->type)) {
       BSON_ASSERT (entity_close (entity, NULL));
@@ -1942,8 +1932,10 @@ entity_destroy (entity_t *entity)
       bson_free (array);
    } else if (0 == strcmp ("size_t", entity->type)) {
       size_t *v = entity->value;
-
       bson_free (v);
+   } else if (0 == strcmp ("topologyDescription", entity->type)) {
+      mongoc_topology_description_t *td = (mongoc_topology_description_t *) entity->value;
+      mongoc_topology_description_destroy (td);
    } else {
       test_error ("Attempting to destroy unrecognized entity type: %s, id: %s", entity->type, entity->id);
    }
@@ -2105,6 +2097,17 @@ entity_map_get_findcursor (entity_map_t *entity_map, const char *id, bson_error_
    return (entity_findcursor_t *) entity->value;
 }
 
+mongoc_topology_description_t *
+entity_map_get_topology_description (entity_map_t *entity_map, const char *id, bson_error_t *error)
+{
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "topologyDescription", error);
+   if (!entity) {
+      return NULL;
+   }
+   BSON_ASSERT (entity->value);
+   return (mongoc_topology_description_t *) entity->value;
+}
+
 bson_val_t *
 entity_map_get_bson (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
@@ -2233,6 +2236,15 @@ entity_map_add_findcursor (
    findcursor->cursor = cursor;
    findcursor->first_result = first_result;
    return _entity_map_add (em, id, "findcursor", (void *) findcursor, error);
+}
+
+bool
+entity_map_add_topology_description (entity_map_t *em,
+                                     const char *id,
+                                     mongoc_topology_description_t *td,
+                                     bson_error_t *error)
+{
+   return _entity_map_add (em, id, "topologyDescription", (void *) td, error);
 }
 
 bool

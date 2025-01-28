@@ -19,6 +19,7 @@
 
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
+#include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-array-private.h>
 #include <common-thread-private.h>
 #include "bsonutil/bson-match.h"
@@ -109,6 +110,13 @@ bool
 entity_map_add_findcursor (
    entity_map_t *em, const char *id, mongoc_cursor_t *cursor, const bson_t *first_result, bson_error_t *error);
 
+/* Steals ownership of td. */
+bool
+entity_map_add_topology_description (entity_map_t *em,
+                                     const char *id,
+                                     mongoc_topology_description_t *td,
+                                     bson_error_t *error);
+
 /* Copies val */
 bool
 entity_map_add_bson (entity_map_t *em, const char *id, bson_val_t *val, bson_error_t *error);
@@ -147,6 +155,9 @@ entity_map_get_changestream (entity_map_t *entity_map, const char *id, bson_erro
 
 entity_findcursor_t *
 entity_map_get_findcursor (entity_map_t *entity_map, const char *id, bson_error_t *error);
+
+mongoc_topology_description_t *
+entity_map_get_topology_description (entity_map_t *entity_map, const char *id, bson_error_t *error);
 
 void
 entity_findcursor_iterate_until_document_or_error (entity_findcursor_t *cursor,

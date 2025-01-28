@@ -3851,20 +3851,57 @@ done:
 #define WAIT_FOR_EVENT_TICK_MS 10             // Same tick size as used in non-unified json test
 
 static bool
-log_filter_hide_wait_for_event_server_selection (const mongoc_structured_log_entry_t *entry, void *user_data)
+log_filter_hide_server_selection_operation (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
    BSON_ASSERT_PARAM (entry);
-   BSON_OPTIONAL_PARAM (user_data);
+   BSON_ASSERT_PARAM (user_data);
+   const char *expected_operation = (const char *) user_data;
+
    if (mongoc_structured_log_entry_get_component (entry) == MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION) {
       bson_t *bson = mongoc_structured_log_entry_message_as_bson (entry);
       bson_iter_t iter;
       BSON_ASSERT (bson_iter_init_find (&iter, bson, "operation"));
       BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
-      BSON_ASSERT (0 == strcmp ("waitForEvent", bson_iter_utf8 (&iter, NULL)));
+      BSON_ASSERT (0 == strcmp (expected_operation, bson_iter_utf8 (&iter, NULL)));
       bson_destroy (bson);
       return false;
    }
    return true;
+}
+
+static void
+_operation_hidden_wait (test_t *test, entity_t *client, const char *name)
+{
+   _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
+
+   // @todo Re-examine this once we have support for connection pools in the unified test
+   //    runner. Without pooling, all events we could be waiting on would be coming
+   //    from single-threaded (blocking) topology scans, or from lazily opening the topology
+   //    description when it's first used. Request stream selection after blocking, to
+   //    handle either of these cases.
+   //
+   // Structured logs can not be fully suppressed here, because we do need to emit topology
+   // lifecycle events. Filter out only the server selection operation here, and ASSERT
+   // that it's the waitForEvent we expect.
+
+   entity_log_filter_push (client, log_filter_hide_server_selection_operation, (void *) name);
+
+   mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client->id, NULL);
+   if (mc_client) {
+      const mongoc_ss_log_context_t ss_log_context = {.operation = name};
+      mongoc_server_stream_t *stream = mongoc_cluster_stream_for_reads (&mc_client->cluster,
+                                                                        &ss_log_context,
+                                                                        NULL /* read_prefs */,
+                                                                        NULL /* client session */,
+                                                                        NULL /* deprioritized servers */,
+                                                                        NULL /* reply */,
+                                                                        NULL /* error */);
+      if (stream) {
+         mongoc_server_stream_cleanup (stream);
+      }
+   }
+
+   entity_log_filter_pop (client, log_filter_hide_server_selection_operation, (void *) name);
 }
 
 static bool
@@ -3926,38 +3963,7 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
          goto done;
       };
 
-      _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
-
-      // @todo Re-examine this once we have support for connection pools in the unified test
-      //    runner. Without pooling, all events we could be waiting on would be coming
-      //    from single-threaded (blocking) topology scans, or from lazily opening the topology
-      //    description when it's first used. Request stream selection after blocking, to
-      //    handle either of these cases.
-      //
-      // Structured logs can not be fully suppressed here, because we do need to emit topology
-      // lifecycle events. Filter out only the server selection operation here, and ASSERT
-      // that it's the waitForEvent we expect.
-
-      entity_log_filter_push (client, log_filter_hide_wait_for_event_server_selection, NULL);
-
-      {
-         mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
-         if (mc_client) {
-            const mongoc_ss_log_context_t ss_log_context = {.operation = "waitForEvent"};
-            mongoc_server_stream_t *stream = mongoc_cluster_stream_for_reads (&mc_client->cluster,
-                                                                              &ss_log_context,
-                                                                              NULL /* read_prefs */,
-                                                                              NULL /* client session */,
-                                                                              NULL /* deprioritized servers */,
-                                                                              NULL /* reply */,
-                                                                              NULL /* error */);
-            if (stream) {
-               mongoc_server_stream_cleanup (stream);
-            }
-         }
-      }
-
-      entity_log_filter_pop (client, log_filter_hide_wait_for_event_server_selection, NULL);
+      _operation_hidden_wait (test, client, "waitForEvent");
    }
 
    result_from_ok (result);
@@ -4035,6 +4041,145 @@ done:
    return ret;
 }
 
+static bool
+operation_record_topology_description (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id, *td_id;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_utf8 (bp, "id", &td_id);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   mongoc_client_t *client = entity_map_get_client (test->entity_map, client_id, error);
+   if (!client) {
+      goto done;
+   }
+
+   mongoc_topology_description_t *td_copy = bson_malloc0 (sizeof *td_copy);
+   mc_shared_tpld td = mc_tpld_take_ref (client->topology);
+   _mongoc_topology_description_copy_to (td.ptr, td_copy);
+   mc_tpld_drop_ref (&td);
+
+   if (!entity_map_add_topology_description (test->entity_map, td_id, td_copy, error)) {
+      mongoc_topology_description_destroy (td_copy);
+      goto done;
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static bool
+operation_assert_topology_type (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *td_id, *expected_topology_type;
+   bson_parser_utf8 (bp, "topologyDescription", &td_id);
+   bson_parser_utf8 (bp, "topologyType", &expected_topology_type);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   // Pointer borrowed from entity
+   mongoc_topology_description_t *td = entity_map_get_topology_description (test->entity_map, td_id, error);
+   if (!td) {
+      goto done;
+   }
+
+   // Static lifetime
+   const char *actual_topology_type = mongoc_topology_description_type (td);
+
+   if (0 != strcmp (expected_topology_type, actual_topology_type)) {
+      test_set_error (error,
+                      "assertTopologyType failed, expected '%s' and found type '%s'",
+                      expected_topology_type,
+                      actual_topology_type);
+      goto done;
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static bool
+operation_wait_for_primary_change (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id, *prior_td_id;
+   int64_t *optional_timeout_ms = NULL;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_utf8 (bp, "priorTopologyDescription", &prior_td_id);
+   bson_parser_int_optional (bp, "timeoutMS", &optional_timeout_ms);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   int64_t timeout = 1000ull * (optional_timeout_ms ? *optional_timeout_ms : 10000ull);
+   int64_t start_time = bson_get_monotonic_time ();
+
+   mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
+   if (!mc_client) {
+      goto done;
+   }
+
+   entity_t *client = entity_map_get (test->entity_map, client_id, error);
+   BSON_ASSERT (client);
+
+   // Pointer borrowed from entity
+   mongoc_topology_description_t *prior_td = entity_map_get_topology_description (test->entity_map, prior_td_id, error);
+   if (!prior_td) {
+      goto done;
+   }
+
+   // Will be NULL when there's no primary
+   const mongoc_server_description_t *prior_primary = _mongoc_topology_description_has_primary (prior_td);
+
+   while (true) {
+      mc_shared_tpld td = mc_tpld_take_ref (mc_client->topology);
+      const mongoc_server_description_t *primary = _mongoc_topology_description_has_primary (td.ptr);
+      mc_tpld_drop_ref (&td);
+
+      if (!prior_primary && primary) {
+         // Succeeded by transitioning from none to any
+         break;
+      }
+
+      if (prior_primary && primary && !_mongoc_server_description_equal (prior_primary, primary)) {
+         // A different server is primary
+         break;
+      }
+
+      int64_t duration = bson_get_monotonic_time () - start_time;
+      if (duration >= timeout) {
+         test_set_error (
+            error, "waitForPrimaryChange timed out. waited %fms (max %fms)", duration / 1000.0, timeout / 1000.0);
+         goto done;
+      }
+
+      _operation_hidden_wait (test, client, "waitForPrimaryChange");
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -4055,6 +4200,9 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"clientBulkWrite", operation_client_bulkwrite},
       {"waitForEvent", operation_wait_for_event},
       {"assertEventCount", operation_assert_event_count},
+      {"recordTopologyDescription", operation_record_topology_description},
+      {"assertTopologyType", operation_assert_topology_type},
+      {"waitForPrimaryChange", operation_wait_for_primary_change},
 
       /* ClientEncryption operations */
       {"createDataKey", operation_create_datakey},

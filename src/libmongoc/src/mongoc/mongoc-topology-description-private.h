@@ -142,6 +142,9 @@ _mongoc_topology_description_validate_max_staleness (const mongoc_topology_descr
                                                      int64_t max_staleness_seconds,
                                                      bson_error_t *error);
 
+const mongoc_server_description_t *
+_mongoc_topology_description_has_primary (const mongoc_topology_description_t *description);
+
 void
 mongoc_topology_description_suitable_servers (mongoc_array_t *set, /* OUT */
                                               mongoc_ss_optype_t optype,

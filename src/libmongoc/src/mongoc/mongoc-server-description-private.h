@@ -211,7 +211,7 @@ mongoc_server_description_filter_tags (const mongoc_server_description_t **descr
 /* Compares server descriptions following the "Server Description Equality"
  * rules. Not all fields are considered. */
 bool
-_mongoc_server_description_equal (mongoc_server_description_t *sd1, mongoc_server_description_t *sd2);
+_mongoc_server_description_equal (const mongoc_server_description_t *sd1, const mongoc_server_description_t *sd2);
 
 int
 mongoc_server_description_topology_version_cmp (const bson_t *tv1, const bson_t *tv2);

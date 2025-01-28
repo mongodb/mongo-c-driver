@@ -1092,7 +1092,7 @@ _nullable_strcmp (const char *a, const char *b)
 }
 
 bool
-_mongoc_server_description_equal (mongoc_server_description_t *sd1, mongoc_server_description_t *sd2)
+_mongoc_server_description_equal (const mongoc_server_description_t *sd1, const mongoc_server_description_t *sd2)
 {
    if (sd1->type != sd2->type) {
       return false;

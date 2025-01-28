@@ -284,7 +284,7 @@ _mongoc_topology_description_has_primary_cb (const void *item, void *ctx /* OUT 
  *
  *--------------------------------------------------------------------------
  */
-static const mongoc_server_description_t *
+const mongoc_server_description_t *
 _mongoc_topology_description_has_primary (const mongoc_topology_description_t *description)
 {
    mongoc_server_description_t *primary = NULL;
