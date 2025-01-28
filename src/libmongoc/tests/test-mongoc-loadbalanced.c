@@ -149,7 +149,12 @@ static void
 free_and_assert_stats (stats_t *stats)
 {
    ASSERT_CMPINT (stats->topology_opening_events, ==, 1);
-   ASSERT_CMPINT (stats->topology_changed_events, ==, 2);
+   /* See https://specifications.readthedocs.io/en/latest/load-balancers/load-balancers/
+    * Expected TopologyDescriptionChangedEvent instances:
+    *  1. TopologyType Unknown -> TopologyType LoadBalanced with ServerType Unknown
+    *  2. TopologyType LoadBalanced with ServerType Unknown -> ServerType LoadBalancer
+    *  3. LoadBalanced LoadBalancer -> Unknown */
+   ASSERT_CMPINT (stats->topology_changed_events, ==, 3);
    ASSERT_CMPINT (stats->server_opening_events, ==, 1);
    ASSERT_CMPINT (stats->server_changed_events, ==, 1);
    ASSERT_CMPINT (stats->server_closed_events, ==, 1);
