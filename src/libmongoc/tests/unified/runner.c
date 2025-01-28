@@ -71,6 +71,8 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"pool-clear-checkout-error", SKIP_ALL_TESTS},
    {"pool-clear-application-error", SKIP_ALL_TESTS},
    {"pool-cleared-error", "PoolClearedError does not mark server unknown"}, // requires multithreaded runner
+   // Requires streaming heartbeat support
+   {"rediscover-quickly-after-step-down", SKIP_ALL_TESTS},
    // CDRIVER-5870: Spec compliant response to authentication errors
    {"auth-error", "Reset server and pool after AuthenticationFailure error"},
    {"auth-network-error", "Reset server and pool after network error during authentication"},
