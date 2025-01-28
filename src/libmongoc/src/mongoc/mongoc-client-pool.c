@@ -578,16 +578,19 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool, mongoc_apm_cal
    BSON_OPTIONAL_PARAM (callbacks);
    BSON_OPTIONAL_PARAM (context);
 
-   // Prevent setting callbacks more than once
+   // Enforce documented thread-safety restrictions
    if (pool->apm_callbacks_set) {
-      MONGOC_ERROR ("Can only set callbacks once");
+      MONGOC_WARNING ("mongoc_client_pool_set_apm_callbacks can only be called once per pool");
       return false;
+   } else if (pool->client_initialized) {
+      MONGOC_WARNING ("mongoc_client_pool_set_apm_callbacks can only be called before mongoc_client_pool_pop");
+      return false;
+   } else {
+      // Now we can be sure no other threads are relying on concurrent access to the instance yet.
+      mongoc_log_and_monitor_instance_set_apm_callbacks (&pool->topology->log_and_monitor, callbacks, context);
+      pool->apm_callbacks_set = true;
+      return true;
    }
-
-   mongoc_log_and_monitor_instance_set_apm_callbacks (&pool->topology->log_and_monitor, callbacks, context);
-   pool->apm_callbacks_set = true;
-
-   return true;
 }
 
 bool
