@@ -580,10 +580,10 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool, mongoc_apm_cal
 
    // Enforce documented thread-safety restrictions
    if (pool->apm_callbacks_set) {
-      MONGOC_WARNING ("mongoc_client_pool_set_apm_callbacks can only be called once per pool");
+      MONGOC_ERROR ("mongoc_client_pool_set_apm_callbacks can only be called once per pool");
       return false;
    } else if (pool->client_initialized) {
-      MONGOC_WARNING ("mongoc_client_pool_set_apm_callbacks can only be called before mongoc_client_pool_pop");
+      MONGOC_ERROR ("mongoc_client_pool_set_apm_callbacks can only be called before mongoc_client_pool_pop");
       return false;
    } else {
       // Now we can be sure no other threads are relying on concurrent access to the instance yet.
@@ -603,10 +603,10 @@ mongoc_client_pool_set_structured_log_opts (mongoc_client_pool_t *pool, const mo
     * and only before the first client is initialized. Structured logging is generally
     * expected to warn but not quit when encountering initialization errors. */
    if (pool->structured_log_opts_set) {
-      MONGOC_WARNING ("mongoc_client_pool_set_structured_log_opts can only be called once per pool");
+      MONGOC_ERROR ("mongoc_client_pool_set_structured_log_opts can only be called once per pool");
       return false;
    } else if (pool->client_initialized) {
-      MONGOC_WARNING ("mongoc_client_pool_set_structured_log_opts can only be called before mongoc_client_pool_pop");
+      MONGOC_ERROR ("mongoc_client_pool_set_structured_log_opts can only be called before mongoc_client_pool_pop");
       return false;
    } else {
       // Now we can be sure no other threads are relying on concurrent access to the instance yet.
