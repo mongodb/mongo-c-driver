@@ -629,6 +629,58 @@ test_bulkwrite_execute_requires_client (void *ctx)
    mongoc_client_destroy (client);
 }
 
+// `test_bulkwrite_two_large_inserts` is a regression test for CDRIVER-5869.
+static void
+test_bulkwrite_two_large_inserts (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   bson_error_t error;
+   mongoc_client_t *client = test_framework_new_default_client ();
+
+   // Drop prior collection:
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_collection_drop (coll, NULL);
+      mongoc_collection_destroy (coll);
+   }
+
+   // Allocate a large string:
+   size_t large_len = 2095652;
+   char *large_string = bson_malloc (large_len + 1);
+   memset (large_string, 'a', large_len);
+   large_string[large_len] = '\0';
+
+   // Create two large documents:
+   bson_t *docs[2];
+   docs[0] = BCON_NEW ("_id", "over_2mib_1");
+   bson_append_utf8 (docs[0], "unencrypted", -1, large_string, large_len);
+   docs[1] = BCON_NEW ("_id", "over_2mib_2");
+   bson_append_utf8 (docs[1], "unencrypted", -1, large_string, large_len);
+
+   mongoc_bulkwriteopts_t *bw_opts = mongoc_bulkwriteopts_new ();
+   mongoc_bulkwriteopts_set_verboseresults (bw_opts, true);
+
+   mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
+   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", docs[0], NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", docs[1], NULL, &error), error);
+
+   mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bw_opts); // Crashes!
+   ASSERT_NO_BULKWRITEEXCEPTION (bwr);
+   ASSERT (bwr.res);
+   const bson_t *insertresults = mongoc_bulkwriteresult_insertresults (bwr.res);
+   ASSERT_MATCH (insertresults,
+                 BSON_STR ({"0" : {"insertedId" : "over_2mib_1"}}, {"1" : {"insertedId" : "over_2mib_2"}}));
+   bson_destroy (docs[0]);
+   bson_destroy (docs[1]);
+   mongoc_bulkwrite_destroy (bw);
+   mongoc_bulkwriteresult_destroy (bwr.res);
+   mongoc_bulkwriteexception_destroy (bwr.exc);
+   mongoc_bulkwriteopts_destroy (bw_opts);
+   mongoc_client_destroy (client);
+   bson_free (large_string);
+}
+
 void
 test_bulkwrite_install (TestSuite *suite)
 {
@@ -718,6 +770,14 @@ test_bulkwrite_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/bulkwrite/execute_requires_client",
                       test_bulkwrite_execute_requires_client,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
+   );
+
+   TestSuite_AddFull (suite,
+                      "/bulkwrite/two_large_inserts",
+                      test_bulkwrite_two_large_inserts,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
