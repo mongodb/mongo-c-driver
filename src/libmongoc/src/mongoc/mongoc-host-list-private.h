@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_HOST_LIST_PRIVATE_H
 #define MONGOC_HOST_LIST_PRIVATE_H
 
-#include "mongoc-host-list.h"
+#include "mongoc/mongoc-host-list.h"
 
 
 BSON_BEGIN_DECLS

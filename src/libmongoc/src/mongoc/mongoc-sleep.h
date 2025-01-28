@@ -1,11 +1,11 @@
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_SLEEP_H
 #define MONGOC_SLEEP_H
 
 #include <bson/bson.h>
 
-#include "mongoc-macros.h"
+#include "mongoc/mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 

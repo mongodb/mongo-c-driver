@@ -20,8 +20,8 @@
 #include "test-diagnostics.h"
 #include "bsonutil/bson-val.h"
 #include "entity-map.h"
-#include "mongoc-cursor.h"
-#include "mongoc-bulkwrite.h"
+#include "mongoc/mongoc-cursor.h"
+#include "mongoc/mongoc-bulkwrite.h"
 
 typedef struct _result_t result_t;
 

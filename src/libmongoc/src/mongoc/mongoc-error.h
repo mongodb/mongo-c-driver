@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_ERRORS_H
 #define MONGOC_ERRORS_H
 
 #include <bson/bson.h>
 
-#include "mongoc-macros.h"
+#include "mongoc/mongoc-macros.h"
 
 #define MONGOC_ERROR_API_VERSION_LEGACY 1
 #define MONGOC_ERROR_API_VERSION_2 2

@@ -23,7 +23,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future-functions.h"
 #include "test-libmongoc.h"
-#include "mongoc-cluster-private.h"
+#include "mongoc/mongoc-cluster-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cmd-test-options"

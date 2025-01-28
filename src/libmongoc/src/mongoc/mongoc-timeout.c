@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "mongoc-timeout-private.h"
-#include "mongoc.h"
+#include "mongoc/mongoc-timeout-private.h"
+#include "mongoc/mongoc.h"
 
 struct _mongoc_timeout_t {
    bool is_set;

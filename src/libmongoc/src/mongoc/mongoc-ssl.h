@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_SSL_H
 #define MONGOC_SSL_H
 
 #include <bson/bson.h>
 
-#include "mongoc-macros.h"
+#include "mongoc/mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 

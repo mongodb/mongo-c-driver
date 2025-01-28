@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_APM_H
 #define MONGOC_APM_H
 
 #include <bson/bson.h>
 
-#include "mongoc-macros.h"
-#include "mongoc-host-list.h"
-#include "mongoc-server-description.h"
-#include "mongoc-topology-description.h"
+#include "mongoc/mongoc-macros.h"
+#include "mongoc/mongoc-host-list.h"
+#include "mongoc/mongoc-server-description.h"
+#include "mongoc/mongoc-topology-description.h"
 
 BSON_BEGIN_DECLS
 

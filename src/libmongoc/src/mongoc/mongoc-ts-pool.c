@@ -1,4 +1,4 @@
-#include "mongoc-ts-pool-private.h"
+#include "mongoc/mongoc-ts-pool-private.h"
 #include "common-thread-private.h"
 
 #include "bson/bson.h"

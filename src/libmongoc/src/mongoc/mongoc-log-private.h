@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_LOG_PRIVATE_H
 #define MONGOC_LOG_PRIVATE_H
 
-#include "mongoc-iovec.h"
+#include "mongoc/mongoc-iovec.h"
 
 /* just for testing */
 void

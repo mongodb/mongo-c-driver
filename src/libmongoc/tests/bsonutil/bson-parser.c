@@ -19,7 +19,7 @@
 #include "unified/util.h"
 #include "test-conveniences.h"
 #include "TestSuite.h"
-#include "utlist.h"
+#include "mongoc/utlist.h"
 
 typedef enum {
    BSON_PARSER_UTF8,

@@ -15,9 +15,9 @@
  */
 
 
-#include "mongoc-error.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-read-prefs-private.h"
+#include "mongoc/mongoc-trace-private.h"
 #include <common-cmp-private.h>
 
 

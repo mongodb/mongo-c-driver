@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_SERVER_API_H
 #define MONGOC_SERVER_API_H
 
 #include <bson/bson.h>
 
-#include "mongoc-optional.h"
-#include "mongoc-macros.h"
+#include "mongoc/mongoc-optional.h"
+#include "mongoc/mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 

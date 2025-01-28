@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_SSPI_PRIVATE_H
 #define MONGOC_SSPI_PRIVATE_H
 
 #include <bson/bson.h>
-#include "mongoc-sasl-private.h"
+#include "mongoc/mongoc-sasl-private.h"
 
 
 BSON_BEGIN_DECLS

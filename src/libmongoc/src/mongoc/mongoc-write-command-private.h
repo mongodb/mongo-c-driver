@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_WRITE_COMMAND_PRIVATE_H
 #define MONGOC_WRITE_COMMAND_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-client.h"
-#include "mongoc-error.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-server-stream-private.h"
-#include "mongoc-buffer-private.h"
+#include "mongoc/mongoc-client.h"
+#include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-write-concern.h"
+#include "mongoc/mongoc-server-stream-private.h"
+#include "mongoc/mongoc-buffer-private.h"
 
 
 BSON_BEGIN_DECLS

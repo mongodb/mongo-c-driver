@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include "mongoc/mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 
 #include <string.h>
 
-#include "mongoc-error.h"
-#include "mongoc-cyrus-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-cyrus-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-trace-private.h"
 #include "common-b64-private.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>

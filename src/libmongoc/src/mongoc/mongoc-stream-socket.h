@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_STREAM_SOCKET_H
 #define MONGOC_STREAM_SOCKET_H
 
-#include "mongoc-macros.h"
-#include "mongoc-socket.h"
-#include "mongoc-stream.h"
+#include "mongoc/mongoc-macros.h"
+#include "mongoc/mongoc-socket.h"
+#include "mongoc/mongoc-stream.h"
 
 
 BSON_BEGIN_DECLS

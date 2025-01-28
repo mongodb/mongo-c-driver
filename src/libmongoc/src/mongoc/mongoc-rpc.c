@@ -15,10 +15,10 @@
  */
 
 
-#include "mongoc-rpc-private.h"
+#include "mongoc/mongoc-rpc-private.h"
 
-#include "mongoc-counters-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-counters-private.h"
+#include "mongoc/mongoc-trace-private.h"
 
 
 bool

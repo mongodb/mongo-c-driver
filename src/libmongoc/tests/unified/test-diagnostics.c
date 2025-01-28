@@ -16,7 +16,7 @@
 
 #include "test-diagnostics.h"
 
-#include "utlist.h"
+#include "mongoc/utlist.h"
 #include "TestSuite.h"
 #include "common-thread-private.h"
 #include <signal.h>

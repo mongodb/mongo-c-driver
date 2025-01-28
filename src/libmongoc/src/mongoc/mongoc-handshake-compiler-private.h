@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 #ifndef MONGOC_HANDSHAKE_COMPILER_PRIVATE_H
 #define MONGOC_HANDSHAKE_COMPILER_PRIVATE_H
 
-#include "mongoc-config.h"
-#include "mongoc-util-private.h"
+#include "mongoc/mongoc-config.h"
+#include "mongoc/mongoc-util-private.h"
 
 /*
  * Thanks to:

@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_COLLECTION_PRIVATE_H
 #define MONGOC_COLLECTION_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-client.h"
+#include "mongoc/mongoc-client.h"
 
 BSON_BEGIN_DECLS
 

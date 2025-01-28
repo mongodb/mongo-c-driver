@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_CYRUS_PRIVATE_H
 #define MONGOC_CYRUS_PRIVATE_H
 
-#include "mongoc-uri.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-sasl-private.h"
+#include "mongoc/mongoc-uri.h"
+#include "mongoc/mongoc-cluster-private.h"
+#include "mongoc/mongoc-sasl-private.h"
 #include <bson/bson.h>
 #include <sasl/sasl.h>
 

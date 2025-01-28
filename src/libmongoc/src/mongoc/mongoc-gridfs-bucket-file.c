@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc.h"
-#include "mongoc-gridfs-bucket-file-private.h"
-#include "mongoc-gridfs-bucket-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-stream-gridfs-download-private.h"
-#include "mongoc-stream-gridfs-upload-private.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-util-private.h"
+#include "mongoc/mongoc.h"
+#include "mongoc/mongoc-gridfs-bucket-file-private.h"
+#include "mongoc/mongoc-gridfs-bucket-private.h"
+#include "mongoc/mongoc-trace-private.h"
+#include "mongoc/mongoc-stream-gridfs-download-private.h"
+#include "mongoc/mongoc-stream-gridfs-upload-private.h"
+#include "mongoc/mongoc-collection-private.h"
+#include "mongoc/mongoc-util-private.h"
 #include <common-cmp-private.h>
 
 #include <inttypes.h>

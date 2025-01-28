@@ -19,7 +19,7 @@
 
 #include "bson/bson.h"
 #include "mongoc/mongoc.h"
-#include "mongoc-array-private.h"
+#include "mongoc/mongoc-array-private.h"
 #include "common-thread-private.h"
 #include "bsonutil/bson-match.h"
 #include "test-diagnostics.h"

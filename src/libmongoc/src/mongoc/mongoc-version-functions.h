@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 
 #ifndef MONGOC_VERSION_FUNCTIONS_H
@@ -22,7 +22,7 @@
 
 #include <bson/bson.h> /* for "bool" */
 
-#include "mongoc-macros.h"
+#include "mongoc/mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 

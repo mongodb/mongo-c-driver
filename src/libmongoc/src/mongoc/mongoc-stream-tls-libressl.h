@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_STREAM_TLS_LIBRESSL_H
 #define MONGOC_STREAM_TLS_LIBRESSL_H
@@ -23,7 +23,7 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-macros.h"
+#include "mongoc/mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 

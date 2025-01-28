@@ -20,7 +20,7 @@
 #include <sys/types.h>
 #include <math.h>
 
-#include "bson.h"
+#include "bson/bson.h"
 #include <bson/bson-config.h>
 #include <bson/bson-json.h>
 #include <bson/bson-json-private.h>

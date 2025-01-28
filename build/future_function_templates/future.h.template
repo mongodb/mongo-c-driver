@@ -3,7 +3,7 @@
 
 #include <bson/bson.h>
 
-#include "future-value.h"
+#include "mock_server/future-value.h"
 #include "mongoc/mongoc-thread-private.h"
 
 {{ header_comment }}
@@ -42,4 +42,3 @@ future_get_{{ T }} (future_t *future);
 void future_destroy (future_t *future);
 
 #endif /* FUTURE_H */
-

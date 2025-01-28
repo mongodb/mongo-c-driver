@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_SHARED_H
 #define MONGOC_SHARED_H

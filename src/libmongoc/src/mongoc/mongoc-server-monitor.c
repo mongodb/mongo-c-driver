@@ -15,7 +15,7 @@
  */
 
 #include "common-thread-private.h"
-#include "mongoc-server-monitor-private.h"
+#include "mongoc/mongoc-server-monitor-private.h"
 
 #include "mongoc/mcd-rpc.h"
 #include "mongoc/mongoc-client-private.h"

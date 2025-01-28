@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_OPENSSL_PRIVATE_H
 #define MONGOC_OPENSSL_PRIVATE_H
@@ -24,8 +24,8 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#include "mongoc-ssl.h"
-#include "mongoc-stream-tls-openssl-private.h"
+#include "mongoc/mongoc-ssl.h"
+#include "mongoc/mongoc-stream-tls-openssl-private.h"
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10001000L) && !defined(OPENSSL_NO_OCSP) && !defined(LIBRESSL_VERSION_NUMBER)
 #define MONGOC_ENABLE_OCSP_OPENSSL

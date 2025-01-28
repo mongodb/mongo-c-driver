@@ -18,21 +18,21 @@
 
 #include "bsonutil/bson-parser.h"
 #include "TestSuite.h"
-#include "mongoc.h"
+#include "mongoc/mongoc.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
-#include "utlist.h"
+#include "mongoc/utlist.h"
 #include "util.h"
 
 #include <common-bson-dsl-private.h>
 
 #include "common-b64-private.h"
-#include "mongoc-client-side-encryption-private.h"
+#include "mongoc/mongoc-client-side-encryption-private.h"
 
 /* TODO: use public API to reduce min heartbeat once CDRIVER-3130 is resolved.
  */
-#include "mongoc-client-private.h"
-#include "mongoc-topology-private.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-topology-private.h"
 #include <common-string-private.h>
 
 #define REDUCED_HEARTBEAT_FREQUENCY_MS 500

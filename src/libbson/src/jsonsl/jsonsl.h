@@ -9,7 +9,7 @@
  * See included LICENSE file for license details.
  */
 
-#include "../bson/bson-prelude.h"
+#include "bson/bson-prelude.h"
 
 #ifndef JSONSL_H_
 #define JSONSL_H_

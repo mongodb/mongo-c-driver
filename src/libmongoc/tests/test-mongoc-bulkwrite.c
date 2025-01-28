@@ -21,7 +21,7 @@
 #include <test-libmongoc.h>
 #include <TestSuite.h>
 #include <test-conveniences.h>
-#include <mongoc-bulkwrite.h>
+#include <mongoc/mongoc-bulkwrite.h>
 
 static void
 test_bulkwrite_insert (void *unused)

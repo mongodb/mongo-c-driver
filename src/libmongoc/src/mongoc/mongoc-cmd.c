@@ -15,15 +15,15 @@
  */
 
 
-#include "mongoc-cmd-private.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-server-api-private.h"
-#include "mongoc-write-concern-private.h"
+#include "mongoc/mongoc-cmd-private.h"
+#include "mongoc/mongoc-read-prefs-private.h"
+#include "mongoc/mongoc-trace-private.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-read-concern-private.h"
+#include "mongoc/mongoc-server-api-private.h"
+#include "mongoc/mongoc-write-concern-private.h"
 /* For strcasecmp on Windows */
-#include "mongoc-util-private.h"
+#include "mongoc/mongoc-util-private.h"
 
 
 void

@@ -18,12 +18,12 @@
 #include <errno.h>
 #include <string.h>
 
-#include "mongoc-counters-private.h"
-#include "mongoc-errno-private.h"
-#include "mongoc-socket-private.h"
-#include "mongoc-host-list.h"
-#include "mongoc-socket-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-counters-private.h"
+#include "mongoc/mongoc-errno-private.h"
+#include "mongoc/mongoc-socket-private.h"
+#include "mongoc/mongoc-host-list.h"
+#include "mongoc/mongoc-socket-private.h"
+#include "mongoc/mongoc-trace-private.h"
 #ifdef _WIN32
 #include <Mstcpip.h>
 #include <process.h>

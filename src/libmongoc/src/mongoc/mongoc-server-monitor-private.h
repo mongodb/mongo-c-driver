@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_SERVER_MONITOR_PRIVATE_H
 #define MONGOC_SERVER_MONITOR_PRIVATE_H
 
-#include "mongoc.h"
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-private.h"
+#include "mongoc/mongoc.h"
+#include "mongoc/mongoc-server-description-private.h"
+#include "mongoc/mongoc-topology-private.h"
 
 /* For background monitoring of a single server. */
 typedef enum {

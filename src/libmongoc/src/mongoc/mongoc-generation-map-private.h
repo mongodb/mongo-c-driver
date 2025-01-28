@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #include "bson/bson.h"
 

@@ -15,11 +15,11 @@
  */
 
 #include "bsonutil/bson-match.h"
-#include "mongoc-util-private.h" // hex_to_bin
+#include "mongoc/mongoc-util-private.h" // hex_to_bin
 #include "test-conveniences.h"
 #include "TestSuite.h"
 #include "unified/util.h"
-#include "utlist.h"
+#include "mongoc/utlist.h"
 
 typedef struct _special_functor_t {
    special_fn fn;

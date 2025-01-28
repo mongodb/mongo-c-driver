@@ -15,15 +15,15 @@
  */
 
 
-#include "mongoc-client-session-private.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-rand-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-error-private.h"
+#include "mongoc/mongoc-client-session-private.h"
+#include "mongoc/mongoc-cluster-private.h"
+#include "mongoc/mongoc-trace-private.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-rand-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-read-concern-private.h"
+#include "mongoc/mongoc-read-prefs-private.h"
+#include "mongoc/mongoc-error-private.h"
 
 #include <common-bson-dsl-private.h>
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_THREAD_PRIVATE_H
 #define MONGOC_THREAD_PRIVATE_H
@@ -22,8 +22,8 @@
 #include <bson/bson.h>
 
 #include "common-thread-private.h"
-#include "mongoc-config.h"
-#include "mongoc-log.h"
+#include "mongoc/mongoc-config.h"
+#include "mongoc/mongoc-log.h"
 
 #if defined(BSON_OS_UNIX)
 #define mongoc_cond_t pthread_cond_t

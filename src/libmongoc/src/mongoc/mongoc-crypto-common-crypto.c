@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
-#include "mongoc-crypto-private.h"
+#include "mongoc/mongoc-config.h"
+#include "mongoc/mongoc-crypto-private.h"
 
 #ifdef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
-#include "mongoc-crypto-common-crypto-private.h"
+#include "mongoc/mongoc-crypto-common-crypto-private.h"
 #include <CommonCrypto/CommonHMAC.h>
 #include <CommonCrypto/CommonDigest.h>
 #include <CommonCrypto/CommonKeyDerivation.h>

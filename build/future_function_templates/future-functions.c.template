@@ -16,7 +16,7 @@
 
 #include "mongoc/mongoc-topology-private.h"
 
-#include "future-functions.h"
+#include "mock_server/future-functions.h"
 
 {% for F in future_functions %}
 static
@@ -57,4 +57,3 @@ future_t *
    return future;
 }
 {% endfor %}
-

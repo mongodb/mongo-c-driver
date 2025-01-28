@@ -35,7 +35,7 @@ checks = [
             MONGOC_PREFIX / "mongoc-prelude.h",
             MONGOC_PREFIX / "mongoc.h",
         ],
-        "include": '#include "mongoc-prelude.h"',
+        "include": '#include "mongoc/mongoc-prelude.h"',
     },
     {
         "name": "libbson",

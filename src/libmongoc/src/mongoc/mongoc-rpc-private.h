@@ -17,9 +17,9 @@
 #ifndef MONGOC_RPC_PRIVATE_H
 #define MONGOC_RPC_PRIVATE_H
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
-#include "mcd-rpc.h"
+#include "mongoc/mcd-rpc.h"
 
 #include <bson/bson.h>
 

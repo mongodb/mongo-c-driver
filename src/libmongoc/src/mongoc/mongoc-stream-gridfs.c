@@ -17,13 +17,13 @@
 
 #include <limits.h>
 
-#include "mongoc-counters-private.h"
-#include "mongoc-stream.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-gridfs-file.h"
-#include "mongoc-gridfs-file-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-stream-gridfs.h"
+#include "mongoc/mongoc-counters-private.h"
+#include "mongoc/mongoc-stream.h"
+#include "mongoc/mongoc-stream-private.h"
+#include "mongoc/mongoc-gridfs-file.h"
+#include "mongoc/mongoc-gridfs-file-private.h"
+#include "mongoc/mongoc-trace-private.h"
+#include "mongoc/mongoc-stream-gridfs.h"
 
 
 #undef MONGOC_LOG_DOMAIN

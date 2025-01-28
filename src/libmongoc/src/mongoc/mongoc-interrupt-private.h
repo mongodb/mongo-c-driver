@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_STREAM_INTERRUPTIBLE_PRIVATE_H
 #define MONGOC_STREAM_INTERRUPTIBLE_PRIVATE_H
 
-#include "mongoc-stream.h"
+#include "mongoc/mongoc-stream.h"
 
 /* Creates a stream to use to interrupt calls to mongoc_stream_poll.
  *

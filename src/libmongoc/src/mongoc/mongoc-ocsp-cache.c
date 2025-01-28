@@ -15,11 +15,11 @@
  */
 
 
-#include "mongoc-ocsp-cache-private.h"
+#include "mongoc/mongoc-ocsp-cache-private.h"
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 
-#include "utlist.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/utlist.h"
+#include "mongoc/mongoc-trace-private.h"
 #include <bson/bson.h>
 #include <common-thread-private.h>
 

@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include "mongoc/mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SSL
 
 #include <bson/bson.h>
-#include "mongoc-ssl.h"
-#include "mongoc-ssl-private.h"
-#include "mongoc-log.h"
-#include "mongoc-uri.h"
-#include "mongoc-util-private.h"
+#include "mongoc/mongoc-ssl.h"
+#include "mongoc/mongoc-ssl-private.h"
+#include "mongoc/mongoc-log.h"
+#include "mongoc/mongoc-uri.h"
+#include "mongoc/mongoc-util-private.h"
 #include <common-string-private.h>
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
-#include "mongoc-openssl-private.h"
+#include "mongoc/mongoc-openssl-private.h"
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#include "mongoc-libressl-private.h"
+#include "mongoc/mongoc-libressl-private.h"
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-#include "mongoc-secure-transport-private.h"
+#include "mongoc/mongoc-secure-transport-private.h"
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-#include "mongoc-secure-channel-private.h"
+#include "mongoc/mongoc-secure-channel-private.h"
 #endif
 
 /* TODO: we could populate these from a config or something further down the

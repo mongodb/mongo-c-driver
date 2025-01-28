@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_READ_CONCERN_PRIVATE_H
 #define MONGOC_READ_CONCERN_PRIVATE_H
 
 #include <bson/bson.h>
-#include "mongoc-read-concern.h"
+#include "mongoc/mongoc-read-concern.h"
 
 
 BSON_BEGIN_DECLS

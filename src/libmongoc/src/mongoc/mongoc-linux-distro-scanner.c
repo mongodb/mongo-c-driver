@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#include "mongoc-handshake-os-private.h"
+#include "mongoc/mongoc-handshake-os-private.h"
 
 #ifdef MONGOC_OS_IS_LINUX
 
 #include <stdio.h>
 #include <sys/utsname.h>
 
-#include "mongoc-error.h"
-#include "mongoc-linux-distro-scanner-private.h"
-#include "mongoc-log.h"
-#include "mongoc-handshake-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-version.h"
+#include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-linux-distro-scanner-private.h"
+#include "mongoc/mongoc-log.h"
+#include "mongoc/mongoc-handshake-private.h"
+#include "mongoc/mongoc-trace-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-version.h"
 
 #define LINE_BUFFER_SIZE 1024
 
