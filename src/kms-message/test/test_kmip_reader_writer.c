@@ -42,11 +42,11 @@ kms_kmip_writer_test_evaluate (kmip_writer_t *writer,
    actual_hex = data_to_hex (actual_buf, actual_len);
 
    if (0 != strcmp (expected_hex, actual_hex)) {
-      fprintf (stderr,
-               "expected '%s' but got '%s' for test description: %s\n",
-               expected_hex,
-               actual_hex,
-               desc);
+      TEST_STDERR_PRINTF (
+         "expected '%s' but got '%s' for test description: %s\n",
+         expected_hex,
+         actual_hex,
+         desc);
       abort ();
    }
 
