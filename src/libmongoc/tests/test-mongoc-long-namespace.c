@@ -15,11 +15,11 @@
  */
 
 
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-change-stream-private.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-database-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-database-private.h>
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"

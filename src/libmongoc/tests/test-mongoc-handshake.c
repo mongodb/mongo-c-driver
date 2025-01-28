@@ -21,9 +21,9 @@
 #include <sys/utsname.h>
 #endif
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-handshake.h"
-#include "mongoc/mongoc-handshake-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-handshake.h>
+#include <mongoc/mongoc-handshake-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"

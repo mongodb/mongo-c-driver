@@ -1,10 +1,10 @@
 #include <fcntl.h>
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"

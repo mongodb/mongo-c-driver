@@ -17,7 +17,7 @@
 #ifndef BSONUTIL_BSON_VAL_H
 #define BSONUTIL_BSON_VAL_H
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 
 /*
  * bson_val_t is a convenience wrapper around a bson_value_t.

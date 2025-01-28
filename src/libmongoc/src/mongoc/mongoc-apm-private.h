@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_APM_PRIVATE_H
 #define MONGOC_APM_PRIVATE_H
 
 #include <bson/bson.h>
-#include "mongoc-apm.h"
+#include <mongoc/mongoc-apm.h>
 
 BSON_BEGIN_DECLS
 

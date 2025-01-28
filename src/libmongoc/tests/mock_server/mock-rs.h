@@ -17,7 +17,7 @@
 #ifndef MOCK_RS_H
 #define MOCK_RS_H
 
-#include "mongoc/mongoc.h"
+#include <mongoc/mongoc.h>
 
 #include "mock-server.h"
 

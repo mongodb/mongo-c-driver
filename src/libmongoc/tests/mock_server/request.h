@@ -21,10 +21,10 @@
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mcd-rpc.h>
 
-#include "mongoc/mongoc.h"
+#include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-array-private.h"
-#include "mongoc/mongoc-rpc-private.h"
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-rpc-private.h>
 #include "sync-queue.h"
 
 struct _mock_server_t; /* forward declaration */

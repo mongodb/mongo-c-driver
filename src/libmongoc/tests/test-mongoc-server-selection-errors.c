@@ -1,6 +1,6 @@
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-client-pool-private.h"
+#include <mongoc/mongoc-client-pool-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"

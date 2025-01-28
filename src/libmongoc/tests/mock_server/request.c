@@ -16,7 +16,7 @@
 
 
 #include <mongoc/mongoc-rpc-private.h>
-#include "mongoc/mongoc.h"
+#include <mongoc/mongoc.h>
 
 #include "mock-server.h"
 #include "../test-conveniences.h"

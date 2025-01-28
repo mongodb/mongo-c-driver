@@ -5,7 +5,7 @@
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/utlist.h>
 
-#include "mongoc/mongoc-client-private.h"
+#include <mongoc/mongoc-client-private.h>
 
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"

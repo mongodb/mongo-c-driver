@@ -3,8 +3,8 @@
 
 #include <bson/bson.h>
 
-#include "future-value.h"
-#include "mongoc/mongoc-thread-private.h"
+#include "mock_server/future-value.h"
+#include <mongoc/mongoc-thread-private.h>
 
 /**************************************************
  *
@@ -172,4 +172,3 @@ future_get_const_mongoc_ss_log_context_ptr (future_t *future);
 void future_destroy (future_t *future);
 
 #endif /* FUTURE_H */
-

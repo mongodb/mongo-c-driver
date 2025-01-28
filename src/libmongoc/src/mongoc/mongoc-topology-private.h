@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_TOPOLOGY_PRIVATE_H
 #define MONGOC_TOPOLOGY_PRIVATE_H
 
-#include "mongoc-config.h"
-#include "mongoc-topology-scanner-private.h"
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-description-private.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-uri.h"
-#include "mongoc-client-session-private.h"
-#include "mongoc-crypt-private.h"
-#include "mongoc-ts-pool-private.h"
-#include "mongoc-shared-private.h"
-#include "mongoc-sleep.h"
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-topology-scanner-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-uri.h>
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-crypt-private.h>
+#include <mongoc/mongoc-ts-pool-private.h>
+#include <mongoc/mongoc-shared-private.h>
+#include <mongoc/mongoc-sleep.h>
 #include <common-atomic-private.h>
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500

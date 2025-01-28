@@ -16,15 +16,15 @@
 
 #include "operation.h"
 
-#include "mongoc-array-private.h"
-#include "mongoc-bulkwrite.h"
-#include "mongoc-util-private.h" // hex_to_bin
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-bulkwrite.h>
+#include <mongoc/mongoc-util-private.h> // hex_to_bin
 #include "result.h"
 #include "test-diagnostics.h"
 #include "test-libmongoc.h"
 #include "util.h"
-#include "utlist.h"
-#include "common-bson-dsl-private.h"
+#include <mongoc/utlist.h>
+#include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>
 
 typedef struct {

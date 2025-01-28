@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLIENT_SESSION_H
 #define MONGOC_CLIENT_SESSION_H
 
 #include <bson/bson.h>
-#include "mongoc-macros.h"
+#include <mongoc/mongoc-macros.h>
 /* mongoc_client_session_t, mongoc_transaction_opt_t, and
    mongoc_session_opt_t are typedef'ed here */
-#include "mongoc-client.h"
+#include <mongoc/mongoc-client.h>
 
 BSON_BEGIN_DECLS
 

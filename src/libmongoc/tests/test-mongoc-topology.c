@@ -3,10 +3,10 @@
 #include <mongoc/mongoc-client-pool-private.h>
 #include <common-oid-private.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-server-api-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-topology-background-monitoring-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-server-api-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"

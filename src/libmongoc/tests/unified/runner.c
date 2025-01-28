@@ -22,7 +22,7 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "test-diagnostics.h"
-#include "utlist.h"
+#include <mongoc/utlist.h>
 #include "util.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>

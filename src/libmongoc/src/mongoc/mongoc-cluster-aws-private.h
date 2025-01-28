@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLUSTER_AWS_PRIVATE_H
 #define MONGOC_CLUSTER_AWS_PRIVATE_H
 
-#include "bson/bson.h"
-#include "mcd-time.h"
-#include "mongoc/mongoc-cluster-private.h"
-#include "common-thread-private.h" // bson_mutex_t
+#include <bson/bson.h>
+#include <mongoc/mcd-time.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <common-thread-private.h> // bson_mutex_t
 
 bool
 _mongoc_cluster_auth_node_aws (mongoc_cluster_t *cluster,

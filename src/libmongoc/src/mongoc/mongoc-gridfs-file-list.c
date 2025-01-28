@@ -17,16 +17,16 @@
 
 #include <limits.h>
 
-#include "mongoc-cursor.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-gridfs.h"
-#include "mongoc-gridfs-private.h"
-#include "mongoc-gridfs-file.h"
-#include "mongoc-gridfs-file-private.h"
-#include "mongoc-gridfs-file-list.h"
-#include "mongoc-gridfs-file-list-private.h"
-#include "mongoc-trace-private.h"
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-gridfs.h>
+#include <mongoc/mongoc-gridfs-private.h>
+#include <mongoc/mongoc-gridfs-file.h>
+#include <mongoc/mongoc-gridfs-file-private.h>
+#include <mongoc/mongoc-gridfs-file-list.h>
+#include <mongoc/mongoc-gridfs-file-list-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
 
 #undef MONGOC_LOG_DOMAIN

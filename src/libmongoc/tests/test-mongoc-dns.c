@@ -1,14 +1,14 @@
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-client-pool-private.h"
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-host-list-private.h"
-#include "mongoc/mongoc-thread-private.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/utlist.h"
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-client-pool-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/utlist.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl.h"
-#include "mongoc/mongoc-ssl-private.h"
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-ssl-private.h>
 #endif
 
 #include "json-test.h"

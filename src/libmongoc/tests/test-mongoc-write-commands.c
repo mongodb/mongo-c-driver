@@ -1,10 +1,10 @@
 #include <bson/bcon.h>
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/mongoc-write-command-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-write-command-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
 
 #include "TestSuite.h"
 

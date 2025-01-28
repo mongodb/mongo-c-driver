@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
 
-#include "mongoc-rand.h"
-#include "mongoc-rand-private.h"
+#include <mongoc/mongoc-rand.h>
+#include <mongoc/mongoc-rand-private.h>
 
-#include "mongoc.h"
+#include <mongoc/mongoc.h>
 
 #include <openssl/opensslv.h>
 #include <openssl/rand.h>

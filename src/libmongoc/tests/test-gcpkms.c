@@ -17,9 +17,9 @@
 #include <mongoc/mongoc.h>
 #include "TestSuite.h"
 #include "test-libmongoc.h"
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-http-private.h"
-#include "mongoc/mongoc-uri.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-http-private.h>
+#include <mongoc/mongoc-uri.h>
 
 
 int

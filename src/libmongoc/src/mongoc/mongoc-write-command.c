@@ -16,16 +16,16 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-client-private.h"
-#include "mongoc-client-session-private.h"
-#include "mongoc-client-side-encryption-private.h"
-#include "mongoc-error.h"
-#include "mongoc-error-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-write-command-private.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-opts-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-write-command-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-opts-private.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
 

@@ -20,10 +20,10 @@
 #include <share.h>
 #endif
 
-#include "mongoc-stream-private.h"
-#include "mongoc-stream-file.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-counters-private.h"
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-file.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-counters-private.h>
 #include <common-cmp-private.h>
 
 /*

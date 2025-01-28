@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_DATABASE_H
 #define MONGOC_DATABASE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-macros.h"
-#include "mongoc-cursor.h"
-#include "mongoc-flags.h"
-#include "mongoc-read-prefs.h"
-#include "mongoc-read-concern.h"
-#include "mongoc-write-concern.h"
+#include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-flags.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-read-concern.h>
+#include <mongoc/mongoc-write-concern.h>
 
 BSON_BEGIN_DECLS
 

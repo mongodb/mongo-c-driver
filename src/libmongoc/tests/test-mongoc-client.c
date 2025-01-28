@@ -1,20 +1,20 @@
 #include <fcntl.h>
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-cluster-private.h"
-#include "mongoc/mongoc-database-private.h"
-#include "mongoc/mongoc-handshake-private.h"
-#include "mongoc/mongoc-host-list-private.h"
-#include "mongoc/mongoc-read-concern-private.h"
-#include "mongoc/mongoc-set-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-set-private.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl.h"
-#include "mongoc/mongoc-ssl-private.h"
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-ssl-private.h>
 #endif
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"

@@ -17,32 +17,32 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-config.h"
-#include "mongoc-counters-private.h"
-#include "mongoc-init.h"
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-init.h>
 
-#include "mongoc-handshake-private.h"
+#include <mongoc/mongoc-handshake-private.h>
 
-#include "mongoc-cluster-aws-private.h"
+#include <mongoc/mongoc-cluster-aws-private.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-#include "mongoc-openssl-private.h"
+#include <mongoc/mongoc-openssl-private.h>
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#include "tls.h"
+#include <tls.h>
 #endif
-#include "mongoc-thread-private.h"
-#include "common-b64-private.h"
+#include <mongoc/mongoc-thread-private.h>
+#include <common-b64-private.h>
 #if defined(MONGOC_ENABLE_CRYPTO_CNG)
-#include "mongoc-crypto-private.h"
-#include "mongoc-crypto-cng-private.h"
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-crypto-cng-private.h>
 #endif
 
 #ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH
-#include "kms_message/kms_message.h"
+#include <kms_message/kms_message.h>
 #endif
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
-#include "mongoc-ocsp-cache-private.h"
+#include <mongoc/mongoc-ocsp-cache-private.h>
 #endif
 
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
@@ -52,7 +52,7 @@
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
-#include "mongoc-cyrus-private.h" // _mongoc_cyrus_verifyfile_cb
+#include <mongoc/mongoc-cyrus-private.h> // _mongoc_cyrus_verifyfile_cb
 
 static void *
 mongoc_cyrus_mutex_alloc (void)

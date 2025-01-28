@@ -1,4 +1,4 @@
-#include "future-value.h"
+#include "mock_server/future-value.h"
 
 /**************************************************
  *
@@ -615,4 +615,3 @@ future_value_get_const_mongoc_ss_log_context_ptr (future_value_t *future_value)
    BSON_ASSERT (future_value->type == future_value_const_mongoc_ss_log_context_ptr_type);
    return future_value->value.const_mongoc_ss_log_context_ptr_value;
 }
-

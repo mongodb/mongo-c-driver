@@ -3,7 +3,7 @@
 
 #include "json-test.h"
 #include "test-libmongoc.h"
-#include "mongoc/mongoc-read-concern-private.h"
+#include <mongoc/mongoc-read-concern-private.h>
 
 
 /*

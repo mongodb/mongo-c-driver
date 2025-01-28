@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "common-string-private.h"
-#include "common-bits-private.h"
-#include "common-utf8-private.h"
-#include "common-b64-private.h"
-#include "common-cmp-private.h"
+#include <common-string-private.h>
+#include <common-bits-private.h>
+#include <common-utf8-private.h>
+#include <common-b64-private.h>
+#include <common-cmp-private.h>
 
 
 mcommon_string_t *

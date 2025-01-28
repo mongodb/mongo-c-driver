@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
 
 #include <bson/bson.h>
 
-#include "mongoc-log.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-ssl.h"
-#include "mongoc-stream-tls.h"
-#include "mongoc-stream-tls-private.h"
-#include "mongoc-secure-transport-private.h"
-#include "mongoc-stream-tls-secure-transport-private.h"
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-secure-transport-private.h>
+#include <mongoc/mongoc-stream-tls-secure-transport-private.h>
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>

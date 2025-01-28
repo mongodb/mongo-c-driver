@@ -17,7 +17,7 @@
 #include <bson/bson.h>
 
 #include "TestSuite.h"
-#include "common-b64-private.h"
+#include <common-b64-private.h>
 #include <common-cmp-private.h>
 
 static void

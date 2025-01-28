@@ -31,8 +31,8 @@
 #include <windows.h>
 #endif
 
-#include "mongoc-counters-private.h"
-#include "mongoc-log.h"
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-log.h>
 #include <common-atomic-private.h>
 
 
@@ -73,7 +73,7 @@ BSON_STATIC_ASSERT2 (counters_t, sizeof (mongoc_counters_t) == 64);
 static void *gCounterFallback = NULL;
 
 #define COUNTER(ident, Category, Name, Description) mongoc_counter_t __mongoc_counter_##ident;
-#include "mongoc-counters.defs"
+#include <mongoc/mongoc-counters.defs>
 #undef COUNTER
 
 /**
@@ -307,7 +307,7 @@ _mongoc_counters_init (void)
 #define COUNTER(ident, Category, Name, Desc)                                         \
    off = mongoc_counters_register (counters, COUNTER_##ident, Category, Name, Desc); \
    __mongoc_counter_##ident.cpus = (mongoc_counter_slots_t *) (segment + off);
-#include "mongoc-counters.defs"
+#include <mongoc/mongoc-counters.defs>
 #undef COUNTER
 
    /*

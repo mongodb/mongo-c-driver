@@ -17,10 +17,10 @@
 #ifndef UNIFIED_RUNNER_H
 #define UNIFIED_RUNNER_H
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 #include "bsonutil/bson-parser.h"
 #include "entity-map.h"
-#include "mongoc/mongoc-array-private.h"
+#include <mongoc/mongoc-array-private.h>
 #include "test-conveniences.h"
 #include "TestSuite.h"
 

@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO
 
 #include <bson/bson.h>
-#include "mongoc-log.h"
-#include "mongoc-crypto-private.h"
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-crypto-private.h>
 #if defined(MONGOC_ENABLE_CRYPTO_LIBCRYPTO)
-#include "mongoc-crypto-openssl-private.h"
+#include <mongoc/mongoc-crypto-openssl-private.h>
 #elif defined(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO)
-#include "mongoc-crypto-common-crypto-private.h"
+#include <mongoc/mongoc-crypto-common-crypto-private.h>
 #elif defined(MONGOC_ENABLE_CRYPTO_CNG)
-#include "mongoc-crypto-cng-private.h"
+#include <mongoc/mongoc-crypto-cng-private.h>
 #endif
 
 void

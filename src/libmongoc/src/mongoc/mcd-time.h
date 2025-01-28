@@ -17,9 +17,9 @@
 #ifndef MCD_TIME_H_INCLUDED
 #define MCD_TIME_H_INCLUDED
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
-#include "./mcd-integer.h"
+#include <mongoc/mcd-integer.h>
 
 #include <bson/bson.h>
 
