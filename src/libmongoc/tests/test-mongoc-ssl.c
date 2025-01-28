@@ -15,12 +15,12 @@
  */
 
 #include "TestSuite.h"
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "test-conveniences.h"
 #include <common-string-private.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl-private.h"
+#include <mongoc/mongoc-ssl-private.h>
 
 typedef struct {
    const char *description;

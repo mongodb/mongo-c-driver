@@ -15,8 +15,8 @@
  */
 
 
-#include "mongoc/mongoc-index.h"
-#include "mongoc/mongoc-trace-private.h"
+#include <mongoc/mongoc-index.h>
+#include <mongoc/mongoc-trace-private.h>
 
 
 #undef MONGOC_LOG_DOMAIN

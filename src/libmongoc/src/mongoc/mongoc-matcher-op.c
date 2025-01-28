@@ -15,9 +15,9 @@
  */
 
 
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-matcher-op-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-matcher-op-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include <inttypes.h>
 

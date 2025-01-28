@@ -1,8 +1,8 @@
 #include <mongoc/mongoc.h>
-#include "mongoc/mongoc-ssl-private.h"
+#include <mongoc/mongoc-ssl-private.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-#include "mongoc/mongoc-openssl-private.h"
+#include <mongoc/mongoc-openssl-private.h>
 #endif
 
 #include "TestSuite.h"

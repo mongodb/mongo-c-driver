@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLIENT_H
 #define MONGOC_CLIENT_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-apm.h"
-#include "mongoc/mongoc-client-side-encryption.h"
-#include "mongoc/mongoc-collection.h"
-#include "mongoc/mongoc-config.h"
-#include "mongoc/mongoc-cursor.h"
-#include "mongoc/mongoc-database.h"
-#include "mongoc/mongoc-gridfs.h"
-#include "mongoc/mongoc-index.h"
-#include "mongoc/mongoc-macros.h"
-#include "mongoc/mongoc-read-prefs.h"
-#include "mongoc/mongoc-server-api.h"
+#include <mongoc/mongoc-apm.h>
+#include <mongoc/mongoc-client-side-encryption.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-database.h>
+#include <mongoc/mongoc-gridfs.h>
+#include <mongoc/mongoc-index.h>
+#include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-server-api.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl.h"
+#include <mongoc/mongoc-ssl.h>
 #endif
-#include "mongoc/mongoc-stream.h"
-#include "mongoc/mongoc-structured-log.h"
-#include "mongoc/mongoc-uri.h"
-#include "mongoc/mongoc-write-concern.h"
-#include "mongoc/mongoc-read-concern.h"
-#include "mongoc/mongoc-server-description.h"
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-structured-log.h>
+#include <mongoc/mongoc-uri.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-read-concern.h>
+#include <mongoc/mongoc-server-description.h>
 
 BSON_BEGIN_DECLS
 

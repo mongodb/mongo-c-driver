@@ -16,23 +16,23 @@
 
 /* for size_t */
 #include <bson/bson.h>
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
-#include "mongoc/mongoc-cluster-private.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-stream-private.h"
-#include "mongoc/mongoc-stream-socket.h"
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-util-private.h>
 
 #ifdef MONGOC_ENABLE_SASL
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
-#include "mongoc/mongoc-cluster-cyrus-private.h"
+#include <mongoc/mongoc-cluster-cyrus-private.h>
 #endif
 #ifdef MONGOC_ENABLE_SASL_SSPI
-#include "mongoc/mongoc-cluster-sspi-private.h"
+#include <mongoc/mongoc-cluster-sspi-private.h>
 #endif
 
 #endif

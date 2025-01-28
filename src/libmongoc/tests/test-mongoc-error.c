@@ -6,7 +6,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
-#include "mongoc/mongoc-error-private.h"
+#include <mongoc/mongoc-error-private.h>
 
 #include <inttypes.h>
 

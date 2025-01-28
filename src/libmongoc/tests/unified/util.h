@@ -17,7 +17,7 @@
 #ifndef UNIFIED_UTIL_H
 #define UNIFIED_UTIL_H
 
-#include "mongoc/mongoc.h"
+#include <mongoc/mongoc.h>
 
 bson_t *
 bson_copy_and_sort (const bson_t *in);

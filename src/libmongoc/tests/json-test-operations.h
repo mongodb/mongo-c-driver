@@ -19,8 +19,8 @@
 
 struct _json_test_config_t;
 
-#include "mongoc/mongoc-thread-private.h"
-#include "common-thread-private.h"
+#include <mongoc/mongoc-thread-private.h>
+#include <common-thread-private.h>
 #include "mock_server/sync-queue.h"
 
 struct _json_test_ctx_t;

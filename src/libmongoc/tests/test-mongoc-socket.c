@@ -2,9 +2,9 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include "mongoc/mongoc-socket-private.h"
-#include "mongoc/mongoc-thread-private.h"
-#include "mongoc/mongoc-errno-private.h"
+#include <mongoc/mongoc-socket-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-errno-private.h>
 #include "TestSuite.h"
 #include <common-cmp-private.h>
 

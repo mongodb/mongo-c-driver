@@ -16,7 +16,7 @@
 
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-structured-log-private.h"
+#include <mongoc/mongoc-structured-log-private.h>
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 

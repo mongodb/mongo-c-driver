@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 
 #ifndef MONGOC_SCRAM_PRIVATE_H
@@ -22,7 +22,7 @@
 
 
 #include <bson/bson.h>
-#include "mongoc/mongoc-crypto-private.h"
+#include <mongoc/mongoc-crypto-private.h>
 
 
 BSON_BEGIN_DECLS

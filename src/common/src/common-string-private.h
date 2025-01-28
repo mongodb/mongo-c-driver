@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "common-prelude.h"
+#include <common-prelude.h>
 
 #ifndef MONGO_C_DRIVER_COMMON_STRING_PRIVATE_H
 #define MONGO_C_DRIVER_COMMON_STRING_PRIVATE_H
 
 #include <bson/bson.h>
 #include <string.h>
-#include "common-cmp-private.h"
+#include <common-cmp-private.h>
 
 
 /* Until the deprecated bson_string_t is removed, this must have the same members in the same order, so we can safely

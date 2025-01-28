@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-topology-background-monitoring-private.h"
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-log-private.h"
-#include "mongoc/mongoc-server-monitor-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-log-private.h>
+#include <mongoc/mongoc-server-monitor-private.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl-private.h"
+#include <mongoc/mongoc-ssl-private.h>
 #endif
-#include "mongoc/mongoc-stream-private.h"
-#include "mongoc/mongoc-topology-description-apm-private.h"
-#include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
 #include <common-atomic-private.h>
 
 #undef MONGOC_LOG_DOMAIN

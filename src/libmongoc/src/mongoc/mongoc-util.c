@@ -20,17 +20,17 @@
 
 #include <string.h>
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 
-#include "common-md5-private.h"
-#include "common-thread-private.h"
-#include "mongoc/mongoc-rand-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-client.h"
-#include "mongoc/mongoc-client-private.h" // WIRE_VERSION_* macros.
-#include "mongoc/mongoc-client-session-private.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-sleep.h"
+#include <common-md5-private.h>
+#include <common-thread-private.h>
+#include <mongoc/mongoc-rand-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-client-private.h> // WIRE_VERSION_* macros.
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-sleep.h>
 #include <common-cmp-private.h>
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =

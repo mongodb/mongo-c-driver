@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_SERVER_STREAM_H
 #define MONGOC_SERVER_STREAM_H
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-topology-description-private.h"
-#include "mongoc/mongoc-server-description-private.h"
-#include "mongoc/mongoc-stream.h"
+#include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-stream.h>
 
 BSON_BEGIN_DECLS
 

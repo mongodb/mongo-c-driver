@@ -1,4 +1,4 @@
-#include "mongoc/mongoc-ts-pool-private.h"
+#include <mongoc/mongoc-ts-pool-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"

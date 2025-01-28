@@ -15,7 +15,7 @@
  */
 
 #include <mongoc/mongoc-util-private.h>
-#include "mongoc/mongoc-counters-private.h"
+#include <mongoc/mongoc-counters-private.h>
 #include "mock_server/mock-server.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
@@ -30,7 +30,7 @@
 
 /* define prev_* counters for testing convenience. */
 #define COUNTER(ident, Category, Name, Description) static int32_t prev_##ident;
-#include "mongoc/mongoc-counters.defs"
+#include <mongoc/mongoc-counters.defs>
 #undef COUNTER
 
 /* helper to reset a prev_* counter */
@@ -51,7 +51,7 @@ static void
 reset_all_counters (void)
 {
 #define COUNTER(ident, Category, Name, Description) RESET (ident);
-#include "mongoc/mongoc-counters.defs"
+#include <mongoc/mongoc-counters.defs>
 #undef COUNTER
 }
 

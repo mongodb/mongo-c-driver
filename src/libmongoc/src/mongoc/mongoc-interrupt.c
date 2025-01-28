@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-errno-private.h"
-#include "mongoc/mongoc-interrupt-private.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-socket-private.h"
-#include "mongoc/mongoc-stream-socket.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "common-thread-private.h"
+#include <mongoc/mongoc-errno-private.h>
+#include <mongoc/mongoc-interrupt-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-socket-private.h>
+#include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <common-thread-private.h>
 
 /* The interrupt stream is implemented in two ways.
  * On POSIX, this uses the self-pipe trick.

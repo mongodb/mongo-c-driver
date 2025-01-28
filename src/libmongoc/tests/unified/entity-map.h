@@ -17,10 +17,10 @@
 #ifndef UNIFIED_ENTITY_MAP_H
 #define UNIFIED_ENTITY_MAP_H
 
-#include "bson/bson.h"
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-array-private.h"
-#include "common-thread-private.h"
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-array-private.h>
+#include <common-thread-private.h>
 #include "bsonutil/bson-match.h"
 #include "test-diagnostics.h"
 

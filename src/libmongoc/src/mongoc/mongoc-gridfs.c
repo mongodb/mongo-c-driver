@@ -18,22 +18,22 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "gridfs"
 
-#include "mongoc/mongoc-bulk-operation.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-collection.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-index.h"
-#include "mongoc/mongoc-gridfs.h"
-#include "mongoc/mongoc-gridfs-private.h"
-#include "mongoc/mongoc-gridfs-file.h"
-#include "mongoc/mongoc-gridfs-file-private.h"
-#include "mongoc/mongoc-gridfs-file-list.h"
-#include "mongoc/mongoc-gridfs-file-list-private.h"
-#include "mongoc/mongoc-client.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-bulk-operation.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-index.h>
+#include <mongoc/mongoc-gridfs.h>
+#include <mongoc/mongoc-gridfs-private.h>
+#include <mongoc/mongoc-gridfs-file.h>
+#include <mongoc/mongoc-gridfs-file-private.h>
+#include <mongoc/mongoc-gridfs-file-list.h>
+#include <mongoc/mongoc-gridfs-file-list-private.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #define MONGOC_GRIDFS_STREAM_CHUNK 4096
 

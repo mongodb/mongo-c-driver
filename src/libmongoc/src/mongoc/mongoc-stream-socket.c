@@ -15,12 +15,12 @@
  */
 
 
-#include "mongoc/mongoc-stream-private.h"
-#include "mongoc/mongoc-stream-socket.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-socket-private.h"
-#include "mongoc/mongoc-errno-private.h"
-#include "mongoc/mongoc-counters-private.h"
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-socket-private.h>
+#include <mongoc/mongoc-errno-private.h>
+#include <mongoc/mongoc-counters-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream"

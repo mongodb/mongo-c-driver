@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongoc/service-gcp.h"
+#include <mongoc/service-gcp.h>
 
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-util-private.h>
 
 #define HOST "metadata.google.internal"
 

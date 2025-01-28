@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_WRITE_CONCERN_PRIVATE_H
 #define MONGOC_WRITE_CONCERN_PRIVATE_H

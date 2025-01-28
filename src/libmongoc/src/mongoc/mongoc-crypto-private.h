@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO

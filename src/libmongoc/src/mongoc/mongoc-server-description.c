@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-config.h"
-#include "mongoc/mongoc-host-list.h"
-#include "mongoc/mongoc-host-list-private.h"
-#include "mongoc/mongoc-read-prefs.h"
-#include "mongoc/mongoc-read-prefs-private.h"
-#include "mongoc/mongoc-server-description-private.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-uri.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-compression-private.h"
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-uri.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-compression-private.h>
 
 #include <common-bson-dsl-private.h>
 #include <common-atomic-private.h>

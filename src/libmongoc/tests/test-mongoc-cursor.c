@@ -5,11 +5,11 @@
 #include "test-libmongoc.h"
 #include "mock_server/mock-rs.h"
 #include "mock_server/future-functions.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/mongoc-error-private.h"
-#include "mongoc/mongoc-read-concern-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
 #include "test-conveniences.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>

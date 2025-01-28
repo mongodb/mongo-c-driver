@@ -1,13 +1,13 @@
 #include <bson/bson.h>
 #include <errno.h>
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #endif
 
-#include "mongoc/mongoc-stream-tls.h"
+#include <mongoc/mongoc-stream-tls.h>
 
 #include "ssl-test.h"
 #include "TestSuite.h"

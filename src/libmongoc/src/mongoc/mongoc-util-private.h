@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_UTIL_PRIVATE_H
 #define MONGOC_UTIL_PRIVATE_H
 
 #include <bson/bson.h>
-#include "mongoc/mongoc.h"
+#include <mongoc/mongoc.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>

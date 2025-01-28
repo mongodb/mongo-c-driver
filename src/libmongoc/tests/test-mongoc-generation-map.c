@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-generation-map-private.h"
+#include <mongoc/mongoc-generation-map-private.h>
 
 #include "TestSuite.h"
 

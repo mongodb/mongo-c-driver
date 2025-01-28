@@ -16,7 +16,7 @@
 
 #include "TestSuite.h"
 
-#include "mongoc/mongoc-ocsp-cache-private.h"
+#include <mongoc/mongoc-ocsp-cache-private.h>
 
 #if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
 #include <openssl/pem.h>

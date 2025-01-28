@@ -6,9 +6,9 @@
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-database-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-database-private.h>
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "test-conveniences.h"

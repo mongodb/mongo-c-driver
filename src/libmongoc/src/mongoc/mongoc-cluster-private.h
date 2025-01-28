@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLUSTER_PRIVATE_H
 #define MONGOC_CLUSTER_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mcd-rpc.h"
-#include "mongoc/mongoc-array-private.h"
-#include "mongoc/mongoc-buffer-private.h"
-#include "mongoc/mongoc-config.h"
-#include "mongoc/mongoc-client.h"
-#include "mongoc/mongoc-list-private.h"
-#include "mongoc/mongoc-opcode.h"
-#include "mongoc/mongoc-rpc-private.h"
-#include "mongoc/mongoc-server-stream-private.h"
-#include "mongoc/mongoc-set-private.h"
-#include "mongoc/mongoc-stream.h"
-#include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-topology-description-private.h"
-#include "mongoc/mongoc-write-concern.h"
-#include "mongoc/mongoc-scram-private.h"
-#include "mongoc/mongoc-cmd-private.h"
-#include "mongoc/mongoc-crypto-private.h"
-#include "mongoc/mongoc-deprioritized-servers-private.h"
+#include <mongoc/mcd-rpc.h>
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-list-private.h>
+#include <mongoc/mongoc-opcode.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-server-stream-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-cmd-private.h>
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-deprioritized-servers-private.h>
 
 BSON_BEGIN_DECLS
 

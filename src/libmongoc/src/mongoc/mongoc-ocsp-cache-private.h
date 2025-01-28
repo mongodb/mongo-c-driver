@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_OCSP_CACHE_PRIVATE_H
 #define MONGOC_OCSP_CACHE_PRIVATE_H
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-#include "mongoc/mongoc-openssl-private.h"
+#include <mongoc/mongoc-openssl-private.h>
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 #include <openssl/ocsp.h>

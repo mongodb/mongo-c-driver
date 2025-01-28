@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "common-thread-private.h"
+#include <common-thread-private.h>
 
 #include <errno.h>
 

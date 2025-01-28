@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_COLLECTION_H
 #define MONGOC_COLLECTION_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-change-stream.h"
-#include "mongoc/mongoc-macros.h"
-#include "mongoc/mongoc-bulk-operation.h"
-#include "mongoc/mongoc-flags.h"
-#include "mongoc/mongoc-cursor.h"
-#include "mongoc/mongoc-index.h"
-#include "mongoc/mongoc-read-prefs.h"
-#include "mongoc/mongoc-read-concern.h"
-#include "mongoc/mongoc-write-concern.h"
-#include "mongoc/mongoc-find-and-modify.h"
+#include <mongoc/mongoc-change-stream.h>
+#include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-bulk-operation.h>
+#include <mongoc/mongoc-flags.h>
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-index.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-read-concern.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-find-and-modify.h>
 
 BSON_BEGIN_DECLS
 

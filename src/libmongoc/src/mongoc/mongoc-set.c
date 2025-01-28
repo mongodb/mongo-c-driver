@@ -17,7 +17,7 @@
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-set-private.h"
+#include <mongoc/mongoc-set-private.h>
 #include <common-cmp-private.h>
 
 #undef MONGOC_LOG_DOMAIN

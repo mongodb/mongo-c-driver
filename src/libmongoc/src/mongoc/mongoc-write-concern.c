@@ -15,11 +15,11 @@
  */
 
 
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-write-concern.h"
-#include "mongoc/mongoc-write-concern-private.h"
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-write-concern-private.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 

@@ -1,7 +1,7 @@
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-set-private.h"
-#include "mongoc/mongoc-client-pool-private.h"
-#include "mongoc/mongoc-client-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-client-pool-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <common-oid-private.h>
 
 #include "TestSuite.h"

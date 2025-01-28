@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SSL_LIBRESSL
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-stream-tls.h"
-#include "mongoc/mongoc-stream-tls-private.h"
-#include "mongoc/mongoc-stream-private.h"
-#include "mongoc/mongoc-stream-tls-libressl-private.h"
-#include "mongoc/mongoc-libressl-private.h"
-#include "mongoc/mongoc-ssl.h"
-#include "mongoc/mongoc-ssl-private.h"
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-counters-private.h"
-#include "mongoc/mongoc-stream-socket.h"
-#include "mongoc/mongoc-socket-private.h"
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-tls-libressl-private.h>
+#include <mongoc/mongoc-libressl-private.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-socket-private.h>
 
 #include <tls.h>
 

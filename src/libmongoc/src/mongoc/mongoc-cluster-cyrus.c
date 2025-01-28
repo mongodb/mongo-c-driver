@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-cyrus-private.h"
-#include "mongoc/mongoc-cluster-cyrus-private.h"
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-trace-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cyrus-private.h>
+#include <mongoc/mongoc-cluster-cyrus-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-trace-private.h>
 
 bool
 _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,

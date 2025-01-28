@@ -2,7 +2,7 @@
 
 #include <bson/bson-error.h>
 
-#include "mongoc/mongoc-array-private.h"
+#include <mongoc/mongoc-array-private.h>
 
 #include "test-conveniences.h"
 #include "test-libmongoc.h"

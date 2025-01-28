@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-flags.h"
+#include <mongoc/mongoc-flags.h>
 
-#include "mongoc/mongoc-compression-private.h"
-#include "mongoc/mongoc-flags-private.h"
+#include <mongoc/mongoc-compression-private.h>
+#include <mongoc/mongoc-flags-private.h>
 
-#include "mongoc/mcd-rpc.h"
+#include <mongoc/mcd-rpc.h>
 
 #include <bson/bson.h>
 

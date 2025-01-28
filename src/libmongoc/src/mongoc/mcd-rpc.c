@@ -1,8 +1,8 @@
-#include "mongoc/mcd-rpc.h"
+#include <mongoc/mcd-rpc.h>
 
 // Header-only dependency. Does NOT require linking with libmongoc.
 #define MONGOC_INSIDE
-#include "mongoc/mongoc-iovec.h"
+#include <mongoc/mongoc-iovec.h>
 #undef MONGOC_INSIDE
 
 #include <bson/bson.h>

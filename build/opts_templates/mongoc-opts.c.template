@@ -1,8 +1,8 @@
-#include "mongoc/mongoc-opts-helpers-private.h"
-#include "mongoc/mongoc-opts-private.h"
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-client-private.h"
+#include <mongoc/mongoc-opts-helpers-private.h>
+#include <mongoc/mongoc-opts-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-client-private.h>
 
 {{ header_comment }}
 {% for struct_type, description in opts_structs.items() %}

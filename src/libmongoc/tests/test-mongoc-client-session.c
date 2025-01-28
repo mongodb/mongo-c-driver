@@ -1,9 +1,9 @@
 #include <mongoc/mongoc-cursor-private.h>
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-change-stream-private.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/utlist.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/utlist.h>
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"

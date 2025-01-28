@@ -15,13 +15,13 @@
  */
 
 
-#include "mongoc/mongoc-aggregate-private.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-read-prefs-private.h"
-#include "mongoc/mongoc-server-stream-private.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-aggregate-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-server-stream-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include <common-bson-dsl-private.h>
 

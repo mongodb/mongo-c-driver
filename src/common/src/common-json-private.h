@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "common-prelude.h"
+#include <common-prelude.h>
 
 #ifndef MONGO_C_DRIVER_COMMON_JSON_PRIVATE_H
 #define MONGO_C_DRIVER_COMMON_JSON_PRIVATE_H
 
-#include "common-string-private.h"
+#include <common-string-private.h>
 
 #define mcommon_iso8601_string_append COMMON_NAME (iso8601_string_append)
 #define mcommon_json_append_escaped COMMON_NAME (json_append_escaped)

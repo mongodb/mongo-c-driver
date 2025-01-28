@@ -20,19 +20,19 @@
  * - receiving OP_REPLY documents in a stream (instead of batch)
  */
 
-#include "mongoc/mongoc-cursor.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-counters-private.h"
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-read-concern-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
-#include "mongoc/mongoc-read-prefs-private.h"
-#include "mongoc/mongoc-rpc-private.h"
-#include "mongoc/mongoc-structured-log-private.h"
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 
 #include <common-bson-dsl-private.h>
 

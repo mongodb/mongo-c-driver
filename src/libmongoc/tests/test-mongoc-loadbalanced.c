@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-client-session-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-session-private.h>
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"

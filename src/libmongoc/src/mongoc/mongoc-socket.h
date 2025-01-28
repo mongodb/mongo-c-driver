@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_SOCKET_H
 #define MONGOC_SOCKET_H
 
 #include <bson/bson.h>
-#include "mongoc/mongoc-macros.h"
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-config.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -42,7 +42,7 @@
 #define ss_family __ss_family
 #endif
 
-#include "mongoc/mongoc-iovec.h"
+#include <mongoc/mongoc-iovec.h>
 
 
 BSON_BEGIN_DECLS

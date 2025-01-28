@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
 
@@ -22,7 +22,7 @@
 #define MONGOC_CRYPTO_COMMON_CRYPTO_PRIVATE_H
 
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 
 BSON_BEGIN_DECLS

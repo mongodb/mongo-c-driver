@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-ssl.h"
-#include "mongoc/mongoc-stream-tls.h"
-#include "mongoc/mongoc-stream-tls-private.h"
-#include "mongoc/mongoc-secure-channel-private.h"
-#include "mongoc/mongoc-stream-tls-secure-channel-private.h"
-#include "mongoc/mongoc-errno-private.h"
-#include "mongoc/mongoc-error.h"
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-secure-channel-private.h>
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#include <mongoc/mongoc-errno-private.h>
+#include <mongoc/mongoc-error.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
 

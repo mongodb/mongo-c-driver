@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-#include "common-atomic-private.h"
-#include "common-oid-private.h"
-#include "common-string-private.h"
-#include "common-json-private.h"
-#include "common-thread-private.h"
-#include "mongoc/mongoc-apm-private.h"
-#include "mongoc/mongoc-error-private.h"
-#include "mongoc/mongoc-structured-log-private.h"
-#include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-structured-log.h"
-#include "mongoc/mongoc-util-private.h"
+#include <common-atomic-private.h>
+#include <common-oid-private.h>
+#include <common-string-private.h>
+#include <common-json-private.h>
+#include <common-thread-private.h>
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-structured-log.h>
+#include <mongoc/mongoc-util-private.h>
 
 #define STRUCTURED_LOG_COMPONENT_TABLE_SIZE (1 + (size_t) MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION)
 

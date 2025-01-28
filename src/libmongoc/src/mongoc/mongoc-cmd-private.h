@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 
 /*
@@ -29,11 +29,11 @@
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-server-api.h"
-#include "mongoc/mongoc-server-stream-private.h"
-#include "mongoc/mongoc-read-prefs.h"
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-opts-private.h"
+#include <mongoc/mongoc-server-api.h>
+#include <mongoc/mongoc-server-stream-private.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-opts-private.h>
 
 BSON_BEGIN_DECLS
 

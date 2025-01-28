@@ -13,23 +13,23 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO
 
 #include <string.h>
 
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-scram-private.h"
-#include "mongoc/mongoc-rand-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-trace-private.h"
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-rand-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
-#include "mongoc/mongoc-crypto-private.h"
-#include "common-b64-private.h"
+#include <mongoc/mongoc-crypto-private.h>
+#include <common-b64-private.h>
 
-#include "mongoc/mongoc-memcmp-private.h"
-#include "common-thread-private.h"
+#include <mongoc/mongoc-memcmp-private.h>
+#include <common-thread-private.h>
 #include <utf8proc.h>
 #include <common-cmp-private.h>
 

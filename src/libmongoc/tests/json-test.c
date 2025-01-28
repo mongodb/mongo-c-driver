@@ -16,11 +16,11 @@
 
 
 #include <mongoc/mongoc.h>
-#include "mongoc/mongoc-client-side-encryption-private.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/mongoc-client-side-encryption.h"
+#include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-client-side-encryption.h>
 #include <common-oid-private.h>
 
 #include "json-test.h"

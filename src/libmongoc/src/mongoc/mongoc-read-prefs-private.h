@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_READ_PREFS_PRIVATE_H
 #define MONGOC_READ_PREFS_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-cluster-private.h"
-#include "mongoc/mongoc-read-prefs.h"
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-read-prefs.h>
 
 
 BSON_BEGIN_DECLS

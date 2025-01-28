@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 
 #ifndef MONGOC_GENERATION_MAP_PRIVATE_H
 #define MONGOC_GENERATION_MAP_PRIVATE_H

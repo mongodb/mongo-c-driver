@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_SECURE_TRANSPORT_PRIVATE_H
 #define MONGOC_SECURE_TRANSPORT_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-ssl.h"
-#include "mongoc/mongoc-stream-tls-secure-transport-private.h"
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream-tls-secure-transport-private.h>
 #include <Security/Security.h>
 
 

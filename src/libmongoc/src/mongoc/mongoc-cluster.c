@@ -15,48 +15,48 @@
  */
 
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #include <string.h>
 
-#include "mongoc/mcd-rpc.h"
-#include "mongoc/mongoc-cluster-private.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-client-side-encryption-private.h"
-#include "mongoc/mongoc-counters-private.h"
-#include "mongoc/mongoc-config.h"
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-flags-private.h"
-#include "mongoc/mongoc-host-list-private.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-cluster-sasl-private.h"
+#include <mongoc/mcd-rpc.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-flags-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-cluster-sasl-private.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl.h"
-#include "mongoc/mongoc-ssl-private.h"
-#include "mongoc/mongoc-stream-tls.h"
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-stream-tls.h>
 #endif
-#include "common-b64-private.h"
-#include "mongoc/mongoc-scram-private.h"
-#include "mongoc/mongoc-set-private.h"
-#include "mongoc/mongoc-socket.h"
-#include "mongoc/mongoc-stream-private.h"
-#include "mongoc/mongoc-stream-socket.h"
-#include "mongoc/mongoc-stream-tls.h"
-#include "mongoc/mongoc-thread-private.h"
-#include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-topology-background-monitoring-private.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/mongoc-rpc-private.h"
-#include "mongoc/mongoc-compression-private.h"
-#include "mongoc/mongoc-cmd-private.h"
-#include "mongoc/utlist.h"
-#include "mongoc/mongoc-handshake-private.h"
-#include "mongoc/mongoc-cluster-aws-private.h"
-#include "mongoc/mongoc-error-private.h"
-#include "mongoc/mongoc-structured-log-private.h"
+#include <common-b64-private.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-socket.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-compression-private.h>
+#include <mongoc/mongoc-cmd-private.h>
+#include <mongoc/utlist.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 
 #include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>

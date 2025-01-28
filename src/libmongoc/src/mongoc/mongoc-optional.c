@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-optional.h"
+#include <mongoc/mongoc-optional.h>
 
 void
 mongoc_optional_init (mongoc_optional_t *opt)

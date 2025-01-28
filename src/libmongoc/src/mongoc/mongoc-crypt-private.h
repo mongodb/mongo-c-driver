@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CRYPT_PRIVATE_H
 #define MONGOC_CRYPT_PRIVATE_H
 
-#include "mongoc/mongoc-config.h"
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-util-private.h>
 
-#include "mongoc/mongoc.h"
+#include <mongoc/mongoc.h>
 
 typedef struct mc_kms_credentials_callback {
    mongoc_kms_credentials_provider_callback_fn fn;

@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_DEPRIORITIZED_SERVERS_PRIVATE_H
 #define MONGOC_DEPRIORITIZED_SERVERS_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-server-description.h"
+#include <mongoc/mongoc-server-description.h>
 
 #include <stdbool.h>
 

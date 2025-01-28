@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-generation-map-private.h"
+#include <mongoc/mongoc-generation-map-private.h>
 
-#include "mongoc/utlist.h"
+#include <mongoc/utlist.h>
 
 typedef struct _gm_node_t {
    bson_oid_t key;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_TS_POOL_PRIVATE_H
 #define MONGOC_TS_POOL_PRIVATE_H

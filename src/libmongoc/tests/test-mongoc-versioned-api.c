@@ -15,8 +15,8 @@
  */
 
 #include <mongoc/mongoc.h>
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-server-api-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-server-api-private.h>
 #include "test-libmongoc.h"
 
 #include "unified/runner.h"

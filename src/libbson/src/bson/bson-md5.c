@@ -1,7 +1,7 @@
 #include <bson/bson-compat.h>
 
 #include <bson/bson-md5.h>
-#include "common-md5-private.h"
+#include <common-md5-private.h>
 
 
 void

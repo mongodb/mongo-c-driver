@@ -17,30 +17,30 @@
 
 #include <stdio.h>
 
-#include "bson/bson.h"
-#include "mongoc/mongoc-aggregate-private.h"
-#include "mongoc/mongoc-bulk-operation.h"
-#include "mongoc/mongoc-bulk-operation-private.h"
-#include "mongoc/mongoc-change-stream-private.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-find-and-modify-private.h"
-#include "mongoc/mongoc-find-and-modify.h"
-#include "mongoc/mongoc-collection.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-index.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-read-concern-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
-#include "mongoc/mongoc-read-prefs-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-write-command-private.h"
-#include "mongoc/mongoc-opts-private.h"
-#include "mongoc/mongoc-write-command-private.h"
-#include "mongoc/mongoc-error-private.h"
-#include "mongoc/mongoc-database-private.h"
+#include <bson/bson.h>
+#include <mongoc/mongoc-aggregate-private.h>
+#include <mongoc/mongoc-bulk-operation.h>
+#include <mongoc/mongoc-bulk-operation-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-find-and-modify-private.h>
+#include <mongoc/mongoc-find-and-modify.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-index.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-command-private.h>
+#include <mongoc/mongoc-opts-private.h>
+#include <mongoc/mongoc-write-command-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-database-private.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 #include <common-bson-dsl-private.h>

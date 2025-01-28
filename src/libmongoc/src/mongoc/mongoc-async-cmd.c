@@ -17,21 +17,21 @@
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-client.h"
-#include "mongoc/mongoc-async-cmd-private.h"
-#include "mongoc/mongoc-async-private.h"
-#include "mongoc/mongoc-cluster-private.h"
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-opcode.h"
-#include "mongoc/mongoc-rpc-private.h"
-#include "mongoc/mongoc-stream-private.h"
-#include "mongoc/mongoc-server-description-private.h"
-#include "mongoc/mongoc-topology-scanner-private.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/utlist.h"
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-async-cmd-private.h>
+#include <mongoc/mongoc-async-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-opcode.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-scanner-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/utlist.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-stream-tls.h"
+#include <mongoc/mongoc-stream-tls.h>
 #endif
 
 #undef MONGOC_LOG_DOMAIN

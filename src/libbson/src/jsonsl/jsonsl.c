@@ -3,8 +3,8 @@
  * See included LICENSE file for license details.
  */
 
-#include "jsonsl/jsonsl.h"
-#include "bson/bson-memory.h"
+#include <jsonsl/jsonsl.h>
+#include <bson/bson-memory.h>
 
 #include <limits.h>
 #include <ctype.h>

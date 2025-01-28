@@ -17,7 +17,7 @@
 #ifndef SERVICE_GCP_H_INCLUDED
 #define SERVICE_GCP_H_INCLUDED
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #include <mongoc/mongoc.h>
 

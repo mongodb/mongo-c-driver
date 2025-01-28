@@ -21,7 +21,7 @@
 
 #include <stdio.h>
 
-#include "bson/bcon.h"
+#include <bson/bcon.h>
 #include <bson/bson-config.h>
 
 /* These stack manipulation macros are used to manage append recursion in

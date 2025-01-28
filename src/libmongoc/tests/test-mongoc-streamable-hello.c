@@ -7,9 +7,9 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-topology-description-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "streamable-hello"

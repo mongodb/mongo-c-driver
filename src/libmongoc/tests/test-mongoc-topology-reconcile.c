@@ -1,9 +1,9 @@
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-client-pool-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/utlist.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-pool-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/utlist.h>
 
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-opcode.h"
+#include <mongoc/mongoc-opcode.h>
 
-#include "mongoc/mcd-rpc.h"
+#include <mongoc/mcd-rpc.h>
 
 #include <bson/bson.h>
 

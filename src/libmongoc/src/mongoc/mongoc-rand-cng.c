@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
-#include "mongoc/mongoc-rand.h"
-#include "mongoc/mongoc-rand-private.h"
+#include <mongoc/mongoc-rand.h>
+#include <mongoc/mongoc-rand-private.h>
 
-#include "mongoc/mongoc.h"
+#include <mongoc/mongoc.h>
 
 #include <windows.h>
 #include <stdio.h>

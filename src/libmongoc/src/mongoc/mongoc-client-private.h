@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLIENT_PRIVATE_H
 #define MONGOC_CLIENT_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-apm-private.h"
-#include "mongoc/mongoc-buffer-private.h"
-#include "mongoc/mongoc-client.h"
-#include "mongoc/mongoc-cluster-private.h"
-#include "mongoc/mongoc-config.h"
-#include "mongoc/mongoc-host-list.h"
-#include "mongoc/mongoc-read-prefs.h"
-#include "mongoc/mongoc-rpc-private.h"
-#include "mongoc/mongoc-opcode.h"
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-opcode.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl.h"
+#include <mongoc/mongoc-ssl.h>
 #endif
 
-#include "mongoc/mongoc-stream.h"
-#include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-write-concern.h"
-#include "mongoc/mongoc-crypt-private.h"
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-crypt-private.h>
 
 BSON_BEGIN_DECLS
 

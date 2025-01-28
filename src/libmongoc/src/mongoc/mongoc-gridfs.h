@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_GRIDFS_H
 #define MONGOC_GRIDFS_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-macros.h"
-#include "mongoc/mongoc-stream.h"
-#include "mongoc/mongoc-gridfs-file.h"
-#include "mongoc/mongoc-collection.h"
-#include "mongoc/mongoc-gridfs-file-list.h"
+#include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-gridfs-file.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-gridfs-file-list.h>
 
 
 BSON_BEGIN_DECLS

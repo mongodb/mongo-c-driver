@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_URI_H
 #define MONGOC_URI_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-macros.h"
-#include "mongoc/mongoc-host-list.h"
-#include "mongoc/mongoc-read-prefs.h"
-#include "mongoc/mongoc-read-concern.h"
-#include "mongoc/mongoc-write-concern.h"
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-read-concern.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-config.h>
 
 
 #ifndef MONGOC_DEFAULT_PORT

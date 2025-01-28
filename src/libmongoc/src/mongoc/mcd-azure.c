@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongoc/mcd-azure.h"
+#include <mongoc/mcd-azure.h>
 
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-util-private.h>
 #include <common-cmp-private.h>
 
 #define AZURE_API_VERSION "2018-02-01"

@@ -58,7 +58,7 @@
 
 #include <string.h>
 
-#include "common-md5-private.h"
+#include <common-md5-private.h>
 
 #undef BYTE_ORDER /* 1 = big-endian, -1 = little-endian, 0 = unknown */
 #if BSON_BYTE_ORDER == BSON_BIG_ENDIAN

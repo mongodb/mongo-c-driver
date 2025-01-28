@@ -3,7 +3,7 @@
 #include "json-test.h"
 #include "json-test-operations.h"
 #include "test-libmongoc.h"
-#include "mongoc/mongoc-bulkwrite.h"
+#include <mongoc/mongoc-bulkwrite.h>
 #include <common-cmp-private.h>
 
 static bool

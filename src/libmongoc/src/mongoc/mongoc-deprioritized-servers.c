@@ -1,6 +1,6 @@
-#include "mongoc/mongoc-deprioritized-servers-private.h"
+#include <mongoc/mongoc-deprioritized-servers-private.h>
 
-#include "mongoc/mongoc-set-private.h"
+#include <mongoc/mongoc-set-private.h>
 
 // Dedicated non-zero value to avoid confusing "key is present with a NULL item"
 // from "key is not present" (also NULL).

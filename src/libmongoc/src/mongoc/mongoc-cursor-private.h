@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CURSOR_PRIVATE_H
 #define MONGOC_CURSOR_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-client.h"
-#include "mongoc/mongoc-buffer-private.h"
-#include "mongoc/mongoc-rpc-private.h"
-#include "mongoc/mongoc-server-stream-private.h"
-#include "mongoc/mongoc-cluster-private.h"
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-server-stream-private.h>
+#include <mongoc/mongoc-cluster-private.h>
 
 
 BSON_BEGIN_DECLS

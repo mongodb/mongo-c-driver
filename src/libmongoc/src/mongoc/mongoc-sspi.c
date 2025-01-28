@@ -16,7 +16,7 @@
  * This file originates from https://github.com/mongodb-labs/winkerberos
  */
 
-#include "mongoc/mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SASL_SSPI
 
@@ -25,8 +25,8 @@
 #define CRYPT_STRING_NOCRLF 0x40000000
 #endif
 
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-sspi-private.h"
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-sspi-private.h>
 
 void
 _mongoc_sspi_destroy_sspi_client_state (mongoc_sspi_client_state_t *state)
