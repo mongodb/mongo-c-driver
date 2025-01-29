@@ -665,7 +665,7 @@ test_bulkwrite_two_large_inserts (void *unused)
    ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", docs[0], NULL, &error), error);
    ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", docs[1], NULL, &error), error);
 
-   mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bw_opts); // Crashes!
+   mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bw_opts);
    ASSERT_NO_BULKWRITEEXCEPTION (bwr);
    ASSERT (bwr.res);
    const bson_t *insertresults = mongoc_bulkwriteresult_insertresults (bwr.res);
