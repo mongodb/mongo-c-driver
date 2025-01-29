@@ -2,6 +2,7 @@
 
 #include <mlib/intutil.h>
 #include <mlib/config.h>
+#include <mlib/loop.h>
 #include <mlib/cmp.h>
 #include <mlib/test.h>
 
@@ -400,6 +401,48 @@ _test_assert_aborts (void)
    ASSERT (a == 0);
 }
 
+void
+_test_foreach (void)
+{
+   int n_loops = 0;
+   mlib_foreach_urange (i, 10) {
+      fprintf (stderr, "i: %zu\n", i);
+      fprintf (stderr, "counter: %zu\n", i_counter);
+      ++n_loops;
+      (void) i;
+      ASSERT (n_loops <= 10);
+   };
+   ASSERT (n_loops == 10);
+
+   n_loops = 0;
+   mlib_foreach_urange (i, 100) {
+      if (i == 42) {
+         break;
+      }
+      ++n_loops;
+   }
+   ASSERT (n_loops == 42);
+
+   n_loops = 0;
+   mlib_foreach_urange (i, 1729) {
+      (void) i;
+      ++n_loops;
+   }
+   ASSERT (n_loops == 1729);
+
+   mlib_foreach_urange (i, 0) {
+      (void) i;
+      ASSERT (false); // Shouldn't ever enter the loop
+   }
+
+   n_loops = 0;
+   mlib_foreach_urange (i, 4, 7) {
+      ++n_loops;
+      ASSERT (i >= 4);
+      ASSERT (i < 7);
+   }
+   ASSERT (n_loops == 3);
+}
 
 void
 test_mlib_install (TestSuite *suite)
@@ -410,6 +453,7 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
    TestSuite_Add (suite, "/mlib/in-range", _test_in_range);
    TestSuite_Add (suite, "/mlib/assert-aborts", _test_assert_aborts);
+   TestSuite_Add (suite, "/mlib/foreach", _test_foreach);
 }
 
 mlib_diagnostic_pop ();
