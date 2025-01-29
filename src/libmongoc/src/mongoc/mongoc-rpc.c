@@ -172,7 +172,7 @@ _mongoc_cmd_check_ok (const bson_t *doc, int32_t error_api_version, bson_error_t
    if (code == 0) {
       code = MONGOC_ERROR_QUERY_FAILURE;
       category = MONGOC_ERROR_CATEGORY;
-   } else if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
+   } else if (code == MONGOC_ERROR_PROTOCOL_ERROR) {
       code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
    }
 
@@ -222,7 +222,7 @@ _mongoc_cmd_check_ok_no_wce (const bson_t *doc, int32_t error_api_version, bson_
    if (code == 0) {
       code = MONGOC_ERROR_QUERY_FAILURE;
       category = MONGOC_ERROR_CATEGORY;
-   } else if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
+   } else if (code == MONGOC_ERROR_PROTOCOL_ERROR) {
       code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
    }
 
