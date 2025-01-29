@@ -262,15 +262,15 @@ mcommon_string_append_oid_as_hex (mcommon_string_append_t *append, const bson_oi
 
 bool
 mcommon_string_append_selected_chars (mcommon_string_append_t *append,
-                                      const char *template,
+                                      const char *tmplt,
                                       const char *selector,
                                       size_t selector_len)
 {
    BSON_ASSERT_PARAM (append);
-   BSON_ASSERT_PARAM (template);
+   BSON_ASSERT_PARAM (tmplt);
    BSON_ASSERT_PARAM (selector);
 
-   for (uint8_t template_char; (template_char = (uint8_t) *template); template ++) {
+   for (uint8_t template_char; (template_char = (uint8_t) *tmplt); tmplt++) {
       BSON_ASSERT (template_char <= 0x7f);
       if (memchr (selector, template_char, selector_len) && !mcommon_string_append_unichar (append, template_char)) {
          return false;
