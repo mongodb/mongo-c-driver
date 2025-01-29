@@ -22,6 +22,7 @@
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-client-side-encryption.h>
 #include <common-oid-private.h>
+#include <mlib/loop.h>
 
 #include "json-test.h"
 #include "json-test-operations.h"
@@ -1819,7 +1820,6 @@ json_test_config_cleanup (json_test_config_t *config)
 static bson_t *
 _skip_if_unsupported (const char *test_name, bson_t *original)
 {
-   int i;
    bool skip = false;
    const char *unsupported_tests[] = {"/retryable_reads/legacy/gridfs-downloadByName",
                                       "/retryable_reads/legacy/gridfs-downloadByName-serverErrors",
@@ -1831,8 +1831,8 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
                                       "/retryable_reads/legacy/listIndexNames-serverErrors",
                                       "/retryable_reads/legacy/mapReduce"};
 
-   for (i = 0; i < sizeof (unsupported_tests) / sizeof (unsupported_tests[0]); i++) {
-      if (0 == strcmp (test_name, unsupported_tests[i])) {
+   mlib_foreach_arr (const char *, test, unsupported_tests) {
+      if (0 == strcmp (test_name, *test)) {
          skip = true;
          break;
       }

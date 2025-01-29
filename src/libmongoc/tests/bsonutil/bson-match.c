@@ -20,6 +20,7 @@
 #include "TestSuite.h"
 #include "unified/util.h"
 #include <mongoc/utlist.h>
+#include <mlib/loop.h>
 
 typedef struct _special_functor_t {
    special_fn fn;
@@ -686,10 +687,8 @@ test_match (void)
        true},
       {"numeric type mismatch is ok", "{'a': 1}", "{'a': 1.0}", true},
       {"comparing number to string is an error", "{'a': 1}", "{'a': 'foo'}", false}};
-   int i;
 
-   for (i = 0; i < sizeof (tests) / sizeof (testcase_t); i++) {
-      testcase_t *test = tests + i;
+   mlib_foreach_arr (testcase_t, test, tests) {
       bson_error_t error;
       bson_val_t *expected = bson_val_from_json (test->expected);
       bson_val_t *actual = bson_val_from_json (test->actual);

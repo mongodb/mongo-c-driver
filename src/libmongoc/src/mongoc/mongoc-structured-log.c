@@ -25,6 +25,7 @@
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-structured-log.h>
 #include <mongoc/mongoc-util-private.h>
+#include <mlib/loop.h>
 
 #define STRUCTURED_LOG_COMPONENT_TABLE_SIZE (1 + (size_t) MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION)
 
@@ -159,7 +160,7 @@ mongoc_structured_log_opts_set_max_level_for_all_components (mongoc_structured_l
                                                              mongoc_structured_log_level_t level)
 {
    BSON_ASSERT_PARAM (opts);
-   for (int component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
+   mlib_foreach_urange (component, STRUCTURED_LOG_COMPONENT_TABLE_SIZE) {
       if (!mongoc_structured_log_opts_set_max_level_for_component (
              opts, (mongoc_structured_log_component_t) component, level)) {
          // Fine to stop on the first error, always means 'level' is wrong and none of these will succeed.
@@ -348,7 +349,7 @@ mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t
       all_ok = false;
    }
 
-   for (int component = 0; component < STRUCTURED_LOG_COMPONENT_TABLE_SIZE; component++) {
+   mlib_foreach_urange (component, STRUCTURED_LOG_COMPONENT_TABLE_SIZE) {
       if (_mongoc_structured_log_get_log_level_from_env (
              gStructuredLogComponentEnvVars[component], &level, &err_flag_per_component_atomic[component])) {
          BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_component (

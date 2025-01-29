@@ -8,8 +8,11 @@
  */
 
 #include <mongoc/mongoc.h>
+#include <mlib/loop.h>
+
 #include <pthread.h>
 #include <stdio.h>
+
 
 static void *
 worker (void *data)
@@ -50,7 +53,6 @@ main (int argc, char *argv[])
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool;
    pthread_t threads[num_clients];
-   unsigned i;
    void *ret;
 
    mongoc_init ();
@@ -74,11 +76,11 @@ main (int argc, char *argv[])
    pool = mongoc_client_pool_new (uri);
    mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
 
-   for (i = 0; i < num_clients; i++) {
+   mlib_foreach_urange (i, num_clients) {
       pthread_create (&threads[i], NULL, worker, pool);
    }
 
-   for (i = 0; i < num_clients; i++) {
+   mlib_foreach_urange (i, num_clients) {
       pthread_join (threads[i], &ret);
    }
 

@@ -8,6 +8,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include <mlib/loop.h>
 
 #include <inttypes.h>
 
@@ -627,7 +628,6 @@ test_unrecognized_dollar_option (void)
 static void
 test_query_flags (void)
 {
-   int i;
    char *find_cmd;
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
 
@@ -647,10 +647,10 @@ test_query_flags (void)
 
    test_data.expected_result = test_data.docs = "[{'_id': 1}]";
 
-   for (i = 0; i < (sizeof flags_and_frags) / (sizeof (flag_and_name_t)); i++) {
-      find_cmd = bson_strdup_printf ("{'find': 'collection', 'filter': {}, %s}", flags_and_frags[i].json_fragment);
+   mlib_foreach_arr (flag_and_name_t, it, flags_and_frags) {
+      find_cmd = bson_strdup_printf ("{'find': 'collection', 'filter': {}, %s}", it->json_fragment);
 
-      test_data.flags = flags_and_frags[i].flag;
+      test_data.flags = it->flag;
       test_data.expected_find_command = find_cmd;
 
       _test_collection_find (&test_data);
