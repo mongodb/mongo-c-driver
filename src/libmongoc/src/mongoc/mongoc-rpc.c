@@ -127,6 +127,30 @@ _parse_error_reply (const bson_t *doc, bool check_wce, uint32_t *code, const cha
 }
 
 
+static void
+_mongoc_cmd_set_error (bson_error_t *error, int32_t error_api_version, uint32_t code, const char *msg)
+{
+   BSON_OPTIONAL_PARAM (error);
+   BSON_ASSERT_PARAM (msg);
+
+   uint8_t category = MONGOC_ERROR_CATEGORY_SERVER;
+
+   if (code == MONGOC_ERROR_PROTOCOL_ERROR) {
+      // Map protocolError to commandNotFound for backward compatibility (DRIVERS-192).
+      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
+   } else if (code == 0) {
+      // Reply was "not OK" but no error code was provided. Use our own error code.
+      code = MONGOC_ERROR_QUERY_FAILURE;
+      category = MONGOC_ERROR_CATEGORY;
+   }
+
+   const mongoc_error_domain_t domain =
+      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
+
+   _mongoc_set_error_with_category (error, category, domain, code, "%s", msg);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -162,24 +186,13 @@ _mongoc_cmd_check_ok (const bson_t *doc, int32_t error_api_version, bson_error_t
    }
 
    uint32_t code;
-   uint8_t category = MONGOC_ERROR_CATEGORY_SERVER;
    const char *msg = "Unknown command error";
 
    if (!_parse_error_reply (doc, false /* check_wce */, &code, &msg)) {
       RETURN (true);
    }
 
-   if (code == 0) {
-      code = MONGOC_ERROR_QUERY_FAILURE;
-      category = MONGOC_ERROR_CATEGORY;
-   } else if (code == MONGOC_ERROR_PROTOCOL_ERROR) {
-      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
-   }
-
-   const mongoc_error_domain_t domain =
-      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
-
-   _mongoc_set_error_with_category (error, category, domain, code, "%s", msg);
+   _mongoc_cmd_set_error (error, error_api_version, code, msg);
 
    /* there was a command error */
    RETURN (false);
@@ -219,17 +232,7 @@ _mongoc_cmd_check_ok_no_wce (const bson_t *doc, int32_t error_api_version, bson_
       RETURN (true);
    }
 
-   if (code == 0) {
-      code = MONGOC_ERROR_QUERY_FAILURE;
-      category = MONGOC_ERROR_CATEGORY;
-   } else if (code == MONGOC_ERROR_PROTOCOL_ERROR) {
-      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
-   }
-
-   const mongoc_error_domain_t domain =
-      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
-
-   _mongoc_set_error_with_category (error, category, domain, code, "%s", msg);
+   _mongoc_cmd_set_error (error, error_api_version, code, msg);
 
    /* there was a command error */
    RETURN (false);
