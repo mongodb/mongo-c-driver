@@ -393,7 +393,7 @@ bson_json_opts_new (bson_json_mode_t mode, int32_t max_len)
    bson_json_opts_t *opts;
 
    opts = (bson_json_opts_t *) bson_malloc (sizeof *opts);
-   *opts = (bson_json_opts_t) {
+   *opts = (bson_json_opts_t){
       .mode = mode,
       .max_len = max_len,
       .is_outermost_array = false,
