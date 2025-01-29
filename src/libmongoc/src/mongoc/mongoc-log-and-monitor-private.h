@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_LOG_AND_MONITOR_PRIVATE_H
 #define MONGOC_LOG_AND_MONITOR_PRIVATE_H
