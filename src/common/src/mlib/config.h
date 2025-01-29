@@ -34,7 +34,11 @@
 #define MLIB_JUST(...) __VA_ARGS__
 
 // Paste two tokens
+#ifndef _MSC_VER
 #define MLIB_PASTE(A, ...) _mlibPaste1 (A, __VA_ARGS__)
+#else
+#define MLIB_PASTE(A, ...) MLIB_JUST (_mlibPaste1 (A, __VA_ARGS__))
+#endif
 // Paste three tokens
 #define MLIB_PASTE_3(A, B, ...) MLIB_PASTE (A, MLIB_PASTE (B, __VA_ARGS__))
 // Paste four tokens
@@ -80,7 +84,7 @@
 // old MSVC's bad preprocessor
 #define _mlibHasComma(...) \
    MLIB_JUST(_mlibPickSixteenth \
-               MLIB_NOTHING("MSVC workaround)") \
+               MLIB_NOTHING("MSVC workaround") \
             (__VA_ARGS__, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, ~))
 #define _mlibCommaIfParens(...) ,
 
@@ -106,7 +110,7 @@
  * @brief If the argument expands to `0`, `false`, or nothing, expands to `0`.
  * Otherwise expands to `1`.
  */
-#define MLIB_BOOLEAN(...) MLIB_IS_NOT_EMPTY (_mlibPaste1 (_mlibBool_, __VA_ARGS__))
+#define MLIB_BOOLEAN(...) MLIB_IS_NOT_EMPTY (MLIB_PASTE_3 (_mlib, Bool_, __VA_ARGS__))
 #define _mlibBool_0
 #define _mlibBool_false
 #define _mlibBool_
@@ -137,7 +141,8 @@
  * @brief Expand to a call expression `Prefix##_argc_N(...)`, where `N` is the
  * number of macro arguments.
  */
-#define MLIB_ARGC_PICK(Prefix, ...) MLIB_PASTE_3 (Prefix, _argc_, MLIB_ARG_COUNT (__VA_ARGS__)) (__VA_ARGS__)
+#define MLIB_ARGC_PICK(Prefix, ...) \
+   MLIB_JUST (MLIB_PASTE_3 (Prefix, _argc_, MLIB_ARG_COUNT (__VA_ARGS__)) (__VA_ARGS__))
 
 #ifdef __cplusplus
 #define mlib_is_cxx() 1
@@ -221,11 +226,11 @@
 // note: Bug on GCC preprocessor prevents us from using if/else trick to omit MSVC code
 #if mlib_is_msvc()
 #define MLIB_IF_MSVC(...) __VA_ARGS__
+#define mlib_pragma(...) __pragma (__VA_ARGS__) mlib_static_assert (1, "")
 #else
 #define MLIB_IF_MSVC(...) MLIB_NOTHING (#__VA_ARGS__)
-#endif
-
 #define mlib_pragma(...) _Pragma (#__VA_ARGS__) mlib_static_assert (1, "")
+#endif
 
 #define mlib_diagnostic_push()                           \
    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic push);) \
