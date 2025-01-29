@@ -1709,9 +1709,9 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       bool batch_ok = false;
       bson_t cmd_reply = BSON_INITIALIZER;
       mongoc_cursor_t *reply_cursor = NULL;
-      // `ops_byte_len` is the number of documents from `ops` to send in this batch.
+      // `ops_byte_len` is the number of bytes from `ops` to send in this batch.
       size_t ops_byte_len = 0;
-      // `ops_doc_len` is the number of bytes from `ops` to send in this batch.
+      // `ops_doc_len` is the number of documents from `ops` to send in this batch.
       size_t ops_doc_len = 0;
 
       if (ops_byte_offset == self->ops.len) {
