@@ -104,6 +104,8 @@ ForEachMacros:
   - BOOST_FOREACH
   - mlib_foreach_irange
   - mlib_foreach_urange
+  - mlib_foreach
+  - mlib_foreach_arr
 IfMacros:
   - mlib_assert_aborts
   - KJ_IF_MAYBE

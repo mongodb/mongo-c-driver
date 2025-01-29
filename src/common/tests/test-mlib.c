@@ -442,6 +442,16 @@ _test_foreach (void)
       ASSERT (i < 7);
    }
    ASSERT (n_loops == 3);
+
+   int arr[] = {1, 2, 3};
+   int sum = 0;
+   n_loops = 0;
+   mlib_foreach_arr (int, n, arr) {
+      n_loops++;
+      sum += *n;
+   }
+   ASSERT (sum == 6);
+   ASSERT (n_loops == 3);
 }
 
 void
