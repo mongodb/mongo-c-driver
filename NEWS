@@ -1,5 +1,5 @@
-libmongoc 1.30.0
-================
+libmongoc 1.30.0 (Unreleased)
+=============================
 
 Notes:
   * Thread Safety restrictions documented for `mongoc_client_pool_set_apm_callbacks` are now enforced at runtime.
