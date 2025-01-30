@@ -238,6 +238,8 @@
 #define mlib_pragma(...) _Pragma (#__VA_ARGS__) mlib_static_assert (1, "")
 #endif
 
+#define MLIB_FUNC MLIB_IF_GNU_LIKE (__func__) MLIB_IF_MSVC (__FUNCTION__)
+
 #define mlib_diagnostic_push()                           \
    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic push);) \
    MLIB_IF_MSVC (mlib_pragma (warning (push));)          \

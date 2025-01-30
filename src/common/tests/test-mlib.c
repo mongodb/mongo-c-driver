@@ -3,6 +3,7 @@
 #include <mlib/intutil.h>
 #include <mlib/config.h>
 #include <mlib/cmp.h>
+#include <mlib/test.h>
 
 #include <stddef.h>
 
@@ -363,12 +364,26 @@ _test_in_range (void)
 }
 
 void
+_test_assert_aborts (void)
+{
+   int a = 0;
+   mlib_assert_aborts () {
+      a = 4;
+      abort ();
+   }
+   // Parent process is unaffected:
+   ASSERT (a == 0);
+}
+
+
+void
 test_mlib_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/mlib/intutil/minmax", _test_minmax);
    TestSuite_Add (suite, "/mlib/intutil/upsize", _test_upsize);
    TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
    TestSuite_Add (suite, "/mlib/in-range", _test_in_range);
+   TestSuite_Add (suite, "/mlib/assert-aborts", _test_assert_aborts);
 }
 
 mlib_diagnostic_pop ();

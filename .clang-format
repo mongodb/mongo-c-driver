@@ -103,6 +103,7 @@ ForEachMacros:
   - Q_FOREACH
   - BOOST_FOREACH
 IfMacros:
+  - mlib_assert_aborts
   - KJ_IF_MAYBE
 IncludeBlocks:   Preserve
 IncludeCategories:
