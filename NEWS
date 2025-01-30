@@ -1,9 +1,12 @@
-libmongoc 1.29.2
-================
+libmongoc 1.30.0 (Unreleased)
+=============================
 
 Deprecated:
 
   * Support for Debian 9 and Debian 10.
+
+libmongoc 1.29.2
+================
 
 Fixes:
   * Rename `set_error` function to avoid symbol conflicts.
