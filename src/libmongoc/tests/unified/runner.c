@@ -39,13 +39,16 @@ typedef struct {
 skipped_unified_test_t SKIPPED_TESTS[] = {
    // CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
+
    // libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality
    {"snapshot-sessions", "Distinct operation with snapshot"},
    {"snapshot-sessions", "Mixed operation with snapshot"},
+
    // CDRIVER-3886: serverless testing (schema version 1.4)
    {"poc-crud", SKIP_ALL_TESTS},
    {"db-aggregate", SKIP_ALL_TESTS},
    {"mongos-unpin", SKIP_ALL_TESTS},
+
    // CDRIVER-2871: CMAP is not implemented
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
@@ -71,32 +74,43 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"pool-clear-checkout-error", SKIP_ALL_TESTS},
    {"pool-clear-application-error", SKIP_ALL_TESTS},
    {"pool-cleared-error", "PoolClearedError does not mark server unknown"}, // requires multithreaded runner
+
    // Requires streaming heartbeat support
    {"rediscover-quickly-after-step-down", SKIP_ALL_TESTS},
+
    // CDRIVER-5870: Spec compliant response to authentication errors
    {"auth-error", "Reset server and pool after AuthenticationFailure error"},
    {"auth-network-error", "Reset server and pool after network error during authentication"},
    {"auth-misc-command-error", "Reset server and pool after misc command error"},
    {"auth-shutdown-error", "Reset server and pool after shutdown error during authentication"},
    {"auth-network-timeout-error", "Reset server and pool after network timeout error during authentication"},
+
    // libmongoc unified tests do not support pooled connections or background server monitoring threads yet
    {"serverMonitoringMode", SKIP_ALL_TESTS},
+
    // CDRIVER-4115: listCollections does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
+
    // CDRIVER-4116: listIndexes does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
+
    // libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode.
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
+
    // libmongoc does not support the optional findOne helper.
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
+
    // libmongoc does not support the optional listIndexNames helper.
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
+
    // libmongoc single-host non-replicaSet URI first transitions Unknown->Single, not Unknown->Unknown
    {"standalone-emit-topology-description-changed-before-close", "Topology lifecycle"},
+
    // libmongoc does not include insertId in InsertOneResult
    {"cancel-server-check", SKIP_ALL_TESTS},
+
    {0},
 };
 // clang-format on
