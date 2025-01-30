@@ -584,7 +584,13 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool, mongoc_apm_cal
       return false;
    } else if (pool->client_initialized) {
       MONGOC_ERROR ("mongoc_client_pool_set_apm_callbacks can only be called before mongoc_client_pool_pop");
-      return false;
+      /* @todo Since 2017 this requirement has been documented but not actually enforced. For now we are leaving it
+       * unenforced, for backward compatibility. This usage remains unsafe and incorrect. When possible, this should be
+       * modified to return false without modifying the APM callbacks. */
+      mongoc_log_and_monitor_instance_set_apm_callbacks (&pool->topology->log_and_monitor, callbacks, context);
+      pool->apm_callbacks_set = true;
+      return true;
+
    } else {
       // Now we can be sure no other threads are relying on concurrent access to the instance yet.
       mongoc_log_and_monitor_instance_set_apm_callbacks (&pool->topology->log_and_monitor, callbacks, context);
