@@ -142,7 +142,7 @@ typedef struct mongoc_topology_scanner {
    bool speculative_authentication;
 
    mongoc_server_api_t *api;
-   mongoc_log_and_monitor_instance_t *log_and_monitor;
+   mongoc_log_and_monitor_instance_t *log_and_monitor; // Not null.
    bool loadbalanced;
 } mongoc_topology_scanner_t;
 
