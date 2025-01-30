@@ -4145,7 +4145,7 @@ operation_wait_for_primary_change (test_t *test, operation_t *op, result_t *resu
       goto done;
    }
 
-   int64_t timeout = 1000ull * (optional_timeout_ms ? *optional_timeout_ms : 10000ull);
+   int64_t timeout = INT64_C (1000) * (optional_timeout_ms ? *optional_timeout_ms : INT64_C (10000));
    int64_t start_time = bson_get_monotonic_time ();
 
    mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
