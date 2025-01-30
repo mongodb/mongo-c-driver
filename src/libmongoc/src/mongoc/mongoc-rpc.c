@@ -225,7 +225,6 @@ _mongoc_cmd_check_ok_no_wce (const bson_t *doc, int32_t error_api_version, bson_
    BSON_ASSERT (doc);
 
    uint32_t code;
-   uint8_t category = MONGOC_ERROR_CATEGORY_SERVER;
    const char *msg = "Unknown command error";
 
    if (!_parse_error_reply (doc, true /* check_wce */, &code, &msg)) {
