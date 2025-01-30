@@ -935,7 +935,7 @@ prose_heartbeat_event_failed (const mongoc_apm_server_heartbeat_failed_t *event)
    prose_heartbeat_context_append_event (context, PROSE_HEARTBEAT_EVENT_SERVER_HEARTBEAT_FAILED);
 }
 
-void
+static void
 test_prose_heartbeat (void)
 {
    bson_thread_t thread;
