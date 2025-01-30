@@ -203,6 +203,8 @@ void
 _mongoc_topology_description_monitor_closed (const mongoc_topology_description_t *td,
                                              const mongoc_log_and_monitor_instance_t *log_and_monitor)
 {
+   // Expected preconditions for 'closed' events:
+   // (mongoc_topology_destroy() carries out these transitions prior to close of monitoring.)
    BSON_ASSERT (td->type == MONGOC_TOPOLOGY_UNKNOWN);
    BSON_ASSERT (mc_tpld_servers_const (td)->items_len == 0);
 
