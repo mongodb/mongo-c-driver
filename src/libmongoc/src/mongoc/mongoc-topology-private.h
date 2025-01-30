@@ -617,7 +617,7 @@ mc_tpld_unsafe_get_const (const mongoc_topology_t *tpl)
  * This is intended for testing purposes, as it provides thread-safe
  * direct topology modification.
  *
- * @param td The topology to modify.
+ * @param topology The topology to modify.
  * @param server_id The ID of a server in the topology.
  */
 static BSON_INLINE void
