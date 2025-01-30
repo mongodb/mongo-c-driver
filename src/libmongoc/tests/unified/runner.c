@@ -1592,6 +1592,10 @@ test_check_expected_log_messages_for_client (test_t *test,
       goto done;
    }
 
+   /* Note: entity->value might be NULL and that's fine.
+    * The unified testing spec recommends that tests don't refer to closed clients,
+    * but some tests do for checking lifecycle logging.
+    * See /server_discovery_and_monitoring/unified/logging-standalone */
    entity_t *entity = entity_map_get (test->entity_map, client_id, error);
    if (!entity) {
       test_set_error (error, "missing entity '%s', expected client", client_id);
@@ -1601,10 +1605,6 @@ test_check_expected_log_messages_for_client (test_t *test,
       test_set_error (error, "expected entity '%s' to be client, got: %s", entity->id, entity->type);
       goto done;
    }
-   /* Note: entity->value might be NULL and that's fine.
-    * The unified testing spec recommends that tests don't refer to closed clients,
-    * but some tests do for checking lifecycle logging.
-    * See /server_discovery_and_monitoring/unified/logging-standalone */
 
    locked = &entity->log_mutex;
    bson_mutex_lock (locked);
