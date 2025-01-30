@@ -33,7 +33,17 @@ mongoc_log_and_monitor_instance_init (mongoc_log_and_monitor_instance_t *new_ins
    // Init apm_callbacks and version_id
    mongoc_log_and_monitor_instance_set_apm_callbacks (new_instance, NULL, NULL);
 
-   // Note: For now this apm_mutex is quite limited in scope, held only during callbacks from the server_monitor
+   /* This apm_mutex currently only provides explicit exclusion for heartbeat events. It was introduced along with
+    * background monitoring threads, to retain compatibility with existing code and with the SDAM spec guarantee:
+    *
+    * "Events and log messages MUST be published in the order that their corresponding changes are processed in the
+    * driver. Events MUST NOT be published concurrently for the same topology ID or server ID, but MAY be published
+    * concurrently for differing topology IDs and server IDs."
+    *
+    * We may want to re-examine the scope of this mutex. It's broader than necessary for strict compliance (per-pool
+    * rather than per-server) and it's unclear that this always provides the necessary exclusion between different event
+    * types on the same server.
+    */
    bson_mutex_init (&new_instance->apm_mutex);
 
    mongoc_structured_log_opts_t *structured_log_opts = mongoc_structured_log_opts_new ();
