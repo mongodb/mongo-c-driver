@@ -31,8 +31,8 @@ _mongoc_topology_description_monitor_server_opening (const mongoc_topology_descr
                                                      const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                      mongoc_server_description_t *sd)
 {
-   if (sd->opened_by_log_and_monitor != log_and_monitor->serial) {
-      sd->opened_by_log_and_monitor = log_and_monitor->serial;
+   if (!bson_oid_equal (&log_and_monitor->version_id, &sd->opened_by_log_and_monitor_version_id)) {
+      bson_oid_copy (&log_and_monitor->version_id, &sd->opened_by_log_and_monitor_version_id);
 
       mongoc_structured_log (log_and_monitor->structured_log,
                              MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
@@ -78,7 +78,7 @@ _mongoc_topology_description_monitor_server_closed (const mongoc_topology_descri
                                                     const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                     const mongoc_server_description_t *sd)
 {
-   if (sd->opened_by_log_and_monitor != log_and_monitor->serial) {
+   if (!bson_oid_equal (&log_and_monitor->version_id, &sd->opened_by_log_and_monitor_version_id)) {
       return;
    }
 
@@ -106,18 +106,15 @@ void
 _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
                                               const mongoc_log_and_monitor_instance_t *log_and_monitor)
 {
-   mongoc_topology_description_t *prev_td = NULL;
-   mongoc_server_description_t *sd;
-
-   if (td->opened_by_log_and_monitor == log_and_monitor->serial) {
+   if (bson_oid_equal (&log_and_monitor->version_id, &td->opened_by_log_and_monitor_version_id)) {
       return;
    }
 
    // The initial 'previous' topology description, with Unknown type
-   prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
+   mongoc_topology_description_t *prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
    mongoc_topology_description_init (prev_td, td->heartbeat_msec);
 
-   td->opened_by_log_and_monitor = log_and_monitor->serial;
+   bson_oid_copy (&log_and_monitor->version_id, &td->opened_by_log_and_monitor_version_id);
 
    mongoc_structured_log (log_and_monitor->structured_log,
                           MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
@@ -137,7 +134,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
    _mongoc_topology_description_monitor_changed (prev_td, td, log_and_monitor);
 
    for (size_t i = 0u; i < mc_tpld_servers (td)->items_len; i++) {
-      sd = mongoc_set_get_item (mc_tpld_servers (td), i);
+      mongoc_server_description_t *sd = mongoc_set_get_item (mc_tpld_servers (td), i);
       _mongoc_topology_description_monitor_server_opening (td, log_and_monitor, sd);
    }
 
@@ -152,7 +149,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
       /* LoadBalanced deployments must have exactly one host listed. Otherwise,
        * an error would have occurred when constructing the topology. */
       BSON_ASSERT (mc_tpld_servers (td)->items_len == 1);
-      sd = mongoc_set_get_item (mc_tpld_servers (td), 0);
+      mongoc_server_description_t *sd = mongoc_set_get_item (mc_tpld_servers (td), 0);
       prev_sd = mongoc_server_description_new_copy (sd);
       BSON_ASSERT (prev_sd);
 
@@ -208,7 +205,7 @@ _mongoc_topology_description_monitor_closed (const mongoc_topology_description_t
    BSON_ASSERT (td->type == MONGOC_TOPOLOGY_UNKNOWN);
    BSON_ASSERT (mc_tpld_servers_const (td)->items_len == 0);
 
-   if (td->opened_by_log_and_monitor != log_and_monitor->serial) {
+   if (!bson_oid_equal (&log_and_monitor->version_id, &td->opened_by_log_and_monitor_version_id)) {
       return;
    }
 

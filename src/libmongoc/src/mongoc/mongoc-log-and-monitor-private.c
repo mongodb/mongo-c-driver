@@ -19,15 +19,6 @@
 #include <mongoc/mongoc-structured-log-private.h>
 #include <common-atomic-private.h>
 
-static mongoc_log_and_monitor_serial_t
-_mongoc_log_and_monitor_instance_new_serial (void)
-{
-   static int64_t serial_number_atomic = 0;
-   mongoc_log_and_monitor_serial_t result =
-      1 + mcommon_atomic_int64_fetch_add (&serial_number_atomic, 1, mcommon_memory_order_seq_cst);
-   BSON_ASSERT (result);
-   return result;
-}
 
 /**
  * @brief Initializes the contents of a just-allocated mongoc_log_and_monitor_instance_t
@@ -39,7 +30,7 @@ mongoc_log_and_monitor_instance_init (mongoc_log_and_monitor_instance_t *new_ins
 {
    BSON_ASSERT_PARAM (new_instance);
 
-   // Init apm_callbacks and serial
+   // Init apm_callbacks and version_id
    mongoc_log_and_monitor_instance_set_apm_callbacks (new_instance, NULL, NULL);
 
    // Note: For now this apm_mutex is quite limited in scope, held only during callbacks from the server_monitor
@@ -83,7 +74,7 @@ mongoc_log_and_monitor_instance_set_apm_callbacks (mongoc_log_and_monitor_instan
    BSON_ASSERT_PARAM (instance);
    instance->apm_callbacks = callbacks ? *callbacks : (mongoc_apm_callbacks_t){0};
    instance->apm_context = context;
-   instance->serial = _mongoc_log_and_monitor_instance_new_serial ();
+   bson_oid_init (&instance->version_id, NULL);
 }
 
 /**
@@ -102,5 +93,5 @@ mongoc_log_and_monitor_instance_set_structured_log_opts (mongoc_log_and_monitor_
    BSON_ASSERT_PARAM (instance);
    mongoc_structured_log_instance_destroy (instance->structured_log);
    instance->structured_log = mongoc_structured_log_instance_new (opts);
-   instance->serial = _mongoc_log_and_monitor_instance_new_serial ();
+   bson_oid_init (&instance->version_id, NULL);
 }

@@ -125,7 +125,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd, const char *add
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
    sd->generation = 0;
-   sd->opened_by_log_and_monitor = 0;
+   mcommon_oid_set_zero (&sd->opened_by_log_and_monitor_version_id);
    sd->_generation_map_ = mongoc_generation_map_new ();
 
    if (!_mongoc_host_list_from_string (&sd->host, address)) {
@@ -777,7 +777,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    copy = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
 
    copy->id = description->id;
-   copy->opened_by_log_and_monitor = description->opened_by_log_and_monitor;
+   bson_oid_copy (&description->opened_by_log_and_monitor_version_id, &copy->opened_by_log_and_monitor_version_id);
    memcpy (&copy->host, &description->host, sizeof (copy->host));
    copy->round_trip_time_msec = MONGOC_RTT_UNSET;
 
