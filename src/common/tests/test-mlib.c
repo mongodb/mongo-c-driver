@@ -492,6 +492,7 @@ _test_foreach (void)
    ASSERT (n_loops == 3);
 }
 
+
 void
 test_mlib_install (TestSuite *suite)
 {

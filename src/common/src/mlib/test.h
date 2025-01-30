@@ -52,6 +52,7 @@
 
 #ifndef _WIN32
 #include <sys/wait.h>
+#include <unistd.h>
 #define _mlibAssertAbortsStmt_()                                                                  \
    for (int once = 1, other_pid = fork (); once; once = 0)                                        \
       for (; once; once = 0)                                                                      \
