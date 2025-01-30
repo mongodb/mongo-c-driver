@@ -650,13 +650,14 @@ test_bulkwrite_two_large_inserts (void *unused)
    char *large_string = bson_malloc (large_len + 1);
    memset (large_string, 'a', large_len);
    large_string[large_len] = '\0';
+   ASSERT (mcommon_in_range_unsigned (int, large_len));
 
    // Create two large documents:
    bson_t *docs[2];
    docs[0] = BCON_NEW ("_id", "over_2mib_1");
-   bson_append_utf8 (docs[0], "unencrypted", -1, large_string, large_len);
+   bson_append_utf8 (docs[0], "unencrypted", -1, large_string, (int) large_len);
    docs[1] = BCON_NEW ("_id", "over_2mib_2");
-   bson_append_utf8 (docs[1], "unencrypted", -1, large_string, large_len);
+   bson_append_utf8 (docs[1], "unencrypted", -1, large_string, (int) large_len);
 
    mongoc_bulkwriteopts_t *bw_opts = mongoc_bulkwriteopts_new ();
    mongoc_bulkwriteopts_set_verboseresults (bw_opts, true);
