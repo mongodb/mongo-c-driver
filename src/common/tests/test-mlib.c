@@ -2,6 +2,7 @@
 
 #include <mlib/intutil.h>
 #include <mlib/config.h>
+#include <mlib/intencode.h>
 #include <mlib/loop.h>
 #include <mlib/cmp.h>
 #include <mlib/test.h>
@@ -402,6 +403,31 @@ _test_assert_aborts (void)
 }
 
 void
+_test_int_encoding (void)
+{
+   {
+      const char *buf = "\x01\x02\x03\x04";
+      const uint32_t val = mlib_read_u32le (buf);
+      mlib_check (val, eq, 0x04030201);
+   }
+
+   {
+      char buf[9] = {0};
+      char *o = mlib_write_i32le (buf, 0x01020304);
+      mlib_check (o, ptreq, buf + 4);
+      mlib_check (buf, streq, "\x04\x03\x02\x01");
+
+      o = mlib_write_i32le (o, 42);
+      mlib_check (o, ptreq, buf + 8);
+      mlib_check (buf, streq, "\x04\x03\x02\x01*");
+
+      o = mlib_write_i64le (buf, 0x0102030405060708);
+      mlib_check (o, ptreq, buf + 8);
+      mlib_check (buf, streq, "\x08\x07\x06\x05\x04\x03\x02\x01");
+   }
+}
+
+void
 _test_foreach (void)
 {
    int n_loops = 0;
@@ -446,7 +472,8 @@ _test_foreach (void)
    int arr[] = {1, 2, 3};
    int sum = 0;
    n_loops = 0;
-   mlib_foreach_arr (int, n, arr) {
+   mlib_foreach_arr (int, n, arr)
+   {
       n_loops++;
       sum += *n;
    }
@@ -463,6 +490,7 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
    TestSuite_Add (suite, "/mlib/in-range", _test_in_range);
    TestSuite_Add (suite, "/mlib/assert-aborts", _test_assert_aborts);
+   TestSuite_Add (suite, "/mlib/int-encoding", _test_int_encoding);
    TestSuite_Add (suite, "/mlib/foreach", _test_foreach);
 }
 
