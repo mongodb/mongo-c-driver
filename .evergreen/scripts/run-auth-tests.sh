@@ -100,16 +100,11 @@ elif command -v otool >/dev/null; then
 fi
 
 if [[ "${ssl}" != "OFF" ]]; then
-  {
-    # Skip 3.6. Remove this block when resolving CDRIVER-5645.
-    echo "Skipping tests on server 3.6 (using 'auth_host' or 'auth_gssapi') until DEVPROD-9029 is addressed."
-  } || {
   # FIXME: CDRIVER-2008 for the cygwin check
   if [[ "${OSTYPE}" != "cygwin" ]]; then
     echo "Authenticating using X.509"
     LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout}"
   fi
-  }
   echo "Connecting to Atlas Free Tier"
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_free:?}&${c_timeout}"
   echo "Connecting to Atlas Free Tier with SRV"
@@ -149,10 +144,6 @@ if [[ "${ssl}" != "OFF" ]]; then
   fi
 fi
 
-{
-  # Skip 3.6. Remove this block when resolving CDRIVER-5645.
-  echo "Skipping tests on server 3.6 (using 'auth_host' or 'auth_gssapi') until DEVPROD-9029 is addressed."
-} || {
 echo "Authenticating using PLAIN"
 LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_plain:?}@${auth_host}/?authMechanism=PLAIN&${c_timeout}"
 
@@ -183,4 +174,3 @@ if [[ "${sasl}" != "OFF" ]]; then
     LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_gssapi_utf8:?}@${auth_host}/?authMechanism=GSSAPI&${c_timeout}"
   fi
 fi
-}
