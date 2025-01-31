@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <mlib/intencode.h>
 #include <common-atomic-private.h>
 #include <common-oid-private.h>
 #include <common-string-private.h>
@@ -604,11 +605,9 @@ _mongoc_structured_log_command_with_payloads_as_truncated_json (const mongoc_cmd
       BSON_ASSERT (doc_begin != doc_end);
 
       const uint8_t *doc_ptr = doc_begin;
-      int32_t doc_len;
 
-      while (doc_ptr + sizeof doc_len <= doc_end) {
-         memcpy (&doc_len, doc_ptr, sizeof doc_len);
-         doc_len = BSON_UINT32_FROM_LE (doc_len);
+      while (doc_ptr + sizeof (int32_t) <= doc_end) {
+         const int32_t doc_len = mlib_read_i32le (doc_ptr);
 
          bson_t doc;
          if (doc_len < 5 || (size_t) doc_len > (size_t) (doc_end - doc_ptr) ||

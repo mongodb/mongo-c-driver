@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <mlib/intencode.h>
 #include <bson/bson-compat.h>
 
 #include <limits.h>
@@ -116,23 +117,6 @@ _bson_rotl_u64 (uint64_t *p, int nbits)
    *p = (*p << nbits) | (*p >> (64 - nbits));
 }
 
-/* Write the little-endian representation of 'val' into 'out' */
-void
-_u64_into_u8x8_le (uint8_t out[8], uint64_t val)
-{
-   val = BSON_UINT64_TO_LE (val);
-   memcpy (out, &val, sizeof val);
-}
-
-/* Read a little-endian representation of a 64bit number from 'in' */
-uint64_t
-_u8x8_le_to_u64 (const uint8_t in[8])
-{
-   uint64_t r;
-   memcpy (&r, in, sizeof r);
-   return BSON_UINT64_FROM_LE (r);
-}
-
 /* Perform one SipHash round */
 void
 _sip_round (uint64_t *v0, uint64_t *v1, uint64_t *v2, uint64_t *v3)
@@ -167,8 +151,8 @@ _siphash (const void *in, const size_t inlen, const uint64_t key[2], uint64_t di
    uint64_t v1 = UINT64_C (0x646f72616e646f6d);
    uint64_t v2 = UINT64_C (0x6c7967656e657261);
    uint64_t v3 = UINT64_C (0x7465646279746573);
-   uint64_t k0 = _u8x8_le_to_u64 (kk);
-   uint64_t k1 = _u8x8_le_to_u64 (kk + 8);
+   uint64_t k0 = mlib_read_u64le (kk);
+   uint64_t k1 = mlib_read_u64le (kk + 8);
    uint64_t m;
    int i;
    const unsigned char *end = ni + inlen - (inlen % sizeof (uint64_t));
@@ -182,7 +166,7 @@ _siphash (const void *in, const size_t inlen, const uint64_t key[2], uint64_t di
    v1 ^= 0xee;
 
    for (; ni != end; ni += 8) {
-      m = _u8x8_le_to_u64 (ni);
+      m = mlib_read_u64le (ni);
       v3 ^= m;
 
       for (i = 0; i < C_ROUNDS; ++i)
@@ -232,7 +216,7 @@ _siphash (const void *in, const size_t inlen, const uint64_t key[2], uint64_t di
       _sip_round (&v0, &v1, &v2, &v3);
 
    b = v0 ^ v1 ^ v2 ^ v3;
-   _u64_into_u8x8_le (digest_buf, b);
+   mlib_write_u64le (digest_buf, b);
 
    v1 ^= 0xdd;
 
@@ -240,7 +224,7 @@ _siphash (const void *in, const size_t inlen, const uint64_t key[2], uint64_t di
       _sip_round (&v0, &v1, &v2, &v3);
 
    b = v0 ^ v1 ^ v2 ^ v3;
-   _u64_into_u8x8_le (digest_buf + 8, b);
+   mlib_write_u64le (digest_buf + 8, b);
 
    memcpy (digest, digest_buf, sizeof digest_buf);
 }

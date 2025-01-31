@@ -18,6 +18,7 @@
 #include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc.h>
 
+#include <mlib/intencode.h>
 #include "mock-server.h"
 #include "../test-conveniences.h"
 #include "../TestSuite.h"
@@ -523,18 +524,6 @@ query_flags_str (mcommon_string_append_t *str, int32_t flags)
 }
 
 
-static int32_t
-length_prefix (const uint8_t *data)
-{
-   uint32_t storage;
-   memcpy (&storage, data, sizeof (storage));
-   storage = BSON_UINT32_FROM_LE (storage);
-   int32_t res;
-   memcpy (&res, &storage, sizeof (storage));
-   return res;
-}
-
-
 static void
 request_from_query (request_t *request)
 {
@@ -551,7 +540,7 @@ request_from_query (request_t *request)
    const void *const request_fields = mcd_rpc_op_query_get_return_fields_selector (request->rpc);
 
    {
-      const int32_t len = length_prefix (request_query);
+      const int32_t len = mlib_read_i32le (request_query);
       bson_t *const query = bson_new_from_data (request_query, (size_t) len);
       BSON_ASSERT (query);
       _mongoc_array_append_val (&request->docs, query);
@@ -572,7 +561,7 @@ request_from_query (request_t *request)
    }
 
    if (request_fields) {
-      const int32_t len = length_prefix (request_fields);
+      const int32_t len = mlib_read_i32le (request_fields);
       bson_t *const fields = bson_new_from_data (request_fields, (size_t) len);
       BSON_ASSERT (fields);
       _mongoc_array_append_val (&request->docs, fields);
@@ -625,7 +614,7 @@ parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, mcom
          mcommon_string_append (msg_as_str, ", ");
       }
 
-      const int32_t doc_len = length_prefix (pos);
+      const int32_t doc_len = mlib_read_i32le (pos);
       const bson_t *const doc = bson_new_from_data (pos, (size_t) doc_len);
       BSON_ASSERT (doc);
       _mongoc_array_append_val (&request->docs, doc);
@@ -653,7 +642,7 @@ request_from_op_msg (request_t *request)
       switch (kind) {
       case 0: { /* a single BSON document */
          const void *const body = mcd_rpc_op_msg_section_get_body (request->rpc, index);
-         parse_op_msg_doc (request, body, (size_t) length_prefix (body), &msg_as_str);
+         parse_op_msg_doc (request, body, (size_t) mlib_read_i32le (body), &msg_as_str);
          break;
       }
 

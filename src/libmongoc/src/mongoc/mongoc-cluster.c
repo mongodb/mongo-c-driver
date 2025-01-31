@@ -15,6 +15,7 @@
  */
 
 
+#include <mlib/intencode.h>
 #include <mongoc/mongoc-config.h>
 
 #include <string.h>
@@ -144,15 +145,6 @@ _handle_network_error (mongoc_cluster_t *cluster, mongoc_server_stream_t *server
 
    EXIT;
 }
-
-
-static int32_t
-_int32_from_le (const void *data)
-{
-   BSON_ASSERT_PARAM (data);
-   return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
-}
-
 
 static int32_t
 _compression_level_from_uri (int32_t compressor_id, const mongoc_uri_t *uri)
@@ -346,7 +338,7 @@ _mongoc_cluster_run_command_opquery_recv (
       goto done;
    }
 
-   const int32_t message_length = _int32_from_le (buffer.data);
+   const int32_t message_length = mlib_read_i32le (buffer.data);
 
    if (message_length < message_header_length || message_length > MONGOC_DEFAULT_MAX_MSG_SIZE) {
       RUN_CMD_ERR (MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "invalid message length");
@@ -2999,7 +2991,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       GOTO (done);
    }
 
-   const int32_t message_length = _int32_from_le (buffer->data + offset);
+   const int32_t message_length = mlib_read_i32le (buffer->data + offset);
 
    const int32_t max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
@@ -3217,7 +3209,7 @@ _mongoc_cluster_run_opmsg_recv (
       goto done;
    }
 
-   const int32_t message_length = _int32_from_le (buffer.data);
+   const int32_t message_length = mlib_read_i32le (buffer.data);
 
    if (message_length < message_header_length || message_length > server_stream->sd->max_msg_size) {
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
@@ -3502,25 +3494,11 @@ mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
    const int32_t op_code = mcd_rpc_op_compressed_get_original_opcode (rpc);
 
    // Populate the msgHeader fields.
-   {
-      uint32_t storage;
-
-      memcpy (&storage, &message_length, sizeof (storage));
-      storage = BSON_UINT32_TO_LE (storage);
-      memcpy (ptr + 0, &storage, sizeof (storage));
-
-      memcpy (&storage, &request_id, sizeof (storage));
-      storage = BSON_UINT32_TO_LE (storage);
-      memcpy (ptr + 4, &storage, sizeof (storage));
-
-      memcpy (&storage, &response_to, sizeof (storage));
-      storage = BSON_UINT32_TO_LE (storage);
-      memcpy (ptr + 8, &storage, sizeof (storage));
-
-      memcpy (&storage, &op_code, sizeof (storage));
-      storage = BSON_UINT32_TO_LE (storage);
-      memcpy (ptr + 12, &storage, sizeof (storage));
-   }
+   uint8_t *out = ptr;
+   out = mlib_write_i32le (out, message_length);
+   out = mlib_write_i32le (out, request_id);
+   out = mlib_write_i32le (out, response_to);
+   out = mlib_write_i32le (out, op_code);
 
    // This value may be passed as an argument to an in-out parameter depending
    // on the compressor, not just an out-parameter.

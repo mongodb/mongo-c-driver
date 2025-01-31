@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <mlib/intencode.h>
 #include <mongoc/mongoc-bulkwrite.h>
 
 #include <bson/bson.h>
@@ -1728,15 +1729,13 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             break;
          }
 
-         if (ops_doc_len >= maxWriteBatchSize) {
+         if (mlib_cmp (ops_doc_len, >=, maxWriteBatchSize)) {
             // Maximum number of operations are readied.
             break;
          }
 
          // Read length of next document.
-         uint32_t doc_len;
-         memcpy (&doc_len, self->ops.data + ops_byte_offset + ops_byte_len, 4);
-         doc_len = BSON_UINT32_FROM_LE (doc_len);
+         const uint32_t doc_len = mlib_read_u32le (self->ops.data + ops_byte_offset + ops_byte_len);
 
          // Check if adding this operation requires adding an `nsInfo` entry.
          // `models_idx` is the index of the model that produced this result.
@@ -1749,7 +1748,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             nsinfo_bson_size = mcd_nsinfo_get_bson_size (md->ns);
          }
 
-         if (opmsg_overhead + ops_byte_len + doc_len + nsinfo_bson_size > maxMessageSizeBytes) {
+         if (mlib_cmp (opmsg_overhead + ops_byte_len + doc_len + nsinfo_bson_size, >, maxMessageSizeBytes)) {
             if (ops_byte_len == 0) {
                // Could not even fit one document within an OP_MSG.
                bson_set_error (&error,
