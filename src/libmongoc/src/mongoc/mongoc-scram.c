@@ -834,7 +834,8 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram, uint8_t *verificat
       return false;
    }
 
-   return (len == encoded_server_signature_len) && (mongoc_memcmp (verification, encoded_server_signature, len) == 0);
+   return mlib_cmp (len, ==, encoded_server_signature_len) &&
+          (mongoc_memcmp (verification, encoded_server_signature, len) == 0);
 }
 
 

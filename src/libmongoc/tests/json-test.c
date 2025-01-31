@@ -656,43 +656,39 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
 bson_t *
 get_bson_from_json_file (char *filename)
 {
-   FILE *file;
-   long length;
-   bson_t *data;
-   bson_error_t error;
-   const char *buffer;
-
-   file = fopen (filename, "rb");
+   FILE *const file = fopen (filename, "rb");
    if (!file) {
       return NULL;
    }
 
    /* get file length */
    fseek (file, 0, SEEK_END);
-   length = ftell (file);
+   const long length = ftell (file);
    fseek (file, 0, SEEK_SET);
    if (length < 1) {
       return NULL;
    }
 
    /* read entire file into buffer */
-   buffer = (const char *) bson_malloc0 (length);
-   if (fread ((void *) buffer, 1, length, file) != length) {
+   char *const buffer = (char *) bson_malloc0 (length);
+   const size_t nread = fread (buffer, 1, length, file);
+   fclose (file);
+   if (mlib_cmp (nread, !=, length)) {
       test_error ("Failed to read JSON file into buffer");
    }
 
-   fclose (file);
    if (!buffer) {
       return NULL;
    }
 
    /* convert to bson */
-   data = bson_new_from_json ((const uint8_t *) buffer, length, &error);
+   bson_error_t error;
+   bson_t *const data = bson_new_from_json ((const uint8_t *) buffer, length, &error);
    if (!data) {
       test_error ("Cannot parse %s: %s", filename, error.message);
    }
 
-   bson_free ((void *) buffer);
+   bson_free (buffer);
 
    return data;
 }

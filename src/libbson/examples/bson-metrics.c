@@ -252,7 +252,7 @@ main (int argc, char *argv[])
       mark = 0;
       while ((b = bson_reader_read (reader, NULL))) {
          off_t pos = bson_reader_tell (reader);
-         state.doc_size_max = BSON_MAX (pos - mark, state.doc_size_max);
+         state.doc_size_max = BSON_MAX (pos - mark, (off_t) state.doc_size_max);
          mark = pos;
          bson_metrics (b, NULL, &state);
       }

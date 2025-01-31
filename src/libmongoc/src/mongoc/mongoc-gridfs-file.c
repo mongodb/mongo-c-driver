@@ -459,7 +459,7 @@ mongoc_gridfs_file_readv (
          if (iov_pos == iov[i].iov_len) {
             /* filled a bucket, keep going */
             break;
-         } else if (file->length == file->pos) {
+         } else if (mlib_cmp (file->length, ==, file->pos)) {
             /* we're at the end of the file.  So we're done */
             RETURN (bytes_read);
          } else if (bytes_read >= min_bytes) {
@@ -857,7 +857,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
          }
       }
 
-      if (file->n != file->pos / file->chunk_size) {
+      if (mlib_cmp (file->n, !=, file->pos / file->chunk_size)) {
          return 0;
       }
    }

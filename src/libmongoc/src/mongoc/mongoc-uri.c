@@ -245,7 +245,7 @@ scan_to_unichar (const char *str, bson_unichar_t match, const char *terminators,
       } else {
          const char *term_iter;
          for (term_iter = terminators; *term_iter; term_iter++) {
-            if (c == *term_iter) {
+            if (mlib_cmp (c, ==, *term_iter)) {
                return NULL;
             }
          }

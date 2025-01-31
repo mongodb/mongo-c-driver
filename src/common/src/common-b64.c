@@ -42,6 +42,7 @@
 
 #include <bson/bson.h>
 #include <common-b64-private.h>
+#include <mlib/loop.h>
 
 #define Assert(Cond) \
    if (!(Cond))      \
@@ -118,21 +119,21 @@ mcommon_b64_ntop (uint8_t const *src, size_t srclength, char *target, size_t tar
    size_t datalength = 0;
    uint8_t input[3];
    uint8_t output[4];
-   size_t i;
 
    if (!target) {
       return -1;
    }
 
-   while (2 < srclength) {
+   // While we have at least three chars to read:
+   while (srclength > 2) {
       input[0] = *src++;
       input[1] = *src++;
       input[2] = *src++;
       srclength -= 3;
 
       output[0] = input[0] >> 2;
-      output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
-      output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
+      output[1] = (uint8_t) (((input[0] & 0x03) << 4) + (input[1] >> 4));
+      output[2] = (uint8_t) (((input[1] & 0x0f) << 2) + (input[2] >> 6));
       output[3] = input[2] & 0x3f;
       Assert (output[0] < 64);
       Assert (output[1] < 64);
@@ -153,12 +154,11 @@ mcommon_b64_ntop (uint8_t const *src, size_t srclength, char *target, size_t tar
       /* Get what's left. */
       input[0] = input[1] = input[2] = '\0';
 
-      for (i = 0; i < srclength; i++) {
-         input[i] = *src++;
-      }
+      memcpy (input, src, srclength);
+      src += srclength;
       output[0] = input[0] >> 2;
-      output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
-      output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
+      output[1] = (uint8_t) (((input[0] & 0x03) << 4) + (input[1] >> 4));
+      output[2] = (uint8_t) (((input[1] & 0x0f) << 2) + (input[2] >> 6));
       Assert (output[0] < 64);
       Assert (output[1] < 64);
       Assert (output[2] < 64);
@@ -277,27 +277,24 @@ static const uint8_t mongoc_b64rmap_invalid = 0xff;
 
 static MONGOC_COMMON_ONCE_FUN (bson_b64_initialize_rmap)
 {
-   int i;
-   unsigned char ch;
-
    /* Null: end of string, stop parsing */
    mongoc_b64rmap[0] = mongoc_b64rmap_end;
 
-   for (i = 1; i < 256; ++i) {
-      ch = (unsigned char) i;
+   mlib_foreach_urange (i, 1, 256) {
+      const uint8_t ch = (uint8_t) i;
       /* Whitespaces */
       if (bson_isspace (ch))
-         mongoc_b64rmap[i] = mongoc_b64rmap_space;
+         mongoc_b64rmap[ch] = mongoc_b64rmap_space;
       /* Padding: stop parsing */
       else if (ch == Pad64)
-         mongoc_b64rmap[i] = mongoc_b64rmap_end;
+         mongoc_b64rmap[ch] = mongoc_b64rmap_end;
       /* Non-base64 char */
       else
-         mongoc_b64rmap[i] = mongoc_b64rmap_invalid;
+         mongoc_b64rmap[ch] = mongoc_b64rmap_invalid;
    }
 
    /* Fill reverse mapping for base64 chars */
-   for (i = 0; Base64[i] != '\0'; ++i)
+   for (uint8_t i = 0; Base64[i] != '\0'; ++i)
       mongoc_b64rmap[(uint8_t) Base64[i]] = i;
 
    MONGOC_COMMON_ONCE_RETURN;
@@ -313,7 +310,7 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
    tarindex = 0;
 
    while (1) {
-      ch = *src++;
+      ch = (uint8_t) *src++;
       ofs = mongoc_b64rmap[ch];
 
       if (ofs >= mongoc_b64rmap_special) {
@@ -367,8 +364,8 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
     * on a byte boundary, and/or with erroneous trailing characters.
     */
 
-   if (ch == Pad64) { /* We got a pad char. */
-      ch = *src++;    /* Skip it, get next. */
+   if (ch == Pad64) {        /* We got a pad char. */
+      ch = (uint8_t) *src++; /* Skip it, get next. */
       switch (state) {
       case 0: /* Invalid = in first position */
       case 1: /* Invalid = in second position */
@@ -376,13 +373,13 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
 
       case 2: /* Valid, means one byte of info */
          /* Skip any number of spaces. */
-         for ((void) NULL; ch != '\0'; ch = *src++)
+         for ((void) NULL; ch != '\0'; ch = (uint8_t) *src++)
             if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
                break;
          /* Make sure there is another trailing = sign. */
          if (ch != Pad64)
             return (-1);
-         ch = *src++; /* Skip the = */
+         ch = (uint8_t) *src++; /* Skip the = */
          /* Fall through to "single trailing =" case. */
          /* FALLTHROUGH */
 
@@ -391,7 +388,7 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
           * We know this char is an =.  Is there anything but
           * whitespace after it?
           */
-         for ((void) NULL; ch != '\0'; ch = *src++)
+         for ((void) NULL; ch != '\0'; ch = (uint8_t) *src++)
             if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
                return (-1);
 
@@ -422,14 +419,13 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
 static int
 mongoc_b64_pton_len (char const *src)
 {
-   int tarindex, state;
-   uint8_t ch, ofs;
-
-   state = 0;
-   tarindex = 0;
+   uint8_t ch = 0;
+   uint8_t ofs = 0;
+   int state = 0;
+   int tarindex = 0;
 
    while (1) {
-      ch = *src++;
+      ch = (uint8_t) *src++;
       ofs = mongoc_b64rmap[ch];
 
       if (ofs >= mongoc_b64rmap_special) {
@@ -469,8 +465,8 @@ mongoc_b64_pton_len (char const *src)
     * on a byte boundary, and/or with erroneous trailing characters.
     */
 
-   if (ch == Pad64) { /* We got a pad char. */
-      ch = *src++;    /* Skip it, get next. */
+   if (ch == Pad64) {        /* We got a pad char. */
+      ch = (uint8_t) *src++; /* Skip it, get next. */
       switch (state) {
       case 0: /* Invalid = in first position */
       case 1: /* Invalid = in second position */
@@ -478,13 +474,13 @@ mongoc_b64_pton_len (char const *src)
 
       case 2: /* Valid, means one byte of info */
          /* Skip any number of spaces. */
-         for ((void) NULL; ch != '\0'; ch = *src++)
+         for ((void) NULL; ch != '\0'; ch = (uint8_t) *src++)
             if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
                break;
          /* Make sure there is another trailing = sign. */
          if (ch != Pad64)
             return (-1);
-         ch = *src++; /* Skip the = */
+         ch = (uint8_t) *src++; /* Skip the = */
          /* Fall through to "single trailing =" case. */
          /* FALLTHROUGH */
 
@@ -493,7 +489,7 @@ mongoc_b64_pton_len (char const *src)
           * We know this char is an =.  Is there anything but
           * whitespace after it?
           */
-         for ((void) NULL; ch != '\0'; ch = *src++)
+         for (; ch != '\0'; ch = (uint8_t) *src++)
             if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
                return (-1);
 

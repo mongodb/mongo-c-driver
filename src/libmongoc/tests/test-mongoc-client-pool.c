@@ -180,7 +180,7 @@ test_mongoc_client_pool_set_max_size (void)
       client = mongoc_client_pool_pop (pool);
       BSON_ASSERT (client);
       _mongoc_array_append_val (&conns, client);
-      BSON_ASSERT (mongoc_client_pool_get_size (pool) == i + 1);
+      BSON_ASSERT (mlib_cmp (mongoc_client_pool_get_size (pool), ==, i + 1));
    }
 
    mongoc_client_pool_max_size (pool, 3);
@@ -219,7 +219,7 @@ test_mongoc_client_pool_set_min_size (void)
       client = mongoc_client_pool_pop (pool);
       BSON_ASSERT (client);
       _mongoc_array_append_val (&conns, client);
-      BSON_ASSERT (mongoc_client_pool_get_size (pool) == i + 1);
+      BSON_ASSERT (mlib_cmp (mongoc_client_pool_get_size (pool), ==, i + 1));
    }
 
    capture_logs (true);
