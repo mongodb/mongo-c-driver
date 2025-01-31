@@ -13,6 +13,31 @@ mlib_diagnostic_push (); // We don't set any diagnostics, we just want to make s
 mlib_msvc_warning (disable : 4507);
 
 static void
+_test_checks (void)
+{
+   // Simple condiion
+   mlib_check (true);
+   mlib_assert_aborts () {
+      mlib_check (false);
+   }
+   // streq
+   mlib_check ("foo", streq, "foo");
+   mlib_assert_aborts () {
+      mlib_check ("foo", streq, "bar");
+   }
+   // eq
+   mlib_check (4, eq, 4);
+   mlib_assert_aborts () {
+      mlib_check (1, eq, 4);
+   }
+   // neq
+   mlib_check (1, neq, 4);
+   mlib_assert_aborts () {
+      mlib_check (1, neq, 1);
+   }
+}
+
+static void
 _test_minmax (void)
 {
    mlib_static_assert (mlib_minof (unsigned) == 0);
@@ -77,15 +102,15 @@ _test_upsize (void)
 void
 _test_cmp (void)
 {
-   ASSERT (mlib_cmp (1, 2) == mlib_less);
-   ASSERT (mlib_cmp (1, 2) < 0);
-   ASSERT (mlib_cmp (1, <, 2));
-   ASSERT (mlib_cmp (2, 1) == mlib_greater);
-   ASSERT (mlib_cmp (2, 1) > 0);
-   ASSERT (mlib_cmp (2, >, 1));
-   ASSERT (mlib_cmp (1, 1) == mlib_equal);
-   ASSERT (mlib_cmp (1, 1) == 0);
-   ASSERT (mlib_cmp (1, ==, 1));
+   mlib_check (mlib_cmp (1, 2) == mlib_less);
+   mlib_check (mlib_cmp (1, 2) < 0);
+   mlib_check (mlib_cmp (1, <, 2));
+   mlib_check (mlib_cmp (2, 1) == mlib_greater);
+   mlib_check (mlib_cmp (2, 1) > 0);
+   mlib_check (mlib_cmp (2, >, 1));
+   mlib_check (mlib_cmp (1, 1) == mlib_equal);
+   mlib_check (mlib_cmp (1, 1) == 0);
+   mlib_check (mlib_cmp (1, ==, 1));
 
    ASSERT (mlib_cmp (0, ==, 0));
    ASSERT (!mlib_cmp (0, ==, -1));
@@ -379,6 +404,7 @@ _test_assert_aborts (void)
 void
 test_mlib_install (TestSuite *suite)
 {
+   TestSuite_Add (suite, "/mlib/checks", _test_checks);
    TestSuite_Add (suite, "/mlib/intutil/minmax", _test_minmax);
    TestSuite_Add (suite, "/mlib/intutil/upsize", _test_upsize);
    TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
