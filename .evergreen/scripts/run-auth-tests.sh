@@ -21,12 +21,12 @@ declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 declare c_timeout="connectTimeoutMS=30000&serverSelectionTryOnce=false"
 
 declare sasl="OFF"
-if grep -q "#define MONGOC_ENABLE_SASL 1" src/libmongoc/src/mongoc/mongoc-config.h; then
+if grep -r -q "#define MONGOC_ENABLE_SASL 1" "${install_dir:?}"; then
   sasl="ON"
 fi
 
 declare ssl="OFF"
-if grep -q "#define MONGOC_ENABLE_SSL 1" src/libmongoc/src/mongoc/mongoc-config.h; then
+if grep -r -q "#define MONGOC_ENABLE_SSL 1" "${install_dir:?}"; then
   ssl="ON"
 fi
 
@@ -41,20 +41,20 @@ declare test_gssapi
 declare ip_addr
 case "${OSTYPE}" in
 cygwin)
-  ping="./src/libmongoc/Debug/mongoc-ping.exe"
-  test_gssapi="./src/libmongoc/Debug/test-mongoc-gssapi.exe"
+  ping="${mongoc_dir}/cmake-build/src/libmongoc/Debug/mongoc-ping.exe"
+  test_gssapi="${mongoc_dir}/cmake-build/src/libmongoc/Debug/test-mongoc-gssapi.exe"
   ip_addr="$(getent hosts "${auth_host:?}" | head -n 1 | awk '{print $1}')"
   ;;
 
 darwin*)
-  ping="./src/libmongoc/mongoc-ping"
-  test_gssapi="./src/libmongoc/test-mongoc-gssapi"
+  ping="${mongoc_dir}/cmake-build/src/libmongoc/mongoc-ping"
+  test_gssapi="${mongoc_dir}/cmake-build/src/libmongoc/test-mongoc-gssapi"
   ip_addr="$(dig "${auth_host:?}" +short | tail -1)"
   ;;
 
 *)
-  ping="./src/libmongoc/mongoc-ping"
-  test_gssapi="./src/libmongoc/test-mongoc-gssapi"
+  ping="${mongoc_dir}/cmake-build/src/libmongoc/mongoc-ping"
+  test_gssapi="${mongoc_dir}/cmake-build/src/libmongoc/test-mongoc-gssapi"
   ip_addr="$(getent hosts "${auth_host:?}" | head -n 1 | awk '{print $1}')"
   ;;
 esac
