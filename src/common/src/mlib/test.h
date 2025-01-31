@@ -19,9 +19,14 @@
  */
 #pragma once
 
+#include <mlib/cmp.h>
+#include <mlib/intutil.h>
 #include <mlib/config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <inttypes.h>
 
 /**
  * @brief Place this macro at the head of a (compound) statement to assert that
@@ -71,8 +76,9 @@
                }                                                                                  \
             }                                                                                     \
          } else /* We are the child */                                                            \
-            for (;; _Exit (71))                                                                   \
-               for (;; _Exit (71)) /* Double loop to prevent the block from `break`ing out */
+            if ((fclose (stderr), 1))                                                             \
+               for (;; _Exit (71))                                                                \
+                  for (;; _Exit (71)) /* Double loop to prevent the block from `break`ing out */
 
 #else
 #define _mlibAssertAbortsStmt_() \
@@ -97,3 +103,141 @@ _mlib_stmt_did_not_abort (const char *file, const char *func, int line, int rc)
 #define _mlibAssertAbortsStmt_debug()                                    \
    for (;; _mlib_stmt_did_not_abort (__FILE__, MLIB_FUNC, __LINE__, -1)) \
       for (;; _mlib_stmt_did_not_abort (__FILE__, MLIB_FUNC, __LINE__, -1))
+
+/**
+ * @brief Aggregate type that holds information about a source location
+ */
+struct mlib_source_location {
+   const char *file;
+   int lineno;
+   const char *func;
+};
+
+/**
+ * @brief Expands to an `mlib_source_location` for the location in which the macro is expanded
+ */
+#define mlib_this_source_location() ((struct mlib_source_location){__FILE__, __LINE__, MLIB_FUNC})
+
+/**
+ * @brief Evaluate a check, aborting with a diagnostic if that check fails
+ *
+ * Can be called with one argument to test a single boolean condition, or three
+ * arguments for more useful diagnostics with an infix operator.
+ */
+#define mlib_check(...) MLIB_ARGC_PICK (_mlib_check, __VA_ARGS__)
+// One arg:
+#define _mlib_check_argc_1(Condition) _mlibCheckConditionSimple (Condition, #Condition, mlib_this_source_location ())
+// Three args:
+#define _mlib_check_argc_3(A, Operator, B) MLIB_PASTE (_mlibCheckCondition_, Operator) (A, B)
+// String-compare:
+#define _mlibCheckCondition_streq(A, B) _mlibCheckStrEq (A, B, #A, #B, mlib_this_source_location ())
+// Pointer-compare:
+#define _mlibCheckCondition_ptreq(A, B) _mlibCheckPtrEq (A, B, #A, #B, mlib_this_source_location ())
+// Integer-equal:
+#define _mlibCheckCondition_eq(A, B) \
+   _mlibCheckIntCmp (                \
+      mlib_equal, true, "==", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+// Integer not-equal:
+#define _mlibCheckCondition_neq(A, B) \
+   _mlibCheckIntCmp (                 \
+      mlib_equal, false, "!=", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+
+/// Check evaluator when given a single boolean
+static inline void
+_mlibCheckConditionSimple (bool c, const char *expr, struct mlib_source_location here)
+{
+   if (!c) {
+      fprintf (stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed\n", here.file, here.lineno, here.func, expr);
+      fflush (stderr);
+      abort ();
+   }
+}
+
+// Implement integer comparison checks
+static inline void
+_mlibCheckIntCmp (enum mlib_cmp_result cres, // The cmp result to check
+                  bool cond,                 // Whether we expect the cmp result to match `cres`
+                  const char *operator_str,
+                  struct mlib_upsized_integer left,
+                  struct mlib_upsized_integer right,
+                  const char *left_expr,
+                  const char *right_expr,
+                  struct mlib_source_location here)
+{
+   if (((mlib_cmp) (left, right, 0) == cres) != cond) {
+      fprintf (stderr,
+               "%s:%d: in [%s]: Check [⟨%s⟩ %s ⟨%s⟩] failed:\n",
+               here.file,
+               here.lineno,
+               here.func,
+               left_expr,
+               operator_str,
+               right_expr);
+      fprintf (stderr, "    ");
+      if (left.is_signed) {
+         fprintf (stderr, "%" PRIiMAX, left.i.s);
+      } else {
+         fprintf (stderr, "%" PRIuMAX, left.i.u);
+      }
+      fprintf (stderr, " ⟨%s⟩\n", left_expr);
+      fprintf (stderr, "    ");
+      if (right.is_signed) {
+         fprintf (stderr, "%" PRIiMAX, right.i.s);
+      } else {
+         fprintf (stderr, "%" PRIuMAX, right.i.u);
+      }
+      fprintf (stderr, " ⟨%s⟩\n", right_expr);
+      fflush (stderr);
+      abort ();
+   }
+}
+
+// Pointer-comparison
+static inline void
+_mlibCheckPtrEq (
+   const void *left, const void *right, const char *left_expr, const char *right_expr, struct mlib_source_location here)
+{
+   if (left != right) {
+      fprintf (stderr,
+               "%s:%d: in [%s]: Check [⟨%s⟩ pointer-equal ⟨%s⟩] failed:\n",
+               here.file,
+               here.lineno,
+               here.func,
+               left_expr,
+               right_expr);
+      fprintf (stderr,
+               "    %p ⟨%s⟩\n"
+               "  ≠ %p ⟨%s⟩\n",
+               left,
+               left_expr,
+               right,
+               right_expr);
+      fflush (stderr);
+      abort ();
+   }
+}
+
+// String-comparison
+static inline void
+_mlibCheckStrEq (
+   const char *left, const char *right, const char *left_expr, const char *right_expr, struct mlib_source_location here)
+{
+   if (strcmp (left, right)) {
+      fprintf (stderr,
+               "%s:%d: in [%s]: Check [⟨%s⟩ str-equal ⟨%s⟩] failed:\n",
+               here.file,
+               here.lineno,
+               here.func,
+               left_expr,
+               right_expr);
+      fprintf (stderr,
+               "    “%s” ⟨%s⟩\n"
+               "  ≠ “%s” ⟨%s⟩\n",
+               left,
+               left_expr,
+               right,
+               right_expr);
+      fflush (stderr);
+      abort ();
+   }
+}
