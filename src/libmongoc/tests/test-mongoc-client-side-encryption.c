@@ -16,7 +16,8 @@
 
 #include "TestSuite.h"
 #include "json-test.h"
-#include "mongoc.h"
+#include <mongoc/mongoc.h>
+
 #include "test-libmongoc.h"
 
 #include <common-bson-dsl-private.h>
