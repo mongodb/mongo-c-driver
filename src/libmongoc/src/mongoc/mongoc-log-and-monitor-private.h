@@ -59,7 +59,7 @@ mongoc_log_and_monitor_instance_destroy_contents (mongoc_log_and_monitor_instanc
 
 void
 mongoc_log_and_monitor_instance_set_apm_callbacks (mongoc_log_and_monitor_instance_t *instance,
-                                                   mongoc_apm_callbacks_t *callbacks,
+                                                   const mongoc_apm_callbacks_t *callbacks,
                                                    void *context);
 
 void
