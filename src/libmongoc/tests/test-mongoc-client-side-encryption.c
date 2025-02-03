@@ -505,7 +505,8 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    bson_t *coll_opts = BCON_NEW ("encryptedFields", BCON_DOCUMENT (corpus_encryptedFields));
    mongoc_database_t *db = mongoc_client_get_database (client, "db");
    (void) mongoc_collection_drop (coll, NULL);
-   ASSERT_OR_PRINT (mongoc_database_create_collection (db, "coll", coll_opts, &error), error);
+   // Create a newly named collection to avoid cached previous JSON Schema.
+   ASSERT_OR_PRINT (mongoc_database_create_collection (db, "coll2", coll_opts, &error), error);
 
    /* Insert two documents that each exceed 2MiB but no encryption occurs.
     * Expect two separate bulkWrite commands.
@@ -517,8 +518,8 @@ test_bson_size_limits_and_batch_splitting (void *unused)
 
    ctx.num_inserts = 0;
    mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
-   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", docs[0], NULL, &error), error);
-   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", docs[1], NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[0], NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[1], NULL, &error), error);
 
    mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bw_opts);
    ASSERT_NO_BULKWRITEEXCEPTION (bwr);
@@ -532,17 +533,19 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    /* Insert two documents that each exceed 2MiB after encryption occurs. Expect
     * the bulk write to succeed and run as two separate inserts.
     */
+
+
    docs[0] = get_bson_from_json_file ("./src/libmongoc/tests/client_side_encryption_prose/limits-qe-doc.json");
    bson_append_utf8 (docs[0], "_id", -1, "encryption_exceeds_2mib_3", -1);
-   bson_append_utf8 (docs[0], "unencrypted", -1, as, exceeds_2mib_after_encryption - 1500);
+   bson_append_utf8 (docs[0], "foo", -1, as, exceeds_2mib_after_encryption - 1500);
    docs[1] = get_bson_from_json_file ("./src/libmongoc/tests/client_side_encryption_prose/limits-qe-doc.json");
    bson_append_utf8 (docs[1], "_id", -1, "encryption_exceeds_2mib_4", -1);
-   bson_append_utf8 (docs[1], "unencrypted", -1, as, exceeds_2mib_after_encryption - 1500);
+   bson_append_utf8 (docs[1], "foo", -1, as, exceeds_2mib_after_encryption - 1500);
 
    ctx.num_inserts = 0;
    bw = mongoc_client_bulkwrite_new (client);
-   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", docs[0], NULL, &error), error);
-   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", docs[1], NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[0], NULL, &error), error);
+   ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[1], NULL, &error), error);
 
    bwr = mongoc_bulkwrite_execute (bw, bw_opts);
    ASSERT_NO_BULKWRITEEXCEPTION (bwr);
