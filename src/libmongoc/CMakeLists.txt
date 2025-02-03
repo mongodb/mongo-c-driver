@@ -748,7 +748,6 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-index.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-iovec.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.h
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log-and-monitor-private.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-macros.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.h
