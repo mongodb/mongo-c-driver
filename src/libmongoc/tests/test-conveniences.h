@@ -19,9 +19,9 @@
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-read-prefs-private.h"
-#include "mongoc/mongoc-client-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-client-private.h>
 
 /* TODO: split this header up.
  * Move bson_lookup_* functions under bsonutil.
@@ -292,5 +292,10 @@ semver_to_string (semver_t *str);
 #define TEST_ERROR_DOMAIN 123456
 #define TEST_ERROR_CODE 654321
 #define test_set_error(error, ...) bson_set_error (error, TEST_ERROR_DOMAIN, TEST_ERROR_CODE, __VA_ARGS__)
+
+/* An arbitrary traceable mongoc_ss_log_context_t for tests.
+ * Logs the function name and file:line as the "operation". */
+#define TEST_SS_LOG_CONTEXT \
+   (&(mongoc_ss_log_context_t){.operation = tmp_str ("%s:%d: %s", __FILE__, (int) __LINE__, BSON_FUNC)})
 
 #endif /* TEST_CONVENIENCES_H */

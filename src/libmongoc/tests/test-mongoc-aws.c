@@ -16,7 +16,7 @@
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
-#include "mongoc/mongoc-cluster-aws-private.h"
+#include <mongoc/mongoc-cluster-aws-private.h>
 
 void
 test_obtain_credentials (void *unused)

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_FIND_AND_MODIFY_PRIVATE_H
 #define MONGOC_FIND_AND_MODIFY_PRIVATE_H
 
 #include <bson/bson.h>
-#include "mongoc-write-command-private.h"
+#include <mongoc/mongoc-write-command-private.h>
 
 BSON_BEGIN_DECLS
 

@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-#include "mongoc-array-private.h"
-#include "mongoc-error.h"
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-description-apm-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-set-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-host-list-private.h"
-#include "utlist.h"
+#include <common-oid-private.h>
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/utlist.h>
 
 
 static bool
@@ -2540,4 +2541,69 @@ mongoc_deprioritized_servers_add_if_sharded (mongoc_deprioritized_servers_t *ds,
       TRACE ("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
       mongoc_deprioritized_servers_add (ds, sd);
    }
+}
+
+bool
+mongoc_topology_description_append_contents_to_bson (const mongoc_topology_description_t *td,
+                                                     bson_t *bson,
+                                                     mongoc_topology_description_content_flags_t flags,
+                                                     mongoc_server_description_content_flags_t servers_flags)
+{
+   // Follow the language-independent format from the SDAM spec.
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_TYPE) &&
+       !BSON_APPEND_UTF8 (bson, "type", mongoc_topology_description_type (td))) {
+      return false;
+   }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SET_NAME) && td->set_name &&
+       !BSON_APPEND_UTF8 (bson, "setName", td->set_name)) {
+      return false;
+   }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_ELECTION_ID) &&
+       !mcommon_oid_is_zero (&td->max_election_id) && !BSON_APPEND_OID (bson, "maxElectionId", &td->max_election_id)) {
+      return false;
+   }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_SET_VERSION) &&
+       MONGOC_NO_SET_VERSION != td->max_set_version &&
+       !BSON_APPEND_INT64 (bson, "maxSetVersion", td->max_set_version)) {
+      return false;
+   }
+   if (flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SERVERS) {
+      const mongoc_set_t *const set = mc_tpld_servers_const (BSON_ASSERT_PTR_INLINE (td));
+      bson_array_builder_t *array;
+      if (BSON_APPEND_ARRAY_BUILDER_BEGIN (bson, "servers", &array)) {
+         bool ok = true;
+         for (size_t i = 0; ok && i < set->items_len; i++) {
+            const mongoc_server_description_t *sd = mongoc_set_get_item_const (set, i);
+            bson_t child;
+            if (!bson_array_builder_append_document_begin (array, &child)) {
+               ok = false;
+            } else {
+               ok &= mongoc_server_description_append_contents_to_bson (sd, &child, servers_flags);
+               ok &= bson_array_builder_append_document_end (array, &child);
+            }
+         }
+         if (!bson_append_array_builder_end (bson, array) || !ok) {
+            return false;
+         }
+      } else {
+         return false;
+      }
+   }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_STALE) && !BSON_APPEND_BOOL (bson, "stale", td->stale)) {
+      return false;
+   }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBLE) &&
+       !BSON_APPEND_BOOL (bson, "compatible", td->compatibility_error.code == 0)) {
+      return false;
+   }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBILITY_ERROR) && 0 != td->compatibility_error.code &&
+       !BSON_APPEND_UTF8 (bson, "compatibilityError", td->compatibility_error.message)) {
+      return false;
+   }
+   if ((flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_LOGICAL_SESSION_TIMEOUT_MINUTES) &&
+       MONGOC_NO_SESSIONS != td->session_timeout_minutes &&
+       !BSON_APPEND_INT64 (bson, "logicalSessionTimeoutMinutes", td->session_timeout_minutes)) {
+      return false;
+   }
+   return true;
 }

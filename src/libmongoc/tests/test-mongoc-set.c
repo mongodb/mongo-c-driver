@@ -1,6 +1,6 @@
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-set-private.h"
+#include <mongoc/mongoc-set-private.h>
 
 #include "TestSuite.h"
 

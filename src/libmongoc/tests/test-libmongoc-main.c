@@ -48,6 +48,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_bson_cmp_install);
    TEST_INSTALL (test_mcommon_cmp_install);
    TEST_INSTALL (test_mcommon_atomic_install);
+   TEST_INSTALL (test_mcommon_oid_install);
 
    /* libmongoc */
 
@@ -69,6 +70,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_collection_find_install);
    TEST_INSTALL (test_collection_find_with_opts_install);
    TEST_INSTALL (test_connection_uri_install);
+   TEST_INSTALL (test_command_logging_and_monitoring_install);
    TEST_INSTALL (test_command_monitoring_install);
    TEST_INSTALL (test_cursor_install);
    TEST_INSTALL (test_database_install);
@@ -82,6 +84,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_linux_distro_scanner_install);
    TEST_INSTALL (test_list_install);
    TEST_INSTALL (test_log_install);
+   TEST_INSTALL (test_structured_log_install);
    TEST_INSTALL (test_long_namespace_install);
    TEST_INSTALL (test_matcher_install);
    TEST_INSTALL (test_mongos_pinning_install);

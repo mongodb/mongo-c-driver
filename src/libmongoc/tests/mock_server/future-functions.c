@@ -21,9 +21,9 @@
  * controlling the server from the main thread.
  */
 
-#include "mongoc/mongoc-topology-private.h"
+#include <mongoc/mongoc-topology-private.h>
 
-#include "future-functions.h"
+#include "mock_server/future-functions.h"
 
 
 static
@@ -1033,9 +1033,10 @@ BSON_THREAD_FUN (background_mongoc_topology_select, data)
       mongoc_topology_select (
          future_value_get_mongoc_topology_ptr (future_get_param (future, 0)),
          future_value_get_mongoc_ss_optype_t (future_get_param (future, 1)),
-         future_value_get_const_mongoc_read_prefs_ptr (future_get_param (future, 2)),
-         future_value_get_bool_ptr (future_get_param (future, 3)),
-         future_value_get_bson_error_ptr (future_get_param (future, 4))
+         future_value_get_const_mongoc_ss_log_context_ptr (future_get_param (future, 2)),
+         future_value_get_const_mongoc_read_prefs_ptr (future_get_param (future, 3)),
+         future_value_get_bool_ptr (future_get_param (future, 4)),
+         future_value_get_bson_error_ptr (future_get_param (future, 5))
       ));
 
    future_resolve (future, return_value);
@@ -2562,12 +2563,13 @@ future_t *
 future_topology_select (
    mongoc_topology_ptr topology,
    mongoc_ss_optype_t optype,
+   const_mongoc_ss_log_context_ptr log_context,
    const_mongoc_read_prefs_ptr read_prefs,
    bool_ptr must_use_primary,
    bson_error_ptr error)
 {
    future_t *future = future_new (future_value_mongoc_server_description_ptr_type,
-                                  5);
+                                  6);
    
    future_value_set_mongoc_topology_ptr (
       future_get_param (future, 0), topology);
@@ -2575,14 +2577,17 @@ future_topology_select (
    future_value_set_mongoc_ss_optype_t (
       future_get_param (future, 1), optype);
    
+   future_value_set_const_mongoc_ss_log_context_ptr (
+      future_get_param (future, 2), log_context);
+   
    future_value_set_const_mongoc_read_prefs_ptr (
-      future_get_param (future, 2), read_prefs);
+      future_get_param (future, 3), read_prefs);
    
    future_value_set_bool_ptr (
-      future_get_param (future, 3), must_use_primary);
+      future_get_param (future, 4), must_use_primary);
    
    future_value_set_bson_error_ptr (
-      future_get_param (future, 4), error);
+      future_get_param (future, 5), error);
    
    future_start (future, background_mongoc_topology_select);
    return future;
@@ -2923,5 +2928,3 @@ future_collection_estimated_document_count (
    future_start (future, background_mongoc_collection_estimated_document_count);
    return future;
 }
-
-

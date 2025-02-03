@@ -1,4 +1,4 @@
-#include "common-prelude.h"
+#include <common-prelude.h>
 
 #ifndef MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H
 #define MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H
@@ -13,7 +13,7 @@
  * For more information about using this DSL, refer to `bson-dsl.md`.
  */
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 #include <common-cmp-private.h>
 
 enum {
@@ -245,6 +245,13 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       ((void) 0)
 #define _bsonArrayOperation_boolean(X) _bsonArrayAppendValue (boolean (X))
 #define _bsonValueOperation_boolean(b) _bsonValueOperation_bool (b)
+
+#define _bsonValueOperation_oid(o)                                        \
+   if (!bson_append_oid (_bsonBuildAppendArgs, (o))) {                    \
+      bsonBuildError = "Error while appending oid(" _bsonDSL_str (o) ")"; \
+   } else                                                                 \
+      ((void) 0)
+#define _bsonArrayOperation_oid(X) _bsonArrayAppendValue (oid (X))
 
 #define _bsonValueOperation_null                       \
    if (!bson_append_null (_bsonBuildAppendArgs)) {     \

@@ -17,7 +17,7 @@
 #ifndef MCD_NSINFO_H
 #define MCD_NSINFO_H
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #include <mongoc/mongoc-buffer-private.h>
 

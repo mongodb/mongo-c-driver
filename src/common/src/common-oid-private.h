@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-#include <bson/bson-prelude.h>
+#include <common-prelude.h>
 
+#ifndef MONGO_C_DRIVER_COMMON_OID_PRIVATE_H
+#define MONGO_C_DRIVER_COMMON_OID_PRIVATE_H
 
-#ifndef BSON_STRING_PRIVATE_H
-#define BSON_STRING_PRIVATE_H
+#include <bson/bson.h>
 
-bson_string_t *
-_bson_string_alloc (const size_t size);
+BSON_BEGIN_DECLS
+
+extern const bson_oid_t kZeroObjectId;
 
 void
-_bson_string_append_ex (bson_string_t *string, const char *str, const size_t len);
+mcommon_oid_set_zero (bson_oid_t *oid);
 
-#endif /* BSON_STRING_PRIVATE_H */
+bool
+mcommon_oid_is_zero (const bson_oid_t *oid);
+
+BSON_END_DECLS
+
+#endif /* MONGO_C_DRIVER_COMMON_OID_PRIVATE_H */

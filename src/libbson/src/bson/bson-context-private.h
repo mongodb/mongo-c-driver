@@ -22,7 +22,7 @@
 
 
 #include <bson/bson-context.h>
-#include "common-thread-private.h"
+#include <common-thread-private.h>
 
 
 BSON_BEGIN_DECLS

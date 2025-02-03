@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_FLAGS_PRIVATE_H
 #define MONGOC_FLAGS_PRIVATE_H

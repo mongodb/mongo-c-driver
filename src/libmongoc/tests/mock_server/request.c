@@ -16,12 +16,13 @@
 
 
 #include <mongoc/mongoc-rpc-private.h>
-#include "mongoc/mongoc.h"
+#include <mongoc/mongoc.h>
 
 #include "mock-server.h"
 #include "../test-conveniences.h"
 #include "../TestSuite.h"
 #include <common-string-private.h>
+#include <common-json-private.h>
 #include <common-cmp-private.h>
 
 static bool
@@ -39,8 +40,8 @@ request_from_getmore (request_t *request);
 static void
 request_from_op_msg (request_t *request);
 
-static char *
-query_flags_str (int32_t flags);
+static void
+query_flags_str (mcommon_string_append_t *str, int32_t flags);
 
 request_t *
 request_new (const mongoc_buffer_t *buffer,
@@ -128,9 +129,18 @@ assert_request_matches_flags (const request_t *request, uint32_t flags)
 
    const int32_t request_flags = mcd_rpc_op_query_get_flags (request->rpc);
    if (mcommon_cmp_not_equal_su (request_flags, flags)) {
+      mcommon_string_append_t str_request_flags, str_flags;
+      mcommon_string_new_as_append (&str_request_flags);
+      mcommon_string_new_as_append (&str_flags);
+      query_flags_str (&str_request_flags, request_flags);
+      query_flags_str (&str_flags, (int32_t) flags);
+
       test_error ("request's query flags are %s, expected %s",
-                  query_flags_str (request_flags),
-                  query_flags_str ((int32_t) flags));
+                  mcommon_str_from_append (&str_request_flags),
+                  mcommon_str_from_append (&str_flags));
+
+      mcommon_string_from_append_destroy (&str_request_flags);
+      mcommon_string_from_append_destroy (&str_flags);
    }
 }
 
@@ -462,11 +472,10 @@ is_command_ns (const char *ns)
 }
 
 
-static char *
-query_flags_str (int32_t flags)
+static void
+query_flags_str (mcommon_string_append_t *str, int32_t flags)
 {
    int flag = 1;
-   mcommon_string_t *str = mcommon_string_new ("");
    bool begun = false;
 
    if (flags == MONGOC_OP_QUERY_FLAG_NONE) {
@@ -511,8 +520,6 @@ query_flags_str (int32_t flags)
          }
       }
    }
-
-   return mcommon_string_free (str, false); /* detach buffer */
 }
 
 
@@ -532,8 +539,9 @@ static void
 request_from_query (request_t *request)
 {
    bson_iter_t iter;
-   mcommon_string_t *query_as_str = mcommon_string_new ("OP_QUERY ");
-   char *str;
+   mcommon_string_append_t query_as_str;
+   mcommon_string_new_as_append (&query_as_str);
+   mcommon_string_append (&query_as_str, "OP_QUERY ");
 
    const int32_t request_flags = mcd_rpc_op_query_get_flags (request->rpc);
    const char *const request_coll = mcd_rpc_op_query_get_full_collection_name (request->rpc);
@@ -548,7 +556,7 @@ request_from_query (request_t *request)
       BSON_ASSERT (query);
       _mongoc_array_append_val (&request->docs, query);
 
-      mcommon_string_append_printf (query_as_str, "%s ", request_coll);
+      mcommon_string_append_printf (&query_as_str, "%s ", request_coll);
 
       if (is_command_ns (request_coll)) {
          request->is_command = true;
@@ -560,9 +568,7 @@ request_from_query (request_t *request)
          }
       }
 
-      str = bson_as_relaxed_extended_json (query, NULL);
-      mcommon_string_append (query_as_str, str);
-      bson_free (str);
+      mcommon_json_append_bson_document (&query_as_str, query, BSON_JSON_MODE_RELAXED, BSON_MAX_RECURSION);
    }
 
    if (request_fields) {
@@ -571,27 +577,22 @@ request_from_query (request_t *request)
       BSON_ASSERT (fields);
       _mongoc_array_append_val (&request->docs, fields);
 
-      str = bson_as_relaxed_extended_json (fields, NULL);
-      mcommon_string_append (query_as_str, " fields=");
-      mcommon_string_append (query_as_str, str);
-      bson_free (str);
+      mcommon_string_append (&query_as_str, " fields=");
+      mcommon_json_append_bson_document (&query_as_str, fields, BSON_JSON_MODE_RELAXED, BSON_MAX_RECURSION);
    }
 
-   mcommon_string_append (query_as_str, " flags=");
-
-   str = query_flags_str (request_flags);
-   mcommon_string_append (query_as_str, str);
-   bson_free (str);
+   mcommon_string_append (&query_as_str, " flags=");
+   query_flags_str (&query_as_str, request_flags);
 
    if (request_skip) {
-      mcommon_string_append_printf (query_as_str, " skip=%" PRId32, request_skip);
+      mcommon_string_append_printf (&query_as_str, " skip=%" PRId32, request_skip);
    }
 
    if (request_return) {
-      mcommon_string_append_printf (query_as_str, " n_return=%" PRId32, request_return);
+      mcommon_string_append_printf (&query_as_str, " n_return=%" PRId32, request_return);
    }
 
-   request->as_str = mcommon_string_free (query_as_str, false);
+   request->as_str = mcommon_string_from_append_destroy_with_steal (&query_as_str);
 }
 
 
@@ -616,7 +617,7 @@ request_from_getmore (request_t *request)
 
 
 static void
-parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, mcommon_string_t *msg_as_str)
+parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, mcommon_string_append_t *msg_as_str)
 {
    const uint8_t *pos = data;
    while (pos < data + data_len) {
@@ -629,9 +630,7 @@ parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, mcom
       BSON_ASSERT (doc);
       _mongoc_array_append_val (&request->docs, doc);
 
-      char *const str = bson_as_relaxed_extended_json (doc, NULL);
-      mcommon_string_append (msg_as_str, str);
-      bson_free (str);
+      mcommon_json_append_bson_document (msg_as_str, doc, BSON_JSON_MODE_RELAXED, BSON_MAX_RECURSION);
 
       pos += doc_len;
    }
@@ -641,30 +640,32 @@ parse_op_msg_doc (request_t *request, const uint8_t *data, size_t data_len, mcom
 static void
 request_from_op_msg (request_t *request)
 {
-   mcommon_string_t *msg_as_str = mcommon_string_new ("OP_MSG");
+   mcommon_string_append_t msg_as_str;
+   mcommon_string_new_as_append (&msg_as_str);
+   mcommon_string_append (&msg_as_str, "OP_MSG");
 
    const size_t sections_count = mcd_rpc_op_msg_get_sections_count (request->rpc);
 
    BSON_ASSERT (sections_count <= 2u);
    for (size_t index = 0; index < sections_count; ++index) {
-      mcommon_string_append (msg_as_str, (index > 0 ? ", " : " "));
+      mcommon_string_append (&msg_as_str, (index > 0 ? ", " : " "));
       const uint8_t kind = mcd_rpc_op_msg_section_get_kind (request->rpc, index);
       switch (kind) {
       case 0: { /* a single BSON document */
          const void *const body = mcd_rpc_op_msg_section_get_body (request->rpc, index);
-         parse_op_msg_doc (request, body, (size_t) length_prefix (body), msg_as_str);
+         parse_op_msg_doc (request, body, (size_t) length_prefix (body), &msg_as_str);
          break;
       }
 
       case 1: { /* a sequence of BSON documents */
-         mcommon_string_append (msg_as_str, mcd_rpc_op_msg_section_get_identifier (request->rpc, index));
-         mcommon_string_append (msg_as_str, ": [");
+         mcommon_string_append (&msg_as_str, mcd_rpc_op_msg_section_get_identifier (request->rpc, index));
+         mcommon_string_append (&msg_as_str, ": [");
          parse_op_msg_doc (request,
                            mcd_rpc_op_msg_section_get_document_sequence (request->rpc, index),
                            mcd_rpc_op_msg_section_get_document_sequence_length (request->rpc, index),
-                           msg_as_str);
+                           &msg_as_str);
 
-         mcommon_string_append (msg_as_str, "]");
+         mcommon_string_append (&msg_as_str, "]");
          break;
       }
 
@@ -673,7 +674,7 @@ request_from_op_msg (request_t *request)
       }
    }
 
-   request->as_str = mcommon_string_free (msg_as_str, false);
+   request->as_str = mcommon_string_from_append_destroy_with_steal (&msg_as_str);
    request->is_command = true; /* true for all OP_MSG requests */
 
    if (request->docs.len) {

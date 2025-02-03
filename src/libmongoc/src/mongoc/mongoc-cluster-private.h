@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLUSTER_PRIVATE_H
 #define MONGOC_CLUSTER_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mcd-rpc.h"
-#include "mongoc-array-private.h"
-#include "mongoc-buffer-private.h"
-#include "mongoc-config.h"
-#include "mongoc-client.h"
-#include "mongoc-list-private.h"
-#include "mongoc-opcode.h"
-#include "mongoc-rpc-private.h"
-#include "mongoc-server-stream-private.h"
-#include "mongoc-set-private.h"
-#include "mongoc-stream.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-topology-description-private.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-scram-private.h"
-#include "mongoc-cmd-private.h"
-#include "mongoc-crypto-private.h"
-#include "mongoc-deprioritized-servers-private.h"
+#include <mongoc/mcd-rpc.h>
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-list-private.h>
+#include <mongoc/mongoc-opcode.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-server-stream-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-cmd-private.h>
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-deprioritized-servers-private.h>
 
 BSON_BEGIN_DECLS
 
@@ -120,6 +120,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
  */
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
+                                 const mongoc_ss_log_context_t *log_context,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
                                  const mongoc_deprioritized_servers_t *ds,
@@ -139,6 +140,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
  */
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
+                                  const mongoc_ss_log_context_t *log_context,
                                   mongoc_client_session_t *cs,
                                   const mongoc_deprioritized_servers_t *ds,
                                   bson_t *reply,
@@ -158,6 +160,7 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
  */
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_aggr_with_write (mongoc_cluster_t *cluster,
+                                           const mongoc_ss_log_context_t *log_context,
                                            const mongoc_read_prefs_t *read_prefs,
                                            mongoc_client_session_t *cs,
                                            bson_t *reply,

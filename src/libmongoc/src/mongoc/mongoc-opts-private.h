@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_OPTS_H
 #define MONGOC_OPTS_H
 
 #include <bson/bson.h>
 
-#include "mongoc-client-session.h"
-#include "mongoc-bulk-operation-private.h"
-#include "mongoc-opts-helpers-private.h"
+#include <mongoc/mongoc-client-session.h>
+#include <mongoc/mongoc-bulk-operation-private.h>
+#include <mongoc/mongoc-opts-helpers-private.h>
 
 /**************************************************
  *

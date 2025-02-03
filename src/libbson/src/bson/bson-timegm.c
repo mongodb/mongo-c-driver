@@ -14,8 +14,8 @@
 #include <bson/bson-macros.h>
 #include <bson/bson-timegm-private.h>
 
-#include "errno.h"
-#include "string.h"
+#include <errno.h>
+#include <string.h>
 #include <stdint.h> /* for INT64_MAX and INT64_MIN */
 
 /* Unlike <ctype.h>'s isdigit, this also works if c < 0 | c > UCHAR_MAX. */
@@ -29,14 +29,6 @@
 #define ATTRIBUTE_CONST        /* empty */
 #define ATTRIBUTE_PURE         /* empty */
 #define ATTRIBUTE_FORMAT(spec) /* empty */
-#endif
-
-#if !defined _Noreturn && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112)
-#if 2 < __GNUC__ + (8 <= __GNUC_MINOR__)
-#define _Noreturn __attribute__ ((__noreturn__))
-#else
-#define _Noreturn
-#endif
 #endif
 
 #if !defined(__STDC_VERSION__) && !defined restrict

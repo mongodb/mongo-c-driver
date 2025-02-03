@@ -17,30 +17,34 @@
 #ifndef UNIFIED_ENTITY_MAP_H
 #define UNIFIED_ENTITY_MAP_H
 
-#include "bson/bson.h"
-#include "mongoc/mongoc.h"
-#include "mongoc-array-private.h"
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-array-private.h>
+#include <common-thread-private.h>
 #include "bsonutil/bson-match.h"
 #include "test-diagnostics.h"
 
 typedef struct _event_t {
-   char *type;
-   char *command_name;
-   char *database_name;
-   bson_t *command;
-   bson_t *reply;
-   bson_oid_t service_id;
-   int64_t server_connection_id;
    struct _event_t *next;
+   const char *type; // Non-owning
+   bson_t *serialized;
+   bool is_sensitive_command;
 } event_t;
 
+typedef struct _log_message_t {
+   struct _log_message_t *next;
+   mongoc_structured_log_component_t component;
+   mongoc_structured_log_level_t level;
+   bson_t *message;
+} log_message_t;
+
 typedef struct _observe_event_t {
-   const char *type; // Non-owning. Type of event to observe.
+   char *type; // Type of event to observe.
 } observe_event_t;
 
 typedef struct _store_event_t {
-   const char *entity_id; // Non-owning. Target entity to store event.
-   const char *type;      // Non-owning. Type of event to store.
+   char *entity_id; // Target entity to store event.
+   char *type;      // Type of event to store.
 } store_event_t;
 
 typedef struct _entity_t {
@@ -51,6 +55,8 @@ typedef struct _entity_t {
    bool *observe_sensitive_commands;
    struct _entity_t *next;
    event_t *events;
+   bson_mutex_t log_messages_mutex;
+   log_message_t *log_messages;
    struct _entity_map_t *entity_map; // Parent entity map.
    mongoc_array_t observe_events;    // observe_event_t [N].
    mongoc_array_t store_events;      // store_event_t [N].

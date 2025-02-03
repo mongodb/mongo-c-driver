@@ -1,3 +1,26 @@
+libbson 1.30.0 (Unreleased)
+===========================
+
+Deprecated:
+
+  * Support for Debian 9 and Debian 10.
+
+Fixes:
+
+  * Truncated output of `bson_as_json_with_opts` is changed to no longer split valid UTF-8 sequences.
+  * Changes were made to the generated JSON text in some cases:
+      * Previously, empty arrays and documents would serialize with either one or two spaces depending on whether it is nested. Empty arrays and documents now consistently serialize with just one space.
+      * Previously, an array omitted due to the maximum recursion limit would serialize to "{ ... }", as if it were a document. Omitted arrays now serialize to "[ ... ]".
+      * The maximum recursion limit now applies to legacy codewscope documents. Deeply nested scope documents will now be omitted like any other deeply nested document.
+
+
+libbson 1.29.2
+==============
+
+No changes since 1.29.1. Version incremented to match the libmongoc version.
+
+
+
 libbson 1.29.1
 ==============
 
@@ -35,7 +58,7 @@ Improvements:
 Thanks to everyone who contributed to the development of this release.
 
   * Kevin Albertson
-  * Micah Scott
+  * Micah Scott @ MongoDB
   * Ezra Chung
   * Joshua Siegel
 

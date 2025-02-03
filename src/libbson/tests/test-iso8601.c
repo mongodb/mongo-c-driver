@@ -1,8 +1,10 @@
 #include <bson/bson.h>
 
-#include "bson/bson-iso8601-private.h"
+#include <bson/bson-iso8601-private.h>
 #include "TestSuite.h"
 #include <common-cmp-private.h>
+#include <common-string-private.h>
+#include <common-json-private.h>
 
 static const bool is_time_t_small = (sizeof (time_t) == sizeof (int32_t));
 
@@ -33,14 +35,13 @@ test_date (const char *str, int64_t millis)
 static void
 test_date_io (const char *str_in, const char *str_out, int64_t millis)
 {
-   mcommon_string_t *bson_str;
-
    test_date (str_in, millis);
 
-   bson_str = mcommon_string_new (NULL);
-   _bson_iso8601_date_format (millis, bson_str);
-   ASSERT_CMPSTR (bson_str->str, str_out);
-   mcommon_string_free (bson_str, true);
+   mcommon_string_append_t bson_str;
+   mcommon_string_new_as_append (&bson_str);
+   mcommon_iso8601_string_append (&bson_str, millis);
+   ASSERT_CMPSTR (mcommon_str_from_append (&bson_str), str_out);
+   mcommon_string_from_append_destroy (&bson_str);
 }
 
 

@@ -1,20 +1,20 @@
 #include <fcntl.h>
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-cluster-private.h"
-#include "mongoc/mongoc-database-private.h"
-#include "mongoc/mongoc-handshake-private.h"
-#include "mongoc/mongoc-host-list-private.h"
-#include "mongoc/mongoc-read-concern-private.h"
-#include "mongoc/mongoc-set-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-set-private.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl.h"
-#include "mongoc/mongoc-ssl-private.h"
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-ssl-private.h>
 #endif
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -24,6 +24,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-oid-private.h>
 
 
 #ifdef BSON_HAVE_STRINGS_H
@@ -1872,7 +1873,8 @@ test_recovering (void *ctx)
    /* recovering member matches no read mode */
    for (read_mode = MONGOC_READ_PRIMARY; read_mode <= MONGOC_READ_NEAREST; read_mode++) {
       mongoc_read_prefs_set_mode (prefs, read_mode);
-      BSON_ASSERT (!mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs, NULL, &error));
+      BSON_ASSERT (
+         !mongoc_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, prefs, NULL, &error));
    }
 
    mongoc_read_prefs_destroy (prefs);
@@ -3717,7 +3719,7 @@ test_mongoc_client_recv_network_error (void)
    /* The server should be a standalone. */
    sd = mongoc_topology_description_server_by_id_const (mc_tpld_unsafe_get_const (client->topology), 1, &error);
    ASSERT_OR_PRINT (sd, error);
-   generation = mc_tpl_sd_get_generation (sd, &kZeroServiceId);
+   generation = mc_tpl_sd_get_generation (sd, &kZeroObjectId);
    BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
    mock_server_destroy (server);
 
@@ -3733,7 +3735,7 @@ test_mongoc_client_recv_network_error (void)
    td = mc_tpld_take_ref (client->topology);
    sd = mongoc_topology_description_server_by_id_const (td.ptr, 1, &error);
    ASSERT_OR_PRINT (sd, error);
-   ASSERT_CMPINT (mc_tpl_sd_get_generation (sd, &kZeroServiceId), ==, generation + 1);
+   ASSERT_CMPINT (mc_tpl_sd_get_generation (sd, &kZeroObjectId), ==, generation + 1);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
 
    mongoc_client_destroy (client);

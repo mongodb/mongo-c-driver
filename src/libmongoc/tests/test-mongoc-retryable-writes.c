@@ -1,6 +1,6 @@
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-collection-private.h"
+#include <mongoc/mongoc-collection-private.h>
 
 #include "json-test.h"
 #include "test-libmongoc.h"
@@ -143,7 +143,8 @@ test_command_with_opts (void *ctx)
    mongoc_uri_destroy (uri);
 
    /* clean up in case a previous test aborted */
-   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   server_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_WRITE, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 
@@ -582,7 +583,9 @@ set_up_original_error_test (mongoc_apm_callbacks_t *callbacks,
    ASSERT (client);
 
    // clean up in case a previous test aborted
-   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "configureFailPoint"};
+   server_id =
+      mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 

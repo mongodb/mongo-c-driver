@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "common-prelude.h"
+#include <common-prelude.h>
 
 
 #ifndef MONGO_C_DRIVER_COMMON_ATOMIC_PRIVATE_H

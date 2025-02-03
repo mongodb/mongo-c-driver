@@ -19,21 +19,21 @@
 #include "mongoc.h"
 #include "test-libmongoc.h"
 
-#include "common-bson-dsl-private.h"
+#include <common-bson-dsl-private.h>
 
-#include "common-b64-private.h"
+#include <common-b64-private.h>
 
 /* _mongoc_host_list_from_string_with_err */
-#include "mongoc/mongoc-host-list-private.h"
-#include "mongoc/mongoc-cluster-aws-private.h"
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-cluster-aws-private.h>
 
 /* MONGOC_SERVER_ERR_NS_NOT_FOUND */
-#include "mongoc/mongoc-error-private.h"
+#include <mongoc/mongoc-error-private.h>
 
-#include "mongoc/mongoc-client-side-encryption-private.h"
+#include <mongoc/mongoc-client-side-encryption-private.h>
 
-#include "mongoc/mongoc-uri.h"
-#include "mongoc/mongoc-http-private.h"
+#include <mongoc/mongoc-uri.h>
+#include <mongoc/mongoc-http-private.h>
 #include <common-cmp-private.h>
 
 static void

@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 #define MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 
-#include "mongoc-set-private.h"
-#include "mongoc-server-description.h"
-#include "mongoc-array-private.h"
-#include "mongoc-topology-description.h"
-#include "mongoc-apm-private.h"
-#include "mongoc-deprioritized-servers-private.h"
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-server-description.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-topology-description.h>
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-deprioritized-servers-private.h>
 
 
 typedef enum {
@@ -65,6 +66,18 @@ struct _mongoc_topology_description_t {
 };
 
 typedef enum { MONGOC_SS_READ, MONGOC_SS_WRITE, MONGOC_SS_AGGREGATE_WITH_WRITE } mongoc_ss_optype_t;
+
+/**
+ * @brief Contextual information for logging during server selection
+ *
+ * Required to support the "common fields" defined in the Server Selection Logging specification.
+ * The 'operation' string is borrowed for the lifetime of the mongoc_ss_log_context_t.
+ */
+typedef struct _mongoc_ss_log_context_t {
+   const char *operation; // Required
+   int64_t operation_id;
+   bool has_operation_id;
+} mongoc_ss_log_context_t;
 
 void
 mongoc_topology_description_init (mongoc_topology_description_t *description, int64_t heartbeat_msec);
@@ -165,7 +178,7 @@ mongoc_topology_description_reconcile (mongoc_topology_description_t *td, mongoc
  * @param td The topology description that will be updated.
  * @param server_id The ID of the server to invalidate.
  * @param service_id A service ID for load-balanced deployments. Use
- * kZeroServiceID if not applicable.
+ * kZeroObjectId if not applicable.
  *
  * @note Not applicable to single-threaded clients, which only maintain a
  * single connection per server and therefore have no connection pool.
@@ -179,5 +192,23 @@ void
 mongoc_deprioritized_servers_add_if_sharded (mongoc_deprioritized_servers_t *ds,
                                              mongoc_topology_description_type_t topology_type,
                                              const mongoc_server_description_t *sd);
+
+typedef enum {
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_TYPE = (1 << 0),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SET_NAME = (1 << 1),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_ELECTION_ID = (1 << 2),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_MAX_SET_VERSION = (1 << 3),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SERVERS = (1 << 4),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_STALE = (1 << 5),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBLE = (1 << 6),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_COMPATIBILITY_ERROR = (1 << 7),
+   MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_LOGICAL_SESSION_TIMEOUT_MINUTES = (1 << 8),
+} mongoc_topology_description_content_flags_t;
+
+bool
+mongoc_topology_description_append_contents_to_bson (const mongoc_topology_description_t *td,
+                                                     bson_t *bson,
+                                                     mongoc_topology_description_content_flags_t flags,
+                                                     mongoc_server_description_content_flags_t servers_flags);
 
 #endif /* MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H */

@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLIENT_PRIVATE_H
 #define MONGOC_CLIENT_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-apm-private.h"
-#include "mongoc-buffer-private.h"
-#include "mongoc-client.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-config.h"
-#include "mongoc-host-list.h"
-#include "mongoc-read-prefs.h"
-#include "mongoc-rpc-private.h"
-#include "mongoc-opcode.h"
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-opcode.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
+#include <mongoc/mongoc-ssl.h>
 #endif
 
-#include "mongoc-stream.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-crypt-private.h"
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-crypt-private.h>
 
 BSON_BEGIN_DECLS
 
@@ -92,7 +92,6 @@ struct _mongoc_client_t {
    mongoc_uri_t *uri;
    mongoc_cluster_t cluster;
    bool in_exhaust;
-   bool is_pooled;
 
    mongoc_stream_initiator_t initiator;
    void *initiator_data;
@@ -194,7 +193,9 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   bson_error_t *error);
 
 mongoc_server_session_t *
-_mongoc_client_pop_server_session (mongoc_client_t *client, bson_error_t *error);
+_mongoc_client_pop_server_session (mongoc_client_t *client,
+                                   const mongoc_ss_log_context_t *log_context,
+                                   bson_error_t *error);
 
 bool
 _mongoc_client_lookup_session (const mongoc_client_t *client,

@@ -16,33 +16,33 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-config.h"
-#include "mongoc-error.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-topology-scanner-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-stream-socket.h"
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-topology-scanner-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-socket.h>
 
-#include "mongoc-handshake.h"
-#include "mongoc-handshake-private.h"
+#include <mongoc/mongoc-handshake.h>
+#include <mongoc/mongoc-handshake-private.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-stream-tls.h"
+#include <mongoc/mongoc-stream-tls.h>
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 #include <openssl/ssl.h>
-#include "mongoc-stream-tls-private.h"
+#include <mongoc/mongoc-stream-tls-private.h>
 #endif
 
-#include "mongoc-counters-private.h"
-#include "utlist.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-uri-private.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/utlist.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-util-private.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
 #include <common-atomic-private.h>
@@ -1171,21 +1171,21 @@ void
 _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
-   bson_error_t *error = &ts->error;
-   mcommon_string_t *msg;
 
+   bson_error_t *error = &ts->error;
    memset (&ts->error, 0, sizeof (bson_error_t));
 
-   msg = mcommon_string_new (NULL);
+   mcommon_string_append_t msg;
+   mcommon_string_new_as_fixed_capacity_append (&msg, sizeof error->message - 1u);
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
       if (node->last_error.code) {
-         if (msg->len) {
-            mcommon_string_append_c (msg, ' ');
+         if (!mcommon_string_from_append_is_empty (&msg)) {
+            mcommon_string_append (&msg, " ");
          }
 
-         mcommon_string_append_printf (msg, "[%s]", node->last_error.message);
+         mcommon_string_append_printf (&msg, "[%s]", node->last_error.message);
 
          /* last error domain and code win */
          error->domain = node->last_error.domain;
@@ -1193,8 +1193,8 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
       }
    }
 
-   bson_strncpy ((char *) &error->message, msg->str, sizeof (error->message));
-   mcommon_string_free (msg, true);
+   bson_strncpy ((char *) &error->message, mcommon_str_from_append (&msg), sizeof error->message);
+   mcommon_string_from_append_destroy (&msg);
 
    _delete_retired_nodes (ts);
 }

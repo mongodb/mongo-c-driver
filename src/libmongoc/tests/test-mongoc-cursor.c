@@ -5,11 +5,11 @@
 #include "test-libmongoc.h"
 #include "mock_server/mock-rs.h"
 #include "mock_server/future-functions.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/mongoc-error-private.h"
-#include "mongoc/mongoc-read-concern-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
 #include "test-conveniences.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>
@@ -936,11 +936,13 @@ _test_cursor_new_from_command (const char *cmd_json, const char *collection_name
    r = (0 != mongoc_bulk_operation_execute (bulk, NULL, &error));
    ASSERT_OR_PRINT (r, error);
 
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, NULL, &error);
+   const bson_t *cmd_bson = tmp_bson (cmd_json);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_get_command_name (cmd_bson)};
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, &ss_log_context, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
    server_id = sd->id;
-   mongoc_client_command_simple_with_server_id (client, "test", tmp_bson (cmd_json), NULL, server_id, &reply, &error);
+   mongoc_client_command_simple_with_server_id (client, "test", cmd_bson, NULL, server_id, &reply, &error);
    cmd_cursor =
       mongoc_cursor_new_from_command_reply_with_opts (client, &reply, tmp_bson ("{'serverId': %d}", server_id));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cmd_cursor, &error), error);
@@ -1380,7 +1382,7 @@ server_id_for_read_mode (mongoc_client_t *client, mongoc_read_mode_t read_mode)
    uint32_t server_id;
 
    prefs = mongoc_read_prefs_new (read_mode);
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs, NULL, &error);
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, prefs, NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
    server_id = sd->id;
@@ -1744,7 +1746,7 @@ typedef struct {
 
 
 static void
-_make_reply_batch (mcommon_string_t *reply, uint32_t n_docs, bool first_batch, bool finished)
+_make_reply_batch (mcommon_string_append_t *reply, uint32_t n_docs, bool first_batch, bool finished)
 {
    uint32_t j;
 
@@ -1778,7 +1780,6 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
    future_t *future;
    int j;
    int reply_no;
-   mcommon_string_t *reply;
    bool cursor_finished;
 
    BSON_APPEND_UTF8 (&find_cmd, "find", "coll");
@@ -1801,10 +1802,13 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
    assert_match_bson (request_get_doc (request, 0), &find_cmd, true);
 
-   reply = mcommon_string_new (NULL);
-   _make_reply_batch (reply, (uint32_t) test->reply_length[0], true, false);
-   reply_to_request_simple (request, reply->str);
-   mcommon_string_free (reply, true);
+   {
+      mcommon_string_append_t reply;
+      mcommon_string_new_as_append (&reply);
+      _make_reply_batch (&reply, (uint32_t) test->reply_length[0], true, false);
+      reply_to_request_simple (request, mcommon_str_from_append (&reply));
+      mcommon_string_from_append_destroy (&reply);
+   }
 
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -1830,12 +1834,14 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor, mock_server_t *server, 
 
       assert_match_bson (request_get_doc (request, 0), &getmore_cmd, true);
 
-      reply = mcommon_string_new (NULL);
-      cursor_finished = (reply_no == 2);
-      _make_reply_batch (reply, (uint32_t) test->reply_length[reply_no], false, cursor_finished);
-
-      reply_to_request_simple (request, reply->str);
-      mcommon_string_free (reply, true);
+      {
+         mcommon_string_append_t reply;
+         mcommon_string_new_as_append (&reply);
+         cursor_finished = (reply_no == 2);
+         _make_reply_batch (&reply, (uint32_t) test->reply_length[reply_no], false, cursor_finished);
+         reply_to_request_simple (request, mcommon_str_from_append (&reply));
+         mcommon_string_from_append_destroy (&reply);
+      }
 
       ASSERT (future_get_bool (future));
       future_destroy (future);

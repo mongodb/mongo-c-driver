@@ -1,4 +1,4 @@
-#include "mongoc/mongoc-thread-private.h"
+#include <mongoc/mongoc-thread-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"

@@ -14,30 +14,32 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
-#include "mongoc-handshake.h"
-#include "mongoc-handshake-private.h"
+#include <mongoc/mongoc-handshake.h>
+#include <mongoc/mongoc-handshake-private.h>
 
-#include "mongoc-error.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-log.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-topology-description-apm-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-cmd-private.h"
-#include "mongoc-uri-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-topology-background-monitoring-private.h"
-#include "mongoc-read-prefs-private.h"
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cmd-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 
-#include "utlist.h"
+#include <mongoc/utlist.h>
 
 #include <stdint.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
+#include <common-oid-private.h>
 
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
@@ -172,7 +174,7 @@ _mongoc_topology_scanner_cb (
       /* Server monitoring: When a server check fails due to a network error
        * (including a network timeout), the client MUST clear its connection
        * pool for the server */
-      _mongoc_topology_description_clear_connection_pool (td, id, &kZeroServiceId);
+      _mongoc_topology_description_clear_connection_pool (td, id, &kZeroObjectId);
    }
 
    /* Server Discovery and Monitoring Spec: "Once a server is connected, the
@@ -399,6 +401,11 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    topology->usleep_fn = mongoc_usleep_default_impl;
    topology->session_pool = mongoc_server_session_pool_new_with_params (
       _server_session_init, _server_session_destroy, _server_session_should_prune, topology);
+
+   // Capture default structured log options from the environment
+   mongoc_structured_log_opts_t *structured_log_opts = mongoc_structured_log_opts_new ();
+   topology->structured_log = mongoc_structured_log_instance_new (structured_log_opts);
+   mongoc_structured_log_opts_destroy (structured_log_opts);
 
    topology->valid = false;
 
@@ -663,6 +670,35 @@ mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
 /*
  *-------------------------------------------------------------------------
  *
+ * mongoc_topology_set_structured_log_opts --
+ *
+ *       Replace the topology's structured logging options. Options are copied.
+ *       The structured log instance used by a client or client pool in the public
+ *       API is internally owned by a mongoc_topology_t.
+ *
+ *       This is only safe to call when no other threads may be accessing the
+ *       structured log. On a single-threaded topology it can be used on the
+ *       thread that owns that topology. On a multi-threaded topology it can
+ *       only be used during initialization, before clients have been created.
+ *       This limitation is enforced by mongoc_client_pool_set_structured_log_opts.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+mongoc_topology_set_structured_log_opts (mongoc_topology_t *topology, const mongoc_structured_log_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (topology);
+   BSON_OPTIONAL_PARAM (opts);
+
+   mongoc_structured_log_instance_destroy (topology->structured_log);
+   topology->structured_log = mongoc_structured_log_instance_new (opts);
+}
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
  * mongoc_topology_destroy --
  *
  *       Free the memory associated with this topology object.
@@ -713,6 +749,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_topology_scanner_destroy (topology->scanner);
    mongoc_server_session_pool_free (topology->session_pool);
    bson_free (topology->clientSideEncryption.autoOptions.extraOptions.cryptSharedLibPath);
+   mongoc_structured_log_instance_destroy (topology->structured_log);
 
    mongoc_cond_destroy (&topology->cond_client);
    bson_mutex_destroy (&topology->tpld_modification_mtx);
@@ -997,11 +1034,13 @@ _mongoc_server_selection_error (const char *msg, const bson_error_t *scanner_err
 mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
+                        const mongoc_ss_log_context_t *log_context,
                         const mongoc_read_prefs_t *read_prefs,
                         bool *must_use_primary,
                         bson_error_t *error)
 {
-   uint32_t server_id = mongoc_topology_select_server_id (topology, optype, read_prefs, must_use_primary, NULL, error);
+   uint32_t server_id =
+      mongoc_topology_select_server_id (topology, optype, log_context, read_prefs, must_use_primary, NULL, error);
 
    if (server_id) {
       /* new copy of the server description */
@@ -1104,6 +1143,7 @@ done:
 uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
+                                  const mongoc_ss_log_context_t *log_context,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bool *must_use_primary,
                                   const mongoc_deprioritized_servers_t *ds,
@@ -1118,13 +1158,16 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    bool try_once;
    int64_t sleep_usec;
    bool tried_once;
+   bool logged_waiting_for_suitable_server = false;
    bson_error_t scanner_error = {0};
    int64_t heartbeat_msec;
    uint32_t server_id;
    mc_shared_tpld td = mc_tpld_take_ref (topology);
 
-   mcommon_string_t *topology_type = mcommon_string_new (". Topology type: ");
-   mcommon_string_append (topology_type, mongoc_topology_description_type (td.ptr));
+   mcommon_string_append_t topology_type;
+   mcommon_string_new_as_append (&topology_type);
+   mcommon_string_append (&topology_type, ". Topology type: ");
+   mcommon_string_append (&topology_type, mongoc_topology_description_type (td.ptr));
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
@@ -1135,6 +1178,15 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
    BSON_ASSERT (topology);
    ts = topology->scanner;
+
+   mongoc_structured_log (topology->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                          "Server selection started",
+                          read_prefs ("selector", read_prefs),
+                          utf8 ("operation", log_context->operation),
+                          int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                          topology_as_description_json ("topologyDescription", topology));
 
    if (!mongoc_topology_scanner_valid (ts)) {
       if (error) {
@@ -1194,6 +1246,19 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
                   server_id = 0;
                   goto done;
+               }
+               if (!logged_waiting_for_suitable_server) {
+                  logged_waiting_for_suitable_server = true;
+                  mongoc_structured_log (
+                     topology->structured_log,
+                     MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                     MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                     "Waiting for suitable server to become available",
+                     read_prefs ("selector", read_prefs),
+                     utf8 ("operation", log_context->operation),
+                     int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                     topology_as_description_json ("topologyDescription", topology),
+                     int64 ("remainingTimeMS", (expire_at - loop_end) / 1000));
                }
                topology->usleep_fn (sleep_usec, topology->usleep_data);
             }
@@ -1284,6 +1349,18 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
              _mongoc_read_mode_as_str (mongoc_read_prefs_get_mode (read_prefs)));
       _mongoc_topology_request_scan (topology);
 
+      if (!logged_waiting_for_suitable_server) {
+         logged_waiting_for_suitable_server = true;
+         mongoc_structured_log (topology->structured_log,
+                                MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                                MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                                "Waiting for suitable server to become available",
+                                read_prefs ("selector", read_prefs),
+                                utf8 ("operation", log_context->operation),
+                                int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                                topology_as_description_json ("topologyDescription", topology),
+                                int64 ("remainingTimeMS", (expire_at - loop_start) / 1000));
+      }
       TRACE ("server selection about to wait for %" PRId64 "ms", (expire_at - loop_start) / 1000);
       r = mongoc_cond_timedwait (
          &topology->cond_client, &topology->tpld_modification_mtx, (expire_at - loop_start) / 1000);
@@ -1326,13 +1403,34 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    }
 
 done:
-   if (error && server_id == 0) {
-      /* server_id set to zero indicates that an error has occured and that `error` is initialized */
-      if (error->domain == MONGOC_ERROR_SERVER_SELECTION) {
-         _mongoc_error_append (error, topology_type->str);
+   /* server_id set to zero indicates an error has occured and that `error` should be initialized */
+   if (server_id == 0) {
+      if (error && error->domain == MONGOC_ERROR_SERVER_SELECTION) {
+         _mongoc_error_append (error, mcommon_str_from_append (&topology_type));
       }
+      mongoc_structured_log (topology->structured_log,
+                             MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                             MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+                             "Server selection failed",
+                             read_prefs ("selector", read_prefs),
+                             utf8 ("operation", log_context->operation),
+                             int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+                             topology_as_description_json ("topologyDescription", topology),
+                             error ("failure", error));
+   } else {
+      mongoc_structured_log (
+         topology->structured_log,
+         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+         MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION,
+         "Server selection succeeded",
+         read_prefs ("selector", read_prefs),
+         utf8 ("operation", log_context->operation),
+         int64 (log_context->has_operation_id ? "operationId" : NULL, log_context->operation_id),
+         topology_as_description_json ("topologyDescription", topology),
+         server_description (
+            mongoc_topology_description_server_by_id_const (td.ptr, server_id, NULL), SERVER_HOST, SERVER_PORT));
    }
-   mcommon_string_free (topology_type, true);
+   mcommon_string_from_append_destroy (&topology_type);
    mc_tpld_drop_ref (&td);
    return server_id;
 }
@@ -1516,7 +1614,9 @@ _mongoc_topology_update_cluster_time (mongoc_topology_t *topology, const bson_t 
  */
 
 mongoc_server_session_t *
-_mongoc_topology_pop_server_session (mongoc_topology_t *topology, bson_error_t *error)
+_mongoc_topology_pop_server_session (mongoc_topology_t *topology,
+                                     const mongoc_ss_log_context_t *log_context,
+                                     bson_error_t *error)
 {
    int64_t timeout;
    mongoc_server_session_t *ss = NULL;
@@ -1534,6 +1634,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology, bson_error_t *
       if (!mongoc_topology_description_has_data_node (td.ptr)) {
          if (!mongoc_topology_select_server_id (topology,
                                                 MONGOC_SS_READ,
+                                                log_context,
                                                 NULL /* read prefs */,
                                                 NULL /* chosen read mode */,
                                                 NULL /* deprioritized servers */,
@@ -1870,10 +1971,11 @@ static void
 _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t *error_out)
 {
    const mongoc_server_description_t *server_description;
-   mcommon_string_t *error_message;
 
    memset (error_out, 0, sizeof (bson_error_t));
-   error_message = mcommon_string_new ("");
+
+   mcommon_string_append_t error_message;
+   mcommon_string_new_as_fixed_capacity_append (&error_message, sizeof error_out->message - 1u);
 
    for (size_t i = 0u; i < mc_tpld_servers_const (td)->items_len; i++) {
       const bson_error_t *error;
@@ -1881,18 +1983,18 @@ _topology_collect_errors (const mongoc_topology_description_t *td, bson_error_t 
       server_description = mc_tpld_servers_const (td)->items[i].item;
       error = &server_description->error;
       if (error->code) {
-         if (error_message->len > 0) {
-            mcommon_string_append_c (error_message, ' ');
+         if (!mcommon_string_from_append_is_empty (&error_message)) {
+            mcommon_string_append (&error_message, " ");
          }
-         mcommon_string_append_printf (error_message, "[%s]", server_description->error.message);
+         mcommon_string_append_printf (&error_message, "[%s]", server_description->error.message);
          /* The last error's code and domain wins. */
          error_out->code = error->code;
          error_out->domain = error->domain;
       }
    }
 
-   bson_strncpy ((char *) &error_out->message, error_message->str, sizeof (error_out->message));
-   mcommon_string_free (error_message, true);
+   bson_strncpy ((char *) &error_out->message, mcommon_str_from_append (&error_message), sizeof (error_out->message));
+   mcommon_string_from_append_destroy (&error_message);
 }
 
 void

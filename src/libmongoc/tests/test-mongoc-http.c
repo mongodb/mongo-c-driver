@@ -16,8 +16,8 @@
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-http-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-http-private.h>
 
 void
 test_mongoc_http_get (void *unused)

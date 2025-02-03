@@ -17,15 +17,15 @@
 
 #include <bson/bson.h>
 
-#include "bson/bson-types.h"
+#include <bson/bson-types.h>
 
-#include "mongoc/mongoc-array-private.h"
+#include <mongoc/mongoc-array-private.h>
 /* For strcasecmp on Windows */
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-write-concern.h"
-#include "mongoc/mongoc-write-concern-private.h"
-#include "mongoc/mongoc-cluster-private.h"
-#include "mongoc/mongoc-client-private.h"
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-client-private.h>
 
 #include "test-conveniences.h"
 #include "test-libmongoc.h"

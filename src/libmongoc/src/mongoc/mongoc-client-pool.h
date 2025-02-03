@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLIENT_POOL_H
 #define MONGOC_CLIENT_POOL_H
 
 #include <bson/bson.h>
 
-#include "mongoc-macros.h"
-#include "mongoc-apm.h"
-#include "mongoc-client.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-apm.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-config.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
+#include <mongoc/mongoc-ssl.h>
 #endif
-#include "mongoc-uri.h"
+#include <mongoc/mongoc-structured-log.h>
+#include <mongoc/mongoc-uri.h>
 
 
 BSON_BEGIN_DECLS
@@ -69,6 +70,8 @@ mongoc_client_pool_enable_auto_encryption (mongoc_client_pool_t *pool,
                                            bson_error_t *error);
 MONGOC_EXPORT (bool)
 mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool, const mongoc_server_api_t *api, bson_error_t *error);
+MONGOC_EXPORT (bool)
+mongoc_client_pool_set_structured_log_opts (mongoc_client_pool_t *pool, const mongoc_structured_log_opts_t *opts);
 
 BSON_END_DECLS
 

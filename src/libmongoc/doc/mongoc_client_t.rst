@@ -91,6 +91,7 @@ Example
     mongoc_client_set_sockettimeoutms
     mongoc_client_set_ssl_opts
     mongoc_client_set_stream_initiator
+    mongoc_client_set_structured_log_opts
     mongoc_client_set_write_concern
     mongoc_client_start_session
     mongoc_client_watch

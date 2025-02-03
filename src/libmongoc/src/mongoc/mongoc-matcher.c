@@ -17,10 +17,10 @@
 
 #include <stdlib.h>
 
-#include "mongoc-error.h"
-#include "mongoc-matcher.h"
-#include "mongoc-matcher-private.h"
-#include "mongoc-matcher-op-private.h"
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-matcher.h>
+#include <mongoc/mongoc-matcher-private.h>
+#include <mongoc/mongoc-matcher-op-private.h>
 
 
 static mongoc_matcher_op_t *

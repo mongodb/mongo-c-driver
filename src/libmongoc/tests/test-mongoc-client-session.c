@@ -1,9 +1,9 @@
 #include <mongoc/mongoc-cursor-private.h>
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-change-stream-private.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/utlist.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/utlist.h>
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
@@ -195,7 +195,8 @@ _test_session_pool_timeout (bool pooled)
    /*
     * trigger discovery
     */
-   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_READ, NULL, NULL, NULL, &error);
+   server_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
    /*

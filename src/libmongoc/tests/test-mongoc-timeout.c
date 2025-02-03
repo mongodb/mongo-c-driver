@@ -17,7 +17,7 @@
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 
-#include <mongoc-timeout-private.h>
+#include <mongoc/mongoc-timeout-private.h>
 
 void
 _test_mongoc_timeout_new_success (int64_t expected)

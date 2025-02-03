@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-array-private.h"
-#include "mongoc/mongoc-thread-private.h"
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-thread-private.h>
 
 #include "sync-queue.h"
 

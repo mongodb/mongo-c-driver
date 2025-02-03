@@ -15,13 +15,13 @@
  */
 
 
-#include "mongoc-aggregate-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-server-stream-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-aggregate-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-server-stream-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include <common-bson-dsl-private.h>
 
@@ -295,7 +295,8 @@ _mongoc_aggregate (mongoc_client_t *client,
    cursor->is_aggr_with_write_stage = has_write_key;
 
    /* server id isn't enough. ensure we're connected & know wire version */
-   server_stream = _mongoc_cursor_fetch_stream (cursor);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "aggregate"};
+   server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
    if (!server_stream) {
       GOTO (done);
    }

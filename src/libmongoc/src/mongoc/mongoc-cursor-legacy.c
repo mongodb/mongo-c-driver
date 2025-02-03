@@ -20,18 +20,19 @@
  * - receiving OP_REPLY documents in a stream (instead of batch)
  */
 
-#include "mongoc-cursor.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-counters-private.h"
-#include "mongoc-error.h"
-#include "mongoc-log.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-rpc-private.h"
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 
 #include <common-bson-dsl-private.h>
 
@@ -46,12 +47,25 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
    ENTRY;
 
    client = cursor->client;
+   _mongoc_cursor_prepare_getmore_command (cursor, &doc);
+
+   mongoc_structured_log (
+      client->topology->structured_log,
+      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      "Command started",
+      int32 ("requestId", client->cluster.request_id),
+      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+      utf8_n ("databaseName", cursor->ns, cursor->dblen),
+      utf8 ("commandName", "getMore"),
+      int64 ("operationId", cursor->operation_id),
+      bson_as_json ("command", &doc));
+
    if (!client->apm_callbacks.started) {
       /* successful */
+      bson_destroy (&doc);
       RETURN (true);
    }
-
-   _mongoc_cursor_prepare_getmore_command (cursor, &doc);
 
    db = bson_strndup (cursor->ns, cursor->dblen);
    mongoc_apm_command_started_init (&event,
@@ -82,17 +96,10 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
                                      mongoc_server_stream_t *server_stream)
 {
    bson_t doc;
-   mongoc_client_t *client;
    char *db;
    bool r;
 
    ENTRY;
-
-   client = cursor->client;
-   if (!client->apm_callbacks.started) {
-      /* successful */
-      RETURN (true);
-   }
 
    bson_init (&doc);
    db = bson_strndup (cursor->ns, cursor->dblen);
@@ -161,7 +168,9 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor, mongoc_cursor_response_legac
 
    const int64_t started = bson_get_monotonic_time ();
 
-   mongoc_server_stream_t *const server_stream = _mongoc_cursor_fetch_stream (cursor);
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = "getMore", .has_operation_id = true, .operation_id = cursor->operation_id};
+   mongoc_server_stream_t *const server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
 
    if (!server_stream) {
       GOTO (done);
@@ -536,7 +545,9 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor, bson_t *filter, mongoc_cu
 
    bool ret = false;
 
-   mongoc_server_stream_t *const server_stream = _mongoc_cursor_fetch_stream (cursor);
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = "find", .has_operation_id = true, .operation_id = cursor->operation_id};
+   mongoc_server_stream_t *const server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
 
    if (!server_stream) {
       RETURN (false);

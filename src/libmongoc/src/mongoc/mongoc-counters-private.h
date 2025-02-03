@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_COUNTERS_PRIVATE_H
 #define MONGOC_COUNTERS_PRIVATE_H
@@ -22,7 +22,7 @@
 #include <bson/bson.h>
 #include <common-atomic-private.h>
 
-#include "mongoc.h"
+#include <mongoc/mongoc.h>
 
 #ifdef __linux__
 #include <sched.h>
@@ -138,13 +138,13 @@ typedef struct {
 
 
 #define COUNTER(ident, Category, Name, Description) extern mongoc_counter_t __mongoc_counter_##ident;
-#include "mongoc-counters.defs"
+#include <mongoc/mongoc-counters.defs>
 #undef COUNTER
 
 
 enum {
 #define COUNTER(ident, Category, Name, Description) COUNTER_##ident,
-#include "mongoc-counters.defs"
+#include <mongoc/mongoc-counters.defs>
 #undef COUNTER
    LAST_COUNTER
 };
@@ -187,7 +187,7 @@ enum {
       }                                                                                                     \
       return _sum;                                                                                          \
    }
-#include "mongoc-counters.defs"
+#include <mongoc/mongoc-counters.defs>
 #undef COUNTER
 
 #else
@@ -208,7 +208,7 @@ enum {
    static BSON_INLINE void mongoc_counter_##ident##_count (void)                        \
    {                                                                                    \
    }
-#include "mongoc-counters.defs"
+#include <mongoc/mongoc-counters.defs>
 #undef COUNTER
 #endif
 

@@ -1,6 +1,6 @@
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-collection-private.h"
+#include <mongoc/mongoc-collection-private.h>
 
 #include "json-test.h"
 #include "test-libmongoc.h"
@@ -8,10 +8,10 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "json-test-operations.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/mongoc-host-list-private.h"
-#include "mongoc/mongoc-read-concern-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 /* Reset server state by disabling failpoints, killing sessions, and... running
@@ -857,7 +857,8 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (0 == mongoc_client_session_get_server_id (session));
 
-   expected_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   expected_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_WRITE, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (expected_id, error);
 
    /* session should still be unpinned */

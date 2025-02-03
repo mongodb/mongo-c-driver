@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 
 #ifndef MONGOC_COMPRESSION_PRIVATE_H
 #define MONGOC_COMPRESSION_PRIVATE_H
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 
 /* Compressor IDs */
 #define MONGOC_COMPRESSOR_NOOP_ID 0

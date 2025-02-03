@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "common-prelude.h"
+#include <common-prelude.h>
 
 #ifndef MONGO_C_DRIVER_COMMON_MACROS_PRIVATE_H
 #define MONGO_C_DRIVER_COMMON_MACROS_PRIVATE_H

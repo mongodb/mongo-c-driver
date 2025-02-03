@@ -1,10 +1,10 @@
 #include <fcntl.h>
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-cursor-private.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -13,6 +13,7 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-oid-private.h>
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -81,7 +82,7 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
 
    sd = mongoc_topology_description_server_by_id_const (td.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
-   generation = mc_tpl_sd_get_generation (sd, &kZeroServiceId);
+   generation = mc_tpl_sd_get_generation (sd, &kZeroObjectId);
    mc_tpld_drop_ref (&td);
 
    return generation;

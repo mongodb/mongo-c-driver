@@ -4,8 +4,8 @@
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/utlist.h>
 
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-client-private.h"
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-client-private.h>
 
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
@@ -173,7 +173,8 @@ test_topology_scanner_discovery (void)
    client = test_framework_client_new (uri_str, NULL);
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
-   future = future_topology_select (client->topology, MONGOC_SS_READ, secondary_pref, NULL, &error);
+   future =
+      future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, secondary_pref, NULL, &error);
 
    /* a single scan discovers *and* checks the secondary */
    request = mock_server_receives_any_hello (primary);
@@ -247,7 +248,7 @@ test_topology_scanner_oscillate (void)
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    BSON_ASSERT (!scanner->async->ncmds);
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
 
    /* a single scan discovers servers 0 and 1 */
    request = mock_server_receives_any_hello (server0);

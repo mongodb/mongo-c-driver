@@ -17,7 +17,7 @@
 #ifndef MCD_INTEGER_H_INCLUDED
 #define MCD_INTEGER_H_INCLUDED
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #include <bson/bson.h>
 

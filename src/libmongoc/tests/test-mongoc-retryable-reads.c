@@ -1,6 +1,6 @@
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-collection-private.h"
+#include <mongoc/mongoc-collection-private.h>
 
 #include "json-test.h"
 #include "test-libmongoc.h"
@@ -94,7 +94,9 @@ test_cmd_helpers (void *ctx)
    mongoc_uri_destroy (uri);
 
    /* clean up in case a previous test aborted */
-   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "configureFailPoint"};
+   server_id =
+      mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 
@@ -163,7 +165,8 @@ test_cmd_helpers (void *ctx)
 
    /* read/write agnostic command_simple_with_server_id helper must not retry.
     */
-   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   server_id =
+      mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    _set_failpoint (client);
    ASSERT (!mongoc_client_command_simple_with_server_id (client, "test", cmd, NULL, server_id, NULL, &error));
@@ -220,7 +223,9 @@ test_retry_reads_off (void *ctx)
    test_framework_set_ssl_opts (client);
 
    /* clean up in case a previous test aborted */
-   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "configureFailPoint"};
+   server_id =
+      mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 

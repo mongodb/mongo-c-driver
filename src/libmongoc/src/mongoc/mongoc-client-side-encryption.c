@@ -21,15 +21,15 @@
 
 #include <common-bson-dsl-private.h>
 
-#include "mongoc.h"
-#include "mongoc-client-private.h"
-#include "mongoc-client-side-encryption-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-database-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-util-private.h>
 #include <common-string-private.h>
 #include <common-atomic-private.h>
 
@@ -1340,25 +1340,25 @@ _uri_construction_error (bson_error_t *error)
 static bool
 _do_spawn (const char *path, char **args, bson_error_t *error)
 {
-   mcommon_string_t *command;
+   mcommon_string_append_t command;
    char **arg;
    PROCESS_INFORMATION process_information;
    STARTUPINFO startup_info;
 
    /* Construct the full command, quote path and arguments. */
-   command = mcommon_string_new ("");
-   mcommon_string_append (command, "\"");
+   mcommon_string_new_as_append (&command);
+   mcommon_string_append (&command, "\"");
    if (path) {
-      mcommon_string_append (command, path);
+      mcommon_string_append (&command, path);
    }
-   mcommon_string_append (command, "mongocryptd.exe");
-   mcommon_string_append (command, "\"");
+   mcommon_string_append (&command, "mongocryptd.exe");
+   mcommon_string_append (&command, "\"");
    /* skip the "mongocryptd" first arg. */
    arg = args + 1;
    while (*arg) {
-      mcommon_string_append (command, " \"");
-      mcommon_string_append (command, *arg);
-      mcommon_string_append (command, "\"");
+      mcommon_string_append (&command, " \"");
+      mcommon_string_append (&command, *arg);
+      mcommon_string_append (&command, "\"");
       arg++;
    }
 
@@ -1368,7 +1368,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    startup_info.cb = sizeof (startup_info);
 
    if (!CreateProcessA (NULL,
-                        command->str,
+                        mcommon_str_from_append (&command),
                         NULL,
                         NULL,
                         false /* inherit descriptors */,
@@ -1395,11 +1395,11 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                       "failed to spawn mongocryptd: %s",
                       message);
       LocalFree (message);
-      mcommon_string_free (command, true);
+      mcommon_string_from_append_destroy (&command);
       return false;
    }
 
-   mcommon_string_free (command, true);
+   mcommon_string_from_append_destroy (&command);
    return true;
 }
 #else

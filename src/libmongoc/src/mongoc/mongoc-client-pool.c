@@ -15,26 +15,26 @@
  */
 
 
-#include "mongoc.h"
-#include "mongoc-apm-private.h"
-#include "mongoc-array-private.h"
-#include "mongoc-counters-private.h"
-#include "mongoc-client-pool-private.h"
-#include "mongoc-client-pool.h"
-#include "mongoc-client-private.h"
-#include "mongoc-client-side-encryption-private.h"
-#include "mongoc-queue-private.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-topology-background-monitoring-private.h"
-#include "mongoc-trace-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-client-pool-private.h>
+#include <mongoc/mongoc-client-pool.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-queue-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl-private.h"
+#include <mongoc/mongoc-ssl-private.h>
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-#include "mongoc-openssl-private.h"
+#include <mongoc/mongoc-openssl-private.h>
 #endif
 
 struct _mongoc_client_pool_t {
@@ -47,16 +47,17 @@ struct _mongoc_client_pool_t {
    uint32_t max_pool_size;
    uint32_t size;
 #ifdef MONGOC_ENABLE_SSL
-   bool ssl_opts_set;
    mongoc_ssl_opt_t ssl_opts;
+   bool ssl_opts_set;
 #endif
    bool apm_callbacks_set;
+   bool error_api_set;
+   bool structured_log_opts_set;
+   bool client_initialized;
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
    int32_t error_api_version;
-   bool error_api_set;
    mongoc_server_api_t *api;
-   bool client_initialized;
    // `last_known_serverids` is a sorted array of uint32_t.
    mongoc_array_t last_known_serverids;
 };
@@ -281,7 +282,6 @@ _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
       client, pool->topology->scanner->initiator, pool->topology->scanner->initiator_context);
 
    pool->client_initialized = true;
-   client->is_pooled = true;
    client->error_api_version = pool->error_api_version;
    _mongoc_client_set_apm_callbacks_private (client, &pool->apm_callbacks, pool->apm_context);
 
@@ -606,6 +606,29 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool, mongoc_apm_cal
    mc_tpld_modify_commit (tdmod);
 
    return true;
+}
+
+bool
+mongoc_client_pool_set_structured_log_opts (mongoc_client_pool_t *pool, const mongoc_structured_log_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (pool);
+   BSON_OPTIONAL_PARAM (opts);
+
+   /* The documented restriction for most pool options: They can be set at most once,
+    * and only before the first client is initialized. Structured logging is generally
+    * expected to warn but not quit when encountering initialization errors. */
+   if (pool->structured_log_opts_set) {
+      MONGOC_WARNING ("mongoc_client_pool_set_structured_log_opts can only be called once per pool");
+      return false;
+   } else if (pool->client_initialized) {
+      MONGOC_WARNING ("mongoc_client_pool_set_structured_log_opts can only be called before mongoc_client_pool_pop");
+      return false;
+   } else {
+      // Now we can be sure no other threads are relying on concurrent access to the instance yet.
+      mongoc_topology_set_structured_log_opts (pool->topology, opts);
+      pool->structured_log_opts_set = true;
+      return true;
+   }
 }
 
 bool

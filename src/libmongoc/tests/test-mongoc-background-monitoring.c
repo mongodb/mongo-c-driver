@@ -15,14 +15,14 @@
  */
 
 #include "mock_server/mock-server.h"
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-client-pool-private.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-handshake-private.h"
-#include "mongoc/mongoc-server-description-private.h"
-#include "mongoc/mongoc-topology-background-monitoring-private.h"
-#include "mongoc/mongoc-topology-description-private.h"
-#include "mongoc/mongoc-topology-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-pool-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-topology-private.h>
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
@@ -58,7 +58,7 @@ typedef struct {
    tf_observations_t *observations;
    bson_mutex_t mutex;
    mongoc_cond_t cond;
-   mcommon_string_t *logs;
+   mcommon_string_append_t logs;
 } test_fixture_t;
 
 void
@@ -73,14 +73,13 @@ tf_dump (test_fixture_t *tf)
    printf ("sd_type=%d\n", (int) tf->observations->sd_type);
 
    printf ("-- Test fixture logs --\n");
-   printf ("%s", tf->logs->str);
+   printf ("%s", mcommon_str_from_append (&tf->logs));
    printf ("== End dump ==\n");
 }
 
 void BSON_GNUC_PRINTF (2, 3) tf_log (test_fixture_t *tf, const char *format, ...)
 {
    va_list ap;
-   char *str;
    char nowstr[32];
    struct timeval tv;
    struct tm tt;
@@ -100,14 +99,13 @@ void BSON_GNUC_PRINTF (2, 3) tf_log (test_fixture_t *tf, const char *format, ...
 #endif
 
    strftime (nowstr, sizeof nowstr, "%Y/%m/%d %H:%M:%S ", &tt);
+   mcommon_string_append (&tf->logs, nowstr);
 
    va_start (ap, format);
-   str = bson_strdupv_printf (format, ap);
+   mcommon_string_append_vprintf (&tf->logs, format, ap);
    va_end (ap);
-   mcommon_string_append (tf->logs, nowstr);
-   mcommon_string_append (tf->logs, str);
-   mcommon_string_append_c (tf->logs, '\n');
-   bson_free (str);
+
+   mcommon_string_append (&tf->logs, "\n");
 }
 
 #define TF_LOG(_tf, ...) tf_log (_tf, __VA_ARGS__)
@@ -241,7 +239,7 @@ tf_new (tf_flags_t flags)
       mock_server_autoresponds (tf->server, auto_respond_polling_hello, NULL, NULL);
    }
    tf->flags = flags;
-   tf->logs = mcommon_string_new ("");
+   mcommon_string_new_as_append (&tf->logs);
    tf->client = mongoc_client_pool_pop (tf->pool);
    return tf;
 }
@@ -252,7 +250,7 @@ tf_destroy (test_fixture_t *tf)
    mock_server_destroy (tf->server);
    mongoc_client_pool_push (tf->pool, tf->client);
    mongoc_client_pool_destroy (tf->pool);
-   mcommon_string_free (tf->logs, true);
+   mcommon_string_from_append_destroy (&tf->logs);
    bson_mutex_destroy (&tf->mutex);
    mongoc_cond_destroy (&tf->cond);
    bson_free (tf->observations);
