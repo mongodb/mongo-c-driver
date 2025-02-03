@@ -1681,8 +1681,8 @@ test_check_outcome_collection (test_t *test, bson_t *collection_data, bson_error
       bson_val_t *actual_v = bson_val_from_bson (actual_sorted);
       bson_val_t *expected_v = bson_val_from_bson (expected_sorted);
 
-      bson_matcher_t *matcher = bson_matcher_new ();
-      if (!bson_matcher_match (matcher, expected_v, actual_v, "", false, error)) {
+      bson_matcher_context_t matcher_context = {.matcher = bson_matcher_new (), .path = "", .is_root = true};
+      if (!bson_matcher_match (&matcher_context, expected_v, actual_v, error)) {
          test_set_error (error, "expected %s, but got %s", tmp_json (expected_sorted), tmp_json (actual_sorted));
          const char *got = tmp_json (actual_sorted);
          printf ("this: %s", got);
@@ -1691,7 +1691,7 @@ test_check_outcome_collection (test_t *test, bson_t *collection_data, bson_error
          goto done;
       }
 
-      bson_matcher_destroy (matcher);
+      bson_matcher_destroy (matcher_context.matcher);
       bson_destroy (actual_sorted);
       bson_destroy (expected_sorted);
       bson_val_destroy (actual_v);
