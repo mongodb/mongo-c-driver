@@ -31,7 +31,9 @@ _mongoc_topology_description_monitor_server_opening (const mongoc_topology_descr
                                                      const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                      mongoc_server_description_t *sd)
 {
-   if (!sd->opened) {
+   /* Topology opening will be deferred until server selection, and
+    * server opening must be deferred until topology opening. */
+   if (td->opened && !sd->opened) {
       sd->opened = true;
 
       mongoc_structured_log (log_and_monitor->structured_log,
