@@ -1114,7 +1114,7 @@ _state_machine_run (_state_machine_t *state_machine, bson_t *result, bson_error_
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
          if (!_state_need_mongo_collinfo (state_machine, true, error)) {
-         goto fail;
+            goto fail;
          }
          break;
       }
