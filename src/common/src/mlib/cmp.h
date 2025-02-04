@@ -59,8 +59,8 @@ enum mlib_cmp_result {
 // Compare two integers, but with an infix operator:
 #define _mlib_cmp_argc_3(L, Op, R) (mlib_cmp (mlib_upsize_integer ((L)), mlib_upsize_integer ((R))) Op 0)
 // Impl for mlib_cmp
-static inline enum mlib_cmp_result (mlib_cmp) (struct mlib_upsized_integer x,
-                                               struct mlib_upsized_integer y) mlib_noexcept
+mlib_always_inline static enum mlib_cmp_result (mlib_cmp) (struct mlib_upsized_integer x,
+                                                           struct mlib_upsized_integer y) mlib_noexcept
 {
    if (x.is_signed) {
       if (y.is_signed) {

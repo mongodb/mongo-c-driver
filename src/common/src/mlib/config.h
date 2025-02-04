@@ -253,3 +253,5 @@
 #define mlib_msvc_warning(...)                         \
    MLIB_IF_MSVC (mlib_pragma (warning (__VA_ARGS__));) \
    mlib_static_assert (true, "")
+
+#define mlib_always_inline MLIB_IF_GNU_LIKE (__attribute__ ((always_inline)) inline) MLIB_IF_MSVC (__forceinline)
