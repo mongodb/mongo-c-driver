@@ -97,7 +97,10 @@ _test_cmp (void)
 
    /// Example: Getting the correct answer:
    // Unintuitive result due to integer promotion:
+   mlib_diagnostic_push ();
+   mlib_gnu_warning_disable ("-Wsign-compare");
    ASSERT (-27 > 20u);
+   mlib_diagnostic_pop ();
    // mlib_cmp produces the correct answer:
    ASSERT (mlib_cmp (-27, <, 20u));
 }
