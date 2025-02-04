@@ -31,20 +31,8 @@ struct mongoc_structured_log_opts_t;
  * Includes APM callbacks, APM callback context, and the structured logging instance.
  *
  * It's owned by mongoc_topology_t on behalf of client/pool and borrowed by topology_description methods.
- *
- * Changes to the APM callbacks or structured log options reset the 'version_id', which is used to track
- * topology lifecycle status starting from when the callbacks are installed. This is not a standard behavior,
- * but rather a specific libmongoc workaround to emit standard SDAM open and close events despite an API that doesn't
- * provide for early callback binding.
- *
- * In this workaround, topology descriptions and server descriptions are lazily given an 'opened' state. This happens at
- * the first server selection or start of background monitoring which takes place after the APM callbacks have been set.
- * Structured logging support required extending the workaround to account for changes to both logging and APM
- * callbacks. With structured logging, there is no longer a meaningful concept of "no callback" to use for delaying
- * open, so we instead extend the concept of openness to be callback-specific.
  */
 typedef struct _mongoc_log_and_monitor_instance_t {
-   bson_oid_t version_id;
    bson_mutex_t apm_mutex;
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;

@@ -698,7 +698,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       mongoc_topology_description_t next_td;
       mongoc_topology_description_init (&next_td, td->heartbeat_msec);
       bson_oid_copy (&td->topology_id, &next_td.topology_id);
-      bson_oid_copy (&td->opened_by_log_and_monitor_version_id, &next_td.opened_by_log_and_monitor_version_id);
+      next_td.opened = td->opened;
 
       _mongoc_topology_description_monitor_changed (td, &next_td, &topology->log_and_monitor);
       _mongoc_topology_description_monitor_closed (&next_td, &topology->log_and_monitor);

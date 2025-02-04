@@ -51,10 +51,8 @@ struct _mongoc_topology_description_t {
    uint32_t max_server_id;
    int32_t max_hosts; /* srvMaxHosts */
    bool stale;
+   bool opened;
    unsigned int rand_seed;
-
-   /* Has this been 'opened' by a log_and_monitor instance? If yes, this is that instance's version_id. Zero if not. */
-   bson_oid_t opened_by_log_and_monitor_version_id;
 
    /* the greatest seen cluster time, for a MongoDB 3.6+ sharded cluster.
     * see Driver Sessions Spec. */

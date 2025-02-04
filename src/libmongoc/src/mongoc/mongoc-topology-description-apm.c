@@ -31,8 +31,8 @@ _mongoc_topology_description_monitor_server_opening (const mongoc_topology_descr
                                                      const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                      mongoc_server_description_t *sd)
 {
-   if (!bson_oid_equal (&log_and_monitor->version_id, &sd->opened_by_log_and_monitor_version_id)) {
-      bson_oid_copy (&log_and_monitor->version_id, &sd->opened_by_log_and_monitor_version_id);
+   if (!sd->opened) {
+      sd->opened = true;
 
       mongoc_structured_log (log_and_monitor->structured_log,
                              MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
@@ -78,7 +78,7 @@ _mongoc_topology_description_monitor_server_closed (const mongoc_topology_descri
                                                     const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                     const mongoc_server_description_t *sd)
 {
-   if (!bson_oid_equal (&log_and_monitor->version_id, &sd->opened_by_log_and_monitor_version_id)) {
+   if (!sd->opened) {
       return;
    }
 
@@ -106,15 +106,14 @@ void
 _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td,
                                               const mongoc_log_and_monitor_instance_t *log_and_monitor)
 {
-   if (bson_oid_equal (&log_and_monitor->version_id, &td->opened_by_log_and_monitor_version_id)) {
+   if (td->opened) {
       return;
    }
+   td->opened = true;
 
    // The initial 'previous' topology description, with Unknown type
    mongoc_topology_description_t *prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
    mongoc_topology_description_init (prev_td, td->heartbeat_msec);
-
-   bson_oid_copy (&log_and_monitor->version_id, &td->opened_by_log_and_monitor_version_id);
 
    mongoc_structured_log (log_and_monitor->structured_log,
                           MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
@@ -205,7 +204,7 @@ _mongoc_topology_description_monitor_closed (const mongoc_topology_description_t
    BSON_ASSERT (td->type == MONGOC_TOPOLOGY_UNKNOWN);
    BSON_ASSERT (mc_tpld_servers_const (td)->items_len == 0);
 
-   if (!bson_oid_equal (&log_and_monitor->version_id, &td->opened_by_log_and_monitor_version_id)) {
+   if (!td->opened) {
       return;
    }
 

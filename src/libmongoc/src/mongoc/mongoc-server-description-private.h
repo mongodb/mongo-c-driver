@@ -70,16 +70,13 @@ struct _mongoc_server_description_t {
    bson_t last_hello_response;
    bool has_hello_response;
    bool hello_ok;
+   bool opened;
    const char *connection_address;
    /* SDAM dictates storing me/hosts/passives/arbiters after being "normalized
     * to lower-case" Instead, they are stored in the casing they are received,
     * but compared case insensitively. This should be addressed in CDRIVER-3527.
     */
    const char *me;
-
-   /* Has this been 'opened' by a log_and_monitor instance? If yes, this was the instance's version_id at the time. Zero
-    * if not. */
-   bson_oid_t opened_by_log_and_monitor_version_id;
 
    const char *set_name;
    bson_error_t error;

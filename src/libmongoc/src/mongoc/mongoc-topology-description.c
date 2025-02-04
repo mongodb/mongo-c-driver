@@ -84,7 +84,6 @@ mongoc_topology_description_init (mongoc_topology_description_t *description, in
    memset (description, 0, sizeof (*description));
 
    bson_oid_init (&description->topology_id, NULL);
-   mcommon_oid_set_zero (&description->opened_by_log_and_monitor_version_id);
    description->type = MONGOC_TOPOLOGY_UNKNOWN;
    description->heartbeat_msec = heartbeat_msec;
    description->_servers_ = mongoc_set_new (8, _mongoc_topology_server_dtor, NULL);
@@ -129,7 +128,7 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src, 
 
    bson_oid_copy (&src->topology_id, &dst->topology_id);
    bson_oid_copy (&src->max_election_id, &dst->max_election_id);
-   bson_oid_copy (&src->opened_by_log_and_monitor_version_id, &dst->opened_by_log_and_monitor_version_id);
+   dst->opened = src->opened;
    dst->type = src->type;
    dst->heartbeat_msec = src->heartbeat_msec;
    dst->rand_seed = src->rand_seed;

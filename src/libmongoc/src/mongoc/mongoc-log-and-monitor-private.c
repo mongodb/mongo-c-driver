@@ -30,7 +30,6 @@ mongoc_log_and_monitor_instance_init (mongoc_log_and_monitor_instance_t *new_ins
 {
    BSON_ASSERT_PARAM (new_instance);
 
-   // Init apm_callbacks and version_id
    mongoc_log_and_monitor_instance_set_apm_callbacks (new_instance, NULL, NULL);
 
    /* This apm_mutex currently only provides explicit exclusion for heartbeat events. It was introduced along with
@@ -84,7 +83,6 @@ mongoc_log_and_monitor_instance_set_apm_callbacks (mongoc_log_and_monitor_instan
    BSON_ASSERT_PARAM (instance);
    instance->apm_callbacks = callbacks ? *callbacks : (mongoc_apm_callbacks_t){0};
    instance->apm_context = context;
-   bson_oid_init (&instance->version_id, NULL);
 }
 
 /**
@@ -103,5 +101,4 @@ mongoc_log_and_monitor_instance_set_structured_log_opts (mongoc_log_and_monitor_
    BSON_ASSERT_PARAM (instance);
    mongoc_structured_log_instance_destroy (instance->structured_log);
    instance->structured_log = mongoc_structured_log_instance_new (opts);
-   bson_oid_init (&instance->version_id, NULL);
 }
