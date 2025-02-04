@@ -31,8 +31,7 @@ BSON_STATIC_ASSERT2 (bson_mem_vtable_t, sizeof (bson_mem_vtable_t) == sizeof (vo
 // For compatibility with C standards prior to C11.
 static void *
 _aligned_alloc_impl (size_t alignment, size_t num_bytes)
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(_WIN32) && !defined(__ANDROID__) && \
-   !defined(_AIX)
+#if defined(BSON_HAVE_ALIGNED_ALLOC)
 {
    return aligned_alloc (alignment, num_bytes);
 }
