@@ -81,4 +81,16 @@
 #define END_IGNORE_DEPRECATIONS
 #endif
 
+// Disable the -Wimplicit warning (including -Wimplicit-int and -Wimplicit-function-declaration).
+#if defined(__GNUC__)
+#define MC_DISABLE_IMPLICIT_WARNING_BEGIN MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("GCC diagnostic ignored \"-Wimplicit\"")
+#define MC_DISABLE_IMPLICIT_WARNING_END MC_PRAGMA_DIAGNOSTIC_POP
+#elif defined(__clang__)
+#define MC_DISABLE_IMPLICIT_WARNING_BEGIN MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("clang diagnostic ignored \"-Wimplicit\"")
+#define MC_DISABLE_IMPLICIT_WARNING_END MC_PRAGMA_DIAGNOSTIC_POP
+#elif defined(_MSC_VER)
+#define MC_DISABLE_IMPLICIT_WARNING_BEGIN MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("warning (disable : 4013 4431)")
+#define MC_DISABLE_IMPLICIT_WARNING_END MC_PRAGMA_DIAGNOSTIC_POP
+#endif
+
 #endif /* MONGO_C_DRIVER_COMMON_MACROS_PRIVATE_H */
