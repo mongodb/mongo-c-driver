@@ -4,6 +4,7 @@
 #include <mlib/config.h>
 #include <mlib/cmp.h>
 #include <mlib/test.h>
+#include <mlib/ckdint.h>
 
 #include <stddef.h>
 
@@ -400,6 +401,33 @@ _test_assert_aborts (void)
    ASSERT (a == 0);
 }
 
+void
+_test_cast (void)
+{
+   int a = 1729;
+   // Fine:
+   int16_t i16 = mlib_assert_narrow (int16_t, a);
+   ASSERT (i16 == 1729);
+   // Fine:
+   a = -6;
+   i16 = mlib_assert_narrow (int16_t, a);
+   ASSERT (i16 == -6);
+   // Boundary:
+   size_t sz = mlib_assert_narrow (size_t, SIZE_MAX);
+   ASSERT (sz == SIZE_MAX);
+   sz = mlib_assert_narrow (size_t, 0);
+   ASSERT (sz == 0);
+   // Boundary:
+   sz = mlib_assert_narrow (size_t, SSIZE_MAX);
+   ASSERT (sz == SSIZE_MAX);
+
+   mlib_assert_aborts () {
+      (void) mlib_assert_narrow (size_t, -4);
+   }
+   mlib_assert_aborts () {
+      (void) mlib_assert_narrow (ssize_t, SIZE_MAX);
+   }
+}
 
 void
 test_mlib_install (TestSuite *suite)
@@ -410,6 +438,7 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
    TestSuite_Add (suite, "/mlib/in-range", _test_in_range);
    TestSuite_Add (suite, "/mlib/assert-aborts", _test_assert_aborts);
+   TestSuite_Add (suite, "/mlib/check-cast", _test_cast);
 }
 
 mlib_diagnostic_pop ();
