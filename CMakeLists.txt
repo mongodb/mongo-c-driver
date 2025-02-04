@@ -462,11 +462,6 @@ if (ENABLE_MONGOC)
    # Ensure the default behavior: don't ignore RPATH settings.
    set (CMAKE_SKIP_BUILD_RPATH OFF)
 
-   if (APPLE)
-      # Until CDRIVER-520.
-      add_definitions (-Wno-deprecated-declarations)
-   endif ()
-
    if (NOT ENABLE_MONGODB_AWS_AUTH MATCHES "ON|OFF|AUTO")
       message (FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH option must be ON, AUTO, or OFF")
    endif ()
