@@ -27,16 +27,29 @@
 #define MONGOC_DEBUG_ASSERT(statement) ((void) 0)
 #endif
 
+#if defined(__GNUC__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#define MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("GCC diagnostic push")
+#define MC_PRAGMA_DIAGNOSTIC_POP _Pragma ("GCC diagnostic pop")
+#elif defined(__clang__)
+#define MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("clang diagnostic push")
+#define MC_PRAGMA_DIAGNOSTIC_POP _Pragma ("clang diagnostic pop")
+#elif defined(_MSC_VER)
+#define MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("warning ( push )")
+#define MC_PRAGMA_DIAGNOSTIC_POP _Pragma ("warning ( pop )")
+#else
+#define MC_PRAGMA_DIAGNOSTIC_PUSH
+#define MC_PRAGMA_DIAGNOSTIC_POP
+#endif
+
 // `MC_ENABLE_CONVERSION_WARNING_BEGIN` enables -Wconversion to check for potentially unsafe integer conversions.
 // The `mcommon_in_range_*` functions can help address these warnings by ensuring a cast is within bounds.
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) // gcc 4.6 added support for "diagnostic push".
-#define MC_ENABLE_CONVERSION_WARNING_BEGIN \
-   _Pragma ("GCC diagnostic push") _Pragma ("GCC diagnostic warning \"-Wconversion\"")
-#define MC_ENABLE_CONVERSION_WARNING_END _Pragma ("GCC diagnostic pop")
+#if defined(__GNUC__)
+#define MC_ENABLE_CONVERSION_WARNING_BEGIN MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("GCC diagnostic warning \"-Wconversion\"")
+#define MC_ENABLE_CONVERSION_WARNING_END MC_PRAGMA_DIAGNOSTIC_POP
 #elif defined(__clang__)
 #define MC_ENABLE_CONVERSION_WARNING_BEGIN \
-   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic warning \"-Wconversion\"")
-#define MC_ENABLE_CONVERSION_WARNING_END _Pragma ("clang diagnostic pop")
+   MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("clang diagnostic warning \"-Wconversion\"")
+#define MC_ENABLE_CONVERSION_WARNING_END MC_PRAGMA_DIAGNOSTIC_POP
 #else
 #define MC_ENABLE_CONVERSION_WARNING_BEGIN
 #define MC_ENABLE_CONVERSION_WARNING_END
@@ -50,19 +63,19 @@
 #undef MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_BEGIN
 #undef MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_END
 #define MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_BEGIN \
-   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wcast-function-type-strict\"")
-#define MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_END _Pragma ("clang diagnostic pop")
+   MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("clang diagnostic ignored \"-Wcast-function-type-strict\"")
+#define MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_END MC_PRAGMA_DIAGNOSTIC_POP
 #endif // __has_warning("-Wcast-function-type-strict")
 #endif // defined(__clang__)
 
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#if defined(__GNUC__)
 #define BEGIN_IGNORE_DEPRECATIONS \
-   _Pragma ("GCC diagnostic push") _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
-#define END_IGNORE_DEPRECATIONS _Pragma ("GCC diagnostic pop")
+   MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define END_IGNORE_DEPRECATIONS MC_PRAGMA_DIAGNOSTIC_POP
 #elif defined(__clang__)
 #define BEGIN_IGNORE_DEPRECATIONS \
-   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
-#define END_IGNORE_DEPRECATIONS _Pragma ("clang diagnostic pop")
+   MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define END_IGNORE_DEPRECATIONS MC_PRAGMA_DIAGNOSTIC_PUSH
 #else
 #define BEGIN_IGNORE_DEPRECATIONS
 #define END_IGNORE_DEPRECATIONS
