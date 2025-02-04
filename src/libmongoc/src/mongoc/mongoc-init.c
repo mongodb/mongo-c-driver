@@ -50,6 +50,11 @@
  Automatic cleanup is deprecated and will be removed in version 2.0.")
 #endif
 
+// CDRIVER-2722: the entire Secure Transport library is deprecated.
+#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+BEGIN_IGNORE_DEPRECATIONS
+#endif // defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
 #include <mongoc/mongoc-cyrus-private.h> // _mongoc_cyrus_verifyfile_cb
@@ -232,3 +237,8 @@ _mongoc_init_dtor (void)
    mongoc_cleanup ();
 }
 #endif
+
+// CDRIVER-2722: the entire Secure Transport library is deprecated.
+#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+END_IGNORE_DEPRECATIONS
+#endif // defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
