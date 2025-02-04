@@ -1395,8 +1395,12 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
 
       mongoc_set_add (mc_tpld_servers (topology), server_id, description);
 
-      /* if we're in topology_new then no callbacks are registered and this is
-       * a no-op. later, if we discover a new RS member this sends an event. */
+      /* Note that libmongoc defers topology 'opening' until server selection or background monitoring begins,
+       * and server monitoring must correspondingly only be 'opened' after the API has seen topology monitoring open.
+       *
+       * If the topology is already opened, we will send server opening events immediately.
+       * Otherwise this has no effect, and server opening events will be sent later by
+       * _mongoc_topology_description_monitor_opening. */
       _mongoc_topology_description_monitor_server_opening (topology, log_and_monitor, description);
    }
 
