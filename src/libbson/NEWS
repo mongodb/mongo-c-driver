@@ -1,5 +1,5 @@
-libbson 1.30.0 (Unreleased)
-===========================
+libbson 1.30.0
+==============
 
 Deprecated:
 
@@ -12,6 +12,20 @@ Fixes:
       * Previously, empty arrays and documents would serialize with either one or two spaces depending on whether it is nested. Empty arrays and documents now consistently serialize with just one space.
       * Previously, an array omitted due to the maximum recursion limit would serialize to "{ ... }", as if it were a document. Omitted arrays now serialize to "[ ... ]".
       * The maximum recursion limit now applies to legacy codewscope documents. Deeply nested scope documents will now be omitted like any other deeply nested document.
+  * Fix leak of output parameter on failed call to `bson_append_array_builder_begin`.
+
+Improvements:
+
+  * Improve performance of BSON-to-JSON serialization for nested documents.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Micah Scott
+  * Jeremy Mikola
+  * Colby Pike
 
 
 libbson 1.29.2
