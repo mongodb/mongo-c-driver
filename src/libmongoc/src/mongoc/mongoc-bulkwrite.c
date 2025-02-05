@@ -59,7 +59,7 @@ set_bson_value_opt (bson_value_t *dst, const bson_value_t *src)
 {
    BSON_ASSERT_PARAM (dst);
    bson_value_destroy (dst);
-   *dst = (bson_value_t) {0};
+   *dst = (bson_value_t){0};
    if (src) {
       bson_value_copy (src, dst);
    }
