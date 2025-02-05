@@ -298,9 +298,9 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
             *(str_out++) = '0';
          }
 
-         for (uint32_t i = 0; mlib_cmp (significand_digits - i, >, BSON_MAX (radix_position - 1, 0)) &&
-                              (str_out - str) < available_bytes;
-              i++) {
+         const unsigned radix_stop = (unsigned) BSON_MAX (radix_position - 1, 0);
+         const unsigned n_to_write = significand_digits - radix_stop;
+         for (uint32_t i = 0; i < n_to_write && (str_out - str) < available_bytes; i++) {
             *(str_out++) = *(significand_read++) + '0';
          }
          *str_out = '\0';
