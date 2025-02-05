@@ -63,7 +63,8 @@ mlib_always_inline static enum mlib_cmp_result (mlib_cmp) (struct mlib_upsized_i
                                                            struct mlib_upsized_integer y,
                                                            int always_zero) mlib_noexcept
 {
-#if mlib_is_optimized_build() && !(defined(MLIB_DISABLE_INLINING_ASSERTIONS) && MLIB_DISABLE_INLINING_ASSERTIONS)
+#if mlib_is_optimized_build() && !mlib_is_msvc() && \
+   !(defined(MLIB_DISABLE_INLINING_ASSERTIONS) && MLIB_DISABLE_INLINING_ASSERTIONS)
    if (always_zero != 0) {
       // All calls must pass zero for `always_zero`. In optimized builds, we assert that this function
       // is always inlined, and that dead-code-elim triggers to delete this branch that calls
