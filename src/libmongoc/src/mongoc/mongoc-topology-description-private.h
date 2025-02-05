@@ -26,6 +26,7 @@
 #include <mongoc/mongoc-topology-description.h>
 #include <mongoc/mongoc-apm-private.h>
 #include <mongoc/mongoc-deprioritized-servers-private.h>
+#include <mongoc/mongoc-log-and-monitor-private.h>
 
 
 typedef enum {
@@ -40,7 +41,6 @@ typedef enum {
 
 struct _mongoc_topology_description_t {
    bson_oid_t topology_id;
-   bool opened;
    mongoc_topology_description_type_t type;
    int64_t heartbeat_msec;
    mongoc_set_t *_servers_;
@@ -51,6 +51,7 @@ struct _mongoc_topology_description_t {
    uint32_t max_server_id;
    int32_t max_hosts; /* srvMaxHosts */
    bool stale;
+   bool opened;
    unsigned int rand_seed;
 
    /* the greatest seen cluster time, for a MongoDB 3.6+ sharded cluster.
@@ -60,9 +61,6 @@ struct _mongoc_topology_description_t {
    /* smallest seen logicalSessionTimeoutMinutes, or -1 if any server has no
     * logicalSessionTimeoutMinutes. see Server Discovery and Monitoring Spec */
    int64_t session_timeout_minutes;
-
-   mongoc_apm_callbacks_t apm_callbacks;
-   void *apm_context;
 };
 
 typedef enum { MONGOC_SS_READ, MONGOC_SS_WRITE, MONGOC_SS_AGGREGATE_WITH_WRITE } mongoc_ss_optype_t;
@@ -109,6 +107,7 @@ mongoc_topology_description_cleanup (mongoc_topology_description_t *description)
 
 void
 mongoc_topology_description_handle_hello (mongoc_topology_description_t *topology,
+                                          const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                           uint32_t server_id,
                                           const bson_t *hello_response,
                                           int64_t rtt_msec,
@@ -141,6 +140,9 @@ _mongoc_topology_description_validate_max_staleness (const mongoc_topology_descr
                                                      int64_t max_staleness_seconds,
                                                      bson_error_t *error);
 
+const mongoc_server_description_t *
+_mongoc_topology_description_has_primary (const mongoc_topology_description_t *description);
+
 void
 mongoc_topology_description_suitable_servers (mongoc_array_t *set, /* OUT */
                                               mongoc_ss_optype_t optype,
@@ -155,11 +157,13 @@ mongoc_topology_description_has_data_node (const mongoc_topology_description_t *
 
 void
 mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,
+                                               const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                                uint32_t id,
                                                const bson_error_t *error /* IN */);
 
 bool
 mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
+                                        const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                         const char *server,
                                         uint32_t *id /* OUT */);
 
@@ -167,7 +171,9 @@ void
 mongoc_topology_description_update_cluster_time (mongoc_topology_description_t *td, const bson_t *reply);
 
 void
-mongoc_topology_description_reconcile (mongoc_topology_description_t *td, mongoc_host_list_t *host_list);
+mongoc_topology_description_reconcile (mongoc_topology_description_t *td,
+                                       const mongoc_log_and_monitor_instance_t *log_and_monitor,
+                                       mongoc_host_list_t *host_list);
 
 /**
  * @brief Invalidate open connnections to a server.

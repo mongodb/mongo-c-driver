@@ -49,8 +49,10 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
    client = cursor->client;
    _mongoc_cursor_prepare_getmore_command (cursor, &doc);
 
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
+
    mongoc_structured_log (
-      client->topology->structured_log,
+      log_and_monitor->structured_log,
       MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
       MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
       "Command started",
@@ -61,7 +63,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
       int64 ("operationId", cursor->operation_id),
       bson_as_json ("command", &doc));
 
-   if (!client->apm_callbacks.started) {
+   if (!log_and_monitor->apm_callbacks.started) {
       /* successful */
       bson_destroy (&doc);
       RETURN (true);
@@ -79,9 +81,9 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
                                     &server_stream->sd->service_id,
                                     server_stream->sd->server_connection_id,
                                     NULL,
-                                    client->apm_context);
+                                    log_and_monitor->apm_context);
 
-   client->apm_callbacks.started (&event);
+   log_and_monitor->apm_callbacks.started (&event);
    mongoc_apm_command_started_cleanup (&event);
    bson_destroy (&doc);
    bson_free (db);

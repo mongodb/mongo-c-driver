@@ -114,8 +114,10 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          mongoc_uri_set_option_as_int64 (uri, key, bson_iter_int64 (&iter));
       } else if (mongoc_uri_option_is_bool (key)) {
          mongoc_uri_set_option_as_bool (uri, key, bson_iter_bool (&iter));
-      } else if (0 == bson_strcasecmp ("appname", key)) {
+      } else if (0 == bson_strcasecmp (MONGOC_URI_APPNAME, key)) {
          mongoc_uri_set_appname (uri, bson_iter_utf8 (&iter, NULL));
+      } else if (0 == bson_strcasecmp (MONGOC_URI_SERVERMONITORINGMODE, key)) {
+         mongoc_uri_set_option_as_utf8 (uri, key, bson_iter_utf8 (&iter, NULL));
       } else {
          test_set_error (error, "Unimplemented test runner support for URI option: %s", key);
          goto done;
@@ -133,10 +135,14 @@ done:
    return ret;
 }
 
+/* Consider refactoring the names, this is confusing. "type" has been the name of the specific event
+ * type. "eventType" is more like what's called the "component" in structured logging, but here it's
+ * named after the field in expectedEventsForClient. */
 static event_t *
-event_new (const char *type, bson_t *serialized, bool is_sensitive_command)
+event_new (const char *type, const char *eventType, bson_t *serialized, bool is_sensitive_command)
 {
    BSON_ASSERT_PARAM (type);
+   BSON_ASSERT_PARAM (eventType);
    BSON_ASSERT_PARAM (serialized);
 
    const int64_t usecs = usecs_since_epoch ();
@@ -146,13 +152,15 @@ event_new (const char *type, bson_t *serialized, bool is_sensitive_command)
    BSON_APPEND_UTF8 (serialized, "name", type);
    BSON_APPEND_DOUBLE (serialized, "observedAt", secs);
 
-   MONGOC_DEBUG ("new event: %s %s (%s)",
+   MONGOC_DEBUG ("new %s event: %s %s (%s)",
+                 eventType,
                  type,
                  tmp_json (serialized),
                  is_sensitive_command ? "marked SENSITIVE" : "not sensitive");
 
    event_t *event = bson_malloc0 (sizeof *event);
    event->type = type;             // Borrowed
+   event->eventType = eventType;   // Borrowed
    event->serialized = serialized; // Takes ownership
    event->is_sensitive_command = is_sensitive_command;
    return event;
@@ -167,6 +175,94 @@ event_destroy (event_t *event)
 
    bson_destroy (event->serialized);
    bson_free (event);
+}
+
+/**
+ * @brief Test whether a structured log entry is accepted by all active filters
+ * @returns true if all filters have returned true in response to this entry, or if no filters were active
+ * @param entity Client entity with the filter stack to query
+ * @param entry Borrowed constant reference to the log entry
+ *
+ * Filters will run in stack order, from most recently pushed to least.
+ *
+ * log_mutex must already be held.
+ */
+static bool
+_entity_log_filter_accepts (const entity_t *entity, const mongoc_structured_log_entry_t *entry)
+{
+   for (log_filter_t *filter = entity->log_filters; filter; filter = filter->next) {
+      if (!filter->func || !filter->func (entry, filter->user_data)) {
+         return false;
+      }
+   }
+   return true;
+}
+
+/**
+ * @brief Push a new structured log filter function onto the stack
+ * @param entity Client entity to modify the filter stack for
+ * @param func Filter function, returns true to accept a log or false to reject. May be NULL to reject all logs.
+ * @param user_data Optional user_data pointer, passed to 'func'.
+ *
+ * Must be paired with entity_log_filter_pop.
+ *
+ * Briefly acquires log_mutex.
+ */
+void
+entity_log_filter_push (entity_t *entity, log_filter_func_t *func, void *user_data)
+{
+   BSON_ASSERT_PARAM (entity);
+   BSON_OPTIONAL_PARAM (func);
+   BSON_OPTIONAL_PARAM (user_data);
+
+   log_filter_t *new_entry = bson_malloc0 (sizeof *new_entry);
+   bson_mutex_lock (&entity->log_mutex);
+   new_entry->next = entity->log_filters;
+   new_entry->func = func;
+   new_entry->user_data = user_data;
+   entity->log_filters = new_entry;
+   bson_mutex_unlock (&entity->log_mutex);
+}
+
+/**
+ * @brief Pop the most recent structured log filter from the stack, which must match
+ * @param entity Client entity to modify the filter stack for
+ * @param func Filter function, must match the value given to entity_log_filter_push
+ * @param user_data Must match the corresponding user_data value from entity_log_filter_push
+ *
+ * Briefly acquires log_mutex.
+ */
+void
+entity_log_filter_pop (entity_t *entity, log_filter_func_t *func, void *user_data)
+{
+   BSON_ASSERT_PARAM (entity);
+   BSON_OPTIONAL_PARAM (func);
+   BSON_OPTIONAL_PARAM (user_data);
+
+   bson_mutex_lock (&entity->log_mutex);
+   log_filter_t *old_entry = entity->log_filters;
+   BSON_ASSERT (old_entry);
+   BSON_ASSERT (old_entry->func == func);
+   BSON_ASSERT (old_entry->user_data == user_data);
+   entity->log_filters = old_entry->next;
+   bson_mutex_unlock (&entity->log_mutex);
+   bson_free (old_entry);
+}
+
+void
+entity_map_log_filter_push (entity_map_t *entity_map, const char *entity_id, log_filter_func_t *func, void *user_data)
+{
+   entity_t *entity = entity_map_get (entity_map, entity_id, NULL);
+   BSON_ASSERT (entity);
+   entity_log_filter_push (entity, func, user_data);
+}
+
+void
+entity_map_log_filter_pop (entity_map_t *entity_map, const char *entity_id, log_filter_func_t *func, void *user_data)
+{
+   entity_t *entity = entity_map_get (entity_map, entity_id, NULL);
+   BSON_ASSERT (entity);
+   entity_log_filter_pop (entity, func, user_data);
 }
 
 static log_message_t *
@@ -207,7 +303,7 @@ entity_new (entity_map_t *em, const char *type)
    entity->entity_map = em;
    _mongoc_array_init (&entity->observe_events, sizeof (observe_event_t));
    _mongoc_array_init (&entity->store_events, sizeof (store_event_t));
-   bson_mutex_init (&entity->log_messages_mutex);
+   bson_mutex_init (&entity->log_mutex);
    return entity;
 }
 
@@ -216,12 +312,21 @@ structured_log_cb (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
    BSON_ASSERT_PARAM (entry);
    BSON_ASSERT_PARAM (user_data);
-   if (!test_is_suppressing_structured_logs ()) {
-      entity_t *entity = (entity_t *) user_data;
+   entity_t *entity = (entity_t *) user_data;
+
+   bson_mutex_lock (&entity->log_mutex);
+   if (_entity_log_filter_accepts (entity, entry)) {
       log_message_t *log_message = log_message_new (entry);
-      bson_mutex_lock (&entity->log_messages_mutex);
       LL_APPEND (entity->log_messages, log_message);
-      bson_mutex_unlock (&entity->log_messages_mutex);
+      bson_mutex_unlock (&entity->log_mutex);
+   } else {
+      bson_mutex_unlock (&entity->log_mutex);
+      bson_t *message_bson = mongoc_structured_log_entry_message_as_bson (entry);
+      MONGOC_DEBUG ("test IGNORED structured log: %s %s %s",
+                    mongoc_structured_log_get_level_name (mongoc_structured_log_entry_get_level (entry)),
+                    mongoc_structured_log_get_component_name (mongoc_structured_log_entry_get_component (entry)),
+                    tmp_json (message_bson));
+      bson_destroy (message_bson);
    }
 }
 
@@ -326,7 +431,7 @@ command_started (const mongoc_apm_command_started_t *started)
       if (service_id, then (kv ("serviceId", oid (service_id)))),
       kv ("command", bson (*mongoc_apm_command_started_get_command (started))));
 
-   event_store_or_destroy (entity, event_new ("commandStartedEvent", serialized, is_sensitive));
+   event_store_or_destroy (entity, event_new ("commandStartedEvent", "command", serialized, is_sensitive));
 }
 
 static void
@@ -352,7 +457,7 @@ command_failed (const mongoc_apm_command_failed_t *failed)
       if (service_id, then (kv ("serviceId", oid (service_id)))),
       kv ("failure", cstr (error.message)));
 
-   event_store_or_destroy (entity, event_new ("commandFailedEvent", serialized, is_sensitive));
+   event_store_or_destroy (entity, event_new ("commandFailedEvent", "command", serialized, is_sensitive));
 }
 
 static void
@@ -376,7 +481,7 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
       if (service_id, then (kv ("serviceId", oid (service_id)))),
       kv ("reply", bson (*mongoc_apm_command_succeeded_get_reply (succeeded))));
 
-   event_store_or_destroy (entity, event_new ("commandSucceededEvent", serialized, is_sensitive));
+   event_store_or_destroy (entity, event_new ("commandSucceededEvent", "command", serialized, is_sensitive));
 }
 
 static void
@@ -400,7 +505,7 @@ server_changed (const mongoc_apm_server_changed_t *changed)
       kv ("newDescription",
           doc (do ({ mongoc_server_description_append_contents_to_bson (new_sd, bsonBuildContext.doc, sd_flags); }))));
 
-   event_store_or_destroy (entity, event_new ("serverDescriptionChangedEvent", serialized, false));
+   event_store_or_destroy (entity, event_new ("serverDescriptionChangedEvent", "sdam", serialized, false));
 }
 
 static void
@@ -427,9 +532,68 @@ topology_changed (const mongoc_apm_topology_changed_t *changed)
                               new_td, bsonBuildContext.doc, td_flags, sd_flags);
                         }))));
 
-   event_store_or_destroy (entity, event_new ("topologyDescriptionChangedEvent", serialized, false));
+   event_store_or_destroy (entity, event_new ("topologyDescriptionChangedEvent", "sdam", serialized, false));
 }
 
+static void
+topology_opening (const mongoc_apm_topology_opening_t *opening)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_topology_opening_get_context (opening);
+   bson_oid_t topology_id;
+   mongoc_apm_topology_opening_get_topology_id (opening, &topology_id);
+
+   bson_t *serialized = bson_new ();
+   bsonBuildAppend (*serialized, kv ("topologyId", oid (&topology_id)));
+
+   event_store_or_destroy (entity, event_new ("topologyOpeningEvent", "sdam", serialized, false));
+}
+
+static void
+topology_closed (const mongoc_apm_topology_closed_t *closed)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_topology_closed_get_context (closed);
+   bson_oid_t topology_id;
+   mongoc_apm_topology_closed_get_topology_id (closed, &topology_id);
+
+   bson_t *serialized = bson_new ();
+   bsonBuildAppend (*serialized, kv ("topologyId", oid (&topology_id)));
+
+   event_store_or_destroy (entity, event_new ("topologyClosedEvent", "sdam", serialized, false));
+}
+
+static void
+server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *started)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_server_heartbeat_started_get_context (started);
+   bson_t *serialized = bson_new ();
+
+   bsonBuildAppend (*serialized, kv ("awaited", boolean (mongoc_apm_server_heartbeat_started_get_awaited (started))));
+
+   event_store_or_destroy (entity, event_new ("serverHeartbeatStartedEvent", "sdam", serialized, false));
+}
+
+static void
+server_heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *succeeded)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_server_heartbeat_succeeded_get_context (succeeded);
+   bson_t *serialized = bson_new ();
+
+   bsonBuildAppend (*serialized,
+                    kv ("awaited", boolean (mongoc_apm_server_heartbeat_succeeded_get_awaited (succeeded))));
+
+   event_store_or_destroy (entity, event_new ("serverHeartbeatSucceededEvent", "sdam", serialized, false));
+}
+
+static void
+server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *failed)
+{
+   entity_t *entity = (entity_t *) mongoc_apm_server_heartbeat_failed_get_context (failed);
+   bson_t *serialized = bson_new ();
+
+   bsonBuildAppend (*serialized, kv ("awaited", boolean (mongoc_apm_server_heartbeat_failed_get_awaited (failed))));
+
+   event_store_or_destroy (entity, event_new ("serverHeartbeatFailedEvent", "sdam", serialized, false));
+}
 
 static void
 set_command_started_cb (mongoc_apm_callbacks_t *callbacks)
@@ -461,6 +625,36 @@ set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks)
    mongoc_apm_set_topology_changed_cb (callbacks, topology_changed);
 }
 
+static void
+set_topology_opening_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_topology_opening_cb (callbacks, topology_opening);
+}
+
+static void
+set_topology_closed_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_topology_closed_cb (callbacks, topology_closed);
+}
+
+static void
+set_server_heartbeat_started_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_server_heartbeat_started_cb (callbacks, server_heartbeat_started);
+}
+
+static void
+set_server_heartbeat_succeeded_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks, server_heartbeat_succeeded);
+}
+
+static void
+set_server_heartbeat_failed_cb (mongoc_apm_callbacks_t *callbacks)
+{
+   mongoc_apm_set_server_heartbeat_failed_cb (callbacks, server_heartbeat_failed);
+}
+
 /* Set a callback for the indicated event type in a mongoc_apm_callbacks_t.
  * Safe to call multiple times for the same event: callbacks for a specific
  * event type are always the same. Returns 'true' if the event is known and
@@ -482,6 +676,11 @@ set_event_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
       {.type = "commandSucceededEvent", .set = set_command_succeeded_cb},
       {.type = "serverDescriptionChangedEvent", .set = set_server_changed_cb},
       {.type = "topologyDescriptionChangedEvent", .set = set_topology_changed_cb},
+      {.type = "topologyOpeningEvent", .set = set_topology_opening_cb},
+      {.type = "topologyClosedEvent", .set = set_topology_closed_cb},
+      {.type = "serverHeartbeatStartedEvent", .set = set_server_heartbeat_started_cb},
+      {.type = "serverHeartbeatSucceededEvent", .set = set_server_heartbeat_succeeded_cb},
+      {.type = "serverHeartbeatFailedEvent", .set = set_server_heartbeat_failed_cb},
       {.type = NULL, .set = NULL},
    };
 
@@ -1144,6 +1343,10 @@ entity_client_encryption_new (entity_map_t *entity_map, bson_t *bson, bson_error
          if (!client_entity) {
             goto ce_opts_done;
          }
+         if (!client_entity->value) {
+            test_set_error (error, "client '%s' is closed", client_id);
+            goto ce_opts_done;
+         }
 
          BSON_ASSERT ((client = (mongoc_client_t *) client_entity->value));
 
@@ -1277,6 +1480,10 @@ entity_database_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error
 
    client_entity = entity_map_get (entity_map, client_id, error);
    if (!client_entity) {
+      goto done;
+   }
+   if (!client_entity) {
+      test_set_error (error, "client '%s' is closed", client_id);
       goto done;
    }
 
@@ -1471,6 +1678,7 @@ entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    }
    client = (mongoc_client_t *) client_entity->value;
    if (!client) {
+      test_set_error (error, "client '%s' is closed", client_id);
       goto done;
    }
    if (session_opts_bson) {
@@ -1639,6 +1847,40 @@ done:
    return ret;
 }
 
+static bool
+entity_close (entity_t *entity, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (entity);
+
+   /* Note that the unified test spec says tests SHOULD avoid using entities
+    * after close, but the SDAM tests do require access to clients after close
+    * for good reason: to check the log messages emitted over a full client
+    * life cycle.
+    *
+    * For the entity types that require 'close' support, the closed state is
+    * represented in this driver by value == NULL. */
+
+   if (0 == strcmp ("client", entity->type)) {
+      mongoc_client_t *client = (mongoc_client_t *) entity->value;
+      mongoc_client_destroy (client);
+   } else if (0 == strcmp ("changestream", entity->type)) {
+      mongoc_change_stream_t *changestream = (mongoc_change_stream_t *) entity->value;
+      mongoc_change_stream_destroy (changestream);
+   } else if (0 == strcmp ("findcursor", entity->type)) {
+      entity_findcursor_t *findcursor = (entity_findcursor_t *) entity->value;
+      if (findcursor) {
+         mongoc_cursor_destroy (findcursor->cursor);
+         bson_free (findcursor);
+      }
+   } else {
+      test_set_error (error, "Attempting to close unsupported entity type: %s, id: %s", entity->type, entity->id);
+      return false;
+   }
+
+   entity->value = NULL;
+   return true;
+}
+
 static void
 entity_destroy (entity_t *entity)
 {
@@ -1650,49 +1892,33 @@ entity_destroy (entity_t *entity)
 
    BSON_ASSERT (entity->type);
 
+   // Note that entities which can be 'close'd chain their destructors via close,
+   // to avoid proliferating duplicates of the per-type finalization steps.
+
    if (0 == strcmp ("client", entity->type)) {
-      mongoc_client_t *client = NULL;
-
-      client = (mongoc_client_t *) entity->value;
-      mongoc_client_destroy (client);
+      BSON_ASSERT (entity_close (entity, NULL));
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
-      mongoc_client_encryption_t *ce = NULL;
-
-      ce = (mongoc_client_encryption_t *) entity->value;
+      mongoc_client_encryption_t *ce = (mongoc_client_encryption_t *) entity->value;
       mongoc_client_encryption_destroy (ce);
    } else if (0 == strcmp ("database", entity->type)) {
-      mongoc_database_t *db = NULL;
-
-      db = (mongoc_database_t *) entity->value;
+      mongoc_database_t *db = (mongoc_database_t *) entity->value;
       mongoc_database_destroy (db);
    } else if (0 == strcmp ("collection", entity->type)) {
-      mongoc_collection_t *coll = NULL;
-
-      coll = (mongoc_collection_t *) entity->value;
+      mongoc_collection_t *coll = (mongoc_collection_t *) entity->value;
       mongoc_collection_destroy (coll);
    } else if (0 == strcmp ("session", entity->type)) {
-      mongoc_client_session_t *sess = NULL;
-
-      sess = (mongoc_client_session_t *) entity->value;
+      mongoc_client_session_t *sess = (mongoc_client_session_t *) entity->value;
       mongoc_client_session_destroy (sess);
    } else if (0 == strcmp ("changestream", entity->type)) {
-      mongoc_change_stream_t *changestream = NULL;
-
-      changestream = (mongoc_change_stream_t *) entity->value;
-      mongoc_change_stream_destroy (changestream);
+      BSON_ASSERT (entity_close (entity, NULL));
    } else if (0 == strcmp ("bson", entity->type)) {
       bson_val_t *value = entity->value;
-
       bson_val_destroy (value);
    } else if (0 == strcmp ("bucket", entity->type)) {
       mongoc_gridfs_bucket_t *bucket = entity->value;
-
       mongoc_gridfs_bucket_destroy (bucket);
    } else if (0 == strcmp ("findcursor", entity->type)) {
-      entity_findcursor_t *findcursor = entity->value;
-
-      mongoc_cursor_destroy (findcursor->cursor);
-      bson_free (findcursor);
+      BSON_ASSERT (entity_close (entity, NULL));
    } else if (0 == strcmp ("bson_array", entity->type)) {
       mongoc_array_t *array = entity->value;
 
@@ -1706,8 +1932,10 @@ entity_destroy (entity_t *entity)
       bson_free (array);
    } else if (0 == strcmp ("size_t", entity->type)) {
       size_t *v = entity->value;
-
       bson_free (v);
+   } else if (0 == strcmp ("topologyDescription", entity->type)) {
+      mongoc_topology_description_t *td = (mongoc_topology_description_t *) entity->value;
+      mongoc_topology_description_destroy (td);
    } else {
       test_error ("Attempting to destroy unrecognized entity type: %s, id: %s", entity->type, entity->id);
    }
@@ -1746,7 +1974,8 @@ entity_destroy (entity_t *entity)
       _mongoc_array_destroy (&entity->store_events);
    }
 
-   bson_mutex_destroy (&entity->log_messages_mutex);
+   BSON_ASSERT (NULL == entity->log_filters);
+   bson_mutex_destroy (&entity->log_mutex);
    bson_destroy (entity->ignore_command_monitoring_events);
    bson_free (entity->type);
    bson_free (entity->id);
@@ -1772,17 +2001,14 @@ entity_map_get (entity_map_t *entity_map, const char *id, bson_error_t *error)
 }
 
 bool
-entity_map_delete (entity_map_t *em, const char *id, bson_error_t *error)
+entity_map_close (entity_map_t *em, const char *id, bson_error_t *error)
 {
    entity_t *entity = entity_map_get (em, id, error);
    if (!entity) {
       return false;
    }
 
-   LL_DELETE (em->entities, entity);
-   entity_destroy (entity);
-
-   return true;
+   return entity_close (entity, error);
 }
 
 static entity_t *
@@ -1808,6 +2034,9 @@ entity_map_get_client (entity_map_t *entity_map, const char *id, bson_error_t *e
    entity_t *entity = _entity_map_get_by_type (entity_map, id, "client", error);
    if (!entity) {
       return NULL;
+   }
+   if (!entity->value) {
+      test_set_error (error, "client '%s' is closed", id);
    }
    return (mongoc_client_t *) entity->value;
 }
@@ -1849,6 +2078,9 @@ entity_map_get_changestream (entity_map_t *entity_map, const char *id, bson_erro
    if (!entity) {
       return NULL;
    }
+   if (!entity->value) {
+      test_set_error (error, "changestream '%s' is closed", id);
+   }
    return (mongoc_change_stream_t *) entity->value;
 }
 
@@ -1859,7 +2091,21 @@ entity_map_get_findcursor (entity_map_t *entity_map, const char *id, bson_error_
    if (!entity) {
       return NULL;
    }
+   if (!entity->value) {
+      test_set_error (error, "findcursor '%s' is closed", id);
+   }
    return (entity_findcursor_t *) entity->value;
+}
+
+mongoc_topology_description_t *
+entity_map_get_topology_description (entity_map_t *entity_map, const char *id, bson_error_t *error)
+{
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "topologyDescription", error);
+   if (!entity) {
+      return NULL;
+   }
+   BSON_ASSERT (entity->value);
+   return (mongoc_topology_description_t *) entity->value;
 }
 
 bson_val_t *
@@ -1990,6 +2236,15 @@ entity_map_add_findcursor (
    findcursor->cursor = cursor;
    findcursor->first_result = first_result;
    return _entity_map_add (em, id, "findcursor", (void *) findcursor, error);
+}
+
+bool
+entity_map_add_topology_description (entity_map_t *em,
+                                     const char *id,
+                                     mongoc_topology_description_t *td,
+                                     bson_error_t *error)
+{
+   return _entity_map_add (em, id, "topologyDescription", (void *) td, error);
 }
 
 bool
@@ -2188,8 +2443,9 @@ entity_map_disable_event_listeners (entity_map_t *em)
    {
       if (0 == strcmp (eiter->type, "client")) {
          mongoc_client_t *client = (mongoc_client_t *) eiter->value;
-
-         mongoc_client_set_apm_callbacks (client, NULL, NULL);
+         if (client) {
+            mongoc_client_set_apm_callbacks (client, NULL, NULL);
+         }
       }
    }
 }
