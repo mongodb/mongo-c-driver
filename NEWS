@@ -1,15 +1,40 @@
-libmongoc 1.30.0 (Unreleased)
-=============================
+libmongoc 1.30.0
+================
 
 Fixes:
 
   * Additional APM events required by the SDAM specification will now be delivered:
     * Servers that have seen `server_opening` will now see a `server_closed` prior to `topology_closed`.
     * Before `topology_closed`, a `topology_changed` event will transition to `Unknown` topology type.
+  * Fix reporting insert IDs in `mongoc_bulkwrite_t` when verbose results requested.
+
+Improvements:
+
+  * Improve performance of `mongoc_server_description_new_copy`.
+
+New Features:
+
+  * Add support for structured logging.
+    * See `mongoc_client_set_structured_log_opts` and `mongoc_client_pool_set_structured_log_opts`.
+  * Add option to configure cache lifetime of In-Use Encryption data encryption keys.
+    * See `mongoc_auto_encryption_opts_set_key_expiration` and `mongoc_client_encryption_opts_set_key_expiration`.
+  * Support `sort` option for update and replace operations.
+  * Support constructing a `mongoc_bulkwrite_t` without a client.
+    * See `mongoc_bulkwrite_new` and `mongoc_bulkwrite_set_client`.
 
 Deprecated:
 
   * Support for Debian 9 and Debian 10.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Micah Scott
+  * Jeremy Mikola
+  * Adrian Dole
+  * Ezra Chung
+  * Antony Polukhin
+  * Jeroen Ooms
 
 libmongoc 1.29.2
 ================
