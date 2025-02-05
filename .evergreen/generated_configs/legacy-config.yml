@@ -16403,15 +16403,6 @@ buildvariants:
   - install-libmongoc-after-libbson
   tags:
   - pr-merge-gate
-- name: clang38
-  display_name: clang 3.8 (Debian 9.2)
-  expansions:
-    CC: clang
-  run_on: debian92-test
-  tasks:
-  - release-compile
-  - debug-compile-nosasl-nossl
-  - .latest .nossl
 - name: openssl
   display_name: OpenSSL / LibreSSL
   run_on: archlinux-build
@@ -16458,15 +16449,6 @@ buildvariants:
   - debug-compile-nosasl-openssl
   - debug-compile-sasl-openssl
   - .authentication-tests .openssl
-  - .latest .nossl
-- name: gcc63
-  display_name: GCC 6.3 (Debian 9.2)
-  expansions:
-    CC: gcc
-  run_on: debian92-test
-  tasks:
-  - release-compile
-  - debug-compile-nosasl-nossl
   - .latest .nossl
 - name: gcc83
   display_name: GCC 8.3 (Debian 10.0)

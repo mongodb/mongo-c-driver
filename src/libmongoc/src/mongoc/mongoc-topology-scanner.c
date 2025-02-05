@@ -43,6 +43,7 @@
 #include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 #include <common-string-private.h>
 #include <mlib/cmp.h>
 #include <common-atomic-private.h>
@@ -411,6 +412,8 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
 mongoc_topology_scanner_t *
 mongoc_topology_scanner_new (const mongoc_uri_t *uri,
+                             const bson_oid_t *topology_id,
+                             mongoc_log_and_monitor_instance_t *log_and_monitor,
                              mongoc_topology_scanner_setup_err_cb_t setup_err_cb,
                              mongoc_topology_scanner_cb_t cb,
                              void *data,
@@ -420,11 +423,13 @@ mongoc_topology_scanner_new (const mongoc_uri_t *uri,
 
    ts->async = mongoc_async_new ();
 
+   bson_oid_copy (topology_id, &ts->topology_id);
    ts->setup_err_cb = setup_err_cb;
    ts->cb = cb;
    ts->cb_data = data;
    ts->uri = uri;
    ts->appname = NULL;
+   ts->log_and_monitor = log_and_monitor;
    ts->api = NULL;
    ts->handshake_state = HANDSHAKE_CMD_UNINITIALIZED;
    ts->connect_timeout_msec = connect_timeout_msec;
@@ -1276,12 +1281,21 @@ _mongoc_topology_scanner_set_cluster_time (mongoc_topology_scanner_t *ts, const 
 static void
 _mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanner_t *ts, const mongoc_host_list_t *host)
 {
-   if (ts->apm_callbacks.server_heartbeat_started) {
+   mongoc_structured_log (ts->log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Server heartbeat started",
+                          oid ("topologyId", &ts->topology_id),
+                          utf8 ("serverHost", host->host),
+                          int32 ("serverPort", host->port),
+                          boolean ("awaited", false));
+
+   if (ts->log_and_monitor->apm_callbacks.server_heartbeat_started) {
       mongoc_apm_server_heartbeat_started_t event;
       event.host = host;
-      event.context = ts->apm_context;
+      event.context = ts->log_and_monitor->apm_context;
       event.awaited = false;
-      ts->apm_callbacks.server_heartbeat_started (&event);
+      ts->log_and_monitor->apm_callbacks.server_heartbeat_started (&event);
    }
 }
 
@@ -1292,22 +1306,38 @@ _mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scan
                                                       const bson_t *reply,
                                                       int64_t duration_usec)
 {
-   if (ts->apm_callbacks.server_heartbeat_succeeded) {
+   /* This redaction is more lenient than the general command redaction in the Command Logging and Monitoring spec and
+    * the cmd*() structured log items. In those general command logs, sensitive replies are omitted entirely. In this
+    * APM message, the reply is passed through with only the speculativeAuthenticate field stripped. The Server
+    * Discovery and Monitoring Logging spec does not mention reply redaction, so we choose to be consistent with the APM
+    * event. */
+
+   bson_t hello_redacted;
+   bson_init (&hello_redacted);
+   bson_copy_to_excluding_noinit (reply, &hello_redacted, "speculativeAuthenticate", NULL);
+
+   mongoc_structured_log (ts->log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Server heartbeat succeeded",
+                          oid ("topologyId", &ts->topology_id),
+                          utf8 ("serverHost", host->host),
+                          int32 ("serverPort", host->port),
+                          boolean ("awaited", false),
+                          monotonic_time_duration (duration_usec),
+                          bson_as_json ("reply", &hello_redacted));
+
+   if (ts->log_and_monitor->apm_callbacks.server_heartbeat_succeeded) {
       mongoc_apm_server_heartbeat_succeeded_t event;
-      bson_t hello_redacted;
-
-      bson_init (&hello_redacted);
-      bson_copy_to_excluding_noinit (reply, &hello_redacted, "speculativeAuthenticate", NULL);
-
       event.host = host;
-      event.context = ts->apm_context;
+      event.context = ts->log_and_monitor->apm_context;
       event.reply = reply;
       event.duration_usec = duration_usec;
       event.awaited = false;
-      ts->apm_callbacks.server_heartbeat_succeeded (&event);
-
-      bson_destroy (&hello_redacted);
+      ts->log_and_monitor->apm_callbacks.server_heartbeat_succeeded (&event);
    }
+
+   bson_destroy (&hello_redacted);
 }
 
 /* SDAM Monitoring Spec: send HeartbeatFailedEvent */
@@ -1317,14 +1347,25 @@ _mongoc_topology_scanner_monitor_heartbeat_failed (const mongoc_topology_scanner
                                                    const bson_error_t *error,
                                                    int64_t duration_usec)
 {
-   if (ts->apm_callbacks.server_heartbeat_failed) {
+   mongoc_structured_log (ts->log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Server heartbeat failed",
+                          oid ("topologyId", &ts->topology_id),
+                          utf8 ("serverHost", host->host),
+                          int32 ("serverPort", host->port),
+                          boolean ("awaited", false),
+                          monotonic_time_duration (duration_usec),
+                          error ("failure", error));
+
+   if (ts->log_and_monitor->apm_callbacks.server_heartbeat_failed) {
       mongoc_apm_server_heartbeat_failed_t event;
       event.host = host;
-      event.context = ts->apm_context;
+      event.context = ts->log_and_monitor->apm_context;
       event.error = error;
       event.duration_usec = duration_usec;
       event.awaited = false;
-      ts->apm_callbacks.server_heartbeat_failed (&event);
+      ts->log_and_monitor->apm_callbacks.server_heartbeat_failed (&event);
    }
 }
 

@@ -5,6 +5,7 @@
 
 #include "json-test.h"
 
+#include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-topology-description-apm-private.h>
@@ -165,7 +166,7 @@ test_sdam_cb (void *test_vp)
     * when SDAM monitoring begins. Force an opening, which would occur on the
     * first operation on the client. */
    tdmod = mc_tpld_modify_begin (client->topology);
-   _mongoc_topology_description_monitor_opening (tdmod.new_td);
+   _mongoc_topology_description_monitor_opening (tdmod.new_td, &client->topology->log_and_monitor);
    mc_tpld_modify_commit (tdmod);
 
    while (bson_iter_next (&phase_iter)) {
@@ -848,6 +849,137 @@ test_prose_rtt (void *unused)
    BSON_ASSERT (ctx.n_heartbeat_succeeded > 0);
 }
 
+typedef enum prose_heartbeat_event_t {
+   PROSE_HEARTBEAT_EVENT_SERVER_HEARTBEAT_STARTED = 1,
+   PROSE_HEARTBEAT_EVENT_CLIENT_CONNECTED,
+   PROSE_HEARTBEAT_EVENT_CLIENT_HELLO_RECEIVED,
+   PROSE_HEARTBEAT_EVENT_SERVER_HEARTBEAT_FAILED,
+} prose_heartbeat_event_t;
+
+#define PROSE_HEARTBEAT_EVENTS_MAX 10
+
+typedef struct prose_heartbeat_context_t {
+   bson_mutex_t mutex;
+   mongoc_cond_t cond;
+   uint16_t listen_port;
+   size_t num_events;
+   prose_heartbeat_event_t events[PROSE_HEARTBEAT_EVENTS_MAX];
+} prose_heartbeat_context_t;
+
+static void
+prose_heartbeat_context_append_event (prose_heartbeat_context_t *context, prose_heartbeat_event_t event)
+{
+   bson_mutex_lock (&context->mutex);
+   size_t num_events = context->num_events;
+   ASSERT_CMPSIZE_T (num_events, <, PROSE_HEARTBEAT_EVENTS_MAX);
+   context->events[num_events] = event;
+   context->num_events = num_events + 1;
+   bson_mutex_unlock (&context->mutex);
+}
+
+static BSON_THREAD_FUN (prose_heartbeat_thread, generic_context)
+{
+   prose_heartbeat_context_t *context = (prose_heartbeat_context_t *) generic_context;
+
+   mongoc_socket_t *listen_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
+   BSON_ASSERT (listen_sock);
+
+   struct sockaddr_in server_addr = {
+      .sin_family = AF_INET,
+      .sin_addr.s_addr = htonl (INADDR_LOOPBACK),
+      .sin_port = htons (0),
+   };
+
+   ASSERT_CMPINT (0, ==, mongoc_socket_bind (listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr));
+
+   mongoc_socklen_t sock_len = sizeof (server_addr);
+   ASSERT_CMPINT (0, ==, mongoc_socket_getsockname (listen_sock, (struct sockaddr *) &server_addr, &sock_len));
+
+   ASSERT_CMPINT (0, ==, mongoc_socket_listen (listen_sock, 10));
+
+   bson_mutex_lock (&context->mutex);
+   context->listen_port = ntohs (server_addr.sin_port);
+   mongoc_cond_signal (&context->cond);
+   bson_mutex_unlock (&context->mutex);
+
+   mongoc_socket_t *conn_sock = mongoc_socket_accept (listen_sock, -1);
+   BSON_ASSERT (conn_sock);
+
+   prose_heartbeat_context_append_event (context, PROSE_HEARTBEAT_EVENT_CLIENT_CONNECTED);
+
+   int64_t expire_at = bson_get_monotonic_time () + 10000000;
+   uint8_t buf[1];
+   ASSERT_CMPINT (1, ==, mongoc_socket_recv (conn_sock, buf, sizeof buf, 0, expire_at));
+
+   prose_heartbeat_context_append_event (context, PROSE_HEARTBEAT_EVENT_CLIENT_HELLO_RECEIVED);
+
+   mongoc_socket_destroy (conn_sock);
+   mongoc_socket_destroy (listen_sock);
+
+   BSON_THREAD_RETURN;
+}
+
+static void
+prose_heartbeat_event_started (const mongoc_apm_server_heartbeat_started_t *event)
+{
+   prose_heartbeat_context_t *context =
+      (prose_heartbeat_context_t *) mongoc_apm_server_heartbeat_started_get_context (event);
+   prose_heartbeat_context_append_event (context, PROSE_HEARTBEAT_EVENT_SERVER_HEARTBEAT_STARTED);
+}
+
+static void
+prose_heartbeat_event_failed (const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   prose_heartbeat_context_t *context =
+      (prose_heartbeat_context_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
+   prose_heartbeat_context_append_event (context, PROSE_HEARTBEAT_EVENT_SERVER_HEARTBEAT_FAILED);
+}
+
+static void
+test_prose_heartbeat (void)
+{
+   bson_thread_t thread;
+   prose_heartbeat_context_t context = {.num_events = 0, .listen_port = 0};
+
+   bson_mutex_init (&context.mutex);
+   mongoc_cond_init (&context.cond);
+
+   BSON_ASSERT (0 == mcommon_thread_create (&thread, prose_heartbeat_thread, &context));
+
+   bson_mutex_lock (&context.mutex);
+   uint16_t listen_port = context.listen_port;
+   while (!listen_port) {
+      mongoc_cond_wait (&context.cond, &context.mutex);
+      listen_port = context.listen_port;
+   }
+   bson_mutex_unlock (&context.mutex);
+
+   MONGOC_INFO ("Mock server listening on port %d", listen_port);
+
+   mongoc_client_t *client =
+      mongoc_client_new (tmp_str ("mongodb://127.0.0.1:%hu/?serverselectiontimeoutms=500", listen_port));
+   BSON_ASSERT (client);
+
+   mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_server_heartbeat_started_cb (callbacks, prose_heartbeat_event_started);
+   mongoc_apm_set_server_heartbeat_failed_cb (callbacks, prose_heartbeat_event_failed);
+   mongoc_client_set_apm_callbacks (client, callbacks, &context);
+   mongoc_apm_callbacks_destroy (callbacks);
+
+   BSON_ASSERT (!mongoc_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL));
+
+   mongoc_client_destroy (client);
+   mcommon_thread_join (thread);
+   mongoc_cond_destroy (&context.cond);
+   bson_mutex_destroy (&context.mutex);
+
+   ASSERT_CMPSIZE_T (context.num_events, ==, 4);
+   ASSERT_CMPINT (context.events[0], ==, PROSE_HEARTBEAT_EVENT_SERVER_HEARTBEAT_STARTED);
+   ASSERT_CMPINT (context.events[1], ==, PROSE_HEARTBEAT_EVENT_CLIENT_CONNECTED);
+   ASSERT_CMPINT (context.events[2], ==, PROSE_HEARTBEAT_EVENT_CLIENT_HELLO_RECEIVED);
+   ASSERT_CMPINT (context.events[3], ==, PROSE_HEARTBEAT_EVENT_SERVER_HEARTBEAT_FAILED);
+}
+
 void
 test_sdam_install (TestSuite *suite)
 {
@@ -876,4 +1008,5 @@ test_sdam_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_less_than_9);
+   TestSuite_Add (suite, "/server_discovery_and_monitoring/prose/heartbeat", test_prose_heartbeat);
 }

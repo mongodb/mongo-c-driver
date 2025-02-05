@@ -115,8 +115,8 @@ test_bson_util_install (TestSuite *suite)
    TestSuite_Add (suite, "/unified/selftest/util/copy_and_sort", test_copy_and_sort);
 }
 
-/* TODO (CDRIVER-3525) add test support for CMAP events once the C driver
- * supports CMAP. */
+/* CMAP (CDRIVER-3525) isn't planned for implementation in this driver. Many tests that would otherwise require CMAP
+ * are used in partial form by skipping individual checks that involve unsupported events. */
 bool
 is_unsupported_event_type (const char *event_type)
 {

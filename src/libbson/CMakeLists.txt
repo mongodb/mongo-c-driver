@@ -108,6 +108,8 @@ check_symbol_exists (clock_gettime time.h BSON_HAVE_CLOCK_GETTIME)
 mongo_bool01 (BSON_HAVE_CLOCK_GETTIME BSON_HAVE_CLOCK_GETTIME)
 check_symbol_exists (strnlen string.h BSON_HAVE_STRNLEN)
 mongo_bool01 (BSON_HAVE_STRNLEN BSON_HAVE_STRNLEN)
+check_symbol_exists (aligned_alloc stdlib.h BSON_HAVE_ALIGNED_ALLOC)
+mongo_bool01 (BSON_HAVE_ALIGNED_ALLOC BSON_HAVE_ALIGNED_ALLOC)
 test_big_endian (BSON_BIG_ENDIAN)
 
 if (WIN32)

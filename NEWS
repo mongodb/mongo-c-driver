@@ -1,9 +1,18 @@
-libmongoc 1.29.2
-================
+libmongoc 1.30.0 (Unreleased)
+=============================
+
+Fixes:
+
+  * Additional APM events required by the SDAM specification will now be delivered:
+    * Servers that have seen `server_opening` will now see a `server_closed` prior to `topology_closed`.
+    * Before `topology_closed`, a `topology_changed` event will transition to `Unknown` topology type.
 
 Deprecated:
 
   * Support for Debian 9 and Debian 10.
+
+libmongoc 1.29.2
+================
 
 Fixes:
   * Rename `set_error` function to avoid symbol conflicts.

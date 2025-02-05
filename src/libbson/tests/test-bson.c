@@ -3196,6 +3196,16 @@ test_bson_array_builder (void)
          bson_array_builder_destroy (bab);
       }
    }
+
+   // A failure in bson_append_array_builder_begin does not allocate.
+   {
+      bson_t b = BSON_INITIALIZER;
+      bson_array_builder_t *child;
+      bool ok = bson_append_array_builder_begin (&b, "has_embedded_null\0", strlen ("has_embedded_null") + 1, &child);
+      ASSERT (!ok);
+      bson_destroy (&b);
+      // Not necessary to free `child`.
+   }
 }
 
 void
