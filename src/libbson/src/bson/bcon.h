@@ -23,7 +23,7 @@
 #ifndef BCON_H_
 #define BCON_H_
 
-#include "bson.h"
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

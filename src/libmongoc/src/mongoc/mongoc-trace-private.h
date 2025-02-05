@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 
 #ifndef MONGOC_TRACE_PRIVATE_H
@@ -24,9 +24,9 @@
 #include <bson/bson.h>
 #include <ctype.h>
 
-#include "mongoc-log.h"
-#include "mongoc-log-private.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-log-private.h>
+#include <mongoc/mongoc-config.h>
 
 
 BSON_BEGIN_DECLS

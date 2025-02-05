@@ -32,9 +32,9 @@
 #include <stdarg.h>
 #include <time.h>
 
-#include "mongoc-log.h"
-#include "mongoc-log-private.h"
-#include "mongoc-thread-private.h"
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-log-private.h>
+#include <mongoc/mongoc-thread-private.h>
 #include <common-string-private.h>
 
 
@@ -227,8 +227,9 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
 {
    STOP_LOGGING_CHECK;
 
-   mcommon_string_t *const str = mcommon_string_new (NULL);
-   mcommon_string_t *const astr = mcommon_string_new (NULL);
+   mcommon_string_append_t str, astr;
+   mcommon_string_new_as_append (&str);
+   mcommon_string_new_as_append (&astr);
 
    size_t _i;
    for (_i = 0u; _i < _l; _i++) {
@@ -236,38 +237,39 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
       const size_t rem = _i % 16u;
 
       if (rem == 0u) {
-         mcommon_string_append_printf (str, "%05zx: ", _i);
+         mcommon_string_append_printf (&str, "%05zx: ", _i);
       }
 
-      mcommon_string_append_printf (str, " %02x", _v);
+      mcommon_string_append_printf (&str, " %02x", _v);
       if (isprint (_v)) {
-         mcommon_string_append_printf (astr, " %c", _v);
+         mcommon_string_append_printf (&astr, " %c", _v);
       } else {
-         mcommon_string_append (astr, " .");
+         mcommon_string_append (&astr, " .");
       }
 
       if (rem == 15u) {
-         mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
-         mcommon_string_truncate (str, 0);
-         mcommon_string_truncate (astr, 0);
+         mongoc_log (
+            MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", mcommon_str_from_append (&str), mcommon_str_from_append (&astr));
+         mcommon_string_from_append_clear (&str);
+         mcommon_string_from_append_clear (&astr);
       } else if (rem == 7u) {
-         mcommon_string_append (str, " ");
-         mcommon_string_append (astr, " ");
+         mcommon_string_append (&str, " ");
+         mcommon_string_append (&astr, " ");
       }
    }
 
    if (_i != 16u) {
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
+      mongoc_log (
+         MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", mcommon_str_from_append (&str), mcommon_str_from_append (&astr));
    }
 
-   mcommon_string_free (str, true);
-   mcommon_string_free (astr, true);
+   mcommon_string_from_append_destroy (&str);
+   mcommon_string_from_append_destroy (&astr);
 }
 
 void
 mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _iovcnt)
 {
-   mcommon_string_t *str, *astr;
    const char *_b;
    unsigned _i = 0;
    unsigned _j = 0;
@@ -282,8 +284,10 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
    }
 
    _i = 0;
-   str = mcommon_string_new (NULL);
-   astr = mcommon_string_new (NULL);
+
+   mcommon_string_append_t str, astr;
+   mcommon_string_new_as_append (&str);
+   mcommon_string_new_as_append (&astr);
 
    for (_j = 0; _j < _iovcnt; _j++) {
       _b = (char *) _iov[_j].iov_base;
@@ -292,31 +296,36 @@ mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _
       for (_k = 0; _k < _l; _k++, _i++) {
          _v = *(_b + _k);
          if ((_i % 16) == 0) {
-            mcommon_string_append_printf (str, "%05x: ", _i);
+            mcommon_string_append_printf (&str, "%05x: ", _i);
          }
 
-         mcommon_string_append_printf (str, " %02x", _v);
+         mcommon_string_append_printf (&str, " %02x", _v);
          if (isprint (_v)) {
-            mcommon_string_append_printf (astr, " %c", _v);
+            mcommon_string_append_printf (&astr, " %c", _v);
          } else {
-            mcommon_string_append (astr, " .");
+            mcommon_string_append (&astr, " .");
          }
 
          if ((_i % 16) == 15) {
-            mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
-            mcommon_string_truncate (str, 0);
-            mcommon_string_truncate (astr, 0);
+            mongoc_log (MONGOC_LOG_LEVEL_TRACE,
+                        domain,
+                        "%s %s",
+                        mcommon_str_from_append (&str),
+                        mcommon_str_from_append (&astr));
+            mcommon_string_from_append_clear (&str);
+            mcommon_string_from_append_clear (&astr);
          } else if ((_i % 16) == 7) {
-            mcommon_string_append (str, " ");
-            mcommon_string_append (astr, " ");
+            mcommon_string_append (&str, " ");
+            mcommon_string_append (&astr, " ");
          }
       }
    }
 
    if (_i != 16) {
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
+      mongoc_log (
+         MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", mcommon_str_from_append (&str), mcommon_str_from_append (&astr));
    }
 
-   mcommon_string_free (str, true);
-   mcommon_string_free (astr, true);
+   mcommon_string_from_append_destroy (&str);
+   mcommon_string_from_append_destroy (&astr);
 }

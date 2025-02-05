@@ -16,11 +16,12 @@
 
 
 #include <mongoc/mongoc.h>
-#include "mongoc/mongoc-client-side-encryption-private.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/mongoc-client-side-encryption.h"
+#include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-client-side-encryption.h>
+#include <common-oid-private.h>
 
 #include "json-test.h"
 #include "json-test-operations.h"
@@ -219,7 +220,8 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          /* send hello through the topology description's handler */
          capture_logs (true);
-         mongoc_topology_description_handle_hello (tdmod.new_td, sd->id, &response, 1, NULL);
+         mongoc_topology_description_handle_hello (
+            tdmod.new_td, &topology->log_and_monitor, sd->id, &response, 1, NULL);
          if (mc_tpld_servers_const (tdmod.new_td)->items_len == 0) {
             ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_WARNING, "Last server removed from topology");
          }
@@ -265,7 +267,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
             generation = bson_iter_int32 (&app_error_field_iter);
          } else {
             /* Default to the current generation. */
-            generation = mc_tpl_sd_get_generation (sd, &kZeroServiceId);
+            generation = mc_tpl_sd_get_generation (sd, &kZeroObjectId);
          }
 
          BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "maxWireVersion"));
@@ -304,7 +306,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          memset (&err, 0, sizeof (bson_error_t));
          _mongoc_topology_handle_app_error (
-            topology, sd->id, handshake_complete, type, &response, &err, max_wire_version, generation, &kZeroServiceId);
+            topology, sd->id, handshake_complete, type, &response, &err, max_wire_version, generation, &kZeroObjectId);
          mc_tpld_drop_ref (&td);
       }
    }
@@ -1153,7 +1155,9 @@ execute_test (const json_test_config_t *config,
    }
 
    /* Select a primary for testing */
-   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "configureFailPoint"};
+   server_id =
+      mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
    json_test_ctx_init (&ctx, test, client, db, collection, config);
@@ -1599,6 +1603,13 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_free (env_cryptSharedLibPath);
    }
 
+   if (bson_iter_init_find (&iter, &opts, "keyExpirationMS")) {
+      BSON_ASSERT (BSON_ITER_HOLDS_INT (&iter));
+      const int expiration = bson_iter_as_int64 (&iter);
+      BSON_ASSERT (expiration > 0);
+      mongoc_auto_encryption_opts_set_key_expiration (auto_encryption_opts, (uint64_t) expiration);
+   }
+
    mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, &extra);
    bson_destroy (&extra);
 
@@ -1750,7 +1761,9 @@ run_json_general_test (const json_test_config_t *config)
       mongoc_uri_destroy (uri);
 
       /* clean up in case a previous test aborted */
-      server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, NULL, &error);
+      const mongoc_ss_log_context_t ss_log_context = {.operation = "configureFailPoint"};
+      server_id = mongoc_topology_select_server_id (
+         client->topology, MONGOC_SS_WRITE, &ss_log_context, NULL, NULL, NULL, &error);
       ASSERT_OR_PRINT (server_id, error);
       deactivate_fail_points (client, server_id);
       r = mongoc_client_command_with_opts (
@@ -1986,7 +1999,16 @@ test_should_be_skipped (const test_skip_t *skips, const char *description)
 {
    if (skips) {
       for (const test_skip_t *iter = skips; iter->description != NULL; iter++) {
-         if (0 == strcmp (description, iter->description)) {
+         if (iter->check_substring) {
+            if (NULL != strstr (description, iter->description)) {
+               fprintf (stderr,
+                        "  - %s SKIPPED (contains '%s'), due to reason: %s\n",
+                        description,
+                        iter->description,
+                        iter->reason);
+               return true;
+            }
+         } else if (0 == strcmp (description, iter->description)) {
             fprintf (stderr, "  - %s SKIPPED, due to reason: %s\n", description, iter->reason);
             return true;
          }

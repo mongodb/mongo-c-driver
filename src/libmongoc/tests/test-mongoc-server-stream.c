@@ -18,8 +18,8 @@
 #include "mock_server/request.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
-#include "mongoc.h"
-#include "mongoc-client-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-private.h>
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
@@ -208,7 +208,8 @@ test_server_stream_ties_server_description_single (void *unused)
    /* Pass in a zeroed out error. */
    memset (&error, 0, sizeof (bson_error_t));
    tdmod = mc_tpld_modify_begin (client->topology);
-   mongoc_topology_description_handle_hello (tdmod.new_td, 1, tmp_bson (HELLO_SERVER_ONE), 0, &error);
+   mongoc_topology_description_handle_hello (
+      tdmod.new_td, &client->topology->log_and_monitor, 1, tmp_bson (HELLO_SERVER_ONE), 0, &error);
    mc_tpld_modify_commit (tdmod);
 
    future = future_client_command_simple (

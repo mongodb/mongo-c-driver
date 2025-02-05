@@ -1,8 +1,8 @@
 #include <stdio.h>
 
-#include "mongoc/mongoc-array-private.h"
-#include "mongoc/mongoc-thread-private.h"
-#include "future.h"
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include "mock_server/future.h"
 #include "../test-libmongoc.h"
 
 /**************************************************
@@ -439,6 +439,16 @@ future_get_const_mongoc_write_concern_ptr (future_t *future)
 {
    if (future_wait (future)) {
       return future_value_get_const_mongoc_write_concern_ptr (&future->return_value);
+   }
+
+   FUTURE_TIMEOUT_ABORT;
+}
+
+const_mongoc_ss_log_context_ptr
+future_get_const_mongoc_ss_log_context_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_const_mongoc_ss_log_context_ptr (&future->return_value);
    }
 
    FUTURE_TIMEOUT_ABORT;

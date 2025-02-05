@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-client-session-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-session-private.h>
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
@@ -119,6 +119,14 @@ set_client_callbacks (mongoc_client_t *client)
    cbs = make_callbacks ();
    mongoc_client_set_apm_callbacks (client, cbs, stats);
    mongoc_apm_callbacks_destroy (cbs);
+
+   if (test_suite_debug_output ()) {
+      mongoc_structured_log_opts_t *log_opts = mongoc_structured_log_opts_new ();
+      mongoc_structured_log_opts_set_max_level_for_all_components (log_opts, MONGOC_STRUCTURED_LOG_LEVEL_DEBUG);
+      mongoc_client_set_structured_log_opts (client, log_opts);
+      mongoc_structured_log_opts_destroy (log_opts);
+   }
+
    return stats;
 }
 
@@ -141,7 +149,12 @@ static void
 free_and_assert_stats (stats_t *stats)
 {
    ASSERT_CMPINT (stats->topology_opening_events, ==, 1);
-   ASSERT_CMPINT (stats->topology_changed_events, ==, 2);
+   /* See https://specifications.readthedocs.io/en/latest/load-balancers/load-balancers/
+    * Expected TopologyDescriptionChangedEvent instances:
+    *  1. TopologyType Unknown -> TopologyType LoadBalanced with ServerType Unknown
+    *  2. TopologyType LoadBalanced with ServerType Unknown -> ServerType LoadBalancer
+    *  3. LoadBalanced LoadBalancer -> Unknown */
+   ASSERT_CMPINT (stats->topology_changed_events, ==, 3);
    ASSERT_CMPINT (stats->server_opening_events, ==, 1);
    ASSERT_CMPINT (stats->server_changed_events, ==, 1);
    ASSERT_CMPINT (stats->server_closed_events, ==, 1);

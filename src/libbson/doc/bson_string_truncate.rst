@@ -28,4 +28,6 @@ Truncates the string so that it is ``len`` bytes in length. This must be smaller
 
 A ``\0`` byte will be placed where the end of the string occurs.
 
+.. warning:: This function is oblivious to UTF-8 structure. If truncation occurs in the middle of a UTF-8 byte sequence, the resulting :symbol:`bson_string_t` will contain invalid UTF-8.
+
 .. warning:: The length of the resulting string (including the ``NULL`` terminator) MUST NOT exceed ``UINT32_MAX``.

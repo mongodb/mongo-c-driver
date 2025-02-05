@@ -23,14 +23,31 @@
 #include <stdio.h>
 #include <string.h>
 
-#define TEST_ERROR(...)                                                        \
-   do {                                                                        \
-      fprintf (                                                                \
-         stderr, "test error %s:%d %s(): ", __FILE__, __LINE__, __FUNCTION__); \
-      fprintf (stderr, __VA_ARGS__);                                           \
-      fprintf (stderr, "\n");                                                  \
-      fflush (stderr);                                                         \
-      abort ();                                                                \
+// TEST_PRINTF ensures stdout and stderr are flushed.
+#define TEST_PRINTF(...)             \
+   if (1) {                          \
+      fflush (stderr);               \
+      fprintf (stdout, __VA_ARGS__); \
+      fflush (stdout);               \
+   } else                            \
+      ((void) 0)
+
+// TEST_STDERR_PRINTF ensures stdout and stderr are flushed.
+#define TEST_STDERR_PRINTF(...)      \
+   if (1) {                          \
+      fflush (stdout);               \
+      fprintf (stderr, __VA_ARGS__); \
+      fflush (stderr);               \
+   } else                            \
+      ((void) 0)
+
+#define TEST_ERROR(...)                                                \
+   do {                                                                \
+      TEST_STDERR_PRINTF (                                             \
+         "test error %s:%d %s(): ", __FILE__, __LINE__, __FUNCTION__); \
+      TEST_STDERR_PRINTF (__VA_ARGS__);                                \
+      TEST_STDERR_PRINTF ("\n");                                       \
+      abort ();                                                        \
    } while (0)
 
 #define ASSERT(stmt)                             \

@@ -1,7 +1,8 @@
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-set-private.h"
-#include "mongoc/mongoc-client-pool-private.h"
-#include "mongoc/mongoc-client-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-client-pool-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <common-oid-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -119,14 +120,17 @@ test_get_servers (void)
    topology = mongoc_topology_new (uri, true /* single-threaded */);
    tdmod = mc_tpld_modify_begin (topology);
 
+   mongoc_log_and_monitor_instance_t log_and_monitor;
+   mongoc_log_and_monitor_instance_init (&log_and_monitor);
+
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host (tdmod.new_td, "a");
    mongoc_topology_description_handle_hello (
-      tdmod.new_td, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+      tdmod.new_td, &log_and_monitor, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sd_c = _sd_for_host (tdmod.new_td, "c");
    mongoc_topology_description_handle_hello (
-      tdmod.new_td, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+      tdmod.new_td, &log_and_monitor, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sds = mongoc_topology_description_get_servers (tdmod.new_td, &n);
    ASSERT_CMPSIZE_T ((size_t) 2, ==, n);
@@ -144,6 +148,7 @@ test_get_servers (void)
    mc_tpld_modify_drop (tdmod);
    mongoc_topology_destroy (topology);
    mongoc_uri_destroy (uri);
+   mongoc_log_and_monitor_instance_destroy_contents (&log_and_monitor);
 }
 
 #define TV_1 "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
@@ -175,18 +180,26 @@ test_topology_version_equal (void)
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, _topology_changed);
-   mongoc_topology_set_apm_callbacks (topology, tdmod.new_td, callbacks, &num_calls);
+   mongoc_log_and_monitor_instance_set_apm_callbacks (&topology->log_and_monitor, callbacks, &num_calls);
 
    sd = _sd_for_host (tdmod.new_td, "host");
-   mongoc_topology_description_handle_hello (
-      tdmod.new_td, sd->id, tmp_bson ("{'ok': 1, 'topologyVersion': " TV_2 " }"), 100, NULL);
+   mongoc_topology_description_handle_hello (tdmod.new_td,
+                                             &topology->log_and_monitor,
+                                             sd->id,
+                                             tmp_bson ("{'ok': 1, 'topologyVersion': " TV_2 " }"),
+                                             100,
+                                             NULL);
 
    ASSERT_CMPINT (num_calls, ==, 1);
 
    /* The subsequent hello has a topologyVersion that compares less, so the
     * hello skips. */
-   mongoc_topology_description_handle_hello (
-      tdmod.new_td, sd->id, tmp_bson ("{'ok': 1, 'topologyVersion': " TV_1 " }"), 100, NULL);
+   mongoc_topology_description_handle_hello (tdmod.new_td,
+                                             &topology->log_and_monitor,
+                                             sd->id,
+                                             tmp_bson ("{'ok': 1, 'topologyVersion': " TV_1 " }"),
+                                             100,
+                                             NULL);
 
    ASSERT_CMPINT (num_calls, ==, 1);
 
@@ -212,16 +225,19 @@ test_topology_description_new_copy (void)
    topology = mongoc_topology_new (uri, true /* single-threaded */);
    tdmod = mc_tpld_modify_begin (topology);
 
+   mongoc_log_and_monitor_instance_t log_and_monitor;
+   mongoc_log_and_monitor_instance_init (&log_and_monitor);
+
    td_copy = mongoc_topology_description_new_copy (tdmod.new_td);
 
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host (tdmod.new_td, "a");
    mongoc_topology_description_handle_hello (
-      tdmod.new_td, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+      tdmod.new_td, &log_and_monitor, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sd_c = _sd_for_host (tdmod.new_td, "c");
    mongoc_topology_description_handle_hello (
-      tdmod.new_td, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+      tdmod.new_td, &log_and_monitor, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    /* td was copied before original was updated */
    sds = mongoc_topology_description_get_servers (td_copy, &n);
@@ -242,6 +258,7 @@ test_topology_description_new_copy (void)
 
    mongoc_server_descriptions_destroy_all (sds, n);
    mongoc_topology_description_destroy (td_copy);
+   mongoc_log_and_monitor_instance_destroy_contents (&log_and_monitor);
 }
 
 /* Test that _mongoc_topology_description_clear_connection_pool increments the
@@ -258,11 +275,11 @@ test_topology_pool_clear (void)
    topology = mongoc_topology_new (uri, true);
    tdmod = mc_tpld_modify_begin (topology);
 
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroServiceId));
-   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, 1, &kZeroServiceId);
-   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroObjectId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroObjectId));
+   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, 1, &kZeroObjectId);
+   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 1, &kZeroObjectId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (tdmod.new_td, 2, &kZeroObjectId));
 
    mongoc_uri_destroy (uri);
    mc_tpld_modify_drop (tdmod);

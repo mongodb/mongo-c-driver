@@ -1,10 +1,11 @@
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-client-pool-private.h"
-#include "mongoc/mongoc-topology-background-monitoring-private.h"
-#include "mongoc/mongoc-uri-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-pool-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <common-oid-private.h>
 
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
@@ -27,7 +28,7 @@ server_id_for_reads (mongoc_cluster_t *cluster)
    mongoc_server_stream_t *server_stream;
    uint32_t id;
 
-   server_stream = mongoc_cluster_stream_for_reads (cluster, NULL, NULL, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_reads (cluster, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
 
@@ -1072,7 +1073,8 @@ future_command_private (mongoc_client_t *client)
 
    ASSERT (client);
 
-   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, NULL, &error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "cmd"};
+   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, &ss_log_context, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
 
    mongoc_cmd_parts_init (&parts, client, "test", MONGOC_QUERY_NONE, tmp_bson ("{'cmd': 1}"));
@@ -1664,21 +1666,28 @@ test_cluster_stream_invalidation_single (void)
 
    /* Test "clearing the pool". This should invalidate existing server streams.
     */
-   stream = mongoc_cluster_stream_for_writes (
-      &client->cluster, NULL /* session */, NULL /* deprioritized servers */, NULL /* reply */, &error);
+   stream = mongoc_cluster_stream_for_writes (&client->cluster,
+                                              TEST_SS_LOG_CONTEXT,
+                                              NULL /* session */,
+                                              NULL /* deprioritized servers */,
+                                              NULL /* reply */,
+                                              &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    tdmod = mc_tpld_modify_begin (client->topology);
-   _mongoc_topology_description_clear_connection_pool (
-      tdmod.new_td, mongoc_server_description_id (sd), &kZeroServiceId);
+   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, mongoc_server_description_id (sd), &kZeroObjectId);
    mc_tpld_modify_commit (tdmod);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
 
    /* Test closing the connection. This should invalidate existing server
     * streams. */
-   stream = mongoc_cluster_stream_for_writes (
-      &client->cluster, NULL /* session */, NULL /* deprioritized servers */, NULL /* reply */, &error);
+   stream = mongoc_cluster_stream_for_writes (&client->cluster,
+                                              TEST_SS_LOG_CONTEXT,
+                                              NULL /* session */,
+                                              NULL /* deprioritized servers */,
+                                              NULL /* reply */,
+                                              &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_cluster_disconnect_node (&client->cluster, sd->id);
@@ -1686,8 +1695,12 @@ test_cluster_stream_invalidation_single (void)
    mongoc_server_stream_cleanup (stream);
 
    /* Test that a new stream is considered valid. */
-   stream = mongoc_cluster_stream_for_writes (
-      &client->cluster, NULL /* session */, NULL /* deprioritized servers */, NULL /* reply */, &error);
+   stream = mongoc_cluster_stream_for_writes (&client->cluster,
+                                              TEST_SS_LOG_CONTEXT,
+                                              NULL /* session */,
+                                              NULL /* deprioritized servers */,
+                                              NULL /* reply */,
+                                              &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
@@ -1715,21 +1728,28 @@ test_cluster_stream_invalidation_pooled (void)
 
    /* Test "clearing the pool". This should invalidate existing server streams.
     */
-   stream = mongoc_cluster_stream_for_writes (
-      &client->cluster, NULL /* session */, NULL /* deprioritized servers */, NULL /* reply */, &error);
+   stream = mongoc_cluster_stream_for_writes (&client->cluster,
+                                              TEST_SS_LOG_CONTEXT,
+                                              NULL /* session */,
+                                              NULL /* deprioritized servers */,
+                                              NULL /* reply */,
+                                              &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    tdmod = mc_tpld_modify_begin (client->topology);
-   _mongoc_topology_description_clear_connection_pool (
-      tdmod.new_td, mongoc_server_description_id (sd), &kZeroServiceId);
+   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, mongoc_server_description_id (sd), &kZeroObjectId);
    mc_tpld_modify_commit (tdmod);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
 
    /* Test closing the connection. This should invalidate existing server
     * streams. */
-   stream = mongoc_cluster_stream_for_writes (
-      &client->cluster, NULL /* session */, NULL /* deprioritized servers */, NULL /* reply */, &error);
+   stream = mongoc_cluster_stream_for_writes (&client->cluster,
+                                              TEST_SS_LOG_CONTEXT,
+                                              NULL /* session */,
+                                              NULL /* deprioritized servers */,
+                                              NULL /* reply */,
+                                              &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_cluster_disconnect_node (&client->cluster, sd->id);
@@ -1737,8 +1757,12 @@ test_cluster_stream_invalidation_pooled (void)
    mongoc_server_stream_cleanup (stream);
 
    /* Test that a new stream is considered valid. */
-   stream = mongoc_cluster_stream_for_writes (
-      &client->cluster, NULL /* session */, NULL /* deprioritized servers */, NULL /* reply */, &error);
+   stream = mongoc_cluster_stream_for_writes (&client->cluster,
+                                              TEST_SS_LOG_CONTEXT,
+                                              NULL /* session */,
+                                              NULL /* deprioritized servers */,
+                                              NULL /* reply */,
+                                              &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);

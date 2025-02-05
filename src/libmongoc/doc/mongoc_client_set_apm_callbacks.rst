@@ -15,7 +15,7 @@ Synopsis
 
 Register a set of callbacks to receive Application Performance Monitoring events.
 
-The ``callbacks`` are copied by the client and may be destroyed at any time after. If a ``context`` is passed, it is the application's responsibility to ensure ``context`` remains valid for the lifetime of the client.
+The ``callbacks`` are copied by the client and may be safely destroyed by the caller after this API call completes. If a ``context`` is passed, it is the application's responsibility to ensure ``context`` remains valid for the lifetime of the client.
 
 Parameters
 ----------

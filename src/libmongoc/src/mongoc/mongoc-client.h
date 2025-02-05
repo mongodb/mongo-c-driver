@@ -14,32 +14,33 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLIENT_H
 #define MONGOC_CLIENT_H
 
 #include <bson/bson.h>
 
-#include "mongoc-apm.h"
-#include "mongoc-client-side-encryption.h"
-#include "mongoc-collection.h"
-#include "mongoc-config.h"
-#include "mongoc-cursor.h"
-#include "mongoc-database.h"
-#include "mongoc-gridfs.h"
-#include "mongoc-index.h"
-#include "mongoc-macros.h"
-#include "mongoc-read-prefs.h"
-#include "mongoc-server-api.h"
+#include <mongoc/mongoc-apm.h>
+#include <mongoc/mongoc-client-side-encryption.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-database.h>
+#include <mongoc/mongoc-gridfs.h>
+#include <mongoc/mongoc-index.h>
+#include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-server-api.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
+#include <mongoc/mongoc-ssl.h>
 #endif
-#include "mongoc-stream.h"
-#include "mongoc-uri.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-read-concern.h"
-#include "mongoc-server-description.h"
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-structured-log.h>
+#include <mongoc/mongoc-uri.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-read-concern.h>
+#include <mongoc/mongoc-server-description.h>
 
 BSON_BEGIN_DECLS
 
@@ -228,6 +229,8 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opt
 #endif
 MONGOC_EXPORT (bool)
 mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context);
+MONGOC_EXPORT (bool)
+mongoc_client_set_structured_log_opts (mongoc_client_t *client, const mongoc_structured_log_opts_t *opts);
 MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_client_get_server_description (mongoc_client_t *client, uint32_t server_id) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_server_description_t **)

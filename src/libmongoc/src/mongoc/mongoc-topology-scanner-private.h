@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_TOPOLOGY_SCANNER_PRIVATE_H
 #define MONGOC_TOPOLOGY_SCANNER_PRIVATE_H
@@ -25,16 +25,16 @@
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #endif
-#include "mongoc-async-private.h"
-#include "mongoc-async-cmd-private.h"
-#include "mongoc-handshake-private.h"
-#include "mongoc-host-list.h"
-#include "mongoc-apm-private.h"
-#include "mongoc-scram-private.h"
-#include "mongoc-ssl.h"
-#include "mongoc-crypto-private.h"
-#include "mongoc-server-description-private.h"
-#include "common-thread-private.h"
+#include <mongoc/mongoc-async-private.h>
+#include <mongoc/mongoc-async-cmd-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <common-thread-private.h>
 
 BSON_BEGIN_DECLS
 
@@ -115,6 +115,7 @@ typedef struct mongoc_topology_scanner {
    bson_t *handshake_cmd;
    handshake_state_t handshake_state;
    bson_t cluster_time;
+   bson_oid_t topology_id;
    const char *appname;
 
    mongoc_topology_scanner_setup_err_cb_t setup_err_cb;
@@ -134,8 +135,6 @@ typedef struct mongoc_topology_scanner {
    SSL_CTX *openssl_ctx;
 #endif
 
-   mongoc_apm_callbacks_t apm_callbacks;
-   void *apm_context;
    int64_t dns_cache_timeout_ms;
    /* only used by single-threaded clients to negotiate auth mechanisms. */
    bool negotiate_sasl_supported_mechs;
@@ -143,11 +142,14 @@ typedef struct mongoc_topology_scanner {
    bool speculative_authentication;
 
    mongoc_server_api_t *api;
+   mongoc_log_and_monitor_instance_t *log_and_monitor; // Not null.
    bool loadbalanced;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
 mongoc_topology_scanner_new (const mongoc_uri_t *uri,
+                             const bson_oid_t *topology_id,
+                             mongoc_log_and_monitor_instance_t *log_and_monitor,
                              mongoc_topology_scanner_setup_err_cb_t setup_err_cb,
                              mongoc_topology_scanner_cb_t cb,
                              void *data,

@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_OPTS_H
 #define MONGOC_OPTS_H
 
 #include <bson/bson.h>
 
-#include "mongoc-client-session.h"
-#include "mongoc-bulk-operation-private.h"
-#include "mongoc-opts-helpers-private.h"
+#include <mongoc/mongoc-client-session.h>
+#include <mongoc/mongoc-bulk-operation-private.h>
+#include <mongoc/mongoc-opts-helpers-private.h>
 
 /**************************************************
  *
@@ -84,6 +84,7 @@ typedef struct _mongoc_delete_many_opts_t {
 typedef struct _mongoc_update_one_opts_t {
    mongoc_update_opts_t update;
    bson_t arrayFilters;
+   bson_t sort;
    bson_t extra;
 } mongoc_update_one_opts_t;
 
@@ -95,6 +96,7 @@ typedef struct _mongoc_update_many_opts_t {
 
 typedef struct _mongoc_replace_one_opts_t {
    mongoc_update_opts_t update;
+   bson_t sort;
    bson_t extra;
 } mongoc_replace_one_opts_t;
 
@@ -123,6 +125,7 @@ typedef struct _mongoc_bulk_update_opts_t {
 
 typedef struct _mongoc_bulk_update_one_opts_t {
    mongoc_bulk_update_opts_t update;
+   bson_t sort;
    bson_t arrayFilters;
    bson_t extra;
 } mongoc_bulk_update_one_opts_t;
@@ -135,6 +138,7 @@ typedef struct _mongoc_bulk_update_many_opts_t {
 
 typedef struct _mongoc_bulk_replace_one_opts_t {
    mongoc_bulk_update_opts_t update;
+   bson_t sort;
    bson_t extra;
 } mongoc_bulk_replace_one_opts_t;
 

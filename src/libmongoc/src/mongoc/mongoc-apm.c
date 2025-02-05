@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-#include "mongoc-util-private.h"
-#include "mongoc-apm-private.h"
-#include "mongoc-cmd-private.h"
-#include "mongoc-handshake-private.h"
-
-static bson_oid_t kObjectIdZero = {{0}};
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-cmd-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <common-oid-private.h>
 
 /*
  * An Application Performance Management (APM) implementation, complying with
@@ -370,7 +369,7 @@ mongoc_apm_command_started_get_server_id (const mongoc_apm_command_started_t *ev
 const bson_oid_t *
 mongoc_apm_command_started_get_service_id (const mongoc_apm_command_started_t *event)
 {
-   if (0 == bson_oid_compare (&event->service_id, &kObjectIdZero)) {
+   if (mcommon_oid_is_zero (&event->service_id)) {
       /* serviceId is unset. */
       return NULL;
    }
@@ -466,7 +465,7 @@ mongoc_apm_command_succeeded_get_server_id (const mongoc_apm_command_succeeded_t
 const bson_oid_t *
 mongoc_apm_command_succeeded_get_service_id (const mongoc_apm_command_succeeded_t *event)
 {
-   if (0 == bson_oid_compare (&event->service_id, &kObjectIdZero)) {
+   if (mcommon_oid_is_zero (&event->service_id)) {
       /* serviceId is unset. */
       return NULL;
    }
@@ -562,7 +561,7 @@ mongoc_apm_command_failed_get_server_id (const mongoc_apm_command_failed_t *even
 const bson_oid_t *
 mongoc_apm_command_failed_get_service_id (const mongoc_apm_command_failed_t *event)
 {
-   if (0 == bson_oid_compare (&event->service_id, &kObjectIdZero)) {
+   if (mcommon_oid_is_zero (&event->service_id)) {
       /* serviceId is unset. */
       return NULL;
    }

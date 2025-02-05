@@ -15,20 +15,20 @@
  */
 
 
-#include "mongoc-aggregate-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-collection.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-cursor.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-database.h"
-#include "mongoc-database-private.h"
-#include "mongoc-error.h"
-#include "mongoc-log.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-change-stream-private.h"
+#include <mongoc/mongoc-aggregate-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-database.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
 
 #include <common-bson-dsl-private.h>
 
@@ -1038,7 +1038,9 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
 
    // Check the wire version to ensure server is 7.0.0 or newer.
    {
+      const mongoc_ss_log_context_t ss_log_context = {.operation = "createCollection"};
       mongoc_server_stream_t *stream = mongoc_cluster_stream_for_writes (&database->client->cluster,
+                                                                         &ss_log_context,
                                                                          NULL /* client session */,
                                                                          NULL /* deprioritized servers */,
                                                                          NULL /* reply */,

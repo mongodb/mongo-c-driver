@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "mongoc-topology-background-monitoring-private.h"
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
 
-#include "mongoc-client-private.h"
-#include "mongoc-log-private.h"
-#include "mongoc-server-monitor-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-log-private.h>
+#include <mongoc/mongoc-server-monitor-private.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl-private.h"
+#include <mongoc/mongoc-ssl-private.h>
 #endif
-#include "mongoc-stream-private.h"
-#include "mongoc-topology-description-apm-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
 #include <common-atomic-private.h>
 
 #undef MONGOC_LOG_DOMAIN
@@ -146,7 +146,7 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    tdmod = mc_tpld_modify_begin (topology);
 
    _mongoc_handshake_freeze ();
-   _mongoc_topology_description_monitor_opening (tdmod.new_td);
+   _mongoc_topology_description_monitor_opening (tdmod.new_td, &topology->log_and_monitor);
    if (tdmod.new_td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* Do not proceed to start monitoring threads. */
       TRACE ("%s", "disabling monitoring for load balanced topology");

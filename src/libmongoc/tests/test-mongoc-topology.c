@@ -1,11 +1,12 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
+#include <common-oid-private.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-server-api-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-topology-background-monitoring-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-server-api-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
@@ -180,7 +181,8 @@ test_topology_client_creation (void)
    BSON_ASSERT (topology_a->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF);
 
    /* ensure that we are sharing streams with the client */
-   server_stream = mongoc_cluster_stream_for_reads (&client_a->cluster, NULL, NULL, NULL, NULL, &error);
+   server_stream =
+      mongoc_cluster_stream_for_reads (&client_a->cluster, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (server_stream, error);
    node = mongoc_topology_scanner_get_node (client_a->topology->scanner, server_stream->sd->id);
@@ -360,7 +362,7 @@ _test_server_selection (bool try_once)
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* no primary, selection fails after one try */
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    reply_to_request_simple (request, secondary_response);
@@ -390,7 +392,7 @@ _test_server_selection (bool try_once)
    _mongoc_usleep (510 * 1000); /* one heartbeat, plus a few milliseconds */
 
    /* second selection, now we try hello again */
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
 
@@ -479,7 +481,8 @@ _test_topology_invalidate_server (bool pooled)
    }
 
    /* call explicitly */
-   server_stream = mongoc_cluster_stream_for_reads (&client->cluster, NULL, NULL, NULL, NULL, &error);
+   server_stream =
+      mongoc_cluster_stream_for_reads (&client->cluster, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    sd = server_stream->sd;
    id = server_stream->sd->id;
@@ -581,7 +584,8 @@ test_invalid_cluster_node (void *ctx)
    cluster = &client->cluster;
 
    /* load stream into cluster */
-   server_stream = mongoc_cluster_stream_for_reads (&client->cluster, NULL, NULL, NULL, NULL, &error);
+   server_stream =
+      mongoc_cluster_stream_for_reads (&client->cluster, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
    mongoc_server_stream_cleanup (server_stream);
@@ -595,12 +599,11 @@ test_invalid_cluster_node (void *ctx)
    ASSERT_OR_PRINT (sd, error);
    /* Both generations match, and are the first generation. */
    ASSERT_CMPINT32 (cluster_node->handshake_sd->generation, ==, 0);
-   ASSERT_CMPINT32 (mc_tpl_sd_get_generation (sd, &kZeroServiceId), ==, 0);
+   ASSERT_CMPINT32 (mc_tpl_sd_get_generation (sd, &kZeroObjectId), ==, 0);
 
    /* update the server's generation, simulating a connection pool clearing */
    tdmod = mc_tpld_modify_begin (client->topology);
-   mc_tpl_sd_increment_generation (mongoc_topology_description_server_by_id (tdmod.new_td, id, &error),
-                                   &kZeroServiceId);
+   mc_tpl_sd_increment_generation (mongoc_topology_description_server_by_id (tdmod.new_td, id, &error), &kZeroObjectId);
    mc_tpld_modify_commit (tdmod);
 
    /* cluster discards node and creates new one with the current generation */
@@ -647,7 +650,8 @@ test_max_wire_version_race_condition (void *ctx)
    client = mongoc_client_pool_pop (pool);
 
    /* load stream into cluster */
-   server_stream = mongoc_cluster_stream_for_reads (&client->cluster, NULL, NULL, NULL, NULL, &error);
+   server_stream =
+      mongoc_cluster_stream_for_reads (&client->cluster, TEST_SS_LOG_CONTEXT, NULL, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
    mongoc_server_stream_cleanup (server_stream);
@@ -656,7 +660,7 @@ test_max_wire_version_race_condition (void *ctx)
    tdmod = mc_tpld_modify_begin (client->topology);
    sd = mongoc_set_get (mc_tpld_servers (tdmod.new_td), id);
    BSON_ASSERT (sd);
-   mc_tpl_sd_increment_generation (sd, &kZeroServiceId);
+   mc_tpl_sd_increment_generation (sd, &kZeroObjectId);
    mongoc_server_description_reset (sd);
    mc_tpld_modify_commit (tdmod);
 
@@ -689,7 +693,7 @@ test_cooldown_standalone (void)
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* first hello fails, selection fails */
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    reply_to_request_with_hang_up (request);
@@ -699,7 +703,7 @@ test_cooldown_standalone (void)
 
    /* second selection doesn't try to call hello: we're in cooldown */
    start = bson_get_monotonic_time ();
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
    BSON_ASSERT (!sd);
    /* waited less than 500ms (minHeartbeatFrequencyMS), in fact
     * didn't wait at all since all nodes are in cooldown */
@@ -712,7 +716,7 @@ test_cooldown_standalone (void)
    _mongoc_usleep (1000 * 1000); /* 1 second */
 
    /* third selection doesn't try to call hello: we're still in cooldown */
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
    mock_server_set_request_timeout_msec (server, 100);
    BSON_ASSERT (!mock_server_receives_any_hello (server)); /* no hello call */
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
@@ -725,7 +729,7 @@ test_cooldown_standalone (void)
    _mongoc_usleep (5100 * 1000); /* 5.1 seconds */
 
    /* cooldown ends, now we try hello again, this time succeeding */
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server); /* not in cooldown now */
    BSON_ASSERT (request);
    reply_to_request_simple (request,
@@ -809,7 +813,7 @@ test_cooldown_rs (void)
                                           mock_server_get_port (servers[1]));
 
    /* server 0 is a secondary. */
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
 
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
@@ -829,7 +833,7 @@ test_cooldown_rs (void)
    _mongoc_usleep (1000 * 1000); /* 1 second */
 
    /* second selection doesn't try hello on server 1: it's in cooldown */
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
 
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
@@ -847,7 +851,7 @@ test_cooldown_rs (void)
    _mongoc_usleep (5100 * 1000); /* 5.1 seconds. longer than 5 sec cooldown. */
 
    /* cooldown ends, now we try hello on server 1, this time succeeding */
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
 
    request = mock_server_receives_any_hello (servers[1]);
    BSON_ASSERT (request);
@@ -891,7 +895,7 @@ test_cooldown_retry (void)
    client = test_framework_client_new_from_uri (uri, NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   future = future_topology_select (client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
 
    /* first hello fails */
    request = mock_server_receives_any_hello (server);
@@ -986,7 +990,7 @@ _test_select_succeed (bool try_once)
 
    /* start waiting for a primary (NULL read pref) */
    start = bson_get_monotonic_time ();
-   future = future_topology_select (client->topology, MONGOC_SS_READ, NULL, NULL, &error);
+   future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, NULL, NULL, &error);
 
    /* selection succeeds */
    sd = future_get_mongoc_server_description_ptr (future);
@@ -2003,7 +2007,8 @@ test_last_server_removed_warning (void)
                            mock_server_get_port (server));
 
    capture_logs (true);
-   description = mongoc_topology_select (client->topology, MONGOC_SS_READ, read_prefs, NULL, &error);
+   description =
+      mongoc_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, read_prefs, NULL, &error);
    ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_WARNING, "Last server removed from topology");
    capture_logs (false);
 

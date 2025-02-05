@@ -27,16 +27,15 @@ process.
 
    - [ ] Check Static Analysis
    - [ ] Check that Tests Are Passing
+   - [ ] Create a new **mongo-c-driver** clone
    - [ ] Check and Update the SBOM Lite
    - [ ] Start Snyk Monitoring
    - [ ] Address and Report Vulnerabilities
    - [ ] Validate API Documentation
-   - [ ] Notify the PHP Driver Team
    - [ ] Get a GitHub API Token
    - [ ] Do the Release:
        - [ ] Start a Release Stopwatch (start time: HH:MM)
        - [ ] Clone the Driver Tools
-       - [ ] Create a new **mongo-c-driver** clone
        - [ ] If patch release: Check consistency with [the Jira release](https://jira.mongodb.org/projects/CDRIVER/versions/XXXXXX)
        - [ ] Run the Release Script
        - [ ] Fixup the `NEWS` Pages
@@ -46,6 +45,7 @@ process.
        - [ ] Announce the Release on the Community Forums
        - [ ] Copy the Release Updates to the ``master`` Branch
        - [ ] Close the Jira Release
+       - [ ] Update the GitHub Webhook
        - [ ] Comment on the Generated DOCSP Ticket
        - [ ] Update the EVG Project
        - [ ] Stop the Release Stopwatch (end time: HH:MM)
@@ -96,7 +96,7 @@ Check that the `etc/purls.txt` file is up-to-date with the set of
 updated, refer to `sbom-lite-updating`.
 
 Create a New Clone of ``mongo-c-driver``
-****************************************
+########################################
 
 To prevent publishing unwanted changes and to preserve local changes, create a
 fresh clone of the C driver. We will clone into a new arbitrary directory which
@@ -194,15 +194,6 @@ compat_report.html* artifact. In the *Added Symbols* section will be a list of
 all newly introduced APIs since the most release release version. Verify that
 documentation has been added for every symbol listed here. If no new symbols are
 added, then the documentation is up-to-date.
-
-
-Notify the PHP Driver Team
-##########################
-
-The PHP driver team consumes the C driver directly and will want to know when a
-new release is coming so that they can identify regressions in the APIs used by
-the PHP driver. Consider requesting that the PHP team test the PHP driver
-against the new release version before the C release is tagged and published.
 
 
 .. _release.github-token:
@@ -370,7 +361,7 @@ Publish Additional Artifacts
 
 
 .. warning::
-   The below steps should be run using the ``master`` branch, regardless of
+   This step should be run using the ``master`` branch, regardless of
    which branch is used for the release.
 
 We publish a release archive that contains a snapshot of the repository and some
@@ -396,8 +387,9 @@ required for it to succeed:
 Once these prerequesites are met, creating the release archive can be done using
 the :any:`+signed-release` target.::
 
-   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$RELEASE_BRANCH --version=$NEW_VERSION
+   $ ./tools/earthly.sh --artifact +signed-release/dist dist --sbom_branch=$SBOM_BRANCH --version=$NEW_VERSION
 
+.. note:: `$SBOM_BRANCH` must be ``master`` for a minor release, or ``$RELEASE_BRANCH`` for a patch release.
 .. note:: `$NEW_VERSION` must correspond to the Git tag created by the release.
 
 The above command will create a `dist/` directory in the working directory that
@@ -448,6 +440,7 @@ __ https://www.mongodb.com/community/forums/c/announcements/driver-releases/110
 
 To generate the release template text, use the following::
 
+   $ git checkout $RELEASE_BRANCH
    $ python $CDRIVER_TOOLS/release.py announce -t community $NEW_VERSION
 
 Update/fix-up the generated text for the new release and publish the new post.
@@ -497,6 +490,20 @@ Return to the `Jira releases`_ page and open the release for the release
 version. Close the *Release x.y.z* ticket that corresponds to the release and
 "Release" that version in Jira, ensuring that the release date is correct. (Do
 not use the "Build and Release" option)
+
+
+Update GitHub Webhook
+*********************
+
+For a non-patch release, update the `Github Webhook <https://wiki.corp.mongodb.com/display/INTX/Githook>`_
+to include the new branch.
+
+Navigate to the `Webhook Settings <https://github.com/mongodb/mongo-c-driver/settings/hooks>`_.
+
+Click ``Edit`` on the hook for ``https://githook.mongodb.com/``.
+
+Add the new release branch to the ``Payload URL``. Remove unmaintained
+release branches.
 
 
 Comment on the Generated DOCSP Ticket

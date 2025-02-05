@@ -16,11 +16,11 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-error.h"
-#include "mongoc-error-private.h"
-#include "mongoc-rpc-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-server-description-private.h"
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-server-description-private.h>
 
 bool
 mongoc_error_has_label (const bson_t *reply, const char *label)
@@ -319,4 +319,22 @@ _mongoc_error_append (bson_error_t *error, const char *s)
    const size_t error_len = strlen (error->message);
    const size_t remaining = sizeof (error->message) - error_len;
    bson_strncpy (error->message + error_len, s, remaining);
+}
+
+bool
+mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, mongoc_error_content_flags_t flags)
+{
+   BSON_ASSERT_PARAM (error);
+   BSON_ASSERT_PARAM (bson);
+
+   if ((flags & MONGOC_ERROR_CONTENT_FLAG_CODE) && !BSON_APPEND_INT32 (bson, "code", error->code)) {
+      return false;
+   }
+   if ((flags & MONGOC_ERROR_CONTENT_FLAG_DOMAIN) && !BSON_APPEND_INT32 (bson, "domain", error->domain)) {
+      return false;
+   }
+   if ((flags & MONGOC_ERROR_CONTENT_FLAG_MESSAGE) && !BSON_APPEND_UTF8 (bson, "message", error->message)) {
+      return false;
+   }
+   return true;
 }

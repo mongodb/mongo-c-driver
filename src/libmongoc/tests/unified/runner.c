@@ -22,10 +22,11 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "test-diagnostics.h"
-#include "utlist.h"
+#include <mongoc/utlist.h>
 #include "util.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>
+#include <common-oid-private.h>
 
 typedef struct {
    const char *file_description;
@@ -38,29 +39,78 @@ typedef struct {
 skipped_unified_test_t SKIPPED_TESTS[] = {
    // CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
+
    // libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality
    {"snapshot-sessions", "Distinct operation with snapshot"},
    {"snapshot-sessions", "Mixed operation with snapshot"},
+
    // CDRIVER-3886: serverless testing (schema version 1.4)
    {"poc-crud", SKIP_ALL_TESTS},
    {"db-aggregate", SKIP_ALL_TESTS},
    {"mongos-unpin", SKIP_ALL_TESTS},
+
    // CDRIVER-2871: CMAP is not implemented
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
+   {"driver-connection-id", SKIP_ALL_TESTS},
+   {"minPoolSize-error", SKIP_ALL_TESTS},
+   {"pool-cleared-on-min-pool-size-population-error", SKIP_ALL_TESTS},
+   {"insert-shutdown-error", SKIP_ALL_TESTS},
+   {"standalone-logging", "Successful heartbeat"}, // requires driverConnectionId
+   {"standalone-logging", "Failing heartbeat"}, // requires driverConnectionId
+   {"replicaset-logging", SKIP_ALL_TESTS }, // requires driverConnectionId
+   {"sharded-logging", SKIP_ALL_TESTS }, // requires driverConnectionId
+   {"find-network-error", "Reset server and pool after network error on find"},
+   {"insert-network-error", "Reset server and pool after network error on insert"},
+   {"pool-clear-on-error-checkout", SKIP_ALL_TESTS},
+   {"find-shutdown-error", "Concurrent shutdown error on find"},
+   {"find-network-timeout-error", "Ignore network timeout error on find"},
+   {"hello-timeout", SKIP_ALL_TESTS},
+   {"hello-network-error", SKIP_ALL_TESTS},
+   {"hello-command-error", SKIP_ALL_TESTS},
+   {"interruptInUse", SKIP_ALL_TESTS},
+   {"pool-clear-min-pool-size-error", SKIP_ALL_TESTS},
+   {"pool-clear-checkout-error", SKIP_ALL_TESTS},
+   {"pool-clear-application-error", SKIP_ALL_TESTS},
+   {"pool-cleared-error", "PoolClearedError does not mark server unknown"}, // requires multithreaded runner
+
+   // Requires streaming heartbeat support
+   {"rediscover-quickly-after-step-down", SKIP_ALL_TESTS},
+
+   // CDRIVER-5870: Spec compliant response to authentication errors
+   {"auth-error", "Reset server and pool after AuthenticationFailure error"},
+   {"auth-network-error", "Reset server and pool after network error during authentication"},
+   {"auth-misc-command-error", "Reset server and pool after misc command error"},
+   {"auth-shutdown-error", "Reset server and pool after shutdown error during authentication"},
+   {"auth-network-timeout-error", "Reset server and pool after network timeout error during authentication"},
+
+   // libmongoc unified tests do not support pooled connections or background server monitoring threads yet
+   {"serverMonitoringMode", SKIP_ALL_TESTS},
+
    // CDRIVER-4115: listCollections does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
+
    // CDRIVER-4116: listIndexes does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
+
    // libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode.
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
+
    // libmongoc does not support the optional findOne helper.
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
+
    // libmongoc does not support the optional listIndexNames helper.
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
+
+   // libmongoc single-host non-replicaSet URI first transitions Unknown->Single, not Unknown->Unknown
+   {"standalone-emit-topology-description-changed-before-close", "Topology lifecycle"},
+
+   // libmongoc does not include insertId in InsertOneResult
+   {"cancel-server-check", SKIP_ALL_TESTS},
+
    {0},
 };
 // clang-format on
@@ -140,7 +190,7 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    failpoint_t *iter = NULL;
    mongoc_read_prefs_t *rp = NULL;
 
-   rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+   rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    LL_FOREACH (test->failpoints, iter)
    {
@@ -154,14 +204,18 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
 
       disable_cmd = tmp_bson ("{'configureFailPoint': '%s', 'mode': 'off' }", iter->name);
       if (iter->server_id != 0) {
-         if (!mongoc_client_command_simple_with_server_id (
-                client, "admin", disable_cmd, rp, iter->server_id, NULL /* reply */, error)) {
-            bson_destroy (disable_cmd);
+         entity_map_log_filter_push (test->entity_map, iter->client_id, NULL, NULL);
+         bool command_ok = mongoc_client_command_simple_with_server_id (
+            client, "admin", disable_cmd, rp, iter->server_id, NULL /* reply */, error);
+         entity_map_log_filter_pop (test->entity_map, iter->client_id, NULL, NULL);
+         if (!command_ok) {
             goto done;
          }
       } else {
-         if (!mongoc_client_command_simple (client, "admin", disable_cmd, rp, NULL /* reply */, error)) {
-            bson_destroy (disable_cmd);
+         entity_map_log_filter_push (test->entity_map, iter->client_id, NULL, NULL);
+         bool command_ok = mongoc_client_command_simple (client, "admin", disable_cmd, rp, NULL /* reply */, error);
+         entity_map_log_filter_pop (test->entity_map, iter->client_id, NULL, NULL);
+         if (!command_ok) {
             goto done;
          }
       }
@@ -339,7 +393,6 @@ test_runner_new (void)
    {
       mongoc_uri_t *const uri = test_framework_get_uri ();
 
-      test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
 
       /* In load balanced mode, the internal client must use the
        * SINGLE_LB_MONGOS_URI. */
@@ -350,6 +403,8 @@ test_runner_new (void)
             test_error ("error applying multiple mongos: %s", error.message);
          }
       }
+
+      test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
 
       mongoc_uri_destroy (uri);
    }
@@ -450,6 +505,7 @@ test_new (test_file_t *test_file, bson_t *bson)
    bson_parser_utf8_optional (parser, "skipReason", &test->skip_reason);
    bson_parser_array (parser, "operations", &test->operations);
    bson_parser_array_optional (parser, "expectEvents", &test->expect_events);
+   bson_parser_array_optional (parser, "expectLogMessages", &test->expect_log_messages);
    bson_parser_array_optional (parser, "outcome", &test->outcome);
    bson_parser_parse_or_assert (parser, bson);
    bson_parser_destroy (parser);
@@ -471,6 +527,7 @@ test_destroy (test_t *test)
    entity_map_destroy (test->entity_map);
    bson_destroy (test->outcome);
    bson_destroy (test->expect_events);
+   bson_destroy (test->expect_log_messages);
    bson_destroy (test->operations);
    bson_destroy (test->run_on_requirements);
    bson_free (test->description);
@@ -577,8 +634,9 @@ check_schema_version (test_file_t *test_file)
    // 1.12 is partially supported (expectedError.errorResponse assertions)
    // 1.18 is partially supported (additional properties in kmsProviders)
    // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
+   // 1.22 is partially supported (keyExpirationMS in client encryption options)
    semver_t schema_version;
-   semver_parse ("1.21", &schema_version);
+   semver_parse ("1.22", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -763,11 +821,12 @@ check_run_on_requirement (test_runner_t *test_runner,
 static bool
 check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requirements, const char **reason)
 {
-   mcommon_string_t *fail_reasons = NULL;
    bool requirements_satisfied = false;
    bson_iter_t iter;
 
-   fail_reasons = mcommon_string_new ("");
+   mcommon_string_append_t fail_reasons;
+   mcommon_string_new_as_append (&fail_reasons);
+
    BSON_FOREACH (run_on_requirements, iter)
    {
       bson_t run_on_requirement;
@@ -785,15 +844,15 @@ check_run_on_requirements (test_runner_t *test_runner, bson_t *run_on_requiremen
       }
 
       mcommon_string_append_printf (
-         fail_reasons, "- Requirement %s failed because: %s\n", bson_iter_key (&iter), fail_reason);
+         &fail_reasons, "- Requirement %s failed because: %s\n", bson_iter_key (&iter), fail_reason);
       bson_free (fail_reason);
    }
 
    *reason = NULL;
    if (!requirements_satisfied) {
-      (*reason) = tmp_str ("runOnRequirements not satisfied:\n%s", fail_reasons->str);
+      *reason = tmp_str ("runOnRequirements not satisfied:\n%s", mcommon_str_from_append (&fail_reasons));
    }
-   mcommon_string_free (fail_reasons, true);
+   mcommon_string_from_append_destroy (&fail_reasons);
    return requirements_satisfied;
 }
 
@@ -823,8 +882,8 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       mongoc_bulk_operation_t *bulk_insert = NULL;
       mongoc_write_concern_t *wc = NULL;
       bson_t *bulk_opts = NULL;
-      bson_t *drop_opts = NULL;
-      bson_t *create_opts = NULL;
+      bson_t *drop_opts = bson_new ();
+      bson_t *create_opts = bson_new ();
       bool ret = false;
 
       bson_iter_bson (&initial_data_iter, &collection_data);
@@ -845,11 +904,16 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       /* Check if the server supports majority write concern on 'drop' and
        * 'create'. */
       if (semver_cmp_str (&test_runner->server_version, "3.4") >= 0) {
-         drop_opts = bson_new ();
          mongoc_write_concern_append (wc, drop_opts);
-         create_opts = bson_new ();
          mongoc_write_concern_append (wc, create_opts);
       }
+
+      if (is_topology_type_sharded (test_runner->topology_type)) {
+         // From spec: "test runner SHOULD use a single mongos for handling initialData"
+         BSON_APPEND_INT32 (drop_opts, "serverId", 1);
+         BSON_APPEND_INT32 (create_opts, "serverId", 1);
+      }
+
       coll = mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name);
       if (!mongoc_collection_drop_with_opts (coll, drop_opts, error)) {
          if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
@@ -865,6 +929,11 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          bson_iter_t documents_iter;
 
          bulk_insert = mongoc_collection_create_bulk_operation_with_opts (coll, bulk_opts);
+
+         if (is_topology_type_sharded (test_runner->topology_type)) {
+            // From spec: "test runner SHOULD use a single mongos for handling initialData"
+            mongoc_bulk_operation_set_server_id (bulk_insert, 1u);
+         }
 
          BSON_FOREACH (documents, documents_iter)
          {
@@ -964,6 +1033,11 @@ done:
 static bool
 test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t *error)
 {
+   /* Note: With events serialized into the same format as the 'expected' documents,
+    * this test is effectively the same as a single top-level entity_map_match but with
+    * somewhat more verbose error messages. If this becomes too much of a maintenance
+    * burden, consider replacing it with a single match. */
+
    bool ret = false;
    bson_iter_t iter;
    bson_t expected_bson;
@@ -973,8 +1047,16 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    char *expected_command_name = NULL;
    char *expected_database_name = NULL;
    bson_t *expected_reply = NULL;
+   bool *expected_awaited = NULL;
    bool *expected_has_service_id = NULL;
    bool *expected_has_server_connection_id = NULL;
+   bson_t *expected_previous_description = NULL;
+   bson_t *expected_new_description = NULL;
+
+   BSON_ASSERT_PARAM (test);
+   BSON_ASSERT_PARAM (expected);
+   BSON_ASSERT_PARAM (actual);
+   BSON_ASSERT_PARAM (error);
 
    if (bson_count_keys (expected) != 1) {
       test_set_error (error, "expected 1 key in expected event, but got: %s", tmp_json (expected));
@@ -1000,80 +1082,180 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    bson_parser_utf8_optional (bp, "commandName", &expected_command_name);
    bson_parser_utf8_optional (bp, "databaseName", &expected_database_name);
    bson_parser_doc_optional (bp, "reply", &expected_reply);
+   bson_parser_bool_optional (bp, "awaited", &expected_awaited);
    bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
    bson_parser_bool_optional (bp, "hasServerConnectionId", &expected_has_server_connection_id);
+   bson_parser_doc_optional (bp, "previousDescription", &expected_previous_description);
+   bson_parser_doc_optional (bp, "newDescription", &expected_new_description);
    if (!bson_parser_parse (bp, &expected_bson, error)) {
       goto done;
    }
 
    if (expected_command) {
-      bson_val_t *expected_val;
-      bson_val_t *actual_val;
-
-      if (!actual || !actual->command) {
-         test_set_error (error, "Expected a value but got NULL");
+      if (!bson_iter_init_find (&iter, actual->serialized, "command")) {
+         test_set_error (error, "event.command expected but missing");
          goto done;
       }
-
-      expected_val = bson_val_from_bson (expected_command);
-      actual_val = bson_val_from_bson (actual->command);
-
-      if (!entity_map_match (test->entity_map, expected_val, actual_val, false, error)) {
-         bson_val_destroy (expected_val);
-         bson_val_destroy (actual_val);
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         test_set_error (error, "Unexpected type for event.command, should be document");
          goto done;
       }
+      bson_val_t *expected_val = bson_val_from_bson (expected_command);
+      bson_val_t *actual_val = bson_val_from_iter (&iter);
+      bool is_match = entity_map_match (test->entity_map, expected_val, actual_val, false, error);
       bson_val_destroy (expected_val);
       bson_val_destroy (actual_val);
+      if (!is_match) {
+         goto done;
+      }
    }
 
-   if (expected_command_name && 0 != strcmp (expected_command_name, actual->command_name)) {
-      test_set_error (error, "expected commandName: %s, but got: %s", expected_command_name, actual->command_name);
-      goto done;
+   if (expected_command_name) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "commandName")) {
+         test_set_error (error, "event.commandName expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         test_set_error (error, "Unexpected type for event.commandName, should be string");
+         goto done;
+      }
+      const char *actual_command_name = bson_iter_utf8 (&iter, NULL);
+      if (0 != strcmp (expected_command_name, actual_command_name)) {
+         test_set_error (error, "expected commandName: %s, but got: %s", expected_command_name, actual_command_name);
+         goto done;
+      }
    }
 
-   if (expected_database_name && 0 != strcmp (expected_database_name, actual->database_name)) {
-      test_set_error (error, "expected databaseName: %s, but got: %s", expected_database_name, actual->database_name);
-      goto done;
+   if (expected_database_name) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "databaseName")) {
+         test_set_error (error, "event.databaseName expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         test_set_error (error, "Unexpected type for event.databaseName, should be string");
+         goto done;
+      }
+      const char *actual_database_name = bson_iter_utf8 (&iter, NULL);
+      if (0 != strcmp (expected_database_name, actual_database_name)) {
+         test_set_error (error, "expected databaseName: %s, but got: %s", expected_database_name, actual_database_name);
+         goto done;
+      }
    }
 
    if (expected_reply) {
-      bson_val_t *expected_val = bson_val_from_bson (expected_reply);
-      bson_val_t *actual_val = bson_val_from_bson (actual->reply);
-      if (!entity_map_match (test->entity_map, expected_val, actual_val, false, error)) {
-         bson_val_destroy (expected_val);
-         bson_val_destroy (actual_val);
+      if (!bson_iter_init_find (&iter, actual->serialized, "reply")) {
+         test_set_error (error, "event.reply expected but missing");
          goto done;
       }
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         test_set_error (error, "Unexpected type for event.reply, should be document");
+         goto done;
+      }
+      bson_val_t *expected_val = bson_val_from_bson (expected_reply);
+      bson_val_t *actual_val = bson_val_from_iter (&iter);
+      bool is_match = entity_map_match (test->entity_map, expected_val, actual_val, false, error);
       bson_val_destroy (expected_val);
       bson_val_destroy (actual_val);
+      if (!is_match) {
+         goto done;
+      }
+   }
+
+   if (expected_awaited) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "awaited")) {
+         test_set_error (error, "event.awaited field expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_BOOL (&iter)) {
+         test_set_error (error, "Unexpected type for event.awaited, should be boolean");
+         goto done;
+      }
+      bool actual_awaited = bson_iter_bool (&iter);
+      if (*expected_awaited != actual_awaited) {
+         test_error ("expected event.awaited=%s, found event.awaited=%s",
+                     *expected_awaited ? "true" : "false",
+                     actual_awaited ? "true" : "false");
+      }
    }
 
    if (expected_has_service_id) {
-      char oid_str[25] = {0};
-      bool has_service_id = false;
-
-      bson_oid_to_string (&actual->service_id, oid_str);
-      has_service_id = 0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
-
-      if (*expected_has_service_id && !has_service_id) {
-         test_error ("expected serviceId, but got none");
+      if (!bson_iter_init_find (&iter, actual->serialized, "serviceId")) {
+         test_set_error (error, "event.serviceId field expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_OID (&iter)) {
+         test_set_error (error, "Unexpected type for event.serviceId, should be ObjectId");
+         goto done;
       }
 
-      if (!*expected_has_service_id && has_service_id) {
-         test_error ("expected no serviceId, but got %s", oid_str);
+      const bson_oid_t *actual_oid = bson_iter_oid (&iter);
+      bool actual_has_service_id = !mcommon_oid_is_zero (actual_oid);
+      char actual_oid_str[25];
+      bson_oid_to_string (actual_oid, actual_oid_str);
+
+      if (*expected_has_service_id && !actual_has_service_id) {
+         test_error ("expected nonzero serviceId, but found zero");
+      }
+      if (!*expected_has_service_id && actual_has_service_id) {
+         test_error ("expected zeroed serviceId, but found nonzero value: %s", actual_oid_str);
       }
    }
 
    if (expected_has_server_connection_id) {
-      const bool has_server_connection_id = actual->server_connection_id != MONGOC_NO_SERVER_CONNECTION_ID;
+      if (!bson_iter_init_find (&iter, actual->serialized, "serverConnectionId")) {
+         test_set_error (error, "event.serverConnectionId expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_INT64 (&iter)) {
+         test_set_error (error, "Unexpected type for event.serverConnectionId, should be int64");
+         goto done;
+      }
+      int64_t actual_server_connection_id = bson_iter_int64 (&iter);
+      const bool has_server_connection_id = actual_server_connection_id != MONGOC_NO_SERVER_CONNECTION_ID;
 
       if (*expected_has_server_connection_id && !has_server_connection_id) {
-         test_error ("expected server connectionId, but got none");
+         test_error ("expected server connectionId, but got MONGOC_NO_SERVER_CONNECTION_ID");
       }
-
       if (!*expected_has_server_connection_id && has_server_connection_id) {
-         test_error ("expected no server connectionId, but got %" PRId64, actual->server_connection_id);
+         test_error ("expected MONGOC_NO_SERVER_CONNECTION_ID, but got %" PRId64, actual_server_connection_id);
+      }
+   }
+
+   if (expected_previous_description) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "previousDescription")) {
+         test_set_error (error, "event.previousDescription expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         test_set_error (error, "Unexpected type for event.previousDescription, should be document");
+         goto done;
+      }
+      bson_val_t *expected_val = bson_val_from_bson (expected_previous_description);
+      bson_val_t *actual_val = bson_val_from_iter (&iter);
+      bool is_match = entity_map_match (test->entity_map, expected_val, actual_val, false, error);
+      bson_val_destroy (expected_val);
+      bson_val_destroy (actual_val);
+      if (!is_match) {
+         goto done;
+      }
+   }
+
+   if (expected_new_description) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "newDescription")) {
+         test_set_error (error, "event.newDescription expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         test_set_error (error, "Unexpected type for event.newDescription, should be document");
+         goto done;
+      }
+      bson_val_t *expected_val = bson_val_from_bson (expected_new_description);
+      bson_val_t *actual_val = bson_val_from_iter (&iter);
+      bool is_match = entity_map_match (test->entity_map, expected_val, actual_val, false, error);
+      bson_val_destroy (expected_val);
+      bson_val_destroy (actual_val);
+      if (!is_match) {
+         goto done;
       }
    }
 
@@ -1084,22 +1266,42 @@ done:
 }
 
 static bool
+event_matches_eventtype (const event_t *event, const char *eventType)
+{
+   BSON_ASSERT_PARAM (event);
+   BSON_OPTIONAL_PARAM (eventType);
+   return 0 == bson_strcasecmp (event->eventType, eventType ? eventType : "command");
+}
+
+bool
+test_count_matching_events_for_client (
+   test_t *test, entity_t *client, bson_t *expected_event, bson_error_t *error, int64_t *count_out)
+{
+   int64_t count = 0;
+
+   event_t *eiter;
+   LL_FOREACH (client->events, eiter)
+   {
+      if (test_check_event (test, expected_event, eiter, error)) {
+         count++;
+      }
+   }
+
+   *count_out = count;
+   return true;
+}
+
+static bool
 test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for_client, bson_error_t *error)
 {
    bool ret = false;
-   bson_parser_t *bp = NULL;
-   char *client_id = NULL;
-   bson_t *expected_events = NULL;
-   bool just_false = false;
-   bool *ignore_extra_events = &just_false;
    entity_t *entity = NULL;
-   bson_iter_t iter;
-   event_t *eiter = NULL;
-   uint32_t expected_num_events;
-   uint32_t actual_num_events = 0;
-   char *event_type = NULL;
 
-   bp = bson_parser_new ();
+   char *client_id;
+   bson_t *expected_events;
+   bool *ignore_extra_events;
+   char *event_type;
+   bson_parser_t *bp = bson_parser_new ();
    bson_parser_utf8 (bp, "client", &client_id);
    bson_parser_array (bp, "events", &expected_events);
    bson_parser_bool_optional (bp, "ignoreExtraEvents", &ignore_extra_events);
@@ -1108,26 +1310,36 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
       goto done;
    }
 
-   if (event_type) {
-      if (0 == strcmp (event_type, "cmap")) {
-         /* TODO: (CDRIVER-3525) Explicitly ignore cmap events until CMAP is
-          * supported. */
-         ret = true;
-         goto done;
-      } else if (0 != strcmp (event_type, "command")) {
-         test_set_error (error, "unexpected event type: %s", event_type);
-         goto done;
-      }
-   }
-
    entity = entity_map_get (test->entity_map, client_id, error);
+   if (!entity) {
+      test_set_error (error, "missing entity '%s', expected client", client_id);
+      goto done;
+   }
    if (0 != strcmp (entity->type, "client")) {
-      test_set_error (error, "expected entity %s to be client, got: %s", entity->id, entity->type);
+      test_set_error (error, "expected entity '%s' to be client, got: %s", entity->id, entity->type);
       goto done;
    }
 
-   expected_num_events = bson_count_keys (expected_events);
-   LL_COUNT (entity->events, eiter, actual_num_events);
+   if (event_type && 0 == strcmp (event_type, "cmap")) {
+      /* Full CMAP support (CDRIVER-3525) is not currently planned for this driver.
+       * Many tests that would otherwise need to be skipped can be partially executed
+       * by letting checks for CMAP events artificially pass. */
+      MONGOC_DEBUG ("SKIPPING expectEvents check for unsupported \"cmap\" events\n");
+      ret = true;
+      goto done;
+   }
+
+   uint32_t expected_num_events = bson_count_keys (expected_events);
+   uint32_t actual_num_events = 0;
+
+   event_t *eiter;
+   LL_FOREACH (entity->events, eiter)
+   {
+      if (event_matches_eventtype (eiter, event_type)) {
+         actual_num_events++;
+      }
+   }
+
    if (expected_num_events != actual_num_events) {
       bool too_many_events = actual_num_events > expected_num_events;
       if (ignore_extra_events && *ignore_extra_events) {
@@ -1143,10 +1355,13 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
    }
 
    eiter = entity->events;
+   bson_iter_t iter;
    BSON_FOREACH (expected_events, iter)
    {
+      while (eiter && !event_matches_eventtype (eiter, event_type)) {
+         eiter = eiter->next;
+      }
       bson_t expected_event;
-
       bson_iter_bson (&iter, &expected_event);
       if (!eiter) {
          test_set_error (error, "could not find event: %s", tmp_json (&expected_event));
@@ -1163,9 +1378,7 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
 done:
    if (!ret) {
       if (entity && entity->events) {
-         char *event_list_string = NULL;
-
-         event_list_string = event_list_to_string (entity->events);
+         char *event_list_string = event_list_to_string (entity->events);
          test_diagnostics_error_info ("all captured events:\n%s", event_list_string);
          bson_free (event_list_string);
       }
@@ -1190,11 +1403,287 @@ test_check_expected_events (test_t *test, bson_error_t *error)
       bson_t expected_events_for_client;
       bson_iter_bson (&iter, &expected_events_for_client);
       if (!test_check_expected_events_for_client (test, &expected_events_for_client, error)) {
-         test_diagnostics_error_info ("checking expectations: %s", tmp_json (&expected_events_for_client));
+         test_diagnostics_error_info ("checking expected events: %s", tmp_json (&expected_events_for_client));
          goto done;
       }
    }
 
+   ret = true;
+done:
+   return ret;
+}
+
+static bool
+check_failure_is_redacted (const bson_iter_t *failure_iter, bson_error_t *error)
+{
+   if (BSON_ITER_HOLDS_UTF8 (failure_iter)) {
+      test_diagnostics_error_info ("%s", "expected redacted 'failure', found string message (not allowed)");
+      return false;
+   }
+   if (!BSON_ITER_HOLDS_DOCUMENT (failure_iter)) {
+      test_diagnostics_error_info ("%s", "expected redacted 'failure' document, found unexpected type");
+      return false;
+   }
+
+   bson_t failure;
+   bson_iter_bson (failure_iter, &failure);
+
+   bson_parser_t *bp = bson_parser_new ();
+   int64_t *failure_code;
+   char *failure_code_name;
+   bson_t *failure_error_labels;
+   bson_parser_int_optional (bp, "code", &failure_code);
+   bson_parser_utf8_optional (bp, "codeName", &failure_code_name);
+   bson_parser_array_optional (bp, "errorLabels", &failure_error_labels);
+   bool parse_result = bson_parser_parse (bp, &failure, error);
+   bson_parser_destroy_with_parsed_fields (bp);
+
+   bson_destroy (&failure);
+   return parse_result;
+}
+
+static bool
+check_failure_is_detailed (const bson_iter_t *failure_iter, bson_error_t *error)
+{
+   if (BSON_ITER_HOLDS_UTF8 (failure_iter)) {
+      // Strings are fine, that's enough proof that the failure was not redacted
+      return true;
+   }
+   if (!BSON_ITER_HOLDS_DOCUMENT (failure_iter)) {
+      test_diagnostics_error_info ("%s", "expected non-redacted 'failure' document, found unexpected type");
+      return false;
+   }
+
+   // Look for keys that indicate an un-redacted message
+   bson_iter_t child;
+   BSON_ASSERT (bson_iter_recurse (failure_iter, &child));
+   while (bson_iter_next (&child)) {
+      const char *key = bson_iter_key (&child);
+      if (!strcmp (key, "message") || !strcmp (key, "details")) {
+         return true;
+      }
+   }
+   return false;
+}
+
+static bool
+test_check_log_message (test_t *test, bson_t *expected, log_message_t *actual, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *expected_level_str;
+   char *expected_component_str;
+   bool *failure_is_redacted;
+   bson_t *expected_message_doc;
+   bson_parser_utf8 (bp, "level", &expected_level_str);
+   bson_parser_utf8 (bp, "component", &expected_component_str);
+   bson_parser_bool_optional (bp, "failureIsRedacted", &failure_is_redacted);
+   bson_parser_doc (bp, "data", &expected_message_doc);
+   if (!bson_parser_parse (bp, expected, error)) {
+      goto done;
+   }
+
+   mongoc_structured_log_level_t expected_level;
+   if (!mongoc_structured_log_get_named_level (expected_level_str, &expected_level)) {
+      test_set_error (error, "expected log level '%s' is not recognized", expected_level_str);
+      goto done;
+   }
+   mongoc_structured_log_component_t expected_component;
+   if (!mongoc_structured_log_get_named_component (expected_component_str, &expected_component)) {
+      test_set_error (error, "expected log component '%s' is not recognized", expected_component_str);
+      goto done;
+   }
+
+   if (expected_level != actual->level) {
+      test_set_error (error,
+                      "expected log level: %s, but got: %s",
+                      mongoc_structured_log_get_level_name (expected_level),
+                      mongoc_structured_log_get_level_name (actual->level));
+      goto done;
+   }
+
+   if (expected_component != actual->component) {
+      test_set_error (error,
+                      "expected log component: %s, but got: %s",
+                      mongoc_structured_log_get_component_name (expected_component),
+                      mongoc_structured_log_get_component_name (actual->component));
+      goto done;
+   }
+
+   if (failure_is_redacted) {
+      bson_iter_t failure_iter;
+      if (!bson_iter_init_find (&failure_iter, actual->message, "failure")) {
+         test_set_error (error, "expected log 'failure' to exist");
+         goto done;
+      };
+      if (*failure_is_redacted) {
+         if (!check_failure_is_redacted (&failure_iter, error)) {
+            test_diagnostics_error_info ("actual log message: %s", tmp_json (actual->message));
+            test_set_error (error, "expected log 'failure' to be redacted");
+            goto done;
+         }
+      } else {
+         if (!check_failure_is_detailed (&failure_iter, error)) {
+            test_diagnostics_error_info ("actual log message: %s", tmp_json (actual->message));
+            test_set_error (error, "expected a complete un-redacted 'failure'");
+            goto done;
+         }
+      }
+   }
+
+   bson_val_t *expected_val = bson_val_from_bson (expected_message_doc);
+   bson_val_t *actual_val = bson_val_from_bson (actual->message);
+   bool is_match = bson_match (expected_val, actual_val, false, error);
+   bson_val_destroy (actual_val);
+   bson_val_destroy (expected_val);
+   if (!is_match) {
+      test_set_error (
+         error, "expected log message: %s, but got: %s", tmp_json (expected_message_doc), tmp_json (actual->message));
+      goto done;
+   }
+
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static bool
+test_log_message_should_be_ignored (test_t *test,
+                                    log_message_t *message,
+                                    bson_t *optional_ignore_list,
+                                    bson_error_t *error)
+{
+   if (optional_ignore_list) {
+      bson_iter_t iter;
+      BSON_FOREACH (optional_ignore_list, iter)
+      {
+         bson_t expected;
+         bson_iter_bson (&iter, &expected);
+         bool is_match = test_check_log_message (test, &expected, message, error);
+         bson_destroy (&expected);
+         if (is_match) {
+            return true;
+         }
+      }
+   }
+   return false;
+}
+
+static bool
+test_check_expected_log_messages_for_client (test_t *test,
+                                             bson_t *expected_log_messages_for_client,
+                                             bson_error_t *error)
+{
+   bool ret = false;
+   bson_mutex_t *locked = NULL;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id;
+   bson_t *expected_messages;
+   bson_t *ignore_messages;
+   bool *ignore_extra_messages;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_array (bp, "messages", &expected_messages);
+   bson_parser_array_optional (bp, "ignoreMessages", &ignore_messages);
+   bson_parser_bool_optional (bp, "ignoreExtraMessages", &ignore_extra_messages);
+   if (!bson_parser_parse (bp, expected_log_messages_for_client, error)) {
+      goto done;
+   }
+
+   /* Note: entity->value might be NULL and that's fine.
+    * The unified testing spec recommends that tests don't refer to closed clients,
+    * but some tests do for checking lifecycle logging.
+    * See /server_discovery_and_monitoring/unified/logging-standalone */
+   entity_t *entity = entity_map_get (test->entity_map, client_id, error);
+   if (!entity) {
+      test_set_error (error, "missing entity '%s', expected client", client_id);
+      goto done;
+   }
+   if (0 != strcmp (entity->type, "client")) {
+      test_set_error (error, "expected entity '%s' to be client, got: %s", entity->id, entity->type);
+      goto done;
+   }
+
+   locked = &entity->log_mutex;
+   bson_mutex_lock (locked);
+
+   log_message_t *actual_message_iter = entity->log_messages;
+   bson_iter_t expected_message_iter;
+   bool expected_message_iter_ok =
+      bson_iter_init (&expected_message_iter, expected_messages) && bson_iter_next (&expected_message_iter);
+
+   while (actual_message_iter || expected_message_iter_ok) {
+      if (actual_message_iter &&
+          test_log_message_should_be_ignored (test, actual_message_iter, ignore_messages, error)) {
+         MONGOC_DEBUG ("log message ignored, %s", tmp_json (actual_message_iter->message));
+         actual_message_iter = actual_message_iter->next;
+         continue;
+      }
+      if (!actual_message_iter) {
+         bson_t expected_message;
+         bson_iter_bson (&expected_message_iter, &expected_message);
+         test_diagnostics_error_info ("missing expected log message: %s", tmp_json (&expected_message));
+         test_set_error (error, "additional log messages expected beyond those collected");
+         bson_destroy (&expected_message);
+         goto done;
+      }
+      if (!expected_message_iter_ok) {
+         if (ignore_extra_messages && *ignore_extra_messages) {
+            break;
+         } else {
+            test_diagnostics_error_info ("extra log message: %s", tmp_json (actual_message_iter->message));
+            test_set_error (error, "unexpected extra log messages");
+            goto done;
+         }
+      }
+      bson_t expected_message;
+      bson_iter_bson (&expected_message_iter, &expected_message);
+      bool is_match = test_check_log_message (test, &expected_message, actual_message_iter, error);
+      MONGOC_DEBUG ("log message check %s %s, expected: %s, actual: %s",
+                    is_match ? "MATCHED" : "FAILED",
+                    error && !is_match ? error->message : "",
+                    tmp_json (&expected_message),
+                    tmp_json (actual_message_iter->message));
+      bson_destroy (&expected_message);
+      if (!is_match) {
+         goto done;
+      }
+      actual_message_iter = actual_message_iter->next;
+      expected_message_iter_ok = bson_iter_next (&expected_message_iter);
+   }
+
+   ret = true;
+done:
+   if (locked) {
+      bson_mutex_unlock (locked);
+   }
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static bool
+test_check_expected_log_messages (test_t *test, bson_error_t *error)
+{
+   bool ret = false;
+   bson_iter_t iter;
+
+   if (!test->expect_log_messages) {
+      ret = true;
+      goto done;
+   }
+
+   BSON_FOREACH (test->expect_log_messages, iter)
+   {
+      bson_t expected_log_messages_for_client;
+      bson_iter_bson (&iter, &expected_log_messages_for_client);
+      if (!test_check_expected_log_messages_for_client (test, &expected_log_messages_for_client, error)) {
+         test_diagnostics_error_info ("checking expected log messages: %s",
+                                      tmp_json (&expected_log_messages_for_client));
+         goto done;
+      }
+   }
 
    ret = true;
 done:
@@ -1607,7 +2096,12 @@ test_run (test_t *test, bson_error_t *error)
    entity_map_disable_event_listeners (test->entity_map);
 
    if (!test_check_expected_events (test, error)) {
-      test_diagnostics_error_info ("%s", "checking expectations");
+      test_diagnostics_error_info ("%s", "checking expected events");
+      goto done;
+   }
+
+   if (!test_check_expected_log_messages (test, error)) {
+      test_diagnostics_error_info ("%s", "checking expected log messages");
       goto done;
    }
 
@@ -1625,7 +2119,7 @@ test_run (test_t *test, bson_error_t *error)
 done:
    /* always clean up failpoints, even on test failure */
    if (!cleanup_failpoints (test, &nonfatal_error)) {
-      MONGOC_DEBUG ("error cleaning up failpoints: %s", nonfatal_error.message);
+      test_error ("error cleaning up failpoints: %s", nonfatal_error.message);
    }
    /* always terminate transactions, even on test failure. */
    if (!test_runner_terminate_open_transactions (test_runner, &nonfatal_error)) {
@@ -1723,5 +2217,9 @@ test_install_unified (TestSuite *suite)
 
    run_unified_tests (suite, JSON_DIR, "index-management");
 
-   run_unified_tests (suite, JSON_DIR, "command-logging-and-monitoring/monitoring");
+   run_unified_tests (suite, JSON_DIR, "command-logging-and-monitoring");
+
+   run_unified_tests (suite, JSON_DIR, "server_selection/logging");
+
+   run_unified_tests (suite, JSON_DIR, "server_discovery_and_monitoring/unified");
 }

@@ -16,33 +16,34 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-config.h"
-#include "mongoc-error.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-topology-scanner-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-stream-socket.h"
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-topology-scanner-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-socket.h>
 
-#include "mongoc-handshake.h"
-#include "mongoc-handshake-private.h"
+#include <mongoc/mongoc-handshake.h>
+#include <mongoc/mongoc-handshake-private.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-stream-tls.h"
+#include <mongoc/mongoc-stream-tls.h>
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
 #include <openssl/ssl.h>
-#include "mongoc-stream-tls-private.h"
+#include <mongoc/mongoc-stream-tls-private.h>
 #endif
 
-#include "mongoc-counters-private.h"
-#include "utlist.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-uri-private.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/utlist.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
 #include <common-atomic-private.h>
@@ -411,6 +412,8 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
 mongoc_topology_scanner_t *
 mongoc_topology_scanner_new (const mongoc_uri_t *uri,
+                             const bson_oid_t *topology_id,
+                             mongoc_log_and_monitor_instance_t *log_and_monitor,
                              mongoc_topology_scanner_setup_err_cb_t setup_err_cb,
                              mongoc_topology_scanner_cb_t cb,
                              void *data,
@@ -420,11 +423,13 @@ mongoc_topology_scanner_new (const mongoc_uri_t *uri,
 
    ts->async = mongoc_async_new ();
 
+   bson_oid_copy (topology_id, &ts->topology_id);
    ts->setup_err_cb = setup_err_cb;
    ts->cb = cb;
    ts->cb_data = data;
    ts->uri = uri;
    ts->appname = NULL;
+   ts->log_and_monitor = log_and_monitor;
    ts->api = NULL;
    ts->handshake_state = HANDSHAKE_CMD_UNINITIALIZED;
    ts->connect_timeout_msec = connect_timeout_msec;
@@ -1171,21 +1176,21 @@ void
 _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
-   bson_error_t *error = &ts->error;
-   mcommon_string_t *msg;
 
+   bson_error_t *error = &ts->error;
    memset (&ts->error, 0, sizeof (bson_error_t));
 
-   msg = mcommon_string_new (NULL);
+   mcommon_string_append_t msg;
+   mcommon_string_new_as_fixed_capacity_append (&msg, sizeof error->message - 1u);
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
       if (node->last_error.code) {
-         if (msg->len) {
-            mcommon_string_append_c (msg, ' ');
+         if (!mcommon_string_from_append_is_empty (&msg)) {
+            mcommon_string_append (&msg, " ");
          }
 
-         mcommon_string_append_printf (msg, "[%s]", node->last_error.message);
+         mcommon_string_append_printf (&msg, "[%s]", node->last_error.message);
 
          /* last error domain and code win */
          error->domain = node->last_error.domain;
@@ -1193,8 +1198,8 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
       }
    }
 
-   bson_strncpy ((char *) &error->message, msg->str, sizeof (error->message));
-   mcommon_string_free (msg, true);
+   bson_strncpy ((char *) &error->message, mcommon_str_from_append (&msg), sizeof error->message);
+   mcommon_string_from_append_destroy (&msg);
 
    _delete_retired_nodes (ts);
 }
@@ -1276,12 +1281,21 @@ _mongoc_topology_scanner_set_cluster_time (mongoc_topology_scanner_t *ts, const 
 static void
 _mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanner_t *ts, const mongoc_host_list_t *host)
 {
-   if (ts->apm_callbacks.server_heartbeat_started) {
+   mongoc_structured_log (ts->log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Server heartbeat started",
+                          oid ("topologyId", &ts->topology_id),
+                          utf8 ("serverHost", host->host),
+                          int32 ("serverPort", host->port),
+                          boolean ("awaited", false));
+
+   if (ts->log_and_monitor->apm_callbacks.server_heartbeat_started) {
       mongoc_apm_server_heartbeat_started_t event;
       event.host = host;
-      event.context = ts->apm_context;
+      event.context = ts->log_and_monitor->apm_context;
       event.awaited = false;
-      ts->apm_callbacks.server_heartbeat_started (&event);
+      ts->log_and_monitor->apm_callbacks.server_heartbeat_started (&event);
    }
 }
 
@@ -1292,22 +1306,38 @@ _mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scan
                                                       const bson_t *reply,
                                                       int64_t duration_usec)
 {
-   if (ts->apm_callbacks.server_heartbeat_succeeded) {
+   /* This redaction is more lenient than the general command redaction in the Command Logging and Monitoring spec and
+    * the cmd*() structured log items. In those general command logs, sensitive replies are omitted entirely. In this
+    * APM message, the reply is passed through with only the speculativeAuthenticate field stripped. The Server
+    * Discovery and Monitoring Logging spec does not mention reply redaction, so we choose to be consistent with the APM
+    * event. */
+
+   bson_t hello_redacted;
+   bson_init (&hello_redacted);
+   bson_copy_to_excluding_noinit (reply, &hello_redacted, "speculativeAuthenticate", NULL);
+
+   mongoc_structured_log (ts->log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Server heartbeat succeeded",
+                          oid ("topologyId", &ts->topology_id),
+                          utf8 ("serverHost", host->host),
+                          int32 ("serverPort", host->port),
+                          boolean ("awaited", false),
+                          monotonic_time_duration (duration_usec),
+                          bson_as_json ("reply", &hello_redacted));
+
+   if (ts->log_and_monitor->apm_callbacks.server_heartbeat_succeeded) {
       mongoc_apm_server_heartbeat_succeeded_t event;
-      bson_t hello_redacted;
-
-      bson_init (&hello_redacted);
-      bson_copy_to_excluding_noinit (reply, &hello_redacted, "speculativeAuthenticate", NULL);
-
       event.host = host;
-      event.context = ts->apm_context;
+      event.context = ts->log_and_monitor->apm_context;
       event.reply = reply;
       event.duration_usec = duration_usec;
       event.awaited = false;
-      ts->apm_callbacks.server_heartbeat_succeeded (&event);
-
-      bson_destroy (&hello_redacted);
+      ts->log_and_monitor->apm_callbacks.server_heartbeat_succeeded (&event);
    }
+
+   bson_destroy (&hello_redacted);
 }
 
 /* SDAM Monitoring Spec: send HeartbeatFailedEvent */
@@ -1317,14 +1347,25 @@ _mongoc_topology_scanner_monitor_heartbeat_failed (const mongoc_topology_scanner
                                                    const bson_error_t *error,
                                                    int64_t duration_usec)
 {
-   if (ts->apm_callbacks.server_heartbeat_failed) {
+   mongoc_structured_log (ts->log_and_monitor->structured_log,
+                          MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                          "Server heartbeat failed",
+                          oid ("topologyId", &ts->topology_id),
+                          utf8 ("serverHost", host->host),
+                          int32 ("serverPort", host->port),
+                          boolean ("awaited", false),
+                          monotonic_time_duration (duration_usec),
+                          error ("failure", error));
+
+   if (ts->log_and_monitor->apm_callbacks.server_heartbeat_failed) {
       mongoc_apm_server_heartbeat_failed_t event;
       event.host = host;
-      event.context = ts->apm_context;
+      event.context = ts->log_and_monitor->apm_context;
       event.error = error;
       event.duration_usec = duration_usec;
       event.awaited = false;
-      ts->apm_callbacks.server_heartbeat_failed (&event);
+      ts->log_and_monitor->apm_callbacks.server_heartbeat_failed (&event);
    }
 }
 

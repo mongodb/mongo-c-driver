@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-server-description-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-server-description-private.h>
 #include "TestSuite.h"
 #include "test-conveniences.h"
 
@@ -458,6 +458,119 @@ test_server_description_hello_type_error (void)
    mongoc_server_description_cleanup (&sd);
 }
 
+static void
+test_copy (const char *hello_json)
+{
+   mongoc_server_description_t sd, *sd_copy;
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   bson_error_t empty_error = {0};
+   mongoc_server_description_handle_hello (&sd, tmp_bson (hello_json), 0, &empty_error);
+   sd_copy = mongoc_server_description_new_copy (&sd);
+
+   // Check server descriptions compare equal by "Server Description Equality" rules. Not all fields are considered.
+   ASSERT (_mongoc_server_description_equal (&sd, sd_copy));
+
+   // Check all fields:
+   ASSERT_CMPUINT32 (sd.id, ==, sd_copy->id);
+   ASSERT_CMPSTR (sd.host.host_and_port, sd_copy->host.host_and_port);
+   ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, sd_copy->round_trip_time_msec);
+   ASSERT_CMPINT64 (sd.last_update_time_usec, ==, sd_copy->last_update_time_usec);
+   ASSERT_EQUAL_BSON (&sd.last_hello_response, &sd_copy->last_hello_response);
+   ASSERT_CMPINT ((int) sd.has_hello_response, ==, (int) sd_copy->has_hello_response);
+   ASSERT_CMPINT ((int) sd.hello_ok, ==, (int) sd_copy->hello_ok);
+   ASSERT_CMPSTR (sd.connection_address, sd_copy->connection_address);
+   ASSERT_CMPSTR (sd.me, sd_copy->me);
+   ASSERT_CMPINT ((int) sd.opened, ==, (int) sd_copy->opened);
+   ASSERT_CMPSTR (sd.set_name, sd_copy->set_name);
+   ASSERT_MEMCMP (&sd.error, &sd_copy->error, (int) sizeof (bson_error_t));
+   ASSERT_CMPINT ((int) sd.type, ==, (int) sd_copy->type);
+   ASSERT_CMPINT32 (sd.min_wire_version, ==, sd_copy->min_wire_version);
+   ASSERT_CMPINT32 (sd.max_wire_version, ==, sd_copy->max_wire_version);
+   ASSERT_CMPINT32 (sd.max_msg_size, ==, sd_copy->max_msg_size);
+   ASSERT_CMPINT32 (sd.max_bson_obj_size, ==, sd_copy->max_bson_obj_size);
+   ASSERT_CMPINT32 (sd.max_write_batch_size, ==, sd_copy->max_write_batch_size);
+   ASSERT_CMPINT64 (sd.session_timeout_minutes, ==, sd_copy->session_timeout_minutes);
+   ASSERT_EQUAL_BSON (&sd.hosts, &sd_copy->hosts);
+   ASSERT_EQUAL_BSON (&sd.passives, &sd_copy->passives);
+   ASSERT_EQUAL_BSON (&sd.arbiters, &sd_copy->arbiters);
+   ASSERT_EQUAL_BSON (&sd.tags, &sd_copy->tags);
+   ASSERT_CMPSTR (sd.current_primary, sd_copy->current_primary);
+   ASSERT_CMPINT64 (sd.set_version, ==, sd_copy->set_version);
+   ASSERT_MEMCMP (&sd.election_id, &sd_copy->election_id, (int) sizeof (bson_oid_t));
+   ASSERT_CMPINT64 (sd.last_write_date_ms, ==, sd_copy->last_write_date_ms);
+   ASSERT_EQUAL_BSON (&sd.compressors, &sd_copy->compressors);
+   ASSERT_EQUAL_BSON (&sd.topology_version, &sd_copy->topology_version);
+   ASSERT_CMPUINT32 (sd.generation, ==, sd_copy->generation);
+   ASSERT (sd_copy->_generation_map_ != NULL); // Do not compare entries. Just ensure non-NULL.
+   ASSERT_MEMCMP (&sd.service_id, &sd_copy->service_id, (int) sizeof (bson_oid_t));
+   ASSERT_CMPINT64 (sd.server_connection_id, ==, sd_copy->server_connection_id);
+
+   mongoc_server_description_cleanup (&sd);
+   mongoc_server_description_destroy (sd_copy);
+}
+
+static void
+test_server_description_copy (void)
+{
+   const char *hello_mongod = BSON_STR ({
+      "topologyVersion" : {"processId" : {"$oid" : "6792ef87965dee8797402adb"}, "counter" : 6},
+      "hosts" : ["localhost:27017"],
+      "setName" : "rs0",
+      "setVersion" : 1,
+      "isWritablePrimary" : true,
+      "secondary" : false,
+      "primary" : "localhost:27017",
+      "me" : "localhost:27017",
+      "electionId" : {"$oid" : "7fffffff0000000000000016"},
+      "lastWrite" : {
+         "opTime" : {"ts" : {"$timestamp" : {"t" : 1737682844, "i" : 1}}, "t" : 22},
+         "lastWriteDate" : {"$date" : "2025-01-24T01:40:44Z"},
+         "majorityOpTime" : {"ts" : {"$timestamp" : {"t" : 1737682844, "i" : 1}}, "t" : 22},
+         "majorityWriteDate" : {"$date" : "2025-01-24T01:40:44Z"}
+      },
+      "maxBsonObjectSize" : 16777216,
+      "maxMessageSizeBytes" : 48000000,
+      "maxWriteBatchSize" : 100000,
+      "localTime" : {"$date" : "2025-01-24T01:40:51.968Z"},
+      "logicalSessionTimeoutMinutes" : 30,
+      "connectionId" : 13,
+      "minWireVersion" : 0,
+      "maxWireVersion" : 25,
+      "readOnly" : false,
+      "ok" : 1.0,
+      "$clusterTime" : {
+         "clusterTime" : {"$timestamp" : {"t" : 1737682844, "i" : 1}},
+         "signature" :
+            {"hash" : {"$binary" : {"base64" : "AAAAAAAAAAAAAAAAAAAAAAAAAAA=", "subType" : "00"}}, "keyId" : 0}
+      },
+      "operationTime" : {"$timestamp" : {"t" : 1737682844, "i" : 1}}
+   });
+
+   const char *hello_mongos = BSON_STR ({
+      "isWritablePrimary" : true,
+      "msg" : "isdbgrid",
+      "topologyVersion" : {"processId" : {"$oid" : "6791af1181771f367602ec40"}, "counter" : 0},
+      "maxBsonObjectSize" : 16777216,
+      "maxMessageSizeBytes" : 48000000,
+      "maxWriteBatchSize" : 100000,
+      "localTime" : {"$date" : "2025-01-24T01:24:57.217Z"},
+      "logicalSessionTimeoutMinutes" : 30,
+      "connectionId" : 3310,
+      "maxWireVersion" : 25,
+      "minWireVersion" : 0,
+      "ok" : 1.0,
+      "$clusterTime" : {
+         "clusterTime" : {"$timestamp" : {"t" : 1737681896, "i" : 1}},
+         "signature" :
+            {"hash" : {"$binary" : {"base64" : "AAAAAAAAAAAAAAAAAAAAAAAAAAA=", "subType" : "00"}}, "keyId" : 0}
+      },
+      "operationTime" : {"$timestamp" : {"t" : 1737681896, "i" : 1}}
+   });
+
+   test_copy (hello_mongod);
+   test_copy (hello_mongos);
+}
+
 void
 test_server_description_install (TestSuite *suite)
 {
@@ -470,4 +583,5 @@ test_server_description_install (TestSuite *suite)
    TestSuite_Add (suite, "/server_description/legacy_hello_ok", test_server_description_legacy_hello_ok);
    TestSuite_Add (suite, "/server_description/connection_id", test_server_description_connection_id);
    TestSuite_Add (suite, "/server_description/hello_type_error", test_server_description_hello_type_error);
+   TestSuite_Add (suite, "/server_description/copy", test_server_description_copy);
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <mongoc-bulkwrite.h>
+#include <mongoc/mongoc-bulkwrite.h>
 
 #include <bson/bson.h>
 #include <common-macros-private.h> // MC_ENABLE_CONVERSION_WARNING_BEGIN
@@ -24,7 +24,6 @@
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-error.h>
-#include <mongoc/mongoc-error-private.h> // _mongoc_write_error_handle_labels
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-util-private.h> // _mongoc_iter_document_as_bson
 #include <mongoc/mongoc-optional.h>
@@ -140,7 +139,12 @@ mongoc_bulkwriteopts_destroy (mongoc_bulkwriteopts_t *self)
 typedef enum { MODEL_OP_INSERT, MODEL_OP_UPDATE, MODEL_OP_DELETE } model_op_t;
 typedef struct {
    model_op_t op;
-   bson_iter_t id_iter;
+   // `id_loc` locates the "_id" field of an insert document.
+   struct {
+      size_t op_start;    // Offset in `mongoc_bulkwrite_t::ops` to the BSON for the insert op: { "document": ... }
+      size_t op_len;      // Length of insert op.
+      uint32_t id_offset; // Offset in the insert op to the "_id" field.
+   } id_loc;
    char *ns;
 } modeldata_t;
 
@@ -169,11 +173,18 @@ mongoc_bulkwrite_t *
 mongoc_client_bulkwrite_new (mongoc_client_t *self)
 {
    BSON_ASSERT_PARAM (self);
-   mongoc_bulkwrite_t *bw = bson_malloc0 (sizeof (mongoc_bulkwrite_t));
+   mongoc_bulkwrite_t *bw = mongoc_bulkwrite_new ();
    bw->client = self;
+   bw->operation_id = ++self->cluster.operation_id;
+   return bw;
+}
+
+mongoc_bulkwrite_t *
+mongoc_bulkwrite_new (void)
+{
+   mongoc_bulkwrite_t *bw = bson_malloc0 (sizeof (mongoc_bulkwrite_t));
    _mongoc_buffer_init (&bw->ops, NULL, 0, NULL, NULL);
    _mongoc_array_init (&bw->arrayof_modeldata, sizeof (modeldata_t));
-   bw->operation_id = ++self->cluster.operation_id;
    return bw;
 }
 
@@ -271,19 +282,14 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
       persisted_id_offset += existing_id_offset;
    }
 
-   BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
-
-   // Store an iterator to the document's `_id` in the persisted payload:
-   bson_iter_t persisted_id_iter;
-   {
-      BSON_ASSERT (mcommon_in_range_size_t_unsigned (op.len));
-      size_t start = self->ops.len - (size_t) op.len;
-      BSON_ASSERT (bson_iter_init_from_data_at_offset (
-         &persisted_id_iter, self->ops.data + start, (size_t) op.len, persisted_id_offset, strlen ("_id")));
-   }
+   size_t op_start = self->ops.len; // Save location of `op` to retrieve `_id` later.
+   BSON_ASSERT (mcommon_in_range_size_t_unsigned (op.len));
+   BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), (size_t) op.len));
 
    self->n_ops++;
-   modeldata_t md = {.op = MODEL_OP_INSERT, .id_iter = persisted_id_iter, .ns = bson_strdup (ns)};
+   modeldata_t md = {.op = MODEL_OP_INSERT,
+                     .id_loc = {.op_start = op_start, .op_len = (size_t) op.len, .id_offset = persisted_id_offset},
+                     .ns = bson_strdup (ns)};
    _mongoc_array_append_val (&self->arrayof_modeldata, md);
    bson_destroy (&op);
    return true;
@@ -326,6 +332,7 @@ struct _mongoc_bulkwrite_updateoneopts_t {
    bson_t *collation;
    bson_value_t hint;
    mongoc_optional_t upsert;
+   bson_t *sort;
 };
 
 mongoc_bulkwrite_updateoneopts_t *
@@ -361,6 +368,13 @@ mongoc_bulkwrite_updateoneopts_set_upsert (mongoc_bulkwrite_updateoneopts_t *sel
    mongoc_optional_set_value (&self->upsert, upsert);
 }
 void
+mongoc_bulkwrite_updateoneopts_set_sort (mongoc_bulkwrite_updateoneopts_t *self, const bson_t *sort)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_OPTIONAL_PARAM (sort);
+   set_bson_opt (&self->sort, sort);
+}
+void
 mongoc_bulkwrite_updateoneopts_destroy (mongoc_bulkwrite_updateoneopts_t *self)
 {
    if (!self) {
@@ -369,6 +383,7 @@ mongoc_bulkwrite_updateoneopts_destroy (mongoc_bulkwrite_updateoneopts_t *self)
    bson_destroy (self->arrayfilters);
    bson_destroy (self->collation);
    bson_value_destroy (&self->hint);
+   bson_destroy (self->sort);
    bson_free (self);
 }
 
@@ -422,6 +437,9 @@ mongoc_bulkwrite_append_updateone (mongoc_bulkwrite_t *self,
    if (mongoc_optional_is_set (&opts->upsert)) {
       BSON_ASSERT (BSON_APPEND_BOOL (&op, "upsert", mongoc_optional_value (&opts->upsert)));
    }
+   if (opts->sort) {
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "sort", opts->sort));
+   }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
 
@@ -436,6 +454,7 @@ struct _mongoc_bulkwrite_replaceoneopts_t {
    bson_t *collation;
    bson_value_t hint;
    mongoc_optional_t upsert;
+   bson_t *sort;
 };
 
 mongoc_bulkwrite_replaceoneopts_t *
@@ -464,6 +483,13 @@ mongoc_bulkwrite_replaceoneopts_set_upsert (mongoc_bulkwrite_replaceoneopts_t *s
    mongoc_optional_set_value (&self->upsert, upsert);
 }
 void
+mongoc_bulkwrite_replaceoneopts_set_sort (mongoc_bulkwrite_replaceoneopts_t *self, const bson_t *sort)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_OPTIONAL_PARAM (sort);
+   set_bson_opt (&self->sort, sort);
+}
+void
 mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self)
 {
    if (!self) {
@@ -471,6 +497,7 @@ mongoc_bulkwrite_replaceoneopts_destroy (mongoc_bulkwrite_replaceoneopts_t *self
    }
    bson_destroy (self->collation);
    bson_value_destroy (&self->hint);
+   bson_destroy (self->sort);
    bson_free (self);
 }
 
@@ -541,6 +568,9 @@ mongoc_bulkwrite_append_replaceone (mongoc_bulkwrite_t *self,
    }
    if (mongoc_optional_is_set (&opts->upsert)) {
       BSON_ASSERT (BSON_APPEND_BOOL (&op, "upsert", mongoc_optional_value (&opts->upsert)));
+   }
+   if (opts->sort) {
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&op, "sort", opts->sort));
    }
 
    BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
@@ -1295,6 +1325,7 @@ _bulkwritereturn_apply_reply (mongoc_bulkwritereturn_t *self, const bson_t *cmd_
          if (!_mongoc_iter_document_as_bson (&wce_iter, &errInfo, &error)) {
             _bulkwriteexception_set_error (self->exc, &error);
             _bulkwriteexception_set_error_reply (self->exc, cmd_reply);
+            return false;
          }
       }
 
@@ -1309,7 +1340,8 @@ static bool
 _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
                                const bson_t *result,
                                size_t ops_doc_offset,
-                               const mongoc_array_t *arrayof_modeldata)
+                               const mongoc_array_t *arrayof_modeldata,
+                               const mongoc_buffer_t *ops)
 {
    BSON_ASSERT_PARAM (self);
    BSON_ASSERT_PARAM (result);
@@ -1427,7 +1459,10 @@ _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
          break;
       }
       case MODEL_OP_INSERT: {
-         _bulkwriteresult_set_insertresult (self->res, &md->id_iter, models_idx);
+         bson_iter_t id_iter;
+         BSON_ASSERT (bson_iter_init_from_data_at_offset (
+            &id_iter, ops->data + md->id_loc.op_start, md->id_loc.op_len, md->id_loc.id_offset, strlen ("_id")));
+         _bulkwriteresult_set_insertresult (self->res, &id_iter, models_idx);
          break;
       }
       default:
@@ -1438,7 +1473,27 @@ _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
    return true;
 }
 
-BSON_EXPORT (void)
+void
+mongoc_bulkwrite_set_client (mongoc_bulkwrite_t *self, mongoc_client_t *client)
+{
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (client);
+
+   if (self->session) {
+      BSON_ASSERT (self->session->client == client);
+   }
+
+   /* NOP if the client is not changing; otherwise, assign it and increment and
+    * fetch its operation_id. */
+   if (self->client == client) {
+      return;
+   }
+
+   self->client = client;
+   self->operation_id = ++client->cluster.operation_id;
+}
+
+void
 mongoc_bulkwrite_set_session (mongoc_bulkwrite_t *self, mongoc_client_session_t *session)
 {
    BSON_ASSERT_PARAM (self);
@@ -1475,6 +1530,15 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    ret.res = _bulkwriteresult_new ();
    ret.exc = _bulkwriteexception_new ();
 
+   if (!self->client) {
+      bson_set_error (&error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "bulk write requires a client and one has not been set");
+      _bulkwriteexception_set_error (ret.exc, &error);
+      goto fail;
+   }
+
    if (self->executed) {
       bson_set_error (&error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "bulk write already executed");
       _bulkwriteexception_set_error (ret.exc, &error);
@@ -1498,6 +1562,9 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       goto fail;
    }
 
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = "bulkWrite", .has_operation_id = true, .operation_id = self->operation_id};
+
    // Select a stream.
    {
       bson_t reply;
@@ -1507,7 +1574,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             &self->client->cluster, opts->serverid, true /* reconnect_ok */, self->session, &reply, &error);
       } else {
          ss = mongoc_cluster_stream_for_writes (
-            &self->client->cluster, self->session, NULL /* deprioritized servers */, &reply, &error);
+            &self->client->cluster, &ss_log_context, self->session, NULL /* deprioritized servers */, &reply, &error);
       }
 
       if (!ss) {
@@ -1642,9 +1709,9 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       bool batch_ok = false;
       bson_t cmd_reply = BSON_INITIALIZER;
       mongoc_cursor_t *reply_cursor = NULL;
-      // `ops_byte_len` is the number of documents from `ops` to send in this batch.
+      // `ops_byte_len` is the number of bytes from `ops` to send in this batch.
       size_t ops_byte_len = 0;
-      // `ops_doc_len` is the number of bytes from `ops` to send in this batch.
+      // `ops_doc_len` is the number of documents from `ops` to send in this batch.
       size_t ops_doc_len = 0;
 
       if (ops_byte_offset == self->ops.len) {
@@ -1755,8 +1822,12 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             bson_t reply;
             // Select a server and create a stream again.
             mongoc_server_stream_cleanup (ss);
-            ss = mongoc_cluster_stream_for_writes (
-               &self->client->cluster, NULL /* session */, NULL /* deprioritized servers */, &reply, &error);
+            ss = mongoc_cluster_stream_for_writes (&self->client->cluster,
+                                                   &ss_log_context,
+                                                   NULL /* session */,
+                                                   NULL /* deprioritized servers */,
+                                                   &reply,
+                                                   &error);
 
             if (ss) {
                parts.assembled.server_stream = ss;
@@ -1836,7 +1907,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                // Iterate over cursor results.
                const bson_t *result;
                while (mongoc_cursor_next (reply_cursor, &result)) {
-                  if (!_bulkwritereturn_apply_result (&ret, result, ops_doc_offset, &self->arrayof_modeldata)) {
+                  if (!_bulkwritereturn_apply_result (
+                         &ret, result, ops_doc_offset, &self->arrayof_modeldata, &self->ops)) {
                      goto batch_fail;
                   }
                }

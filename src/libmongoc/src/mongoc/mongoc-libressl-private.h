@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_LIBRESSL_PRIVATE_H
 #define MONGOC_LIBRESSL_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-ssl.h"
-#include "mongoc-stream-tls-libressl-private.h"
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream-tls-libressl-private.h>
 #include <tls.h>
 
 

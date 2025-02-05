@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLIENT_PRIVATE_H
 #define MONGOC_CLIENT_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-apm-private.h"
-#include "mongoc-buffer-private.h"
-#include "mongoc-client.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-config.h"
-#include "mongoc-host-list.h"
-#include "mongoc-read-prefs.h"
-#include "mongoc-rpc-private.h"
-#include "mongoc-opcode.h"
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-opcode.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
+#include <mongoc/mongoc-ssl.h>
 #endif
 
-#include "mongoc-stream.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-crypt-private.h"
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-crypt-private.h>
 
 BSON_BEGIN_DECLS
 
@@ -92,7 +92,6 @@ struct _mongoc_client_t {
    mongoc_uri_t *uri;
    mongoc_cluster_t cluster;
    bool in_exhaust;
-   bool is_pooled;
 
    mongoc_stream_initiator_t initiator;
    void *initiator_data;
@@ -107,9 +106,6 @@ struct _mongoc_client_t {
    mongoc_read_prefs_t *read_prefs;
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
-
-   mongoc_apm_callbacks_t apm_callbacks;
-   void *apm_context;
 
    int32_t error_api_version;
    bool error_api_set;
@@ -152,9 +148,6 @@ _mongoc_client_get_rr (const char *hostname,
 mongoc_client_t *
 _mongoc_client_new_from_topology (mongoc_topology_t *topology);
 
-bool
-_mongoc_client_set_apm_callbacks_private (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context);
-
 mongoc_stream_t *
 mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
                                         const mongoc_host_list_t *host,
@@ -194,7 +187,9 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   bson_error_t *error);
 
 mongoc_server_session_t *
-_mongoc_client_pop_server_session (mongoc_client_t *client, bson_error_t *error);
+_mongoc_client_pop_server_session (mongoc_client_t *client,
+                                   const mongoc_ss_log_context_t *log_context,
+                                   bson_error_t *error);
 
 bool
 _mongoc_client_lookup_session (const mongoc_client_t *client,

@@ -16,23 +16,23 @@
 
 #define MONGOC_LOG_DOMAIN "client-side-encryption"
 
-#include "mongoc-crypt-private.h"
+#include <mongoc/mongoc-crypt-private.h>
 
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
 #include <mongocrypt/mongocrypt.h>
 
-#include "mongoc-client-private.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-ssl-private.h"
-#include "mongoc-cluster-aws-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-http-private.h"
-#include "mcd-azure.h"
-#include "mcd-time.h"
-#include "service-gcp.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-http-private.h>
+#include <mongoc/mcd-azure.h>
+#include <mongoc/mcd-time.h>
+#include <mongoc/service-gcp.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
 
@@ -1139,10 +1139,10 @@ _parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t 
    bson_t tls_opts_doc;
    const uint8_t *data;
    uint32_t len;
-   mcommon_string_t *errmsg;
+   mcommon_string_append_t errmsg;
    bson_iter_t permitted_iter;
 
-   errmsg = mcommon_string_new (NULL);
+   mcommon_string_new_as_append (&errmsg);
    kms_provider = bson_iter_key (iter);
    memset (out_opt, 0, sizeof (mongoc_ssl_opt_t));
 
@@ -1194,19 +1194,19 @@ _parse_one_tls_opts (bson_iter_t *iter, mongoc_ssl_opt_t *out_opt, bson_error_t 
       goto fail;
    }
 
-   if (!_mongoc_ssl_opts_from_bson (out_opt, &tls_opts_doc, errmsg)) {
+   if (!_mongoc_ssl_opts_from_bson (out_opt, &tls_opts_doc, &errmsg)) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
                       "Error parsing TLS options for %s: %s",
                       kms_provider,
-                      errmsg->str);
+                      mcommon_str_from_append (&errmsg));
       goto fail;
    }
 
    ok = true;
 fail:
-   mcommon_string_free (errmsg, true /* free_segment */);
+   mcommon_string_from_append_destroy (&errmsg);
    return ok;
 }
 
@@ -1380,6 +1380,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
                    mc_kms_credentials_callback creds_cb,
+                   mcd_optional_u64_t cache_expiration_ms,
                    bson_error_t *error)
 {
    _mongoc_crypt_t *crypt;
@@ -1455,6 +1456,13 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    if (!mongocrypt_setopt_use_range_v2 (crypt->handle)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;
+   }
+
+   if (cache_expiration_ms.set) {
+      mongocrypt_setopt_key_expiration (crypt->handle, cache_expiration_ms.value);
+      if (!_crypt_check_error (crypt->handle, error, false)) {
+         goto fail;
+      }
    }
 
    if (!mongocrypt_init (crypt->handle)) {

@@ -1,7 +1,7 @@
 #include <mongoc/mongoc.h>
-#include "mongoc/mongoc-client-pool-private.h"
+#include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
-#include "mongoc/mongoc-util-private.h"
+#include <mongoc/mongoc-util-private.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 
@@ -380,11 +380,11 @@ test_client_pool_create_unused_session (void *context)
 
    callbacks = mongoc_apm_callbacks_new ();
    pool = test_framework_new_default_client_pool ();
-   client = mongoc_client_pool_pop (pool);
-   session = mongoc_client_start_session (client, NULL, &error);
-
    mongoc_apm_set_command_started_cb (callbacks, command_started_cb);
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &count);
+
+   client = mongoc_client_pool_pop (pool);
+   session = mongoc_client_start_session (client, NULL, &error);
 
    mongoc_client_session_destroy (session);
    mongoc_client_pool_push (pool, client);

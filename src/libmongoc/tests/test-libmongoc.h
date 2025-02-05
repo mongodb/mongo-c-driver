@@ -36,6 +36,7 @@ char *
 gen_collection_name (const char *prefix);
 mongoc_collection_t *
 get_test_collection (mongoc_client_t *client, const char *prefix);
+
 void
 capture_logs (bool capture);
 void

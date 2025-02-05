@@ -97,6 +97,7 @@ test_command_monitoring_cb (void *scenario)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
+   // Newer versions of the 'unified' tests have migrated to command-logging-and-monitoring
    run_unified_tests (suite, JSON_DIR, "command_monitoring/unified");
    install_json_test_suite (suite, JSON_DIR, "command_monitoring/legacy", &test_command_monitoring_cb);
 }
@@ -354,8 +355,9 @@ _test_set_callbacks (bool pooled, bool try_pop)
 
    if (pooled) {
       ASSERT (!mongoc_client_pool_set_apm_callbacks (pool, NULL, (void *) &n_calls));
-      ASSERT_CAPTURED_LOG (
-         "mongoc_client_pool_set_apm_callbacks", MONGOC_LOG_LEVEL_ERROR, "Can only set callbacks once");
+      ASSERT_CAPTURED_LOG ("mongoc_client_pool_set_apm_callbacks",
+                           MONGOC_LOG_LEVEL_ERROR,
+                           "mongoc_client_pool_set_apm_callbacks can only be called once per pool");
 
       clear_captured_logs ();
       ASSERT (!mongoc_client_set_apm_callbacks (client, NULL, (void *) &n_calls));

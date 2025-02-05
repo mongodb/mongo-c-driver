@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CURSOR_PRIVATE_H
 #define MONGOC_CURSOR_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-client.h"
-#include "mongoc-buffer-private.h"
-#include "mongoc-rpc-private.h"
-#include "mongoc-server-stream-private.h"
-#include "mongoc-cluster-private.h"
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-server-stream-private.h>
+#include <mongoc/mongoc-cluster-private.h>
 
 
 BSON_BEGIN_DECLS
@@ -172,7 +172,7 @@ _mongoc_cursor_flags_to_opts (mongoc_query_flags_t qflags, bson_t *opts, bool *s
 bool
 _mongoc_cursor_translate_dollar_query_opts (const bson_t *query, bson_t *opts, bson_t *unwrapped, bson_error_t *error);
 mongoc_server_stream_t *
-_mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor);
+_mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor, const mongoc_ss_log_context_t *log_context);
 void
 _mongoc_cursor_collection (const mongoc_cursor_t *cursor, const char **collection, int *collection_len);
 bool

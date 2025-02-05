@@ -108,14 +108,13 @@ topology_changed (const mongoc_apm_topology_changed_t *event)
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
-   /* it is safe, and unfortunately necessary, to cast away const here */
-   if (mongoc_topology_description_has_readable_server ((mongoc_topology_description_t *) new_td, prefs)) {
+   if (mongoc_topology_description_has_readable_server (new_td, prefs)) {
       printf ("  secondary AVAILABLE\n");
    } else {
       printf ("  secondary UNAVAILABLE\n");
    }
 
-   if (mongoc_topology_description_has_writable_server ((mongoc_topology_description_t *) new_td)) {
+   if (mongoc_topology_description_has_writable_server (new_td)) {
       printf ("  primary AVAILABLE\n");
    } else {
       printf ("  primary UNAVAILABLE\n");

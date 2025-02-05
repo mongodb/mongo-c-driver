@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_GRIDFS_FILE_PAGE_PRIVATE_H
 #define MONGOC_GRIDFS_FILE_PAGE_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-gridfs-file.h"
+#include <mongoc/mongoc-gridfs-file.h>
 
 
 BSON_BEGIN_DECLS

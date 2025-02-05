@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_UTIL_PRIVATE_H
 #define MONGOC_UTIL_PRIVATE_H
 
 #include <bson/bson.h>
-#include "mongoc.h"
+#include <mongoc/mongoc.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -244,6 +244,11 @@ hex_to_bin (const char *hex, uint32_t *len);
 
 char *
 bin_to_hex (const uint8_t *bin, uint32_t len);
+
+typedef struct {
+   bool set;
+   uint64_t value;
+} mcd_optional_u64_t;
 
 BSON_END_DECLS
 

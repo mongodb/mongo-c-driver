@@ -14,3 +14,4 @@
 * ``hint``: A document or string that specifies the index to use to support the query predicate.
 * ``upsert``: When true, creates a new document if no document matches the query.
 * ``let``: A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language.
+* ``sort``: Specify a sort order when matching documents.

@@ -14,18 +14,21 @@ Synopsis
                                    const mongoc_ssl_opt_t *opts);
   #endif
 
+.. note::
+   |ssl:naming|
+
 This function is identical to :symbol:`mongoc_client_set_ssl_opts()` except for
 client pools. It ensures that all clients retrieved from
 :symbol:`mongoc_client_pool_pop()` or :symbol:`mongoc_client_pool_try_pop()`
-are configured with the same SSL settings.
+are configured with the same TLS settings.
 
-The ``mongoc_ssl_opt_t`` struct is copied by the pool along with the strings
+The :symbol:`mongoc_ssl_opt_t` struct is copied by the pool along with the strings
 it points to (``pem_file``, ``pem_pwd``, ``ca_file``, ``ca_dir``, and
 ``crl_file``) so they don't have to remain valid after the call to
-``mongoc_client_pool_set_ssl_opts``.
+:symbol:`mongoc_client_pool_set_ssl_opts`.
 
-A call to ``mongoc_client_pool_set_ssl_opts`` overrides all TLS options set
-through the connection string with which the ``mongoc_client_pool_t`` was
+A call to :symbol:`mongoc_client_pool_set_ssl_opts` overrides all TLS options set
+through the connection string with which the :symbol:`mongoc_client_pool_t` was
 constructed.
 
 Parameters

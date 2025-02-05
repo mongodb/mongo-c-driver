@@ -383,7 +383,7 @@ all_aws_sig_v4_tests (const char *path, const char *selected)
    }
 
    if (skip_aws_test (test_name) && !selected) {
-      printf ("SKIP: %s\n", test_name);
+      TEST_PRINTF ("SKIP: %s\n", test_name);
       goto done;
    }
 
@@ -407,7 +407,7 @@ all_aws_sig_v4_tests (const char *path, const char *selected)
          continue;
       }
 
-      printf ("%s\n", path);
+      TEST_PRINTF ("%s\n", path);
       aws_sig_v4_test (path);
       ran_tests = true;
    }
@@ -903,7 +903,7 @@ parser_testcase_run (parser_testcase_t *testcase)
       size_t ret = fread (buf, 1, (size_t) bytes_to_read, response_file);
 
       if (!kms_response_parser_feed (parser, buf, (int) ret)) {
-         printf ("feed error: %s\n", parser->error);
+         TEST_PRINTF ("feed error: %s\n", parser->error);
          ASSERT (false);
       }
    }
@@ -945,7 +945,7 @@ kms_response_parser_files (void)
    size_t i;
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
-      printf (" parser testcase: %d\n", (int) i);
+      TEST_PRINTF (" parser testcase: %d\n", (int) i);
       parser_testcase_run (tests + i);
    }
 }
@@ -1081,8 +1081,8 @@ kms_signature_test (void)
    signature_b64 = kms_message_raw_to_b64 (signature_raw, 256);
 
    if (0 != strcmp (signature_b64, expected_signature)) {
-      printf ("generated signature: %s\n", signature_b64);
-      printf ("but expected signature: %s\n", expected_signature);
+      TEST_PRINTF ("generated signature: %s\n", signature_b64);
+      TEST_PRINTF ("but expected signature: %s\n", expected_signature);
       abort ();
    }
 
@@ -1197,7 +1197,7 @@ test_request_newlines (void)
 #define RUN_TEST(_func)                                          \
    do {                                                          \
       if (!selector || 0 == kms_strcasecmp (#_func, selector)) { \
-         printf ("%s\n", #_func);                                \
+         TEST_PRINTF ("%s\n", #_func);                           \
          _func ();                                               \
          ran_tests = true;                                       \
       }                                                          \
@@ -1232,7 +1232,7 @@ main (int argc, char *argv[])
    help = "Usage: test_kms_request [TEST_NAME]";
 
    if (argc > 2) {
-      fprintf (stderr, "%s\n", help);
+      TEST_STDERR_PRINTF ("%s\n", help);
       abort ();
    } else if (argc == 2) {
       selector = argv[1];
@@ -1240,7 +1240,7 @@ main (int argc, char *argv[])
 
    int ret = kms_message_init ();
    if (ret != 0) {
-      printf ("kms_message_init failed: 0x%x\n", ret);
+      TEST_PRINTF ("kms_message_init failed: 0x%x\n", ret);
       abort ();
    }
 
@@ -1292,7 +1292,7 @@ main (int argc, char *argv[])
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);
-      fprintf (stderr, "No such test: \"%s\"\n", argv[1]);
+      TEST_STDERR_PRINTF ("No such test: \"%s\"\n", argv[1]);
       abort ();
    }
 

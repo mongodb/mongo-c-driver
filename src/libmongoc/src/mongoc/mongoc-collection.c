@@ -17,30 +17,30 @@
 
 #include <stdio.h>
 
-#include "bson/bson.h"
-#include "mongoc-aggregate-private.h"
-#include "mongoc-bulk-operation.h"
-#include "mongoc-bulk-operation-private.h"
-#include "mongoc-change-stream-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-find-and-modify-private.h"
-#include "mongoc-find-and-modify.h"
-#include "mongoc-collection.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-error.h"
-#include "mongoc-index.h"
-#include "mongoc-log.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-write-command-private.h"
-#include "mongoc-opts-private.h"
-#include "mongoc-write-command-private.h"
-#include "mongoc-error-private.h"
-#include "mongoc-database-private.h"
+#include <bson/bson.h>
+#include <mongoc/mongoc-aggregate-private.h>
+#include <mongoc/mongoc-bulk-operation.h>
+#include <mongoc/mongoc-bulk-operation-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-find-and-modify-private.h>
+#include <mongoc/mongoc-find-and-modify.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-index.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-command-private.h>
+#include <mongoc/mongoc-opts-private.h>
+#include <mongoc/mongoc-write-command-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-database-private.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 #include <common-bson-dsl-private.h>
@@ -60,7 +60,11 @@ _mongoc_collection_write_command_execute (mongoc_write_command_t *command,
 
    ENTRY;
 
-   server_stream = mongoc_cluster_stream_for_writes (&collection->client->cluster, cs, NULL, NULL, &result->error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (command),
+                                                   .has_operation_id = true,
+                                                   .operation_id = command->operation_id};
+   server_stream =
+      mongoc_cluster_stream_for_writes (&collection->client->cluster, &ss_log_context, cs, NULL, NULL, &result->error);
 
    if (!server_stream) {
       /* result->error has been filled out */
@@ -94,8 +98,11 @@ _mongoc_collection_write_command_execute_idl (mongoc_write_command_t *command,
 
    ENTRY;
 
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (command),
+                                                   .has_operation_id = true,
+                                                   .operation_id = command->operation_id};
    server_stream = mongoc_cluster_stream_for_writes (
-      &collection->client->cluster, crud->client_session, NULL, &reply, &result->error);
+      &collection->client->cluster, &ss_log_context, crud->client_session, NULL, &reply, &result->error);
 
    if (!server_stream) {
       /* result->error and reply have been filled out */
@@ -1189,7 +1196,7 @@ mongoc_collection_drop_index_with_opts (mongoc_collection_t *collection,
 char *
 mongoc_collection_keys_to_index_string (const bson_t *keys)
 {
-   mcommon_string_t *s;
+   mcommon_string_append_t append;
    bson_iter_t iter;
    bson_type_t type;
    int i = 0;
@@ -1200,7 +1207,7 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
       return NULL;
    }
 
-   s = mcommon_string_new (NULL);
+   mcommon_string_new_as_append (&append);
 
    while (bson_iter_next (&iter)) {
       /* Index type can be specified as a string ("2d") or as an integer
@@ -1208,18 +1215,19 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
       type = bson_iter_type (&iter);
       if (type == BSON_TYPE_UTF8) {
          mcommon_string_append_printf (
-            s, (i++ ? "_%s_%s" : "%s_%s"), bson_iter_key (&iter), bson_iter_utf8 (&iter, NULL));
+            &append, (i++ ? "_%s_%s" : "%s_%s"), bson_iter_key (&iter), bson_iter_utf8 (&iter, NULL));
       } else if (type == BSON_TYPE_INT32) {
-         mcommon_string_append_printf (s, (i++ ? "_%s_%d" : "%s_%d"), bson_iter_key (&iter), bson_iter_int32 (&iter));
+         mcommon_string_append_printf (
+            &append, (i++ ? "_%s_%d" : "%s_%d"), bson_iter_key (&iter), bson_iter_int32 (&iter));
       } else if (type == BSON_TYPE_INT64) {
          mcommon_string_append_printf (
-            s, (i++ ? "_%s_%" PRId64 : "%s_%" PRId64), bson_iter_key (&iter), bson_iter_int64 (&iter));
+            &append, (i++ ? "_%s_%" PRId64 : "%s_%" PRId64), bson_iter_key (&iter), bson_iter_int64 (&iter));
       } else {
-         mcommon_string_free (s, true);
+         mcommon_string_from_append_destroy (&append);
          return NULL;
       }
    }
-   return mcommon_string_free (s, false);
+   return mcommon_string_from_append_destroy_with_steal (&append);
 }
 
 
@@ -1522,8 +1530,9 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    bson_array_builder_append_document_end (ar, &doc);
    bson_append_array_builder_end (&cmd, ar);
 
-   server_stream =
-      mongoc_cluster_stream_for_writes (&collection->client->cluster, parsed.client_session, NULL, reply, error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "createIndexes"};
+   server_stream = mongoc_cluster_stream_for_writes (
+      &collection->client->cluster, &ss_log_context, parsed.client_session, NULL, reply, error);
 
    if (!server_stream) {
       reply_initialized = true;
@@ -2017,6 +2026,7 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
                                       bool multi,
                                       bool bypass,
                                       const bson_t *array_filters,
+                                      const bson_t *sort,
                                       bson_t *extra,
                                       bson_t *reply,
                                       bson_error_t *error)
@@ -2058,6 +2068,10 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       bson_append_array (extra, "arrayFilters", 12, array_filters);
    }
 
+   if (!bson_empty0 (sort)) {
+      bson_append_document (extra, "sort", 4, sort);
+   }
+
    if (multi) {
       bson_append_bool (extra, "multi", 5, true);
    }
@@ -2075,8 +2089,11 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       command.flags.has_update_hint = true;
    }
 
+   const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (&command),
+                                                   .has_operation_id = true,
+                                                   .operation_id = command.operation_id};
    server_stream = mongoc_cluster_stream_for_writes (
-      &collection->client->cluster, update_opts->crud.client_session, NULL, reply, error);
+      &collection->client->cluster, &ss_log_context, update_opts->crud.client_session, NULL, reply, error);
 
    if (!server_stream) {
       /* mongoc_cluster_stream_for_writes inits reply on error */
@@ -2180,6 +2197,7 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
                                                false /* multi */,
                                                update_one_opts.update.bypass,
                                                &update_one_opts.arrayFilters,
+                                               &update_one_opts.sort,
                                                &update_one_opts.extra,
                                                reply,
                                                error);
@@ -2224,6 +2242,7 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
                                                true /* multi */,
                                                update_many_opts.update.bypass,
                                                &update_many_opts.arrayFilters,
+                                               NULL /* sort */,
                                                &update_many_opts.extra,
                                                reply,
                                                error);
@@ -2268,6 +2287,7 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
                                                false /* multi */,
                                                replace_one_opts.update.bypass,
                                                NULL,
+                                               &replace_one_opts.sort,
                                                &replace_one_opts.extra,
                                                reply,
                                                error);
@@ -3111,7 +3131,9 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t *collection,
       GOTO (done);
    }
 
-   server_stream = mongoc_cluster_stream_for_writes (cluster, appended_opts.client_session, NULL, &ss_reply, error);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "findAndModify"};
+   server_stream =
+      mongoc_cluster_stream_for_writes (cluster, &ss_log_context, appended_opts.client_session, NULL, &ss_reply, error);
 
    if (!server_stream) {
       bson_concat (reply, &ss_reply);
@@ -3404,7 +3426,9 @@ mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
 
    // Check for commitQuorum option.
    if (opts && bson_has_field (opts, "commitQuorum")) {
+      const mongoc_ss_log_context_t ss_log_context = {.operation = "createIndexes"};
       server_stream = mongoc_cluster_stream_for_writes (&collection->client->cluster,
+                                                        &ss_log_context,
                                                         NULL /* mongoc_client_session_t */,
                                                         NULL /* deprioritized servers */,
                                                         reply_ptr,

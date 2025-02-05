@@ -16,15 +16,15 @@
 
 #include "operation.h"
 
-#include "mongoc-array-private.h"
-#include "mongoc-bulkwrite.h"
-#include "mongoc-util-private.h" // hex_to_bin
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-bulkwrite.h>
+#include <mongoc/mongoc-util-private.h> // hex_to_bin
 #include "result.h"
 #include "test-diagnostics.h"
 #include "test-libmongoc.h"
 #include "util.h"
-#include "utlist.h"
-#include "common-bson-dsl-private.h"
+#include <mongoc/utlist.h>
+#include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>
 
 typedef struct {
@@ -105,6 +105,10 @@ operation_create_change_stream (test_t *test, operation_t *op, result_t *result,
 
    if (0 == strcmp (entity->type, "client")) {
       mongoc_client_t *client = (mongoc_client_t *) entity->value;
+      if (!client) {
+         test_set_error (error, "client '%s' is closed", entity->id);
+         goto done;
+      }
       changestream = mongoc_client_watch (client, pipeline, opts);
    } else if (0 == strcmp (entity->type, "database")) {
       mongoc_database_t *db = (mongoc_database_t *) entity->value;
@@ -238,6 +242,7 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
    bson_val_t *hint = NULL;
    bool *upsert = NULL;
    bson_t *arrayFilters = NULL;
+   bson_t *sort = NULL;
    bson_parser_t *parser = bson_parser_new ();
 
    // Expect exactly one root key to identify the model (e.g. "insertOne"):
@@ -275,6 +280,7 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
       bson_parser_doc_optional (parser, "collation", &collation);
       bson_parser_any_optional (parser, "hint", &hint);
       bson_parser_bool_optional (parser, "upsert", &upsert);
+      bson_parser_doc_optional (parser, "sort", &sort);
       if (!bson_parser_parse (parser, &model_bson, error)) {
          goto done;
       }
@@ -287,6 +293,9 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
       }
       if (upsert) {
          mongoc_bulkwrite_updateoneopts_set_upsert (opts, *upsert);
+      }
+      if (sort) {
+         mongoc_bulkwrite_updateoneopts_set_sort (opts, sort);
       }
 
       if (!mongoc_bulkwrite_append_updateone (bw, namespace, filter, update, opts, error)) {
@@ -372,6 +381,7 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
       bson_parser_doc_optional (parser, "collation", &collation);
       bson_parser_bool_optional (parser, "upsert", &upsert);
       bson_parser_any_optional (parser, "hint", &hint);
+      bson_parser_doc_optional (parser, "sort", &sort);
       if (!bson_parser_parse (parser, &model_bson, error)) {
          goto done;
       }
@@ -383,6 +393,9 @@ append_client_bulkwritemodel (mongoc_bulkwrite_t *bw, bson_t *model_wrapper, bso
       }
       if (upsert) {
          mongoc_bulkwrite_replaceoneopts_set_upsert (opts, *upsert);
+      }
+      if (sort) {
+         mongoc_bulkwrite_replaceoneopts_set_sort (opts, sort);
       }
 
       if (!mongoc_bulkwrite_append_replaceone (bw, namespace, filter, replacement, opts, error)) {
@@ -1295,10 +1308,12 @@ operation_run_command (test_t *test, operation_t *op, result_t *result, bson_err
       mongoc_write_concern_append (wc, opts);
    }
 
-   bson_destroy (&op_reply);
    mongoc_database_command_with_opts (db, command, rp, opts, &op_reply, &op_error);
 
-   result_from_val_and_reply (result, NULL, &op_reply, &op_error);
+   // For a generic command, the reply is also the result value
+   bson_val_t *op_reply_val = bson_val_from_bson (&op_reply);
+   result_from_val_and_reply (result, op_reply_val, &op_reply, &op_error);
+   bson_val_destroy (op_reply_val);
 
    ret = true;
 done:
@@ -2423,12 +2438,9 @@ operation_close (test_t *test, operation_t *op, result_t *result, bson_error_t *
       goto done;
    }
 
-   if (0 != strcmp (entity->type, "findcursor") && 0 != strcmp (entity->type, "changestream")) {
-      test_set_error (error, "attempting to close an unsupported entity: %s", entity->type);
+   if (!entity_map_close (test->entity_map, op->object, error)) {
       goto done;
    }
-
-   entity_map_delete (test->entity_map, op->object, error);
 
    result_from_ok (result);
 
@@ -2505,7 +2517,9 @@ operation_failpoint (test_t *test, operation_t *op, result_t *result, bson_error
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
+   entity_map_log_filter_push (test->entity_map, client_id, NULL, NULL);
    mongoc_client_command_simple (client, "admin", failpoint, rp, &op_reply, &op_error);
+   entity_map_log_filter_pop (test->entity_map, client_id, NULL, NULL);
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -2563,7 +2577,9 @@ operation_targeted_failpoint (test_t *test, operation_t *op, result_t *result, b
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_destroy (&op_reply);
+   entity_map_log_filter_push (test->entity_map, client_id, NULL, NULL);
    mongoc_client_command_simple_with_server_id (client, "admin", failpoint, rp, server_id, &op_reply, &op_error);
+   entity_map_log_filter_pop (test->entity_map, client_id, NULL, NULL);
    result_from_val_and_reply (result, NULL /* value */, &op_reply, &op_error);
 
    /* Add failpoint to list of test_t's known failpoints */
@@ -2809,19 +2825,19 @@ assert_lsid_on_last_two_commands (test_t *test, operation_t *op, result_t *resul
       goto done;
    }
 
-   if (!bson_iter_init_find (&iter, a->command, "lsid")) {
-      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (a->command));
+   if (bson_iter_init (&iter, a->serialized) && bson_iter_find_descendant (&iter, "command.lsid", &iter)) {
+      bson_iter_bson (&iter, &a_lsid);
+   } else {
+      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (a->serialized));
       goto done;
    }
 
-   bson_iter_bson (&iter, &a_lsid);
-
-   if (!bson_iter_init_find (&iter, b->command, "lsid")) {
-      test_set_error (error, "unable to find lsid in second to last commandStartedEvent: %s", tmp_json (b->command));
+   if (bson_iter_init (&iter, b->serialized) && bson_iter_find_descendant (&iter, "command.lsid", &iter)) {
+      bson_iter_bson (&iter, &b_lsid);
+   } else {
+      test_set_error (error, "unable to find lsid in last commandStartedEvent: %s", tmp_json (b->serialized));
       goto done;
    }
-
-   bson_iter_bson (&iter, &b_lsid);
 
    if (check_same != bson_equal (&a_lsid, &b_lsid)) {
       test_set_error (error,
@@ -3547,6 +3563,22 @@ operation_assert_number_connections_checked_out (test_t *test, operation_t *op, 
 }
 
 static bool
+operation_wait (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   BSON_UNUSED (test);
+   BSON_UNUSED (error);
+
+   bson_iter_t iter;
+   bson_iter_init_find (&iter, op->arguments, "ms");
+   ASSERT (BSON_ITER_HOLDS_INT (&iter));
+   const int64_t sleep_msec = bson_iter_as_int64 (&iter);
+   _mongoc_usleep (sleep_msec * 1000);
+
+   result_from_ok (result);
+   return true;
+}
+
+static bool
 operation_rename (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    // First validate the arguments
@@ -3784,6 +3816,396 @@ done:
    return ret;
 }
 
+static bool
+operation_create_entities (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   bson_t *entities;
+   bson_parser_array_optional (bp, "entities", &entities);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   bson_iter_t entity_iter;
+   BSON_FOREACH (entities, entity_iter)
+   {
+      bson_t entity;
+      bson_iter_bson (&entity_iter, &entity);
+      bool create_ret = entity_map_create (test->entity_map, &entity, error);
+      bson_destroy (&entity);
+      if (!create_ret) {
+         goto done;
+      }
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+#define WAIT_FOR_EVENT_TIMEOUT_MS (10 * 1000) // Specified by test runner spec
+#define WAIT_FOR_EVENT_TICK_MS 10             // Same tick size as used in non-unified json test
+
+static bool
+log_filter_hide_server_selection_operation (const mongoc_structured_log_entry_t *entry, void *user_data)
+{
+   BSON_ASSERT_PARAM (entry);
+   BSON_ASSERT_PARAM (user_data);
+   const char *expected_operation = (const char *) user_data;
+
+   if (mongoc_structured_log_entry_get_component (entry) == MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION) {
+      bson_t *bson = mongoc_structured_log_entry_message_as_bson (entry);
+      bson_iter_t iter;
+      BSON_ASSERT (bson_iter_init_find (&iter, bson, "operation"));
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+      BSON_ASSERT (0 == strcmp (expected_operation, bson_iter_utf8 (&iter, NULL)));
+      bson_destroy (bson);
+      return false;
+   }
+   return true;
+}
+
+static void
+_operation_hidden_wait (test_t *test, entity_t *client, const char *name)
+{
+   _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
+
+   // @todo Re-examine this once we have support for connection pools in the unified test
+   //    runner. Without pooling, all events we could be waiting on would be coming
+   //    from single-threaded (blocking) topology scans, or from lazily opening the topology
+   //    description when it's first used. Request stream selection after blocking, to
+   //    handle either of these cases.
+   //
+   // Structured logs can not be fully suppressed here, because we do need to emit topology
+   // lifecycle events. Filter out only the server selection operation here, and ASSERT
+   // that it's the waitForEvent we expect.
+
+   entity_log_filter_push (client, log_filter_hide_server_selection_operation, (void *) name);
+
+   mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client->id, NULL);
+   if (mc_client) {
+      const mongoc_ss_log_context_t ss_log_context = {.operation = name};
+      mongoc_server_stream_t *stream = mongoc_cluster_stream_for_reads (&mc_client->cluster,
+                                                                        &ss_log_context,
+                                                                        NULL /* read_prefs */,
+                                                                        NULL /* client session */,
+                                                                        NULL /* deprioritized servers */,
+                                                                        NULL /* reply */,
+                                                                        NULL /* error */);
+      if (stream) {
+         mongoc_server_stream_cleanup (stream);
+      }
+   }
+
+   entity_log_filter_pop (client, log_filter_hide_server_selection_operation, (void *) name);
+}
+
+static bool
+operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   int64_t start_time = bson_get_monotonic_time ();
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id;
+   bson_t *expected_event;
+   int64_t *expected_count;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_doc (bp, "event", &expected_event);
+   bson_parser_int (bp, "count", &expected_count);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   entity_t *client = entity_map_get (test->entity_map, client_id, error);
+   if (!client) {
+      goto done;
+   }
+
+   // @todo CDRIVER-3525 test support for CMAP events once supported by libmongoc
+   bson_iter_t iter;
+   bson_iter_init (&iter, expected_event);
+   bson_iter_next (&iter);
+   const char *expected_event_type = bson_iter_key (&iter);
+   if (is_unsupported_event_type (expected_event_type)) {
+      MONGOC_DEBUG ("SKIPPING waitForEvent for unsupported event type '%s'", expected_event_type);
+      result_from_ok (result);
+      ret = true;
+      goto done;
+   }
+
+   while (true) {
+      int64_t count;
+      if (!test_count_matching_events_for_client (test, client, expected_event, error, &count)) {
+         goto done;
+      }
+      if (count >= *expected_count) {
+         break;
+      }
+
+      int64_t duration = bson_get_monotonic_time () - start_time;
+      if (duration >= (int64_t) WAIT_FOR_EVENT_TIMEOUT_MS * 1000) {
+         char *event_list_string = event_list_to_string (client->events);
+         test_diagnostics_error_info ("all captured events for client:\n%s", event_list_string);
+         bson_free (event_list_string);
+         test_diagnostics_error_info ("checking for expected event: %s\n", tmp_json (expected_event));
+         test_set_error (error,
+                         "waitForEvent timed out with %" PRId64 " of %" PRId64
+                         " matches needed. waited %dms (max %dms)",
+                         count,
+                         *expected_count,
+                         (int) (duration / 1000),
+                         (int) WAIT_FOR_EVENT_TIMEOUT_MS);
+         goto done;
+      };
+
+      _operation_hidden_wait (test, client, "waitForEvent");
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+/* Test for an event match document containing an unsupported event type as defined by is_unsupported_event_type(). If
+ * the match document has an unexpected format, returns false. */
+static bool
+is_unsupported_event_match_document (const bson_t *event_match)
+{
+   BSON_ASSERT_PARAM (event_match);
+
+   if (bson_count_keys (event_match) == 1) {
+      bson_iter_t iter;
+      bson_iter_init (&iter, event_match);
+      bson_iter_next (&iter);
+      return is_unsupported_event_type (bson_iter_key (&iter));
+   } else {
+      return false;
+   }
+}
+
+static bool
+operation_assert_event_count (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id;
+   bson_t *expected_event;
+   int64_t *expected_count;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_doc (bp, "event", &expected_event);
+   bson_parser_int (bp, "count", &expected_count);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   if (is_unsupported_event_match_document (expected_event)) {
+      MONGOC_DEBUG ("SKIPPING assertEventCount for unsupported event %s", tmp_json (expected_event));
+      result_from_ok (result);
+      ret = true;
+      goto done;
+   }
+
+   entity_t *client = entity_map_get (test->entity_map, client_id, error);
+   if (!client) {
+      goto done;
+   }
+
+   int64_t actual_count;
+   if (!test_count_matching_events_for_client (test, client, expected_event, error, &actual_count)) {
+      goto done;
+   }
+   if (actual_count != *expected_count) {
+      char *event_list_string = event_list_to_string (client->events);
+      test_diagnostics_error_info ("all captured events for client:\n%s", event_list_string);
+      bson_free (event_list_string);
+      test_diagnostics_error_info ("checking for expected event: %s\n", tmp_json (expected_event));
+      test_set_error (error,
+                      "assertEventCount found %" PRId64 " matches, required exactly %" PRId64 " matches",
+                      actual_count,
+                      *expected_count);
+      goto done;
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static const char *
+tmp_topology_description_json (const mongoc_topology_description_t *td)
+{
+   bson_t bson = BSON_INITIALIZER;
+   BSON_ASSERT (mongoc_topology_description_append_contents_to_bson (
+      td,
+      &bson,
+      MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_TYPE | MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SERVERS,
+      MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_ADDRESS | MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG_TYPE));
+   const char *result = tmp_json (&bson);
+   bson_destroy (&bson);
+   return result;
+}
+
+static bool
+operation_record_topology_description (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id, *td_id;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_utf8 (bp, "id", &td_id);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   mongoc_client_t *client = entity_map_get_client (test->entity_map, client_id, error);
+   if (!client) {
+      goto done;
+   }
+
+   mongoc_topology_description_t *td_copy = bson_malloc0 (sizeof *td_copy);
+   mc_shared_tpld td = mc_tpld_take_ref (client->topology);
+   _mongoc_topology_description_copy_to (td.ptr, td_copy);
+   mc_tpld_drop_ref (&td);
+
+   MONGOC_DEBUG ("Recording topology description '%s': %s", td_id, tmp_topology_description_json (td_copy));
+
+   if (!entity_map_add_topology_description (test->entity_map, td_id, td_copy, error)) {
+      mongoc_topology_description_destroy (td_copy);
+      goto done;
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static bool
+operation_assert_topology_type (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *td_id, *expected_topology_type;
+   bson_parser_utf8 (bp, "topologyDescription", &td_id);
+   bson_parser_utf8 (bp, "topologyType", &expected_topology_type);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   // Pointer borrowed from entity
+   mongoc_topology_description_t *td = entity_map_get_topology_description (test->entity_map, td_id, error);
+   if (!td) {
+      goto done;
+   }
+
+   // Static lifetime
+   const char *actual_topology_type = mongoc_topology_description_type (td);
+
+   if (0 != strcmp (expected_topology_type, actual_topology_type)) {
+      test_set_error (error,
+                      "assertTopologyType failed, expected '%s' but found type '%s' in topology description: %s",
+                      expected_topology_type,
+                      actual_topology_type,
+                      tmp_topology_description_json (td));
+      goto done;
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static bool
+operation_wait_for_primary_change (test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *bp = bson_parser_new ();
+   char *client_id, *prior_td_id;
+   int64_t *optional_timeout_ms = NULL;
+   bson_parser_utf8 (bp, "client", &client_id);
+   bson_parser_utf8 (bp, "priorTopologyDescription", &prior_td_id);
+   bson_parser_int_optional (bp, "timeoutMS", &optional_timeout_ms);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   int64_t timeout = INT64_C (1000) * (optional_timeout_ms ? *optional_timeout_ms : INT64_C (10000));
+   int64_t start_time = bson_get_monotonic_time ();
+
+   mongoc_client_t *mc_client = entity_map_get_client (test->entity_map, client_id, error);
+   if (!mc_client) {
+      goto done;
+   }
+
+   entity_t *client = entity_map_get (test->entity_map, client_id, error);
+   BSON_ASSERT (client);
+
+   // Pointer borrowed from entity
+   mongoc_topology_description_t *prior_td = entity_map_get_topology_description (test->entity_map, prior_td_id, error);
+   if (!prior_td) {
+      goto done;
+   }
+
+   // Will be NULL when there's no primary
+   const mongoc_server_description_t *prior_primary = _mongoc_topology_description_has_primary (prior_td);
+
+   while (true) {
+      mc_shared_tpld td = mc_tpld_take_ref (mc_client->topology);
+      const mongoc_server_description_t *primary = _mongoc_topology_description_has_primary (td.ptr);
+
+      if (!prior_primary && primary) {
+         MONGOC_DEBUG ("waitForPrimaryChange succeeded by transitioning from none to any");
+         mc_tpld_drop_ref (&td);
+         break;
+      }
+
+      if (prior_primary && primary && !_mongoc_server_description_equal (prior_primary, primary)) {
+         MONGOC_DEBUG ("waitForPrimaryChange succeeded by switching to a different primary server");
+         mc_tpld_drop_ref (&td);
+         break;
+      }
+
+      int64_t duration = bson_get_monotonic_time () - start_time;
+      if (duration >= timeout) {
+         test_set_error (error,
+                         "waitForPrimaryChange timed out. waited %fms (max %fms). \nprior topology description: "
+                         "%s\ncurrent topology description: %s",
+                         duration / 1000.0,
+                         timeout / 1000.0,
+                         tmp_topology_description_json (prior_td),
+                         tmp_topology_description_json (td.ptr));
+
+         mc_tpld_drop_ref (&td);
+         goto done;
+      }
+      mc_tpld_drop_ref (&td);
+
+      _operation_hidden_wait (test, client, "waitForPrimaryChange");
+   }
+
+   result_from_ok (result);
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -3871,19 +4293,27 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"assertSessionUnpinned", operation_assert_session_unpinned},
       {"loop", operation_loop},
       {"assertNumberConnectionsCheckedOut", operation_assert_number_connections_checked_out},
+      {"wait", operation_wait},
+      {"waitForEvent", operation_wait_for_event},
+      {"assertEventCount", operation_assert_event_count},
+      {"recordTopologyDescription", operation_record_topology_description},
+      {"assertTopologyType", operation_assert_topology_type},
+      {"waitForPrimaryChange", operation_wait_for_primary_change},
 
       /* GridFS operations */
       {"delete", operation_delete},
       {"download", operation_download},
       {"upload", operation_upload},
 
-      /* Session operations. */
+      /* Session operations */
       {"endSession", operation_end_session},
       {"startTransaction", operation_start_transaction},
       {"commitTransaction", operation_commit_transaction},
       {"withTransaction", operation_with_transaction},
       {"abortTransaction", operation_abort_transaction},
 
+      /* Entity operations */
+      {"createEntities", operation_create_entities},
    };
    bool ret = false;
 

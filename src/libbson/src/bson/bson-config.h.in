@@ -122,4 +122,13 @@
 # undef BSON_HAVE_STRLCPY
 #endif
 
+
+/*
+ * Define to 1 if you have aligned_alloc available on your platform.
+ */
+#define BSON_HAVE_ALIGNED_ALLOC @BSON_HAVE_ALIGNED_ALLOC@
+#if BSON_HAVE_ALIGNED_ALLOC != 1
+# undef BSON_HAVE_ALIGNED_ALLOC
+#endif
+
 #endif /* BSON_CONFIG_H */

@@ -15,15 +15,15 @@
  */
 
 #include <bson/bson.h>
-#include "mongoc-cluster-private.h"
-#include "mongoc-change-stream-private.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-client-session-private.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-database-private.h"
-#include "mongoc-error.h"
-#include "mongoc-error-private.h"
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 
 #define CHANGE_STREAM_ERR(_str) \
    bson_set_error (&stream->err, MONGOC_ERROR_CURSOR, MONGOC_ERROR_BSON, "Could not set " _str)
@@ -267,8 +267,9 @@ _make_cursor (mongoc_change_stream_t *stream)
       goto cleanup;
    }
 
-   server_stream =
-      mongoc_cluster_stream_for_reads (&stream->client->cluster, stream->read_prefs, cs, NULL, &reply, &stream->err);
+   const mongoc_ss_log_context_t ss_log_context = {.operation = "aggregate"};
+   server_stream = mongoc_cluster_stream_for_reads (
+      &stream->client->cluster, &ss_log_context, stream->read_prefs, cs, NULL, &reply, &stream->err);
    if (!server_stream) {
       bson_destroy (&stream->err_doc);
       bson_copy_to (&reply, &stream->err_doc);

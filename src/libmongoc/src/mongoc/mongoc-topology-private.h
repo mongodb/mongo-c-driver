@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_TOPOLOGY_PRIVATE_H
 #define MONGOC_TOPOLOGY_PRIVATE_H
 
-#include "mongoc-config.h"
-#include "mongoc-topology-scanner-private.h"
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-description-private.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-uri.h"
-#include "mongoc-client-session-private.h"
-#include "mongoc-crypt-private.h"
-#include "mongoc-ts-pool-private.h"
-#include "mongoc-shared-private.h"
-#include "mongoc-sleep.h"
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-topology-scanner-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-log-and-monitor-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-uri.h>
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-crypt-private.h>
+#include <mongoc/mongoc-ts-pool-private.h>
+#include <mongoc/mongoc-shared-private.h>
+#include <mongoc/mongoc-sleep.h>
 #include <common-atomic-private.h>
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
@@ -55,6 +56,7 @@ typedef enum mongoc_topology_cse_state_t {
 
 struct _mongoc_background_monitor_t;
 struct _mongoc_client_pool_t;
+struct mongoc_structured_log_instance_t;
 
 typedef enum { MONGOC_RR_SRV, MONGOC_RR_TXT } mongoc_rr_type_t;
 
@@ -207,7 +209,10 @@ typedef struct _mongoc_topology_t {
    /* For background monitoring. */
    mongoc_set_t *server_monitors;
    mongoc_set_t *rtt_monitors;
-   bson_mutex_t apm_mutex;
+
+   // APM callbacks, structured logging handlers and callbacks.
+   // Documented as per-client and per-pool, implemented as owned by topology_t.
+   mongoc_log_and_monitor_instance_t log_and_monitor;
 
    /* This is overridable for SRV polling tests to mock DNS records. */
    _mongoc_rr_resolver_fn rr_resolver;
@@ -232,10 +237,8 @@ mongoc_topology_t *
 mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded);
 
 void
-mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
-                                   mongoc_topology_description_t *td,
-                                   mongoc_apm_callbacks_t const *callbacks,
-                                   void *context);
+mongoc_topology_set_structured_log_opts (mongoc_topology_t *topology, const mongoc_structured_log_opts_t *opts);
+
 
 void
 mongoc_topology_destroy (mongoc_topology_t *topology);
@@ -259,6 +262,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
  *
  * @param topology The topology to inspect and/or update.
  * @param optype The operation that is intended to be performed.
+ * @param log_context Additional contextual information used only to support standardized logging.
  * @param read_prefs The read preferences for the command.
  * @param must_use_primary An optional output parameter. Server selection might
  * need to override the caller's read preferences' read mode to 'primary'.
@@ -275,6 +279,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
 mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
+                        const mongoc_ss_log_context_t *log_context,
                         const mongoc_read_prefs_t *read_prefs,
                         bool *must_use_primary,
                         bson_error_t *error);
@@ -287,6 +292,7 @@ mongoc_topology_select (mongoc_topology_t *topology,
  *
  * @param topology The topology to inspect and/or update.
  * @param optype The operation that is intended to be performed.
+ * @param log_context Additional contextual information used only to support standardized logging.
  * @param read_prefs The read preferences for the command.
  * @param must_use_primary An optional output parameter. Server selection might
  * need to override the caller's read preferences' read mode to 'primary'.
@@ -302,6 +308,7 @@ mongoc_topology_select (mongoc_topology_t *topology,
 uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
+                                  const mongoc_ss_log_context_t *log_context,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bool *must_use_primary,
                                   const mongoc_deprioritized_servers_t *ds,
@@ -356,7 +363,9 @@ void
 _mongoc_topology_update_cluster_time (mongoc_topology_t *topology, const bson_t *reply);
 
 mongoc_server_session_t *
-_mongoc_topology_pop_server_session (mongoc_topology_t *topology, bson_error_t *error);
+_mongoc_topology_pop_server_session (mongoc_topology_t *topology,
+                                     const mongoc_ss_log_context_t *log_context,
+                                     bson_error_t *error);
 
 void
 _mongoc_topology_push_server_session (mongoc_topology_t *topology, mongoc_server_session_t *server_session);
@@ -411,7 +420,7 @@ typedef enum {
  * @param generation The generation of the server description the caller was
  * using.
  * @param service_id A service ID for a load-balanced deployment. If not
- * applicable, pass kZeroServiceID.
+ * applicable, pass kZeroObjectId.
  * @return true If the topology was updated and the pool was cleared.
  * @return false If no modifications were made and the error was ignored.
  *
@@ -470,7 +479,7 @@ _mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *to
  * @param td The topology that contains the server
  * @param server_id The ID of the server to inspect
  * @param service_id The service ID of the connection if applicable, or
- * kZeroServiceID.
+ * kZeroObjectId.
  * @returns uint32_t A generation counter for the given server, or zero if the
  * server does not exist in the topology.
  */
@@ -608,16 +617,16 @@ mc_tpld_unsafe_get_const (const mongoc_topology_t *tpl)
  * This is intended for testing purposes, as it provides thread-safe
  * direct topology modification.
  *
- * @param td The topology to modify.
+ * @param topology The topology to modify.
  * @param server_id The ID of a server in the topology.
  */
 static BSON_INLINE void
-_mongoc_topology_invalidate_server (mongoc_topology_t *td, uint32_t server_id)
+_mongoc_topology_invalidate_server (mongoc_topology_t *topology, uint32_t server_id)
 {
    bson_error_t error;
-   mc_tpld_modification tdmod = mc_tpld_modify_begin (td);
+   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
    bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
-   mongoc_topology_description_invalidate_server (tdmod.new_td, server_id, &error);
+   mongoc_topology_description_invalidate_server (tdmod.new_td, &topology->log_and_monitor, server_id, &error);
    mc_tpld_modify_commit (tdmod);
 }
 

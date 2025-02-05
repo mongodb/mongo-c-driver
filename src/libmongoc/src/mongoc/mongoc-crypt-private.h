@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CRYPT_PRIVATE_H
 #define MONGOC_CRYPT_PRIVATE_H
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-util-private.h>
 
-#include "mongoc.h"
+#include <mongoc/mongoc.h>
 
 typedef struct mc_kms_credentials_callback {
    mongoc_kms_credentials_provider_callback_fn fn;
@@ -48,6 +49,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
                    mc_kms_credentials_callback creds_cb,
+                   mcd_optional_u64_t cache_expiration_ms,
                    bson_error_t *error);
 
 void

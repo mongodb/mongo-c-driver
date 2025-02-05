@@ -15,50 +15,52 @@
  */
 
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #include <string.h>
 
-#include "mcd-rpc.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-client-side-encryption-private.h"
-#include "mongoc-counters-private.h"
-#include "mongoc-config.h"
-#include "mongoc-error.h"
-#include "mongoc-flags-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-log.h"
-#include "mongoc-cluster-sasl-private.h"
+#include <mongoc/mcd-rpc.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-flags-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-cluster-sasl-private.h>
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
-#include "mongoc-ssl-private.h"
-#include "mongoc-stream-tls.h"
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-stream-tls.h>
 #endif
-#include "common-b64-private.h"
-#include "mongoc-scram-private.h"
-#include "mongoc-set-private.h"
-#include "mongoc-socket.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-stream-socket.h"
-#include "mongoc-stream-tls.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-topology-background-monitoring-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-uri-private.h"
-#include "mongoc-rpc-private.h"
-#include "mongoc-compression-private.h"
-#include "mongoc-cmd-private.h"
-#include "utlist.h"
-#include "mongoc-handshake-private.h"
-#include "mongoc-cluster-aws-private.h"
-#include "mongoc-error-private.h"
+#include <common-b64-private.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-socket.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-compression-private.h>
+#include <mongoc/mongoc-cmd-private.h>
+#include <mongoc/utlist.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 
 #include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>
+#include <common-oid-private.h>
 
 #include <inttypes.h>
 
@@ -496,7 +498,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    bool retval;
    const int32_t request_id = ++cluster->request_id;
    uint32_t server_id;
-   mongoc_apm_callbacks_t *callbacks;
    mongoc_apm_command_started_t started_event;
    mongoc_apm_command_succeeded_t succeeded_event;
    mongoc_apm_command_failed_t failed_event;
@@ -508,12 +509,13 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    bson_t encrypted = BSON_INITIALIZER;
    bson_t decrypted = BSON_INITIALIZER;
    mongoc_cmd_t encrypted_cmd;
-   bool is_redacted = false;
+   bool is_redacted_by_apm = false;
 
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
 
-   callbacks = &cluster->client->apm_callbacks;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &cluster->client->topology->log_and_monitor;
+
    if (!reply) {
       reply = &reply_local;
    }
@@ -532,18 +534,29 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       }
    }
 
-   if (callbacks->started) {
-      mongoc_apm_command_started_init_with_cmd (
-         &started_event, cmd, request_id, &is_redacted, cluster->client->apm_context);
+   mongoc_structured_log (
+      log_and_monitor->structured_log,
+      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+      "Command started",
+      int32 ("requestId", request_id),
+      server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+      cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID, COMMAND));
 
-      callbacks->started (&started_event);
+   if (log_and_monitor->apm_callbacks.started) {
+      mongoc_apm_command_started_init_with_cmd (
+         &started_event, cmd, request_id, &is_redacted_by_apm, log_and_monitor->apm_context);
+
+      log_and_monitor->apm_callbacks.started (&started_event);
       mongoc_apm_command_started_cleanup (&started_event);
    }
 
    retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
 
-   if (retval && callbacks->succeeded) {
+   if (retval) {
       bson_t fake_reply = BSON_INITIALIZER;
+      int64_t duration = bson_get_monotonic_time () - started;
+
       /*
        * Unacknowledged writes must provide a CommandSucceededEvent with an
        * {ok: 1} reply.
@@ -552,42 +565,71 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       if (!cmd->is_acknowledged) {
          bson_append_int32 (&fake_reply, "ok", 2, 1);
       }
-      mongoc_apm_command_succeeded_init (&succeeded_event,
-                                         bson_get_monotonic_time () - started,
-                                         cmd->is_acknowledged ? reply : &fake_reply,
+
+      mongoc_structured_log (
+         log_and_monitor->structured_log,
+         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+         "Command succeeded",
+         int32 ("requestId", request_id),
+         monotonic_time_duration (duration),
+         server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+         cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID),
+         cmd_reply (cmd, cmd->is_acknowledged ? reply : &fake_reply));
+
+      if (log_and_monitor->apm_callbacks.succeeded) {
+         mongoc_apm_command_succeeded_init (&succeeded_event,
+                                            duration,
+                                            cmd->is_acknowledged ? reply : &fake_reply,
+                                            cmd->command_name,
+                                            cmd->db_name,
+                                            request_id,
+                                            cmd->operation_id,
+                                            &server_stream->sd->host,
+                                            server_id,
+                                            &server_stream->sd->service_id,
+                                            server_stream->sd->server_connection_id,
+                                            is_redacted_by_apm,
+                                            log_and_monitor->apm_context);
+
+         log_and_monitor->apm_callbacks.succeeded (&succeeded_event);
+         mongoc_apm_command_succeeded_cleanup (&succeeded_event);
+      }
+
+      bson_destroy (&fake_reply);
+   } else {
+      int64_t duration = bson_get_monotonic_time () - started;
+
+      mongoc_structured_log (
+         log_and_monitor->structured_log,
+         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+         "Command failed",
+         int32 ("requestId", request_id),
+         monotonic_time_duration (duration),
+         server_description (server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
+         cmd (cmd, DATABASE_NAME, COMMAND_NAME, OPERATION_ID),
+         cmd_failure (cmd, reply, error));
+
+      if (log_and_monitor->apm_callbacks.failed) {
+         mongoc_apm_command_failed_init (&failed_event,
+                                         duration,
                                          cmd->command_name,
                                          cmd->db_name,
+                                         error,
+                                         reply,
                                          request_id,
                                          cmd->operation_id,
                                          &server_stream->sd->host,
                                          server_id,
                                          &server_stream->sd->service_id,
                                          server_stream->sd->server_connection_id,
-                                         is_redacted,
-                                         cluster->client->apm_context);
+                                         is_redacted_by_apm,
+                                         log_and_monitor->apm_context);
 
-      callbacks->succeeded (&succeeded_event);
-      mongoc_apm_command_succeeded_cleanup (&succeeded_event);
-      bson_destroy (&fake_reply);
-   }
-   if (!retval && callbacks->failed) {
-      mongoc_apm_command_failed_init (&failed_event,
-                                      bson_get_monotonic_time () - started,
-                                      cmd->command_name,
-                                      cmd->db_name,
-                                      error,
-                                      reply,
-                                      request_id,
-                                      cmd->operation_id,
-                                      &server_stream->sd->host,
-                                      server_id,
-                                      &server_stream->sd->service_id,
-                                      server_stream->sd->server_connection_id,
-                                      is_redacted,
-                                      cluster->client->apm_context);
-
-      callbacks->failed (&failed_event);
-      mongoc_apm_command_failed_cleanup (&failed_event);
+         log_and_monitor->apm_callbacks.failed (&failed_event);
+         mongoc_apm_command_failed_cleanup (&failed_event);
+      }
    }
 
    if (retval && _mongoc_cse_is_enabled (cluster->client)) {
@@ -928,179 +970,6 @@ _cluster_run_hello (mongoc_cluster_t *cluster,
    }
 
    return sd;
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_build_basic_auth_digest --
- *
- *       Computes the Basic Authentication digest using the credentials
- *       configured for @cluster and the @nonce provided.
- *
- *       The result should be freed by the caller using bson_free() when
- *       they are finished with it.
- *
- * Returns:
- *       A newly allocated string containing the digest.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static char *
-_mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster, const char *nonce)
-{
-   const char *username;
-   const char *password;
-   char *password_digest;
-   char *password_md5;
-   char *digest_in;
-   char *ret;
-
-   ENTRY;
-
-   /*
-    * The following generates the digest to be used for basic authentication
-    * with a MongoDB server. More information on the format can be found
-    * at the following location:
-    *
-    * https://www.mongodb.com/docs/meta-driver/latest/legacy/
-    *   implement-authentication-in-driver/
-    */
-
-   BSON_ASSERT (cluster);
-   BSON_ASSERT (cluster->uri);
-
-   username = mongoc_uri_get_username (cluster->uri);
-   password = mongoc_uri_get_password (cluster->uri);
-   password_digest = bson_strdup_printf ("%s:mongo:%s", username, password);
-   password_md5 = _mongoc_hex_md5 (password_digest);
-   digest_in = bson_strdup_printf ("%s%s%s", nonce, username, password_md5);
-   ret = _mongoc_hex_md5 (digest_in);
-   bson_free (digest_in);
-   bson_free (password_md5);
-   bson_free (password_digest);
-
-   RETURN (ret);
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_auth_node_cr --
- *
- *       Performs authentication of @node using the credentials provided
- *       when configuring the @cluster instance.
- *
- *       This is the Challenge-Response mode of authentication.
- *
- * Returns:
- *       true if authentication was successful; otherwise false and
- *       @error is set.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static bool
-_mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
-                              mongoc_stream_t *stream,
-                              mongoc_server_description_t *sd,
-                              bson_error_t *error)
-{
-   mongoc_cmd_parts_t parts;
-   bson_iter_t iter;
-   const char *auth_source;
-   bson_t command;
-   bson_t reply;
-   char *digest;
-   char *nonce;
-   bool ret;
-   mongoc_server_stream_t *server_stream;
-   mc_shared_tpld td;
-
-   ENTRY;
-
-   BSON_ASSERT (cluster);
-   BSON_ASSERT (stream);
-
-   if (!(auth_source = mongoc_uri_get_auth_source (cluster->uri)) || (*auth_source == '\0')) {
-      auth_source = "admin";
-   }
-
-   /*
-    * To authenticate a node using basic authentication, we need to first
-    * get the nonce from the server. We use that to hash our password which
-    * is sent as a reply to the server. If everything went good we get a
-    * success notification back from the server.
-    */
-
-   /*
-    * Execute the getnonce command to fetch the nonce used for generating
-    * md5 digest of our password information.
-    */
-   bson_init (&command);
-   bson_append_int32 (&command, "getnonce", 8, 1);
-   mongoc_cmd_parts_init (&parts, cluster->client, auth_source, MONGOC_QUERY_SECONDARY_OK, &command);
-   parts.prohibit_lsid = true;
-
-   td = mc_tpld_take_ref (cluster->client->topology);
-   server_stream = _mongoc_cluster_create_server_stream (td.ptr, sd, stream);
-   mc_tpld_drop_ref (&td);
-
-   if (!mongoc_cluster_run_command_parts (cluster, server_stream, &parts, &reply, error)) {
-      mongoc_server_stream_cleanup (server_stream);
-      bson_destroy (&command);
-      bson_destroy (&reply);
-      RETURN (false);
-   }
-   bson_destroy (&command);
-   if (!bson_iter_init_find_case (&iter, &reply, "nonce")) {
-      bson_set_error (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_GETNONCE, "Invalid reply from getnonce");
-      bson_destroy (&reply);
-      RETURN (false);
-   }
-
-   /*
-    * Build our command to perform the authentication.
-    */
-   nonce = bson_iter_dup_utf8 (&iter, NULL);
-   digest = _mongoc_cluster_build_basic_auth_digest (cluster, nonce);
-   bson_init (&command);
-   bson_append_int32 (&command, "authenticate", 12, 1);
-   bson_append_utf8 (&command, "user", 4, mongoc_uri_get_username (cluster->uri), -1);
-   bson_append_utf8 (&command, "nonce", 5, nonce, -1);
-   bson_append_utf8 (&command, "key", 3, digest, -1);
-   bson_destroy (&reply);
-   bson_free (nonce);
-   bson_free (digest);
-
-   /*
-    * Execute the authenticate command. mongoc_cluster_run_command_private
-    * checks for {ok: 1} in the response.
-    */
-   mongoc_cmd_parts_init (&parts, cluster->client, auth_source, MONGOC_QUERY_SECONDARY_OK, &command);
-   parts.prohibit_lsid = true;
-   ret = mongoc_cluster_run_command_parts (cluster, server_stream, &parts, &reply, error);
-
-   if (!ret) {
-      /* error->message is already set */
-      error->domain = MONGOC_ERROR_CLIENT;
-      error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
-   }
-
-   mongoc_server_stream_cleanup (server_stream);
-   bson_destroy (&command);
-   bson_destroy (&reply);
-
-   RETURN (ret);
 }
 
 
@@ -1779,9 +1648,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
       }
    }
 
-   if (0 == strcasecmp (mechanism, "MONGODB-CR")) {
-      ret = _mongoc_cluster_auth_node_cr (cluster, stream, sd, error);
-   } else if (0 == strcasecmp (mechanism, "MONGODB-X509")) {
+   if (0 == strcasecmp (mechanism, "MONGODB-X509")) {
       ret = _mongoc_cluster_auth_node_x509 (cluster, stream, sd, error);
    } else if (0 == strcasecmp (mechanism, "SCRAM-SHA-1")) {
       ret = _mongoc_cluster_auth_node_scram_sha_1 (cluster, stream, sd, error);
@@ -2175,12 +2042,12 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
          goto done;
       }
 
-      mongoc_topology_description_invalidate_server (tdmod.new_td, server_id, err_ptr);
+      mongoc_topology_description_invalidate_server (tdmod.new_td, &topology->log_and_monitor, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       /* This is not load balanced mode, so there are no service IDs associated
-       * with connections. Pass kZeroServiceId to clear the entire connection
+       * with connections. Pass kZeroObjectId to clear the entire connection
        * pool to this server. */
-      _mongoc_topology_description_clear_connection_pool (tdmod.new_td, server_id, &kZeroServiceId);
+      _mongoc_topology_description_clear_connection_pool (tdmod.new_td, server_id, &kZeroObjectId);
 
       if (!topology->single_threaded) {
          _mongoc_topology_background_monitoring_cancel_check (topology, server_id);
@@ -2582,6 +2449,7 @@ static uint32_t
 _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
                                   mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
+                                  const mongoc_ss_log_context_t *log_context,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bool *must_use_primary,
                                   const mongoc_deprioritized_servers_t *ds,
@@ -2598,13 +2466,15 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
    if (_in_sharded_txn (cs)) {
       server_id = cs->server_id;
       if (!server_id) {
-         server_id = mongoc_topology_select_server_id (topology, optype, read_prefs, must_use_primary, ds, error);
+         server_id =
+            mongoc_topology_select_server_id (topology, optype, log_context, read_prefs, must_use_primary, ds, error);
          if (server_id) {
             _mongoc_client_session_pin (cs, server_id);
          }
       }
    } else {
-      server_id = mongoc_topology_select_server_id (topology, optype, read_prefs, must_use_primary, ds, error);
+      server_id =
+         mongoc_topology_select_server_id (topology, optype, log_context, read_prefs, must_use_primary, ds, error);
       /* Transactions Spec: Additionally, any non-transaction operation using a
        * pinned ClientSession MUST unpin the session and the operation MUST
        * perform normal server selection. */
@@ -2637,6 +2507,7 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
 static mongoc_server_stream_t *
 _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
                                    mongoc_ss_optype_t optype,
+                                   const mongoc_ss_log_context_t *log_context,
                                    const mongoc_read_prefs_t *read_prefs,
                                    mongoc_client_session_t *cs,
                                    bool is_retryable,
@@ -2659,7 +2530,8 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 
    BSON_ASSERT (cluster);
 
-   server_id = _mongoc_cluster_select_server_id (cs, topology, optype, read_prefs, &must_use_primary, ds, error);
+   server_id =
+      _mongoc_cluster_select_server_id (cs, topology, optype, log_context, read_prefs, &must_use_primary, ds, error);
 
    if (!server_id) {
       if (reply) {
@@ -2671,7 +2543,8 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 
    if (!mongoc_cluster_check_interval (cluster, server_id)) {
       /* Server Selection Spec: try once more */
-      server_id = _mongoc_cluster_select_server_id (cs, topology, optype, read_prefs, &must_use_primary, ds, error);
+      server_id =
+         _mongoc_cluster_select_server_id (cs, topology, optype, log_context, read_prefs, &must_use_primary, ds, error);
 
       if (!server_id) {
          if (reply) {
@@ -2743,6 +2616,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
+                                 const mongoc_ss_log_context_t *log_context,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
                                  const mongoc_deprioritized_servers_t *ds,
@@ -2759,11 +2633,12 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
       mongoc_uri_get_option_as_bool (cluster->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
 
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_READ, prefs_override, cs, is_retryable, ds, reply, error);
+      cluster, MONGOC_SS_READ, log_context, prefs_override, cs, is_retryable, ds, reply, error);
 }
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
+                                  const mongoc_ss_log_context_t *log_context,
                                   mongoc_client_session_t *cs,
                                   const mongoc_deprioritized_servers_t *ds,
                                   bson_t *reply,
@@ -2772,11 +2647,13 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
    const bool is_retryable =
       mongoc_uri_get_option_as_bool (cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
 
-   return _mongoc_cluster_stream_for_optype (cluster, MONGOC_SS_WRITE, NULL, cs, is_retryable, ds, reply, error);
+   return _mongoc_cluster_stream_for_optype (
+      cluster, MONGOC_SS_WRITE, log_context, NULL, cs, is_retryable, ds, reply, error);
 }
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_aggr_with_write (mongoc_cluster_t *cluster,
+                                           const mongoc_ss_log_context_t *log_context,
                                            const mongoc_read_prefs_t *read_prefs,
                                            mongoc_client_session_t *cs,
                                            bson_t *reply,
@@ -2789,7 +2666,7 @@ mongoc_cluster_stream_for_aggr_with_write (mongoc_cluster_t *cluster,
       mongoc_uri_get_option_as_bool (cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
 
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_AGGREGATE_WITH_WRITE, prefs_override, cs, is_retryable, NULL, reply, error);
+      cluster, MONGOC_SS_AGGREGATE_WITH_WRITE, log_context, prefs_override, cs, is_retryable, NULL, reply, error);
 }
 
 static bool
@@ -2980,7 +2857,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
          mongoc_cluster_disconnect_node (cluster, server_id);
          tdmod = mc_tpld_modify_begin (topology);
          /* invalidate_server() is okay if 'server_id' was already removed. */
-         mongoc_topology_description_invalidate_server (tdmod.new_td, server_id, &error);
+         mongoc_topology_description_invalidate_server (tdmod.new_td, &topology->log_and_monitor, server_id, &error);
          mc_tpld_modify_commit (tdmod);
          return false;
       }
@@ -2994,7 +2871,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
       mongoc_cmd_parts_init (&parts, cluster->client, "admin", MONGOC_QUERY_SECONDARY_OK, &command);
       parts.prohibit_lsid = true;
 
-      td = mc_tpld_take_ref (cluster->client->topology);
+      td = mc_tpld_take_ref (topology);
       server_stream = _mongoc_cluster_create_server_stream (td.ptr, handshake_sd, stream);
       mc_tpld_drop_ref (&td);
 
@@ -3010,9 +2887,9 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
       if (!r) {
          mc_tpld_modification tdmod;
          mongoc_cluster_disconnect_node (cluster, server_id);
-         tdmod = mc_tpld_modify_begin (cluster->client->topology);
+         tdmod = mc_tpld_modify_begin (topology);
          /* invalidate_server() is okay if 'server_id' was already removed. */
-         mongoc_topology_description_invalidate_server (tdmod.new_td, server_id, &error);
+         mongoc_topology_description_invalidate_server (tdmod.new_td, &topology->log_and_monitor, server_id, &error);
          mc_tpld_modify_commit (tdmod);
       }
    }
@@ -3737,8 +3614,6 @@ retry:
    // selection fails or the selected server does not support retryable writes, fall through and allow the original
    // error to be reported.
    if (can_retry && _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
-      bson_error_t ignored_error;
-
       can_retry = false; // Only retry once.
 
       // Select a server.
@@ -3748,8 +3623,10 @@ retry:
          // If talking to a sharded cluster, deprioritize the just-used mongos to prefer a new mongos for the retry.
          mongoc_deprioritized_servers_add_if_sharded (ds, cmd->server_stream->topology_type, cmd->server_stream->sd);
 
-         *retry_server_stream =
-            mongoc_cluster_stream_for_writes (cluster, cmd->session, ds, NULL /* reply */, &ignored_error);
+         const mongoc_ss_log_context_t ss_log_context = {
+            .operation = cmd->command_name, .has_operation_id = true, .operation_id = cmd->operation_id};
+         *retry_server_stream = mongoc_cluster_stream_for_writes (
+            cluster, &ss_log_context, cmd->session, ds, NULL /* reply */, NULL /* error */);
 
          mongoc_deprioritized_servers_destroy (ds);
       }

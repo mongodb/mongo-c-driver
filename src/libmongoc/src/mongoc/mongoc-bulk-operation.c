@@ -15,14 +15,14 @@
  */
 
 
-#include "mongoc-bulk-operation.h"
-#include "mongoc-bulk-operation-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-opts-private.h"
-#include "mongoc-write-command-private.h"
+#include <mongoc/mongoc-bulk-operation.h>
+#include <mongoc/mongoc-bulk-operation-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-opts-private.h>
+#include <mongoc/mongoc-write-command-private.h>
 
 
 /*
@@ -408,7 +408,8 @@ _mongoc_bulk_operation_update_append (mongoc_bulk_operation_t *bulk,
                                       const bson_t *document,
                                       const mongoc_bulk_update_opts_t *update_opts,
                                       const bson_t *array_filters,
-                                      const bson_t *extra_opts)
+                                      const bson_t *extra_opts,
+                                      const bson_t *sort)
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
@@ -435,6 +436,10 @@ _mongoc_bulk_operation_update_append (mongoc_bulk_operation_t *bulk,
    has_update_hint = !!(update_opts->hint.value_type);
    if (has_update_hint) {
       bson_append_value (&opts, "hint", 4, &update_opts->hint);
+   }
+
+   if (!bson_empty0 (sort)) {
+      bson_append_document (&opts, "sort", 4, sort);
    }
 
    if (extra_opts) {
@@ -483,6 +488,7 @@ _mongoc_bulk_operation_update_with_opts (mongoc_bulk_operation_t *bulk,
                                          const bson_t *array_filters,
                                          const bson_t *extra_opts,
                                          bool multi,
+                                         const bson_t *sort,
                                          bson_error_t *error) /* OUT */
 {
    ENTRY;
@@ -507,7 +513,7 @@ _mongoc_bulk_operation_update_with_opts (mongoc_bulk_operation_t *bulk,
       RETURN (false);
    }
 
-   _mongoc_bulk_operation_update_append (bulk, selector, document, update_opts, array_filters, extra_opts);
+   _mongoc_bulk_operation_update_append (bulk, selector, document, update_opts, array_filters, extra_opts, sort);
 
    RETURN (true);
 }
@@ -538,6 +544,7 @@ mongoc_bulk_operation_update_one_with_opts (mongoc_bulk_operation_t *bulk,
                                                   &update_opts.arrayFilters,
                                                   &update_opts.extra,
                                                   false /* multi */,
+                                                  &update_opts.sort,
                                                   error);
 
    _mongoc_bulk_update_one_opts_cleanup (&update_opts);
@@ -570,6 +577,7 @@ mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t *bulk,
                                                   &update_opts.arrayFilters,
                                                   &update_opts.extra,
                                                   true /* multi */,
+                                                  NULL /* sort */,
                                                   error);
 
    _mongoc_bulk_update_many_opts_cleanup (&update_opts);
@@ -674,7 +682,8 @@ mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
       GOTO (done);
    }
 
-   _mongoc_bulk_operation_update_append (bulk, selector, document, update_opts, NULL, &repl_opts.extra);
+   _mongoc_bulk_operation_update_append (
+      bulk, selector, document, update_opts, NULL, &repl_opts.extra, &repl_opts.sort);
    ret = true;
 
 done:
@@ -768,19 +777,22 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
    }
 
    for (size_t i = 0u; i < bulk->commands.len; i++) {
+      command = &_mongoc_array_index (&bulk->commands, mongoc_write_command_t, i);
+
       if (bulk->server_id) {
          server_stream = mongoc_cluster_stream_for_server (
             cluster, bulk->server_id, true /* reconnect_ok */, bulk->session, reply, error);
       } else {
-         server_stream = mongoc_cluster_stream_for_writes (cluster, bulk->session, NULL, reply, error);
+         const mongoc_ss_log_context_t ss_log_context = {.operation = _mongoc_write_command_get_name (command),
+                                                         .has_operation_id = true,
+                                                         .operation_id = command->operation_id};
+         server_stream = mongoc_cluster_stream_for_writes (cluster, &ss_log_context, bulk->session, NULL, reply, error);
       }
 
       if (!server_stream) {
          /* stream_for_server and stream_for_writes initialize reply on error */
          RETURN (false);
       }
-
-      command = &_mongoc_array_index (&bulk->commands, mongoc_write_command_t, i);
 
       _mongoc_write_command_execute (command,
                                      bulk->client,
@@ -885,14 +897,14 @@ mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk, void *client)
       BSON_ASSERT (bulk->session->client == client);
    }
 
-   bulk->client = (mongoc_client_t *) client;
-
-   /* if you call set_client, bulk was likely made by mongoc_bulk_operation_new,
-    * not mongoc_collection_create_bulk_operation_with_opts(), so operation_id
-    * is 0. */
-   if (!bulk->operation_id) {
-      bulk->operation_id = ++bulk->client->cluster.operation_id;
+   /* NOP if the client is not changing; otherwise, assign it and increment and
+    * fetch its operation_id. */
+   if ((void *) bulk->client == client) {
+      return;
    }
+
+   bulk->client = (mongoc_client_t *) client;
+   bulk->operation_id = ++bulk->client->cluster.operation_id;
 }
 
 

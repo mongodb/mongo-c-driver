@@ -35,7 +35,7 @@ checks = [
             MONGOC_PREFIX / "mongoc-prelude.h",
             MONGOC_PREFIX / "mongoc.h",
         ],
-        "include": '#include "mongoc-prelude.h"',
+        "include": '#include <mongoc/mongoc-prelude.h>',
     },
     {
         "name": "libbson",
@@ -50,7 +50,7 @@ checks = [
         "name": "common",
         "headers": list(COMMON_PREFIX.glob("*.h")),
         "exclusions": [COMMON_PREFIX / "common-prelude.h"],
-        "include": '#include "common-prelude.h"',
+        "include": '#include <common-prelude.h>',
     },
 ]
 

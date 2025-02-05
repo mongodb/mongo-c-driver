@@ -16,7 +16,7 @@
 
 #include <mongoc/mongoc.h>
 
-#include "mongoc/mongoc-client-private.h"
+#include <mongoc/mongoc-client-private.h>
 
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"

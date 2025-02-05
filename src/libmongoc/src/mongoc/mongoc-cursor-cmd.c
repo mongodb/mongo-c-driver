@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "mongoc.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-client-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-client-private.h>
 
 typedef enum { NONE, CMD_RESPONSE, OP_GETMORE_RESPONSE } reading_from_t;
 typedef enum { UNKNOWN, GETMORE_CMD, OP_GETMORE } getmore_type_t;
@@ -42,7 +42,9 @@ _getmore_type (mongoc_cursor_t *cursor)
    if (data->getmore_type != UNKNOWN) {
       return data->getmore_type;
    }
-   server_stream = _mongoc_cursor_fetch_stream (cursor);
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = "getMore", .has_operation_id = true, .operation_id = cursor->operation_id};
+   server_stream = _mongoc_cursor_fetch_stream (cursor, &ss_log_context);
    if (!server_stream) {
       return UNKNOWN;
    }

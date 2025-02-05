@@ -112,9 +112,11 @@ if (NOT ENABLE_ZLIB STREQUAL "OFF")
    check_include_files ("stdarg.h" HAVE_STDARG_H)
    if (HAVE_UNISTD_H)
       add_definitions (-DHAVE_UNISTD_H)
+      list (APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_UNISTD_H)
    endif ()
    if (HAVE_STDARG_H)
       add_definitions (-DHAVE_STDARG_H)
+      list (APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_STDARG_H)
    endif ()
    set (MONGOC_ENABLE_COMPRESSION 1)
    set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
@@ -621,6 +623,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-list.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log-and-monitor-private.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
@@ -648,6 +651,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-download.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-upload.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-timeout.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-background-monitoring.c
@@ -664,6 +668,9 @@ set (MONGOC_SOURCES
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-b64.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-md5.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-json.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-string.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/src/common-thread.c
 
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
@@ -762,6 +769,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-file.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
@@ -929,9 +937,7 @@ if (ENABLE_SHARED)
       mongoc_shared
       PUBLIC
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common/src>
@@ -1010,9 +1016,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       mongoc_static
       PUBLIC
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
          $<BUILD_INTERFACE:${mongo-c-driver_SOURCE_DIR}/src/common/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src>
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common/src>
@@ -1031,6 +1035,7 @@ endif ()
 set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-cmp.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-atomic.c
@@ -1090,6 +1095,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find-with-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-command-logging-and-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-command-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-connection-uri.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-counters.c
@@ -1141,6 +1147,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ssl.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-streamable-hello.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-thread.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-timeout.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-description.c
@@ -1292,7 +1299,9 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    mongoc_add_example (example-gridfs ${PROJECT_SOURCE_DIR}/examples/example-gridfs.c)
    mongoc_add_example (example-gridfs-bucket ${PROJECT_SOURCE_DIR}/examples/example-gridfs-bucket.c)
    if (NOT WIN32 AND ENABLE_EXAMPLES)
+      # Examples that use pthreads
       mongoc_add_example (example-pool ${PROJECT_SOURCE_DIR}/examples/example-pool.c)
+      mongoc_add_example (example-structured-log ${PROJECT_SOURCE_DIR}/examples/example-structured-log.c)
    endif ()
    mongoc_add_example (example-scram ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
    mongoc_add_example (example-sdam-monitoring ${PROJECT_SOURCE_DIR}/examples/example-sdam-monitoring.c)

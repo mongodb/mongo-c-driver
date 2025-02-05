@@ -1,7 +1,7 @@
 #include <mongoc/mongoc.h>
 
 #include "json-test.h"
-#include "mongoc/mongoc-client-session-private.h"
+#include <mongoc/mongoc-client-session-private.h>
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 

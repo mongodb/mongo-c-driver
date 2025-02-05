@@ -1,10 +1,10 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/mongoc-host-list-private.h"
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-host-list-private.h>
 
 #include "TestSuite.h"
 
@@ -338,14 +338,6 @@ test_mongoc_uri_new (void)
    ASSERT (uri);
    mongoc_uri_destroy (uri);
 
-   /* MONGODB-CR */
-
-   /* should recognize this mechanism */
-   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-CR");
-   ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-CR");
-   mongoc_uri_destroy (uri);
-
    /* X509 */
 
    /* should recognize this mechanism, and use $external as the source */
@@ -408,9 +400,6 @@ test_mongoc_uri_authmechanismproperties (void)
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
    ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
    ASSERT_MATCH (&props, "{'a': 'one', 'b': 'two'}");
-
-   ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-CR"));
-   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-CR");
 
    /* prohibited */
    ASSERT (!mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_AUTHMECHANISM, "SCRAM-SHA1"));
@@ -2243,18 +2232,20 @@ test_parses_long_ipv6 (void)
    // Test the largest permitted IPv6 literal.
    {
       // Construct a string of repeating `:`.
-      mcommon_string_t *host = mcommon_string_new (NULL);
+      mcommon_string_append_t host;
+      mcommon_string_new_as_append (&host);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2; i++) {
          // Max IPv6 literal is two less due to including `[` and `]`.
-         mcommon_string_append (host, ":");
+         mcommon_string_append (&host, ":");
       }
+      const char *host_str = mcommon_str_from_append (&host);
 
-      char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
+      char *host_and_port = bson_strdup_printf ("[%s]:27017", host_str);
       char *uri_string = bson_strdup_printf ("mongodb://%s", host_and_port);
       mongoc_uri_t *uri = mongoc_uri_new_with_error (uri_string, &error);
       ASSERT_OR_PRINT (uri, error);
       const mongoc_host_list_t *hosts = mongoc_uri_get_hosts (uri);
-      ASSERT_CMPSTR (hosts->host, host->str);
+      ASSERT_CMPSTR (hosts->host, host_str);
       ASSERT_CMPSTR (hosts->host_and_port, host_and_port);
       ASSERT_CMPUINT16 (hosts->port, ==, 27017);
       ASSERT (!hosts->next);
@@ -2262,18 +2253,20 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      mcommon_string_free (host, true /* free_segment */);
+      mcommon_string_from_append_destroy (&host);
    }
 
    // Test one character more than the largest IPv6 literal.
    {
       // Construct a string of repeating `:`.
-      mcommon_string_t *host = mcommon_string_new (NULL);
+      mcommon_string_append_t host;
+      mcommon_string_new_as_append (&host);
       for (int i = 0; i < BSON_HOST_NAME_MAX - 2 + 1; i++) {
-         mcommon_string_append (host, ":");
+         mcommon_string_append (&host, ":");
       }
+      const char *host_str = mcommon_str_from_append (&host);
 
-      char *host_and_port = bson_strdup_printf ("[%s]:27017", host->str);
+      char *host_and_port = bson_strdup_printf ("[%s]:27017", host_str);
       char *uri_string = bson_strdup_printf ("mongodb://%s", host_and_port);
       capture_logs (true);
       mongoc_uri_t *uri = mongoc_uri_new_with_error (uri_string, &error);
@@ -2289,7 +2282,7 @@ test_parses_long_ipv6 (void)
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
       bson_free (host_and_port);
-      mcommon_string_free (host, true /* free_segment */);
+      mcommon_string_from_append_destroy (&host);
    }
 }
 

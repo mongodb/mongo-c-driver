@@ -22,21 +22,21 @@
 #include <math.h>
 
 /* strcasecmp on windows */
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc-util-private.h>
 
-#include "mongoc-config.h"
-#include "mongoc-host-list.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-log.h"
-#include "mongoc-handshake-private.h"
-#include "mongoc-socket.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-uri-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-write-concern-private.h"
-#include "mongoc-compression-private.h"
-#include "utlist.h"
-#include "mongoc-trace-private.h"
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-socket.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-compression-private.h>
+#include <mongoc/utlist.h>
+#include <mongoc/mongoc-trace-private.h>
 
 #include <common-bson-dsl-private.h>
 #include <common-string-private.h>
@@ -1961,7 +1961,7 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
    /* Auth spec:
     * "For GSSAPI and MONGODB-X509 authMechanisms the authSource defaults to
     * $external. For PLAIN the authSource defaults to the database name if
-    * supplied on the connection string or $external. For MONGODB-CR,
+    * supplied on the connection string or $external. For
     * SCRAM-SHA-1 and SCRAM-SHA-256 authMechanisms, the authSource defaults to
     * the database name if supplied on the connection string or admin."
     */
@@ -2218,7 +2218,6 @@ char *
 mongoc_uri_unescape (const char *escaped_string)
 {
    bson_unichar_t c;
-   mcommon_string_t *str;
    unsigned int hex = 0;
    const char *ptr;
    const char *end;
@@ -2239,7 +2238,9 @@ mongoc_uri_unescape (const char *escaped_string)
 
    ptr = escaped_string;
    end = ptr + len;
-   str = mcommon_string_new (NULL);
+
+   mcommon_string_append_t append;
+   mcommon_string_new_with_capacity_as_append (&append, len);
 
    for (; *ptr; ptr = bson_utf8_next_char (ptr)) {
       c = bson_utf8_get_char (ptr);
@@ -2252,28 +2253,32 @@ mongoc_uri_unescape (const char *escaped_string)
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
              || 0 == hex) {
-            mcommon_string_free (str, true);
+            mcommon_string_from_append_destroy (&append);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
          }
-         mcommon_string_append_c (str, hex);
+
+         // This isn't guaranteed to be valid UTF-8, we check again below
+         char byte = (char) hex;
+         mcommon_string_append_bytes (&append, &byte, 1);
          ptr += 2;
          unescape_occurred = true;
          break;
       default:
-         mcommon_string_append_unichar (str, c);
+         mcommon_string_append_unichar (&append, c);
          break;
       }
    }
 
    /* Check that after unescaping, it is still valid UTF-8 */
-   if (unescape_occurred && !bson_utf8_validate (str->str, str->len, false)) {
+   if (unescape_occurred &&
+       !bson_utf8_validate (mcommon_str_from_append (&append), mcommon_strlen_from_append (&append), false)) {
       MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
-      mcommon_string_free (str, true);
+      mcommon_string_from_append_destroy (&append);
       return NULL;
    }
 
-   return mcommon_string_free (str, false);
+   return mcommon_string_from_append_destroy_with_steal (&append);
 }
 
 

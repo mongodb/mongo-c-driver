@@ -15,13 +15,15 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('debian10',          'gcc',       None, ['cyrus']),
-    ('debian11',          'gcc',       None, ['cyrus']),
-    ('debian92',          'clang',     None, ['cyrus']),
-    ('debian92',          'gcc',       None, ['cyrus']),
+    ('debian92', 'clang', None, ['cyrus']),
+    ('debian92', 'gcc',   None, ['cyrus']),
+    ('debian10', 'clang', None, ['cyrus']),
+    ('debian10', 'gcc',   None, ['cyrus']),
+    ('debian11', 'clang', None, ['cyrus']),
+    ('debian11', 'gcc',   None, ['cyrus']),
     ('rhel80',            'gcc',       None, ['cyrus']),
-    ('rhel83-zseries',    'gcc',       None, ['cyrus']),
-    ('ubuntu2004',        'clang',       None, ['cyrus']),
+    ('rhel8-zseries',     'gcc',       None, ['cyrus']),
+    ('ubuntu2004',        'clang',     None, ['cyrus']),
     ('ubuntu2004',        'gcc',       None, ['cyrus']),
     ('ubuntu2004-arm64',  'gcc',       None, ['cyrus']),
     ('windows-vsCurrent', 'vs2017x64', None, ['cyrus']),
@@ -29,20 +31,19 @@ COMPILE_MATRIX = [
 
 # TODO (CDRIVER-3789): test cse with the 'sharded' topology.
 TEST_MATRIX = [
-    # 4.2 and 4.4 not available on rhel83-zseries.
-    ('rhel83-zseries', 'gcc', None, 'cyrus', ['auth'], ['server'], ['5.0']),
-    
+    # 4.2 and 4.4 not available on rhel8-zseries.
+    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server'], ['5.0']),
+
     ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0' ]),
 
     # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
     ('ubuntu2004',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
+    ('rhel8-zseries',     'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
     ('ubuntu2004-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
     ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
 
     # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
     ('debian10',          'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2']),
-    
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -80,7 +81,7 @@ def tasks():
 
     # PowerPC and zSeries are limited resources.
     for task in res:
-        if any(pattern in task.run_on for pattern in ["power8", "zseries"]):
+        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
             task.patchable = False
 
     return res
@@ -95,7 +96,7 @@ def variants():
 
     # PowerPC and zSeries are limited resources.
     for task in TASKS:
-        if any(pattern in task.run_on for pattern in ["power8", "zseries"]):
+        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
             tasks.append(
                 TaskRef(
                     name=task.name,

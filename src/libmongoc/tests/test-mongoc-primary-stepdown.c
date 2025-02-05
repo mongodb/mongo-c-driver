@@ -2,11 +2,11 @@
 // `Connections Survive Primary Step Down Tests`. See:
 // https://github.com/mongodb/specifications/tree/db3114e957f7c0976a1af09882dbb46cb4a70049/source/connections-survive-step-down/tests
 
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-read-concern-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-topology-private.h"
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-topology-private.h>
 
 #include "json-test.h"
 #include "TestSuite.h"
@@ -154,6 +154,7 @@ test_getmore_iteration (mongoc_client_t *client)
     * connection counts. */
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  TEST_SS_LOG_CONTEXT,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,
@@ -241,6 +242,7 @@ test_not_primary_keep_pool (mongoc_client_t *client)
     * connection counts. */
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  TEST_SS_LOG_CONTEXT,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,
@@ -312,6 +314,7 @@ test_not_primary_reset_pool (mongoc_client_t *client)
     * connection counts. */
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  TEST_SS_LOG_CONTEXT,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,
@@ -387,6 +390,7 @@ test_shutdown_reset_pool (mongoc_client_t *client)
     * connection counts. */
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  TEST_SS_LOG_CONTEXT,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,
@@ -456,6 +460,7 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
     * connection counts. */
    primary_id = mongoc_topology_select_server_id (client->topology,
                                                   MONGOC_SS_WRITE,
+                                                  TEST_SS_LOG_CONTEXT,
                                                   NULL /* read prefs */,
                                                   NULL /* chosen read mode */,
                                                   NULL /* deprioritized servers */,

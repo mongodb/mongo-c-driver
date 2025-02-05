@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_WRITE_COMMAND_PRIVATE_H
 #define MONGOC_WRITE_COMMAND_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc-client.h"
-#include "mongoc-error.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-server-stream-private.h"
-#include "mongoc-buffer-private.h"
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-write-concern.h>
+#include <mongoc/mongoc-server-stream-private.h>
+#include <mongoc/mongoc-buffer-private.h>
 
 
 BSON_BEGIN_DECLS
@@ -181,6 +181,8 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
                                    uint32_t offset,
                                    const struct _mongoc_crud_opts_t *crud,
                                    mongoc_write_result_t *result);
+const char *
+_mongoc_write_command_get_name (const mongoc_write_command_t *command);
 void
 _mongoc_write_result_init (mongoc_write_result_t *result);
 #define MONGOC_WRITE_RESULT_COMPLETE(_result, ...) _mongoc_write_result_complete (_result, __VA_ARGS__, NULL)

@@ -47,9 +47,9 @@ install_openssl() {
   declare ssl_version="${SSL##openssl-}"
   declare tmp
   tmp="$(echo "${ssl_version:?}" | tr . _)"
-  curl -L --retry 5 -o ssl.tar.gz "https://github.com/openssl/openssl/archive/OpenSSL_${tmp}.tar.gz"
+  curl -L --retry 5 -o ssl.tar.gz "https://github.com/openssl/openssl/releases/download/OpenSSL_${tmp}/openssl-${ssl_version}.tar.gz"
   tar zxf ssl.tar.gz
-  pushd "openssl-OpenSSL_${tmp}"
+  pushd "openssl-${ssl_version}"
   (
     set -o xtrace
     ./config --prefix="${openssl_install_dir}" "${ssl_extra_flags[@]}" shared -fPIC
@@ -61,11 +61,11 @@ install_openssl() {
     make -j
     make install_sw
   ) >/dev/null
-  popd # "openssl-OpenSSL_${tmp}"
+  popd # "openssl-${ssl_version}"
 }
 
 install_openssl_fips() {
-  curl --retry 5 -o fips.tar.gz https://www.openssl.org/source/openssl-fips-2.0.16.tar.gz
+  curl -L --retry 5 -o fips.tar.gz https://github.com/openssl/openssl/releases/download/OpenSSL-fips-2_0_16/openssl-fips-2.0.16.tar.gz
   tar zxf fips.tar.gz
   pushd openssl-fips-2.0.16
   (
