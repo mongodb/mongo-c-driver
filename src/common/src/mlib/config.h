@@ -254,4 +254,53 @@
    MLIB_IF_MSVC (mlib_pragma (warning (__VA_ARGS__));) \
    mlib_static_assert (true, "")
 
+/**
+ * @brief Attribute macro that forces the function to be inlined at all call sites.
+ *
+ * Don't use this unless you really know that you need it, lest you generate code
+ * bloat when the compiler's heuristics would do a better job.
+ */
 #define mlib_always_inline MLIB_IF_GNU_LIKE (__attribute__ ((always_inline)) inline) MLIB_IF_MSVC (__forceinline)
+
+// clang-format off
+/**
+ * @brief Expand to `1` if the current build configuration matches the given token.
+ *
+ * If the token is not a known valid build configuration, generates a compilation
+ * error (check your spelling!)
+ *
+ * Requires that `_MLIB_BUILD_CONFIG` is defined, otherwise always expands to `0`
+ */
+#define mlib_build_config_is(Config) \
+   /* If `Config` is a recognized config, this line will disappear, */ \
+   /* other wise it will be a "call to undefined macro": */ \
+   MLIB_PASTE_4 (_mlibTestBuildConfig_, Config, _, Config) () \
+   /* If `Config` is the same token as `_MLIB_BUILD_CONFIG`, this will */ \
+   /* expand to `1`, otherwise it will expand to `0` */ \
+   MLIB_IS_EMPTY (MLIB_PASTE_4 (_mlibTestBuildConfig_, Config, _, _MLIB_BUILD_CONFIG) ())
+// clang-format on
+// Known build configurations:
+#define _mlibTestBuildConfig_Release_Release()
+#define _mlibTestBuildConfig_Debug_Debug()
+#define _mlibTestBuildConfig_RelWithDebInfo_RelWithDebInfo()
+#define _mlibTestBuildConfig_MinSizeRel_MinSizeRel()
+
+/**
+ * @brief Function-like macro that expands to `1` if we are certain that we are
+ * compiling with optimizations enabled.
+ *
+ * This may yield `0` if we cannot determine whether optimization is turned on.
+ *
+ * This macro should be used with care, as different translation units can see different values,
+ * but still be linked together in the final program. Beware generating ODR violations.
+ */
+#define mlib_is_optimized_build() _mlibIsOptimizedBuild ()
+
+#if mlib_build_config_is(Release) || mlib_build_config_is(RelWithDebInfo) || mlib_build_config_is(MinSizeRel) || \
+   (defined(__OPTIMIZE__) && __OPTIMIZE__)
+// Preproc definition __OPTIMIZE__set by GCC ang Clang when the optimizer is enabled.
+// MSVC has no such definition, so we rely on CMake to tell us when we are compiling in release mode
+#define _mlibIsOptimizedBuild() 1
+#else
+#define _mlibIsOptimizedBuild() 0
+#endif

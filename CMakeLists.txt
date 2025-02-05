@@ -233,6 +233,9 @@ mongo_bool_setting(
    ]]
 )
 
+# Announce the build configuration. Used by `mlib_build_config_is()` in `mlib/config.h`
+add_compile_definitions(_MLIB_BUILD_CONFIG=$<CONFIG>)
+
 if(ENABLE_COVERAGE)
    mongo_platform_link_options(--coverage)
    mongo_platform_compile_options($<BUILD_INTERFACE:--coverage>)

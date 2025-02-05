@@ -55,13 +55,25 @@ enum mlib_cmp_result {
  */
 #define mlib_cmp(...) MLIB_ARGC_PICK (_mlib_cmp, __VA_ARGS__)
 // Compare two integers, and return the result of that comparison:
-#define _mlib_cmp_argc_2(L, R) mlib_cmp (mlib_upsize_integer ((L)), mlib_upsize_integer ((R)))
+#define _mlib_cmp_argc_2(L, R) mlib_cmp (mlib_upsize_integer ((L)), mlib_upsize_integer ((R)), 0)
 // Compare two integers, but with an infix operator:
-#define _mlib_cmp_argc_3(L, Op, R) (mlib_cmp (mlib_upsize_integer ((L)), mlib_upsize_integer ((R))) Op 0)
+#define _mlib_cmp_argc_3(L, Op, R) (mlib_cmp (mlib_upsize_integer ((L)), mlib_upsize_integer ((R)), 0) Op 0)
 // Impl for mlib_cmp
 mlib_always_inline static enum mlib_cmp_result (mlib_cmp) (struct mlib_upsized_integer x,
-                                                           struct mlib_upsized_integer y) mlib_noexcept
+                                                           struct mlib_upsized_integer y,
+                                                           int always_zero) mlib_noexcept
 {
+#if mlib_is_optimized_build() && !(defined(MLIB_DISABLE_INLINING_ASSERTIONS) && MLIB_DISABLE_INLINING_ASSERTIONS)
+   if (always_zero != 0) {
+      // All calls must pass zero for `always_zero`. In optimized builds, we assert that this function
+      // is always inlined, and that dead-code-elim triggers to delete this branch that calls
+      // a never-defined function.
+      extern void __assert_that_mlib_cmp_was_inlined (void);
+      // If you see a call to this function ↑ produce a link error here ↓, it means
+      // that inlining or DCE failed within the relevant translation unit.
+      __assert_that_mlib_cmp_was_inlined ();
+   }
+#endif
    if (x.is_signed) {
       if (y.is_signed) {
          // Both signed
