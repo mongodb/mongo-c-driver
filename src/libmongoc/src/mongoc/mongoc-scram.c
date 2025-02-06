@@ -32,7 +32,6 @@
 #include <common-thread-private.h>
 #include <utf8proc.h>
 #include <mlib/cmp.h>
-#include <mlib/cmp.h>
 
 typedef struct _mongoc_scram_cache_entry_t {
    /* book keeping */
