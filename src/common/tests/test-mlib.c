@@ -86,6 +86,180 @@ _test_cmp (void)
    ASSERT (mlib_cmp (1, 1) == 0);
    ASSERT (mlib_cmp (1, ==, 1));
 
+   ASSERT (mlib_cmp (0, ==, 0));
+   ASSERT (!mlib_cmp (0, ==, -1));
+   ASSERT (!mlib_cmp (0, ==, 1));
+   ASSERT (!mlib_cmp (-1, ==, 0));
+   ASSERT (mlib_cmp (-1, ==, -1));
+   ASSERT (!mlib_cmp (-1, ==, 1));
+   ASSERT (!mlib_cmp (1, ==, 0));
+   ASSERT (!mlib_cmp (1, ==, -1));
+   ASSERT (mlib_cmp (1, ==, 1));
+
+   ASSERT (mlib_cmp (0u, ==, 0u));
+   ASSERT (!mlib_cmp (0u, ==, 1u));
+   ASSERT (!mlib_cmp (1u, ==, 0u));
+   ASSERT (mlib_cmp (1u, ==, 1u));
+
+   ASSERT (mlib_cmp (0, ==, 0u));
+   ASSERT (!mlib_cmp (0, ==, 1u));
+   ASSERT (!mlib_cmp (-1, ==, 0u));
+   ASSERT (!mlib_cmp (-1, ==, 1u));
+   ASSERT (!mlib_cmp (1, ==, 0u));
+   ASSERT (mlib_cmp (1, ==, 1u));
+
+   ASSERT (mlib_cmp (0u, ==, 0));
+   ASSERT (!mlib_cmp (0u, ==, -1));
+   ASSERT (!mlib_cmp (0u, ==, 1));
+   ASSERT (!mlib_cmp (1u, ==, 0));
+   ASSERT (!mlib_cmp (1u, ==, -1));
+   ASSERT (mlib_cmp (1u, ==, 1));
+
+   ASSERT (!mlib_cmp (0, !=, 0));
+   ASSERT (mlib_cmp (0, !=, -1));
+   ASSERT (mlib_cmp (0, !=, 1));
+   ASSERT (mlib_cmp (-1, !=, 0));
+   ASSERT (!mlib_cmp (-1, !=, -1));
+   ASSERT (mlib_cmp (-1, !=, 1));
+   ASSERT (mlib_cmp (1, !=, 0));
+   ASSERT (mlib_cmp (1, !=, -1));
+   ASSERT (!mlib_cmp (1, !=, 1));
+
+   ASSERT (!mlib_cmp (0u, !=, 0u));
+   ASSERT (mlib_cmp (0u, !=, 1u));
+   ASSERT (mlib_cmp (1u, !=, 0u));
+   ASSERT (!mlib_cmp (1u, !=, 1u));
+
+   ASSERT (!mlib_cmp (0, !=, 0u));
+   ASSERT (mlib_cmp (0, !=, 1u));
+   ASSERT (mlib_cmp (-1, !=, 0u));
+   ASSERT (mlib_cmp (-1, !=, 1u));
+   ASSERT (mlib_cmp (1, !=, 0u));
+   ASSERT (!mlib_cmp (1, !=, 1u));
+
+   ASSERT (!mlib_cmp (0u, !=, 0));
+   ASSERT (mlib_cmp (0u, !=, -1));
+   ASSERT (mlib_cmp (0u, !=, 1));
+   ASSERT (mlib_cmp (1u, !=, 0));
+   ASSERT (mlib_cmp (1u, !=, -1));
+   ASSERT (!mlib_cmp (1u, !=, 1));
+
+   ASSERT (!mlib_cmp (0, <, 0));
+   ASSERT (!mlib_cmp (0, <, -1));
+   ASSERT (mlib_cmp (0, <, 1));
+   ASSERT (mlib_cmp (-1, <, 0));
+   ASSERT (!mlib_cmp (-1, <, -1));
+   ASSERT (mlib_cmp (-1, <, 1));
+   ASSERT (!mlib_cmp (1, <, 0));
+   ASSERT (!mlib_cmp (1, <, -1));
+   ASSERT (!mlib_cmp (1, <, 1));
+
+   ASSERT (!mlib_cmp (0u, <, 0u));
+   ASSERT (mlib_cmp (0u, <, 1u));
+   ASSERT (!mlib_cmp (1u, <, 0u));
+   ASSERT (!mlib_cmp (1u, <, 1u));
+
+   ASSERT (!mlib_cmp (0, <, 0u));
+   ASSERT (mlib_cmp (0, <, 1u));
+   ASSERT (mlib_cmp (-1, <, 0u));
+   ASSERT (mlib_cmp (-1, <, 1u));
+   ASSERT (!mlib_cmp (1, <, 0u));
+   ASSERT (!mlib_cmp (1, <, 1u));
+
+   ASSERT (!mlib_cmp (0u, <, 0));
+   ASSERT (!mlib_cmp (0u, <, -1));
+   ASSERT (mlib_cmp (0u, <, 1));
+   ASSERT (!mlib_cmp (1u, <, 0));
+   ASSERT (!mlib_cmp (1u, <, -1));
+   ASSERT (!mlib_cmp (1u, <, 1));
+
+   ASSERT (!mlib_cmp (0, >, 0));
+   ASSERT (mlib_cmp (0, >, -1));
+   ASSERT (!mlib_cmp (0, >, 1));
+   ASSERT (!mlib_cmp (-1, >, 0));
+   ASSERT (!mlib_cmp (-1, >, -1));
+   ASSERT (!mlib_cmp (-1, >, 1));
+   ASSERT (mlib_cmp (1, >, 0));
+   ASSERT (mlib_cmp (1, >, -1));
+   ASSERT (!mlib_cmp (1, >, 1));
+
+   ASSERT (!mlib_cmp (0u, >, 0u));
+   ASSERT (!mlib_cmp (0u, >, 1u));
+   ASSERT (mlib_cmp (1u, >, 0u));
+   ASSERT (!mlib_cmp (1u, >, 1u));
+
+   ASSERT (!mlib_cmp (0, >, 0u));
+   ASSERT (!mlib_cmp (0, >, 1u));
+   ASSERT (!mlib_cmp (-1, >, 0u));
+   ASSERT (!mlib_cmp (-1, >, 1u));
+   ASSERT (mlib_cmp (1, >, 0u));
+   ASSERT (!mlib_cmp (1, >, 1u));
+
+   ASSERT (!mlib_cmp (0u, >, 0));
+   ASSERT (mlib_cmp (0u, >, -1));
+   ASSERT (!mlib_cmp (0u, >, 1));
+   ASSERT (mlib_cmp (1u, >, 0));
+   ASSERT (mlib_cmp (1u, >, -1));
+   ASSERT (!mlib_cmp (1u, >, 1));
+
+   ASSERT (mlib_cmp (0, <=, 0));
+   ASSERT (!mlib_cmp (0, <=, -1));
+   ASSERT (mlib_cmp (0, <=, 1));
+   ASSERT (mlib_cmp (-1, <=, 0));
+   ASSERT (mlib_cmp (-1, <=, -1));
+   ASSERT (mlib_cmp (-1, <=, 1));
+   ASSERT (!mlib_cmp (1, <=, 0));
+   ASSERT (!mlib_cmp (1, <=, -1));
+   ASSERT (mlib_cmp (1, <=, 1));
+
+   ASSERT (mlib_cmp (0u, <=, 0u));
+   ASSERT (mlib_cmp (0u, <=, 1u));
+   ASSERT (!mlib_cmp (1u, <=, 0u));
+   ASSERT (mlib_cmp (1u, <=, 1u));
+
+   ASSERT (mlib_cmp (0, <=, 0u));
+   ASSERT (mlib_cmp (0, <=, 1u));
+   ASSERT (mlib_cmp (-1, <=, 0u));
+   ASSERT (mlib_cmp (-1, <=, 1u));
+   ASSERT (!mlib_cmp (1, <=, 0u));
+   ASSERT (mlib_cmp (1, <=, 1u));
+
+   ASSERT (mlib_cmp (0u, <=, 0));
+   ASSERT (!mlib_cmp (0u, <=, -1));
+   ASSERT (mlib_cmp (0u, <=, 1));
+   ASSERT (!mlib_cmp (1u, <=, 0));
+   ASSERT (!mlib_cmp (1u, <=, -1));
+   ASSERT (mlib_cmp (1u, <=, 1));
+
+   ASSERT (mlib_cmp (0, >=, 0));
+   ASSERT (mlib_cmp (0, >=, -1));
+   ASSERT (!mlib_cmp (0, >=, 1));
+   ASSERT (!mlib_cmp (-1, >=, 0));
+   ASSERT (mlib_cmp (-1, >=, -1));
+   ASSERT (!mlib_cmp (-1, >=, 1));
+   ASSERT (mlib_cmp (1, >=, 0));
+   ASSERT (mlib_cmp (1, >=, -1));
+   ASSERT (mlib_cmp (1, >=, 1));
+
+   ASSERT (mlib_cmp (0u, >=, 0u));
+   ASSERT (!mlib_cmp (0u, >=, 1u));
+   ASSERT (mlib_cmp (1u, >=, 0u));
+   ASSERT (mlib_cmp (1u, >=, 1u));
+
+   ASSERT (mlib_cmp (0, >=, 0u));
+   ASSERT (!mlib_cmp (0, >=, 1u));
+   ASSERT (!mlib_cmp (-1, >=, 0u));
+   ASSERT (!mlib_cmp (-1, >=, 1u));
+   ASSERT (mlib_cmp (1, >=, 0u));
+   ASSERT (mlib_cmp (1, >=, 1u));
+
+   ASSERT (mlib_cmp (0u, >=, 0));
+   ASSERT (mlib_cmp (0u, >=, -1));
+   ASSERT (!mlib_cmp (0u, >=, 1));
+   ASSERT (mlib_cmp (1u, >=, 0));
+   ASSERT (mlib_cmp (1u, >=, -1));
+   ASSERT (mlib_cmp (1u, >=, 1));
+
    size_t big_size = SIZE_MAX;
    ASSERT (mlib_cmp (42, big_size) == mlib_less);
    ASSERT (mlib_cmp (big_size, big_size) == mlib_equal);
@@ -108,6 +282,17 @@ _test_cmp (void)
 void
 _test_in_range (void)
 {
+   const int64_t int8_min = INT8_MIN;
+   const int64_t int8_max = INT8_MAX;
+   const int64_t int32_min = INT32_MIN;
+   const int64_t int32_max = INT32_MAX;
+
+   const uint64_t uint8_max = UINT8_MAX;
+   const uint64_t uint32_max = UINT32_MAX;
+
+   const ssize_t ssize_min = SSIZE_MIN;
+   const ssize_t ssize_max = SSIZE_MAX;
+
    ASSERT (!mlib_in_range (int8_t, 1729));
    ASSERT (!mlib_in_range (int, SIZE_MAX));
    ASSERT (mlib_in_range (size_t, SIZE_MAX));
@@ -115,6 +300,66 @@ _test_in_range (void)
    ASSERT (mlib_in_range (int8_t, -42));
    ASSERT (mlib_in_range (int8_t, -128));
    ASSERT (!mlib_in_range (int8_t, -129));
+
+   ASSERT (!mlib_in_range (int8_t, int8_min - 1));
+   ASSERT (mlib_in_range (int8_t, int8_min));
+   ASSERT (mlib_in_range (int8_t, 0));
+   ASSERT (mlib_in_range (int8_t, int8_max));
+   ASSERT (!mlib_in_range (int8_t, int8_max + 1));
+
+   ASSERT (mlib_in_range (int8_t, 0u));
+   ASSERT (mlib_in_range (int8_t, (uint64_t) int8_max));
+   ASSERT (!mlib_in_range (int8_t, (uint64_t) (int8_max + 1)));
+
+   ASSERT (!mlib_in_range (uint8_t, int8_min - 1));
+   ASSERT (!mlib_in_range (uint8_t, int8_min));
+   ASSERT (mlib_in_range (uint8_t, 0));
+   ASSERT (mlib_in_range (uint8_t, int8_max));
+   ASSERT (mlib_in_range (uint8_t, int8_max + 1));
+   ASSERT (mlib_in_range (uint8_t, (int64_t) uint8_max));
+   ASSERT (!mlib_in_range (uint8_t, (int64_t) uint8_max + 1));
+
+   ASSERT (mlib_in_range (uint8_t, 0u));
+   ASSERT (mlib_in_range (uint8_t, uint8_max));
+   ASSERT (!mlib_in_range (uint8_t, uint8_max + 1u));
+
+   ASSERT (!mlib_in_range (int32_t, int32_min - 1));
+   ASSERT (mlib_in_range (int32_t, int32_min));
+   ASSERT (mlib_in_range (int32_t, 0));
+   ASSERT (mlib_in_range (int32_t, int32_max));
+   ASSERT (!mlib_in_range (int32_t, int32_max + 1));
+
+   ASSERT (mlib_in_range (int32_t, 0u));
+   ASSERT (mlib_in_range (int32_t, (uint64_t) int32_max));
+   ASSERT (!mlib_in_range (int32_t, (uint64_t) (int32_max + 1)));
+
+   ASSERT (!mlib_in_range (uint32_t, int32_min - 1));
+   ASSERT (!mlib_in_range (uint32_t, int32_min));
+   ASSERT (mlib_in_range (uint32_t, 0));
+   ASSERT (mlib_in_range (uint32_t, int32_max));
+   ASSERT (mlib_in_range (uint32_t, int32_max + 1));
+   ASSERT (mlib_in_range (uint32_t, (int64_t) uint32_max));
+   ASSERT (!mlib_in_range (uint32_t, (int64_t) uint32_max + 1));
+
+   ASSERT (mlib_in_range (uint32_t, 0u));
+   ASSERT (mlib_in_range (uint32_t, uint32_max));
+   ASSERT (!mlib_in_range (uint32_t, uint32_max + 1u));
+
+   ASSERT (mlib_in_range (ssize_t, ssize_min));
+   ASSERT (mlib_in_range (ssize_t, 0));
+   ASSERT (mlib_in_range (ssize_t, ssize_max));
+
+   ASSERT (mlib_in_range (ssize_t, 0u));
+   ASSERT (mlib_in_range (ssize_t, (size_t) ssize_max));
+   ASSERT (!mlib_in_range (ssize_t, (size_t) ssize_max + 1u));
+
+   ASSERT (!mlib_in_range (size_t, ssize_min));
+   ASSERT (mlib_in_range (size_t, 0));
+   ASSERT (mlib_in_range (size_t, ssize_max));
+
+   ASSERT (mlib_in_range (size_t, 0u));
+   ASSERT (mlib_in_range (size_t, (size_t) ssize_max));
+   ASSERT (mlib_in_range (size_t, (size_t) ssize_max + 1u));
 }
 
 void

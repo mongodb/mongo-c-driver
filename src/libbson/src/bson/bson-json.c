@@ -26,9 +26,9 @@
 #include <bson/bson-json-private.h>
 #include <bson/bson-iso8601-private.h>
 
+#include <mlib/cmp.h>
 #include <common-b64-private.h>
 #include <jsonsl/jsonsl.h>
-#include <common-cmp-private.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -2071,7 +2071,7 @@ bson_json_reader_read (bson_json_reader_t *reader, /* IN */
 
          /* accumulate a key or string value */
          if (reader->json_text_pos != -1) {
-            if (mcommon_cmp_less_su (reader->json_text_pos, reader->json->pos)) {
+            if (mlib_cmp (reader->json_text_pos, <, reader->json->pos)) {
                BSON_ASSERT (mlib_in_range (ssize_t, reader->json->pos));
                accum = BSON_MIN ((ssize_t) reader->json->pos - reader->json_text_pos, r);
                /* if this chunk stopped mid-token, buf_offset is how far into
