@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.29.2
+%global up_version   1.30.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -27,7 +27,7 @@
 Name:      mongo-c-driver
 Summary:   Client library written in C for MongoDB
 Version:   %{up_version}%{?up_prever:~%{up_prever}}
-Release:   2%{?dist}
+Release:   1%{?dist}
 # See THIRD_PARTY_NOTICES
 License:   Apache-2.0 AND ISC AND MIT AND Zlib
 URL:       https://github.com/%{gh_owner}/%{gh_project}
@@ -259,6 +259,9 @@ exit $ret
 
 
 %changelog
+* Thu Feb  6 2025 Remi Collet <remi@remirepo.net> - 1.30.0-1
+- update to 1.30.0
+
 * Fri Jan 17 2025 Fedora Release Engineering <releng@fedoraproject.org> - 1.29.2-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_42_Mass_Rebuild
 
