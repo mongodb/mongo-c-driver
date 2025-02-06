@@ -86,9 +86,9 @@ mlib_always_inline static enum mlib_cmp_result (mlib_cmp) (struct mlib_upsized_i
          }
       } else {
          // X signed, Y unsigned
-         if (x.i.s < 0 || y.i.u > (uintmax_t) x.i.s) {
+         if (x.i.s < 0 || (uintmax_t) x.i.s < y.i.u) {
             return mlib_less;
-         } else if (y.i.u < (uintmax_t) x.i.s) {
+         } else if ((uintmax_t) x.i.s > y.i.u) {
             return mlib_greater;
          }
       }
