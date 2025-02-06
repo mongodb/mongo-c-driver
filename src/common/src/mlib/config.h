@@ -1,7 +1,12 @@
 /**
- * @file config.h
+ * @file mlib/config.h
  * @brief Provides utility macros
  * @date 2024-08-29
+ *
+ * @note This file is intented to be standalone-includable, with no dependencies
+ * other than the standard library and platform headers. This file (and other
+ * `mlib` files), are for internal use only, and should not be used in any public
+ * headers.
  *
  * @copyright Copyright 2009-present MongoDB, Inc.
  *
