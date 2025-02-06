@@ -3,7 +3,7 @@
  * @brief Provides utility macros
  * @date 2024-08-29
  *
- * @copyright Copyright (c) 2025
+ * @copyright Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
+#ifndef MLIB_CONFIG_H_INCLUDED
+#define MLIB_CONFIG_H_INCLUDED
 
 #ifndef _WIN32
 #include <sys/param.h> // Endian detection
@@ -304,3 +305,5 @@
 #else
 #define _mlibIsOptimizedBuild() 0
 #endif
+
+#endif // MLIB_CONFIG_H_INCLUDED

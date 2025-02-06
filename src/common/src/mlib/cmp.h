@@ -6,7 +6,7 @@
  * This file provides safe and intuitive integer comparison macros that behave
  * appropriately, regardless of the sign or precision of the integer operands.
  *
- * @copyright Copyright (c) 2025
+ * @copyright Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
+#ifndef MLIB_CMP_H_INCLUDED
+#define MLIB_CMP_H_INCLUDED
 
 #include <mlib/config.h>
 #include <mlib/intutil.h>
@@ -129,3 +130,5 @@ static inline bool (mlib_in_range) (intmax_t min_, uintmax_t max_, struct mlib_u
       return mlib_cmp (val.i.u, >=, min_) && mlib_cmp (val.i.u, <=, max_);
    }
 }
+
+#endif // MLIB_CMP_H_INCLUDED

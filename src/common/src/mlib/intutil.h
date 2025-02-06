@@ -3,7 +3,7 @@
  * @brief Integer utilities
  * @date 2025-01-28
  *
- * @copyright Copyright (c) 2025
+ * @copyright Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
+#ifndef MLIB_INTUTIL_H_INCLUDED
+#define MLIB_INTUTIL_H_INCLUDED
 
 #include <limits.h>
 #include <stdint.h>
@@ -88,3 +89,5 @@ struct mlib_upsized_integer {
       ? (struct mlib_upsized_integer) {.i = {.s = (intmax_t) (Value)}, .is_signed = true} \
       : (struct mlib_upsized_integer) {.i = {.u = (uintmax_t) (Value)}})
 // clang-format on
+
+#endif // MLIB_INTUTIL_H_INCLUDED
