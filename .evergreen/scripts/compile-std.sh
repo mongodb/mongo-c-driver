@@ -134,7 +134,7 @@ echo "Installing libmongocrypt... done."
 # Use ccache if able.
 . "${script_dir:?}/find-ccache.sh"
 find_ccache_and_export_vars "$(pwd)" || true
-if [[ "${OSTYPE:?}" == cygwin ]]; then
+if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
   configure_flags_append "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
   configure_flags_append "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
 fi

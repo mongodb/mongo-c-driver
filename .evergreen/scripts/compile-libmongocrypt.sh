@@ -20,7 +20,7 @@ compile_libmongocrypt() {
     "-DBUILD_VERSION=1.12.0"
   )
 
-  if [[ "${OSTYPE:?}" == cygwin ]]; then
+  if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
     crypt_cmake_flags+=(
       "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
       "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded"
