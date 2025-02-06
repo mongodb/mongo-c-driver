@@ -1255,8 +1255,12 @@ _mongoc_collection_index_keys_equal (const bson_t *expected, const bson_t *actua
    bson_iter_t iter_expected;
    bson_iter_t iter_actual;
 
-   bson_iter_init (&iter_expected, expected);
-   bson_iter_init (&iter_actual, actual);
+   if (!bson_iter_init (&iter_expected, expected)) {
+      return false;
+   }
+   if (!bson_iter_init (&iter_actual, actual)) {
+      return false;
+   }
 
    while (bson_iter_next (&iter_expected)) {
       /* If the key document has fewer items than expected, indexes are unequal
