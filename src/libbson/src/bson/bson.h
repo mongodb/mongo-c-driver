@@ -44,6 +44,7 @@
 #include <bson/bson-types.h>
 #include <bson/bson-utf8.h>
 #include <bson/bson-value.h>
+#include <bson/bson-vector.h>
 #include <bson/bson-version.h>
 #include <bson/bson-version-functions.h>
 #include <bson/bson-writer.h>
@@ -626,10 +627,30 @@ BSON_EXPORT (bool)
 bson_array_builder_append_array (bson_array_builder_t *bab, const bson_t *array);
 
 /**
- * bson_append_binary:
- * @bson: A bson_t to append.
+ * bson_append_array_from_vector:
+ * @bson: A bson_t that will be modified.
  * @key: The key for the field.
- * @subtype: The bson_subtype_t of the binary.
+ * @iter: A bson_iter_t pointing to any supported vector in another bson_t.
+ *
+ * If @iter points to a supported vector type, converts the vector to a BSON array appended to @bson.
+ *
+ * Returns: true if successful; false if append would overflow max size or @iter does not point to a vector in a
+ * supported format.
+ */
+BSON_EXPORT (bool)
+bson_append_array_from_vector (bson_t *bson, const char *key, int key_length, const bson_iter_t *iter);
+
+#define BSON_APPEND_ARRAY_FROM_VECTOR(b, key, iter) bson_append_array_from_vector (b, key, (int) strlen (key), iter)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_array_from_vector (bson_array_builder_t *bab, const bson_iter_t *iter);
+
+/**
+ * bson_append_binary:
+ * @bson: A bson_t.
+ * @key: The key for the field.
+ * @key_length: Optional length of 'key' in bytes, or -1 to use strlen(key).
+ * @subtype: The bson_subtype_t of the binary item.
  * @binary: The binary buffer to append.
  * @length: The length of @binary.
  *
@@ -648,6 +669,30 @@ bson_array_builder_append_binary (bson_array_builder_t *bab,
                                   bson_subtype_t subtype,
                                   const uint8_t *binary,
                                   uint32_t length);
+
+/**
+ * bson_append_binary_uninit:
+ * @bson: A bson_t.
+ * @key: The key for the field.
+ * @key_length: Optional length of 'key' in bytes, or -1 to use strlen(key).
+ * @binary: Output parameter, pointer for the binary data within bson_t to be written.
+ * @length: Length of the binary field to allocate, in bytes.
+ *
+ * Returns: true if successful; false if append would overflow max size.
+ */
+
+BSON_EXPORT (bool)
+bson_append_binary_uninit (
+   bson_t *bson, const char *key, int key_length, bson_subtype_t subtype, uint8_t **binary, uint32_t length);
+
+#define BSON_APPEND_BINARY_UNINIT(b, key, subtype, val, len) \
+   bson_append_binary_uninit (b, key, (int) strlen (key), subtype, val, len)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_binary_uninit (bson_array_builder_t *bab,
+                                         bson_subtype_t subtype,
+                                         uint8_t **binary,
+                                         uint32_t length);
 
 /**
  * bson_append_bool:

@@ -945,6 +945,137 @@ bson_iter_binary (const bson_iter_t *iter, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * bson_iter_overwrite_binary --
+ *
+ *       Obtain temporary mutable access to the contents of a BSON_TYPE_BINARY
+ *       field. It may be modified in content only, without changing length
+ *       or subtype, through a temporary pointer that's only valid until the
+ *       underlying bson_t is modified or deleted.
+ *
+ * Parameters:
+ *       @iter: A bson_iter_t
+ *       @binary_len: A location for the length of @binary.
+ *       @binary: A location for a pointer to the binary data.
+ *
+ * Returns:
+ *       On success, returns a pointer in *binary and a length in *binary_len.
+ *       The pointer is invalidated when the underlying bson_t is destroyed or modified.
+ *       If the iter does not point to a binary item of the indicated subtype,
+ *       returns NULL in *binary and 0 *binary_len.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+BSON_EXPORT (void)
+bson_iter_overwrite_binary (bson_iter_t *iter,      /* IN */
+                            bson_subtype_t subtype, /* IN */
+                            uint32_t *binary_len,   /* OUT */
+                            uint8_t **binary)       /* OUT */
+{
+   BSON_ASSERT_PARAM (iter);
+   BSON_OPTIONAL_PARAM (binary_len);
+   BSON_OPTIONAL_PARAM (binary);
+
+   bson_subtype_t iter_subtype;
+   uint32_t iter_binary_len;
+   const uint8_t *iter_binary;
+   bson_iter_binary (iter, &iter_subtype, &iter_binary_len, &iter_binary);
+
+   if (iter_binary && iter_subtype == subtype) {
+      // All of bson_iter_overwrite_* work by casting away const from iter->raw.
+      if (binary) {
+         *binary = (void *) iter_binary;
+      }
+      if (binary_len) {
+         *binary_len = iter_binary_len;
+      }
+      return;
+   }
+   if (binary) {
+      *binary = NULL;
+   }
+   if (binary_len) {
+      *binary_len = 0;
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_iter_binary_subtype --
+ *
+ *       Retrieves the subtype of a BSON_TYPE_BINARY field.
+ *
+ * Parameters:
+ *       @iter: A bson_iter_t
+ *
+ * Returns:
+ *       Same as the @subtype OUT parameter from bson_iter_binary().
+ *       If the iterator is valid, returns the referenced subtype. Otherwise,
+ *       returns BSON_SUBTYPE_BINARY as a fallback.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+BSON_EXPORT (bson_subtype_t)
+bson_iter_binary_subtype (const bson_iter_t *iter)
+{
+   bson_subtype_t result;
+   bson_iter_binary (iter, &result, NULL, NULL);
+   return result;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_iter_binary_equal --
+ *
+ *       Compare two BSON_TYPE_BINARY fields for equality.
+ *
+ * Parameters:
+ *       @iter_a: First bson_iter_t to compare
+ *       @iter_b: Second bson_iter_t to compare
+ *
+ * Returns:
+ *       true if both iterators point to BSON_TYPE_BINARY fields with
+ *       identical subtype and contents. false if there is any difference.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+BSON_EXPORT (bool)
+bson_iter_binary_equal (const bson_iter_t *iter_a, const bson_iter_t *iter_b)
+{
+   BSON_ASSERT_PARAM (iter_a);
+   BSON_ASSERT_PARAM (iter_b);
+
+   if (BSON_ITER_HOLDS_BINARY (iter_a) && BSON_ITER_HOLDS_BINARY (iter_b)) {
+      bson_subtype_t subtypes[2];
+      uint32_t lengths[2];
+      const uint8_t *data[2];
+      bson_iter_binary (iter_a, &subtypes[0], &lengths[0], &data[0]);
+      bson_iter_binary (iter_b, &subtypes[1], &lengths[1], &data[1]);
+      return subtypes[0] == subtypes[1] && lengths[0] == lengths[1] && 0 == memcmp (data[0], data[1], lengths[0]);
+   } else {
+      return false;
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * bson_iter_bool --
  *
  *       Retrieves the current field of type BSON_TYPE_BOOL.
