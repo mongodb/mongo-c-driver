@@ -139,7 +139,12 @@ mongoc_bulkwriteopts_destroy (mongoc_bulkwriteopts_t *self)
 typedef enum { MODEL_OP_INSERT, MODEL_OP_UPDATE, MODEL_OP_DELETE } model_op_t;
 typedef struct {
    model_op_t op;
-   bson_iter_t id_iter;
+   // `id_loc` locates the "_id" field of an insert document.
+   struct {
+      size_t op_start;    // Offset in `mongoc_bulkwrite_t::ops` to the BSON for the insert op: { "document": ... }
+      size_t op_len;      // Length of insert op.
+      uint32_t id_offset; // Offset in the insert op to the "_id" field.
+   } id_loc;
    char *ns;
 } modeldata_t;
 
@@ -278,19 +283,14 @@ mongoc_bulkwrite_append_insertone (mongoc_bulkwrite_t *self,
       persisted_id_offset += existing_id_offset;
    }
 
-   BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), op.len));
-
-   // Store an iterator to the document's `_id` in the persisted payload:
-   bson_iter_t persisted_id_iter;
-   {
-      BSON_ASSERT (mcommon_in_range_size_t_unsigned (op.len));
-      size_t start = self->ops.len - (size_t) op.len;
-      BSON_ASSERT (bson_iter_init_from_data_at_offset (
-         &persisted_id_iter, self->ops.data + start, (size_t) op.len, persisted_id_offset, strlen ("_id")));
-   }
+   size_t op_start = self->ops.len; // Save location of `op` to retrieve `_id` later.
+   BSON_ASSERT (mcommon_in_range_size_t_unsigned (op.len));
+   BSON_ASSERT (_mongoc_buffer_append (&self->ops, bson_get_data (&op), (size_t) op.len));
 
    self->n_ops++;
-   modeldata_t md = {.op = MODEL_OP_INSERT, .id_iter = persisted_id_iter, .ns = bson_strdup (ns)};
+   modeldata_t md = {.op = MODEL_OP_INSERT,
+                     .id_loc = {.op_start = op_start, .op_len = (size_t) op.len, .id_offset = persisted_id_offset},
+                     .ns = bson_strdup (ns)};
    _mongoc_array_append_val (&self->arrayof_modeldata, md);
    bson_destroy (&op);
    return true;
@@ -1341,7 +1341,8 @@ static bool
 _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
                                const bson_t *result,
                                size_t ops_doc_offset,
-                               const mongoc_array_t *arrayof_modeldata)
+                               const mongoc_array_t *arrayof_modeldata,
+                               const mongoc_buffer_t *ops)
 {
    BSON_ASSERT_PARAM (self);
    BSON_ASSERT_PARAM (result);
@@ -1459,7 +1460,10 @@ _bulkwritereturn_apply_result (mongoc_bulkwritereturn_t *self,
          break;
       }
       case MODEL_OP_INSERT: {
-         _bulkwriteresult_set_insertresult (self->res, &md->id_iter, models_idx);
+         bson_iter_t id_iter;
+         BSON_ASSERT (bson_iter_init_from_data_at_offset (
+            &id_iter, ops->data + md->id_loc.op_start, md->id_loc.op_len, md->id_loc.id_offset, strlen ("_id")));
+         _bulkwriteresult_set_insertresult (self->res, &id_iter, models_idx);
          break;
       }
       default:
@@ -1706,9 +1710,9 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
       bool batch_ok = false;
       bson_t cmd_reply = BSON_INITIALIZER;
       mongoc_cursor_t *reply_cursor = NULL;
-      // `ops_byte_len` is the number of documents from `ops` to send in this batch.
+      // `ops_byte_len` is the number of bytes from `ops` to send in this batch.
       size_t ops_byte_len = 0;
-      // `ops_doc_len` is the number of bytes from `ops` to send in this batch.
+      // `ops_doc_len` is the number of documents from `ops` to send in this batch.
       size_t ops_doc_len = 0;
 
       if (ops_byte_offset == self->ops.len) {
@@ -1904,7 +1908,8 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
                // Iterate over cursor results.
                const bson_t *result;
                while (mongoc_cursor_next (reply_cursor, &result)) {
-                  if (!_bulkwritereturn_apply_result (&ret, result, ops_doc_offset, &self->arrayof_modeldata)) {
+                  if (!_bulkwritereturn_apply_result (
+                         &ret, result, ops_doc_offset, &self->arrayof_modeldata, &self->ops)) {
                      goto batch_fail;
                   }
                }

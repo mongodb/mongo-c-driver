@@ -486,11 +486,9 @@ mongoc_server_description_update_rtt (mongoc_server_description_t *server, int64
       return;
    }
    if (server->round_trip_time_msec == MONGOC_RTT_UNSET) {
-      mcommon_atomic_int64_exchange (&server->round_trip_time_msec, rtt_msec, mcommon_memory_order_relaxed);
+      server->round_trip_time_msec = rtt_msec;
    } else {
-      mcommon_atomic_int64_exchange (&server->round_trip_time_msec,
-                                     (int64_t) (ALPHA * rtt_msec + (1 - ALPHA) * server->round_trip_time_msec),
-                                     mcommon_memory_order_relaxed);
+      server->round_trip_time_msec = (int64_t) (ALPHA * rtt_msec + (1 - ALPHA) * server->round_trip_time_msec);
    }
 }
 
@@ -770,48 +768,96 @@ authfailure:
 mongoc_server_description_t *
 mongoc_server_description_new_copy (const mongoc_server_description_t *description)
 {
-   mongoc_server_description_t *copy;
+#define COPY_FIELD(FIELD)               \
+   if (1) {                             \
+      copy->FIELD = description->FIELD; \
+   } else                               \
+      (void) 0
+
+
+#define COPY_BSON_FIELD(FIELD)                          \
+   if (1) {                                             \
+      bson_copy_to (&description->FIELD, &copy->FIELD); \
+   } else                                               \
+      (void) 0
+
+// COPY_INTERNAL_BSON_FIELD copies a `bson_t` that references data in `last_hello_response`.
+#define COPY_INTERNAL_BSON_FIELD(FIELD)                                                                              \
+   if (1) {                                                                                                          \
+      if (!bson_empty (&description->FIELD)) {                                                                       \
+         ptrdiff_t offset = bson_get_data (&description->FIELD) - bson_get_data (&description->last_hello_response); \
+         MONGOC_DEBUG_ASSERT (offset >= 0);                                                                          \
+         const uint8_t *data = bson_get_data (&copy->last_hello_response) + offset;                                  \
+         uint32_t len = description->FIELD.len;                                                                      \
+         MONGOC_DEBUG_ASSERT (offset + len <= copy->last_hello_response.len);                                        \
+         bson_init_static (&copy->FIELD, data, len);                                                                 \
+      } else {                                                                                                       \
+         bson_init (&copy->FIELD);                                                                                   \
+      }                                                                                                              \
+   } else                                                                                                            \
+      (void) 0
+
+// COPY_INTERNAL_STRING_FIELD copies a `const char*` that references data in `last_hello_response`.
+#define COPY_INTERNAL_STRING_FIELD(FIELD)                                                                             \
+   if (1) {                                                                                                           \
+      if (description->FIELD) {                                                                                       \
+         ptrdiff_t offset = (char *) description->FIELD - (char *) bson_get_data (&description->last_hello_response); \
+         MONGOC_DEBUG_ASSERT (offset >= 0);                                                                           \
+         copy->FIELD = (char *) bson_get_data (&copy->last_hello_response) + offset;                                  \
+         MONGOC_DEBUG_ASSERT (offset + strlen (description->FIELD) <= copy->last_hello_response.len);                 \
+      } else {                                                                                                        \
+         copy->FIELD = NULL;                                                                                          \
+      }                                                                                                               \
+   } else                                                                                                             \
+      (void) 0
+
 
    if (!description) {
       return NULL;
    }
 
-   copy = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
+   mongoc_server_description_t *copy = BSON_ALIGNED_ALLOC (mongoc_server_description_t);
 
-   copy->id = description->id;
-   copy->opened = description->opened;
-   memcpy (&copy->host, &description->host, sizeof (copy->host));
-   copy->round_trip_time_msec = MONGOC_RTT_UNSET;
-
+   COPY_FIELD (id);
+   COPY_FIELD (host);
+   COPY_FIELD (round_trip_time_msec);
+   COPY_FIELD (last_update_time_usec);
+   COPY_BSON_FIELD (last_hello_response);
+   COPY_FIELD (has_hello_response);
+   COPY_FIELD (hello_ok);
    copy->connection_address = copy->host.host_and_port;
-   bson_init (&copy->last_hello_response);
-   bson_init (&copy->hosts);
-   bson_init (&copy->passives);
-   bson_init (&copy->arbiters);
-   bson_init (&copy->tags);
-   bson_init (&copy->compressors);
-   bson_copy_to (&description->topology_version, &copy->topology_version);
-   bson_oid_copy (&description->service_id, &copy->service_id);
-   copy->server_connection_id = description->server_connection_id;
-
-   if (description->has_hello_response) {
-      /* calls mongoc_server_description_reset */
-      int64_t last_rtt_ms =
-         mcommon_atomic_int64_fetch (&description->round_trip_time_msec, mcommon_memory_order_relaxed);
-      mongoc_server_description_handle_hello (
-         copy, &description->last_hello_response, last_rtt_ms, &description->error);
-   } else {
-      mongoc_server_description_reset (copy);
-      /* preserve the original server description type, which is manually set
-       * for a LoadBalancer server */
-      copy->type = description->type;
-   }
-
-   /* Preserve the error */
-   memcpy (&copy->error, &description->error, sizeof copy->error);
-
-   copy->generation = description->generation;
+   COPY_INTERNAL_STRING_FIELD (me);
+   COPY_FIELD (opened);
+   COPY_INTERNAL_STRING_FIELD (set_name);
+   COPY_FIELD (error);
+   COPY_FIELD (type);
+   COPY_FIELD (min_wire_version);
+   COPY_FIELD (max_wire_version);
+   COPY_FIELD (max_msg_size);
+   COPY_FIELD (max_bson_obj_size);
+   COPY_FIELD (max_write_batch_size);
+   COPY_FIELD (session_timeout_minutes);
+   COPY_INTERNAL_BSON_FIELD (hosts);
+   COPY_INTERNAL_BSON_FIELD (passives);
+   COPY_INTERNAL_BSON_FIELD (arbiters);
+   COPY_INTERNAL_BSON_FIELD (tags);
+   COPY_INTERNAL_STRING_FIELD (current_primary);
+   COPY_FIELD (set_version);
+   COPY_FIELD (election_id);
+   COPY_FIELD (last_write_date_ms);
+   COPY_INTERNAL_BSON_FIELD (compressors);
+   // `topology_version` does not refer to data in `last_hello_response`. It needs to outlive `last_hello_response`.
+   COPY_BSON_FIELD (topology_version);
+   COPY_FIELD (generation);
    copy->_generation_map_ = mongoc_generation_map_copy (mc_tpl_sd_generation_map_const (description));
+   COPY_FIELD (service_id);
+   COPY_FIELD (server_connection_id);
+
+#undef COPY_INTERNAL_STRING_FIELD
+#undef COPY_INTERNAL_BSON_FIELD
+#undef COPY_BSON_FIELD
+#undef COPY_FIELD
+
    return copy;
 }
 

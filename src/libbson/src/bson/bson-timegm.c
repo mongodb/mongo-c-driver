@@ -14,8 +14,8 @@
 #include <bson/bson-macros.h>
 #include <bson/bson-timegm-private.h>
 
-#include "errno.h"
-#include "string.h"
+#include <errno.h>
+#include <string.h>
 #include <stdint.h> /* for INT64_MAX and INT64_MIN */
 
 /* Unlike <ctype.h>'s isdigit, this also works if c < 0 | c > UCHAR_MAX. */

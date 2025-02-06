@@ -33,7 +33,7 @@
 #include <mongoc/mongoc-http-private.h>
 #include <mongoc/mcd-azure.h>
 #include <mongoc/mcd-time.h>
-#include "service-gcp.h"
+#include <mongoc/service-gcp.h>
 #include <common-string-private.h>
 #include <common-cmp-private.h>
 
