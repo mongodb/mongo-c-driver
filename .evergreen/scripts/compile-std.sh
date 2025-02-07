@@ -131,12 +131,16 @@ echo "Installing libmongocrypt..."
 }
 echo "Installing libmongocrypt... done."
 
-echo "CFLAGS: ${CFLAGS}"
-echo "configure_flags: ${configure_flags[*]}"
-
 # Use ccache if able.
 . "${script_dir:?}/find-ccache.sh"
 find_ccache_and_export_vars "$(pwd)" || true
+if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
+  configure_flags_append "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
+  configure_flags_append "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
+fi
+
+echo "CFLAGS: ${CFLAGS}"
+echo "configure_flags: ${configure_flags[*]}"
 
 "${cmake_binary}" "${configure_flags[@]}" .
 "${cmake_binary}" --build .
