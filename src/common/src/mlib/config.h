@@ -100,7 +100,7 @@
  *    -  then: _mlibHasComma(,)
  *    -  then: 1
  * Given any other aruments:
- *    - first: _mlibHasComma(_bsonDSL_isEmpty_CASE_<somethingelse>)
+ *    - first: _mlibHasComma(_mlibIsEmptyCase_<somethingelse>)
  *    -  then: 0
  */
 #define _mlibIsEmpty_1(_1, _2, _3, _4) \
@@ -129,7 +129,7 @@
  * list. Otherwise, expands to the third argument list. The unused argument list
  * is not expanded and is discarded.
  */
-#define MLIB_IF_ELSE(...) MLIB_NOTHING (#__VA_ARGS__) MLIB_PASTE (_mlibIfElseBranch_, MLIB_BOOLEAN (__VA_ARGS__))
+#define MLIB_IF_ELSE(...) MLIB_PASTE (_mlibIfElseBranch_, MLIB_BOOLEAN (__VA_ARGS__))
 #define _mlibIfElseBranch_1(...) __VA_ARGS__ _mlibNoExpandNothing
 #define _mlibIfElseBranch_0(...) MLIB_NOTHING (#__VA_ARGS__) MLIB_JUST
 #define _mlibNoExpandNothing(...) MLIB_NOTHING (#__VA_ARGS__)
