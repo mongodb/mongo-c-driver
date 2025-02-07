@@ -39,30 +39,78 @@ typedef struct {
 skipped_unified_test_t SKIPPED_TESTS[] = {
    // CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
+
    // libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality
    {"snapshot-sessions", "Distinct operation with snapshot"},
    {"snapshot-sessions", "Mixed operation with snapshot"},
+
    // CDRIVER-3886: serverless testing (schema version 1.4)
    {"poc-crud", SKIP_ALL_TESTS},
    {"db-aggregate", SKIP_ALL_TESTS},
    {"mongos-unpin", SKIP_ALL_TESTS},
+
    // CDRIVER-2871: CMAP is not implemented
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
    {"driver-connection-id", SKIP_ALL_TESTS},
+   {"minPoolSize-error", SKIP_ALL_TESTS},
+   {"pool-cleared-on-min-pool-size-population-error", SKIP_ALL_TESTS},
+   {"insert-shutdown-error", SKIP_ALL_TESTS},
+   {"standalone-logging", "Successful heartbeat"}, // requires driverConnectionId
+   {"standalone-logging", "Failing heartbeat"}, // requires driverConnectionId
+   {"replicaset-logging", SKIP_ALL_TESTS }, // requires driverConnectionId
+   {"sharded-logging", SKIP_ALL_TESTS }, // requires driverConnectionId
+   {"find-network-error", "Reset server and pool after network error on find"},
+   {"insert-network-error", "Reset server and pool after network error on insert"},
+   {"pool-clear-on-error-checkout", SKIP_ALL_TESTS},
+   {"find-shutdown-error", "Concurrent shutdown error on find"},
+   {"find-network-timeout-error", "Ignore network timeout error on find"},
+   {"hello-timeout", SKIP_ALL_TESTS},
+   {"hello-network-error", SKIP_ALL_TESTS},
+   {"hello-command-error", SKIP_ALL_TESTS},
+   {"interruptInUse", SKIP_ALL_TESTS},
+   {"pool-clear-min-pool-size-error", SKIP_ALL_TESTS},
+   {"pool-clear-checkout-error", SKIP_ALL_TESTS},
+   {"pool-clear-application-error", SKIP_ALL_TESTS},
+   {"pool-cleared-error", "PoolClearedError does not mark server unknown"}, // requires multithreaded runner
+
+   // Requires streaming heartbeat support
+   {"rediscover-quickly-after-step-down", SKIP_ALL_TESTS},
+
+   // CDRIVER-5870: Spec compliant response to authentication errors
+   {"auth-error", "Reset server and pool after AuthenticationFailure error"},
+   {"auth-network-error", "Reset server and pool after network error during authentication"},
+   {"auth-misc-command-error", "Reset server and pool after misc command error"},
+   {"auth-shutdown-error", "Reset server and pool after shutdown error during authentication"},
+   {"auth-network-timeout-error", "Reset server and pool after network timeout error during authentication"},
+
+   // libmongoc unified tests do not support pooled connections or background server monitoring threads yet
+   {"serverMonitoringMode", SKIP_ALL_TESTS},
+
    // CDRIVER-4115: listCollections does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
+
    // CDRIVER-4116: listIndexes does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
+
    // libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode.
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
+
    // libmongoc does not support the optional findOne helper.
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
+
    // libmongoc does not support the optional listIndexNames helper.
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
+
+   // libmongoc single-host non-replicaSet URI first transitions Unknown->Single, not Unknown->Unknown
+   {"standalone-emit-topology-description-changed-before-close", "Topology lifecycle"},
+
+   // libmongoc does not include insertId in InsertOneResult
+   {"cancel-server-check", SKIP_ALL_TESTS},
+
    {0},
 };
 // clang-format on
@@ -142,8 +190,6 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    failpoint_t *iter = NULL;
    mongoc_read_prefs_t *rp = NULL;
 
-   test_begin_suppressing_structured_logs ();
-
    rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    LL_FOREACH (test->failpoints, iter)
@@ -158,12 +204,18 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
 
       disable_cmd = tmp_bson ("{'configureFailPoint': '%s', 'mode': 'off' }", iter->name);
       if (iter->server_id != 0) {
-         if (!mongoc_client_command_simple_with_server_id (
-                client, "admin", disable_cmd, rp, iter->server_id, NULL /* reply */, error)) {
+         entity_map_log_filter_push (test->entity_map, iter->client_id, NULL, NULL);
+         bool command_ok = mongoc_client_command_simple_with_server_id (
+            client, "admin", disable_cmd, rp, iter->server_id, NULL /* reply */, error);
+         entity_map_log_filter_pop (test->entity_map, iter->client_id, NULL, NULL);
+         if (!command_ok) {
             goto done;
          }
       } else {
-         if (!mongoc_client_command_simple (client, "admin", disable_cmd, rp, NULL /* reply */, error)) {
+         entity_map_log_filter_push (test->entity_map, iter->client_id, NULL, NULL);
+         bool command_ok = mongoc_client_command_simple (client, "admin", disable_cmd, rp, NULL /* reply */, error);
+         entity_map_log_filter_pop (test->entity_map, iter->client_id, NULL, NULL);
+         if (!command_ok) {
             goto done;
          }
       }
@@ -172,7 +224,6 @@ cleanup_failpoints (test_t *test, bson_error_t *error)
    ret = true;
 done:
    mongoc_read_prefs_destroy (rp);
-   test_end_suppressing_structured_logs ();
    return ret;
 }
 
@@ -272,8 +323,6 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner, bson_error_
    bool cmd_ret = false;
    bson_error_t cmd_error = {0};
 
-   test_begin_suppressing_structured_logs ();
-
    if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
       // Not applicable when running as test-atlas-executor.
       return true;
@@ -326,7 +375,6 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner, bson_error_
 
    ret = true;
 done:
-   test_end_suppressing_structured_logs ();
    return ret;
 }
 
@@ -999,6 +1047,7 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    char *expected_command_name = NULL;
    char *expected_database_name = NULL;
    bson_t *expected_reply = NULL;
+   bool *expected_awaited = NULL;
    bool *expected_has_service_id = NULL;
    bool *expected_has_server_connection_id = NULL;
    bson_t *expected_previous_description = NULL;
@@ -1033,6 +1082,7 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
    bson_parser_utf8_optional (bp, "commandName", &expected_command_name);
    bson_parser_utf8_optional (bp, "databaseName", &expected_database_name);
    bson_parser_doc_optional (bp, "reply", &expected_reply);
+   bson_parser_bool_optional (bp, "awaited", &expected_awaited);
    bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
    bson_parser_bool_optional (bp, "hasServerConnectionId", &expected_has_server_connection_id);
    bson_parser_doc_optional (bp, "previousDescription", &expected_previous_description);
@@ -1108,6 +1158,23 @@ test_check_event (test_t *test, bson_t *expected, event_t *actual, bson_error_t 
       bson_val_destroy (actual_val);
       if (!is_match) {
          goto done;
+      }
+   }
+
+   if (expected_awaited) {
+      if (!bson_iter_init_find (&iter, actual->serialized, "awaited")) {
+         test_set_error (error, "event.awaited field expected but missing");
+         goto done;
+      }
+      if (!BSON_ITER_HOLDS_BOOL (&iter)) {
+         test_set_error (error, "Unexpected type for event.awaited, should be boolean");
+         goto done;
+      }
+      bool actual_awaited = bson_iter_bool (&iter);
+      if (*expected_awaited != actual_awaited) {
+         test_error ("expected event.awaited=%s, found event.awaited=%s",
+                     *expected_awaited ? "true" : "false",
+                     actual_awaited ? "true" : "false");
       }
    }
 
@@ -1198,6 +1265,14 @@ done:
    return ret;
 }
 
+static bool
+event_matches_eventtype (const event_t *event, const char *eventType)
+{
+   BSON_ASSERT_PARAM (event);
+   BSON_OPTIONAL_PARAM (eventType);
+   return 0 == bson_strcasecmp (event->eventType, eventType ? eventType : "command");
+}
+
 bool
 test_count_matching_events_for_client (
    test_t *test, entity_t *client, bson_t *expected_event, bson_error_t *error, int64_t *count_out)
@@ -1220,18 +1295,13 @@ static bool
 test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for_client, bson_error_t *error)
 {
    bool ret = false;
-   bson_parser_t *bp;
+   entity_t *entity = NULL;
+
    char *client_id;
    bson_t *expected_events;
    bool *ignore_extra_events;
-   entity_t *entity = NULL;
-   bson_iter_t iter;
-   event_t *eiter;
-   uint32_t expected_num_events;
-   uint32_t actual_num_events;
    char *event_type;
-
-   bp = bson_parser_new ();
+   bson_parser_t *bp = bson_parser_new ();
    bson_parser_utf8 (bp, "client", &client_id);
    bson_parser_array (bp, "events", &expected_events);
    bson_parser_bool_optional (bp, "ignoreExtraEvents", &ignore_extra_events);
@@ -1240,26 +1310,36 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
       goto done;
    }
 
-   if (event_type) {
-      if (0 == strcmp (event_type, "cmap")) {
-         /* TODO: (CDRIVER-3525) Explicitly ignore cmap events until CMAP is
-          * supported. */
-         ret = true;
-         goto done;
-      } else if (0 != strcmp (event_type, "command")) {
-         test_set_error (error, "unexpected event type: %s", event_type);
-         goto done;
-      }
-   }
-
    entity = entity_map_get (test->entity_map, client_id, error);
+   if (!entity) {
+      test_set_error (error, "missing entity '%s', expected client", client_id);
+      goto done;
+   }
    if (0 != strcmp (entity->type, "client")) {
-      test_set_error (error, "expected entity %s to be client, got: %s", entity->id, entity->type);
+      test_set_error (error, "expected entity '%s' to be client, got: %s", entity->id, entity->type);
       goto done;
    }
 
-   expected_num_events = bson_count_keys (expected_events);
-   LL_COUNT (entity->events, eiter, actual_num_events);
+   if (event_type && 0 == strcmp (event_type, "cmap")) {
+      /* Full CMAP support (CDRIVER-3525) is not currently planned for this driver.
+       * Many tests that would otherwise need to be skipped can be partially executed
+       * by letting checks for CMAP events artificially pass. */
+      MONGOC_DEBUG ("SKIPPING expectEvents check for unsupported \"cmap\" events\n");
+      ret = true;
+      goto done;
+   }
+
+   uint32_t expected_num_events = bson_count_keys (expected_events);
+   uint32_t actual_num_events = 0;
+
+   event_t *eiter;
+   LL_FOREACH (entity->events, eiter)
+   {
+      if (event_matches_eventtype (eiter, event_type)) {
+         actual_num_events++;
+      }
+   }
+
    if (expected_num_events != actual_num_events) {
       bool too_many_events = actual_num_events > expected_num_events;
       if (ignore_extra_events && *ignore_extra_events) {
@@ -1275,10 +1355,13 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
    }
 
    eiter = entity->events;
+   bson_iter_t iter;
    BSON_FOREACH (expected_events, iter)
    {
+      while (eiter && !event_matches_eventtype (eiter, event_type)) {
+         eiter = eiter->next;
+      }
       bson_t expected_event;
-
       bson_iter_bson (&iter, &expected_event);
       if (!eiter) {
          test_set_error (error, "could not find event: %s", tmp_json (&expected_event));
@@ -1509,13 +1592,21 @@ test_check_expected_log_messages_for_client (test_t *test,
       goto done;
    }
 
+   /* Note: entity->value might be NULL and that's fine.
+    * The unified testing spec recommends that tests don't refer to closed clients,
+    * but some tests do for checking lifecycle logging.
+    * See /server_discovery_and_monitoring/unified/logging-standalone */
    entity_t *entity = entity_map_get (test->entity_map, client_id, error);
+   if (!entity) {
+      test_set_error (error, "missing entity '%s', expected client", client_id);
+      goto done;
+   }
    if (0 != strcmp (entity->type, "client")) {
-      test_set_error (error, "expected entity %s to be client, got: %s", entity->id, entity->type);
+      test_set_error (error, "expected entity '%s' to be client, got: %s", entity->id, entity->type);
       goto done;
    }
 
-   locked = &entity->log_messages_mutex;
+   locked = &entity->log_mutex;
    bson_mutex_lock (locked);
 
    log_message_t *actual_message_iter = entity->log_messages;
@@ -1526,6 +1617,7 @@ test_check_expected_log_messages_for_client (test_t *test,
    while (actual_message_iter || expected_message_iter_ok) {
       if (actual_message_iter &&
           test_log_message_should_be_ignored (test, actual_message_iter, ignore_messages, error)) {
+         MONGOC_DEBUG ("log message ignored, %s", tmp_json (actual_message_iter->message));
          actual_message_iter = actual_message_iter->next;
          continue;
       }
@@ -1549,13 +1641,11 @@ test_check_expected_log_messages_for_client (test_t *test,
       bson_t expected_message;
       bson_iter_bson (&expected_message_iter, &expected_message);
       bool is_match = test_check_log_message (test, &expected_message, actual_message_iter, error);
-      if (!is_match) {
-         test_diagnostics_error_info ("expected log message: %s\nactual log message: %s, %s, %s",
-                                      tmp_json (&expected_message),
-                                      mongoc_structured_log_get_level_name (actual_message_iter->level),
-                                      mongoc_structured_log_get_component_name (actual_message_iter->component),
-                                      tmp_json (actual_message_iter->message));
-      }
+      MONGOC_DEBUG ("log message check %s %s, expected: %s, actual: %s",
+                    is_match ? "MATCHED" : "FAILED",
+                    error && !is_match ? error->message : "",
+                    tmp_json (&expected_message),
+                    tmp_json (actual_message_iter->message));
       bson_destroy (&expected_message);
       if (!is_match) {
          goto done;
@@ -2130,4 +2220,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "command-logging-and-monitoring");
 
    run_unified_tests (suite, JSON_DIR, "server_selection/logging");
+
+   run_unified_tests (suite, JSON_DIR, "server_discovery_and_monitoring/unified");
 }

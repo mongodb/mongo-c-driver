@@ -134,6 +134,14 @@ if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 fi
 
+# Use ccache if able.
+. "${script_dir:?}/find-ccache.sh"
+find_ccache_and_export_vars "$(pwd)" || true
+if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
+  configure_flags_append "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
+  configure_flags_append "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
+fi
+
 "${cmake_binary:?}" -S . -B "${build_dir:?}" -G "$CC" "${configure_flags[@]}" "${extra_configure_flags[@]}"
 "${cmake_binary:?}" --build "${build_dir:?}" --config "${build_config:?}"
 "${cmake_binary:?}" --install "${build_dir:?}" --config "${build_config:?}"

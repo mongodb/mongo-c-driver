@@ -76,6 +76,10 @@ ZSTD="AUTO"
 if [[ -f $DIR/find-ccache.sh ]]; then
   . $DIR/find-ccache.sh
   find_ccache_and_export_vars "$SCRATCH_DIR" || true
+  if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
+    configure_flags_append "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
+    configure_flags_append "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
+  fi
 fi
 
 $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"

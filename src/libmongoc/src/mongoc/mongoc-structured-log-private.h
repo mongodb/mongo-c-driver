@@ -217,6 +217,16 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
     .arg2.read_prefs = (_value_read_prefs)},
 
 /**
+ * @def oid(key, value)
+ * @brief Structured log item, bson_oid_t
+ *
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
+ * @param value OID as a const bson_oid_t * expression, or NULL for a null value.
+ */
+#define _mongoc_structured_log_item_oid(_key_or_null, _value_oid) \
+   {.func = _mongoc_structured_log_append_oid, .arg1.utf8 = (_key_or_null), .arg2.oid = (_value_oid)},
+
+/**
  * @def oid_as_hex(key, value)
  * @brief Structured log item, bson_oid_t converted to a hex string
  *
@@ -238,6 +248,18 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
  */
 #define _mongoc_structured_log_item_bson_as_json(_key_or_null, _value_bson) \
    {.func = _mongoc_structured_log_append_bson_as_json, .arg1.utf8 = (_key_or_null), .arg2.bson = (_value_bson)},
+
+/**
+ * @def topology_description_as_json(key, value)
+ * @brief Structured log item, mongoc_topology_description_t serialized into a json string
+ *
+ * @param key Key as a NUL-terminated const char * expression, or NULL to skip this item.
+ * @param value Topology description as a const mongoc_topology_description_t * expression, or NULL for a null value.
+ */
+#define _mongoc_structured_log_item_topology_description_as_json(_key_or_null, _value_topology_description) \
+   {.func = _mongoc_structured_log_append_topology_description_as_json,                                     \
+    .arg1.utf8 = (_key_or_null),                                                                            \
+    .arg2.topology_description = (_value_topology_description)},
 
 /**
  * @def topology_as_description_json(key, topology)
@@ -372,11 +394,12 @@ struct mongoc_structured_log_builder_stage_t {
    } arg1;
    union {
       bool boolean;
-      bson_oid_t *oid;
       const bson_error_t *error;
+      const bson_oid_t *oid;
       const bson_t *bson;
       const char *utf8;
       const mongoc_read_prefs_t *read_prefs;
+      const struct _mongoc_topology_description_t *topology_description;
       const struct _mongoc_topology_t *topology;
       double double_value;
       int32_t int32;
@@ -457,6 +480,11 @@ _mongoc_structured_log_append_oid_as_hex (bson_t *bson,
                                           const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_oid (bson_t *bson,
+                                   const mongoc_structured_log_builder_stage_t *stage,
+                                   const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_bson_as_json (bson_t *bson,
                                             const mongoc_structured_log_builder_stage_t *stage,
                                             const mongoc_structured_log_opts_t *opts);
@@ -500,6 +528,11 @@ const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_server_description (bson_t *bson,
                                                   const mongoc_structured_log_builder_stage_t *stage,
                                                   const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_topology_description_as_json (bson_t *bson,
+                                                            const mongoc_structured_log_builder_stage_t *stage,
+                                                            const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
 _mongoc_structured_log_append_topology_as_description_json (bson_t *bson,

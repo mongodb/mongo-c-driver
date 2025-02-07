@@ -23,6 +23,7 @@
 #include <mongoc/mongoc-topology-scanner-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-log-and-monitor-private.h>
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-uri.h>
 #include <mongoc/mongoc-client-session-private.h>
@@ -208,9 +209,10 @@ typedef struct _mongoc_topology_t {
    /* For background monitoring. */
    mongoc_set_t *server_monitors;
    mongoc_set_t *rtt_monitors;
-   bson_mutex_t apm_mutex;
 
-   struct mongoc_structured_log_instance_t *structured_log;
+   // APM callbacks, structured logging handlers and callbacks.
+   // Documented as per-client and per-pool, implemented as owned by topology_t.
+   mongoc_log_and_monitor_instance_t log_and_monitor;
 
    /* This is overridable for SRV polling tests to mock DNS records. */
    _mongoc_rr_resolver_fn rr_resolver;
@@ -233,12 +235,6 @@ typedef struct _mongoc_topology_t {
 
 mongoc_topology_t *
 mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded);
-
-void
-mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
-                                   mongoc_topology_description_t *td,
-                                   mongoc_apm_callbacks_t const *callbacks,
-                                   void *context);
 
 void
 mongoc_topology_set_structured_log_opts (mongoc_topology_t *topology, const mongoc_structured_log_opts_t *opts);
@@ -621,16 +617,16 @@ mc_tpld_unsafe_get_const (const mongoc_topology_t *tpl)
  * This is intended for testing purposes, as it provides thread-safe
  * direct topology modification.
  *
- * @param td The topology to modify.
+ * @param topology The topology to modify.
  * @param server_id The ID of a server in the topology.
  */
 static BSON_INLINE void
-_mongoc_topology_invalidate_server (mongoc_topology_t *td, uint32_t server_id)
+_mongoc_topology_invalidate_server (mongoc_topology_t *topology, uint32_t server_id)
 {
    bson_error_t error;
-   mc_tpld_modification tdmod = mc_tpld_modify_begin (td);
+   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
    bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
-   mongoc_topology_description_invalidate_server (tdmod.new_td, server_id, &error);
+   mongoc_topology_description_invalidate_server (tdmod.new_td, &topology->log_and_monitor, server_id, &error);
    mc_tpld_modify_commit (tdmod);
 }
 

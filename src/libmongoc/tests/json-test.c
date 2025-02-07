@@ -220,7 +220,8 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          /* send hello through the topology description's handler */
          capture_logs (true);
-         mongoc_topology_description_handle_hello (tdmod.new_td, sd->id, &response, 1, NULL);
+         mongoc_topology_description_handle_hello (
+            tdmod.new_td, &topology->log_and_monitor, sd->id, &response, 1, NULL);
          if (mc_tpld_servers_const (tdmod.new_td)->items_len == 0) {
             ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_WARNING, "Last server removed from topology");
          }

@@ -448,6 +448,7 @@ endif ()
 
 if (MSVC)
    add_definitions (-D_CRT_SECURE_NO_WARNINGS)
+   list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_CRT_SECURE_NO_WARNINGS)
 endif ()
 
 if (ENABLE_MONGOC)

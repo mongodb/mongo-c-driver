@@ -107,9 +107,6 @@ struct _mongoc_client_t {
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
 
-   mongoc_apm_callbacks_t apm_callbacks;
-   void *apm_context;
-
    int32_t error_api_version;
    bool error_api_set;
 
@@ -150,9 +147,6 @@ _mongoc_client_get_rr (const char *hostname,
 
 mongoc_client_t *
 _mongoc_client_new_from_topology (mongoc_topology_t *topology);
-
-bool
-_mongoc_client_set_apm_callbacks_private (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context);
 
 mongoc_stream_t *
 mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
