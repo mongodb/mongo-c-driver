@@ -19,7 +19,7 @@
 #include <bson/bson-config.h>
 #include <bson/bson-decimal128.h>
 #include <bson/bson-types.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #define ITER_TYPE(i) ((bson_type_t) * ((i)->raw + (i)->type))
 
@@ -112,7 +112,7 @@ bson_iter_init_from_data (bson_iter_t *iter,   /* OUT */
       return false;
    }
 
-   if (BSON_UNLIKELY (!mcommon_in_range_unsigned (uint32_t, length))) {
+   if (BSON_UNLIKELY (!mlib_in_range (uint32_t, length))) {
       memset (iter, 0, sizeof *iter);
       return false;
    }

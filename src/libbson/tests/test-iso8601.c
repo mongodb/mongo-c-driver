@@ -2,7 +2,7 @@
 
 #include <bson/bson-iso8601-private.h>
 #include "TestSuite.h"
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-string-private.h>
 #include <common-json-private.h>
 
@@ -16,7 +16,7 @@ test_date (const char *str, int64_t millis)
 
    const size_t len = strlen (str);
 
-   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, len));
+   BSON_ASSERT (mlib_in_range (int32_t, len));
 
    if (!_bson_iso8601_date_parse (str, (int32_t) len, &v, &error)) {
       fprintf (stderr, "could not parse (%s)\n", str);
@@ -61,7 +61,7 @@ test_date_should_fail (const char *str)
 
    const size_t len = strlen (str);
 
-   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, len));
+   BSON_ASSERT (mlib_in_range (int32_t, len));
 
    if (_bson_iso8601_date_parse (str, (int32_t) len, &v, &error)) {
       fprintf (stderr, "should not be able to parse (%s)\n", str);

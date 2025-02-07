@@ -12,7 +12,7 @@
 #include <mongoc/mongoc-write-concern-private.h>
 #include "test-conveniences.h"
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 
 typedef mongoc_cursor_t *(*make_cursor_fn) (mongoc_collection_t *);
@@ -1156,7 +1156,7 @@ test_cursor_int64_t_maxtimems (void)
    bson_append_bool (max_await_time_ms, "awaitData", 9, true);
    bson_append_int64 (
       max_await_time_ms, MONGOC_CURSOR_MAX_AWAIT_TIME_MS, MONGOC_CURSOR_MAX_AWAIT_TIME_MS_LEN, ms_int64);
-   ASSERT (mcommon_in_range_int32_t_unsigned (server_id));
+   ASSERT (mlib_in_range (int32_t, server_id));
    BSON_APPEND_INT32 (max_await_time_ms, "serverId", (uint32_t) server_id);
 
    cursor = mongoc_cursor_new_from_command_reply_with_opts (client,
