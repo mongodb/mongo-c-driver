@@ -35,7 +35,7 @@
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);
@@ -435,7 +435,7 @@ mongoc_gridfs_file_readv (
    BSON_ASSERT (iovcnt);
 
    /* Reading when positioned past the end does nothing */
-   if (mcommon_cmp_greater_equal_us (file->pos, file->length)) {
+   if (mlib_cmp (file->pos, >=, file->length)) {
       return 0;
    }
 
@@ -499,7 +499,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file, const mongoc_iovec_t *iov
    }
 
    /* When writing past the end-of-file, fill the gap with zeros */
-   if (mcommon_cmp_greater_us (file->pos, file->length) && !_mongoc_gridfs_file_extend (file)) {
+   if (mlib_cmp (file->pos, >, file->length) && !_mongoc_gridfs_file_extend (file)) {
       return -1;
    }
 
@@ -564,13 +564,13 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
 
    BSON_ASSERT (file);
 
-   if (mcommon_cmp_greater_equal_su (file->length, file->pos)) {
+   if (mlib_cmp (file->length, >=, file->pos)) {
       RETURN (0);
    }
 
    const uint64_t target_length = file->pos;
 
-   BSON_ASSERT (mcommon_in_range_signed (uint64_t, file->length));
+   BSON_ASSERT (mlib_in_range (uint64_t, file->length));
    const uint64_t diff = file->pos - (uint64_t) file->length;
 
    if (-1 == mongoc_gridfs_file_seek (file, 0, SEEK_END)) {
@@ -585,7 +585,7 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
       /* Set bytes until we reach the limit or fill a page */
       {
          const uint64_t len = target_length - file->pos;
-         BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, len));
+         BSON_ASSERT (mlib_in_range (uint32_t, len));
          file->pos += _mongoc_gridfs_file_page_memset0 (file->page, (uint32_t) len);
       }
 
@@ -598,11 +598,11 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
       }
    }
 
-   BSON_ASSERT (mcommon_in_range_unsigned (int64_t, target_length));
+   BSON_ASSERT (mlib_in_range (int64_t, target_length));
    file->length = (int64_t) target_length;
    file->is_dirty = true;
 
-   BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, diff));
+   BSON_ASSERT (mlib_in_range (ssize_t, diff));
    RETURN ((ssize_t) diff);
 }
 
@@ -812,7 +812,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
       /* we might have had a cursor before, then seeked ahead past a chunk.
        * iterate until we're on the right chunk */
-      while (mcommon_cmp_less_equal_us (file->cursor_range[0], file->n)) {
+      while (mlib_cmp (file->cursor_range[0], <=, file->n)) {
          if (!mongoc_cursor_next (file->cursor, &chunk)) {
             /* copy cursor error; if there's none, we're missing a chunk */
             if (!mongoc_cursor_error (file->cursor, &file->error)) {
@@ -842,7 +842,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
             // If this not the last chunk, ensure length is equal to chunk size.
             bool is_last_chunk = ((file->n + 1) == existing_chunks);
             // If this is not the last chunk, error.
-            if (!is_last_chunk && mcommon_cmp_not_equal_us (len, file->chunk_size)) {
+            if (!is_last_chunk && mlib_cmp (len, !=, file->chunk_size)) {
                _mongoc_set_error (&file->error,
                                   MONGOC_ERROR_GRIDFS,
                                   MONGOC_ERROR_GRIDFS_CORRUPT,
@@ -871,7 +871,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       RETURN (0);
    }
 
-   if (mcommon_cmp_greater_us (len, file->chunk_size)) {
+   if (mlib_cmp (len, >, file->chunk_size)) {
       _mongoc_set_error (&file->error,
                          MONGOC_ERROR_GRIDFS,
                          MONGOC_ERROR_GRIDFS_CORRUPT,
@@ -931,7 +931,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence)
       offset = delta;
       break;
    case SEEK_CUR:
-      BSON_ASSERT (mcommon_in_range_unsigned (int64_t, file->pos));
+      BSON_ASSERT (mlib_in_range (int64_t, file->pos));
       offset = (int64_t) file->pos + delta;
       break;
    case SEEK_END:
@@ -965,15 +965,15 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence)
        * lazily load */
    } else if (file->page) {
       const int64_t n = offset % file->chunk_size;
-      BSON_ASSERT (mcommon_in_range_signed (uint32_t, n));
+      BSON_ASSERT (mlib_in_range (uint32_t, n));
       BSON_ASSERT (_mongoc_gridfs_file_page_seek (file->page, (uint32_t) n));
    }
 
    file->pos = (uint64_t) offset;
 
-   BSON_ASSERT (mcommon_in_range_signed (uint64_t, file->chunk_size));
+   BSON_ASSERT (mlib_in_range (uint64_t, file->chunk_size));
    const uint64_t n = file->pos / (uint64_t) file->chunk_size;
-   BSON_ASSERT (mcommon_in_range_unsigned (int32_t, n));
+   BSON_ASSERT (mlib_in_range (int32_t, n));
    file->n = (int32_t) n;
 
    return 0;

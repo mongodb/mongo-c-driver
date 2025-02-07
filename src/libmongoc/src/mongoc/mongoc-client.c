@@ -71,7 +71,7 @@
 #endif
 
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #include <inttypes.h>
 
@@ -624,7 +624,7 @@ mongoc_client_connect_tcp (int32_t connecttimeoutms, const mongoc_host_list_t *h
 
    // Expect no truncation.
    int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
-   BSON_ASSERT (mcommon_cmp_less_su (req, sizeof portstr));
+   BSON_ASSERT (mlib_cmp (req, <, sizeof portstr));
 
    memset (&hints, 0, sizeof hints);
    hints.ai_family = host->family;
@@ -721,7 +721,7 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
    // Expect no truncation.
    int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
 
-   if (mcommon_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
+   if (mlib_cmp (req, >=, sizeof saddr.sun_path - 1)) {
       _mongoc_set_error (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
       RETURN (NULL);
@@ -1122,7 +1122,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    }
 #endif
 
-   mongoc_structured_log (topology->structured_log,
+   mongoc_structured_log (topology->log_and_monitor.structured_log,
                           MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
                           MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,
                           "Client created");
@@ -1646,8 +1646,6 @@ retry:
     * server does not support retryable reads, fall through and allow the
     * original error to be reported. */
    if (is_retryable && _mongoc_read_error_get_type (ret, error, reply) == MONGOC_READ_ERR_RETRY) {
-      bson_error_t ignored_error;
-
       /* each read command may be retried at most once */
       is_retryable = false;
 
@@ -1667,8 +1665,13 @@ retry:
             .has_operation_id = true,
             .operation_id = parts->assembled.operation_id,
          };
-         retry_server_stream = mongoc_cluster_stream_for_reads (
-            &client->cluster, &ss_log_context, parts->read_prefs, parts->assembled.session, ds, NULL, &ignored_error);
+         retry_server_stream = mongoc_cluster_stream_for_reads (&client->cluster,
+                                                                &ss_log_context,
+                                                                parts->read_prefs,
+                                                                parts->assembled.session,
+                                                                ds,
+                                                                NULL /* reply */,
+                                                                NULL /* error */);
 
          mongoc_deprioritized_servers_destroy (ds);
       }
@@ -2165,14 +2168,14 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
                                        const char *collection)
 {
    bson_t doc;
-   mongoc_client_t *client;
    mongoc_apm_command_started_t event;
 
    ENTRY;
 
-   client = cluster->client;
+   mongoc_client_t *client = cluster->client;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
 
-   if (!client->apm_callbacks.started) {
+   if (!log_and_monitor->apm_callbacks.started) {
       return;
    }
 
@@ -2189,9 +2192,9 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
                                     &server_stream->sd->service_id,
                                     server_stream->sd->server_connection_id,
                                     NULL,
-                                    client->apm_context);
+                                    log_and_monitor->apm_context);
 
-   client->apm_callbacks.started (&event);
+   log_and_monitor->apm_callbacks.started (&event);
    mongoc_apm_command_started_cleanup (&event);
    bson_destroy (&doc);
 
@@ -2207,16 +2210,16 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
                                                  int64_t operation_id,
                                                  const char *db)
 {
-   mongoc_client_t *client;
    bson_t doc;
    bson_array_builder_t *cursors_unknown;
    mongoc_apm_command_succeeded_t event;
 
    ENTRY;
 
-   client = cluster->client;
+   mongoc_client_t *client = cluster->client;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
 
-   if (!client->apm_callbacks.succeeded) {
+   if (!log_and_monitor->apm_callbacks.succeeded) {
       EXIT;
    }
 
@@ -2239,9 +2242,9 @@ _mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
                                       &server_stream->sd->service_id,
                                       server_stream->sd->server_connection_id,
                                       false,
-                                      client->apm_context);
+                                      log_and_monitor->apm_context);
 
-   client->apm_callbacks.succeeded (&event);
+   log_and_monitor->apm_callbacks.succeeded (&event);
 
    mongoc_apm_command_succeeded_cleanup (&event);
    bson_destroy (&doc);
@@ -2256,15 +2259,15 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
                                               int64_t operation_id,
                                               const char *db)
 {
-   mongoc_client_t *client;
    bson_t doc;
    mongoc_apm_command_failed_t event;
 
    ENTRY;
 
-   client = cluster->client;
+   mongoc_client_t *client = cluster->client;
+   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
 
-   if (!client->apm_callbacks.failed) {
+   if (!log_and_monitor->apm_callbacks.failed) {
       EXIT;
    }
 
@@ -2285,9 +2288,9 @@ _mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
                                    &server_stream->sd->service_id,
                                    server_stream->sd->server_connection_id,
                                    false,
-                                   client->apm_context);
+                                   log_and_monitor->apm_context);
 
-   client->apm_callbacks.failed (&event);
+   log_and_monitor->apm_callbacks.failed (&event);
 
    mongoc_apm_command_failed_cleanup (&event);
    bson_destroy (&doc);
@@ -2577,33 +2580,6 @@ mongoc_client_set_stream_initiator (mongoc_client_t *client, mongoc_stream_initi
 
 
 bool
-_mongoc_client_set_apm_callbacks_private (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context)
-{
-   BSON_ASSERT_PARAM (client);
-
-   if (callbacks) {
-      memcpy (&client->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
-   } else {
-      memset (&client->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
-   }
-
-   client->apm_context = context;
-
-   /* A client pool sets APM callbacks for the entire pool. */
-   if (client->topology->single_threaded) {
-      mongoc_topology_set_apm_callbacks (client->topology,
-                                         /* We are safe to modify the shared_descr directly, since we are
-                                          * single-threaded */
-                                         mc_tpld_unsafe_get_mutable (client->topology),
-                                         callbacks,
-                                         context);
-   }
-
-   return true;
-}
-
-
-bool
 mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context)
 {
    BSON_ASSERT_PARAM (client);
@@ -2614,7 +2590,9 @@ mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t
       return false;
    }
 
-   return _mongoc_client_set_apm_callbacks_private (client, callbacks, context);
+   mongoc_log_and_monitor_instance_set_apm_callbacks (&client->topology->log_and_monitor, callbacks, context);
+
+   return true;
 }
 
 
@@ -2625,7 +2603,7 @@ mongoc_client_set_structured_log_opts (mongoc_client_t *client, const mongoc_str
    BSON_OPTIONAL_PARAM (opts);
 
    if (client->topology->single_threaded) {
-      mongoc_topology_set_structured_log_opts (client->topology, opts);
+      mongoc_log_and_monitor_instance_set_structured_log_opts (&client->topology->log_and_monitor, opts);
       return true;
    } else {
       MONGOC_WARNING ("Cannot set structured log options on a pooled client, use "

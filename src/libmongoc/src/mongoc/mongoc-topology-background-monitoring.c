@@ -146,7 +146,7 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    tdmod = mc_tpld_modify_begin (topology);
 
    _mongoc_handshake_freeze ();
-   _mongoc_topology_description_monitor_opening (tdmod.new_td);
+   _mongoc_topology_description_monitor_opening (tdmod.new_td, &topology->log_and_monitor);
    if (tdmod.new_td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* Do not proceed to start monitoring threads. */
       TRACE ("%s", "disabling monitoring for load balanced topology");

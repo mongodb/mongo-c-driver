@@ -38,7 +38,7 @@
 
 #include <common-bson-dsl-private.h>
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init
@@ -434,7 +434,7 @@ _get_env_info (mongoc_handshake_t *handshake)
       char *endptr;
       int64_t env_memory_mb = bson_ascii_strtoll (memory_str, &endptr, 10);
       bool parse_ok = endptr == memory_str + (strlen (memory_str));
-      bool in_range = mcommon_in_range_int32_t_signed (env_memory_mb);
+      bool in_range = mlib_in_range (int32_t, env_memory_mb);
 
       if (parse_ok && in_range) {
          handshake->env_memory_mb.set = true;
@@ -445,7 +445,7 @@ _get_env_info (mongoc_handshake_t *handshake)
       char *endptr;
       int64_t env_timeout_sec = bson_ascii_strtoll (timeout_str, &endptr, 10);
       bool parse_ok = endptr == timeout_str + (strlen (timeout_str));
-      bool in_range = mcommon_in_range_int32_t_signed (env_timeout_sec);
+      bool in_range = mlib_in_range (int32_t, env_timeout_sec);
 
       if (parse_ok && in_range) {
          handshake->env_timeout_sec.set = true;
@@ -748,7 +748,7 @@ _append_and_truncate (char **s, const char *suffix, size_t max_len)
    }
 
    const size_t space_for_suffix = max_len - required_space;
-   BSON_ASSERT (mcommon_in_range_unsigned (int, space_for_suffix));
+   BSON_ASSERT (mlib_in_range (int, space_for_suffix));
 
    *s = bson_strdup_printf ("%s / %.*s", prefix, (int) space_for_suffix, suffix);
    BSON_ASSERT (strlen (*s) <= max_len);

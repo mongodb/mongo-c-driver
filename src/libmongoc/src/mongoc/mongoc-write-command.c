@@ -26,7 +26,7 @@
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-opts-private.h>
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #include <inttypes.h>
 
@@ -702,7 +702,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       ulen = BSON_UINT32_FROM_LE (ulen);
 
       // Although messageLength is an int32, it should never be negative.
-      BSON_ASSERT (mcommon_in_range_unsigned (int32_t, ulen));
+      BSON_ASSERT (mlib_in_range (int32_t, ulen));
       const int32_t slen = (int32_t) ulen;
 
       if (slen > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
@@ -711,8 +711,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          result->failed = true;
          break;
 
-      } else if (mcommon_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
-                 document_count == 0) {
+      } else if (mlib_cmp (payload_batch_size + opmsg_overhead + ulen, <=, max_msg_size) || document_count == 0) {
          /* The current batch is still under max batch size in bytes */
          payload_batch_size += ulen;
 

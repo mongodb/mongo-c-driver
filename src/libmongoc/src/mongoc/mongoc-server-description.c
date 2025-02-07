@@ -126,7 +126,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd, const char *add
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
    sd->generation = 0;
-   sd->opened = 0;
+   sd->opened = false;
    sd->_generation_map_ = mongoc_generation_map_new ();
 
    if (!_mongoc_host_list_from_string (&sd->host, address)) {
@@ -1140,7 +1140,7 @@ _nullable_strcmp (const char *a, const char *b)
 }
 
 bool
-_mongoc_server_description_equal (mongoc_server_description_t *sd1, mongoc_server_description_t *sd2)
+_mongoc_server_description_equal (const mongoc_server_description_t *sd1, const mongoc_server_description_t *sd2)
 {
    if (sd1->type != sd2->type) {
       return false;

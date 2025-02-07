@@ -303,7 +303,7 @@ _signal_shutdown (test_fixture_t *tf)
    /* Ignore the "Last server removed from topology" warning. */
    capture_logs (true);
    /* remove the server description from the topology description. */
-   mongoc_topology_description_reconcile (tdmod.new_td, NULL);
+   mongoc_topology_description_reconcile (tdmod.new_td, &tf->client->topology->log_and_monitor, NULL);
    capture_logs (false);
    /* remove the server monitor from the set of server monitors. */
    _mongoc_topology_background_monitoring_reconcile (tf->client->topology, tdmod.new_td);
@@ -319,7 +319,8 @@ _add_server_monitor (test_fixture_t *tf)
 
    uri = mock_server_get_uri (tf->server);
    /* remove the server description from the topology description. */
-   mongoc_topology_description_add_server (tdmod.new_td, mongoc_uri_get_hosts (uri)->host_and_port, &id);
+   mongoc_topology_description_add_server (
+      tdmod.new_td, &tf->client->topology->log_and_monitor, mongoc_uri_get_hosts (uri)->host_and_port, &id);
    /* add the server monitor from the set of server monitors. */
    _mongoc_topology_background_monitoring_reconcile (tf->client->topology, tdmod.new_td);
    mc_tpld_modify_commit (tdmod);

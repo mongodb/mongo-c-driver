@@ -8,6 +8,7 @@
           "a:27017",
           {
             "ok": 1,
+            "helloOk": true,
             "isWritablePrimary": false,
             "secondary": true,
             "setName": "rs",
@@ -18,7 +19,7 @@
               "b:27017"
             ],
             "minWireVersion": 0,
-            "maxWireVersion": 4
+            "maxWireVersion": 21
           }
         ]
       ],

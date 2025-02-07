@@ -30,7 +30,7 @@
 #include "../TestSuite.h"
 #include <common-string-private.h>
 #include <common-json-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -356,7 +356,7 @@ mock_server_run (mock_server_t *server)
    // socklen_t: an unsigned opaque integral type of length of at least 32 bits.
    // To forestall portability problems, it is recommended that applications
    // should not use values larger than 2^32 - 1.
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, bind_addr_len));
+   BSON_ASSERT (mlib_in_range (uint32_t, bind_addr_len));
 
    if (-1 == mongoc_socket_bind (ssock, (struct sockaddr *) bind_addr, (uint32_t) bind_addr_len)) {
       perror ("Failed to bind socket");
@@ -2065,7 +2065,7 @@ _mock_server_reply_with_stream (mock_server_t *server, reply_t *reply, mongoc_st
 
    const ssize_t n_written = mongoc_stream_writev (client, iov, iovcnt, -1);
 
-   BSON_ASSERT (mcommon_cmp_equal_su (n_written, expected));
+   BSON_ASSERT (mlib_cmp (n_written, ==, expected));
 
    bson_free (iov);
    mcd_rpc_message_destroy (rpc);

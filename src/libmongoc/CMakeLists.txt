@@ -112,9 +112,11 @@ if (NOT ENABLE_ZLIB STREQUAL "OFF")
    check_include_files ("stdarg.h" HAVE_STDARG_H)
    if (HAVE_UNISTD_H)
       add_definitions (-DHAVE_UNISTD_H)
+      list (APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_UNISTD_H)
    endif ()
    if (HAVE_STDARG_H)
       add_definitions (-DHAVE_STDARG_H)
+      list (APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_STDARG_H)
    endif ()
    set (MONGOC_ENABLE_COMPRESSION 1)
    set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
@@ -621,6 +623,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-list.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log-and-monitor-private.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
@@ -1031,7 +1034,7 @@ endif ()
 
 set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-atomic.c
-   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-cmp.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-mlib.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h

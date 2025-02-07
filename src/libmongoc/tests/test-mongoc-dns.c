@@ -13,7 +13,7 @@
 
 #include "json-test.h"
 #include "test-libmongoc.h"
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 static void
 _assert_options_match (const bson_t *test, mongoc_uri_t *uri)
@@ -203,7 +203,7 @@ _host_list_matches (const bson_t *test, context_t *ctx)
       ctx->hosts = NULL;
       bson_mutex_unlock (&ctx->mutex);
 
-      ret = mcommon_cmp_equal_su (expected, actual);
+      ret = mlib_cmp (expected, ==, actual);
    }
 
    return ret;
@@ -452,6 +452,7 @@ test_all_spec_tests (TestSuite *suite)
 extern bool
 mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
                                          mongoc_topology_description_t *td,
+                                         const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                          mongoc_host_list_t *hosts,
                                          bson_error_t *error);
 
@@ -510,13 +511,16 @@ check_topology_description (mongoc_topology_description_t *td, mongoc_host_list_
    mongoc_host_list_t *host;
    const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
+   mongoc_log_and_monitor_instance_t log_and_monitor;
+   mongoc_log_and_monitor_instance_init (&log_and_monitor);
+
    for (host = hosts; host; host = host->next) {
       ++nhosts;
 
       /* Check that "host" is already in the topology description by upserting
        * it, and ensuring that the number of servers remains constant. */
       const size_t server_count = servers->items_len;
-      BSON_ASSERT (mongoc_topology_description_add_server (td, host->host_and_port, NULL));
+      BSON_ASSERT (mongoc_topology_description_add_server (td, &log_and_monitor, host->host_and_port, NULL));
 
       if (server_count != servers->items_len) {
          dump_topology_description (td);
@@ -530,6 +534,8 @@ check_topology_description (mongoc_topology_description_t *td, mongoc_host_list_
       dump_hosts (hosts);
       test_error ("topology description had extra hosts");
    }
+
+   mongoc_log_and_monitor_instance_destroy_contents (&log_and_monitor);
 }
 
 static void
@@ -544,13 +550,16 @@ test_srv_polling_mocked (void *unused)
 
    BSON_UNUSED (unused);
 
+   mongoc_log_and_monitor_instance_t log_and_monitor;
+   mongoc_log_and_monitor_instance_init (&log_and_monitor);
+
    mongoc_topology_description_init (&td, 0);
    uri = mongoc_uri_new ("mongodb+srv://server.test.com/?tls=true");
    capture_logs (true);
 
    hosts = MAKE_HOSTS ("a.test.com", "b.test.com");
    expected = MAKE_HOSTS ("a.test.com", "b.test.com");
-   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, hosts, &error);
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, &log_and_monitor, hosts, &error);
    ASSERT_OR_PRINT (ret, error);
    check_topology_description (&td, expected);
    _mongoc_host_list_destroy_all (expected);
@@ -560,7 +569,7 @@ test_srv_polling_mocked (void *unused)
    /* Add an extra host. */
    hosts = MAKE_HOSTS ("x.test.com", "a.test.com", "y.test.com", "b.test.com");
    expected = MAKE_HOSTS ("x.test.com", "a.test.com", "y.test.com", "b.test.com");
-   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, hosts, &error);
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, &log_and_monitor, hosts, &error);
    ASSERT_OR_PRINT (ret, error);
    check_topology_description (&td, expected);
    _mongoc_host_list_destroy_all (expected);
@@ -570,7 +579,7 @@ test_srv_polling_mocked (void *unused)
    /* Remove all but one host. */
    hosts = MAKE_HOSTS ("x.test.com");
    expected = MAKE_HOSTS ("x.test.com");
-   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, hosts, &error);
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, &log_and_monitor, hosts, &error);
    ASSERT_OR_PRINT (ret, error);
    check_topology_description (&td, expected);
    _mongoc_host_list_destroy_all (expected);
@@ -581,7 +590,7 @@ test_srv_polling_mocked (void *unused)
     * logged. */
    hosts = MAKE_HOSTS ("x.test.com", "y.test.com", "bad.wrongdomain.com");
    expected = MAKE_HOSTS ("x.test.com", "y.test.com");
-   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, hosts, &error);
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, &log_and_monitor, hosts, &error);
    ASSERT_OR_PRINT (ret, error);
    check_topology_description (&td, expected);
    _mongoc_host_list_destroy_all (expected);
@@ -591,7 +600,7 @@ test_srv_polling_mocked (void *unused)
    /* An empty host list returns false but does NOT change topology description
     */
    expected = MAKE_HOSTS ("x.test.com", "y.test.com");
-   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, NULL, &error);
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, &log_and_monitor, NULL, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "SRV response did not contain any valid hosts");
@@ -603,7 +612,7 @@ test_srv_polling_mocked (void *unused)
     */
    hosts = MAKE_HOSTS ("bad1.wrongdomain.com", "bad2.wrongdomain.com");
    expected = MAKE_HOSTS ("x.test.com", "y.test.com");
-   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, NULL, &error);
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, &log_and_monitor, NULL, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "SRV response did not contain any valid hosts");
@@ -614,6 +623,7 @@ test_srv_polling_mocked (void *unused)
 
    mongoc_topology_description_cleanup (&td);
    mongoc_uri_destroy (uri);
+   mongoc_log_and_monitor_instance_destroy_contents (&log_and_monitor);
 }
 
 static void
@@ -898,7 +908,7 @@ _mock_rr_resolver_prose_test_10 (const char *service,
 
    if (rr_type == MONGOC_RR_SRV) {
       const size_t count = _mongoc_host_list_length (rr_data->hosts);
-      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, count));
+      BSON_ASSERT (mlib_in_range (uint32_t, count));
 
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
                                    "localhost.test.build.10gen.cc:27019",
@@ -1000,7 +1010,7 @@ _mock_rr_resolver_prose_test_11 (const char *service,
 
    if (rr_type == MONGOC_RR_SRV) {
       const size_t count = _mongoc_host_list_length (rr_data->hosts);
-      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, count));
+      BSON_ASSERT (mlib_in_range (uint32_t, count));
 
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019", "localhost.test.build.10gen.cc:27020");
       rr_data->count = (uint32_t) count;
@@ -1099,7 +1109,7 @@ _mock_rr_resolver_prose_test_12 (const char *service,
 
    if (rr_type == MONGOC_RR_SRV) {
       const size_t count = _mongoc_host_list_length (rr_data->hosts);
-      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, count));
+      BSON_ASSERT (mlib_in_range (uint32_t, count));
 
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
                                    "localhost.test.build.10gen.cc:27019",
@@ -1250,7 +1260,7 @@ _mock_rr_resolver_with_override (const char *service,
    if (rr_type == MONGOC_RR_SRV) {
       bson_mutex_lock (&rr_override.lock);
       const size_t count = _mongoc_host_list_length (rr_override.hosts);
-      BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, count));
+      BSON_ASSERT (mlib_in_range (uint32_t, count));
       rr_data->hosts = _mongoc_host_list_copy_all (rr_override.hosts);
       rr_data->count = (uint32_t) count;
       rr_data->txt_record_opts = NULL;

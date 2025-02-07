@@ -18,7 +18,7 @@
 
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #define AZURE_API_VERSION "2018-02-01"
 
@@ -128,7 +128,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
                             MONGOC_ERROR_AZURE,
                             MONGOC_ERROR_KMS_SERVER_BAD_JSON,
                             "Invalid 'expires_in' string \"%.*s\" from IMDS server",
-                            mcommon_in_range_unsigned (int, expires_in_len) ? (int) expires_in_len : INT_MAX,
+                            mlib_in_range (int, expires_in_len) ? (int) expires_in_len : INT_MAX,
                             expires_in_str);
       } else {
          out->expires_in = mcd_seconds (s);

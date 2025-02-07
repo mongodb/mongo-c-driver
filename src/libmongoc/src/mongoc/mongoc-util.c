@@ -32,7 +32,7 @@
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-sleep.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
@@ -954,7 +954,7 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, hex_len / 2u));
+   BSON_ASSERT (mlib_in_range (uint32_t, hex_len / 2u));
 
    *len = (uint32_t) (hex_len / 2u);
    out = bson_malloc0 (*len);
@@ -967,7 +967,7 @@ hex_to_bin (const char *hex, uint32_t *len)
          return NULL;
       }
 
-      BSON_ASSERT (mcommon_in_range_unsigned (uint8_t, hex_char));
+      BSON_ASSERT (mlib_in_range (uint8_t, hex_char));
       out[i / 2u] = (uint8_t) hex_char;
    }
    return out;

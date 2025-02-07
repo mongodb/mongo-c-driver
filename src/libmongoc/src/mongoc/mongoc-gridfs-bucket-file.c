@@ -23,7 +23,7 @@
 #include <mongoc/mongoc-stream-gridfs-upload-private.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #include <inttypes.h>
 
@@ -332,7 +332,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file, const mong
       }
    }
 
-   BSON_ASSERT (mcommon_in_range_signed (size_t, file->chunk_size));
+   BSON_ASSERT (mlib_in_range (size_t, file->chunk_size));
    const size_t chunk_size = (size_t) file->chunk_size;
 
    for (size_t i = 0u; i < iovcnt; i++) {
@@ -356,7 +356,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file, const mong
       }
    }
 
-   BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, total));
+   BSON_ASSERT (mlib_in_range (ssize_t, total));
    return (ssize_t) total;
 }
 
@@ -400,14 +400,14 @@ _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file, mongoc_iove
             }
             if (file->finished) {
                /* There's nothing left to read */
-               BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, total));
+               BSON_ASSERT (mlib_in_range (ssize_t, total));
                RETURN ((ssize_t) total);
             }
          }
       }
    }
 
-   BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, total));
+   BSON_ASSERT (mlib_in_range (ssize_t, total));
    RETURN ((ssize_t) total);
 }
 

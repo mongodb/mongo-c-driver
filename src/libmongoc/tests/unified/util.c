@@ -18,7 +18,7 @@
 
 #include "test-conveniences.h"
 #include "TestSuite.h"
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 static int
 cmp_key (const void *a, const void *b)
@@ -115,8 +115,8 @@ test_bson_util_install (TestSuite *suite)
    TestSuite_Add (suite, "/unified/selftest/util/copy_and_sort", test_copy_and_sort);
 }
 
-/* TODO (CDRIVER-3525) add test support for CMAP events once the C driver
- * supports CMAP. */
+/* CMAP (CDRIVER-3525) isn't planned for implementation in this driver. Many tests that would otherwise require CMAP
+ * are used in partial form by skipping individual checks that involve unsupported events. */
 bool
 is_unsupported_event_type (const char *event_type)
 {
@@ -149,8 +149,8 @@ usecs_since_epoch (void)
    struct timeval tv;
    BSON_ASSERT (bson_gettimeofday (&tv) == 0);
 
-   BSON_ASSERT (mcommon_in_range_signed (int64_t, tv.tv_sec));
-   BSON_ASSERT (mcommon_in_range_signed (int64_t, tv.tv_usec));
+   BSON_ASSERT (mlib_in_range (int64_t, tv.tv_sec));
+   BSON_ASSERT (mlib_in_range (int64_t, tv.tv_usec));
 
    const int64_t secs = (int64_t) tv.tv_sec;
    const int64_t usecs = (int64_t) tv.tv_usec;
