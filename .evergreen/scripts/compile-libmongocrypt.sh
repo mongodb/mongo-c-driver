@@ -20,6 +20,8 @@ compile_libmongocrypt() {
     "-DBUILD_VERSION=1.12.0"
   )
 
+  . "$(dirname "${BASH_SOURCE[0]}")/find-ccache.sh"
+  find_ccache_and_export_vars "$(pwd)/libmongocrypt" || true
   if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
     crypt_cmake_flags+=(
       "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
