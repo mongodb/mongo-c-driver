@@ -31,10 +31,10 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "CYRUS-SASL"
 
-// CDRIVER-2722: the entire Secure Transport library is deprecated.
-#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+// CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
+#if defined(__APPLE__)
 BEGIN_IGNORE_DEPRECATIONS
-#endif // defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#endif // defined(__APPLE__)
 
 bool
 _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl, const char *mechanism, bson_error_t *error)
@@ -466,8 +466,9 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    return true;
 }
 
-#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+// CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
+#if defined(__APPLE__)
 END_IGNORE_DEPRECATIONS
-#endif // defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#endif // defined(__APPLE__)
 
 #endif

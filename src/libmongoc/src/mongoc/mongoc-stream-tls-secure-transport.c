@@ -42,7 +42,7 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure_transport"
 
-// CDRIVER-2722: the entire Secure Transport library is deprecated.
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
 BEGIN_IGNORE_DEPRECATIONS
 
 static void
@@ -705,6 +705,7 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
    RETURN ((mongoc_stream_t *) tls);
 }
 
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
 END_IGNORE_DEPRECATIONS
 
 #endif /* MONGOC_ENABLE_SSL_SECURE_TRANSPORT */

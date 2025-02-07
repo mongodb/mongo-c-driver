@@ -50,10 +50,10 @@
  Automatic cleanup is deprecated and will be removed in version 2.0.")
 #endif
 
-// CDRIVER-2722: the entire Secure Transport library is deprecated.
-#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+// CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
+#if defined(MONGOC_ENABLE_SASL_CYRUS) && defined(__APPLE__)
 BEGIN_IGNORE_DEPRECATIONS
-#endif // defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#endif // defined(MONGOC_ENABLE_SASL_CYRUS) && defined(__APPLE__)
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
@@ -238,7 +238,7 @@ _mongoc_init_dtor (void)
 }
 #endif
 
-// CDRIVER-2722: the entire Secure Transport library is deprecated.
-#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-END_IGNORE_DEPRECATIONS
-#endif // defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+// CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
+#if defined(MONGOC_ENABLE_SASL_CYRUS) && defined(__APPLE__)
+BEGIN_IGNORE_DEPRECATIONS
+#endif // defined(MONGOC_ENABLE_SASL_CYRUS) && defined(__APPLE__)

@@ -39,7 +39,7 @@
 #include <common-macros-private.h>
 #include <common-string-private.h>
 
-// CDRIVER-2722: the entire Secure Transport library is deprecated.
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
 BEGIN_IGNORE_DEPRECATIONS
 
 /* Jailbreak Darwin Private API */
@@ -512,6 +512,7 @@ CFReleaseSafe (CFTypeRef cf)
    }
 }
 
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
 END_IGNORE_DEPRECATIONS
 
 #endif
