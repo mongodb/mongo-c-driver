@@ -15,7 +15,7 @@
  */
 
 
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern.h>
@@ -417,7 +417,7 @@ static bool
 _mongoc_write_concern_validate (const mongoc_write_concern_t *write_concern, bson_error_t *error)
 {
    if (write_concern && !mongoc_write_concern_is_valid (write_concern)) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
       return false;
    }
    return true;
@@ -450,7 +450,7 @@ _mongoc_parse_wc_err (const bson_t *doc, bson_error_t *error)
             errmsg = bson_iter_utf8 (&inner, NULL);
          }
       }
-      bson_set_error (error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
+      _mongoc_set_error (error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
       return true;
    }
    return false;
@@ -556,7 +556,7 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *erro
    return write_concern;
 
 fail:
-   bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
+   _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
    mongoc_write_concern_destroy (write_concern);
    return NULL;
 }

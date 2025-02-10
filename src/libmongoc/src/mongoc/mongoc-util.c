@@ -24,6 +24,7 @@
 
 #include <common-md5-private.h>
 #include <common-thread-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-rand-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-client.h>
@@ -316,41 +317,6 @@ _mongoc_wire_version_to_server_version (int32_t version)
 }
 
 
-/* Get "serverId" from opts. Sets *server_id to the serverId from "opts" or 0
- * if absent. On error, fills out *error with domain and code and return false.
- */
-bool
-_mongoc_get_server_id_from_opts (
-   const bson_t *opts, mongoc_error_domain_t domain, mongoc_error_code_t code, uint32_t *server_id, bson_error_t *error)
-{
-   bson_iter_t iter;
-
-   ENTRY;
-
-   BSON_ASSERT (server_id);
-
-   *server_id = 0;
-
-   if (!opts || !bson_iter_init_find (&iter, opts, "serverId")) {
-      RETURN (true);
-   }
-
-   if (!BSON_ITER_HOLDS_INT (&iter)) {
-      bson_set_error (error, domain, code, "The serverId option must be an integer");
-      RETURN (false);
-   }
-
-   if (bson_iter_as_int64 (&iter) <= 0) {
-      bson_set_error (error, domain, code, "The serverId option must be >= 1");
-      RETURN (false);
-   }
-
-   *server_id = (uint32_t) bson_iter_as_int64 (&iter);
-
-   RETURN (true);
-}
-
-
 bool
 _mongoc_validate_new_document (const bson_t *doc, bson_validate_flags_t vflags, bson_error_t *error)
 {
@@ -361,11 +327,11 @@ _mongoc_validate_new_document (const bson_t *doc, bson_validate_flags_t vflags, 
    }
 
    if (!bson_validate_with_error (doc, vflags, &validate_err)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "invalid document for insert: %s",
-                      validate_err.message);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "invalid document for insert: %s",
+                         validate_err.message);
       return false;
    }
 
@@ -385,27 +351,27 @@ _mongoc_validate_replace (const bson_t *doc, bson_validate_flags_t vflags, bson_
    }
 
    if (!bson_validate_with_error (doc, vflags, &validate_err)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "invalid argument for replace: %s",
-                      validate_err.message);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "invalid argument for replace: %s",
+                         validate_err.message);
       return false;
    }
 
    if (!bson_iter_init (&iter, doc)) {
-      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "replace document is corrupt");
+      _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "replace document is corrupt");
       return false;
    }
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
       if (key[0] == '$') {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid key '%s': replace prohibits $ operators",
-                         key);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Invalid key '%s': replace prohibits $ operators",
+                            key);
 
          return false;
       }
@@ -427,11 +393,11 @@ _mongoc_validate_update (const bson_t *update, bson_validate_flags_t vflags, bso
    }
 
    if (!bson_validate_with_error (update, vflags, &validate_err)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "invalid argument for update: %s",
-                      validate_err.message);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "invalid argument for update: %s",
+                         validate_err.message);
       return false;
    }
 
@@ -440,19 +406,19 @@ _mongoc_validate_update (const bson_t *update, bson_validate_flags_t vflags, bso
    }
 
    if (!bson_iter_init (&iter, update)) {
-      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "update document is corrupt");
+      _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "update document is corrupt");
       return false;
    }
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
       if (key[0] != '$') {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid key '%s': update only works with $ operators"
-                         " and pipelines",
-                         key);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Invalid key '%s': update only works with $ operators"
+                            " and pipelines",
+                            key);
 
          return false;
       }
@@ -957,21 +923,21 @@ _mongoc_iter_document_as_bson (const bson_iter_t *iter, bson_t *bson, bson_error
    const uint8_t *data;
 
    if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "expected BSON document for field: %s",
-                      bson_iter_key (iter));
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "expected BSON document for field: %s",
+                         bson_iter_key (iter));
       return false;
    }
 
    bson_iter_document (iter, &len, &data);
    if (!bson_init_static (bson, data, len)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "unable to initialize BSON document from field: %s",
-                      bson_iter_key (iter));
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "unable to initialize BSON document from field: %s",
+                         bson_iter_key (iter));
       return false;
    }
 

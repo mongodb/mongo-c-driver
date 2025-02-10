@@ -34,7 +34,7 @@
 #include <mongoc/mongoc-iovec.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mlib/cmp.h>
 
 static bool
@@ -107,7 +107,7 @@ bool
 mongoc_gridfs_file_set_id (mongoc_gridfs_file_t *file, const bson_value_t *id, bson_error_t *error)
 {
    if (!file->is_dirty) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR, "Cannot set file id after saving file.");
       return false;
    }
@@ -710,7 +710,7 @@ divide_round_up (int64_t num, int64_t denom)
 static void
 missing_chunk (mongoc_gridfs_file_t *file)
 {
-   bson_set_error (
+   _mongoc_set_error (
       &file->error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CHUNK_MISSING, "missing chunk number %" PRId32, file->n);
 
    if (file->cursor) {
@@ -843,12 +843,12 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
             bool is_last_chunk = ((file->n + 1) == existing_chunks);
             // If this is not the last chunk, error.
             if (!is_last_chunk && mlib_cmp (len, !=, file->chunk_size)) {
-               bson_set_error (&file->error,
-                               MONGOC_ERROR_GRIDFS,
-                               MONGOC_ERROR_GRIDFS_CORRUPT,
-                               "corrupt chunk number %" PRId32 ": not equal to chunk size: %" PRId32,
-                               file->n,
-                               file->chunk_size);
+               _mongoc_set_error (&file->error,
+                                  MONGOC_ERROR_GRIDFS,
+                                  MONGOC_ERROR_GRIDFS_CORRUPT,
+                                  "corrupt chunk number %" PRId32 ": not equal to chunk size: %" PRId32,
+                                  file->n,
+                                  file->chunk_size);
                RETURN (0);
             }
          } else {
@@ -863,21 +863,21 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    }
 
    if (!data) {
-      bson_set_error (&file->error,
-                      MONGOC_ERROR_GRIDFS,
-                      MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
-                      "corrupt chunk number %" PRId32 ": no data",
-                      file->n);
+      _mongoc_set_error (&file->error,
+                         MONGOC_ERROR_GRIDFS,
+                         MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
+                         "corrupt chunk number %" PRId32 ": no data",
+                         file->n);
       RETURN (0);
    }
 
    if (mlib_cmp (len, >, file->chunk_size)) {
-      bson_set_error (&file->error,
-                      MONGOC_ERROR_GRIDFS,
-                      MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "corrupt chunk number %" PRId32 ": greater than chunk size: %" PRId32,
-                      file->n,
-                      file->chunk_size);
+      _mongoc_set_error (&file->error,
+                         MONGOC_ERROR_GRIDFS,
+                         MONGOC_ERROR_GRIDFS_CORRUPT,
+                         "corrupt chunk number %" PRId32 ": greater than chunk size: %" PRId32,
+                         file->n,
+                         file->chunk_size);
       RETURN (0);
    }
 
@@ -994,7 +994,9 @@ mongoc_gridfs_file_error (mongoc_gridfs_file_t *file, bson_error_t *error)
    BSON_ASSERT (error);
 
    if (BSON_UNLIKELY (file->error.domain)) {
-      bson_set_error (error, file->error.domain, file->error.code, "%s", file->error.message);
+      if (error) {
+         *error = file->error;
+      }
       RETURN (true);
    }
 

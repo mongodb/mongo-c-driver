@@ -21,7 +21,7 @@
 #include <mongoc/mongoc-async-cmd-private.h>
 #include <mongoc/mongoc-async-private.h>
 #include <mongoc/mongoc-cluster-private.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-opcode.h>
 #include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-stream-private.h>
@@ -345,7 +345,7 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
    }
 
    if (bytes < 0) {
-      bson_set_error (&acmd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to write rpc bytes.");
+      _mongoc_set_error (&acmd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to write rpc bytes.");
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
@@ -375,13 +375,13 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
    }
 
    if (bytes < 0) {
-      bson_set_error (
+      _mongoc_set_error (
          &acmd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to receive length header from server.");
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
    if (bytes == 0) {
-      bson_set_error (&acmd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Server closed connection.");
+      _mongoc_set_error (&acmd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Server closed connection.");
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
@@ -392,7 +392,7 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
       msg_len = BSON_UINT32_FROM_LE (msg_len);
 
       if (msg_len < 16 || msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE || msg_len < acmd->buffer.len) {
-         bson_set_error (
+         _mongoc_set_error (
             &acmd->error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply from server.");
          return MONGOC_ASYNC_CMD_ERROR;
       }
@@ -416,13 +416,13 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
    }
 
    if (bytes < 0) {
-      bson_set_error (
+      _mongoc_set_error (
          &acmd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to receive rpc bytes from server.");
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
    if (bytes == 0) {
-      bson_set_error (&acmd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Server closed connection.");
+      _mongoc_set_error (&acmd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Server closed connection.");
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
@@ -431,7 +431,7 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
    if (!acmd->bytes_to_read) {
       mcd_rpc_message_reset (acmd->rpc);
       if (!mcd_rpc_message_from_data_in_place (acmd->rpc, acmd->buffer.data, acmd->buffer.len, NULL)) {
-         bson_set_error (
+         _mongoc_set_error (
             &acmd->error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply from server.");
          return MONGOC_ASYNC_CMD_ERROR;
       }
@@ -441,10 +441,10 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
       size_t decompressed_data_len;
 
       if (!mcd_rpc_message_decompress_if_necessary (acmd->rpc, &decompressed_data, &decompressed_data_len)) {
-         bson_set_error (&acmd->error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Could not decompress server reply");
+         _mongoc_set_error (&acmd->error,
+                            MONGOC_ERROR_PROTOCOL,
+                            MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                            "Could not decompress server reply");
          return MONGOC_ASYNC_CMD_ERROR;
       }
 
@@ -454,7 +454,7 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
       }
 
       if (!mcd_rpc_message_get_body (acmd->rpc, &acmd->reply)) {
-         bson_set_error (
+         _mongoc_set_error (
             &acmd->error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply from server");
          return MONGOC_ASYNC_CMD_ERROR;
       }

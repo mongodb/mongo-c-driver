@@ -22,6 +22,7 @@
 
 #include <bson/bson.h>
 #include <bson/bson-config.h>
+#include <bson/bson-error-private.h>
 #include <bson/bson-json.h>
 #include <bson/bson-json-private.h>
 #include <bson/bson-iso8601-private.h>
@@ -422,10 +423,11 @@ _bson_json_read_set_error (bson_json_reader_t *reader, /* IN */
    if (reader->error) {
       reader->error->domain = BSON_ERROR_JSON;
       reader->error->code = BSON_JSON_ERROR_READ_INVALID_PARAM;
+      bson_set_error_category (reader->error, BSON_ERROR_CATEGORY);
+
       va_start (ap, fmt);
       bson_vsnprintf (reader->error->message, sizeof reader->error->message, fmt, ap);
       va_end (ap);
-      reader->error->message[sizeof reader->error->message - 1] = '\0';
    }
 
    reader->bson.read_state = BSON_JSON_ERROR;
@@ -447,10 +449,11 @@ _bson_json_read_corrupt (bson_json_reader_t *reader, /* IN */
    if (reader->error) {
       reader->error->domain = BSON_ERROR_JSON;
       reader->error->code = BSON_JSON_ERROR_READ_CORRUPT_JS;
+      bson_set_error_category (reader->error, BSON_ERROR_CATEGORY);
+
       va_start (ap, fmt);
       bson_vsnprintf (reader->error->message, sizeof reader->error->message, fmt, ap);
       va_end (ap);
-      reader->error->message[sizeof reader->error->message - 1] = '\0';
    }
 
    reader->bson.read_state = BSON_JSON_ERROR;

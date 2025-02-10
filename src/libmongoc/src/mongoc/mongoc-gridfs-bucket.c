@@ -18,6 +18,7 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-gridfs-bucket-private.h>
 #include <mongoc/mongoc-gridfs-bucket-file-private.h>
 #include <mongoc/mongoc-opts-private.h>
@@ -64,7 +65,7 @@ _mongoc_gridfs_find_file_with_id (mongoc_gridfs_bucket_t *bucket,
    r = mongoc_cursor_next (cursor, &doc);
    if (!r) {
       if (!mongoc_cursor_error (cursor, error)) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_FILE_NOT_FOUND, "No file with given id exists");
       }
    } else {
@@ -96,12 +97,12 @@ mongoc_gridfs_bucket_new (mongoc_database_t *db,
 
    /* Initialize the bucket fields */
    if (strlen (gridfs_opts.bucketName) + strlen (".chunks") + 1 > sizeof (buf)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "bucketName \"%s\" must have fewer than %d characters",
-                      gridfs_opts.bucketName,
-                      (int) (sizeof (buf) - (strlen (".chunks") + 1)));
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "bucketName \"%s\" must have fewer than %d characters",
+                         gridfs_opts.bucketName,
+                         (int) (sizeof (buf) - (strlen (".chunks") + 1)));
       return NULL;
    }
 
@@ -254,7 +255,7 @@ mongoc_gridfs_bucket_upload_from_stream_with_id (mongoc_gridfs_bucket_t *bucket,
 
    if (bytes_read < 0) {
       mongoc_gridfs_bucket_abort_upload (upload_stream);
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_STREAM, "Error occurred on the provided stream.");
       mongoc_stream_destroy (upload_stream);
       return false;
@@ -322,7 +323,7 @@ mongoc_gridfs_bucket_open_download_stream (mongoc_gridfs_bucket_t *bucket,
    }
 
    if (!bson_iter_init (&iter, &file_doc)) {
-      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "File document malformed");
+      _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "File document malformed");
       return NULL;
    }
 
@@ -375,7 +376,7 @@ mongoc_gridfs_bucket_download_to_stream (mongoc_gridfs_bucket_t *bucket,
    while ((bytes_read = mongoc_stream_read (download_stream, buf, 256, 1, 0)) > 0) {
       bytes_written = mongoc_stream_write (destination, buf, bytes_read, 0);
       if (bytes_written < 0) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_STREAM, "Error occurred on the provided stream.");
          mongoc_stream_destroy (download_stream);
          return false;
@@ -412,7 +413,7 @@ mongoc_gridfs_bucket_delete_by_id (mongoc_gridfs_bucket_t *bucket, const bson_va
    BSON_ASSERT (bson_iter_init_find (&iter, &reply, "deletedCount"));
 
    if (bson_iter_as_int64 (&iter) != 1) {
-      bson_set_error (error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_FILE_NOT_FOUND, "File not found");
+      _mongoc_set_error (error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_FILE_NOT_FOUND, "File not found");
       bson_destroy (&reply);
       return false;
    }
@@ -441,7 +442,7 @@ mongoc_gridfs_bucket_find (mongoc_gridfs_bucket_t *bucket, const bson_t *filter,
 
    cursor = mongoc_collection_find_with_opts (bucket->files, filter, opts, NULL);
    if (!cursor->error.code && opts && bson_has_field (opts, "sessionId")) {
-      bson_set_error (
+      _mongoc_set_error (
          &cursor->error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Cannot pass sessionId as an option");
    }
    return cursor;

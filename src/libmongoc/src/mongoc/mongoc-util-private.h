@@ -86,13 +86,6 @@ const char *
 _mongoc_wire_version_to_server_version (int32_t version);
 
 bool
-_mongoc_get_server_id_from_opts (const bson_t *opts,
-                                 mongoc_error_domain_t domain,
-                                 mongoc_error_code_t code,
-                                 uint32_t *server_id,
-                                 bson_error_t *error);
-
-bool
 _mongoc_validate_new_document (const bson_t *insert, bson_validate_flags_t vflags, bson_error_t *error);
 
 bool

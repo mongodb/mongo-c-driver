@@ -30,7 +30,7 @@
 #include <mongoc/mongoc-secure-transport-private.h>
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-ssl-private.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-stream-tls.h>
 #include <mongoc/mongoc-stream-tls-private.h>
@@ -404,7 +404,7 @@ _set_error_from_osstatus (OSStatus status, const char *prefix, bson_error_t *err
 
    err = SecCopyErrorMessageString (status, NULL);
    err_str = _mongoc_cfstringref_to_cstring (err);
-   bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "%s: %s (%d)", prefix, err_str, status);
+   _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "%s: %s (%d)", prefix, err_str, status);
 
    bson_free (err_str);
    CFRelease (err);
@@ -542,7 +542,7 @@ _verify_peer (mongoc_stream_t *stream, bson_error_t *error)
 
    if (trust_result != kSecTrustResultProceed && trust_result != kSecTrustResultUnspecified) {
       char *reason = explain_trust_result (trust, trust_result);
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed (%s)", reason);
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed (%s)", reason);
       bson_free (reason);
       goto fail;
    }

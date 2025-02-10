@@ -17,7 +17,7 @@
 #include <mongoc/mcd-nsinfo.h>
 
 #include <mongoc/mongoc-buffer-private.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/uthash.h>
 
 typedef struct {
@@ -67,11 +67,11 @@ mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error)
 
    const int32_t ns_index = self->count;
    if (self->count == INT32_MAX) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Only %" PRId32 " distinct collections may be used",
-                      INT32_MAX);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Only %" PRId32 " distinct collections may be used",
+                         INT32_MAX);
       return -1;
    }
    self->count++;

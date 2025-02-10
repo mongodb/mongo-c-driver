@@ -20,7 +20,7 @@
 
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
-#include <bson/bson-error.h>
+#include <bson/bson-error-private.h>
 #include <bson/bson-memory.h>
 #include <common-string-private.h>
 #include <bson/bson-types.h>
@@ -74,12 +74,11 @@ bson_set_error (bson_error_t *error, /* OUT */
    if (error) {
       error->domain = domain;
       error->code = code;
+      bson_set_error_category (error, BSON_ERROR_CATEGORY);
 
       va_start (args, format);
       bson_vsnprintf (error->message, sizeof error->message, format, args);
       va_end (args);
-
-      error->message[sizeof error->message - 1] = '\0';
    }
 }
 

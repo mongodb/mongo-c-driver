@@ -323,10 +323,10 @@ _server_monitor_send_and_recv_hello_opmsg (mongoc_server_monitor_t *server_monit
    const int32_t message_header_length = 4u * sizeof (int32_t);
 
    if (message_length < message_header_length) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid reply from server: message length");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid reply from server: message length");
       goto fail;
    }
 
@@ -339,29 +339,29 @@ _server_monitor_send_and_recv_hello_opmsg (mongoc_server_monitor_t *server_monit
 
    mcd_rpc_message_reset (rpc);
    if (!mcd_rpc_message_from_data_in_place (rpc, buffer.data, buffer.len, NULL)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid reply from server: malformed message");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid reply from server: malformed message");
       goto fail;
    }
 
    mcd_rpc_message_ingress (rpc);
 
    if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid reply from server: decompression failure");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid reply from server: decompression failure");
       goto fail;
    }
 
    bson_t body;
    if (!mcd_rpc_message_get_body (rpc, &body)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid reply from server: malformed body");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid reply from server: malformed body");
       goto fail;
    }
 
@@ -436,10 +436,10 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
    const int32_t message_header_length = 4u * sizeof (int32_t);
 
    if (message_length < message_header_length) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid reply from server: message length");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid reply from server: message length");
       goto fail;
    }
 
@@ -452,29 +452,29 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
 
    mcd_rpc_message_reset (rpc);
    if (!mcd_rpc_message_from_data_in_place (rpc, buffer.data, buffer.len, NULL)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid reply from server: malformed message");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid reply from server: malformed message");
       goto fail;
    }
 
    mcd_rpc_message_ingress (rpc);
 
    if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid reply from server: decompression failure");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid reply from server: decompression failure");
       goto fail;
    }
 
    bson_t body;
    if (!mcd_rpc_message_get_body (rpc, &body)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "invalid reply from server: malformed body");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "invalid reply from server: malformed body");
       goto fail;
    }
 
@@ -608,12 +608,12 @@ _server_monitor_poll_with_interrupt (mongoc_server_monitor_t *server_monitor,
       ret = mongoc_stream_poll (poller, 1, (int32_t) BSON_MIN (timeleft_ms, monitor_tick_ms));
       if (ret == -1) {
          MONITOR_LOG (server_monitor, "mongoc_stream_poll error");
-         bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "poll error");
+         _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "poll error");
          return false;
       }
 
       if (poller[0].revents & (POLLERR | POLLHUP)) {
-         bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "connection closed while polling");
+         _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "connection closed while polling");
          return false;
       }
 
@@ -633,7 +633,7 @@ _server_monitor_poll_with_interrupt (mongoc_server_monitor_t *server_monitor,
          return true;
       }
    }
-   bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "connection timeout while polling");
+   _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "connection timeout while polling");
    return false;
 }
 
@@ -649,7 +649,7 @@ _get_timeout_ms (int64_t expire_at_ms, bson_error_t *error)
 
    timeout_ms = expire_at_ms - _now_ms ();
    if (timeout_ms <= 0) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "connection timed out reading message length");
       return 0;
    }
@@ -705,12 +705,12 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
    const int32_t message_header_length = 4u * sizeof (int32_t);
 
    if ((message_length < message_header_length) || (message_length > server_monitor->description->max_msg_size)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "message size %" PRId32 " is not within expected range 16-%" PRId32 " bytes",
-                      message_length,
-                      server_monitor->description->max_msg_size);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "message size %" PRId32 " is not within expected range 16-%" PRId32 " bytes",
+                         message_length,
+                         server_monitor->description->max_msg_size);
       GOTO (fail);
    }
 
@@ -727,7 +727,7 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
    }
 
    if (!mcd_rpc_message_from_data_in_place (rpc, buffer.data, buffer.len, NULL)) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");
       GOTO (fail);
    }
@@ -735,13 +735,13 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
    mcd_rpc_message_ingress (rpc);
 
    if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
-      bson_set_error (error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "decompression failure");
+      _mongoc_set_error (error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "decompression failure");
       GOTO (fail);
    }
 
    bson_t body;
    if (!mcd_rpc_message_get_body (rpc, &body)) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed BSON payload from server");
       GOTO (fail);
    }

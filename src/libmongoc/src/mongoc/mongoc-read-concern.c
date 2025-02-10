@@ -15,7 +15,7 @@
  */
 
 
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-read-concern.h>
 #include <mongoc/mongoc-read-concern-private.h>
@@ -206,7 +206,7 @@ _mongoc_read_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *error
    return read_concern;
 
 fail:
-   bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid readConcern");
+   _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid readConcern");
 
    mongoc_read_concern_destroy (read_concern);
    return NULL;

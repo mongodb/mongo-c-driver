@@ -1,3 +1,11 @@
+libbson 2.0.0 (Unreleased)
+==========================
+
+Changes:
+
+  * `BSON_ERROR_BUFFER_SIZE` is reduced from `504` to `503` to reserve the final byte for internal use.
+      * The data layout of `bson_error_t` remains otherwise unchanged: the size is still 512 bytes and the offset of the `.code`, `.domain`, and `.message` data members remain unchanged.
+
 libbson 1.30.0
 ==============
 
@@ -26,7 +34,6 @@ Thanks to everyone who contributed to the development of this release.
   * Micah Scott
   * Jeremy Mikola
   * Colby Pike
-
 
 libbson 1.29.2
 ==============

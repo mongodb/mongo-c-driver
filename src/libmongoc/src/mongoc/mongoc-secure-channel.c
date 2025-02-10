@@ -28,7 +28,7 @@
 #include <mongoc/mongoc-secure-channel-private.h>
 #include <mongoc/mongoc-stream-tls-secure-channel-private.h>
 #include <mongoc/mongoc-errno-private.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <common-string-private.h>
 #include <mlib/cmp.h>
 
@@ -527,10 +527,10 @@ _mongoc_secure_channel_init_sec_buffer_desc (SecBufferDesc *desc, SecBuffer *buf
 }
 
 
-#define MONGOC_LOG_AND_SET_ERROR(ERROR, DOMAIN, CODE, ...) \
-   do {                                                    \
-      MONGOC_ERROR (__VA_ARGS__);                          \
-      bson_set_error (ERROR, DOMAIN, CODE, __VA_ARGS__);   \
+#define MONGOC_LOG_AND_SET_ERROR(ERROR, DOMAIN, CODE, ...)  \
+   do {                                                     \
+      MONGOC_ERROR (__VA_ARGS__);                           \
+      _mongoc_set_error (ERROR, DOMAIN, CODE, __VA_ARGS__); \
    } while (0)
 
 bool

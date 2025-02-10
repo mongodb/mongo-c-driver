@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-rand-private.h>
 #include <mongoc/mongoc-util-private.h>
@@ -338,7 +338,7 @@ _mongoc_scram_start (
    BSON_ASSERT (outbuflen);
 
    if (!scram->user) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: username is not set");
       goto FAIL;
    }
@@ -354,11 +354,11 @@ _mongoc_scram_start (
 
    /* the server uses a 24 byte random nonce.  so we do as well */
    if (1 != _mongoc_rand_bytes (nonce, sizeof (nonce))) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: could not generate a cryptographically "
-                      "secure nonce in sasl step 1");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: could not generate a cryptographically "
+                         "secure nonce in sasl step 1");
       goto FAIL;
    }
 
@@ -366,7 +366,7 @@ _mongoc_scram_start (
       mcommon_b64_ntop (nonce, sizeof (nonce), scram->encoded_nonce, sizeof (scram->encoded_nonce));
 
    if (-1 == scram->encoded_nonce_len) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: could not encode nonce");
       goto FAIL;
    }
@@ -426,15 +426,15 @@ _mongoc_scram_start (
    goto CLEANUP;
 
 BUFFER_AUTH:
-   bson_set_error (error,
-                   MONGOC_ERROR_SCRAM,
-                   MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                   "SCRAM Failure: could not buffer auth message in sasl step1");
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_SCRAM,
+                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                      "SCRAM Failure: could not buffer auth message in sasl step1");
 
    goto FAIL;
 
 BUFFER:
-   bson_set_error (
+   _mongoc_set_error (
       error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: could not buffer sasl step1");
 
    goto FAIL;
@@ -602,21 +602,21 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
          current_val_len = &val_i_len;
          break;
       default:
-         bson_set_error (error,
-                         MONGOC_ERROR_SCRAM,
-                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                         "SCRAM Failure: unknown key (%c) in sasl step 2",
-                         *ptr);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_SCRAM,
+                            MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                            "SCRAM Failure: unknown key (%c) in sasl step 2",
+                            *ptr);
          goto FAIL;
       }
 
       ptr++;
 
       if (*ptr != '=') {
-         bson_set_error (error,
-                         MONGOC_ERROR_SCRAM,
-                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                         "SCRAM Failure: invalid parse state in sasl step 2");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_SCRAM,
+                            MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                            "SCRAM Failure: invalid parse state in sasl step 2");
 
          goto FAIL;
       }
@@ -643,21 +643,21 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    if (!val_r) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: no r param in sasl step 2");
 
       goto FAIL;
    }
 
    if (!val_s) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: no s param in sasl step 2");
 
       goto FAIL;
    }
 
    if (!val_i) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: no i param in sasl step 2");
 
       goto FAIL;
@@ -666,10 +666,10 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    /* verify our nonce */
    if (mlib_cmp (val_r_len, <, scram->encoded_nonce_len) ||
        mongoc_memcmp (val_r, scram->encoded_nonce, scram->encoded_nonce_len)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: client nonce not repeated in sasl step 2");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: client nonce not repeated in sasl step 2");
    }
 
    *outbuflen = 0;
@@ -694,19 +694,19 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    decoded_salt_len = mcommon_b64_pton ((char *) val_s, decoded_salt, sizeof (decoded_salt));
 
    if (-1 == decoded_salt_len) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: unable to decode salt in sasl step2");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: unable to decode salt in sasl step2");
       goto FAIL;
    }
 
    if (expected_salt_length != decoded_salt_len) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: invalid salt length of %d in sasl step2",
-                      decoded_salt_len);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: invalid salt length of %d in sasl step2",
+                         decoded_salt_len);
       goto FAIL;
    }
 
@@ -715,18 +715,18 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
     * null, we got to the end of the string and didn't have a parse error */
 
    if (*tmp) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: unable to parse iterations in sasl step2");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: unable to parse iterations in sasl step2");
       goto FAIL;
    }
 
    if (iterations < 0) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: iterations is negative in sasl step2");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: iterations is negative in sasl step2");
       goto FAIL;
    }
 
@@ -734,10 +734,10 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
     * the authentication conversation specifies a lower count. This mitigates
     * downgrade attacks by a man-in-the-middle attacker. */
    if (iterations < 4096) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: iterations must be at least 4096");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: iterations must be at least 4096");
       goto FAIL;
    }
 
@@ -760,7 +760,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
                                                                  decoded_salt,
                                                                  decoded_salt_len,
                                                                  (uint32_t) iterations)) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: failed to salt password");
       goto FAIL;
    }
@@ -770,15 +770,15 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    goto CLEANUP;
 
 BUFFER_AUTH:
-   bson_set_error (error,
-                   MONGOC_ERROR_SCRAM,
-                   MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                   "SCRAM Failure: could not buffer auth message in sasl step2");
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_SCRAM,
+                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                      "SCRAM Failure: could not buffer auth message in sasl step2");
 
    goto FAIL;
 
 BUFFER:
-   bson_set_error (
+   _mongoc_set_error (
       error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: could not buffer sasl step2");
 
    goto FAIL;
@@ -872,21 +872,21 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
          current_val_len = &val_v_len;
          break;
       default:
-         bson_set_error (error,
-                         MONGOC_ERROR_SCRAM,
-                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                         "SCRAM Failure: unknown key (%c) in sasl step 3",
-                         *ptr);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_SCRAM,
+                            MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                            "SCRAM Failure: unknown key (%c) in sasl step 3",
+                            *ptr);
          goto FAIL;
       }
 
       ptr++;
 
       if (*ptr != '=') {
-         bson_set_error (error,
-                         MONGOC_ERROR_SCRAM,
-                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                         "SCRAM Failure: invalid parse state in sasl step 3");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_SCRAM,
+                            MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                            "SCRAM Failure: invalid parse state in sasl step 3");
          goto FAIL;
       }
 
@@ -914,25 +914,25 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
    *outbuflen = 0;
 
    if (val_e) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: authentication failure in sasl step 3 : %s",
-                      val_e);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: authentication failure in sasl step 3 : %s",
+                         val_e);
       goto FAIL;
    }
 
    if (!val_v) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: no v param in sasl step 3");
       goto FAIL;
    }
 
    if (!_mongoc_scram_verify_server_signature (scram, val_v, val_v_len)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: could not verify server signature in sasl step 3");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: could not verify server signature in sasl step 3");
       goto FAIL;
    }
 
@@ -976,7 +976,8 @@ _mongoc_scram_step (mongoc_scram_t *scram,
    case 3:
       return _mongoc_scram_step3 (scram, inbuf, inbuflen, outbuf, outbufmax, outbuflen, error);
    default:
-      bson_set_error (error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_NOT_DONE, "SCRAM Failure: maximum steps detected");
+      _mongoc_set_error (
+         error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_NOT_DONE, "SCRAM Failure: maximum steps detected");
       return false;
    }
 }
@@ -1009,10 +1010,10 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    ssize_t num_chars;
    uint8_t *out_utf8;
 
-#define SASL_PREP_ERR_RETURN(msg)                                                               \
-   do {                                                                                         \
-      bson_set_error (err, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, (msg), name); \
-      return NULL;                                                                              \
+#define SASL_PREP_ERR_RETURN(msg)                                                                  \
+   do {                                                                                            \
+      _mongoc_set_error (err, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, (msg), name); \
+      return NULL;                                                                                 \
    } while (0)
 
    /* 1. convert str to Unicode codepoints. */
