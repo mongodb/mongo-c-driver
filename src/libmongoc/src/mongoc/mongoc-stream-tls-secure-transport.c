@@ -36,10 +36,14 @@
 #include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-stream-tls-secure-transport-private.h>
+#include <common-macros-private.h>
 #include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure_transport"
+
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
+BEGIN_IGNORE_DEPRECATIONS
 
 static void
 _mongoc_stream_tls_secure_transport_destroy (mongoc_stream_t *stream)
@@ -700,4 +704,8 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
    }
    RETURN ((mongoc_stream_t *) tls);
 }
+
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
+END_IGNORE_DEPRECATIONS
+
 #endif /* MONGOC_ENABLE_SSL_SECURE_TRANSPORT */
