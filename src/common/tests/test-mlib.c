@@ -434,6 +434,9 @@ _test_foreach (void)
    mlib_foreach_urange (i, 10) {
       fprintf (stderr, "i: %zu\n", i);
       fprintf (stderr, "counter: %zu\n", i_counter);
+      ASSERT (i == loop.index);
+      ASSERT (loop.first == (i == 0));
+      ASSERT (loop.last == (i == 9));
       ++n_loops;
       (void) i;
       ASSERT (n_loops <= 10);
@@ -472,10 +475,12 @@ _test_foreach (void)
    int arr[] = {1, 2, 3};
    int sum = 0;
    n_loops = 0;
-   mlib_foreach_arr (int, n, arr)
-   {
+   mlib_foreach_arr (int, n, arr) {
+      mlib_check (n_loops, eq, loop.index);
       n_loops++;
       sum += *n;
+      ASSERT (loop.first == (n == arr + 0));
+      ASSERT (loop.last == (n == arr + 2));
    }
    ASSERT (sum == 6);
    ASSERT (n_loops == 3);
