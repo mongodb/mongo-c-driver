@@ -620,9 +620,10 @@ _bson_json_read_integer (bson_json_reader_t *reader, uint64_t val, int64_t sign)
 
    if (rs == BSON_JSON_REGULAR) {
       BASIC_CB_BAIL_IF_NOT_NORMAL ("integer");
+      BSON_ASSERT (mlib_in_range (int, len));
 
       if (val <= INT32_MAX || (sign == -1 && val <= (uint64_t) INT32_MAX + 1)) {
-         bson_append_int32 (STACK_BSON_CHILD, key, (int) len, (int) (val * sign));
+         bson_append_int32 (STACK_BSON_CHILD, key, (int) len, (int32_t) ((int64_t) val * sign));
       } else if (sign == -1) {
 #if defined(_WIN32) && !defined(__MINGW32__)
          // Unary negation of unsigned integer is deliberate.
