@@ -116,7 +116,7 @@ struct mlib_source_location {
 /**
  * @brief Expands to an `mlib_source_location` for the location in which the macro is expanded
  */
-#define mlib_this_source_location() ((struct mlib_source_location) {(__FILE__), (__LINE__), (MLIB_FUNC)})
+#define mlib_this_source_location() ((struct mlib_source_location){(__FILE__), (__LINE__), (MLIB_FUNC)})
 // ↑ The paren wrapping is required on VS2017 to prevent it from deleting the preceding comma (?!)
 
 /**
