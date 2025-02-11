@@ -169,10 +169,10 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
    int biased_exponent;
    if (BSON_UNLIKELY ((combination >> 3) == 3)) {
       /* Check for 'special' values */
-      if (combination == COMBINATION_INFINITY) { /* Infinity */
+      if (mlib_cmp (combination, ==, COMBINATION_INFINITY)) { /* Infinity */
          strcpy (str_out, BSON_DECIMAL128_INF);
          return;
-      } else if (combination == COMBINATION_NAN) { /* NaN */
+      } else if (mlib_cmp (combination, ==, COMBINATION_NAN)) { /* NaN */
          /* str, not str_out, to erase the sign */
          strcpy (str, BSON_DECIMAL128_NAN);
          /* we don't care about the NaN payload. */

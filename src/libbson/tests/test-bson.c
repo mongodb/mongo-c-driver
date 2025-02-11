@@ -1795,7 +1795,7 @@ test_bson_steal (void)
    /* test stealing from a bson created with bson_new_from_buffer */
    buf = bson_malloc0 (5);
    len = 5;
-   mlib_write_u32le (buf, len);
+   mlib_write_u32le (buf, 5);
    heap_alloced = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
    ASSERT (bson_steal (&dst, heap_alloced));
    ASSERT (dst.flags & BSON_FLAG_NO_FREE);

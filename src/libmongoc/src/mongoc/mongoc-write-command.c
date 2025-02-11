@@ -699,7 +699,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    }
 
    do {
-      const int32_t len = mlib_read_u32le (command->payload.data + payload_batch_size + payload_total_offset);
+      const int32_t len = mlib_read_i32le (command->payload.data + payload_batch_size + payload_total_offset);
 
       // Although messageLength is an int32, it should never be negative.
       BSON_ASSERT (len >= 0);

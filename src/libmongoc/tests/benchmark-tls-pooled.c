@@ -76,11 +76,11 @@ main (int argc, char *argv[])
    pool = mongoc_client_pool_new (uri);
    mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
 
-   mlib_foreach_urange (i, num_clients) {
+   mlib_foreach_irange (i, num_clients) {
       pthread_create (&threads[i], NULL, worker, pool);
    }
 
-   mlib_foreach_urange (i, num_clients) {
+   mlib_foreach_irange (i, num_clients) {
       pthread_join (threads[i], &ret);
    }
 
