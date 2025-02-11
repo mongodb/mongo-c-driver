@@ -101,7 +101,7 @@ _test_upsize (void)
    ASSERT (up.i.u == UINTMAX_MAX);
 }
 
-void
+static void
 _test_cmp (void)
 {
    mlib_check (mlib_cmp (1, 2) == mlib_less);
@@ -307,7 +307,7 @@ _test_cmp (void)
    ASSERT (mlib_cmp (-27, <, 20u));
 }
 
-void
+static void
 _test_in_range (void)
 {
    const int64_t int8_min = INT8_MIN;
@@ -390,7 +390,7 @@ _test_in_range (void)
    ASSERT (mlib_in_range (size_t, (size_t) ssize_max + 1u));
 }
 
-void
+static void
 _test_assert_aborts (void)
 {
    int a = 0;
@@ -402,7 +402,7 @@ _test_assert_aborts (void)
    ASSERT (a == 0);
 }
 
-void
+static void
 _test_int_encoding (void)
 {
    {
@@ -427,7 +427,7 @@ _test_int_encoding (void)
    }
 }
 
-void
+static void
 _test_foreach (void)
 {
    int n_loops = 0;
