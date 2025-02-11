@@ -1535,7 +1535,7 @@ test_unavailable_seeds (void)
    }
 
    const int num_uris = 6;
-   uri_str = uri_strs = bson_malloc0 (num_uris * sizeof (char *));
+   uri_str = uri_strs = bson_malloc0 ((num_uris + 1) * sizeof (char *));
    *(uri_str++) = bson_strdup_printf ("mongodb://%s", mock_server_get_host_and_port (servers[0]));
 
    *(uri_str++) = bson_strdup_printf (
