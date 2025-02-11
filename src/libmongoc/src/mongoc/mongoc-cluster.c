@@ -3498,7 +3498,7 @@ mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
    out = mlib_write_i32le (out, message_length);
    out = mlib_write_i32le (out, request_id);
    out = mlib_write_i32le (out, response_to);
-   out = mlib_write_i32le (out, op_code);
+   mlib_write_i32le (out, op_code);
 
    // This value may be passed as an argument to an in-out parameter depending
    // on the compressor, not just an out-parameter.
