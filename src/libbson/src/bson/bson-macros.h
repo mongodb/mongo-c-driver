@@ -200,7 +200,7 @@
 
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
-#define BSON_NORETURN noreturn
+#define BSON_NORETURN [[noreturn]]
 #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #define BSON_NORETURN _Noreturn
 #elif defined(__GNUC__) && 2 < __GNUC__ + (8 <= __GNUC_MINOR__)
@@ -210,14 +210,14 @@
 #endif
 
 
-static BSON_INLINE BSON_NORETURN void
+BSON_NORETURN static BSON_INLINE void
 _bson_assert_failed_on_line (const char *file, int line, const char *func, const char *test)
 {
    fprintf (stderr, "%s:%d %s(): assertion failed: %s\n", file, line, func, test);
    abort ();
 }
 
-static BSON_INLINE BSON_NORETURN void
+BSON_NORETURN static BSON_INLINE void
 _bson_assert_failed_on_param (const char *param, const char *func)
 {
    fprintf (stderr, "The parameter: %s, in function %s, cannot be NULL\n", param, func);
