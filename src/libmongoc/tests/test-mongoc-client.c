@@ -1571,7 +1571,6 @@ test_unavailable_seeds (void)
    }
 
    mlib_foreach_arr (mock_server_t *, srv, servers) {
-      *srv = mock_server_down (); /* hangs up on all requests */
       mock_server_destroy (*srv);
    }
 
