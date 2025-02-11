@@ -284,9 +284,10 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
 
          // Reserve space for null terminator.
          const int available_bytes = BSON_DECIMAL128_STRING - 1;
+         const char *const str_end = str + available_bytes;
 
          if (radix_position > 0) { /* non-zero digits before radix */
-            for (int32_t i = 0; i < radix_position && (str_out - str) < available_bytes; i++) {
+            for (int32_t i = 0; i < radix_position && str_out != str_end; i++) {
                *(str_out++) = *(significand_read++) + '0';
             }
          } else { /* leading zero before radix point */
@@ -294,13 +295,13 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
          }
 
          *(str_out++) = '.';
-         while (radix_position++ < 0) { /* add leading zeros after radix */
+         while (radix_position++ < 0 && str_out != str_end) { /* add leading zeros after radix */
             *(str_out++) = '0';
          }
 
          const unsigned dot_pos = (unsigned) BSON_MAX (radix_position - 1, 0);
          const unsigned n_trailing_digits = num_significant_digits - dot_pos;
-         const unsigned n_to_write = BSON_MIN (n_trailing_digits, available_bytes);
+         const unsigned n_to_write = BSON_MIN (n_trailing_digits, (unsigned) (str_end - str_out));
          mlib_foreach_urange (i, n_to_write) {
             (void) i;
             *str_out++ = *significand_read++ + '0';
