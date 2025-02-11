@@ -142,7 +142,7 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream, /* IN */
             GOTO (done);
          } else {
             ret += nread;
-            if (nread != iov[i].iov_len) {
+            if ((size_t) nread != iov[i].iov_len) {
                ret = ret ? ret : -1;
                GOTO (done);
             }
