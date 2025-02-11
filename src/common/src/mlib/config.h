@@ -175,7 +175,7 @@
 #elif defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN)
 #define mlib_is_little_endian() (__BYTE_ORDER == __LITTLE_ENDIAN)
 #elif defined(_WIN32)
-#define mlib_is_mlib_is_little_endian() 1
+#define mlib_is_little_endian() 1
 #else
 #error "Do not know how to detect endianness on this platform."
 #endif
