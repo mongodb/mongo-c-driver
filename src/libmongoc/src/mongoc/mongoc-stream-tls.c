@@ -194,13 +194,13 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
 
    /* !client is only used for testing,
     * when the streams are pretending to be the server */
-   if (!client || opt->weak_cert_validation) {
+   if (opt && (!client || opt->weak_cert_validation)) {
       opt->allow_invalid_hostname = true;
    }
 
 #ifndef _WIN32
    /* Silly check for Unix Domain Sockets */
-   if (!host || (host[0] == '/' && !access (host, F_OK))) {
+   if (opt && (!host || (host[0] == '/' && !access (host, F_OK)))) {
       opt->allow_invalid_hostname = true;
    }
 #endif
@@ -255,13 +255,13 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (
 
    /* !client is only used for testing,
     * when the streams are pretending to be the server */
-   if (!client || opt->weak_cert_validation) {
+   if (opt && (!client || opt->weak_cert_validation)) {
       opt->allow_invalid_hostname = true;
    }
 
 #ifndef _WIN32
    /* Silly check for Unix Domain Sockets */
-   if (!host || (host[0] == '/' && !access (host, F_OK))) {
+   if (opt && (!host || (host[0] == '/' && !access (host, F_OK)))) {
       opt->allow_invalid_hostname = true;
    }
 #endif
