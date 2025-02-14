@@ -63,7 +63,7 @@ Example
 
      for (int i = 0; i < 1000; i++) {
         bson_writer_begin (writer, &doc);
-        BSON_APPEND_INT32 (&doc, "i", i);
+        BSON_APPEND_INT32 (doc, "i", i);
         bson_writer_end (writer);
      }
 
