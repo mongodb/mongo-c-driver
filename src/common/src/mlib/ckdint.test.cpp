@@ -163,7 +163,7 @@ main ()
       mlib_assert_add (size_t, 41, -42);
    }
    mlib_assert_aborts () {
-      mlib_assert_add (ssize_t, 41, SIZE_MAX);
+      mlib_assert_add (ptrdiff_t, 41, SIZE_MAX);
    }
    // Does not abort:
    const size_t sum = mlib_assert_add (size_t, -32, 33);

@@ -108,16 +108,16 @@ _mlib_stmt_did_not_abort (const char *file, const char *func, int line, int rc)
 /**
  * @brief Aggregate type that holds information about a source location
  */
-struct mlib_source_location {
+typedef struct mlib_source_location {
    const char *file;
    int lineno;
    const char *func;
-};
+} mlib_source_location;
 
 /**
  * @brief Expands to an `mlib_source_location` for the location in which the macro is expanded
  */
-#define mlib_this_source_location() ((struct mlib_source_location){__FILE__, __LINE__, MLIB_FUNC})
+#define mlib_this_source_location() (mlib_init (mlib_source_location){(__FILE__), (__LINE__), (MLIB_FUNC)})
 
 /**
  * @brief Evaluate a check, aborting with a diagnostic if that check fails
