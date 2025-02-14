@@ -61,7 +61,7 @@ Example
 
      writer = bson_writer_new (&buf, &buflen, 0, bson_realloc_ctx, NULL);
 
-     for (i = 0; i < 1000; i++) {
+     for (int i = 0; i < 1000; i++) {
         bson_writer_begin (writer, &doc);
         BSON_APPEND_INT32 (&doc, "i", i);
         bson_writer_end (writer);
