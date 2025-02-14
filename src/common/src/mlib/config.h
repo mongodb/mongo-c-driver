@@ -165,6 +165,13 @@
 #define MLIB_LANG_PICK MLIB_IF_ELSE (mlib_is_not_cxx ())
 
 /**
+ * @brief Use as the prefix of a braced initializer within C headers, allowing
+ * the initializer to appear as a compound-init in C and an equivalent braced
+ * aggregate-init in C++
+ */
+#define mlib_init(T) MLIB_LANG_PICK ((T)) (T)
+
+/**
  * @brief Expands to `noexcept` when compiled as C++, otherwise expands to
  * nothing
  */
@@ -330,9 +337,9 @@
 #define mlib_have_typeof() 1
 #elif defined _MSC_VER && _MSC_VER >= 1939 && !__cplusplus
 // We can __typeof__ in MSVC 19.39+
-#define mlibe_have_typeof() 1
+#define mlib_have_typeof() 1
 #else
-#define mlibe_have_typeof() 0
+#define mlib_have_typeof() 0
 #endif
 
 /**
