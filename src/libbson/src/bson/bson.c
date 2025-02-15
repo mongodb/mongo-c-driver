@@ -2008,7 +2008,7 @@ bson_copy_to (const bson_t *src, bson_t *dst)
    if ((src->flags & BSON_FLAG_INLINE)) {
 #ifdef BSON_MEMCHECK
       dst->len = src->len;
-      dst->canary = bson_malloc (1);
+      dst->canary = src->canary;
       memcpy (dst->padding, src->padding, sizeof dst->padding);
 #else
       memcpy (dst, src, sizeof *dst);
