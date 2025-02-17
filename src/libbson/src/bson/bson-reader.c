@@ -450,7 +450,7 @@ static const bson_t *
 _bson_reader_handle_read (bson_reader_handle_t *reader, /* IN */
                           bool *reached_eof)            /* IN */
 {
-   int32_t blen;
+   uint32_t blen;
 
    if (reached_eof) {
       *reached_eof = false;
@@ -556,7 +556,7 @@ static const bson_t *
 _bson_reader_data_read (bson_reader_data_t *reader, /* IN */
                         bool *reached_eof)          /* IN */
 {
-   int32_t blen;
+   uint32_t blen;
 
    if (reached_eof) {
       *reached_eof = false;
