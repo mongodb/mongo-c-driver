@@ -478,7 +478,7 @@ _bson_reader_handle_read (bson_reader_handle_t *reader, /* IN */
          continue;
       }
 
-      if (!bson_init_static (&reader->inline_bson, &reader->data[reader->offset], (uint32_t) blen)) {
+      if (!bson_init_static (&reader->inline_bson, &reader->data[reader->offset], blen)) {
          return NULL;
       }
 
@@ -574,7 +574,7 @@ _bson_reader_data_read (bson_reader_data_t *reader, /* IN */
          return NULL;
       }
 
-      if (!bson_init_static (&reader->inline_bson, &reader->data[reader->offset], (uint32_t) blen)) {
+      if (!bson_init_static (&reader->inline_bson, &reader->data[reader->offset], blen)) {
          return NULL;
       }
 
