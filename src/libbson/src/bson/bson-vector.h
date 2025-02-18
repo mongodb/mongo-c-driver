@@ -259,6 +259,19 @@ bson_append_array_from_vector_packed_bits (bson_t *bson,
    bson_append_array_from_vector_packed_bits (b, key, (int) strlen (key), view)
 
 
+static const BSON_INLINE int8_t *
+bson_vector_int8_const_view_pointer (bson_vector_int8_const_view_t view)
+{
+   return (const int8_t *) view.binary.data + BSON_VECTOR_HEADER_LEN;
+}
+
+static BSON_INLINE int8_t *
+bson_vector_int8_view_pointer (bson_vector_int8_view_t view)
+{
+   return (int8_t *) view.binary.data + BSON_VECTOR_HEADER_LEN;
+}
+
+
 static BSON_INLINE uint32_t
 bson_vector_int8_binary_data_length (size_t element_count)
 {
@@ -363,7 +376,7 @@ bson_vector_int8_const_view_read (bson_vector_int8_const_view_t view,
 {
    size_t length = bson_vector_int8_const_view_length (view);
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
-      memcpy (values_out, view.binary.data + BSON_VECTOR_HEADER_LEN + vector_offset_elements, element_count);
+      memcpy (values_out, bson_vector_int8_const_view_pointer (view) + vector_offset_elements, element_count);
       return true;
    } else {
       return false;
@@ -388,7 +401,7 @@ bson_vector_int8_view_write (bson_vector_int8_view_t view,
 {
    size_t length = bson_vector_int8_view_length (view);
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
-      memcpy (view.binary.data + BSON_VECTOR_HEADER_LEN + vector_offset_elements, values, element_count);
+      memcpy (bson_vector_int8_view_pointer (view) + vector_offset_elements, values, element_count);
       return true;
    } else {
       return false;

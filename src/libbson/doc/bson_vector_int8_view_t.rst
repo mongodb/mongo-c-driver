@@ -40,6 +40,7 @@ The :symbol:`bson_t` *MUST* be valid for the lifetime of the view and it is an e
     bson_vector_int8_view_length
     bson_vector_int8_view_read
     bson_vector_int8_view_write
+    bson_vector_int8_view_pointer
 
 Example
 -------
