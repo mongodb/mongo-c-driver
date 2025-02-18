@@ -1,4 +1,4 @@
-a``:man_page: bson_vector_int8_const_view_pointer
+:man_page: bson_vector_int8_const_view_pointer
 
 bson_vector_int8_const_view_pointer()
 =====================================
