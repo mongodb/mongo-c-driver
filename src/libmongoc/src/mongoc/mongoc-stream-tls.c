@@ -252,16 +252,17 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (
    mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
 {
    BSON_ASSERT (base_stream);
+   BSON_ASSERT (opt);
 
    /* !client is only used for testing,
     * when the streams are pretending to be the server */
-   if (opt && (!client || opt->weak_cert_validation)) {
+   if (!client || opt->weak_cert_validation) {
       opt->allow_invalid_hostname = true;
    }
 
 #ifndef _WIN32
    /* Silly check for Unix Domain Sockets */
-   if (opt && (!host || (host[0] == '/' && !access (host, F_OK)))) {
+   if (!host || (host[0] == '/' && !access (host, F_OK))) {
       opt->allow_invalid_hostname = true;
    }
 #endif
