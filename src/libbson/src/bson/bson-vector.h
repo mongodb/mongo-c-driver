@@ -262,13 +262,13 @@ bson_append_array_from_vector_packed_bits (bson_t *bson,
 static BSON_INLINE const int8_t *
 bson_vector_int8_const_view_pointer (bson_vector_int8_const_view_t view)
 {
-   return (const int8_t *) view.binary.data + BSON_VECTOR_HEADER_LEN;
+   return (const int8_t *) (view.binary.data + BSON_VECTOR_HEADER_LEN);
 }
 
 static BSON_INLINE int8_t *
 bson_vector_int8_view_pointer (bson_vector_int8_view_t view)
 {
-   return (int8_t *) view.binary.data + BSON_VECTOR_HEADER_LEN;
+   return (int8_t *) (view.binary.data + BSON_VECTOR_HEADER_LEN);
 }
 
 
