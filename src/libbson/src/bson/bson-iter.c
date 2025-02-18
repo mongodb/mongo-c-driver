@@ -881,6 +881,12 @@ bson_iter_next (bson_iter_t *iter) /* INOUT */
  *       @binary should not be modified or freed and is only valid while
  *       @iter's bson_t is valid and unmodified.
  *
+ *       Note: Public constraints are tighter than private ones.
+ *       API documentation says it's "a programming error to call this function
+ *       when ``iter`` is not observing an element of type BSON_TYPE_BINARY.".
+ *       Privately only, we do check the iterator type and we output NULL and
+ *       BSON_SUBTYPE_BINARY when the type is incorrect.
+ *
  * Parameters:
  *       @iter: A bson_iter_t
  *       @subtype: A location for the binary subtype.
@@ -952,6 +958,12 @@ bson_iter_binary (const bson_iter_t *iter, /* IN */
  *       or subtype, through a temporary pointer that's only valid until the
  *       underlying bson_t is modified or deleted.
  *
+ *       Note: Public constraints are tighter than private ones.
+ *       API documentation says it's "a programming error to call this function
+ *       when ``iter`` is not observing an element of type BSON_TYPE_BINARY.".
+ *       Privately only, we do check the iterator type and we return NULL when
+ *       the type is incorrect.
+ *
  * Parameters:
  *       @iter: A bson_iter_t
  *       @binary_len: A location for the length of @binary.
@@ -1009,6 +1021,12 @@ bson_iter_overwrite_binary (bson_iter_t *iter,      /* IN */
  * bson_iter_binary_subtype --
  *
  *       Retrieves the subtype of a BSON_TYPE_BINARY field.
+ *
+ *       Note: Public constraints are tighter than private ones.
+ *       API documentation says it's "a programming error to call this function
+ *       when ``iter`` is not observing an element of type BSON_TYPE_BINARY.".
+ *       Privately only, we do check the iterator type and return
+ *       BSON_SUBTYPE_BINARY when the type is incorrect.
  *
  * Parameters:
  *       @iter: A bson_iter_t
