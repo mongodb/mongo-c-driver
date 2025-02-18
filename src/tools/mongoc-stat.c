@@ -29,11 +29,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define BSON_INSIDE
-#define MONGOC_INSIDE
 #include <mlib/cmp.h>
-#undef MONGOC_INSIDE
-#undef BSON_INSIDE
 
 #pragma pack(1)
 typedef struct {
