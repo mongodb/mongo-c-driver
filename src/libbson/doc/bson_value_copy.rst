@@ -21,6 +21,7 @@ Description
 -----------
 
 This function will copy the boxed content in ``src`` into ``dst``. ``dst`` must be freed with :symbol:`bson_value_destroy()` when no longer in use.
+``dst`` *MUST* be an uninitialized :symbol:`bson_value_t` to avoid leaking memory.
 
 .. note::
 
