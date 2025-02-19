@@ -113,7 +113,7 @@ mongoc_counters_calc_size (void)
 #ifdef BSON_OS_UNIX
    long pg_sz = sysconf (_SC_PAGESIZE);
    BSON_ASSERT (pg_sz > 0);
-   return BSON_MAX (pg_sz, size);
+   return BSON_MAX ((size_t) pg_sz, size);
 #else
    return size;
 #endif
