@@ -209,7 +209,7 @@ match_json (const bson_t *doc,
 
 #define ASSERT_EQUAL_BSON(expected, actual)                                   \
    do {                                                                       \
-      bson_t *_expected_bson = expected, *_actual_bson = actual;              \
+      const bson_t *_expected_bson = expected, *_actual_bson = actual;        \
       char *_expected_str, *_actual_str;                                      \
       _expected_str = bson_as_canonical_extended_json (_expected_bson, NULL); \
       _actual_str = bson_as_canonical_extended_json (_actual_bson, NULL);     \
