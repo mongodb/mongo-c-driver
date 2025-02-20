@@ -306,7 +306,6 @@ sbom-generate:
 # sbom-validate:
 #   Validate the SBOM Lite for the given branch.
 sbom-validate:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
     FROM +silkbomb
     # Copy in the relevant files:
     WORKDIR /s
