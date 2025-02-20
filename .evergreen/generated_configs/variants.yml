@@ -174,10 +174,6 @@ buildvariants:
     display_name: loadbalanced
     tasks:
       - name: .loadbalanced
-  - name: misc
-    display_name: Miscellaneous
-    tasks:
-      - name: .misc
   - name: mock-server-test
     display_name: Mock Server Test
     expansions:

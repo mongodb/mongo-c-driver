@@ -249,33 +249,6 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. seealso:: `sbom-lite` and `sbom-lite-updating`
 
-
-.. program:: +create-silk-asset-group
-.. earthly-target:: +create-silk-asset-group
-
-   Creates a new `Silk asset group <silk-asset-group>` for a branch in the
-   repository. This target executes the `tools/create-silk-asset-group.py`
-   script with the appropriate arguments.
-
-   .. note:: For branches that execute in CI, running this target manually is
-      not necessary, as it is run automatically for every build.
-
-   .. rubric:: Parameters
-   .. option:: --branch <branch>
-
-      The repository branch for which to create the new asset group. If not
-      specified, the branch name will be inferred by asking Git.
-
-   .. rubric:: Secrets
-   .. envvar::
-         SILK_CLIENT_ID
-         SILK_CLIENT_SECRET
-      :noindex:
-
-      **Required**. [#creds]_
-
-      .. seealso:: `earthly.secrets`
-
 .. program:: +snyk-monitor-snapshot
 .. earthly-target:: +snyk-monitor-snapshot
 

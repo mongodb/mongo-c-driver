@@ -322,38 +322,6 @@ sbom-download:
     # Export as /augmented-sbom.json
     SAVE ARTIFACT augmented-sbom.json
 
-# create-silk-asset-group :
-#   Create an asset group in Silk for the Git branch if one is not already defined.
-#
-# Requires credentials for Silk access.
-#
-# If --branch is not specified, it will be inferred from the current Git branch
-create-silk-asset-group:
-    ARG branch
-    # Get a default value for $branch
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.19
-    IF test "${branch}" = ""
-        LOCALLY
-        LET branch=$(git rev-parse --abbrev-ref HEAD)
-        RUN --no-cache echo "Inferred asset-group name from Git HEAD to be “${branch}”"
-    END
-    # Reset to alpine from the LOCALLY above
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.19
-    RUN apk add python3
-    # Copy in the script
-    COPY tools/create-silk-asset-group.py /opt/
-    # # Run the creation script. Refer to tools/create-silk-asset-group.py for details
-    RUN --no-cache \
-        --secret SILK_CLIENT_ID \
-        --secret SILK_CLIENT_SECRET \
-        python /opt/create-silk-asset-group.py \
-            --branch=${branch} \
-            --project=mongo-c-driver \
-            --code-repo-url=https://github.com/mongodb/mongo-c-driver \
-            --sbom-lite-path=etc/cyclonedx.sbom.json \
-            --exist-ok
-
-
 snyk:
     FROM --platform=linux/amd64 artifactory.corp.mongodb.com/dockerhub/library/ubuntu:24.04
     RUN apt-get update && apt-get -y install curl
