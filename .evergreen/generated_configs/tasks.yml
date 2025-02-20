@@ -4913,6 +4913,11 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+  - name: sbom
+    run_on: rhel80-small
+    tags: [sbom, rhel80]
+    commands:
+      - func: sbom
   - name: scan-build-macos-14-arm64-clang
     run_on: macos-14-arm64
     tags: [scan-build-matrix, macos-14-arm64, clang]

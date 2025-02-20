@@ -197,6 +197,10 @@ release-archive:
         LET base = "mongo_c_driver_latest_release"
     END
 
+    # The augmented SBOM must be manually obtained from a recent execution of
+    # the `sbom` task in an Evergreen patch or commit build in advance.
+    COPY etc/augmented-sbom.json cyclonedx.sbom.json
+
     # The full link to the build for this commit
     LET waterfall_url = "https://spruce.mongodb.com/version/${base}_${revision}"
     # Insert the URL into the SSDLC report

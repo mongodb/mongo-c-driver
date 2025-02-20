@@ -112,6 +112,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    Generate a source release archive of the repository for the specified branch.
    Requires the secrets for `+snyk-test`.
+   Requires `etc/augmented-sbom.json` is present (obtained from Evergreen).
 
    .. earthly-artifact:: +release-archive/release.tar.gz
 
