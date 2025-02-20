@@ -665,7 +665,7 @@ test_read (void)
 
    BSON_ASSERT (errno == previous_errno);
    BSON_ASSERT (r == 0);
-   BSON_ASSERT (mongoc_gridfs_file_tell (file) == file->length + 20);
+   BSON_ASSERT (mlib_cmp (mongoc_gridfs_file_tell (file), ==, file->length + 20));
 
    mongoc_gridfs_file_destroy (file);
 
@@ -757,11 +757,11 @@ _test_write (bool at_boundary)
 
    /* Test writing beyond the end of the file */
    BSON_ASSERT (mongoc_gridfs_file_seek (file, seek_len, SEEK_END) == 0);
-   BSON_ASSERT (mongoc_gridfs_file_tell (file) == file->length + seek_len);
+   BSON_ASSERT (mlib_cmp (mongoc_gridfs_file_tell (file), ==, file->length + seek_len));
 
    r = mongoc_gridfs_file_writev (file, iov, 2, 0);
    BSON_ASSERT (r == len);
-   BSON_ASSERT (mongoc_gridfs_file_tell (file) == 2 * len + seek_len);
+   BSON_ASSERT (mlib_cmp (mongoc_gridfs_file_tell (file), ==, 2 * len + seek_len));
    BSON_ASSERT (file->length == 2 * len + seek_len);
    BSON_ASSERT (mongoc_gridfs_file_save (file));
    _check_chunk_count (gridfs, 2 * len + seek_len, file->chunk_size);

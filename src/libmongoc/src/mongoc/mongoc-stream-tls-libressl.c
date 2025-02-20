@@ -194,7 +194,8 @@ _mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov
       iov_pos = 0;
 
       while (iov_pos < iov[i].iov_len) {
-         if (buf_head != buf_tail || ((i + 1 < iovcnt) && ((buf_end - buf_tail) > (iov[i].iov_len - iov_pos)))) {
+         if (buf_head != buf_tail ||
+             ((i + 1 < iovcnt) && ((size_t) (buf_end - buf_tail) > (iov[i].iov_len - iov_pos)))) {
             /* If we have either of:
              *   - buffered bytes already
              *   - another iovec to send after this one and we don't have more
@@ -202,7 +203,7 @@ _mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov
              *
              * copy into the buffer */
 
-            bytes = BSON_MIN (iov[i].iov_len - iov_pos, buf_end - buf_tail);
+            bytes = BSON_MIN (iov[i].iov_len - iov_pos, (size_t) (buf_end - buf_tail));
 
             memcpy (buf_tail, (char *) iov[i].iov_base + iov_pos, bytes);
             buf_tail += bytes;
@@ -237,7 +238,7 @@ _mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov
 
             ret += child_ret;
 
-            if (child_ret < to_write_len) {
+            if ((size_t) child_ret < to_write_len) {
                /* we timed out, so send back what we could send */
 
                RETURN (ret);

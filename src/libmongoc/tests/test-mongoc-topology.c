@@ -201,7 +201,7 @@ static void
 assert_topology_state (mongoc_topology_t *topology, mongoc_topology_scanner_state_t state)
 {
    ASSERT (topology);
-   ASSERT (topology->scanner_state == state);
+   ASSERT (mlib_cmp (topology->scanner_state, ==, state));
 }
 
 static void

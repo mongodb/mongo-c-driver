@@ -1191,7 +1191,7 @@ test_bson_json_error (const char *json, int domain, bson_json_error_code_t code)
    bson = bson_new_from_json ((const uint8_t *) json, strlen (json), &error);
 
    BSON_ASSERT (!bson);
-   BSON_ASSERT (error.domain == domain);
+   BSON_ASSERT (mlib_cmp (error.domain, ==, domain));
    BSON_ASSERT (error.code == code);
 }
 
@@ -3213,7 +3213,7 @@ _test_bson_json_utf8_truncation (bson_t *test_doc, bson_json_mode_t mode, const 
          if (arg < 0) {
             BSON_ASSERT (arg == -1);
             break;
-         } else if (arg == checking_len) {
+         } else if (mlib_cmp (arg, ==, checking_len)) {
             expect_truncation_here = false;
          }
       }

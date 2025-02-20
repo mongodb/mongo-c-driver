@@ -4,6 +4,7 @@
 #include "test-conveniences.h"
 #include <mongoc/mongoc-array-private.h>
 #include "TestSuite.h"
+#include <mlib/loop.h>
 
 static void
 stored_log_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
@@ -291,8 +292,8 @@ prose_test_3 (void)
       if (test_length > max_expected_length) {
          expect_missing = true;
       } else {
-         for (int missing = 0; missing < sizeof expect_missing_lengths / sizeof expect_missing_lengths[0]; missing++) {
-            if (expect_missing_lengths[missing] == test_length) {
+         mlib_foreach_arr (const int, len, expect_missing_lengths) {
+            if (*len == test_length) {
                expect_missing = true;
                break;
             }

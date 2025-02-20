@@ -1,5 +1,6 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mlib/loop.h>
 
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
@@ -74,8 +75,6 @@ _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
 static void
 test_query_flags (void)
 {
-   int i;
-
    typedef struct {
       mongoc_query_flags_t flag;
       bson_t *opt;
@@ -86,9 +85,9 @@ test_query_flags (void)
       {MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA, tmp_bson ("{'tailable': true, 'awaitData': true}")}};
 
    /* test with both flag and opt */
-   for (i = 0; i < (sizeof flags_and_opts) / (sizeof (flag_and_opt_t)); i++) {
-      _test_query_flag (flags_and_opts[i].flag, NULL);
-      _test_query_flag (MONGOC_QUERY_NONE, flags_and_opts[i].opt);
+   mlib_foreach_arr (flag_and_opt_t, opts, flags_and_opts) {
+      _test_query_flag (opts->flag, NULL);
+      _test_query_flag (MONGOC_QUERY_NONE, opts->opt);
    }
 }
 

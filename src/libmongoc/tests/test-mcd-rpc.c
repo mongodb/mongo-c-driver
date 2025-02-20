@@ -1,6 +1,7 @@
 #include <mongoc/mcd-rpc.h>
 
 #include <mongoc/mongoc-iovec.h>
+#include <mlib/intencode.h>
 
 #include "test-conveniences.h"
 #include "TestSuite.h"
@@ -328,22 +329,6 @@
    } else                                                                                   \
       (void) 0
 
-
-static int32_t
-_int32_from_le (const void *data)
-{
-   BSON_ASSERT_PARAM (data);
-   return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
-}
-
-static int64_t
-_int64_from_le (const void *data)
-{
-   BSON_ASSERT_PARAM (data);
-   return bson_iter_int64_unsafe (&(bson_iter_t){.raw = data});
-}
-
-
 static void
 test_rpc_message_from_data_op_compressed_valid (void)
 {
@@ -507,7 +492,7 @@ _test_rpc_message_from_data_op_msg_valid_kind_1_single (const uint8_t *data, siz
       ASSERT (sequence);
       ASSERT_CMPSIZE_T (mcd_rpc_op_msg_section_get_document_sequence_length (rpc, 1u), ==, 15u);
 
-      const int32_t bson_len = _int32_from_le (sequence);
+      const int32_t bson_len = mlib_read_i32le (sequence);
       ASSERT_CMPINT32 (bson_len, ==, 15);
 
       bson_t bson;
@@ -578,7 +563,7 @@ _test_rpc_message_from_data_op_msg_valid_kind_1_multiple (const uint8_t *data, s
       const void *const sequence = mcd_rpc_op_msg_section_get_document_sequence (rpc, 1u);
       ASSERT (sequence);
 
-      const int32_t bson_len = _int32_from_le (sequence);
+      const int32_t bson_len = mlib_read_i32le (sequence);
       ASSERT_CMPINT32 (bson_len, ==, 15);
 
       bson_t bson;
@@ -598,7 +583,7 @@ _test_rpc_message_from_data_op_msg_valid_kind_1_multiple (const uint8_t *data, s
       // BSON objects, index 0.
       {
          const uint8_t *const doc_0 = sequence;
-         const int32_t bson_len = _int32_from_le (doc_0);
+         const int32_t bson_len = mlib_read_i32le (doc_0);
          ASSERT_CMPINT32 (bson_len, ==, 16);
 
          bson_t bson;
@@ -610,7 +595,7 @@ _test_rpc_message_from_data_op_msg_valid_kind_1_multiple (const uint8_t *data, s
       // BSON objects, index 1.
       {
          const uint8_t *const doc_1 = sequence + 16;
-         const int32_t bson_len = _int32_from_le (doc_1);
+         const int32_t bson_len = mlib_read_i32le (doc_1);
          ASSERT_CMPINT32 (bson_len, ==, 16);
 
          bson_t bson;
@@ -681,7 +666,7 @@ test_rpc_message_from_data_op_reply_valid (void)
       // Documents, index 0.
       {
          const uint8_t *const doc_0 = documents;
-         const int32_t bson_len = _int32_from_le (doc_0);
+         const int32_t bson_len = mlib_read_i32le (doc_0);
          ASSERT_CMPINT32 (bson_len, ==, 16);
 
          bson_t bson;
@@ -693,7 +678,7 @@ test_rpc_message_from_data_op_reply_valid (void)
       // Documents, index 1.
       {
          const uint8_t *const doc_1 = documents + 16;
-         const int32_t bson_len = _int32_from_le (doc_1);
+         const int32_t bson_len = mlib_read_i32le (doc_1);
          ASSERT_CMPINT32 (bson_len, ==, 16);
 
          bson_t bson;
@@ -773,7 +758,7 @@ test_rpc_message_from_data_op_update_valid (void)
          const uint8_t *const selector = mcd_rpc_op_update_get_selector (rpc);
          ASSERT_CMPSIZE_T ((size_t) (selector - data), ==, 32u);
 
-         const int32_t selector_len = _int32_from_le (selector);
+         const int32_t selector_len = mlib_read_i32le (selector);
          ASSERT_CMPINT32 (selector_len, ==, 16);
 
          bson_t bson;
@@ -786,7 +771,7 @@ test_rpc_message_from_data_op_update_valid (void)
          const uint8_t *const update = mcd_rpc_op_update_get_update (rpc);
          ASSERT_CMPSIZE_T ((size_t) (update - data), ==, 48u);
 
-         const int32_t update_len = _int32_from_le (update);
+         const int32_t update_len = mlib_read_i32le (update);
          ASSERT_CMPINT32 (update_len, ==, 14);
 
          bson_t bson;
@@ -839,7 +824,7 @@ test_rpc_message_from_data_op_insert_valid (void)
       // Documents, index 0.
       {
          const uint8_t *const doc_0 = documents;
-         const int32_t bson_len = _int32_from_le (doc_0);
+         const int32_t bson_len = mlib_read_i32le (doc_0);
          ASSERT_CMPINT32 (bson_len, ==, 16);
 
          bson_t bson;
@@ -851,7 +836,7 @@ test_rpc_message_from_data_op_insert_valid (void)
       // Documents, index 1.
       {
          const uint8_t *const doc_1 = documents + 16;
-         const int32_t bson_len = _int32_from_le (doc_1);
+         const int32_t bson_len = mlib_read_i32le (doc_1);
          ASSERT_CMPINT32 (bson_len, ==, 16);
 
          bson_t bson;
@@ -919,7 +904,7 @@ test_rpc_message_from_data_op_query_valid (void)
          const uint8_t *const query = mcd_rpc_op_query_get_query (rpc);
          ASSERT_CMPSIZE_T ((size_t) (query - data), ==, 36u);
 
-         const int32_t query_len = _int32_from_le (query);
+         const int32_t query_len = mlib_read_i32le (query);
          ASSERT_CMPINT32 (query_len, ==, 13);
 
          bson_t bson;
@@ -932,7 +917,7 @@ test_rpc_message_from_data_op_query_valid (void)
          const uint8_t *const selector = mcd_rpc_op_query_get_return_fields_selector (rpc);
          ASSERT_CMPSIZE_T ((size_t) (selector - data), ==, 49u);
 
-         const int32_t selector_len = _int32_from_le (selector);
+         const int32_t selector_len = mlib_read_i32le (selector);
          ASSERT_CMPINT32 (selector_len, ==, 16);
 
          bson_t bson;
@@ -1047,7 +1032,7 @@ test_rpc_message_from_data_op_delete_valid (void)
          const uint8_t *const selector = mcd_rpc_op_delete_get_selector (rpc);
          ASSERT_CMPSIZE_T ((size_t) (selector - data), ==, 32u);
 
-         const int32_t selector_len = _int32_from_le (selector);
+         const int32_t selector_len = mlib_read_i32le (selector);
          ASSERT_CMPINT32 (selector_len, ==, 16);
 
          bson_t bson;
@@ -2104,8 +2089,8 @@ test_rpc_message_to_iovecs_op_kill_cursors (void)
 
       const int64_t *const cursor_ids = (const int64_t *) iovec->iov_base;
 
-      const int64_t cursor_id_0 = _int64_from_le (cursor_ids + 0);
-      const int64_t cursor_id_1 = _int64_from_le (cursor_ids + 1);
+      const int64_t cursor_id_0 = mlib_read_i64le (cursor_ids + 0);
+      const int64_t cursor_id_1 = mlib_read_i64le (cursor_ids + 1);
 
       ASSERT_CMPINT64 (cursor_id_0, ==, 1230066625199609624);
       ASSERT_CMPINT64 (cursor_id_1, ==, 2387509390608836392);

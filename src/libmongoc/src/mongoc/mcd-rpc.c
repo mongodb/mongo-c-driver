@@ -1,3 +1,4 @@
+#include <mlib/intencode.h>
 #include <mongoc/mcd-rpc.h>
 
 // Header-only dependency. Does NOT require linking with libmongoc.
@@ -174,15 +175,6 @@ union _mcd_rpc_message {
       BSON_ASSERT (!rpc->msg_header.is_in_iovecs_state); \
    } else                                                \
       (void) 0
-
-
-static int32_t
-_int32_from_le (const void *data)
-{
-   BSON_ASSERT_PARAM (data);
-   return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
-}
-
 
 // In addition to validating expected size against remaining bytes, ensure
 // proper conversion from little endian format.
@@ -364,7 +356,7 @@ _consume_op_msg_section (
 
    switch (section.kind) {
    case 0: { // Body
-      section.payload.body.section_len = _int32_from_le (*ptr);
+      section.payload.body.section_len = mlib_read_i32le (*ptr);
       section.payload.body.bson = *ptr;
 
       int32_t num_parsed = 0;
@@ -1244,12 +1236,11 @@ _append_iovec_op_update (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_data (
-          *iovecs, capacity, count, op_update->selector, (size_t) _int32_from_le (op_update->selector))) {
+   if (!_append_iovec_data (*iovecs, capacity, count, op_update->selector, mlib_read_u32le (op_update->selector))) {
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs, capacity, count, op_update->update, (size_t) _int32_from_le (op_update->update))) {
+   if (!_append_iovec_data (*iovecs, capacity, count, op_update->update, mlib_read_u32le (op_update->update))) {
       return false;
    }
 
@@ -1321,7 +1312,7 @@ _append_iovec_op_query (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_data (*iovecs, capacity, count, op_query->query, (size_t) _int32_from_le (op_query->query))) {
+   if (!_append_iovec_data (*iovecs, capacity, count, op_query->query, mlib_read_u32le (op_query->query))) {
       return false;
    }
 
@@ -1330,7 +1321,7 @@ _append_iovec_op_query (mongoc_iovec_t **iovecs,
                                capacity,
                                count,
                                op_query->return_fields_selector,
-                               (size_t) _int32_from_le (op_query->return_fields_selector))) {
+                               mlib_read_u32le (op_query->return_fields_selector))) {
          return false;
       }
    }
@@ -1401,8 +1392,7 @@ _append_iovec_op_delete (mongoc_iovec_t **iovecs,
       return false;
    }
 
-   if (!_append_iovec_data (
-          *iovecs, capacity, count, op_delete->selector, (size_t) _int32_from_le (op_delete->selector))) {
+   if (!_append_iovec_data (*iovecs, capacity, count, op_delete->selector, mlib_read_u32le (op_delete->selector))) {
       return false;
    }
 
@@ -1579,7 +1569,7 @@ _mcd_rpc_header_get_op_code_maybe_le (const mcd_rpc_message *rpc)
 
    default:
       // May be in little endian.
-      op_code = _int32_from_le (&op_code);
+      op_code = mlib_read_i32le (&op_code);
 
       switch (op_code) {
       case MONGOC_OP_CODE_COMPRESSED:
@@ -1826,7 +1816,7 @@ mcd_rpc_op_msg_section_get_length (const mcd_rpc_message *rpc, size_t index)
 
    switch (section->kind) {
    case 0: { // Body
-      return _int32_from_le (section->payload.body.bson);
+      return mlib_read_i32le (section->payload.body.bson);
    }
 
    case 1: { // Document Sequence
@@ -1932,7 +1922,7 @@ mcd_rpc_op_msg_section_set_body (mcd_rpc_message *rpc, size_t index, const void 
    BSON_ASSERT (index < rpc->op_msg.sections_count);
    BSON_ASSERT (rpc->op_msg.sections[index].kind == 0);
 
-   const int32_t section_len = body ? _int32_from_le (body) : 0;
+   const int32_t section_len = body ? mlib_read_i32le (body) : 0;
 
    rpc->op_msg.sections[index].payload.body.bson = body;
    rpc->op_msg.sections[index].payload.body.section_len = section_len;
@@ -2168,7 +2158,7 @@ mcd_rpc_op_update_set_selector (mcd_rpc_message *rpc, const void *selector)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_update.selector = selector;
-   return selector ? _int32_from_le (selector) : 0;
+   return selector ? mlib_read_i32le (selector) : 0;
 }
 
 int32_t
@@ -2176,7 +2166,7 @@ mcd_rpc_op_update_set_update (mcd_rpc_message *rpc, const void *update)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_update.update = update;
-   return update ? _int32_from_le (update) : 0;
+   return update ? mlib_read_i32le (update) : 0;
 }
 
 
@@ -2346,7 +2336,7 @@ mcd_rpc_op_query_set_query (mcd_rpc_message *rpc, const void *query)
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    rpc->op_query.query = query;
-   return _int32_from_le (query);
+   return mlib_read_i32le (query);
 }
 
 int32_t
@@ -2355,7 +2345,7 @@ mcd_rpc_op_query_set_return_fields_selector (mcd_rpc_message *rpc, const void *r
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    rpc->op_query.return_fields_selector = return_fields_selector;
-   return return_fields_selector ? _int32_from_le (return_fields_selector) : 0;
+   return return_fields_selector ? mlib_read_i32le (return_fields_selector) : 0;
 }
 
 
@@ -2471,7 +2461,7 @@ mcd_rpc_op_delete_set_selector (mcd_rpc_message *rpc, const void *selector)
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
    rpc->op_delete.selector = selector;
-   return selector ? _int32_from_le (selector) : 0;
+   return selector ? mlib_read_i32le (selector) : 0;
 }
 
 

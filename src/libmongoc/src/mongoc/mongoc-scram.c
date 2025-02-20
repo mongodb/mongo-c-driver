@@ -32,6 +32,7 @@
 #include <common-thread-private.h>
 #include <utf8proc.h>
 #include <mlib/cmp.h>
+#include <mlib/loop.h>
 
 typedef struct _mongoc_scram_cache_entry_t {
    /* book keeping */
@@ -833,7 +834,8 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram, uint8_t *verificat
       return false;
    }
 
-   return (len == encoded_server_signature_len) && (mongoc_memcmp (verification, encoded_server_signature, len) == 0);
+   return mlib_cmp (len, ==, encoded_server_signature_len) &&
+          (mongoc_memcmp (verification, encoded_server_signature, len) == 0);
 }
 
 
@@ -1028,7 +1030,7 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    utf8_codepoints = bson_malloc (sizeof (uint32_t) * ((size_t) num_chars + 1u)); /* add one for trailing 0 value. */
    const char *c = in_utf8;
 
-   for (size_t i = 0; i < num_chars; ++i) {
+   mlib_foreach_irange (i, num_chars) {
       const size_t utf8_char_length = _mongoc_utf8_char_length (c);
       utf8_codepoints[i] = _mongoc_utf8_get_first_code_point (c, utf8_char_length);
 
@@ -1047,7 +1049,7 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    // pointers: one for reading the original characters (i) and one for writing
    // the new characters (curr). i will always be >= curr.
    size_t curr = 0;
-   for (size_t i = 0; i < num_chars; ++i) {
+   mlib_foreach_irange (i, num_chars) {
       if (_mongoc_utf8_code_point_is_in_table (utf8_codepoints[i],
                                                non_ascii_space_character_ranges,
                                                sizeof (non_ascii_space_character_ranges) / sizeof (uint32_t)))
@@ -1073,7 +1075,7 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
 
    // preflight for length
    size_t utf8_pre_norm_len = 0;
-   for (size_t i = 0; i < num_chars; ++i) {
+   mlib_foreach_irange (i, num_chars) {
       const ssize_t len = _mongoc_utf8_code_point_length (utf8_codepoints[i]);
       if (len == -1) {
          bson_free (utf8_codepoints);
@@ -1085,7 +1087,7 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    char *utf8_pre_norm = (char *) bson_malloc (sizeof (char) * (utf8_pre_norm_len + 1));
 
    char *loc = utf8_pre_norm;
-   for (size_t i = 0; i < num_chars; ++i) {
+   mlib_foreach_irange (i, num_chars) {
       const ssize_t utf8_char_length = _mongoc_utf8_code_point_to_str (utf8_codepoints[i], loc);
       if (utf8_char_length == -1) {
          bson_free (utf8_pre_norm);
@@ -1107,7 +1109,7 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    // c. Prohibit -- Check for any characters
    // that are not allowed in the output. If any are found, return an error.
 
-   for (size_t i = 0; i < num_chars; ++i) {
+   mlib_foreach_irange (i, num_chars) {
       if (_mongoc_utf8_code_point_is_in_table (
              utf8_codepoints[i], prohibited_output_ranges, sizeof (prohibited_output_ranges) / sizeof (uint32_t)) ||
           _mongoc_utf8_code_point_is_in_table (utf8_codepoints[i],
@@ -1137,8 +1139,7 @@ _mongoc_sasl_prep_impl (const char *name, const char *in_utf8, bson_error_t *err
    bool contains_LCat = false;
    bool contains_RandALCar = false;
 
-
-   for (size_t i = 0; i < num_chars; ++i) {
+   mlib_foreach_irange (i, num_chars) {
       if (_mongoc_utf8_code_point_is_in_table (
              utf8_codepoints[i], LCat_bidi_ranges, sizeof (LCat_bidi_ranges) / sizeof (uint32_t))) {
          contains_LCat = true;

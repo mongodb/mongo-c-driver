@@ -1000,7 +1000,7 @@ test_change_stream_live_read_prefs (void *test_ctx)
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, &next_doc), err);
 
    raw_cursor = stream->cursor;
-   ASSERT (first_cursor_id != mongoc_cursor_get_id (raw_cursor));
+   ASSERT (mlib_cmp (first_cursor_id, !=, mongoc_cursor_get_id (raw_cursor)));
    ASSERT (test_framework_server_is_secondary (client, raw_cursor->server_id));
 
    mongoc_read_prefs_destroy (prefs);

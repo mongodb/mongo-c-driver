@@ -38,6 +38,7 @@
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
+#include <mlib/cmp.h>
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 #include <mongoc/mongoc-ocsp-cache-private.h>
@@ -343,13 +344,13 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl, const char *host, bool allow_inva
                case GEN_DNS:
 
                   /* check that we don't have an embedded null byte */
-                  if ((length == bson_strnlen (check, length)) && _mongoc_openssl_hostcheck (check, host)) {
+                  if (mlib_cmp (length, ==, bson_strnlen (check, length)) && _mongoc_openssl_hostcheck (check, host)) {
                      r = 1;
                   }
 
                   break;
                case GEN_IPADD:
-                  if (length == addrlen) {
+                  if (mlib_cmp (length, ==, addrlen)) {
                      if (length == sizeof addr6 && !memcmp (check, &addr6, length)) {
                         r = 1;
                      } else if (length == sizeof addr4 && !memcmp (check, &addr4, length)) {
@@ -390,7 +391,8 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl, const char *host, bool allow_inva
 
                   if (length >= 0) {
                      /* check for embedded nulls */
-                     if ((length == bson_strnlen (check, length)) && _mongoc_openssl_hostcheck (check, host)) {
+                     if (mlib_cmp (length, ==, bson_strnlen (check, length)) &&
+                         _mongoc_openssl_hostcheck (check, host)) {
                         r = 1;
                      }
 

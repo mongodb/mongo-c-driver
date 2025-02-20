@@ -4,6 +4,7 @@
 #include <mongoc/mongoc-change-stream-private.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/utlist.h>
+#include <mlib/loop.h>
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
@@ -787,7 +788,6 @@ _test_end_sessions_many (bool pooled)
 {
    endsessions_test_t test;
    mongoc_client_t *client;
-   int i;
    mongoc_client_session_t *sessions[10001];
    bson_error_t error;
    bson_t ended_lsids;
@@ -801,14 +801,13 @@ _test_end_sessions_many (bool pooled)
    /*
     * create and destroy 10,001 sessions
     */
-   for (i = 0; i < sizeof sessions / sizeof (mongoc_client_session_t *); i++) {
-      sessions[i] = mongoc_client_start_session (client, NULL, &error);
-      ASSERT_OR_PRINT (sessions[i], error);
-      send_ping (client, sessions[i]);
+   mlib_foreach_arr (mongoc_client_session_t *, session, sessions) {
+      *session = mongoc_client_start_session (client, NULL, &error);
+      ASSERT_OR_PRINT (*session, error);
+      send_ping (client, *session);
    }
-
-   for (i = 0; i < sizeof sessions / sizeof (mongoc_client_session_t *); i++) {
-      mongoc_client_session_destroy (sessions[i]);
+   mlib_foreach_arr (mongoc_client_session_t *, session, sessions) {
+      mongoc_client_session_destroy (*session);
    }
 
    endsessions_test_destroy_client (&test);

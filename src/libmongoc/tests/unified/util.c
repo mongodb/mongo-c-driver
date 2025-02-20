@@ -19,6 +19,7 @@
 #include "test-conveniences.h"
 #include "TestSuite.h"
 #include <mlib/cmp.h>
+#include <mlib/loop.h>
 
 static int
 cmp_key (const void *a, const void *b)
@@ -74,10 +75,9 @@ mcommon_string_and_type_t bson_type_map[] = {
 bson_type_t
 bson_type_from_string (const char *in)
 {
-   int i;
-   for (i = 0; i < sizeof (bson_type_map) / sizeof (bson_type_map[0]); i++) {
-      if (0 == strcmp (in, bson_type_map[i].str)) {
-         return bson_type_map[i].type;
+   mlib_foreach_arr (mcommon_string_and_type_t, it, bson_type_map) {
+      if (0 == strcmp (in, it->str)) {
+         return it->type;
       }
    }
    test_error ("unrecognized type string: %s\n", in);
@@ -87,10 +87,9 @@ bson_type_from_string (const char *in)
 const char *
 bson_type_to_string (bson_type_t btype)
 {
-   int i;
-   for (i = 0; i < sizeof (bson_type_map) / sizeof (bson_type_map[0]); i++) {
-      if (btype == bson_type_map[i].type) {
-         return bson_type_map[i].str;
+   mlib_foreach_arr (mcommon_string_and_type_t, it, bson_type_map) {
+      if (btype == it->type) {
+         return it->str;
       }
    }
    test_error ("unrecognized type: %d\n", (int) btype);

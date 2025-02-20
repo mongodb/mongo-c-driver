@@ -24,6 +24,7 @@
 #include <bson/bson-macros.h>
 #include <common-string-private.h>
 #include <mlib/cmp.h>
+#include <mlib/loop.h>
 
 
 #define BSON_DECIMAL128_EXPONENT_MAX 6111
@@ -128,15 +129,14 @@ void
 bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
                            char *str)                    /* OUT */
 {
-   uint32_t COMBINATION_MASK = 0x1f;   /* Extract least significant 5 bits */
-   uint32_t EXPONENT_MASK = 0x3fff;    /* Extract least significant 14 bits */
-   uint32_t COMBINATION_INFINITY = 30; /* Value of combination field for Inf */
-   uint32_t COMBINATION_NAN = 31;      /* Value of combination field for NaN */
-   uint32_t EXPONENT_BIAS = 6176;      /* decimal128 exponent bias */
+   const int COMBINATION_MASK = 0x1f;   /* Extract least significant 5 bits */
+   const int EXPONENT_MASK = 0x3fff;    /* Extract least significant 14 bits */
+   const int COMBINATION_INFINITY = 30; /* Value of combination field for Inf */
+   const int COMBINATION_NAN = 31;      /* Value of combination field for NaN */
+   const int EXPONENT_BIAS = 6176;      /* decimal128 exponent bias */
 
    char *str_out = str;      /* output pointer in string */
    char significand_str[35]; /* decoded significand digits */
-
 
    /* Note: bits in this routine are referred to starting at 0, */
    /* from the sign bit, towards the coefficient. */
@@ -145,13 +145,8 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
    uint32_t midl;                            /* bits 64 - 95 */
    uint32_t low;                             /* bits 96 - 127 */
    uint32_t combination;                     /* bits 1 - 5 */
-   uint32_t biased_exponent;                 /* decoded biased exponent (14 bits) */
-   uint32_t significand_digits = 0;          /* the number of significand digits */
    uint32_t significand[36] = {0};           /* the base-10 digits in the significand */
    uint32_t *significand_read = significand; /* read pointer into significand */
-   int32_t exponent;                         /* unbiased exponent */
-   int32_t scientific_exponent;              /* the exponent if scientific notation is
-                                              * used */
    bool is_zero = false;                     /* true if the number is zero */
 
    uint8_t significand_msb;        /* the most signifcant significand bits (50-46) */
@@ -171,12 +166,13 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
    /* Decode combination field and exponent */
    combination = (high >> 26) & COMBINATION_MASK;
 
+   int biased_exponent;
    if (BSON_UNLIKELY ((combination >> 3) == 3)) {
       /* Check for 'special' values */
-      if (combination == COMBINATION_INFINITY) { /* Infinity */
+      if (mlib_cmp (combination, ==, COMBINATION_INFINITY)) { /* Infinity */
          strcpy (str_out, BSON_DECIMAL128_INF);
          return;
-      } else if (combination == COMBINATION_NAN) { /* NaN */
+      } else if (mlib_cmp (combination, ==, COMBINATION_NAN)) { /* NaN */
          /* str, not str_out, to erase the sign */
          strcpy (str, BSON_DECIMAL128_NAN);
          /* we don't care about the NaN payload. */
@@ -190,13 +186,15 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
       biased_exponent = (high >> 17) & EXPONENT_MASK;
    }
 
-   exponent = biased_exponent - EXPONENT_BIAS;
+   /* unbiased exponent */
+   const int32_t exponent = biased_exponent - EXPONENT_BIAS;
+
    /* Create string of significand digits */
 
    /* Convert the 114-bit binary number represented by */
    /* (high, midh, midl, low) to at most 34 decimal */
    /* digits through modulo and division. */
-   significand128.parts[0] = (high & 0x3fff) + ((significand_msb & 0xf) << 14);
+   significand128.parts[0] = (high & 0x3fff) + ((significand_msb & 0xfu) << 14);
    significand128.parts[1] = midh;
    significand128.parts[2] = midl;
    significand128.parts[3] = low;
@@ -234,18 +232,20 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
    /* Scientific - [-]d.dddE(+/-)dd or [-]dE(+/-)dd */
    /* Regular    - ddd.ddd */
 
+   int32_t num_significant_digits;
    if (is_zero) {
-      significand_digits = 1;
+      num_significant_digits = 1;
       *significand_read = 0;
    } else {
-      significand_digits = 36;
+      num_significant_digits = 36;
       while (!(*significand_read)) {
-         significand_digits--;
+         num_significant_digits--;
          significand_read++;
       }
    }
 
-   scientific_exponent = significand_digits - 1 + exponent;
+   /* the exponent if scientific notation is used */
+   const int32_t scientific_exponent = num_significant_digits - 1 + exponent;
 
    /* The scientific exponent checks are dictated by the string conversion
     * specification and are somewhat arbitrary cutoffs.
@@ -258,13 +258,13 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
    if (scientific_exponent < -6 || exponent > 0) {
       /* Scientific format */
       *(str_out++) = *(significand_read++) + '0';
-      significand_digits--;
+      num_significant_digits--;
 
-      if (significand_digits) {
+      if (num_significant_digits) {
          *(str_out++) = '.';
       }
 
-      for (uint32_t i = 0; i < significand_digits && (str_out - str) < 36; i++) {
+      for (int32_t i = 0; i < num_significant_digits && (str_out - str) < 36; i++) {
          *(str_out++) = *(significand_read++) + '0';
       }
       /* Exponent */
@@ -275,18 +275,19 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
    } else {
       /* Regular format with no decimal place */
       if (exponent >= 0) {
-         for (uint32_t i = 0; i < significand_digits && (str_out - str) < 36; i++) {
+         for (int32_t i = 0; i < num_significant_digits && (str_out - str) < 36; i++) {
             *(str_out++) = *(significand_read++) + '0';
          }
          *str_out = '\0';
       } else {
-         int32_t radix_position = significand_digits + exponent;
+         int32_t radix_position = num_significant_digits + exponent;
 
          // Reserve space for null terminator.
          const int available_bytes = BSON_DECIMAL128_STRING - 1;
+         const char *const str_end = str + available_bytes;
 
          if (radix_position > 0) { /* non-zero digits before radix */
-            for (int32_t i = 0; i < radix_position && (str_out - str) < available_bytes; i++) {
+            for (int32_t i = 0; i < radix_position && str_out != str_end; i++) {
                *(str_out++) = *(significand_read++) + '0';
             }
          } else { /* leading zero before radix point */
@@ -294,14 +295,16 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
          }
 
          *(str_out++) = '.';
-         while (radix_position++ < 0) { /* add leading zeros after radix */
+         while (radix_position++ < 0 && str_out != str_end) { /* add leading zeros after radix */
             *(str_out++) = '0';
          }
 
-         const unsigned radix_stop = (unsigned) BSON_MAX (radix_position - 1, 0);
-         const unsigned n_to_write = significand_digits - radix_stop;
-         for (uint32_t i = 0; i < n_to_write && (str_out - str) < available_bytes; i++) {
-            *(str_out++) = *(significand_read++) + '0';
+         const unsigned dot_pos = (unsigned) BSON_MAX (radix_position - 1, 0);
+         const unsigned n_trailing_digits = num_significant_digits - dot_pos;
+         const unsigned n_to_write = BSON_MIN (n_trailing_digits, (unsigned) (str_end - str_out));
+         mlib_foreach_urange (i, n_to_write) {
+            (void) i;
+            *str_out++ = *significand_read++ + '0';
          }
          *str_out = '\0';
       }
@@ -548,7 +551,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
             }
 
             found_nonzero = true;
-            *(digits_insert++) = *(str_read) - '0'; /* Only store 34 digits */
+            *(digits_insert++) = (uint16_t) (*(str_read) - '0'); /* Only store 34 digits */
             ndigits_stored++;
          }
       }
@@ -692,11 +695,9 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    /* Round */
    /* We've normalized the exponent, but might still need to round. */
    if (last_digit - first_digit + 1 < significant_digits) {
-      uint8_t round_digit;
-
       /* There are non-zero digits after last_digit that need rounding. */
       /* We round to nearest, ties to even */
-      round_digit = string[first_nonzero + last_digit + includes_sign + saw_radix + 1] - '0';
+      const char round_digit = string[first_nonzero + last_digit + includes_sign + saw_radix + 1] - '0';
 
       if (round_digit != 0) {
          /* Inexact (non-zero) rounding is not allowed */
