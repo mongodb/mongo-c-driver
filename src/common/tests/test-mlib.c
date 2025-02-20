@@ -3,6 +3,8 @@
 #include <mlib/intutil.h>
 #include <mlib/config.h>
 #include <mlib/cmp.h>
+#include <mlib/test.h>
+#include <mlib/ckdint.h>
 
 #include <stddef.h>
 
@@ -10,6 +12,31 @@ mlib_diagnostic_push (); // We don't set any diagnostics, we just want to make s
 
 // Not relevant, we just want to test that it compiles:
 mlib_msvc_warning (disable : 4507);
+
+static void
+_test_checks (void)
+{
+   // Simple condiion
+   mlib_check (true);
+   mlib_assert_aborts () {
+      mlib_check (false);
+   }
+   // streq
+   mlib_check ("foo", streq, "foo");
+   mlib_assert_aborts () {
+      mlib_check ("foo", streq, "bar");
+   }
+   // eq
+   mlib_check (4, eq, 4);
+   mlib_assert_aborts () {
+      mlib_check (1, eq, 4);
+   }
+   // neq
+   mlib_check (1, neq, 4);
+   mlib_assert_aborts () {
+      mlib_check (1, neq, 1);
+   }
+}
 
 static void
 _test_minmax (void)
@@ -76,15 +103,15 @@ _test_upsize (void)
 void
 _test_cmp (void)
 {
-   ASSERT (mlib_cmp (1, 2) == mlib_less);
-   ASSERT (mlib_cmp (1, 2) < 0);
-   ASSERT (mlib_cmp (1, <, 2));
-   ASSERT (mlib_cmp (2, 1) == mlib_greater);
-   ASSERT (mlib_cmp (2, 1) > 0);
-   ASSERT (mlib_cmp (2, >, 1));
-   ASSERT (mlib_cmp (1, 1) == mlib_equal);
-   ASSERT (mlib_cmp (1, 1) == 0);
-   ASSERT (mlib_cmp (1, ==, 1));
+   mlib_check (mlib_cmp (1, 2) == mlib_less);
+   mlib_check (mlib_cmp (1, 2) < 0);
+   mlib_check (mlib_cmp (1, <, 2));
+   mlib_check (mlib_cmp (2, 1) == mlib_greater);
+   mlib_check (mlib_cmp (2, 1) > 0);
+   mlib_check (mlib_cmp (2, >, 1));
+   mlib_check (mlib_cmp (1, 1) == mlib_equal);
+   mlib_check (mlib_cmp (1, 1) == 0);
+   mlib_check (mlib_cmp (1, ==, 1));
 
    ASSERT (mlib_cmp (0, ==, 0));
    ASSERT (!mlib_cmp (0, ==, -1));
@@ -363,12 +390,55 @@ _test_in_range (void)
 }
 
 void
+_test_assert_aborts (void)
+{
+   int a = 0;
+   mlib_assert_aborts () {
+      a = 4;
+      abort ();
+   }
+   // Parent process is unaffected:
+   ASSERT (a == 0);
+}
+
+void
+_test_cast (void)
+{
+   int a = 1729;
+   // Fine:
+   int16_t i16 = mlib_assert_narrow (int16_t, a);
+   ASSERT (i16 == 1729);
+   // Fine:
+   a = -6;
+   i16 = mlib_assert_narrow (int16_t, a);
+   ASSERT (i16 == -6);
+   // Boundary:
+   size_t sz = mlib_assert_narrow (size_t, SIZE_MAX);
+   ASSERT (sz == SIZE_MAX);
+   sz = mlib_assert_narrow (size_t, 0);
+   ASSERT (sz == 0);
+   // Boundary:
+   sz = mlib_assert_narrow (size_t, SSIZE_MAX);
+   ASSERT (sz == SSIZE_MAX);
+
+   mlib_assert_aborts () {
+      (void) mlib_assert_narrow (size_t, -4);
+   }
+   mlib_assert_aborts () {
+      (void) mlib_assert_narrow (ssize_t, SIZE_MAX);
+   }
+}
+
+void
 test_mlib_install (TestSuite *suite)
 {
+   TestSuite_Add (suite, "/mlib/checks", _test_checks);
    TestSuite_Add (suite, "/mlib/intutil/minmax", _test_minmax);
    TestSuite_Add (suite, "/mlib/intutil/upsize", _test_upsize);
    TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
    TestSuite_Add (suite, "/mlib/in-range", _test_in_range);
+   TestSuite_Add (suite, "/mlib/assert-aborts", _test_assert_aborts);
+   TestSuite_Add (suite, "/mlib/check-cast", _test_cast);
 }
 
 mlib_diagnostic_pop ();
