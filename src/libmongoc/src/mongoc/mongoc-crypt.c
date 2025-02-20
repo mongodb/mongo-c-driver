@@ -342,15 +342,18 @@ _state_need_mongo_collinfo (_state_machine_t *state_machine, bson_error_t *error
       goto fail;
    }
 
-   /* 2. Return the first result (if any) with mongocrypt_ctx_mongo_feed or
+   /* 2. Return all results (if any) with mongocrypt_ctx_mongo_feed or
     * proceed to the next step if nothing was returned. */
-   if (mongoc_cursor_next (cursor, &collinfo_bson)) {
+   while (mongoc_cursor_next (cursor, &collinfo_bson)) {
       collinfo_bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (collinfo_bson), collinfo_bson->len);
       if (!mongocrypt_ctx_mongo_feed (state_machine->ctx, collinfo_bin)) {
          _ctx_check_error (state_machine->ctx, error, true);
          goto fail;
       }
-   } else if (mongoc_cursor_error (cursor, error)) {
+      mongocrypt_binary_destroy (collinfo_bin);
+      collinfo_bin = NULL;
+   }
+   if (mongoc_cursor_error (cursor, error)) {
       goto fail;
    }
 
@@ -1397,6 +1400,10 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    crypt->kmsid_to_tlsopts = mcd_mapof_kmsid_to_tlsopts_new ();
    crypt->handle = mongocrypt_new ();
    mongocrypt_setopt_retry_kms (crypt->handle, true);
+   if (!mongocrypt_setopt_enable_multiple_collinfo (crypt->handle)) {
+      _crypt_check_error (crypt->handle, error, true);
+      goto fail;
+   }
 
    // Stash away a copy of the user's kmsProviders in case we need to lazily
    // load credentials.
