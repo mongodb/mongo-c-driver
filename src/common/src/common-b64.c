@@ -263,14 +263,20 @@ static const uint8_t mongoc_b64rmap_invalid = 0xff;
 #if defined(BSON_OS_UNIX)
 #include <pthread.h>
 #define mongoc_common_once_t pthread_once_t
-#define mongoc_common_once pthread_once
+#define mongoc_common_once(o, c)             \
+   do {                                      \
+      Assert (pthread_once ((o), (c)) == 0); \
+   } while (0)
 #define MONGOC_COMMON_ONCE_FUN(n) void n (void)
 #define MONGOC_COMMON_ONCE_RETURN return
 #define MONGOC_COMMON_ONCE_INIT PTHREAD_ONCE_INIT
 #else
 #define mongoc_common_once_t INIT_ONCE
 #define MONGOC_COMMON_ONCE_INIT INIT_ONCE_STATIC_INIT
-#define mongoc_common_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
+#define mongoc_common_once(o, c)                            \
+   do {                                                     \
+      Assert (InitOnceExecuteOnce (o, c, NULL, NULL) != 0); \
+   } while (0)
 #define MONGOC_COMMON_ONCE_FUN(n) BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c)
 #define MONGOC_COMMON_ONCE_RETURN return true
 #endif

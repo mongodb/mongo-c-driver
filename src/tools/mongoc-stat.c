@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <mlib/cmp.h>
 
 #pragma pack(1)
 typedef struct {
@@ -108,6 +109,7 @@ mongoc_counters_new_from_pid (unsigned pid)
       return NULL;
    }
 
+   BSON_ASSERT (mlib_in_range (size_t, len));
    size = len;
 
    if (MAP_FAILED == (mem = mmap (NULL, size, PROT_READ, MAP_SHARED, fd, 0))) {
