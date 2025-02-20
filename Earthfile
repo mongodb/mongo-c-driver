@@ -176,7 +176,6 @@ multibuild:
 release-archive:
     FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
     RUN apk add git bash
-    ARG --required sbom_branch
     ARG --required prefix
     ARG --required ref
 
@@ -198,7 +197,9 @@ release-archive:
         LET base = "mongo_c_driver_latest_release"
     END
 
-    COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
+    # The augmented SBOM must be manually obtained from a recent execution of
+    # the `sbom` task in an Evergreen patch or commit build in advance.
+    COPY etc/augmented-sbom.json cyclonedx.sbom.json
 
     # The full link to the build for this commit
     LET waterfall_url = "https://spruce.mongodb.com/version/${base}_${revision}"
@@ -269,7 +270,7 @@ signed-release:
     LET rel_tgz = "$rel_dir/$stem.tar.gz"
     LET rel_asc = "$rel_dir/$stem.tar.gz.asc"
     # Make the release archive:
-    COPY (+release-archive/ --branch=$sbom_branch --prefix=$stem --ref=$ref) $rel_dir/
+    COPY (+release-archive/ --prefix=$stem --ref=$ref) $rel_dir/
     RUN mv $rel_dir/release.tar.gz $rel_tgz
     # Sign the release archive:
     COPY (+sign-file/signature.asc --file $rel_tgz) $rel_asc
@@ -280,8 +281,8 @@ signed-release:
 
 # This target is simply an environment in which the SilkBomb executable is available.
 silkbomb:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
-    # Alias the silkbom executable to a simpler name:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0
+    # Alias the silkbomb executable to a simpler name:
     RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
 
 # sbom-generate :
@@ -296,63 +297,27 @@ sbom-generate:
     COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
     # Update the SBOM file:
     RUN silkbomb update \
+        --refresh \
+        --no-update-sbom-version \
         --purls purls.txt \
         --sbom-in cyclonedx.sbom.json \
         --sbom-out cyclonedx.sbom.json
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
 
-# sbom-download :
-#   Download an augmented SBOM from the Silk server for the given branch. Exports
-#   the artifact as /augmented-sbom.json
-#
-# Requires credentials for silk access.
-sbom-download:
+# sbom-validate:
+#   Validate the SBOM Lite for the given branch.
+sbom-validate:
     FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
-    ARG --required branch
-    # Run the SilkBomb tool to download the artifact that matches the requested branch
     FROM +silkbomb
-    # Set --no-cache, because the remote artifact could change arbitrarily over time
-    RUN --no-cache \
-        --secret SILK_CLIENT_ID \
-        --secret SILK_CLIENT_SECRET \
-        silkbomb download \
-            --sbom-out augmented-sbom.json \
-            --silk-asset-group mongo-c-driver-${branch}
-    # Export as /augmented-sbom.json
-    SAVE ARTIFACT augmented-sbom.json
-
-# create-silk-asset-group :
-#   Create an asset group in Silk for the Git branch if one is not already defined.
-#
-# Requires credentials for Silk access.
-#
-# If --branch is not specified, it will be inferred from the current Git branch
-create-silk-asset-group:
-    ARG branch
-    # Get a default value for $branch
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.19
-    IF test "${branch}" = ""
-        LOCALLY
-        LET branch=$(git rev-parse --abbrev-ref HEAD)
-        RUN --no-cache echo "Inferred asset-group name from Git HEAD to be “${branch}”"
-    END
-    # Reset to alpine from the LOCALLY above
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.19
-    RUN apk add python3
-    # Copy in the script
-    COPY tools/create-silk-asset-group.py /opt/
-    # # Run the creation script. Refer to tools/create-silk-asset-group.py for details
-    RUN --no-cache \
-        --secret SILK_CLIENT_ID \
-        --secret SILK_CLIENT_SECRET \
-        python /opt/create-silk-asset-group.py \
-            --branch=${branch} \
-            --project=mongo-c-driver \
-            --code-repo-url=https://github.com/mongodb/mongo-c-driver \
-            --sbom-lite-path=etc/cyclonedx.sbom.json \
-            --exist-ok
-
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Run the SilkBomb tool to download the artifact that matches the requested branch
+    RUN silkbomb validate \
+            --purls purls.txt \
+            --sbom-in cyclonedx.sbom.json \
+            --exclude jira
 
 snyk:
     FROM --platform=linux/amd64 artifactory.corp.mongodb.com/dockerhub/library/ubuntu:24.04
