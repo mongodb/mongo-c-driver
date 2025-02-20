@@ -13,11 +13,6 @@ command -v podman >/dev/null || {
   exit 1
 }
 
-command -v jq >/dev/null || {
-  echo "missing required program jq" 1>&2
-  exit 1
-}
-
 podman login --password-stdin --username "${artifactory_username:?}" artifactory.corp.mongodb.com <<<"${artifactory_password:?}"
 
 silkbomb="artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0"

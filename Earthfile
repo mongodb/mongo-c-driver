@@ -251,8 +251,6 @@ sign-file:
 signed-release:
     FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
     RUN apk add git
-    # We need to know which branch to get the SBOM from
-    ARG --required sbom_branch
     # The version of the release. This affects the filepaths of the output and is the default for --ref
     ARG --required version
     # The Git revision of the repository to be archived. By default, archives the tag of the given version
@@ -308,7 +306,6 @@ sbom-generate:
 # sbom-validate:
 #   Validate the SBOM Lite for the given branch.
 sbom-validate:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
     FROM +silkbomb
     # Copy in the relevant files:
     WORKDIR /s
