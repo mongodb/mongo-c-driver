@@ -280,8 +280,8 @@ signed-release:
 
 # This target is simply an environment in which the SilkBomb executable is available.
 silkbomb:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
-    # Alias the silkbom executable to a simpler name:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0
+    # Alias the silkbomb executable to a simpler name:
     RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
 
 # sbom-generate :
@@ -296,6 +296,8 @@ sbom-generate:
     COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
     # Update the SBOM file:
     RUN silkbomb update \
+        --refresh \
+        --no-update-sbom-version \
         --purls purls.txt \
         --sbom-in cyclonedx.sbom.json \
         --sbom-out cyclonedx.sbom.json

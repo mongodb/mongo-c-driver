@@ -47,10 +47,9 @@ copyright statements, URLs, and license identifiers of the dependencies.
 
 .. file:: etc/cyclonedx.sbom.json
 
-   The `SBOM-lite`_ for the C driver project. This is injested automatically and
-   asynchronously by Silk to produce the `augmented SBOM`_. This file is
-   generated semi-automatically from `etc/purls.txt` and the `+sbom-generate`
-   Earthly target.
+   The `SBOM-lite`_ for the C driver project. This file is generated
+   semi-automatically from `etc/purls.txt` and the `+sbom-generate` Earthly
+   target. This file is used by SilkBomb to produce an `augmented SBOM`_.
 
    .. warning:: This file is **partially generated**! Prefer to edit `etc/purls.txt`!
       Refer to: `sbom-lite-updating`
