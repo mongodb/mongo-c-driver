@@ -780,10 +780,6 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-bulkwrite.h
 )
 
-set (HEADERS_FORWARDING
-   ${PROJECT_SOURCE_DIR}/src/mongoc/forwarding/mongoc.h
-)
-
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -899,7 +895,7 @@ set (
 )
 
 if (ENABLE_SHARED)
-   add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+   add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS})
    if(WIN32)
       # Add resource-definition script for Windows shared library (.dll).
       configure_file(libmongoc.rc.in libmongoc.rc)
@@ -976,7 +972,7 @@ if (ENABLE_SHARED)
 endif () # ENABLE_SHARED
 
 if (MONGOC_ENABLE_STATIC_BUILD)
-   add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+   add_library (mongoc_static STATIC ${SOURCES} ${HEADERS})
    target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
@@ -1395,11 +1391,6 @@ install (
 install (
    FILES ${HEADERS}
    DESTINATION "${MONGOC_HEADER_INSTALL_DIR}/mongoc"
-)
-
-install (
-   FILES ${HEADERS_FORWARDING}
-   DESTINATION "${MONGOC_HEADER_INSTALL_DIR}"
 )
 
 if (ENABLE_APPLE_FRAMEWORK)

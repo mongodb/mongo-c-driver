@@ -1,5 +1,5 @@
 framework module bson [system] {
-    umbrella header "bson.h"
-    
+    umbrella header "bson/bson.h"
+
     export *
 }

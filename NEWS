@@ -1,3 +1,13 @@
+Unreleased (2.0.0)
+==================
+
+Removals:
+
+  * The compatibility "forwarding" headers have been removed (previously added
+    in 1.13.0). This means it is no longer valid to include the literal header
+    names `mongoc.h` or `bson.h` directly. Instead, the names must be prefixed
+    with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`.
+
 libmongoc 1.30.0
 ================
 
@@ -1477,6 +1487,7 @@ Features:
     and all bson headers are under bson/. The preferred way of including the
     headers are mongoc/mongoc.h and bson/bson.h respectively.
     Forwarding headers in the root are provided for backwards compatibility.
+    (**Update**: These headers were removed in the 2.0 release)
   * The default CMake build type had been unspecified, now it is RelWithDebInfo.
   * Support LibreSSL 2.7+.
 

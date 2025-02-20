@@ -161,12 +161,6 @@ if test -f $INSTALL_DIR/include/libbson-1.0/bson/bson.h; then
 else
   echo "bson/bson.h check ok"
 fi
-if test -f $INSTALL_DIR/include/libbson-1.0/bson.h; then
-  echo "bson.h found!"
-  exit 1
-else
-  echo "bson.h check ok"
-fi
 if test -d $INSTALL_DIR/include/libbson-1.0; then
   echo "$INSTALL_DIR/include/libbson-1.0 found!"
   exit 1
@@ -179,12 +173,6 @@ if [ -z "$BSON_ONLY" ]; then
     exit 1
   else
     echo "mongoc/mongoc.h check ok"
-  fi
-  if test -f $INSTALL_DIR/include/libmongoc-1.0/mongoc.h; then
-    echo "mongoc.h found!"
-    exit 1
-  else
-    echo "mongoc.h check ok"
   fi
   if test -d $INSTALL_DIR/include/libmongoc-1.0; then
     echo "$INSTALL_DIR/include/libmongoc-1.0 found!"
