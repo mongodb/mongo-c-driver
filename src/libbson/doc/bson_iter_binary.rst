@@ -32,3 +32,7 @@ This function shall return the binary data of a BSON_TYPE_BINARY element. It is 
 
 The buffer that ``binary`` points to is only valid until the iterator's :symbol:`bson_t` is modified or freed.
 
+.. seealso::
+
+  | :symbol:`bson_iter_binary_equal`
+  | :symbol:`bson_iter_binary_subtype`

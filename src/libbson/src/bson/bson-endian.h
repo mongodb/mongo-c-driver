@@ -83,6 +83,8 @@ BSON_BEGIN_DECLS
 #define BSON_UINT64_TO_BE(v) BSON_UINT64_SWAP_LE_BE (v)
 #define BSON_DOUBLE_FROM_LE(v) ((double) v)
 #define BSON_DOUBLE_TO_LE(v) ((double) v)
+#define BSON_FLOAT_FROM_LE(v) ((float) v)
+#define BSON_FLOAT_TO_LE(v) ((float) v)
 #elif BSON_BYTE_ORDER == BSON_BIG_ENDIAN
 #define BSON_UINT16_FROM_LE(v) BSON_UINT16_SWAP_LE_BE (v)
 #define BSON_UINT16_TO_LE(v) BSON_UINT16_SWAP_LE_BE (v)
@@ -98,6 +100,8 @@ BSON_BEGIN_DECLS
 #define BSON_UINT64_TO_BE(v) ((uint64_t) v)
 #define BSON_DOUBLE_FROM_LE(v) (__bson_double_swap_slow (v))
 #define BSON_DOUBLE_TO_LE(v) (__bson_double_swap_slow (v))
+#define BSON_FLOAT_FROM_LE(v) (__bson_float_swap_slow (v))
+#define BSON_FLOAT_TO_LE(v) (__bson_float_swap_slow (v))
 #else
 #error "The endianness of target architecture is unknown."
 #endif
@@ -200,6 +204,37 @@ __bson_double_swap_slow (double v) /* IN */
 
    memcpy (&uv, &v, sizeof (v));
    uv = BSON_UINT64_SWAP_LE_BE (uv);
+   memcpy (&v, &uv, sizeof (v));
+
+   return v;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * __bson_float_swap_slow --
+ *
+ *       Fallback endianness conversion for single floating point.
+ *
+ * Returns:
+ *       The endian swapped version.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+BSON_STATIC_ASSERT2 (sizeof_uint32_t, sizeof (float) == sizeof (uint32_t));
+
+static BSON_INLINE float
+__bson_float_swap_slow (float v) /* IN */
+{
+   uint32_t uv;
+
+   memcpy (&uv, &v, sizeof (v));
+   uv = BSON_UINT32_SWAP_LE_BE (uv);
    memcpy (&v, &uv, sizeof (v));
 
    return v;
