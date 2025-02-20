@@ -304,6 +304,20 @@ sbom-generate:
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
 
+# sbom-validate:
+#   Validate the SBOM Lite for the given branch.
+sbom-validate:
+    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM +silkbomb
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Run the SilkBomb tool to download the artifact that matches the requested branch
+    RUN silkbomb validate \
+            --purls purls.txt \
+            --sbom-in cyclonedx.sbom.json \
+            --exclude jira
+
 # sbom-download :
 #   Download an augmented SBOM from the Silk server for the given branch. Exports
 #   the artifact as /augmented-sbom.json

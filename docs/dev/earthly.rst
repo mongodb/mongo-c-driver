@@ -150,6 +150,10 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       no effect on the files archived, which is selected by
       `+release-archive --ref`.
 
+.. program:: +sbom-validate
+.. earthly-target:: +sbom-validate
+
+   Validate the `etc/cyclonedx.sbom.json`.
 
 .. program:: +sbom-download
 .. earthly-target:: +sbom-download
