@@ -90,11 +90,6 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       `+sign-file/signature.asc` for the release. The exported filenames are
       based on the `--version` argument.
 
-   .. rubric:: Parameters
-   .. option:: --sbom_branch <branch>
-
-      Forwarded to `+release-archive --sbom_branch`
-
    .. option:: --version <version>
 
       Affects the output filename and archive prefix paths in
@@ -115,26 +110,20 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 .. program:: +release-archive
 .. earthly-target:: +release-archive
 
-   Generate a source release archive of the repository at a specifiy branch.
-   Requires the secrets for `+sbom-download` and `+snyk-test`.
+   Generate a source release archive of the repository for the specified branch.
+   Requires the secrets for `+snyk-test`.
 
    .. earthly-artifact:: +release-archive/release.tar.gz
 
       The resulting source distribution archive for the specified branch. The
       generated archive includes the source tree, but also includes other
-      release artifacts that are generated on-the-fly when invoked e.g. the
-      `+sbom-download/augmented-sbom.json` artifact.
+      release artifacts that are generated on-the-fly when invoked.
 
    .. earthly-artifact:: +release-archive/ssdlc_compliance_report.md
 
       The SSDLC compliance report for the release. This file is based on the
       content of ``etc/ssdlc.md``, which has certain substrings replaced based
       on attributes of the release.
-
-   .. rubric:: Parameters
-   .. option:: --sbom_branch <branch>
-
-      Forwarded as `+sbom-download --branch` to download the augmented SBOM.
 
    .. option:: --ref <git-ref>
 
@@ -154,38 +143,6 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 .. earthly-target:: +sbom-validate
 
    Validate the `etc/cyclonedx.sbom.json`.
-
-.. program:: +sbom-download
-.. earthly-target:: +sbom-download
-
-   Download an `augmented SBOM <augmented-sbom>` from Silk for a given project
-   branch. This target explicitly disables caching, because the upstream SBOM
-   file can change arbitrarily.
-
-   .. earthly-artifact:: +sbom-download/augmented-sbom.json
-
-      The `augmented SBOM <augmented-sbom>` downloaded from Silk for the requested branch.
-
-   .. rubric:: Parameters
-   .. option:: --branch <branch>
-
-      **Required**. Specifies the branch of the repository from which we are
-      requesting an SBOM.
-
-      .. note::
-
-         It is *required* that the `Silk asset group <silk-asset-group>` has
-         been created for the given branch before the `+sbom-download` target
-         can succeed. See: `+create-silk-asset-group`
-
-   .. rubric:: Secrets
-   .. envvar::
-      SILK_CLIENT_ID
-      SILK_CLIENT_SECRET
-
-      **Required**. [#creds]_
-
-      .. seealso:: `earthly.secrets`
 
 .. program:: +sign-file
 .. earthly-target:: +sign-file

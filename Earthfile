@@ -176,7 +176,6 @@ multibuild:
 release-archive:
     FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
     RUN apk add git bash
-    ARG --required sbom_branch
     ARG --required prefix
     ARG --required ref
 
@@ -197,8 +196,6 @@ release-archive:
         # This is (probably) a patch release. Link to the build on the release branch.
         LET base = "mongo_c_driver_latest_release"
     END
-
-    COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
 
     # The full link to the build for this commit
     LET waterfall_url = "https://spruce.mongodb.com/version/${base}_${revision}"
@@ -269,7 +266,7 @@ signed-release:
     LET rel_tgz = "$rel_dir/$stem.tar.gz"
     LET rel_asc = "$rel_dir/$stem.tar.gz.asc"
     # Make the release archive:
-    COPY (+release-archive/ --branch=$sbom_branch --prefix=$stem --ref=$ref) $rel_dir/
+    COPY (+release-archive/ --prefix=$stem --ref=$ref) $rel_dir/
     RUN mv $rel_dir/release.tar.gz $rel_tgz
     # Sign the release archive:
     COPY (+sign-file/signature.asc --file $rel_tgz) $rel_asc
@@ -317,26 +314,6 @@ sbom-validate:
             --purls purls.txt \
             --sbom-in cyclonedx.sbom.json \
             --exclude jira
-
-# sbom-download :
-#   Download an augmented SBOM from the Silk server for the given branch. Exports
-#   the artifact as /augmented-sbom.json
-#
-# Requires credentials for silk access.
-sbom-download:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
-    ARG --required branch
-    # Run the SilkBomb tool to download the artifact that matches the requested branch
-    FROM +silkbomb
-    # Set --no-cache, because the remote artifact could change arbitrarily over time
-    RUN --no-cache \
-        --secret SILK_CLIENT_ID \
-        --secret SILK_CLIENT_SECRET \
-        silkbomb download \
-            --sbom-out augmented-sbom.json \
-            --silk-asset-group mongo-c-driver-${branch}
-    # Export as /augmented-sbom.json
-    SAVE ARTIFACT augmented-sbom.json
 
 snyk:
     FROM --platform=linux/amd64 artifactory.corp.mongodb.com/dockerhub/library/ubuntu:24.04
