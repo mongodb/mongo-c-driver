@@ -663,7 +663,7 @@ get_bson_from_json_file (char *filename)
 
    file = fopen (filename, "rb");
    if (!file) {
-      return NULL;
+      test_error ("Failed to open JSON file: %s", filename);
    }
 
    /* get file length */
@@ -671,19 +671,16 @@ get_bson_from_json_file (char *filename)
    length = ftell (file);
    fseek (file, 0, SEEK_SET);
    if (length < 1) {
-      return NULL;
+      test_error ("Failed to read length of JSON file: %s", filename);
    }
 
    /* read entire file into buffer */
    buffer = (const char *) bson_malloc0 (length);
    if (fread ((void *) buffer, 1, length, file) != length) {
-      test_error ("Failed to read JSON file into buffer");
+      test_error ("Failed to read JSON file into buffer: %s", filename);
    }
 
    fclose (file);
-   if (!buffer) {
-      return NULL;
-   }
 
    /* convert to bson */
    data = bson_new_from_json ((const uint8_t *) buffer, length, &error);

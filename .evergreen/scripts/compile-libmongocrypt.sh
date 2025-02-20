@@ -10,14 +10,20 @@ compile_libmongocrypt() {
   # `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no
   # divergence in the copied files.
 
-  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.12.0 || return
+  # Clone libmongocrypt and check-out commit for MONGOCRYPT-723.
+  # TODO: once libmongocrypt 1.13.0 is released, updated to:
+  # git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.13.0 || return
+  git clone -q https://github.com/mongodb/libmongocrypt || return
+  cd libmongocrypt
+  git checkout 33fdf65cce5a0c0cdd293c64ed40e4a8205c3ce0
+  cd ..
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
     "-DBUILD_TESTING=OFF"
     "-DENABLE_ONLINE_TESTS=OFF"
     "-DENABLE_MONGOC=OFF"
-    "-DBUILD_VERSION=1.12.0"
+    "-DBUILD_VERSION=1.13.0-pre"
   )
 
   . "$(dirname "${BASH_SOURCE[0]}")/find-ccache.sh"
