@@ -211,6 +211,16 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. seealso:: `sbom-lite` and `sbom-lite-updating`
 
+.. earthly-target:: +sbom-generate-new-serial-number
+
+   Equivalent to `+sbom-generate` but uses the `--generate-new-serial-number`
+   flag to generate a new unique serial number and reset the SBOM version to 1.
+
+   After running this target, the contents of the `etc/cyclonedx.sbom.json` file
+   may change.
+
+   .. seealso:: `sbom-lite` and `sbom-lite-updating`
+
 .. program:: +snyk-monitor-snapshot
 .. earthly-target:: +snyk-monitor-snapshot
 
