@@ -99,9 +99,9 @@ augmented SBOM's generation. [#asbom-vulns]_
 
 The augmented SBOM is produced automatically and asynchronously as part of an
 external process that is not contained within the repository itself. The
-augmented SBOM is downloaded from an internal service using the `+sbom-download`
-Earthly target. This file is included in the release archive for the
-`+release-archive` target.
+augmented SBOM must be downloaded from a recent execution of the ``sbom`` task
+in an Evergreen patch or commit build. This file is included in the release
+archive for the `+release-archive` target.
 
 .. _snyk scanning:
 

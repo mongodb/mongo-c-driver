@@ -103,8 +103,8 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. rubric:: Secrets
 
-   Secrets for the `+sbom-download`, `+snyk-test`, and `+sign-file` targets are
-   required for this target.
+   Secrets for the `+snyk-test` and `+sign-file` targets are required for this
+   target.
 
 
 .. program:: +release-archive
@@ -112,7 +112,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    Generate a source release archive of the repository for the specified branch.
    Requires the secrets for `+snyk-test`.
-   Requires `etc/augmented-sbom.json` is present (obtained from Evergreen).
+   Requires ``etc/augmented-sbom.json`` is present (obtained from Evergreen).
 
    .. earthly-artifact:: +release-archive/release.tar.gz
 
@@ -213,7 +213,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
 .. earthly-target:: +sbom-generate-new-serial-number
 
-   Equivalent to `+sbom-generate` but uses the `--generate-new-serial-number`
+   Equivalent to `+sbom-generate` but uses the ``--generate-new-serial-number``
    flag to generate a new unique serial number and reset the SBOM version to 1.
 
    After running this target, the contents of the `etc/cyclonedx.sbom.json` file
