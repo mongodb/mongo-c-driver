@@ -97,11 +97,10 @@ The augmented SBOM contains extra data about the dependencies from the
 `SBOM-lite <sbom-lite>`, including vulnerabilities known at the time of the
 augmented SBOM's generation. [#asbom-vulns]_
 
-The augmented SBOM is produced automatically and asynchronously as part of an
-external process that is not contained within the repository itself. The
-augmented SBOM must be downloaded from a recent execution of the ``sbom`` task
-in an Evergreen patch or commit build. This file is included in the release
-archive for the `+release-archive` target.
+The augmented SBOM is produced by an external process that is not contained
+within the repository itself. The augmented SBOM must be downloaded from a
+recent execution of the ``sbom`` task in an Evergreen patch or commit build.
+This file is included in the release archive for the `+release-archive` target.
 
 .. _snyk scanning:
 
