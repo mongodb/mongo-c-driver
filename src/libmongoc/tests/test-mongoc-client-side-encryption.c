@@ -6462,7 +6462,16 @@ test_lookup_setup (void)
       mongoc_collection_t *keyvault = mongoc_client_get_collection (setup_client, "db", "keyvault");
       mongoc_collection_drop (keyvault, NULL);
       bson_t *keydoc = get_bson_from_json_file (TESTDIR "key-doc.json");
-      ASSERT_OR_PRINT (mongoc_collection_insert_one (keyvault, keydoc, NULL, NULL, &error), error);
+      bson_t opts = BSON_INITIALIZER;
+      // Apply majority write concern.
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+         mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+         mongoc_write_concern_append (wc, &opts);
+         mongoc_write_concern_destroy (wc);
+      }
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (keyvault, keydoc, NULL, &opts, &error), error);
+      bson_destroy (&opts);
       bson_destroy (keydoc);
       mongoc_collection_destroy (keyvault);
    }
