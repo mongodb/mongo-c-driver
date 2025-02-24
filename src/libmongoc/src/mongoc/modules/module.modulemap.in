@@ -1,5 +1,5 @@
 framework module mongoc {
-    umbrella header "mongoc.h"
-    
+    umbrella header "mongoc/mongoc.h"
+
     export *
 }

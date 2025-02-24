@@ -38,7 +38,7 @@ SASLOption = Literal["Cyrus", "off"]
 "Valid options for the SASL configuration parameter"
 TLSOption = Literal["LibreSSL", "OpenSSL", "off"]
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["r3.8.0", "r3.9.0", "none"]
+CxxVersion = Literal["r3.9.0", "none"]
 "C++ driver refs that are under CI test"
 
 # A separator character, since we cannot use whitespace
