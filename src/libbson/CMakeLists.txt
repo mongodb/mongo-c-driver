@@ -359,14 +359,9 @@ install(
    FILES_MATCHING
       PATTERN "*.h"
       PATTERN "*-private.h" EXCLUDE
-      # Installed separately below:
-      PATTERN "forwarding" EXCLUDE
       # Don't generate an empty "modules" directory
       PATTERN "modules" EXCLUDE
    )
-
-# The forwarding header is for compatibility with `#include <bson.h>`, so it goes at the top-level:
-install(FILES src/bson/forwarding/bson.h DESTINATION "${BSON_HEADER_INSTALL_DIR}")
 
 if (ENABLE_APPLE_FRAMEWORK)
    install (
