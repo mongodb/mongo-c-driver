@@ -8,6 +8,11 @@ Removals:
     names `mongoc.h` or `bson.h` directly. Instead, the names must be prefixed
     with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`.
 
+libmongoc 1.30.1
+================
+
+No changes since 1.30.0. Version incremented to match the libbson version.
+
 libmongoc 1.30.0
 ================
 
