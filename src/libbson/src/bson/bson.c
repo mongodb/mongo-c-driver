@@ -813,8 +813,8 @@ bson_append_binary (bson_t *bson,           /* IN */
  *
  *       Append binary data to @bson by framing an uninitialized field to be written by the caller.
  *       The field will have the BSON_TYPE_BINARY type. On success, the caller MUST write to all
- *       bytes in the binary data field. The returned `*binary` pointer is only valid until the
- *       bson_t is modified or destroyed.
+ *       bytes in the binary data field. The returned `*binary` pointer may be invalidated by
+ *       subsequent modifications to @bson.
  *
  * Parameters:
  *       @subtype: the BSON Binary Subtype. See bsonspec.org for more
