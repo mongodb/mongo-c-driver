@@ -156,7 +156,7 @@ append_vector_packed_bits_from_packed_array (
 static void
 hex_str_to_bson (bson_t *bson_out, const char *hex_str)
 {
-   uint32_t size = strlen (hex_str) / 2;
+   uint32_t size = (uint32_t) strlen (hex_str) / 2u;
    uint8_t *buffer = bson_reserve_buffer (bson_out, size);
    for (uint32_t i = 0; i < size; i++) {
       unsigned int byte;
