@@ -64,7 +64,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    file = fopen (filename, "rb");
    if (!file) {
       MONGOC_ERROR ("Couldn't open file '%s'", filename);
-      return false;
+      return NULL;
    }
 
    fseek (file, 0, SEEK_END);
@@ -72,7 +72,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    fseek (file, 0, SEEK_SET);
    if (pem_length < 1) {
       MONGOC_ERROR ("Couldn't determine file size of '%s'", filename);
-      return false;
+      return NULL;
    }
 
    pem = (char *) bson_malloc0 (pem_length);
