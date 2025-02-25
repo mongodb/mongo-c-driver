@@ -70,9 +70,19 @@ Max Staleness is also supported by sharded clusters of replica sets if all serve
 Hedged Reads
 ------------
 
-When connecting to a sharded cluster running MongoDB 4.4 or later, reads can be sent in parallel to the two "best" hosts.  Once one result returns, any other outstanding operations that were part of the hedged read are cancelled.
+.. deprecated:: MongoDB Server 8.0
 
-When the read preference mode is ``MONGOC_READ_NEAREST`` and the sharded cluster is running MongoDB 4.4 or later, hedged reads are enabled by default.  Additionally, hedged reads may be explicitly enabled or disabled by calling :symbol:`mongoc_read_prefs_set_hedge` with a BSON document, e.g.
+  Hedged reads are deprecated in MongoDB version 8.0 and will be removed in
+  a future release.
+
+When connecting to a sharded cluster running MongoDB 4.4 or later, reads can be
+sent in parallel to the two "best" hosts. Once one result returns, any other
+outstanding operations that were part of the hedged read are cancelled.
+
+When the read preference mode is ``MONGOC_READ_NEAREST`` and the sharded cluster
+is running MongoDB 4.4 or later, hedged reads are enabled by default.
+Additionally, hedged reads may be explicitly enabled or disabled by calling
+:symbol:`mongoc_read_prefs_set_hedge` with a BSON document, e.g.
 
 .. code-block:: none
 
