@@ -698,7 +698,7 @@ append_failure:
  *
  * _bson_append_binary --
  *
- *       Append a BSON_TYPE_BINARY field, with or without data copied in.
+ *       Append a BSON_TYPE_BINARY field, optionally copying @binary into the field.
  *
  * Parameters:
  *       @subtype: the BSON Binary Subtype. See bsonspec.org for more
