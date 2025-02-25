@@ -140,7 +140,7 @@ append_vector_packed_bits_from_packed_array (
    }
 
    bson_vector_packed_bits_view_t view;
-   if (bson_append_vector_packed_bits (bson, key, key_length, byte_count * 8 - padding, &view)) {
+   if (bson_append_vector_packed_bits (bson, key, key_length, byte_count * 8u - (size_t) padding, &view)) {
       bson_iter_t copy_iter = *iter;
       for (size_t i = 0; i < byte_count; i++) {
          BSON_ASSERT (bson_iter_next (&copy_iter));
