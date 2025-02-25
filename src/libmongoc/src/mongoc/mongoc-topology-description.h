@@ -46,8 +46,8 @@ MONGOC_EXPORT (const char *)
 mongoc_topology_description_type (const mongoc_topology_description_t *td);
 
 MONGOC_EXPORT (mongoc_server_description_t **)
-mongoc_topology_description_get_servers (const mongoc_topology_description_t *td,
-                                         size_t *n) BSON_GNUC_WARN_UNUSED_RESULT;
+mongoc_topology_description_get_servers (const mongoc_topology_description_t *td, size_t *n)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS
 
