@@ -357,7 +357,7 @@ bson_vector_packed_bits_view_padding (bson_vector_packed_bits_view_t view)
 static BSON_INLINE size_t
 bson_vector_packed_bits_const_view_length (bson_vector_packed_bits_const_view_t view)
 {
-   return bson_vector_packed_bits_const_view_length_bytes (view) * (size_t) 8 -
+   return bson_vector_packed_bits_const_view_length_bytes (view) * 8u -
           bson_vector_packed_bits_const_view_padding (view);
 }
 
