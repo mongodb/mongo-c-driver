@@ -63,7 +63,7 @@ bson_vector_packed_bits_validate (bson_vector_binary_header_impl_t header,
       } else {
          // We need to read the last byte of the binary block to validate that unused bits are zero.
          uint8_t last_data_byte = binary_data[binary_data_len - 1];
-         uint8_t mask_of_unused_bits = (1 << padding) - 1;
+         uint8_t mask_of_unused_bits = (uint8_t) ((1u << padding) - 1u);
          return (last_data_byte & mask_of_unused_bits) == 0;
       }
    } else {
