@@ -704,7 +704,7 @@ append_failure:
  *       @subtype: the BSON Binary Subtype. See bsonspec.org for more
  *                 information.
  *       @binary: Optional pointer to the raw binary data.
- *       @length: the size of @binary in bytes.
+ *       @length: the size of the field's binary data in bytes.
  *
  * Returns:
  *       true if successful; otherwise false.
