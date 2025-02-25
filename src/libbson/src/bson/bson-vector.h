@@ -510,7 +510,7 @@ bson_vector_packed_bits_view_write_packed (bson_vector_packed_bits_view_t view,
          size_t other_bytes = byte_count - 1u;
          memcpy (view.binary.data + BSON_VECTOR_HEADER_LEN + vector_offset_bytes, packed_values, other_bytes);
          view.binary.data[BSON_VECTOR_HEADER_LEN + vector_offset_bytes + other_bytes] =
-            ((uint8_t) 0xFF << bson_vector_packed_bits_view_padding (view)) & packed_values[other_bytes];
+            (UINT8_C (0xFF) << bson_vector_packed_bits_view_padding (view)) & packed_values[other_bytes];
       } else {
          memcpy (view.binary.data + BSON_VECTOR_HEADER_LEN + vector_offset_bytes, packed_values, byte_count);
       }
