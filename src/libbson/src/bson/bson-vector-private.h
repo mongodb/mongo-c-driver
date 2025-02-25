@@ -43,7 +43,7 @@ bson_vector_header_byte_0 (bson_vector_element_type_t element_type, bson_vector_
 {
    BSON_ASSERT ((unsigned) element_type <= 0x0f);
    BSON_ASSERT ((unsigned) element_size <= 0x0f);
-   return (uint8_t) element_type << 4 | (uint8_t) element_size;
+   return (uint8_t) (((unsigned) element_type << 4) | (unsigned) element_size);
 }
 
 // See also `bson_vector_padding_from_header_byte_1` defined in <bson/bson-vector.h> for use by public inline functions.
