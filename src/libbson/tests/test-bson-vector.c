@@ -332,7 +332,7 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
                if (actual_double != actual_double) {
                   is_sorta_equal = true;
                }
-            } else if (expected_double == 0 || expected_double * 0 != 0) {
+            } else if (expected_double == 0.0 || expected_double * 0.0 != 0.0) {
                // Infinity or zero, equality comparison is fine.
                is_sorta_equal = expected_double == actual_double;
             } else {
