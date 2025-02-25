@@ -727,6 +727,7 @@ _bson_append_binary (bson_t *bson,           /* IN */
 
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (key);
+   BSON_OPTIONAL_PARAM (binary);
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
