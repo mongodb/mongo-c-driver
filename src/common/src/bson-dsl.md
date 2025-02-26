@@ -203,7 +203,7 @@ satisfies `cond` into the parent document.
 The *Predicate* `cond` will be evaluated for every element in `b`. Refer:
 [*Predicate*](#Predicate).
 
-To copy *all* elements from `b`, simply use the bare `true` predicate.
+To copy *all* elements from `b`, simply use the bare `always` predicate.
 
 
 #### `insertFromIter()`
@@ -618,7 +618,7 @@ Each `when` is considered in the listed order. If the *Predicate* `w` of a
 After any `when` clause matches an element, no subsequent `when` clauses are
 considered.
 
-An `else(ops...)` clause is equivalent to `when(true, ops...)`.
+An `else(ops...)` clause is equivalent to `when(always, ops...)`.
 
 If no clause matches the element, nothing happens.
 
@@ -670,12 +670,12 @@ The `isNumeric` predicate matches if the element's value is a numeric type
 Matches only the final element in a document.
 
 
-#### `true`
+#### `always`
 
 Always matches.
 
 
-#### `false`
+#### `never`
 
 Never matches.
 
@@ -1032,4 +1032,3 @@ by a single `AGAIN(f)`.
 
 There are additional tricks required to make `EVAL`, `MAP`, and token pasting
 play nice, but those details are not necessary here.
-
