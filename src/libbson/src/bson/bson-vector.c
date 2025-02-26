@@ -368,7 +368,7 @@ bson_append_vector_packed_bit (
 }
 
 static bool
-bson_vector_from_array_expect_key (const bson_iter_t *iter, size_t numeric_key, bson_error_t *error)
+bson_vector_from_array_expect_key (const bson_iter_t *iter, uint32_t numeric_key, bson_error_t *error)
 {
    char buffer[16];
    const char *key;
@@ -401,7 +401,7 @@ bson_append_vector_int8_from_array (
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (iter);
 
-   size_t element_count = 0;
+   uint32_t element_count = 0;
    {
       bson_iter_t validation_iter = *iter;
       while (bson_iter_next (&validation_iter)) {
@@ -437,7 +437,7 @@ bson_append_vector_int8_from_array (
       return false;
    }
    bson_iter_t copy_iter = *iter;
-   for (size_t i = 0; i < element_count; i++) {
+   for (uint32_t i = 0; i < element_count; i++) {
       BSON_ASSERT (bson_iter_next (&copy_iter));
       int8_t element = (int8_t) bson_iter_as_int64 (&copy_iter);
       BSON_ASSERT (bson_vector_int8_view_write (view, &element, 1, i));
@@ -453,7 +453,7 @@ bson_append_vector_float32_from_array (
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (iter);
 
-   size_t element_count = 0;
+   uint32_t element_count = 0;
    {
       bson_iter_t validation_iter = *iter;
       while (bson_iter_next (&validation_iter)) {
@@ -479,7 +479,7 @@ bson_append_vector_float32_from_array (
       return false;
    }
    bson_iter_t copy_iter = *iter;
-   for (size_t i = 0; i < element_count; i++) {
+   for (uint32_t i = 0; i < element_count; i++) {
       BSON_ASSERT (bson_iter_next (&copy_iter));
       float element = (float) bson_iter_double (&copy_iter);
       BSON_ASSERT (bson_vector_float32_view_write (view, &element, 1, i));
@@ -495,7 +495,7 @@ bson_append_vector_packed_bit_from_array (
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (iter);
 
-   size_t element_count = 0;
+   uint32_t element_count = 0;
    {
       bson_iter_t validation_iter = *iter;
       while (bson_iter_next (&validation_iter)) {
@@ -531,7 +531,7 @@ bson_append_vector_packed_bit_from_array (
       return false;
    }
    bson_iter_t copy_iter = *iter;
-   for (size_t i = 0; i < element_count; i++) {
+   for (uint32_t i = 0; i < element_count; i++) {
       BSON_ASSERT (bson_iter_next (&copy_iter));
       bool element_as_bool = (bool) bson_iter_as_int64 (&copy_iter);
       BSON_ASSERT (bson_vector_packed_bit_view_pack_bool (view, &element_as_bool, 1, i));
