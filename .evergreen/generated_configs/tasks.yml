@@ -5024,16 +5024,6 @@ tasks:
           CXX: clang++
           MARCH: i686
       - func: upload scan artifacts
-  - name: std-c11-debian10-clang-compile
-    run_on: debian10-large
-    tags: [std-matrix, debian10, clang, compile, std-c11]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CC: clang
-          CXX: clang++
-          C_STD_VERSION: 11
   - name: std-c11-debian10-gcc-compile
     run_on: debian10-large
     tags: [std-matrix, debian10, gcc, compile, std-c11]
@@ -5041,18 +5031,8 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: gcc
-          CXX: g++
-          C_STD_VERSION: 11
-  - name: std-c11-debian11-clang-compile
-    run_on: debian11-large
-    tags: [std-matrix, debian11, clang, compile, std-c11]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CC: clang
-          CXX: clang++
+          CC: gcc-8
+          CXX: g++-8
           C_STD_VERSION: 11
   - name: std-c11-debian11-gcc-compile
     run_on: debian11-large
@@ -5061,18 +5041,158 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 11
+  - name: std-c11-rhel76-gcc-compile
+    run_on: rhel76-large
+    tags: [std-matrix, rhel76, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
           CC: gcc
           CXX: g++
           C_STD_VERSION: 11
-  - name: std-c11-debian92-clang-compile
-    run_on: debian92-large
-    tags: [std-matrix, debian92, clang, compile, std-c11]
+  - name: std-c11-rhel80-clang-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, clang, compile, std-c11]
     commands:
       - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: clang
           CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel80-gcc-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel84-gcc-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel90-clang-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel90-gcc-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel91-clang-compile
+    run_on: rhel91-large
+    tags: [std-matrix, rhel91, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel92-clang-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel92-gcc-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel93-clang-compile
+    run_on: rhel93-large
+    tags: [std-matrix, rhel93, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel94-clang-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel94-gcc-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel95-clang-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel95-gcc-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
           C_STD_VERSION: 11
   - name: std-c11-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
@@ -5081,8 +5201,8 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: clang
-          CXX: clang++
+          CC: clang-10
+          CXX: clang++-10
           C_STD_VERSION: 11
   - name: std-c11-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
@@ -5091,8 +5211,18 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: gcc
-          CXX: g++
+          CC: gcc-9
+          CXX: g++-9
+          C_STD_VERSION: 11
+  - name: std-c11-ubuntu2204-clang-compile
+    run_on: ubuntu2204-large
+    tags: [std-matrix, ubuntu2204, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
           C_STD_VERSION: 11
   - name: std-c11-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
@@ -5104,6 +5234,26 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 15 2017
           CMAKE_GENERATOR_PLATFORM: x64
           C_STD_VERSION: 11
+  - name: std-c11-windows-2019-vs2019-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 11
+  - name: std-c11-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 11
   - name: std-c17-debian10-gcc-compile
     run_on: debian10-large
     tags: [std-matrix, debian10, gcc, compile, std-c17]
@@ -5111,8 +5261,8 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: gcc
-          CXX: g++
+          CC: gcc-8
+          CXX: g++-8
           C_STD_VERSION: 17
   - name: std-c17-debian11-gcc-compile
     run_on: debian11-large
@@ -5121,8 +5271,178 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 17
+  - name: std-c17-rhel80-clang-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel80-gcc-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
           CC: gcc
           CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel84-gcc-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel90-clang-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel90-gcc-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel91-clang-compile
+    run_on: rhel91-large
+    tags: [std-matrix, rhel91, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel92-clang-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel92-gcc-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel93-clang-compile
+    run_on: rhel93-large
+    tags: [std-matrix, rhel93, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel94-clang-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel94-gcc-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel95-clang-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel95-gcc-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-ubuntu2004-clang-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-10
+          CXX: clang++-10
+          C_STD_VERSION: 17
+  - name: std-c17-ubuntu2004-gcc-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-9
+          CXX: g++-9
+          C_STD_VERSION: 17
+  - name: std-c17-ubuntu2204-clang-compile
+    run_on: ubuntu2204-large
+    tags: [std-matrix, ubuntu2204, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
           C_STD_VERSION: 17
   - name: std-c17-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
@@ -5134,6 +5454,436 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 15 2017
           CMAKE_GENERATOR_PLATFORM: x64
           C_STD_VERSION: 17
+  - name: std-c17-windows-2019-vs2019-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 17
+  - name: std-c17-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 17
+  - name: std-c23-debian11-gcc-compile
+    run_on: debian11-large
+    tags: [std-matrix, debian11, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 23
+  - name: std-c23-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel90-clang-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel90-gcc-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel91-clang-compile
+    run_on: rhel91-large
+    tags: [std-matrix, rhel91, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel92-clang-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel92-gcc-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel93-clang-compile
+    run_on: rhel93-large
+    tags: [std-matrix, rhel93, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel94-clang-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel94-gcc-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel95-clang-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel95-gcc-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 23
+  - name: std-c23-ubuntu2004-clang-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-10
+          CXX: clang++-10
+          C_STD_VERSION: 23
+  - name: std-c23-ubuntu2004-gcc-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-9
+          CXX: g++-9
+          C_STD_VERSION: 23
+  - name: std-c23-ubuntu2204-clang-compile
+    run_on: ubuntu2204-large
+    tags: [std-matrix, ubuntu2204, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
+          C_STD_VERSION: 23
+  - name: std-c99-debian10-gcc-compile
+    run_on: debian10-large
+    tags: [std-matrix, debian10, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-8
+          CXX: g++-8
+          C_STD_VERSION: 99
+  - name: std-c99-debian11-gcc-compile
+    run_on: debian11-large
+    tags: [std-matrix, debian11, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 99
+  - name: std-c99-rhel76-gcc-compile
+    run_on: rhel76-large
+    tags: [std-matrix, rhel76, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel80-clang-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel80-gcc-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel84-gcc-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel90-clang-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel90-gcc-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel91-clang-compile
+    run_on: rhel91-large
+    tags: [std-matrix, rhel91, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel92-clang-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel92-gcc-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel93-clang-compile
+    run_on: rhel93-large
+    tags: [std-matrix, rhel93, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel94-clang-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel94-gcc-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel95-clang-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel95-gcc-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-ubuntu2004-clang-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-10
+          CXX: clang++-10
+          C_STD_VERSION: 99
+  - name: std-c99-ubuntu2004-gcc-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-9
+          CXX: g++-9
+          C_STD_VERSION: 99
+  - name: std-c99-ubuntu2204-clang-compile
+    run_on: ubuntu2204-large
+    tags: [std-matrix, ubuntu2204, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
+          C_STD_VERSION: 99
+  - name: std-c99-windows-2019-vs2017-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 99
+  - name: std-c99-windows-2019-vs2019-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 99
+  - name: std-c99-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 99
+  - name: std-clatest-windows-2019-vs2017-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-clatest]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: latest
+  - name: std-clatest-windows-2019-vs2019-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-clatest]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: latest
+  - name: std-clatest-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-clatest]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: latest
   - name: tsan-sasl-cyrus-openssl-debian10-clang-compile
     run_on: debian10-large
     tags: [sanitizers-matrix-tsan, compile, debian10, clang, tsan, sasl-cyrus]

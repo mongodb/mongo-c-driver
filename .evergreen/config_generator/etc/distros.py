@@ -63,8 +63,15 @@ MACOS_ARM64_DISTROS = [
 ]
 
 RHEL_DISTROS = []
+RHEL_DISTROS += ls_distro(name='rhel76', os='rhel', os_type='linux', os_ver='7.6')
 RHEL_DISTROS += ls_distro(name='rhel80', os='rhel', os_type='linux', os_ver='8.0')
 RHEL_DISTROS += ls_distro(name='rhel84', os='rhel', os_type='linux', os_ver='8.4')
+RHEL_DISTROS += ls_distro(name='rhel90', os='rhel', os_type='linux', os_ver='9.0')
+RHEL_DISTROS += ls_distro(name='rhel91', os='rhel', os_type='linux', os_ver='9.1')
+RHEL_DISTROS += ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.2')
+RHEL_DISTROS += ls_distro(name='rhel93', os='rhel', os_type='linux', os_ver='9.3')
+RHEL_DISTROS += ls_distro(name='rhel94', os='rhel', os_type='linux', os_ver='9.4')
+RHEL_DISTROS += ls_distro(name='rhel95', os='rhel', os_type='linux', os_ver='9.5')
 RHEL_DISTROS += ls_distro(name='rhel8.9', os='rhel', os_type='linux', os_ver='8.7')
 RHEL_DISTROS += ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.0')
 
@@ -220,26 +227,26 @@ def to_platform(compiler):
 
 
 def compiler_to_vars(compiler):
-    match compiler:
-        case 'gcc':
+    match compiler, compiler.split('-'):
+        case _, ['gcc', *rest]:
             return {
-                'CC': 'gcc',
-                'CXX': 'g++',
+                'CC': '-'.join(['gcc'] + rest),
+                'CXX': '-'.join(['g++'] + rest),
             }
 
-        case 'clang':
+        case _, ['clang', *rest]:
             return {
-                'CC': 'clang',
-                'CXX': 'clang++',
+                'CC': '-'.join(['clang'] + rest),
+                'CXX': '-'.join(['clang++'] + rest),
             }
 
-        case str(vs) if 'vs' in vs:
+        case str(vs), _ if 'vs' in vs:
             return {
                 'CMAKE_GENERATOR': to_cc(vs),
                 'CMAKE_GENERATOR_PLATFORM': to_platform(vs),
             }
 
-        case _:
+        case compiler, _:
             return {
                 'CC': compiler,
                 'CXX': compiler,
