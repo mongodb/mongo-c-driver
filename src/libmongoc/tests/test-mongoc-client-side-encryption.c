@@ -6442,13 +6442,13 @@ create_encrypted_client (void)
 #define MAKE_BSON(...) tmp_bson (BSON_STR (__VA_ARGS__))
 
 static void
-drop_coll (mongoc_database_t *db, const char *coll)
+drop_coll (mongoc_database_t *db, const char *collname)
 {
    bson_error_t error;
-   mongoc_collection_t *coll = mongoc_database_get_collection (db, coll);
+   mongoc_collection_t *coll = mongoc_database_get_collection (db, collname);
    bool ok = mongoc_collection_drop (coll, &error);
    if (!ok && error.code != MONGOC_SERVER_ERR_NS_NOT_FOUND) {
-      test_error ("unexpected error dropping %s: %s", coll, error.message);
+      test_error ("unexpected error dropping %s: %s", collname, error.message);
    }
    mongoc_collection_destroy (coll);
 }
