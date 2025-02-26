@@ -37,6 +37,7 @@ target_compile_options(public-header-warnings PRIVATE
   $<$<C_COMPILER_ID:AppleClang,Clang,GNU>:-Wno-disabled-macro-expansion>
   $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-c++98-compat-pedantic>
   $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-pre-c2x-compat>
+  $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-unsafe-buffer-usage>
   $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-padded>
   $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-reserved-identifier>
   $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-documentation-unknown-command>
