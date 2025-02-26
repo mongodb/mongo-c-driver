@@ -47,10 +47,9 @@ copyright statements, URLs, and license identifiers of the dependencies.
 
 .. file:: etc/cyclonedx.sbom.json
 
-   The `SBOM-lite`_ for the C driver project. This is injested automatically and
-   asynchronously by Silk to produce the `augmented SBOM`_. This file is
-   generated semi-automatically from `etc/purls.txt` and the `+sbom-generate`
-   Earthly target.
+   The `SBOM-lite`_ for the C driver project. This file is generated
+   semi-automatically from `etc/purls.txt` and the `+sbom-generate` Earthly
+   target. This file is used by SilkBomb to produce an `augmented SBOM`_.
 
    .. warning:: This file is **partially generated**! Prefer to edit `etc/purls.txt`!
       Refer to: `sbom-lite-updating`
@@ -98,38 +97,10 @@ The augmented SBOM contains extra data about the dependencies from the
 `SBOM-lite <sbom-lite>`, including vulnerabilities known at the time of the
 augmented SBOM's generation. [#asbom-vulns]_
 
-The augmented SBOM is produced automatically and asynchronously as part of an
-external process that is not contained within the repository itself. The
-augmented SBOM is downloaded from an internal service using the `+sbom-download`
-Earthly target, which is automatically included in the release archive for the
-`+release-archive` target.
-
-.. _silk-asset-group:
-
-Silk Asset Groups
-*****************
-
-.. note:: A Silk asset group will be created automatically for each branch that
-   is executed in CI.
-
-We use Silk's *asset groups* to allow tracking of multiple versions of the
-SBOM-lite_ simultaneously (i.e. one for each release branch). These asset groups
-correspond to branches within the repository, and are created automatically when
-CI executes for the first time on a particular branch. If you need an asset
-group for a branch that has not run in CI, use the `+create-silk-asset-group`
-Earthly target to create the asset group on-demand.
-
-Note that Silk pulls from the upstream Git repository for an asset group, so
-creating an asset group for a branch that does not exist in the main upstream
-repository will not work.
-
-.. file:: tools/create-silk-asset-group.py
-
-   A Python script that will create an `asset group <silk-asset-group>` in Silk
-   based on a set of parameters. Execute with ``--help`` for more information.
-   For the C driver, it is easier to use the `+create-silk-asset-group` Earthly
-   target.
-
+The augmented SBOM is produced by an external process that is not contained
+within the repository itself. The augmented SBOM must be downloaded from a
+recent execution of the ``sbom`` task in an Evergreen patch or commit build.
+This file is included in the release archive for the `+release-archive` target.
 
 .. _snyk scanning:
 
@@ -152,8 +123,7 @@ detect the other dependencies within the project. The `+snyk-test` Earthly
 target is written to avoid this issue and allow Snyk to accurately detect other
 dependencies within the project.
 
-Due to difficulty coordinating the behavior of Snyk and Silk at time of
-writing, vulnerability collection is partially a manual process. This is
+For now, vulnerability collection is partially a manual process. This is
 especially viable as the native code contains a very small number of
 dependencies and it is trivial to validate the output of Snyk by hand.
 

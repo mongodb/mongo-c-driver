@@ -6,6 +6,17 @@ Changes:
   * `BSON_ERROR_BUFFER_SIZE` is reduced from `504` to `503` to reserve the final byte for internal use.
       * The data layout of `bson_error_t` remains otherwise unchanged: the size is still 512 bytes and the offset of the `.code`, `.domain`, and `.message` data members remain unchanged.
 
+libbson 1.30.1
+==============
+
+Fixes:
+  * Fix `BSON_NORETURN` macro for C23 standard
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Micah Scott
+
+
 libbson 1.30.0
 ==============
 
