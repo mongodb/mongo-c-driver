@@ -111,7 +111,7 @@ jsonsl_t jsonsl_new(int nlevels)
 
     jsn = (struct jsonsl_st *)
             bson_malloc0(sizeof (*jsn) +
-                    ( (nlevels-1) * sizeof (struct jsonsl_state_st) )
+                    ( (nlevels) * sizeof (struct jsonsl_state_st) )
             );
 
     jsn->levels_max = (unsigned int) nlevels;
