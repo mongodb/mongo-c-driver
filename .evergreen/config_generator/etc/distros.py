@@ -205,6 +205,10 @@ def make_distro_str(distro_name, compiler, arch) -> str:
             'vs2015x86': '-x86',
             'vs2017x64': '-x64',
             'vs2017x86': '-x86',
+            'vs2019x64': '-x64',
+            'vs2019x86': '-x86',
+            'vs2022x64': '-x64',
+            'vs2022x86': '-x86',
         }.get(compiler, f'-{compiler}')
     else:
         distro_str = distro_name
@@ -219,10 +223,56 @@ def make_distro_str(distro_name, compiler, arch) -> str:
 
 def to_cc(compiler):
     return {
-        'vs2013x64': 'Visual Studio 12 2013 Win64',
+        'vs2013x64': 'Visual Studio 12 2013',
         'vs2013x86': 'Visual Studio 12 2013',
-        'vs2015x64': 'Visual Studio 14 2015 Win64',
+        'vs2015x64': 'Visual Studio 14 2015',
         'vs2015x86': 'Visual Studio 14 2015',
-        'vs2017x64': 'Visual Studio 15 2017 Win64',
+        'vs2017x64': 'Visual Studio 15 2017',
         'vs2017x86': 'Visual Studio 15 2017',
+        'vs2019x64': 'Visual Studio 16 2019',
+        'vs2019x86': 'Visual Studio 16 2019',
+        'vs2022x64': 'Visual Studio 17 2022',
+        'vs2022x86': 'Visual Studio 17 2022',
     }.get(compiler, compiler)
+
+
+def to_platform(compiler):
+    return {
+        'vs2013x64': 'x64',
+        'vs2013x86': 'Win32',
+        'vs2015x64': 'x64',
+        'vs2015x86': 'Win32',
+        'vs2017x64': 'x64',
+        'vs2017x86': 'Win32',
+        'vs2019x64': 'x64',
+        'vs2019x86': 'Win32',
+        'vs2022x64': 'x64',
+        'vs2022x86': 'Win32',
+    }.get(compiler, compiler)
+
+
+def compiler_to_vars(compiler):
+    match compiler:
+        case 'gcc':
+            return {
+                'CC': 'gcc',
+                'CXX': 'g++',
+            }
+
+        case 'clang':
+            return {
+                'CC': 'clang',
+                'CXX': 'clang++',
+            }
+
+        case str(vs) if 'vs' in vs:
+            return {
+                'CMAKE_GENERATOR': to_cc(vs),
+                'CMAKE_GENERATOR_PLATFORM': to_platform(vs),
+            }
+
+        case _:
+            return {
+                'CC': compiler,
+                'CXX': compiler,
+            }

@@ -7,7 +7,9 @@ set -o pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
-check_var_req CC
+check_var_opt CC
+check_var_opt CMAKE_GENERATOR
+check_var_opt CMAKE_GENERATOR_PLATFORM
 
 check_var_opt C_STD_VERSION
 check_var_opt CFLAGS
@@ -48,7 +50,7 @@ if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
-if [[ "${CC}" =~ ^"Visual Studio " ]]; then
+if [[ "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]]; then
   # Avoid C standard conformance issues with Windows 10 SDK headers.
   # See: https://developercommunity.visualstudio.com/t/stdc17-generates-warning-compiling-windowsh/1249671#T-N1257345
   configure_flags_append "-DCMAKE_SYSTEM_VERSION=10.0.20348.0"
@@ -56,7 +58,7 @@ fi
 
 declare -a flags
 
-if [[ ! "${CC}" =~ ^"Visual Studio " ]]; then
+if [[ ! "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]]; then
   case "${MARCH}" in
   i686)
     flags+=("-m32" "-march=i386")
@@ -76,14 +78,12 @@ if [[ ! "${CC}" =~ ^"Visual Studio " ]]; then
   esac
 fi
 
-if [[ "${CC}" =~ ^"Visual Studio " ]]; then
+if [[ "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]]; then
   # Even with -DCMAKE_SYSTEM_VERSION=10.0.20348.0, winbase.h emits conformance warnings.
   flags+=('/wd5105')
 fi
 
 # CMake and compiler environment variables.
-export CC
-export CXX
 export CFLAGS
 export CXXFLAGS
 
@@ -93,15 +93,6 @@ CXXFLAGS+=" ${flags+${flags[*]}}"
 if [[ "${OSTYPE}" == darwin* ]]; then
   CFLAGS+=" -Wno-unknown-pragmas"
 fi
-
-case "${CC}" in
-clang)
-  CXX=clang++
-  ;;
-gcc)
-  CXX=g++
-  ;;
-esac
 
 # Ensure find-cmake-latest.sh is sourced *before* add-build-dirs-to-paths.sh
 # to avoid interfering with potential CMake build configuration.
