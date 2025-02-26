@@ -6442,24 +6442,31 @@ create_encrypted_client (void)
 #define MAKE_BSON(...) tmp_bson (BSON_STR (__VA_ARGS__))
 
 static void
+drop_coll (mongoc_database_t *db, const char *coll)
+{
+   bson_error_t error;
+   mongoc_collection_t *coll = mongoc_database_get_collection (db, coll);
+   bool ok = mongoc_collection_drop (coll, &error);
+   if (!ok && error.code != MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+      test_error ("unexpected error dropping %s: %s", coll, error.message);
+   }
+   mongoc_collection_destroy (coll);
+}
+
+static void
 test_lookup_setup (void)
 {
    bool ok;
    bson_error_t error;
 
+   mongoc_client_t *encrypted_client = create_encrypted_client ();
    mongoc_client_t *setup_client = test_framework_new_default_client ();
 
-   // Drop database:
-   {
-      mongoc_database_t *db = mongoc_client_get_database (setup_client, "db");
-      mongoc_database_drop (db, NULL);
-      mongoc_database_destroy (db);
-   }
 
 #define TESTDIR "./src/libmongoc/tests/client_side_encryption_prose/lookup/"
    // Insert key into key vault:
    {
-      mongoc_collection_t *keyvault = mongoc_client_get_collection (setup_client, "db", "keyvault");
+      mongoc_collection_t *keyvault = mongoc_client_get_collection (encrypted_client, "db", "keyvault");
       mongoc_collection_drop (keyvault, NULL);
       bson_t *keydoc = get_bson_from_json_file (TESTDIR "key-doc.json");
       bson_t opts = BSON_INITIALIZER;
@@ -6478,9 +6485,10 @@ test_lookup_setup (void)
 
    // Create collections:
    {
-      mongoc_database_t *db = mongoc_client_get_database (setup_client, "db");
+      mongoc_database_t *db = mongoc_client_get_database (encrypted_client, "db");
       // Create db.csfle:
       {
+         drop_coll (db, "csfle");
          bson_t *schema = get_bson_from_json_file (TESTDIR "schema-csfle.json");
          bson_t *create_opts = BCON_NEW ("validator", "{", "$jsonSchema", BCON_DOCUMENT (schema), "}");
          mongoc_collection_t *coll = mongoc_database_create_collection (db, "csfle", create_opts, &error);
@@ -6492,6 +6500,7 @@ test_lookup_setup (void)
 
       // Create db.csfle2:
       {
+         drop_coll (db, "csfle2");
          bson_t *schema = get_bson_from_json_file (TESTDIR "schema-csfle2.json");
          bson_t *create_opts = BCON_NEW ("validator", "{", "$jsonSchema", BCON_DOCUMENT (schema), "}");
          mongoc_collection_t *coll = mongoc_database_create_collection (db, "csfle2", create_opts, &error);
@@ -6503,6 +6512,7 @@ test_lookup_setup (void)
 
       // Create db.qe:
       {
+         drop_coll (db, "qe");
          bson_t *schema = get_bson_from_json_file (TESTDIR "schema-qe.json");
          bson_t *create_opts = BCON_NEW ("encryptedFields", BCON_DOCUMENT (schema));
          mongoc_collection_t *coll = mongoc_database_create_collection (db, "qe", create_opts, &error);
@@ -6514,6 +6524,7 @@ test_lookup_setup (void)
 
       // Create db.qe2:
       {
+         drop_coll (db, "qe2");
          bson_t *schema = get_bson_from_json_file (TESTDIR "schema-qe2.json");
          bson_t *create_opts = BCON_NEW ("encryptedFields", BCON_DOCUMENT (schema));
          mongoc_collection_t *coll = mongoc_database_create_collection (db, "qe2", create_opts, &error);
@@ -6525,6 +6536,7 @@ test_lookup_setup (void)
 
       // Create db.no_schema:
       {
+         drop_coll (db, "no_schema");
          mongoc_collection_t *coll = mongoc_database_create_collection (db, "noschema", NULL, &error);
          ASSERT_OR_PRINT (coll, error);
          mongoc_collection_destroy (coll);
@@ -6532,6 +6544,7 @@ test_lookup_setup (void)
 
       // Create db.no_schema2:
       {
+         drop_coll (db, "no_schema2");
          mongoc_collection_t *coll = mongoc_database_create_collection (db, "noschema2", NULL, &error);
          ASSERT_OR_PRINT (coll, error);
          mongoc_collection_destroy (coll);
@@ -6621,6 +6634,7 @@ test_lookup_setup (void)
    }
 
    mongoc_client_destroy (setup_client);
+   mongoc_client_destroy (encrypted_client);
 }
 
 static void
