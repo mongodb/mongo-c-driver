@@ -1,7 +1,7 @@
-:man_page: bson_array_builder_append_vector_packed_bits_elements
+:man_page: bson_array_builder_append_vector_packed_bit_elements
 
-bson_array_builder_append_vector_packed_bits_elements()
-=======================================================
+bson_array_builder_append_vector_packed_bit_elements()
+======================================================
 
 Synopsis
 --------
@@ -9,14 +9,14 @@ Synopsis
 .. code-block:: c
 
   bool
-  bson_array_builder_append_vector_packed_bits_elements (bson_array_builder_t *builder,
-                                                         bson_vector_packed_bits_const_view_t view);
+  bson_array_builder_append_vector_packed_bit_elements (bson_array_builder_t *builder,
+                                                        bson_vector_packed_bit_const_view_t view);
 
 Parameters
 ----------
 
 * ``builder``: A valid :symbol:`bson_array_builder_t`.
-* ``view``: A :symbol:`bson_vector_packed_bits_const_view_t` pointing to validated ``packed_bits`` :doc:`binary_vector` data.
+* ``view``: A :symbol:`bson_vector_packed_bit_const_view_t` pointing to validated ``packed_bit`` :doc:`binary_vector` data.
 
 Description
 -----------

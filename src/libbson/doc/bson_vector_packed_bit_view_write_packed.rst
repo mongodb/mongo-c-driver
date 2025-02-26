@@ -1,9 +1,9 @@
-:man_page: bson_vector_packed_bits_view_write_packed
+:man_page: bson_vector_packed_bit_view_write_packed
 
-bson_vector_packed_bits_view_write_packed()
-===========================================
+bson_vector_packed_bit_view_write_packed()
+==========================================
 
-Copy a contiguous block of packed bytes into a :symbol:`bson_vector_packed_bits_view_t`.
+Copy a contiguous block of packed bytes into a :symbol:`bson_vector_packed_bit_view_t`.
 
 Synopsis
 --------
@@ -11,15 +11,15 @@ Synopsis
 .. code-block:: c
 
   bool
-  bson_vector_packed_bits_view_write_packed (bson_vector_packed_bits_view_t view,
-                                             const uint8_t *packed_values,
-                                             size_t byte_count,
-                                             size_t vector_offset_bytes);
+  bson_vector_packed_bit_view_write_packed (bson_vector_packed_bit_view_t view,
+                                            const uint8_t *packed_values,
+                                            size_t byte_count,
+                                            size_t vector_offset_bytes);
 
 Parameters
 ----------
 
-* ``view``: A valid :symbol:`bson_vector_packed_bits_view_t`.
+* ``view``: A valid :symbol:`bson_vector_packed_bit_view_t`.
 * ``packed_values``: Location where the packed bytes will be copied from.
 * ``byte_count``: Number of bytes to write.
 * ``vector_offset_bytes``: The byte index of the first packed byte to write.
@@ -41,5 +41,5 @@ On success, returns true and writes ``byte_count`` bytes from ``*packed_values``
 
 .. seealso::
 
-  | :symbol:`bson_vector_packed_bits_view_read_packed`
-  | :symbol:`bson_vector_packed_bits_const_view_read_packed`
+  | :symbol:`bson_vector_packed_bit_view_read_packed`
+  | :symbol:`bson_vector_packed_bit_const_view_read_packed`

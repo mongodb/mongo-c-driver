@@ -1,9 +1,9 @@
-:man_page: bson_vector_packed_bits_binary_data_length
+:man_page: bson_vector_packed_bit_binary_data_length
 
-bson_vector_packed_bits_binary_data_length()
-============================================
+bson_vector_packed_bit_binary_data_length()
+===========================================
 
-Calculate the size of a BSON Binary field that would be needed to store a Vector with the indicated number of ``packed_bits`` elements.
+Calculate the size of a BSON Binary field that would be needed to store a Vector with the indicated number of ``packed_bit`` elements.
 
 Synopsis
 --------
@@ -11,7 +11,7 @@ Synopsis
 .. code-block:: c
 
   uint32_t
-  bson_vector_packed_bits_binary_data_length (size_t element_count);
+  bson_vector_packed_bit_binary_data_length (size_t element_count);
 
 Parameters
 ----------

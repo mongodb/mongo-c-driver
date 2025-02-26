@@ -25,7 +25,7 @@ Synopsis
   #define BSON_ITER_HOLDS_VECTOR(iter) /* ... */
   #define BSON_ITER_HOLDS_VECTOR_INT8(iter) /* ... */
   #define BSON_ITER_HOLDS_VECTOR_FLOAT32(iter) /* ... */
-  #define BSON_ITER_HOLDS_VECTOR_PACKED_BITS(iter) /* ... */
+  #define BSON_ITER_HOLDS_VECTOR_PACKED_BIT(iter) /* ... */
 
   #define BSON_ITER_HOLDS_UNDEFINED(iter) /* ... */
 

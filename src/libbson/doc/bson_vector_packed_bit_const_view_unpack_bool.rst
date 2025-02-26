@@ -1,9 +1,9 @@
-:man_page: bson_vector_packed_bits_view_unpack_bool
+:man_page: bson_vector_packed_bit_const_view_unpack_bool
 
-bson_vector_packed_bits_view_unpack_bool()
-================================================
+bson_vector_packed_bit_const_view_unpack_bool()
+===============================================
 
-Unpack a contiguous block of elements from a :symbol:`bson_vector_packed_bits_view_t` into a C array of ``bool``.
+Unpack a contiguous block of elements from a :symbol:`bson_vector_packed_bit_const_view_t` into a C array of ``bool``.
 
 Synopsis
 --------
@@ -11,15 +11,15 @@ Synopsis
 .. code-block:: c
 
   bool
-  bson_vector_packed_bits_view_unpack_bool (bson_vector_packed_bits_view_t view,
-                                            bool *unpacked_values_out,
-                                            size_t element_count,
-                                            size_t vector_offset_elements);
+  bson_vector_packed_bit_const_view_unpack_bool (bson_vector_packed_bit_const_view_t view,
+                                                 bool *unpacked_values_out,
+                                                 size_t element_count,
+                                                 size_t vector_offset_elements);
 
 Parameters
 ----------
 
-* ``view``: A valid :symbol:`bson_vector_packed_bits_view_t`.
+* ``view``: A valid :symbol:`bson_vector_packed_bit_const_view_t`.
 * ``unpacked_values_out``: Location where the ``bool`` elements will be unpacked to.
 * ``element_count``: Number of elements to unpack.
 * ``vector_offset_elements``: The vector index of the first element to unpack.
@@ -38,4 +38,4 @@ On success, returns true and unpacks ``element_count`` elements into ``*unpacked
 
 .. seealso::
 
-  | :symbol:`bson_vector_packed_bits_const_view_unpack_bool`
+  | :symbol:`bson_vector_packed_bit_view_unpack_bool`

@@ -92,15 +92,15 @@ typedef struct bson_vector_float32_const_view_t {
    bson_vector_binary_const_view_impl_t binary;
 } bson_vector_float32_const_view_t;
 
-/** @brief A reference to non-owned BSON Binary data holding a valid Vector of packed_bits */
-typedef struct bson_vector_packed_bits_view_t {
+/** @brief A reference to non-owned BSON Binary data holding a valid Vector of packed_bit */
+typedef struct bson_vector_packed_bit_view_t {
    bson_vector_binary_view_impl_t binary;
-} bson_vector_packed_bits_view_t;
+} bson_vector_packed_bit_view_t;
 
-/** @brief A reference to non-owned const BSON Binary data holding a valid Vector of packed_bits */
-typedef struct bson_vector_packed_bits_const_view_t {
+/** @brief A reference to non-owned const BSON Binary data holding a valid Vector of packed_bit */
+typedef struct bson_vector_packed_bit_const_view_t {
    bson_vector_binary_const_view_impl_t binary;
-} bson_vector_packed_bits_const_view_t;
+} bson_vector_packed_bit_const_view_t;
 
 
 static BSON_INLINE bson_vector_int8_const_view_t
@@ -119,10 +119,10 @@ bson_vector_float32_view_as_const (bson_vector_float32_view_t view)
    return result;
 }
 
-static BSON_INLINE bson_vector_packed_bits_const_view_t
-bson_vector_packed_bits_view_as_const (bson_vector_packed_bits_view_t view)
+static BSON_INLINE bson_vector_packed_bit_const_view_t
+bson_vector_packed_bit_view_as_const (bson_vector_packed_bit_view_t view)
 {
-   bson_vector_packed_bits_const_view_t result;
+   bson_vector_packed_bit_const_view_t result;
    result.binary = bson_vector_binary_view_impl_as_const (view.binary);
    return result;
 }
@@ -146,14 +146,14 @@ bson_vector_float32_const_view_init (bson_vector_float32_const_view_t *view_out,
                                      uint32_t binary_data_len);
 
 BSON_EXPORT (bool)
-bson_vector_packed_bits_view_init (bson_vector_packed_bits_view_t *view_out,
-                                   uint8_t *binary_data,
-                                   uint32_t binary_data_len);
+bson_vector_packed_bit_view_init (bson_vector_packed_bit_view_t *view_out,
+                                  uint8_t *binary_data,
+                                  uint32_t binary_data_len);
 
 BSON_EXPORT (bool)
-bson_vector_packed_bits_const_view_init (bson_vector_packed_bits_const_view_t *view_out,
-                                         const uint8_t *binary_data,
-                                         uint32_t binary_data_len);
+bson_vector_packed_bit_const_view_init (bson_vector_packed_bit_const_view_t *view_out,
+                                        const uint8_t *binary_data,
+                                        uint32_t binary_data_len);
 
 
 BSON_EXPORT (bool)
@@ -169,10 +169,10 @@ BSON_EXPORT (bool)
 bson_vector_float32_const_view_from_iter (bson_vector_float32_const_view_t *view_out, const bson_iter_t *iter);
 
 BSON_EXPORT (bool)
-bson_vector_packed_bits_view_from_iter (bson_vector_packed_bits_view_t *view_out, bson_iter_t *iter);
+bson_vector_packed_bit_view_from_iter (bson_vector_packed_bit_view_t *view_out, bson_iter_t *iter);
 
 BSON_EXPORT (bool)
-bson_vector_packed_bits_const_view_from_iter (bson_vector_packed_bits_const_view_t *view_out, const bson_iter_t *iter);
+bson_vector_packed_bit_const_view_from_iter (bson_vector_packed_bit_const_view_t *view_out, const bson_iter_t *iter);
 
 
 BSON_EXPORT (bool)
@@ -184,8 +184,8 @@ bson_array_builder_append_vector_float32_elements (struct _bson_array_builder_t 
                                                    bson_vector_float32_const_view_t view);
 
 BSON_EXPORT (bool)
-bson_array_builder_append_vector_packed_bits_elements (struct _bson_array_builder_t *builder,
-                                                       bson_vector_packed_bits_const_view_t view);
+bson_array_builder_append_vector_packed_bit_elements (struct _bson_array_builder_t *builder,
+                                                      bson_vector_packed_bit_const_view_t view);
 
 BSON_EXPORT (bool)
 bson_array_builder_append_vector_elements (struct _bson_array_builder_t *builder, const bson_iter_t *iter);
@@ -205,11 +205,11 @@ bson_append_vector_float32 (
    bson_append_vector_float32 (b, key, (int) strlen (key), count, view)
 
 BSON_EXPORT (bool)
-bson_append_vector_packed_bits (
-   bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_packed_bits_view_t *view_out);
+bson_append_vector_packed_bit (
+   bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_packed_bit_view_t *view_out);
 
-#define BSON_APPEND_VECTOR_PACKED_BITS(b, key, count, view) \
-   bson_append_vector_packed_bits (b, key, (int) strlen (key), count, view)
+#define BSON_APPEND_VECTOR_PACKED_BIT(b, key, count, view) \
+   bson_append_vector_packed_bit (b, key, (int) strlen (key), count, view)
 
 
 BSON_EXPORT (bool)
@@ -227,11 +227,11 @@ bson_append_vector_float32_from_array (
    bson_append_vector_float32_from_array (b, key, (int) strlen (key), iter, err)
 
 BSON_EXPORT (bool)
-bson_append_vector_packed_bits_from_array (
+bson_append_vector_packed_bit_from_array (
    bson_t *bson, const char *key, int key_length, const bson_iter_t *iter, bson_error_t *error);
 
-#define BSON_APPEND_VECTOR_PACKED_BITS_FROM_ARRAY(b, key, iter, err) \
-   bson_append_vector_packed_bits_from_array (b, key, (int) strlen (key), iter, err)
+#define BSON_APPEND_VECTOR_PACKED_BIT_FROM_ARRAY(b, key, iter, err) \
+   bson_append_vector_packed_bit_from_array (b, key, (int) strlen (key), iter, err)
 
 
 BSON_EXPORT (bool)
@@ -250,13 +250,13 @@ bson_append_array_from_vector_float32 (bson_t *bson,
    bson_append_array_from_vector_float32 (b, key, (int) strlen (key), view)
 
 BSON_EXPORT (bool)
-bson_append_array_from_vector_packed_bits (bson_t *bson,
-                                           const char *key,
-                                           int key_length,
-                                           bson_vector_packed_bits_const_view_t view);
+bson_append_array_from_vector_packed_bit (bson_t *bson,
+                                          const char *key,
+                                          int key_length,
+                                          bson_vector_packed_bit_const_view_t view);
 
-#define BSON_APPEND_ARRAY_FROM_VECTOR_PACKED_BITS(b, key, view) \
-   bson_append_array_from_vector_packed_bits (b, key, (int) strlen (key), view)
+#define BSON_APPEND_ARRAY_FROM_VECTOR_PACKED_BIT(b, key, view) \
+   bson_append_array_from_vector_packed_bit (b, key, (int) strlen (key), view)
 
 
 static BSON_INLINE const int8_t *
@@ -289,7 +289,7 @@ bson_vector_float32_binary_data_length (size_t element_count)
 }
 
 static BSON_INLINE uint32_t
-bson_vector_packed_bits_binary_data_length (size_t element_count)
+bson_vector_packed_bit_binary_data_length (size_t element_count)
 {
    const size_t max_representable = (size_t) BSON_MIN (
       (uint64_t) SIZE_MAX, ((uint64_t) UINT32_MAX - (uint64_t) BSON_VECTOR_HEADER_LEN) * (uint64_t) 8);
@@ -324,15 +324,15 @@ bson_vector_float32_view_length (bson_vector_float32_view_t view)
 }
 
 static BSON_INLINE size_t
-bson_vector_packed_bits_const_view_length_bytes (bson_vector_packed_bits_const_view_t view)
+bson_vector_packed_bit_const_view_length_bytes (bson_vector_packed_bit_const_view_t view)
 {
    return view.binary.data_len - (uint32_t) BSON_VECTOR_HEADER_LEN;
 }
 
 static BSON_INLINE size_t
-bson_vector_packed_bits_view_length_bytes (bson_vector_packed_bits_view_t view)
+bson_vector_packed_bit_view_length_bytes (bson_vector_packed_bit_view_t view)
 {
-   return bson_vector_packed_bits_const_view_length_bytes (bson_vector_packed_bits_view_as_const (view));
+   return bson_vector_packed_bit_const_view_length_bytes (bson_vector_packed_bit_view_as_const (view));
 }
 
 // Implementation detail, not part of documented API.
@@ -343,28 +343,27 @@ bson_vector_padding_from_header_byte_1 (uint8_t byte_1)
 }
 
 static BSON_INLINE size_t
-bson_vector_packed_bits_const_view_padding (bson_vector_packed_bits_const_view_t view)
+bson_vector_packed_bit_const_view_padding (bson_vector_packed_bit_const_view_t view)
 {
    return bson_vector_padding_from_header_byte_1 (view.binary.header_copy.bytes[1]);
 }
 
 static BSON_INLINE size_t
-bson_vector_packed_bits_view_padding (bson_vector_packed_bits_view_t view)
+bson_vector_packed_bit_view_padding (bson_vector_packed_bit_view_t view)
 {
-   return bson_vector_packed_bits_const_view_padding (bson_vector_packed_bits_view_as_const (view));
+   return bson_vector_packed_bit_const_view_padding (bson_vector_packed_bit_view_as_const (view));
 }
 
 static BSON_INLINE size_t
-bson_vector_packed_bits_const_view_length (bson_vector_packed_bits_const_view_t view)
+bson_vector_packed_bit_const_view_length (bson_vector_packed_bit_const_view_t view)
 {
-   return bson_vector_packed_bits_const_view_length_bytes (view) * 8u -
-          bson_vector_packed_bits_const_view_padding (view);
+   return bson_vector_packed_bit_const_view_length_bytes (view) * 8u - bson_vector_packed_bit_const_view_padding (view);
 }
 
 static BSON_INLINE size_t
-bson_vector_packed_bits_view_length (bson_vector_packed_bits_view_t view)
+bson_vector_packed_bit_view_length (bson_vector_packed_bit_view_t view)
 {
-   return bson_vector_packed_bits_const_view_length (bson_vector_packed_bits_view_as_const (view));
+   return bson_vector_packed_bit_const_view_length (bson_vector_packed_bit_view_as_const (view));
 }
 
 
@@ -472,12 +471,12 @@ bson_vector_float32_view_write (bson_vector_float32_view_t view,
 
 
 static BSON_INLINE bool
-bson_vector_packed_bits_const_view_read_packed (bson_vector_packed_bits_const_view_t view,
-                                                uint8_t *BSON_RESTRICT packed_values_out,
-                                                size_t byte_count,
-                                                size_t vector_offset_bytes)
+bson_vector_packed_bit_const_view_read_packed (bson_vector_packed_bit_const_view_t view,
+                                               uint8_t *BSON_RESTRICT packed_values_out,
+                                               size_t byte_count,
+                                               size_t vector_offset_bytes)
 {
-   size_t length_bytes = bson_vector_packed_bits_const_view_length_bytes (view);
+   size_t length_bytes = bson_vector_packed_bit_const_view_length_bytes (view);
    if (BSON_LIKELY (vector_offset_bytes <= length_bytes && byte_count <= length_bytes - vector_offset_bytes)) {
       memcpy (packed_values_out, view.binary.data + BSON_VECTOR_HEADER_LEN + vector_offset_bytes, byte_count);
       return true;
@@ -487,22 +486,22 @@ bson_vector_packed_bits_const_view_read_packed (bson_vector_packed_bits_const_vi
 }
 
 static BSON_INLINE bool
-bson_vector_packed_bits_view_read_packed (bson_vector_packed_bits_view_t view,
-                                          uint8_t *BSON_RESTRICT packed_values_out,
-                                          size_t byte_count,
-                                          size_t vector_offset_bytes)
+bson_vector_packed_bit_view_read_packed (bson_vector_packed_bit_view_t view,
+                                         uint8_t *BSON_RESTRICT packed_values_out,
+                                         size_t byte_count,
+                                         size_t vector_offset_bytes)
 {
-   return bson_vector_packed_bits_const_view_read_packed (
-      bson_vector_packed_bits_view_as_const (view), packed_values_out, byte_count, vector_offset_bytes);
+   return bson_vector_packed_bit_const_view_read_packed (
+      bson_vector_packed_bit_view_as_const (view), packed_values_out, byte_count, vector_offset_bytes);
 }
 
 static BSON_INLINE bool
-bson_vector_packed_bits_view_write_packed (bson_vector_packed_bits_view_t view,
-                                           const uint8_t *BSON_RESTRICT packed_values,
-                                           size_t byte_count,
-                                           size_t vector_offset_bytes)
+bson_vector_packed_bit_view_write_packed (bson_vector_packed_bit_view_t view,
+                                          const uint8_t *BSON_RESTRICT packed_values,
+                                          size_t byte_count,
+                                          size_t vector_offset_bytes)
 {
-   size_t length_bytes = bson_vector_packed_bits_view_length_bytes (view);
+   size_t length_bytes = bson_vector_packed_bit_view_length_bytes (view);
    if (BSON_LIKELY (vector_offset_bytes <= length_bytes && byte_count <= length_bytes - vector_offset_bytes)) {
       if (byte_count == length_bytes - vector_offset_bytes && byte_count >= 1u) {
          // This write touches the last byte in the vector:
@@ -510,7 +509,7 @@ bson_vector_packed_bits_view_write_packed (bson_vector_packed_bits_view_t view,
          size_t other_bytes = byte_count - 1u;
          memcpy (view.binary.data + BSON_VECTOR_HEADER_LEN + vector_offset_bytes, packed_values, other_bytes);
          view.binary.data[BSON_VECTOR_HEADER_LEN + vector_offset_bytes + other_bytes] =
-            (UINT8_C (0xFF) << bson_vector_packed_bits_view_padding (view)) & packed_values[other_bytes];
+            (UINT8_C (0xFF) << bson_vector_packed_bit_view_padding (view)) & packed_values[other_bytes];
       } else {
          memcpy (view.binary.data + BSON_VECTOR_HEADER_LEN + vector_offset_bytes, packed_values, byte_count);
       }
@@ -522,12 +521,12 @@ bson_vector_packed_bits_view_write_packed (bson_vector_packed_bits_view_t view,
 
 
 static BSON_INLINE bool
-bson_vector_packed_bits_const_view_unpack_bool (bson_vector_packed_bits_const_view_t view,
-                                                bool *BSON_RESTRICT unpacked_values_out,
-                                                size_t element_count,
-                                                size_t vector_offset_elements)
+bson_vector_packed_bit_const_view_unpack_bool (bson_vector_packed_bit_const_view_t view,
+                                               bool *BSON_RESTRICT unpacked_values_out,
+                                               size_t element_count,
+                                               size_t vector_offset_elements)
 {
-   size_t length = bson_vector_packed_bits_const_view_length (view);
+   size_t length = bson_vector_packed_bit_const_view_length (view);
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
       size_t i;
       for (i = 0; i < element_count; i++) {
@@ -542,22 +541,22 @@ bson_vector_packed_bits_const_view_unpack_bool (bson_vector_packed_bits_const_vi
 }
 
 static BSON_INLINE bool
-bson_vector_packed_bits_view_unpack_bool (bson_vector_packed_bits_view_t view,
-                                          bool *BSON_RESTRICT unpacked_values_out,
-                                          size_t element_count,
-                                          size_t vector_offset_elements)
+bson_vector_packed_bit_view_unpack_bool (bson_vector_packed_bit_view_t view,
+                                         bool *BSON_RESTRICT unpacked_values_out,
+                                         size_t element_count,
+                                         size_t vector_offset_elements)
 {
-   return bson_vector_packed_bits_const_view_unpack_bool (
-      bson_vector_packed_bits_view_as_const (view), unpacked_values_out, element_count, vector_offset_elements);
+   return bson_vector_packed_bit_const_view_unpack_bool (
+      bson_vector_packed_bit_view_as_const (view), unpacked_values_out, element_count, vector_offset_elements);
 }
 
 static BSON_INLINE bool
-bson_vector_packed_bits_view_pack_bool (bson_vector_packed_bits_view_t view,
-                                        const bool *BSON_RESTRICT unpacked_values,
-                                        size_t element_count,
-                                        size_t vector_offset_elements)
+bson_vector_packed_bit_view_pack_bool (bson_vector_packed_bit_view_t view,
+                                       const bool *BSON_RESTRICT unpacked_values,
+                                       size_t element_count,
+                                       size_t vector_offset_elements)
 {
-   size_t length = bson_vector_packed_bits_view_length (view);
+   size_t length = bson_vector_packed_bit_view_length (view);
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
       while (element_count > 0) {
          uint8_t *BSON_RESTRICT packed_byte = &view.binary.data[BSON_VECTOR_HEADER_LEN + (vector_offset_elements >> 3)];

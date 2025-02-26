@@ -44,10 +44,10 @@ BSON_STATIC_ASSERT2 (sizeof_bson_vector_float32_const_view_t,
                      sizeof (bson_vector_float32_const_view_t) == EXPECTED_VECTOR_VIEW_SIZE);
 BSON_STATIC_ASSERT2 (sizeof_bson_vector_float32_view_t,
                      sizeof (bson_vector_float32_view_t) == EXPECTED_VECTOR_VIEW_SIZE);
-BSON_STATIC_ASSERT2 (sizeof_bson_vector_packed_bits_const_view_t,
-                     sizeof (bson_vector_packed_bits_const_view_t) == EXPECTED_VECTOR_VIEW_SIZE);
-BSON_STATIC_ASSERT2 (sizeof_bson_vector_packed_bits_view_t,
-                     sizeof (bson_vector_packed_bits_view_t) == EXPECTED_VECTOR_VIEW_SIZE);
+BSON_STATIC_ASSERT2 (sizeof_bson_vector_packed_bit_const_view_t,
+                     sizeof (bson_vector_packed_bit_const_view_t) == EXPECTED_VECTOR_VIEW_SIZE);
+BSON_STATIC_ASSERT2 (sizeof_bson_vector_packed_bit_view_t,
+                     sizeof (bson_vector_packed_bit_view_t) == EXPECTED_VECTOR_VIEW_SIZE);
 #undef EXPECTED_VECTOR_VIEW_SIZE
 
 typedef struct vector_json_test_case_t {
@@ -82,12 +82,12 @@ translate_json_test_vector (bson_t *array_in, bson_t *array_out)
 }
 
 static bool
-append_vector_packed_bits_from_packed_array (
+append_vector_packed_bit_from_packed_array (
    bson_t *bson, const char *key, int key_length, const bson_iter_t *iter, int64_t padding, bson_error_t *error)
 {
    // (TODO for DRIVERS-3095, DRIVERS-3097) This implements something the test covers that our API doesn't. If the test
    // were modified to cover element-by-element conversion, this can be replaced with
-   // bson_append_vector_packed_bits_from_array.
+   // bson_append_vector_packed_bit_from_array.
 
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (key);
@@ -125,7 +125,7 @@ append_vector_packed_bits_from_packed_array (
                       TEST_ERROR_DOMAIN,
                       TEST_ERROR_CODE,
                       "'padding' parameter (%" PRId64
-                      ") for append_vector_packed_bits_from_packed_array is out of range",
+                      ") for append_vector_packed_bit_from_packed_array is out of range",
                       padding);
       return false;
    }
@@ -134,18 +134,18 @@ append_vector_packed_bits_from_packed_array (
                       TEST_ERROR_DOMAIN,
                       TEST_ERROR_CODE,
                       "nonzero 'padding' parameter (%" PRId64
-                      ") for zero-length append_vector_packed_bits_from_packed_array",
+                      ") for zero-length append_vector_packed_bit_from_packed_array",
                       padding);
       return false;
    }
 
-   bson_vector_packed_bits_view_t view;
-   if (bson_append_vector_packed_bits (bson, key, key_length, byte_count * 8u - (size_t) padding, &view)) {
+   bson_vector_packed_bit_view_t view;
+   if (bson_append_vector_packed_bit (bson, key, key_length, byte_count * 8u - (size_t) padding, &view)) {
       bson_iter_t copy_iter = *iter;
       for (size_t i = 0; i < byte_count; i++) {
          BSON_ASSERT (bson_iter_next (&copy_iter));
          uint8_t packed_byte = (uint8_t) bson_iter_as_int64 (&copy_iter);
-         BSON_ASSERT (bson_vector_packed_bits_view_write_packed (view, &packed_byte, 1, i));
+         BSON_ASSERT (bson_vector_packed_bit_view_write_packed (view, &packed_byte, 1, i));
       }
       return true;
    } else {
@@ -219,7 +219,7 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
       }
       bson_destroy (&converted);
    } else if (0 == strcmp ("0x10", test_case->test_dtype_hex_str)) {
-      // packed_bits from packed bytes in an int array, with "padding" parameter supplied separately.
+      // packed_bit from packed bytes in an int array, with "padding" parameter supplied separately.
       // TODO for DRIVERS-3095, DRIVERS-3097:
       //  - Array-to-Vector should be defined as an element-by-element conversion. This test shouldn't operate on packed
       //  representations.
@@ -230,12 +230,12 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
          test_error ("test '%s' is missing required 'padding' field", test_case->test_description);
       }
       vector_from_array_ok = test_case->test_vector_array && bson_iter_init (&iter, test_case->test_vector_array) &&
-                             append_vector_packed_bits_from_packed_array (&vector_from_array,
-                                                                          test_case->scenario_test_key,
-                                                                          -1,
-                                                                          &iter,
-                                                                          *test_case->test_padding,
-                                                                          &vector_from_array_error);
+                             append_vector_packed_bit_from_packed_array (&vector_from_array,
+                                                                         test_case->scenario_test_key,
+                                                                         -1,
+                                                                         &iter,
+                                                                         *test_case->test_padding,
+                                                                         &vector_from_array_error);
    } else {
       test_error (
          "test '%s' has unsupported dtype_hex format '%s'", test_case->test_description, test_case->test_dtype_hex_str);
@@ -287,7 +287,7 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
       }
 
       // (TODO for DRIVERS-3095, DRIVERS-3097) Due to loosely defined element types and rounding behavior in the test
-      // vectors, this comparison can't be exact. Temporary special cases are needed for float32 and packed_bits.
+      // vectors, this comparison can't be exact. Temporary special cases are needed for float32 and packed_bit.
 
       if (BSON_ITER_HOLDS_VECTOR_FLOAT32 (&iter)) {
          // float32 special case: We need to handle the nonstandard "inf" and "-inf" forms, and
@@ -352,16 +352,16 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
             }
          }
 
-      } else if (BSON_ITER_HOLDS_VECTOR_PACKED_BITS (&iter)) {
-         // packed_bits special case: The tests for packed_bits aren't actually testing vector-to-array conversion as we
+      } else if (BSON_ITER_HOLDS_VECTOR_PACKED_BIT (&iter)) {
+         // packed_bit special case: The tests for packed_bit aren't actually testing vector-to-array conversion as we
          // understand it, they're operating on bytes rather than elements. This is the inverse of
-         // append_vector_packed_bits_from_packed_array() above, and it bypasses the vector-to-array conversion.
+         // append_vector_packed_bit_from_packed_array() above, and it bypasses the vector-to-array conversion.
          // 'array_from_vector' is ignored on this path.
 
          bson_iter_t expected_iter;
          BSON_ASSERT (bson_iter_init (&expected_iter, test_case->test_vector_array));
-         bson_vector_packed_bits_const_view_t actual_view;
-         BSON_ASSERT (bson_vector_packed_bits_const_view_from_iter (&actual_view, &iter));
+         bson_vector_packed_bit_const_view_t actual_view;
+         BSON_ASSERT (bson_vector_packed_bit_const_view_from_iter (&actual_view, &iter));
 
          size_t byte_count = 0;
          while (bson_iter_next (&expected_iter)) {
@@ -376,24 +376,24 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
             // tests allow padding bits to take on undefined values. Modify the expected values to keep padding bits
             // zeroed.
             if (0 == strcmp ("PACKED_BIT with padding", test_case->test_description) &&
-                byte_count == bson_vector_packed_bits_const_view_length_bytes (actual_view) - 1u) {
+                byte_count == bson_vector_packed_bit_const_view_length_bytes (actual_view) - 1u) {
                expected_byte &= ((int64_t) 0xFF << *test_case->test_padding) & 0xFF;
             }
 
             // Note, the zero initializer is only needed due to a false positive -Wmaybe-uninitialized warning in
             // uncommon configurations where the compiler does not have visibility into memcpy().
             uint8_t actual_byte = 0;
-            BSON_ASSERT (bson_vector_packed_bits_const_view_read_packed (actual_view, &actual_byte, 1, byte_count));
+            BSON_ASSERT (bson_vector_packed_bit_const_view_read_packed (actual_view, &actual_byte, 1, byte_count));
 
             if (expected_byte != (int64_t) actual_byte) {
-               test_error ("failed to match packed byte %d of packed_bits test-vector. Actual: 0x%02x Expected: 0x%02x",
+               test_error ("failed to match packed byte %d of packed_bit test-vector. Actual: 0x%02x Expected: 0x%02x",
                            (int) byte_count,
                            (unsigned) actual_byte,
                            (unsigned) expected_byte);
             }
             byte_count++;
          }
-         ASSERT_CMPSIZE_T (byte_count, ==, bson_vector_packed_bits_const_view_length_bytes (actual_view));
+         ASSERT_CMPSIZE_T (byte_count, ==, bson_vector_packed_bit_const_view_length_bytes (actual_view));
 
       } else {
          // No special case, expect an exact match. (Used for int8 vectors)
@@ -550,7 +550,7 @@ test_bson_vector_view_api_usage_int8 (void)
       ASSERT (BSON_ITER_HOLDS_VECTOR (&iter));
       ASSERT (BSON_ITER_HOLDS_VECTOR_INT8 (&iter));
       ASSERT (!BSON_ITER_HOLDS_VECTOR_FLOAT32 (&iter));
-      ASSERT (!BSON_ITER_HOLDS_VECTOR_PACKED_BITS (&iter));
+      ASSERT (!BSON_ITER_HOLDS_VECTOR_PACKED_BIT (&iter));
       bson_vector_int8_const_view_t view;
       ASSERT (bson_vector_int8_const_view_from_iter (&view, &iter));
       ASSERT (bson_vector_int8_const_view_length (view) == 25);
@@ -665,7 +665,7 @@ test_bson_vector_view_api_usage_float32 (void)
       ASSERT (BSON_ITER_HOLDS_VECTOR (&iter));
       ASSERT (!BSON_ITER_HOLDS_VECTOR_INT8 (&iter));
       ASSERT (BSON_ITER_HOLDS_VECTOR_FLOAT32 (&iter));
-      ASSERT (!BSON_ITER_HOLDS_VECTOR_PACKED_BITS (&iter));
+      ASSERT (!BSON_ITER_HOLDS_VECTOR_PACKED_BIT (&iter));
       bson_vector_float32_const_view_t view;
       ASSERT (bson_vector_float32_const_view_from_iter (&view, &iter));
       ASSERT (bson_vector_float32_const_view_length (view) == 5);
@@ -732,18 +732,18 @@ test_bson_vector_view_api_usage_float32 (void)
 }
 
 static void
-test_bson_vector_view_api_usage_packed_bits (void)
+test_bson_vector_view_api_usage_packed_bit (void)
 {
    bson_t doc = BSON_INITIALIZER;
 
    // Construct a small vector by packing individual elements from a 'bool' source
    {
-      bson_vector_packed_bits_view_t view;
+      bson_vector_packed_bit_view_t view;
       const size_t length = 123;
-      ASSERT (BSON_APPEND_VECTOR_PACKED_BITS (&doc, "vector", length, &view));
+      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "vector", length, &view));
       for (size_t i = 0; i < length; i++) {
          bool v = (i & 1) != 0;
-         bson_vector_packed_bits_view_pack_bool (view, &v, 1, i);
+         bson_vector_packed_bit_view_pack_bool (view, &v, 1, i);
       }
    }
 
@@ -752,12 +752,12 @@ test_bson_vector_view_api_usage_packed_bits (void)
 
    // Construct a longer vector by packing individual elements from a 'bool' source
    {
-      bson_vector_packed_bits_view_t view;
+      bson_vector_packed_bit_view_t view;
       const size_t length = 100002;
-      ASSERT (bson_append_vector_packed_bits (&doc, "longer_vector", -1, length, &view));
+      ASSERT (bson_append_vector_packed_bit (&doc, "longer_vector", -1, length, &view));
       for (size_t i = 0; i < length; i++) {
          bool v = (i & 3) != 0;
-         bson_vector_packed_bits_view_pack_bool (view, &v, 1, i);
+         bson_vector_packed_bit_view_pack_bool (view, &v, 1, i);
       }
    }
 
@@ -776,16 +776,16 @@ test_bson_vector_view_api_usage_packed_bits (void)
       ASSERT (BSON_ITER_HOLDS_VECTOR (&iter));
       ASSERT (!BSON_ITER_HOLDS_VECTOR_INT8 (&iter));
       ASSERT (!BSON_ITER_HOLDS_VECTOR_FLOAT32 (&iter));
-      ASSERT (BSON_ITER_HOLDS_VECTOR_PACKED_BITS (&iter));
-      bson_vector_packed_bits_const_view_t view;
-      ASSERT (bson_vector_packed_bits_const_view_from_iter (&view, &iter));
-      ASSERT (bson_vector_packed_bits_const_view_length (view) == 123);
+      ASSERT (BSON_ITER_HOLDS_VECTOR_PACKED_BIT (&iter));
+      bson_vector_packed_bit_const_view_t view;
+      ASSERT (bson_vector_packed_bit_const_view_from_iter (&view, &iter));
+      ASSERT (bson_vector_packed_bit_const_view_length (view) == 123);
       bool values[123];
       bool expected_values[123];
       for (size_t i = 0; i < sizeof expected_values / sizeof expected_values[0]; i++) {
          expected_values[i] = (i & 1) != 0;
       }
-      ASSERT (bson_vector_packed_bits_const_view_unpack_bool (view, values, sizeof values / sizeof values[0], 0));
+      ASSERT (bson_vector_packed_bit_const_view_unpack_bool (view, values, sizeof values / sizeof values[0], 0));
       ASSERT_MEMCMP (values, expected_values, (int) sizeof expected_values);
    }
 
@@ -793,13 +793,13 @@ test_bson_vector_view_api_usage_packed_bits (void)
    {
       bson_iter_t iter;
       ASSERT (bson_iter_init_find (&iter, &doc, "vector"));
-      bson_vector_packed_bits_const_view_t view;
-      ASSERT (bson_vector_packed_bits_const_view_from_iter (&view, &iter));
-      ASSERT (bson_vector_packed_bits_const_view_length (view) == 123);
+      bson_vector_packed_bit_const_view_t view;
+      ASSERT (bson_vector_packed_bit_const_view_from_iter (&view, &iter));
+      ASSERT (bson_vector_packed_bit_const_view_length (view) == 123);
       uint8_t packed[16];
       static const uint8_t expected_packed[16] = {
          0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x40};
-      ASSERT (bson_vector_packed_bits_const_view_read_packed (view, packed, sizeof packed, 0));
+      ASSERT (bson_vector_packed_bit_const_view_read_packed (view, packed, sizeof packed, 0));
       ASSERT_MEMCMP (packed, expected_packed, (int) sizeof expected_packed);
    }
 
@@ -807,21 +807,21 @@ test_bson_vector_view_api_usage_packed_bits (void)
    {
       bson_iter_t iter;
       ASSERT (bson_iter_init_find (&iter, &doc, "vector"));
-      bson_vector_packed_bits_view_t view;
-      ASSERT (bson_vector_packed_bits_view_from_iter (&view, &iter));
+      bson_vector_packed_bit_view_t view;
+      ASSERT (bson_vector_packed_bit_view_from_iter (&view, &iter));
       uint8_t packed[2] = {0x12, 0x34};
-      ASSERT (bson_vector_packed_bits_view_write_packed (view, packed, sizeof packed, 12));
+      ASSERT (bson_vector_packed_bit_view_write_packed (view, packed, sizeof packed, 12));
    }
 
    // Partial read of the packed representation
    {
       bson_iter_t iter;
       ASSERT (bson_iter_init_find (&iter, &doc, "vector"));
-      bson_vector_packed_bits_const_view_t view;
-      ASSERT (bson_vector_packed_bits_const_view_from_iter (&view, &iter));
+      bson_vector_packed_bit_const_view_t view;
+      ASSERT (bson_vector_packed_bit_const_view_from_iter (&view, &iter));
       uint8_t packed[5];
       static const uint8_t expected_packed[5] = {0x55, 0x12, 0x34, 0x55, 0x40};
-      ASSERT (bson_vector_packed_bits_const_view_read_packed (view, packed, sizeof packed, 11));
+      ASSERT (bson_vector_packed_bit_const_view_read_packed (view, packed, sizeof packed, 11));
       ASSERT_MEMCMP (packed, expected_packed, (int) sizeof expected_packed);
    }
 
@@ -829,13 +829,13 @@ test_bson_vector_view_api_usage_packed_bits (void)
    {
       bson_iter_t iter;
       ASSERT (bson_iter_init_find (&iter, &doc, "vector"));
-      bson_vector_packed_bits_view_t view;
-      ASSERT (bson_vector_packed_bits_view_from_iter (&view, &iter));
+      bson_vector_packed_bit_view_t view;
+      ASSERT (bson_vector_packed_bit_view_from_iter (&view, &iter));
       bool values[24] = {
          false, false, false, true,  false, false, false, true,  true,  true,  false, true,
          true,  false, false, false, false, true,  false, false, false, false, false, true,
       };
-      ASSERT (bson_vector_packed_bits_view_pack_bool (view, values, sizeof values / sizeof values[0], 3));
+      ASSERT (bson_vector_packed_bit_view_pack_bool (view, values, sizeof values / sizeof values[0], 3));
    }
 
    // Convert the small vector to a BSON Array, and check the resulting canonical extended JSON.
@@ -885,7 +885,7 @@ test_bson_vector_view_api_usage_packed_bits (void)
       ASSERT (bson_iter_init_find (&iter, &converted, "array"));
       ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
       ASSERT (bson_iter_recurse (&iter, &iter));
-      ASSERT (BSON_APPEND_VECTOR_PACKED_BITS_FROM_ARRAY (&doc, "round_trip", &iter, NULL));
+      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_FROM_ARRAY (&doc, "round_trip", &iter, NULL));
       bson_destroy (&converted);
    }
 
@@ -907,7 +907,7 @@ test_bson_vector_view_api_usage_packed_bits (void)
       ASSERT (bson_iter_init_find (&iter, &converted, "array"));
       ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
       ASSERT (bson_iter_recurse (&iter, &iter));
-      ASSERT (BSON_APPEND_VECTOR_PACKED_BITS_FROM_ARRAY (&doc, "longer_round_trip", &iter, NULL));
+      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_FROM_ARRAY (&doc, "longer_round_trip", &iter, NULL));
       bson_destroy (&converted);
    }
    {
@@ -917,36 +917,36 @@ test_bson_vector_view_api_usage_packed_bits (void)
       ASSERT (bson_iter_binary_equal (&a, &b));
    }
 
-   // Padding bits will be initialized to zero when a packed_bits vector is first allocated by
-   // bson_append_vector_packed_bits
+   // Padding bits will be initialized to zero when a packed_bit vector is first allocated by
+   // bson_append_vector_packed_bit
    {
       // Set the uninitialized part of 'doc' to a known value
       static const uint32_t reserve_len = 512;
       memset (bson_reserve_buffer (&doc, doc.len + reserve_len) + doc.len, 0xdd, reserve_len);
 
-      bson_vector_packed_bits_view_t view;
-      ASSERT (BSON_APPEND_VECTOR_PACKED_BITS (&doc, "padding_init_test", 12, &view));
-      ASSERT (bson_vector_packed_bits_view_length_bytes (view) == 2);
-      ASSERT (bson_vector_packed_bits_view_padding (view) == 4);
+      bson_vector_packed_bit_view_t view;
+      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "padding_init_test", 12, &view));
+      ASSERT (bson_vector_packed_bit_view_length_bytes (view) == 2);
+      ASSERT (bson_vector_packed_bit_view_padding (view) == 4);
 
       // BSON validity only requires the low 4 bits to be zero, but the entire last
       // byte will be zeroed by our implementation.
       uint8_t bytes[2];
-      ASSERT (bson_vector_packed_bits_view_read_packed (view, bytes, sizeof bytes, 0));
+      ASSERT (bson_vector_packed_bit_view_read_packed (view, bytes, sizeof bytes, 0));
       ASSERT_CMPUINT ((unsigned) bytes[0], ==, 0xdd);
       ASSERT_CMPUINT ((unsigned) bytes[1], ==, 0x00);
    }
 
-   // Padding bits can't be forcibly given nonzero values using bson_vector_packed_bits_view_write_packed
+   // Padding bits can't be forcibly given nonzero values using bson_vector_packed_bit_view_write_packed
    {
-      bson_vector_packed_bits_view_t view;
-      ASSERT (BSON_APPEND_VECTOR_PACKED_BITS (&doc, "padding_mask_test", 13, &view));
-      ASSERT (bson_vector_packed_bits_view_length_bytes (view) == 2);
-      ASSERT (bson_vector_packed_bits_view_padding (view) == 3);
+      bson_vector_packed_bit_view_t view;
+      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "padding_mask_test", 13, &view));
+      ASSERT (bson_vector_packed_bit_view_length_bytes (view) == 2);
+      ASSERT (bson_vector_packed_bit_view_padding (view) == 3);
 
       uint8_t bytes[2] = {0xff, 0xff};
-      ASSERT (bson_vector_packed_bits_view_write_packed (view, bytes, sizeof bytes, 0));
-      ASSERT (bson_vector_packed_bits_view_read_packed (view, bytes, sizeof bytes, 0));
+      ASSERT (bson_vector_packed_bit_view_write_packed (view, bytes, sizeof bytes, 0));
+      ASSERT (bson_vector_packed_bit_view_read_packed (view, bytes, sizeof bytes, 0));
       ASSERT_CMPUINT ((unsigned) bytes[0], ==, 0xff);
       ASSERT_CMPUINT ((unsigned) bytes[1], ==, 0xf8);
    }
@@ -1070,7 +1070,7 @@ test_bson_vector_view_api_fuzz_float32 (void)
 }
 
 static void
-test_bson_vector_view_api_fuzz_packed_bits (void)
+test_bson_vector_view_api_fuzz_packed_bit (void)
 {
    size_t current_length = 0;
    bson_t vector_doc = BSON_INITIALIZER;
@@ -1086,12 +1086,12 @@ test_bson_vector_view_api_fuzz_packed_bits (void)
          // Resize and fill from unpacked bool source
          size_t new_length = (size_t) r_param % MAX_TESTED_VECTOR_LENGTH;
          bson_reinit (&vector_doc);
-         bson_vector_packed_bits_view_t view;
-         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BITS (&vector_doc, "vector", new_length, &view));
+         bson_vector_packed_bit_view_t view;
+         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&vector_doc, "vector", new_length, &view));
          for (size_t i = 0; i < new_length; i++) {
             expected_elements[i] = (rand () & 1) != 0;
          }
-         BSON_ASSERT (bson_vector_packed_bits_view_pack_bool (view, expected_elements, new_length, 0));
+         BSON_ASSERT (bson_vector_packed_bit_view_pack_bool (view, expected_elements, new_length, 0));
          current_length = new_length;
 
       } else if (r_operation < 7) {
@@ -1103,13 +1103,13 @@ test_bson_vector_view_api_fuzz_packed_bits (void)
             for (size_t i = 0; i < element_count; i++) {
                expected_elements[offset + i] = (rand () & 1) != 0;
             }
-            bson_vector_packed_bits_view_t view;
+            bson_vector_packed_bit_view_t view;
             bson_iter_t iter;
             BSON_ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
-            BSON_ASSERT (bson_vector_packed_bits_view_from_iter (&view, &iter));
-            BSON_ASSERT (bson_vector_packed_bits_view_length (view) == current_length);
+            BSON_ASSERT (bson_vector_packed_bit_view_from_iter (&view, &iter));
+            BSON_ASSERT (bson_vector_packed_bit_view_length (view) == current_length);
             BSON_ASSERT (
-               bson_vector_packed_bits_view_pack_bool (view, expected_elements + offset, element_count, offset));
+               bson_vector_packed_bit_view_pack_bool (view, expected_elements + offset, element_count, offset));
          } else {
             // Partial write of packed bytes
             size_t current_length_bytes = (current_length + 7) / 8;
@@ -1122,13 +1122,13 @@ test_bson_vector_view_api_fuzz_packed_bits (void)
                   expected_elements[(byte_offset + i) * 8 + bit] = (packed_byte & (0x80 >> bit)) != 0;
                }
             }
-            bson_vector_packed_bits_view_t view;
+            bson_vector_packed_bit_view_t view;
             bson_iter_t iter;
             BSON_ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
-            BSON_ASSERT (bson_vector_packed_bits_view_from_iter (&view, &iter));
-            BSON_ASSERT (bson_vector_packed_bits_view_length (view) == current_length);
-            BSON_ASSERT (bson_vector_packed_bits_view_length_bytes (view) == current_length_bytes);
-            BSON_ASSERT (bson_vector_packed_bits_view_write_packed (view, packed_buffer, byte_count, byte_offset));
+            BSON_ASSERT (bson_vector_packed_bit_view_from_iter (&view, &iter));
+            BSON_ASSERT (bson_vector_packed_bit_view_length (view) == current_length);
+            BSON_ASSERT (bson_vector_packed_bit_view_length_bytes (view) == current_length_bytes);
+            BSON_ASSERT (bson_vector_packed_bit_view_write_packed (view, packed_buffer, byte_count, byte_offset));
          }
       } else {
          // Partial read
@@ -1136,12 +1136,12 @@ test_bson_vector_view_api_fuzz_packed_bits (void)
             // Partial read to unpacked bool destination
             size_t element_count = r_param % current_length;
             size_t offset = rand () % (current_length - element_count);
-            bson_vector_packed_bits_const_view_t view;
+            bson_vector_packed_bit_const_view_t view;
             bson_iter_t iter;
             BSON_ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
-            BSON_ASSERT (bson_vector_packed_bits_const_view_from_iter (&view, &iter));
-            BSON_ASSERT (bson_vector_packed_bits_const_view_length (view) == current_length);
-            BSON_ASSERT (bson_vector_packed_bits_const_view_unpack_bool (view, actual_elements, element_count, offset));
+            BSON_ASSERT (bson_vector_packed_bit_const_view_from_iter (&view, &iter));
+            BSON_ASSERT (bson_vector_packed_bit_const_view_length (view) == current_length);
+            BSON_ASSERT (bson_vector_packed_bit_const_view_unpack_bool (view, actual_elements, element_count, offset));
             for (size_t i = 0; i < element_count; i++) {
                BSON_ASSERT (actual_elements[i] == expected_elements[i + offset]);
             }
@@ -1150,13 +1150,13 @@ test_bson_vector_view_api_fuzz_packed_bits (void)
             size_t current_length_bytes = (current_length + 7) / 8;
             size_t byte_count = r_param % current_length_bytes;
             size_t byte_offset = rand () % (current_length_bytes - byte_count);
-            bson_vector_packed_bits_const_view_t view;
+            bson_vector_packed_bit_const_view_t view;
             bson_iter_t iter;
             BSON_ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
-            BSON_ASSERT (bson_vector_packed_bits_const_view_from_iter (&view, &iter));
-            BSON_ASSERT (bson_vector_packed_bits_const_view_length (view) == current_length);
-            BSON_ASSERT (bson_vector_packed_bits_const_view_length_bytes (view) == current_length_bytes);
-            BSON_ASSERT (bson_vector_packed_bits_const_view_read_packed (view, packed_buffer, byte_count, byte_offset));
+            BSON_ASSERT (bson_vector_packed_bit_const_view_from_iter (&view, &iter));
+            BSON_ASSERT (bson_vector_packed_bit_const_view_length (view) == current_length);
+            BSON_ASSERT (bson_vector_packed_bit_const_view_length_bytes (view) == current_length_bytes);
+            BSON_ASSERT (bson_vector_packed_bit_const_view_read_packed (view, packed_buffer, byte_count, byte_offset));
             for (size_t i = 0; i < byte_count; i++) {
                uint8_t packed_byte = packed_buffer[i];
                for (unsigned bit = 0; bit < 8; bit++) {
@@ -1285,37 +1285,37 @@ test_bson_vector_example_float32_view (void)
 }
 
 static void
-test_bson_vector_example_packed_bits_const_view (void)
+test_bson_vector_example_packed_bit_const_view (void)
 {
    // setup: construct a sample document
    bson_t doc = BSON_INITIALIZER;
    {
       static const bool values[] = {true, false, true, true, false, true, false, true, true, false};
-      bson_vector_packed_bits_view_t view;
-      BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BITS (&doc, "vector", sizeof values / sizeof values[0], &view));
-      BSON_ASSERT (bson_vector_packed_bits_view_pack_bool (view, values, sizeof values / sizeof values[0], 0));
+      bson_vector_packed_bit_view_t view;
+      BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "vector", sizeof values / sizeof values[0], &view));
+      BSON_ASSERT (bson_vector_packed_bit_view_pack_bool (view, values, sizeof values / sizeof values[0], 0));
    }
 
-   // bson_vector_packed_bits_const_view_t.rst
+   // bson_vector_packed_bit_const_view_t.rst
    // Edits:
    //  - Added test_suite_debug_output() test.
    //  - Added unnecessary zero initializer to work around false positive compiler warning.
    //    (same as in bson_array_builder_append_vector_int8_elements)
    {
       bson_iter_t iter;
-      bson_vector_packed_bits_const_view_t view;
+      bson_vector_packed_bit_const_view_t view;
 
-      if (bson_iter_init_find (&iter, &doc, "vector") && bson_vector_packed_bits_const_view_from_iter (&view, &iter)) {
-         size_t length = bson_vector_packed_bits_const_view_length (view);
-         size_t length_bytes = bson_vector_packed_bits_const_view_length_bytes (view);
-         size_t padding = bson_vector_packed_bits_const_view_padding (view);
+      if (bson_iter_init_find (&iter, &doc, "vector") && bson_vector_packed_bit_const_view_from_iter (&view, &iter)) {
+         size_t length = bson_vector_packed_bit_const_view_length (view);
+         size_t length_bytes = bson_vector_packed_bit_const_view_length_bytes (view);
+         size_t padding = bson_vector_packed_bit_const_view_padding (view);
 
          if (test_suite_debug_output ()) {
             printf ("Elements in 'vector':\n");
          }
          for (size_t i = 0; i < length; i++) {
             bool element;
-            BSON_ASSERT (bson_vector_packed_bits_const_view_unpack_bool (view, &element, 1, i));
+            BSON_ASSERT (bson_vector_packed_bit_const_view_unpack_bool (view, &element, 1, i));
             if (test_suite_debug_output ()) {
                printf (" elements[%d] = %d\n", (int) i, (int) element);
             }
@@ -1326,7 +1326,7 @@ test_bson_vector_example_packed_bits_const_view (void)
          }
          for (size_t i = 0; i < length_bytes; i++) {
             uint8_t packed_byte = 0; // Workaround
-            BSON_ASSERT (bson_vector_packed_bits_const_view_read_packed (view, &packed_byte, 1, i));
+            BSON_ASSERT (bson_vector_packed_bit_const_view_read_packed (view, &packed_byte, 1, i));
             if (test_suite_debug_output ()) {
                printf (" bytes[%d] = 0x%02x\n", (int) i, (unsigned) packed_byte);
             }
@@ -1338,20 +1338,20 @@ test_bson_vector_example_packed_bits_const_view (void)
 }
 
 static void
-test_bson_vector_example_packed_bits_view (void)
+test_bson_vector_example_packed_bit_view (void)
 {
    bson_t doc = BSON_INITIALIZER;
 
-   // bson_vector_packed_bits_view_t.rst
+   // bson_vector_packed_bit_view_t.rst
    {
       // Fill a new vector with individual boolean elements
       {
          static const bool bool_values[] = {true, false, true, true, false};
          const size_t bool_values_count = sizeof bool_values / sizeof bool_values[0];
 
-         bson_vector_packed_bits_view_t view;
-         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BITS (&doc, "from_bool", bool_values_count, &view));
-         BSON_ASSERT (bson_vector_packed_bits_view_pack_bool (view, bool_values, bool_values_count, 0));
+         bson_vector_packed_bit_view_t view;
+         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "from_bool", bool_values_count, &view));
+         BSON_ASSERT (bson_vector_packed_bit_view_pack_bool (view, bool_values, bool_values_count, 0));
       }
 
       // Fill another new vector with packed bytes
@@ -1360,9 +1360,9 @@ test_bson_vector_example_packed_bits_view (void)
          const size_t unused_bits_count = 3;
          const size_t packed_values_count = sizeof packed_bytes * 8 - unused_bits_count;
 
-         bson_vector_packed_bits_view_t view;
-         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BITS (&doc, "from_packed", packed_values_count, &view));
-         BSON_ASSERT (bson_vector_packed_bits_view_write_packed (view, packed_bytes, sizeof packed_bytes, 0));
+         bson_vector_packed_bit_view_t view;
+         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "from_packed", packed_values_count, &view));
+         BSON_ASSERT (bson_vector_packed_bit_view_write_packed (view, packed_bytes, sizeof packed_bytes, 0));
       }
 
       // Compare both vectors. They match exactly.
@@ -1384,17 +1384,17 @@ test_bson_vector_install (TestSuite *suite)
 
    TestSuite_Add (suite, "/bson_binary_vector/view_api/usage/int8", test_bson_vector_view_api_usage_int8);
    TestSuite_Add (suite, "/bson_binary_vector/view_api/usage/float32", test_bson_vector_view_api_usage_float32);
-   TestSuite_Add (suite, "/bson_binary_vector/view_api/usage/packed_bits", test_bson_vector_view_api_usage_packed_bits);
+   TestSuite_Add (suite, "/bson_binary_vector/view_api/usage/packed_bit", test_bson_vector_view_api_usage_packed_bit);
 
    TestSuite_Add (suite, "/bson_binary_vector/view_api/fuzz/int8", test_bson_vector_view_api_fuzz_int8);
    TestSuite_Add (suite, "/bson_binary_vector/view_api/fuzz/float32", test_bson_vector_view_api_fuzz_float32);
-   TestSuite_Add (suite, "/bson_binary_vector/view_api/fuzz/packed_bits", test_bson_vector_view_api_fuzz_packed_bits);
+   TestSuite_Add (suite, "/bson_binary_vector/view_api/fuzz/packed_bit", test_bson_vector_view_api_fuzz_packed_bit);
 
    TestSuite_Add (suite, "/bson_binary_vector/example/int8_const_view", test_bson_vector_example_int8_const_view);
    TestSuite_Add (suite, "/bson_binary_vector/example/int8_view", test_bson_vector_example_int8_view);
    TestSuite_Add (suite, "/bson_binary_vector/example/float32_const_view", test_bson_vector_example_float32_const_view);
    TestSuite_Add (suite, "/bson_binary_vector/example/float32_view", test_bson_vector_example_float32_view);
    TestSuite_Add (
-      suite, "/bson_binary_vector/example/packed_bits_const_view", test_bson_vector_example_packed_bits_const_view);
-   TestSuite_Add (suite, "/bson_binary_vector/example/packed_bits_view", test_bson_vector_example_packed_bits_view);
+      suite, "/bson_binary_vector/example/packed_bit_const_view", test_bson_vector_example_packed_bit_const_view);
+   TestSuite_Add (suite, "/bson_binary_vector/example/packed_bit_view", test_bson_vector_example_packed_bit_view);
 }

@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   #define BSON_APPEND_VECTOR_INT8(b, key, count, view) \
-    bson_append_vector_int8 (b, key, (int) strlen (key), count, view)
+     bson_append_vector_int8 (b, key, (int) strlen (key), count, view)
 
   bool
   bson_append_vector_int8 (bson_t *bson,

@@ -35,4 +35,4 @@ Returns ``true`` if the operation was applied successfully. The function fails i
   | :symbol:`bson_append_array_from_vector`
   | :symbol:`bson_array_builder_append_vector_int8_elements`
   | :symbol:`bson_array_builder_append_vector_float32_elements`
-  | :symbol:`bson_array_builder_append_vector_packed_bits_elements`
+  | :symbol:`bson_array_builder_append_vector_packed_bit_elements`

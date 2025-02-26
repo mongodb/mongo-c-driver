@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   #define BSON_APPEND_VECTOR_FLOAT32(b, key, count, view) \
-    bson_append_vector_float32 (b, key, (int) strlen (key), count, view)
+     bson_append_vector_float32 (b, key, (int) strlen (key), count, view)
 
   bool
   bson_append_vector_float32 (bson_t *bson,

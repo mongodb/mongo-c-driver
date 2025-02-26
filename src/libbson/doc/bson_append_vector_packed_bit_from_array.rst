@@ -1,22 +1,22 @@
-:man_page: bson_append_vector_packed_bits_from_array
+:man_page: bson_append_vector_packed_bit_from_array
 
-bson_append_vector_packed_bits_from_array()
-===========================================
+bson_append_vector_packed_bit_from_array()
+==========================================
 
 Synopsis
 --------
 
 .. code-block:: c
 
-  #define BSON_APPEND_VECTOR_PACKED_BITS_FROM_ARRAY(b, key, iter, err) \
-    bson_append_vector_packed_bits_from_array (b, key, (int) strlen (key), iter, err)
+  #define BSON_APPEND_VECTOR_PACKED_BIT_FROM_ARRAY(b, key, iter, err) \
+     bson_append_vector_packed_bit_from_array (b, key, (int) strlen (key), iter, err)
 
   bool
-  bson_append_vector_packed_bits_from_array (bson_t *bson,
-                                             const char *key,
-                                             int key_length,
-                                             const bson_iter_t *iter,
-                                             bson_error_t *error);
+  bson_append_vector_packed_bit_from_array (bson_t *bson,
+                                            const char *key,
+                                            int key_length,
+                                            const bson_iter_t *iter,
+                                            bson_error_t *error);
 
 Parameters
 ----------
@@ -30,7 +30,7 @@ Parameters
 Description
 -----------
 
-Appends a new field to ``bson`` by converting an Array to a Vector of ``packed_bits`` elements.
+Appends a new field to ``bson`` by converting an Array to a Vector of ``packed_bit`` elements.
 
 For the conversion to succeed, every item in the Array must be either an integer (``BSON_TYPE_INT32`` or ``BSON_TYPE_INT64``) with the values ``0`` or ``1``, or boolean (``BSON_TYPE_BOOL``).
 If any element has an incorrect type or an out-of-range value, the conversion fails with an ``error`` message providing details, and no changes are made to ``bson``.

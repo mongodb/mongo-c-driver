@@ -15,7 +15,7 @@ The specification currently defines three element types, which Libbson interpret
 
 * ``int8``: signed integer elements, equivalent to C ``int8_t``.
 * ``float32``: IEEE 754 floating point, 32 bits per element, least-significant byte first. After alignment and byte swapping, elements are equivalent to C ``float``.
-* ``packed_bits``: single-bit integer elements, packed most-significant bit first. Accessible in packed form as C ``uint8_t`` or as unpacked elements using C ``bool``.
+* ``packed_bit``: single-bit integer elements, packed most-significant bit first. Accessible in packed form as C ``uint8_t`` or as unpacked elements using C ``bool``.
 
 Vector Views
 ------------
@@ -28,8 +28,8 @@ Vector Views
   bson_vector_int8_const_view_t
   bson_vector_float32_view_t
   bson_vector_float32_const_view_t
-  bson_vector_packed_bits_view_t
-  bson_vector_packed_bits_const_view_t
+  bson_vector_packed_bit_view_t
+  bson_vector_packed_bit_const_view_t
 
 Integration
 -----------
@@ -42,7 +42,7 @@ Integration
 
     bson_append_vector_int8
     bson_append_vector_float32
-    bson_append_vector_packed_bits
+    bson_append_vector_packed_bit
 
 * Accessing an existing Vector via :symbol:`bson_iter_t`:
 
@@ -51,7 +51,7 @@ Integration
     #define BSON_ITER_HOLDS_VECTOR(iter) /* ... */
     #define BSON_ITER_HOLDS_VECTOR_INT8(iter) /* ... */
     #define BSON_ITER_HOLDS_VECTOR_FLOAT32(iter) /* ... */
-    #define BSON_ITER_HOLDS_VECTOR_PACKED_BITS(iter) /* ... */
+    #define BSON_ITER_HOLDS_VECTOR_PACKED_BIT(iter) /* ... */
 
   .. toctree::
     :titlesonly:
@@ -61,8 +61,8 @@ Integration
     bson_vector_int8_const_view_from_iter
     bson_vector_float32_view_from_iter
     bson_vector_float32_const_view_from_iter
-    bson_vector_packed_bits_view_from_iter
-    bson_vector_packed_bits_const_view_from_iter
+    bson_vector_packed_bit_view_from_iter
+    bson_vector_packed_bit_const_view_from_iter
 
 Array Conversion
 ----------------
@@ -83,7 +83,7 @@ Array Conversion
 
     bson_append_array_from_vector_int8
     bson_append_array_from_vector_float32
-    bson_append_array_from_vector_packed_bits
+    bson_append_array_from_vector_packed_bit
 
 * Using :symbol:`bson_array_builder_t` for array-from-vector:
 
@@ -93,7 +93,7 @@ Array Conversion
 
     bson_array_builder_append_vector_int8_elements
     bson_array_builder_append_vector_float32_elements
-    bson_array_builder_append_vector_packed_bits_elements
+    bson_array_builder_append_vector_packed_bit_elements
     bson_array_builder_append_vector_elements
 
 * Type specific vector-from-array:
@@ -104,7 +104,7 @@ Array Conversion
 
     bson_append_vector_int8_from_array
     bson_append_vector_float32_from_array
-    bson_append_vector_packed_bits_from_array
+    bson_append_vector_packed_bit_from_array
 
 Additional Definitions
 ----------------------
@@ -133,7 +133,7 @@ Additional Definitions
 
     bson_vector_int8_binary_data_length
     bson_vector_float32_binary_data_length
-    bson_vector_packed_bits_binary_data_length
+    bson_vector_packed_bit_binary_data_length
 
 * Errors:
 

@@ -48,9 +48,9 @@ bson_vector_float32_validate (bson_vector_binary_header_impl_t header, uint32_t 
 }
 
 static BSON_INLINE bool
-bson_vector_packed_bits_validate (bson_vector_binary_header_impl_t header,
-                                  const uint8_t *binary_data,
-                                  uint32_t binary_data_len)
+bson_vector_packed_bit_validate (bson_vector_binary_header_impl_t header,
+                                 const uint8_t *binary_data,
+                                 uint32_t binary_data_len)
 {
    if (header.bytes[0] == bson_vector_header_byte_0 (BSON_VECTOR_ELEMENT_UNSIGNED_INT, BSON_VECTOR_ELEMENT_1_BIT)) {
       size_t padding = bson_vector_padding_from_header_byte_1 (header.bytes[1]);
@@ -149,17 +149,17 @@ bson_vector_float32_const_view_init (bson_vector_float32_const_view_t *view_out,
 }
 
 bool
-bson_vector_packed_bits_view_init (bson_vector_packed_bits_view_t *view_out,
-                                   uint8_t *binary_data,
-                                   uint32_t binary_data_len)
+bson_vector_packed_bit_view_init (bson_vector_packed_bit_view_t *view_out,
+                                  uint8_t *binary_data,
+                                  uint32_t binary_data_len)
 {
    BSON_OPTIONAL_PARAM (view_out);
    BSON_ASSERT_PARAM (binary_data);
    bson_vector_binary_header_impl_t header;
    if (bson_vector_binary_header_impl_init (&header, binary_data, binary_data_len) &&
-       bson_vector_packed_bits_validate (header, binary_data, binary_data_len)) {
+       bson_vector_packed_bit_validate (header, binary_data, binary_data_len)) {
       if (view_out) {
-         *view_out = (bson_vector_packed_bits_view_t){
+         *view_out = (bson_vector_packed_bit_view_t){
             .binary.data = binary_data, .binary.data_len = binary_data_len, .binary.header_copy = header};
       }
       return true;
@@ -169,17 +169,17 @@ bson_vector_packed_bits_view_init (bson_vector_packed_bits_view_t *view_out,
 }
 
 bool
-bson_vector_packed_bits_const_view_init (bson_vector_packed_bits_const_view_t *view_out,
-                                         const uint8_t *binary_data,
-                                         uint32_t binary_data_len)
+bson_vector_packed_bit_const_view_init (bson_vector_packed_bit_const_view_t *view_out,
+                                        const uint8_t *binary_data,
+                                        uint32_t binary_data_len)
 {
    BSON_OPTIONAL_PARAM (view_out);
    BSON_ASSERT_PARAM (binary_data);
    bson_vector_binary_header_impl_t header;
    if (bson_vector_binary_header_impl_init (&header, binary_data, binary_data_len) &&
-       bson_vector_packed_bits_validate (header, binary_data, binary_data_len)) {
+       bson_vector_packed_bit_validate (header, binary_data, binary_data_len)) {
       if (view_out) {
-         *view_out = (bson_vector_packed_bits_const_view_t){
+         *view_out = (bson_vector_packed_bit_const_view_t){
             .binary.data = binary_data, .binary.data_len = binary_data_len, .binary.header_copy = header};
       }
       return true;
@@ -254,7 +254,7 @@ bson_vector_float32_const_view_from_iter (bson_vector_float32_const_view_t *view
 }
 
 bool
-bson_vector_packed_bits_view_from_iter (bson_vector_packed_bits_view_t *view_out, bson_iter_t *iter)
+bson_vector_packed_bit_view_from_iter (bson_vector_packed_bit_view_t *view_out, bson_iter_t *iter)
 {
    BSON_OPTIONAL_PARAM (view_out);
    BSON_ASSERT_PARAM (iter);
@@ -262,14 +262,14 @@ bson_vector_packed_bits_view_from_iter (bson_vector_packed_bits_view_t *view_out
       uint32_t binary_len;
       uint8_t *binary;
       bson_iter_overwrite_binary (iter, BSON_SUBTYPE_VECTOR, &binary_len, &binary);
-      return binary && bson_vector_packed_bits_view_init (view_out, binary, binary_len);
+      return binary && bson_vector_packed_bit_view_init (view_out, binary, binary_len);
    } else {
       return false;
    }
 }
 
 bool
-bson_vector_packed_bits_const_view_from_iter (bson_vector_packed_bits_const_view_t *view_out, const bson_iter_t *iter)
+bson_vector_packed_bit_const_view_from_iter (bson_vector_packed_bit_const_view_t *view_out, const bson_iter_t *iter)
 {
    BSON_OPTIONAL_PARAM (view_out);
    BSON_ASSERT_PARAM (iter);
@@ -279,7 +279,7 @@ bson_vector_packed_bits_const_view_from_iter (bson_vector_packed_bits_const_view
       const uint8_t *binary;
       bson_iter_binary (iter, &subtype, &binary_len, &binary);
       return binary && subtype == BSON_SUBTYPE_VECTOR &&
-             bson_vector_packed_bits_const_view_init (view_out, binary, binary_len);
+             bson_vector_packed_bit_const_view_init (view_out, binary, binary_len);
    } else {
       return false;
    }
@@ -337,13 +337,13 @@ bson_append_vector_float32 (
 }
 
 bool
-bson_append_vector_packed_bits (
-   bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_packed_bits_view_t *view_out)
+bson_append_vector_packed_bit (
+   bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_packed_bit_view_t *view_out)
 {
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (view_out);
 
-   uint32_t length = bson_vector_packed_bits_binary_data_length (element_count);
+   uint32_t length = bson_vector_packed_bit_binary_data_length (element_count);
    if (length < BSON_VECTOR_HEADER_LEN) {
       return false;
    }
@@ -359,7 +359,7 @@ bson_append_vector_packed_bits (
          // No reason to read-modify-write here, it's better to write the whole byte.
          binary[length - 1u] = 0u;
       }
-      *view_out = (bson_vector_packed_bits_view_t){
+      *view_out = (bson_vector_packed_bit_view_t){
          .binary.data = binary, .binary.data_len = length, .binary.header_copy = header};
       return true;
    } else {
@@ -488,7 +488,7 @@ bson_append_vector_float32_from_array (
 }
 
 bool
-bson_append_vector_packed_bits_from_array (
+bson_append_vector_packed_bit_from_array (
    bson_t *bson, const char *key, int key_length, const bson_iter_t *iter, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (bson);
@@ -516,7 +516,7 @@ bson_append_vector_packed_bits_from_array (
             bson_set_error (error,
                             BSON_ERROR_VECTOR,
                             BSON_VECTOR_ERROR_ARRAY_ELEMENT_VALUE,
-                            "BSON array key '%s' value %" PRId64 " is out of range for vector of packed_bits",
+                            "BSON array key '%s' value %" PRId64 " is out of range for vector of packed_bit",
                             bson_iter_key (&validation_iter),
                             element_as_int64);
             return false;
@@ -525,8 +525,8 @@ bson_append_vector_packed_bits_from_array (
       }
    }
 
-   bson_vector_packed_bits_view_t view;
-   if (!bson_append_vector_packed_bits (bson, key, key_length, element_count, &view)) {
+   bson_vector_packed_bit_view_t view;
+   if (!bson_append_vector_packed_bit (bson, key, key_length, element_count, &view)) {
       bson_vector_set_error_max_size (error);
       return false;
    }
@@ -534,7 +534,7 @@ bson_append_vector_packed_bits_from_array (
    for (size_t i = 0; i < element_count; i++) {
       BSON_ASSERT (bson_iter_next (&copy_iter));
       bool element_as_bool = (bool) bson_iter_as_int64 (&copy_iter);
-      BSON_ASSERT (bson_vector_packed_bits_view_pack_bool (view, &element_as_bool, 1, i));
+      BSON_ASSERT (bson_vector_packed_bit_view_pack_bool (view, &element_as_bool, 1, i));
    }
    return true;
 }
@@ -573,14 +573,14 @@ bson_array_builder_append_vector_float32_elements (bson_array_builder_t *builder
 }
 
 bool
-bson_array_builder_append_vector_packed_bits_elements (bson_array_builder_t *builder,
-                                                       bson_vector_packed_bits_const_view_t view)
+bson_array_builder_append_vector_packed_bit_elements (bson_array_builder_t *builder,
+                                                      bson_vector_packed_bit_const_view_t view)
 {
    BSON_ASSERT_PARAM (builder);
-   size_t length = bson_vector_packed_bits_const_view_length (view);
+   size_t length = bson_vector_packed_bit_const_view_length (view);
    for (size_t i = 0; i < length; i++) {
       bool element;
-      BSON_ASSERT (bson_vector_packed_bits_const_view_unpack_bool (view, &element, 1, i));
+      BSON_ASSERT (bson_vector_packed_bit_const_view_unpack_bool (view, &element, 1, i));
       if (!bson_array_builder_append_int32 (builder, element ? 1 : 0)) {
          return false;
       }
@@ -607,9 +607,9 @@ bson_array_builder_append_vector_elements (bson_array_builder_t *builder, const 
       }
    }
    {
-      bson_vector_packed_bits_const_view_t view;
-      if (bson_vector_packed_bits_const_view_from_iter (&view, iter)) {
-         return bson_array_builder_append_vector_packed_bits_elements (builder, view);
+      bson_vector_packed_bit_const_view_t view;
+      if (bson_vector_packed_bit_const_view_from_iter (&view, iter)) {
+         return bson_array_builder_append_vector_packed_bit_elements (builder, view);
       }
    }
    return false;
@@ -648,16 +648,16 @@ bson_append_array_from_vector_float32 (bson_t *bson,
 }
 
 bool
-bson_append_array_from_vector_packed_bits (bson_t *bson,
-                                           const char *key,
-                                           int key_length,
-                                           bson_vector_packed_bits_const_view_t view)
+bson_append_array_from_vector_packed_bit (bson_t *bson,
+                                          const char *key,
+                                          int key_length,
+                                          bson_vector_packed_bit_const_view_t view)
 {
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (key);
    bson_array_builder_t *child;
    if (bson_append_array_builder_begin (bson, key, key_length, &child)) {
-      bool ok = bson_array_builder_append_vector_packed_bits_elements (child, view);
+      bool ok = bson_array_builder_append_vector_packed_bit_elements (child, view);
       return bson_append_array_builder_end (bson, child) && ok;
    } else {
       return false;

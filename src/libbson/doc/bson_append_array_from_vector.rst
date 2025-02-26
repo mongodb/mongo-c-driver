@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   #define BSON_APPEND_ARRAY_FROM_VECTOR(b, key, iter) \
-    bson_append_array_from_vector (b, key, (int) strlen (key), iter)
+     bson_append_array_from_vector (b, key, (int) strlen (key), iter)
 
   bool
   bson_append_array_from_vector (bson_t *bson,

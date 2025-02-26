@@ -47,7 +47,7 @@ BSON_BEGIN_DECLS
 
 #define BSON_ITER_HOLDS_VECTOR_FLOAT32(iter) (bson_vector_float32_const_view_from_iter (NULL, iter))
 
-#define BSON_ITER_HOLDS_VECTOR_PACKED_BITS(iter) (bson_vector_packed_bits_const_view_from_iter (NULL, iter))
+#define BSON_ITER_HOLDS_VECTOR_PACKED_BIT(iter) (bson_vector_packed_bit_const_view_from_iter (NULL, iter))
 
 #define BSON_ITER_HOLDS_UNDEFINED(iter) (bson_iter_type ((iter)) == BSON_TYPE_UNDEFINED)
 
