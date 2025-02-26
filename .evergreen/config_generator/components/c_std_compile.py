@@ -17,14 +17,16 @@ TAG = 'std-matrix'
 # pylint: disable=line-too-long
 # fmt: off
 MATRIX = [
-    ('debian92',          'clang',     None,   [11,   ]),
-    ('debian10',          'clang',     None,   [11,   ]),
-    ('debian10',          'gcc',       None,   [11, 17]),
-    ('debian11',          'clang',     None,   [11,   ]),
-    ('debian11',          'gcc',       None,   [11, 17]),
-    ('ubuntu2004',        'clang',     None,   [11,   ]),
-    ('ubuntu2004',        'gcc',       None,   [11,   ]),
-    ('windows-vsCurrent', 'vs2017x64', None,   [11, 17]),
+    ('debian92',   'clang', None, [11]), # Clang 3.8
+    ('debian10',   'clang', None, [11]), # Clang 7.0
+    ('ubuntu2004', 'clang', None, [11]), # Clang 10.0
+    ('debian11',   'clang', None, [11]), # Clang 11.0
+
+    ('debian10',   'gcc', None, [11, 17]), # GCC 8.3
+    ('ubuntu2004', 'gcc', None, [11,   ]), # GCC 9.3
+    ('debian11',   'gcc', None, [11, 17]), # GCC 10.2
+
+    ('windows-vsCurrent', 'vs2017x64', None, [11, 17]),
 ]
 # fmt: on
 # pylint: enable=line-too-long
