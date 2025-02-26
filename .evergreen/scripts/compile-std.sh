@@ -11,8 +11,9 @@ check_var_opt CC
 check_var_opt CMAKE_GENERATOR
 check_var_opt CMAKE_GENERATOR_PLATFORM
 
-check_var_opt C_STD_VERSION
+check_var_req C_STD_VERSION
 check_var_opt CFLAGS
+check_var_opt CXXFLAGS
 check_var_opt MARCH
 
 declare script_dir
@@ -44,7 +45,16 @@ configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 
-configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
+if [[ "${C_STD_VERSION}" == "latest" ]]; then
+  [[ "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]] || {
+    echo "C_STD_VERSION=clatest is only supported with Visual Studio generators" 1>&2
+    exit 1
+  }
+
+  configure_flags_append "-DCMAKE_C_FLAGS=/std:clatest"
+else
+  configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
+fi
 
 if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
@@ -58,29 +68,13 @@ fi
 
 declare -a flags
 
-if [[ ! "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]]; then
-  case "${MARCH}" in
-  i686)
-    flags+=("-m32" "-march=i386")
-    ;;
-  esac
-
-  case "${HOSTTYPE}" in
-  s390x)
-    flags+=("-march=z196" "-mtune=zEC12")
-    ;;
-  x86_64)
-    flags+=("-m64" "-march=x86-64")
-    ;;
-  powerpc64le)
-    flags+=("-mcpu=power8" "-mtune=power8" "-mcmodel=medium")
-    ;;
-  esac
-fi
-
 if [[ "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]]; then
   # Even with -DCMAKE_SYSTEM_VERSION=10.0.20348.0, winbase.h emits conformance warnings.
   flags+=('/wd5105')
+fi
+
+if [[ "${OSTYPE}" == darwin* ]]; then
+  flags+=('-Wno-unknown-pragmas')
 fi
 
 # CMake and compiler environment variables.
@@ -90,16 +84,15 @@ export CXXFLAGS
 CFLAGS+=" ${flags+${flags[*]}}"
 CXXFLAGS+=" ${flags+${flags[*]}}"
 
-if [[ "${OSTYPE}" == darwin* ]]; then
-  CFLAGS+=" -Wno-unknown-pragmas"
-fi
-
 # Ensure find-cmake-latest.sh is sourced *before* add-build-dirs-to-paths.sh
 # to avoid interfering with potential CMake build configuration.
 # shellcheck source=.evergreen/scripts/find-cmake-latest.sh
 . "${script_dir}/find-cmake-latest.sh"
 declare cmake_binary
 cmake_binary="$(find_cmake_latest)"
+
+declare build_dir
+build_dir="cmake-build"
 
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
@@ -112,6 +105,16 @@ if [[ "${OSTYPE}" == darwin* ]]; then
   nproc() {
     sysctl -n hw.logicalcpu
   }
+fi
+
+export CMAKE_BUILD_PARALLEL_LEVEL
+CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
+
+if [[ "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]]; then
+  # MSBuild needs additional assistance.
+  # https://devblogs.microsoft.com/cppblog/improved-parallelism-in-msbuild/
+  export UseMultiToolTask=1
+  export EnforceProcessCountAcrossBuilds=1
 fi
 
 echo "Installing libmongocrypt..."
@@ -133,5 +136,15 @@ fi
 echo "CFLAGS: ${CFLAGS}"
 echo "configure_flags: ${configure_flags[*]}"
 
-"${cmake_binary}" "${configure_flags[@]}" .
-"${cmake_binary}" --build .
+if [[ "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]]; then
+  all_target="ALL_BUILD"
+else
+  all_target="all"
+fi
+
+"${cmake_binary}" -S . -B "${build_dir:?}" "${configure_flags[@]}"
+"${cmake_binary}" --build "${build_dir:?}" --config Debug \
+  --target mongo_c_driver_tests \
+  --target mongo_c_driver_examples \
+  --target public-header-warnings \
+  --target "${all_target:?}"
