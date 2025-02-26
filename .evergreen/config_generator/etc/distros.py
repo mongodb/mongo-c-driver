@@ -39,19 +39,19 @@ class Distro(BaseModel):
     def validate_os_ver(cls, value):
         return Version(value)
 
+
+def ls_distro(name, **kwargs):
+    return [
+        Distro(name=f'{name}-large', size='large', **kwargs),
+        Distro(name=f'{name}-small', size='small', **kwargs),
+    ]
+
+
 # See: https://evergreen.mongodb.com/distros
-# pylint: disable=line-too-long
-#fmt: off
-DEBIAN_DISTROS = [
-    Distro(name='debian92-large', os='debian', os_type='linux', os_ver='9.2', size='large'), # CDRIVER-5873
-    Distro(name='debian92-small', os='debian', os_type='linux', os_ver='9.2', size='small'), # CDRIVER-5873
-    Distro(name='debian10-large', os='debian', os_type='linux', os_ver='10', size='large'), # CDRIVER-5874
-    Distro(name='debian10-small', os='debian', os_type='linux', os_ver='10', size='small'), # CDRIVER-5874
-    Distro(name='debian11-large', os='debian', os_type='linux', os_ver='11', size='large'),
-    Distro(name='debian11-small', os='debian', os_type='linux', os_ver='11', size='small'),
-    Distro(name='debian92-large', os='debian', os_type='linux', os_ver='9.2', size='large'),
-    Distro(name='debian92-small', os='debian', os_type='linux', os_ver='9.2', size='small'),
-]
+DEBIAN_DISTROS = []
+DEBIAN_DISTROS += ls_distro(name='debian92', os='debian', os_type='linux', os_ver='9.2')  # CDRIVER-5873
+DEBIAN_DISTROS += ls_distro(name='debian10', os='debian', os_type='linux', os_ver='10')  # CDRIVER-5874
+DEBIAN_DISTROS += ls_distro(name='debian11', os='debian', os_type='linux', os_ver='11')
 
 MACOS_DISTROS = [
     Distro(name='macos-14', os='macos', os_type='macos', os_ver='14'),
@@ -62,77 +62,45 @@ MACOS_ARM64_DISTROS = [
     Distro(name='macos-14-arm64', os='macos', os_type='macos', os_ver='14', arch='arm64'),
 ]
 
-RHEL_DISTROS = [
-    Distro(name='rhel80-large', os='rhel', os_type='linux', os_ver='8.0', size='large'),
-    Distro(name='rhel80-small', os='rhel', os_type='linux', os_ver='8.0', size='small'),
-    Distro(name='rhel84-large', os='rhel', os_type='linux', os_ver='8.4', size='large'),
-    Distro(name='rhel84-small', os='rhel', os_type='linux', os_ver='8.4', size='small'),
-    Distro(name='rhel8.9-large', os='rhel', os_type='linux', os_ver='8.7', size='large'),
-    Distro(name='rhel8.9-small', os='rhel', os_type='linux', os_ver='8.7', size='small'),
-    Distro(name='rhel92-large', os='rhel', os_type='linux', os_ver='9.0', size='large'),
-    Distro(name='rhel92-small', os='rhel', os_type='linux', os_ver='9.0', size='small'),
-]
+RHEL_DISTROS = []
+RHEL_DISTROS += ls_distro(name='rhel80', os='rhel', os_type='linux', os_ver='8.0')
+RHEL_DISTROS += ls_distro(name='rhel84', os='rhel', os_type='linux', os_ver='8.4')
+RHEL_DISTROS += ls_distro(name='rhel8.9', os='rhel', os_type='linux', os_ver='8.7')
+RHEL_DISTROS += ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.0')
 
-RHEL_ARM64_DISTROS = [
-    Distro(name='rhel82-arm64-large', os='rhel', os_type='linux', os_ver='8.2', size='large', arch='arm64'),
-    Distro(name='rhel82-arm64-small', os='rhel', os_type='linux', os_ver='8.2', size='small', arch='arm64'),
-    Distro(name='rhel92-arm64-large', os='rhel', os_type='linux', os_ver='9.0', size='large', arch='arm64'),
-    Distro(name='rhel92-arm64-small', os='rhel', os_type='linux', os_ver='9.0', size='small', arch='arm64'),
-]
+RHEL_ARM64_DISTROS = []
+RHEL_ARM64_DISTROS += ls_distro(name='rhel82-arm64', os='rhel', os_type='linux', os_ver='8.2', arch='arm64')
+RHEL_ARM64_DISTROS += ls_distro(name='rhel92-arm64', os='rhel', os_type='linux', os_ver='9.0', arch='arm64')
 
-RHEL_POWER_DISTROS = [
-    Distro(name='rhel8-power-large', os='rhel', os_type='linux', os_ver='8', size='large', arch='power'),
-    Distro(name='rhel8-power-small', os='rhel', os_type='linux', os_ver='8', size='small', arch='power'),
-    Distro(name='rhel9-power-large', os='rhel', os_type='linux', os_ver='9', size='large', arch='power'),
-    Distro(name='rhel9-power-small', os='rhel', os_type='linux', os_ver='9', size='small', arch='power'),
-]
+RHEL_POWER_DISTROS = []
+RHEL_POWER_DISTROS += ls_distro(name='rhel8-power', os='rhel', os_type='linux', os_ver='8', arch='power')
+RHEL_POWER_DISTROS += ls_distro(name='rhel9-power', os='rhel', os_type='linux', os_ver='9', arch='power')
 
-RHEL_ZSERIES_DISTROS = [
-    Distro(name='rhel8-zseries-large', os='rhel', os_type='linux', os_ver='8', size='large', arch='zseries'),
-    Distro(name='rhel8-zseries-small', os='rhel', os_type='linux', os_ver='8', size='small', arch='zseries'),
-    Distro(name='rhel9-zseries-large', os='rhel', os_type='linux', os_ver='9', size='large', arch='zseries'),
-    Distro(name='rhel9-zseries-small', os='rhel', os_type='linux', os_ver='9', size='small', arch='zseries'),
-]
+RHEL_ZSERIES_DISTROS = []
+RHEL_ZSERIES_DISTROS += ls_distro(name='rhel8-zseries', os='rhel', os_type='linux', os_ver='8', arch='zseries')
+RHEL_ZSERIES_DISTROS += ls_distro(name='rhel9-zseries', os='rhel', os_type='linux', os_ver='9', arch='zseries')
 
-UBUNTU_DISTROS = [
-    Distro(name='ubuntu2004-large', os='ubuntu', os_type='linux', os_ver='20.04', size='large'),
-    Distro(name='ubuntu2004-small', os='ubuntu', os_type='linux', os_ver='20.04', size='small'),
-    Distro(name='ubuntu2204-large', os='ubuntu', os_type='linux', os_ver='22.04', size='large'),
-    Distro(name='ubuntu2204-small', os='ubuntu', os_type='linux', os_ver='22.04', size='small'),
-]
+UBUNTU_DISTROS = []
+UBUNTU_DISTROS += ls_distro(name='ubuntu2004', os='ubuntu', os_type='linux', os_ver='20.04')
+UBUNTU_DISTROS += ls_distro(name='ubuntu2204', os='ubuntu', os_type='linux', os_ver='22.04')
 
-UBUNTU_ARM64_DISTROS = [
-    Distro(name='ubuntu2004-arm64-large', os='ubuntu', os_type='linux', os_ver='20.04', size='large', arch='arm64'),
-    Distro(name='ubuntu2004-arm64-small', os='ubuntu', os_type='linux', os_ver='20.04', size='small', arch='arm64'),
-    Distro(name='ubuntu2204-arm64-large', os='ubuntu', os_type='linux', os_ver='22.04', size='large', arch='arm64'),
-    Distro(name='ubuntu2204-arm64-small', os='ubuntu', os_type='linux', os_ver='22.04', size='small', arch='arm64'),
-]
+UBUNTU_ARM64_DISTROS = []
+UBUNTU_ARM64_DISTROS += ls_distro(name='ubuntu2004-arm64', os='ubuntu', os_type='linux', os_ver='20.04', arch='arm64')
+UBUNTU_ARM64_DISTROS += ls_distro(name='ubuntu2204-arm64', os='ubuntu', os_type='linux', os_ver='22.04', arch='arm64')
 
-WINDOWS_DISTROS = [
-    Distro(name='windows-64-vs2013-large', os='windows', os_type='windows', vs_ver='2013', size='large'),
-    Distro(name='windows-64-vs2013-small', os='windows', os_type='windows', vs_ver='2013', size='small'),
-    Distro(name='windows-64-vs2015-large', os='windows', os_type='windows', vs_ver='2015', size='large'),
-    Distro(name='windows-64-vs2015-small', os='windows', os_type='windows', vs_ver='2015', size='small'),
-    Distro(name='windows-64-vs2017-large', os='windows', os_type='windows', vs_ver='2017', size='large'),
-    Distro(name='windows-64-vs2017-small', os='windows', os_type='windows', vs_ver='2017', size='small'),
-    Distro(name='windows-64-vs2019-large', os='windows', os_type='windows', vs_ver='2019', size='large'),
-    Distro(name='windows-64-vs2019-small', os='windows', os_type='windows', vs_ver='2019', size='small'),
-
-    Distro(name='windows-2022-large', os='windows', os_type='windows', os_ver='2022'),
-    Distro(name='windows-2022-small', os='windows', os_type='windows', os_ver='2022'),
-
-    Distro(name='windows-64-2019', os='windows', os_type='windows', os_ver='2019'),
-
-    Distro(name='windows-64-vsMulti-small', os='windows', os_type='windows', vs_ver='vsMulti', size='small'),
-
-    Distro(name='windows-vsCurrent-2022-large', os='windows', os_type='windows', os_ver='2022', vs_ver='vsCurrent', size='large'),
-    Distro(name='windows-vsCurrent-2022-small', os='windows', os_type='windows', os_ver='2022', vs_ver='vsCurrent', size='small'),
-
-    Distro(name='windows-vsCurrent-large', os='windows', os_type='windows', vs_ver='vsCurrent', size='large'), # Windows Server 2019
-    Distro(name='windows-vsCurrent-small', os='windows', os_type='windows', vs_ver='vsCurrent', size='small'), # Windows Server 2019
-]
-#fmt: on
-# pylint: enable=line-too-long
+WINDOWS_DISTROS = []
+WINDOWS_DISTROS += ls_distro(name='windows-64-vs2013', os='windows', os_type='windows', vs_ver='2013')
+WINDOWS_DISTROS += ls_distro(name='windows-64-vs2015', os='windows', os_type='windows', vs_ver='2015')
+WINDOWS_DISTROS += ls_distro(name='windows-64-vs2017', os='windows', os_type='windows', vs_ver='2017')
+WINDOWS_DISTROS += ls_distro(name='windows-64-vs2019', os='windows', os_type='windows', vs_ver='2019')
+WINDOWS_DISTROS += ls_distro(name='windows-2022', os='windows', os_type='windows', os_ver='2022')
+WINDOWS_DISTROS += [Distro(name='windows-64-2019', os='windows', os_type='windows', os_ver='2019')]
+WINDOWS_DISTROS += [Distro(name='windows-64-vsMulti-small', os='windows',
+                           os_type='windows', vs_ver='vsMulti', size='small')]
+WINDOWS_DISTROS += ls_distro(name='windows-vsCurrent-2022', os='windows',
+                             os_type='windows', os_ver='2022', vs_ver='vsCurrent')
+WINDOWS_DISTROS += ls_distro(name='windows-vsCurrent', os='windows', os_type='windows',
+                             vs_ver='vsCurrent')  # Windows Server 2019
 
 # Ensure no-arch distros are ordered before arch-specific distros.
 ALL_DISTROS = [] + \
