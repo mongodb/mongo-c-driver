@@ -59,7 +59,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool) BSON_GNUC_WARN_UNUSED_RE
 MONGOC_EXPORT (void)
 mongoc_client_pool_max_size (mongoc_client_pool_t *pool, uint32_t max_pool_size);
 
-BSON_DEPRECATED ("Setting min_pool_size on an existing client pool is deprecated")
+BSON_DEPRECATED ("Setting min_pool_size on a client pool is deprecated")
 MONGOC_EXPORT (void) mongoc_client_pool_min_size (mongoc_client_pool_t *pool, uint32_t min_pool_size);
 
 #ifdef MONGOC_ENABLE_SSL
