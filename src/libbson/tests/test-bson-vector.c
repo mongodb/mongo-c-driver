@@ -140,7 +140,7 @@ append_vector_packed_bit_from_packed_array (
    }
 
    bson_vector_packed_bit_view_t view;
-   if (bson_append_vector_packed_bit (bson, key, key_length, byte_count * 8u - (size_t) padding, &view)) {
+   if (bson_append_vector_packed_bit_uninit (bson, key, key_length, byte_count * 8u - (size_t) padding, &view)) {
       bson_iter_t copy_iter = *iter;
       for (size_t i = 0; i < byte_count; i++) {
          BSON_ASSERT (bson_iter_next (&copy_iter));
@@ -502,7 +502,7 @@ test_bson_vector_view_api_usage_int8 (void)
    {
       bson_vector_int8_view_t view;
       const size_t length = 25;
-      ASSERT (BSON_APPEND_VECTOR_INT8 (&doc, "vector", length, &view));
+      ASSERT (BSON_APPEND_VECTOR_INT8_UNINIT (&doc, "vector", length, &view));
       for (size_t i = 0; i < length; i++) {
          int8_t v = (int8_t) i - 9;
          bson_vector_int8_view_write (view, &v, 1, i);
@@ -517,7 +517,7 @@ test_bson_vector_view_api_usage_int8 (void)
    {
       bson_vector_int8_view_t view;
       const size_t length = 50000;
-      ASSERT (bson_append_vector_int8 (&doc, "longer_vector", -1, length, &view));
+      ASSERT (bson_append_vector_int8_uninit (&doc, "longer_vector", -1, length, &view));
       for (size_t i = 0; i < length; i++) {
          int8_t v = (int8_t) (uint8_t) i;
          bson_vector_int8_view_write (view, &v, 1, i);
@@ -528,7 +528,7 @@ test_bson_vector_view_api_usage_int8 (void)
    {
       bson_vector_int8_view_t view;
       const size_t length = UINT32_MAX - 1;
-      ASSERT (!bson_append_vector_int8 (&doc, "overlong_vector", -1, length, &view));
+      ASSERT (!bson_append_vector_int8_uninit (&doc, "overlong_vector", -1, length, &view));
    }
 
    // Use a mutable view to partially overwrite "vector"
@@ -628,7 +628,7 @@ test_bson_vector_view_api_usage_float32 (void)
    {
       bson_vector_float32_view_t view;
       const size_t length = 5;
-      ASSERT (BSON_APPEND_VECTOR_FLOAT32 (&doc, "vector", length, &view));
+      ASSERT (BSON_APPEND_VECTOR_FLOAT32_UNINIT (&doc, "vector", length, &view));
       for (size_t i = 0; i < length; i++) {
          float v = 1.0f + 0.25f * (float) i;
          bson_vector_float32_view_write (view, &v, 1, i);
@@ -643,7 +643,7 @@ test_bson_vector_view_api_usage_float32 (void)
    {
       bson_vector_float32_view_t view;
       const size_t length = 10000;
-      ASSERT (bson_append_vector_float32 (&doc, "longer_vector", -1, length, &view));
+      ASSERT (bson_append_vector_float32_uninit (&doc, "longer_vector", -1, length, &view));
       for (size_t i = 0; i < length; i++) {
          float v = (float) i;
          bson_vector_float32_view_write (view, &v, 1, i);
@@ -654,7 +654,7 @@ test_bson_vector_view_api_usage_float32 (void)
    {
       bson_vector_float32_view_t view;
       const size_t length = (UINT32_MAX - 1) / 4;
-      ASSERT (!bson_append_vector_float32 (&doc, "overlong_vector", -1, length, &view));
+      ASSERT (!bson_append_vector_float32_uninit (&doc, "overlong_vector", -1, length, &view));
    }
 
    // Read the small vector into a float array
@@ -740,7 +740,7 @@ test_bson_vector_view_api_usage_packed_bit (void)
    {
       bson_vector_packed_bit_view_t view;
       const size_t length = 123;
-      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "vector", length, &view));
+      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&doc, "vector", length, &view));
       for (size_t i = 0; i < length; i++) {
          bool v = (i & 1) != 0;
          bson_vector_packed_bit_view_pack_bool (view, &v, 1, i);
@@ -754,7 +754,7 @@ test_bson_vector_view_api_usage_packed_bit (void)
    {
       bson_vector_packed_bit_view_t view;
       const size_t length = 100002;
-      ASSERT (bson_append_vector_packed_bit (&doc, "longer_vector", -1, length, &view));
+      ASSERT (bson_append_vector_packed_bit_uninit (&doc, "longer_vector", -1, length, &view));
       for (size_t i = 0; i < length; i++) {
          bool v = (i & 3) != 0;
          bson_vector_packed_bit_view_pack_bool (view, &v, 1, i);
@@ -765,7 +765,7 @@ test_bson_vector_view_api_usage_packed_bit (void)
    {
       bson_vector_int8_view_t view;
       const size_t length = (UINT32_MAX - 1) * (size_t) 8;
-      ASSERT (!bson_append_vector_int8 (&doc, "overlong_vector", -1, length, &view));
+      ASSERT (!bson_append_vector_int8_uninit (&doc, "overlong_vector", -1, length, &view));
    }
 
    // Unpack the small vector into a bool array
@@ -918,14 +918,14 @@ test_bson_vector_view_api_usage_packed_bit (void)
    }
 
    // Padding bits will be initialized to zero when a packed_bit vector is first allocated by
-   // bson_append_vector_packed_bit
+   // bson_append_vector_packed_bit_uninit
    {
       // Set the uninitialized part of 'doc' to a known value
       static const uint32_t reserve_len = 512;
       memset (bson_reserve_buffer (&doc, doc.len + reserve_len) + doc.len, 0xdd, reserve_len);
 
       bson_vector_packed_bit_view_t view;
-      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "padding_init_test", 12, &view));
+      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&doc, "padding_init_test", 12, &view));
       ASSERT (bson_vector_packed_bit_view_length_bytes (view) == 2);
       ASSERT (bson_vector_packed_bit_view_padding (view) == 4);
 
@@ -940,7 +940,7 @@ test_bson_vector_view_api_usage_packed_bit (void)
    // Padding bits can't be forcibly given nonzero values using bson_vector_packed_bit_view_write_packed
    {
       bson_vector_packed_bit_view_t view;
-      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "padding_mask_test", 13, &view));
+      ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&doc, "padding_mask_test", 13, &view));
       ASSERT (bson_vector_packed_bit_view_length_bytes (view) == 2);
       ASSERT (bson_vector_packed_bit_view_padding (view) == 3);
 
@@ -974,7 +974,7 @@ test_bson_vector_view_api_fuzz_int8 (void)
          size_t new_length = (size_t) r_param % MAX_TESTED_VECTOR_LENGTH;
          bson_reinit (&vector_doc);
          bson_vector_int8_view_t view;
-         BSON_ASSERT (BSON_APPEND_VECTOR_INT8 (&vector_doc, "vector", new_length, &view));
+         BSON_ASSERT (BSON_APPEND_VECTOR_INT8_UNINIT (&vector_doc, "vector", new_length, &view));
          for (size_t i = 0; i < new_length; i++) {
             expected_elements[i] = (int8_t) (uint8_t) rand ();
          }
@@ -1030,7 +1030,7 @@ test_bson_vector_view_api_fuzz_float32 (void)
          size_t new_length = (size_t) r_param % MAX_TESTED_VECTOR_LENGTH;
          bson_reinit (&vector_doc);
          bson_vector_float32_view_t view;
-         BSON_ASSERT (BSON_APPEND_VECTOR_FLOAT32 (&vector_doc, "vector", new_length, &view));
+         BSON_ASSERT (BSON_APPEND_VECTOR_FLOAT32_UNINIT (&vector_doc, "vector", new_length, &view));
          for (size_t i = 0; i < new_length; i++) {
             expected_elements[i] = (float) rand ();
          }
@@ -1087,7 +1087,7 @@ test_bson_vector_view_api_fuzz_packed_bit (void)
          size_t new_length = (size_t) r_param % MAX_TESTED_VECTOR_LENGTH;
          bson_reinit (&vector_doc);
          bson_vector_packed_bit_view_t view;
-         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&vector_doc, "vector", new_length, &view));
+         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&vector_doc, "vector", new_length, &view));
          for (size_t i = 0; i < new_length; i++) {
             expected_elements[i] = (rand () & 1) != 0;
          }
@@ -1180,7 +1180,7 @@ test_bson_vector_example_int8_const_view (void)
    {
       static const int8_t values[] = {12, 34, -56};
       bson_vector_int8_view_t view;
-      BSON_ASSERT (BSON_APPEND_VECTOR_INT8 (&doc, "vector", sizeof values / sizeof values[0], &view));
+      BSON_ASSERT (BSON_APPEND_VECTOR_INT8_UNINIT (&doc, "vector", sizeof values / sizeof values[0], &view));
       BSON_ASSERT (bson_vector_int8_view_write (view, values, sizeof values / sizeof values[0], 0));
    }
 
@@ -1222,7 +1222,7 @@ test_bson_vector_example_int8_view (void)
       const size_t values_count = sizeof values / sizeof values[0];
 
       bson_vector_int8_view_t view;
-      BSON_ASSERT (BSON_APPEND_VECTOR_INT8 (&doc, "vector", values_count, &view));
+      BSON_ASSERT (BSON_APPEND_VECTOR_INT8_UNINIT (&doc, "vector", values_count, &view));
       BSON_ASSERT (bson_vector_int8_view_write (view, values, values_count, 0));
    }
 
@@ -1237,7 +1237,7 @@ test_bson_vector_example_float32_const_view (void)
    {
       static const float values[] = {5.0f, -1e10f, (float) INFINITY, (float) NAN, -1.0f};
       bson_vector_float32_view_t view;
-      BSON_ASSERT (BSON_APPEND_VECTOR_FLOAT32 (&doc, "vector", sizeof values / sizeof values[0], &view));
+      BSON_ASSERT (BSON_APPEND_VECTOR_FLOAT32_UNINIT (&doc, "vector", sizeof values / sizeof values[0], &view));
       BSON_ASSERT (bson_vector_float32_view_write (view, values, sizeof values / sizeof values[0], 0));
    }
 
@@ -1277,7 +1277,7 @@ test_bson_vector_example_float32_view (void)
       const size_t values_count = sizeof values / sizeof values[0];
 
       bson_vector_float32_view_t view;
-      BSON_ASSERT (BSON_APPEND_VECTOR_FLOAT32 (&doc, "vector", values_count, &view));
+      BSON_ASSERT (BSON_APPEND_VECTOR_FLOAT32_UNINIT (&doc, "vector", values_count, &view));
       BSON_ASSERT (bson_vector_float32_view_write (view, values, values_count, 0));
    }
 
@@ -1292,7 +1292,7 @@ test_bson_vector_example_packed_bit_const_view (void)
    {
       static const bool values[] = {true, false, true, true, false, true, false, true, true, false};
       bson_vector_packed_bit_view_t view;
-      BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "vector", sizeof values / sizeof values[0], &view));
+      BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&doc, "vector", sizeof values / sizeof values[0], &view));
       BSON_ASSERT (bson_vector_packed_bit_view_pack_bool (view, values, sizeof values / sizeof values[0], 0));
    }
 
@@ -1350,7 +1350,7 @@ test_bson_vector_example_packed_bit_view (void)
          const size_t bool_values_count = sizeof bool_values / sizeof bool_values[0];
 
          bson_vector_packed_bit_view_t view;
-         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "from_bool", bool_values_count, &view));
+         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&doc, "from_bool", bool_values_count, &view));
          BSON_ASSERT (bson_vector_packed_bit_view_pack_bool (view, bool_values, bool_values_count, 0));
       }
 
@@ -1361,7 +1361,7 @@ test_bson_vector_example_packed_bit_view (void)
          const size_t packed_values_count = sizeof packed_bytes * 8 - unused_bits_count;
 
          bson_vector_packed_bit_view_t view;
-         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "from_packed", packed_values_count, &view));
+         BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&doc, "from_packed", packed_values_count, &view));
          BSON_ASSERT (bson_vector_packed_bit_view_write_packed (view, packed_bytes, sizeof packed_bytes, 0));
       }
 

@@ -192,24 +192,24 @@ bson_array_builder_append_vector_elements (struct _bson_array_builder_t *builder
 
 
 BSON_EXPORT (bool)
-bson_append_vector_int8 (
+bson_append_vector_int8_uninit (
    bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_int8_view_t *view_out);
 
-#define BSON_APPEND_VECTOR_INT8(b, key, count, view) bson_append_vector_int8 (b, key, (int) strlen (key), count, view)
+#define BSON_APPEND_VECTOR_INT8_UNINIT(b, key, count, view) bson_append_vector_int8_uninit (b, key, (int) strlen (key), count, view)
 
 BSON_EXPORT (bool)
-bson_append_vector_float32 (
+bson_append_vector_float32_uninit (
    bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_float32_view_t *view_out);
 
-#define BSON_APPEND_VECTOR_FLOAT32(b, key, count, view) \
-   bson_append_vector_float32 (b, key, (int) strlen (key), count, view)
+#define BSON_APPEND_VECTOR_FLOAT32_UNINIT(b, key, count, view) \
+   bson_append_vector_float32_uninit (b, key, (int) strlen (key), count, view)
 
 BSON_EXPORT (bool)
-bson_append_vector_packed_bit (
+bson_append_vector_packed_bit_uninit (
    bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_packed_bit_view_t *view_out);
 
-#define BSON_APPEND_VECTOR_PACKED_BIT(b, key, count, view) \
-   bson_append_vector_packed_bit (b, key, (int) strlen (key), count, view)
+#define BSON_APPEND_VECTOR_PACKED_BIT_UNINIT(b, key, count, view) \
+   bson_append_vector_packed_bit_uninit (b, key, (int) strlen (key), count, view)
 
 
 BSON_EXPORT (bool)

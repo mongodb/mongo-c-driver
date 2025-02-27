@@ -287,7 +287,7 @@ bson_vector_packed_bit_const_view_from_iter (bson_vector_packed_bit_const_view_t
 
 
 bool
-bson_append_vector_int8 (
+bson_append_vector_int8_uninit (
    bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_int8_view_t *view_out)
 {
    BSON_ASSERT_PARAM (bson);
@@ -312,7 +312,7 @@ bson_append_vector_int8 (
 }
 
 bool
-bson_append_vector_float32 (
+bson_append_vector_float32_uninit (
    bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_float32_view_t *view_out)
 {
    BSON_ASSERT_PARAM (bson);
@@ -337,7 +337,7 @@ bson_append_vector_float32 (
 }
 
 bool
-bson_append_vector_packed_bit (
+bson_append_vector_packed_bit_uninit (
    bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_packed_bit_view_t *view_out)
 {
    BSON_ASSERT_PARAM (bson);
@@ -432,7 +432,7 @@ bson_append_vector_int8_from_array (
    }
 
    bson_vector_int8_view_t view;
-   if (!bson_append_vector_int8 (bson, key, key_length, element_count, &view)) {
+   if (!bson_append_vector_int8_uninit (bson, key, key_length, element_count, &view)) {
       bson_vector_set_error_max_size (error);
       return false;
    }
@@ -474,7 +474,7 @@ bson_append_vector_float32_from_array (
    }
 
    bson_vector_float32_view_t view;
-   if (!bson_append_vector_float32 (bson, key, key_length, element_count, &view)) {
+   if (!bson_append_vector_float32_uninit (bson, key, key_length, element_count, &view)) {
       bson_vector_set_error_max_size (error);
       return false;
    }
@@ -526,7 +526,7 @@ bson_append_vector_packed_bit_from_array (
    }
 
    bson_vector_packed_bit_view_t view;
-   if (!bson_append_vector_packed_bit (bson, key, key_length, element_count, &view)) {
+   if (!bson_append_vector_packed_bit_uninit (bson, key, key_length, element_count, &view)) {
       bson_vector_set_error_max_size (error);
       return false;
    }

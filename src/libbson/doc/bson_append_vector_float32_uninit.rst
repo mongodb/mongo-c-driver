@@ -1,22 +1,22 @@
-:man_page: bson_append_vector_float32
+:man_page: bson_append_vector_float32_uninit
 
-bson_append_vector_float32()
-============================
+bson_append_vector_float32_uninit()
+===================================
 
 Synopsis
 --------
 
 .. code-block:: c
 
-  #define BSON_APPEND_VECTOR_FLOAT32(b, key, count, view) \
-     bson_append_vector_float32 (b, key, (int) strlen (key), count, view)
+  #define BSON_APPEND_VECTOR_FLOAT32_UNINIT(b, key, count, view) \
+     bson_append_vector_float32_uninit (b, key, (int) strlen (key), count, view)
 
   bool
-  bson_append_vector_float32 (bson_t *bson,
-                              const char *key,
-                              int key_length,
-                              size_t element_count,
-                              bson_vector_float32_view_t *view_out);
+  bson_append_vector_float32_uninit (bson_t *bson,
+                                     const char *key,
+                                     int key_length,
+                                     size_t element_count,
+                                     bson_vector_float32_view_t *view_out);
 
 Parameters
 ----------
@@ -34,7 +34,7 @@ Appends a new field to ``bson`` by allocating a Vector with the indicated number
 The elements will be uninitialized.
 On success, the caller must write every element in the Vector if the resulting :symbol:`bson_t` is to be used.
 
-The pointer written to ``*view_out`` is only valid until ``bson`` is otherwise modified or freed.
+The view written to ``*view_out`` is only valid until ``bson`` is otherwise modified or freed.
 
 Returns
 -------

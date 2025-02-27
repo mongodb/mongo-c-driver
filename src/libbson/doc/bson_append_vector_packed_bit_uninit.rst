@@ -1,6 +1,6 @@
-:man_page: bson_append_vector_packed_bit
+:man_page: bson_append_vector_packed_bit_uninit
 
-bson_append_vector_packed_bit()
+bson_append_vector_packed_bit_uninit()
 ===============================
 
 Synopsis
@@ -8,15 +8,15 @@ Synopsis
 
 .. code-block:: c
 
-  #define BSON_APPEND_VECTOR_PACKED_BIT(b, key, count, view) \
-     bson_append_vector_packed_bit (b, key, (int) strlen (key), count, view)
+  #define BSON_APPEND_VECTOR_PACKED_BIT_UNINIT(b, key, count, view) \
+     bson_append_vector_packed_bit_uninit (b, key, (int) strlen (key), count, view)
 
   bool
-  bson_append_vector_packed_bit (bson_t *bson,
-                                 const char *key,
-                                 int key_length,
-                                 size_t element_count,
-                                 bson_vector_packed_bit_view_t *view_out);
+  bson_append_vector_packed_bit_uninit (bson_t *bson,
+                                        const char *key,
+                                        int key_length,
+                                        size_t element_count,
+                                        bson_vector_packed_bit_view_t *view_out);
 
 Parameters
 ----------
@@ -34,7 +34,7 @@ Appends a new field to ``bson`` by allocating a Vector with the indicated number
 The elements will be uninitialized.
 On success, the caller must write every element in the Vector if the resulting :symbol:`bson_t` is to be used.
 
-The pointer written to ``*view_out`` is only valid until ``bson`` is otherwise modified or freed.
+The view written to ``*view_out`` is only valid until ``bson`` is otherwise modified or freed.
 
 Returns
 -------

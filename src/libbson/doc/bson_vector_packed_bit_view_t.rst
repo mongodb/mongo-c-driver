@@ -56,7 +56,7 @@ Example
       const size_t bool_values_count = sizeof bool_values / sizeof bool_values[0];
 
       bson_vector_packed_bit_view_t view;
-      BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "from_bool", bool_values_count, &view));
+      BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&doc, "from_bool", bool_values_count, &view));
       BSON_ASSERT (bson_vector_packed_bit_view_pack_bool (view, bool_values, bool_values_count, 0));
   }
 
@@ -67,7 +67,7 @@ Example
       const size_t packed_values_count = sizeof packed_bytes * 8 - unused_bits_count;
 
       bson_vector_packed_bit_view_t view;
-      BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT (&doc, "from_packed", packed_values_count, &view));
+      BSON_ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&doc, "from_packed", packed_values_count, &view));
       BSON_ASSERT (bson_vector_packed_bit_view_write_packed (view, packed_bytes, sizeof packed_bytes, 0));
   }
 
@@ -81,5 +81,5 @@ Example
 
 .. seealso::
 
-  | :symbol:`bson_append_vector_packed_bit`
+  | :symbol:`bson_append_vector_packed_bit_uninit`
   | :symbol:`bson_vector_packed_bit_const_view_t`

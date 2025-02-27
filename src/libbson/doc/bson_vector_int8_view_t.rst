@@ -51,10 +51,10 @@ Example
   const size_t values_count = sizeof values / sizeof values[0];
 
   bson_vector_int8_view_t view;
-  BSON_ASSERT (BSON_APPEND_VECTOR_INT8 (&doc, "vector", values_count, &view));
+  BSON_ASSERT (BSON_APPEND_VECTOR_INT8_UNINIT (&doc, "vector", values_count, &view));
   BSON_ASSERT (bson_vector_int8_view_write (view, values, values_count, 0));
 
 .. seealso::
 
-  | :symbol:`bson_append_vector_int8`
+  | :symbol:`bson_append_vector_int8_uninit`
   | :symbol:`bson_vector_int8_const_view_t`

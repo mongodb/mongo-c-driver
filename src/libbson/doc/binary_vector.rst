@@ -40,9 +40,9 @@ Integration
     :titlesonly:
     :maxdepth: 1
 
-    bson_append_vector_int8
-    bson_append_vector_float32
-    bson_append_vector_packed_bit
+    bson_append_vector_int8_uninit
+    bson_append_vector_float32_uninit
+    bson_append_vector_packed_bit_uninit
 
 * Accessing an existing Vector via :symbol:`bson_iter_t`:
 
