@@ -1,7 +1,7 @@
 :man_page: bson_append_vector_packed_bit_uninit
 
 bson_append_vector_packed_bit_uninit()
-===============================
+======================================
 
 Synopsis
 --------
