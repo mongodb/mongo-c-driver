@@ -972,9 +972,9 @@ test_bson_vector_view_api_fuzz_int8 (void)
    int8_t *expected_elements = bson_malloc (MAX_TESTED_VECTOR_LENGTH * sizeof *expected_elements);
    int8_t *actual_elements = bson_malloc (MAX_TESTED_VECTOR_LENGTH * sizeof *actual_elements);
    for (int fuzz_iter = 0; fuzz_iter < FUZZ_TEST_ITERS; fuzz_iter++) {
-      int r = rand ();
-      int r_operation = r & 0xF;
-      int r_param = r >> 4;
+      unsigned r = (unsigned) rand ();
+      unsigned r_operation = r & 0xFu;
+      size_t r_param = r >> 4;
 
       if (current_length == 0 || r_operation == 15) {
          // Resize and fill
@@ -1028,9 +1028,9 @@ test_bson_vector_view_api_fuzz_float32 (void)
    float *expected_elements = bson_malloc (MAX_TESTED_VECTOR_LENGTH * sizeof *expected_elements);
    float *actual_elements = bson_malloc (MAX_TESTED_VECTOR_LENGTH * sizeof *actual_elements);
    for (int fuzz_iter = 0; fuzz_iter < FUZZ_TEST_ITERS; fuzz_iter++) {
-      int r = rand ();
-      int r_operation = r & 0xF;
-      int r_param = r >> 4;
+      unsigned r = (unsigned) rand ();
+      unsigned r_operation = r & 0xFu;
+      size_t r_param = r >> 4;
 
       if (current_length == 0 || r_operation == 15) {
          // Resize and fill
@@ -1085,9 +1085,9 @@ test_bson_vector_view_api_fuzz_packed_bit (void)
    bool *actual_elements = bson_malloc (MAX_TESTED_VECTOR_LENGTH * sizeof *actual_elements);
    uint8_t *packed_buffer = bson_malloc ((MAX_TESTED_VECTOR_LENGTH + 7) / 8);
    for (int fuzz_iter = 0; fuzz_iter < FUZZ_TEST_ITERS; fuzz_iter++) {
-      int r = rand ();
-      int r_operation = r & 0xF;
-      int r_param = r >> 4;
+      unsigned r = (unsigned) rand ();
+      unsigned r_operation = r & 0xFu;
+      size_t r_param = r >> 4;
 
       if (current_length == 0 || r_operation == 15) {
          // Resize and fill from unpacked bool source
