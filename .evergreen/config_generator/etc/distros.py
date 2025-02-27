@@ -47,7 +47,6 @@ def ls_distro(name, **kwargs):
     ]
 
 
-# See: https://evergreen.mongodb.com/distros
 DEBIAN_DISTROS = [
     *ls_distro(name='debian92', os='debian', os_type='linux', os_ver='9.2'),  # CDRIVER-5873
     *ls_distro(name='debian10', os='debian', os_type='linux', os_ver='10'),  # CDRIVER-5874
@@ -102,6 +101,7 @@ WINDOWS_DISTROS = [
     *ls_distro(name='windows-vsCurrent', os='windows', os_type='windows', vs_ver='vsCurrent'),  # Windows Server 2019
 ]
 
+# See: https://evergreen.mongodb.com/distros
 # Ensure no-arch distros are ordered before arch-specific distros.
 ALL_DISTROS = [
     *DEBIAN_DISTROS,
