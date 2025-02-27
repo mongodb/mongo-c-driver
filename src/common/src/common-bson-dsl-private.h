@@ -741,8 +741,8 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 
 #define _bsonPredicate_Condition_1 1
 #define _bsonPredicate_Condition_0 0
-#define _bsonPredicate_Condition_true true
-#define _bsonPredicate_Condition_false false
+#define _bsonPredicate_Condition_always true
+#define _bsonPredicate_Condition_never false
 
 #define _bsonPredicate_Condition_isTrue (bson_iter_as_bool (&bsonVisitIter))
 #define _bsonPredicate_Condition_isFalse (!bson_iter_as_bool (&bsonVisitIter))

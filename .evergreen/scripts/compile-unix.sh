@@ -10,6 +10,8 @@ set -o pipefail
 check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
+check_var_opt CMAKE_GENERATOR
+check_var_opt CMAKE_GENERATOR_PLATFORM
 check_var_opt CFLAGS
 check_var_opt CHECK_LOG "OFF"
 check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
@@ -119,8 +121,6 @@ powerpc64le)
 esac
 
 # CMake and compiler environment variables.
-export CC
-export CXX
 export CFLAGS
 export CXXFLAGS
 
@@ -134,15 +134,6 @@ fi
 if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
-
-case "${CC}" in
-clang)
-  CXX=clang++
-  ;;
-gcc)
-  CXX=g++
-  ;;
-esac
 
 declare cmake_binary
 if [[ "${BYPASS_FIND_CMAKE}" == "OFF" ]]; then
