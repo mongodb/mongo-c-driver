@@ -48,10 +48,11 @@ def ls_distro(name, **kwargs):
 
 
 # See: https://evergreen.mongodb.com/distros
-DEBIAN_DISTROS = []
-DEBIAN_DISTROS += ls_distro(name='debian92', os='debian', os_type='linux', os_ver='9.2')  # CDRIVER-5873
-DEBIAN_DISTROS += ls_distro(name='debian10', os='debian', os_type='linux', os_ver='10')  # CDRIVER-5874
-DEBIAN_DISTROS += ls_distro(name='debian11', os='debian', os_type='linux', os_ver='11')
+DEBIAN_DISTROS = [
+    *ls_distro(name='debian92', os='debian', os_type='linux', os_ver='9.2'),  # CDRIVER-5873
+    *ls_distro(name='debian10', os='debian', os_type='linux', os_ver='10'),  # CDRIVER-5874
+    *ls_distro(name='debian11', os='debian', os_type='linux', os_ver='11'),
+]
 
 MACOS_DISTROS = [
     Distro(name='macos-14', os='macos', os_type='macos', os_ver='14'),
@@ -62,65 +63,74 @@ MACOS_ARM64_DISTROS = [
     Distro(name='macos-14-arm64', os='macos', os_type='macos', os_ver='14', arch='arm64'),
 ]
 
-RHEL_DISTROS = []
-RHEL_DISTROS += ls_distro(name='rhel76', os='rhel', os_type='linux', os_ver='7.6')
-RHEL_DISTROS += ls_distro(name='rhel80', os='rhel', os_type='linux', os_ver='8.0')
-RHEL_DISTROS += ls_distro(name='rhel84', os='rhel', os_type='linux', os_ver='8.4')
-RHEL_DISTROS += ls_distro(name='rhel90', os='rhel', os_type='linux', os_ver='9.0')
-RHEL_DISTROS += ls_distro(name='rhel91', os='rhel', os_type='linux', os_ver='9.1')
-RHEL_DISTROS += ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.2')
-RHEL_DISTROS += ls_distro(name='rhel93', os='rhel', os_type='linux', os_ver='9.3')
-RHEL_DISTROS += ls_distro(name='rhel94', os='rhel', os_type='linux', os_ver='9.4')
-RHEL_DISTROS += ls_distro(name='rhel95', os='rhel', os_type='linux', os_ver='9.5')
-RHEL_DISTROS += ls_distro(name='rhel8.9', os='rhel', os_type='linux', os_ver='8.7')
-RHEL_DISTROS += ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.0')
+RHEL_DISTROS = [
+    *ls_distro(name='rhel76', os='rhel', os_type='linux', os_ver='7.6'),
+    *ls_distro(name='rhel80', os='rhel', os_type='linux', os_ver='8.0'),
+    *ls_distro(name='rhel84', os='rhel', os_type='linux', os_ver='8.4'),
+    *ls_distro(name='rhel90', os='rhel', os_type='linux', os_ver='9.0'),
+    *ls_distro(name='rhel91', os='rhel', os_type='linux', os_ver='9.1'),
+    *ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.2'),
+    *ls_distro(name='rhel93', os='rhel', os_type='linux', os_ver='9.3'),
+    *ls_distro(name='rhel94', os='rhel', os_type='linux', os_ver='9.4'),
+    *ls_distro(name='rhel95', os='rhel', os_type='linux', os_ver='9.5'),
+    *ls_distro(name='rhel8.9', os='rhel', os_type='linux', os_ver='8.7'),
+    *ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.0'),
+]
 
-RHEL_ARM64_DISTROS = []
-RHEL_ARM64_DISTROS += ls_distro(name='rhel82-arm64', os='rhel', os_type='linux', os_ver='8.2', arch='arm64')
-RHEL_ARM64_DISTROS += ls_distro(name='rhel92-arm64', os='rhel', os_type='linux', os_ver='9.0', arch='arm64')
+RHEL_ARM64_DISTROS = [
+    *ls_distro(name='rhel82-arm64', os='rhel', os_type='linux', os_ver='8.2', arch='arm64'),
+    *ls_distro(name='rhel92-arm64', os='rhel', os_type='linux', os_ver='9.0', arch='arm64'),
+]
 
-RHEL_POWER_DISTROS = []
-RHEL_POWER_DISTROS += ls_distro(name='rhel8-power', os='rhel', os_type='linux', os_ver='8', arch='power')
-RHEL_POWER_DISTROS += ls_distro(name='rhel9-power', os='rhel', os_type='linux', os_ver='9', arch='power')
+RHEL_POWER_DISTROS = [
+    *ls_distro(name='rhel8-power', os='rhel', os_type='linux', os_ver='8', arch='power'),
+    *ls_distro(name='rhel9-power', os='rhel', os_type='linux', os_ver='9', arch='power'),
+]
 
-RHEL_ZSERIES_DISTROS = []
-RHEL_ZSERIES_DISTROS += ls_distro(name='rhel8-zseries', os='rhel', os_type='linux', os_ver='8', arch='zseries')
-RHEL_ZSERIES_DISTROS += ls_distro(name='rhel9-zseries', os='rhel', os_type='linux', os_ver='9', arch='zseries')
+RHEL_ZSERIES_DISTROS = [
+    *ls_distro(name='rhel8-zseries', os='rhel', os_type='linux', os_ver='8', arch='zseries'),
+    *ls_distro(name='rhel9-zseries', os='rhel', os_type='linux', os_ver='9', arch='zseries'),
+]
 
-UBUNTU_DISTROS = []
-UBUNTU_DISTROS += ls_distro(name='ubuntu2004', os='ubuntu', os_type='linux', os_ver='20.04')
-UBUNTU_DISTROS += ls_distro(name='ubuntu2204', os='ubuntu', os_type='linux', os_ver='22.04')
+UBUNTU_DISTROS = [
+    *ls_distro(name='ubuntu2004', os='ubuntu', os_type='linux', os_ver='20.04'),
+    *ls_distro(name='ubuntu2204', os='ubuntu', os_type='linux', os_ver='22.04'),
+]
 
-UBUNTU_ARM64_DISTROS = []
-UBUNTU_ARM64_DISTROS += ls_distro(name='ubuntu2004-arm64', os='ubuntu', os_type='linux', os_ver='20.04', arch='arm64')
-UBUNTU_ARM64_DISTROS += ls_distro(name='ubuntu2204-arm64', os='ubuntu', os_type='linux', os_ver='22.04', arch='arm64')
+UBUNTU_ARM64_DISTROS = [
+    *ls_distro(name='ubuntu2004-arm64', os='ubuntu', os_type='linux', os_ver='20.04', arch='arm64'),
+    *ls_distro(name='ubuntu2204-arm64', os='ubuntu', os_type='linux', os_ver='22.04', arch='arm64'),
+]
 
-WINDOWS_DISTROS = []
-WINDOWS_DISTROS += ls_distro(name='windows-64-vs2013', os='windows', os_type='windows', vs_ver='2013')
-WINDOWS_DISTROS += ls_distro(name='windows-64-vs2015', os='windows', os_type='windows', vs_ver='2015')
-WINDOWS_DISTROS += ls_distro(name='windows-64-vs2017', os='windows', os_type='windows', vs_ver='2017')
-WINDOWS_DISTROS += ls_distro(name='windows-64-vs2019', os='windows', os_type='windows', vs_ver='2019')
-WINDOWS_DISTROS += ls_distro(name='windows-2022', os='windows', os_type='windows', os_ver='2022')
-WINDOWS_DISTROS += [Distro(name='windows-64-2019', os='windows', os_type='windows', os_ver='2019')]
-WINDOWS_DISTROS += [Distro(name='windows-64-vsMulti-small', os='windows',
-                           os_type='windows', vs_ver='vsMulti', size='small')]
-WINDOWS_DISTROS += ls_distro(name='windows-vsCurrent-2022', os='windows',
-                             os_type='windows', os_ver='2022', vs_ver='vsCurrent')
-WINDOWS_DISTROS += ls_distro(name='windows-vsCurrent', os='windows', os_type='windows',
-                             vs_ver='vsCurrent')  # Windows Server 2019
+WINDOWS_DISTROS = [
+    *ls_distro(name='windows-64-vs2013', os='windows', os_type='windows', vs_ver='2013'),
+    *ls_distro(name='windows-64-vs2015', os='windows', os_type='windows', vs_ver='2015'),
+    *ls_distro(name='windows-64-vs2017', os='windows', os_type='windows', vs_ver='2017'),
+    *ls_distro(name='windows-64-vs2019', os='windows', os_type='windows', vs_ver='2019'),
+
+    *ls_distro(name='windows-2022', os='windows', os_type='windows', os_ver='2022'),
+
+    Distro(name='windows-64-2019', os='windows', os_type='windows', os_ver='2019'),
+    Distro(name='windows-64-vsMulti-small', os='windows', os_type='windows', vs_ver='vsMulti', size='small'),
+
+    *ls_distro(name='windows-vsCurrent-2022', os='windows', os_type='windows', os_ver='2022', vs_ver='vsCurrent'),
+
+    *ls_distro(name='windows-vsCurrent', os='windows', os_type='windows', vs_ver='vsCurrent'), # Windows Server 2019
+]
 
 # Ensure no-arch distros are ordered before arch-specific distros.
-ALL_DISTROS = [] + \
-    DEBIAN_DISTROS + \
-    MACOS_DISTROS + \
-    MACOS_ARM64_DISTROS + \
-    RHEL_DISTROS + \
-    RHEL_ARM64_DISTROS + \
-    RHEL_POWER_DISTROS + \
-    RHEL_ZSERIES_DISTROS + \
-    UBUNTU_DISTROS + \
-    UBUNTU_ARM64_DISTROS + \
-    WINDOWS_DISTROS
+ALL_DISTROS = [
+    *DEBIAN_DISTROS,
+    *MACOS_DISTROS,
+    *MACOS_ARM64_DISTROS,
+    *RHEL_DISTROS,
+    *RHEL_ARM64_DISTROS,
+    *RHEL_POWER_DISTROS,
+    *RHEL_ZSERIES_DISTROS,
+    *UBUNTU_DISTROS,
+    *UBUNTU_ARM64_DISTROS,
+    *WINDOWS_DISTROS,
+]
 
 
 def find_distro(name) -> Distro:
