@@ -77,19 +77,12 @@ RHEL_DISTROS = [
     *ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.0'),
 ]
 
-RHEL_ARM64_DISTROS = [
-    *ls_distro(name='rhel82-arm64', os='rhel', os_type='linux', os_ver='8.2', arch='arm64'),
-    *ls_distro(name='rhel92-arm64', os='rhel', os_type='linux', os_ver='9.0', arch='arm64'),
-]
-
 RHEL_POWER_DISTROS = [
     *ls_distro(name='rhel8-power', os='rhel', os_type='linux', os_ver='8', arch='power'),
-    *ls_distro(name='rhel9-power', os='rhel', os_type='linux', os_ver='9', arch='power'),
 ]
 
 RHEL_ZSERIES_DISTROS = [
     *ls_distro(name='rhel8-zseries', os='rhel', os_type='linux', os_ver='8', arch='zseries'),
-    *ls_distro(name='rhel9-zseries', os='rhel', os_type='linux', os_ver='9', arch='zseries'),
 ]
 
 UBUNTU_DISTROS = [
@@ -99,23 +92,14 @@ UBUNTU_DISTROS = [
 
 UBUNTU_ARM64_DISTROS = [
     *ls_distro(name='ubuntu2004-arm64', os='ubuntu', os_type='linux', os_ver='20.04', arch='arm64'),
-    *ls_distro(name='ubuntu2204-arm64', os='ubuntu', os_type='linux', os_ver='22.04', arch='arm64'),
 ]
 
 WINDOWS_DISTROS = [
-    *ls_distro(name='windows-64-vs2013', os='windows', os_type='windows', vs_ver='2013'),
     *ls_distro(name='windows-64-vs2015', os='windows', os_type='windows', vs_ver='2015'),
     *ls_distro(name='windows-64-vs2017', os='windows', os_type='windows', vs_ver='2017'),
     *ls_distro(name='windows-64-vs2019', os='windows', os_type='windows', vs_ver='2019'),
 
-    *ls_distro(name='windows-2022', os='windows', os_type='windows', os_ver='2022'),
-
-    Distro(name='windows-64-2019', os='windows', os_type='windows', os_ver='2019'),
-    Distro(name='windows-64-vsMulti-small', os='windows', os_type='windows', vs_ver='vsMulti', size='small'),
-
-    *ls_distro(name='windows-vsCurrent-2022', os='windows', os_type='windows', os_ver='2022', vs_ver='vsCurrent'),
-
-    *ls_distro(name='windows-vsCurrent', os='windows', os_type='windows', vs_ver='vsCurrent'), # Windows Server 2019
+    *ls_distro(name='windows-vsCurrent', os='windows', os_type='windows', vs_ver='vsCurrent'),  # Windows Server 2019
 ]
 
 # Ensure no-arch distros are ordered before arch-specific distros.
@@ -124,7 +108,6 @@ ALL_DISTROS = [
     *MACOS_DISTROS,
     *MACOS_ARM64_DISTROS,
     *RHEL_DISTROS,
-    *RHEL_ARM64_DISTROS,
     *RHEL_POWER_DISTROS,
     *RHEL_ZSERIES_DISTROS,
     *UBUNTU_DISTROS,
