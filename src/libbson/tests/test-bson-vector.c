@@ -70,9 +70,9 @@ translate_json_test_vector (bson_t *array_in, bson_t *array_out)
    bson_array_builder_t *builder = bson_array_builder_new ();
    while (bson_iter_next (&iter_in)) {
       if (BSON_ITER_HOLDS_UTF8 (&iter_in) && 0 == strcmp ("inf", bson_iter_utf8 (&iter_in, NULL))) {
-         BSON_ASSERT (bson_array_builder_append_double (builder, INFINITY));
+         BSON_ASSERT (bson_array_builder_append_double (builder, (double) INFINITY));
       } else if (BSON_ITER_HOLDS_UTF8 (&iter_in) && 0 == strcmp ("-inf", bson_iter_utf8 (&iter_in, NULL))) {
-         BSON_ASSERT (bson_array_builder_append_double (builder, -INFINITY));
+         BSON_ASSERT (bson_array_builder_append_double (builder, (double) -INFINITY));
       } else {
          BSON_ASSERT (bson_array_builder_append_iter (builder, &iter_in));
       }
@@ -315,10 +315,10 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
 
             double expected_double;
             if (BSON_ITER_HOLDS_UTF8 (&expected_iter) && 0 == strcmp ("inf", bson_iter_utf8 (&expected_iter, NULL))) {
-               expected_double = INFINITY;
+               expected_double = (double) INFINITY;
             } else if (BSON_ITER_HOLDS_UTF8 (&expected_iter) &&
                        0 == strcmp ("-inf", bson_iter_utf8 (&expected_iter, NULL))) {
-               expected_double = -INFINITY;
+               expected_double = (double) -INFINITY;
             } else if (BSON_ITER_HOLDS_DOUBLE (&expected_iter)) {
                expected_double = bson_iter_double (&expected_iter);
             } else {
@@ -1236,7 +1236,7 @@ test_bson_vector_example_float32_const_view (void)
    // setup: construct a sample document
    bson_t doc = BSON_INITIALIZER;
    {
-      static const float values[] = {5.0f, -1e10f, (float) INFINITY, (float) NAN, -1.0f};
+      static const float values[] = {5.0f, -1e10f, INFINITY, NAN, -1.0f};
       bson_vector_float32_view_t view;
       BSON_ASSERT (BSON_APPEND_VECTOR_FLOAT32_UNINIT (&doc, "vector", sizeof values / sizeof values[0], &view));
       BSON_ASSERT (bson_vector_float32_view_write (view, values, sizeof values / sizeof values[0], 0));
