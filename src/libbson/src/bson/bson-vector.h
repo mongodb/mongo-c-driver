@@ -580,7 +580,7 @@ bson_vector_packed_bit_view_pack_bool (bson_vector_packed_bit_view_t view,
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
       while (element_count > 0) {
          BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
-         uint8_t *BSON_RESTRICT packed_byte = &view.binary.data[BSON_VECTOR_HEADER_LEN + (vector_offset_elements >> 3)];
+         uint8_t *BSON_RESTRICT packed_byte = BSON_VECTOR_HEADER_LEN + (vector_offset_elements >> 3) + view.binary.data;
          if (element_count >= 8 && (vector_offset_elements & 7) == 0) {
             uint8_t complete_byte = 0;
             unsigned i;
