@@ -1264,45 +1264,109 @@ test_bson_init_static (void)
    bson_destroy (&b);
 }
 
+static void *
+realloc_func_never_called (void *mem, size_t num_bytes, void *ctx)
+{
+   // Reallocate function for tests that should never reallocate
+   BSON_UNUSED (num_bytes);
+   BSON_UNUSED (ctx);
+   BSON_ASSERT (false);
+   return mem;
+}
 
 static void
 test_bson_new_from_buffer (void)
 {
-   bson_t *b;
-   uint8_t *buf = bson_malloc0 (5);
-   size_t len = 5;
-   uint32_t len_le = BSON_UINT32_TO_LE (5);
+   // Buffer size matches document size
+   {
+      uint8_t *buf = bson_malloc0 (5);
+      size_t len = 5;
+      uint32_t len_le = BSON_UINT32_TO_LE (5);
 
-   memcpy (buf, &len_le, sizeof (len_le));
+      memcpy (buf, &len_le, sizeof (len_le));
 
-   b = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
+      bson_t *b = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
 
-   BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
-   BSON_ASSERT (len == 5);
-   BSON_ASSERT (b->len == 5);
+      BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
+      BSON_ASSERT (len == 5);
+      BSON_ASSERT (b->len == 5);
 
-   bson_append_utf8 (b, "hello", -1, "world", -1);
+      bson_append_utf8 (b, "hello", -1, "world", -1);
 
-   BSON_ASSERT (len == 32);
-   BSON_ASSERT (b->len == 22);
+      BSON_ASSERT (len == 32);
+      BSON_ASSERT (b->len == 22);
 
-   bson_destroy (b);
+      bson_destroy (b);
+      BSON_ASSERT (buf);
+      bson_free (buf);
+   }
 
-   bson_free (buf);
+   // Buffer is NULL. An empty document will be allocated.
+   {
+      uint8_t *buf = NULL;
+      size_t len = 0;
 
-   buf = NULL;
-   len = 0;
+      bson_t *b = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
 
-   b = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
+      BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
+      BSON_ASSERT (len == 5);
+      BSON_ASSERT (b->len == 5);
 
-   BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
-   BSON_ASSERT (len == 5);
-   BSON_ASSERT (b->len == 5);
+      bson_destroy (b);
+      BSON_ASSERT (buf);
+      bson_free (buf);
+   }
 
-   bson_destroy (b);
-   bson_free (buf);
+   // Buffer is larger than the document. Expect it to be growable without reallocating.
+   {
+      size_t buf_len = 0x10000;
+      uint8_t *buf = bson_malloc0 (buf_len);
+      uint32_t doc_len_le = BSON_UINT32_TO_LE (5);
+
+      memcpy (buf, &doc_len_le, sizeof (doc_len_le));
+
+      bson_t *b = bson_new_from_buffer (&buf, &buf_len, realloc_func_never_called, NULL);
+
+      BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
+      BSON_ASSERT (buf_len == 0x10000);
+      BSON_ASSERT (&buf_len == ((bson_impl_alloc_t *) b)->buflen);
+      BSON_ASSERT (b->len == 5);
+
+      bson_append_utf8 (b, "hello", -1, "world", -1);
+
+      BSON_ASSERT (buf_len == 0x10000);
+      BSON_ASSERT (b->len == 22);
+
+      bson_destroy (b);
+      BSON_ASSERT (buf);
+      bson_free (buf);
+   }
+
+   // Otherwise valid, but buffer is smaller than the document size. bson_new_from_buffer() must fail.
+   {
+      uint8_t *buf = NULL;
+      size_t buf_len = SIZE_MAX; // Must be ignored when buf == NULL
+
+      // Start with a valid doc
+      bson_t *valid_doc = bson_new_from_buffer (&buf, &buf_len, bson_realloc_ctx, NULL);
+      BSON_ASSERT (BSON_APPEND_UTF8 (valid_doc, "hello", "world"));
+      ASSERT_CMPUINT32 (valid_doc->len, ==, 22);
+      bson_destroy (valid_doc);
+      ASSERT_CMPSIZE_T (buf_len, ==, 32);
+
+      // Check that a slightly-too-small buffer is rejected
+      buf_len = 21;
+      BSON_ASSERT (!bson_new_from_buffer (&buf, &buf_len, realloc_func_never_called, NULL));
+
+      // Successful return if one more byte is included in the buf_len.
+      buf_len++;
+      bson_t *minimal = bson_new_from_buffer (&buf, &buf_len, realloc_func_never_called, NULL);
+      BSON_ASSERT (minimal != NULL);
+      ASSERT_CMPUINT32 (minimal->len, ==, 22);
+      bson_destroy (minimal);
+      bson_free (buf);
+   }
 }
-
 
 static void
 test_bson_utf8_key (void)
