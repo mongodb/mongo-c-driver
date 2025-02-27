@@ -21,6 +21,7 @@
 #include <bson/bson-json-private.h>
 #include <common-string-private.h>
 #include <common-json-private.h>
+#include <common-macros-private.h>
 #include <bson/bson-iso8601-private.h>
 
 #include <string.h>
@@ -63,6 +64,31 @@ static const uint8_t gZero;
 /*
  *--------------------------------------------------------------------------
  *
+ * _bson_next_power_of_two_for_alloc --
+ *
+ *       Given a potential allocation length no greater than BSON_MAX_SIZE,
+ *       round it up to the next power of two without exceeding BSON_MAX_SIZE.
+ *
+ * Returns:
+ *       A value >= the input size and <= BSON_MAX_SIZE.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static BSON_INLINE size_t
+_bson_next_power_of_two_for_alloc (size_t size)
+{
+   MONGOC_DEBUG_ASSERT (size <= BSON_MAX_SIZE);
+   size_t power_of_two = bson_next_power_of_two (size);
+   return BSON_MIN (power_of_two, BSON_MAX_SIZE);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _bson_impl_inline_grow --
  *
  *       Document growth implementation for documents that currently
@@ -90,7 +116,7 @@ _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
       return true;
    }
 
-   req = bson_next_power_of_two (impl->len + size);
+   req = _bson_next_power_of_two_for_alloc (impl->len + size);
 
    if (req <= BSON_MAX_SIZE) {
       data = bson_malloc (req);
@@ -150,7 +176,7 @@ _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
       return true;
    }
 
-   req = bson_next_power_of_two (req);
+   req = _bson_next_power_of_two_for_alloc (req);
 
    if ((req <= BSON_MAX_SIZE) && impl->realloc) {
       *impl->buf = impl->realloc (*impl->buf, req, impl->realloc_func_ctx);
@@ -168,7 +194,8 @@ _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
  * _bson_grow --
  *
  *       Grows the bson_t structure to be large enough to contain @size
- *       bytes.
+ *       bytes in addition to its current content. The caller is responsible
+ *       for ensuring the new summed size is <= BSON_MAX_SIZE.
  *
  * Returns:
  *       true if successful, false if the size would overflow.
@@ -183,6 +210,9 @@ static bool
 _bson_grow (bson_t *bson,  /* IN */
             uint32_t size) /* IN */
 {
+   // Already checked by caller in all build types
+   MONGOC_DEBUG_ASSERT ((size_t) bson->len <= BSON_MAX_SIZE && (size_t) size <= BSON_MAX_SIZE - (size_t) bson->len);
+
    if ((bson->flags & BSON_FLAG_INLINE)) {
       return _bson_impl_inline_grow ((bson_impl_inline_t *) bson, size);
    }
@@ -2097,7 +2127,7 @@ bson_copy_to (const bson_t *src, bson_t *dst)
    }
 
    data = _bson_data (src);
-   len = bson_next_power_of_two ((size_t) src->len);
+   len = _bson_next_power_of_two_for_alloc ((size_t) src->len);
 
    adst = (bson_impl_alloc_t *) dst;
    adst->flags = BSON_FLAG_STATIC;
@@ -2219,6 +2249,10 @@ bson_reserve_buffer (bson_t *bson, uint32_t size)
       return NULL;
    }
 
+   MONGOC_DEBUG_ASSERT ((size_t) bson->len <= BSON_MAX_SIZE);
+   if ((size_t) size > BSON_MAX_SIZE - (size_t) bson->len) {
+      return NULL;
+   }
    if (!_bson_grow (bson, size)) {
       return NULL;
    }
