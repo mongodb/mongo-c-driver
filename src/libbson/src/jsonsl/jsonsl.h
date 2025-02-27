@@ -568,7 +568,7 @@ struct jsonsl_st {
      * nlevels argument passed to jsonsl_new. If you modify this structure,
      * make sure that this member is last.
      */
-    struct jsonsl_state_st stack[1];
+    struct jsonsl_state_st stack[];
 };
 
 
