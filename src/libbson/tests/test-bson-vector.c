@@ -960,6 +960,7 @@ test_bson_vector_view_api_usage_packed_bit (void)
    bson_destroy (&doc);
 }
 
+// Note: The effective MAX_TESTED_VECTOR_LENGTH is limited to 2047 on Windows due to RAND_MAX==0x7fff
 #define MAX_TESTED_VECTOR_LENGTH 10000
 #define FUZZ_TEST_ITERS 5000
 
