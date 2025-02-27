@@ -1384,6 +1384,26 @@ test_bson_vector_example_packed_bit_view (void)
    bson_destroy (&doc);
 }
 
+// Shared edge case tests that apply to all reader/writer functions.
+#define TEST_BSON_VECTOR_RW(_expected, _view, _v, _count, _offset, _read, _write) \
+   if (true) {                                                                    \
+      ASSERT ((_expected) == (_write) ((_view), (_v), (_count), (_offset)));      \
+      ASSERT ((_expected) == (_read) ((_view), (_v), (_count), (_offset)));       \
+   } else {                                                                       \
+   }
+
+#define TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON(_view, _alloc_size, _v, _v_size, _read, _write)                   \
+   if (true) {                                                                                                  \
+      TEST_BSON_VECTOR_RW (false, (_view), (_v), (_alloc_size) + 1u, 0, (_read), (_write));                     \
+      TEST_BSON_VECTOR_RW (true, (_view), (_v), (_v_size), (_alloc_size) - (_v_size), (_read), (_write));       \
+      TEST_BSON_VECTOR_RW (false, (_view), (_v), (_v_size), (_alloc_size) - (_v_size) + 1u, (_read), (_write)); \
+      TEST_BSON_VECTOR_RW (false, (_view), (_v), (_v_size) + 1u, (_alloc_size) - (_v_size), (_read), (_write)); \
+      TEST_BSON_VECTOR_RW (false, (_view), (_v), SIZE_MAX, (_alloc_size) - (_v_size), (_read), (_write));       \
+      TEST_BSON_VECTOR_RW (false, (_view), (_v), SIZE_MAX, (_alloc_size) - (_v_size) + 1u, (_read), (_write));  \
+      TEST_BSON_VECTOR_RW (true, (_view), (_v), (_v_size), 0, (_read), (_write));                               \
+   } else {                                                                                                     \
+   }
+
 static void
 test_bson_vector_edge_cases_int8 (void)
 {
@@ -1397,7 +1417,7 @@ test_bson_vector_edge_cases_int8 (void)
    }
 
    // Needs little real memory because most bytes are never accessed,
-   // but we do need a virtual address space larger than 32 bits.
+   // but we should require a virtual address space larger than 32 bits.
 #if BSON_WORD_SIZE > 32
 
    size_t expected_bson_overhead =
@@ -1419,20 +1439,8 @@ test_bson_vector_edge_cases_int8 (void)
    {
       int8_t values[] = {1, 2, 3, 4, 5};
       size_t values_size = sizeof values / sizeof values[0];
-      ASSERT (bson_vector_int8_view_write (view, values, values_size, 0));
-      ASSERT (bson_vector_int8_view_read (view, values, values_size, 0));
-      ASSERT (!bson_vector_int8_view_write (view, values, max_alloc_elements + 1u, 0));
-      ASSERT (!bson_vector_int8_view_read (view, values, max_alloc_elements + 1u, 0));
-      ASSERT (bson_vector_int8_view_write (view, values, values_size, max_alloc_elements - values_size));
-      ASSERT (bson_vector_int8_view_read (view, values, values_size, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_int8_view_write (view, values, values_size, max_alloc_elements - values_size + 1u));
-      ASSERT (!bson_vector_int8_view_read (view, values, values_size, max_alloc_elements - values_size + 1u));
-      ASSERT (!bson_vector_int8_view_write (view, values, values_size + 1u, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_int8_view_read (view, values, values_size + 1u, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_int8_view_write (view, values, SIZE_MAX, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_int8_view_read (view, values, SIZE_MAX, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_int8_view_write (view, values, SIZE_MAX, max_alloc_elements - values_size + 1u));
-      ASSERT (!bson_vector_int8_view_read (view, values, SIZE_MAX, max_alloc_elements - values_size + 1u));
+      TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON (
+         view, max_alloc_elements, values, values_size, bson_vector_int8_view_read, bson_vector_int8_view_write);
    }
 
    bson_destroy (&doc);
@@ -1454,7 +1462,7 @@ test_bson_vector_edge_cases_float32 (void)
    }
 
    // Needs little real memory because most bytes are never accessed,
-   // but we do need a virtual address space larger than 32 bits.
+   // but we should require a virtual address space larger than 32 bits.
 #if BSON_WORD_SIZE > 32
 
    size_t expected_bson_overhead =
@@ -1477,20 +1485,8 @@ test_bson_vector_edge_cases_float32 (void)
    {
       float values[] = {1.f, 2.f, 3.f, 4.f, 5.f};
       size_t values_size = sizeof values / sizeof values[0];
-      ASSERT (bson_vector_float32_view_write (view, values, values_size, 0));
-      ASSERT (bson_vector_float32_view_read (view, values, values_size, 0));
-      ASSERT (!bson_vector_float32_view_write (view, values, max_alloc_elements + 1u, 0));
-      ASSERT (!bson_vector_float32_view_read (view, values, max_alloc_elements + 1u, 0));
-      ASSERT (bson_vector_float32_view_write (view, values, values_size, max_alloc_elements - values_size));
-      ASSERT (bson_vector_float32_view_read (view, values, values_size, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_float32_view_write (view, values, values_size, max_alloc_elements - values_size + 1u));
-      ASSERT (!bson_vector_float32_view_read (view, values, values_size, max_alloc_elements - values_size + 1u));
-      ASSERT (!bson_vector_float32_view_write (view, values, values_size + 1u, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_float32_view_read (view, values, values_size + 1u, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_float32_view_write (view, values, SIZE_MAX, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_float32_view_read (view, values, SIZE_MAX, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_float32_view_write (view, values, SIZE_MAX, max_alloc_elements - values_size + 1u));
-      ASSERT (!bson_vector_float32_view_read (view, values, SIZE_MAX, max_alloc_elements - values_size + 1u));
+      TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON (
+         view, max_alloc_elements, values, values_size, bson_vector_float32_view_read, bson_vector_float32_view_write);
    }
 
    bson_destroy (&doc);
@@ -1512,7 +1508,7 @@ test_bson_vector_edge_cases_packed_bit (void)
    }
 
    // Needs little real memory because most bytes are never accessed,
-   // but we do need a virtual address space larger than 32 bits.
+   // but we should require a virtual address space larger than 32 bits.
 #if BSON_WORD_SIZE > 32
 
    size_t expected_bson_overhead =
@@ -1531,7 +1527,7 @@ test_bson_vector_edge_cases_packed_bit (void)
       ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&doc, "v", max_alloc_elements, &view));
    }
 
-   // Test some pack and unpack boundaries, similar to the read/write tests for non-packed element types.
+   // Test pack and unpack boundaries with the same tests used for read/write of non-packed element types.
    // Only tests one length, but it's chosen to be greater than 8 and not a multiple of 8.
    {
       bool values[190];
@@ -1539,52 +1535,23 @@ test_bson_vector_edge_cases_packed_bit (void)
       for (size_t i = 0; i < values_size; i++) {
          values[i] = (i & 3) == 3;
       }
-      ASSERT (bson_vector_packed_bit_view_pack_bool (view, values, values_size, 0));
-      ASSERT (bson_vector_packed_bit_view_unpack_bool (view, values, values_size, 0));
-      ASSERT (!bson_vector_packed_bit_view_pack_bool (view, values, max_alloc_elements + 1u, 0));
-      ASSERT (!bson_vector_packed_bit_view_unpack_bool (view, values, max_alloc_elements + 1u, 0));
-      ASSERT (bson_vector_packed_bit_view_pack_bool (view, values, values_size, max_alloc_elements - values_size));
-      ASSERT (bson_vector_packed_bit_view_unpack_bool (view, values, values_size, max_alloc_elements - values_size));
-      ASSERT (
-         !bson_vector_packed_bit_view_pack_bool (view, values, values_size, max_alloc_elements - values_size + 1u));
-      ASSERT (
-         !bson_vector_packed_bit_view_unpack_bool (view, values, values_size, max_alloc_elements - values_size + 1u));
-      ASSERT (
-         !bson_vector_packed_bit_view_pack_bool (view, values, values_size + 1u, max_alloc_elements - values_size));
-      ASSERT (
-         !bson_vector_packed_bit_view_unpack_bool (view, values, values_size + 1u, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_packed_bit_view_pack_bool (view, values, SIZE_MAX, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_packed_bit_view_unpack_bool (view, values, SIZE_MAX, max_alloc_elements - values_size));
-      ASSERT (!bson_vector_packed_bit_view_pack_bool (view, values, SIZE_MAX, max_alloc_elements - values_size + 1u));
-      ASSERT (!bson_vector_packed_bit_view_unpack_bool (view, values, SIZE_MAX, max_alloc_elements - values_size + 1u));
+      TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON (view,
+                                             max_alloc_elements,
+                                             values,
+                                             values_size,
+                                             bson_vector_packed_bit_view_unpack_bool,
+                                             bson_vector_packed_bit_view_pack_bool);
    }
 
-   // Test some read and write boundaries on packed bytes.
+   // Test read and write boundaries on packed bytes.
    {
       uint8_t packed[] = {0x12, 0x34, 0x56, 0x78, 0x9A};
-      ASSERT (bson_vector_packed_bit_view_write_packed (view, packed, sizeof packed, 0));
-      ASSERT (bson_vector_packed_bit_view_read_packed (view, packed, sizeof packed, 0));
-      ASSERT (!bson_vector_packed_bit_view_write_packed (view, packed, max_alloc_bytes + 1u, 0));
-      ASSERT (!bson_vector_packed_bit_view_read_packed (view, packed, max_alloc_bytes + 1u, 0));
-      ASSERT (
-         bson_vector_packed_bit_view_write_packed (view, packed, sizeof packed, max_alloc_bytes - sizeof packed));
-      ASSERT (
-         bson_vector_packed_bit_view_read_packed (view, packed, sizeof packed, max_alloc_bytes - sizeof packed));
-      ASSERT (!bson_vector_packed_bit_view_write_packed (
-         view, packed, sizeof packed, max_alloc_bytes - sizeof packed + 1u));
-      ASSERT (!bson_vector_packed_bit_view_read_packed (
-         view, packed, sizeof packed, max_alloc_bytes - sizeof packed + 1u));
-      ASSERT (!bson_vector_packed_bit_view_write_packed (
-         view, packed, sizeof packed + 1u, max_alloc_bytes - sizeof packed));
-      ASSERT (!bson_vector_packed_bit_view_read_packed (
-         view, packed, sizeof packed + 1u, max_alloc_bytes - sizeof packed));
-      ASSERT (
-         !bson_vector_packed_bit_view_write_packed (view, packed, SIZE_MAX, max_alloc_bytes - sizeof packed));
-      ASSERT (!bson_vector_packed_bit_view_read_packed (view, packed, SIZE_MAX, max_alloc_bytes - sizeof packed));
-      ASSERT (!bson_vector_packed_bit_view_write_packed (
-         view, packed, SIZE_MAX, max_alloc_bytes - sizeof packed + 1u));
-      ASSERT (
-         !bson_vector_packed_bit_view_read_packed (view, packed, SIZE_MAX, max_alloc_bytes - sizeof packed + 1u));
+      TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON (view,
+                                             max_alloc_bytes,
+                                             packed,
+                                             sizeof packed,
+                                             bson_vector_packed_bit_view_read_packed,
+                                             bson_vector_packed_bit_view_write_packed);
    }
 
    bson_destroy (&doc);
