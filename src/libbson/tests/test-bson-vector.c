@@ -1431,10 +1431,11 @@ test_bson_vector_edge_cases_int8 (void)
 
    // Test some read and write boundaries.
    {
-      int8_t values[] = {1, 2, 3, 4, 5};
-      size_t values_size = sizeof values / sizeof values[0];
+      size_t values_size = 100;
+      int8_t *values = bson_malloc0 (values_size * sizeof *values);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON (
          view, max_alloc_elements, values, values_size, bson_vector_int8_view_read, bson_vector_int8_view_write);
+      bson_free (values);
    }
 
    bson_destroy (&doc);
@@ -1477,10 +1478,11 @@ test_bson_vector_edge_cases_float32 (void)
 
    // Test some read and write boundaries.
    {
-      float values[] = {1.f, 2.f, 3.f, 4.f, 5.f};
-      size_t values_size = sizeof values / sizeof values[0];
+      size_t values_size = 100;
+      float *values = bson_malloc0 (values_size * sizeof *values);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON (
          view, max_alloc_elements, values, values_size, bson_vector_float32_view_read, bson_vector_float32_view_write);
+      bson_free (values);
    }
 
    bson_destroy (&doc);
@@ -1524,28 +1526,28 @@ test_bson_vector_edge_cases_packed_bit (void)
    // Test pack and unpack boundaries with the same tests used for read/write of non-packed element types.
    // Only tests one length, but it's chosen to be greater than 8 and not a multiple of 8.
    {
-      bool values[190];
-      size_t values_size = sizeof values / sizeof values[0];
-      for (size_t i = 0; i < values_size; i++) {
-         values[i] = (i & 3) == 3;
-      }
+      size_t values_size = 190;
+      bool *values = bson_malloc0 (values_size * sizeof *values);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON (view,
                                              max_alloc_elements,
                                              values,
                                              values_size,
                                              bson_vector_packed_bit_view_unpack_bool,
                                              bson_vector_packed_bit_view_pack_bool);
+      bson_free (values);
    }
 
    // Test read and write boundaries on packed bytes.
    {
-      uint8_t packed[] = {0x12, 0x34, 0x56, 0x78, 0x9A};
+      size_t packed_size = 50;
+      uint8_t *packed = bson_malloc0 (packed_size);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON (view,
                                              max_alloc_bytes,
                                              packed,
-                                             sizeof packed,
+                                             packed_size,
                                              bson_vector_packed_bit_view_read_packed,
                                              bson_vector_packed_bit_view_write_packed);
+      bson_free (packed);
    }
 
    bson_destroy (&doc);
