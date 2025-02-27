@@ -262,13 +262,17 @@ bson_append_array_from_vector_packed_bit (bson_t *bson,
 static BSON_INLINE const int8_t *
 bson_vector_int8_const_view_pointer (bson_vector_int8_const_view_t view)
 {
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    return (const int8_t *) (view.binary.data + BSON_VECTOR_HEADER_LEN);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 }
 
 static BSON_INLINE int8_t *
 bson_vector_int8_view_pointer (bson_vector_int8_view_t view)
 {
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    return (int8_t *) (view.binary.data + BSON_VECTOR_HEADER_LEN);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 }
 
 
@@ -345,7 +349,9 @@ bson_vector_padding_from_header_byte_1 (uint8_t byte_1)
 static BSON_INLINE size_t
 bson_vector_packed_bit_const_view_padding (bson_vector_packed_bit_const_view_t view)
 {
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
    return bson_vector_padding_from_header_byte_1 (view.binary.header_copy.bytes[1]);
+   BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
 }
 
 static BSON_INLINE size_t
@@ -375,7 +381,9 @@ bson_vector_int8_const_view_read (bson_vector_int8_const_view_t view,
 {
    size_t length = bson_vector_int8_const_view_length (view);
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
       memcpy (values_out, bson_vector_int8_const_view_pointer (view) + vector_offset_elements, element_count);
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
       return true;
    } else {
       return false;
@@ -400,7 +408,9 @@ bson_vector_int8_view_write (bson_vector_int8_view_t view,
 {
    size_t length = bson_vector_int8_view_length (view);
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
       memcpy (bson_vector_int8_view_pointer (view) + vector_offset_elements, values, element_count);
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
       return true;
    } else {
       return false;
@@ -419,6 +429,7 @@ bson_vector_float32_const_view_read (bson_vector_float32_const_view_t view,
    size_t length = bson_vector_float32_const_view_length (view);
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
       size_t byte_offset = BSON_VECTOR_HEADER_LEN + vector_offset_elements * 4;
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
 #if BSON_BYTE_ORDER == BSON_LITTLE_ENDIAN
       memcpy (values_out, view.binary.data + byte_offset, element_count * 4);
 #else
@@ -429,6 +440,7 @@ bson_vector_float32_const_view_read (bson_vector_float32_const_view_t view,
          values_out[i] = BSON_FLOAT_FROM_LE (aligned_tmp);
       }
 #endif
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
       return true;
    } else {
       return false;
@@ -454,6 +466,7 @@ bson_vector_float32_view_write (bson_vector_float32_view_t view,
    size_t length = bson_vector_float32_view_length (view);
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
       size_t byte_offset = BSON_VECTOR_HEADER_LEN + vector_offset_elements * 4;
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
 #if BSON_BYTE_ORDER == BSON_LITTLE_ENDIAN
       memcpy (view.binary.data + byte_offset, values, element_count * 4);
 #else
@@ -463,6 +476,7 @@ bson_vector_float32_view_write (bson_vector_float32_view_t view,
          memcpy (view.binary.data + byte_offset + i * 4, &aligned_tmp, 4);
       }
 #endif
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
       return true;
    } else {
       return false;
@@ -478,7 +492,9 @@ bson_vector_packed_bit_const_view_read_packed (bson_vector_packed_bit_const_view
 {
    size_t length_bytes = bson_vector_packed_bit_const_view_length_bytes (view);
    if (BSON_LIKELY (vector_offset_bytes <= length_bytes && byte_count <= length_bytes - vector_offset_bytes)) {
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
       memcpy (packed_values_out, view.binary.data + BSON_VECTOR_HEADER_LEN + vector_offset_bytes, byte_count);
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
       return true;
    } else {
       return false;
@@ -503,6 +519,7 @@ bson_vector_packed_bit_view_write_packed (bson_vector_packed_bit_view_t view,
 {
    size_t length_bytes = bson_vector_packed_bit_view_length_bytes (view);
    if (BSON_LIKELY (vector_offset_bytes <= length_bytes && byte_count <= length_bytes - vector_offset_bytes)) {
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
       if (byte_count == length_bytes - vector_offset_bytes && byte_count >= 1u) {
          // This write touches the last byte in the vector:
          // special-case that byte so we can ensure unused bits remain set to zero.
@@ -513,6 +530,7 @@ bson_vector_packed_bit_view_write_packed (bson_vector_packed_bit_view_t view,
       } else {
          memcpy (view.binary.data + BSON_VECTOR_HEADER_LEN + vector_offset_bytes, packed_values, byte_count);
       }
+      BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
       return true;
    } else {
       return false;
@@ -531,8 +549,10 @@ bson_vector_packed_bit_const_view_unpack_bool (bson_vector_packed_bit_const_view
       size_t i;
       for (i = 0; i < element_count; i++) {
          size_t element_index = vector_offset_elements + i;
+         BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
          uint8_t packed_byte = view.binary.data[BSON_VECTOR_HEADER_LEN + (element_index >> 3)];
          unpacked_values_out[i] = 0 != (packed_byte & ((uint8_t) 0x80 >> (element_index & 7)));
+         BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
       }
       return true;
    } else {
@@ -559,6 +579,7 @@ bson_vector_packed_bit_view_pack_bool (bson_vector_packed_bit_view_t view,
    size_t length = bson_vector_packed_bit_view_length (view);
    if (BSON_LIKELY (vector_offset_elements <= length && element_count <= length - vector_offset_elements)) {
       while (element_count > 0) {
+         BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_BEGIN
          uint8_t *BSON_RESTRICT packed_byte = &view.binary.data[BSON_VECTOR_HEADER_LEN + (vector_offset_elements >> 3)];
          if (element_count >= 8 && (vector_offset_elements & 7) == 0) {
             uint8_t complete_byte = 0;
@@ -577,6 +598,7 @@ bson_vector_packed_bit_view_pack_bool (bson_vector_packed_bit_view_t view,
             vector_offset_elements++;
             element_count--;
          }
+         BSON_DISABLE_UNSAFE_BUFFER_USAGE_WARNING_END
       }
       return true;
    } else {
