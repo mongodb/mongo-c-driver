@@ -47,7 +47,7 @@ configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 
 if [[ "${C_STD_VERSION}" == "latest" ]]; then
   [[ "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]] || {
-    echo "C_STD_VERSION=clatest is only supported with Visual Studio generators" 1>&2
+    echo "C_STD_VERSION=latest to enable /std:clatest is only supported with Visual Studio generators" 1>&2
     exit 1
   }
 
