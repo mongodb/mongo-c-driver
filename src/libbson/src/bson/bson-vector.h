@@ -195,8 +195,7 @@ BSON_EXPORT (bool)
 bson_append_vector_int8_uninit (
    bson_t *bson, const char *key, int key_length, size_t element_count, bson_vector_int8_view_t *view_out);
 
-#define BSON_APPEND_VECTOR_INT8_UNINIT(b, key, count, view) \
-   bson_append_vector_int8_uninit (b, key, (int) strlen (key), count, view)
+#define BSON_APPEND_VECTOR_INT8_UNINIT(b, key, count, view) bson_append_vector_int8_uninit (b, key, (int) strlen (key), count, view)
 
 BSON_EXPORT (bool)
 bson_append_vector_float32_uninit (
