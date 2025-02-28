@@ -1383,8 +1383,8 @@ test_bson_vector_example_packed_bit_view (void)
    if (true) {                                                                    \
       ASSERT ((_expected) == (_write) ((_view), (_v), (_count), (_offset)));      \
       ASSERT ((_expected) == (_read) ((_view), (_v), (_count), (_offset)));       \
-   } else {                                                                       \
-   }
+   } else                                                                         \
+      ((void) 0)
 
 #define TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON(_view, _alloc_size, _v, _v_size, _read, _write)                   \
    if (true) {                                                                                                  \
@@ -1395,8 +1395,8 @@ test_bson_vector_example_packed_bit_view (void)
       TEST_BSON_VECTOR_RW (false, (_view), (_v), SIZE_MAX, (_alloc_size) - (_v_size), (_read), (_write));       \
       TEST_BSON_VECTOR_RW (false, (_view), (_v), SIZE_MAX, (_alloc_size) - (_v_size) + 1u, (_read), (_write));  \
       TEST_BSON_VECTOR_RW (true, (_view), (_v), (_v_size), 0, (_read), (_write));                               \
-   } else {                                                                                                     \
-   }
+   } else                                                                                                       \
+      ((void) 0)
 
 static void
 test_bson_vector_edge_cases_int8 (void)
