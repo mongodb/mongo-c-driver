@@ -998,7 +998,7 @@ test_bson_vector_view_api_fuzz_int8 (void)
       } else {
          // Partial read
          size_t element_count = r_param % current_length;
-         size_t offset = rand () % (current_length - element_count);
+         size_t offset = (size_t) rand () % (current_length - element_count);
          bson_vector_int8_const_view_t view;
          bson_iter_t iter;
          ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
@@ -1041,7 +1041,7 @@ test_bson_vector_view_api_fuzz_float32 (void)
       } else if (r_operation < 7) {
          // Partial write
          size_t element_count = r_param % current_length;
-         size_t offset = rand () % (current_length - element_count);
+         size_t offset = (size_t) rand () % (current_length - element_count);
          for (size_t i = 0; i < element_count; i++) {
             expected_elements[offset + i] = (float) rand ();
          }
@@ -1054,7 +1054,7 @@ test_bson_vector_view_api_fuzz_float32 (void)
       } else {
          // Partial read
          size_t element_count = r_param % current_length;
-         size_t offset = rand () % (current_length - element_count);
+         size_t offset = (size_t) rand () % (current_length - element_count);
          bson_vector_float32_const_view_t view;
          bson_iter_t iter;
          ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
@@ -1090,7 +1090,7 @@ test_bson_vector_view_api_fuzz_packed_bit (void)
          bson_vector_packed_bit_view_t view;
          ASSERT (BSON_APPEND_VECTOR_PACKED_BIT_UNINIT (&vector_doc, "vector", new_length, &view));
          for (size_t i = 0; i < new_length; i++) {
-            expected_elements[i] = (rand () & 1) != 0;
+            expected_elements[i] = ((unsigned) rand () & 1u) != 0u;
          }
          ASSERT (bson_vector_packed_bit_view_pack_bool (view, expected_elements, new_length, 0));
          current_length = new_length;
@@ -1100,9 +1100,9 @@ test_bson_vector_view_api_fuzz_packed_bit (void)
          if (r_operation & 1) {
             // Partial write from unpacked bool source
             size_t element_count = r_param % current_length;
-            size_t offset = rand () % (current_length - element_count);
+            size_t offset = (size_t) rand () % (current_length - element_count);
             for (size_t i = 0; i < element_count; i++) {
-               expected_elements[offset + i] = (rand () & 1) != 0;
+               expected_elements[offset + i] = ((unsigned) rand () & 1u) != 0u;
             }
             bson_vector_packed_bit_view_t view;
             bson_iter_t iter;
@@ -1114,7 +1114,7 @@ test_bson_vector_view_api_fuzz_packed_bit (void)
             // Partial write of packed bytes
             size_t current_length_bytes = (current_length + 7) / 8;
             size_t byte_count = r_param % current_length_bytes;
-            size_t byte_offset = rand () % (current_length_bytes - byte_count);
+            size_t byte_offset = (size_t) rand () % (current_length_bytes - byte_count);
             for (size_t i = 0; i < byte_count; i++) {
                uint8_t packed_byte = (uint8_t) rand ();
                packed_buffer[i] = packed_byte;
@@ -1135,7 +1135,7 @@ test_bson_vector_view_api_fuzz_packed_bit (void)
          if (r_operation & 1) {
             // Partial read to unpacked bool destination
             size_t element_count = r_param % current_length;
-            size_t offset = rand () % (current_length - element_count);
+            size_t offset = (size_t) rand () % (current_length - element_count);
             bson_vector_packed_bit_const_view_t view;
             bson_iter_t iter;
             ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
@@ -1149,7 +1149,7 @@ test_bson_vector_view_api_fuzz_packed_bit (void)
             // Partial read of packed bytes
             size_t current_length_bytes = (current_length + 7) / 8;
             size_t byte_count = r_param % current_length_bytes;
-            size_t byte_offset = rand () % (current_length_bytes - byte_count);
+            size_t byte_offset = (size_t) rand () % (current_length_bytes - byte_count);
             bson_vector_packed_bit_const_view_t view;
             bson_iter_t iter;
             ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
