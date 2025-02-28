@@ -53,6 +53,9 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: MultiLine
 AttributeMacros:
   - __capability
+  - BSON_GNUC_WARN_UNUSED_RESULT
+  - BSON_DEPRECATED
+  - BSON_DEPRECATED_FOR
 BinPackArguments: false
 BinPackParameters: false
 BitFieldColonSpacing: Both

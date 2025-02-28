@@ -302,9 +302,9 @@ bson_copy_to (const bson_t *src, bson_t *dst);
  * more fields in a bson_t. Note that bson_init() will be called
  * on dst.
  */
+BSON_DEPRECATED_FOR (bson_copy_to_excluding_noinit)
 BSON_EXPORT (void)
-bson_copy_to_excluding (const bson_t *src, bson_t *dst, const char *first_exclude, ...) BSON_GNUC_NULL_TERMINATED
-   BSON_GNUC_DEPRECATED_FOR (bson_copy_to_excluding_noinit);
+   bson_copy_to_excluding (const bson_t *src, bson_t *dst, const char *first_exclude, ...) BSON_GNUC_NULL_TERMINATED;
 
 /**
  * bson_copy_to_excluding_noinit:
@@ -531,8 +531,8 @@ bson_as_canonical_extended_json (const bson_t *bson, size_t *length);
  *
  * Returns: A newly allocated string that should be freed with bson_free().
  */
-BSON_EXPORT (char *)
-bson_as_json (const bson_t *bson, size_t *length) BSON_GNUC_DEPRECATED_FOR (bson_as_legacy_extended_json);
+BSON_DEPRECATED_FOR (bson_as_legacy_extended_json)
+BSON_EXPORT (char *) bson_as_json (const bson_t *bson, size_t *length);
 
 // `bson_as_legacy_extended_json` is a non-deprecated form of `bson_as_json`.
 BSON_EXPORT (char *)
@@ -562,8 +562,8 @@ bson_as_relaxed_extended_json (const bson_t *bson, size_t *length);
 
 
 /* like bson_as_json() but for outermost arrays. */
-BSON_EXPORT (char *)
-bson_array_as_json (const bson_t *bson, size_t *length) BSON_GNUC_DEPRECATED_FOR (bson_array_as_legacy_extended_json);
+BSON_DEPRECATED_FOR (bson_array_as_legacy_extended_json)
+BSON_EXPORT (char *) bson_array_as_json (const bson_t *bson, size_t *length);
 
 // `bson_array_as_legacy_extended_json` is a non-deprecated form of `bson_array_as_json`.
 BSON_EXPORT (char *)

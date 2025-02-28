@@ -53,9 +53,8 @@ mongoc_server_description_type (const mongoc_server_description_t *description);
 MONGOC_EXPORT (const bson_t *)
 mongoc_server_description_hello_response (const mongoc_server_description_t *description);
 
-MONGOC_EXPORT (const bson_t *)
-mongoc_server_description_ismaster (const mongoc_server_description_t *description)
-   BSON_GNUC_DEPRECATED_FOR (mongoc_server_description_hello_response);
+BSON_DEPRECATED_FOR (mongoc_server_description_hello_response)
+MONGOC_EXPORT (const bson_t *) mongoc_server_description_ismaster (const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (int32_t)
 mongoc_server_description_compressor_id (const mongoc_server_description_t *description);

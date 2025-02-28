@@ -29,12 +29,15 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_matcher_t mongoc_matcher_t;
 
 
-MONGOC_EXPORT (mongoc_matcher_t *)
-mongoc_matcher_new (const bson_t *query, bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT BSON_GNUC_DEPRECATED;
-MONGOC_EXPORT (bool)
-mongoc_matcher_match (const mongoc_matcher_t *matcher, const bson_t *document) BSON_GNUC_DEPRECATED;
-MONGOC_EXPORT (void)
-mongoc_matcher_destroy (mongoc_matcher_t *matcher) BSON_GNUC_DEPRECATED;
+BSON_DEPRECATED ("<mongoc/mongoc-matcher.h> APIs are deprecated")
+MONGOC_EXPORT (mongoc_matcher_t *) mongoc_matcher_new (const bson_t *query, bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+
+BSON_DEPRECATED ("<mongoc/mongoc-matcher.h> APIs are deprecated")
+MONGOC_EXPORT (bool) mongoc_matcher_match (const mongoc_matcher_t *matcher, const bson_t *document);
+
+BSON_DEPRECATED ("<mongoc/mongoc-matcher.h> APIs are deprecated")
+MONGOC_EXPORT (void) mongoc_matcher_destroy (mongoc_matcher_t *matcher);
 
 
 BSON_END_DECLS
