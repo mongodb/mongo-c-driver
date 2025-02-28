@@ -975,7 +975,7 @@ test_bson_vector_view_api_fuzz_int8 (void)
          size_t new_length = (size_t) r_param % MAX_TESTED_VECTOR_LENGTH;
          bson_reinit (&vector_doc);
          bson_vector_int8_view_t view;
-         BSON_ASSERT (BSON_APPEND_VECTOR_INT8_UNINIT (&vector_doc, "vector", new_length, &view));
+         ASSERT (BSON_APPEND_VECTOR_INT8_UNINIT (&vector_doc, "vector", new_length, &view));
          for (size_t i = 0; i < new_length; i++) {
             expected_elements[i] = (int8_t) (uint8_t) rand ();
          }
