@@ -985,7 +985,7 @@ test_bson_vector_view_api_fuzz_int8 (void)
       } else if (r_operation < 7) {
          // Partial write
          size_t element_count = r_param % current_length;
-         size_t offset = rand () % (current_length - element_count);
+         size_t offset = (size_t) rand () % (current_length - element_count);
          for (size_t i = 0; i < element_count; i++) {
             expected_elements[offset + i] = (int8_t) (uint8_t) rand ();
          }
