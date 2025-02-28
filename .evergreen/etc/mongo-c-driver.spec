@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.29.2
+%global up_version   1.30.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -33,6 +33,8 @@ License:   Apache-2.0 AND ISC AND MIT AND Zlib
 URL:       https://github.com/%{gh_owner}/%{gh_project}
 
 Source0:   https://github.com/%{gh_owner}/%{gh_project}/archive/refs/tags/%{up_version}%{?up_prever:-%{up_prever}}.tar.gz
+
+Patch0:    upstream.patch
 
 BuildRequires: cmake >= 3.15
 BuildRequires: gcc
@@ -127,6 +129,8 @@ Documentation: http://mongoc.org/libbson/%{version}/
 
 %prep
 %setup -q -n %{gh_project}-%{up_version}%{?up_prever:-%{up_prever}}
+
+%patch -P0 -p1 -b .up
 
 
 %build
@@ -259,6 +263,13 @@ exit $ret
 
 
 %changelog
+* Tue Feb 18 2025 Remi Collet <remi@remirepo.net> - 1.30.0-2
+- add upstream patch for GCC 15
+  https://jira.mongodb.org/browse/CDRIVER-5889
+
+* Thu Feb  6 2025 Remi Collet <remi@remirepo.net> - 1.30.0-1
+- update to 1.30.0
+
 * Fri Jan 17 2025 Fedora Release Engineering <releng@fedoraproject.org> - 1.29.2-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_42_Mass_Rebuild
 
