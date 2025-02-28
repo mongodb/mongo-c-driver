@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.30.0
+%global up_version   1.30.1
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -27,14 +27,12 @@
 Name:      mongo-c-driver
 Summary:   Client library written in C for MongoDB
 Version:   %{up_version}%{?up_prever:~%{up_prever}}
-Release:   2%{?dist}
+Release:   1%{?dist}
 # See THIRD_PARTY_NOTICES
 License:   Apache-2.0 AND ISC AND MIT AND Zlib
 URL:       https://github.com/%{gh_owner}/%{gh_project}
 
 Source0:   https://github.com/%{gh_owner}/%{gh_project}/archive/refs/tags/%{up_version}%{?up_prever:-%{up_prever}}.tar.gz
-
-Patch0:    upstream.patch
 
 BuildRequires: cmake >= 3.15
 BuildRequires: gcc
@@ -129,8 +127,6 @@ Documentation: http://mongoc.org/libbson/%{version}/
 
 %prep
 %setup -q -n %{gh_project}-%{up_version}%{?up_prever:-%{up_prever}}
-
-%patch -P0 -p1 -b .up
 
 
 %build
@@ -263,6 +259,9 @@ exit $ret
 
 
 %changelog
+* Tue Feb 25 2025 Remi Collet <remi@remirepo.net> - 1.30.1-1
+- update to 1.30.1
+
 * Tue Feb 18 2025 Remi Collet <remi@remirepo.net> - 1.30.0-2
 - add upstream patch for GCC 15
   https://jira.mongodb.org/browse/CDRIVER-5889
