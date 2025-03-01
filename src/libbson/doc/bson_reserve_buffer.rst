@@ -24,6 +24,8 @@ Grow the internal buffer of ``bson`` to ``total_size`` and set the document leng
 
 First, initialize ``bson`` with :symbol:`bson_init` or :symbol:`bson_new`, then call this function. After it returns, the length of ``bson`` is set to ``total_size`` but its contents are uninitialized memory: you must fill the contents with a BSON document of the correct length before any other operations.
 
+The document must be freed with :symbol:`bson_destroy`.
+
 Note that, in this usage, the BSON header and footer bytes will not be verified or used by Libbson.
 The ``bson_t`` document length and buffer size limit are both set to ``total_size`` regardless of the value encoded in the document header.
 
