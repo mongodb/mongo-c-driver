@@ -1004,9 +1004,7 @@ test_bson_vector_view_api_fuzz_int8 (void)
          ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
          ASSERT (bson_vector_int8_const_view_from_iter (&view, &iter));
          ASSERT (bson_vector_int8_const_view_read (view, actual_elements, element_count, offset));
-         for (size_t i = 0; i < element_count; i++) {
-            ASSERT (actual_elements[i] == expected_elements[i + offset]);
-         }
+         ASSERT_MEMCMP (actual_elements, expected_elements + offset, element_count * sizeof *actual_elements);
       }
    }
    bson_destroy (&vector_doc);
@@ -1060,9 +1058,7 @@ test_bson_vector_view_api_fuzz_float32 (void)
          ASSERT (bson_iter_init_find (&iter, &vector_doc, "vector"));
          ASSERT (bson_vector_float32_const_view_from_iter (&view, &iter));
          ASSERT (bson_vector_float32_const_view_read (view, actual_elements, element_count, offset));
-         for (size_t i = 0; i < element_count; i++) {
-            ASSERT (actual_elements[i] == expected_elements[i + offset]);
-         }
+         ASSERT_MEMCMP (actual_elements, expected_elements + offset, element_count * sizeof *actual_elements);
       }
    }
    bson_destroy (&vector_doc);
@@ -1142,9 +1138,7 @@ test_bson_vector_view_api_fuzz_packed_bit (void)
             ASSERT (bson_vector_packed_bit_const_view_from_iter (&view, &iter));
             ASSERT (bson_vector_packed_bit_const_view_length (view) == current_length);
             ASSERT (bson_vector_packed_bit_const_view_unpack_bool (view, actual_elements, element_count, offset));
-            for (size_t i = 0; i < element_count; i++) {
-               ASSERT (actual_elements[i] == expected_elements[i + offset]);
-            }
+            ASSERT_MEMCMP (actual_elements, expected_elements + offset, element_count * sizeof *actual_elements);
          } else {
             // Partial read of packed bytes
             size_t current_length_bytes = (current_length + 7) / 8;
