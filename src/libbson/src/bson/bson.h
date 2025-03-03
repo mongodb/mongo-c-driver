@@ -334,7 +334,7 @@ BSON_EXPORT (void)
 bson_destroy (bson_t *bson);
 
 BSON_EXPORT (uint8_t *)
-bson_reserve_buffer (bson_t *bson, uint32_t size);
+bson_reserve_buffer (bson_t *bson, uint32_t total_size);
 
 BSON_EXPORT (bool)
 bson_steal (bson_t *dst, bson_t *src);
