@@ -64,7 +64,7 @@ static const uint8_t gZero;
 /*
  *--------------------------------------------------------------------------
  *
- * _bson_round_up_alloc_size --
+ * _bson_next_power_of_two_for_alloc --
  *
  *       Given a potential allocation length in bytes, round up to the
  *       next power of two without exceeding BSON_MAX_SIZE.
@@ -81,7 +81,7 @@ static const uint8_t gZero;
  */
 
 static BSON_INLINE size_t
-_bson_round_up_alloc_size (size_t size)
+_bson_next_power_of_two_for_alloc (size_t size)
 {
    if (size <= BSON_MAX_SIZE) {
       size_t power_of_two = bson_next_power_of_two (size);
@@ -121,7 +121,7 @@ _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
       return true;
    }
 
-   req = _bson_round_up_alloc_size (impl->len + size);
+   req = _bson_next_power_of_two_for_alloc (impl->len + size);
 
    if (req <= BSON_MAX_SIZE) {
       data = bson_malloc (req);
@@ -188,7 +188,7 @@ _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
       return true;
    }
 
-   req = _bson_round_up_alloc_size (req);
+   req = _bson_next_power_of_two_for_alloc (req);
 
    if ((req <= BSON_MAX_SIZE) && impl->realloc) {
       *impl->buf = impl->realloc (*impl->buf, req, impl->realloc_func_ctx);
@@ -2136,7 +2136,7 @@ bson_copy_to (const bson_t *src, bson_t *dst)
    }
 
    data = _bson_data (src);
-   len = _bson_round_up_alloc_size ((size_t) src->len);
+   len = _bson_next_power_of_two_for_alloc ((size_t) src->len);
 
    adst = (bson_impl_alloc_t *) dst;
    adst->flags = BSON_FLAG_STATIC;
