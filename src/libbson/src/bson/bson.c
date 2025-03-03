@@ -21,7 +21,6 @@
 #include <bson/bson-json-private.h>
 #include <common-string-private.h>
 #include <common-json-private.h>
-#include <common-macros-private.h>
 #include <bson/bson-iso8601-private.h>
 
 #include <string.h>
@@ -64,36 +63,6 @@ static const uint8_t gZero;
 /*
  *--------------------------------------------------------------------------
  *
- * _bson_next_power_of_two_for_alloc --
- *
- *       Given a potential allocation length in bytes, round up to the
- *       next power of two without exceeding BSON_MAX_SIZE.
- *
- * Returns:
- *       If the input is <= BSON_MAX_SIZE, returns a value >= the input
- *       and still <= BSON_MAX_SIZE. If the input was greater than
- *       BSON_MAX_SIZE, it is returned unmodified.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static BSON_INLINE size_t
-_bson_next_power_of_two_for_alloc (size_t size)
-{
-   if (size <= BSON_MAX_SIZE) {
-      size_t power_of_two = bson_next_power_of_two (size);
-      return BSON_MIN (power_of_two, BSON_MAX_SIZE);
-   } else {
-      return size;
-   }
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * _bson_impl_inline_grow --
  *
  *       Document growth implementation for documents that currently
@@ -121,7 +90,7 @@ _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
       return true;
    }
 
-   req = _bson_next_power_of_two_for_alloc (impl->len + size);
+   req = bson_next_power_of_two (impl->len + size);
 
    if (req <= BSON_MAX_SIZE) {
       data = bson_malloc (req);
@@ -153,12 +122,11 @@ _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
  *
  * _bson_impl_alloc_grow --
  *
- *       Document growth implementation for non-inline documents, possibly
- *       containing a reallocatable buffer.
+ *       Document growth implementation for documents containing malloc
+ *       based buffers.
  *
  * Returns:
- *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow
- *       or an attempt to grow a buffer with no realloc implementation.
+ *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow.
  *
  * Side effects:
  *       None.
@@ -175,12 +143,6 @@ _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
    /*
     * Determine how many bytes we need for this document in the buffer
     * including necessary trailing bytes for parent documents.
-    *
-    * Note that the buffer offset and nesting depth are not available
-    * outside bson_impl_alloc_t, meaning it's not possible for callers to
-    * fully rule out BSON_MAX_SIZE overflow before _bson_grow().
-    * Some earlier checks against BSON_MAX_SIZE serve to prevent intermediate
-    * overflows rather than to validate the final allocation size.
     */
    req = (impl->offset + impl->len + size + impl->depth);
 
@@ -188,7 +150,7 @@ _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
       return true;
    }
 
-   req = _bson_next_power_of_two_for_alloc (req);
+   req = bson_next_power_of_two (req);
 
    if ((req <= BSON_MAX_SIZE) && impl->realloc) {
       *impl->buf = impl->realloc (*impl->buf, req, impl->realloc_func_ctx);
@@ -206,11 +168,10 @@ _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
  * _bson_grow --
  *
  *       Grows the bson_t structure to be large enough to contain @size
- *       bytes in addition to its current content.
+ *       bytes.
  *
  * Returns:
- *       true if successful, false if the size would overflow or the buffer
- *       needs to grow but does not support reallocation.
+ *       true if successful, false if the size would overflow.
  *
  * Side effects:
  *       None.
@@ -2136,7 +2097,7 @@ bson_copy_to (const bson_t *src, bson_t *dst)
    }
 
    data = _bson_data (src);
-   len = _bson_next_power_of_two_for_alloc ((size_t) src->len);
+   len = bson_next_power_of_two ((size_t) src->len);
 
    adst = (bson_impl_alloc_t *) dst;
    adst->flags = BSON_FLAG_STATIC;
@@ -2258,24 +2219,15 @@ bson_reserve_buffer (bson_t *bson, uint32_t size)
       return NULL;
    }
 
-   /* The caller wants a total document size of "size".
-    * Note that the bson_t can also include space for parent or sibling documents (offset) and for trailing bytes
-    * (depth). These sizes will be considered by _bson_grow() but we can assume they are zero in documents without
-    * BSON_FLAG_CHILD or BSON_FLAG_IN_CHILD. If this is called on a document that's part of a bson_writer_t, it is
-    * correct to ignore offset: we set the size of the current document, leaving previous documents alone. */
-   if (size > bson->len && !_bson_grow (bson, size - bson->len)) {
-      // Will fail due to overflow or when reallocation is needed on a buffer that does not support it.
+   if (!_bson_grow (bson, size)) {
       return NULL;
    }
 
    if (bson->flags & BSON_FLAG_INLINE) {
       /* bson_grow didn't spill over */
       ((bson_impl_inline_t *) bson)->len = size;
-      BSON_ASSERT (size <= BSON_INLINE_DATA_SIZE);
    } else {
-      bson_impl_alloc_t *impl = (bson_impl_alloc_t *) bson;
-      impl->len = size;
-      BSON_ASSERT (impl->offset <= *impl->buflen && *impl->buflen - impl->offset >= (size_t) size);
+      ((bson_impl_alloc_t *) bson)->len = size;
    }
 
    return _bson_data (bson);

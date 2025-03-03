@@ -1886,15 +1886,10 @@ test_bson_reserve_buffer_errors (void)
    uint32_t len_le;
 
    /* too big */
-   ASSERT (!bson_reserve_buffer (&bson, (uint32_t) (BSON_MAX_SIZE + 1u)));
-   /* exactly the maximum size */
-#if BSON_WORD_SIZE > 32
-   ASSERT (bson_reserve_buffer (&bson, (uint32_t) BSON_MAX_SIZE));
-   ASSERT_CMPUINT32 (bson.len, ==, BSON_MAX_SIZE);
-#endif
-   bson_destroy (&bson);
+   ASSERT (!bson_reserve_buffer (&bson, (uint32_t) (INT32_MAX - bson.len - 1)));
 
    /* make a static bson, it refuses bson_reserve_buffer since it's read-only */
+   bson_destroy (&bson);
    len_le = BSON_UINT32_TO_LE (5);
    memcpy (data, &len_le, sizeof (len_le));
    ASSERT (bson_init_static (&bson, data, sizeof data));
