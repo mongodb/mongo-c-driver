@@ -10,6 +10,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: asan-cse-sasl-cyrus-openssl-debian10-clang-test-4.2-server-auth
     run_on: debian10-small
@@ -23,6 +24,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -45,6 +47,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -64,6 +67,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: asan-cse-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-replica-auth
     run_on: ubuntu2004-small
@@ -77,6 +81,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: replica_set }
@@ -99,6 +104,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: replica_set }
@@ -122,6 +128,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -144,6 +151,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -167,6 +175,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -189,6 +198,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -212,6 +222,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -234,6 +245,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -257,6 +269,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -279,6 +292,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -302,6 +316,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -324,6 +339,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -347,6 +363,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -369,6 +386,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -392,6 +410,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -414,6 +433,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -437,6 +457,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -459,6 +480,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -482,6 +504,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -504,6 +527,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -527,6 +551,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -549,6 +574,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -572,6 +598,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -594,6 +621,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -613,6 +641,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: asan-sasl-cyrus-openssl-debian10-clang-test-4.2-replica-auth
     run_on: debian10-small
@@ -626,6 +655,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: replica_set }
@@ -646,6 +676,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -666,6 +697,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -682,6 +714,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: asan-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-replica-auth
     run_on: ubuntu2004-small
@@ -695,6 +728,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: replica_set }
@@ -715,6 +749,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -735,6 +770,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -755,6 +791,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -775,6 +812,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -795,6 +833,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -815,6 +854,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -835,6 +875,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -855,6 +896,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -875,6 +917,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -895,6 +938,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -915,6 +959,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -935,6 +980,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -955,6 +1001,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -975,6 +1022,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -995,6 +1043,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -1015,6 +1064,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -1035,6 +1085,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -1258,6 +1309,7 @@ tasks:
       - func: cse-sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: cse-sasl-cyrus-darwinssl-macos-11-arm64-clang-test-6.0-server-auth
     run_on: macos-11-arm64
@@ -1271,6 +1323,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -1287,6 +1340,7 @@ tasks:
       - func: cse-sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-server-auth
     run_on: macos-14-arm64
@@ -1300,6 +1354,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -1320,6 +1375,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1340,6 +1396,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -1360,6 +1417,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1380,6 +1438,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -1400,6 +1459,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -1420,6 +1480,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -1436,6 +1497,7 @@ tasks:
       - func: cse-sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-4.2-server-auth
     run_on: macos-14
@@ -1449,6 +1511,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -1469,6 +1532,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -1489,6 +1553,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -1505,6 +1570,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-debian10-gcc-compile
     run_on: debian10-large
@@ -1514,6 +1580,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-debian10-gcc-test-4.2-replica-auth
     run_on: debian10-small
@@ -1527,6 +1594,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1547,6 +1615,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -1563,6 +1632,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
     run_on: debian11-large
@@ -1572,6 +1642,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-debian92-clang-compile
     run_on: debian92-large
@@ -1581,6 +1652,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-debian92-gcc-compile
     run_on: debian92-large
@@ -1590,6 +1662,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
     run_on: rhel8-zseries-large
@@ -1600,6 +1673,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-server-auth
     run_on: rhel8-zseries-small
@@ -1614,6 +1688,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -1635,6 +1710,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1656,6 +1732,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -1677,6 +1754,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1698,6 +1776,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -1719,6 +1798,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -1740,6 +1820,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -1756,6 +1837,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
     run_on: ubuntu2004-arm64-large
@@ -1765,6 +1847,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-replica-auth
     run_on: ubuntu2004-arm64-small
@@ -1778,6 +1861,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1798,6 +1882,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -1818,6 +1903,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1838,6 +1924,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -1858,6 +1945,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1878,6 +1966,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -1898,6 +1987,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1918,6 +2008,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -1938,6 +2029,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -1958,6 +2050,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -1978,6 +2071,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -1998,6 +2092,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -2014,6 +2109,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
@@ -2023,6 +2119,7 @@ tasks:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-test-4.4-replica-auth
     run_on: ubuntu2004-small
@@ -2036,6 +2133,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: replica_set }
@@ -2056,6 +2154,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -2076,6 +2175,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -2096,6 +2196,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -2116,6 +2217,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -2136,6 +2238,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -2156,6 +2259,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -2176,6 +2280,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -2196,6 +2301,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -2216,6 +2322,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -2236,6 +2343,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -2256,6 +2364,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -2271,7 +2380,8 @@ tasks:
       - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
-          CC: Visual Studio 15 2017 Win64
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
@@ -2284,7 +2394,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -2304,7 +2415,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -2324,7 +2436,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -2344,7 +2457,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -2364,7 +2478,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -2384,7 +2499,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -2404,7 +2520,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -2424,7 +2541,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -2444,7 +2562,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -2464,7 +2583,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -2480,7 +2600,8 @@ tasks:
       - func: find-cmake-latest
       - func: cse-sasl-cyrus-winssl-compile
         vars:
-          CC: Visual Studio 14 2015 Win64
+          CMAKE_GENERATOR: Visual Studio 14 2015
+          CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
@@ -2489,7 +2610,8 @@ tasks:
       - func: find-cmake-latest
       - func: cse-sasl-cyrus-winssl-compile
         vars:
-          CC: Visual Studio 15 2017 Win64
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
@@ -2502,7 +2624,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -2522,7 +2645,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -2542,7 +2666,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -2562,7 +2687,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -2582,7 +2708,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -2602,7 +2729,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -2622,7 +2750,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -2642,7 +2771,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -2662,7 +2792,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -2682,7 +2813,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -3010,6 +3142,7 @@ tasks:
       - func: openssl-static-compile
         vars:
           CC: gcc
+          CXX: g++
   - name: openssl-static-compile-debian11-gcc
     run_on: debian11-large
     tags: [openssl-static-matrix, debian11, gcc]
@@ -3018,6 +3151,7 @@ tasks:
       - func: openssl-static-compile
         vars:
           CC: gcc
+          CXX: g++
   - name: openssl-static-compile-debian92-gcc
     run_on: debian92-large
     tags: [openssl-static-matrix, debian92, gcc]
@@ -3026,6 +3160,7 @@ tasks:
       - func: openssl-static-compile
         vars:
           CC: gcc
+          CXX: g++
   - name: openssl-static-compile-ubuntu2004-gcc
     run_on: ubuntu2004-large
     tags: [openssl-static-matrix, ubuntu2004, gcc]
@@ -3034,6 +3169,7 @@ tasks:
       - func: openssl-static-compile
         vars:
           CC: gcc
+          CXX: g++
   - name: sasl-cyrus-darwinssl-macos-11-arm64-clang-compile
     run_on: macos-11-arm64
     tags: [sasl-matrix-darwinssl, compile, macos-11-arm64, clang, sasl-cyrus]
@@ -3042,6 +3178,7 @@ tasks:
       - func: sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: sasl-cyrus-darwinssl-macos-11-arm64-clang-test-6.0-server-auth
     run_on: macos-11-arm64
@@ -3055,6 +3192,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -3075,6 +3213,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -3095,6 +3234,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -3115,6 +3255,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -3131,6 +3272,7 @@ tasks:
       - func: sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-server-auth
     run_on: macos-14-arm64
@@ -3144,6 +3286,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -3164,6 +3307,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -3184,6 +3328,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -3204,6 +3349,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -3220,6 +3366,7 @@ tasks:
       - func: sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: sasl-cyrus-darwinssl-macos-14-clang-test-4.0-server-auth
     run_on: macos-14
@@ -3233,6 +3380,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.0" }
             - { key: TOPOLOGY, value: server }
@@ -3253,6 +3401,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -3273,6 +3422,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -3293,6 +3443,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -3309,6 +3460,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-cyrus-openssl-debian10-gcc-test-4.2-replica-auth
     run_on: debian10-small
@@ -3322,6 +3474,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: replica_set }
@@ -3342,6 +3495,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -3358,6 +3512,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-cyrus-openssl-debian92-clang-compile
     run_on: debian92-large
@@ -3367,6 +3522,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: sasl-cyrus-openssl-debian92-gcc-compile
     run_on: debian92-large
@@ -3376,6 +3532,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-cyrus-openssl-rhel8-power-gcc-compile
     run_on: rhel8-power-large
@@ -3386,6 +3543,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.2-server-auth
     run_on: rhel8-power-small
@@ -3400,6 +3558,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -3421,6 +3580,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -3442,6 +3602,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -3463,6 +3624,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -3484,6 +3646,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -3505,6 +3668,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -3526,6 +3690,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -3543,6 +3708,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-server-auth
     run_on: rhel8-zseries-small
@@ -3557,6 +3723,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -3578,6 +3745,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -3599,6 +3767,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -3620,6 +3789,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -3641,6 +3811,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -3657,6 +3828,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
     run_on: ubuntu2004-arm64-large
@@ -3666,6 +3838,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
     run_on: ubuntu2004-arm64-small
@@ -3679,6 +3852,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -3699,6 +3873,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -3719,6 +3894,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -3739,6 +3915,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -3759,6 +3936,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -3779,6 +3957,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -3795,6 +3974,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
@@ -3804,6 +3984,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-cyrus-openssl-ubuntu2004-gcc-test-4.4-server-auth
     run_on: ubuntu2004-small
@@ -3817,6 +3998,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -3837,6 +4019,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -3857,6 +4040,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -3877,6 +4061,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -3897,6 +4082,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -3917,6 +4103,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -3932,7 +4119,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
         vars:
-          CC: Visual Studio 15 2017 Win64
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
   - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
     run_on: windows-vsCurrent-small
@@ -3945,7 +4133,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -3961,7 +4150,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-cyrus-winssl-compile
         vars:
-          CC: Visual Studio 14 2015 Win64
+          CMAKE_GENERATOR: Visual Studio 14 2015
+          CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
@@ -3970,7 +4160,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-cyrus-winssl-compile
         vars:
-          CC: Visual Studio 15 2017 Win64
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-test-4.0-server-auth
     run_on: windows-vsCurrent-small
@@ -3983,7 +4174,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.0" }
             - { key: TOPOLOGY, value: server }
@@ -4003,7 +4195,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -4023,7 +4216,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -4043,7 +4237,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -4063,7 +4258,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -4083,7 +4279,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -4103,7 +4300,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -4123,7 +4321,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -4140,6 +4339,7 @@ tasks:
       - func: sasl-off-nossl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-off-nossl-debian10-gcc-test-4.2-replica-noauth
     run_on: debian10-small
@@ -4153,6 +4353,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: replica_set }
@@ -4173,6 +4374,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -4193,6 +4395,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -4209,6 +4412,7 @@ tasks:
       - func: sasl-off-nossl-compile
         vars:
           CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-off-nossl-ubuntu2004-gcc-test-4.4-replica-noauth
     run_on: ubuntu2004-small
@@ -4222,6 +4426,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: replica_set }
@@ -4242,6 +4447,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -4262,6 +4468,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -4282,6 +4489,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -4302,6 +4510,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -4322,6 +4531,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -4342,6 +4552,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -4362,6 +4573,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -4382,6 +4594,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -4402,6 +4615,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -4422,6 +4636,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -4442,6 +4657,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -4462,6 +4678,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -4482,6 +4699,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -4502,6 +4720,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -4522,6 +4741,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -4542,6 +4762,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -4562,6 +4783,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -4577,7 +4799,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-off-nossl-compile
         vars:
-          CC: Visual Studio 15 2017 Win64
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
   - name: sasl-off-winssl-vs2015-x86-compile
     run_on: windows-64-vs2015-large
@@ -4586,7 +4809,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-off-winssl-compile
         vars:
-          CC: Visual Studio 14 2015
+          CMAKE_GENERATOR: Visual Studio 14 2015
+          CMAKE_GENERATOR_PLATFORM: Win32
       - func: upload-build
   - name: sasl-off-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
@@ -4595,7 +4819,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-off-winssl-compile
         vars:
-          CC: Visual Studio 15 2017 Win64
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
   - name: sasl-off-winssl-windows-2019-vs2017-x86-compile
     run_on: windows-vsCurrent-large
@@ -4604,7 +4829,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-off-winssl-compile
         vars:
-          CC: Visual Studio 15 2017
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: Win32
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-mingw-compile
     run_on: windows-vsCurrent-large
@@ -4614,6 +4840,7 @@ tasks:
       - func: sasl-sspi-winssl-compile
         vars:
           CC: mingw
+          CXX: mingw
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-mingw-test-8.0-server-auth
     run_on: windows-vsCurrent-small
@@ -4627,6 +4854,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: mingw }
+            - { key: CXX, value: mingw }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -4647,6 +4875,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: mingw }
+            - { key: CXX, value: mingw }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -4662,7 +4891,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-sspi-winssl-compile
         vars:
-          CC: Visual Studio 15 2017 Win64
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-8.0-server-auth
     run_on: windows-vsCurrent-small
@@ -4675,7 +4905,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -4695,7 +4926,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -4711,7 +4943,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-sspi-winssl-compile
         vars:
-          CC: Visual Studio 15 2017
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: Win32
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-vs2017-x86-test-8.0-server-auth
     run_on: windows-vsCurrent-small
@@ -4724,7 +4957,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: Win32 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -4744,7 +4978,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: Win32 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -4766,6 +5001,7 @@ tasks:
       - func: scan-build
         vars:
           CC: clang
+          CXX: clang++
       - func: upload scan artifacts
   - name: scan-build-ubuntu2004-arm64-clang
     run_on: ubuntu2004-arm64-large
@@ -4775,6 +5011,7 @@ tasks:
       - func: scan-build
         vars:
           CC: clang
+          CXX: clang++
       - func: upload scan artifacts
   - name: scan-build-ubuntu2004-clang-i686
     run_on: ubuntu2004-large
@@ -4784,17 +5021,9 @@ tasks:
       - func: scan-build
         vars:
           CC: clang
+          CXX: clang++
           MARCH: i686
       - func: upload scan artifacts
-  - name: std-c11-debian10-clang-compile
-    run_on: debian10-large
-    tags: [std-matrix, debian10, clang, compile, std-c11]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CC: clang
-          C_STD_VERSION: 11
   - name: std-c11-debian10-gcc-compile
     run_on: debian10-large
     tags: [std-matrix, debian10, gcc, compile, std-c11]
@@ -4802,16 +5031,8 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: gcc
-          C_STD_VERSION: 11
-  - name: std-c11-debian11-clang-compile
-    run_on: debian11-large
-    tags: [std-matrix, debian11, clang, compile, std-c11]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CC: clang
+          CC: gcc-8
+          CXX: g++-8
           C_STD_VERSION: 11
   - name: std-c11-debian11-gcc-compile
     run_on: debian11-large
@@ -4820,16 +5041,158 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: gcc
+          CC: gcc-10
+          CXX: g++-10
           C_STD_VERSION: 11
-  - name: std-c11-debian92-clang-compile
-    run_on: debian92-large
-    tags: [std-matrix, debian92, clang, compile, std-c11]
+  - name: std-c11-rhel76-gcc-compile
+    run_on: rhel76-large
+    tags: [std-matrix, rhel76, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel80-clang-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, clang, compile, std-c11]
     commands:
       - func: find-cmake-latest
       - func: std-compile
         vars:
           CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel80-gcc-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel84-gcc-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel90-clang-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel90-gcc-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel91-clang-compile
+    run_on: rhel91-large
+    tags: [std-matrix, rhel91, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel92-clang-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel92-gcc-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel93-clang-compile
+    run_on: rhel93-large
+    tags: [std-matrix, rhel93, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel94-clang-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel94-gcc-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel95-clang-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel95-gcc-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
           C_STD_VERSION: 11
   - name: std-c11-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
@@ -4838,7 +5201,8 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: clang
+          CC: clang-10
+          CXX: clang++-10
           C_STD_VERSION: 11
   - name: std-c11-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
@@ -4847,7 +5211,18 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: gcc
+          CC: gcc-9
+          CXX: g++-9
+          C_STD_VERSION: 11
+  - name: std-c11-ubuntu2204-clang-compile
+    run_on: ubuntu2204-large
+    tags: [std-matrix, ubuntu2204, clang, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
           C_STD_VERSION: 11
   - name: std-c11-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
@@ -4856,7 +5231,28 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: Visual Studio 15 2017 Win64
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 11
+  - name: std-c11-windows-2019-vs2019-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 11
+  - name: std-c11-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
           C_STD_VERSION: 11
   - name: std-c17-debian10-gcc-compile
     run_on: debian10-large
@@ -4865,7 +5261,8 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: gcc
+          CC: gcc-8
+          CXX: g++-8
           C_STD_VERSION: 17
   - name: std-c17-debian11-gcc-compile
     run_on: debian11-large
@@ -4874,7 +5271,178 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 17
+  - name: std-c17-rhel80-clang-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel80-gcc-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
           CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel84-gcc-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel90-clang-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel90-gcc-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel91-clang-compile
+    run_on: rhel91-large
+    tags: [std-matrix, rhel91, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel92-clang-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel92-gcc-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel93-clang-compile
+    run_on: rhel93-large
+    tags: [std-matrix, rhel93, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel94-clang-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel94-gcc-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel95-clang-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel95-gcc-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-ubuntu2004-clang-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-10
+          CXX: clang++-10
+          C_STD_VERSION: 17
+  - name: std-c17-ubuntu2004-gcc-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-9
+          CXX: g++-9
+          C_STD_VERSION: 17
+  - name: std-c17-ubuntu2204-clang-compile
+    run_on: ubuntu2204-large
+    tags: [std-matrix, ubuntu2204, clang, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
           C_STD_VERSION: 17
   - name: std-c17-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
@@ -4883,8 +5451,439 @@ tasks:
       - func: find-cmake-latest
       - func: std-compile
         vars:
-          CC: Visual Studio 15 2017 Win64
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
           C_STD_VERSION: 17
+  - name: std-c17-windows-2019-vs2019-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 17
+  - name: std-c17-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 17
+  - name: std-c23-debian11-gcc-compile
+    run_on: debian11-large
+    tags: [std-matrix, debian11, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 23
+  - name: std-c23-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel90-clang-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel90-gcc-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel91-clang-compile
+    run_on: rhel91-large
+    tags: [std-matrix, rhel91, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel92-clang-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel92-gcc-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel93-clang-compile
+    run_on: rhel93-large
+    tags: [std-matrix, rhel93, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel94-clang-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel94-gcc-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel95-clang-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel95-gcc-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 23
+  - name: std-c23-ubuntu2004-clang-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-10
+          CXX: clang++-10
+          C_STD_VERSION: 23
+  - name: std-c23-ubuntu2004-gcc-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-9
+          CXX: g++-9
+          C_STD_VERSION: 23
+  - name: std-c23-ubuntu2204-clang-compile
+    run_on: ubuntu2204-large
+    tags: [std-matrix, ubuntu2204, clang, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
+          C_STD_VERSION: 23
+  - name: std-c99-debian10-gcc-compile
+    run_on: debian10-large
+    tags: [std-matrix, debian10, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-8
+          CXX: g++-8
+          C_STD_VERSION: 99
+  - name: std-c99-debian11-gcc-compile
+    run_on: debian11-large
+    tags: [std-matrix, debian11, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 99
+  - name: std-c99-rhel76-gcc-compile
+    run_on: rhel76-large
+    tags: [std-matrix, rhel76, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel80-clang-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel80-gcc-compile
+    run_on: rhel80-large
+    tags: [std-matrix, rhel80, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel84-gcc-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel90-clang-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel90-gcc-compile
+    run_on: rhel90-large
+    tags: [std-matrix, rhel90, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel91-clang-compile
+    run_on: rhel91-large
+    tags: [std-matrix, rhel91, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel92-clang-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel92-gcc-compile
+    run_on: rhel92-large
+    tags: [std-matrix, rhel92, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel93-clang-compile
+    run_on: rhel93-large
+    tags: [std-matrix, rhel93, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel94-clang-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel94-gcc-compile
+    run_on: rhel94-large
+    tags: [std-matrix, rhel94, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel95-clang-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel95-gcc-compile
+    run_on: rhel95-large
+    tags: [std-matrix, rhel95, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-ubuntu2004-clang-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-10
+          CXX: clang++-10
+          C_STD_VERSION: 99
+  - name: std-c99-ubuntu2004-gcc-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix, ubuntu2004, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-9
+          CXX: g++-9
+          C_STD_VERSION: 99
+  - name: std-c99-ubuntu2204-clang-compile
+    run_on: ubuntu2204-large
+    tags: [std-matrix, ubuntu2204, clang, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
+          C_STD_VERSION: 99
+  - name: std-c99-windows-2019-vs2017-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 99
+  - name: std-c99-windows-2019-vs2019-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 99
+  - name: std-c99-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 99
+  - name: std-clatest-windows-2019-vs2017-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-clatest]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: latest
+  - name: std-clatest-windows-2019-vs2019-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-clatest]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: latest
+  - name: std-clatest-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-clatest]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: latest
   - name: tsan-sasl-cyrus-openssl-debian10-clang-compile
     run_on: debian10-large
     tags: [sanitizers-matrix-tsan, compile, debian10, clang, tsan, sasl-cyrus]
@@ -4893,6 +5892,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: tsan-sasl-cyrus-openssl-debian10-clang-test-4.2-replica-auth
     run_on: debian10-small
@@ -4906,6 +5906,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: replica_set }
@@ -4926,6 +5927,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: server }
@@ -4946,6 +5948,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -4962,6 +5965,7 @@ tasks:
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
+          CXX: clang++
       - func: upload-build
   - name: tsan-sasl-cyrus-openssl-ubuntu2004-clang-test-4.4-replica-auth
     run_on: ubuntu2004-small
@@ -4975,6 +5979,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: replica_set }
@@ -4995,6 +6000,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
@@ -5015,6 +6021,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -5035,6 +6042,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -5055,6 +6063,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
@@ -5075,6 +6084,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -5095,6 +6105,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -5115,6 +6126,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
@@ -5135,6 +6147,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -5155,6 +6168,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -5175,6 +6189,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
@@ -5195,6 +6210,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -5215,6 +6231,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: replica_set }
@@ -5235,6 +6252,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -5255,6 +6273,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: sharded_cluster }
@@ -5275,6 +6294,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
@@ -5295,6 +6315,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -5315,6 +6336,7 @@ tasks:
         params:
           updates:
             - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: sharded_cluster }

@@ -15,6 +15,7 @@
  */
 
 
+#include <mlib/config.h>
 #include <mongoc/mongoc-cmd-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-trace-private.h>
@@ -375,7 +376,10 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts, const mongoc_serve
       max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (parts->read_prefs);
 
       tags = mongoc_read_prefs_get_tags (parts->read_prefs);
+      mlib_diagnostic_push ();
+      mlib_disable_deprecation_warnings ();
       hedge = mongoc_read_prefs_get_hedge (parts->read_prefs);
+      mlib_diagnostic_pop ();
    }
 
    if (server_stream->must_use_primary) {

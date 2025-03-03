@@ -39,6 +39,9 @@
 #define BSON_BEGIN_IGNORE_DEPRECATIONS \
    _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
 #define BSON_END_IGNORE_DEPRECATIONS _Pragma ("clang diagnostic pop")
+#elif defined(_MSC_VER)
+#define BSON_BEGIN_IGNORE_DEPRECATIONS __pragma (warning (push)) __pragma (warning (disable : 4996))
+#define BSON_END_IGNORE_DEPRECATIONS __pragma (warning (pop))
 #else
 #define BSON_BEGIN_IGNORE_DEPRECATIONS
 #define BSON_END_IGNORE_DEPRECATIONS
@@ -70,25 +73,29 @@ BSON_BEGIN_DECLS
  * recommended.
  */
 
-#define BSON_CMP_SET(op, ss, uu, su, us)                                                                   \
-   static BSON_INLINE bool BSON_GNUC_DEPRECATED BSON_CONCAT3 (bson_cmp_, op, _ss) (int64_t t, int64_t u)   \
-   {                                                                                                       \
-      return (ss);                                                                                         \
-   }                                                                                                       \
-                                                                                                           \
-   static BSON_INLINE bool BSON_GNUC_DEPRECATED BSON_CONCAT3 (bson_cmp_, op, _uu) (uint64_t t, uint64_t u) \
-   {                                                                                                       \
-      return (uu);                                                                                         \
-   }                                                                                                       \
-                                                                                                           \
-   static BSON_INLINE bool BSON_GNUC_DEPRECATED BSON_CONCAT3 (bson_cmp_, op, _su) (int64_t t, uint64_t u)  \
-   {                                                                                                       \
-      return (su);                                                                                         \
-   }                                                                                                       \
-                                                                                                           \
-   static BSON_INLINE bool BSON_GNUC_DEPRECATED BSON_CONCAT3 (bson_cmp_, op, _us) (uint64_t t, int64_t u)  \
-   {                                                                                                       \
-      return (us);                                                                                         \
+#define BSON_CMP_SET(op, ss, uu, su, us)                                                            \
+   static BSON_INLINE BSON_DEPRECATED ("<bson/bson-cmp.h> APIs are deprecated") bool BSON_CONCAT3 ( \
+      bson_cmp_, op, _ss) (int64_t t, int64_t u)                                                    \
+   {                                                                                                \
+      return (ss);                                                                                  \
+   }                                                                                                \
+                                                                                                    \
+   static BSON_INLINE BSON_DEPRECATED ("<bson/bson-cmp.h> APIs are deprecated") bool BSON_CONCAT3 ( \
+      bson_cmp_, op, _uu) (uint64_t t, uint64_t u)                                                  \
+   {                                                                                                \
+      return (uu);                                                                                  \
+   }                                                                                                \
+                                                                                                    \
+   static BSON_INLINE BSON_DEPRECATED ("<bson/bson-cmp.h> APIs are deprecated") bool BSON_CONCAT3 ( \
+      bson_cmp_, op, _su) (int64_t t, uint64_t u)                                                   \
+   {                                                                                                \
+      return (su);                                                                                  \
+   }                                                                                                \
+                                                                                                    \
+   static BSON_INLINE BSON_DEPRECATED ("<bson/bson-cmp.h> APIs are deprecated") bool BSON_CONCAT3 ( \
+      bson_cmp_, op, _us) (uint64_t t, int64_t u)                                                   \
+   {                                                                                                \
+      return (us);                                                                                  \
    }
 
 BSON_CMP_SET (equal, t == u, t == u, t < 0 ? false : (uint64_t) (t) == u, u < 0 ? false : t == (uint64_t) (u))
@@ -121,28 +128,32 @@ BSON_CMP_SET (greater_equal,
 
 /* Return true if the given value is within the range of the corresponding
  * signed type. The suffix must match the signedness of the given value. */
-#define BSON_IN_RANGE_SET_SIGNED(Type, min, max)                                                                  \
-   static BSON_INLINE bool BSON_GNUC_DEPRECATED BSON_CONCAT3 (bson_in_range, _##Type, _signed) (int64_t value)    \
-   {                                                                                                              \
-      return bson_cmp_greater_equal_ss (value, min) && bson_cmp_less_equal_ss (value, max);                       \
-   }                                                                                                              \
-                                                                                                                  \
-   static BSON_INLINE bool BSON_GNUC_DEPRECATED BSON_CONCAT3 (bson_in_range, _##Type, _unsigned) (uint64_t value) \
-   {                                                                                                              \
-      return bson_cmp_greater_equal_us (value, min) && bson_cmp_less_equal_us (value, max);                       \
+#define BSON_IN_RANGE_SET_SIGNED(Type, min, max)                                                    \
+   static BSON_INLINE BSON_DEPRECATED ("<bson/bson-cmp.h> APIs are deprecated") bool BSON_CONCAT3 ( \
+      bson_in_range, _##Type, _signed) (int64_t value)                                              \
+   {                                                                                                \
+      return bson_cmp_greater_equal_ss (value, min) && bson_cmp_less_equal_ss (value, max);         \
+   }                                                                                                \
+                                                                                                    \
+   static BSON_INLINE BSON_DEPRECATED ("<bson/bson-cmp.h> APIs are deprecated") bool BSON_CONCAT3 ( \
+      bson_in_range, _##Type, _unsigned) (uint64_t value)                                           \
+   {                                                                                                \
+      return bson_cmp_greater_equal_us (value, min) && bson_cmp_less_equal_us (value, max);         \
    }
 
 /* Return true if the given value is within the range of the corresponding
  * unsigned type. The suffix must match the signedness of the given value. */
-#define BSON_IN_RANGE_SET_UNSIGNED(Type, max)                                                                     \
-   static BSON_INLINE bool BSON_GNUC_DEPRECATED BSON_CONCAT3 (bson_in_range, _##Type, _signed) (int64_t value)    \
-   {                                                                                                              \
-      return bson_cmp_greater_equal_su (value, 0u) && bson_cmp_less_equal_su (value, max);                        \
-   }                                                                                                              \
-                                                                                                                  \
-   static BSON_INLINE bool BSON_GNUC_DEPRECATED BSON_CONCAT3 (bson_in_range, _##Type, _unsigned) (uint64_t value) \
-   {                                                                                                              \
-      return bson_cmp_less_equal_uu (value, max);                                                                 \
+#define BSON_IN_RANGE_SET_UNSIGNED(Type, max)                                                       \
+   static BSON_INLINE BSON_DEPRECATED ("<bson/bson-cmp.h> APIs are deprecated") bool BSON_CONCAT3 ( \
+      bson_in_range, _##Type, _signed) (int64_t value)                                              \
+   {                                                                                                \
+      return bson_cmp_greater_equal_su (value, 0u) && bson_cmp_less_equal_su (value, max);          \
+   }                                                                                                \
+                                                                                                    \
+   static BSON_INLINE BSON_DEPRECATED ("<bson/bson-cmp.h> APIs are deprecated") bool BSON_CONCAT3 ( \
+      bson_in_range, _##Type, _unsigned) (uint64_t value)                                           \
+   {                                                                                                \
+      return bson_cmp_less_equal_uu (value, max);                                                   \
    }
 
 BSON_IN_RANGE_SET_SIGNED (signed_char, SCHAR_MIN, SCHAR_MAX)

@@ -292,6 +292,13 @@
 #define _mlibTestBuildConfig_MinSizeRel_MinSizeRel()
 
 /**
+ * @brief Emit a _Pragma that will disable warnings about the use of deprecated entities.
+ */
+#define mlib_disable_deprecation_warnings()                \
+   mlib_gnu_warning_disable ("-Wdeprecated-declarations"); \
+   mlib_msvc_warning (disable : 4996)
+
+/**
  * @brief Function-like macro that expands to `1` if we are certain that we are
  * compiling with optimizations enabled.
  *

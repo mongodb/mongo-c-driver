@@ -1886,10 +1886,15 @@ test_bson_reserve_buffer_errors (void)
    uint32_t len_le;
 
    /* too big */
-   ASSERT (!bson_reserve_buffer (&bson, (uint32_t) (INT32_MAX - bson.len - 1)));
+   ASSERT (!bson_reserve_buffer (&bson, (uint32_t) (BSON_MAX_SIZE + 1u)));
+   /* exactly the maximum size */
+#if BSON_WORD_SIZE > 32
+   ASSERT (bson_reserve_buffer (&bson, (uint32_t) BSON_MAX_SIZE));
+   ASSERT_CMPUINT32 (bson.len, ==, BSON_MAX_SIZE);
+#endif
+   bson_destroy (&bson);
 
    /* make a static bson, it refuses bson_reserve_buffer since it's read-only */
-   bson_destroy (&bson);
    len_le = BSON_UINT32_TO_LE (5);
    memcpy (data, &len_le, sizeof (len_le));
    ASSERT (bson_init_static (&bson, data, sizeof data));
@@ -2652,7 +2657,7 @@ test_bson_dsl_build (void)
    // Insert a subdoc
    bson_t *subdoc = TMP_BSON_FROM_JSON ({"child" : [ 1, 2, 3 ], "other" : null});
 
-   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, true))));
+   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, always))));
    ASSERT_BSON_EQUAL (doc, {"subdoc" : {"child" : [ 1, 2, 3 ], "other" : null}});
    bson_destroy (&doc);
 
@@ -2667,7 +2672,7 @@ test_bson_dsl_build (void)
                   doc (kv ("inner1", array ()),
                        kv ("inner2", null),
                        kv ("inner3", array (int32 (1), int32 (2), int32 (3))),
-                       insert (*subdoc, true),
+                       insert (*subdoc, always),
                        kv ("inner4", doc (kv ("innermost", int32 (42)))))));
    ASSERT_BSON_EQUAL (doc, {
       "top" : {
