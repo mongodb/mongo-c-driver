@@ -9,27 +9,30 @@ Synopsis
 .. code-block:: c
 
   uint8_t *
-  bson_reserve_buffer (bson_t *bson, uint32_t size);
+  bson_reserve_buffer (bson_t *bson, uint32_t total_size);
 
 Parameters
 ----------
 
 * ``bson``: An initialized :symbol:`bson_t`.
-* ``size``: The length in bytes of the new buffer.
+* ``total_size``: The length in bytes of the new buffer.
 
 Description
 -----------
 
-Grow the internal buffer of ``bson`` to ``size`` and set the document length to ``size``. Useful for eliminating copies when reading BSON bytes from a stream.
+Grow the internal buffer of ``bson`` to ``total_size`` and set the document length to ``total_size``. Useful for eliminating copies when reading BSON bytes from a stream.
 
-First, initialize ``bson`` with :symbol:`bson_init` or :symbol:`bson_new`, then call this function. After it returns, the length of ``bson`` is set to ``size`` but its contents are uninitialized memory: you must fill the contents with a BSON document of the correct length before any other operations.
+First, initialize ``bson`` with :symbol:`bson_init` or :symbol:`bson_new`, then call this function. After it returns, the length of ``bson`` is set to ``total_size`` but its contents are uninitialized memory: you must fill the contents with a BSON document of the correct length before any other operations.
 
 The document must be freed with :symbol:`bson_destroy`.
+
+Note that, in this usage, the BSON header and footer bytes will not be verified or used by Libbson.
+The ``bson_t`` document length and buffer size limit are both set to ``total_size`` regardless of the value encoded in the document header.
 
 Returns
 -------
 
-A pointer to the internal buffer, which is at least ``size`` bytes, or NULL if the space could not be allocated.
+A pointer to the internal buffer, which is at least ``total_size`` bytes, or NULL if the space could not be allocated.
 
 Example
 -------
