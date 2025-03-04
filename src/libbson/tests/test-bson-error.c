@@ -24,10 +24,11 @@ test_bson_error_basic (void)
 {
    bson_error_t error;
 
-   bson_set_error (&error, 123, 456, "%s %d", "localhost", 27017);
-   BSON_ASSERT (!strcmp (error.message, "localhost 27017"));
+   bson_set_error (&error, 123, 456, "%s:%d", "localhost", 27017);
+   ASSERT_CMPSTR (error.message, "localhost:27017");
    ASSERT_CMPUINT32 (error.domain, ==, 123u);
    ASSERT_CMPUINT32 (error.code, ==, 456u);
+   ASSERT_CMPUINT (error.reserved, ==, 1u); // BSON_ERROR_CATEGORY
 }
 
 static void

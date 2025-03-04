@@ -15,7 +15,8 @@
  */
 
 
-#include <mongoc/mongoc-error.h>
+#include <mlib/config.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mlib/cmp.h>
@@ -234,7 +235,10 @@ _apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
       max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
 
       tags = mongoc_read_prefs_get_tags (read_prefs);
+      mlib_diagnostic_push ();
+      mlib_disable_deprecation_warnings ();
       hedge = mongoc_read_prefs_get_hedge (read_prefs);
+      mlib_diagnostic_pop ();
    }
 
    /* Server Selection Spec says:
@@ -308,7 +312,11 @@ mongoc_read_prefs_append_contents_to_bson (const mongoc_read_prefs_t *read_prefs
    if (read_prefs) {
       // Other content is only available for non-NULL read_prefs
       int64_t max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
+
+      mlib_diagnostic_push ();
+      mlib_disable_deprecation_warnings ();
       const bson_t *hedge = mongoc_read_prefs_get_hedge (read_prefs);
+      mlib_diagnostic_pop ();
       const bson_t *tags = mongoc_read_prefs_get_tags (read_prefs);
 
       if ((flags & MONGOC_READ_PREFS_CONTENT_FLAG_TAGS) && !bson_empty (tags) &&
@@ -434,7 +442,7 @@ bool
 _mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs, bson_error_t *error)
 {
    if (read_prefs && !mongoc_read_prefs_is_valid (read_prefs)) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid mongoc_read_prefs_t");
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid mongoc_read_prefs_t");
       return false;
    }
    return true;

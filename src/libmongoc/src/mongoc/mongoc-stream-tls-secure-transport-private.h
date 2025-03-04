@@ -24,8 +24,12 @@
 
 #include <Security/Security.h>
 
+#include <common-macros-private.h>
+
 BSON_BEGIN_DECLS
 
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
+BEGIN_IGNORE_DEPRECATIONS
 
 /**
  * mongoc_stream_tls_secure_transport_t:
@@ -38,6 +42,8 @@ typedef struct {
    CFMutableArrayRef my_cert;
 } mongoc_stream_tls_secure_transport_t;
 
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
+END_IGNORE_DEPRECATIONS
 
 BSON_END_DECLS
 

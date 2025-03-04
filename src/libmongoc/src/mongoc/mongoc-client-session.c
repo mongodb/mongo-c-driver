@@ -99,10 +99,10 @@ txn_abort (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
 
    if (session->txn.opts.write_concern) {
       if (!mongoc_write_concern_append (session->txn.opts.write_concern, &opts)) {
-         bson_set_error (err_ptr,
-                         MONGOC_ERROR_TRANSACTION,
-                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                         "Invalid transaction write concern");
+         _mongoc_set_error (err_ptr,
+                            MONGOC_ERROR_TRANSACTION,
+                            MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                            "Invalid transaction write concern");
          GOTO (done);
       }
    }
@@ -191,7 +191,7 @@ retry:
 
    if (session->txn.opts.max_commit_time_ms != DEFAULT_MAX_COMMIT_TIME_MS) {
       if (!bson_append_int64 (&opts, "maxTimeMS", -1, session->txn.opts.max_commit_time_ms)) {
-         bson_set_error (err_ptr, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "error appending maxCommitTimeMS");
+         _mongoc_set_error (err_ptr, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "error appending maxCommitTimeMS");
          GOTO (done);
       }
    }
@@ -207,10 +207,10 @@ retry:
 
    if (retry_wc || session->txn.opts.write_concern) {
       if (!mongoc_write_concern_append (retry_wc ? retry_wc : session->txn.opts.write_concern, &opts)) {
-         bson_set_error (err_ptr,
-                         MONGOC_ERROR_TRANSACTION,
-                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                         "Invalid transaction write concern");
+         _mongoc_set_error (err_ptr,
+                            MONGOC_ERROR_TRANSACTION,
+                            MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                            "Invalid transaction write concern");
          GOTO (done);
       }
    }
@@ -535,10 +535,10 @@ _mongoc_server_session_uuid (uint8_t *data /* OUT */, bson_error_t *error)
     */
 
    if (!_mongoc_rand_bytes (data, 16)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_SESSION_FAILURE,
-                      "Could not generate UUID for logical session id");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                         "Could not generate UUID for logical session id");
 
       return false;
    }
@@ -549,12 +549,12 @@ _mongoc_server_session_uuid (uint8_t *data /* OUT */, bson_error_t *error)
    return true;
 #else
    /* no _mongoc_rand_bytes without a crypto library */
-   bson_set_error (error,
-                   MONGOC_ERROR_CLIENT,
-                   MONGOC_ERROR_CLIENT_SESSION_FAILURE,
-                   "Could not generate UUID for logical session id, we need a"
-                   " cryptography library like libcrypto, Common Crypto, or"
-                   " CNG");
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                      "Could not generate UUID for logical session id, we need a"
+                      " cryptography library like libcrypto, Common Crypto, or"
+                      " CNG");
 
    return false;
 #endif
@@ -1045,21 +1045,21 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    }
 
    if (mongoc_session_opts_get_snapshot (&session->opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_TRANSACTION,
-                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "Transactions are not supported in snapshot sessions");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_TRANSACTION,
+                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                         "Transactions are not supported in snapshot sessions");
       ret = false;
       GOTO (done);
    }
 
    if (server_stream->sd->max_wire_version < 7 ||
        (server_stream->sd->max_wire_version < 8 && server_stream->sd->type == MONGOC_SERVER_MONGOS)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_TRANSACTION,
-                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "Multi-document transactions are not supported by this "
-                      "server version");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_TRANSACTION,
+                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                         "Multi-document transactions are not supported by this "
+                         "server version");
       ret = false;
       GOTO (done);
    }
@@ -1068,7 +1068,7 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    switch (session->txn.state) {
    case MONGOC_INTERNAL_TRANSACTION_STARTING:
    case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_TRANSACTION, MONGOC_ERROR_TRANSACTION_INVALID_STATE, "Transaction already in progress");
       ret = false;
       GOTO (done);
@@ -1097,10 +1097,10 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    }
 
    if (!mongoc_write_concern_is_acknowledged (session->txn.opts.write_concern)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_TRANSACTION,
-                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "Transactions do not support unacknowledged write concern");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_TRANSACTION,
+                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                         "Transactions do not support unacknowledged write concern");
       ret = false;
       GOTO (done);
    }
@@ -1195,7 +1195,7 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session, bson
 
    switch (session->txn.state) {
    case MONGOC_INTERNAL_TRANSACTION_NONE:
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_TRANSACTION, MONGOC_ERROR_TRANSACTION_INVALID_STATE, "No transaction started");
       _mongoc_bson_init_if_set (reply);
       break;
@@ -1223,10 +1223,10 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session, bson
       abort ();
    case MONGOC_INTERNAL_TRANSACTION_ABORTED:
    default:
-      bson_set_error (error,
-                      MONGOC_ERROR_TRANSACTION,
-                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "Cannot call commitTransaction after calling abortTransaction");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_TRANSACTION,
+                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                         "Cannot call commitTransaction after calling abortTransaction");
       _mongoc_bson_init_if_set (reply);
       break;
    }
@@ -1262,13 +1262,13 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session, bson_
       RETURN (true);
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
-      bson_set_error (error,
-                      MONGOC_ERROR_TRANSACTION,
-                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "Cannot call abortTransaction after calling commitTransaction");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_TRANSACTION,
+                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                         "Cannot call abortTransaction after calling commitTransaction");
       RETURN (false);
    case MONGOC_INTERNAL_TRANSACTION_ABORTED:
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_TRANSACTION, MONGOC_ERROR_TRANSACTION_INVALID_STATE, "Cannot call abortTransaction twice");
       RETURN (false);
    case MONGOC_INTERNAL_TRANSACTION_ENDING:
@@ -1276,7 +1276,7 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session, bson_
       abort ();
    case MONGOC_INTERNAL_TRANSACTION_NONE:
    default:
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_TRANSACTION, MONGOC_ERROR_TRANSACTION_INVALID_STATE, "No transaction started");
       RETURN (false);
    }
@@ -1294,7 +1294,7 @@ _mongoc_client_session_from_iter (mongoc_client_t *client,
 
    /* must be int64 that fits in uint32 */
    if (!BSON_ITER_HOLDS_INT64 (iter) || bson_iter_int64 (iter) > 0xffffffff) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid sessionId");
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid sessionId");
       RETURN (false);
    }
 
@@ -1390,7 +1390,7 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session, bson_t *cmd
    }
 
    if (bson_empty0 (cmd)) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Empty command in transaction");
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Empty command in transaction");
       RETURN (false);
    }
 
@@ -1528,7 +1528,7 @@ mongoc_client_session_append (const mongoc_client_session_t *client_session, bso
    BSON_ASSERT (opts);
 
    if (!bson_append_int64 (opts, "sessionId", 9, client_session->client_session_id)) {
-      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "invalid opts");
+      _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "invalid opts");
 
       RETURN (false);
    }

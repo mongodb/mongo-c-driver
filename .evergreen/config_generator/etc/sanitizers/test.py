@@ -6,7 +6,7 @@ from shrub.v3.evg_task import EvgTask, EvgTaskDependency
 
 from config_generator.etc.distros import find_small_distro
 from config_generator.etc.distros import make_distro_str
-from config_generator.etc.distros import to_cc
+from config_generator.etc.distros import compiler_to_vars
 
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
@@ -37,7 +37,7 @@ def generate_test_tasks(SSL, TAG, MATRIX, MORE_COMPILE_TAGS=None, MORE_TEST_TAGS
         test_distro = find_small_distro(distro_name)
 
         compile_vars = []
-        compile_vars.append(KeyValueParam(key='CC', value=to_cc(compiler)))
+        compile_vars = [KeyValueParam(key=key, value=value) for key, value in compiler_to_vars(compiler).items()]
 
         if arch:
             tags.append(arch)

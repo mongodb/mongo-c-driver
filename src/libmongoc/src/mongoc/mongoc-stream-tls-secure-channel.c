@@ -64,7 +64,7 @@
 #include <mongoc/mongoc-secure-channel-private.h>
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-ssl-private.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-errno-private.h>
 
@@ -811,7 +811,7 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream, const char 
    *events = 0;
 
    if (error && !error->code) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed");
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed");
    }
 
    RETURN (false);

@@ -3,6 +3,11 @@
 mongoc_read_prefs_set_hedge()
 =============================
 
+.. deprecated:: MongoDB Server 8.0
+
+  Hedged reads are deprecated in MongoDB version 8.0 and will be removed in
+  a future release.
+
 Synopsis
 --------
 

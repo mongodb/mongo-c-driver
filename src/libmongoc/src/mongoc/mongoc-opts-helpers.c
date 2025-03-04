@@ -16,22 +16,23 @@
 
 #include <mongoc/mongoc-opts-helpers-private.h>
 #include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mlib/cmp.h>
 
-#define BSON_ERR(...)                                                                    \
-   do {                                                                                  \
-      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, __VA_ARGS__); \
-      return false;                                                                      \
+#define BSON_ERR(...)                                                                       \
+   do {                                                                                     \
+      _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, __VA_ARGS__); \
+      return false;                                                                         \
    } while (0)
 
 
-#define CONVERSION_ERR(...)                                                                        \
-   do {                                                                                            \
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, __VA_ARGS__); \
-      return false;                                                                                \
+#define CONVERSION_ERR(...)                                                                           \
+   do {                                                                                               \
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, __VA_ARGS__); \
+      return false;                                                                                   \
    } while (0)
 
 

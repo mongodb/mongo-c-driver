@@ -18,6 +18,7 @@
 #include <mongoc/mongoc-aggregate-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-trace-private.h>
@@ -119,7 +120,7 @@ _make_agg_cmd (
                     append (*command, kv ("pipeline", iterValue (bsonVisitIter)))),
               else ( // We did not find a "pipeline" array. copy the pipeline as
                      // an array into the command
-                 append (*command, kv ("pipeline", array (insert (*pipeline, true))))));
+                 append (*command, kv ("pipeline", array (insert (*pipeline, always))))));
    if ((error = bsonParseError)) {
       error_hint = "append-pipeline";
       goto fail;
@@ -158,12 +159,12 @@ _make_agg_cmd (
    return true;
 
 fail:
-   bson_set_error (err,
-                   MONGOC_ERROR_COMMAND,
-                   MONGOC_ERROR_COMMAND_INVALID_ARG,
-                   "Error while building aggregate command [%s]: %s",
-                   error_hint,
-                   error);
+   _mongoc_set_error (err,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Error while building aggregate command [%s]: %s",
+                      error_hint,
+                      error);
    return false;
 }
 
@@ -284,7 +285,7 @@ _mongoc_aggregate (mongoc_client_t *client,
       has_write_key = _has_write_key (&ar);
    } else {
       if (!bson_iter_init (&iter, pipeline)) {
-         bson_set_error (&cursor->error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Pipeline is invalid BSON");
+         _mongoc_set_error (&cursor->error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Pipeline is invalid BSON");
          GOTO (done);
       }
       has_write_key = _has_write_key (&iter);

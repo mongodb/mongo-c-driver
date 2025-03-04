@@ -23,6 +23,7 @@
 #include <mongoc/mongoc-client-pool.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log-and-monitor-private.h>
 #include <mongoc/mongoc-queue-private.h>
 #include <mongoc/mongoc-thread-private.h>
@@ -138,11 +139,11 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
 
 #ifndef MONGOC_ENABLE_SSL
    if (mongoc_uri_get_tls (uri)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Can't create SSL client pool, SSL not enabled in this "
-                      "build.");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Can't create SSL client pool, SSL not enabled in this "
+                         "build.");
       return NULL;
    }
 #endif
@@ -674,16 +675,16 @@ mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool, const mongoc_serv
    BSON_ASSERT_PARAM (api);
 
    if (pool->api) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_POOL, MONGOC_ERROR_POOL_API_ALREADY_SET, "Cannot set server api more than once per pool");
       return false;
    }
 
    if (pool->client_initialized) {
-      bson_set_error (error,
-                      MONGOC_ERROR_POOL,
-                      MONGOC_ERROR_POOL_API_TOO_LATE,
-                      "Cannot set server api after a client has been created");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_POOL,
+                         MONGOC_ERROR_POOL_API_TOO_LATE,
+                         "Cannot set server api after a client has been created");
       return false;
    }
 

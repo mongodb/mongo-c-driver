@@ -604,7 +604,6 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    first_digit = 0;
 
    if (!ndigits_stored) { /* value is zero */
-      first_digit = 0;
       last_digit = 0;
       digits[0] = 0;
       ndigits = 1;

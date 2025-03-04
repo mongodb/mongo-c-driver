@@ -209,6 +209,30 @@ test_state_change (void)
    test_state_change_helper (MONGOC_ERROR_QUERY, false);
 }
 
+static void
+test_mongoc_error_basic (void)
+{
+   bson_error_t error;
+
+   _mongoc_set_error (&error, 123, 456, "%s:%d", "localhost", 27017);
+   ASSERT_CMPSTR (error.message, "localhost:27017");
+   ASSERT_CMPUINT32 (error.domain, ==, 123u);
+   ASSERT_CMPUINT32 (error.code, ==, 456u);
+   ASSERT_CMPUINT (error.reserved, ==, 2u); // MONGOC_ERROR_CATEGORY
+}
+
+static void
+test_mongoc_error_with_category (void)
+{
+   bson_error_t error;
+
+   _mongoc_set_error_with_category (&error, 99u, 123, 456, "%s:%d", "localhost", 27017);
+   ASSERT_CMPSTR (error.message, "localhost:27017");
+   ASSERT_CMPUINT32 (error.domain, ==, 123u);
+   ASSERT_CMPUINT32 (error.code, ==, 456u);
+   ASSERT_CMPUINT (error.reserved, ==, 99u);
+}
+
 void
 test_error_install (TestSuite *suite)
 {
@@ -219,4 +243,6 @@ test_error_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite, "/Error/command/v2", test_command_error_v2);
    TestSuite_Add (suite, "/Error/has_label", test_has_label);
    TestSuite_Add (suite, "/Error/state_change", test_state_change);
+   TestSuite_Add (suite, "/Error/basic", test_mongoc_error_basic);
+   TestSuite_Add (suite, "/Error/category", test_mongoc_error_with_category);
 }

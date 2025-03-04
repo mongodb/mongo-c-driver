@@ -23,7 +23,7 @@
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database.h>
 #include <mongoc/mongoc-database-private.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
@@ -722,7 +722,7 @@ mongoc_database_find_collections (mongoc_database_t *database, const bson_t *fil
 
    if (filter) {
       if (!BSON_APPEND_DOCUMENT (&opts, "filter", filter)) {
-         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Invalid 'filter' parameter.");
+         _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Invalid 'filter' parameter.");
          bson_destroy (&opts);
          return NULL;
       }
@@ -839,7 +839,7 @@ create_collection (mongoc_database_t *database, const char *name, const bson_t *
    BSON_ASSERT_PARAM (name);
 
    if (strchr (name, '$')) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_NAMESPACE, MONGOC_ERROR_NAMESPACE_INVALID, "The namespace \"%s\" is invalid.", name);
       return NULL;
    }
@@ -847,10 +847,10 @@ create_collection (mongoc_database_t *database, const char *name, const bson_t *
    if (opts) {
       if (bson_iter_init_find (&iter, opts, "capped")) {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The argument \"capped\" must be a boolean.");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "The argument \"capped\" must be a boolean.");
             return NULL;
          }
          capped = bson_iter_bool (&iter);
@@ -858,72 +858,72 @@ create_collection (mongoc_database_t *database, const char *name, const bson_t *
 
       if (bson_iter_init_find (&iter, opts, "size")) {
          if (!BSON_ITER_HOLDS_INT (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The argument \"size\" must be an integer.");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "The argument \"size\" must be an integer.");
             return NULL;
          }
          if (!capped) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The \"size\" parameter requires {\"capped\": true}");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "The \"size\" parameter requires {\"capped\": true}");
             return NULL;
          }
       }
 
       if (bson_iter_init_find (&iter, opts, "max")) {
          if (!BSON_ITER_HOLDS_INT (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The argument \"max\" must be an integer.");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "The argument \"max\" must be an integer.");
             return NULL;
          }
          if (!capped) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The \"max\" parameter requires {\"capped\": true}");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "The \"max\" parameter requires {\"capped\": true}");
             return NULL;
          }
       }
 
       if (bson_iter_init_find (&iter, opts, "storageEngine")) {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The \"storageEngine\" parameter must be a document");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "The \"storageEngine\" parameter must be a document");
 
             return NULL;
          }
 
          if (bson_iter_find (&iter, "wiredTiger")) {
             if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-               bson_set_error (error,
-                               MONGOC_ERROR_COMMAND,
-                               MONGOC_ERROR_COMMAND_INVALID_ARG,
-                               "The \"wiredTiger\" option must take a document "
-                               "argument with a \"configString\" field");
+               _mongoc_set_error (error,
+                                  MONGOC_ERROR_COMMAND,
+                                  MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                  "The \"wiredTiger\" option must take a document "
+                                  "argument with a \"configString\" field");
                return NULL;
             }
 
             if (bson_iter_find (&iter, "configString")) {
                if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-                  bson_set_error (error,
-                                  MONGOC_ERROR_COMMAND,
-                                  MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                  "The \"configString\" parameter must be a string");
+                  _mongoc_set_error (error,
+                                     MONGOC_ERROR_COMMAND,
+                                     MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                     "The \"configString\" parameter must be a string");
                   return NULL;
                }
             } else {
-               bson_set_error (error,
-                               MONGOC_ERROR_COMMAND,
-                               MONGOC_ERROR_COMMAND_INVALID_ARG,
-                               "The \"wiredTiger\" option must take a document "
-                               "argument with a \"configString\" field");
+               _mongoc_set_error (error,
+                                  MONGOC_ERROR_COMMAND,
+                                  MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                  "The \"wiredTiger\" option must take a document "
+                                  "argument with a \"configString\" field");
                return NULL;
             }
          }
@@ -969,22 +969,22 @@ _mongoc_get_encryptedField_state_collection (const bson_t *encryptedFields,
    } else if (0 == strcmp (state_collection_suffix, "ecoc")) {
       fieldName = "ecocCollection";
    } else {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "expected state_collection_suffix to be 'esc' or "
-                      "'ecoc', got: %s",
-                      state_collection_suffix);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "expected state_collection_suffix to be 'esc' or "
+                         "'ecoc', got: %s",
+                         state_collection_suffix);
       return NULL;
    }
 
    if (bson_iter_init_find (&iter, encryptedFields, fieldName)) {
       if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "expected encryptedFields.%s to be UTF-8",
-                         fieldName);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "expected encryptedFields.%s to be UTF-8",
+                            fieldName);
          return NULL;
       }
       return bson_strdup (bson_iter_utf8 (&iter, NULL));
@@ -1049,14 +1049,14 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
          goto fail;
       }
       if (stream->sd->max_wire_version < WIRE_VERSION_7_0) {
-         bson_set_error (error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Driver support of Queryable Encryption is incompatible "
-                         "with server. Upgrade server to use Queryable Encryption. "
-                         "Got maxWireVersion %" PRId32 " but need maxWireVersion >= %d",
-                         stream->sd->max_wire_version,
-                         WIRE_VERSION_7_0);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_PROTOCOL,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "Driver support of Queryable Encryption is incompatible "
+                            "with server. Upgrade server to use Queryable Encryption. "
+                            "Got maxWireVersion %" PRId32 " but need maxWireVersion >= %d",
+                            stream->sd->max_wire_version,
+                            WIRE_VERSION_7_0);
          mongoc_server_stream_cleanup (stream);
          goto fail;
       }
@@ -1073,7 +1073,7 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
    /* Create data collection. */
    cc_opts = bson_copy (opts);
    if (!BSON_APPEND_DOCUMENT (cc_opts, "encryptedFields", encryptedFields)) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "unable to append encryptedFields");
       goto fail;
    }
@@ -1161,7 +1161,7 @@ _mongoc_get_encryptedFields_from_server (
       /* Check if the collInfo has options.encryptedFields. */
       bson_iter_t iter;
       if (!bson_iter_init (&iter, collInfo)) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "unable to iterate listCollections result");
          goto fail;
       }
@@ -1216,11 +1216,11 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
                        do (found = true)));
       if (bsonParseError) {
          // Error while parsing
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid createCollection command options: %s",
-                         bsonParseError);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Invalid createCollection command options: %s",
+                            bsonParseError);
          return false;
       } else if (found) {
          // Found it!

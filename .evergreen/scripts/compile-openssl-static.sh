@@ -8,6 +8,8 @@ set -o pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 check_var_opt CC
+check_var_opt CMAKE_GENERATOR
+check_var_opt CMAKE_GENERATOR_PLATFORM
 check_var_opt MARCH
 
 declare script_dir
@@ -76,15 +78,6 @@ CXXFLAGS+=" ${flags+${flags[*]}}"
 if [[ "${OSTYPE}" == darwin* ]]; then
   CFLAGS+=" -Wno-unknown-pragmas"
 fi
-
-case "${CC}" in
-clang)
-  CXX=clang++
-  ;;
-gcc)
-  CXX=g++
-  ;;
-esac
 
 if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"

@@ -20,6 +20,7 @@
 #define MONGOC_TOPOLOGY_PRIVATE_H
 
 #include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-topology-scanner-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-topology-description-private.h>
@@ -625,7 +626,7 @@ _mongoc_topology_invalidate_server (mongoc_topology_t *topology, uint32_t server
 {
    bson_error_t error;
    mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
-   bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
+   _mongoc_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
    mongoc_topology_description_invalidate_server (tdmod.new_td, &topology->log_and_monitor, server_id, &error);
    mc_tpld_modify_commit (tdmod);
 }

@@ -17,6 +17,7 @@
 #include <inttypes.h> // PRIu16
 
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-error-private.h>
 /* strcasecmp on windows */
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/utlist.h>
@@ -197,26 +198,26 @@ _mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_, const char *a
       /* if present, the port should immediately follow after ] */
       sport = strchr (close_bracket, ':');
       if (sport > close_bracket + 1) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "If present, port should immediately follow the \"]\""
-                         "in an IPv6 address");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "If present, port should immediately follow the \"]\""
+                            "in an IPv6 address");
          return false;
       }
 
       /* otherwise ] should be the last char. */
       if (!sport && *(close_bracket + 1) != '\0') {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "If port is not supplied, \"[\" should be the last"
-                         "character");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "If port is not supplied, \"[\" should be the last"
+                            "character");
          return false;
       }
 
       if (*address != '[') {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Missing matching bracket \"[\"");
          return false;
       }
@@ -232,15 +233,15 @@ _mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_, const char *a
    if (sport) {
       if (sport == address) {
          /* bad address like ":27017" */
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Bad address, \":\" should not be first character");
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Bad address, \":\" should not be first character");
          return false;
       }
 
       if (!mongoc_parse_port (&port, sport + 1)) {
-         bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Port could not be parsed");
+         _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Port could not be parsed");
          return false;
       }
 
@@ -282,16 +283,16 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
    };
 
    if (host_len == 0) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Empty hostname in URI");
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Empty hostname in URI");
       return false;
    }
 
    if (host_len > BSON_HOST_NAME_MAX) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                      "Hostname provided in URI is too long, max is %d chars",
-                      BSON_HOST_NAME_MAX);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                         "Hostname provided in URI is too long, max is %d chars",
+                         BSON_HOST_NAME_MAX);
       return false;
    }
 
@@ -304,11 +305,11 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       // Check that IPv6 literal is two less than the max to account for `[` and
       // `]` added below.
       if (host_len > BSON_HOST_NAME_MAX - 2) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                         "IPv6 literal provided in URI is too long, max is %d chars",
-                         BSON_HOST_NAME_MAX - 2);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                            "IPv6 literal provided in URI is too long, max is %d chars",
+                            BSON_HOST_NAME_MAX - 2);
          return false;
       }
 

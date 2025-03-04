@@ -658,7 +658,7 @@ get_bson_from_json_file (char *filename)
 {
    FILE *const file = fopen (filename, "rb");
    if (!file) {
-      return NULL;
+      test_error ("Failed to open JSON file: %s", filename);
    }
 
    /* get file length */
@@ -666,7 +666,7 @@ get_bson_from_json_file (char *filename)
    const long length = ftell (file);
    fseek (file, 0, SEEK_SET);
    if (length < 1) {
-      return NULL;
+      test_error ("Failed to read length of JSON file: %s", filename);
    }
 
    /* read entire file into buffer */
@@ -674,11 +674,7 @@ get_bson_from_json_file (char *filename)
    const size_t nread = fread (buffer, 1, length, file);
    fclose (file);
    if (mlib_cmp (nread, !=, length)) {
-      test_error ("Failed to read JSON file into buffer");
-   }
-
-   if (!buffer) {
-      return NULL;
+      test_error ("Failed to read JSON file [%s] into buffer", filename);
    }
 
    /* convert to bson */

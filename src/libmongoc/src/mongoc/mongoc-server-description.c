@@ -15,6 +15,7 @@
  */
 
 #include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-host-list.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-read-prefs.h>
@@ -498,7 +499,7 @@ _mongoc_server_description_set_error (mongoc_server_description_t *sd, const bso
    if (error && error->code) {
       memcpy (&sd->error, error, sizeof (bson_error_t));
    } else {
-      bson_set_error (&sd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "unknown error calling hello");
+      _mongoc_set_error (&sd->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "unknown error calling hello");
    }
 
    /* Server Discovery and Monitoring Spec: if the server type changes from a
@@ -570,6 +571,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
              * MUST treat this an authentication error." */
             sd->error.domain = MONGOC_ERROR_CLIENT;
             sd->error.code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
+            _mongoc_set_error_category (&sd->error, MONGOC_ERROR_CATEGORY);
             GOTO (authfailure);
          }
       } else if (strcmp ("isWritablePrimary", bson_iter_key (&iter)) == 0 ||
@@ -741,12 +743,12 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
    EXIT;
 
 typefailure:
-   bson_set_error (&sd->error,
-                   MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_INVALID_TYPE,
-                   "unexpected type %s for field %s in hello response",
-                   _mongoc_bson_type_to_str (bson_iter_type (&iter)),
-                   bson_iter_key (&iter));
+   _mongoc_set_error (&sd->error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_INVALID_TYPE,
+                      "unexpected type %s for field %s in hello response",
+                      _mongoc_bson_type_to_str (bson_iter_type (&iter)),
+                      bson_iter_key (&iter));
 authfailure:
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;

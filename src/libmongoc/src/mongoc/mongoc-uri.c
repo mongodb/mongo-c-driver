@@ -25,6 +25,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-host-list.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-log.h>
@@ -59,7 +60,7 @@ struct _mongoc_uri_t {
 };
 
 #define MONGOC_URI_ERROR(error, format, ...) \
-   bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, format, __VA_ARGS__)
+   _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, format, __VA_ARGS__)
 
 
 static const char *escape_instructions = "Percent-encode username and password"
@@ -86,16 +87,16 @@ mongoc_uri_do_unescape (char **str)
 }
 
 
-#define VALIDATE_SRV_ERR()                                                \
-   do {                                                                   \
-      bson_set_error (error,                                              \
-                      MONGOC_ERROR_STREAM,                                \
-                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,                \
-                      "Invalid host \"%s\" returned for service \"%s\": " \
-                      "host must be subdomain of service name",           \
-                      host,                                               \
-                      srv_hostname);                                      \
-      return false;                                                       \
+#define VALIDATE_SRV_ERR()                                                   \
+   do {                                                                      \
+      _mongoc_set_error (error,                                              \
+                         MONGOC_ERROR_STREAM,                                \
+                         MONGOC_ERROR_STREAM_NAME_RESOLUTION,                \
+                         "Invalid host \"%s\" returned for service \"%s\": " \
+                         "host must be subdomain of service name",           \
+                         host,                                               \
+                         srv_hostname);                                      \
+      return false;                                                          \
    } while (0)
 
 
@@ -1089,7 +1090,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
             }
 
             if (!mongoc_uri_set_option_as_bool (uri, canon, bval)) {
-               bson_set_error (
+               _mongoc_set_error (
                   error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Failed to set %s to %d", canon, bval);
                return false;
             }
@@ -1625,7 +1626,7 @@ mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri, const bson_t *properties
                     // Append the new properties
                     kv (MONGOC_URI_AUTHMECHANISMPROPERTIES, bson (*properties)));
    bson_reinit (&uri->credentials);
-   bsonBuildAppend (uri->credentials, insert (tmp, true));
+   bsonBuildAppend (uri->credentials, insert (tmp, always));
    bson_destroy (&tmp);
    return bsonBuildError == NULL;
 }

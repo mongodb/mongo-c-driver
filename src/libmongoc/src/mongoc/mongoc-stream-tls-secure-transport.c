@@ -30,16 +30,20 @@
 #include <mongoc/mongoc-secure-transport-private.h>
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-ssl-private.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-stream-tls.h>
 #include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-stream-tls-secure-transport-private.h>
+#include <common-macros-private.h>
 #include <common-string-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure_transport"
+
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
+BEGIN_IGNORE_DEPRECATIONS
 
 static void
 _mongoc_stream_tls_secure_transport_destroy (mongoc_stream_t *stream)
@@ -401,7 +405,7 @@ _set_error_from_osstatus (OSStatus status, const char *prefix, bson_error_t *err
 
    err = SecCopyErrorMessageString (status, NULL);
    err_str = _mongoc_cfstringref_to_cstring (err);
-   bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "%s: %s (%d)", prefix, err_str, status);
+   _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "%s: %s (%d)", prefix, err_str, status);
 
    bson_free (err_str);
    CFRelease (err);
@@ -539,7 +543,7 @@ _verify_peer (mongoc_stream_t *stream, bson_error_t *error)
 
    if (trust_result != kSecTrustResultProceed && trust_result != kSecTrustResultUnspecified) {
       char *reason = explain_trust_result (trust, trust_result);
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed (%s)", reason);
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed (%s)", reason);
       bson_free (reason);
       goto fail;
    }
@@ -701,4 +705,8 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
    }
    RETURN ((mongoc_stream_t *) tls);
 }
+
+// CDRIVER-2722: Secure Transport is deprecated on MacOS.
+END_IGNORE_DEPRECATIONS
+
 #endif /* MONGOC_ENABLE_SSL_SECURE_TRANSPORT */

@@ -16,6 +16,7 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-error-private.h>
 
 typedef struct _data_change_stream_t {
    mongoc_cursor_response_t response;
@@ -134,7 +135,7 @@ _mongoc_cursor_change_stream_new (mongoc_client_t *client, bson_t *reply, const 
    cursor->state = IN_BATCH;
 
    if (!_mongoc_cursor_start_reading_response (cursor, &data->response)) {
-      bson_set_error (
+      _mongoc_set_error (
          &cursor->error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Couldn't parse cursor document");
    }
 

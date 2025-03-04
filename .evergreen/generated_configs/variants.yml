@@ -174,10 +174,6 @@ buildvariants:
     display_name: loadbalanced
     tasks:
       - name: .loadbalanced
-  - name: misc
-    display_name: Miscellaneous
-    tasks:
-      - name: .misc
   - name: mock-server-test
     display_name: Mock Server Test
     expansions:
@@ -282,6 +278,10 @@ buildvariants:
     expansions: {}
     tasks:
       - name: .sasl-matrix-winssl
+  - name: sbom
+    display_name: SBOM
+    tasks:
+      - name: .sbom
   - name: scan-build-matrix
     display_name: scan-build-matrix
     tasks:

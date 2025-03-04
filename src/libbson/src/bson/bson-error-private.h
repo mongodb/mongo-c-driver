@@ -14,5 +14,23 @@
  * limitations under the License.
  */
 
-/* Including mongoc.h is superseded. Use mongoc/mongoc.h instead. */
-#include <mongoc/mongoc.h>
+#include <bson/bson-prelude.h>
+
+#ifndef BSON_ERROR_PRIVATE_H
+#define BSON_ERROR_PRIVATE_H
+
+#include <bson/bson-error.h>
+#include <bson/bson-macros.h>
+
+
+#define BSON_ERROR_CATEGORY 1
+
+
+static BSON_INLINE void
+bson_set_error_category (bson_error_t *error, uint8_t category)
+{
+   BSON_ASSERT_PARAM (error);
+   error->reserved = category;
+}
+
+#endif /* BSON_ERROR_PRIVATE_H */

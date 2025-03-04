@@ -20,6 +20,7 @@
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-server-api-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
@@ -139,7 +140,8 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts, bson_iter_t *iter, bson
          continue;
       } else if (BSON_ITER_IS_KEY (iter, "readConcern")) {
          if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
-            bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "Invalid readConcern");
+            _mongoc_set_error (
+               error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "Invalid readConcern");
             RETURN (false);
          }
 
@@ -165,11 +167,11 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts, bson_iter_t *iter, bson
 
       to_append = bson_iter_key (iter);
       if (!bson_append_iter (&parts->extra, to_append, -1, iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Failed to append \"%s\" to create command.",
-                         to_append);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Failed to append \"%s\" to create command.",
+                            to_append);
          RETURN (false);
       }
    }
@@ -178,10 +180,10 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts, bson_iter_t *iter, bson
 }
 
 
-#define OPTS_ERR(_code, ...)                                                           \
-   do {                                                                                \
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_##_code, __VA_ARGS__); \
-      RETURN (false);                                                                  \
+#define OPTS_ERR(_code, ...)                                                              \
+   do {                                                                                   \
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_##_code, __VA_ARGS__); \
+      RETURN (false);                                                                     \
    } while (0)
 
 
@@ -374,7 +376,10 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts, const mongoc_serve
       max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (parts->read_prefs);
 
       tags = mongoc_read_prefs_get_tags (parts->read_prefs);
+      mlib_diagnostic_push ();
+      mlib_disable_deprecation_warnings ();
       hedge = mongoc_read_prefs_get_hedge (parts->read_prefs);
+      mlib_diagnostic_pop ();
    }
 
    if (server_stream->must_use_primary) {
@@ -718,11 +723,11 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts, mongoc_server_stream_t *se
     * been invalidated, error. */
    if (server_type == MONGOC_SERVER_UNKNOWN) {
       if (error) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot assemble command for invalidated server: %s",
-                         server_stream->sd->error.message);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot assemble command for invalidated server: %s",
+                            server_stream->sd->error.message);
       }
       RETURN (false);
    }
@@ -739,7 +744,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts, mongoc_server_stream_t *se
    cmd_name = parts->assembled.command_name = _mongoc_get_command_name (parts->assembled.command);
 
    if (!parts->assembled.command_name) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Empty command document");
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Empty command document");
       GOTO (done);
    }
 
@@ -772,10 +777,10 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts, mongoc_server_stream_t *se
 
       if (cs && _mongoc_client_session_in_txn (cs)) {
          if (!IS_PREF_PRIMARY (cs->txn.opts.read_prefs) && !parts->is_write_command) {
-            bson_set_error (error,
-                            MONGOC_ERROR_TRANSACTION,
-                            MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                            "Read preference in a transaction must be primary");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_TRANSACTION,
+                               MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                               "Read preference in a transaction must be primary");
             GOTO (done);
          }
       } else if (mode != MONGOC_READ_PRIMARY && server_type != MONGOC_SERVER_STANDALONE) {
@@ -808,10 +813,10 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts, mongoc_server_stream_t *se
        */
       if (cs) {
          if (!parts->assembled.is_acknowledged) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Cannot use client session with unacknowledged command");
+            _mongoc_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "Cannot use client session with unacknowledged command");
             GOTO (done);
          }
 
@@ -863,10 +868,10 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts, mongoc_server_stream_t *se
              * than 13 before potentially appending "snapshot" read concern. */
             if (mongoc_session_opts_get_snapshot (&cs->opts) &&
                 server_stream->sd->max_wire_version < WIRE_VERSION_SNAPSHOT_READS) {
-               bson_set_error (error,
-                               MONGOC_ERROR_CLIENT,
-                               MONGOC_ERROR_CLIENT_SESSION_FAILURE,
-                               "Snapshot reads require MongoDB 5.0 or later");
+               _mongoc_set_error (error,
+                                  MONGOC_ERROR_CLIENT,
+                                  MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                                  "Snapshot reads require MongoDB 5.0 or later");
                GOTO (done);
             }
 

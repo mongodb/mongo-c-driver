@@ -68,7 +68,7 @@ if [[ -d "${openssl_install_dir}" ]]; then
 fi
 
 # This test will hang after the first ping.
-LD_LIBRARY_PATH="${openssl_lib_prefix}" "${mongoc_dir}/src/libmongoc/test-mongoc-cache" "${mongoc_dir}/.evergreen/ocsp/${CERT_TYPE}/ca.pem" &
+LD_LIBRARY_PATH="${openssl_lib_prefix}" "${mongoc_dir}/cmake-build/src/libmongoc/test-mongoc-cache" "${mongoc_dir}/.evergreen/ocsp/${CERT_TYPE}/ca.pem" &
 sleep 5 # Give the program time to contact the OCSP responder
 
 pkill -nf "ocsp_mock" # We assume that the mock OCSP responder is named "ocsp_mock"
