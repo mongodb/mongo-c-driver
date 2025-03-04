@@ -40,7 +40,7 @@ mlib_read_u32le (const void *buf)
       const uint8_t *cptr = (const uint8_t *) buf;
       mlib_foreach_urange (i, sizeof ret) {
          ret <<= 8;
-         ret |= cptr[i];
+         ret |= cptr[(sizeof ret) - i - 1];
       }
    }
    return ret;
@@ -52,7 +52,10 @@ mlib_read_u32le (const void *buf)
 static inline int32_t
 mlib_read_i32le (const void *buf)
 {
-   return (int32_t) mlib_read_u32le (buf);
+   const uint32_t u = mlib_read_u32le (buf);
+   int32_t r;
+   memcpy (&r, &u, sizeof r);
+   return r;
 }
 
 /**
@@ -70,7 +73,7 @@ mlib_read_u64le (const void *buf)
       const uint8_t *cptr = (const uint8_t *) buf;
       mlib_foreach_urange (i, sizeof ret) {
          ret <<= 8;
-         ret |= cptr[i];
+         ret |= cptr[(sizeof ret) - i - 1];
       }
    }
    return ret;
@@ -82,7 +85,10 @@ mlib_read_u64le (const void *buf)
 static inline int64_t
 mlib_read_i64le (const void *buf)
 {
-   return (int64_t) mlib_read_u64le (buf);
+   const uint64_t u = mlib_read_u64le (buf);
+   int64_t r;
+   memcpy (&r, &u, sizeof r);
+   return r;
 }
 
 /**
