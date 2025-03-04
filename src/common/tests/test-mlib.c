@@ -22,10 +22,16 @@ _test_checks (void)
    mlib_assert_aborts () {
       mlib_check (false);
    }
-   // streq
-   mlib_check ("foo", streq, "foo");
+   // str_eq
+   mlib_check ("foo", str_eq, "foo");
    mlib_assert_aborts () {
-      mlib_check ("foo", streq, "bar");
+      mlib_check ("foo", str_eq, "bar");
+   }
+   // ptr_eq
+   const char *s = "foo";
+   mlib_check (s, ptr_eq, s);
+   mlib_assert_aborts () {
+      mlib_check (s, ptr_eq, NULL);
    }
    // eq
    mlib_check (4, eq, 4);
@@ -414,16 +420,16 @@ _test_int_encoding (void)
    {
       char buf[9] = {0};
       char *o = mlib_write_i32le (buf, 0x01020304);
-      mlib_check (o, ptreq, buf + 4);
-      mlib_check (buf, streq, "\x04\x03\x02\x01");
+      mlib_check (o, ptr_eq, buf + 4);
+      mlib_check (buf, str_eq, "\x04\x03\x02\x01");
 
       o = mlib_write_i32le (o, 42);
-      mlib_check (o, ptreq, buf + 8);
-      mlib_check (buf, streq, "\x04\x03\x02\x01*");
+      mlib_check (o, ptr_eq, buf + 8);
+      mlib_check (buf, str_eq, "\x04\x03\x02\x01*");
 
       o = mlib_write_i64le (buf, 0x0102030405060708);
-      mlib_check (o, ptreq, buf + 8);
-      mlib_check (buf, streq, "\x08\x07\x06\x05\x04\x03\x02\x01");
+      mlib_check (o, ptr_eq, buf + 8);
+      mlib_check (buf, str_eq, "\x08\x07\x06\x05\x04\x03\x02\x01");
    }
 }
 

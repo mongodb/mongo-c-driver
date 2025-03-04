@@ -131,9 +131,9 @@ struct mlib_source_location {
 // Three args:
 #define _mlib_check_argc_3(A, Operator, B) MLIB_PASTE (_mlibCheckCondition_, Operator) (A, B)
 // String-compare:
-#define _mlibCheckCondition_streq(A, B) _mlibCheckStrEq (A, B, #A, #B, mlib_this_source_location ())
+#define _mlibCheckCondition_str_eq(A, B) _mlibCheckStrEq (A, B, #A, #B, mlib_this_source_location ())
 // Pointer-compare:
-#define _mlibCheckCondition_ptreq(A, B) _mlibCheckPtrEq (A, B, #A, #B, mlib_this_source_location ())
+#define _mlibCheckCondition_ptr_eq(A, B) _mlibCheckPtrEq (A, B, #A, #B, mlib_this_source_location ())
 // Integer-equal:
 #define _mlibCheckCondition_eq(A, B) \
    _mlibCheckIntCmp (                \
