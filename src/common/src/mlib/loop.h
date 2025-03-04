@@ -31,7 +31,7 @@
  * - `mlib_foreach_{u,i}range(Var, Stop)`
  * - `mlib_foreach_{u,i}range(Var, Start, Stop)`
  *
- * If ommitted, starts at zero. The loop does not include the `Stop` value. The `Var`
+ * If omitted, starts at zero. The loop does not include the `Stop` value. The `Var`
  * variable cannot be modified within the loop. The loop variable is declared as the maximum
  * precision type for the requested signedness.
  */
@@ -106,7 +106,7 @@
          Iter != StopVar), \
         /* Advance the iterator on each loop */ \
         ++Iter, \
-        /* Declare a contant pointer to the current element at the top of the loop */ \
+        /* Declare a constant pointer to the current element at the top of the loop */ \
         T* const VarName = Iter)
 
 
