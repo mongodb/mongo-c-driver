@@ -1,3 +1,14 @@
+libmongoc 1.30.2
+================
+
+Fixes:
+
+  * Fix C23 build on Windows.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Jeroen Ooms
+
 libmongoc 1.30.1
 ================
 

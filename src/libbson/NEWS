@@ -1,3 +1,16 @@
+libbson 1.30.2
+==============
+
+Fixes:
+
+  * Fix `bson_new_from_buffer` behavior on malformed input.
+  * Fix allocation of large `bson_t`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Micah Scott
+  * Kevin Albertson
+
 libbson 1.30.1
 ==============
 
