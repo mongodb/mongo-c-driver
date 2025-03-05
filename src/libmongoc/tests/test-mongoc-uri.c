@@ -1897,6 +1897,7 @@ test_mongoc_uri_duplicates (void)
 #define RECREATE_URI(opts)                                                               \
    if (1) {                                                                              \
       mongoc_uri_destroy (uri);                                                          \
+      clear_captured_logs ();                                                            \
       uri = mongoc_uri_new_with_error ("mongodb://user:pwd@localhost/test?" opts, &err); \
       ASSERT_OR_PRINT (uri, err);                                                        \
    } else                                                                                \
@@ -2003,6 +2004,7 @@ test_mongoc_uri_duplicates (void)
    /* exception: read preference tags get appended. */
    RECREATE_URI (MONGOC_URI_READPREFERENCE "=secondary&" MONGOC_URI_READPREFERENCETAGS
                                            "=a:x&" MONGOC_URI_READPREFERENCETAGS "=b:y");
+   ASSERT_NO_CAPTURED_LOGS (mongoc_uri_get_string (uri));
    bson = mongoc_uri_get_read_prefs (uri);
    BSON_ASSERT (bson_compare (bson, tmp_bson ("{'0': {'a': 'x'}, '1': {'b': 'y'}}")) == 0);
 
@@ -2074,7 +2076,7 @@ test_mongoc_uri_duplicates (void)
 
    /* exception: a string write concern takes precedence over an int */
    RECREATE_URI (MONGOC_URI_W "=majority&" MONGOC_URI_W "=0");
-   ASSERT_LOG_DUPE (MONGOC_URI_W);
+   ASSERT_NO_CAPTURED_LOGS (mongoc_uri_get_string (uri));
    wc = mongoc_uri_get_write_concern (uri);
    BSON_ASSERT (mongoc_write_concern_get_w (wc) == MONGOC_WRITE_CONCERN_W_MAJORITY);
 
