@@ -257,11 +257,11 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    /* should recognize a question mark in the userpass instead of mistaking it for the beginning of options */
-   uri = mongoc_uri_new ("mongodb://us?r:pa?s@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1");
+   uri = mongoc_uri_new ("mongodb://us?r:pa?s@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA-1");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "us?r");
    ASSERT_CMPSTR (mongoc_uri_get_password (uri), "pa?s");
-   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA-1");
    mongoc_uri_destroy (uri);
 
    /* should fail on invalid escaped characters */
@@ -370,17 +370,17 @@ test_mongoc_uri_new (void)
    /* PLAIN */
 
    /* should recognize this mechanism */
-   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=PLAIN");
+   uri = mongoc_uri_new ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=PLAIN");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "PLAIN");
    mongoc_uri_destroy (uri);
 
-   /* SCRAM-SHA1 */
+   /* SCRAM-SHA-1 */
 
    /* should recognize this mechanism */
-   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1");
+   uri = mongoc_uri_new ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA-1");
    ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA-1");
    mongoc_uri_destroy (uri);
 }
 
@@ -394,15 +394,21 @@ test_mongoc_uri_authmechanismproperties (void)
 
    capture_logs (true);
 
-   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1"
+   uri = mongoc_uri_new ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=GSSAPI"
                          "&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=a:one,b:two");
    ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
+   ASSERT_CAPTURED_LOG (mongoc_uri_get_string (uri),
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported 'GSSAPI' authentication mechanism property: 'a'");
+   ASSERT_CAPTURED_LOG (mongoc_uri_get_string (uri),
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported 'GSSAPI' authentication mechanism property: 'b'");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "GSSAPI");
    ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
    ASSERT_MATCH (&props, "{'a': 'one', 'b': 'two'}");
 
    /* prohibited */
-   ASSERT (!mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_AUTHMECHANISM, "SCRAM-SHA1"));
+   ASSERT (!mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_AUTHMECHANISM, "SCRAM-SHA-1"));
 
    ASSERT (!mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_AUTHMECHANISM, 1));
    ASSERT_CAPTURED_LOG ("setting authmechanism=1",
@@ -1929,6 +1935,8 @@ test_mongoc_uri_duplicates (void)
 
    RECREATE_URI (MONGOC_URI_AUTHMECHANISM "=a&" MONGOC_URI_AUTHMECHANISM "=b");
    ASSERT_LOG_DUPE (MONGOC_URI_AUTHMECHANISM);
+   ASSERT_CAPTURED_LOG (
+      mongoc_uri_get_string (uri), MONGOC_LOG_LEVEL_WARNING, "Unsupported value for \"authMechanism\": \"b\"");
    bson = mongoc_uri_get_credentials (uri);
    BSON_ITER_UNIQUE (MONGOC_URI_AUTHMECHANISM);
    BSON_ASSERT (strcmp (bson_iter_utf8 (&iter, NULL), "b") == 0);
@@ -1937,6 +1945,17 @@ test_mongoc_uri_duplicates (void)
    ASSERT_LOG_DUPE (MONGOC_URI_AUTHMECHANISMPROPERTIES);
    bson = mongoc_uri_get_credentials (uri);
    BSON_ASSERT (bson_compare (bson, tmp_bson ("{'authmechanismproperties': {'b': 'y' }}")) == 0);
+
+   RECREATE_URI (MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES
+                                          "=a:x&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=b:y");
+   ASSERT_LOG_DUPE (MONGOC_URI_AUTHMECHANISMPROPERTIES);
+   ASSERT_CAPTURED_LOG (mongoc_uri_get_string (uri),
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported 'MONGODB-AWS' authentication mechanism property: 'b'");
+   bson = mongoc_uri_get_credentials (uri);
+   ASSERT_EQUAL_BSON (
+      tmp_bson ("{'authmechanism': 'MONGODB-AWS', 'authmechanismproperties': {'b': 'y' }, 'authsource': '$external'}"),
+      bson);
 
    RECREATE_URI (MONGOC_URI_AUTHSOURCE "=a&" MONGOC_URI_AUTHSOURCE "=b");
    ASSERT_LOG_DUPE (MONGOC_URI_AUTHSOURCE);

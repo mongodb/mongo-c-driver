@@ -1286,71 +1286,377 @@ mongoc_uri_finalize_tls (mongoc_uri_t *uri, bson_error_t *error)
 }
 
 
+typedef enum _mongoc_uri_finalize_validate {
+   _mongoc_uri_finalize_allowed,
+   _mongoc_uri_finalize_required,
+   _mongoc_uri_finalize_prohibited,
+} mongoc_uri_finalize_validate;
+
+
+static bool
+_finalize_auth_username (const char *username,
+                         const char *mechanism,
+                         mongoc_uri_finalize_validate validate,
+                         bson_error_t *error)
+{
+   BSON_OPTIONAL_PARAM (username);
+   BSON_ASSERT_PARAM (mechanism);
+   BSON_OPTIONAL_PARAM (error);
+
+   switch (validate) {
+   case _mongoc_uri_finalize_required:
+      if (!username || strlen (username) == 0u) {
+         MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires a username", mechanism);
+         return false;
+      }
+      break;
+
+   case _mongoc_uri_finalize_prohibited:
+      if (username) {
+         MONGOC_URI_ERROR (error, "'%s' authentication mechanism does not accept a username", mechanism);
+         return false;
+      }
+      break;
+
+   case _mongoc_uri_finalize_allowed:
+   default:
+      break;
+   }
+
+   return true;
+}
+
+static bool
+_finalize_auth_source_external_required (const char *source, const char *mechanism, bson_error_t *error)
+{
+   BSON_OPTIONAL_PARAM (source);
+   BSON_ASSERT_PARAM (mechanism);
+   BSON_OPTIONAL_PARAM (error);
+
+   if (!source || strcasecmp (source, "$external") != 0) {
+      MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires \"$external\" authSource", mechanism);
+      return false;
+   }
+
+   return true;
+}
+
+static bool
+_finalize_auth_password (const char *password,
+                         const char *mechanism,
+                         mongoc_uri_finalize_validate validate,
+                         bson_error_t *error)
+{
+   BSON_OPTIONAL_PARAM (password);
+   BSON_ASSERT_PARAM (mechanism);
+   BSON_OPTIONAL_PARAM (error);
+
+   switch (validate) {
+   case _mongoc_uri_finalize_required:
+      // Passwords may be zero length.
+      if (!password) {
+         MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires a password", mechanism);
+         return false;
+      }
+      break;
+
+   case _mongoc_uri_finalize_prohibited:
+      if (password) {
+         MONGOC_URI_ERROR (error, "'%s' authentication mechanism does not accept a password", mechanism);
+         return false;
+      }
+      break;
+
+   case _mongoc_uri_finalize_allowed:
+   default:
+      break;
+   }
+
+   return true;
+}
+
+static bool
+_finalize_auth_mechanism_properties_prohibited (const bson_t *mechanism_properties,
+                                                const char *mechanism,
+                                                bson_error_t *error)
+{
+   BSON_OPTIONAL_PARAM (mechanism_properties);
+   BSON_ASSERT_PARAM (mechanism);
+   BSON_OPTIONAL_PARAM (error);
+
+   if (mechanism_properties) {
+      MONGOC_URI_ERROR (error, "'%s' authentication mechanism does not accept mechanism properties", mechanism);
+      return false;
+   }
+
+   return true;
+}
+
+typedef struct __supported_mechanism_properties {
+   const char *name;
+   bson_type_t type;
+} supported_mechanism_properties;
+
+static void
+_supported_mechanism_properties_check (const supported_mechanism_properties *supported_properties,
+                                       const bson_t *mechanism_properties,
+                                       const char *mechanism)
+{
+   BSON_ASSERT_PARAM (supported_properties);
+   BSON_ASSERT_PARAM (mechanism_properties);
+   BSON_ASSERT_PARAM (mechanism);
+
+   bson_iter_t iter;
+   BSON_ASSERT (bson_iter_init (&iter, mechanism_properties));
+
+   // For each element in `MongoCredential.mechanism_properties`...
+   while (bson_iter_next (&iter)) {
+      const char *const key = bson_iter_key (&iter);
+
+      // ... ensure it matches one of the supported GSSAPI mechanism property fields.
+      for (const supported_mechanism_properties *prop = supported_properties; prop->name; ++prop) {
+         if (strcasecmp (key, prop->name) == 0) {
+            const bson_type_t type = bson_iter_type (&iter);
+
+            if (type == prop->type) {
+               goto found_match; // Matches both key and type.
+            } else {
+               // Connection String spec: Any invalid Values for a given key MUST be ignored and MUST log a WARN level
+               // message.
+               MONGOC_WARNING ("'%s' authentication mechanism property '%s' has incorrect type '%s'",
+                               key,
+                               mechanism,
+                               _mongoc_bson_type_to_str (type));
+            }
+         }
+      }
+
+      // Connection String spec: any invalid Values for a given key MUST be ignored and MUST log a WARN level message.
+      MONGOC_WARNING ("Unsupported '%s' authentication mechanism property: '%s'", mechanism, key);
+
+   found_match:
+      continue;
+   }
+}
+
+static void
+_finalize_auth_gssapi_mechanism_properties (const bson_t *mechanism_properties)
+{
+   BSON_OPTIONAL_PARAM (mechanism_properties);
+
+   static const supported_mechanism_properties supported_properties[] = {
+      {"SERVICE_NAME", BSON_TYPE_UTF8},
+      {"CANONICALIZE_HOST_NAME", BSON_TYPE_UTF8}, // CDRIVER-4128: UTF-8 even when "false" or "true".
+      {"SERVICE_REALM", BSON_TYPE_UTF8},
+      {"SERVICE_HOST", BSON_TYPE_UTF8},
+      {0},
+   };
+
+   if (mechanism_properties) {
+      _supported_mechanism_properties_check (supported_properties, mechanism_properties, "GSSAPI");
+   }
+}
+
+static void
+_finalize_auth_aws_mechanism_properties (const bson_t *mechanism_properties)
+{
+   BSON_OPTIONAL_PARAM (mechanism_properties);
+   BSON_OPTIONAL_PARAM (error);
+
+   static const supported_mechanism_properties supported_properties[] = {
+      {"AWS_SESSION_TOKEN", BSON_TYPE_UTF8},
+      {0},
+   };
+
+   if (mechanism_properties) {
+      _supported_mechanism_properties_check (supported_properties, mechanism_properties, "MONGODB-AWS");
+   }
+}
+
 static bool
 mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (uri);
+   BSON_OPTIONAL_PARAM (error);
+
+   bool ret = false;
+
+   const char *const mechanism = mongoc_uri_get_auth_mechanism (uri);
+   const char *const username = mongoc_uri_get_username (uri);
+
+   // Driver Authentication spec: The presence of a credential delimiter (i.e. '@') in the URI connection string is
+   // evidence that the user has unambiguously specified user information and MUST be interpreted as a user
+   // configuring authentication credentials (even if the username and/or password are empty strings).
+   //
+   // Note: username is always set when the credential delimiter `@` is present in the URI as parsed by
+   // `mongoc_uri_parse_userpass`.
+   //
+   // If neither an authentication mechanism nor a username is provided, there is nothing to do.
+   if (!mechanism && !username) {
+      return true;
+   } else {
+      // All code below assumes authentication credentials are being configured.
+   }
+
    bson_iter_t iter;
-   const char *source = NULL;
-   const bool require_auth = uri->username != NULL;
 
-   if (bson_iter_init_find_case (&iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
-      source = bson_iter_utf8 (&iter, NULL);
-   }
+   const char *const source =
+      bson_iter_init_find_case (&iter, &uri->credentials, MONGOC_URI_AUTHSOURCE) ? bson_iter_utf8 (&iter, NULL) : NULL;
+   const char *const password = mongoc_uri_get_password (uri);
 
-   if (mongoc_uri_get_auth_mechanism (uri)) {
-      /* authSource with GSSAPI or X509 should always be external */
-      if (!strcasecmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI") ||
-          !strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509")) {
-         if (source) {
-            if (strcasecmp (source, "$external")) {
-               MONGOC_URI_ERROR (error, "%s", "GSSAPI and X509 require \"$external\" authSource");
-               return false;
-            }
-         } else {
-            bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
-         }
-      }
-      /* MONGODB-X509 and MONGODB-AWS are the only mechanisms that don't require
-       * username */
-      if (!(strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") == 0 ||
-            strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-AWS") == 0)) {
-         if (!mongoc_uri_get_username (uri) || strcmp (mongoc_uri_get_username (uri), "") == 0) {
-            MONGOC_URI_ERROR (
-               error, "'%s' authentication mechanism requires username", mongoc_uri_get_auth_mechanism (uri));
-            return false;
-         }
-      }
-      /* MONGODB-X509 errors if a password is supplied. */
-      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") == 0) {
-         if (mongoc_uri_get_password (uri)) {
-            MONGOC_URI_ERROR (
-               error, "'%s' authentication mechanism does not accept a password", mongoc_uri_get_auth_mechanism (uri));
-            return false;
-         }
-      }
-      /* GSSAPI uses 'mongodb' as the default service name */
-      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI") == 0 &&
-          !(bson_iter_init_find (&iter, &uri->credentials, MONGOC_URI_AUTHMECHANISMPROPERTIES) &&
-            BSON_ITER_HOLDS_DOCUMENT (&iter) && bson_iter_recurse (&iter, &iter) &&
-            bson_iter_find_case (&iter, "SERVICE_NAME"))) {
-         bson_t tmp;
-         bson_t *props = NULL;
-
-         props = mongoc_uri_get_mechanism_properties (uri, &tmp) ? bson_copy (&tmp) : bson_new ();
-
-         BSON_APPEND_UTF8 (props, "SERVICE_NAME", "mongodb");
-         mongoc_uri_set_mechanism_properties (uri, props);
-
-         bson_destroy (props);
-      }
-
-   } else if (require_auth) /* Default auth mechanism is used */ {
-      if (!mongoc_uri_get_username (uri) || strcmp (mongoc_uri_get_username (uri), "") == 0) {
-         MONGOC_URI_ERROR (error, "%s", "Default authentication mechanism requires username");
-         return false;
+   bson_t *mechanism_properties = NULL;
+   bson_t mechanism_properties_owner;
+   {
+      bson_t tmp;
+      if (mongoc_uri_get_mechanism_properties (uri, &tmp)) {
+         bson_copy_to (&tmp, &mechanism_properties_owner); // Avoid invalidation by updates to `uri->credentials`.
+         mechanism_properties = &mechanism_properties_owner;
+      } else {
+         bson_init (&mechanism_properties_owner); // Ensure initialization.
       }
    }
-   return true;
+
+   // Default authentication method.
+   if (!mechanism) {
+      // The authentication mechanism will be derived by `_mongoc_cluster_auth_node` during handshake according to
+      // `saslSupportedMechanisms`.
+
+      // Default authentication method is used when no mechanism is specified but a username is present.
+      // Driver Authentication spec: MUST be specified and non-zero length.
+      if (!_finalize_auth_username (username, "default", _mongoc_uri_finalize_required, error)) {
+         goto fail;
+      }
+
+      // Defer validation of `MongoCredential` fields to `_mongoc_cluster_auth_node` during handshake according to
+      // `saslSupportedMechanisms`. Defaults for `MongoCredential.source` is handled by `mongoc_uri_get_auth_source` for
+      // backward compatibility.
+   }
+
+   // MONGODB-CR, SCRAM-SHA-1, SCRAM-SHA-256, and PLAIN (same validation requirements)
+   else if (strcmp (mechanism, "MONGODB-CR") == 0 || strcmp (mechanism, "SCRAM-SHA-1") == 0 ||
+            strcmp (mechanism, "SCRAM-SHA-256") == 0 || strcmp (mechanism, "PLAIN") == 0) {
+      // Driver Authentication spec: `MongoCredential.username` MUST be specified and non-zero length.
+      if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_required, error)) {
+         goto fail;
+      }
+
+      // Driver Authentication spec: `MongoCredential.source` MUST be specified. Defaults to the database name if
+      // supplied on the connection string or:
+      //   - "admin" (for MONGODB-CR, SCRAM-SHA-1, and SCRAM-SHA-256).
+      //   - "$external" (for PLAIN).
+      // Handled by `mongoc_uri_get_auth_source` for backward compatibility.
+
+      // Driver Authentication spec: `MongoCredential.password` MUST be specified.
+      if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_required, error)) {
+         goto fail;
+      }
+
+      // Driver Authentication spec: `MongoCredential.mechanism_properties` MUST NOT be specified.
+      if (!_finalize_auth_mechanism_properties_prohibited (mechanism_properties, mechanism, error)) {
+         goto fail;
+      }
+   }
+
+   // MONGODB-X509
+   else if (strcmp (mechanism, "MONGODB-X509") == 0) {
+      // `MongoCredential.username` SHOULD NOT be provided for MongoDB 3.4 and newer.
+      // CDRIVER-1959: allow for backward compatibility until the spec states "MUST NOT" instead of "SHOULD NOT" and
+      // spec tests are updated accordingly to permit warnings or errors.
+      if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_allowed, error)) {
+         goto fail;
+      }
+
+      // Driver Authentication spec: `MongoCredential.source` MUST be "$external" and defaults to "$external".
+      if (!source) {
+         bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
+      } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
+         goto fail;
+      }
+
+      // Driver Authentication spec: `MongoCredential.password` MUST NOT be specified.
+      if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_prohibited, error)) {
+         goto fail;
+      }
+
+      // Driver Authentication spec: `MongoCredential.mechanism_properties` MUST NOT be specified.
+      if (!_finalize_auth_mechanism_properties_prohibited (mechanism_properties, mechanism, error)) {
+         goto fail;
+      }
+   }
+
+   // GSSAPI
+   else if (strcmp (mechanism, "GSSAPI") == 0) {
+      // Driver Authentication spec: `MongoCredential.username` MUST be specified and non-zero length.
+      if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_required, error)) {
+         goto fail;
+      }
+
+      // Driver Authentication spec: `MongoCredential.source` MUST be "$external" and defaults to "$external".
+      if (!source) {
+         bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
+      } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
+         goto fail;
+      }
+
+      // Driver Authentication spec: `MongoCredential.password` MAY be specified.
+      if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_allowed, error)) {
+         goto fail;
+      }
+
+      // `MongoCredentials.mechanism_properties` are allowed for GSSAPI.
+      _finalize_auth_gssapi_mechanism_properties (mechanism_properties);
+
+      // Driver Authentication spec: Drivers MUST allow the user to specify a different service name. The default is
+      // "mongodb".
+      if (!mechanism_properties || !bson_iter_init_find (&iter, mechanism_properties, "SERVICE_NAME")) {
+         bsonBuildDecl (props,
+                        if (mechanism_properties, then (insert (*mechanism_properties, always))),
+                        kv ("SERVICE_NAME", cstr ("mongodb")));
+
+         const bool success = !bsonBuildError && mongoc_uri_set_mechanism_properties (uri, &props);
+
+         if (!success) {
+            MONGOC_URI_ERROR (
+               error, "'%s' authentication mechanism could not set the default service name to \"mongodb\"", mechanism);
+            goto fail;
+         }
+      }
+   }
+
+   // MONGODB-AWS
+   else if (strcmp (mechanism, "MONGODB-AWS") == 0) {
+      // Driver Authentication spec: `MongoCredential.username` MAY be specified (as the non-sensitive AWS access key).
+      if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_allowed, error)) {
+         goto fail;
+      }
+
+      // Driver Authentication spec: `MongoCredential.source` MUST be "$external" and defaults to "$external".
+      if (!source) {
+         bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
+      } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
+         goto fail;
+      }
+
+      // Driver Authentication spec: `MongoCredential.password` MAY be specified (as the sensitive AWS secret key).
+      if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_allowed, error)) {
+         goto fail;
+      }
+
+      // `MongoCredentials.mechanism_properties` are allowed for MONGODB-AWS.
+      _finalize_auth_aws_mechanism_properties (mechanism_properties);
+   }
+
+   // Invalid or unsupported authentication mechanism.
+   else {
+      MONGOC_WARNING ("Unsupported value for \"authMechanism\": \"%s\"", mechanism);
+   }
+
+   ret = true;
+
+fail:
+   bson_destroy (&mechanism_properties_owner);
+
+   return ret;
 }
 
 static bool
@@ -1950,33 +2256,54 @@ mongoc_uri_set_database (mongoc_uri_t *uri, const char *database)
 const char *
 mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
 {
-   bson_iter_t iter;
-   const char *mechanism;
+   BSON_ASSERT_PARAM (uri);
 
-   BSON_ASSERT (uri);
-
-   if (bson_iter_init_find_case (&iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
-      return bson_iter_utf8 (&iter, NULL);
-   }
-
-   /* Auth spec:
-    * "For GSSAPI and MONGODB-X509 authMechanisms the authSource defaults to
-    * $external. For PLAIN the authSource defaults to the database name if
-    * supplied on the connection string or $external. For
-    * SCRAM-SHA-1 and SCRAM-SHA-256 authMechanisms, the authSource defaults to
-    * the database name if supplied on the connection string or admin."
-    */
-   mechanism = mongoc_uri_get_auth_mechanism (uri);
-   if (mechanism) {
-      if (!strcasecmp (mechanism, "GSSAPI") || !strcasecmp (mechanism, "MONGODB-X509")) {
-         return "$external";
-      }
-      if (!strcasecmp (mechanism, "PLAIN")) {
-         return uri->database ? uri->database : "$external";
+   // Explicitly set.
+   {
+      bson_iter_t iter;
+      if (bson_iter_init_find_case (&iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
+         return bson_iter_utf8 (&iter, NULL);
       }
    }
 
-   return uri->database ? uri->database : "admin";
+   // The database name if supplied.
+   const char *const db = uri->database;
+
+   // Depending on the authentication mechanism, `MongoCredential.source` has different defaults.
+   const char *const mechanism = mongoc_uri_get_auth_mechanism (uri);
+
+   // Default authentication mechanism uses either SCRAM-SHA-1 or SCRAM-SHA-256.
+   if (!mechanism) {
+      return db ? db : "admin";
+   }
+
+   // Defaults to the database name if supplied on the connection string or "admin" for:
+   {
+      static const char *const matches[] = {
+         "MONGODB-CR",
+         "SCRAM-SHA-1",
+         "SCRAM-SHA-256",
+         NULL,
+      };
+
+      for (const char *const *match = matches; *match; ++match) {
+         if (strcmp (mechanism, *match) == 0) {
+            return db ? db : "admin";
+         }
+      }
+   }
+
+   // Defaults to the database name if supplied on the connection string or "$external" for:
+   //  - PLAIN
+   if (strcmp (mechanism, "PLAIN") == 0) {
+      return db ? db : "$external";
+   }
+
+   // Fallback to "$external" for all remaining authentication mechanisms:
+   //  - MONGODB-X509
+   //  - GSSAPI
+   //  - MONGODB-AWS
+   return "$external";
 }
 
 

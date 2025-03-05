@@ -8,6 +8,30 @@ Removals:
     names `mongoc.h` or `bson.h` directly. Instead, the names must be prefixed
     with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`.
 
+Changes:
+
+  * Authentication mechanisms and connection strings:
+    * Case sensitive is now respected for _values_ of authentication-related URI options and authentication mechanism properties.
+      * _Keys_ remain case-insensitive, including in mechanism properties. e.g. `authMechanismProperties=service_name:value` is equivalent to `authMechanismProperties=SERVICE_NAME:value`.
+      * e.g. `"authMechanism=scram-sha-1"` does not equal `"authMechanism=SCRAM-SHA-1"`.
+      * e.g. `authMechanismProperties=SERVICE_NAME:value` is not equivalent to `authMechanismProperties=SERVICE_NAME:VALUE`
+    * `authMechanism` is now validated and emits a warning for invalid or unsupported values.
+    * The requirement that a password is specified (even when empty, e.g. `"mongodb://username:@127.0.0.1/"`) is now enforced for the following authentication mechanisms (only when the authentication mechanism is specified):
+      * MONGODB-CR
+      * PLAIN
+      * SCRAM-SHA-1
+      * SCRAM-SHA-256
+    * `authMechanismProperties` is now prohibited (instead of ignored) for the following authentication mechanisms:
+      * MONGODB-CR
+      * PLAIN
+      * SCRAM-SHA-1
+      * SCRAM-SHA-256
+      * MONGODB-X509
+    * `authMechanismProperties` is now validated and warns for invalid or unsupported fields for the following authentication mechanisms:
+      * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
+      * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
+    * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
+
 libmongoc 1.30.1
 ================
 
