@@ -2044,7 +2044,6 @@ test_mongoc_uri_duplicates (void)
    ASSERT_EQUAL_BSON (tmp_bson ("{'zlib': 'yes'}"), bson);
 #endif
 
-   /* exception: GSSAPISERVICENAME does not overwrite. */
    RECREATE_URI (MONGOC_URI_AUTHMECHANISM "=GSSAPI&" MONGOC_URI_GSSAPISERVICENAME "=a&" MONGOC_URI_GSSAPISERVICENAME
                                           "=b");
    ASSERT_CAPTURED_LOG ("option: " MONGOC_URI_GSSAPISERVICENAME,
