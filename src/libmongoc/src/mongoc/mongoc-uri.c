@@ -1484,7 +1484,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    const char *const mechanism = mongoc_uri_get_auth_mechanism (uri);
    const char *const username = mongoc_uri_get_username (uri);
 
-   // Driver Authentication spec: The presence of a credential delimiter (i.e. '@') in the URI connection string is
+   // Authentication spec: The presence of a credential delimiter (i.e. '@') in the URI connection string is
    // evidence that the user has unambiguously specified user information and MUST be interpreted as a user
    // configuring authentication credentials (even if the username and/or password are empty strings).
    //
@@ -1522,7 +1522,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // `saslSupportedMechanisms`.
 
       // Default authentication method is used when no mechanism is specified but a username is present.
-      // Driver Authentication spec: MUST be specified and non-zero length.
+      // Authentication spec: username: MUST be specified and non-zero length.
       if (!_finalize_auth_username (username, "default", _mongoc_uri_finalize_required, error)) {
          goto fail;
       }
@@ -1535,23 +1535,23 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    // MONGODB-CR, SCRAM-SHA-1, SCRAM-SHA-256, and PLAIN (same validation requirements)
    else if (strcmp (mechanism, "MONGODB-CR") == 0 || strcmp (mechanism, "SCRAM-SHA-1") == 0 ||
             strcmp (mechanism, "SCRAM-SHA-256") == 0 || strcmp (mechanism, "PLAIN") == 0) {
-      // Driver Authentication spec: `MongoCredential.username` MUST be specified and non-zero length.
+      // Authentication spec: username: MUST be specified and non-zero length.
       if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_required, error)) {
          goto fail;
       }
 
-      // Driver Authentication spec: `MongoCredential.source` MUST be specified. Defaults to the database name if
+      // Authentication spec: source: MUST be specified. Defaults to the database name if
       // supplied on the connection string or:
       //   - "admin" (for MONGODB-CR, SCRAM-SHA-1, and SCRAM-SHA-256).
       //   - "$external" (for PLAIN).
       // Handled by `mongoc_uri_get_auth_source` for backward compatibility.
 
-      // Driver Authentication spec: `MongoCredential.password` MUST be specified.
+      // Authentication spec: password: MUST be specified.
       if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_required, error)) {
          goto fail;
       }
 
-      // Driver Authentication spec: `MongoCredential.mechanism_properties` MUST NOT be specified.
+      // Authentication spec: mechanism_properties: MUST NOT be specified.
       if (!_finalize_auth_mechanism_properties_prohibited (mechanism_properties, mechanism, error)) {
          goto fail;
       }
@@ -1566,19 +1566,19 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          goto fail;
       }
 
-      // Driver Authentication spec: `MongoCredential.source` MUST be "$external" and defaults to "$external".
+      // Authentication spec: source: MUST be "$external" and defaults to "$external".
       if (!source) {
          bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
       } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
          goto fail;
       }
 
-      // Driver Authentication spec: `MongoCredential.password` MUST NOT be specified.
+      // Authentication spec: password: MUST NOT be specified.
       if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_prohibited, error)) {
          goto fail;
       }
 
-      // Driver Authentication spec: `MongoCredential.mechanism_properties` MUST NOT be specified.
+      // Authentication spec: mechanism_properties: MUST NOT be specified.
       if (!_finalize_auth_mechanism_properties_prohibited (mechanism_properties, mechanism, error)) {
          goto fail;
       }
@@ -1586,19 +1586,19 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
    // GSSAPI
    else if (strcmp (mechanism, "GSSAPI") == 0) {
-      // Driver Authentication spec: `MongoCredential.username` MUST be specified and non-zero length.
+      // Authentication spec: username: MUST be specified and non-zero length.
       if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_required, error)) {
          goto fail;
       }
 
-      // Driver Authentication spec: `MongoCredential.source` MUST be "$external" and defaults to "$external".
+      // Authentication spec: source: MUST be "$external" and defaults to "$external".
       if (!source) {
          bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
       } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
          goto fail;
       }
 
-      // Driver Authentication spec: `MongoCredential.password` MAY be specified.
+      // Authentication spec: password: MAY be specified.
       if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_allowed, error)) {
          goto fail;
       }
@@ -1606,7 +1606,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // `MongoCredentials.mechanism_properties` are allowed for GSSAPI.
       _finalize_auth_gssapi_mechanism_properties (mechanism_properties);
 
-      // Driver Authentication spec: Drivers MUST allow the user to specify a different service name. The default is
+      // Authentication spec: Drivers MUST allow the user to specify a different service name. The default is
       // "mongodb".
       if (!mechanism_properties || !bson_iter_init_find (&iter, mechanism_properties, "SERVICE_NAME")) {
          bsonBuildDecl (props,
@@ -1625,24 +1625,24 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
    // MONGODB-AWS
    else if (strcmp (mechanism, "MONGODB-AWS") == 0) {
-      // Driver Authentication spec: `MongoCredential.username` MAY be specified (as the non-sensitive AWS access key).
+      // Authentication spec: username: MAY be specified (as the non-sensitive AWS access key).
       if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_allowed, error)) {
          goto fail;
       }
 
-      // Driver Authentication spec: `MongoCredential.source` MUST be "$external" and defaults to "$external".
+      // Authentication spec: source: MUST be "$external" and defaults to "$external".
       if (!source) {
          bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
       } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
          goto fail;
       }
 
-      // Driver Authentication spec: `MongoCredential.password` MAY be specified (as the sensitive AWS secret key).
+      // Authentication spec: password: MAY be specified (as the sensitive AWS secret key).
       if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_allowed, error)) {
          goto fail;
       }
 
-      // `MongoCredentials.mechanism_properties` are allowed for MONGODB-AWS.
+      // mechanism_properties are allowed for MONGODB-AWS.
       _finalize_auth_aws_mechanism_properties (mechanism_properties);
    }
 
