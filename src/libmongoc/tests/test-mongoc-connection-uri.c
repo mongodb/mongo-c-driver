@@ -14,22 +14,24 @@ static void
 bson_contains_iter (const bson_t *haystack, bson_iter_t *needle)
 {
    bson_iter_t iter;
-   uint32_t bson_type;
 
    if (!bson_iter_next (needle)) {
       return;
    }
 
-   ASSERT (bson_iter_init_find_case (&iter, haystack, bson_iter_key (needle)));
+   const char *const key = bson_iter_key (needle);
 
-   bson_type = bson_iter_type (needle);
+   ASSERT_WITH_MSG (bson_iter_init_find_case (&iter, haystack, key), "'%s' is not present", key);
+
+   const uint32_t bson_type = bson_iter_type (needle);
+
    switch (bson_type) {
    case BSON_TYPE_ARRAY:
    case BSON_TYPE_DOCUMENT: {
       bson_t sub_bson;
       bson_iter_t sub_iter;
 
-      ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+      ASSERT_WITH_MSG (BSON_ITER_HOLDS_DOCUMENT (&iter), "'%s' is not a document", key);
       bson_iter_bson (&iter, &sub_bson);
 
       bson_iter_recurse (needle, &sub_iter);
@@ -39,20 +41,20 @@ bson_contains_iter (const bson_t *haystack, bson_iter_t *needle)
       return;
    }
    case BSON_TYPE_BOOL:
-      ASSERT (bson_iter_as_bool (needle) == bson_iter_as_bool (&iter));
+      ASSERT_WITH_MSG (bson_iter_as_bool (needle) == bson_iter_as_bool (&iter), "'%s' is not the correct value", key);
       bson_contains_iter (haystack, needle);
       return;
    case BSON_TYPE_UTF8:
-      ASSERT (0 == strcmp (bson_iter_utf8 (needle, 0), bson_iter_utf8 (&iter, 0)));
+      ASSERT_CMPSTR (bson_iter_utf8 (needle, 0), bson_iter_utf8 (&iter, 0));
       bson_contains_iter (haystack, needle);
       return;
    case BSON_TYPE_DOUBLE:
-      ASSERT (bson_iter_double (needle) == bson_iter_double (&iter));
+      ASSERT_CMPDOUBLE (bson_iter_double (needle), ==, bson_iter_double (&iter));
       bson_contains_iter (haystack, needle);
       return;
    case BSON_TYPE_INT64:
    case BSON_TYPE_INT32:
-      ASSERT (bson_iter_as_int64 (needle) == bson_iter_as_int64 (&iter));
+      ASSERT_CMPINT64 (bson_iter_as_int64 (needle), ==, bson_iter_as_int64 (&iter));
       bson_contains_iter (haystack, needle);
       return;
    default:
@@ -64,25 +66,25 @@ bson_contains_iter (const bson_t *haystack, bson_iter_t *needle)
 static void
 run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bson_t *auth, const bson_t *options)
 {
-   mongoc_uri_t *uri;
-   bson_iter_t auth_iter;
-   const char *db;
    bson_error_t error;
 
-   uri = mongoc_uri_new_with_error (uri_string, &error);
+   mongoc_uri_t *const uri = mongoc_uri_new_with_error (uri_string, &error);
 
    /* BEGIN Exceptions to test suite */
 
    /* some spec tests assume we allow DB names like "auth.foo" */
-   if ((bson_iter_init_find (&auth_iter, auth, "db") || bson_iter_init_find (&auth_iter, auth, "source")) &&
-       BSON_ITER_HOLDS_UTF8 (&auth_iter)) {
-      db = bson_iter_utf8 (&auth_iter, NULL);
-      if (strchr (db, '.')) {
-         BSON_ASSERT (!uri);
-         ASSERT_ERROR_CONTAINS (
-            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database name in URI");
-         clear_captured_logs ();
-         return;
+   {
+      bson_iter_t auth_iter;
+      if ((bson_iter_init_find (&auth_iter, auth, "db") || bson_iter_init_find (&auth_iter, auth, "source")) &&
+          BSON_ITER_HOLDS_UTF8 (&auth_iter)) {
+         const char *const db = bson_iter_utf8 (&auth_iter, NULL);
+         if (strchr (db, '.')) {
+            ASSERT_ERROR_CONTAINS (
+               error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database name in URI");
+            ASSERT (!uri);
+            clear_captured_logs ();
+            return;
+         }
       }
    }
 
@@ -133,12 +135,11 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
    if (valid) {
       ASSERT_OR_PRINT (uri, error);
    } else {
-      BSON_ASSERT (!uri);
+      ASSERT_WITH_MSG (!uri, "expected URI to be invalid: %s", uri_string);
       return;
    }
 
    if (!bson_empty0 (hosts)) {
-      const mongoc_host_list_t *hl;
       bson_iter_t iter;
       bson_iter_t host_iter;
 
@@ -154,7 +155,7 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
             port = bson_iter_as_int64 (&host_iter);
          }
 
-         for (hl = mongoc_uri_get_hosts (uri); hl; hl = hl->next) {
+         for (const mongoc_host_list_t *hl = mongoc_uri_get_hosts (uri); hl; hl = hl->next) {
             if (!strcmp (host, hl->host) && port == hl->port) {
                ok = true;
                break;
@@ -162,8 +163,7 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
          }
 
          if (!ok) {
-            fprintf (stderr, "Could not find '%s':%" PRId64 " in uri '%s'\n", host, port, mongoc_uri_get_string (uri));
-            BSON_ASSERT (0);
+            test_error ("Could not find '%s':%" PRId64 " in uri '%s'\n", host, port, mongoc_uri_get_string (uri));
          }
       }
    }
@@ -193,7 +193,6 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
    }
 
    if (options) {
-      const mongoc_read_concern_t *rc;
       bson_t uri_options = BSON_INITIALIZER;
       bson_t test_options = BSON_INITIALIZER;
       bson_iter_t iter;
@@ -201,7 +200,7 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
       bson_concat (&uri_options, mongoc_uri_get_options (uri));
       bson_concat (&uri_options, mongoc_uri_get_credentials (uri));
 
-      rc = mongoc_uri_get_read_concern (uri);
+      const mongoc_read_concern_t *const rc = mongoc_uri_get_read_concern (uri);
       if (!mongoc_read_concern_is_default (rc)) {
          BSON_APPEND_UTF8 (&uri_options, "readconcernlevel", mongoc_read_concern_get_level (rc));
       }
@@ -243,6 +242,10 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
 static void
 test_connection_uri_cb (void *scenario_vp)
 {
+   BSON_ASSERT_PARAM (scenario_vp);
+
+   const bson_t *const scenario = scenario_vp;
+
    static const test_skip_t skips[] = {
       {.description = "Valid connection pool options are parsed correctly",
        .reason = "libmongoc does not support maxIdleTimeMS"},
@@ -301,11 +304,8 @@ test_connection_uri_cb (void *scenario_vp)
    bson_t options;
    bool valid;
 
-   BSON_ASSERT_PARAM (scenario_vp);
-   const bson_t *const scenario = scenario_vp;
-
-   BSON_ASSERT (bson_iter_init_find (&iter, scenario, "tests"));
-   BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
+   ASSERT (bson_iter_init_find (&iter, scenario, "tests"));
+   ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
    ASSERT (bson_iter_recurse (&iter, &tests_iter));
 
    while (bson_iter_next (&tests_iter)) {
