@@ -1379,14 +1379,24 @@ test_bson_vector_example_packed_bit_view (void)
    } else                                                                         \
       ((void) 0)
 
+#if defined(__USE_FORTIFY_LEVEL) && __USE_FORTIFY_LEVEL > 0
+// Prevent memcpy size overflows even in dead code
+#define MAX_TESTABLE_COPY_COUNT (SIZE_MAX / 2u / sizeof (float))
+#else
+// Allow dead code to contain an oversized or overflowing memcpy
+#define MAX_TESTABLE_COPY_COUNT SIZE_MAX
+#endif
+
 #define TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON(_view, _alloc_size, _v, _v_size, _read, _write)                   \
    if (true) {                                                                                                  \
       TEST_BSON_VECTOR_RW (false, (_view), (_v), (_alloc_size) + 1u, 0, (_read), (_write));                     \
       TEST_BSON_VECTOR_RW (true, (_view), (_v), (_v_size), (_alloc_size) - (_v_size), (_read), (_write));       \
       TEST_BSON_VECTOR_RW (false, (_view), (_v), (_v_size), (_alloc_size) - (_v_size) + 1u, (_read), (_write)); \
       TEST_BSON_VECTOR_RW (false, (_view), (_v), (_v_size) + 1u, (_alloc_size) - (_v_size), (_read), (_write)); \
-      TEST_BSON_VECTOR_RW (false, (_view), (_v), SIZE_MAX, (_alloc_size) - (_v_size), (_read), (_write));       \
-      TEST_BSON_VECTOR_RW (false, (_view), (_v), SIZE_MAX, (_alloc_size) - (_v_size) + 1u, (_read), (_write));  \
+      TEST_BSON_VECTOR_RW (                                                                                     \
+         false, (_view), (_v), MAX_TESTABLE_COPY_COUNT, (_alloc_size) - (_v_size), (_read), (_write));          \
+      TEST_BSON_VECTOR_RW (                                                                                     \
+         false, (_view), (_v), MAX_TESTABLE_COPY_COUNT, (_alloc_size) - (_v_size) + 1u, (_read), (_write));     \
       TEST_BSON_VECTOR_RW (true, (_view), (_v), (_v_size), 0, (_read), (_write));                               \
    } else                                                                                                       \
       ((void) 0)
