@@ -40,6 +40,15 @@ BSON_BEGIN_DECLS
 
 #define BSON_ITER_HOLDS_BINARY(iter) (bson_iter_type ((iter)) == BSON_TYPE_BINARY)
 
+#define BSON_ITER_HOLDS_VECTOR(iter) \
+   (BSON_ITER_HOLDS_BINARY (iter) && bson_iter_binary_subtype (iter) == BSON_SUBTYPE_VECTOR)
+
+#define BSON_ITER_HOLDS_VECTOR_INT8(iter) (bson_vector_int8_const_view_from_iter (NULL, iter))
+
+#define BSON_ITER_HOLDS_VECTOR_FLOAT32(iter) (bson_vector_float32_const_view_from_iter (NULL, iter))
+
+#define BSON_ITER_HOLDS_VECTOR_PACKED_BIT(iter) (bson_vector_packed_bit_const_view_from_iter (NULL, iter))
+
 #define BSON_ITER_HOLDS_UNDEFINED(iter) (bson_iter_type ((iter)) == BSON_TYPE_UNDEFINED)
 
 #define BSON_ITER_HOLDS_OID(iter) (bson_iter_type ((iter)) == BSON_TYPE_OID)
@@ -114,6 +123,15 @@ bson_iter_array (const bson_iter_t *iter, uint32_t *array_len, const uint8_t **a
 
 BSON_EXPORT (void)
 bson_iter_binary (const bson_iter_t *iter, bson_subtype_t *subtype, uint32_t *binary_len, const uint8_t **binary);
+
+BSON_EXPORT (void)
+bson_iter_overwrite_binary (bson_iter_t *iter, bson_subtype_t subtype, uint32_t *binary_len, uint8_t **binary);
+
+BSON_EXPORT (bson_subtype_t)
+bson_iter_binary_subtype (const bson_iter_t *iter);
+
+BSON_EXPORT (bool)
+bson_iter_binary_equal (const bson_iter_t *iter_a, const bson_iter_t *iter_b);
 
 
 BSON_EXPORT (const char *)

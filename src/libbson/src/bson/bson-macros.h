@@ -210,6 +210,18 @@
 #endif
 
 
+#if defined(__GNUC__)
+#define BSON_RESTRICT __restrict__
+#elif defined(_MSC_VER)
+#define BSON_RESTRICT __restrict
+#elif !defined(__cplusplus)
+// C99 (not C++)
+#define BSON_RESTRICT restrict
+#else
+#define BSON_RESTRICT
+#endif
+
+
 BSON_NORETURN static BSON_INLINE void
 _bson_assert_failed_on_line (const char *file, int line, const char *func, const char *test)
 {

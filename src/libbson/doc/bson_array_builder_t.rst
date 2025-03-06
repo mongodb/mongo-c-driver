@@ -83,6 +83,12 @@ Appending values to an array
                                       uint32_t length);
 
     bool
+    bson_array_builder_append_binary_uninit (bson_array_builder_t *bab,
+                                             bson_subtype_t subtype,
+                                             uint8_t **binary,
+                                             uint32_t length);
+
+    bool
     bson_array_builder_append_bool (bson_array_builder_t *bab, bool value);
 
 
