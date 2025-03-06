@@ -1065,6 +1065,34 @@ test_mongoc_uri_auth_mechanisms (void)
          mongoc_uri_destroy (uri);
       }
 
+      // For backward compatibility, `mongoc_uri_get_auth_source` uses the database name when no `authMechanism`,
+      // database name, or `authSource` is specified (consistent with default authentication method selecting
+      // SCRAM-SHA-1 or SCRAM-SHA-256).
+      {
+         mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://user:pass@localhost/db", &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_OR_PRINT (uri, error);
+         ASSERT_WITH_MSG (!mongoc_uri_get_auth_mechanism (uri),
+                          "expected no authMechanism, got %s",
+                          mongoc_uri_get_auth_mechanism (uri));
+         ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "db");
+         mongoc_uri_destroy (uri);
+      }
+
+      // For backward compatibility, `mongoc_uri_get_auth_source` uses `authSource` when specified (consistent with
+      // default authentication method selecting SCRAM-SHA-1 or SCRAM-SHA-256).
+      {
+         mongoc_uri_t *const uri =
+            mongoc_uri_new_with_error ("mongodb://user:pass@localhost/db?" MONGOC_URI_AUTHSOURCE "=source", &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_OR_PRINT (uri, error);
+         ASSERT_WITH_MSG (!mongoc_uri_get_auth_mechanism (uri),
+                          "expected no authMechanism, got %s",
+                          mongoc_uri_get_auth_mechanism (uri));
+         ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "source");
+         mongoc_uri_destroy (uri);
+      }
+
       // `authMechanismProperties` should not be validated without an `authMechanism`.
       {
          mongoc_uri_t *const uri =
