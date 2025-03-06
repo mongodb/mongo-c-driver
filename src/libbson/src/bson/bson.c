@@ -324,7 +324,7 @@ BSON_STATIC_ASSERT2 (max_alloc_grow_fits_min_sizet, (uint64_t) BSON_MAX_SIZE * 2
    if (BSON_UNLIKELY ((_length) > BSON_MAX_SIZE - (_list).n_bytes)) { \
       goto append_failure;                                            \
    } else if ((_length) > 0) {                                        \
-      *(_list).current++ = (_bson_append_bytes_arg) {                 \
+      *(_list).current++ = (_bson_append_bytes_arg){                  \
          .bytes = (const uint8_t *) (_bytes),                         \
          .length = (_length),                                         \
       };                                                              \
