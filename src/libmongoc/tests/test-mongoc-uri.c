@@ -545,7 +545,8 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
    bson_error_t error;
 
    // Authentication spec: username: SHOULD NOT be provided for MongoDB 3.4+.
-   // For backward compatibility, allow it to be specified, but emit a warning.
+   // CDRIVER-1959: allow for backward compatibility until the spec states "MUST NOT" instead of "SHOULD NOT" and
+   // spec tests are updated accordingly to permit warnings or errors.
    {
       // None.
       {
