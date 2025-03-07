@@ -56,6 +56,9 @@ Synopsis
   #define BSON_APPEND_BINARY(b, key, subtype, val, len) \
      bson_append_binary (b, key, (int) strlen (key), subtype, val, len)
 
+  #define BSON_APPEND_BINARY_UNINIT(b, key, subtype, val, len) \
+     bson_append_binary_uninit (b, key, (int) strlen (key), subtype, val, len)
+
   #define BSON_APPEND_BOOL(b, key, val) \
      bson_append_bool (b, key, (int) strlen (key), val)
 
@@ -163,6 +166,7 @@ BSON document contains duplicate keys.
     bson_append_array_begin
     bson_append_array_end
     bson_append_binary
+    bson_append_binary_uninit
     bson_append_bool
     bson_append_code
     bson_append_code_with_scope

@@ -22,6 +22,11 @@ Synopsis
 
   #define BSON_ITER_HOLDS_BINARY(iter) /* ... */
 
+  #define BSON_ITER_HOLDS_VECTOR(iter) /* ... */
+  #define BSON_ITER_HOLDS_VECTOR_INT8(iter) /* ... */
+  #define BSON_ITER_HOLDS_VECTOR_FLOAT32(iter) /* ... */
+  #define BSON_ITER_HOLDS_VECTOR_PACKED_BIT(iter) /* ... */
+
   #define BSON_ITER_HOLDS_UNDEFINED(iter) /* ... */
 
   #define BSON_ITER_HOLDS_OID(iter) /* ... */
@@ -88,6 +93,8 @@ The :symbol:`bson_t` *MUST* be valid for the lifetime of the iter and it is an e
     bson_iter_as_double
     bson_iter_as_int64
     bson_iter_binary
+    bson_iter_binary_subtype
+    bson_iter_binary_equal
     bson_iter_bool
     bson_iter_code
     bson_iter_codewscope
@@ -115,6 +122,7 @@ The :symbol:`bson_t` *MUST* be valid for the lifetime of the iter and it is an e
     bson_iter_offset
     bson_iter_oid
     bson_iter_overwrite_bool
+    bson_iter_overwrite_binary
     bson_iter_overwrite_date_time
     bson_iter_overwrite_decimal128
     bson_iter_overwrite_double

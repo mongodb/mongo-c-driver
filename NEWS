@@ -33,6 +33,17 @@ Changes:
       * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
       * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
 
+libmongoc 1.30.2
+================
+
+Fixes:
+
+  * Fix C23 build on Windows.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Jeroen Ooms
+
 libmongoc 1.30.1
 ================
 
