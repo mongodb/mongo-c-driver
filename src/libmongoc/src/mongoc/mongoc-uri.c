@@ -1413,7 +1413,7 @@ _supported_mechanism_properties_check (const supported_mechanism_properties *sup
    while (bson_iter_next (&iter)) {
       const char *const key = bson_iter_key (&iter);
 
-      // ... ensure it matches one of the supported GSSAPI mechanism property fields.
+      // ... ensure it matches one of the supported mechanism property fields.
       for (const supported_mechanism_properties *prop = supported_properties; prop->name; ++prop) {
          // Authentication spec: naming of mechanism properties MUST be case-insensitive. For instance, SERVICE_NAME and
          // service_name refer to the same property.
