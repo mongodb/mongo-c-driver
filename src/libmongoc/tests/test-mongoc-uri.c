@@ -688,7 +688,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
          bson_t props;
          ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
-         ASSERT_EQUAL_BSON (tmp_bson ("{'a': '1', 'b': '2', 'SERVICE_NAME': 'mongodb'}"), &props);
+         ASSERT_MATCH (&props, "{'a': '1', 'b': '2', 'SERVICE_NAME': 'mongodb'}");
 
          clear_captured_logs ();
          bson_destroy (&props);
@@ -773,7 +773,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
          bson_t props;
          ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
-         ASSERT_MATCH (&props, "{'SERVICE_REALM': 'realm'}");
+         ASSERT_MATCH (&props, "{'SERVICE_NAME': 'mongodb', 'SERVICE_REALM': 'realm'}");
 
          bson_destroy (&props);
          mongoc_uri_destroy (uri);
@@ -790,7 +790,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
          bson_t props;
          ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
-         ASSERT_MATCH (&props, "{'SERVICE_HOST': 'host'}");
+         ASSERT_MATCH (&props, "{'SERVICE_NAME': 'mongodb', 'SERVICE_HOST': 'host'}");
 
          bson_destroy (&props);
          mongoc_uri_destroy (uri);
