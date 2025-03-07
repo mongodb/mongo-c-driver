@@ -1611,6 +1611,25 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // `MongoCredentials.mechanism_properties` are allowed for GSSAPI.
       _finalize_auth_gssapi_mechanism_properties (mechanism_properties);
 
+      // Authentication spec: valid values for CANONICALIZE_HOST_NAME are true, false, "none", "forward",
+      // "forwardAndReverse". If a value is provided that does not match one of these the driver MUST raise an error.
+      if (mechanism_properties) {
+         bsonParse (*mechanism_properties,
+                    find (iKeyWithType ("CANONICALIZE_HOST_NAME", utf8),
+                          case (when (iStrEqual ("true"), nop),
+                                when (iStrEqual ("false"), nop),
+                                // CDRIVER-4128: only legacy boolean values are currently supported.
+                                else (do ({
+                                   bsonParseError =
+                                      "'GSSAPI' authentication mechanism requires CANONICALIZE_HOST_NAME is either "
+                                      "\"true\" or \"false\"";
+                                })))));
+         if (bsonParseError) {
+            MONGOC_URI_ERROR (error, "%s", bsonParseError);
+            goto fail;
+         }
+      }
+
       // Authentication spec: Drivers MUST allow the user to specify a different service name. The default is
       // "mongodb".
       if (!mechanism_properties || !bson_iter_init_find_case (&iter, mechanism_properties, "SERVICE_NAME")) {

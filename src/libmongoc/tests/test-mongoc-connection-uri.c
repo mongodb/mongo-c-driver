@@ -108,6 +108,11 @@ run_uri_test (const char *uri_string,
          MONGOC_WARNING ("Error parsing URI: '%s'", error.message);
          return;
       }
+
+      // CDRIVER-4128: only legacy boolean values are currently supported.
+      if (strstr (uri_string, "CANONICALIZE_HOST_NAME:none") || strstr (uri_string, "CANONICALIZE_HOST_NAME:forward")) {
+         return;
+      }
    }
 
    if (uri) {
@@ -359,8 +364,6 @@ test_connection_uri_cb (void *scenario_vp)
       {.description = "replicaset, host and non-default port present",
        .reason = "libmongoc does not support proxies (CDRIVER-4187)"},
       {.description = "all options present", .reason = "libmongoc does not support proxies (CDRIVER-4187)"},
-      {.description = "must raise an error when the hostname canonicalization is invalid",
-       .reason = "libmongoc does not-yet support non-boolean values for CANONICALIZE_HOST_NAME (CDRIVER-4128)"},
       {.description = "must raise an error when the authSource is empty",
        .reason = "libmongoc does not-yet error on empty authSource (CDRIVER-3517)"},
       {.description = "must raise an error when the authSource is empty without credentials",

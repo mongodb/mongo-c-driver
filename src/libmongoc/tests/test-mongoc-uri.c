@@ -713,38 +713,51 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
       // CANONICALIZE_HOST_NAME: Drivers MAY allow the user to request canonicalization of the hostname.
       {
-         // CDRIVER-4128: only "legacy boolean values" are currently supported as UTF-8 strings.
+         // CDRIVER-4128: only legacy boolean values are currently supported.
          {
-            mongoc_uri_t *const uri =
-               mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
-                                          "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=CANONICALIZE_HOST_NAME:true",
-                                          &error);
-            ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-            ASSERT_OR_PRINT (uri, error);
+            static const char *const values[] = {"false", "true", NULL};
 
-            bson_t props;
-            ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
-            ASSERT_MATCH (&props, "{'CANONICALIZE_HOST_NAME': 'true'}");
+            for (const char *const *value_ptr = values; *value_ptr; ++value_ptr) {
+               const char *const value = *value_ptr;
 
-            bson_destroy (&props);
-            mongoc_uri_destroy (uri);
+               mongoc_uri_t *const uri = mongoc_uri_new_with_error (
+                  tmp_str ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
+                           "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=CANONICALIZE_HOST_NAME:%s",
+                           value),
+                  &error);
+               ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+               ASSERT_OR_PRINT (uri, error);
+
+               bson_t props;
+               ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+               ASSERT_MATCH (&props, "{'CANONICALIZE_HOST_NAME': '%s'}", value);
+
+               bson_destroy (&props);
+               mongoc_uri_destroy (uri);
+            }
          }
 
-         // CDRIVER-4128: validation is deferred to `_mongoc_sasl_set_properties`.
          {
-            mongoc_uri_t *const uri =
-               mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
-                                          "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=CANONICALIZE_HOST_NAME:none",
-                                          &error);
-            ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-            ASSERT_OR_PRINT (uri, error);
+            // CDRIVER-4128: only legacy boolean values are currently supported.
+            static const char *const values[] = {"none", "forward", "forwardAndReverse", NULL};
 
-            bson_t props;
-            ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
-            ASSERT_MATCH (&props, "{'CANONICALIZE_HOST_NAME': 'none'}");
+            for (const char *const *value_ptr = values; *value_ptr; ++value_ptr) {
+               const char *const value = *value_ptr;
+               mongoc_uri_t *const uri = mongoc_uri_new_with_error (
+                  tmp_str ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
+                           "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=CANONICALIZE_HOST_NAME:%s",
+                           value),
+                  &error);
+               ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+               ASSERT_WITH_MSG (!uri, "expected failure");
+               ASSERT_ERROR_CONTAINS (error,
+                                      MONGOC_ERROR_COMMAND,
+                                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                      "'GSSAPI' authentication mechanism requires CANONICALIZE_HOST_NAME is either "
+                                      "\"true\" or \"false\"");
 
-            bson_destroy (&props);
-            mongoc_uri_destroy (uri);
+               mongoc_uri_destroy (uri);
+            }
          }
       }
 
