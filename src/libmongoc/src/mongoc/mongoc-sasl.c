@@ -110,9 +110,18 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
       canonicalize = bson_iter_bool (&iter);
    }
 
+   /* newer "authMechanismProperties" URI syntax takes precedence */
    if (bson_iter_init_find_case (&iter, &properties, "CANONICALIZE_HOST_NAME") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-      /* newer "authMechanismProperties" URI syntax takes precedence */
-      canonicalize = !strcasecmp (bson_iter_utf8 (&iter, NULL), "true");
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
+      const bool is_true = strcasecmp (value, "true") == 0;
+
+      // CDRIVER-4128: only legacy boolean values are currently supported.
+      if (!is_true && strcasecmp (value, "false") != 0) {
+         MONGOC_WARNING ("Unsupported value for \"CANONICALIZE_HOST_NAME\": \"%s\"", value);
+      } else {
+         canonicalize = is_true;
+      }
    }
 
    sasl->canonicalize_host_name = canonicalize;
