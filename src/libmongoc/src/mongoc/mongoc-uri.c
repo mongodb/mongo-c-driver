@@ -1612,8 +1612,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          bsonBuildDecl (props,
                         if (mechanism_properties, then (insert (*mechanism_properties, always))),
                         kv ("SERVICE_NAME", cstr ("mongodb")));
-
          const bool success = !bsonBuildError && mongoc_uri_set_mechanism_properties (uri, &props);
+         bson_destroy (&props);
 
          if (!success) {
             MONGOC_URI_ERROR (
