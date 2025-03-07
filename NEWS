@@ -11,10 +11,6 @@ Removals:
 Changes:
 
   * URI authentication credentials validation (only during creation of a new `mongoc_uri_t` object from a connection string):
-    * Case-sensitivity is now enforced for _values_ of authentication-related URI options and authentication mechanism properties. _Keys_ remain case-insensitive.
-      * e.g. `authMechanismProperties=service_name:value` is equivalent to `authMechanismProperties=SERVICE_NAME:value`.
-      * e.g. `"authMechanism=scram-sha-1"` is _not_ equivalent to `"authMechanism=SCRAM-SHA-1"`.
-      * e.g. `authMechanismProperties=SERVICE_NAME:value` is _not_ equivalent to `authMechanismProperties=SERVICE_NAME:VALUE`
     * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
     * `authSource` is now validated and returns a client error for invalid or unsupported values for the specified `authMechanism`.
     * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).

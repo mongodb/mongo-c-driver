@@ -1092,7 +1092,7 @@ test_mongoc_uri_auth_mechanisms (void)
       // Empty.
       {
          mongoc_uri_t *const uri =
-            mongoc_uri_new_with_error ("mongodb://username@localhost/?" MONGOC_URI_AUTHMECHANISM "=", &error);
+            mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=", &error);
          ASSERT_CAPTURED_LOG (
             "mongoc_uri_new_with_error", MONGOC_LOG_LEVEL_WARNING, "Unsupported value for \"authMechanism\": \"\"");
          ASSERT_OR_PRINT (uri, error);
@@ -1101,23 +1101,20 @@ test_mongoc_uri_auth_mechanisms (void)
          mongoc_uri_destroy (uri);
       }
 
-      // Case-sensitivity.
+      // Case-insensitivity.
       {
          mongoc_uri_t *const uri = mongoc_uri_new_with_error (
-            "mongodb://username@localhost/?" MONGOC_URI_AUTHMECHANISM "=scram-sha-1", &error);
-         ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
-                              MONGOC_LOG_LEVEL_WARNING,
-                              "Unsupported value for \"authMechanism\": \"scram-sha-1\"");
+            "mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=scram-sha-1", &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
          ASSERT_OR_PRINT (uri, error);
          ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "scram-sha-1");
-         clear_captured_logs ();
          mongoc_uri_destroy (uri);
       }
 
       // No substring comparison.
       {
          mongoc_uri_t *const uri =
-            mongoc_uri_new_with_error ("mongodb://username@localhost/?" MONGOC_URI_AUTHMECHANISM "=SCRAM", &error);
+            mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=SCRAM", &error);
          ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
                               MONGOC_LOG_LEVEL_WARNING,
                               "Unsupported value for \"authMechanism\": \"SCRAM\"");
@@ -1130,7 +1127,7 @@ test_mongoc_uri_auth_mechanisms (void)
       // Unsupported.
       {
          mongoc_uri_t *const uri =
-            mongoc_uri_new_with_error ("mongodb://username@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-CR", &error);
+            mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-CR", &error);
          ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
                               MONGOC_LOG_LEVEL_WARNING,
                               "Unsupported value for \"authMechanism\": \"MONGODB-CR\"");

@@ -1533,8 +1533,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    }
 
    // SCRAM-SHA-1, SCRAM-SHA-256, and PLAIN (same validation requirements)
-   else if (strcmp (mechanism, "SCRAM-SHA-1") == 0 || strcmp (mechanism, "SCRAM-SHA-256") == 0 ||
-            strcmp (mechanism, "PLAIN") == 0) {
+   else if (strcasecmp (mechanism, "SCRAM-SHA-1") == 0 || strcasecmp (mechanism, "SCRAM-SHA-256") == 0 ||
+            strcasecmp (mechanism, "PLAIN") == 0) {
       // Authentication spec: username: MUST be specified and non-zero length.
       if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_required, error)) {
          goto fail;
@@ -1558,7 +1558,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    }
 
    // MONGODB-X509
-   else if (strcmp (mechanism, "MONGODB-X509") == 0) {
+   else if (strcasecmp (mechanism, "MONGODB-X509") == 0) {
       // `MongoCredential.username` SHOULD NOT be provided for MongoDB 3.4 and newer.
       // CDRIVER-1959: allow for backward compatibility until the spec states "MUST NOT" instead of "SHOULD NOT" and
       // spec tests are updated accordingly to permit warnings or errors.
@@ -1585,7 +1585,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    }
 
    // GSSAPI
-   else if (strcmp (mechanism, "GSSAPI") == 0) {
+   else if (strcasecmp (mechanism, "GSSAPI") == 0) {
       // Authentication spec: username: MUST be specified and non-zero length.
       if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_required, error)) {
          goto fail;
@@ -1624,7 +1624,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    }
 
    // MONGODB-AWS
-   else if (strcmp (mechanism, "MONGODB-AWS") == 0) {
+   else if (strcasecmp (mechanism, "MONGODB-AWS") == 0) {
       // Authentication spec: username: MAY be specified (as the non-sensitive AWS access key).
       if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_allowed, error)) {
          goto fail;
@@ -2286,7 +2286,7 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
       };
 
       for (const char *const *match = matches; *match; ++match) {
-         if (strcmp (mechanism, *match) == 0) {
+         if (strcasecmp (mechanism, *match) == 0) {
             return db ? db : "admin";
          }
       }
@@ -2294,7 +2294,7 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
 
    // Defaults to the database name if supplied on the connection string or "$external" for:
    //  - PLAIN
-   if (strcmp (mechanism, "PLAIN") == 0) {
+   if (strcasecmp (mechanism, "PLAIN") == 0) {
       return db ? db : "$external";
    }
 
