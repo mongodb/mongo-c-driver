@@ -1523,8 +1523,9 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // The authentication mechanism will be derived by `_mongoc_cluster_auth_node` during handshake according to
       // `saslSupportedMechanisms`.
 
-      // Default authentication method is used when no mechanism is specified but a username is present.
       // Authentication spec: username: MUST be specified and non-zero length.
+      // Default authentication method is used when no mechanism is specified but a username is present; see the
+      // `!mechanism && !username` check above.
       if (!_finalize_auth_username (username, "default", _mongoc_uri_finalize_required, error)) {
          goto fail;
       }
