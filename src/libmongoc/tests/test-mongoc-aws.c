@@ -8,17 +8,16 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and limitations under the
+ * License.
  */
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 #include <mongoc/mongoc-cluster-aws-private.h>
 
-void
+static void
 test_obtain_credentials (void *unused)
 {
    mongoc_uri_t *uri;
@@ -29,9 +28,9 @@ test_obtain_credentials (void *unused)
    BSON_UNUSED (unused);
 
    /* A username specified with a password is parsed correctly. */
-   uri = mongoc_uri_new ("mongodb://"
-                         "access_key_id:secret_access_key@localhost/?"
-                         "authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://access_key_id:secret_access_key@localhost/");
+   ASSERT_OR_PRINT (uri, error);
+   ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    ASSERT_OR_PRINT (ret, error);
    ASSERT_CMPSTR (creds.access_key_id, "access_key_id");
@@ -41,7 +40,9 @@ test_obtain_credentials (void *unused)
    mongoc_uri_destroy (uri);
 
    /* A username specified with no password is an error. */
-   uri = mongoc_uri_new ("mongodb://access_key_id:@localhost/?authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://access_key_id:@localhost/");
+   ASSERT_OR_PRINT (uri, error);
+   ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
@@ -52,7 +53,9 @@ test_obtain_credentials (void *unused)
    mongoc_uri_destroy (uri);
 
    /* Password not set at all (not empty string) */
-   uri = mongoc_uri_new ("mongodb://access_key_id@localhost/?authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://access_key_id@localhost/");
+   ASSERT_OR_PRINT (uri, error);
+   ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
@@ -64,10 +67,10 @@ test_obtain_credentials (void *unused)
 
    /* A session token may be set through the AWS_SESSION_TOKEN auth mechanism
     * property */
-   uri = mongoc_uri_new ("mongodb://"
-                         "access_key_id:secret_access_key@localhost/?"
-                         "authMechanism=MONGODB-AWS&authMechanismProperties="
-                         "AWS_SESSION_TOKEN:token");
+   uri = mongoc_uri_new (
+      "mongodb://access_key_id:secret_access_key@localhost/?authMechanismProperties=AWS_SESSION_TOKEN:token");
+   ASSERT_OR_PRINT (uri, error);
+   ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    ASSERT_OR_PRINT (ret, error);
    ASSERT_CMPSTR (creds.access_key_id, "access_key_id");
@@ -77,21 +80,20 @@ test_obtain_credentials (void *unused)
    mongoc_uri_destroy (uri);
 
    /* A session token in the URI with no username/password is an error. */
-   uri = mongoc_uri_new ("mongodb://localhost/"
-                         "?authMechanism=MONGODB-AWS&authMechanismProperties="
-                         "AWS_SESSION_TOKEN:token");
+   uri = mongoc_uri_new ("mongodb://localhost/?authMechanismProperties=AWS_SESSION_TOKEN:token");
+   ASSERT_OR_PRINT (uri, error);
+   ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "AWS_SESSION_TOKEN is set, but ACCESS_KEY_ID and "
-                          "SECRET_ACCESS_KEY are missing");
+                          "AWS_SESSION_TOKEN is set, but ACCESS_KEY_ID and SECRET_ACCESS_KEY are missing");
    _mongoc_aws_credentials_cleanup (&creds);
    mongoc_uri_destroy (uri);
 }
 
-void
+static void
 test_obtain_credentials_from_env (void *unused)
 {
    mongoc_uri_t *uri;
@@ -109,7 +111,7 @@ test_obtain_credentials_from_env (void *unused)
    /* Environment variables are used if username/password is not set. */
    _mongoc_setenv ("AWS_ACCESS_KEY_ID", "access_key_id");
    _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "secret_access_key");
-   uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://localhost/");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    ASSERT_OR_PRINT (ret, error);
    ASSERT_CMPSTR (creds.access_key_id, "access_key_id");
@@ -121,7 +123,7 @@ test_obtain_credentials_from_env (void *unused)
    /* Omitting one of the required environment variables is an error. */
    _mongoc_setenv ("AWS_ACCESS_KEY_ID", "access_key_id");
    _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "");
-   uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://localhost/");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
@@ -134,7 +136,7 @@ test_obtain_credentials_from_env (void *unused)
    /* Omitting one of the required environment variables is an error. */
    _mongoc_setenv ("AWS_ACCESS_KEY_ID", "");
    _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "secret_access_key");
-   uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://localhost/");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
@@ -148,14 +150,13 @@ test_obtain_credentials_from_env (void *unused)
    _mongoc_setenv ("AWS_ACCESS_KEY_ID", "");
    _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "");
    _mongoc_setenv ("AWS_SESSION_TOKEN", "token");
-   uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://localhost/");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "AWS_SESSION_TOKEN is set, but ACCESS_KEY_ID and "
-                          "SECRET_ACCESS_KEY are missing");
+                          "AWS_SESSION_TOKEN is set, but ACCESS_KEY_ID and SECRET_ACCESS_KEY are missing");
    _mongoc_aws_credentials_cleanup (&creds);
    mongoc_uri_destroy (uri);
 
@@ -163,7 +164,7 @@ test_obtain_credentials_from_env (void *unused)
    _mongoc_setenv ("AWS_ACCESS_KEY_ID", "access_key_id");
    _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "secret_access_key");
    _mongoc_setenv ("AWS_SESSION_TOKEN", "token");
-   uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
+   uri = mongoc_uri_new ("mongodb://localhost/");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    ASSERT_OR_PRINT (ret, error);
    ASSERT_CMPSTR (creds.access_key_id, "access_key_id");
