@@ -1667,7 +1667,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
    // Invalid or unsupported authentication mechanism.
    else {
-      MONGOC_WARNING ("Unsupported value for \"authMechanism\": \"%s\"", mechanism);
+      MONGOC_URI_ERROR (error, "Unsupported value for \"authMechanism\": \"%s\"", mechanism);
+      goto fail;
    }
 
    ret = true;

@@ -1142,11 +1142,12 @@ test_mongoc_uri_auth_mechanisms (void)
       {
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=", &error);
-         ASSERT_CAPTURED_LOG (
-            "mongoc_uri_new_with_error", MONGOC_LOG_LEVEL_WARNING, "Unsupported value for \"authMechanism\": \"\"");
-         ASSERT_OR_PRINT (uri, error);
-         ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "");
-         clear_captured_logs ();
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                "Unsupported value for \"authMechanism\": \"\"");
          mongoc_uri_destroy (uri);
       }
 
@@ -1164,12 +1165,12 @@ test_mongoc_uri_auth_mechanisms (void)
       {
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=SCRAM", &error);
-         ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
-                              MONGOC_LOG_LEVEL_WARNING,
-                              "Unsupported value for \"authMechanism\": \"SCRAM\"");
-         ASSERT_OR_PRINT (uri, error);
-         ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM");
-         clear_captured_logs ();
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                "Unsupported value for \"authMechanism\": \"SCRAM\"");
          mongoc_uri_destroy (uri);
       }
 
@@ -1177,12 +1178,12 @@ test_mongoc_uri_auth_mechanisms (void)
       {
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-CR", &error);
-         ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
-                              MONGOC_LOG_LEVEL_WARNING,
-                              "Unsupported value for \"authMechanism\": \"MONGODB-CR\"");
-         ASSERT_OR_PRINT (uri, error);
-         ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-CR");
-         clear_captured_logs ();
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                "Unsupported value for \"authMechanism\": \"MONGODB-CR\"");
          mongoc_uri_destroy (uri);
       }
    }
@@ -2817,13 +2818,11 @@ test_mongoc_uri_duplicates (void)
    str = mongoc_uri_get_appname (uri);
    ASSERT_CMPSTR (str, "b");
 
-   RECREATE_URI (MONGOC_URI_AUTHMECHANISM "=a&" MONGOC_URI_AUTHMECHANISM "=b");
+   RECREATE_URI (MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA-1&" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA-256");
    ASSERT_LOG_DUPE (MONGOC_URI_AUTHMECHANISM);
-   ASSERT_CAPTURED_LOG (
-      mongoc_uri_get_string (uri), MONGOC_LOG_LEVEL_WARNING, "Unsupported value for \"authMechanism\": \"b\"");
    bson = mongoc_uri_get_credentials (uri);
    BSON_ITER_UNIQUE (MONGOC_URI_AUTHMECHANISM);
-   ASSERT (strcmp (bson_iter_utf8 (&iter, NULL), "b") == 0);
+   ASSERT (strcmp (bson_iter_utf8 (&iter, NULL), "SCRAM-SHA-256") == 0);
 
    RECREATE_URI (MONGOC_URI_AUTHMECHANISMPROPERTIES "=a:x&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=b:y");
    ASSERT_LOG_DUPE (MONGOC_URI_AUTHMECHANISMPROPERTIES);
