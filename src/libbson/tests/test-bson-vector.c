@@ -1495,20 +1495,44 @@ test_bson_vector_edge_cases_float32 (void)
 static void
 test_bson_vector_edge_cases_packed_bit (void)
 {
+   // Test UINT32_MAX as an element count. This is the largest representable on systems with a 32-bit size_t.
+   uint32_t len_for_max_count = (uint32_t) (((uint64_t) UINT32_MAX + 7u) / 8u + BSON_VECTOR_HEADER_LEN);
+   {
+      ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX), ==, len_for_max_count);
+      ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX - 1u), ==, len_for_max_count);
+      ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX - 6u), ==, len_for_max_count);
+      ASSERT_CMPUINT32 (
+         bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX - 7u), ==, len_for_max_count - 1u);
+      ASSERT_CMPUINT32 (
+         bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX - 8u), ==, len_for_max_count - 1u);
+   }
+
+   // Test the real max_representable_elements only if size_t is large enough.
+#if SIZE_MAX > UINT32_MAX
    size_t max_representable_elements = ((size_t) UINT32_MAX - BSON_VECTOR_HEADER_LEN) * 8u;
 
    // Test binary_data_length (uint32_t) edge cases, without any allocation.
    {
+      ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX + 1u), ==, len_for_max_count);
+      ASSERT_CMPUINT32 (
+         bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX + 2u), ==, len_for_max_count + 1u);
+      ASSERT_CMPUINT32 (
+         bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX + 9u), ==, len_for_max_count + 1u);
       ASSERT_CMPUINT32 (
          bson_vector_packed_bit_binary_data_length (max_representable_elements - 8u), ==, UINT32_MAX - 1u);
       ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length (max_representable_elements - 7u), ==, UINT32_MAX);
       ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length (max_representable_elements), ==, UINT32_MAX);
       ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length (max_representable_elements + 1u), ==, 0);
    }
+#endif // SIZE_MAX > UINT32_MAX
 
-   // Needs little real memory because most bytes are never accessed,
-   // but we should require a virtual address space larger than 32 bits.
+   // If we additionally have a 64-bit address space, allocate this max-sized vector and run tests.
+   // Needs little real memory because most bytes are never accessed.
 #if BSON_WORD_SIZE > 32
+
+#if !(SIZE_MAX > UINT32_MAX)
+#error 64-bit platforms should have a 64-bit size_t
+#endif
 
    size_t expected_bson_overhead =
       5 /* empty bson document */ + 3 /* "v" element header */ + 5 /* binary item header */;
