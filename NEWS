@@ -18,6 +18,7 @@ Changes:
       * PLAIN
       * SCRAM-SHA-1
       * SCRAM-SHA-256
+    * The requirement that neither or both a username and password is provided (optionally with a `AWS_SESSION_TOKEN`) is now enforced for MONGODB-AWS.
     * `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
       * PLAIN
       * SCRAM-SHA-1

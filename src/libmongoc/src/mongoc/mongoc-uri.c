@@ -1646,6 +1646,24 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
       // mechanism_properties are allowed for MONGODB-AWS.
       _finalize_auth_aws_mechanism_properties (mechanism_properties);
+
+      // Authentication spec: if a username is provided without a password (or vice-versa), Drivers MUST raise an error.
+      if (!username != !password) {
+         MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires both a username and a password", mechanism);
+         goto fail;
+      }
+
+      // Authentication spec: if *only* a session token is provided, Drivers MUST raise an error.
+      if (!username && mechanism_properties) {
+         bson_iter_t iter;
+         if (bson_iter_init_find_case (&iter, mechanism_properties, "AWS_SESSION_TOKEN")) {
+            MONGOC_URI_ERROR (error,
+                              "%s",
+                              "'MONGODB-AWS' authentication mechanism requires AWS_SESSION_TOKEN to be accompanied by "
+                              "a username and a password");
+            goto fail;
+         }
+      }
    }
 
    // Invalid or unsupported authentication mechanism.

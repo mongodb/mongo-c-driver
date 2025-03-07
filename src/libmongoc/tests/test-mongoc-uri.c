@@ -881,6 +881,8 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
    bson_error_t error;
 
    // Authentication spec: username: MAY be specified.
+   // Authentication spec: if a username is provided without a password (or vice-versa) or if only a session token is
+   // provided Drivers MUST raise an error.
    {
       // None.
       {
@@ -895,28 +897,60 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
       // Empty.
       {
          mongoc_uri_t *const uri =
-            mongoc_uri_new_with_error ("mongodb://@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
+            mongoc_uri_new_with_error ("mongodb://:@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-         ASSERT_OR_PRINT (uri, error);
          ASSERT_CMPSTR (mongoc_uri_get_username (uri), "");
-         clear_captured_logs ();
          mongoc_uri_destroy (uri);
       }
 
       // Normal.
       {
          mongoc_uri_t *const uri =
-            mongoc_uri_new_with_error ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
+            mongoc_uri_new_with_error ("mongodb://user:@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
          ASSERT_OR_PRINT (uri, error);
          ASSERT_CMPSTR (mongoc_uri_get_username (uri), "user");
-         clear_captured_logs ();
          mongoc_uri_destroy (uri);
       }
    }
 
    // Authentication spec: password: MAY be specified.
-   _auth_mechanism_password_allowed ("MONGODB-AWS");
+   // Authentication spec: if a username is provided without a password (or vice-versa) or if only a session token is
+   // provided Drivers MUST raise an error.
+   {
+      // None.
+      {
+         mongoc_uri_t *const uri =
+            mongoc_uri_new_with_error ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                "'MONGODB-AWS' authentication mechanism requires both a username and a password");
+         mongoc_uri_destroy (uri);
+      }
+
+      // Empty.
+      {
+         mongoc_uri_t *const uri =
+            mongoc_uri_new_with_error ("mongodb://user:@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                "'MONGODB-AWS' authentication mechanism requires both a username and a password");
+         mongoc_uri_destroy (uri);
+      }
+
+      // Normal.
+      {
+         mongoc_uri_t *const uri = mongoc_uri_new_with_error (
+            "mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_OR_PRINT (uri, error);
+         mongoc_uri_destroy (uri);
+      }
+   }
 
    // mechanism_properties are allowed.
    {
@@ -972,11 +1006,26 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
          mongoc_uri_destroy (uri);
       }
 
+      // AWS_SESSION_TOKEN: if *only* a session token is provided Drivers MUST raise an error.
+      {
+         mongoc_uri_t *const uri =
+            mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM
+                                       "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=AWS_SESSION_TOKEN:token",
+                                       &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                "'MONGODB-AWS' authentication mechanism requires AWS_SESSION_TOKEN to be accompanied "
+                                "by a username and a password");
+      }
+
       // AWS_SESSION_TOKEN: Drivers MUST allow the user to specify an AWS session token for authentication with
       // temporary credentials.
       {
          mongoc_uri_t *const uri =
-            mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM
+            mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=AWS_SESSION_TOKEN:token",
                                        &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
