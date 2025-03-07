@@ -712,6 +712,23 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
          mongoc_uri_destroy (uri);
       }
 
+      // SERVICE_NAME: naming of mechanism properties MUST be case-insensitive.
+      {
+         mongoc_uri_t *const uri =
+            mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
+                                       "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=service_name:name",
+                                       &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_OR_PRINT (uri, error);
+
+         bson_t props;
+         ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+         ASSERT_EQUAL_BSON (tmp_bson ("{'service_name': 'name'}"), &props);
+
+         bson_destroy (&props);
+         mongoc_uri_destroy (uri);
+      }
+
       // CANONICALIZE_HOST_NAME: Drivers MAY allow the user to request canonicalization of the hostname.
       {
          // CDRIVER-4128: only legacy boolean values are currently supported.
@@ -1048,6 +1065,23 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
          bson_t props;
          ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
          ASSERT_EQUAL_BSON (tmp_bson ("{'AWS_SESSION_TOKEN': 'token'}"), &props);
+
+         bson_destroy (&props);
+         mongoc_uri_destroy (uri);
+      }
+
+      // AWS_SESSION_TOKEN: naming of mechanism properties MUST be case-insensitive.
+      {
+         mongoc_uri_t *const uri =
+            mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
+                                       "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=aws_session_token:token",
+                                       &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_OR_PRINT (uri, error);
+
+         bson_t props;
+         ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+         ASSERT_EQUAL_BSON (tmp_bson ("{'aws_session_token': 'token'}"), &props);
 
          bson_destroy (&props);
          mongoc_uri_destroy (uri);
