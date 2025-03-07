@@ -190,11 +190,7 @@ run_uri_test (const char *uri_string,
 
       if ((bson_iter_init_find (&iter, auth, "db") || bson_iter_init_find (&iter, auth, "source")) &&
           BSON_ITER_HOLDS_UTF8 (&iter)) {
-         const char *const auth_mech = mongoc_uri_get_auth_mechanism (uri);
-         if (auth_mech && 0 != strcmp (auth_mech, "MONGODB-AWS")) {
-            // Do not check expected auth source for MONGODB-AWS due to CDRIVER-5811.
-            ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), bson_iter_utf8 (&iter, NULL));
-         }
+         ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), bson_iter_utf8 (&iter, NULL));
       }
    }
 
