@@ -1143,9 +1143,9 @@ test_mongoc_uri_auth_mechanisms (void)
          mongoc_uri_destroy (uri);
       }
 
-      // For backward compatibility, `mongoc_uri_get_auth_source` uses the database name when no `authMechanism`,
-      // database name, or `authSource` is specified (consistent with default authentication method selecting
-      // SCRAM-SHA-1 or SCRAM-SHA-256).
+      // For backward compatibility, `mongoc_uri_get_auth_source` uses the database name when no `authMechanism` or
+      // `authSource` is specified (consistent with default authentication method selecting SCRAM-SHA-1 or
+      // SCRAM-SHA-256).
       {
          mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://user:pass@localhost/db", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
