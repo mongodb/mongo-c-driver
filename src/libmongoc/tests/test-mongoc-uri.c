@@ -540,25 +540,6 @@ _auth_mechanism_source_external_only (const char *mechanism, const char *userpas
 }
 
 static void
-test_mongoc_uri_auth_mechanism_mongodb_cr (void)
-{
-   const char *const mechanism = "MONGODB-CR";
-
-   // Authentication spec: username: MUST be specified and non-zero length.
-   _auth_mechanism_username_required (mechanism);
-
-   // Authentication spec: password: MUST be specified.
-   _auth_mechanism_password_required (mechanism);
-
-   // Authentication spec: mechanism_properties: MUST NOT be specified.
-   _auth_mechanism_properties_prohibited (mechanism, "user:pass@");
-
-   // Authentication spec: source: MUST be specified. Defaults to the database name if supplied on the connection
-   // string or "admin".
-   _auth_mechanism_source_default_db_or_admin (mechanism);
-}
-
-static void
 test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
 {
    bson_error_t error;
@@ -1145,6 +1126,19 @@ test_mongoc_uri_auth_mechanisms (void)
          clear_captured_logs ();
          mongoc_uri_destroy (uri);
       }
+
+      // Unsupported.
+      {
+         mongoc_uri_t *const uri =
+            mongoc_uri_new_with_error ("mongodb://username@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-CR", &error);
+         ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
+                              MONGOC_LOG_LEVEL_WARNING,
+                              "Unsupported value for \"authMechanism\": \"MONGODB-CR\"");
+         ASSERT_OR_PRINT (uri, error);
+         ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-CR");
+         clear_captured_logs ();
+         mongoc_uri_destroy (uri);
+      }
    }
 
    // Default Authentication Mechanism
@@ -1180,7 +1174,6 @@ test_mongoc_uri_auth_mechanisms (void)
       }
    }
 
-   test_mongoc_uri_auth_mechanism_mongodb_cr ();
    test_mongoc_uri_auth_mechanism_mongodb_x509 ();
    test_mongoc_uri_auth_mechanism_gssapi ();
    test_mongoc_uri_auth_mechanism_plain ();

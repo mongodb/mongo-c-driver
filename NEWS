@@ -19,12 +19,10 @@ Changes:
     * `authSource` is now validated and returns a client error for invalid or unsupported values for the specified `authMechanism`.
     * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
     * The requirement that a password is provided is now enforced when the authentication mechanism is specified for:
-      * MONGODB-CR
       * PLAIN
       * SCRAM-SHA-1
       * SCRAM-SHA-256
     * `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
-      * MONGODB-CR
       * PLAIN
       * SCRAM-SHA-1
       * SCRAM-SHA-256

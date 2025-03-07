@@ -1532,9 +1532,9 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // backward compatibility.
    }
 
-   // MONGODB-CR, SCRAM-SHA-1, SCRAM-SHA-256, and PLAIN (same validation requirements)
-   else if (strcmp (mechanism, "MONGODB-CR") == 0 || strcmp (mechanism, "SCRAM-SHA-1") == 0 ||
-            strcmp (mechanism, "SCRAM-SHA-256") == 0 || strcmp (mechanism, "PLAIN") == 0) {
+   // SCRAM-SHA-1, SCRAM-SHA-256, and PLAIN (same validation requirements)
+   else if (strcmp (mechanism, "SCRAM-SHA-1") == 0 || strcmp (mechanism, "SCRAM-SHA-256") == 0 ||
+            strcmp (mechanism, "PLAIN") == 0) {
       // Authentication spec: username: MUST be specified and non-zero length.
       if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_required, error)) {
          goto fail;
@@ -1542,7 +1542,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
       // Authentication spec: source: MUST be specified. Defaults to the database name if
       // supplied on the connection string or:
-      //   - "admin" (for MONGODB-CR, SCRAM-SHA-1, and SCRAM-SHA-256).
+      //   - "admin" (for SCRAM-SHA-1 and SCRAM-SHA-256).
       //   - "$external" (for PLAIN).
       // Handled by `mongoc_uri_get_auth_source` for backward compatibility.
 
@@ -2280,7 +2280,6 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
    // Defaults to the database name if supplied on the connection string or "admin" for:
    {
       static const char *const matches[] = {
-         "MONGODB-CR",
          "SCRAM-SHA-1",
          "SCRAM-SHA-256",
          NULL,
