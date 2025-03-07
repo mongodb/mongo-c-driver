@@ -17,10 +17,8 @@ test_mongoc_uri_new (void)
 {
    const mongoc_host_list_t *hosts;
    const bson_t *options;
-   const bson_t *credentials;
    const bson_t *read_prefs_tags;
    const mongoc_read_prefs_t *read_prefs;
-   bson_t properties;
    mongoc_uri_t *uri;
    bson_iter_t iter;
 
