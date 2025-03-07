@@ -1297,6 +1297,206 @@ tasks:
             - --test_mongocxx_ref=r3.9.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=LibreSSL\_\u2022\_test_mongocxx_ref=r3.9.0"
+    run_on:
+      - ubuntu2204-large
+      - debian10-large
+      - debian11-large
+      - amazon2
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          args:
+            - -c
+            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +env-warmup
+            - --sasl=off
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --sasl=off
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
+    run_on:
+      - ubuntu2204-large
+      - debian10-large
+      - debian11-large
+      - amazon2
+    tags: [earthly, pr-merge-gate, centos7-clang, centos7-gcc, u16-clang, u16-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          args:
+            - -c
+            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +env-warmup
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=none
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +run
+            - --targets=test-example
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=none
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r3.9.0"
+    run_on:
+      - ubuntu2204-large
+      - debian10-large
+      - debian11-large
+      - amazon2
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          args:
+            - -c
+            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +env-warmup
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
+    run_on:
+      - ubuntu2204-large
+      - debian10-large
+      - debian11-large
+      - amazon2
+    tags: [earthly, pr-merge-gate, centos7-clang, centos7-gcc, u16-clang, u16-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          args:
+            - -c
+            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +env-warmup
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=none
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +run
+            - --targets=test-example
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=none
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r3.9.0"
+    run_on:
+      - ubuntu2204-large
+      - debian10-large
+      - debian11-large
+      - amazon2
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          args:
+            - -c
+            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +env-warmup
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=r3.9.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: clang-format
     tags: [clang-format]
     commands:
