@@ -15,6 +15,7 @@
  */
 
 
+#include <mlib/intencode.h>
 #include <bson/bson.h>
 
 #include <mongoc/mongoc-client.h>
@@ -368,8 +369,6 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
 {
    ssize_t bytes = _mongoc_buffer_try_append_from_stream (&acmd->buffer, acmd->stream, acmd->bytes_to_read, 0);
-   uint32_t msg_len;
-
    if (bytes <= 0 && mongoc_stream_should_retry (acmd->stream)) {
       return MONGOC_ASYNC_CMD_IN_PROGRESS;
    }
@@ -388,8 +387,7 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
    acmd->bytes_to_read = (size_t) (acmd->bytes_to_read - bytes);
 
    if (!acmd->bytes_to_read) {
-      memcpy (&msg_len, acmd->buffer.data, 4);
-      msg_len = BSON_UINT32_FROM_LE (msg_len);
+      const uint32_t msg_len = mlib_read_u32le (acmd->buffer.data);
 
       if (msg_len < 16 || msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE || msg_len < acmd->buffer.len) {
          _mongoc_set_error (

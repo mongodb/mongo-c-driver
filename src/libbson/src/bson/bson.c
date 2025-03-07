@@ -15,6 +15,7 @@
  */
 
 
+#include <mlib/intencode.h>
 #include <bson/bson.h>
 #include <bson/bson-config.h>
 #include <bson/bson-private.h>
@@ -288,12 +289,7 @@ _bson_data (const bson_t *bson) /* IN */
 static BSON_INLINE void
 _bson_encode_length (bson_t *bson) /* IN */
 {
-#if BSON_BYTE_ORDER == BSON_LITTLE_ENDIAN
-   memcpy (_bson_data (bson), &bson->len, sizeof (bson->len));
-#else
-   uint32_t length_le = BSON_UINT32_TO_LE (bson->len);
-   memcpy (_bson_data (bson), &length_le, sizeof (length_le));
-#endif
+   mlib_write_u32le (_bson_data (bson), bson->len);
 }
 
 
@@ -1937,7 +1933,6 @@ bool
 bson_init_static (bson_t *bson, const uint8_t *data, size_t length)
 {
    bson_impl_alloc_t *impl = (bson_impl_alloc_t *) bson;
-   uint32_t len_le;
 
    BSON_ASSERT (bson);
    BSON_ASSERT (data);
@@ -1946,9 +1941,9 @@ bson_init_static (bson_t *bson, const uint8_t *data, size_t length)
       return false;
    }
 
-   memcpy (&len_le, data, sizeof (len_le));
+   const uint32_t hdr_len = mlib_read_u32le (data);
 
-   if ((size_t) BSON_UINT32_FROM_LE (len_le) != length) {
+   if (hdr_len != length) {
       return false;
    }
 
@@ -2038,22 +2033,21 @@ bson_sized_new (size_t size)
 bson_t *
 bson_new_from_data (const uint8_t *data, size_t length)
 {
-   uint32_t len_le;
-   bson_t *bson;
-
    BSON_ASSERT (data);
 
    if ((length < 5) || (length > BSON_MAX_SIZE) || data[length - 1]) {
+      // Invalid length, or not null-terminated
       return NULL;
    }
 
-   memcpy (&len_le, data, sizeof (len_le));
+   const int32_t hdr = mlib_read_i32le (data);
 
-   if (length != (size_t) BSON_UINT32_FROM_LE (len_le)) {
+   if (mlib_cmp (hdr, !=, length)) {
+      // Header's declared length is not equal to the length of the data buffer we were given
       return NULL;
    }
 
-   bson = bson_sized_new (length);
+   bson_t *const bson = bson_sized_new (length);
    memcpy (_bson_data (bson), data, length);
    bson->len = (uint32_t) length;
 
@@ -2065,7 +2059,6 @@ bson_t *
 bson_new_from_buffer (uint8_t **buf, size_t *buf_len, bson_realloc_func realloc_func, void *realloc_func_ctx)
 {
    bson_impl_alloc_t *impl;
-   uint32_t len_le;
    uint32_t length;
    bson_t *bson;
 
@@ -2081,20 +2074,17 @@ bson_new_from_buffer (uint8_t **buf, size_t *buf_len, bson_realloc_func realloc_
 
    if (!*buf) {
       length = 5;
-      len_le = BSON_UINT32_TO_LE (length);
       *buf_len = 5;
       *buf = realloc_func (*buf, *buf_len, realloc_func_ctx);
-      memcpy (*buf, &len_le, sizeof (len_le));
+      mlib_write_u32le (*buf, length);
       (*buf)[4] = '\0';
    } else {
       if ((*buf_len < 5) || (*buf_len > BSON_MAX_SIZE)) {
          bson_free (bson);
          return NULL;
       }
-
-      memcpy (&len_le, *buf, sizeof (len_le));
-      length = BSON_UINT32_FROM_LE (len_le);
-      if ((size_t) length > *buf_len) {
+      length = mlib_read_u32le (*buf);
+      if (length > *buf_len) {
          bson_free (bson);
          return NULL;
       }

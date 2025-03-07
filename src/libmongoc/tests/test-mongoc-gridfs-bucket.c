@@ -632,7 +632,7 @@ gridfs_spec_download_operation (mongoc_database_t *db, mongoc_gridfs_bucket_t *b
 
    r = hex_to_bytes (str, &hex_len, &hex_bytes);
    if (r) {
-      ASSERT (ret == hex_len);
+      ASSERT (mlib_cmp (ret, ==, hex_len));
       ASSERT (memcmp (buf, hex_bytes, hex_len) == 0);
       bson_free (hex_bytes);
    } else {
@@ -709,7 +709,7 @@ gridfs_spec_upload_operation (mongoc_database_t *db, mongoc_gridfs_bucket_t *buc
    ASSERT (stream);
 
    bytes_written = mongoc_stream_write (stream, hex_bytes, hex_len, 0);
-   ASSERT (bytes_written == hex_len);
+   ASSERT (mlib_cmp (bytes_written, ==, hex_len));
    bson_free (hex_bytes);
 
    mongoc_stream_close (stream);

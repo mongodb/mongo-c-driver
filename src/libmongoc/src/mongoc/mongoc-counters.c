@@ -15,6 +15,7 @@
  */
 
 
+#include <mlib/cmp.h>
 #include <bson/bson.h>
 
 #include <fcntl.h>
@@ -111,7 +112,12 @@ mongoc_counters_calc_size (void)
            (n_cpu * n_groups * sizeof (mongoc_counter_slots_t)));
 
 #ifdef BSON_OS_UNIX
-   return BSON_MAX (sysconf (_SC_PAGESIZE), size);
+   const long pg_sz = sysconf (_SC_PAGESIZE);
+   if (mlib_cmp (size, >, pg_sz)) {
+      return size;
+   } else {
+      return (size_t) pg_sz;
+   }
 #else
    return size;
 #endif

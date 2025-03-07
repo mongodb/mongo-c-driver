@@ -25,6 +25,7 @@
 #include "mock_server/mock-rs.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <common-oid-private.h>
+#include <mlib/loop.h>
 
 
 #ifdef BSON_HAVE_STRINGS_H
@@ -1528,14 +1529,13 @@ test_unavailable_seeds (void)
    const bson_t *doc;
    bson_error_t error;
 
-   int i;
-
-   for (i = 0; i < 2; i++) {
-      servers[i] = mock_server_down (); /* hangs up on all requests */
-      mock_server_run (servers[i]);
+   mlib_foreach_arr (mock_server_t *, srv, servers) {
+      *srv = mock_server_down (); /* hangs up on all requests */
+      mock_server_run (*srv);
    }
 
-   uri_str = uri_strs = bson_malloc0 (7 * sizeof (char *));
+   const int num_uris = 6;
+   uri_str = uri_strs = bson_malloc0 ((num_uris + 1) * sizeof (char *));
    *(uri_str++) = bson_strdup_printf ("mongodb://%s", mock_server_get_host_and_port (servers[0]));
 
    *(uri_str++) = bson_strdup_printf (
@@ -1554,8 +1554,8 @@ test_unavailable_seeds (void)
                                       mock_server_get_host_and_port (servers[0]),
                                       mock_server_get_host_and_port (servers[1]));
 
-   for (i = 0; i < (sizeof (uri_strs) / sizeof (const char *)); i++) {
-      client = test_framework_client_new (uri_strs[i], NULL);
+   mlib_foreach (char *, uri, uri_strs, num_uris) {
+      client = test_framework_client_new (*uri, NULL);
       BSON_ASSERT (client);
 
       collection = mongoc_client_get_collection (client, "test", "test");
@@ -1570,8 +1570,8 @@ test_unavailable_seeds (void)
       mongoc_client_destroy (client);
    }
 
-   for (i = 0; i < 2; i++) {
-      mock_server_destroy (servers[i]);
+   mlib_foreach_arr (mock_server_t *, srv, servers) {
+      mock_server_destroy (*srv);
    }
 
    bson_strfreev (uri_strs);

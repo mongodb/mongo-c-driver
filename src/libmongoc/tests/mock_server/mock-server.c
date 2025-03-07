@@ -31,6 +31,7 @@
 #include <common-string-private.h>
 #include <common-json-private.h>
 #include <mlib/cmp.h>
+#include <mlib/intencode.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -1803,7 +1804,6 @@ static BSON_THREAD_FUN (worker_thread, data)
    mongoc_buffer_t buffer;
    bool handled;
    bson_error_t error;
-   int32_t msg_len;
    sync_queue_t *requests;
    sync_queue_t *replies;
    request_t *request;
@@ -1844,9 +1844,7 @@ again:
    /* loop, checking for requests to receive or replies to send */
    if (_mongoc_buffer_fill (&buffer, client_stream, 4, 10, &error) > 0) {
       BSON_ASSERT (buffer.len >= 4);
-
-      memcpy (&msg_len, buffer.data, 4);
-      msg_len = BSON_UINT32_FROM_LE (msg_len);
+      const int32_t msg_len = mlib_read_u32le (buffer.data);
 
       if (msg_len < 16) {
          MONGOC_WARNING ("No data");

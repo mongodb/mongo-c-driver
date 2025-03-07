@@ -22,6 +22,7 @@
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-client-side-encryption.h>
 #include <common-oid-private.h>
+#include <mlib/loop.h>
 
 #include "json-test.h"
 #include "json-test-operations.h"
@@ -655,40 +656,35 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
 bson_t *
 get_bson_from_json_file (char *filename)
 {
-   FILE *file;
-   long length;
-   bson_t *data;
-   bson_error_t error;
-   const char *buffer;
-
-   file = fopen (filename, "rb");
+   FILE *const file = fopen (filename, "rb");
    if (!file) {
       test_error ("Failed to open JSON file: %s", filename);
    }
 
    /* get file length */
    fseek (file, 0, SEEK_END);
-   length = ftell (file);
+   const long length = ftell (file);
    fseek (file, 0, SEEK_SET);
    if (length < 1) {
       test_error ("Failed to read length of JSON file: %s", filename);
    }
 
    /* read entire file into buffer */
-   buffer = (const char *) bson_malloc0 (length);
-   if (fread ((void *) buffer, 1, length, file) != length) {
-      test_error ("Failed to read JSON file into buffer: %s", filename);
+   char *const buffer = (char *) bson_malloc0 (length);
+   const size_t nread = fread (buffer, 1, length, file);
+   fclose (file);
+   if (mlib_cmp (nread, !=, length)) {
+      test_error ("Failed to read JSON file [%s] into buffer", filename);
    }
 
-   fclose (file);
-
    /* convert to bson */
-   data = bson_new_from_json ((const uint8_t *) buffer, length, &error);
+   bson_error_t error;
+   bson_t *const data = bson_new_from_json ((const uint8_t *) buffer, length, &error);
    if (!data) {
       test_error ("Cannot parse %s: %s", filename, error.message);
    }
 
-   bson_free ((void *) buffer);
+   bson_free (buffer);
 
    return data;
 }
@@ -1816,7 +1812,6 @@ json_test_config_cleanup (json_test_config_t *config)
 static bson_t *
 _skip_if_unsupported (const char *test_name, bson_t *original)
 {
-   int i;
    bool skip = false;
    const char *unsupported_tests[] = {"/retryable_reads/legacy/gridfs-downloadByName",
                                       "/retryable_reads/legacy/gridfs-downloadByName-serverErrors",
@@ -1828,8 +1823,8 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
                                       "/retryable_reads/legacy/listIndexNames-serverErrors",
                                       "/retryable_reads/legacy/mapReduce"};
 
-   for (i = 0; i < sizeof (unsupported_tests) / sizeof (unsupported_tests[0]); i++) {
-      if (0 == strcmp (test_name, unsupported_tests[i])) {
+   mlib_foreach_arr (const char *, test, unsupported_tests) {
+      if (0 == strcmp (test_name, *test)) {
          skip = true;
          break;
       }

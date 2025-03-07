@@ -183,8 +183,8 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
             int fd2 = bson_open ("failure.expected.bson", O_RDWR | O_CREAT, 0640);                              \
             ASSERT (fd1 != -1);                                                                                 \
             ASSERT (fd2 != -1);                                                                                 \
-            ASSERT ((bson)->len == bson_write (fd1, bson_data, (bson)->len));                                   \
-            ASSERT ((expected)->len == bson_write (fd2, expected_data, (expected)->len));                       \
+            ASSERT ((int) (bson)->len == (int) bson_write (fd1, bson_data, (bson)->len));                       \
+            ASSERT ((int) (expected)->len == (int) bson_write (fd2, expected_data, (expected)->len));           \
             bson_close (fd1);                                                                                   \
             bson_close (fd2);                                                                                   \
          }                                                                                                      \

@@ -5,6 +5,7 @@
 #include "test-libmongoc.h"
 #include <mongoc/mongoc-bulkwrite.h>
 #include <mlib/cmp.h>
+#include <mlib/loop.h>
 
 static bool
 crud_test_operation_cb (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
@@ -1006,14 +1007,14 @@ prose_test_11_fixture_new (void)
          bson_free (large_str);
       }
 
-      for (size_t i = 0; i < tf->numModels; i++) {
+      mlib_foreach_irange (i, tf->numModels) {
+         (void) i;
          ok = mongoc_bulkwrite_append_insertone (tf->bw, "db.coll", doc, NULL, &error);
          ASSERT_OR_PRINT (ok, error);
       }
 
       bson_destroy (doc);
    }
-
 
    if (remainderBytes >= 217) {
       // Create a document { 'a': 'b'.repeat(remainderBytes - 57) }
