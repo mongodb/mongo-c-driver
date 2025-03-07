@@ -9,6 +9,7 @@
 #include "mock_server/future-functions.h"
 #include "test-libmongoc.h"
 #include "mock_server/mock-rs.h"
+#include <mlib/loop.h>
 
 
 typedef struct {
@@ -396,7 +397,6 @@ test_unrecognized_dollar_option (void)
 static void
 test_query_flags (void)
 {
-   int i;
    char *opts;
    char *find_cmd;
    test_collection_find_with_opts_t test_data = {0};
@@ -415,12 +415,12 @@ test_query_flags (void)
       {MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA, "'tailable': true, 'awaitData': true"},
    };
 
-   for (i = 0; i < (sizeof flags_and_frags) / (sizeof (flag_and_name_t)); i++) {
-      opts = bson_strdup_printf ("{%s}", flags_and_frags[i].json_fragment);
-      find_cmd = bson_strdup_printf ("{'find': 'collection', 'filter': {}, %s}", flags_and_frags[i].json_fragment);
+   mlib_foreach_arr (flag_and_name_t, it, flags_and_frags) {
+      opts = bson_strdup_printf ("{%s}", it->json_fragment);
+      find_cmd = bson_strdup_printf ("{'find': 'collection', 'filter': {}, %s}", it->json_fragment);
 
       test_data.opts = opts;
-      test_data.expected_flags = flags_and_frags[i].flag;
+      test_data.expected_flags = it->flag;
       test_data.expected_find_command = find_cmd;
 
       _test_collection_find_with_opts (&test_data);

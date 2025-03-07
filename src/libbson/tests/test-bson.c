@@ -25,6 +25,7 @@
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
+#include <mlib/intencode.h>
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
 BSON_STATIC_ASSERT (1 == 1);
@@ -1279,11 +1280,9 @@ test_bson_new_from_buffer (void)
 {
    // Buffer size matches document size
    {
-      uint8_t *buf = bson_malloc0 (5);
       size_t len = 5;
-      uint32_t len_le = BSON_UINT32_TO_LE (5);
-
-      memcpy (buf, &len_le, sizeof (len_le));
+      uint8_t *buf = bson_malloc0 (5);
+      mlib_write_i32le (buf, 5);
 
       bson_t *b = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
 
@@ -1815,7 +1814,6 @@ test_bson_steal (void)
    uint8_t *alloc;
    uint8_t *buf;
    size_t len;
-   uint32_t len_le;
 
    /* inline, stack-allocated */
    bson_init (&stack_alloced);
@@ -1861,8 +1859,7 @@ test_bson_steal (void)
    /* test stealing from a bson created with bson_new_from_buffer */
    buf = bson_malloc0 (5);
    len = 5;
-   len_le = BSON_UINT32_TO_LE (5);
-   memcpy (buf, &len_le, sizeof (len_le));
+   mlib_write_u32le (buf, 5);
    heap_alloced = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
    ASSERT (bson_steal (&dst, heap_alloced));
    ASSERT (dst.flags & BSON_FLAG_NO_FREE);
@@ -1947,7 +1944,6 @@ test_bson_reserve_buffer_errors (void)
    bson_t bson = BSON_INITIALIZER;
    bson_t child;
    uint8_t data[5] = {0};
-   uint32_t len_le;
 
    /* too big */
    ASSERT (!bson_reserve_buffer (&bson, (uint32_t) (BSON_MAX_SIZE + 1u)));
@@ -1959,8 +1955,7 @@ test_bson_reserve_buffer_errors (void)
    bson_destroy (&bson);
 
    /* make a static bson, it refuses bson_reserve_buffer since it's read-only */
-   len_le = BSON_UINT32_TO_LE (5);
-   memcpy (data, &len_le, sizeof (len_le));
+   mlib_write_u32le (data, 5);
    ASSERT (bson_init_static (&bson, data, sizeof data));
    ASSERT (!bson_reserve_buffer (&bson, 10));
 

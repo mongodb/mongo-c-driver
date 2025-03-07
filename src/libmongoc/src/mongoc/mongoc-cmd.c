@@ -15,7 +15,7 @@
  */
 
 
-#include <mlib/config.h>
+#include <mlib/intencode.h>
 #include <mongoc/mongoc-cmd-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-trace-private.h>
@@ -957,7 +957,6 @@ mongoc_cmd_is_compressible (const mongoc_cmd_t *cmd)
 void
 _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
 {
-   int32_t doc_len;
    bson_t doc;
    const uint8_t *pos;
    const char *field_name;
@@ -976,8 +975,7 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
 
       pos = cmd->payloads[i].documents;
       while (pos < cmd->payloads[i].documents + cmd->payloads[i].size) {
-         memcpy (&doc_len, pos, sizeof (doc_len));
-         doc_len = BSON_UINT32_FROM_LE (doc_len);
+         const int32_t doc_len = mlib_read_i32le (pos);
          BSON_ASSERT (bson_init_static (&doc, pos, (size_t) doc_len));
          bson_array_builder_append_document (bson, &doc);
 

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <mlib/intencode.h>
 #include <bson/bson.h>
 
 #include <errno.h>
@@ -450,8 +451,6 @@ static const bson_t *
 _bson_reader_handle_read (bson_reader_handle_t *reader, /* IN */
                           bool *reached_eof)            /* IN */
 {
-   int32_t blen;
-
    if (reached_eof) {
       *reached_eof = false;
    }
@@ -462,9 +461,7 @@ _bson_reader_handle_read (bson_reader_handle_t *reader, /* IN */
          continue;
       }
 
-      memcpy (&blen, &reader->data[reader->offset], sizeof blen);
-      blen = BSON_UINT32_FROM_LE (blen);
-
+      const int32_t blen = mlib_read_i32le (reader->data + reader->offset);
       if (blen < 5) {
          return NULL;
       }
@@ -556,16 +553,12 @@ static const bson_t *
 _bson_reader_data_read (bson_reader_data_t *reader, /* IN */
                         bool *reached_eof)          /* IN */
 {
-   int32_t blen;
-
    if (reached_eof) {
       *reached_eof = false;
    }
 
    if ((reader->offset + 4) < reader->length) {
-      memcpy (&blen, &reader->data[reader->offset], sizeof blen);
-      blen = BSON_UINT32_FROM_LE (blen);
-
+      const int32_t blen = mlib_read_i32le (reader->data + reader->offset);
       if (blen < 5) {
          return NULL;
       }

@@ -175,7 +175,7 @@
 #elif defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN)
 #define mlib_is_little_endian() (__BYTE_ORDER == __LITTLE_ENDIAN)
 #elif defined(_WIN32)
-#define mlib_is_mlib_is_little_endian() 1
+#define mlib_is_little_endian() 1
 #else
 #error "Do not know how to detect endianness on this platform."
 #endif
@@ -237,6 +237,8 @@
 #define MLIB_IF_MSVC(...) MLIB_NOTHING (#__VA_ARGS__)
 #define mlib_pragma(...) _Pragma (#__VA_ARGS__) mlib_static_assert (1, "")
 #endif
+
+#define MLIB_FUNC MLIB_IF_GNU_LIKE (__func__) MLIB_IF_MSVC (__FUNCTION__)
 
 #define mlib_diagnostic_push()                           \
    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic push);) \

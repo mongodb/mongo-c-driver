@@ -459,7 +459,7 @@ _mongoc_get_rr_search (const char *hostname,
       if (size < 0) {
          DNS_ERROR ("Failed to look up %s record \"%s\": %s", rr_type_name, hostname, _mongoc_hstrerror (h_errno));
       }
-   } while (size >= buffer_size);
+   } while (mlib_cmp (size, >=, buffer_size));
 
    if (ns_initparse (search_buf, size, &ns_answer)) {
       DNS_ERROR ("Invalid %s answer for \"%s\"", rr_type_name, hostname);

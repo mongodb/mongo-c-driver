@@ -15,11 +15,12 @@
  */
 
 
+#include <mlib/intencode.h>
+#include <mlib/cmp.h>
 #include <bson/bson-iter.h>
 #include <bson/bson-config.h>
 #include <bson/bson-decimal128.h>
 #include <bson/bson-types.h>
-#include <mlib/cmp.h>
 
 #define ITER_TYPE(i) ((bson_type_t) * ((i)->raw + (i)->type))
 
@@ -90,8 +91,6 @@ bson_iter_init_from_data (bson_iter_t *iter,   /* OUT */
                           const uint8_t *data, /* IN */
                           size_t length)       /* IN */
 {
-   uint32_t len_le;
-
    BSON_ASSERT (iter);
    BSON_ASSERT (data);
 
@@ -100,9 +99,9 @@ bson_iter_init_from_data (bson_iter_t *iter,   /* OUT */
       return false;
    }
 
-   memcpy (&len_le, data, sizeof (len_le));
-
-   if (BSON_UNLIKELY ((size_t) BSON_UINT32_FROM_LE (len_le) != length)) {
+   // Check that the object header matches the length of the given buffer
+   const uint32_t hdr_len = mlib_read_u32le (data);
+   if (BSON_UNLIKELY (hdr_len != length)) {
       memset (iter, 0, sizeof *iter);
       return false;
    }
@@ -575,16 +574,13 @@ fill_data_fields:
    case BSON_TYPE_CODE:
    case BSON_TYPE_SYMBOL:
    case BSON_TYPE_UTF8: {
-      uint32_t l;
-
       if ((o + 4) >= len) {
          iter->err_off = o;
          goto mark_invalid;
       }
 
       iter->d2 = o + 4;
-      memcpy (&l, iter->raw + iter->d1, sizeof (l));
-      l = BSON_UINT32_FROM_LE (l);
+      const uint32_t l = mlib_read_u32le (iter->raw + iter->d1);
 
       if (l > (len - (o + 4))) {
          iter->err_off = o;
@@ -611,7 +607,6 @@ fill_data_fields:
    } break;
    case BSON_TYPE_BINARY: {
       bson_subtype_t subtype;
-      uint32_t l;
 
       if (o >= (len - 4)) {
          iter->err_off = o;
@@ -621,8 +616,7 @@ fill_data_fields:
       iter->d2 = o + 4;
       iter->d3 = o + 5;
 
-      memcpy (&l, iter->raw + iter->d1, sizeof (l));
-      l = BSON_UINT32_FROM_LE (l);
+      const uint32_t l = mlib_read_u32le (iter->raw + iter->d1);
 
       if (l >= (len - o - 4)) {
          iter->err_off = o;
@@ -632,17 +626,14 @@ fill_data_fields:
       subtype = *(iter->raw + iter->d2);
 
       if (subtype == BSON_SUBTYPE_BINARY_DEPRECATED) {
-         int32_t binary_len;
-
          if (l < 4) {
             iter->err_off = o;
             goto mark_invalid;
          }
 
          /* subtype 2 has a redundant length header in the data */
-         memcpy (&binary_len, (iter->raw + iter->d3), sizeof (binary_len));
-         binary_len = BSON_UINT32_FROM_LE (binary_len);
-         if (binary_len != l - 4) {
+         const int32_t bin_len = mlib_read_i32le (iter->raw + iter->d3);
+         if (mlib_cmp (bin_len, !=, l - 4)) {
             iter->err_off = iter->d3;
             goto mark_invalid;
          }
@@ -652,16 +643,12 @@ fill_data_fields:
    } break;
    case BSON_TYPE_ARRAY:
    case BSON_TYPE_DOCUMENT: {
-      uint32_t l;
-
       if (o >= (len - 4)) {
          iter->err_off = o;
          goto mark_invalid;
       }
 
-      memcpy (&l, iter->raw + iter->d1, sizeof (l));
-      l = BSON_UINT32_FROM_LE (l);
-
+      const uint32_t l = mlib_read_u32le (iter->raw + iter->d1);
       if ((l > len) || (l > (len - o))) {
          iter->err_off = o;
          goto mark_invalid;
@@ -720,16 +707,13 @@ fill_data_fields:
       iter->next_off = o + 1;
    } break;
    case BSON_TYPE_DBPOINTER: {
-      uint32_t l;
-
       if (o >= (len - 4)) {
          iter->err_off = o;
          goto mark_invalid;
       }
 
       iter->d2 = o + 4;
-      memcpy (&l, iter->raw + iter->d1, sizeof (l));
-      l = BSON_UINT32_FROM_LE (l);
+      const uint32_t l = mlib_read_u32le (iter->raw + iter->d1);
 
       /* Check valid string length. l counts '\0' but not 4 bytes for itself. */
       if (l == 0 || l > (len - o - 4)) {
@@ -747,9 +731,6 @@ fill_data_fields:
       iter->next_off = o + 4 + l + 12;
    } break;
    case BSON_TYPE_CODEWSCOPE: {
-      uint32_t l;
-      uint32_t doclen;
-
       if ((len < 19) || (o >= (len - 14))) {
          iter->err_off = o;
          goto mark_invalid;
@@ -758,40 +739,37 @@ fill_data_fields:
       iter->d2 = o + 4;
       iter->d3 = o + 8;
 
-      memcpy (&l, iter->raw + iter->d1, sizeof (l));
-      l = BSON_UINT32_FROM_LE (l);
+      const uint32_t l1 = mlib_read_u32le (iter->raw + iter->d1);
 
-      if ((l < 14) || (l >= (len - o))) {
+      if ((l1 < 14) || (l1 >= (len - o))) {
          iter->err_off = o;
          goto mark_invalid;
       }
 
-      iter->next_off = o + l;
+      iter->next_off = o + l1;
 
       if (iter->next_off >= len) {
          iter->err_off = o;
          goto mark_invalid;
       }
 
-      memcpy (&l, iter->raw + iter->d2, sizeof (l));
-      l = BSON_UINT32_FROM_LE (l);
+      const uint32_t l2 = mlib_read_u32le (iter->raw + iter->d2);
 
-      if (l == 0 || l >= (len - o - 4 - 4)) {
+      if (l2 == 0 || l2 >= (len - o - 4 - 4)) {
          iter->err_off = o;
          goto mark_invalid;
       }
 
-      if ((o + 4 + 4 + l + 4) >= iter->next_off) {
+      if ((o + 4 + 4 + l2 + 4) >= iter->next_off) {
          iter->err_off = o + 4;
          goto mark_invalid;
       }
 
-      iter->d4 = o + 4 + 4 + l;
-      memcpy (&doclen, iter->raw + iter->d4, sizeof (doclen));
-      doclen = BSON_UINT32_FROM_LE (doclen);
+      iter->d4 = o + 4 + 4 + l2;
+      const uint32_t doclen = mlib_read_u32le (iter->raw + iter->d4);
 
-      if ((o + 4 + 4 + l + doclen) != iter->next_off) {
-         iter->err_off = o + 4 + 4 + l;
+      if ((o + 4 + 4 + l2 + doclen) != iter->next_off) {
+         iter->err_off = o + 4 + 4 + l2;
          goto mark_invalid;
       }
    } break;
@@ -921,8 +899,7 @@ bson_iter_binary (const bson_iter_t *iter, /* IN */
       *subtype = (bson_subtype_t) * (iter->raw + iter->d2);
 
       if (binary) {
-         memcpy (binary_len, (iter->raw + iter->d1), sizeof (*binary_len));
-         *binary_len = BSON_UINT32_FROM_LE (*binary_len);
+         *binary_len = mlib_read_u32le (iter->raw + iter->d1);
          *binary = iter->raw + iter->d3;
 
          if (*subtype == BSON_SUBTYPE_BINARY_DEPRECATED) {
@@ -1597,21 +1574,17 @@ bson_iter_codewscope (const bson_iter_t *iter, /* IN */
                       uint32_t *scope_len,     /* OUT */
                       const uint8_t **scope)   /* OUT */
 {
-   uint32_t len;
-
    BSON_ASSERT (iter);
 
    if (ITER_TYPE (iter) == BSON_TYPE_CODEWSCOPE) {
       if (length) {
-         memcpy (&len, iter->raw + iter->d2, sizeof (len));
+         const uint32_t len = mlib_read_u32le (iter->raw + iter->d2);
          /* The string length was checked > 0 in _bson_iter_next_internal. */
-         len = BSON_UINT32_FROM_LE (len);
          BSON_ASSERT (len > 0);
          *length = len - 1;
       }
 
-      memcpy (&len, iter->raw + iter->d4, sizeof (len));
-      *scope_len = BSON_UINT32_FROM_LE (len);
+      *scope_len = mlib_read_u32le (iter->raw + iter->d4);
       *scope = iter->raw + iter->d4;
       return (const char *) (iter->raw + iter->d3);
    }
@@ -1680,8 +1653,7 @@ bson_iter_dbpointer (const bson_iter_t *iter,  /* IN */
 
    if (ITER_TYPE (iter) == BSON_TYPE_DBPOINTER) {
       if (collection_len) {
-         memcpy (collection_len, (iter->raw + iter->d1), sizeof (*collection_len));
-         *collection_len = BSON_UINT32_FROM_LE (*collection_len);
+         *collection_len = mlib_read_u32le (iter->raw + iter->d1);
 
          if ((*collection_len) > 0) {
             (*collection_len)--;
@@ -1830,17 +1802,14 @@ bson_iter_timestamp (const bson_iter_t *iter, /* IN */
                      uint32_t *timestamp,     /* OUT */
                      uint32_t *increment)     /* OUT */
 {
-   uint64_t encoded;
    uint32_t ret_timestamp = 0;
    uint32_t ret_increment = 0;
 
    BSON_ASSERT (iter);
 
    if (ITER_TYPE (iter) == BSON_TYPE_TIMESTAMP) {
-      memcpy (&encoded, iter->raw + iter->d1, sizeof (encoded));
-      encoded = BSON_UINT64_FROM_LE (encoded);
-      ret_timestamp = (encoded >> 32) & 0xFFFFFFFF;
-      ret_increment = encoded & 0xFFFFFFFF;
+      ret_increment = mlib_read_u32le (iter->raw + iter->d1);
+      ret_timestamp = mlib_read_u32le (iter->raw + iter->d1 + sizeof (uint32_t));
    }
 
    if (timestamp) {
@@ -1945,8 +1914,7 @@ bson_iter_document (const bson_iter_t *iter,  /* IN */
    *document_len = 0;
 
    if (ITER_TYPE (iter) == BSON_TYPE_DOCUMENT) {
-      memcpy (document_len, (iter->raw + iter->d1), sizeof (*document_len));
-      *document_len = BSON_UINT32_FROM_LE (*document_len);
+      *document_len = mlib_read_u32le (iter->raw + iter->d1);
       *document = (iter->raw + iter->d1);
    }
 }
@@ -2007,8 +1975,7 @@ bson_iter_array (const bson_iter_t *iter, /* IN */
    *array_len = 0;
 
    if (ITER_TYPE (iter) == BSON_TYPE_ARRAY) {
-      memcpy (array_len, (iter->raw + iter->d1), sizeof (*array_len));
-      *array_len = BSON_UINT32_FROM_LE (*array_len);
+      *array_len = mlib_read_u32le (iter->raw + iter->d1);
       *array = (iter->raw + iter->d1);
    }
 }
@@ -2359,13 +2326,11 @@ bson_iter_overwrite_oid (bson_iter_t *iter, const bson_oid_t *value)
 void
 bson_iter_overwrite_timestamp (bson_iter_t *iter, uint32_t timestamp, uint32_t increment)
 {
-   uint64_t value;
    BSON_ASSERT (iter);
 
    if (ITER_TYPE (iter) == BSON_TYPE_TIMESTAMP) {
-      value = ((((uint64_t) timestamp) << 32U) | ((uint64_t) increment));
-      value = BSON_UINT64_TO_LE (value);
-      memcpy ((void *) (iter->raw + iter->d1), &value, sizeof (value));
+      void *out = mlib_write_u32le ((char *) iter->raw + iter->d1, increment);
+      mlib_write_u32le (out, timestamp);
    }
 }
 
@@ -2376,8 +2341,7 @@ bson_iter_overwrite_date_time (bson_iter_t *iter, int64_t value)
    BSON_ASSERT (iter);
 
    if (ITER_TYPE (iter) == BSON_TYPE_DATE_TIME) {
-      value = BSON_UINT64_TO_LE (value);
-      memcpy ((void *) (iter->raw + iter->d1), &value, sizeof (value));
+      mlib_write_i64le ((char *) iter->raw + iter->d1, value);
    }
 }
 
@@ -2406,10 +2370,7 @@ bson_iter_overwrite_int32 (bson_iter_t *iter, /* IN */
    BSON_ASSERT (iter);
 
    if (ITER_TYPE (iter) == BSON_TYPE_INT32) {
-#if BSON_BYTE_ORDER != BSON_LITTLE_ENDIAN
-      value = BSON_UINT32_TO_LE (value);
-#endif
-      memcpy ((void *) (iter->raw + iter->d1), &value, sizeof (value));
+      mlib_write_i32le ((char *) iter->raw + iter->d1, value);
    }
 }
 
@@ -2438,10 +2399,7 @@ bson_iter_overwrite_int64 (bson_iter_t *iter, /* IN */
    BSON_ASSERT (iter);
 
    if (ITER_TYPE (iter) == BSON_TYPE_INT64) {
-#if BSON_BYTE_ORDER != BSON_LITTLE_ENDIAN
-      value = BSON_UINT64_TO_LE (value);
-#endif
-      memcpy ((void *) (iter->raw + iter->d1), &value, sizeof (value));
+      mlib_write_i64le ((char *) iter->raw + iter->d1, value);
    }
 }
 
@@ -2470,8 +2428,7 @@ bson_iter_overwrite_double (bson_iter_t *iter, /* IN */
    BSON_ASSERT (iter);
 
    if (ITER_TYPE (iter) == BSON_TYPE_DOUBLE) {
-      value = BSON_DOUBLE_TO_LE (value);
-      memcpy ((void *) (iter->raw + iter->d1), &value, sizeof (value));
+      mlib_write_f64le ((char *) iter->raw + iter->d1, value);
    }
 }
 
@@ -2499,14 +2456,10 @@ bson_iter_overwrite_decimal128 (bson_iter_t *iter,              /* IN */
    BSON_ASSERT (iter);
 
    if (ITER_TYPE (iter) == BSON_TYPE_DECIMAL128) {
-#if BSON_BYTE_ORDER != BSON_LITTLE_ENDIAN
-      uint64_t data[2];
-      data[0] = BSON_UINT64_TO_LE (value->low);
-      data[1] = BSON_UINT64_TO_LE (value->high);
-      memcpy ((void *) (iter->raw + iter->d1), data, sizeof (data));
-#else
-      memcpy ((void *) (iter->raw + iter->d1), value, sizeof (*value));
-#endif
+      // low bits
+      void *out = mlib_write_u64le ((char *) iter->raw + iter->d1, value->low);
+      // Followed by high bits
+      mlib_write_u64le (out, value->high);
    }
 }
 

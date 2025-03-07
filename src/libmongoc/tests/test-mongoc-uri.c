@@ -11,6 +11,7 @@
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
 #include <common-string-private.h>
+#include <mlib/loop.h>
 
 static void
 test_mongoc_uri_new (void)
@@ -3143,19 +3144,18 @@ test_one_tls_option_enables_tls (void)
                          MONGOC_URI_SSLALLOWINVALIDHOSTNAMES "=true",
                          MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK "=true",
                          MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK "=true"};
-   int i;
 
-   for (i = 0; i < sizeof (opts) / sizeof (opts[0]); i++) {
+   mlib_foreach_arr (const char *, opt, opts) {
       mongoc_uri_t *uri;
       bson_error_t error;
       char *uri_string;
 
-      uri_string = bson_strdup_printf ("mongodb://localhost:27017/?%s", opts[i]);
+      uri_string = bson_strdup_printf ("mongodb://localhost:27017/?%s", *opt);
       uri = mongoc_uri_new_with_error (uri_string, &error);
       bson_free (uri_string);
       ASSERT_OR_PRINT (uri, error);
       if (!mongoc_uri_get_tls (uri)) {
-         test_error ("unexpected tls not enabled when following option set: %s\n", opts[i]);
+         test_error ("unexpected tls not enabled when following option set: %s\n", *opt);
       }
       mongoc_uri_destroy (uri);
    }
