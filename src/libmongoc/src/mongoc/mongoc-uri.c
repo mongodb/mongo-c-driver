@@ -1610,7 +1610,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
       // Authentication spec: Drivers MUST allow the user to specify a different service name. The default is
       // "mongodb".
-      if (!mechanism_properties || !bson_iter_init_find (&iter, mechanism_properties, "SERVICE_NAME")) {
+      if (!mechanism_properties || !bson_iter_init_find_case (&iter, mechanism_properties, "SERVICE_NAME")) {
          bsonBuildDecl (props,
                         if (mechanism_properties, then (insert (*mechanism_properties, always))),
                         kv ("SERVICE_NAME", cstr ("mongodb")));
