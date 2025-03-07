@@ -297,7 +297,7 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    fseek (file, 0, SEEK_END);
    length = ftell (file);
    fseek (file, 0, SEEK_SET);
-   if (length < 1 || length >= SIZE_MAX - 1u) {
+   if (length < 1 || length >= LONG_MAX - 1) {
       MONGOC_WARNING ("Couldn't determine file size of '%s'", opt->ca_file);
       fclose (file);
       return false;
