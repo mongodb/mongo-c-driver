@@ -120,6 +120,20 @@ bson_open (const char *filename, int flags, ...)
    } else                                    \
       ((void) 0)
 
+#define MONGOC_STDERR_HEXDUMP(pointer, length)                    \
+   if (1) {                                                       \
+      const uint8_t *_pointer = (const uint8_t *) (pointer);      \
+      const size_t _length = (length);                            \
+      fflush (stdout);                                            \
+      putc ('<', stderr);                                         \
+      for (size_t _i = 0; _i < _length; _i++) {                   \
+         fprintf (stderr, "%s%02x", _i ? " " : "", _pointer[_i]); \
+      }                                                           \
+      putc ('>', stderr);                                         \
+      fflush (stderr);                                            \
+   } else                                                         \
+      ((void) 0)
+
 #define ASSERT(Cond)                                                                                                 \
    do {                                                                                                              \
       if (!(Cond)) {                                                                                                 \
@@ -260,14 +274,22 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "f", double)
 #define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "p", void *)
 
-#define ASSERT_MEMCMP(a, b, n)                                                                                      \
-   do {                                                                                                             \
-      if (0 != memcmp (a, b, n)) {                                                                                  \
-         MONGOC_STDERR_PRINTF ("Failed comparing %d bytes: \"%.*s\" != \"%.*s\"", n, n, (char *) a, n, (char *) b); \
-         abort ();                                                                                                  \
-      }                                                                                                             \
+#define ASSERT_MEMCMP(a, b, n)                                                                             \
+   do {                                                                                                    \
+      const void *_a = (a);                                                                                \
+      const void *_b = (b);                                                                                \
+      const size_t _n = (n);                                                                               \
+      if (0 != memcmp (_a, _b, _n)) {                                                                      \
+         MONGOC_STDERR_PRINTF ("FAIL\n\nAssert Failure: Expected an exact match of %" PRIu64 " bytes:\n ", \
+                               (uint64_t) _n);                                                             \
+         MONGOC_STDERR_HEXDUMP (_a, _n);                                                                   \
+         fprintf (stderr, " !=\n ");                                                                       \
+         MONGOC_STDERR_HEXDUMP (_b, _n);                                                                   \
+         MONGOC_STDERR_PRINTF ("\n %s:%d %s()\n", __FILE__, (int) (__LINE__), BSON_FUNC);                  \
+         fflush (stderr);                                                                                  \
+         abort ();                                                                                         \
+      }                                                                                                    \
    } while (0)
-
 
 #ifdef ASSERT_ALMOST_EQUAL
 #undef ASSERT_ALMOST_EQUAL
