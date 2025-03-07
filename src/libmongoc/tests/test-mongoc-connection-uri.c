@@ -365,8 +365,6 @@ test_connection_uri_cb (void *scenario_vp)
        .reason = "libmongoc does not-yet error on empty authSource (CDRIVER-3517)"},
       {.description = "must raise an error when the authSource is empty without credentials",
        .reason = "libmongoc does not-yet error on empty authSource (CDRIVER-3517)"},
-      {.description = "should throw an exception if username and no password (MONGODB-AWS)",
-       .reason = "libmongoc does not-yet error with username and no password for MONGODB-AWS (CDRIVER-5811)"},
       {.description = "(MONGODB-OIDC)",
        .reason = "libmongoc does not-yet implement MONGODB-OIDC (CDRIVER-4489)",
        .check_substring = true},
