@@ -297,14 +297,14 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    fseek (file, 0, SEEK_END);
    length = ftell (file);
    fseek (file, 0, SEEK_SET);
-   if (length < 1 || length >= LONG_MAX - 1) {
+   if (length < 1 || length > LONG_MAX - 1) {
       MONGOC_WARNING ("Couldn't determine file size of '%s'", opt->ca_file);
       fclose (file);
       return false;
    }
 
    // Read the whole file into one nul-terminated string
-   pem_key = (const char *) bson_malloc0 (length + 1);
+   pem_key = (const char *) bson_malloc0 ((size_t) length + 1u);
    bool read_ok = length == fread ((void *) pem_key, 1, length, file);
    fclose (file);
    if (!read_ok) {
