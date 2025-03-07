@@ -1036,13 +1036,13 @@ set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-b64.c
-   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bcon-basic.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bcon-extract.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-cmp.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-corpus.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-error.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-sync.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-vector.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-version.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-clock.c
