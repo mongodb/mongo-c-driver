@@ -1483,8 +1483,20 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
    bool ret = false;
 
+   bson_iter_t iter;
+
    const char *const mechanism = mongoc_uri_get_auth_mechanism (uri);
    const char *const username = mongoc_uri_get_username (uri);
+   const char *const password = mongoc_uri_get_password (uri);
+   const char *const source =
+      bson_iter_init_find_case (&iter, &uri->credentials, MONGOC_URI_AUTHSOURCE) ? bson_iter_utf8 (&iter, NULL) : NULL;
+
+   // Connection String spec test: "must raise an error when the authSource is empty".
+   // This applies even before determining whether or not authentication is required.
+   if (source && strlen (source) == 0) {
+      MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires an authSource", mechanism);
+      return false;
+   }
 
    // Authentication spec: The presence of a credential delimiter (i.e. '@') in the URI connection string is
    // evidence that the user has unambiguously specified user information and MUST be interpreted as a user
@@ -1499,12 +1511,6 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    } else {
       // All code below assumes authentication credentials are being configured.
    }
-
-   bson_iter_t iter;
-
-   const char *const source =
-      bson_iter_init_find_case (&iter, &uri->credentials, MONGOC_URI_AUTHSOURCE) ? bson_iter_utf8 (&iter, NULL) : NULL;
-   const char *const password = mongoc_uri_get_password (uri);
 
    bson_t *mechanism_properties = NULL;
    bson_t mechanism_properties_owner;
