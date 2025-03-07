@@ -55,7 +55,7 @@
  *
  * Don't create this manually. Instead, use `mlib_upsize_integer` to do it automatically
  */
-struct mlib_upsized_integer {
+typedef struct mlib_upsized_integer {
    union {
       // The signed value of the integer
       intmax_t s;
@@ -64,7 +64,7 @@ struct mlib_upsized_integer {
    } i;
    // Whether the upscaled integer is stored in the signed field or the unsigned field
    bool is_signed;
-};
+} mlib_upsized_integer;
 
 // clang-format off
 /**
@@ -86,8 +86,8 @@ struct mlib_upsized_integer {
 #define mlib_upsize_integer(Value) \
    /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
    ((sizeof ((Value)) < sizeof (intmax_t) || ((0 & (Value)) - 1) < 0) \
-      ? (struct mlib_upsized_integer) {.i = {.s = (intmax_t) (Value)}, .is_signed = true} \
-      : (struct mlib_upsized_integer) {.i = {.u = (uintmax_t) (Value)}})
+      ? mlib_init(mlib_upsized_integer) {{(intmax_t) (Value)}, true} \
+      : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}})
 // clang-format on
 
 #endif // MLIB_INTUTIL_H_INCLUDED
