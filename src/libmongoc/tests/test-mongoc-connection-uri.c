@@ -1,4 +1,9 @@
-#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-uri.h>
+
+//
+
+#include <bson/bson.h>
+
 #include <mongoc/mongoc-util-private.h>
 
 #include "json-test.h"
@@ -64,7 +69,12 @@ bson_contains_iter (const bson_t *haystack, bson_iter_t *needle)
 }
 
 static void
-run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bson_t *auth, const bson_t *options)
+run_uri_test (const char *uri_string,
+              bool valid,
+              const bson_t *hosts,
+              const bson_t *auth,
+              const bson_t *options,
+              const bson_t *credentials)
 {
    bson_error_t error;
 
@@ -74,14 +84,13 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
 
    /* some spec tests assume we allow DB names like "auth.foo" */
    {
-      bson_iter_t auth_iter;
-      if ((bson_iter_init_find (&auth_iter, auth, "db") || bson_iter_init_find (&auth_iter, auth, "source")) &&
-          BSON_ITER_HOLDS_UTF8 (&auth_iter)) {
-         const char *const db = bson_iter_utf8 (&auth_iter, NULL);
-         if (strchr (db, '.')) {
+      bson_iter_t iter;
+      if ((bson_iter_init_find (&iter, auth, "db") || bson_iter_init_find (&iter, auth, "source")) &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         if (strchr (bson_iter_utf8 (&iter, NULL), '.')) {
+            BSON_ASSERT (!uri);
             ASSERT_ERROR_CONTAINS (
                error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database name in URI");
-            ASSERT (!uri);
             clear_captured_logs ();
             return;
          }
@@ -168,45 +177,43 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
       }
    }
 
-   if (!bson_empty0 (auth)) {
-      const char *auth_source = mongoc_uri_get_auth_source (uri);
-      const char *username = mongoc_uri_get_username (uri);
-      const char *password = mongoc_uri_get_password (uri);
+   if (auth) {
       bson_iter_t iter;
 
       if (bson_iter_init_find (&iter, auth, "username") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-         ASSERT_CMPSTR (username, bson_iter_utf8 (&iter, NULL));
+         ASSERT_CMPSTR (mongoc_uri_get_username (uri), bson_iter_utf8 (&iter, NULL));
       }
 
       if (bson_iter_init_find (&iter, auth, "password") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-         ASSERT_CMPSTR (password, bson_iter_utf8 (&iter, NULL));
+         ASSERT_CMPSTR (mongoc_uri_get_password (uri), bson_iter_utf8 (&iter, NULL));
       }
 
       if ((bson_iter_init_find (&iter, auth, "db") || bson_iter_init_find (&iter, auth, "source")) &&
           BSON_ITER_HOLDS_UTF8 (&iter)) {
-         const char *auth_mech = mongoc_uri_get_auth_mechanism (uri);
+         const char *const auth_mech = mongoc_uri_get_auth_mechanism (uri);
          if (auth_mech && 0 != strcmp (auth_mech, "MONGODB-AWS")) {
             // Do not check expected auth source for MONGODB-AWS due to CDRIVER-5811.
-            ASSERT_CMPSTR (auth_source, bson_iter_utf8 (&iter, NULL));
+            ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), bson_iter_utf8 (&iter, NULL));
          }
       }
    }
 
    if (options) {
-      bson_t uri_options = BSON_INITIALIZER;
-      bson_t test_options = BSON_INITIALIZER;
+      bson_t actual = BSON_INITIALIZER;
       bson_iter_t iter;
 
-      bson_concat (&uri_options, mongoc_uri_get_options (uri));
-      bson_concat (&uri_options, mongoc_uri_get_credentials (uri));
+      // "options" includes both URI options and credentials.
+      bson_concat (&actual, mongoc_uri_get_options (uri));
+      bson_concat (&actual, mongoc_uri_get_credentials (uri));
 
       const mongoc_read_concern_t *const rc = mongoc_uri_get_read_concern (uri);
       if (!mongoc_read_concern_is_default (rc)) {
-         BSON_APPEND_UTF8 (&uri_options, "readconcernlevel", mongoc_read_concern_get_level (rc));
+         BSON_APPEND_UTF8 (&actual, "readconcernlevel", mongoc_read_concern_get_level (rc));
       }
 
+      bson_t expected = BSON_INITIALIZER;
       bson_copy_to_excluding_noinit (options,
-                                     &test_options,
+                                     &expected,
                                      "username", /* these 'auth' params may be included in 'options' */
                                      "password",
                                      "source",
@@ -218,20 +225,98 @@ run_uri_test (const char *uri_string, bool valid, const bson_t *hosts, const bso
       if ((bson_iter_init_find (&iter, options, "mechanism") ||
            bson_iter_init_find (&iter, options, "authmechanism")) &&
           BSON_ITER_HOLDS_UTF8 (&iter)) {
-         BSON_APPEND_UTF8 (&test_options, "authmechanism", bson_iter_utf8 (&iter, NULL));
+         BSON_APPEND_UTF8 (&expected, "authmechanism", bson_iter_utf8 (&iter, NULL));
       }
 
       if ((bson_iter_init_find (&iter, options, "mechanism_properties") ||
            bson_iter_init_find (&iter, options, "authmechanismproperties")) &&
           BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         ASSERT (bson_append_iter (&test_options, "authmechanismproperties", -1, &iter));
+         ASSERT (bson_append_iter (&expected, "authmechanismproperties", -1, &iter));
       }
 
-      bson_iter_init (&iter, &test_options);
-      bson_contains_iter (&uri_options, &iter);
+      bson_iter_init (&iter, &expected);
+      bson_contains_iter (&actual, &iter);
 
-      bson_destroy (&test_options);
-      bson_destroy (&uri_options);
+      bson_destroy (&expected);
+      bson_destroy (&actual);
+   }
+
+   if (credentials) {
+      bson_iter_t iter;
+
+      bson_t expected = BSON_INITIALIZER;
+
+      // Rename keys for consistency across tests:
+      //  - "mechanism" -> "authmechanism"
+      //  - "mechanism_properties" -> "authmechanismproperties"
+      {
+         bson_copy_to_excluding_noinit (credentials,
+                                        &expected,
+                                        "mechanism",            /* renamed to 'authmechanism' for consistency */
+                                        "mechanism_properties", /* renamed to 'authmechanismproperties' for
+                                                                 * consistency */
+                                        NULL);
+
+         if ((bson_iter_init_find (&iter, credentials, "mechanism") ||
+              bson_iter_init_find (&iter, credentials, "authmechanism")) &&
+             BSON_ITER_HOLDS_UTF8 (&iter)) {
+            BSON_APPEND_UTF8 (&expected, "authmechanism", bson_iter_utf8 (&iter, NULL));
+         }
+
+         if ((bson_iter_init_find (&iter, credentials, "mechanism_properties") ||
+              bson_iter_init_find (&iter, credentials, "authmechanismproperties")) &&
+             BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+            ASSERT (bson_append_iter (&expected, "authmechanismproperties", -1, &iter));
+         }
+      }
+
+      if (bson_iter_init_find (&iter, &expected, "username") && BSON_ITER_HOLDS_UTF8 (&iter)) {
+         ASSERT_CMPSTR (mongoc_uri_get_username (uri), bson_iter_utf8 (&iter, NULL));
+      }
+
+      if (bson_iter_init_find (&iter, &expected, "password") && BSON_ITER_HOLDS_UTF8 (&iter)) {
+         ASSERT_CMPSTR (mongoc_uri_get_password (uri), bson_iter_utf8 (&iter, NULL));
+      }
+
+      if (bson_iter_init_find (&iter, &expected, "source") && BSON_ITER_HOLDS_UTF8 (&iter)) {
+         ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), bson_iter_utf8 (&iter, NULL));
+      }
+
+      if (bson_iter_init_find (&iter, &expected, "authmechanism") && BSON_ITER_HOLDS_UTF8 (&iter)) {
+         ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), bson_iter_utf8 (&iter, NULL));
+      }
+
+      if (bson_iter_init_find (&iter, &expected, "authmechanismproperties") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         bson_t expected_props = BSON_INITIALIZER;
+         ASSERT_OR_PRINT (_mongoc_iter_document_as_bson (&iter, &expected_props, &error), error);
+
+         // CDRIVER-4128: CANONICALIZE_HOST_NAME is UTF-8 even when "false" or "true".
+         {
+            bson_t updated;
+            bson_copy_to_excluding (&expected_props, &updated, "CANONICALIZE_HOST_NAME", NULL);
+            if (bson_iter_init_find_case (&iter, &expected_props, "CANONICALIZE_HOST_NAME")) {
+               if (BSON_ITER_HOLDS_BOOL (&iter)) {
+                  BSON_APPEND_UTF8 (&updated, "CANONICALIZE_HOST_NAME", bson_iter_bool (&iter) ? "true" : "false");
+               } else {
+                  BSON_APPEND_VALUE (&updated, "CANONICALIZE_HOST_NAME", bson_iter_value (&iter));
+               }
+            }
+            bson_destroy (&expected_props);
+            expected_props = updated; // Ownership transfer.
+         }
+
+         bson_t actual;
+         ASSERT_WITH_MSG (mongoc_uri_get_mechanism_properties (uri, &actual),
+                          "expected authmechanismproperties to be provided");
+
+         bson_iter_init (&iter, &expected_props);
+         bson_contains_iter (&actual, &iter);
+
+         bson_destroy (&expected_props);
+         bson_destroy (&actual);
+      }
+
+      bson_destroy (&expected);
    }
 
    if (uri) {
@@ -302,6 +387,7 @@ test_connection_uri_cb (void *scenario_vp)
    bson_t hosts;
    bson_t auth;
    bson_t options;
+   bson_t credentials;
    bool valid;
 
    ASSERT (bson_iter_init_find (&iter, scenario, "tests"));
@@ -324,26 +410,33 @@ test_connection_uri_cb (void *scenario_vp)
          fflush (stdout);
       }
 
-      /* newer spec test replaces both "auth" and "options" with "credential"
-       */
-      if (bson_has_field (&test_case, "credential")) {
-         bson_lookup_doc_null_ok (&test_case, "credential", &auth);
-         bson_lookup_doc_null_ok (&test_case, "credential", &options);
-         bson_init (&hosts);
-      } else if (bson_has_field (&test_case, "auth")) {
-         bson_lookup_doc_null_ok (&test_case, "auth", &auth);
-         bson_lookup_doc_null_ok (&test_case, "options", &options);
+      if (bson_has_field (&test_case, "hosts")) {
          bson_lookup_doc_null_ok (&test_case, "hosts", &hosts);
       } else {
-         /* These are expected to be initialized */
          bson_init (&hosts);
+      }
+
+      if (bson_has_field (&test_case, "auth")) {
+         bson_lookup_doc_null_ok (&test_case, "auth", &auth);
+      } else {
          bson_init (&auth);
+      }
+
+      if (bson_has_field (&test_case, "options")) {
+         bson_lookup_doc_null_ok (&test_case, "options", &options);
+      } else {
          bson_init (&options);
+      }
+
+      if (bson_has_field (&test_case, "credential")) {
+         bson_lookup_doc_null_ok (&test_case, "credential", &credentials);
+      } else {
+         bson_init (&credentials);
       }
 
       valid = _mongoc_lookup_bool (&test_case, "valid", true);
       capture_logs (true);
-      run_uri_test (uri_string, valid, &hosts, &auth, &options);
+      run_uri_test (uri_string, valid, &hosts, &auth, &options, &credentials);
 
       bson_iter_init (&warning_iter, &test_case);
 
@@ -358,6 +451,7 @@ test_connection_uri_cb (void *scenario_vp)
       bson_destroy (&hosts);
       bson_destroy (&auth);
       bson_destroy (&options);
+      bson_destroy (&credentials);
    }
 }
 
