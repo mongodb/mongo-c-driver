@@ -1571,7 +1571,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
       if (!source) {
-         bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
+         bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
+         BSON_ASSERT (!bsonBuildError);
       } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
          goto fail;
       }
@@ -1596,7 +1597,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
       if (!source) {
-         bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
+         bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
+         BSON_ASSERT (!bsonBuildError);
       } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
          goto fail;
       }
@@ -1615,14 +1617,9 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          bsonBuildDecl (props,
                         if (mechanism_properties, then (insert (*mechanism_properties, always))),
                         kv ("SERVICE_NAME", cstr ("mongodb")));
-         const bool success = !bsonBuildError && mongoc_uri_set_mechanism_properties (uri, &props);
+         BSON_ASSERT (!bsonBuildError);
+         BSON_ASSERT (mongoc_uri_set_mechanism_properties (uri, &props));
          bson_destroy (&props);
-
-         if (!success) {
-            MONGOC_URI_ERROR (
-               error, "'%s' authentication mechanism could not set the default service name to \"mongodb\"", mechanism);
-            goto fail;
-         }
       }
    }
 
@@ -1635,7 +1632,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
       if (!source) {
-         bson_append_utf8 (&uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
+         bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
+         BSON_ASSERT (!bsonBuildError);
       } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
          goto fail;
       }
