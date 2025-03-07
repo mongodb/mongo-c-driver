@@ -299,12 +299,18 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    fseek (file, 0, SEEK_SET);
    if (length < 1) {
       MONGOC_WARNING ("Couldn't determine file size of '%s'", opt->ca_file);
+      fclose (file);
       return false;
    }
 
-   pem_key = (const char *) bson_malloc0 (length);
-   fread ((void *) pem_key, 1, length, file);
+   // Read the whole file into one nul-terminated string
+   pem_key = (const char *) bson_malloc0 (length + 1);
+   bool read_ok = length == fread ((void *) pem_key, 1, length, file);
    fclose (file);
+   if (!read_ok) {
+      MONGOC_WARNING ("Couldn't read certificate file '%s'", opt->ca_file);
+      return false;
+   }
 
    /* If we have private keys or other fuzz, seek to the good stuff */
    pem_key = strstr (pem_key, "-----BEGIN CERTIFICATE-----");
