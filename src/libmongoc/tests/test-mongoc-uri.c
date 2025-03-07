@@ -2075,7 +2075,7 @@ test_mongoc_uri_write_concern (void)
          .uri = "mongodb://localhost/?" MONGOC_URI_W "=mytag",
          .parses = true,
          .w = MONGOC_WRITE_CONCERN_W_TAG,
-         "mytag",
+         .wtag = "mytag",
       },
       {
          .uri = "mongodb://localhost/?" MONGOC_URI_W "=mytag&" MONGOC_URI_SAFE "=false",
