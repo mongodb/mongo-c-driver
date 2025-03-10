@@ -1,5 +1,3 @@
-from typing import List
-
 from shrub.v3.evg_build_variant import BuildVariant
 
 from config_generator.etc.utils import TaskRef
