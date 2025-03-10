@@ -26,6 +26,7 @@ COMPILE_MATRIX = [
     ('ubuntu2004-arm64',  'gcc',        None, ['cyrus']),
     ('ubuntu2004',        'gcc',        None, ['cyrus']),
     ('windows-vsCurrent', 'vs2017x64',  None, ['cyrus']),
+    ('amazon2023-arm64-latest-large-m8g', 'gcc', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
@@ -38,6 +39,9 @@ TEST_MATRIX = [
 
     # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
     ('debian10',          'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2']), 
+
+    # Test with Graviton processor:
+    ('amazon2023-arm64-latest-large-m8g', 'gcc',  None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
