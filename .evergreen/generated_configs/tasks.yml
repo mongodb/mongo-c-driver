@@ -3452,6 +3452,79 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+  - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
+    run_on: amazon2023-arm64-latest-large-m8g
+    tags: [sasl-matrix-openssl, compile, amazon2023-arm64-latest-large-m8g, gcc, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
+  - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-replica-auth
+    run_on: amazon2023-arm64-latest-large-m8g
+    tags: [sasl-matrix-openssl, test, amazon2023-arm64-latest-large-m8g, gcc, sasl-cyrus, auth, replica, latest, openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-server-auth
+    run_on: amazon2023-arm64-latest-large-m8g
+    tags: [sasl-matrix-openssl, test, amazon2023-arm64-latest-large-m8g, gcc, sasl-cyrus, auth, server, latest, openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-sharded-auth
+    run_on: amazon2023-arm64-latest-large-m8g
+    tags: [sasl-matrix-openssl, test, amazon2023-arm64-latest-large-m8g, gcc, sasl-cyrus, auth, sharded, latest, openssl]
+    depends_on: [{ name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
   - name: sasl-cyrus-openssl-debian10-gcc-compile
     run_on: debian10-large
     tags: [sasl-matrix-openssl, compile, debian10, gcc, sasl-cyrus]
