@@ -10,7 +10,7 @@ Removals:
 
 Changes:
 
-  * URI authentication credentials validation (only during creation of a new `mongoc_uri_t` object from a connection string):
+  * URI authentication credentials validation (only applicable during creation of a new `mongoc_uri_t` object from a connection string):
     * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
     * `authSource` is now validated and returns a client error for invalid or unsupported values for the specified `authMechanism`.
     * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
@@ -24,7 +24,7 @@ Changes:
       * SCRAM-SHA-1
       * SCRAM-SHA-256
       * MONGODB-X509
-    * `authMechanismProperties` is now validated and warns for invalid or unsupported fields when the authentication mechanism is specified for:
+    * `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
       * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
       * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
 

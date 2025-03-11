@@ -1397,14 +1397,16 @@ typedef struct __supported_mechanism_properties {
    bson_type_t type;
 } supported_mechanism_properties;
 
-static void
+static bool
 _supported_mechanism_properties_check (const supported_mechanism_properties *supported_properties,
                                        const bson_t *mechanism_properties,
-                                       const char *mechanism)
+                                       const char *mechanism,
+                                       bson_error_t *error)
 {
    BSON_ASSERT_PARAM (supported_properties);
    BSON_ASSERT_PARAM (mechanism_properties);
    BSON_ASSERT_PARAM (mechanism);
+   BSON_ASSERT_PARAM (error);
 
    bson_iter_t iter;
    BSON_ASSERT (bson_iter_init (&iter, mechanism_properties));
@@ -1425,26 +1427,32 @@ _supported_mechanism_properties_check (const supported_mechanism_properties *sup
             } else {
                // Connection String spec: Any invalid Values for a given key MUST be ignored and MUST log a WARN level
                // message.
-               MONGOC_WARNING ("'%s' authentication mechanism property '%s' has incorrect type '%s'",
-                               key,
-                               mechanism,
-                               _mongoc_bson_type_to_str (type));
+               MONGOC_URI_ERROR (error,
+                                 "'%s' authentication mechanism property '%s' has incorrect type '%s'",
+                                 key,
+                                 mechanism,
+                                 _mongoc_bson_type_to_str (type));
+               return false;
             }
          }
       }
 
       // Connection String spec: any invalid Values for a given key MUST be ignored and MUST log a WARN level message.
-      MONGOC_WARNING ("Unsupported '%s' authentication mechanism property: '%s'", mechanism, key);
+      MONGOC_URI_ERROR (error, "Unsupported '%s' authentication mechanism property: '%s'", mechanism, key);
+      return false;
 
    found_match:
       continue;
    }
+
+   return true;
 }
 
-static void
-_finalize_auth_gssapi_mechanism_properties (const bson_t *mechanism_properties)
+static bool
+_finalize_auth_gssapi_mechanism_properties (const bson_t *mechanism_properties, bson_error_t *error)
 {
    BSON_OPTIONAL_PARAM (mechanism_properties);
+   BSON_ASSERT_PARAM (error);
 
    static const supported_mechanism_properties supported_properties[] = {
       {"SERVICE_NAME", BSON_TYPE_UTF8},
@@ -1455,14 +1463,17 @@ _finalize_auth_gssapi_mechanism_properties (const bson_t *mechanism_properties)
    };
 
    if (mechanism_properties) {
-      _supported_mechanism_properties_check (supported_properties, mechanism_properties, "GSSAPI");
+      return _supported_mechanism_properties_check (supported_properties, mechanism_properties, "GSSAPI", error);
    }
+
+   return true;
 }
 
-static void
-_finalize_auth_aws_mechanism_properties (const bson_t *mechanism_properties)
+static bool
+_finalize_auth_aws_mechanism_properties (const bson_t *mechanism_properties, bson_error_t *error)
 {
    BSON_OPTIONAL_PARAM (mechanism_properties);
+   BSON_ASSERT_PARAM (error);
    BSON_OPTIONAL_PARAM (error);
 
    static const supported_mechanism_properties supported_properties[] = {
@@ -1471,8 +1482,10 @@ _finalize_auth_aws_mechanism_properties (const bson_t *mechanism_properties)
    };
 
    if (mechanism_properties) {
-      _supported_mechanism_properties_check (supported_properties, mechanism_properties, "MONGODB-AWS");
+      return _supported_mechanism_properties_check (supported_properties, mechanism_properties, "MONGODB-AWS", error);
    }
+
+   return true;
 }
 
 static bool
@@ -1491,10 +1504,10 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    const char *const source =
       bson_iter_init_find_case (&iter, &uri->credentials, MONGOC_URI_AUTHSOURCE) ? bson_iter_utf8 (&iter, NULL) : NULL;
 
-   // Connection String spec test: "must raise an error when the authSource is empty".
+   // Satisfy Connection String spec test: "must raise an error when the authSource is empty".
    // This applies even before determining whether or not authentication is required.
    if (source && strlen (source) == 0) {
-      MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires an authSource", mechanism);
+      MONGOC_URI_ERROR (error, "%s", "'default' authentication mechanism requires a source");
       return false;
    }
 
@@ -1578,7 +1591,13 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
       if (!source) {
          bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
-         BSON_ASSERT (!bsonBuildError);
+         if (bsonBuildError) {
+            MONGOC_URI_ERROR (error,
+                              "unexpected URI credentials BSON error when attempting to default 'MONGODB-X509' "
+                              "authentication source to '$external': %s",
+                              bsonBuildError);
+            goto fail;
+         }
       } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
          goto fail;
       }
@@ -1604,7 +1623,13 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
       if (!source) {
          bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
-         BSON_ASSERT (!bsonBuildError);
+         if (bsonBuildError) {
+            MONGOC_URI_ERROR (error,
+                              "unexpected URI credentials BSON error when attempting to default 'GSSAPI' "
+                              "authentication mechanism source to '$external': %s",
+                              bsonBuildError);
+            goto fail;
+         }
       } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
          goto fail;
       }
@@ -1615,7 +1640,9 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       }
 
       // `MongoCredentials.mechanism_properties` are allowed for GSSAPI.
-      _finalize_auth_gssapi_mechanism_properties (mechanism_properties);
+      if (!_finalize_auth_gssapi_mechanism_properties (mechanism_properties, error)) {
+         goto fail;
+      }
 
       // Authentication spec: valid values for CANONICALIZE_HOST_NAME are true, false, "none", "forward",
       // "forwardAndReverse". If a value is provided that does not match one of these the driver MUST raise an error.
@@ -1642,8 +1669,20 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          bsonBuildDecl (props,
                         if (mechanism_properties, then (insert (*mechanism_properties, always))),
                         kv ("SERVICE_NAME", cstr ("mongodb")));
-         BSON_ASSERT (!bsonBuildError);
-         BSON_ASSERT (mongoc_uri_set_mechanism_properties (uri, &props));
+         if (bsonBuildError) {
+            MONGOC_URI_ERROR (error,
+                              "unexpected URI credentials BSON error when attempting to default 'GSSAPI' "
+                              "authentication mechanism property 'SERVICE_NAME' to 'mongodb': %s",
+                              bsonBuildError);
+            goto fail;
+         }
+         if (!mongoc_uri_set_mechanism_properties (uri, &props)) {
+            MONGOC_URI_ERROR (error,
+                              "unexpected URI credentials BSON error when attempting to default 'GSSAPI' "
+                              "authentication mechanism property 'SERVICE_NAME' to 'mongodb': %s",
+                              bsonBuildError);
+            goto fail;
+         }
          bson_destroy (&props);
       }
    }
@@ -1658,7 +1697,13 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
       if (!source) {
          bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
-         BSON_ASSERT (!bsonBuildError);
+         if (bsonBuildError) {
+            MONGOC_URI_ERROR (error,
+                              "unexpected URI credentials BSON error when attempting to default 'MONGODB-AWS' "
+                              "authentication mechanism source to '$external': %s",
+                              bsonBuildError);
+            goto fail;
+         }
       } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
          goto fail;
       }
@@ -1669,7 +1714,9 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       }
 
       // mechanism_properties are allowed for MONGODB-AWS.
-      _finalize_auth_aws_mechanism_properties (mechanism_properties);
+      if (!_finalize_auth_aws_mechanism_properties (mechanism_properties, error)) {
+         goto fail;
+      }
 
       // Authentication spec: if a username is provided without a password (or vice-versa), Drivers MUST raise an error.
       if (!username != !password) {

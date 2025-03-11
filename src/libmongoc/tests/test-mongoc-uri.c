@@ -674,23 +674,16 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
       // Invalid properties.
       {
-         mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
-                                                              "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=a:1,b:2",
-                                                              &error);
-         ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
-                              MONGOC_LOG_LEVEL_WARNING,
-                              "Unsupported 'GSSAPI' authentication mechanism property: 'a'");
-         ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
-                              MONGOC_LOG_LEVEL_WARNING,
-                              "Unsupported 'GSSAPI' authentication mechanism property: 'b'");
-         ASSERT_OR_PRINT (uri, error);
-
-         bson_t props;
-         ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
-         ASSERT_MATCH (&props, "{'a': '1', 'b': '2', 'SERVICE_NAME': 'mongodb'}");
-
-         clear_captured_logs ();
-         bson_destroy (&props);
+         mongoc_uri_t *const uri =
+            mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
+                                       "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=invalid:value",
+                                       &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                "Unsupported 'GSSAPI' authentication mechanism property: 'invalid'");
          mongoc_uri_destroy (uri);
       }
 
@@ -1017,23 +1010,14 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
       {
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM
-                                       "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=a:1,b:2",
+                                       "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=invalid:value",
                                        &error);
-         ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
-                              MONGOC_LOG_LEVEL_WARNING,
-                              "Unsupported 'MONGODB-AWS' authentication mechanism property: 'a'");
-         ASSERT_CAPTURED_LOG ("mongoc_uri_new_with_error",
-                              MONGOC_LOG_LEVEL_WARNING,
-                              "Unsupported 'MONGODB-AWS' authentication mechanism property: 'b'");
-         ASSERT_OR_PRINT (uri, error);
-
-         bson_t props;
-         ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
-         ASSERT_EQUAL_BSON (tmp_bson ("{'a': '1', 'b': '2'}"), &props);
-
-         clear_captured_logs ();
-         bson_destroy (&props);
-         mongoc_uri_destroy (uri);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                "Unsupported 'MONGODB-AWS' authentication mechanism property: 'invalid'");
       }
 
       // AWS_SESSION_TOKEN: if *only* a session token is provided Drivers MUST raise an error.
@@ -1265,6 +1249,19 @@ test_mongoc_uri_auth_mechanisms (void)
          ASSERT_CMPSTR (mongoc_uri_get_password (uri), "");
 
          mongoc_uri_destroy (uri);
+      }
+
+      // Satisfy Connection String spec test: "must raise an error when the authSource is empty".
+      // This applies even before determining whether or not authentication is required.
+      {
+         mongoc_uri_t *const uri =
+            mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHSOURCE "=", &error);
+         ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                "'default' authentication mechanism requires a source");
       }
    }
 
@@ -2876,16 +2873,10 @@ test_mongoc_uri_duplicates (void)
    bson = mongoc_uri_get_credentials (uri);
    ASSERT_EQUAL_BSON (tmp_bson ("{'authmechanismproperties': {'b': 'y'}}"), bson);
 
-   RECREATE_URI (MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES
-                                          "=a:x&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=b:y");
+   RECREATE_URI (MONGOC_URI_AUTHMECHANISMPROPERTIES "=a:x&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=b:y");
    ASSERT_LOG_DUPE (MONGOC_URI_AUTHMECHANISMPROPERTIES);
-   ASSERT_CAPTURED_LOG (mongoc_uri_get_string (uri),
-                        MONGOC_LOG_LEVEL_WARNING,
-                        "Unsupported 'MONGODB-AWS' authentication mechanism property: 'b'");
    bson = mongoc_uri_get_credentials (uri);
-   ASSERT_EQUAL_BSON (
-      tmp_bson ("{'authmechanism': 'MONGODB-AWS', 'authmechanismproperties': {'b': 'y' }, 'authsource': '$external'}"),
-      bson);
+   ASSERT_EQUAL_BSON (tmp_bson ("{'authmechanismproperties': {'b': 'y' }}"), bson);
 
    RECREATE_URI (MONGOC_URI_AUTHSOURCE "=a&" MONGOC_URI_AUTHSOURCE "=b");
    ASSERT_LOG_DUPE (MONGOC_URI_AUTHSOURCE);
