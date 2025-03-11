@@ -269,7 +269,7 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
 
    // Read the whole file into one nul-terminated string
    pem_key = (const char *) bson_malloc0 ((size_t) length + 1u);
-   bool read_ok = length == fread ((void *) pem_key, 1, length, file);
+   bool read_ok = (size_t) length == fread ((void *) pem_key, 1, length, file);
    fclose (file);
    if (!read_ok) {
       MONGOC_WARNING ("Couldn't read certificate file '%s'", opt->ca_file);
