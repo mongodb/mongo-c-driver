@@ -296,11 +296,11 @@ bson_vector_float32_binary_data_length (size_t element_count)
 static BSON_INLINE uint32_t
 bson_vector_packed_bit_binary_data_length (size_t element_count)
 {
-   const size_t max_representable = (size_t) BSON_MIN (
-      (uint64_t) SIZE_MAX, ((uint64_t) UINT32_MAX - (uint64_t) BSON_VECTOR_HEADER_LEN) * (uint64_t) 8);
+   const size_t max_representable =
+      (size_t) BSON_MIN ((uint64_t) SIZE_MAX, ((uint64_t) UINT32_MAX - (uint64_t) BSON_VECTOR_HEADER_LEN) * 8u);
    return element_count > max_representable
              ? 0u
-             : (uint32_t) ((element_count + (size_t) 7) / (size_t) 8) + (uint32_t) BSON_VECTOR_HEADER_LEN;
+             : (uint32_t) (((uint64_t) element_count + 7u) / 8u) + (uint32_t) BSON_VECTOR_HEADER_LEN;
 }
 
 
