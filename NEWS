@@ -7,6 +7,9 @@ Removals:
     in 1.13.0). This means it is no longer valid to include the literal header
     names `mongoc.h` or `bson.h` directly. Instead, the names must be prefixed
     with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`.
+  * `mongoc_server_description_ismaster` is removed. Use the equivalent `mongoc_server_description_hello` instead.
+  * `MONGOC_QUERY_SLAVE_OK` is removed. Use the equivalent `MONGOC_QUERY_SECONDARY_OK` instead.
+  * `MONGOC_URI_SLAVEOK` is removed. It was unused.
 
 libmongoc 1.30.2
 ================
