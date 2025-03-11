@@ -222,8 +222,7 @@ mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri, bson_t *properties
 MONGOC_EXPORT (bool)
 mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri, const bson_t *properties);
 
-BSON_DEPRECATED_FOR (mongoc_uri_get_tls)
-MONGOC_EXPORT (bool) mongoc_uri_get_ssl (const mongoc_uri_t *uri);
+BSON_DEPRECATED_FOR (mongoc_uri_get_tls) MONGOC_EXPORT (bool) mongoc_uri_get_ssl (const mongoc_uri_t *uri);
 
 MONGOC_EXPORT (bool)
 mongoc_uri_get_tls (const mongoc_uri_t *uri);
