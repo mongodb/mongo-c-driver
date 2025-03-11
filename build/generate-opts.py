@@ -49,7 +49,7 @@ def flatten(items):
 
 class Struct(OrderedDict):
     def __init__(self, items, opts_name='opts', generate_rst=True,
-                 generate_code=True, allow_extra=True, **defaults):
+                 generate_code=True, allow_extra=True, rst_prelude=None, **defaults):
         """Define an options struct.
 
         - items: List of pairs: (optionName, info)
@@ -64,6 +64,7 @@ class Struct(OrderedDict):
         self.generate_code = generate_code
         self.allow_extra = allow_extra
         self.defaults = defaults
+        self.rst_prelude = rst_prelude
 
     def default(self, item, fallback):
         return self.defaults.get(item, fallback)
@@ -317,7 +318,7 @@ opts_structs = OrderedDict([
         }),
         ('showExpandedEvents', { 'type': 'bool', 'help': 'Set to ``true`` to return an expanded list of change stream events. Available only on MongoDB versions >=6.0'}),
         comment_option_string_pre_4_4,
-    ], fullDocument=None, fullDocumentBeforeChange=None, batchSize=-1)),
+    ], fullDocument=None, fullDocumentBeforeChange=None, batchSize=-1, rst_prelude=".. versionchanged:: 2.0.0 ``batchSize`` of 0 is applied to the ``aggregate`` command. 0 was previously ignored.")),
 
     ('mongoc_create_index_opts_t', Struct([
         write_concern_option,
@@ -474,6 +475,9 @@ for struct_name, struct in opts_structs.items():
     print(file_name)
     f = open(joinpath(doc_includes, file_name), 'w')
     f.write (disclaimer)
+    if struct.rst_prelude is not None:
+        f.write(struct.rst_prelude)
+        f.write("\n\n")
     f.write(
         "``%s`` may be NULL or a BSON document with additional"
         " command options:\n\n" % struct.opts_name)
