@@ -377,7 +377,7 @@ _change_stream_init (mongoc_change_stream_t *stream, const bson_t *pipeline, con
 
    _mongoc_timestamp_set (&stream->operation_time, &stream->opts.startAtOperationTime);
 
-   stream->batch_size = stream->opts.batchSize;
+   stream->batch_size = stream->opts.batchSize; // `stream->opts.batchSize` is -1 if not present in `opts`.
    stream->max_await_time_ms = stream->opts.maxAwaitTimeMS;
    stream->show_expanded_events = stream->opts.showExpandedEvents;
 

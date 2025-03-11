@@ -317,7 +317,7 @@ opts_structs = OrderedDict([
         }),
         ('showExpandedEvents', { 'type': 'bool', 'help': 'Set to ``true`` to return an expanded list of change stream events. Available only on MongoDB versions >=6.0'}),
         comment_option_string_pre_4_4,
-    ], fullDocument=None, fullDocumentBeforeChange=None)),
+    ], fullDocument=None, fullDocumentBeforeChange=None, batchSize=-1)),
 
     ('mongoc_create_index_opts_t', Struct([
         write_concern_option,
