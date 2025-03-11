@@ -60,7 +60,6 @@
 #define MONGOC_URI_SERVERMONITORINGMODE "servermonitoringmode"
 #define MONGOC_URI_SERVERSELECTIONTIMEOUTMS "serverselectiontimeoutms"
 #define MONGOC_URI_SERVERSELECTIONTRYONCE "serverselectiontryonce"
-#define MONGOC_URI_SLAVEOK "slaveok"
 #define MONGOC_URI_SOCKETCHECKINTERVALMS "socketcheckintervalms"
 #define MONGOC_URI_SOCKETTIMEOUTMS "sockettimeoutms"
 #define MONGOC_URI_SRVSERVICENAME "srvservicename"
@@ -223,7 +222,8 @@ mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri, bson_t *properties
 MONGOC_EXPORT (bool)
 mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri, const bson_t *properties);
 
-BSON_DEPRECATED_FOR (mongoc_uri_get_tls) MONGOC_EXPORT (bool) mongoc_uri_get_ssl (const mongoc_uri_t *uri);
+BSON_DEPRECATED_FOR (mongoc_uri_get_tls)
+MONGOC_EXPORT (bool) mongoc_uri_get_ssl (const mongoc_uri_t *uri);
 
 MONGOC_EXPORT (bool)
 mongoc_uri_get_tls (const mongoc_uri_t *uri);
