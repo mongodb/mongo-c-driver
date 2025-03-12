@@ -75,7 +75,7 @@ test_mongoc_uri_new (void)
    hosts = mongoc_uri_get_hosts (uri);
    ASSERT (hosts);
    ASSERT_CMPSTR (hosts->host, "::1");
-   ASSERT (hosts->port == 27888);
+   ASSERT_CMPUINT16 (hosts->port, ==, 27888);
    ASSERT_CMPSTR (hosts->host_and_port, "[::1]:27888");
    mongoc_uri_destroy (uri);
 
@@ -85,7 +85,7 @@ test_mongoc_uri_new (void)
    hosts = mongoc_uri_get_hosts (uri);
    ASSERT (hosts);
    ASSERT_CMPSTR (hosts->host, "::1%lo0");
-   ASSERT (hosts->port == 27017);
+   ASSERT_CMPUINT16 (hosts->port, ==, 27017);
    ASSERT_CMPSTR (hosts->host_and_port, "[::1%lo0]:27017");
    mongoc_uri_destroy (uri);
 
@@ -111,7 +111,7 @@ test_mongoc_uri_new (void)
    ASSERT (hosts);
    ASSERT (!hosts->next);
    ASSERT_CMPSTR (hosts->host, "localhost");
-   ASSERT_CMPINT (hosts->port, ==, 27017);
+   ASSERT_CMPUINT16 (hosts->port, ==, 27017);
    ASSERT_CMPSTR (hosts->host_and_port, "localhost:27017");
    ASSERT_CMPSTR (mongoc_uri_get_database (uri), "test");
    options = mongoc_uri_get_options (uri);
@@ -127,11 +127,11 @@ test_mongoc_uri_new (void)
    ASSERT (hosts->next->next);
    ASSERT (!hosts->next->next->next);
    ASSERT_CMPSTR (hosts->host, "local1");
-   ASSERT_CMPINT (hosts->port, ==, 27017);
+   ASSERT_CMPUINT16 (hosts->port, ==, 27017);
    ASSERT_CMPSTR (hosts->next->host, "local2");
-   ASSERT_CMPINT (hosts->next->port, ==, 999);
+   ASSERT_CMPUINT16 (hosts->next->port, ==, 999);
    ASSERT_CMPSTR (hosts->next->next->host, "local3");
-   ASSERT_CMPINT (hosts->next->next->port, ==, 27017);
+   ASSERT_CMPUINT16 (hosts->next->next->port, ==, 27017);
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
    ASSERT (bson_iter_init_find (&iter, options, "replicaset"));
