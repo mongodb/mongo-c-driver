@@ -1547,11 +1547,6 @@ test_mongoc_uri_new_with_error (void)
       error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Journal conflicts with w value [w=0]");
 
    error = BSON_ERROR_INIT;
-   ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db?journal=true&w=-1", &error));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Journal conflicts with w value [w=-1]");
-
-   error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db?w=-5", &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Unsupported w value [w=-5]");
 
@@ -2087,8 +2082,8 @@ test_mongoc_uri_write_concern (void)
       },
       {
          .uri = "mongodb://localhost/?" MONGOC_URI_W "=-1",
-         .parses = true,
-         .w = MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED,
+         .parses = false,
+         .log_msg = "Unsupported w value [w=-1]",
       },
       {
          .uri = "mongodb://localhost/?" MONGOC_URI_W "=0",
@@ -2177,12 +2172,6 @@ test_mongoc_uri_write_concern (void)
          .parses = false,
          .w = MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED,
          .log_msg = "Journal conflicts with w value [" MONGOC_URI_W "=0]",
-      },
-      {
-         .uri = "mongodb://localhost/?" MONGOC_URI_W "=-1&" MONGOC_URI_JOURNAL "=true",
-         .parses = false,
-         .w = MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED,
-         .log_msg = "Journal conflicts with w value [" MONGOC_URI_W "=-1]",
       },
       {0}};
 

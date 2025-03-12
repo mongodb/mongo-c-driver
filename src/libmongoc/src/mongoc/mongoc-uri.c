@@ -2118,8 +2118,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
                     storeStrRef (w_str),
                     case (
                        // Special W options:
-                       when (anyOf (eq (int32, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED),
-                                    eq (int32, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED)),
+                       when (eq (int32, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED),
                              // These conflict with journalling:
                              if (eval (mongoc_write_concern_get_journal (write_concern)),
                                  then (error ("Journal conflicts with w value"))),

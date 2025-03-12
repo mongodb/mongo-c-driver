@@ -24,5 +24,5 @@ Fetches the ``w`` parameter of the write concern.
 Returns
 -------
 
-Returns an integer containing the w value. If wmajority is set, this would be MONGOC_WRITE_CONCERN_W_MAJORITY.
+Returns an integer containing the ``w`` value. If wmajority is set, this would be ``MONGOC_WRITE_CONCERN_W_MAJORITY``.
 

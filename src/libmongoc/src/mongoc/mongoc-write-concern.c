@@ -374,9 +374,8 @@ bool
 mongoc_write_concern_is_acknowledged (const mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
-      return (((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) &&
-               (write_concern->w != MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) ||
-              write_concern->fsync_ == true || mongoc_write_concern_get_journal (write_concern));
+      return (((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED)) || write_concern->fsync_ == true ||
+              mongoc_write_concern_get_journal (write_concern));
    }
    return true;
 }
@@ -400,8 +399,7 @@ mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
 
    /* Journal or fsync should require acknowledgement.  */
    if ((write_concern->fsync_ == true || mongoc_write_concern_get_journal (write_concern)) &&
-       (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
-        write_concern->w == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) {
+       (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED)) {
       return false;
    }
 
@@ -511,7 +509,7 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *erro
       if (BSON_ITER_IS_KEY (&inner, "w")) {
          if (BSON_ITER_HOLDS_INT32 (&inner)) {
             w = bson_iter_int32 (&inner);
-            if (w < MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED) {
+            if (w < MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) {
                goto fail;
             }
 
