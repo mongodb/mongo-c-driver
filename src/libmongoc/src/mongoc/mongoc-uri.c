@@ -516,25 +516,46 @@ mongoc_uri_parse_database (mongoc_uri_t *uri, const char *str, const char **end)
 static bool
 mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
 {
-   char *field;
-   char *value;
    const char *end_scan;
-   bson_t properties;
 
-   bson_init (&properties);
+   bson_t properties = BSON_INITIALIZER;
 
-   /* build up the properties document */
-   while ((field = scan_to_unichar (str, ':', "&", &end_scan))) {
+   // Key-value pairs are delimited by ','.
+   for (char *kvp; (kvp = scan_to_unichar (str, ',', "", &end_scan)); bson_free (kvp)) {
       str = end_scan + 1;
-      if (!(value = scan_to_unichar (str, ',', ":&", &end_scan))) {
-         value = bson_strdup (str);
-         str = "";
-      } else {
-         str = end_scan + 1;
+
+      char *const key = scan_to_unichar (kvp, ':', "", &end_scan);
+
+      // Found delimiter: split into key and value.
+      if (key) {
+         char *const value = bson_strdup (end_scan + 1);
+         BSON_APPEND_UTF8 (&properties, key, value);
+         bson_free (key);
+         bson_free (value);
       }
-      bson_append_utf8 (&properties, field, -1, value, -1);
-      bson_free (field);
-      bson_free (value);
+
+      // No delimiter: entire string is the key. Use empty string as value.
+      else {
+         BSON_APPEND_UTF8 (&properties, kvp, "");
+      }
+   }
+
+   // Last (or only) pair.
+   if (*str != '\0') {
+      char *const key = scan_to_unichar (str, ':', "", &end_scan);
+
+      // Found delimiter: split into key and value.
+      if (key) {
+         char *const value = bson_strdup (end_scan + 1);
+         BSON_APPEND_UTF8 (&properties, key, value);
+         bson_free (key);
+         bson_free (value);
+      }
+
+      // No delimiter: entire string is the key. Use empty string as value.
+      else {
+         BSON_APPEND_UTF8 (&properties, str, "");
+      }
    }
 
    /* append our auth properties to our credentials */
