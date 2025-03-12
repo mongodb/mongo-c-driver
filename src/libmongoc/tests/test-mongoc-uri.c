@@ -280,7 +280,7 @@ _auth_mechanism_username_required (const char *mechanism)
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-      ASSERT_WITH_MSG (!uri, "expected failure");
+      ASSERT (!uri);
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -293,7 +293,7 @@ _auth_mechanism_username_required (const char *mechanism)
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-      ASSERT_WITH_MSG (!uri, "expected failure");
+      ASSERT (!uri);
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -313,7 +313,7 @@ _auth_mechanism_password_required (const char *mechanism)
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-      ASSERT_WITH_MSG (!uri, "expected failure");
+      ASSERT (!uri);
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -404,7 +404,7 @@ _auth_mechanism_properties_prohibited (const char *mechanism, const char *userpa
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
       ASSERT_OR_PRINT (uri, error);
       bson_t props;
-      ASSERT_WITH_MSG (!mongoc_uri_get_mechanism_properties (uri, &props), "expected failure");
+      ASSERT (!mongoc_uri_get_mechanism_properties (uri, &props));
       mongoc_uri_destroy (uri);
    }
 
@@ -416,7 +416,7 @@ _auth_mechanism_properties_prohibited (const char *mechanism, const char *userpa
                                                                     mechanism),
                                                            &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-      ASSERT_WITH_MSG (!uri, "expected failure");
+      ASSERT (!uri);
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -432,7 +432,7 @@ _auth_mechanism_properties_prohibited (const char *mechanism, const char *userpa
                                                                     mechanism),
                                                            &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-      ASSERT_WITH_MSG (!uri, "expected failure");
+      ASSERT (!uri);
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -516,7 +516,7 @@ _auth_mechanism_source_external_only (const char *mechanism, const char *userpas
                                                                     mechanism),
                                                            &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-      ASSERT_WITH_MSG (!uri, "expected failure");
+      ASSERT (!uri);
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -598,7 +598,7 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error"); // CDRIVER-1959
-         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -611,7 +611,7 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
          mongoc_uri_t *const uri = mongoc_uri_new_with_error (
             "mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error"); // CDRIVER-1959
-         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -679,7 +679,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
                                        "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=invalid:value",
                                        &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -759,7 +759,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
                            value),
                   &error);
                ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-               ASSERT_WITH_MSG (!uri, "expected failure");
+               ASSERT (!uri);
                ASSERT_ERROR_CONTAINS (error,
                                       MONGOC_ERROR_COMMAND,
                                       MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1013,7 +1013,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
                                        "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=invalid:value",
                                        &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1027,7 +1027,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
                                        "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=AWS_SESSION_TOKEN:token",
                                        &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1174,7 +1174,7 @@ test_mongoc_uri_auth_mechanisms (void)
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1197,7 +1197,7 @@ test_mongoc_uri_auth_mechanisms (void)
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=SCRAM", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1210,7 +1210,7 @@ test_mongoc_uri_auth_mechanisms (void)
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-CR", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1257,7 +1257,7 @@ test_mongoc_uri_auth_mechanisms (void)
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHSOURCE "=", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-         ASSERT_WITH_MSG (!uri, "expected failure");
+         ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,

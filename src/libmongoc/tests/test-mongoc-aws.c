@@ -44,7 +44,7 @@ test_obtain_credentials (void *unused)
    ASSERT_OR_PRINT (uri, error);
    ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -57,7 +57,7 @@ test_obtain_credentials (void *unused)
    ASSERT_OR_PRINT (uri, error);
    ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -84,7 +84,7 @@ test_obtain_credentials (void *unused)
    ASSERT_OR_PRINT (uri, error);
    ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -129,7 +129,7 @@ test_obtain_credentials_from_env (void *unused)
    ASSERT_OR_PRINT (uri, error);
    ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -144,7 +144,7 @@ test_obtain_credentials_from_env (void *unused)
    ASSERT_OR_PRINT (uri, error);
    ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -160,7 +160,7 @@ test_obtain_credentials_from_env (void *unused)
    ASSERT_OR_PRINT (uri, error);
    ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-AWS"));
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -202,22 +202,22 @@ test_derive_region (void *unused)
 #define WITH_LEN(s) s, strlen (s)
 
    ret = _mongoc_validate_and_derive_region (WITH_LEN ("abc..def"), &region, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free (region);
 
    ret = _mongoc_validate_and_derive_region (WITH_LEN ("."), &region, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free (region);
 
    ret = _mongoc_validate_and_derive_region (WITH_LEN ("..."), &region, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free (region);
 
    ret = _mongoc_validate_and_derive_region (WITH_LEN ("first."), &region, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free (region);
 
@@ -237,7 +237,7 @@ test_derive_region (void *unused)
    bson_free (region);
 
    ret = _mongoc_validate_and_derive_region (WITH_LEN (""), &region, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty");
    bson_free (region);
 
@@ -245,7 +245,7 @@ test_derive_region (void *unused)
    memset (large, 'a', 256);
 
    ret = _mongoc_validate_and_derive_region (large, strlen (large), &region, &error);
-   ASSERT_WITH_MSG (!ret, "expected failure");
+   ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: too large");
    bson_free (region);
    bson_free (large);
