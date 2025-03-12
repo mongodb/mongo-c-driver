@@ -624,8 +624,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log-and-monitor-private.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cmd.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.c
@@ -751,7 +749,6 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-iovec.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-macros.h
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-optional.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-prelude.h
@@ -1115,7 +1112,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-loadbalanced.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-long-namespace.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-matcher.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongohouse.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongos-pinning.c
