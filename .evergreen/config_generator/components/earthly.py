@@ -27,7 +27,7 @@ EnvKey = Literal[
     "alpine3.18",
     "alpine3.19",
     "archlinux",
-    "centos7"
+    "centos7",
 ]
 "Identifiers for environments. These correspond to special 'env.*' targets in the Earthfile."
 CompilerName = Literal["gcc", "clang"]
@@ -42,7 +42,7 @@ CxxVersion = Literal["r3.9.0", "none"]
 "C++ driver refs that are under CI test"
 
 # A separator character, since we cannot use whitespace
-_SEPARATOR = "\N{no-break space}\N{bullet}\N{no-break space}"
+_SEPARATOR = "\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}"
 
 
 def os_split(env: EnvKey) -> tuple[str, None | str]:
@@ -59,9 +59,7 @@ def os_split(env: EnvKey) -> tuple[str, None | str]:
         case "centos7":
             return "CentOS", "7.0"
         case _:
-            raise ValueError(
-                f"Failed to split OS env key {env=} into a name+version pair (unrecognized)"
-            )
+            raise ValueError(f"Failed to split OS env key {env=} into a name+version pair (unrecognized)")
 
 
 class EarthlyVariant(NamedTuple):
@@ -135,7 +133,7 @@ class Configuration(NamedTuple):
 
     @property
     def suffix(self) -> str:
-        return f"{_SEPARATOR}".join(f"{k}={v}" for k, v in self._asdict().items())
+        return _SEPARATOR.join(f"{k}={v}" for k, v in self._asdict().items())
 
 
 def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
@@ -144,26 +142,16 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
     configuration values.
     """
     match env, conf:
-        # We only need one task with "sasl=off"
-        case ["u22", "gcc"], ("off", "OpenSSL", "r3.8.0"):
-            return True
-        # The Ubuntu 18.04 GCC has a bug that fails to build the 3.8.0 C++ driver
-        case ["u18", "gcc"], [_, _, "r3.8.0"]:
-            return False
-        # Other sasl=off tasks we'll just ignore:
-        case _, ("off", _tls, _cxx):
-            return False
         # Ubuntu and CentOS do not ship with a LibreSSL package:
-        case e, (_sasl, "LibreSSL", _cxx) if e.display_name.startswith("Ubuntu") or e.display_name.startswith("CentOS"):
+        case e, (_sasl, "LibreSSL", _cxx) if re.match(r"^Ubuntu|^CentOS", e.display_name):
             return False
-        # u16 is not capable of building mongocxx
-        case e, (_, _, "none") if e.display_name.startswith("Ubuntu 16") or e.display_name.startswith("CentOS 7"):
-            return True
-         # Exclude u16 for all other configurations
-        case e, _ if e.display_name.startswith("Ubuntu 16") or e.display_name.startswith("CentOS 7"):
-            return False
-        # Exclude all other envs
-        case _, (_, _, "none"):
+        # u16/centos7 are not capable of building mongocxx
+        case e, (_sasl, _tls, cxx) if re.match(r"^Ubuntu 16|^CentOS 7", e.display_name):
+            # Only build if C++ driver is test is disabled
+            return cxx == "none"
+        # Skip other platforms where the C++ driver test is disabled, since they would be
+        # redundant
+        case _, (_sasl, _tls, "none"):
             return False
         # Anything else: Allow it to run:
         case _:
@@ -230,11 +218,11 @@ def earthly_task(
         commands=[
             # Ensure subsequent Docker commands are authenticated.
             subprocess_exec(
-                binary='bash',
-                command_type="setup",
+                binary="bash",
+                command_type=EvgCommandType.SETUP,
                 args=[
                     "-c",
-                    'docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"'
+                    r'docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"',
                 ],
             ),
             # First, just build the "env-warmup" which will prepare the build environment.
@@ -253,8 +241,8 @@ def earthly_task(
                 # The "targets" arg is for +run to specify which targets to run
                 args={"targets": " ".join(targets)} | earthly_args,
             ),
-        ],
-        tags=[f"earthly", "pr-merge-gate", *env_tags],
+        ],  # type: ignore (The type annots on `commands` is wrong)
+        tags=["earthly", "pr-merge-gate", *env_tags],
         run_on=CONTAINER_RUN_DISTROS,
     )
 

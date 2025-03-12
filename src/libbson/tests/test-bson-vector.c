@@ -58,34 +58,11 @@ typedef struct vector_json_test_case_t {
    bool *test_valid;
 } vector_json_test_case_t;
 
-static void
-translate_json_test_vector (bson_t *array_in, bson_t *array_out)
-{
-   // Patches JSON tests until DRIVERS-3095 is resolved:
-   // - convert "inf" to a double +Infinity
-   // - convert "-inf" to a double -Infinity
-
-   bson_iter_t iter_in;
-   ASSERT (bson_iter_init (&iter_in, array_in));
-   bson_array_builder_t *builder = bson_array_builder_new ();
-   while (bson_iter_next (&iter_in)) {
-      if (BSON_ITER_HOLDS_UTF8 (&iter_in) && 0 == strcmp ("inf", bson_iter_utf8 (&iter_in, NULL))) {
-         ASSERT (bson_array_builder_append_double (builder, (double) INFINITY));
-      } else if (BSON_ITER_HOLDS_UTF8 (&iter_in) && 0 == strcmp ("-inf", bson_iter_utf8 (&iter_in, NULL))) {
-         ASSERT (bson_array_builder_append_double (builder, (double) -INFINITY));
-      } else {
-         ASSERT (bson_array_builder_append_iter (builder, &iter_in));
-      }
-   }
-   ASSERT (bson_array_builder_build (builder, array_out));
-   bson_array_builder_destroy (builder);
-}
-
 static bool
 append_vector_packed_bit_from_packed_array (
    bson_t *bson, const char *key, int key_length, const bson_iter_t *iter, int64_t padding, bson_error_t *error)
 {
-   // (TODO for DRIVERS-3095, DRIVERS-3097) This implements something the test covers that our API doesn't. If the test
+   // (Spec test improvement TODO) This implements something the test covers that our API doesn't. If the test
    // were modified to cover element-by-element conversion, this can be replaced with
    // bson_append_vector_packed_bit_from_array.
 
@@ -182,7 +159,7 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
    bson_error_t vector_from_array_error;
    bool vector_from_array_ok;
 
-   // (TODO for DRIVERS-3095, DRIVERS-3097) Patch test cases that have unused bits set to '1' when '0' is required.
+   // (Spec test improvement TODO) Patch test cases that have unused bits set to '1' when '0' is required.
    if (0 == strcmp ("PACKED_BIT with padding", test_case->test_description)) {
       bson_iter_t iter;
       ASSERT (bson_iter_init_find (&iter, &expected_bson, test_case->scenario_test_key));
@@ -205,26 +182,20 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
                                 &vector_from_array, test_case->scenario_test_key, &iter, &vector_from_array_error);
    } else if (0 == strcmp ("0x27", test_case->test_dtype_hex_str)) {
       // float32 vector from float64 array
-      // (TODO for DRIVERS-3095) Convert the unusual numeric array format to a standard array
-      bson_t converted = BSON_INITIALIZER;
+      bson_iter_t iter;
       bool padding_ok = !test_case->test_padding || *test_case->test_padding == 0;
-      if (test_case->test_vector_array && padding_ok) {
-         bson_iter_t iter;
-         translate_json_test_vector (test_case->test_vector_array, &converted);
-         vector_from_array_ok = bson_iter_init (&iter, &converted) &&
-                                BSON_APPEND_VECTOR_FLOAT32_FROM_ARRAY (
-                                   &vector_from_array, test_case->scenario_test_key, &iter, &vector_from_array_error);
-      } else {
-         vector_from_array_ok = false;
-      }
-      bson_destroy (&converted);
+      vector_from_array_ok = test_case->test_vector_array && padding_ok &&
+                             bson_iter_init (&iter, test_case->test_vector_array) &&
+                             BSON_APPEND_VECTOR_FLOAT32_FROM_ARRAY (
+                                &vector_from_array, test_case->scenario_test_key, &iter, &vector_from_array_error);
    } else if (0 == strcmp ("0x10", test_case->test_dtype_hex_str)) {
       // packed_bit from packed bytes in an int array, with "padding" parameter supplied separately.
-      // TODO for DRIVERS-3095, DRIVERS-3097:
+      // Suggested changes to reduce the special cases here:
       //  - Array-to-Vector should be defined as an element-by-element conversion. This test shouldn't operate on packed
       //  representations.
       //  - Include additional JSON tests for packed access, distinct from Array conversion.
       //  - Tests should keep the unused bits zeroed as required.
+      // (Spec test improvement TODO)
       bson_iter_t iter;
       if (!test_case->test_padding) {
          test_error ("test '%s' is missing required 'padding' field", test_case->test_description);
@@ -286,12 +257,9 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
          bson_array_builder_destroy (array_builder);
       }
 
-      // (TODO for DRIVERS-3095, DRIVERS-3097) Due to loosely defined element types and rounding behavior in the test
-      // vectors, this comparison can't be exact. Temporary special cases are needed for float32 and packed_bit.
-
       if (BSON_ITER_HOLDS_VECTOR_FLOAT32 (&iter)) {
-         // float32 special case: We need to handle the nonstandard "inf" and "-inf" forms, and
-         // due to underspecified rounding and conversion rules we compare value inexactly.
+         // float32 special case: Due to underspecified rounding and conversion rules we compare value inexactly.
+         // (Spec test improvement TODO)
 
          bson_iter_t actual_iter, expected_iter;
          ASSERT (bson_iter_init (&actual_iter, &array_from_vector));
@@ -314,12 +282,7 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
             double actual_double = bson_iter_double (&actual_iter);
 
             double expected_double;
-            if (BSON_ITER_HOLDS_UTF8 (&expected_iter) && 0 == strcmp ("inf", bson_iter_utf8 (&expected_iter, NULL))) {
-               expected_double = (double) INFINITY;
-            } else if (BSON_ITER_HOLDS_UTF8 (&expected_iter) &&
-                       0 == strcmp ("-inf", bson_iter_utf8 (&expected_iter, NULL))) {
-               expected_double = (double) -INFINITY;
-            } else if (BSON_ITER_HOLDS_DOUBLE (&expected_iter)) {
+            if (BSON_ITER_HOLDS_DOUBLE (&expected_iter)) {
                expected_double = bson_iter_double (&expected_iter);
             } else {
                test_error ("test-vector array element %d has unexpected type, should be double, 'inf', or '-inf'.",
@@ -357,6 +320,7 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
          // understand it, they're operating on bytes rather than elements. This is the inverse of
          // append_vector_packed_bit_from_packed_array() above, and it bypasses the vector-to-array conversion.
          // 'array_from_vector' is ignored on this path.
+         // (Spec test improvement TODO)
 
          bson_iter_t expected_iter;
          ASSERT (bson_iter_init (&expected_iter, test_case->test_vector_array));
@@ -372,7 +336,7 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
                test_error ("test-vector array element %d has unexpected type, should be int.", (int) byte_count);
             }
 
-            // (TODO for DRIVERS-3095, DRIVERS-3097) Packed writes can't set unused bits to '1' in libbson, but the spec
+            // (Spec test improvement TODO) Packed writes can't set unused bits to '1' in libbson, but the spec
             // tests allow padding bits to take on undefined values. Modify the expected values to keep padding bits
             // zeroed.
             if (0 == strcmp ("PACKED_BIT with padding", test_case->test_description) &&
@@ -1495,20 +1459,44 @@ test_bson_vector_edge_cases_float32 (void)
 static void
 test_bson_vector_edge_cases_packed_bit (void)
 {
+   // Test UINT32_MAX as an element count. This is the largest representable on systems with a 32-bit size_t.
+   uint32_t len_for_max_count = (uint32_t) (((uint64_t) UINT32_MAX + 7u) / 8u + BSON_VECTOR_HEADER_LEN);
+   {
+      ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX), ==, len_for_max_count);
+      ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX - 1u), ==, len_for_max_count);
+      ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX - 6u), ==, len_for_max_count);
+      ASSERT_CMPUINT32 (
+         bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX - 7u), ==, len_for_max_count - 1u);
+      ASSERT_CMPUINT32 (
+         bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX - 8u), ==, len_for_max_count - 1u);
+   }
+
+   // Test the real max_representable_elements only if size_t is large enough.
+#if SIZE_MAX > UINT32_MAX
    size_t max_representable_elements = ((size_t) UINT32_MAX - BSON_VECTOR_HEADER_LEN) * 8u;
 
    // Test binary_data_length (uint32_t) edge cases, without any allocation.
    {
+      ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX + 1u), ==, len_for_max_count);
+      ASSERT_CMPUINT32 (
+         bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX + 2u), ==, len_for_max_count + 1u);
+      ASSERT_CMPUINT32 (
+         bson_vector_packed_bit_binary_data_length ((size_t) UINT32_MAX + 9u), ==, len_for_max_count + 1u);
       ASSERT_CMPUINT32 (
          bson_vector_packed_bit_binary_data_length (max_representable_elements - 8u), ==, UINT32_MAX - 1u);
       ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length (max_representable_elements - 7u), ==, UINT32_MAX);
       ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length (max_representable_elements), ==, UINT32_MAX);
       ASSERT_CMPUINT32 (bson_vector_packed_bit_binary_data_length (max_representable_elements + 1u), ==, 0);
    }
+#endif // SIZE_MAX > UINT32_MAX
 
-   // Needs little real memory because most bytes are never accessed,
-   // but we should require a virtual address space larger than 32 bits.
+   // If we additionally have a 64-bit address space, allocate this max-sized vector and run tests.
+   // Needs little real memory because most bytes are never accessed.
 #if BSON_WORD_SIZE > 32
+
+#if !(SIZE_MAX > UINT32_MAX)
+#error 64-bit platforms should have a 64-bit size_t
+#endif
 
    size_t expected_bson_overhead =
       5 /* empty bson document */ + 3 /* "v" element header */ + 5 /* binary item header */;
