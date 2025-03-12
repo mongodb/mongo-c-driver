@@ -273,10 +273,9 @@ test_mongoc_uri_new (void)
 static void
 _auth_mechanism_username_required (const char *mechanism)
 {
-   bson_error_t error;
-
    // None.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -290,6 +289,7 @@ _auth_mechanism_username_required (const char *mechanism)
 
    // Empty.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -306,10 +306,9 @@ _auth_mechanism_password_required (const char *mechanism)
 {
    BSON_ASSERT_PARAM (mechanism);
 
-   bson_error_t error;
-
    // None.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -322,6 +321,7 @@ _auth_mechanism_password_required (const char *mechanism)
 
    // Empty.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user:@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -334,6 +334,7 @@ _auth_mechanism_password_required (const char *mechanism)
 
    // Normal.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -350,10 +351,9 @@ _auth_mechanism_password_allowed (const char *mechanism)
 {
    BSON_ASSERT_PARAM (mechanism);
 
-   bson_error_t error;
-
    // None.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -366,6 +366,7 @@ _auth_mechanism_password_allowed (const char *mechanism)
 
    // Empty.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user:@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -378,6 +379,7 @@ _auth_mechanism_password_allowed (const char *mechanism)
 
    // Normal.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -395,10 +397,9 @@ _auth_mechanism_properties_prohibited (const char *mechanism, const char *userpa
    BSON_ASSERT_PARAM (mechanism);
    BSON_ASSERT_PARAM (userpass_prefix);
 
-   bson_error_t error;
-
    // None.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://%slocalhost/?" MONGOC_URI_AUTHMECHANISM "=%s", userpass_prefix, mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -410,6 +411,7 @@ _auth_mechanism_properties_prohibited (const char *mechanism, const char *userpa
 
    // Empty.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (tmp_str ("mongodb://%slocalhost/?" MONGOC_URI_AUTHMECHANISM
                                                                     "=%s&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=",
                                                                     userpass_prefix,
@@ -426,6 +428,7 @@ _auth_mechanism_properties_prohibited (const char *mechanism, const char *userpa
 
    // Normal.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (tmp_str ("mongodb://%slocalhost/?" MONGOC_URI_AUTHMECHANISM
                                                                     "=%s&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=",
                                                                     userpass_prefix,
@@ -446,10 +449,9 @@ _auth_mechanism_source_default_db_or_admin (const char *mechanism)
 {
    BSON_ASSERT_PARAM (mechanism);
 
-   bson_error_t error;
-
    // None (default).
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -460,6 +462,7 @@ _auth_mechanism_source_default_db_or_admin (const char *mechanism)
 
    // Database name.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user:pass@localhost/db?" MONGOC_URI_AUTHMECHANISM "=%s", mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -470,6 +473,7 @@ _auth_mechanism_source_default_db_or_admin (const char *mechanism)
 
    // `authSource` (highest precedence).
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://user:pass@localhost/db?" MONGOC_URI_AUTHMECHANISM "=%s&" MONGOC_URI_AUTHSOURCE "=source",
                   mechanism),
@@ -486,10 +490,9 @@ _auth_mechanism_source_external_only (const char *mechanism, const char *userpas
 {
    BSON_ASSERT_PARAM (mechanism);
 
-   bson_error_t error;
-
    // None (default).
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://%slocalhost/?" MONGOC_URI_AUTHMECHANISM "=%s", userpass_prefix, mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -500,6 +503,7 @@ _auth_mechanism_source_external_only (const char *mechanism, const char *userpas
 
    // Database name (no effect).
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://%slocalhost/db?" MONGOC_URI_AUTHMECHANISM "=%s", userpass_prefix, mechanism), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -510,6 +514,7 @@ _auth_mechanism_source_external_only (const char *mechanism, const char *userpas
 
    // `authSource` (highest precedence, incorrect).
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (tmp_str ("mongodb://%slocalhost/db?" MONGOC_URI_AUTHMECHANISM
                                                                     "=%s&" MONGOC_URI_AUTHSOURCE "=source",
                                                                     userpass_prefix,
@@ -526,6 +531,7 @@ _auth_mechanism_source_external_only (const char *mechanism, const char *userpas
 
    // `authSource` (highest precedence, correct).
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (tmp_str ("mongodb://%slocalhost/db?" MONGOC_URI_AUTHMECHANISM
                                                                     "=%s&" MONGOC_URI_AUTHSOURCE "=$external",
                                                                     userpass_prefix,
@@ -541,14 +547,13 @@ _auth_mechanism_source_external_only (const char *mechanism, const char *userpas
 static void
 test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
 {
-   bson_error_t error;
-
    // Authentication spec: username: SHOULD NOT be provided for MongoDB 3.4+.
    // CDRIVER-1959: allow for backward compatibility until the spec states "MUST NOT" instead of "SHOULD NOT" and
    // spec tests are updated accordingly to permit warnings or errors.
    {
       // None.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -559,6 +564,7 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
 
       // Empty.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error"); // CDRIVER-1959
@@ -569,6 +575,7 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
 
       // Normal.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error"); // CDRIVER-1959
@@ -582,6 +589,7 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
    {
       // None.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -595,6 +603,7 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
 
       // Empty.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error"); // CDRIVER-1959
@@ -608,6 +617,7 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
 
       // Normal.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error (
             "mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error"); // CDRIVER-1959
@@ -630,8 +640,6 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
 static void
 test_mongoc_uri_auth_mechanism_gssapi (void)
 {
-   bson_error_t error;
-
    // Authentication spec: username: MUST be specified and non-zero length.
    _auth_mechanism_username_required ("GSSAPI");
 
@@ -642,6 +650,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
    {
       // None.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=GSSAPI", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -657,6 +666,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
       // Empty.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                                                               "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=",
                                                               &error);
@@ -673,6 +683,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
       // Invalid properties.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=invalid:value",
@@ -688,6 +699,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
       // SERVICE_NAME: Drivers MUST allow the user to specify a different service name. The default is "mongodb".
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=SERVICE_NAME:name",
@@ -705,6 +717,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
       // SERVICE_NAME: naming of mechanism properties MUST be case-insensitive.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=service_name:name",
@@ -729,6 +742,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
             for (const char *const *value_ptr = values; *value_ptr; ++value_ptr) {
                const char *const value = *value_ptr;
 
+               bson_error_t error;
                mongoc_uri_t *const uri = mongoc_uri_new_with_error (
                   tmp_str ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                            "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=CANONICALIZE_HOST_NAME:%s",
@@ -752,6 +766,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
             for (const char *const *value_ptr = values; *value_ptr; ++value_ptr) {
                const char *const value = *value_ptr;
+               bson_error_t error;
                mongoc_uri_t *const uri = mongoc_uri_new_with_error (
                   tmp_str ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                            "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=CANONICALIZE_HOST_NAME:%s",
@@ -772,6 +787,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
       // SERVICE_REALM: Drivers MAY allow the user to specify a different realm for the service.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=SERVICE_REALM:realm",
@@ -789,6 +805,7 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 
       // SERVICE_HOST: Drivers MAY allow the user to specify a different host for the service.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=SERVICE_HOST:host",
@@ -812,8 +829,6 @@ test_mongoc_uri_auth_mechanism_gssapi (void)
 static void
 test_mongoc_uri_auth_mechanism_plain (void)
 {
-   bson_error_t error;
-
    // Authentication spec: username: MUST be specified and non-zero length.
    _auth_mechanism_username_required ("PLAIN");
 
@@ -828,6 +843,7 @@ test_mongoc_uri_auth_mechanism_plain (void)
    {
       // None (default).
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=PLAIN", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -838,6 +854,7 @@ test_mongoc_uri_auth_mechanism_plain (void)
 
       // Database name.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/db?" MONGOC_URI_AUTHMECHANISM "=PLAIN", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -848,6 +865,7 @@ test_mongoc_uri_auth_mechanism_plain (void)
 
       // `authSource` (highest precedence).
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error (
             "mongodb://user:pass@localhost/db?" MONGOC_URI_AUTHMECHANISM "=PLAIN&" MONGOC_URI_AUTHSOURCE "=source",
             &error);
@@ -900,14 +918,13 @@ test_mongoc_uri_auth_mechanism_scram_sha_256 (void)
 static void
 test_mongoc_uri_auth_mechanism_mongodb_aws (void)
 {
-   bson_error_t error;
-
    // Authentication spec: username: MAY be specified.
    // Authentication spec: if a username is provided without a password (or vice-versa) or if only a session token is
    // provided Drivers MUST raise an error.
    {
       // None.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -918,6 +935,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
 
       // Empty.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://:@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -928,6 +946,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
 
       // Normal.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -943,6 +962,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
    {
       // None.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -956,19 +976,17 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
 
       // Empty.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
-            "'MONGODB-AWS' authentication mechanism does not accept a username or a password without the other");
+         ASSERT_OR_PRINT (uri, error);
          mongoc_uri_destroy (uri);
       }
 
       // Normal.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error (
             "mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -981,6 +999,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
    {
       // None.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -994,6 +1013,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
 
       // Empty.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM
                                                               "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=",
                                                               &error);
@@ -1010,6 +1030,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
 
       // Invalid properties.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=invalid:value",
@@ -1024,6 +1045,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
 
       // AWS_SESSION_TOKEN: if *only* a session token is provided Drivers MUST raise an error.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=AWS_SESSION_TOKEN:token",
@@ -1040,6 +1062,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
       // AWS_SESSION_TOKEN: Drivers MUST allow the user to specify an AWS session token for authentication with
       // temporary credentials.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=AWS_SESSION_TOKEN:token",
@@ -1057,6 +1080,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
 
       // AWS_SESSION_TOKEN: naming of mechanism properties MUST be case-insensitive.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM
                                        "=MONGODB-AWS&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=aws_session_token:token",
@@ -1080,8 +1104,6 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
 static void
 test_mongoc_uri_auth_mechanisms (void)
 {
-   bson_error_t error = {0};
-
    capture_logs (true);
 
    // No username or mechanism means no authentication, even if auth fields are present.
@@ -1089,6 +1111,7 @@ test_mongoc_uri_auth_mechanisms (void)
       // Authentication spec: the presence of a database name in the URI connection string MUST NOT be interpreted as a
       // user configuring authentication credentials.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://localhost/db", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
          ASSERT_OR_PRINT (uri, error);
@@ -1103,6 +1126,7 @@ test_mongoc_uri_auth_mechanisms (void)
       // credential data such as Userinfo or authentication parameters in connection options MUST NOT be interpreted as
       // a request for authentication.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHSOURCE "=source", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -1118,6 +1142,7 @@ test_mongoc_uri_auth_mechanisms (void)
       // database name, or `authSource` is specified (consistent with default authentication method selecting
       // SCRAM-SHA-1 or SCRAM-SHA-256).
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://localhost/", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
          ASSERT_OR_PRINT (uri, error);
@@ -1132,6 +1157,7 @@ test_mongoc_uri_auth_mechanisms (void)
       // `authSource` is specified (consistent with default authentication method selecting SCRAM-SHA-1 or
       // SCRAM-SHA-256).
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://user:pass@localhost/db", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
          ASSERT_OR_PRINT (uri, error);
@@ -1145,6 +1171,7 @@ test_mongoc_uri_auth_mechanisms (void)
       // For backward compatibility, `mongoc_uri_get_auth_source` uses `authSource` when specified (consistent with
       // default authentication method selecting SCRAM-SHA-1 or SCRAM-SHA-256).
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://user:pass@localhost/db?" MONGOC_URI_AUTHSOURCE "=source", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -1158,6 +1185,7 @@ test_mongoc_uri_auth_mechanisms (void)
 
       // `authMechanismProperties` should not be validated without an `authMechanism`.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISMPROPERTIES "=x:1", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -1173,6 +1201,7 @@ test_mongoc_uri_auth_mechanisms (void)
    {
       // Empty.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -1186,6 +1215,7 @@ test_mongoc_uri_auth_mechanisms (void)
 
       // Case-insensitivity.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error (
             "mongodb://user:pass@localhost/?" MONGOC_URI_AUTHMECHANISM "=scram-sha-1", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -1196,6 +1226,7 @@ test_mongoc_uri_auth_mechanisms (void)
 
       // No substring comparison.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=SCRAM", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -1209,6 +1240,7 @@ test_mongoc_uri_auth_mechanisms (void)
 
       // Unsupported.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-CR", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -1227,6 +1259,7 @@ test_mongoc_uri_auth_mechanisms (void)
       // that the user has unambiguously specified user information and MUST be interpreted as a user configuring
       // authentication credentials (even if the username and/or password are empty strings).
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://username@localhost/", &error);
          ASSERT_OR_PRINT (uri, error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -1241,6 +1274,7 @@ test_mongoc_uri_auth_mechanisms (void)
 
       // Presence of `:` is interpreted as specifying a password, even if empty.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://username:@localhost/", &error);
          ASSERT_OR_PRINT (uri, error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
@@ -1256,6 +1290,7 @@ test_mongoc_uri_auth_mechanisms (void)
       // Satisfy Connection String spec test: "must raise an error when the authSource is empty".
       // This applies even before determining whether or not authentication is required.
       {
+         bson_error_t error;
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://localhost/?" MONGOC_URI_AUTHSOURCE "=", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
