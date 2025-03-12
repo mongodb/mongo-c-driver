@@ -1299,7 +1299,7 @@ test_mongoc_uri_auth_mechanisms (void)
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                "'default' authentication mechanism requires a source");
+                                "authSource may not be specified as an empty string");
       }
    }
 

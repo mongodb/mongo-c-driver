@@ -1512,7 +1512,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    // Satisfy Connection String spec test: "must raise an error when the authSource is empty".
    // This applies even before determining whether or not authentication is required.
    if (source && strlen (source) == 0) {
-      MONGOC_URI_ERROR (error, "%s", "'default' authentication mechanism requires a source");
+      MONGOC_URI_ERROR (error, "%s", "authSource may not be specified as an empty string");
       return false;
    }
 
