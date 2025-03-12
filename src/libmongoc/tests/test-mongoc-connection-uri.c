@@ -6,6 +6,8 @@
 
 #include <mongoc/mongoc-util-private.h>
 
+#include <common-bson-dsl-private.h>
+
 #include "json-test.h"
 #include "test-libmongoc.h"
 #include <mongoc/mongoc-read-concern-private.h>
@@ -271,51 +273,48 @@ run_uri_test (const char *uri_string,
          }
       }
 
-      if (bson_iter_init_find (&iter, &expected, "username") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-         ASSERT_CMPSTR (mongoc_uri_get_username (uri), bson_iter_utf8 (&iter, NULL));
-      }
+      bsonVisitEach (
+         expected,
+         case (
+            when (iKey ("username"), do ({ ASSERT_CMPSTR (mongoc_uri_get_username (uri), bsonAs (cstr)); })),
+            when (iKey ("password"), do ({ ASSERT_CMPSTR (mongoc_uri_get_password (uri), bsonAs (cstr)); })),
+            when (iKey ("source"), do ({ ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), bsonAs (cstr)); })),
+            when (iKey ("authmechanism"), do ({ ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), bsonAs (cstr)); })),
+            when (iKey ("authmechanismproperties"), do ({
+                     bson_t expected_props = BSON_INITIALIZER;
+                     ASSERT_OR_PRINT (_mongoc_iter_document_as_bson (&bsonVisitIter, &expected_props, &error), error);
 
-      if (bson_iter_init_find (&iter, &expected, "password") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-         ASSERT_CMPSTR (mongoc_uri_get_password (uri), bson_iter_utf8 (&iter, NULL));
-      }
+                     // CDRIVER-4128: CANONICALIZE_HOST_NAME is UTF-8 even when "false" or "true".
+                     {
+                        bson_t updated;
+                        bson_copy_to_excluding (&expected_props, &updated, "CANONICALIZE_HOST_NAME", NULL);
+                        if (bson_iter_init_find_case (&iter, &expected_props, "CANONICALIZE_HOST_NAME")) {
+                           if (BSON_ITER_HOLDS_BOOL (&iter)) {
+                              BSON_APPEND_UTF8 (
+                                 &updated, "CANONICALIZE_HOST_NAME", bson_iter_bool (&iter) ? "true" : "false");
+                           } else {
+                              BSON_APPEND_VALUE (&updated, "CANONICALIZE_HOST_NAME", bson_iter_value (&iter));
+                           }
+                        }
+                        bson_destroy (&expected_props);
+                        expected_props = updated; // Ownership transfer.
+                     }
 
-      if (bson_iter_init_find (&iter, &expected, "source") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-         ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), bson_iter_utf8 (&iter, NULL));
-      }
+                     bson_t actual;
+                     ASSERT_WITH_MSG (mongoc_uri_get_mechanism_properties (uri, &actual),
+                                      "expected authmechanismproperties to be provided");
 
-      if (bson_iter_init_find (&iter, &expected, "authmechanism") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-         ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), bson_iter_utf8 (&iter, NULL));
-      }
+                     bson_iter_init (&iter, &expected_props);
+                     bson_contains_iter (&actual, &iter);
 
-      if (bson_iter_init_find (&iter, &expected, "authmechanismproperties") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         bson_t expected_props = BSON_INITIALIZER;
-         ASSERT_OR_PRINT (_mongoc_iter_document_as_bson (&iter, &expected_props, &error), error);
-
-         // CDRIVER-4128: CANONICALIZE_HOST_NAME is UTF-8 even when "false" or "true".
-         {
-            bson_t updated;
-            bson_copy_to_excluding (&expected_props, &updated, "CANONICALIZE_HOST_NAME", NULL);
-            if (bson_iter_init_find_case (&iter, &expected_props, "CANONICALIZE_HOST_NAME")) {
-               if (BSON_ITER_HOLDS_BOOL (&iter)) {
-                  BSON_APPEND_UTF8 (&updated, "CANONICALIZE_HOST_NAME", bson_iter_bool (&iter) ? "true" : "false");
-               } else {
-                  BSON_APPEND_VALUE (&updated, "CANONICALIZE_HOST_NAME", bson_iter_value (&iter));
-               }
-            }
-            bson_destroy (&expected_props);
-            expected_props = updated; // Ownership transfer.
-         }
-
-         bson_t actual;
-         ASSERT_WITH_MSG (mongoc_uri_get_mechanism_properties (uri, &actual),
-                          "expected authmechanismproperties to be provided");
-
-         bson_iter_init (&iter, &expected_props);
-         bson_contains_iter (&actual, &iter);
-
-         bson_destroy (&expected_props);
-         bson_destroy (&actual);
-      }
+                     bson_destroy (&expected_props);
+                     bson_destroy (&actual);
+                  })),
+            else (do ({
+               test_error ("unexpected credentials field '%s' with type '%s'",
+                           bson_iter_key (&bsonVisitIter),
+                           _mongoc_bson_type_to_str (bson_iter_type (&bsonVisitIter)));
+            }))));
 
       bson_destroy (&expected);
    }
