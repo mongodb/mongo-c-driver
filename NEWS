@@ -8,6 +8,11 @@ Removals:
     names `mongoc.h` or `bson.h` directly. Instead, the names must be prefixed
     with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`.
 
+Changes:
+
+  * '?' is no longer permitted in the user information component of a URI.
+    * Use percent-encoding `"%3F"` to include '?' in the user information component.
+
 libmongoc 1.30.2
 ================
 

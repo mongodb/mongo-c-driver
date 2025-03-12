@@ -1427,100 +1427,123 @@ error:
 static bool
 mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (uri);
    BSON_ASSERT_PARAM (str);
 
-   char *before_slash = NULL;
-   const char *tmp;
+   const size_t str_len = strlen (str);
 
-   if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
+   if (!bson_utf8_validate (str, str_len, false /* allow_null */)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid UTF-8 in URI");
-      goto error;
+      return false;
    }
 
+   // Save for later.
+   const char *const str_end = str + str_len;
+
+   // Parse and remove scheme and its delimiter.
+   // e.g. "mongodb://user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
+   //       ~~~~~~~~~~
    if (!mongoc_uri_parse_scheme (uri, str, &str)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid URI Schema, expecting 'mongodb://' or 'mongodb+srv://'");
-      goto error;
+      return false;
    }
+   // str -> "user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
 
-   before_slash = scan_to_unichar (str, '/', "", &tmp);
-   if (!before_slash) {
-      // Handle cases of optional delimiting slash
-      char *userpass = NULL;
-      char *hosts = NULL;
+   // From this point forward, use this cursor to find the split between "userhosts" and "dbopts".
+   const char *cursor = str;
 
-      // Skip any "?"s that exist in the userpass
-      userpass = scan_to_unichar (str, '@', "", &tmp);
-      if (!userpass) {
-         // If none found, safely check for "?" indicating beginning of options
-         before_slash = scan_to_unichar (str, '?', "", &tmp);
-      } else {
-         const size_t userpass_len = (size_t) (tmp - str);
-         // Otherwise, see if options exist after userpass and concatenate result
-         hosts = scan_to_unichar (tmp, '?', "", &tmp);
+   // Remove userinfo and its delimiter, which may include '?'.
+   // e.g. "user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
+   //       ~~~~~~~~~~
+   {
+      const char *tmp;
 
-         if (hosts) {
-            const size_t hosts_len = (size_t) (tmp - str) - userpass_len;
+      // Only ':' is permitted among RFC-3986 gen-delims (":/?#[]@") in userinfo.
+      char *userinfo = scan_to_unichar (cursor, '@', "/?#[]", &tmp);
 
-            before_slash = bson_strndup (str, userpass_len + hosts_len);
-         }
+      if (userinfo) {
+         cursor = tmp + 1; // Consume userinfo delimiter.
+         bson_free (userinfo);
+      }
+   }
+   // cursor -> "host1:27017,host2:27018/database?key1=value1&key2=value2"
+
+   // Find either the optional auth database delimiter or the query delimiter.
+   // e.g. "host1:27017,host2:27018/database?key1=value1&key2=value2"
+   //                              ^
+   // e.g. "host1:27017,host2:27018?key1=value1&key2=value2"
+   //                              ^
+   {
+      const char *tmp;
+
+      // Only ':', '[', and ']' are permitted among RFC-3986 gen-delims (":/?#[]@") in hostinfo.
+      const char *const terminators = "/?#@";
+
+      char *hostinfo;
+
+      // Optional auth delimiter is present.
+      if ((hostinfo = scan_to_unichar (cursor, '/', terminators, &tmp))) {
+         cursor = tmp; // Include the delimiter.
+         bson_free (hostinfo);
       }
 
-      bson_free (userpass);
-      bson_free (hosts);
-   }
-
-   if (!before_slash) {
-      before_slash = bson_strdup (str);
-      str += strlen (before_slash);
-   } else {
-      str = tmp;
-   }
-
-   if (!mongoc_uri_parse_before_slash (uri, before_slash, error)) {
-      goto error;
-   }
-
-   BSON_ASSERT (str);
-
-   if (*str) {
-      // Check for valid end of hostname delimeter (skip slash if necessary)
-      if (*str != '/' && *str != '?') {
-         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
-         goto error;
+      // Query delimiter is present.
+      else if ((hostinfo = scan_to_unichar (cursor, '?', terminators, &tmp))) {
+         cursor = tmp; // Include the delimiter.
+         bson_free (hostinfo);
       }
 
-      if (*str == '/') {
-         // Try to parse database.
-         str++;
-         if (*str) {
-            if (!mongoc_uri_parse_database (uri, str, &str)) {
+      // Neither delimiter is present. Entire rest of string is part of hostinfo.
+      else {
+         cursor = str_end; // Jump to end of string.
+         BSON_ASSERT (*cursor == '\0');
+      }
+   }
+   // cursor -> "/database?key1=value1&key2=value2"
+
+   // Parse "userhosts". e.g. "user:pass@host1:27017,host2:27018"
+   {
+      char *const userhosts = bson_strndup (str, (size_t) (cursor - str));
+      const bool ret = mongoc_uri_parse_before_slash (uri, userhosts, error);
+      bson_free (userhosts);
+      if (!ret) {
+         return false;
+      }
+   }
+
+   // Parse "dbopts". e.g. "/database?key1=value1&key2=value2"
+   if (*cursor != '\0') {
+      BSON_ASSERT (*cursor == '/' || *cursor == '?');
+
+      // Parse the auth database.
+      if (*cursor == '/') {
+         ++cursor; // Consume the delimiter.
+
+         // No auth database may be present even if the delimiter is present.
+         // e.g. "mongodb://localhost:27017/"
+         if (*cursor != '\0') {
+            if (!mongoc_uri_parse_database (uri, cursor, &cursor)) {
                MONGOC_URI_ERROR (error, "%s", "Invalid database name in URI");
-               goto error;
+               return false;
             }
          }
       }
 
-      if (*str == '?') {
-         // Try to parse options.
-         str++;
-         if (*str) {
-            if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
-               goto error;
+      // Parse the query options.
+      if (*cursor == '?') {
+         ++cursor; // Consume the delimiter.
+
+         // No options may be present even if the delimiter is present.
+         // e.g. "mongodb://localhost:27017?"
+         if (*cursor != '\0') {
+            if (!mongoc_uri_parse_options (uri, cursor, false /* from DNS */, error)) {
+               return false;
             }
          }
       }
    }
 
-   if (!mongoc_uri_finalize (uri, error)) {
-      goto error;
-   }
-
-   bson_free (before_slash);
-   return true;
-
-error:
-   bson_free (before_slash);
-   return false;
+   return mongoc_uri_finalize (uri, error);
 }
 
 
