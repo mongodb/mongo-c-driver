@@ -1,12 +1,23 @@
 Unreleased (2.0.0)
 ==================
 
-Removals:
+## Removals
+### Forwarding headers `#include <bson.h>` and `#include <mongoc.h>`
 
-  * The compatibility "forwarding" headers have been removed (previously added
-    in 1.13.0). This means it is no longer valid to include the literal header
-    names `mongoc.h` or `bson.h` directly. Instead, the names must be prefixed
-    with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`.
+The compatibility "forwarding" headers have been removed (previously added in 1.13.0). This means it is no longer valid to include the literal header names `mongoc.h` or `bson.h` directly:
+
+```c
+#include <bson.h> // No longer provided!
+#include <mongoc.h> // No longer provided!
+```
+
+Instead, the names must be prefixed with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`:
+
+```c
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
+```
+
 
 libmongoc 1.30.2
 ================
