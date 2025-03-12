@@ -616,7 +616,6 @@ test_mongoc_uri_auth_mechanism_mongodb_x509 (void)
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
                                 "'MONGODB-X509' authentication mechanism does not accept a password");
-         clear_captured_logs ();
          mongoc_uri_destroy (uri);
       }
    }
