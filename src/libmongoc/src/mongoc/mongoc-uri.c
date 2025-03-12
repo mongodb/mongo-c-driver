@@ -1745,7 +1745,11 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
    // Invalid or unsupported authentication mechanism.
    else {
-      MONGOC_URI_ERROR (error, "Unsupported value for \"authMechanism\": \"%s\"", mechanism);
+      MONGOC_URI_ERROR (
+         error,
+         "Unsupported value for authMechanism '%s': must be one of "
+         "['MONGODB-OIDC', 'SCRAM-SHA-1', 'SCRAM-SHA-256', 'PLAIN', 'MONGODB-X509', 'GSSAPI', 'MONGODB-AWS']",
+         mechanism);
       goto fail;
    }
 

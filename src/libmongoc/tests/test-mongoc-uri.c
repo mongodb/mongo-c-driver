@@ -1210,7 +1210,8 @@ test_mongoc_uri_auth_mechanisms (void)
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                "Unsupported value for \"authMechanism\": \"\"");
+                                "Unsupported value for authMechanism '': must be one of ['MONGODB-OIDC', "
+                                "'SCRAM-SHA-1', 'SCRAM-SHA-256', 'PLAIN', 'MONGODB-X509', 'GSSAPI', 'MONGODB-AWS']");
          mongoc_uri_destroy (uri);
       }
 
@@ -1235,7 +1236,8 @@ test_mongoc_uri_auth_mechanisms (void)
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                "Unsupported value for \"authMechanism\": \"SCRAM\"");
+                                "Unsupported value for authMechanism 'SCRAM': must be one of ['MONGODB-OIDC', "
+                                "'SCRAM-SHA-1', 'SCRAM-SHA-256', 'PLAIN', 'MONGODB-X509', 'GSSAPI', 'MONGODB-AWS']");
          mongoc_uri_destroy (uri);
       }
 
@@ -1249,7 +1251,8 @@ test_mongoc_uri_auth_mechanisms (void)
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_COMMAND,
                                 MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                "Unsupported value for \"authMechanism\": \"MONGODB-CR\"");
+                                "Unsupported value for authMechanism 'MONGODB-CR': must be one of ['MONGODB-OIDC', "
+                                "'SCRAM-SHA-1', 'SCRAM-SHA-256', 'PLAIN', 'MONGODB-X509', 'GSSAPI', 'MONGODB-AWS']");
          mongoc_uri_destroy (uri);
       }
    }
