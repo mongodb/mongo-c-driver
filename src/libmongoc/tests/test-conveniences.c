@@ -840,13 +840,11 @@ derive (match_ctx_t *ctx, match_ctx_t *derived, const char *key)
  *
  *       Does "doc" match "pattern"?
  *
- *       mongoc_matcher_t prohibits $-prefixed keys, which is something
- *       we need to test in e.g. test_mongoc_client_read_prefs, so this
- *       does *not* use mongoc_matcher_t. Instead, "doc" matches "pattern"
- *       if its key-value pairs are a simple superset of pattern's. Order
- *       matters.
+ *       "doc" matches "pattern" if its key-value pairs are a simple
+ *       superset of pattern's. Order matters.
  *
- *       The only special pattern syntaxes are:
+ *       Matching $-prefixed keys is supported (e.g. `$readPreference`)
+ *       excluding these special patterns:
  *         "field": {"$exists": true/false}
  *         "field": {"$empty": true/false}
  *         "field": {"$$type": "type string"}
