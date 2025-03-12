@@ -18,6 +18,8 @@ Instead, the names must be prefixed with the parent directory: `mongoc/mongoc.h`
 #include <mongoc/mongoc.h>
 ```
 
+### `mongoc_matcher_t`
+The client side matching feature, `mongoc_matcher_t` and related functions are removed.
 
 libmongoc 1.30.2
 ================
