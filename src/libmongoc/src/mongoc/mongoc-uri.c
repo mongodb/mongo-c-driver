@@ -1479,7 +1479,6 @@ _finalize_auth_aws_mechanism_properties (const bson_t *mechanism_properties, bso
 {
    BSON_OPTIONAL_PARAM (mechanism_properties);
    BSON_ASSERT_PARAM (error);
-   BSON_OPTIONAL_PARAM (error);
 
    static const supported_mechanism_properties supported_properties[] = {
       {"AWS_SESSION_TOKEN", BSON_TYPE_UTF8},
