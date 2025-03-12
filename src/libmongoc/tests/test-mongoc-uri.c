@@ -921,6 +921,7 @@ test_mongoc_uri_auth_mechanism_mongodb_aws (void)
          mongoc_uri_t *const uri =
             mongoc_uri_new_with_error ("mongodb://:@localhost/?" MONGOC_URI_AUTHMECHANISM "=MONGODB-AWS", &error);
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+         ASSERT_OR_PRINT (uri, error);
          ASSERT_CMPSTR (mongoc_uri_get_username (uri), "");
          mongoc_uri_destroy (uri);
       }
