@@ -1428,10 +1428,11 @@ _supported_mechanism_properties_check (const supported_mechanism_properties *sup
                // Connection String spec: Any invalid Values for a given key MUST be ignored and MUST log a WARN level
                // message.
                MONGOC_URI_ERROR (error,
-                                 "'%s' authentication mechanism property '%s' has incorrect type '%s'",
+                                 "'%s' authentication mechanism property '%s' has incorrect type '%s', should be '%s'",
                                  key,
                                  mechanism,
-                                 _mongoc_bson_type_to_str (type));
+                                 _mongoc_bson_type_to_str (type),
+                                 _mongoc_bson_type_to_str (prop->type));
                return false;
             }
          }
