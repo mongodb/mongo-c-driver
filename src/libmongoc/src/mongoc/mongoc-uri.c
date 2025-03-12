@@ -1725,7 +1725,9 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
       // Authentication spec: if a username is provided without a password (or vice-versa), Drivers MUST raise an error.
       if (!username != !password) {
-         MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires both a username and a password", mechanism);
+         MONGOC_URI_ERROR (error,
+                           "'%s' authentication mechanism does not accept a username or a password without the other",
+                           mechanism);
          goto fail;
       }
 
