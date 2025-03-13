@@ -3,9 +3,11 @@ Unreleased (2.0.0)
 
 ## Changes
 
+
 * Passing `batchSize:0` as an option to `mongoc_client_watch`, `mongoc_database_watch`, or `mongoc_collection_watch`
   now applies `batchSize:0` to the `aggregate` command. Useful to request an immediate cursor. Previously the value
   was ignored.
+* `bson_oid_init_sequence` is removed. Use `bson_oid_init` instead.
 
 ## Removals
 
