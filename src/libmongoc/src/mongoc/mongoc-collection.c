@@ -2297,66 +2297,6 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_save --
- *
- *       Save @document to @collection.
- *
- *       If the document has an _id field, it will be updated. Otherwise,
- *       the document will be inserted into the collection.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @error is set upon failure if non-NULL.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-mongoc_collection_save (mongoc_collection_t *collection,
-                        const bson_t *document,
-                        const mongoc_write_concern_t *write_concern,
-                        bson_error_t *error)
-{
-   bson_iter_t iter;
-   bool ret;
-   bson_t selector;
-
-   BSON_ASSERT_PARAM (collection);
-   BSON_ASSERT_PARAM (document);
-
-   BEGIN_IGNORE_DEPRECATIONS
-   if (!bson_iter_init_find (&iter, document, "_id")) {
-      return mongoc_collection_insert (collection, MONGOC_INSERT_NONE, document, write_concern, error);
-   }
-
-   bson_init (&selector);
-   if (!bson_append_iter (&selector, NULL, 0, &iter)) {
-      _mongoc_set_error (
-         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Failed to append bson to create update.");
-      bson_destroy (&selector);
-      return false;
-   }
-
-   /* this document will be inserted, validate same as for inserts */
-   if (!_mongoc_validate_new_document (document, _mongoc_default_insert_vflags, error)) {
-      return false;
-   }
-
-   ret = mongoc_collection_update (
-      collection, MONGOC_UPDATE_UPSERT | MONGOC_UPDATE_NO_VALIDATE, &selector, document, write_concern, error);
-   END_IGNORE_DEPRECATIONS
-
-   bson_destroy (&selector);
-
-   return ret;
-}
-
-
 bool
 mongoc_collection_remove (mongoc_collection_t *collection,
                           mongoc_remove_flags_t flags,

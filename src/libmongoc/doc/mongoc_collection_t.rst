@@ -71,7 +71,6 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_collection_rename
     mongoc_collection_rename_with_opts
     mongoc_collection_replace_one
-    mongoc_collection_save
     mongoc_collection_set_read_concern
     mongoc_collection_set_read_prefs
     mongoc_collection_set_write_concern
