@@ -100,13 +100,6 @@ _oid_init (bson_oid_t *oid, bson_context_t *context, bool add_random)
 }
 
 void
-bson_oid_init_sequence (bson_oid_t *oid,         /* OUT */
-                        bson_context_t *context) /* IN */
-{
-   _oid_init (oid, context, false /* no randomness */);
-}
-
-void
 bson_oid_init (bson_oid_t *oid,         /* OUT */
                bson_context_t *context) /* IN */
 {
