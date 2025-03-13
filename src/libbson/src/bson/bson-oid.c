@@ -76,8 +76,9 @@ BSON_MAYBE_UNUSED static const uint16_t gHexCharPairs[] = {
 #endif
 };
 
-static BSON_INLINE void
-_oid_init (bson_oid_t *oid, bson_context_t *context, bool add_random)
+void
+bson_oid_init (bson_oid_t *oid,         /* OUT */
+               bson_context_t *context) /* IN */
 {
    BSON_ASSERT (oid);
    if (!context) {
@@ -90,20 +91,9 @@ _oid_init (bson_oid_t *oid, bson_context_t *context, bool add_random)
    oid->bytes[1] = (uint8_t) (now >> 16);
    oid->bytes[2] = (uint8_t) (now >> 8);
    oid->bytes[3] = (uint8_t) (now >> 0);
-   // Maybe add randomness if the caller wants it
-   if (add_random) {
-      _bson_context_set_oid_rand (context, oid);
-      _bson_context_set_oid_seq32 (context, oid);
-   } else {
-      _bson_context_set_oid_seq64 (context, oid);
-   }
-}
-
-void
-bson_oid_init (bson_oid_t *oid,         /* OUT */
-               bson_context_t *context) /* IN */
-{
-   _oid_init (oid, context, true /* add randomness */);
+   // Add randomness
+   _bson_context_set_oid_rand (context, oid);
+   _bson_context_set_oid_seq32 (context, oid);
 }
 
 
