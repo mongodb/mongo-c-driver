@@ -258,12 +258,6 @@ MONGOC_EXPORT (bool) mongoc_collection_delete (mongoc_collection_t *collection,
                                                const mongoc_write_concern_t *write_concern,
                                                bson_error_t *error);
 
-BSON_DEPRECATED_FOR (mongoc_collection_insert_one or mongoc_collection_replace_one)
-MONGOC_EXPORT (bool) mongoc_collection_save (mongoc_collection_t *collection,
-                                             const bson_t *document,
-                                             const mongoc_write_concern_t *write_concern,
-                                             bson_error_t *error);
-
 MONGOC_EXPORT (bool)
 mongoc_collection_remove (mongoc_collection_t *collection,
                           mongoc_remove_flags_t flags,
