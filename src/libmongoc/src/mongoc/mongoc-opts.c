@@ -1650,7 +1650,7 @@ _mongoc_change_stream_opts_parse (
 
    BSON_ASSERT (client || true); // client may be NULL.
 
-   mongoc_change_stream_opts->batchSize = 0;
+   mongoc_change_stream_opts->batchSize = -1;
    bson_init (&mongoc_change_stream_opts->resumeAfter);
    bson_init (&mongoc_change_stream_opts->startAfter);
    memset (&mongoc_change_stream_opts->startAtOperationTime, 0, sizeof (mongoc_timestamp_t));

@@ -49,7 +49,7 @@ def flatten(items):
 
 class Struct(OrderedDict):
     def __init__(self, items, opts_name='opts', generate_rst=True,
-                 generate_code=True, allow_extra=True, **defaults):
+                 generate_code=True, allow_extra=True, rst_prelude=None, **defaults):
         """Define an options struct.
 
         - items: List of pairs: (optionName, info)
@@ -64,6 +64,7 @@ class Struct(OrderedDict):
         self.generate_code = generate_code
         self.allow_extra = allow_extra
         self.defaults = defaults
+        self.rst_prelude = rst_prelude
 
     def default(self, item, fallback):
         return self.defaults.get(item, fallback)
@@ -293,7 +294,7 @@ opts_structs = OrderedDict([
     ], limit=0, allow_extra=False)),
 
     ('mongoc_change_stream_opts_t', Struct([
-        ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_change_stream_next`'}),
+        ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` requesting a limit of documents returned in each server reply. If positive, the ``batchSize`` is applied to both ``aggregate`` and ``getMore`` commands. If 0, the ``batchSize`` is only applied to the ``aggregate`` command (Useful to request an immediate cursor without significant server-side work. See `Aggregate Data Specifying Batch Size <https://www.mongodb.com/docs/manual/reference/command/aggregate/#aggregate-data-specifying-batch-size>`_). If omitted or negative, the value is ignored and server defaults are used (See `Cursor Batches <https://www.mongodb.com/docs/manual/core/cursors/#cursor-batches>`_ for a description of server defaults).'}),
         ('resumeAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. The result of :symbol:`mongoc_change_stream_get_resume_token()` or the ``_id`` field  of any change received from a change stream can be used here. This option is mutually exclusive with ``startAfter`` and ``startAtOperationTime``.'}),
         ('startAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. Unlike ``resumeAfter``, this can resume notifications after an "invalidate" event. The result of :symbol:`mongoc_change_stream_get_resume_token()` or the ``_id`` field  of any change received from a change stream can be used here.  This option is mutually exclusive with ``resumeAfter`` and ``startAtOperationTime``.'}),
         ('startAtOperationTime', {'type': 'timestamp', 'help': 'A ``Timestamp``. The change stream only provides changes that occurred at or after the specified timestamp. Any command run against the server will return an operation time that can be used here. This option is mutually exclusive with ``resumeAfter`` and ``startAfter``.'}),
@@ -317,7 +318,7 @@ opts_structs = OrderedDict([
         }),
         ('showExpandedEvents', { 'type': 'bool', 'help': 'Set to ``true`` to return an expanded list of change stream events. Available only on MongoDB versions >=6.0'}),
         comment_option_string_pre_4_4,
-    ], fullDocument=None, fullDocumentBeforeChange=None)),
+    ], fullDocument=None, fullDocumentBeforeChange=None, batchSize=-1, rst_prelude=".. versionchanged:: 2.0.0 ``batchSize`` of 0 is applied to the ``aggregate`` command. 0 was previously ignored.")),
 
     ('mongoc_create_index_opts_t', Struct([
         write_concern_option,
@@ -474,6 +475,9 @@ for struct_name, struct in opts_structs.items():
     print(file_name)
     f = open(joinpath(doc_includes, file_name), 'w')
     f.write (disclaimer)
+    if struct.rst_prelude is not None:
+        f.write(struct.rst_prelude)
+        f.write("\n\n")
     f.write(
         "``%s`` may be NULL or a BSON document with additional"
         " command options:\n\n" % struct.opts_name)
