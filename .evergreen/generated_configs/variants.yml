@@ -234,6 +234,7 @@ buildvariants:
       - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
       - name: sasl-cyrus-openssl-ubuntu2004-gcc-compile
       - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.2-server-auth
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.4-server-auth
@@ -273,6 +274,9 @@ buildvariants:
       - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
       - name: sasl-cyrus-openssl-debian10-gcc-test-4.2-server-auth
       - name: sasl-cyrus-openssl-debian10-gcc-test-4.2-replica-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-server-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-replica-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-sharded-auth
   - name: sasl-matrix-winssl
     display_name: sasl-matrix-winssl
     expansions: {}
