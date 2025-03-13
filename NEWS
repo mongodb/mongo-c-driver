@@ -7,6 +7,7 @@ Removals:
     in 1.13.0). This means it is no longer valid to include the literal header
     names `mongoc.h` or `bson.h` directly. Instead, the names must be prefixed
     with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`.
+  * `bson_oid_init_sequence` is removed. Use `bson_oid_init` instead.
 
 libmongoc 1.30.2
 ================
