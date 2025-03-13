@@ -1442,7 +1442,12 @@ _supported_mechanism_properties_check (const supported_mechanism_properties *sup
          }
       }
 
-      // Connection String spec: any invalid Values for a given key MUST be ignored and MUST log a WARN level message.
+      // Authentication spec: Drivers SHOULD raise an error as early as possible when detecting invalid values in a
+      // credential. For instance, if a mechanism_property is specified for MONGODB-CR, the driver should raise an error
+      // indicating that the property does not apply.
+      //
+      // Note: this overrides the Connection String spec: Any invalid Values for a given key MUST be ignored and MUST
+      // log a WARN level message.
       MONGOC_URI_ERROR (error, "Unsupported '%s' authentication mechanism property: '%s'", mechanism, key);
       return false;
 
