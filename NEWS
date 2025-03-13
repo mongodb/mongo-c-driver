@@ -1,13 +1,38 @@
 Unreleased (2.0.0)
 ==================
 
-Removals:
+## Changes
 
-  * The compatibility "forwarding" headers have been removed (previously added
-    in 1.13.0). This means it is no longer valid to include the literal header
-    names `mongoc.h` or `bson.h` directly. Instead, the names must be prefixed
-    with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`.
-  * `mongoc_collection_save` is removed. Use `mongoc_collection_insert_one` or `mongoc_collection_replace_one` instead.
+* Passing `batchSize:0` as an option to `mongoc_client_watch`, `mongoc_database_watch`, or `mongoc_collection_watch`
+  now applies `batchSize:0` to the `aggregate` command. Useful to request an immediate cursor. Previously the value
+  was ignored.
+* `bson_oid_init_sequence` is removed. Use `bson_oid_init` instead.
+
+## Removals
+
+* The `bson_md5_t` struct and associated API is removed.
+* The client side matching feature, `mongoc_matcher_t` and related functions are removed.
+* `mongoc_server_description_ismaster` is removed. Use the equivalent `mongoc_server_description_hello` instead.
+* `MONGOC_QUERY_SLAVE_OK` is removed. Use the equivalent `MONGOC_QUERY_SECONDARY_OK` instead.
+* `MONGOC_URI_SLAVEOK` is removed. It was unused.
+* `mongoc_collection_save` is removed. Use `mongoc_collection_insert_one` or `mongoc_collection_replace_one` instead.
+
+### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
+
+The compatibility "forwarding" headers have been removed (previously added in 1.13.0). This means it is no longer valid to include the literal header names `mongoc.h` or `bson.h` directly:
+
+```c
+#include <bson.h> // No longer provided!
+#include <mongoc.h> // No longer provided!
+```
+
+Instead, the names must be prefixed with the parent directory: `mongoc/mongoc.h` and `bson/bson.h`:
+
+```c
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
+```
+
 
 libmongoc 1.30.2
 ================
