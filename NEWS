@@ -1,8 +1,13 @@
 Unreleased (2.0.0)
 ==================
 
+## Changes
+
+* Passing `batchSize:0` as an option to `mongoc_client_watch`, `mongoc_database_watch`, or `mongoc_collection_watch`
+  now applies `batchSize:0` to the `aggregate` command. Useful to request an immediate cursor. Previously the value
+  was ignored.
+
 ## Removals
-### Forwarding headers `#include <bson.h>` and `#include <mongoc.h>`
 
 The compatibility "forwarding" headers have been removed (previously added in 1.13.0). This means it is no longer valid to include the literal header names `mongoc.h` or `bson.h` directly:
 

@@ -101,6 +101,11 @@ WINDOWS_DISTROS = [
     *ls_distro(name='windows-vsCurrent', os='windows', os_type='windows', vs_ver='vsCurrent'),  # Windows Server 2019
 ]
 
+GRAVITON_DISTROS = [
+    Distro(name='amazon2023-arm64-latest-large-m8g', os='amazon2023', os_type='linux', os_ver='2023', arch='arm64'),
+    Distro(name='amazon2-arm64-latest-large-m8g', os='amazon2', os_type='linux', os_ver='2', arch='arm64'),
+]
+
 # See: https://evergreen.mongodb.com/distros
 # Ensure no-arch distros are ordered before arch-specific distros.
 ALL_DISTROS = [
@@ -113,6 +118,7 @@ ALL_DISTROS = [
     *UBUNTU_DISTROS,
     *UBUNTU_ARM64_DISTROS,
     *WINDOWS_DISTROS,
+    *GRAVITON_DISTROS
 ]
 
 
