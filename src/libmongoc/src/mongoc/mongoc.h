@@ -44,7 +44,6 @@
 #include <mongoc/mongoc-gridfs-file-page.h>
 #include <mongoc/mongoc-host-list.h>
 #include <mongoc/mongoc-init.h>
-#include <mongoc/mongoc-matcher.h>
 #include <mongoc/mongoc-handshake.h>
 #include <mongoc/mongoc-opcode.h>
 #include <mongoc/mongoc-log.h>
