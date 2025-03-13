@@ -36,7 +36,6 @@ Applications receive a temporary reference to a ``mongoc_server_description_t`` 
     mongoc_server_description_hello_response
     mongoc_server_description_host
     mongoc_server_description_id
-    mongoc_server_description_ismaster
     mongoc_server_description_last_update_time
     mongoc_server_description_new_copy
     mongoc_server_description_round_trip_time

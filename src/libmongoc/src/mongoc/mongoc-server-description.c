@@ -392,25 +392,6 @@ mongoc_server_description_hello_response (const mongoc_server_description_t *des
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_server_description_ismaster --
- *
- *      Return this server's most recent "hello" command response.
- *
- * Returns:
- *      A reference to a BSON document, owned by the server description.
- *
- *--------------------------------------------------------------------------
- */
-
-const bson_t *
-mongoc_server_description_ismaster (const mongoc_server_description_t *description)
-{
-   return mongoc_server_description_hello_response (description);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * mongoc_server_description_set_state --
  *
  *       Set the server description's server type.

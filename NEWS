@@ -12,6 +12,9 @@ Unreleased (2.0.0)
 
 * The `bson_md5_t` struct and associated API is removed.
 * The client side matching feature, `mongoc_matcher_t` and related functions are removed.
+* `mongoc_server_description_ismaster` is removed. Use the equivalent `mongoc_server_description_hello` instead.
+* `MONGOC_QUERY_SLAVE_OK` is removed. Use the equivalent `MONGOC_QUERY_SECONDARY_OK` instead.
+* `MONGOC_URI_SLAVEOK` is removed. It was unused.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
