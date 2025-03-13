@@ -68,18 +68,6 @@ _bson_context_set_oid_seq32 (bson_context_t *context, /* IN */
    memcpy (&oid->bytes[BSON_OID_SEQ32_OFFSET], ((uint8_t *) &seq) + 1, BSON_OID_SEQ32_SIZE);
 }
 
-
-void
-_bson_context_set_oid_seq64 (bson_context_t *context, /* IN */
-                             bson_oid_t *oid)         /* OUT */
-{
-   uint64_t seq =
-      (uint64_t) mcommon_atomic_int64_fetch_add ((int64_t *) &context->seq64, 1, mcommon_memory_order_seq_cst);
-
-   seq = BSON_UINT64_TO_BE (seq);
-   memcpy (&oid->bytes[BSON_OID_SEQ64_OFFSET], &seq, BSON_OID_SEQ64_SIZE);
-}
-
 /*
  * --------------------------------------------------------------------------
  *
