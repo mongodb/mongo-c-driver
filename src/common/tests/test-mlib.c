@@ -521,6 +521,129 @@ _test_cast (void)
    }
 }
 
+// This is a "partial" test of the ckdint APIs. A fully exhaustive test set is defined
+// in `mlib/ckdint.test.cpp`
+static void
+_test_ckdint_partial (void)
+{
+   // Small signed
+   {
+      int a = 42;
+      mlib_check (!mlib_add (&a, a, 5)); // a = a + 5
+      mlib_check (a, eq, 47);
+
+      mlib_check (!mlib_add (&a, 5)); // a += 5
+      mlib_check (a, eq, 52);
+
+      // The `check` arithmetic functions should abort the process immediately
+      mlib_assert_aborts () {
+         mlib_assert_add (size_t, 41, -42);
+      }
+      mlib_assert_aborts () {
+         mlib_assert_add (ptrdiff_t, 41, SIZE_MAX);
+      }
+      // Does not abort:
+      const size_t sum = mlib_assert_add (size_t, -32, 33);
+      mlib_check (sum, eq, 1);
+
+      mlib_check (!mlib_add (&a, a, (size_t) 123456));
+      mlib_check (a, eq, 123508);
+
+      a = 4;
+      mlib_check (mlib_add (&a, a, INT_MAX)); // Indicates overflow
+      mlib_check (a, eq, INT_MIN + 3);        // Result is wrapped
+
+      a = -1;
+      mlib_check (!mlib_add (&a, a, INT_MAX));
+      mlib_check (a, eq, INT_MAX - 1);
+   }
+
+   // Small unsigned
+   {
+      unsigned a = 42;
+      mlib_check (!mlib_add (&a, a, 5));
+      mlib_check (a, eq, 47);
+
+      mlib_check (!mlib_add (&a, a, INT_MAX));
+      mlib_check (a, eq, (unsigned) INT_MAX + 47);
+   }
+
+   // Sub with small signed
+   {
+      int a = -1;
+      mlib_check (mlib_sub (&a, INT_MAX, a)); // MAX - (-1) → MAX + 1
+      mlib_check (a, eq, INT_MIN);
+
+      a = -1;
+      mlib_check (!mlib_sub (&a, INT_MIN, a)); // MIN - (-1) → MIN + 1
+      mlib_check (a, eq, INT_MIN + 1);
+   }
+
+   // Max precision tests are more interesting, because they excercise the bit-manipulation
+   // tricks in the arithmetic functions, while smaller ints are simple bounds checks
+   // ==============
+   // Maximum precision signed
+   {
+      intmax_t a = 42;
+      mlib_check (!mlib_add (&a, a, 5));
+      mlib_check (a, eq, 47);
+
+      mlib_check (mlib_add (&a, 42, INTMAX_MAX)); // Overflows
+      mlib_check (a, eq, INTMAX_MIN + 41);        // Wraps
+
+      mlib_check (!mlib_sub (&a, -1, INTMAX_MIN)); // (-N) - (-M) is always well-defined
+      mlib_check (a, eq, INTMAX_MAX);
+
+      mlib_check (mlib_sub (&a, -2, INTMAX_MAX));
+      mlib_check (a, eq, INTMAX_MAX);
+
+      mlib_check (!mlib_sub (&a, 1, INTMAX_MAX));
+      mlib_check (a, eq, INTMAX_MIN + 2);
+
+      mlib_check (!mlib_mul (&a, 1, INTMAX_MAX));
+      mlib_check (a, eq, INTMAX_MAX);
+
+      mlib_check (mlib_mul (&a, 2, INTMAX_MAX));
+      mlib_check (a, eq, -2);
+      mlib_check (mlib_mul (&a, 3, INTMAX_MAX));
+      mlib_check (a, eq, INTMAX_MAX - 2);
+   }
+
+   // Maximum precision unsigned
+   {
+      uintmax_t a = 42;
+      mlib_check (!mlib_add (&a, a, 5));
+      mlib_check (a, eq, 47);
+
+      a = 42;
+      mlib_check (mlib_add (&a, a, UINTMAX_MAX)); // Overflows
+      mlib_check (a, eq, 41);                     // Wraps
+
+      a = 1;
+      mlib_check (mlib_sub (&a, a, INTMAX_MAX)); // Overflows (result is negative)
+      mlib_check (a, eq, (uintmax_t) INTMAX_MAX + 3);
+
+      mlib_check (!mlib_sub (&a, -1, INTMAX_MIN)); // (-N) - (-M) is always well-defined
+      mlib_check (a, eq, INTMAX_MAX);
+
+      mlib_check (mlib_sub (&a, -2, INTMAX_MAX));
+      mlib_check (a, eq, INTMAX_MAX);
+
+      mlib_check (mlib_sub (&a, 1, INTMAX_MAX));
+      mlib_check (a, eq, (uintmax_t) INTMAX_MAX + 3);
+
+      mlib_check (!mlib_mul (&a, 1, INTMAX_MAX));
+      mlib_check (a, eq, INTMAX_MAX);
+
+      // Just barely enough room:
+      mlib_check (!mlib_mul (&a, 2, INTMAX_MAX));
+      mlib_check (a, eq, UINTMAX_MAX - 1);
+      // Too big:
+      mlib_check (mlib_mul (&a, 3, INTMAX_MAX));
+      mlib_check (a, eq, INTMAX_MAX - 2);
+   }
+}
+
 void
 test_mlib_install (TestSuite *suite)
 {
@@ -533,6 +656,7 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/int-encoding", _test_int_encoding);
    TestSuite_Add (suite, "/mlib/foreach", _test_foreach);
    TestSuite_Add (suite, "/mlib/check-cast", _test_cast);
+   TestSuite_Add (suite, "/mlib/ckdint-partial", _test_ckdint_partial);
 }
 
 mlib_diagnostic_pop ();
