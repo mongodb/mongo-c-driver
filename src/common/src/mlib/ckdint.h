@@ -484,7 +484,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             if (did_overflow) {
                return true;
             }
-            if (positive_prod > INTMAX_MAX + a_is_negative) {
+            if (positive_prod > (uintmax_t) INTMAX_MAX + (unsigned) a_is_negative) {
                return true;
             }
             return false;
