@@ -41,9 +41,6 @@ BSON_BEGIN_DECLS
  *       unicode characters. When iterating UTF-8 sequences, this should
  *       be used to avoid losing the high-bits of non-ascii characters.
  *
- * See also:
- *       bson_string_append_unichar()
- *
  *--------------------------------------------------------------------------
  */
 
@@ -149,18 +146,15 @@ BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
  * ]|
  */
 #ifdef BSON_MEMCHECK
-#define BSON_INITIALIZER          \
-   {                              \
-      3, 5, bson_malloc (1), {5}, \
-   }
-#else
 #define BSON_INITIALIZER \
    {                     \
-      3, 5,              \
-      {                  \
-         5               \
-      }                  \
+      3,                 \
+      5,                 \
+      bson_malloc (1),   \
+      {5},               \
    }
+#else
+#define BSON_INITIALIZER {3, 5, {5}}
 #endif
 
 
