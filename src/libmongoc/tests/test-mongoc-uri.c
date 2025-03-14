@@ -257,17 +257,19 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "christian@realm");
    mongoc_uri_destroy (uri);
 
-   /* should not recognize reserved character '?" as part of user information component */
+   /* should recognize a question mark in the userpass instead of mistaking it for the beginning of options */
    uri = mongoc_uri_new ("mongodb://us?r:pa?s@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1");
-   ASSERT (uri);
-   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'r:pa?s@localhost?': null}");
-   mongoc_uri_destroy (uri);
-
-   /* should recognize percent-encoded '?" as part of user information component */
-   uri = mongoc_uri_new ("mongodb://us%3Fr:pa%3Fs@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "us?r");
    ASSERT_CMPSTR (mongoc_uri_get_password (uri), "pa?s");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
+   mongoc_uri_destroy (uri);
+
+   /* should recognize many reserved characters in the userpass for backward compatibility */
+   uri = mongoc_uri_new ("mongodb://user?#[]:pass?#[]@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1");
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_username (uri), "user?#[]");
+   ASSERT_CMPSTR (mongoc_uri_get_password (uri), "pass?#[]");
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
    mongoc_uri_destroy (uri);
 

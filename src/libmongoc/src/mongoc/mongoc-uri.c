@@ -1473,14 +1473,17 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    // From this point forward, use this cursor to find the split between "userhosts" and "dbopts".
    const char *cursor = str;
 
-   // Remove userinfo and its delimiter, which may include '?'.
+   // Remove userinfo and its delimiter.
    // e.g. "user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
    //       ~~~~~~~~~~
    {
       const char *tmp;
 
       // Only ':' is permitted among RFC-3986 gen-delims (":/?#[]@") in userinfo.
-      char *userinfo = scan_to_unichar (cursor, '@', "/?#[]", &tmp);
+      // However, continue supporting these characters for backward compatibility, as permitted by the Connection String
+      // spec: for backwards-compatibility reasons, drivers MAY allow reserved characters other than "@" and ":" to be
+      // present in user information without percent-encoding.
+      char *userinfo = scan_to_unichar (cursor, '@', "", &tmp);
 
       if (userinfo) {
          cursor = tmp + 1; // Consume userinfo delimiter.
