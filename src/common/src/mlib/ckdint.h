@@ -579,7 +579,7 @@ _mlib_ckdint (void *dst,
    if (!mlib_is_little_endian ()) {
       // We need to adjust the copy src in order to truncate the integer for big-endian encoding.
       // Number of high bytes that we need to drop:
-      const int n_drop = dst_sz - (int) sizeof (tmp);
+      const int n_drop = (int) sizeof (tmp) - dst_sz;
       // Adjust the copy pointer to so that we copy from the most significant byte that
       // we wish to keep
       copy_from += n_drop;
