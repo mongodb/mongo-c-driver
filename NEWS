@@ -7,6 +7,7 @@ Unreleased (2.0.0)
   now applies `batchSize:0` to the `aggregate` command. Useful to request an immediate cursor. Previously the value
   was ignored.
 * `bson_oid_init_sequence` is removed. Use `bson_oid_init` instead.
+* `mongoc_server_description_host` changes the return type from `mongoc_host_list_t *` to `const mongoc_host_list_t *`.
 
 ## Removals
 

@@ -533,7 +533,7 @@ test_topology_discovery (void *ctx)
    mongoc_client_t *client;
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd_secondary;
-   mongoc_host_list_t *hl_secondary;
+   const mongoc_host_list_t *hl_secondary;
    mongoc_collection_t *collection;
    bson_t doc = BSON_INITIALIZER;
    bson_t reply;
@@ -597,7 +597,7 @@ test_direct_connection (void *ctx)
    mongoc_client_t *client;
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd_secondary;
-   mongoc_host_list_t *hl_secondary;
+   const mongoc_host_list_t *hl_secondary;
    mongoc_collection_t *collection;
    bson_t doc = BSON_INITIALIZER;
    bson_t reply;
@@ -662,7 +662,7 @@ test_existing_behavior (void *ctx)
    mongoc_client_t *client;
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd_secondary;
-   mongoc_host_list_t *hl_secondary;
+   const mongoc_host_list_t *hl_secondary;
    mongoc_collection_t *collection;
    bson_t doc = BSON_INITIALIZER;
    bson_t reply;

@@ -38,7 +38,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
 MONGOC_EXPORT (uint32_t)
 mongoc_server_description_id (const mongoc_server_description_t *description);
 
-MONGOC_EXPORT (mongoc_host_list_t *)
+MONGOC_EXPORT (const mongoc_host_list_t *)
 mongoc_server_description_host (const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (int64_t)
