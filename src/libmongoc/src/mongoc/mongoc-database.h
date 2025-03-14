@@ -65,17 +65,6 @@ mongoc_database_aggregate (mongoc_database_t *db,
 MONGOC_EXPORT (mongoc_database_t *)
 mongoc_database_copy (mongoc_database_t *database) BSON_GNUC_WARN_UNUSED_RESULT;
 
-BSON_DEPRECATED_FOR (mongoc_database_command_simple)
-MONGOC_EXPORT (mongoc_cursor_t *) mongoc_database_command (mongoc_database_t *database,
-                                                           mongoc_query_flags_t flags,
-                                                           uint32_t skip,
-                                                           uint32_t limit,
-                                                           uint32_t batch_size,
-                                                           const bson_t *command,
-                                                           const bson_t *fields,
-                                                           const mongoc_read_prefs_t *read_prefs)
-   BSON_GNUC_WARN_UNUSED_RESULT;
-
 MONGOC_EXPORT (bool)
 mongoc_database_read_command_with_opts (mongoc_database_t *database,
                                         const bson_t *command,
