@@ -827,106 +827,7 @@ test_wire_version (void)
 
 
 static void
-test_mongoc_client_command (void)
-{
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-   bool r;
-   bson_t cmd = BSON_INITIALIZER;
-
-   client = test_framework_new_default_client ();
-   BSON_ASSERT (client);
-
-   bson_append_int32 (&cmd, "ping", 4, 1);
-
-   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
-
-   r = mongoc_cursor_next (cursor, &doc);
-   BSON_ASSERT (r);
-   BSON_ASSERT (doc);
-
-   r = mongoc_cursor_next (cursor, &doc);
-   BSON_ASSERT (!r);
-   BSON_ASSERT (!doc);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-   bson_destroy (&cmd);
-}
-
-
-static void
-test_mongoc_client_command_defaults (void)
-{
-   mongoc_client_t *client;
-   mongoc_read_prefs_t *read_prefs;
-   mongoc_read_concern_t *read_concern;
-   mongoc_cursor_t *cursor;
-
-
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-
-   read_concern = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (read_concern, "majority");
-
-   client = test_framework_new_default_client ();
-   mongoc_client_set_read_prefs (client, read_prefs);
-   mongoc_client_set_read_concern (client, read_concern);
-
-   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{'ping': 1}"), NULL, NULL);
-
-   /* Read and Write Concern spec: "If your driver offers a generic RunCommand
-    * method on your database object, ReadConcern MUST NOT be applied
-    * automatically to any command. A user wishing to use a ReadConcern in a
-    * generic command must supply it manually." Server Selection Spec: "The
-    * generic command method MUST ignore any default read preference from
-    * client, database or collection configuration. The generic command method
-    * SHOULD allow an optional read preference argument."
-    */
-   ASSERT (cursor->read_concern->level == NULL);
-   ASSERT (cursor->read_prefs->mode == MONGOC_READ_PRIMARY);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_read_concern_destroy (read_concern);
-   mongoc_read_prefs_destroy (read_prefs);
-   mongoc_client_destroy (client);
-}
-
-
-static void
-test_mongoc_client_command_secondary (void)
-{
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   mongoc_read_prefs_t *read_prefs;
-   bson_t cmd = BSON_INITIALIZER;
-   const bson_t *reply;
-
-   client = test_framework_new_default_client ();
-   BSON_ASSERT (client);
-
-   BSON_APPEND_INT32 (&cmd, "invalid_command_here", 1);
-
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-
-   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, read_prefs);
-   mongoc_cursor_next (cursor, &reply);
-
-   if (test_framework_is_replset ()) {
-      BSON_ASSERT (test_framework_server_is_secondary (client, mongoc_cursor_get_server_id (cursor)));
-   }
-
-   mongoc_read_prefs_destroy (read_prefs);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-   bson_destroy (&cmd);
-}
-
-
-static void
-_test_command_read_prefs (bool simple, bool pooled)
+_test_command_read_prefs (bool pooled)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -937,8 +838,6 @@ _test_command_read_prefs (bool simple, bool pooled)
    future_t *future;
    bson_error_t error;
    request_t *request;
-   mongoc_cursor_t *cursor;
-   const bson_t *reply;
 
    /* mock mongos: easiest way to test that read preference is configured */
    server = mock_mongos_new (WIRE_VERSION_MIN);
@@ -959,52 +858,26 @@ _test_command_read_prefs (bool simple, bool pooled)
 
    cmd = tmp_bson ("{'foo': 1}");
 
-   if (simple) {
-      /* simple, without read preference */
-      future = future_client_command_simple (client, "db", cmd, NULL, NULL, &error);
+   /* without read preference */
+   future = future_client_command_simple (client, "db", cmd, NULL, NULL, &error);
 
-      request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
+   request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
 
-      reply_to_request_with_ok_and_destroy (request);
-      ASSERT_OR_PRINT (future_get_bool (future), error);
-      future_destroy (future);
+   reply_to_request_with_ok_and_destroy (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
 
-      /* with read preference */
-      future = future_client_command_simple (client, "db", cmd, secondary_pref, NULL, &error);
+   /* with read preference */
+   future = future_client_command_simple (client, "db", cmd, secondary_pref, NULL, &error);
 
-      request = mock_server_receives_msg (server,
-                                          MONGOC_MSG_NONE,
-                                          tmp_bson ("{'$db': 'db',"
-                                                    " 'foo': 1,"
-                                                    " '$readPreference': {'mode': 'secondary'}}"));
-      reply_to_request_with_ok_and_destroy (request);
-      ASSERT_OR_PRINT (future_get_bool (future), error);
-      future_destroy (future);
-   } else {
-      /* not simple, no read preference */
-      cursor = mongoc_client_command (client, "db", MONGOC_QUERY_NONE, 0, 0, 0, cmd, NULL, NULL);
-      future = future_cursor_next (cursor, &reply);
-      request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
-
-      reply_to_request_with_ok_and_destroy (request);
-      ASSERT (future_get_bool (future));
-      future_destroy (future);
-      mongoc_cursor_destroy (cursor);
-
-      /* with read preference */
-      cursor = mongoc_client_command (client, "db", MONGOC_QUERY_NONE, 0, 0, 0, cmd, NULL, secondary_pref);
-      future = future_cursor_next (cursor, &reply);
-      request = mock_server_receives_msg (server,
-                                          MONGOC_MSG_NONE,
-                                          tmp_bson ("{'$db': 'db',"
-                                                    " 'foo': 1,"
-                                                    " '$readPreference': {'mode': 'secondary'}}"));
-
-      reply_to_request_with_ok_and_destroy (request);
-      ASSERT (future_get_bool (future));
-      future_destroy (future);
-      mongoc_cursor_destroy (cursor);
-   }
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " 'foo': 1,"
+                                                 " '$readPreference': {'mode': 'secondary'}}"));
+   reply_to_request_with_ok_and_destroy (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
 
    mongoc_uri_destroy (uri);
 
@@ -1023,49 +896,14 @@ _test_command_read_prefs (bool simple, bool pooled)
 static void
 test_command_simple_read_prefs_single (void)
 {
-   _test_command_read_prefs (true, false);
+   _test_command_read_prefs (false);
 }
 
 
 static void
 test_command_simple_read_prefs_pooled (void)
 {
-   _test_command_read_prefs (true, true);
-}
-
-
-static void
-test_command_read_prefs_single (void)
-{
-   _test_command_read_prefs (false, false);
-}
-
-
-static void
-test_command_read_prefs_pooled (void)
-{
-   _test_command_read_prefs (false, true);
-}
-
-
-static void
-test_command_not_found (void)
-{
-   mongoc_client_t *client;
-   const bson_t *doc;
-   bson_error_t error;
-   mongoc_cursor_t *cursor;
-
-   client = test_framework_new_default_client ();
-   cursor = mongoc_client_command (client, "test", MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{'foo': 1}"), NULL, NULL);
-
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_QUERY);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
+   _test_command_read_prefs (true);
 }
 
 
@@ -4029,9 +3867,6 @@ test_client_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
-   TestSuite_AddLive (suite, "/Client/command", test_mongoc_client_command);
-   TestSuite_AddLive (suite, "/Client/command_defaults", test_mongoc_client_command_defaults);
-   TestSuite_AddLive (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_AddMockServerTest (suite, "/Client/command_w_server_id", test_client_cmd_w_server_id);
    TestSuite_AddMockServerTest (suite, "/Client/command_w_server_id/sharded", test_client_cmd_w_server_id_sharded);
    TestSuite_AddFull (
@@ -4044,9 +3879,6 @@ test_client_install (TestSuite *suite)
       suite, "/Client/command/read_prefs/simple/single", test_command_simple_read_prefs_single);
    TestSuite_AddMockServerTest (
       suite, "/Client/command/read_prefs/simple/pooled", test_command_simple_read_prefs_pooled);
-   TestSuite_AddMockServerTest (suite, "/Client/command/read_prefs/single", test_command_read_prefs_single);
-   TestSuite_AddMockServerTest (suite, "/Client/command/read_prefs/pooled", test_command_read_prefs_pooled);
-   TestSuite_AddLive (suite, "/Client/command_not_found/cursor", test_command_not_found);
    TestSuite_AddLive (suite, "/Client/command_not_found/simple", test_command_not_found_simple);
    TestSuite_AddMockServerTest (suite, "/Client/command_with_opts/read_prefs", test_command_with_opts_read_prefs);
    TestSuite_AddMockServerTest (suite, "/Client/command_with_opts/read_write", test_read_write_cmd_with_opts);
