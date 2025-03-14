@@ -56,5 +56,7 @@ endif ()
 
 if (MONGO_USE_LLD)
     message (STATUS "Linking using LLVM lld. Disable by setting MONGO_USE_LLD to OFF")
-    add_link_options (-fuse-ld=lld)
+    # We only tested with C, so only use LLD on C (some platforms don't support lld with g++)
+    # XXX: This should use $<LINK_LANGUAGE:C> when we can require CMake 3.18+
+    add_link_options ($<$<COMPILE_LANGUAGE:C>:-fuse-ld=lld>)
 endif ()

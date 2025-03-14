@@ -52,6 +52,7 @@
 
 #ifndef _WIN32
 #include <sys/wait.h>
+#include <unistd.h>
 #define _mlibAssertAbortsStmt_()                                                                  \
    for (int once = 1, other_pid = fork (); once; once = 0)                                        \
       for (; once; once = 0)                                                                      \
@@ -107,16 +108,16 @@ _mlib_stmt_did_not_abort (const char *file, const char *func, int line, int rc)
 /**
  * @brief Aggregate type that holds information about a source location
  */
-struct mlib_source_location {
+typedef struct mlib_source_location {
    const char *file;
    int lineno;
    const char *func;
-};
+} mlib_source_location;
 
 /**
  * @brief Expands to an `mlib_source_location` for the location in which the macro is expanded
  */
-#define mlib_this_source_location() ((struct mlib_source_location){(__FILE__), (__LINE__), (MLIB_FUNC)})
+#define mlib_this_source_location() (mlib_init (mlib_source_location){(__FILE__), (__LINE__), (MLIB_FUNC)})
 // ↑ The paren wrapping is required on VS2017 to prevent it from deleting the preceding comma (?!)
 
 /**
@@ -125,11 +126,13 @@ struct mlib_source_location {
  * Can be called with one argument to test a single boolean condition, or three
  * arguments for more useful diagnostics with an infix operator.
  */
-#define mlib_check(...) MLIB_ARGC_PICK (_mlib_check, __VA_ARGS__)
+#define mlib_check(...) MLIB_ARGC_PICK (_mlib_check, #__VA_ARGS__, __VA_ARGS__)
 // One arg:
-#define _mlib_check_argc_1(Condition) _mlibCheckConditionSimple (Condition, #Condition, mlib_this_source_location ())
+#define _mlib_check_argc_2(ArgString, Condition) \
+   _mlibCheckConditionSimple (Condition, ArgString, mlib_this_source_location ())
 // Three args:
-#define _mlib_check_argc_3(A, Operator, B) MLIB_PASTE (_mlibCheckCondition_, Operator) (A, B)
+#define _mlib_check_argc_4(ArgString, A, Operator, B) \
+   MLIB_NOTHING (#A, #B) MLIB_PASTE (_mlibCheckCondition_, Operator) (A, B)
 // String-compare:
 #define _mlibCheckCondition_str_eq(A, B) _mlibCheckStrEq (A, B, #A, #B, mlib_this_source_location ())
 // Pointer-compare:
@@ -176,16 +179,16 @@ _mlibCheckIntCmp (enum mlib_cmp_result cres, // The cmp result to check
                right_expr);
       fprintf (stderr, "    ");
       if (left.is_signed) {
-         fprintf (stderr, "%" PRIiMAX, left.i.s);
+         fprintf (stderr, "%lld", (long long) left.i.s);
       } else {
-         fprintf (stderr, "%" PRIuMAX, left.i.u);
+         fprintf (stderr, "%llu", (unsigned long long) left.i.u);
       }
       fprintf (stderr, " ⟨%s⟩\n", left_expr);
       fprintf (stderr, "    ");
       if (right.is_signed) {
-         fprintf (stderr, "%" PRIiMAX, right.i.s);
+         fprintf (stderr, "%lld", (long long) right.i.s);
       } else {
-         fprintf (stderr, "%" PRIuMAX, right.i.u);
+         fprintf (stderr, "%llu", (unsigned long long) right.i.u);
       }
       fprintf (stderr, " ⟨%s⟩\n", right_expr);
       fflush (stderr);
