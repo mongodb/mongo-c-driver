@@ -287,8 +287,7 @@ mongoc_server_description_id (const mongoc_server_description_t *description)
  *      Return a reference to the host associated with this server description.
  *
  * Returns:
- *      This server description's host, a const mongoc_host_list_t * you must
- *      not modify or free.
+ *      This server description's host, a const mongoc_host_list_t *.
  *
  *--------------------------------------------------------------------------
  */

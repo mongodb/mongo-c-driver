@@ -26,5 +26,5 @@ Returns
 
 .. versionchanged:: 2.0.0 The return type changed from ``mongoc_host_list_t *`` to ``const mongoc_host_list_t *``.
 
-A reference to the server description's :symbol:`mongoc_host_list_t`, which you must not modify or free.
+A reference to the server description's :symbol:`mongoc_host_list_t`.
 
