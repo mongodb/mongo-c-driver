@@ -36,7 +36,6 @@
 #include <bson/bson-iter.h>
 #include <bson/bson-json.h>
 #include <bson/bson-keys.h>
-#include <bson/bson-md5.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-oid.h>
 #include <bson/bson-reader.h>

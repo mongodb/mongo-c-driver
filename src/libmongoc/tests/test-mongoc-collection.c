@@ -855,59 +855,6 @@ test_insert_command_keys (void)
 
 
 static void
-test_save (void)
-{
-   mongoc_collection_t *collection;
-   mongoc_database_t *database;
-   mongoc_client_t *client;
-   bson_context_t *context;
-   bson_error_t error;
-   bson_oid_t oid;
-   unsigned i;
-   bson_t b;
-   bool r;
-
-   client = test_framework_new_default_client ();
-   ASSERT (client);
-
-   database = get_test_database (client);
-   ASSERT (database);
-
-   collection = get_test_collection (client, "test_save");
-   ASSERT (collection);
-
-   /* don't care if ns not found. */
-   (void) mongoc_collection_drop (collection, &error);
-
-   context = bson_context_new (BSON_CONTEXT_NONE);
-   ASSERT (context);
-
-   BEGIN_IGNORE_DEPRECATIONS
-
-   for (i = 0; i < 10; i++) {
-      bson_init (&b);
-      bson_oid_init (&oid, context);
-      bson_append_oid (&b, "_id", 3, &oid);
-      bson_append_utf8 (&b, "hello", 5, "/world", 5);
-      ASSERT_OR_PRINT (mongoc_collection_save (collection, &b, NULL, &error), error);
-      bson_destroy (&b);
-   }
-
-   r = mongoc_collection_save (collection, tmp_bson ("{'': 1}"), NULL, &error);
-
-   END_IGNORE_DEPRECATIONS
-
-   ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid document");
-
-   mongoc_collection_destroy (collection);
-   mongoc_database_destroy (database);
-   bson_context_destroy (context);
-   mongoc_client_destroy (client);
-}
-
-
-static void
 test_regex (void)
 {
    mongoc_collection_t *collection;
@@ -5810,7 +5757,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddFull (
       suite, "/Collection/insert/oversize", test_insert_oversize, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddMockServerTest (suite, "/Collection/insert/keys", test_insert_command_keys);
-   TestSuite_AddLive (suite, "/Collection/save", test_save);
    TestSuite_AddLive (suite, "/Collection/insert/w0", test_insert_w0);
    TestSuite_AddLive (suite, "/Collection/update/w0", test_update_w0);
    TestSuite_AddLive (suite, "/Collection/remove/w0", test_remove_w0);
