@@ -277,19 +277,6 @@ bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc)
    bson_iter_bson (&iter, doc);
 }
 
-void
-bson_lookup_doc_null_ok (const bson_t *b, const char *key, bson_t *doc)
-{
-   bson_iter_t iter;
-
-   bson_lookup (b, key, &iter);
-   if (!BSON_ITER_HOLDS_NULL (&iter)) {
-      bson_iter_bson (&iter, doc);
-   } else {
-      bson_init (doc);
-   }
-}
-
 
 /*--------------------------------------------------------------------------
  *

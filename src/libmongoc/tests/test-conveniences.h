@@ -81,6 +81,9 @@ json_with_all_types (void);
 #define realpath(path, expanded) GetFullPathName (path, PATH_MAX, expanded, NULL)
 #endif
 
+void
+bson_lookup (const bson_t *bson, const char *path, bson_iter_t *out);
+
 const char *
 bson_lookup_utf8 (const bson_t *b, const char *key);
 
@@ -95,9 +98,6 @@ bson_lookup_bson (const bson_t *b, const char *key);
 
 void
 bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc);
-
-void
-bson_lookup_doc_null_ok (const bson_t *b, const char *key, bson_t *doc);
 
 bool
 bson_lookup_bool (const bson_t *b, const char *key);

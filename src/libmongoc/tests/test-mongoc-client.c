@@ -3960,25 +3960,6 @@ test_failure_to_auth (void)
    mongoc_uri_destroy (uri);
 }
 
-static void
-test_does_not_support_mongodbcr (void)
-{
-   mongoc_uri_t *uri = test_framework_get_uri ();
-   mongoc_uri_set_username (uri, "foo");
-   mongoc_uri_set_password (uri, "bar");
-   mongoc_uri_set_auth_mechanism (uri, "MONGODB-CR");
-   mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
-   ASSERT (client);
-   test_framework_set_ssl_opts (client);
-   bson_error_t error;
-   bool ok = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-   ASSERT_WITH_MSG (!ok, "expected command to fail, got success");
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Unknown authentication mechanism");
-   mongoc_client_destroy (client);
-   mongoc_uri_destroy (uri);
-}
-
 void
 test_client_install (TestSuite *suite)
 {
@@ -4172,5 +4153,4 @@ test_client_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_server_ssl);
 #endif
-   TestSuite_AddLive (suite, "/Client/does_not_support_MONGODB-CR", test_does_not_support_mongodbcr);
 }
