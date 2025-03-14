@@ -271,7 +271,7 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    if (dst_signed) {
       if (a_signed) {
          if (b_signed) { // S = S + S
-            return (intmax_t) ((sum ^ a) & (sum ^ b)) < 0;
+            return signbit & (sum ^ a) & (sum ^ b);
             // Expanded:
             // Test whether the product sign is unequal to both input signs
             // X ^ Y yields a negative value if the signs are unequal
@@ -290,13 +290,13 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             return a + b < b;
          } else { // S = U + U
             // The signed sum must not be greater than the addend, and not negative
-            return sum < a || (intmax_t) sum < 0;
+            return sum < a || (signbit & sum);
          }
       }
    } else {
       if (a_signed) {
          if (b_signed) { // U = S + S
-            return ((intmax_t) (((sum | a) & b) | ((sum & a) & ~b)) < 0);
+            return signbit & (((sum | a) & b) | ((sum & a) & ~b));
             // Expanded:
             const bool a_is_negative = (intmax_t) a < 0;
             const bool b_is_negative = (intmax_t) b < 0;
@@ -318,7 +318,7 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             }
             return false;
          } else { // U = S + U
-            return (intmax_t) ((sum ^ a ^ signbit) & (sum ^ b)) < 0;
+            return signbit & (sum ^ a ^ signbit) & (sum ^ b);
             // Expanded:
             const bool sum_is_large = sum > INTMAX_MAX;
             const bool b_is_large = b > INTMAX_MAX;
@@ -344,7 +344,7 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          }
       } else {
          if (b_signed) { // U = U + S  --- (See [U = S + U] for an explanation)
-            return (intmax_t) ((sum ^ a) & (sum ^ b ^ signbit)) < 0;
+            return signbit & (sum ^ a) & (sum ^ b ^ signbit);
          } else { // U = U + U (simple case)
             return sum < a;
          }
@@ -362,10 +362,10 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    // Test whether the operation overflowed for the given sign configuration
    // (See mlib_add for more details on why we do this bit fiddling)
    if (dst_signed) {
-      const bool diff_is_negative = (intmax_t) diff < 0;
+      const bool diff_is_negative = signbit & diff;
       if (a_signed) {
          if (b_signed) { // S = S - S
-            return (intmax_t) ((a ^ b) & (diff ^ a)) < 0;
+            return signbit & (a ^ b) & (diff ^ a);
             // Explain:
             const bool a_is_negative = (intmax_t) a < 0;
             const bool b_is_negative = (intmax_t) b < 0;
@@ -395,7 +395,7 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    } else {
       if (a_signed) {
          if (b_signed) { // U = S - S
-            return ((intmax_t) (((diff & a) & b) | ((diff | a) & ~b)) < 0);
+            return signbit & (((diff & a) & b) | ((diff | a) & ~b));
             // Expanded:
             const bool a_is_negative = (intmax_t) a < 0;
             const bool b_is_negative = (intmax_t) b < 0;
@@ -421,11 +421,11 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             }
             return false;
          } else { //
-            return (b > a) || ((intmax_t) a < 0);
+            return (b > a) || (signbit & a);
          }
       } else {
          if (b_signed) { // U = U - S
-            return (intmax_t) ((a ^ b ^ signbit) & (diff ^ a)) < 0;
+            return signbit & (a ^ b ^ signbit) & (diff ^ a);
             // Explain:
             const bool a_is_large = a > INTMAX_MAX;
             const bool b_is_negative = (intmax_t) b < 0;
@@ -459,6 +459,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    mlib_noexcept
 {
    // Multiplication is a lot more subtle
+   const uintmax_t signbit = (UINTMAX_C (1) << ((sizeof (intmax_t) * CHAR_BIT) - 1));
    if (dst_signed) {
       if (a_signed) {
          if (b_signed) {
@@ -477,7 +478,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          } else {
             // S = S × U
             *dst = a * b;
-            const bool a_is_negative = (intmax_t) a < 0;
+            const bool a_is_negative = signbit & a;
             const uintmax_t positive_a = a_is_negative ? (0 - a) : a;
             const uintmax_t positive_prod = positive_a * b;
             const bool did_overflow = positive_a && positive_prod / positive_a != b;
@@ -501,7 +502,8 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             if (did_overflow) {
                return true;
             }
-            if ((intmax_t) *dst < 0) {
+            if (signbit & *dst) {
+               // A negative product indicates wrapping
                return true;
             }
             return false;
@@ -513,7 +515,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             // U = S × S
             // Is either operand the min?
             bool either_min = false;
-            if ((intmax_t) (a & b) < 0) {
+            if (signbit & a & b) {
                // Both negative: Flip the signs
                a = 0 - a;
                b = 0 - b;
@@ -521,14 +523,14 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
                either_min = (intmax_t) a == INTMAX_MIN || (intmax_t) b == INTMAX_MIN;
             }
             // Check if the product would be a negative number
-            const bool neg_prod = (intmax_t) (a ^ b) < 0 && a && b && !either_min;
+            const bool neg_prod = (signbit & (a ^ b)) && a && b && !either_min;
             *dst = a * b;
             return neg_prod || (a && *dst / a != b);
          } else {
             // U = S × U
             *dst = a * b;
             const bool did_ovr = a && *dst / a != b;
-            const bool a_is_negative = (intmax_t) a < 0;
+            const bool a_is_negative = signbit & a;
             if (did_ovr || (a_is_negative && b)) {
                return true;
             }
