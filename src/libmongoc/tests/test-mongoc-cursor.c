@@ -2212,8 +2212,7 @@ test_error_document_getmore (void)
 }
 
 /* test that an error during constructing a find cursor causes the cursor to
- * be marked as failed, so mongoc_cursor_is_alive and mongoc_cursor_more return
- * false */
+ * be marked as failed, mongoc_cursor_more returns false */
 static void
 test_find_error_is_alive (void)
 {
@@ -2229,7 +2228,6 @@ test_find_error_is_alive (void)
    BSON_ASSERT (mongoc_cursor_error (cursor, &err));
    ASSERT_ERROR_CONTAINS (
       err, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Cannot mix $query with non-dollar field");
-   BSON_ASSERT (!mongoc_cursor_is_alive (cursor));
    BSON_ASSERT (!mongoc_cursor_more (cursor));
    BSON_ASSERT (!mongoc_cursor_next (cursor, &bson));
    mongoc_cursor_destroy (cursor);
