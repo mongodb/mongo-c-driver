@@ -112,7 +112,7 @@ that cannot be stored in an unsigned integer. Thus, logical-bit operations on
 integers and then comparing the result as less-than-zero effectively treats the
 high bit as a boolean, e.g.:
 
-- For signed X and Y, `(X ^ Y) < 0` yield `true` iff `X` and why have different
+- For signed X and Y, `(X ^ Y) < 0` yield `true` iff `X` and `Y` have different
   sign.
 - `(X & Y) < 0` tests that both X and Y are negative.
 - `(X | Y) < 0` tests that either X or Y are negative.
@@ -158,7 +158,7 @@ signed/unsigned.
 
 ### Things that Don't Work™
 
-Given a type `T`, we an check whether it is signed with a simple macro:
+Given a type `T`, we can check whether it is signed with a simple macro:
 
 ```c
 #define IS_SIGNED(T) ((T)-1 < 0)
@@ -178,7 +178,7 @@ There is one close call, that allows us to grab a zero and subtract one:
 #define IS_SIGNED_TYPEOF(V) ((0 & V) - 1 < 0)
 ```
 
-This seems promising, but this **doesn't work**, because of C's aweful,
+This seems promising, but this **doesn't work**, because of C's awful,
 horrible, no-good, very-bad integer promotion rules. The expression `0 & V`
 *will* yield zero, but if `V` is smaller than `int`, it will be immediately
 promoted to `signed int` beforehand, regardless of the sign of `V`. This macro
@@ -250,7 +250,7 @@ static thread_local bool S;
 This uses the comma-operator the enforce evaluation of each sub-expression:
 
 1. Save the bit pattern of `V` in a global static temporary $P$.
-2. Save Set `V` to zero.
+2. Set `V` to zero.
 3. Decrement `V` and check if the result is negative. Save that value in a
    separate global $S$.
 4. Restore the value of `V` by writing the bit pattern stored in $P$ back into

@@ -101,7 +101,7 @@ mlib_extern_c_begin ();
  * @retval `true` if the value written to `Out` does not represent the true arithmetic product.
  * @retval `false` Otherwise.
  *
- * The product `A × B` will be written to `Out`. The operaion is commutative.
+ * The product `A × B` will be written to `Out`. The operation is commutative.
  *
  * If the argument `B` is omitted, computes `Out × A` (performs in-place multiplication)
  */
@@ -571,7 +571,7 @@ _mlib_ckdint (void *dst,
               struct mlib_upsized_integer b,
               _mlib_ckdint_arith_fn fn) mlib_noexcept
 {
-   // Perorm the arithmetic on uintmax_t, for wrapping behavior
+   // Perform the arithmetic on uintmax_t, for wrapping behavior
    uintmax_t tmp;
    bool ovr = fn (&tmp, minval < 0, a.is_signed, a.i.u, b.is_signed, b.i.u);
    // Endian-adjusting for writing the result
