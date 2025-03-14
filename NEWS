@@ -7,6 +7,9 @@ Unreleased (2.0.0)
   now applies `batchSize:0` to the `aggregate` command. Useful to request an immediate cursor. Previously the value
   was ignored.
 * `bson_oid_init_sequence` is removed. Use `bson_oid_init` instead.
+* `MONGOC_URI_AUTHMECHANISMPROPERTIES` now correctly supports `':'` within property values.
+  * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
+  * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
 
 ## Removals
 
@@ -32,15 +35,6 @@ Instead, the names must be prefixed with the parent directory: `mongoc/mongoc.h`
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
 ```
-
-
-Changes:
-
-  * '?' is no longer permitted in the user information component of a URI.
-    * Use percent-encoding `"%3F"` to include '?' in the user information component.
-  * `MONGOC_URI_AUTHMECHANISMPROPERTIES` now correctly supports `':'` within property values.
-    * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
-    * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
 
 libmongoc 1.30.2
 ================
