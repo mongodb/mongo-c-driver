@@ -16,6 +16,7 @@ Unreleased (2.0.0)
 * `MONGOC_QUERY_SLAVE_OK` is removed. Use the equivalent `MONGOC_QUERY_SECONDARY_OK` instead.
 * `MONGOC_URI_SLAVEOK` is removed. It was unused.
 * `mongoc_collection_save` is removed. Use `mongoc_collection_insert_one` or `mongoc_collection_replace_one` instead.
+* `mongoc_client_command`, `mongoc_database_command`, and `mongoc_collection_command` are removed. Use `mongoc_client_command_simple`,  `mongoc_database_command_simple`, and `mongoc_collection_command_simple` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 

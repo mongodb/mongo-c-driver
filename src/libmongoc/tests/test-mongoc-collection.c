@@ -332,12 +332,6 @@ test_read_prefs_is_valid (void *ctx)
    ASSERT (mongoc_cursor_error (cursor, &error));
    mongoc_cursor_destroy (cursor);
 
-   /* mongoc_collection_command */
-   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{}"), NULL, read_prefs);
-   ASSERT (cursor);
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   mongoc_cursor_destroy (cursor);
-
    /* mongoc_collection_command_simple */
    ASSERT (!mongoc_collection_command_simple (collection, tmp_bson ("{'ping': 1}"), read_prefs, &reply, &error));
    bson_destroy (&reply);
@@ -369,12 +363,6 @@ test_read_prefs_is_valid (void *ctx)
    cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, pipeline, NULL, read_prefs);
    ASSERT (cursor);
 
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   mongoc_cursor_destroy (cursor);
-
-   /* mongoc_collection_command */
-   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{}"), NULL, read_prefs);
-   ASSERT (cursor);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    mongoc_cursor_destroy (cursor);
 
@@ -3575,41 +3563,6 @@ test_find_batch_size (void)
 
 
 static void
-test_command_fq (void *context)
-{
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc = NULL;
-   bson_iter_t iter;
-   bson_t *cmd;
-   bool r;
-
-   BSON_UNUSED (context);
-
-   client = test_framework_new_default_client ();
-   ASSERT (client);
-
-   cmd = tmp_bson ("{ 'dbstats': 1}");
-
-   cursor = mongoc_client_command (client, "sometest.$cmd", MONGOC_QUERY_SECONDARY_OK, 0, -1, 0, cmd, NULL, NULL);
-   r = mongoc_cursor_next (cursor, &doc);
-   BSON_ASSERT (r);
-
-   if (bson_iter_init_find (&iter, doc, "db") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-      ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "sometest");
-   } else {
-      test_error ("dbstats didn't return 'db' key?");
-   }
-
-
-   r = mongoc_cursor_next (cursor, &doc);
-   BSON_ASSERT (!r);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-}
-
-static void
 test_get_index_info (void)
 {
    mongoc_collection_t *collection;
@@ -5838,8 +5791,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/insert_many_validate", test_insert_many_validate);
    TestSuite_AddMockServerTest (suite, "/Collection/limit", test_find_limit);
    TestSuite_AddMockServerTest (suite, "/Collection/batch_size", test_find_batch_size);
-   TestSuite_AddFull (
-      suite, "/Collection/command_fully_qualified", test_command_fq, NULL, NULL, test_framework_skip_if_mongos);
    TestSuite_AddLive (suite, "/Collection/get_index_info", test_get_index_info);
    TestSuite_AddMockServerTest (suite, "/Collection/find_indexes/error", test_find_indexes_err);
    TestSuite_AddLive (suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);

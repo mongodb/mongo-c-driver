@@ -16,7 +16,7 @@ Synopsis
                                 bson_t *reply,
                                 bson_error_t *error);
 
-This is a simplified interface to :symbol:`mongoc_client_command()`. It returns the first document from the result cursor into ``reply``. The client's read preference, read concern, and write concern are not applied to the command.
+The client's read preference, read concern, and write concern are not applied to the command.
 
 .. warning::
 

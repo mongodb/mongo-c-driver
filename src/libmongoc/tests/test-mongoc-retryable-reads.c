@@ -79,9 +79,7 @@ test_cmd_helpers (void *ctx)
    bson_t reply;
    bson_error_t error;
    bson_iter_t iter;
-   mongoc_cursor_t *cursor;
    mongoc_database_t *database;
-   const bson_t *doc;
 
    BSON_UNUSED (ctx);
 
@@ -171,30 +169,6 @@ test_cmd_helpers (void *ctx)
    _set_failpoint (client);
    ASSERT (!mongoc_client_command_simple_with_server_id (client, "test", cmd, NULL, server_id, NULL, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
-
-
-   /* deprecated command helpers (which goes through cursor logic) function must
-    * not retry. */
-   _set_failpoint (client);
-   cursor = mongoc_client_command (client, "test", MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
-   mongoc_cursor_destroy (cursor);
-
-   _set_failpoint (client);
-   cursor = mongoc_database_command (database, MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
-   mongoc_cursor_destroy (cursor);
-
-   _set_failpoint (client);
-   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
-   mongoc_cursor_destroy (cursor);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 

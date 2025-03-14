@@ -53,7 +53,6 @@ Example
     :maxdepth: 1
 
     mongoc_client_bulkwrite_new
-    mongoc_client_command
     mongoc_client_command_simple
     mongoc_client_command_simple_with_server_id
     mongoc_client_command_with_opts

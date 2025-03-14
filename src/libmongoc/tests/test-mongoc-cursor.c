@@ -40,9 +40,6 @@ typedef struct {
    } while (0)
 
 static mongoc_cursor_t *
-_make_cmd_deprecated_cursor (mongoc_collection_t *coll);
-
-static mongoc_cursor_t *
 _make_array_cursor (mongoc_collection_t *coll);
 
 /* test that the host a cursor returns belongs to a server it connected to. */
@@ -291,7 +288,7 @@ _test_common_opts (void *ctx)
    ASSERT_CMPINT (mongoc_cursor_get_server_id (cursor), ==, sd->id);
 
    /* listDatabases and hello prohibits limit and batchSize */
-   if (ctor != _make_array_cursor && ctor != _make_cmd_deprecated_cursor) {
+   if (ctor != _make_array_cursor) {
       mongoc_cursor_set_batch_size (cursor, 1);
       ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
       BSON_ASSERT (mongoc_cursor_set_limit (cursor, 2));
@@ -304,7 +301,7 @@ _test_common_opts (void *ctx)
    ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), cursor->error);
    /* options should be unchanged. */
    ASSERT_CMPINT (mongoc_cursor_get_server_id (cursor), ==, sd->id);
-   if (ctor != _make_array_cursor && ctor != _make_cmd_deprecated_cursor) {
+   if (ctor != _make_array_cursor) {
       ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
       ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
       /* limit cannot be set again. */
@@ -412,14 +409,6 @@ _make_cmd_cursor_from_agg (mongoc_collection_t *coll)
 
 
 static mongoc_cursor_t *
-_make_cmd_deprecated_cursor (mongoc_collection_t *coll)
-{
-   return mongoc_collection_command (
-      coll, MONGOC_QUERY_SECONDARY_OK, 0, 0, 0, tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"), NULL, NULL);
-}
-
-
-static mongoc_cursor_t *
 _make_array_cursor (mongoc_collection_t *coll)
 {
    return mongoc_client_find_databases_with_opts (coll->client, NULL);
@@ -441,13 +430,6 @@ _make_array_cursor (mongoc_collection_t *coll)
    } else                                                                                    \
       ((void) 0)
 
-#define TEST_CURSOR_CMD_DEPRECATED(prefix, fn)                                                          \
-   if (1) {                                                                                             \
-      make_cursor_helper_t *const helper = bson_malloc (sizeof (*helper));                              \
-      *helper = (make_cursor_helper_t){.ctor = _make_cmd_deprecated_cursor};                            \
-      TestSuite_AddFull (suite, prefix "/cmd_deprecated", fn, &bson_free, helper, TestSuite_CheckLive); \
-   } else                                                                                               \
-      ((void) 0)
 
 #define TEST_CURSOR_ARRAY(prefix, fn)                                                          \
    if (1) {                                                                                    \
@@ -466,14 +448,13 @@ _make_array_cursor (mongoc_collection_t *coll)
       ((void) 0)
 
 
-#define TEST_FOREACH_CURSOR(prefix, fn)        \
-   if (1) {                                    \
-      TEST_CURSOR_FIND (prefix, fn);           \
-      TEST_CURSOR_CMD (prefix, fn);            \
-      TEST_CURSOR_CMD_DEPRECATED (prefix, fn); \
-      TEST_CURSOR_ARRAY (prefix, fn);          \
-      TEST_CURSOR_AGG (prefix, fn);            \
-   } else                                      \
+#define TEST_FOREACH_CURSOR(prefix, fn) \
+   if (1) {                             \
+      TEST_CURSOR_FIND (prefix, fn);    \
+      TEST_CURSOR_CMD (prefix, fn);     \
+      TEST_CURSOR_ARRAY (prefix, fn);   \
+      TEST_CURSOR_AGG (prefix, fn);     \
+   } else                               \
       (void) 0
 
 
@@ -487,11 +468,9 @@ test_common_cursor_functions_install (TestSuite *suite)
    TEST_FOREACH_CURSOR ("/Cursor/common/advancing_past_end", _test_common_advancing_past_end);
    /* an agg/cmd cursors do not support setting server id. test others. */
    TEST_CURSOR_FIND ("/Cursor/common/hint", _test_common_server_hint);
-   TEST_CURSOR_CMD_DEPRECATED ("/Cursor/common/hint", _test_common_server_hint);
    TEST_CURSOR_ARRAY ("/Cursor/common/hint", _test_common_server_hint);
    /* find, cmd_depr, and array cursors can have all options set. */
    TEST_CURSOR_FIND ("/Cursor/common/opts", _test_common_opts);
-   TEST_CURSOR_CMD_DEPRECATED ("/Cursor/common/opts", _test_common_opts);
    TEST_CURSOR_ARRAY ("/Cursor/common/opts", _test_common_opts);
    /* a command cursor created from find_indexes_with_opts is already primed. */
    TEST_CURSOR_CMD ("/Cursor/common/opts", _test_common_opts_after_prime);
@@ -2129,40 +2108,6 @@ test_error_document_query (void)
    mongoc_client_destroy (client);
 }
 
-
-static void
-test_error_document_command (void)
-{
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   bson_error_t error;
-   const bson_t *doc;
-   const bson_t *error_doc;
-
-   client = test_framework_new_default_client ();
-   mongoc_client_set_error_api (client, 2);
-   cursor = mongoc_client_command (client,
-                                   "test",
-                                   MONGOC_QUERY_NONE,
-                                   0,
-                                   0,
-                                   0,
-                                   tmp_bson ("{'foo': 1}"), /* no such cmd */
-                                   NULL,
-                                   NULL);
-
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
-   ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
-   ASSERT_CONTAINS (error.message, "no such");
-
-   ASSERT_CMPINT32 (bson_lookup_int32 (error_doc, "code"), ==, (int32_t) error.code);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-}
-
-
 static void
 test_error_document_getmore (void)
 {
@@ -2616,7 +2561,6 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite, "/Cursor/empty_final_batch", test_empty_final_batch);
    TestSuite_AddLive (suite, "/Cursor/error_document/query", test_error_document_query);
    TestSuite_AddLive (suite, "/Cursor/error_document/getmore", test_error_document_getmore);
-   TestSuite_AddLive (suite, "/Cursor/error_document/command", test_error_document_command);
    TestSuite_AddLive (suite, "/Cursor/find_error/is_alive", test_find_error_is_alive);
    TestSuite_AddLive (suite, "/Cursor/batchsize_override_int32", test_cursor_batchsize_override_int32);
    TestSuite_AddLive (suite, "/Cursor/batchsize_override_int64", test_cursor_batchsize_override_int64);

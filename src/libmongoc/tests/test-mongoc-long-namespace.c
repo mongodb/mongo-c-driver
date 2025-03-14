@@ -262,81 +262,6 @@ change_stream (test_fixture_t *test_fixture)
 }
 
 
-/* Test mongoc_client_command, which constructed a namespace with
- * MONGOC_NAMESPACE_MAX */
-static void
-client_command (test_fixture_t *test_fixture)
-{
-   const bson_t *found;
-   mongoc_cursor_t *cursor;
-   bool ret;
-   bson_error_t error;
-
-   cursor = mongoc_client_command (test_fixture->client,
-                                   test_fixture->ns_db,
-                                   MONGOC_QUERY_NONE,
-                                   0 /* skip */,
-                                   0 /* limit */,
-                                   0 /* batch size */,
-                                   tmp_bson ("{'listCollections': 1, 'filter': {'name': '%s'}}", test_fixture->ns_coll),
-                                   NULL /* fields */,
-                                   NULL /* read prefs */);
-   ret = mongoc_cursor_next (cursor, &found);
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error) && ret, error);
-   ASSERT_MATCH (found, "{'cursor': {'firstBatch': [{'name': '%s'}]}}", test_fixture->ns_coll);
-   mongoc_cursor_destroy (cursor);
-}
-
-/* Test mongoc_database_command, which constructed a namespace with
- * MONGOC_NAMESPACE_MAX. */
-static void
-database_command (test_fixture_t *test_fixture)
-{
-   const bson_t *found;
-   mongoc_cursor_t *cursor;
-   bool ret;
-   bson_error_t error;
-
-   cursor =
-      mongoc_database_command (test_fixture->db,
-                               MONGOC_QUERY_NONE,
-                               0 /* skip */,
-                               0 /* limit */,
-                               0 /* batch size */,
-                               tmp_bson ("{'listCollections': 1, 'filter': {'name': '%s'}}", test_fixture->ns_coll),
-                               NULL /* fields */,
-                               NULL /* read prefs */);
-   ret = mongoc_cursor_next (cursor, &found);
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error) && ret, error);
-   ASSERT_MATCH (found, "{'cursor': {'firstBatch': [{'name': '%s'}]}}", test_fixture->ns_coll);
-   mongoc_cursor_destroy (cursor);
-}
-
-/* Test mongoc_collection_command, which constructed a namespace with
- * MONGOC_NAMESPACE_MAX. */
-static void
-collection_command (test_fixture_t *test_fixture)
-{
-   const bson_t *found;
-   mongoc_cursor_t *cursor;
-   bool ret;
-   bson_error_t error;
-
-   cursor =
-      mongoc_collection_command (test_fixture->coll,
-                                 MONGOC_QUERY_NONE,
-                                 0 /* skip */,
-                                 0 /* limit */,
-                                 0 /* batch size */,
-                                 tmp_bson ("{'listCollections': 1, 'filter': {'name': '%s'}}", test_fixture->ns_coll),
-                                 NULL /* fields */,
-                                 NULL /* read prefs */);
-   ret = mongoc_cursor_next (cursor, &found);
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error) && ret, error);
-   ASSERT_MATCH (found, "{'cursor': {'firstBatch': [{'name': '%s'}]}}", test_fixture->ns_coll);
-   mongoc_cursor_destroy (cursor);
-}
-
 /* Check whether a collection exists. */
 static void
 _check_existence (mongoc_client_t *client, char *ns_db, char *ns_coll, bool should_exist)
@@ -531,14 +456,6 @@ test_long_namespace_install (TestSuite *suite)
 {
    /* MongoDB 4.4 (wire version 9) introduced support for long namespaces in
     * SERVER-32959 */
-   add_long_namespace_test (
-      "/long_namespace/client_command", client_command, test_framework_skip_if_max_wire_version_less_than_9);
-
-   add_long_namespace_test (
-      "/long_namespace/database_command", database_command, test_framework_skip_if_max_wire_version_less_than_9);
-
-   add_long_namespace_test (
-      "/long_namespace/collection_command", collection_command, test_framework_skip_if_max_wire_version_less_than_9);
 
    add_long_namespace_test ("/long_namespace/crud", crud, test_framework_skip_if_max_wire_version_less_than_9);
 

@@ -14,11 +14,8 @@ You can specify a write concern on connection objects, database objects, collect
 
 Exceptions to this principle are the generic command functions:
 
-* :symbol:`mongoc_client_command`
 * :symbol:`mongoc_client_command_simple`
-* :symbol:`mongoc_database_command`
 * :symbol:`mongoc_database_command_simple`
-* :symbol:`mongoc_collection_command`
 * :symbol:`mongoc_collection_command_simple`
 
 These generic command functions do not automatically apply a write concern, and they do not check the server response for a write concern error or write concern timeout.
