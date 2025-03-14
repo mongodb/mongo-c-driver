@@ -235,6 +235,11 @@ static mlib_maybe_unused mlib_thread_local uintmax_t _mlibSignCheckTmp[2];
 static mlib_maybe_unused mlib_thread_local bool _mlibSignCheckResult[2];
 // clang-format on
 
+// Compile-time assert that the compiler's integer conversions obey two's complement encoding
+mlib_static_assert ((intmax_t) UINTMAX_MAX == -1 //
+                       && (intmax_t) (UINTMAX_MAX - 5) == -6,
+                    "This file requires two's complement signed integers");
+
 /**
  * @brief Function signature for checked arithmetic support functions
  *
@@ -279,17 +284,17 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             const bool b_signflipped = (intmax_t) (sum ^ b) < 0;
             return a_signflipped && b_signflipped;
          } else { // S = S + U
-            // Flip the sign of a, test whether that sum overflows
+            // Flip the sign bit of a, test whether that sum overflows
             a ^= signbit;
             return a + b < a;
          }
       } else {
          if (b_signed) { // S = U + S
-            // Flip the sign of `b`, test whether that sum overflows
+            // Flip the sign bit of `b`, test whether that sum overflows
             b ^= signbit;
             return a + b < b;
          } else { // S = U + U
-            // The signed sum must not be greater than the addend, and not negative
+            // The signed sum must not be less than the addend, and not negative
             return sum < a || (signbit & sum);
          }
       }
@@ -372,7 +377,7 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             if (a_is_negative != b_is_negative) {
                // Given: Pos - Neg = Pos
                //      ∧ Neg - Pos = Neg
-               // We expect that the difference preserves the sign as the minuend
+               // We expect that the difference preserves the sign of the minuend
                if (diff_is_negative != a_is_negative) {
                   return true;
                }
@@ -380,12 +385,12 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             // Otherwise, `Pos - Pos` and `Neg - Neg` cannot possibly overflow
             return false;
          } else { // S = S - U
-            // The diff overflows if the negated minuend is smaller than the subtrahend
+            // The diff overflows if the sign-bit-flipped minuend is smaller than the subtrahend
             return (a ^ signbit) < b;
          }
       } else {
          if (b_signed) { // S = U - S
-            // The diff overflows if the negated subtrahend is greater than or equal to the minuend
+            // The diff overflows if the sign-bit-flipped subtrahend is greater than or equal to the minuend
             return a >= (b ^ signbit);
          } else { // S = U - U
             const bool expect_negative = a < b;
