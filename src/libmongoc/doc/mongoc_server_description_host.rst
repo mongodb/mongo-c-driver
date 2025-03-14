@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  mongoc_host_list_t *
+  const mongoc_host_list_t *
   mongoc_server_description_host (const mongoc_server_description_t *description);
 
 Parameters
@@ -23,6 +23,8 @@ Return the server's host and port. This object is owned by the server descriptio
 
 Returns
 -------
+
+.. versionchanged:: 2.0.0 The return type changed from ``mongoc_host_list_t *`` to ``const mongoc_host_list_t *``.
 
 A reference to the server description's :symbol:`mongoc_host_list_t`, which you must not modify or free.
 
