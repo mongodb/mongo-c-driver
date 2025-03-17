@@ -1421,23 +1421,6 @@ mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cursor_is_alive --
- *
- *       Deprecated for mongoc_cursor_more.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-mongoc_cursor_is_alive (const mongoc_cursor_t *cursor) /* IN */
-{
-   return mongoc_cursor_more ((mongoc_cursor_t *) cursor);
-}
-
-
 const bson_t *
 mongoc_cursor_current (const mongoc_cursor_t *cursor) /* IN */
 {

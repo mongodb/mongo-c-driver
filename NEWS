@@ -17,6 +17,7 @@ Unreleased (2.0.0)
 * `MONGOC_QUERY_SLAVE_OK` is removed. Use the equivalent `MONGOC_QUERY_SECONDARY_OK` instead.
 * `MONGOC_URI_SLAVEOK` is removed. It was unused.
 * `mongoc_collection_save` is removed. Use `mongoc_collection_insert_one` or `mongoc_collection_replace_one` instead.
+* `mongoc_cursor_is_alive` is removed. Use the equivalent `mongoc_cursor_more` instead.
 * `mongoc_collection_delete` is removed. Use `mongoc_collection_delete_one` or `mongoc_collection_delete_many` instead.
 * `mongoc_delete_flags_t` and `mongoc_reply_flags_t` are removed.
 
