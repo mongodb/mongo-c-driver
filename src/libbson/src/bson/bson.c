@@ -324,7 +324,7 @@ BSON_STATIC_ASSERT2 (max_alloc_grow_fits_min_sizet, (uint64_t) BSON_MAX_SIZE * 2
    if (BSON_UNLIKELY ((_length) > BSON_MAX_SIZE - (_list).n_bytes)) { \
       goto append_failure;                                            \
    } else if ((_length) > 0) {                                        \
-      *(_list).current++ = (_bson_append_bytes_arg){                  \
+      *(_list).current++ = (_bson_append_bytes_arg) {                 \
          .bytes = (const uint8_t *) (_bytes),                         \
          .length = (_length),                                         \
       };                                                              \
@@ -2506,12 +2506,6 @@ bson_as_canonical_extended_json (const bson_t *bson, size_t *length)
 
 
 char *
-bson_as_json (const bson_t *bson, size_t *length)
-{
-   return bson_as_legacy_extended_json (bson, length);
-}
-
-char *
 bson_as_legacy_extended_json (const bson_t *bson, size_t *length)
 {
    const bson_json_opts_t opts = {BSON_JSON_MODE_LEGACY, BSON_MAX_LEN_UNLIMITED, false};
@@ -2526,12 +2520,6 @@ bson_as_relaxed_extended_json (const bson_t *bson, size_t *length)
    return bson_as_json_with_opts (bson, length, &opts);
 }
 
-
-char *
-bson_array_as_json (const bson_t *bson, size_t *length)
-{
-   return bson_array_as_legacy_extended_json (bson, length);
-}
 
 char *
 bson_array_as_legacy_extended_json (const bson_t *bson, size_t *length)
