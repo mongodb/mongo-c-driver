@@ -24,13 +24,11 @@ main (int argc, char *argv[])
    } else                                      \
       ((void) 0)
 
-   TEST_INSTALL (test_atomic_install);
    TEST_INSTALL (test_bcon_basic_install);
    TEST_INSTALL (test_bcon_extract_install);
    TEST_INSTALL (test_bson_corpus_install);
    TEST_INSTALL (test_bson_error_install);
    TEST_INSTALL (test_bson_install);
-   TEST_INSTALL (test_bson_sync_install);
    TEST_INSTALL (test_bson_version_install);
    TEST_INSTALL (test_bson_vector_install);
    TEST_INSTALL (test_clock_install);
