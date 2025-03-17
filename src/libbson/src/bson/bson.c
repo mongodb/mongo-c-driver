@@ -2474,12 +2474,6 @@ bson_as_canonical_extended_json (const bson_t *bson, size_t *length)
 
 
 char *
-bson_as_json (const bson_t *bson, size_t *length)
-{
-   return bson_as_legacy_extended_json (bson, length);
-}
-
-char *
 bson_as_legacy_extended_json (const bson_t *bson, size_t *length)
 {
    const bson_json_opts_t opts = {BSON_JSON_MODE_LEGACY, BSON_MAX_LEN_UNLIMITED, false};
@@ -2494,12 +2488,6 @@ bson_as_relaxed_extended_json (const bson_t *bson, size_t *length)
    return bson_as_json_with_opts (bson, length, &opts);
 }
 
-
-char *
-bson_array_as_json (const bson_t *bson, size_t *length)
-{
-   return bson_array_as_legacy_extended_json (bson, length);
-}
 
 char *
 bson_array_as_legacy_extended_json (const bson_t *bson, size_t *length)

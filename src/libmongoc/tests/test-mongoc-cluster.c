@@ -549,39 +549,6 @@ test_cluster_time_command_simple_pooled (void)
 }
 
 
-/* test the deprecated mongoc_client_command function with $clusterTime */
-static bool
-client_command (mongoc_client_t *client, bson_error_t *error)
-{
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-   bool r;
-
-   ASSERT (client);
-
-   cursor = mongoc_client_command (client, "test", MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{'ping': 1}"), NULL, NULL);
-
-   mongoc_cursor_next (cursor, &doc);
-   r = !mongoc_cursor_error (cursor, error);
-   mongoc_cursor_destroy (cursor);
-   return r;
-}
-
-
-static void
-test_cluster_time_command_single (void)
-{
-   _test_cluster_time (false, client_command);
-}
-
-
-static void
-test_cluster_time_command_pooled (void)
-{
-   _test_cluster_time (true, client_command);
-}
-
-
 /* test modern mongoc_client_read_command_with_opts with $clusterTime */
 static bool
 client_command_with_opts (mongoc_client_t *client, bson_error_t *error)
@@ -1807,8 +1774,6 @@ test_cluster_install (TestSuite *suite)
                       test_framework_skip_if_slow);
    TestSuite_AddLive (suite, "/Cluster/cluster_time/command_simple/single", test_cluster_time_command_simple_single);
    TestSuite_AddLive (suite, "/Cluster/cluster_time/command_simple/pooled", test_cluster_time_command_simple_pooled);
-   TestSuite_AddLive (suite, "/Cluster/cluster_time/command/single", test_cluster_time_command_single);
-   TestSuite_AddLive (suite, "/Cluster/cluster_time/command/pooled", test_cluster_time_command_pooled);
    TestSuite_AddLive (
       suite, "/Cluster/cluster_time/command_with_opts/single", test_cluster_time_command_with_opts_single);
    TestSuite_AddLive (

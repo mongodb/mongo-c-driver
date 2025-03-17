@@ -41,9 +41,6 @@ BSON_BEGIN_DECLS
  *       unicode characters. When iterating UTF-8 sequences, this should
  *       be used to avoid losing the high-bits of non-ascii characters.
  *
- * See also:
- *       bson_string_append_unichar()
- *
  *--------------------------------------------------------------------------
  */
 
