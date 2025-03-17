@@ -217,24 +217,33 @@ run_uri_test (const char *uri_string,
       bson_t expected = BSON_INITIALIZER;
       bson_copy_to_excluding_noinit (options,
                                      &expected,
-                                     "username", /* these 'auth' params may be included in 'options' */
+
+                                     // These 'auth' params may be included in 'options'
+                                     "username",
                                      "password",
                                      "source",
-                                     "mechanism",            /* renamed to 'authmechanism' for consistency */
-                                     "mechanism_properties", /* renamed to 'authmechanismproperties' for
-                                                              * consistency */
+
+                                     // Credentials fields.
+                                     "authmechanism",
+                                     "authmechanismproperties",
+
+                                     // Rename for consistency.
+                                     "mechanism",            // -> "authmechanism"
+                                     "mechanism_properties", // -> "authmechanismproperties"
                                      NULL);
 
       if ((bson_iter_init_find (&iter, options, "mechanism") ||
            bson_iter_init_find (&iter, options, "authmechanism")) &&
           BSON_ITER_HOLDS_UTF8 (&iter)) {
-         BSON_APPEND_UTF8 (&expected, "authmechanism", bson_iter_utf8 (&iter, NULL));
+         ASSERT (!bson_has_field (&expected, "authmechanism"));
+         ASSERT (BSON_APPEND_UTF8 (&expected, "authmechanism", bson_iter_utf8 (&iter, NULL)));
       }
 
       if ((bson_iter_init_find (&iter, options, "mechanism_properties") ||
            bson_iter_init_find (&iter, options, "authmechanismproperties")) &&
           BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         ASSERT (bson_append_iter (&expected, "authmechanismproperties", -1, &iter));
+         ASSERT (!bson_has_field (&expected, "authmechanismproperties"));
+         ASSERT (BSON_APPEND_ITER (&expected, "authmechanismproperties", &iter));
       }
 
       bson_iter_init (&iter, &expected);
@@ -255,21 +264,28 @@ run_uri_test (const char *uri_string,
       {
          bson_copy_to_excluding_noinit (credentials,
                                         &expected,
-                                        "mechanism",            /* renamed to 'authmechanism' for consistency */
-                                        "mechanism_properties", /* renamed to 'authmechanismproperties' for
-                                                                 * consistency */
+
+                                        // Credentials fields.
+                                        "authmechanism",
+                                        "authmechanismproperties",
+
+                                        // Rename for consistency.
+                                        "mechanism",            // -> "authmechanism"
+                                        "mechanism_properties", // -> "authmechanismproperties"
                                         NULL);
 
          if ((bson_iter_init_find (&iter, credentials, "mechanism") ||
               bson_iter_init_find (&iter, credentials, "authmechanism")) &&
              BSON_ITER_HOLDS_UTF8 (&iter)) {
-            BSON_APPEND_UTF8 (&expected, "authmechanism", bson_iter_utf8 (&iter, NULL));
+            ASSERT (!bson_has_field (&expected, "authmechanism"));
+            ASSERT (BSON_APPEND_UTF8 (&expected, "authmechanism", bson_iter_utf8 (&iter, NULL)));
          }
 
          if ((bson_iter_init_find (&iter, credentials, "mechanism_properties") ||
               bson_iter_init_find (&iter, credentials, "authmechanismproperties")) &&
              BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-            ASSERT (bson_append_iter (&expected, "authmechanismproperties", -1, &iter));
+            ASSERT (!bson_has_field (&expected, "authmechanismproperties"));
+            ASSERT (BSON_APPEND_ITER (&expected, "authmechanismproperties", &iter));
          }
       }
 
