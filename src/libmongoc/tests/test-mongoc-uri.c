@@ -242,11 +242,11 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    /* should recognize many reserved characters in the userpass for backward compatibility */
-   uri = mongoc_uri_new ("mongodb://user?#[]:pass?#[]@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA1");
+   uri = mongoc_uri_new ("mongodb://user?#[]:pass?#[]@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA-1");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "user?#[]");
    ASSERT_CMPSTR (mongoc_uri_get_password (uri), "pass?#[]");
-   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA-1");
    mongoc_uri_destroy (uri);
 
    /* should fail on invalid escaped characters */
