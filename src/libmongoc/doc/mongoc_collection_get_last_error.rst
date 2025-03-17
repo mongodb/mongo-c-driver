@@ -39,7 +39,6 @@ Description
 
 - :symbol:`mongoc_collection_update`
 - :symbol:`mongoc_collection_remove`
-- :symbol:`mongoc_collection_delete`
 - :symbol:`mongoc_collection_insert_bulk`
 - :symbol:`mongoc_collection_insert`
 

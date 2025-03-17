@@ -5316,10 +5316,8 @@ test_remove_multi (void)
       mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{'_id': {'$gte': 8}}"), NULL, &error),
       error);
 
-   /* mongoc_collection_delete is an alias of mongoc_collection_remove, although
-    * its flag type differs slightly */
    ASSERT_OR_PRINT (
-      mongoc_collection_delete (collection, MONGOC_DELETE_NONE, tmp_bson ("{'_id': {'$lt': 2}}"), NULL, &error), error);
+      mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{'_id': {'$lt': 2}}"), NULL, &error), error);
 
    _test_docs_in_coll_matches (collection, tmp_bson ("{'x': 1234}"), NULL, 6);
 
@@ -5684,25 +5682,6 @@ test_get_last_error (void)
             {"nInserted" : 0, "nMatched" : 0, "nModified" : 0, "nRemoved" : 1, "nUpserted" : 0, "writeErrors" : []}));
    }
 
-   // Test mongoc_collection_delete:
-   {
-      mongoc_collection_drop (coll, NULL);
-
-      // Clear error:
-      ASSERT_OR_PRINT (mongoc_collection_command_simple (coll, tmp_bson ("{'ping': 1}"), NULL, NULL, &error), error);
-      ASSERT (!mongoc_collection_get_last_error (coll));
-
-      // Insert a document to delete:
-      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{'_id': 0}"), NULL, NULL, &error), error);
-
-      ok = mongoc_collection_delete (coll, MONGOC_DELETE_NONE, tmp_bson ("{}"), NULL, &error);
-      ASSERT_OR_PRINT (ok, error);
-      const bson_t *gle = mongoc_collection_get_last_error (coll);
-      ASSERT_MATCH (
-         gle,
-         BSON_STR (
-            {"nInserted" : 0, "nMatched" : 0, "nModified" : 0, "nRemoved" : 1, "nUpserted" : 0, "writeErrors" : []}));
-   }
 
    // Test mongoc_collection_insert_bulk:
    {
