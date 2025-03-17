@@ -139,7 +139,13 @@ BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
  * bson_t b = BSON_INITIALIZER;
  * ]|
  */
-#define BSON_INITIALIZER {3, 5, {5}}
+#define BSON_INITIALIZER \
+   {                     \
+      3, 5,              \
+      {                  \
+         5               \
+      }                  \
+   }
 
 
 BSON_STATIC_ASSERT2 (bson_t, sizeof (bson_t) == 128);
