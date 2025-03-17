@@ -1576,45 +1576,6 @@ mongoc_client_set_read_prefs (mongoc_client_t *client, const mongoc_read_prefs_t
    }
 }
 
-mongoc_cursor_t *
-mongoc_client_command (mongoc_client_t *client,
-                       const char *db_name,
-                       mongoc_query_flags_t flags,
-                       uint32_t skip,
-                       uint32_t limit,
-                       uint32_t batch_size,
-                       const bson_t *query,
-                       const bson_t *fields,
-                       const mongoc_read_prefs_t *read_prefs)
-{
-   char *ns = NULL;
-   mongoc_cursor_t *cursor;
-
-   BSON_UNUSED (flags);
-   BSON_UNUSED (skip);
-   BSON_UNUSED (limit);
-   BSON_UNUSED (batch_size);
-   BSON_UNUSED (fields);
-
-   BSON_ASSERT_PARAM (client);
-   BSON_ASSERT (db_name);
-   BSON_ASSERT (query);
-
-   /*
-    * Allow a caller to provide a fully qualified namespace
-    */
-   if (NULL == strstr (db_name, "$cmd")) {
-      ns = bson_strdup_printf ("%s.$cmd", db_name);
-      db_name = ns;
-   }
-
-   cursor = _mongoc_cursor_cmd_deprecated_new (client, db_name, query, read_prefs);
-
-   bson_free (ns);
-   return cursor;
-}
-
-
 static bool
 _mongoc_client_retryable_read_command_with_stream (mongoc_client_t *client,
                                                    mongoc_cmd_parts_t *parts,
