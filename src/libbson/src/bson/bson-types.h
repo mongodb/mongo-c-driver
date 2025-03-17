@@ -120,20 +120,11 @@ typedef struct _bson_json_opts_t bson_json_opts_t;
  *
  * This structure is meant to fit in two sequential 64-byte cachelines.
  */
-#ifdef BSON_MEMCHECK
-BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
-   uint32_t flags; /* Internal flags for the bson_t. */
-   uint32_t len;   /* Length of BSON data. */
-   char *canary;   /* For leak checks. */
-   uint8_t padding[120 - sizeof (char *)];
-} bson_t BSON_ALIGNED_END (128);
-#else
 BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
    uint32_t flags;       /* Internal flags for the bson_t. */
    uint32_t len;         /* Length of BSON data. */
    uint8_t padding[120]; /* Padding for stack allocation. */
 } bson_t BSON_ALIGNED_END (128);
-#endif
 
 /**
  * BSON_INITIALIZER:
@@ -145,12 +136,6 @@ BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
  * bson_t b = BSON_INITIALIZER;
  * ]|
  */
-#ifdef BSON_MEMCHECK
-#define BSON_INITIALIZER          \
-   {                              \
-      3, 5, bson_malloc (1), {5}, \
-   }
-#else
 #define BSON_INITIALIZER \
    {                     \
       3, 5,              \
@@ -158,7 +143,6 @@ BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
          5               \
       }                  \
    }
-#endif
 
 
 BSON_STATIC_ASSERT2 (bson_t, sizeof (bson_t) == 128);

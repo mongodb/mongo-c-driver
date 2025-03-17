@@ -28,11 +28,6 @@
 #include <string.h>
 #include <math.h>
 
-#ifdef BSON_MEMCHECK
-#pragma message( \
-   "Do not define BSON_MEMCHECK. BSON_MEMCHECK changes the data layout of bson_t. BSON_MEMCHECK is deprecated may be removed in a future major release")
-#endif
-
 
 typedef enum {
    BSON_VALIDATE_PHASE_START,
@@ -131,9 +126,6 @@ _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
       data = bson_malloc (req);
 
       memcpy (data, impl->data, impl->len);
-#ifdef BSON_MEMCHECK
-      bson_free (impl->canary);
-#endif
       alloc->flags &= ~BSON_FLAG_INLINE;
       alloc->parent = NULL;
       alloc->depth = 0;
@@ -1897,9 +1889,6 @@ bson_init (bson_t *bson)
 
    BSON_ASSERT (bson);
 
-#ifdef BSON_MEMCHECK
-   impl->canary = bson_malloc (1);
-#endif
    impl->flags = BSON_FLAG_INLINE | BSON_FLAG_STATIC;
    impl->len = 5;
    impl->data[0] = 5;
@@ -1978,9 +1967,6 @@ bson_new (void)
    impl = (bson_impl_inline_t *) bson;
    impl->flags = BSON_FLAG_INLINE;
    impl->len = 5;
-#ifdef BSON_MEMCHECK
-   impl->canary = bson_malloc (1);
-#endif
    impl->data[0] = 5;
    impl->data[1] = 0;
    impl->data[2] = 0;
@@ -2129,13 +2115,7 @@ bson_copy_to (const bson_t *src, bson_t *dst)
    BSON_ASSERT (dst);
 
    if ((src->flags & BSON_FLAG_INLINE)) {
-#ifdef BSON_MEMCHECK
-      dst->len = src->len;
-      dst->canary = bson_malloc (1);
-      memcpy (dst->padding, src->padding, sizeof dst->padding);
-#else
       memcpy (dst, src, sizeof *dst);
-#endif
       dst->flags = (BSON_FLAG_STATIC | BSON_FLAG_INLINE);
       return;
    }
@@ -2245,12 +2225,6 @@ bson_destroy (bson_t *bson)
       bson_free (*((bson_impl_alloc_t *) bson)->buf);
    }
 
-#ifdef BSON_MEMCHECK
-   if (bson->flags & BSON_FLAG_INLINE) {
-      bson_free (bson->canary);
-   }
-#endif
-
    if (!(bson->flags & BSON_FLAG_STATIC)) {
       bson_free (bson);
    }
@@ -2317,13 +2291,7 @@ bson_steal (bson_t *dst, bson_t *src)
 
       /* for consistency, src is always invalid after steal, even if inline */
       src->len = 0;
-#ifdef BSON_MEMCHECK
-      bson_free (src->canary);
-#endif
    } else {
-#ifdef BSON_MEMCHECK
-      bson_free (dst->canary);
-#endif
       memcpy (dst, src, sizeof (bson_t));
       alloc = (bson_impl_alloc_t *) dst;
       alloc->flags |= BSON_FLAG_STATIC;
