@@ -49,7 +49,6 @@ API Reference
    mongoc_read_mode_t
    mongoc_read_prefs_t
    mongoc_remove_flags_t
-   mongoc_reply_flags_t
    mongoc_server_api_t
    mongoc_server_api_version_t
    mongoc_server_description_t
