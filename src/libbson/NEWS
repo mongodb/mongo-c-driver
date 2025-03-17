@@ -6,6 +6,11 @@ Changes:
   * `BSON_ERROR_BUFFER_SIZE` is reduced from `504` to `503` to reserve the final byte for internal use.
       * The data layout of `bson_error_t` remains otherwise unchanged: the size is still 512 bytes and the offset of the `.code`, `.domain`, and `.message` data members remain unchanged.
 
+Removals:
+
+  * Remove deprecated integral comparison interfaces: `bson_in_range_*` and `bson_cmp_*`.
+  * Remove deprecated atomic and threading interfaces: `bson_atomic_*` and `bson_thrd_yield`.
+
 libbson 1.30.2
 ==============
 
