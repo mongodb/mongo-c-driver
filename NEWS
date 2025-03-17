@@ -7,6 +7,23 @@ Unreleased (2.0.0)
   now applies `batchSize:0` to the `aggregate` command. Useful to request an immediate cursor. Previously the value
   was ignored.
 * `bson_oid_init_sequence` is removed. Use `bson_oid_init` instead.
+* URI authentication credentials validation (only applicable during creation of a new `mongoc_uri_t` object from a connection string):
+  * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
+  * `authSource` is now validated and returns a client error for invalid or unsupported values for the specified `authMechanism`.
+  * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
+  * The requirement that a password is provided is now enforced when the authentication mechanism is specified for:
+    * PLAIN
+    * SCRAM-SHA-1
+    * SCRAM-SHA-256
+  * The requirement that neither or both a username and password is provided (optionally with a `AWS_SESSION_TOKEN`) is now enforced for MONGODB-AWS.
+  * `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
+    * PLAIN
+    * SCRAM-SHA-1
+    * SCRAM-SHA-256
+    * MONGODB-X509
+  * `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
+    * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
+    * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
 * `MONGOC_URI_AUTHMECHANISMPROPERTIES` now correctly supports `':'` within property values.
   * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
   * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
