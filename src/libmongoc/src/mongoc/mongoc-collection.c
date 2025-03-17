@@ -2348,17 +2348,6 @@ mongoc_collection_remove (mongoc_collection_t *collection,
 }
 
 
-bool
-mongoc_collection_delete (mongoc_collection_t *collection,
-                          mongoc_delete_flags_t flags,
-                          const bson_t *selector,
-                          const mongoc_write_concern_t *write_concern,
-                          bson_error_t *error)
-{
-   return mongoc_collection_remove (collection, (mongoc_remove_flags_t) flags, selector, write_concern, error);
-}
-
-
 static bool
 _mongoc_delete_one_or_many (mongoc_collection_t *collection,
                             bool multi,
