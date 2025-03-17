@@ -63,6 +63,9 @@ $(pwd)/changes-install/include/libbson-1.0/bson/bson.h
 <libs>$(pwd)/changes-install/lib</libs>
 DOC
 
+# Allow task to upload the HTML report despite failed status.
 if ! abi-compliance-checker -lib mongo-c-driver -old old.xml -new new.xml; then
-  touch ./abi-error.txt
+  declare status
+  status='{"status":"failed", "type":"test", "should_continue":true, "desc":"abi-compliance-checker emitted one or more errors"}'
+  curl -sS -d "${status:?}" -H "Content-Type: application/json" -X POST localhost:2285/task_status || true
 fi
