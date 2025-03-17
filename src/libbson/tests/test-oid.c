@@ -205,28 +205,6 @@ test_bson_oid_init (void)
 }
 
 
-static void
-test_bson_oid_init_sequence (void)
-{
-   bson_context_t *context;
-   bson_oid_t oid;
-   bson_oid_t oid2;
-   int i;
-
-   BEGIN_IGNORE_DEPRECATIONS
-   context = bson_context_new (BSON_CONTEXT_NONE);
-   bson_oid_init_sequence (&oid, context);
-   for (i = 0; i < 10000; i++) {
-      bson_oid_init_sequence (&oid2, context);
-      BSON_ASSERT (false == bson_oid_equal (&oid, &oid2));
-      BSON_ASSERT (0 > bson_oid_compare (&oid, &oid2));
-      bson_oid_copy (&oid2, &oid);
-   }
-   bson_context_destroy (context);
-   END_IGNORE_DEPRECATIONS
-}
-
-
 static char *
 get_time_as_string (const bson_oid_t *oid)
 {
@@ -476,7 +454,6 @@ test_oid_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/bson/oid/init", test_bson_oid_init);
    TestSuite_Add (suite, "/bson/oid/init_from_string", test_bson_oid_init_from_string);
-   TestSuite_Add (suite, "/bson/oid/init_sequence", test_bson_oid_init_sequence);
    TestSuite_Add (suite, "/bson/oid/init_with_threads", test_bson_oid_init_with_threads);
    TestSuite_Add (suite, "/bson/oid/hash", test_bson_oid_hash);
    TestSuite_Add (suite, "/bson/oid/compare", test_bson_oid_compare);

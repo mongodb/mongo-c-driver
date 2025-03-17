@@ -23,6 +23,12 @@
 
 BSON_BEGIN_DECLS
 
+typedef struct {
+   uint32_t count[2]; /* message length in bits, lsw first */
+   uint32_t abcd[4];  /* digest buffer */
+   uint8_t buf[64];   /* accumulate block */
+} bson_md5_t;
+
 #define mcommon_md5_init COMMON_NAME (md5_init)
 #define mcommon_md5_append COMMON_NAME (md5_append)
 #define mcommon_md5_finish COMMON_NAME (md5_finish)
