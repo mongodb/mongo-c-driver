@@ -29,34 +29,6 @@
 
 BSON_BEGIN_DECLS
 
-
-typedef struct {
-   char *str;
-   uint32_t len;
-   uint32_t alloc;
-} bson_string_t;
-
-
-BSON_DEPRECATED ("bson_string_t APIs are deprecated") BSON_EXPORT (bson_string_t *) bson_string_new (const char *str);
-
-BSON_DEPRECATED ("bson_string_t APIs are deprecated")
-BSON_EXPORT (char *) bson_string_free (bson_string_t *string, bool free_segment);
-
-BSON_DEPRECATED ("bson_string_t APIs are deprecated")
-BSON_EXPORT (void) bson_string_append (bson_string_t *string, const char *str);
-
-BSON_DEPRECATED ("bson_string_t APIs are deprecated")
-BSON_EXPORT (void) bson_string_append_c (bson_string_t *string, char str);
-
-BSON_DEPRECATED ("bson_string_t APIs are deprecated")
-BSON_EXPORT (void) bson_string_append_unichar (bson_string_t *string, bson_unichar_t unichar);
-
-BSON_DEPRECATED ("bson_string_t APIs are deprecated")
-BSON_EXPORT (void) bson_string_append_printf (bson_string_t *string, const char *format, ...) BSON_GNUC_PRINTF (2, 3);
-
-BSON_DEPRECATED ("bson_string_t APIs are deprecated")
-BSON_EXPORT (void) bson_string_truncate (bson_string_t *string, uint32_t len);
-
 BSON_EXPORT (char *)
 bson_strdup (const char *str);
 

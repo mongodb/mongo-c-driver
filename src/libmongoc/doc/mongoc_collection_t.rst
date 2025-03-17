@@ -27,7 +27,6 @@ Read preferences and write concerns are inherited from the parent client. They c
     :maxdepth: 1
 
     mongoc_collection_aggregate
-    mongoc_collection_command
     mongoc_collection_command_simple
     mongoc_collection_command_with_opts
     mongoc_collection_copy
@@ -40,7 +39,6 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_collection_create_index
     mongoc_collection_create_index_with_opts
     mongoc_collection_create_indexes_with_opts
-    mongoc_collection_delete
     mongoc_collection_delete_many
     mongoc_collection_delete_one
     mongoc_collection_destroy
