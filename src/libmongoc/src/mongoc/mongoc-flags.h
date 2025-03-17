@@ -26,23 +26,6 @@ BSON_BEGIN_DECLS
 
 
 /**
- * mongoc_delete_flags_t:
- * @MONGOC_DELETE_NONE: Specify no delete flags.
- * @MONGOC_DELETE_SINGLE_REMOVE: Only remove the first document matching the
- *    document selector.
- *
- * This type is only for use with deprecated functions and should not be
- * used in new code. Use mongoc_remove_flags_t instead.
- *
- * #mongoc_delete_flags_t are used when performing a delete operation.
- */
-typedef enum {
-   MONGOC_DELETE_NONE = 0,
-   MONGOC_DELETE_SINGLE_REMOVE = 1 << 0,
-} mongoc_delete_flags_t;
-
-
-/**
  * mongoc_remove_flags_t:
  * @MONGOC_REMOVE_NONE: Specify no delete flags.
  * @MONGOC_REMOVE_SINGLE_REMOVE: Only remove the first document matching the
@@ -102,27 +85,6 @@ typedef enum {
    MONGOC_QUERY_EXHAUST = 1 << 6,
    MONGOC_QUERY_PARTIAL = 1 << 7,
 } mongoc_query_flags_t;
-
-
-/**
- * mongoc_reply_flags_t:
- * @MONGOC_REPLY_NONE: No flags set.
- * @MONGOC_REPLY_CURSOR_NOT_FOUND: Cursor was not found.
- * @MONGOC_REPLY_QUERY_FAILURE: Query failed, error document provided.
- * @MONGOC_REPLY_SHARD_CONFIG_STALE: Shard configuration is stale.
- * @MONGOC_REPLY_AWAIT_CAPABLE: Wait for data to be returned until timeout
- *    has passed. Used with %MONGOC_QUERY_TAILABLE_CURSOR.
- *
- * #mongoc_reply_flags_t contains flags supplied by the Mongo server in reply
- * to a request.
- */
-typedef enum {
-   MONGOC_REPLY_NONE = 0,
-   MONGOC_REPLY_CURSOR_NOT_FOUND = 1 << 0,
-   MONGOC_REPLY_QUERY_FAILURE = 1 << 1,
-   MONGOC_REPLY_SHARD_CONFIG_STALE = 1 << 2,
-   MONGOC_REPLY_AWAIT_CAPABLE = 1 << 3,
-} mongoc_reply_flags_t;
 
 
 /**
