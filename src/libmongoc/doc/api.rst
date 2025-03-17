@@ -30,7 +30,6 @@ API Reference
    mongoc_collection_t
    mongoc_cursor_t
    mongoc_database_t
-   mongoc_delete_flags_t
    mongoc_find_and_modify_opts_t
    mongoc_gridfs_file_list_t
    mongoc_gridfs_file_opt_t
@@ -50,7 +49,6 @@ API Reference
    mongoc_read_mode_t
    mongoc_read_prefs_t
    mongoc_remove_flags_t
-   mongoc_reply_flags_t
    mongoc_server_api_t
    mongoc_server_api_version_t
    mongoc_server_description_t

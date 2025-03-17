@@ -240,13 +240,6 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
                                bson_t *reply,
                                bson_error_t *error);
 
-BSON_DEPRECATED_FOR (mongoc_collection_delete_one or mongoc_collection_delete_many)
-MONGOC_EXPORT (bool) mongoc_collection_delete (mongoc_collection_t *collection,
-                                               mongoc_delete_flags_t flags,
-                                               const bson_t *selector,
-                                               const mongoc_write_concern_t *write_concern,
-                                               bson_error_t *error);
-
 MONGOC_EXPORT (bool)
 mongoc_collection_remove (mongoc_collection_t *collection,
                           mongoc_remove_flags_t flags,
