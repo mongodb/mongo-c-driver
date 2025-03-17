@@ -40,20 +40,13 @@ typedef enum {
 } bson_flags_t;
 
 
-#ifdef BSON_MEMCHECK
-#define BSON_INLINE_DATA_SIZE (120 - sizeof (char *))
-#else
 #define BSON_INLINE_DATA_SIZE 120
-#endif
 
 
 BSON_ALIGNED_BEGIN (128)
 typedef struct {
    bson_flags_t flags;
    uint32_t len;
-#ifdef BSON_MEMCHECK
-   char *canary;
-#endif
    uint8_t data[BSON_INLINE_DATA_SIZE];
 } bson_impl_inline_t BSON_ALIGNED_END (128);
 
