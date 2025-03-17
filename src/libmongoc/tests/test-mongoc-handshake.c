@@ -1197,10 +1197,6 @@ test_handshake_platform_config (void)
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES));
 #endif
 
-#ifdef MONGOC_ENABLE_SSL_LIBRESSL
-   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL));
-#endif
-
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SASL_CYRUS));
 #endif

@@ -161,15 +161,6 @@ multibuild:
         --sasl=Cyrus --sasl=off \
         --c_compiler=gcc --c_compiler=clang \
         --test_mongocxx_ref=master
-    # Note: At time of writing, Ubuntu does not support LibreSSL, so run those
-    #   tests on a separate BUILD line that does not include Ubuntu:
-    BUILD +run --targets "test-example" \
-        --env=alpine3.16 --env=alpine3.17 --env=alpine3.18 --env=alpine3.19 \
-        --env=archlinux \
-        --tls=LibreSSL \
-        --sasl=Cyrus --sasl=off \
-        --c_compiler=gcc --c_compiler=clang \
-        --test_mongocxx_ref=master
 
 # release-archive :
 #   Create a release archive of the source tree. (Refer to dev docs)

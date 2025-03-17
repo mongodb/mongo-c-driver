@@ -81,18 +81,6 @@ install_openssl_fips() {
   install_openssl
 }
 
-install_libressl() {
-  curl --retry 5 -o ssl.tar.gz "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/${SSL}.tar.gz"
-  tar zxf ssl.tar.gz
-  pushd "${SSL}"
-  (
-    set -o xtrace
-    ./configure --prefix="${install_dir}"
-    make -s -j "${njobs}" install
-  ) >/dev/null
-  popd # "${SSL}"
-}
-
 case "${SSL}" in
 openssl-*-fips)
   export LC_ALL
@@ -106,7 +94,4 @@ openssl-*)
   install_openssl
   ;;
 
-libressl-*)
-  install_libressl
-  ;;
 esac
