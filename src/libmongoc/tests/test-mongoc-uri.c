@@ -23,8 +23,6 @@ test_mongoc_uri_new (void)
    mongoc_uri_t *uri;
    bson_iter_t iter;
 
-   capture_logs (true);
-
    /* bad uris */
    ASSERT (!mongoc_uri_new ("mongodb://"));
    ASSERT (!mongoc_uri_new ("mongodb://\x80"));
@@ -246,14 +244,19 @@ test_mongoc_uri_new (void)
    uri = mongoc_uri_new ("mongodb://u%ser:pwd@localhost:27017");
    ASSERT (!uri);
    ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+   capture_logs (false);
 
+   capture_logs (true);
    uri = mongoc_uri_new ("mongodb://user:p%wd@localhost:27017");
    ASSERT (!uri);
    ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+   capture_logs (false);
 
+   capture_logs (true);
    uri = mongoc_uri_new ("mongodb://user:pwd@local% host:27017");
    ASSERT (!uri);
    ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+   capture_logs (false);
 
    uri = mongoc_uri_new ("mongodb://christian%40realm@localhost:27017/?replicaset=%20");
    ASSERT (uri);
