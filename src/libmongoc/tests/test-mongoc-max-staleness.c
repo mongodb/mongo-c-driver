@@ -10,9 +10,6 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future-functions.h"
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "client-test-max-staleness"
-
 
 static int64_t
 get_max_staleness (const mongoc_client_t *client)

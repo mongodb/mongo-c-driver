@@ -726,7 +726,6 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts
 
 #define SOFT_FAIL(...) ((stapled_response) ? MONGOC_ERROR (__VA_ARGS__) : MONGOC_DEBUG (__VA_ARGS__))
 
-#define X509_CHECK_SUCCESS 1
 #define OCSP_VERIFY_SUCCESS 1
 
 int

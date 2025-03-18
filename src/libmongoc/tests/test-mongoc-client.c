@@ -32,9 +32,6 @@
 #include <strings.h>
 #endif
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "client-test"
-
 
 static void
 test_client_cmd_w_server_id (void)

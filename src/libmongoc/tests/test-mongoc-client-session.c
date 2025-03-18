@@ -15,9 +15,6 @@
 
 #include <inttypes.h>
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "session-test"
-
 static void
 test_session_opts_clone (void)
 {

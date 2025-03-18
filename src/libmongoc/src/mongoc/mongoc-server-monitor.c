@@ -124,8 +124,6 @@ static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (mongoc_server_monitor_t
 
 /* TODO CDRIVER-3710 use MONGOC_LOG_LEVEL_ERROR */
 #define MONITOR_LOG_ERROR(sm, ...) _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
-/* TODO CDRIVER-3710 use MONGOC_LOG_LEVEL_WARNING */
-#define MONITOR_LOG_WARNING(sm, ...) _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
 
 static void
 _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor, bool awaited)

@@ -18,21 +18,10 @@
 #include <string.h>
 #include <stdint.h> /* for INT64_MAX and INT64_MIN */
 
-/* Unlike <ctype.h>'s isdigit, this also works if c < 0 | c > UCHAR_MAX. */
-#define is_digit(c) ((unsigned) (c) - '0' <= 9)
-
 #if 2 < __GNUC__ + (96 <= __GNUC_MINOR__)
-#define ATTRIBUTE_CONST __attribute__ ((const))
 #define ATTRIBUTE_PURE __attribute__ ((__pure__))
-#define ATTRIBUTE_FORMAT(spec) __attribute__ ((__format__ spec))
 #else
-#define ATTRIBUTE_CONST        /* empty */
-#define ATTRIBUTE_PURE         /* empty */
-#define ATTRIBUTE_FORMAT(spec) /* empty */
-#endif
-
-#if !defined(__STDC_VERSION__) && !defined restrict
-#define restrict /* empty */
+#define ATTRIBUTE_PURE /* empty */
 #endif
 
 #ifdef __clang__
@@ -79,87 +68,12 @@ static int64_t const time_t_max = INT64_MAX;
 #define SECSPERDAY ((int_fast32_t) SECSPERHOUR * HOURSPERDAY)
 #define MONSPERYEAR 12
 
-#define TM_SUNDAY 0
-#define TM_MONDAY 1
-#define TM_TUESDAY 2
-#define TM_WEDNESDAY 3
-#define TM_THURSDAY 4
-#define TM_FRIDAY 5
-#define TM_SATURDAY 6
-
-#define TM_JANUARY 0
-#define TM_FEBRUARY 1
-#define TM_MARCH 2
-#define TM_APRIL 3
-#define TM_MAY 4
-#define TM_JUNE 5
-#define TM_JULY 6
-#define TM_AUGUST 7
-#define TM_SEPTEMBER 8
-#define TM_OCTOBER 9
-#define TM_NOVEMBER 10
-#define TM_DECEMBER 11
-
 #define TM_YEAR_BASE 1900
 
 #define EPOCH_YEAR 1970
-#define EPOCH_WDAY TM_THURSDAY
+#define EPOCH_WDAY 4 /* TM_THURSDAY */
 
 #define isleap(y) (((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))
-
-/*
-** Since everything in isleap is modulo 400 (or a factor of 400), we know that
-**	isleap(y) == isleap(y % 400)
-** and so
-**	isleap(a + b) == isleap((a + b) % 400)
-** or
-**	isleap(a + b) == isleap(a % 400 + b % 400)
-** This is true even if % means modulo rather than Fortran remainder
-** (which is allowed by C89 but not C99).
-** We use this to avoid addition overflow problems.
-*/
-
-#define isleap_sum(a, b) isleap ((a) % 400 + (b) % 400)
-
-#ifndef TZ_ABBR_MAX_LEN
-#define TZ_ABBR_MAX_LEN 16
-#endif /* !defined TZ_ABBR_MAX_LEN */
-
-#ifndef TZ_ABBR_CHAR_SET
-#define TZ_ABBR_CHAR_SET "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :+-._"
-#endif /* !defined TZ_ABBR_CHAR_SET */
-
-#ifndef TZ_ABBR_ERR_CHAR
-#define TZ_ABBR_ERR_CHAR '_'
-#endif /* !defined TZ_ABBR_ERR_CHAR */
-
-#ifndef WILDABBR
-/*
-** Someone might make incorrect use of a time zone abbreviation:
-**	1.	They might reference tzname[0] before calling tzset (explicitly
-**		or implicitly).
-**	2.	They might reference tzname[1] before calling tzset (explicitly
-**		or implicitly).
-**	3.	They might reference tzname[1] after setting to a time zone
-**		in which Daylight Saving Time is never observed.
-**	4.	They might reference tzname[0] after setting to a time zone
-**		in which Standard Time is never observed.
-**	5.	They might reference tm.TM_ZONE after calling offtime.
-** What's best to do in the above cases is open to debate;
-** for now, we just set things up so that in any of the five cases
-** WILDABBR is used. Another possibility: initialize tzname[0] to the
-** string "tzname[0] used before set", and similarly for the other cases.
-** And another: initialize tzname[0] to "ERA", with an explanation in the
-** manual page of what this "time zone abbreviation" means (doing this so
-** that tzname[0] has the "normal" length of three characters).
-*/
-#define WILDABBR "   "
-#endif /* !defined WILDABBR */
-
-#ifdef TM_ZONE
-static const char wildabbr[] = WILDABBR;
-static const char gmt[] = "GMT";
-#endif
 
 struct ttinfo {            /* time type information */
    int_fast32_t tt_gmtoff; /* UT offset in seconds */
@@ -205,10 +119,6 @@ struct rule {
    int r_mon;           /* month number of rule */
    int_fast32_t r_time; /* transition time of rule */
 };
-
-#define JULIAN_DAY 0            /* Jn - Julian day */
-#define DAY_OF_YEAR 1           /* n - day of year */
-#define MONTH_NTH_DAY_OF_WEEK 2 /* Mm.n.d - month, week, day of week */
 
 /*
 ** Prototypes for static functions.
@@ -286,14 +196,6 @@ gmtsub (const int64_t *const timep, const int_fast32_t offset, struct bson_tm *c
       gmtload (gmtptr);
    }
    result = timesub (timep, offset, gmtptr, tmp);
-#ifdef TM_ZONE
-   /*
-   ** Could get fancy here and deliver something such as
-   ** "UT+xxxx" or "UT-xxxx" if offset is non-zero,
-   ** but this is no time for a treasure hunt.
-   */
-   tmp->TM_ZONE = offset ? wildabbr : gmtptr ? gmtptr->chars : gmt;
-#endif /* defined TM_ZONE */
    return result;
 }
 

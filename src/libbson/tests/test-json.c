@@ -1,5 +1,7 @@
 /* required on old Windows for rand_s to be defined */
+#ifdef _WIN32
 #define _CRT_RAND_S
+#endif
 
 #include <bson/bson.h>
 #include <math.h>
