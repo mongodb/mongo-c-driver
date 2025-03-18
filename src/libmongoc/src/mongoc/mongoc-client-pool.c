@@ -174,15 +174,6 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
 
    b = mongoc_uri_get_options (pool->uri);
 
-   if (bson_iter_init_find_case (&iter, b, MONGOC_URI_MINPOOLSIZE)) {
-      MONGOC_WARNING (MONGOC_URI_MINPOOLSIZE " is deprecated; its behavior does not match its name, and its actual"
-                                             " behavior will likely hurt performance.");
-
-      if (BSON_ITER_HOLDS_INT32 (&iter)) {
-         pool->min_pool_size = BSON_MAX (0, bson_iter_int32 (&iter));
-      }
-   }
-
    if (bson_iter_init_find_case (&iter, b, MONGOC_URI_MAXPOOLSIZE)) {
       if (BSON_ITER_HOLDS_INT32 (&iter)) {
          pool->max_pool_size = BSON_MAX (1, bson_iter_int32 (&iter));
