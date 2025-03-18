@@ -23,6 +23,8 @@ Unreleased (2.0.0)
 * `mongoc_cursor_is_alive` is removed. Use the equivalent `mongoc_cursor_more` instead.
 * `mongoc_collection_delete` is removed. Use `mongoc_collection_delete_one` or `mongoc_collection_delete_many` instead.
 * `mongoc_delete_flags_t` and `mongoc_reply_flags_t` are removed.
+* Support for `ENABLE_SASL=CYRUS` on Windows is removed. Use `ENABLE_SASL=SSPI` or `ENABLE_SASL=OFF` instead.
+    * The associated Windows-only option `CYRUS_PLUGIN_PATH_PREFIX` is removed.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
