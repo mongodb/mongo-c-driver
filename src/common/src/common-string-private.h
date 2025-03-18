@@ -24,9 +24,7 @@
 #include <string.h>
 
 
-/* Until the deprecated bson_string_t is removed, this must have the same members in the same order, so we can safely
- * cast between the two types. Afterward, we are free to modify the memory layout as needed.
- *
+/*
  * In mcommon_string_t, 'str' is guaranteed to be NUL terminated and SHOULD be valid UTF-8. mcommon_string_t operations
  * MUST maintain the validity of valid UTF-8 strings.
  *

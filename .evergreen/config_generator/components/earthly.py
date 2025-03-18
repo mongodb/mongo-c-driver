@@ -36,9 +36,9 @@ CompilerName = Literal["gcc", "clang"]
 # Other options: SSPI (Windows only), AUTO (not reliably test-able without more environments)
 SASLOption = Literal["Cyrus", "off"]
 "Valid options for the SASL configuration parameter"
-TLSOption = Literal["LibreSSL", "OpenSSL", "off"]
+TLSOption = Literal["OpenSSL", "off"]
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["r3.9.0", "none"]
+CxxVersion = Literal["r4.0.0", "none"]
 "C++ driver refs that are under CI test"
 
 # A separator character, since we cannot use whitespace
@@ -142,9 +142,6 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
     configuration values.
     """
     match env, conf:
-        # Ubuntu and CentOS do not ship with a LibreSSL package:
-        case e, (_sasl, "LibreSSL", _cxx) if re.match(r"^Ubuntu|^CentOS", e.display_name):
-            return False
         # u16/centos7 are not capable of building mongocxx
         case e, (_sasl, _tls, cxx) if re.match(r"^Ubuntu 16|^CentOS 7", e.display_name):
             # Only build if C++ driver is test is disabled

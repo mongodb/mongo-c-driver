@@ -23,8 +23,6 @@ test_mongoc_uri_new (void)
    mongoc_uri_t *uri;
    bson_iter_t iter;
 
-   capture_logs (true);
-
    /* bad uris */
    ASSERT (!mongoc_uri_new ("mongodb://"));
    ASSERT (!mongoc_uri_new ("mongodb://\x80"));
@@ -254,14 +252,19 @@ test_mongoc_uri_new (void)
    uri = mongoc_uri_new ("mongodb://u%ser:pwd@localhost:27017");
    ASSERT (!uri);
    ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+   capture_logs (false);
 
+   capture_logs (true);
    uri = mongoc_uri_new ("mongodb://user:p%wd@localhost:27017");
    ASSERT (!uri);
    ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+   capture_logs (false);
 
+   capture_logs (true);
    uri = mongoc_uri_new ("mongodb://user:pwd@local% host:27017");
    ASSERT (!uri);
    ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+   capture_logs (false);
 
    uri = mongoc_uri_new ("mongodb://christian%40realm@localhost:27017/?replicaset=%20");
    ASSERT (uri);
@@ -276,6 +279,15 @@ test_mongoc_uri_new (void)
    ASSERT (options);
    ASSERT_EQUAL_BSON (tmp_bson ("{'replicaset': ' '}"), options);
    mongoc_uri_destroy (uri);
+
+   // Should warn on unsupported `minPoolSize`. `minPoolSize` was removed in CDRIVER-2390.
+   capture_logs (true);
+   uri = mongoc_uri_new ("mongodb://host/?minPoolSize=1");
+   ASSERT (uri);
+   ASSERT_CAPTURED_LOG (
+      "setting URI option minPoolSize=1", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option \"minpoolsize\"");
+   mongoc_uri_destroy (uri);
+   capture_logs (false);
 }
 
 static void
@@ -2978,10 +2990,6 @@ test_mongoc_uri_duplicates (void)
                                            "=1&" MONGOC_URI_MAXSTALENESSSECONDS "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_MAXSTALENESSSECONDS);
    ASSERT (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXSTALENESSSECONDS, 0) == 2);
-
-   RECREATE_URI (MONGOC_URI_MINPOOLSIZE "=1&" MONGOC_URI_MINPOOLSIZE "=2");
-   ASSERT_LOG_DUPE (MONGOC_URI_MINPOOLSIZE);
-   ASSERT (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MINPOOLSIZE, 0) == 2);
 
    RECREATE_URI (MONGOC_URI_READCONCERNLEVEL "=local&" MONGOC_URI_READCONCERNLEVEL "=majority");
    ASSERT_LOG_DUPE (MONGOC_URI_READCONCERNLEVEL);

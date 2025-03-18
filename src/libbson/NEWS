@@ -1,10 +1,17 @@
 libbson 2.0.0 (Unreleased)
 ==========================
 
-Changes:
+## Changes
 
-  * `BSON_ERROR_BUFFER_SIZE` is reduced from `504` to `503` to reserve the final byte for internal use.
-      * The data layout of `bson_error_t` remains otherwise unchanged: the size is still 512 bytes and the offset of the `.code`, `.domain`, and `.message` data members remain unchanged.
+* `BSON_ERROR_BUFFER_SIZE` is reduced from `504` to `503` to reserve the final byte for internal use.
+    * The data layout of `bson_error_t` remains otherwise unchanged: the size is still 512 bytes and the offset of the `.code`, `.domain`, and `.message` data members remain unchanged.
+
+## Removals
+
+* `bson_as_json` and `bson_array_as_json` are removed due to producing non-portable Legacy Extended JSON. Prefer Canonical Extended JSON or Relaxed Extended JSON for portability. To continue using Legacy Extended JSON, use `bson_as_legacy_extended_json` and `bson_array_as_legacy_extended_json`.
+* Compiling with `BSON_MEMCHECK` defined now has no effect.
+* Remove deprecated integral comparison interfaces: `bson_in_range_*` and `bson_cmp_*`.
+* Remove deprecated atomic and threading interfaces: `bson_atomic_*` and `bson_thrd_yield`.
 
 libbson 1.30.2
 ==============

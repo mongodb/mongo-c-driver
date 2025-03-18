@@ -27,7 +27,6 @@ Read preferences and write concerns are inherited from the parent client. They c
 
     mongoc_database_add_user
     mongoc_database_aggregate
-    mongoc_database_command
     mongoc_database_command_simple
     mongoc_database_command_with_opts
     mongoc_database_copy

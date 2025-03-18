@@ -20,6 +20,16 @@
 #include <bson/bson.h>
 
 #include <mongoc/mongoc-flags-private.h>
+
+// mongoc_reply_flags_t represents flags for the legacy OP_REPLY protocol:
+typedef enum {
+   MONGOC_REPLY_NONE = 0,
+   MONGOC_REPLY_CURSOR_NOT_FOUND = 1 << 0,
+   MONGOC_REPLY_QUERY_FAILURE = 1 << 1,
+   MONGOC_REPLY_SHARD_CONFIG_STALE = 1 << 2,
+   MONGOC_REPLY_AWAIT_CAPABLE = 1 << 3,
+} mongoc_reply_flags_t;
+
 #include <mongoc/mongoc-uri.h>
 
 #ifdef MONGOC_ENABLE_SSL

@@ -14,7 +14,6 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('windows-64-vs2015', 'vs2015x64', None, ['cyrus']),
     ('windows-vsCurrent', 'vs2017x64', None, ['cyrus']),
 ]
 

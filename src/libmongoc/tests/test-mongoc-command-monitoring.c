@@ -821,49 +821,6 @@ set_cmd_test_callbacks (mongoc_client_t *client, void *context)
 
 
 static void
-test_client_cmd (void)
-{
-   cmd_test_t test;
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   const bson_t *reply;
-
-   cmd_test_init (&test);
-   client = test_framework_new_default_client ();
-   set_cmd_test_callbacks (client, (void *) &test);
-   cursor =
-      mongoc_client_command (client, "admin", MONGOC_QUERY_SECONDARY_OK, 0, 0, 0, tmp_bson ("{'ping': 1}"), NULL, NULL);
-
-   ASSERT (mongoc_cursor_next (cursor, &reply));
-   ASSERT_CMPSTR (test.cmd_name, "ping");
-   ASSERT_MATCH (&test.cmd, "{'ping': 1}");
-   ASSERT_CMPSTR (test.db, "admin");
-   ASSERT_CMPINT (1, ==, test.started_calls);
-   ASSERT_CMPINT (1, ==, test.succeeded_calls);
-   ASSERT_CMPINT (0, ==, test.failed_calls);
-
-   cmd_test_cleanup (&test);
-   mongoc_cursor_destroy (cursor);
-
-   cmd_test_init (&test);
-   cursor =
-      mongoc_client_command (client, "admin", MONGOC_QUERY_SECONDARY_OK, 0, 0, 0, tmp_bson ("{'foo': 1}"), NULL, NULL);
-
-   ASSERT (!mongoc_cursor_next (cursor, &reply));
-   ASSERT_CMPSTR (test.cmd_name, "foo");
-   ASSERT_MATCH (&test.cmd, "{'foo': 1}");
-   ASSERT_CMPSTR (test.db, "admin");
-   ASSERT_CMPINT (1, ==, test.started_calls);
-   ASSERT_CMPINT (0, ==, test.succeeded_calls);
-   ASSERT_CMPINT (1, ==, test.failed_calls);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-   cmd_test_cleanup (&test);
-}
-
-
-static void
 test_client_cmd_simple (void)
 {
    cmd_test_t test;
@@ -1304,7 +1261,6 @@ test_command_monitoring_install (TestSuite *suite)
       suite, "/command_monitoring/operation_id/query/single/cmd", test_query_operation_id_single_cmd);
    TestSuite_AddMockServerTest (
       suite, "/command_monitoring/operation_id/query/pooled/cmd", test_query_operation_id_pooled_cmd);
-   TestSuite_AddLive (suite, "/command_monitoring/client_cmd", test_client_cmd);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd/op_ids", test_client_cmd_op_ids);
    TestSuite_AddFull (suite,

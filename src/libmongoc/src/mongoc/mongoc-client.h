@@ -120,18 +120,6 @@ mongoc_client_get_uri (const mongoc_client_t *client);
 MONGOC_EXPORT (void)
 mongoc_client_set_stream_initiator (mongoc_client_t *client, mongoc_stream_initiator_t initiator, void *user_data);
 
-BSON_DEPRECATED_FOR (mongoc_client_command_simple)
-MONGOC_EXPORT (mongoc_cursor_t *) mongoc_client_command (mongoc_client_t *client,
-                                                         const char *db_name,
-                                                         mongoc_query_flags_t flags,
-                                                         uint32_t skip,
-                                                         uint32_t limit,
-                                                         uint32_t batch_size,
-                                                         const bson_t *query,
-                                                         const bson_t *fields,
-                                                         const mongoc_read_prefs_t *read_prefs)
-   BSON_GNUC_WARN_UNUSED_RESULT;
-
 
 BSON_DEPRECATED ("mongoc_client_kill_cursor is deprecated")
 MONGOC_EXPORT (void) mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id);

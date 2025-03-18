@@ -119,7 +119,7 @@ test-cxx-driver:
 #   Create the VERSION_CURRENT file using Git. This file is exported as an artifact at /
 version-current:
     # Run on Alpine, which does this work the fastest
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.18
+    FROM alpine:3.18
     # Install Python and Git, the only things required for this job:
     RUN apk add git python3
     # Copy only the .git/ directory and calc_release_version, which are enough to get the VERSION_CURRENT
@@ -161,20 +161,11 @@ multibuild:
         --sasl=Cyrus --sasl=off \
         --c_compiler=gcc --c_compiler=clang \
         --test_mongocxx_ref=master
-    # Note: At time of writing, Ubuntu does not support LibreSSL, so run those
-    #   tests on a separate BUILD line that does not include Ubuntu:
-    BUILD +run --targets "test-example" \
-        --env=alpine3.16 --env=alpine3.17 --env=alpine3.18 --env=alpine3.19 \
-        --env=archlinux \
-        --tls=LibreSSL \
-        --sasl=Cyrus --sasl=off \
-        --c_compiler=gcc --c_compiler=clang \
-        --test_mongocxx_ref=master
 
 # release-archive :
 #   Create a release archive of the source tree. (Refer to dev docs)
 release-archive:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM alpine:3.20
     RUN apk add git bash
     ARG --required prefix
     ARG --required ref
@@ -219,7 +210,7 @@ release-archive:
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM alpine:3.20
     RUN apk add curl
     RUN curl --location --silent --fail "https://pgp.mongodb.com/c-driver.pub" -o /c-driver.pub
     SAVE ARTIFACT /c-driver.pub
@@ -249,7 +240,7 @@ sign-file:
 #   Generate a signed release artifact. Refer to the "Earthly" page of our dev docs for more information.
 #   (Refer to dev docs)
 signed-release:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM alpine:3.20
     RUN apk add git
     # The version of the release. This affects the filepaths of the output and is the default for --ref
     ARG --required version
@@ -338,7 +329,7 @@ sbom-validate:
             --exclude jira
 
 snyk:
-    FROM --platform=linux/amd64 artifactory.corp.mongodb.com/dockerhub/library/ubuntu:24.04
+    FROM --platform=linux/amd64 ubuntu:24.04
     RUN apt-get update && apt-get -y install curl
     RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
     RUN chmod a+x /usr/local/bin/snyk
@@ -410,7 +401,7 @@ test-vcpkg-manifest-mode:
         make test-manifest-mode
 
 vcpkg-base:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.18
+    FROM alpine:3.18
     RUN apk add cmake curl gcc g++ musl-dev ninja-is-really-ninja zip unzip tar \
                 build-base git pkgconf perl bash linux-headers
     ENV VCPKG_ROOT=/opt/vcpkg-git
@@ -469,7 +460,7 @@ env.alpine3.19:
     DO --pass-args +ALPINE_ENV --version=3.19
 
 env.archlinux:
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/archlinux
+    FROM --pass-args tools+init-env --from archlinux
     RUN pacman-key --init
     ARG --required purpose
 
@@ -490,7 +481,7 @@ env.centos7:
 ALPINE_ENV:
     COMMAND
     ARG --required version
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/alpine:$version
+    FROM --pass-args tools+init-env --from alpine:$version
     # XXX: On Alpine, we just use the system's CMake. At time of writing, it is
     # very up-to-date and much faster than building our own from source (since
     # Kitware does not (yet) provide libmuslc builds of CMake)
@@ -512,7 +503,7 @@ ALPINE_ENV:
 UBUNTU_ENV:
     COMMAND
     ARG --required version
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/ubuntu:$version
+    FROM --pass-args tools+init-env --from ubuntu:$version
     RUN __install curl build-essential
     ARG --required purpose
 
@@ -530,7 +521,7 @@ UBUNTU_ENV:
 CENTOS_ENV:
     COMMAND
     ARG --required version
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/centos:$version
+    FROM --pass-args tools+init-env --from centos:$version
     # Update repositories to use vault.centos.org
     RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
         sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*

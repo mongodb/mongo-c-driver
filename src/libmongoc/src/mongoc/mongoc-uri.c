@@ -741,13 +741,8 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_SOCKETCHECKINTERVALMS) || !strcasecmp (key, MONGOC_URI_SOCKETTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_LOCALTHRESHOLDMS) || !strcasecmp (key, MONGOC_URI_MAXPOOLSIZE) ||
-          !strcasecmp (key, MONGOC_URI_MAXSTALENESSSECONDS) || !strcasecmp (key, MONGOC_URI_MINPOOLSIZE) ||
-          !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) || !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) ||
-          !strcasecmp (key, MONGOC_URI_SRVMAXHOSTS);
-   /* Not including deprecated unimplemented options:
-    * - MONGOC_URI_MAXIDLETIMEMS
-    * - MONGOC_URI_WAITQUEUEMULTIPLE
-    */
+          !strcasecmp (key, MONGOC_URI_MAXSTALENESSSECONDS) || !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
+          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) || !strcasecmp (key, MONGOC_URI_SRVMAXHOSTS);
 }
 
 bool

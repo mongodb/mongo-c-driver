@@ -7,6 +7,7 @@ Unreleased (2.0.0)
   now applies `batchSize:0` to the `aggregate` command. Useful to request an immediate cursor. Previously the value
   was ignored.
 * `bson_oid_init_sequence` is removed. Use `bson_oid_init` instead.
+* `mongoc_server_description_host` changes the return type from `mongoc_host_list_t *` to `const mongoc_host_list_t *`.
 * URI authentication credentials validation (only applicable during creation of a new `mongoc_uri_t` object from a connection string):
   * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
   * `authSource` is now validated and returns a client error for invalid or unsupported values for the specified `authMechanism`.
@@ -15,15 +16,15 @@ Unreleased (2.0.0)
     * PLAIN
     * SCRAM-SHA-1
     * SCRAM-SHA-256
-  * The requirement that neither or both a username and password is provided (optionally with a `AWS_SESSION_TOKEN`) is now enforced for MONGODB-AWS.
-  * `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
-    * PLAIN
-    * SCRAM-SHA-1
-    * SCRAM-SHA-256
-    * MONGODB-X509
-  * `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
-    * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
-    * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
+* The requirement that neither or both a username and password is provided (optionally with a `AWS_SESSION_TOKEN`) is now enforced for MONGODB-AWS.
+* `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
+  * PLAIN
+  * SCRAM-SHA-1
+  * SCRAM-SHA-256
+  * MONGODB-X509
+* `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
+  * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
+  * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
 * `MONGOC_URI_AUTHMECHANISMPROPERTIES` now correctly supports `':'` within property values.
   * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
   * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
@@ -36,6 +37,14 @@ Unreleased (2.0.0)
 * `MONGOC_QUERY_SLAVE_OK` is removed. Use the equivalent `MONGOC_QUERY_SECONDARY_OK` instead.
 * `MONGOC_URI_SLAVEOK` is removed. It was unused.
 * `mongoc_collection_save` is removed. Use `mongoc_collection_insert_one` or `mongoc_collection_replace_one` instead.
+* `mongoc_client_command`, `mongoc_database_command`, and `mongoc_collection_command` are removed. Use `mongoc_client_command_simple`,  `mongoc_database_command_simple`, and `mongoc_collection_command_simple` instead.
+* `MONGOC_URI_MAXIDLETIMEMS` and `MONGOC_URI_WAITQUEUEMULTIPLE` are removed. They were unused.
+* `bson_string_t` and associated functions are removed.
+* `mongoc_cursor_is_alive` is removed. Use the equivalent `mongoc_cursor_more` instead.
+* `mongoc_collection_delete` is removed. Use `mongoc_collection_delete_one` or `mongoc_collection_delete_many` instead.
+* `mongoc_delete_flags_t` and `mongoc_reply_flags_t` are removed.
+* Support for the deprecated `minPoolSize` URI option is removed along with associated API: `MONGOC_URI_MINPOOLSIZE` and `mongoc_client_pool_min_size`.
+* Support for LibreSSL (the CMake option `ENABLE_SSL=LIBRESSL`) is removed. Associated API is removed (`MONGOC_ENABLE_SSL_LIBRESSL` and  `mongoc_stream_tls_libressl_new`).
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 

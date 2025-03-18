@@ -24,7 +24,7 @@ Parameters
 * ``reply``: A |bson_t-opt-storage-ptr| to contain the results.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-This is a simplified interface to :symbol:`mongoc_database_command()` that returns the first result document. The database's read preference, read concern, and write concern are not applied to the command.  The parameter ``reply`` is initialized even upon failure to simplify memory management.
+The database's read preference, read concern, and write concern are not applied to the command.  The parameter ``reply`` is initialized even upon failure to simplify memory management.
 
 .. include:: includes/not-retryable-read.txt
 

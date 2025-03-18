@@ -1930,7 +1930,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (mongoc_topology_t *topology,
    while (prev_cse_state == MONGOC_CSE_STARTING) {
       /* Another thread is starting client-side encryption. It may take some
        * time to start, but don't continue until it is finished. */
-      bson_thrd_yield ();
+      mcommon_thrd_yield ();
       prev_cse_state = mcommon_atomic_int_compare_exchange_strong (
          (int *) &topology->cse_state, MONGOC_CSE_DISABLED, MONGOC_CSE_STARTING, mcommon_memory_order_acquire);
    }
@@ -2791,7 +2791,7 @@ _mongoc_cse_is_enabled (mongoc_client_t *client)
          return state == MONGOC_CSE_ENABLED;
       }
       /* CSE is starting up. Wait until that succeeds or fails. */
-      bson_thrd_yield ();
+      mcommon_thrd_yield ();
    }
 }
 
