@@ -11,6 +11,8 @@ static pthread_mutex_t handler_mutex;
 static void
 example_handler (const mongoc_structured_log_entry_t *entry, void *user_data)
 {
+   (void) user_data;
+
    mongoc_structured_log_component_t component = mongoc_structured_log_entry_get_component (entry);
    mongoc_structured_log_level_t level = mongoc_structured_log_entry_get_level (entry);
    const char *message_string = mongoc_structured_log_entry_get_message_string (entry);

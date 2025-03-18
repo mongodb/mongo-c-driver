@@ -6364,6 +6364,8 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
 static void
 test_kms_retry (void *unused)
 {
+   BSON_UNUSED (unused);
+
    bson_t *aws_masterkey = tmp_bson (BSON_STR ({"region" : "r", "key" : "k", "endpoint" : "127.0.0.1:9003"}));
    bson_t *azure_masterkey = tmp_bson (BSON_STR ({"keyVaultEndpoint" : "127.0.0.1:9003", "keyName" : "foo"}));
    bson_t *gcp_masterkey = tmp_bson (BSON_STR (

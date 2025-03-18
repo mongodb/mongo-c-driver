@@ -220,7 +220,7 @@ main (int argc, char *argv[])
 #include <stdio.h>
 
 int
-main (int argc, char *argv[])
+main (void)
 {
    fprintf (stderr, "mongoc-stat is not supported on your platform.\n");
    return EXIT_FAILURE;
