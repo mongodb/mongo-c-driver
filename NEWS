@@ -16,18 +16,18 @@ Unreleased (2.0.0)
     * PLAIN
     * SCRAM-SHA-1
     * SCRAM-SHA-256
-* The requirement that neither or both a username and password is provided (optionally with a `AWS_SESSION_TOKEN`) is now enforced for MONGODB-AWS.
-* `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
-  * PLAIN
-  * SCRAM-SHA-1
-  * SCRAM-SHA-256
-  * MONGODB-X509
-* `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
-  * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
-  * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
-* `MONGOC_URI_AUTHMECHANISMPROPERTIES` now correctly supports `':'` within property values.
-  * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
-  * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
+  * The requirement that neither or both a username and password is provided (optionally with a `AWS_SESSION_TOKEN`) is now enforced for MONGODB-AWS.
+  * `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
+    * PLAIN
+    * SCRAM-SHA-1
+    * SCRAM-SHA-256
+    * MONGODB-X509
+  * `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
+    * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
+    * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
+  * `MONGOC_URI_AUTHMECHANISMPROPERTIES` now correctly supports `':'` within property values.
+    * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
+    * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
 
 ## Removals
 
