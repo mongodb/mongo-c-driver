@@ -150,7 +150,7 @@ mongo_setting(
          message(WARNING "ENABLE_SASL=SSPI is only supported on Windows platforms")
       endif()
       if(ENABLE_SASL STREQUAL "CYRUS" AND WIN32)
-         message(DEPRECATION "ENABLE_SASL=CYRUS on Windows platforms is deprecated and may be removed in a future major release")
+         message(WARNING "ENABLE_SASL=CYRUS on Windows platforms is unsupported. Use ENABLE_SASL=SSPI or ENABLE_SASL=OFF instead")
       endif()
    ]]
 )
