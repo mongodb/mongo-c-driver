@@ -418,6 +418,10 @@ test_connection_uri_cb (void *scenario_vp)
       {.description = "Colon in a key value pair",
        .reason = "libmongoc does not-yet implement MONGODB-OIDC (CDRIVER-4489)",
        .check_substring = true},
+      {.description = "Valid connection pool options are parsed correctly",
+       .reason = "libmongoc does not support minPoolSize (CDRIVER-2390)"},
+      {.description = "minPoolSize=0 does not error",
+       .reason = "libmongoc does not support minPoolSize (CDRIVER-2390)"},
       {.description = NULL},
    };
 
