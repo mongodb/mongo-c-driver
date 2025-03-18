@@ -201,7 +201,6 @@ These options govern the behavior of a :symbol:`mongoc_client_pool_t`. They are 
 Constant                                   Key                               Description
 ========================================== ================================= =========================================================================================================================================================================================================================
 MONGOC_URI_MAXPOOLSIZE                     maxpoolsize                       The maximum number of clients created by a :symbol:`mongoc_client_pool_t` total (both in the pool and checked out). The default value is 100. Once it is reached, :symbol:`mongoc_client_pool_pop` blocks until another thread pushes a client.
-MONGOC_URI_MINPOOLSIZE                     minpoolsize                       Deprecated. This option's behavior does not match its name, and its actual behavior will likely hurt performance.
 MONGOC_URI_WAITQUEUETIMEOUTMS              waitqueuetimeoutms                The maximum time to wait for a client to become available from the pool.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
