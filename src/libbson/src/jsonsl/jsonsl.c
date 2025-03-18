@@ -75,7 +75,6 @@ void jsonsl_dump_global_metrics(void)
 #else
 #define INCR_METRIC(m)
 #define INCR_GENERIC(c)
-#define INCR_STRINGY_CATCH(c)
 JSONSL_API
 void jsonsl_dump_global_metrics(void) { }
 #endif /* JSONSL_USE_METRICS */
@@ -236,15 +235,6 @@ jsonsl_feed(jsonsl_t jsn, const jsonsl_char_t *bytes, size_t nbytes)
     state = jsn->stack + (++jsn->level); \
     state->ignore_callback = jsn->stack[jsn->level-1].ignore_callback; \
     state->pos_begin = jsn->pos;
-
-#define STACK_POP_NOPOS \
-    state->pos_cur = jsn->pos; \
-    state = jsn->stack + (--jsn->level);
-
-
-#define STACK_POP \
-    STACK_POP_NOPOS; \
-    state->pos_cur = jsn->pos;
 
 #define CALLBACK_AND_POP_NOPOS(T) \
         state->pos_cur = jsn->pos; \

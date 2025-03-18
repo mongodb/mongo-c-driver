@@ -16,9 +16,6 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "topology-scanner-test"
-
 #define TIMEOUT 20000 /* milliseconds */
 #define NSERVERS 10
 

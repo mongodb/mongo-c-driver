@@ -16,9 +16,6 @@
 #include <common-oid-private.h>
 
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "exhaust-test"
-
 /* Server support for exhaust cursors depends on server topology and version:
  * Server Version      Server Behavior
  * ------------------  -----------------------------------

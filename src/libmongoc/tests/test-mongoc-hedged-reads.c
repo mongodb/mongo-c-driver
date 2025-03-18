@@ -24,9 +24,6 @@
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "client-test-hedged-reads"
-
 
 static void
 test_mongos_hedged_reads_read_pref (void)

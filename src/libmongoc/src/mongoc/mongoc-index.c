@@ -19,10 +19,6 @@
 #include <mongoc/mongoc-trace-private.h>
 
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "gridfs_index"
-
-
 static mongoc_index_opt_t gMongocIndexOptDefault = {
    1,     /* is_initialized */
    0,     /* background */

@@ -16,8 +16,6 @@
 
 #define NUM_IOVECS 2000
 
-#define LOCALHOST "127.0.0.1"
-
 /** this function is meant to be run from ssl_test as a child thread
  *
  * It:

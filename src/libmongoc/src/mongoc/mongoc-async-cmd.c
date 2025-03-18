@@ -35,9 +35,6 @@
 #include <mongoc/mongoc-stream-tls.h>
 #endif
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "async"
-
 typedef mongoc_async_cmd_result_t (*_mongoc_async_cmd_phase_t) (mongoc_async_cmd_t *cmd);
 
 mongoc_async_cmd_result_t

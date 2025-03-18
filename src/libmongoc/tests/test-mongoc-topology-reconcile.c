@@ -13,9 +13,6 @@
 #include "test-libmongoc.h"
 #include <common-atomic-private.h>
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "topology-reconcile-test"
-
 
 static mongoc_topology_scanner_node_t *
 get_node (mongoc_topology_t *topology, const char *host_and_port)
