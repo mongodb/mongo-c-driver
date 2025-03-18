@@ -27,8 +27,6 @@
 
 #include <bson/bson-macros.h>
 #include <bson/bson-config.h>
-#include <bson/bson-atomic.h> // Deprecated.
-#include <bson/bson-cmp.h>    // Deprecated.
 #include <bson/bson-context.h>
 #include <bson/bson-clock.h>
 #include <bson/bson-decimal128.h>
@@ -36,7 +34,6 @@
 #include <bson/bson-iter.h>
 #include <bson/bson-json.h>
 #include <bson/bson-keys.h>
-#include <bson/bson-md5.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-oid.h>
 #include <bson/bson-reader.h>
@@ -520,7 +517,7 @@ bson_as_canonical_extended_json (const bson_t *bson, size_t *length);
 
 
 /**
- * bson_as_json:
+ * bson_as_legacy_extended_json:
  * @bson: A bson_t.
  * @length: A location for the string length, or NULL.
  *
@@ -532,10 +529,7 @@ bson_as_canonical_extended_json (const bson_t *bson, size_t *length);
  *
  * Returns: A newly allocated string that should be freed with bson_free().
  */
-BSON_DEPRECATED_FOR (bson_as_legacy_extended_json)
-BSON_EXPORT (char *) bson_as_json (const bson_t *bson, size_t *length);
 
-// `bson_as_legacy_extended_json` is a non-deprecated form of `bson_as_json`.
 BSON_EXPORT (char *)
 bson_as_legacy_extended_json (const bson_t *bson, size_t *length);
 
@@ -562,11 +556,7 @@ BSON_EXPORT (char *)
 bson_as_relaxed_extended_json (const bson_t *bson, size_t *length);
 
 
-/* like bson_as_json() but for outermost arrays. */
-BSON_DEPRECATED_FOR (bson_array_as_legacy_extended_json)
-BSON_EXPORT (char *) bson_array_as_json (const bson_t *bson, size_t *length);
-
-// `bson_array_as_legacy_extended_json` is a non-deprecated form of `bson_array_as_json`.
+/* like bson_as_legacy_extended_json() but for outermost arrays. */
 BSON_EXPORT (char *)
 bson_array_as_legacy_extended_json (const bson_t *bson, size_t *length);
 

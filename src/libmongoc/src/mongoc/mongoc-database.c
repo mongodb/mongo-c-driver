@@ -175,44 +175,6 @@ mongoc_database_copy (mongoc_database_t *database)
       database->client, database->name, database->read_prefs, database->read_concern, database->write_concern));
 }
 
-mongoc_cursor_t *
-mongoc_database_command (mongoc_database_t *database,
-                         mongoc_query_flags_t flags,
-                         uint32_t skip,
-                         uint32_t limit,
-                         uint32_t batch_size,
-                         const bson_t *command,
-                         const bson_t *fields,
-                         const mongoc_read_prefs_t *read_prefs)
-{
-   char *ns;
-   mongoc_cursor_t *cursor;
-
-   BSON_UNUSED (flags);
-   BSON_UNUSED (skip);
-   BSON_UNUSED (limit);
-   BSON_UNUSED (batch_size);
-   BSON_UNUSED (fields);
-
-   BSON_ASSERT_PARAM (database);
-   BSON_ASSERT_PARAM (command);
-
-   ns = bson_strdup_printf ("%s.$cmd", database->name);
-
-   /* Server Selection Spec: "The generic command method has a default read
-    * preference of mode 'primary'. The generic command method MUST ignore any
-    * default read preference from client, database or collection
-    * configuration. The generic command method SHOULD allow an optional read
-    * preference argument."
-    */
-
-   /* flags, skip, limit, batch_size, fields are unused */
-   cursor = _mongoc_cursor_cmd_deprecated_new (database->client, ns, command, read_prefs);
-   bson_free (ns);
-   return cursor;
-}
-
-
 bool
 mongoc_database_command_simple (mongoc_database_t *database,
                                 const bson_t *command,

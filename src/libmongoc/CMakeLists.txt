@@ -624,8 +624,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log-and-monitor-private.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cmd.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.c
@@ -751,7 +749,6 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-iovec.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-macros.h
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-optional.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-prelude.h
@@ -1034,14 +1031,11 @@ set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.h
-   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-atomic.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-b64.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bcon-basic.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bcon-extract.c
-   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-cmp.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-corpus.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-error.c
-   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-sync.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-vector.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson-version.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-bson.c
@@ -1115,7 +1109,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-loadbalanced.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-long-namespace.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-matcher.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongohouse.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongos-pinning.c
@@ -1344,11 +1337,6 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    # examples/tutorial
    mongoc_add_example (executing ${PROJECT_SOURCE_DIR}/examples/tutorial/executing.c)
    mongoc_add_example (appending ${PROJECT_SOURCE_DIR}/examples/tutorial/appending.c)
-   mongoc_add_example (migrating ${PROJECT_SOURCE_DIR}/examples/migrating.c)
-   # Ignore deprecation warnings in migrating examples. Migrating examples deliberately call deprecated API to show how to migrate.
-   target_compile_options (migrating
-      PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
-   )
 endif ()
 
 if (ENABLE_TESTS AND ENABLE_SHARED AND MONGOC_ENABLE_SSL AND NOT WIN32)

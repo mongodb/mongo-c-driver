@@ -332,12 +332,6 @@ test_read_prefs_is_valid (void *ctx)
    ASSERT (mongoc_cursor_error (cursor, &error));
    mongoc_cursor_destroy (cursor);
 
-   /* mongoc_collection_command */
-   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{}"), NULL, read_prefs);
-   ASSERT (cursor);
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   mongoc_cursor_destroy (cursor);
-
    /* mongoc_collection_command_simple */
    ASSERT (!mongoc_collection_command_simple (collection, tmp_bson ("{'ping': 1}"), read_prefs, &reply, &error));
    bson_destroy (&reply);
@@ -369,12 +363,6 @@ test_read_prefs_is_valid (void *ctx)
    cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, pipeline, NULL, read_prefs);
    ASSERT (cursor);
 
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   mongoc_cursor_destroy (cursor);
-
-   /* mongoc_collection_command */
-   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{}"), NULL, read_prefs);
-   ASSERT (cursor);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    mongoc_cursor_destroy (cursor);
 
@@ -851,59 +839,6 @@ test_insert_command_keys (void)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
-}
-
-
-static void
-test_save (void)
-{
-   mongoc_collection_t *collection;
-   mongoc_database_t *database;
-   mongoc_client_t *client;
-   bson_context_t *context;
-   bson_error_t error;
-   bson_oid_t oid;
-   unsigned i;
-   bson_t b;
-   bool r;
-
-   client = test_framework_new_default_client ();
-   ASSERT (client);
-
-   database = get_test_database (client);
-   ASSERT (database);
-
-   collection = get_test_collection (client, "test_save");
-   ASSERT (collection);
-
-   /* don't care if ns not found. */
-   (void) mongoc_collection_drop (collection, &error);
-
-   context = bson_context_new (BSON_CONTEXT_NONE);
-   ASSERT (context);
-
-   BEGIN_IGNORE_DEPRECATIONS
-
-   for (i = 0; i < 10; i++) {
-      bson_init (&b);
-      bson_oid_init (&oid, context);
-      bson_append_oid (&b, "_id", 3, &oid);
-      bson_append_utf8 (&b, "hello", 5, "/world", 5);
-      ASSERT_OR_PRINT (mongoc_collection_save (collection, &b, NULL, &error), error);
-      bson_destroy (&b);
-   }
-
-   r = mongoc_collection_save (collection, tmp_bson ("{'': 1}"), NULL, &error);
-
-   END_IGNORE_DEPRECATIONS
-
-   ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid document");
-
-   mongoc_collection_destroy (collection);
-   mongoc_database_destroy (database);
-   bson_context_destroy (context);
-   mongoc_client_destroy (client);
 }
 
 
@@ -3628,41 +3563,6 @@ test_find_batch_size (void)
 
 
 static void
-test_command_fq (void *context)
-{
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc = NULL;
-   bson_iter_t iter;
-   bson_t *cmd;
-   bool r;
-
-   BSON_UNUSED (context);
-
-   client = test_framework_new_default_client ();
-   ASSERT (client);
-
-   cmd = tmp_bson ("{ 'dbstats': 1}");
-
-   cursor = mongoc_client_command (client, "sometest.$cmd", MONGOC_QUERY_SECONDARY_OK, 0, -1, 0, cmd, NULL, NULL);
-   r = mongoc_cursor_next (cursor, &doc);
-   BSON_ASSERT (r);
-
-   if (bson_iter_init_find (&iter, doc, "db") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-      ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "sometest");
-   } else {
-      test_error ("dbstats didn't return 'db' key?");
-   }
-
-
-   r = mongoc_cursor_next (cursor, &doc);
-   BSON_ASSERT (!r);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-}
-
-static void
 test_get_index_info (void)
 {
    mongoc_collection_t *collection;
@@ -5369,10 +5269,8 @@ test_remove_multi (void)
       mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{'_id': {'$gte': 8}}"), NULL, &error),
       error);
 
-   /* mongoc_collection_delete is an alias of mongoc_collection_remove, although
-    * its flag type differs slightly */
    ASSERT_OR_PRINT (
-      mongoc_collection_delete (collection, MONGOC_DELETE_NONE, tmp_bson ("{'_id': {'$lt': 2}}"), NULL, &error), error);
+      mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{'_id': {'$lt': 2}}"), NULL, &error), error);
 
    _test_docs_in_coll_matches (collection, tmp_bson ("{'x': 1234}"), NULL, 6);
 
@@ -5737,25 +5635,6 @@ test_get_last_error (void)
             {"nInserted" : 0, "nMatched" : 0, "nModified" : 0, "nRemoved" : 1, "nUpserted" : 0, "writeErrors" : []}));
    }
 
-   // Test mongoc_collection_delete:
-   {
-      mongoc_collection_drop (coll, NULL);
-
-      // Clear error:
-      ASSERT_OR_PRINT (mongoc_collection_command_simple (coll, tmp_bson ("{'ping': 1}"), NULL, NULL, &error), error);
-      ASSERT (!mongoc_collection_get_last_error (coll));
-
-      // Insert a document to delete:
-      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{'_id': 0}"), NULL, NULL, &error), error);
-
-      ok = mongoc_collection_delete (coll, MONGOC_DELETE_NONE, tmp_bson ("{}"), NULL, &error);
-      ASSERT_OR_PRINT (ok, error);
-      const bson_t *gle = mongoc_collection_get_last_error (coll);
-      ASSERT_MATCH (
-         gle,
-         BSON_STR (
-            {"nInserted" : 0, "nMatched" : 0, "nModified" : 0, "nRemoved" : 1, "nUpserted" : 0, "writeErrors" : []}));
-   }
 
    // Test mongoc_collection_insert_bulk:
    {
@@ -5810,7 +5689,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddFull (
       suite, "/Collection/insert/oversize", test_insert_oversize, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddMockServerTest (suite, "/Collection/insert/keys", test_insert_command_keys);
-   TestSuite_AddLive (suite, "/Collection/save", test_save);
    TestSuite_AddLive (suite, "/Collection/insert/w0", test_insert_w0);
    TestSuite_AddLive (suite, "/Collection/update/w0", test_update_w0);
    TestSuite_AddLive (suite, "/Collection/remove/w0", test_remove_w0);
@@ -5892,8 +5770,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/insert_many_validate", test_insert_many_validate);
    TestSuite_AddMockServerTest (suite, "/Collection/limit", test_find_limit);
    TestSuite_AddMockServerTest (suite, "/Collection/batch_size", test_find_batch_size);
-   TestSuite_AddFull (
-      suite, "/Collection/command_fully_qualified", test_command_fq, NULL, NULL, test_framework_skip_if_mongos);
    TestSuite_AddLive (suite, "/Collection/get_index_info", test_get_index_info);
    TestSuite_AddMockServerTest (suite, "/Collection/find_indexes/error", test_find_indexes_err);
    TestSuite_AddLive (suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);

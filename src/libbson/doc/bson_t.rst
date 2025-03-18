@@ -195,11 +195,9 @@ BSON document contains duplicate keys.
     bson_append_utf8
     bson_append_value
     bson_array_as_canonical_extended_json
-    bson_array_as_json
     bson_array_as_legacy_extended_json
     bson_array_as_relaxed_extended_json
     bson_as_canonical_extended_json
-    bson_as_json
     bson_as_json_with_opts
     bson_as_legacy_extended_json
     bson_as_relaxed_extended_json

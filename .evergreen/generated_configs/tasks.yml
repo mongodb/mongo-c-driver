@@ -1097,7 +1097,7 @@ tasks:
   - name: check-headers
     commands:
       - func: check-headers
-  - name: "check:sasl=Cyrus\_\u2022\_tls=LibreSSL\_\u2022\_test_mongocxx_ref=r3.9.0"
+  - name: "check:sasl=Cyrus\_\u2022\_tls=LibreSSL\_\u2022\_test_mongocxx_ref=r4.0.0"
     run_on:
       - ubuntu2204-large
       - debian10-large
@@ -1121,7 +1121,7 @@ tasks:
             - +env-warmup
             - --sasl=Cyrus
             - --tls=LibreSSL
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
@@ -1134,7 +1134,7 @@ tasks:
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=LibreSSL
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
@@ -1177,7 +1177,7 @@ tasks:
             - --test_mongocxx_ref=none
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r3.9.0"
+  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.0.0"
     run_on:
       - ubuntu2204-large
       - debian10-large
@@ -1201,7 +1201,7 @@ tasks:
             - +env-warmup
             - --sasl=Cyrus
             - --tls=OpenSSL
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
@@ -1214,7 +1214,7 @@ tasks:
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=OpenSSL
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
@@ -1257,7 +1257,7 @@ tasks:
             - --test_mongocxx_ref=none
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r3.9.0"
+  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.0.0"
     run_on:
       - ubuntu2204-large
       - debian10-large
@@ -1281,7 +1281,7 @@ tasks:
             - +env-warmup
             - --sasl=Cyrus
             - --tls=off
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
@@ -1294,10 +1294,10 @@ tasks:
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=off
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=LibreSSL\_\u2022\_test_mongocxx_ref=r3.9.0"
+  - name: "check:sasl=off\_\u2022\_tls=LibreSSL\_\u2022\_test_mongocxx_ref=r4.0.0"
     run_on:
       - ubuntu2204-large
       - debian10-large
@@ -1321,7 +1321,7 @@ tasks:
             - +env-warmup
             - --sasl=off
             - --tls=LibreSSL
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
@@ -1334,7 +1334,7 @@ tasks:
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=LibreSSL
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
@@ -1377,7 +1377,7 @@ tasks:
             - --test_mongocxx_ref=none
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r3.9.0"
+  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.0.0"
     run_on:
       - ubuntu2204-large
       - debian10-large
@@ -1401,7 +1401,7 @@ tasks:
             - +env-warmup
             - --sasl=off
             - --tls=OpenSSL
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
@@ -1414,7 +1414,7 @@ tasks:
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=OpenSSL
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
@@ -1457,7 +1457,7 @@ tasks:
             - --test_mongocxx_ref=none
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r3.9.0"
+  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.0.0"
     run_on:
       - ubuntu2204-large
       - debian10-large
@@ -1481,7 +1481,7 @@ tasks:
             - +env-warmup
             - --sasl=off
             - --tls=off
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
@@ -1494,7 +1494,7 @@ tasks:
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=off
-            - --test_mongocxx_ref=r3.9.0
+            - --test_mongocxx_ref=r4.0.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: clang-format
@@ -2793,16 +2793,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-vs2015-x64-compile
-    run_on: windows-64-vs2015-large
-    tags: [cse-matrix-winssl, compile, windows-64-vs2015, vs2015x64, cse, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: cse-sasl-cyrus-winssl-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 14 2015
-          CMAKE_GENERATOR_PLATFORM: x64
-      - func: upload-build
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2017x64, cse, sasl-cyrus]
@@ -4416,16 +4406,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-cyrus-winssl-vs2015-x64-compile
-    run_on: windows-64-vs2015-large
-    tags: [sasl-matrix-winssl, compile, windows-64-vs2015, vs2015x64, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-winssl-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 14 2015
-          CMAKE_GENERATOR_PLATFORM: x64
-      - func: upload-build
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-cyrus]
@@ -5074,16 +5054,6 @@ tasks:
         vars:
           CMAKE_GENERATOR: Visual Studio 15 2017
           CMAKE_GENERATOR_PLATFORM: x64
-      - func: upload-build
-  - name: sasl-off-winssl-vs2015-x86-compile
-    run_on: windows-64-vs2015-large
-    tags: [sasl-matrix-winssl, compile, windows-64-vs2015, vs2015x86, sasl-off]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-off-winssl-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 14 2015
-          CMAKE_GENERATOR_PLATFORM: Win32
       - func: upload-build
   - name: sasl-off-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large

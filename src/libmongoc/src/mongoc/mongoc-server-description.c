@@ -287,13 +287,12 @@ mongoc_server_description_id (const mongoc_server_description_t *description)
  *      Return a reference to the host associated with this server description.
  *
  * Returns:
- *      This server description's host, a mongoc_host_list_t * you must
- *      not modify or free.
+ *      This server description's host, a const mongoc_host_list_t *.
  *
  *--------------------------------------------------------------------------
  */
 
-mongoc_host_list_t *
+const mongoc_host_list_t *
 mongoc_server_description_host (const mongoc_server_description_t *description)
 {
    return &((mongoc_server_description_t *) description)->host;
@@ -387,25 +386,6 @@ const bson_t *
 mongoc_server_description_hello_response (const mongoc_server_description_t *description)
 {
    return &description->last_hello_response;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_server_description_ismaster --
- *
- *      Return this server's most recent "hello" command response.
- *
- * Returns:
- *      A reference to a BSON document, owned by the server description.
- *
- *--------------------------------------------------------------------------
- */
-
-const bson_t *
-mongoc_server_description_ismaster (const mongoc_server_description_t *description)
-{
-   return mongoc_server_description_hello_response (description);
 }
 
 /*

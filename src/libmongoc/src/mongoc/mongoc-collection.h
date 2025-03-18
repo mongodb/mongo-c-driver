@@ -51,17 +51,6 @@ mongoc_collection_destroy (mongoc_collection_t *collection);
 MONGOC_EXPORT (mongoc_collection_t *)
 mongoc_collection_copy (mongoc_collection_t *collection) BSON_GNUC_WARN_UNUSED_RESULT;
 
-BSON_DEPRECATED_FOR (mongoc_collection_command_simple)
-MONGOC_EXPORT (mongoc_cursor_t *) mongoc_collection_command (mongoc_collection_t *collection,
-                                                             mongoc_query_flags_t flags,
-                                                             uint32_t skip,
-                                                             uint32_t limit,
-                                                             uint32_t batch_size,
-                                                             const bson_t *command,
-                                                             const bson_t *fields,
-                                                             const mongoc_read_prefs_t *read_prefs)
-   BSON_GNUC_WARN_UNUSED_RESULT;
-
 MONGOC_EXPORT (bool)
 mongoc_collection_read_command_with_opts (mongoc_collection_t *collection,
                                           const bson_t *command,
@@ -250,19 +239,6 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
                                const bson_t *opts,
                                bson_t *reply,
                                bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_delete_one or mongoc_collection_delete_many)
-MONGOC_EXPORT (bool) mongoc_collection_delete (mongoc_collection_t *collection,
-                                               mongoc_delete_flags_t flags,
-                                               const bson_t *selector,
-                                               const mongoc_write_concern_t *write_concern,
-                                               bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_insert_one or mongoc_collection_replace_one)
-MONGOC_EXPORT (bool) mongoc_collection_save (mongoc_collection_t *collection,
-                                             const bson_t *document,
-                                             const mongoc_write_concern_t *write_concern,
-                                             bson_error_t *error);
 
 MONGOC_EXPORT (bool)
 mongoc_collection_remove (mongoc_collection_t *collection,

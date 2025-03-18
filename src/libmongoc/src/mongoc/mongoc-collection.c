@@ -444,83 +444,6 @@ mongoc_collection_find_with_opts (mongoc_collection_t *collection,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_command --
- *
- *       Executes a command on a cluster node matching @read_prefs. If
- *       @read_prefs is not provided, it will be run on the primary node.
- *
- *       This function will always return a mongoc_cursor_t.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @flags: Bitwise-or'd flags for command.
- *       @skip: Number of documents to skip, typically 0.
- *       @limit : Number of documents to return
- *       @batch_size : Batch size
- *       @query: The command to execute.
- *       @fields: The fields to return, or NULL.
- *       @read_prefs: Command read preferences or NULL.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-mongoc_cursor_t *
-mongoc_collection_command (mongoc_collection_t *collection,
-                           mongoc_query_flags_t flags,
-                           uint32_t skip,
-                           uint32_t limit,
-                           uint32_t batch_size,
-                           const bson_t *query,
-                           const bson_t *fields,
-                           const mongoc_read_prefs_t *read_prefs)
-{
-   char *ns;
-   mongoc_cursor_t *cursor;
-
-   BSON_UNUSED (flags);
-   BSON_UNUSED (skip);
-   BSON_UNUSED (limit);
-   BSON_UNUSED (batch_size);
-   BSON_UNUSED (fields);
-
-   BSON_ASSERT_PARAM (collection);
-   BSON_ASSERT_PARAM (query);
-
-   if (!read_prefs) {
-      read_prefs = collection->read_prefs;
-   }
-
-   bson_clear (&collection->gle);
-
-   if (NULL == strstr (collection->collection, "$cmd")) {
-      ns = bson_strdup_printf ("%s.$cmd", collection->db);
-   } else {
-      ns = bson_strdup (collection->db);
-   }
-
-   /* Server Selection Spec: "The generic command method has a default read
-    * preference of mode 'primary'. The generic command method MUST ignore any
-    * default read preference from client, database or collection
-    * configuration. The generic command method SHOULD allow an optional read
-    * preference argument."
-    */
-
-   /* flags, skip, limit, batch_size, fields are unused */
-   cursor = _mongoc_cursor_cmd_deprecated_new (collection->client, ns, query, read_prefs);
-   bson_free (ns);
-   return cursor;
-}
-
-
 bool
 mongoc_collection_read_command_with_opts (mongoc_collection_t *collection,
                                           const bson_t *command,
@@ -2297,66 +2220,6 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_save --
- *
- *       Save @document to @collection.
- *
- *       If the document has an _id field, it will be updated. Otherwise,
- *       the document will be inserted into the collection.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @error is set upon failure if non-NULL.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-mongoc_collection_save (mongoc_collection_t *collection,
-                        const bson_t *document,
-                        const mongoc_write_concern_t *write_concern,
-                        bson_error_t *error)
-{
-   bson_iter_t iter;
-   bool ret;
-   bson_t selector;
-
-   BSON_ASSERT_PARAM (collection);
-   BSON_ASSERT_PARAM (document);
-
-   BEGIN_IGNORE_DEPRECATIONS
-   if (!bson_iter_init_find (&iter, document, "_id")) {
-      return mongoc_collection_insert (collection, MONGOC_INSERT_NONE, document, write_concern, error);
-   }
-
-   bson_init (&selector);
-   if (!bson_append_iter (&selector, NULL, 0, &iter)) {
-      _mongoc_set_error (
-         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Failed to append bson to create update.");
-      bson_destroy (&selector);
-      return false;
-   }
-
-   /* this document will be inserted, validate same as for inserts */
-   if (!_mongoc_validate_new_document (document, _mongoc_default_insert_vflags, error)) {
-      return false;
-   }
-
-   ret = mongoc_collection_update (
-      collection, MONGOC_UPDATE_UPSERT | MONGOC_UPDATE_NO_VALIDATE, &selector, document, write_concern, error);
-   END_IGNORE_DEPRECATIONS
-
-   bson_destroy (&selector);
-
-   return ret;
-}
-
-
 bool
 mongoc_collection_remove (mongoc_collection_t *collection,
                           mongoc_remove_flags_t flags,
@@ -2405,17 +2268,6 @@ mongoc_collection_remove (mongoc_collection_t *collection,
    _mongoc_write_command_destroy (&command);
 
    RETURN (ret);
-}
-
-
-bool
-mongoc_collection_delete (mongoc_collection_t *collection,
-                          mongoc_delete_flags_t flags,
-                          const bson_t *selector,
-                          const mongoc_write_concern_t *write_concern,
-                          bson_error_t *error)
-{
-   return mongoc_collection_remove (collection, (mongoc_remove_flags_t) flags, selector, write_concern, error);
 }
 
 
