@@ -434,19 +434,6 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile.sh
-  sasl-cyrus-winssl-compile:
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        env:
-          SASL: CYRUS
-          SSL: WINDOWS
-        args:
-          - -c
-          - .evergreen/scripts/compile.sh
   sasl-off-nossl-compile:
     - command: subprocess.exec
       type: test

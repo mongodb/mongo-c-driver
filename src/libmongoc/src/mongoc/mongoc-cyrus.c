@@ -135,52 +135,6 @@ _mongoc_cyrus_get_user (mongoc_cyrus_t *sasl, int param_id, const char **result,
    return (sasl->credentials.user != NULL) ? SASL_OK : SASL_FAIL;
 }
 
-static const char *
-sasl_verify_type_to_str (sasl_verify_type_t type)
-{
-   switch (type) {
-   case SASL_VRFY_PLUGIN:
-      return "SASL_VRFY_PLUGIN";
-   case SASL_VRFY_CONF:
-      return "SASL_VRFY_CONF";
-   case SASL_VRFY_PASSWD:
-      return "SASL_VRFY_PASSWD";
-   case SASL_VRFY_OTHER:
-      return "SASL_VRFY_OTHER";
-   default:
-      return "Unknown";
-   }
-}
-
-int
-_mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t type)
-{
-   BSON_UNUSED (context);
-
-   TRACE ("Attempting to load file: `%s`. Type is %s\n", file, sasl_verify_type_to_str (type));
-
-#ifdef _WIN32
-   // On Windows, Cyrus SASL hard-codes the plugin path.
-   // Only permit loading plugin from user configured path to prevent unintentional library loading.
-   if (type == SASL_VRFY_PLUGIN) {
-      const char *path_prefix = MONGOC_CYRUS_PLUGIN_PATH_PREFIX;
-      bool has_valid_prefix = (path_prefix && file == strstr (file, path_prefix));
-      // Check if `file` has necessary prefix.
-      if (has_valid_prefix) {
-         return SASL_OK;
-      }
-      MONGOC_WARNING ("Refusing to load Cyrus SASL plugin at: '%s'. If needed, set CYRUS_PLUGIN_PATH_PREFIX (currently "
-                      "'%s') to the absolute path prefix of the plugin during build configuration of the C Driver.",
-                      file,
-                      path_prefix ? path_prefix : "(unset)");
-      return SASL_CONTINUE;
-   }
-#endif
-
-   return SASL_OK;
-}
-
-
 void
 _mongoc_cyrus_init (mongoc_cyrus_t *sasl)
 {
@@ -189,7 +143,6 @@ _mongoc_cyrus_init (mongoc_cyrus_t *sasl)
                                   {SASL_CB_USER, SASL_CALLBACK_FN (_mongoc_cyrus_get_user), sasl},
                                   {SASL_CB_PASS, SASL_CALLBACK_FN (_mongoc_cyrus_get_pass), sasl},
                                   {SASL_CB_CANON_USER, SASL_CALLBACK_FN (_mongoc_cyrus_canon_user), sasl},
-                                  {SASL_CB_VERIFYFILE, SASL_CALLBACK_FN (_mongoc_cyrus_verifyfile_cb), NULL},
                                   {SASL_CB_LIST_END}};
    MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_END
 
