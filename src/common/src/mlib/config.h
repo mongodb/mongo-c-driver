@@ -165,6 +165,13 @@
 #define MLIB_LANG_PICK MLIB_IF_ELSE (mlib_is_not_cxx ())
 
 /**
+ * @brief Use as the prefix of a braced initializer within C headers, allowing
+ * the initializer to appear as a compound-init in C and an equivalent braced
+ * aggregate-init in C++
+ */
+#define mlib_init(T) MLIB_LANG_PICK ((T)) (T)
+
+/**
  * @brief Expands to `noexcept` when compiled as C++, otherwise expands to
  * nothing
  */
@@ -270,6 +277,12 @@
  */
 #define mlib_always_inline MLIB_IF_GNU_LIKE (__attribute__ ((always_inline)) inline) MLIB_IF_MSVC (__forceinline)
 
+// Annotate a variable as thread-local
+#define mlib_thread_local MLIB_IF_GNU_LIKE (__thread) MLIB_IF_MSVC (__declspec (thread))
+
+// Annotate an entiry that might be unused
+#define mlib_maybe_unused MLIB_IF_GNU_LIKE (__attribute__ ((unused)))
+
 // clang-format off
 /**
  * @brief Expand to `1` if the current build configuration matches the given token.
@@ -319,5 +332,22 @@
 #else
 #define _mlibIsOptimizedBuild() 0
 #endif
+
+#if mlib_is_gnu_like()
+#define mlib_have_typeof() 1
+#elif defined _MSC_VER && _MSC_VER >= 1939 && !__cplusplus
+// We can __typeof__ in MSVC 19.39+
+#define mlib_have_typeof() 1
+#else
+#define mlib_have_typeof() 0
+#endif
+
+/**
+ * @brief Equivalent to C23's `typeof()`, if it is supported by the current compiler.
+ *
+ * This expands to `__typeof__`, which is supported even on newer MSVC compilers,
+ * even when not in C23 mode.
+ */
+#define mlib_typeof(...) MLIB_IF_ELSE (mlib_have_typeof ()) (__typeof__) (__mlib_typeof_is_not_supported) (__VA_ARGS__)
 
 #endif // MLIB_CONFIG_H_INCLUDED

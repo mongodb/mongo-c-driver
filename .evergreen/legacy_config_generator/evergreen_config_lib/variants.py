@@ -82,16 +82,13 @@ all_variants = [
     ),
     Variant(
         "openssl",
-        "OpenSSL / LibreSSL",
+        "OpenSSL",
         "archlinux-build",
         [
             "build-and-run-authentication-tests-openssl-1.0.1",
             "build-and-run-authentication-tests-openssl-1.0.2",
             "build-and-run-authentication-tests-openssl-1.1.0",
-            "build-and-run-authentication-tests-openssl-1.0.1-fips",
-            "build-and-run-authentication-tests-libressl-2.5",
-            "build-and-run-authentication-tests-libressl-3.0-auto",
-            "build-and-run-authentication-tests-libressl-3.0",
+            "build-and-run-authentication-tests-openssl-1.0.1-fips"
         ],
         {},
     ),

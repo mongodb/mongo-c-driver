@@ -896,6 +896,7 @@ _mongoc_structured_log_append_error (bson_t *bson,
                                      const mongoc_structured_log_builder_stage_t *stage,
                                      const mongoc_structured_log_opts_t *opts)
 {
+   BSON_UNUSED (opts);
    const char *key_or_null = stage->arg1.utf8;
    const bson_error_t *error_or_null = stage->arg2.error;
    if (key_or_null) {

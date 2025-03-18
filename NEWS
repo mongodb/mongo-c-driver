@@ -8,6 +8,23 @@ Unreleased (2.0.0)
   was ignored.
 * `bson_oid_init_sequence` is removed. Use `bson_oid_init` instead.
 * `mongoc_server_description_host` changes the return type from `mongoc_host_list_t *` to `const mongoc_host_list_t *`.
+* URI authentication credentials validation (only applicable during creation of a new `mongoc_uri_t` object from a connection string):
+  * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
+  * `authSource` is now validated and returns a client error for invalid or unsupported values for the specified `authMechanism`.
+  * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
+  * The requirement that a password is provided is now enforced when the authentication mechanism is specified for:
+    * PLAIN
+    * SCRAM-SHA-1
+    * SCRAM-SHA-256
+* The requirement that neither or both a username and password is provided (optionally with a `AWS_SESSION_TOKEN`) is now enforced for MONGODB-AWS.
+* `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
+  * PLAIN
+  * SCRAM-SHA-1
+  * SCRAM-SHA-256
+  * MONGODB-X509
+* `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
+  * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
+  * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
 
 ## Removals
 
@@ -24,6 +41,7 @@ Unreleased (2.0.0)
 * `mongoc_collection_delete` is removed. Use `mongoc_collection_delete_one` or `mongoc_collection_delete_many` instead.
 * `mongoc_delete_flags_t` and `mongoc_reply_flags_t` are removed.
 * Support for the deprecated `minPoolSize` URI option is removed along with associated API: `MONGOC_URI_MINPOOLSIZE` and `mongoc_client_pool_min_size`.
+* Support for LibreSSL (the CMake option `ENABLE_SSL=LIBRESSL`) is removed. Associated API is removed (`MONGOC_ENABLE_SSL_LIBRESSL` and  `mongoc_stream_tls_libressl_new`).
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
@@ -42,25 +60,6 @@ Instead, the names must be prefixed with the parent directory: `mongoc/mongoc.h`
 ```
 
 
-Changes:
-
-  * URI authentication credentials validation (only applicable during creation of a new `mongoc_uri_t` object from a connection string):
-    * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
-    * `authSource` is now validated and returns a client error for invalid or unsupported values for the specified `authMechanism`.
-    * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
-    * The requirement that a password is provided is now enforced when the authentication mechanism is specified for:
-      * PLAIN
-      * SCRAM-SHA-1
-      * SCRAM-SHA-256
-    * The requirement that neither or both a username and password is provided (optionally with a `AWS_SESSION_TOKEN`) is now enforced for MONGODB-AWS.
-    * `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
-      * PLAIN
-      * SCRAM-SHA-1
-      * SCRAM-SHA-256
-      * MONGODB-X509
-    * `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
-      * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
-      * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
 
 libmongoc 1.30.2
 ================

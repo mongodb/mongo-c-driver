@@ -14,8 +14,7 @@
 
 #define TIMEOUT 10000 /* milliseconds */
 
-#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL) && \
-   !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 /** run as a child thread by test_mongoc_tls_hangup
  *
  * It:
@@ -331,7 +330,7 @@ test_mongoc_tls_handshake_stall (void)
 }
 
 #endif /* !MONGOC_ENABLE_SSL_SECURE_TRANSPORT */
-#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
+#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL */
 
 /* TLS stream should be NULL and base stream should still be valid, and error
  * messages should be consistent across TLS libs. Until CDRIVER-2844, just
@@ -369,7 +368,7 @@ test_mongoc_tls_load_files (void)
 void
 test_stream_tls_error_install (TestSuite *suite)
 {
-#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 #if !defined(__APPLE__)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
@@ -378,6 +377,6 @@ test_stream_tls_error_install (TestSuite *suite)
 #if !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_Add (suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);
 #endif
-#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
+#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL */
    TestSuite_Add (suite, "/TLS/load_files", test_mongoc_tls_load_files);
 }
