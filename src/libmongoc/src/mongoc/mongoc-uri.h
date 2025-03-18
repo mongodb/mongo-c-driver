@@ -48,7 +48,6 @@
 #define MONGOC_URI_LOCALTHRESHOLDMS "localthresholdms"
 #define MONGOC_URI_MAXPOOLSIZE "maxpoolsize"
 #define MONGOC_URI_MAXSTALENESSSECONDS "maxstalenessseconds"
-#define MONGOC_URI_MINPOOLSIZE "minpoolsize"
 #define MONGOC_URI_READCONCERNLEVEL "readconcernlevel"
 #define MONGOC_URI_READPREFERENCE "readpreference"
 #define MONGOC_URI_READPREFERENCETAGS "readpreferencetags"

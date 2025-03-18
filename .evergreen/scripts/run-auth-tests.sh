@@ -68,7 +68,7 @@ fi
 
 # Archlinux (which we use for testing various self-installed OpenSSL versions)
 # stores their trust list under /etc/ca-certificates/extracted/.
-# We need to copy it to our custom installed OpenSSL/LibreSSL trust store.
+# We need to copy it to our custom installed OpenSSL trust store.
 declare pem_file="/etc/ca-certificates/extracted/tls-ca-bundle.pem"
 if [[ -f "${pem_file}" ]]; then
   [[ ! -d "${install_dir}" ]] || cp -v "${pem_file}" "${install_dir}/cert.pem"
