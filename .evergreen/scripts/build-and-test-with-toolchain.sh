@@ -35,8 +35,6 @@ toolchain_base_dir="$(readlink -f /opt/mongo-c-toolchain)"
 declare toolchain_lib_dir="${toolchain_base_dir}/lib"
 
 declare -a ssl_vers=(
-  "libressl-2.5"
-  "libressl-3.0"
   "openssl-1.0.1"
   "openssl-1.0.1-fips"
   "openssl-1.0.2"
@@ -60,11 +58,7 @@ for ssl_ver in "${ssl_vers[@]}"; do
   "${cmake_binary}" --version
 
   declare ssl
-  if [[ "${ssl_ver#*libressl}" != "${ssl_ver}" ]]; then
-    ssl="LIBRESSL"
-  else
-    ssl="OPENSSL"
-  fi
+  ssl="OPENSSL"
 
   declare output_file
   output_file="$(mktemp)"

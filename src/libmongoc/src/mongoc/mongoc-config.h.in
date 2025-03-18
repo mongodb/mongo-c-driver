@@ -97,17 +97,6 @@
 
 
 /*
- * MONGOC_ENABLE_SSL_LIBRESSL is set from configure to determine if we are
- * compiled with LibreSSL support.
- */
-#define MONGOC_ENABLE_SSL_LIBRESSL @MONGOC_ENABLE_SSL_LIBRESSL@
-
-#if MONGOC_ENABLE_SSL_LIBRESSL != 1
-#  undef MONGOC_ENABLE_SSL_LIBRESSL
-#endif
-
-
-/*
  * MONGOC_ENABLE_SSL_OPENSSL is set from configure to determine if we are
  * compiled with OpenSSL support.
  */
