@@ -271,6 +271,15 @@ test_mongoc_uri_new (void)
    ASSERT (options);
    ASSERT_EQUAL_BSON (tmp_bson ("{'replicaset': ' '}"), options);
    mongoc_uri_destroy (uri);
+
+   // Should warn on unsupported `minPoolSize`. `minPoolSize` was removed in CDRIVER-2390.
+   capture_logs (true);
+   uri = mongoc_uri_new ("mongodb://host/?minPoolSize=1");
+   ASSERT (uri);
+   ASSERT_CAPTURED_LOG (
+      "setting URI option minPoolSize=1", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option \"minpoolsize\"");
+   mongoc_uri_destroy (uri);
+   capture_logs (false);
 }
 
 static void
