@@ -1576,63 +1576,6 @@ tasks:
         env SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
   - func: run auth tests
   - func: upload-build
-- name: build-and-run-authentication-tests-libressl-2.5
-  commands:
-  - func: install ssl
-    vars:
-      SSL: libressl-2.5.2
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL=OFF SSL=LIBRESSL .evergreen/scripts/compile.sh
-  - func: run auth tests
-    vars:
-      require_tls12: true
-  - func: upload-build
-- name: build-and-run-authentication-tests-libressl-3.0-auto
-  commands:
-  - func: install ssl
-    vars:
-      SSL: libressl-3.0.2
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL=OFF SSL=AUTO .evergreen/scripts/compile.sh
-  - func: run auth tests
-    vars:
-      require_tls12: true
-  - func: upload-build
-- name: build-and-run-authentication-tests-libressl-3.0
-  commands:
-  - func: install ssl
-    vars:
-      SSL: libressl-3.0.2
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL=OFF SSL=LIBRESSL .evergreen/scripts/compile.sh
-  - func: run auth tests
-    vars:
-      require_tls12: true
-  - func: upload-build
 - name: test-latest-server-ipv6-client-ipv6-noauth-nosasl-nossl
   tags:
   - ipv4-ipv6
@@ -16404,16 +16347,13 @@ buildvariants:
   tags:
   - pr-merge-gate
 - name: openssl
-  display_name: OpenSSL / LibreSSL
+  display_name: OpenSSL
   run_on: archlinux-build
   tasks:
   - build-and-run-authentication-tests-openssl-1.0.1
   - build-and-run-authentication-tests-openssl-1.0.2
   - build-and-run-authentication-tests-openssl-1.1.0
   - build-and-run-authentication-tests-openssl-1.0.1-fips
-  - build-and-run-authentication-tests-libressl-2.5
-  - build-and-run-authentication-tests-libressl-3.0-auto
-  - build-and-run-authentication-tests-libressl-3.0
 - name: clang37
   display_name: clang 3.7 (Archlinux)
   expansions:

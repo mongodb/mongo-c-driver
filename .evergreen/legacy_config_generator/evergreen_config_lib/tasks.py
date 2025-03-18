@@ -55,7 +55,7 @@ class CompileTask(NamedTask):
         CFLAGS: str | None = None,
         LDFLAGS: str | None = None,
         EXTRA_CONFIGURE_FLAGS: str | None = None,
-        SSL: Literal["WINDOWS", "DARWIN", "OPENSSL", "OPENSSL_STATIC", "LIBRESSL", "OFF", None] = None,
+        SSL: Literal["WINDOWS", "DARWIN", "OPENSSL", "OPENSSL_STATIC", "OFF", None] = None,
         ENABLE_SHM_COUNTERS: OptToggleStr = None,
         CHECK_LOG: OptToggleStr = None,
         TRACING: OptToggleStr = None,
@@ -773,8 +773,6 @@ class SSLTask(Task):
 
         if enable_ssl is not False:
             script += " SSL=" + enable_ssl
-        elif "libressl" in version:
-            script += " SSL=LIBRESSL"
         else:
             script += " SSL=OPENSSL"
 
@@ -818,10 +816,7 @@ all_tasks = chain(
             "l",
             cflags="-Wno-redundant-decls",
         ),
-        SSLTask("openssl-1.1.0", "l"),
-        SSLTask("libressl-2.5", ".2", test_params=dict(require_tls12=True)),
-        SSLTask("libressl-3.0", ".2", enable_ssl="AUTO", test_params=dict(require_tls12=True)),
-        SSLTask("libressl-3.0", ".2", test_params=dict(require_tls12=True)),
+        SSLTask("openssl-1.1.0", "l")
     ],
 )
 

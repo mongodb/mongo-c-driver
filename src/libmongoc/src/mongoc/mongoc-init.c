@@ -27,8 +27,6 @@
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <mongoc/mongoc-openssl-private.h>
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#include <tls.h>
 #endif
 #include <mongoc/mongoc-thread-private.h>
 #include <common-b64-private.h>
@@ -106,8 +104,6 @@ static BSON_ONCE_FUN (_mongoc_do_init)
 #endif
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    _mongoc_openssl_init ();
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   tls_init ();
 #endif
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS

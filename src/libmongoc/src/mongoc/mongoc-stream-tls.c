@@ -31,9 +31,6 @@
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #include <mongoc/mongoc-stream-tls-openssl.h>
 #include <mongoc/mongoc-openssl-private.h>
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#include <mongoc/mongoc-libressl-private.h>
-#include <mongoc/mongoc-stream-tls-libressl.h>
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 #include <mongoc/mongoc-secure-transport-private.h>
 #include <mongoc/mongoc-stream-tls-secure-transport.h>
@@ -207,10 +204,6 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    return mongoc_stream_tls_openssl_new (base_stream, host, opt, client);
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   BEGIN_IGNORE_DEPRECATIONS
-   return mongoc_stream_tls_libressl_new (base_stream, host, opt, client);
-   END_IGNORE_DEPRECATIONS
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    return mongoc_stream_tls_secure_transport_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)

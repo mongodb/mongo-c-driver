@@ -125,10 +125,6 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES);
 #endif
 
-#ifdef MONGOC_ENABLE_SSL_LIBRESSL
-   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL);
-#endif
-
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SASL_CYRUS);
 #endif
