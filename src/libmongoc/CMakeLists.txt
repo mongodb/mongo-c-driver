@@ -880,12 +880,6 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
 
-set_property(
-   SOURCE ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c
-   APPEND PROPERTY COMPILE_DEFINITIONS
-   "MONGOC_CYRUS_PLUGIN_PATH_PREFIX=$<IF:$<STREQUAL:${CYRUS_PLUGIN_PATH_PREFIX},>,NULL,\"${CYRUS_PLUGIN_PATH_PREFIX}\">"
-)
-
 set (
    UTHASH_INCLUDE_DIR
    "${mongo-c-driver_SOURCE_DIR}/src/uthash"
