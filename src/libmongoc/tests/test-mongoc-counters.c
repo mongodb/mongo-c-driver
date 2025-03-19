@@ -778,30 +778,6 @@ test_counters_rpc_op_egress_cluster_legacy (void)
       future_destroy (ping);
    }
 
-   // Trigger: mongoc_cluster_legacy_rpc_sendv_to_server
-   mongoc_client_kill_cursor (client, 123);
-
-   {
-      request_t *const request = mock_server_receives_kill_cursors (server, 123);
-
-      ASSERT_WITH_MSG (request->opcode == MONGOC_OPCODE_KILL_CURSORS,
-                       "expected OP_KILL_CURSORS request, but received: %s",
-                       request->as_str);
-
-      // OP_KILL_CURSORS 1:
-      //  - by _mongoc_rpc_op_egress_inc
-      //  - by mongoc_cluster_legacy_rpc_sendv_to_server
-      //  - by _mongoc_client_op_killcursors
-      //  - by _mongoc_client_kill_cursor
-      //  - by mongoc_client_kill_cursor
-      expected.op_egress_killcursors += 1;
-      expected.op_egress_total += 1;
-      ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
-
-      // OP_KILL_CURSORS does not require a response.
-      request_destroy (request);
-   }
-
    // Ensure no extra requests.
    {
       int responses = 0;
