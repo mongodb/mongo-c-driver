@@ -144,6 +144,13 @@ run_uri_test (const char *uri_string,
          clear_captured_logs ();
       }
 #endif
+
+      // CDRIVER-5580: allow *percent-encoded* commas to be present, as they do not interfere with parsing due to late
+      // percent-decoding of authMechanismProperties. Unencoded commas are always treated as key-value pair delimiters
+      // first and cannot be diagnosed as part of a property value.
+      if (strstr (uri_string, "TOKEN_RESOURCE:mongodb://host1%2Chost2")) {
+         MONGOC_WARNING ("percent-encoded commas in TOKEN_RESOURCE are supported by libmongoc");
+      }
    }
 
    /* END Exceptions to test suite */
