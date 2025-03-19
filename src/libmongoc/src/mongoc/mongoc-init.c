@@ -90,9 +90,16 @@ mongoc_cyrus_mutex_free (void *mutex)
 
 #endif /* MONGOC_ENABLE_SASL_CYRUS */
 
+static bool mongoc_init_called;
+bool
+mongoc_get_init_called (void)
+{
+   return mongoc_init_called;
+}
 
 static BSON_ONCE_FUN (_mongoc_do_init)
 {
+   mongoc_init_called = true;
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    int status;
 #endif
