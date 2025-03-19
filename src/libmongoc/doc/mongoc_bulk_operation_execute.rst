@@ -15,7 +15,7 @@ Synopsis
 
 This function executes all operations queued into the bulk operation. Unless ``ordered: false`` was specified in the ``opts`` passed to :symbol:`mongoc_collection_create_bulk_operation_with_opts()`, then forward progress will be stopped upon the first error.
 
-It is only valid to call :symbol:`mongoc_bulk_operation_execute()` once. Calling repeatedly results in error. The ``mongoc_bulk_operation_t`` must be destroyed afterwards.
+It is only valid to call :symbol:`mongoc_bulk_operation_execute()` once on the same :symbol:`mongoc_bulk_operation_t`. Calling repeatedly results in error. Call :symbol:`mongoc_bulk_operation_destroy` to destroy ``bulk`` afterwards.
 
 .. versionchanged:: 2.0.0 Calling :symbol:`mongoc_bulk_operation_execute()` repeatedly results in an error.
 
