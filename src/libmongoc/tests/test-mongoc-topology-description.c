@@ -8,9 +8,6 @@
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "topology-test"
-
 static void
 _test_has_readable_writable_server (bool pooled)
 {

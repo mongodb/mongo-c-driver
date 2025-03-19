@@ -2151,6 +2151,8 @@ test_events_succeeded_cb (const mongoc_apm_command_succeeded_t *e)
 static void
 test_change_stream_batchSize0 (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
+
    bson_error_t error;
 
    // Create a change stream. Capture a resume token. Insert documents to create future events.

@@ -25,9 +25,6 @@
 #include "test-libmongoc.h"
 #include <mongoc/mongoc-cluster-private.h>
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "cmd-test-options"
-
 
 /* CDRIVER-3303 - mongoc_cmd_parts_assemble sometimes fails to set options;
  * the fix was to refactor the code and this test guards against regressions

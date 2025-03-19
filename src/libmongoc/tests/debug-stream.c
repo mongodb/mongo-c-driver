@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-
-#ifndef DEBUG_STREAM_H
-#define DEBUG_STREAM_H
-
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
 
@@ -181,5 +177,3 @@ test_framework_set_debug_stream (mongoc_client_t *client, debug_stream_stats_t *
    stats->client = client;
    mongoc_client_set_stream_initiator (client, debug_stream_initiator, stats);
 }
-
-#endif /* DEBUG_STREAM_H */

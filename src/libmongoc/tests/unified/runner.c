@@ -1443,7 +1443,7 @@ check_failure_is_redacted (const bson_iter_t *failure_iter, bson_error_t *error)
 }
 
 static bool
-check_failure_is_detailed (const bson_iter_t *failure_iter, bson_error_t *error)
+check_failure_is_detailed (const bson_iter_t *failure_iter)
 {
    if (BSON_ITER_HOLDS_UTF8 (failure_iter)) {
       // Strings are fine, that's enough proof that the failure was not redacted
@@ -1467,7 +1467,7 @@ check_failure_is_detailed (const bson_iter_t *failure_iter, bson_error_t *error)
 }
 
 static bool
-test_check_log_message (test_t *test, bson_t *expected, log_message_t *actual, bson_error_t *error)
+test_check_log_message (bson_t *expected, log_message_t *actual, bson_error_t *error)
 {
    bool ret = false;
 
@@ -1524,7 +1524,7 @@ test_check_log_message (test_t *test, bson_t *expected, log_message_t *actual, b
             goto done;
          }
       } else {
-         if (!check_failure_is_detailed (&failure_iter, error)) {
+         if (!check_failure_is_detailed (&failure_iter)) {
             test_diagnostics_error_info ("actual log message: %s", tmp_json (actual->message));
             test_set_error (error, "expected a complete un-redacted 'failure'");
             goto done;
@@ -1550,10 +1550,7 @@ done:
 }
 
 static bool
-test_log_message_should_be_ignored (test_t *test,
-                                    log_message_t *message,
-                                    bson_t *optional_ignore_list,
-                                    bson_error_t *error)
+test_log_message_should_be_ignored (log_message_t *message, bson_t *optional_ignore_list, bson_error_t *error)
 {
    if (optional_ignore_list) {
       bson_iter_t iter;
@@ -1561,7 +1558,7 @@ test_log_message_should_be_ignored (test_t *test,
       {
          bson_t expected;
          bson_iter_bson (&iter, &expected);
-         bool is_match = test_check_log_message (test, &expected, message, error);
+         bool is_match = test_check_log_message (&expected, message, error);
          bson_destroy (&expected);
          if (is_match) {
             return true;
@@ -1615,8 +1612,7 @@ test_check_expected_log_messages_for_client (test_t *test,
       bson_iter_init (&expected_message_iter, expected_messages) && bson_iter_next (&expected_message_iter);
 
    while (actual_message_iter || expected_message_iter_ok) {
-      if (actual_message_iter &&
-          test_log_message_should_be_ignored (test, actual_message_iter, ignore_messages, error)) {
+      if (actual_message_iter && test_log_message_should_be_ignored (actual_message_iter, ignore_messages, error)) {
          MONGOC_DEBUG ("log message ignored, %s", tmp_json (actual_message_iter->message));
          actual_message_iter = actual_message_iter->next;
          continue;
@@ -1640,7 +1636,7 @@ test_check_expected_log_messages_for_client (test_t *test,
       }
       bson_t expected_message;
       bson_iter_bson (&expected_message_iter, &expected_message);
-      bool is_match = test_check_log_message (test, &expected_message, actual_message_iter, error);
+      bool is_match = test_check_log_message (&expected_message, actual_message_iter, error);
       MONGOC_DEBUG ("log message check %s %s, expected: %s, actual: %s",
                     is_match ? "MATCHED" : "FAILED",
                     error && !is_match ? error->message : "",

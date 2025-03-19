@@ -10,9 +10,6 @@
 #include <mongoc/mongoc-errno-private.h>
 #include "test-libmongoc.h"
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "async-test"
-
 #define TIMEOUT 10000 /* milliseconds */
 #define NSERVERS 10
 

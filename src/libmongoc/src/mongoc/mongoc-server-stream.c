@@ -19,9 +19,6 @@
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "server-stream"
-
 mongoc_server_stream_t *
 mongoc_server_stream_new (const mongoc_topology_description_t *td,
                           mongoc_server_description_t *sd,

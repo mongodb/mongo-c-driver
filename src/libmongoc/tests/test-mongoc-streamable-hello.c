@@ -11,9 +11,6 @@
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-topology-description-private.h>
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "streamable-hello"
-
 #define TV1 "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
 #define TV2 "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }"
 

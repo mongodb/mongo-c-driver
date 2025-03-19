@@ -29,10 +29,6 @@
 #include <mongoc/mongoc-trace-private.h>
 
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "gridfs_file_list"
-
-
 mongoc_gridfs_file_list_t *
 _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs, const bson_t *query, uint32_t limit)
 {

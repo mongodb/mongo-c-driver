@@ -28,15 +28,11 @@
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-topology-scanner-private.h>
-#include <mongoc/mongoc-log.h>
 #include <mongoc/utlist.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-stream-tls.h>
 #endif
-
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "async"
 
 typedef mongoc_async_cmd_result_t (*_mongoc_async_cmd_phase_t) (mongoc_async_cmd_t *cmd);
 
