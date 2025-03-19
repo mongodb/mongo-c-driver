@@ -4766,6 +4766,23 @@ test_bulk_write_set_client_updates_operation_id_when_client_changes (void)
    mock_server_destroy (mock_server);
 }
 
+static void
+test_multiple_execution (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = get_test_collection (client, "test_multiple_execution");
+   bson_error_t error;
+   mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation (coll, true, NULL);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{}"));
+   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
+   ASSERT (!mongoc_bulk_operation_execute (bulk, NULL, &error));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "bulk write already executed");
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -4944,4 +4961,5 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/set_client_updates_operation_id_when_client_changes",
                                 test_bulk_write_set_client_updates_operation_id_when_client_changes);
+   TestSuite_AddLive (suite, "/BulkOperation/multiple_execution", test_multiple_execution);
 }
