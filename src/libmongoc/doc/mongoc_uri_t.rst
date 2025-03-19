@@ -122,9 +122,55 @@ Authentication Options
 Constant                                   Key                               Description
 ========================================== ================================= =========================================================================================================================================================================================================================
 MONGOC_URI_AUTHMECHANISM                   authmechanism                     Specifies the mechanism to use when authenticating as the provided user. See `Authentication <authentication_>`_ for supported values.
-MONGOC_URI_AUTHMECHANISMPROPERTIES         authmechanismproperties           Certain authentication mechanisms have additional options that can be configured. These options should be provided as comma separated option_key:option_value pair and provided as authMechanismProperties. Specifying the same option_key multiple times has undefined behavior.
-MONGOC_URI_AUTHSOURCE                      authsource                        The authSource defines the database that should be used to authenticate to. It is unnecessary to provide this option the database name is the same as the database used in the URI.
+MONGOC_URI_AUTHMECHANISMPROPERTIES         authmechanismproperties           Additional properties for the specified mechanism using key-value pair format, e.g. ``key1:value1,key2:value2``.
+MONGOC_URI_AUTHSOURCE                      authsource                        The name of the database to which authentication commands are sent or ``$external`` depending on the specified mechanism. Overrides the auth database in the URI when applicable.
 ========================================== ================================= =========================================================================================================================================================================================================================
+
+.. _authentication_mechanism_properties:
+
+Mechanism Properties
+~~~~~~~~~~~~~~~~~~~~
+
+The following properties may be specified as key-value pairs for the ``MONGOC_URI_AUTHMECHANISMPROPERTIES`` option.
+
+These properties may only be specified when the corresponding authentication mechanism is also specified.
+
+MONGODB-OIDC
+^^^^^^^^^^^^
+
+============== =========================================================================================
+Key            Value
+============== =========================================================================================
+ENVIRONMENT    The name of a built-in OIDC provider integration. Must be one of ["azure", "gcp", "k8s"].
+TOKEN_RESOURCE The URI of the target resource. ``ENVIRONMENT`` must be one of ["azure", "gcp"].
+============== =========================================================================================
+
+.. warning::
+
+  The value of the ``TOKEN_RESOURCE`` property MUST NOT contain the comma character "," when specified as a connection string query option.
+  Any commas in the value MUST be percent-encoded (as "%2C") to avoid being interpreted as a key-value pair delimiter.
+  However, the value MAY contain the colon character ":", as only the first colon is interpreted as a key-value delimiter.
+
+GSSAPI
+^^^^^^
+
+====================== ===================================================================================================================================================================================================================================
+Key                    Value
+====================== ===================================================================================================================================================================================================================================
+SERVICE_NAME           Optional. Defaults to "mongodb".
+CANONICALIZE_HOST_NAME Optional. Must be one of ["false", "true"]. "false" performs no canonicalization (aka "none"). "true" performs a forward DNS lookup and then a reverse lookup on that value to canonicalize the hostname (aka "forwardAndReverse").
+SERVICE_REALM          Optional. May be needed for cross-realm authentication where the user and service exist in different realms.
+SERVICE_HOST           Optional. May be needed to use a service host that differs from the initial role.
+====================== ===================================================================================================================================================================================================================================
+
+MONGODB-AWS
+^^^^^^^^^^^
+
+=========== ====================================================================================
+Key         Value
+=========== ====================================================================================
+MONGODB-AWS Optional. An AWS session token to use for authentication with temporary credentials.
+=========== ====================================================================================
 
 Deprecated Mechanism Property Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
