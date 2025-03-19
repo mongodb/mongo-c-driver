@@ -25,7 +25,7 @@ Unreleased (2.0.0)
 * `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
   * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
   * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
-* `mongoc_bulk_operation_execute` on the same `mongoc_bulk_operation_t` repeatedly is an error. Previously this was only discouraged in documentation.
+* Calling `mongoc_bulk_operation_execute` on the same `mongoc_bulk_operation_t` repeatedly is an error. Previously this was only discouraged in documentation.
 
 ## Removals
 
