@@ -44,6 +44,7 @@ Unreleased (2.0.0)
     * The associated Windows-only option `CYRUS_PLUGIN_PATH_PREFIX` is removed.
 * Support for the deprecated `minPoolSize` URI option is removed along with associated API: `MONGOC_URI_MINPOOLSIZE` and `mongoc_client_pool_min_size`.
 * Support for LibreSSL (the CMake option `ENABLE_SSL=LIBRESSL`) is removed. Associated API is removed (`MONGOC_ENABLE_SSL_LIBRESSL` and  `mongoc_stream_tls_libressl_new`).
+* The deprecated CMake option `ENABLE_AUTOMATIC_INIT_AND_CLEANUP` is removed. See [Initialization and cleanup](https://mongoc.org/libmongoc/1.30.2/init-cleanup.html) for expected use of `mongoc_init()` and `mongoc_cleanup()`.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
