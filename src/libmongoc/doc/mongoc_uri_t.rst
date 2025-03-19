@@ -126,16 +126,17 @@ MONGOC_URI_AUTHMECHANISMPROPERTIES         authmechanismproperties           Cer
 MONGOC_URI_AUTHSOURCE                      authsource                        The authSource defines the database that should be used to authenticate to. It is unnecessary to provide this option the database name is the same as the database used in the URI.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
-Mechanism Properties
-~~~~~~~~~~~~~~~~~~~~
+Deprecated Mechanism Property Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-========================================== ================================= =========================================================================================================================================================================================================================
-Constant                                   Key                               Description
-========================================== ================================= =========================================================================================================================================================================================================================
-MONGOC_URI_CANONICALIZEHOSTNAME            canonicalizehostname              Use the canonical hostname of the service, rather than its configured alias, when authenticating with Cyrus-SASL Kerberos.
-MONGOC_URI_GSSAPISERVICENAME               gssapiservicename                 Use alternative service name. The default is ``mongodb``.
-========================================== ================================= =========================================================================================================================================================================================================================
+The following options have been deprecated and may be removed from future releases of libmongoc.
 
+========================================== ================================= ==================================================================== =======================
+Constant                                   Key                               Deprecated For                                                       Key
+========================================== ================================= ==================================================================== =======================
+MONGOC_URI_CANONICALIZEHOSTNAME            canonicalizehostname              MONGOC_URI_AUTHMECHANISMPROPERTIES (CANONICALIZE_HOST_NAME)          authmechanismproperties
+MONGOC_URI_GSSAPISERVICENAME               gssapiservicename                 MONGOC_URI_AUTHMECHANISMPROPERTIES (SERVICE_NAME)                    authmechanismproperties
+========================================== ================================= ==================================================================== =======================
 
 .. _tls_options:
 
