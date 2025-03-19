@@ -1474,6 +1474,7 @@ test_counters_auth_pooled_op_msg (void *context)
 void
 test_counters_install (TestSuite *suite)
 {
+   BSON_UNUSED (suite);
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    TestSuite_AddFull (suite,
                       "/counters/op_msg",
