@@ -117,10 +117,6 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE);
 #endif
 
-#ifdef MONGOC_NO_AUTOMATIC_GLOBALS
-   _set_bit (bf, byte_count, MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS);
-#endif
-
 #ifdef MONGOC_EXPERIMENTAL_FEATURES
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES);
 #endif
@@ -536,7 +532,7 @@ _mongoc_handshake_cleanup (void)
    _free_driver_info (h);
    _free_platform_string (h);
    _free_env_info (h);
-   *h = (mongoc_handshake_t){0};
+   *h = (mongoc_handshake_t) {0};
 
    bson_mutex_destroy (&gHandshakeLock);
 }

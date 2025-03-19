@@ -43,11 +43,6 @@
 #include <mongoc/mongoc-ocsp-cache-private.h>
 #endif
 
-#ifndef MONGOC_NO_AUTOMATIC_GLOBALS
-#pragma message("Configure the driver with ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF.\
- Automatic cleanup is deprecated and will be removed in version 2.0.")
-#endif
-
 // CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
 #if defined(MONGOC_ENABLE_SASL_CYRUS) && defined(__APPLE__)
 BEGIN_IGNORE_DEPRECATIONS
@@ -203,29 +198,6 @@ mongoc_cleanup (void)
    static bson_once_t once = BSON_ONCE_INIT;
    bson_once (&once, _mongoc_do_cleanup);
 }
-
-/*
- * On GCC, just use __attribute__((constructor)) to perform initialization
- * automatically for the application.
- */
-#if defined(__GNUC__) && !defined(MONGOC_NO_AUTOMATIC_GLOBALS)
-static void
-_mongoc_init_ctor (void) __attribute__ ((constructor));
-static void
-_mongoc_init_ctor (void)
-{
-   mongoc_init ();
-}
-
-static void
-_mongoc_init_dtor (void) __attribute__ ((destructor));
-static void
-_mongoc_init_dtor (void)
-{
-   bson_mem_restore_vtable ();
-   mongoc_cleanup ();
-}
-#endif
 
 // CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
 #if defined(MONGOC_ENABLE_SASL_CYRUS) && defined(__APPLE__)
