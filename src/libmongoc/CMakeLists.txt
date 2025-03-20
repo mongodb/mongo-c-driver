@@ -380,12 +380,6 @@ add_feature_info(
    "authenticate with MongoDB servers using SASL: “Simple Authentication and Security Layer” (${SASL_BACKEND})"
 )
 
-if (ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
-   set (MONGOC_NO_AUTOMATIC_GLOBALS 0)
-else ()
-   set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
-endif ()
-
 if (WIN32)
    SET (CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
 else ()
