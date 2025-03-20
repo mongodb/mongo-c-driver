@@ -733,11 +733,18 @@ mongoc_uri_option_is_int64 (const char *key)
 bool
 mongoc_uri_option_is_bool (const char *key)
 {
-   return !strcasecmp (key, MONGOC_URI_CANONICALIZEHOSTNAME) || !strcasecmp (key, MONGOC_URI_DIRECTCONNECTION) ||
-          !strcasecmp (key, MONGOC_URI_JOURNAL) || !strcasecmp (key, MONGOC_URI_RETRYREADS) ||
-          !strcasecmp (key, MONGOC_URI_RETRYWRITES) || !strcasecmp (key, MONGOC_URI_SAFE) ||
-          !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTRYONCE) || !strcasecmp (key, MONGOC_URI_TLS) ||
-          !strcasecmp (key, MONGOC_URI_TLSINSECURE) || !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
+   // CDRIVER-5933
+   if (!strcasecmp (key, MONGOC_URI_CANONICALIZEHOSTNAME)) {
+      MONGOC_WARNING (MONGOC_URI_CANONICALIZEHOSTNAME " is deprecated, use " MONGOC_URI_AUTHMECHANISMPROPERTIES
+                                                      " with CANONICALIZE_HOST_NAME instead");
+      return true;
+   }
+
+   return !strcasecmp (key, MONGOC_URI_DIRECTCONNECTION) || !strcasecmp (key, MONGOC_URI_JOURNAL) ||
+          !strcasecmp (key, MONGOC_URI_RETRYREADS) || !strcasecmp (key, MONGOC_URI_RETRYWRITES) ||
+          !strcasecmp (key, MONGOC_URI_SAFE) || !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTRYONCE) ||
+          !strcasecmp (key, MONGOC_URI_TLS) || !strcasecmp (key, MONGOC_URI_TLSINSECURE) ||
+          !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
           !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) || !strcasecmp (key, MONGOC_URI_LOADBALANCED) ||
@@ -1117,7 +1124,13 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
             MONGOC_WARNING ("authMechanismProperties SERVICE_NAME already set, "
                             "ignoring '%s'",
                             key);
-         } else if (!mongoc_uri_parse_auth_mechanism_properties (uri, tmp)) {
+         }
+
+         // CDRIVER-5933
+         MONGOC_WARNING (MONGOC_URI_GSSAPISERVICENAME " is deprecated, use " MONGOC_URI_AUTHMECHANISMPROPERTIES
+                                                      " with SERVICE_NAME instead");
+
+         if (!mongoc_uri_parse_auth_mechanism_properties (uri, tmp)) {
             bson_free (tmp);
             goto UNSUPPORTED_VALUE;
          }
