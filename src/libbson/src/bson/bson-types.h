@@ -274,7 +274,6 @@ typedef enum {
  *--------------------------------------------------------------------------
  */
 
-BSON_ALIGNED_BEGIN (8)
 typedef struct _bson_value_t {
    bson_type_t value_type;
    int32_t padding;
@@ -328,7 +327,7 @@ typedef struct _bson_value_t {
       } v_symbol;
       bson_decimal128_t v_decimal128;
    } value;
-} bson_value_t BSON_ALIGNED_END (8);
+} bson_value_t;
 
 
 /**
