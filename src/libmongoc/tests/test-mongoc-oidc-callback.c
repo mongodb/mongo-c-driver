@@ -1,0 +1,143 @@
+/*
+ * Copyright 2009-present MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <mongoc/mongoc-oidc-callback-private.h>
+
+//
+
+#include "test-conveniences.h"
+#include "TestSuite.h"
+
+static mongoc_oidc_credential_t *
+_test_oidc_callback_fn_cb (mongoc_oidc_callback_params_t *params)
+{
+   BSON_UNUSED (params);
+   test_error ("should not be invoked");
+}
+
+static void
+test_oidc_callback_new (void)
+{
+   mongoc_oidc_callback_t *const callback = mongoc_oidc_callback_new ();
+
+   // Initial values.
+   {
+      ASSERT (!mongoc_oidc_callback_get_fn (callback));
+      ASSERT (!mongoc_oidc_callback_get_user_data (callback));
+   }
+
+   // Normal values.
+   {
+      int user_data = 0;
+
+      mongoc_oidc_callback_set_fn (callback, &_test_oidc_callback_fn_cb);
+      mongoc_oidc_callback_set_user_data (callback, &user_data);
+
+      ASSERT (mongoc_oidc_callback_get_fn (callback) == &_test_oidc_callback_fn_cb);
+      ASSERT (mongoc_oidc_callback_get_user_data (callback) == &user_data);
+   }
+
+   // "Reset" values.
+   {
+      mongoc_oidc_callback_set_fn (callback, NULL);
+      mongoc_oidc_callback_set_user_data (callback, NULL);
+
+      ASSERT (!mongoc_oidc_callback_get_fn (callback));
+      ASSERT (!mongoc_oidc_callback_get_user_data (callback));
+   }
+
+   mongoc_oidc_callback_destroy (callback);
+}
+
+static void
+test_oidc_callback_params (void)
+{
+   mongoc_oidc_callback_params_t *const params = mongoc_oidc_callback_params_new ();
+
+   // Initial values.
+   ASSERT_CMPINT64 (mongoc_oidc_callback_params_get_timeout (params), ==, 0);
+   ASSERT_CMPSTR (mongoc_oidc_callback_params_get_username (params), NULL);
+   ASSERT_CMPINT32 (mongoc_oidc_callback_params_get_version (params), ==, MONGOC_PRIVATE_OIDC_CALLBACK_API_VERSION);
+   ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
+   ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_error (params));
+
+   // Input parameters.
+   {
+      mongoc_oidc_callback_params_set_timeout (params, 123);
+      mongoc_oidc_callback_params_set_timeout (params, 123);
+   }
+
+   // Out parameters.
+   {
+      mongoc_oidc_callback_params_cancel_with_timeout (params);
+      mongoc_oidc_callback_params_cancel_with_error (params);
+
+      ASSERT (mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
+      ASSERT (mongoc_oidc_callback_params_get_cancelled_with_error (params));
+   }
+
+   // "Reset" values.
+   {
+      mongoc_oidc_callback_params_reset (params);
+
+      ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
+      ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_error (params));
+   }
+
+   mongoc_oidc_callback_params_destroy (params);
+}
+
+static void
+test_oidc_credential (void)
+{
+   mongoc_oidc_credential_t *const cred = mongoc_oidc_credential_new ();
+
+   // Default values.
+   ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), NULL);
+   ASSERT (!mongoc_oidc_credential_get_expires_in (cred));
+
+   // Normal values.
+   {
+      {
+         const char access_token[] = "token"; // Ensure a copy is made.
+         mongoc_oidc_credential_set_access_token (cred, access_token);
+      }
+      mongoc_oidc_credential_set_expires_in (cred, 123);
+
+      ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), "token");
+      ASSERT (mongoc_oidc_credential_get_expires_in (cred));
+      ASSERT_CMPINT64 (*mongoc_oidc_credential_get_expires_in (cred), ==, 123);
+   }
+
+   // "Reset" values.
+   {
+      mongoc_oidc_credential_set_access_token (cred, NULL);
+      mongoc_oidc_credential_unset_expires_in (cred);
+
+      ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), NULL);
+      ASSERT (!mongoc_oidc_credential_get_expires_in (cred));
+   }
+
+   mongoc_oidc_credential_destroy (cred);
+}
+
+void
+test_mongoc_oidc_callback_install (TestSuite *suite)
+{
+   TestSuite_Add (suite, "/oidc/callback/new", test_oidc_callback_new);
+   TestSuite_Add (suite, "/oidc/callback/params", test_oidc_callback_params);
+   TestSuite_Add (suite, "/oidc/callback/credential", test_oidc_credential);
+}

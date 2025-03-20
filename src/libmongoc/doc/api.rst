@@ -42,6 +42,7 @@ API Reference
    mongoc_index_opt_wt_t
    mongoc_insert_flags_t
    mongoc_iovec_t
+   mongoc_oidc_callback_t
    mongoc_optional_t
    mongoc_query_flags_t
    mongoc_rand
