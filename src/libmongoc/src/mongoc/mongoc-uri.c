@@ -1315,6 +1315,10 @@ _finalize_auth_username (const char *username,
 
    case _mongoc_uri_finalize_allowed:
    default:
+      if (username && strlen (username) == 0u) {
+         MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires a non-empty username", mechanism);
+         return false;
+      }
       break;
    }
 

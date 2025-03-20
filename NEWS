@@ -9,6 +9,7 @@ Unreleased (2.0.0)
 * `bson_oid_init_sequence` is removed. Use `bson_oid_init` instead.
 * `mongoc_server_description_host` changes the return type from `mongoc_host_list_t *` to `const mongoc_host_list_t *`.
 * URI authentication credentials validation (only applicable during creation of a new `mongoc_uri_t` object from a connection string):
+  * The requirement that a username is non-empty when specified is now enforced regardless of authentication mechanism.
   * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
   * `authSource` is now validated and returns a client error for invalid or unsupported values for the specified `authMechanism`.
   * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
