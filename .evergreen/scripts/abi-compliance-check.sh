@@ -16,7 +16,7 @@ today=$(date +%Y%m%d)
 
 declare newest current
 current="$(cat VERSION_CURRENT)"
-newest="$current-$today+git$head_commit"
+newest=$(cat etc/prior_version.txt)
 
 declare working_dir
 working_dir="$(pwd)"
