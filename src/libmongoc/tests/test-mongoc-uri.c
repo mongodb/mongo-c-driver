@@ -323,10 +323,10 @@ _auth_mechanism_password_prohibited (const char *mechanism, const char *user_pre
    {
       bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
-         tmp_str ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=%s%s", mechanism, uri_suffix), &error);
+         tmp_str ("mongodb://%s@localhost/?" MONGOC_URI_AUTHMECHANISM "=%s%s", user_prefix, mechanism, uri_suffix), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
       ASSERT_OR_PRINT (uri, error);
-      ASSERT_CMPSTR (mongoc_uri_get_username (uri), NULL);
+      ASSERT_CMPSTR (mongoc_uri_get_username (uri), user_prefix);
       ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "$external");
       ASSERT_CMPSTR (mongoc_uri_get_password (uri), NULL);
       ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), mechanism);
