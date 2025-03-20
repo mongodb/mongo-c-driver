@@ -448,13 +448,13 @@ typedef struct {
 
 #define BSON_ERROR_BUFFER_SIZE 503
 
-BSON_ALIGNED_BEGIN (8)
+BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) // Aligned for backwards-compatibility.
 typedef struct _bson_error_t {
    uint32_t domain;
    uint32_t code;
    char message[BSON_ERROR_BUFFER_SIZE];
    uint8_t reserved; // For internal use only!
-} bson_error_t BSON_ALIGNED_END (8);
+} bson_error_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
 
 
 BSON_STATIC_ASSERT2 (error_t, sizeof (bson_error_t) == 512);
