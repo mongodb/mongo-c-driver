@@ -319,10 +319,9 @@ _auth_mechanism_password_prohibited (const char *mechanism, const char *user_pre
    BSON_ASSERT_PARAM (mechanism);
    BSON_ASSERT_PARAM (user_prefix);
 
-   bson_error_t error;
-
    // None.
    {
+      bson_error_t error;
       mongoc_uri_t *const uri = mongoc_uri_new_with_error (
          tmp_str ("mongodb://localhost/?" MONGOC_URI_AUTHMECHANISM "=%s%s", mechanism, uri_suffix), &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
