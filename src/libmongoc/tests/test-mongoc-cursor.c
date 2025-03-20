@@ -803,78 +803,6 @@ test_kill_cursors_pooled (void)
 }
 
 
-/* Test explicit mongoc_client_kill_cursor. */
-static void
-_test_client_kill_cursor (bool has_primary)
-{
-   mock_rs_t *rs;
-   mongoc_client_t *client;
-   mongoc_read_prefs_t *read_prefs;
-   bson_error_t error;
-   future_t *future;
-   request_t *request;
-
-   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN,
-                                 has_primary, /* maybe a primary*/
-                                 1,           /* definitely a secondary */
-                                 0);          /* no arbiter */
-   mock_rs_run (rs);
-   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-
-   /* make client open a connection - it won't open one to kill a cursor */
-   future = future_client_command_simple (client, "admin", tmp_bson ("{'foo': 1}"), read_prefs, NULL, &error);
-
-   request = mock_rs_receives_msg (rs,
-                                   MONGOC_MSG_NONE,
-                                   tmp_bson ("{'$db': 'admin',"
-                                             " '$readPreference': {'mode': 'secondary'},"
-                                             " 'foo': 1}"));
-
-   reply_to_request_simple (request, "{'ok': 1}");
-   ASSERT_OR_PRINT (future_get_bool (future), error);
-   request_destroy (request);
-   future_destroy (future);
-
-   future = future_client_kill_cursor (client, 123);
-   mock_rs_set_request_timeout_msec (rs, 100);
-
-   /* we don't pass namespace so client always sends legacy OP_KILLCURSORS */
-   request = mock_rs_receives_kill_cursors (rs, 123);
-
-   if (has_primary) {
-      BSON_ASSERT (request);
-
-      /* weird but true. see mongoc_client_kill_cursor's documentation */
-      BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
-
-      request_destroy (request); /* server has no reply to OP_KILLCURSORS */
-   } else {
-      /* TODO: catch and check warning */
-      BSON_ASSERT (!request);
-   }
-
-   future_wait (future); /* no return value */
-   future_destroy (future);
-   mongoc_read_prefs_destroy (read_prefs);
-   mongoc_client_destroy (client);
-   mock_rs_destroy (rs);
-}
-
-static void
-test_client_kill_cursor_with_primary (void)
-{
-   _test_client_kill_cursor (true);
-}
-
-
-static void
-test_client_kill_cursor_without_primary (void)
-{
-   _test_client_kill_cursor (false);
-}
-
-
 static int
 count_docs (mongoc_cursor_t *cursor)
 {
@@ -2527,9 +2455,6 @@ test_cursor_install (TestSuite *suite)
                       test_kill_cursor_live);
    TestSuite_AddMockServerTest (suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_AddMockServerTest (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
-   TestSuite_AddMockServerTest (suite, "/Cursor/client_kill_cursor/with_primary", test_client_kill_cursor_with_primary);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/client_kill_cursor/without_primary", test_client_kill_cursor_without_primary);
    TestSuite_AddLive (suite, "/Cursor/empty_collection", test_cursor_empty_collection);
    TestSuite_AddLive (suite, "/Cursor/new_from_agg", test_cursor_new_from_aggregate);
    TestSuite_AddLive (suite, "/Cursor/new_from_agg_no_initial", test_cursor_new_from_aggregate_no_initial);

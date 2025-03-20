@@ -201,11 +201,6 @@ future_functions = [
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
-    future_function("void",
-                    "mongoc_client_kill_cursor",
-                    [param("mongoc_client_ptr", "client"),
-                     param("int64_t", "cursor_id")]),
-
     future_function("mongoc_change_stream_ptr",
                     "mongoc_client_watch",
                     [param("mongoc_client_ptr", "client"),
@@ -573,7 +568,7 @@ def future_function_name(fn):
         # E.g. future_cursor_next().
         return 'future' + fn.name[len('mongoc'):]
     else:
-        # E.g. future__mongoc_client_kill_cursor().
+        # E.g. future_mongoc_client_command_simple().
         return 'future_' + fn.name
 
 
