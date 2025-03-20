@@ -368,7 +368,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" .evergreen/scripts/compile.sh
+        env SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-nossl
   tags:
@@ -1311,7 +1311,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
+        env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh
   - func: prepare-kerberos
   - func: run auth tests
     vars:

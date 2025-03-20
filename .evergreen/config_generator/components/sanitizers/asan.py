@@ -10,7 +10,6 @@ def variants():
         'ASAN': 'on',
         'CFLAGS': '-fno-omit-frame-pointer',
         'CHECK_LOG': 'ON',
-        'EXTRA_CONFIGURE_FLAGS': '-DENABLE_EXTRA_ALIGNMENT=OFF',
         'SANITIZE': 'address,undefined',
     }
 

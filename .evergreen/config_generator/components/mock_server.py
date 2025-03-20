@@ -42,7 +42,6 @@ def variants():
                 'CC': 'gcc',
                 'ASAN': 'on',
                 'CFLAGS': '-fno-omit-frame-pointer',
-                'EXTRA_CONFIGURE_FLAGS': '-DENABLE_EXTRA_ALIGNMENT=OFF',
                 'SANITIZE': 'address,undefined',
             }
         ),
