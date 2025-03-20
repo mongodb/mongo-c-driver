@@ -912,38 +912,6 @@ test_client_cmd_op_ids (void)
 }
 
 
-static void
-test_killcursors_deprecated (void *unused)
-{
-   cmd_test_t test;
-   mongoc_client_t *client;
-   bool r;
-   bson_error_t error;
-
-   BSON_UNUSED (unused);
-
-   cmd_test_init (&test);
-   client = test_framework_new_default_client ();
-
-   /* connect */
-   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-
-   ASSERT_OR_PRINT (r, error);
-   set_cmd_test_callbacks (client, (void *) &test);
-
-   /* deprecated function without "db" or "collection", skips APM. This sends
-    * OP_KILL_CURSORS. */
-   mongoc_client_kill_cursor (client, 123);
-
-   ASSERT_CMPINT (0, ==, test.started_calls);
-   ASSERT_CMPINT (0, ==, test.succeeded_calls);
-   ASSERT_CMPINT (0, ==, test.failed_calls);
-
-   mongoc_client_destroy (client);
-   cmd_test_cleanup (&test);
-}
-
-
 typedef struct {
    int failed_calls;
    bson_t reply;
@@ -1263,12 +1231,6 @@ test_command_monitoring_install (TestSuite *suite)
       suite, "/command_monitoring/operation_id/query/pooled/cmd", test_query_operation_id_pooled_cmd);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd/op_ids", test_client_cmd_op_ids);
-   TestSuite_AddFull (suite,
-                      "/command_monitoring/killcursors_deprecated",
-                      test_killcursors_deprecated,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddMockServerTest (suite, "/command_monitoring/failed_reply_mock", test_command_failed_reply_mock);
    TestSuite_AddMockServerTest (suite, "/command_monitoring/failed_reply_hangup", test_command_failed_reply_hangup);
    TestSuite_AddMockServerTest (suite, "/command_monitoring/service_id/loadbalanced", test_service_id_loadbalanced);

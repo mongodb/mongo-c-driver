@@ -1189,9 +1189,7 @@ test_handshake_platform_config (void)
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE));
 #endif
 
-#ifdef MONGOC_NO_AUTOMATIC_GLOBALS
-   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS));
-#endif
+   BSON_ASSERT (!_get_bit (config_str, MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS_UNUSED)); // Flag was removed.
 
 #ifdef MONGOC_EXPERIMENTAL_FEATURES
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES));

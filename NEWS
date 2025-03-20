@@ -47,6 +47,7 @@ Unreleased (2.0.0)
     * The associated Windows-only option `CYRUS_PLUGIN_PATH_PREFIX` is removed.
 * Support for the deprecated `minPoolSize` URI option is removed along with associated API: `MONGOC_URI_MINPOOLSIZE` and `mongoc_client_pool_min_size`.
 * Support for LibreSSL (the CMake option `ENABLE_SSL=LIBRESSL`) is removed. Associated API is removed (`MONGOC_ENABLE_SSL_LIBRESSL` and  `mongoc_stream_tls_libressl_new`).
+* The deprecated CMake option `ENABLE_AUTOMATIC_INIT_AND_CLEANUP` is removed. See [Initialization and cleanup](https://mongoc.org/libmongoc/1.30.2/init-cleanup.html) for expected use of `mongoc_init()` and `mongoc_cleanup()`.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
@@ -63,6 +64,22 @@ Instead, the names must be prefixed with the parent directory: `mongoc/mongoc.h`
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
 ```
+
+### `mongoc_client_kill_cursor`
+
+`mongoc_client_kill_cursor` is removed. It did not accept a server identifier. It was only reliable when connected to a single server.
+
+Sending [killCursors](https://www.mongodb.com/docs/manual/reference/command/killCursors/) is not typically needed. `mongoc_cursor_t` manages the cursor lifetime. If needed, use a generic command helper to manually send a `killCursors` command:
+
+```c
+bson_t *cmd = BCON_NEW ("killCursors", "coll", "cursors", "[", BCON_INT64 (cursor_id), "]");
+bool ok = mongoc_client_command_simple_with_server_id (client, "db", cmd, NULL, server_id, NULL, &error);
+if (!ok) {
+  printf ("Failed to send 'killCursors': %s\n", error.message);
+}
+bson_destroy (cmd);
+```
+
 
 libmongoc 1.30.2
 ================
