@@ -15,7 +15,7 @@ head_commit=$(git rev-parse --revs-only --short=10 "HEAD^{commit}")
 today=$(date +%Y%m%d)
 
 declare newest current
-current="$(cat VERSION_CURRENT)"
+current="$(cat VERSION_CURRENT)-$today+git$head_commit"
 newest=$(cat etc/prior_version.txt)
 
 declare working_dir
