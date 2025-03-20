@@ -1124,15 +1124,15 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
             MONGOC_WARNING ("authMechanismProperties SERVICE_NAME already set, "
                             "ignoring '%s'",
                             key);
-         }
+         } else {
+            // CDRIVER-5933
+            MONGOC_WARNING (MONGOC_URI_GSSAPISERVICENAME " is deprecated, use " MONGOC_URI_AUTHMECHANISMPROPERTIES
+                                                         " with SERVICE_NAME instead");
 
-         // CDRIVER-5933
-         MONGOC_WARNING (MONGOC_URI_GSSAPISERVICENAME " is deprecated, use " MONGOC_URI_AUTHMECHANISMPROPERTIES
-                                                      " with SERVICE_NAME instead");
-
-         if (!mongoc_uri_parse_auth_mechanism_properties (uri, tmp)) {
-            bson_free (tmp);
-            goto UNSUPPORTED_VALUE;
+            if (!mongoc_uri_parse_auth_mechanism_properties (uri, tmp)) {
+               bson_free (tmp);
+               goto UNSUPPORTED_VALUE;
+            }
          }
          bson_free (tmp);
 
