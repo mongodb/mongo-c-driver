@@ -186,11 +186,6 @@ all_tasks = [
     CompileTask("debug-compile-compression-zlib", tags=["zlib", "compression"], compression="zlib"),
     CompileTask("debug-compile-compression-snappy", tags=["snappy", "compression"], compression="snappy"),
     CompileTask("debug-compile-compression-zstd", tags=["zstd", "compression"], compression="zstd"),
-    CompileTask(
-        "debug-compile-no-align",
-        tags=["debug-compile"],
-        compression="zlib",
-    ),
     CompileTask("debug-compile-nosasl-nossl", tags=["debug-compile", "nosasl", "nossl"], SSL="OFF"),
     CompileTask("debug-compile-lto", CFLAGS="-flto"),
     CompileTask("debug-compile-lto-thin", CFLAGS="-flto=thin"),
