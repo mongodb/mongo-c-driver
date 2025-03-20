@@ -1362,11 +1362,15 @@ test_mongoc_uri_functions (void)
    ASSERT_CMPSTR (mongoc_uri_get_auth_source (client->uri), "longer authsource that should work");
    mongoc_client_destroy (client);
 
-
+   capture_logs (true);
    uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=3"
                          "&" MONGOC_URI_JOURNAL "=true"
                          "&" MONGOC_URI_WTIMEOUTMS "=42"
                          "&" MONGOC_URI_CANONICALIZEHOSTNAME "=false");
+   ASSERT_CAPTURED_LOG ("mongoc_uri_new",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        MONGOC_URI_CANONICALIZEHOSTNAME " is deprecated, use " MONGOC_URI_AUTHMECHANISMPROPERTIES
+                                                        " with CANONICALIZE_HOST_NAME instead");
 
    ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (uri, "serverselectiontimeoutms", 18), ==, 3);
    ASSERT (mongoc_uri_set_option_as_int32 (uri, "serverselectiontimeoutms", 18));
@@ -1410,7 +1414,6 @@ test_mongoc_uri_functions (void)
    mongoc_uri_destroy (uri);
 
    ASSERT (mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_JOURNAL, false));
-   ASSERT (!mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
    /* tls isn't set, return out fallback */
    ASSERT (mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_TLS, true));
    mongoc_client_destroy (client);
@@ -2932,6 +2935,10 @@ test_mongoc_uri_duplicates (void)
    ASSERT_CMPSTR (str, "b");
 
    RECREATE_URI (MONGOC_URI_CANONICALIZEHOSTNAME "=false&" MONGOC_URI_CANONICALIZEHOSTNAME "=true");
+   ASSERT_CAPTURED_LOG ("option: " MONGOC_URI_CANONICALIZEHOSTNAME,
+                        MONGOC_LOG_LEVEL_WARNING,
+                        MONGOC_URI_CANONICALIZEHOSTNAME " is deprecated, use " MONGOC_URI_AUTHMECHANISMPROPERTIES
+                                                        " with CANONICALIZE_HOST_NAME instead");
    ASSERT_LOG_DUPE (MONGOC_URI_CANONICALIZEHOSTNAME);
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_CANONICALIZEHOSTNAME, false));
 
@@ -2948,6 +2955,10 @@ test_mongoc_uri_duplicates (void)
 
    RECREATE_URI (MONGOC_URI_AUTHMECHANISM "=GSSAPI&" MONGOC_URI_GSSAPISERVICENAME "=a&" MONGOC_URI_GSSAPISERVICENAME
                                           "=b");
+   ASSERT_CAPTURED_LOG ("option: " MONGOC_URI_GSSAPISERVICENAME,
+                        MONGOC_LOG_LEVEL_WARNING,
+                        MONGOC_URI_GSSAPISERVICENAME " is deprecated, use " MONGOC_URI_AUTHMECHANISMPROPERTIES
+                                                     " with SERVICE_NAME instead");
    ASSERT_CAPTURED_LOG ("option: " MONGOC_URI_GSSAPISERVICENAME,
                         MONGOC_LOG_LEVEL_WARNING,
                         "Overwriting previously provided value for 'gssapiservicename'");
