@@ -342,7 +342,6 @@ typedef struct _bson_value_t {
  * This structure is safe to discard on the stack. No cleanup is necessary
  * after using it.
  */
-BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR)
 typedef struct {
    const uint8_t *raw; /* The raw buffer being iterated. */
    uint32_t len;       /* The length of raw. */
@@ -356,7 +355,7 @@ typedef struct {
    uint32_t next_off;  /* The offset of the next field. */
    uint32_t err_off;   /* The offset of the error. */
    bson_value_t value; /* Internal value for various state. */
-} bson_iter_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
+} bson_iter_t;
 
 
 /**
