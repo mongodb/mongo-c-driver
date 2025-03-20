@@ -136,6 +136,15 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
 
    BSON_ASSERT (uri);
 
+   extern bool mongoc_get_init_called (void);
+   if (!mongoc_get_init_called ()) {
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_NOT_READY,
+                         "Attempting to create client pool, but libmongoc not initialized. Call mongoc_init");
+      return NULL;
+   }
+
 #ifndef MONGOC_ENABLE_SSL
    if (mongoc_uri_get_tls (uri)) {
       _mongoc_set_error (error,

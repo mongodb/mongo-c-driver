@@ -130,14 +130,6 @@ future_client_read_write_command_with_opts (
 
 
 future_t *
-future_client_kill_cursor (
-
-   mongoc_client_ptr client,
-   int64_t cursor_id
-);
-
-
-future_t *
 future_client_watch (
 
    mongoc_client_ptr client,

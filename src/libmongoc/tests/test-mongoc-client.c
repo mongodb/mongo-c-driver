@@ -3795,6 +3795,52 @@ test_failure_to_auth (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_killCursors (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+   bson_error_t error;
+
+   mongoc_collection_drop (coll, NULL); // Ignore error.
+
+   // Insert two documents.
+   {
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &error), error);
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &error), error);
+   }
+
+   uint32_t server_id;
+   int64_t cursor_id;
+
+   // Create cursor.
+   {
+      // Use batchSize:1 so cursor is not exhausted (has non-zero cursor ID) after iterating first result.
+      mongoc_cursor_t *cursor =
+         mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
+      // Iterate cursor once to send initial `find` command and create server-side cursor.
+      const bson_t *got;
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      server_id = mongoc_cursor_get_server_id (cursor);
+      cursor_id = mongoc_cursor_get_id (cursor);
+      ASSERT_CMPINT64 (cursor_id, >, 0);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   // Code snippet for NEWS ... begin
+   bson_t *cmd = BCON_NEW ("killCursors", "coll", "cursors", "[", BCON_INT64 (cursor_id), "]");
+   bool ok = mongoc_client_command_simple_with_server_id (client, "db", cmd, NULL, server_id, NULL, &error);
+   if (!ok) {
+      printf ("Failed to send 'killCursors': %s\n", error.message);
+   }
+   bson_destroy (cmd);
+   // Code snippet for NEWS ... end
+
+   ASSERT_OR_PRINT (ok, error);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -3982,4 +4028,5 @@ test_client_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_server_ssl);
 #endif
+   TestSuite_AddLive (suite, "/Client/killCursors", test_killCursors);
 }

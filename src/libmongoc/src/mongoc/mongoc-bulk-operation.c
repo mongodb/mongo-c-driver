@@ -740,8 +740,8 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
    cluster = &bulk->client->cluster;
 
    if (bulk->executed) {
-      _mongoc_write_result_destroy (&bulk->result);
-      _mongoc_write_result_init (&bulk->result);
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "bulk write already executed");
+      GOTO (err);
    }
 
    bulk->executed = true;

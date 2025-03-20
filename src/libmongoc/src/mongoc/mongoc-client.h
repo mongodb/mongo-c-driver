@@ -120,11 +120,6 @@ mongoc_client_get_uri (const mongoc_client_t *client);
 MONGOC_EXPORT (void)
 mongoc_client_set_stream_initiator (mongoc_client_t *client, mongoc_stream_initiator_t initiator, void *user_data);
 
-
-BSON_DEPRECATED ("mongoc_client_kill_cursor is deprecated")
-MONGOC_EXPORT (void) mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id);
-
-
 MONGOC_EXPORT (bool)
 mongoc_client_command_simple (mongoc_client_t *client,
                               const char *db_name,
