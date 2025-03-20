@@ -13,7 +13,7 @@ libbson 2.0.0 (Unreleased)
 * Remove deprecated integral comparison interfaces: `bson_in_range_*` and `bson_cmp_*`.
 * Remove deprecated atomic and threading interfaces: `bson_atomic_*` and `bson_thrd_yield`.
 * The deprecated `ENABLE_EXTRA_ALIGNMENT` CMake option is removed.
-  * `bson_t` and `bson_iter_t` are now aligned to the size of a pointer.
+  * `bson_t` and `bson_iter_t` are now aligned to the size of a pointer instead of `128`.
   * `BSON_ALIGNED_BEGIN` and `BSON_ALIGNED_END` now unconditionally apply their requested alignment.
 
 
