@@ -10,7 +10,7 @@ mkdir abi-compliance/dumps
 
 declare head_commit today
 # The 10 digits of the current commit
-head_commit=$(git rev-parse --recv-only --short=10 "HEAD^{commit}")
+head_commit=$(git rev-parse --revs-only --short=10 "HEAD^{commit}")
 # The YYYYMMDD date
 today=$(date +%Y%m%d)
 
