@@ -20,7 +20,6 @@ CTestTestfile.cmake
 _build/
 dist_manifest.txt
 test-results.json
-VERSION_RELEASED
 *.pyc
 
 # Windows things
