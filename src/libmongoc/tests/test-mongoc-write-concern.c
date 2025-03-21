@@ -196,23 +196,9 @@ test_write_concern_fsync_and_journal_w1_and_validity (void)
    ASSERT (mongoc_write_concern_journal_is_set (write_concern));
    mongoc_write_concern_set_journal (write_concern, false);
 
-   /* w=-1 does not need GLE and is valid */
-   mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED);
-   ASSERT (!mongoc_write_concern_is_acknowledged (write_concern));
+   /* w=-1 is considered valid (server is expected to error) */
+   mongoc_write_concern_set_w (write_concern, -1);
    ASSERT (mongoc_write_concern_is_valid (write_concern));
-   ASSERT (mongoc_write_concern_journal_is_set (write_concern));
-
-   /* fsync=true needs GLE, but it conflicts with w=-1 */
-   mongoc_write_concern_set_fsync (write_concern, true);
-   ASSERT (mongoc_write_concern_is_acknowledged (write_concern));
-   ASSERT (!mongoc_write_concern_is_valid (write_concern));
-   ASSERT (mongoc_write_concern_journal_is_set (write_concern));
-
-   /* journal=true needs GLE, but it conflicts with w=-1 */
-   mongoc_write_concern_set_fsync (write_concern, false);
-   mongoc_write_concern_set_journal (write_concern, true);
-   ASSERT (mongoc_write_concern_is_acknowledged (write_concern));
-   ASSERT (mongoc_write_concern_journal_is_set (write_concern));
 
    /* fsync=true with w=default needs GLE and is valid */
    mongoc_write_concern_set_journal (write_concern, false);
@@ -311,7 +297,7 @@ test_write_concern_from_iterator (void)
    _test_write_concern_from_iterator ("{'writeConcern': {'w': 1}}", true, false);
    _test_write_concern_from_iterator ("{'writeConcern': {'j': true}}", true, false);
    _test_write_concern_from_iterator ("{'writeConcern': {'j': false}}", true, false);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': -1}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': -1}}", false, false);
    _test_write_concern_from_iterator ("{'writeConcern': {'w': -2}}", false, false);
    _test_write_concern_from_iterator ("{'writeConcern': {'w': -3}}", false, false);
    _test_write_concern_from_iterator ("{'writeConcern': {'w': -4}}", false, false);
