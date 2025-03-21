@@ -1520,7 +1520,7 @@ test_hello_on_unknown (void)
 
    client = mongoc_client_pool_pop (pool);
 
-   mongoc_client_set_stream_initiator (client, _initiator_fn, pool);
+   _mongoc_client_set_stream_initiator_single_or_pooled (client, _initiator_fn, pool);
 
    /* The other client marked the server as unknown after this client selected
     * the server and created a stream, but *before* constructing the initial
