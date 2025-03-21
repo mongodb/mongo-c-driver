@@ -37,8 +37,6 @@ n                                           Block until a write has been propaga
 Deprecations
 ------------
 
-The write concern ``MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED`` (value -1) is a deprecated synonym for ``MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED`` (value 0), and will be removed in the next major release.
-
 :symbol:`mongoc_write_concern_set_fsync` is deprecated.
 
 .. only:: html
