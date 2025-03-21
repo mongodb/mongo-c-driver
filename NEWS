@@ -27,6 +27,8 @@ Unreleased (2.0.0)
   * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
   * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
 * Calling `mongoc_bulk_operation_execute` on the same `mongoc_bulk_operation_t` repeatedly is an error. Previously this was only discouraged in documentation.
+* `mongoc_client_set_ssl_opts` now ignores a pooled `mongoc_client_t` and logs an error. Use `mongoc_client_pool_set_ssl_opts` to set TLS options on a `mongoc_client_pool_t` before popping any clients.
+* `mongoc_client_set_ssl_stream_initiator` now ignores a pooled `mongoc_client_t` and logs an error.
 
 ## Removals
 
