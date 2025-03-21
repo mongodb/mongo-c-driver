@@ -64,8 +64,8 @@ bson_json_opts_destroy (bson_json_opts_t *opts);
 BSON_EXPORT (void)
 bson_json_opts_set_outermost_array (bson_json_opts_t *opts, bool is_outermost_array);
 
-typedef ssize_t (*bson_json_reader_cb) (void *handle, uint8_t *buf, size_t count);
-typedef void (*bson_json_destroy_cb) (void *handle);
+typedef ssize_t (BSON_CALL *bson_json_reader_cb) (void *handle, uint8_t *buf, size_t count);
+typedef void (BSON_CALL *bson_json_destroy_cb) (void *handle);
 
 
 BSON_EXPORT (bson_json_reader_t *)

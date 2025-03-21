@@ -61,10 +61,10 @@ typedef enum {
  * libmongoc library. This is useful if you would like to show them in a
  * user interface or alternate storage.
  */
-typedef void (*mongoc_log_func_t) (mongoc_log_level_t log_level,
-                                   const char *log_domain,
-                                   const char *message,
-                                   void *user_data);
+typedef void (BSON_CALL *mongoc_log_func_t) (mongoc_log_level_t log_level,
+                                             const char *log_domain,
+                                             const char *message,
+                                             void *user_data);
 
 
 /**

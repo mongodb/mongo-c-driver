@@ -311,18 +311,19 @@ mongoc_apm_server_heartbeat_failed_get_awaited (const mongoc_apm_server_heartbea
  * callbacks
  */
 
-typedef void (*mongoc_apm_command_started_cb_t) (const mongoc_apm_command_started_t *event);
-typedef void (*mongoc_apm_command_succeeded_cb_t) (const mongoc_apm_command_succeeded_t *event);
-typedef void (*mongoc_apm_command_failed_cb_t) (const mongoc_apm_command_failed_t *event);
-typedef void (*mongoc_apm_server_changed_cb_t) (const mongoc_apm_server_changed_t *event);
-typedef void (*mongoc_apm_server_opening_cb_t) (const mongoc_apm_server_opening_t *event);
-typedef void (*mongoc_apm_server_closed_cb_t) (const mongoc_apm_server_closed_t *event);
-typedef void (*mongoc_apm_topology_changed_cb_t) (const mongoc_apm_topology_changed_t *event);
-typedef void (*mongoc_apm_topology_opening_cb_t) (const mongoc_apm_topology_opening_t *event);
-typedef void (*mongoc_apm_topology_closed_cb_t) (const mongoc_apm_topology_closed_t *event);
-typedef void (*mongoc_apm_server_heartbeat_started_cb_t) (const mongoc_apm_server_heartbeat_started_t *event);
-typedef void (*mongoc_apm_server_heartbeat_succeeded_cb_t) (const mongoc_apm_server_heartbeat_succeeded_t *event);
-typedef void (*mongoc_apm_server_heartbeat_failed_cb_t) (const mongoc_apm_server_heartbeat_failed_t *event);
+typedef void (BSON_CALL *mongoc_apm_command_started_cb_t) (const mongoc_apm_command_started_t *event);
+typedef void (BSON_CALL *mongoc_apm_command_succeeded_cb_t) (const mongoc_apm_command_succeeded_t *event);
+typedef void (BSON_CALL *mongoc_apm_command_failed_cb_t) (const mongoc_apm_command_failed_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_changed_cb_t) (const mongoc_apm_server_changed_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_opening_cb_t) (const mongoc_apm_server_opening_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_closed_cb_t) (const mongoc_apm_server_closed_t *event);
+typedef void (BSON_CALL *mongoc_apm_topology_changed_cb_t) (const mongoc_apm_topology_changed_t *event);
+typedef void (BSON_CALL *mongoc_apm_topology_opening_cb_t) (const mongoc_apm_topology_opening_t *event);
+typedef void (BSON_CALL *mongoc_apm_topology_closed_cb_t) (const mongoc_apm_topology_closed_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_heartbeat_started_cb_t) (const mongoc_apm_server_heartbeat_started_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_heartbeat_succeeded_cb_t) (
+   const mongoc_apm_server_heartbeat_succeeded_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_heartbeat_failed_cb_t) (const mongoc_apm_server_heartbeat_failed_t *event);
 
 /*
  * registering callbacks
