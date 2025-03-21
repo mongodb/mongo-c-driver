@@ -151,7 +151,6 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
         CFLAGS="-fno-omit-frame-pointer",
         COMPILE_LIBMONGOCRYPT="ON",
         CHECK_LOG="ON",
-        EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
         PATH="/usr/lib/llvm-3.8/bin:$PATH",
     )
     cls_tags: ClassVar[Sequence[str]] = ["client-side-encryption"]
@@ -187,12 +186,6 @@ all_tasks = [
     CompileTask("debug-compile-compression-zlib", tags=["zlib", "compression"], compression="zlib"),
     CompileTask("debug-compile-compression-snappy", tags=["snappy", "compression"], compression="snappy"),
     CompileTask("debug-compile-compression-zstd", tags=["zstd", "compression"], compression="zstd"),
-    CompileTask(
-        "debug-compile-no-align",
-        tags=["debug-compile"],
-        compression="zlib",
-        EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-    ),
     CompileTask("debug-compile-nosasl-nossl", tags=["debug-compile", "nosasl", "nossl"], SSL="OFF"),
     CompileTask("debug-compile-lto", CFLAGS="-flto"),
     CompileTask("debug-compile-lto-thin", CFLAGS="-flto=thin"),
@@ -697,7 +690,7 @@ all_tasks = chain(
                 func("find-cmake-latest"),
                 shell_mongoc(
                     """
-            env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
+            env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh
             """,
                     add_expansions_to_env=True,
                 ),

@@ -2949,7 +2949,6 @@ tasks:
           env:
             CC: gcc
             CFLAGS: -fno-omit-frame-pointer
-            EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF
             SSL: OPENSSL
           args:
             - -c
