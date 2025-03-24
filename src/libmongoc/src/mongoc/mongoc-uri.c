@@ -1408,23 +1408,6 @@ _finalize_auth_password (const char *password,
    return true;
 }
 
-static bool
-_finalize_auth_mechanism_properties_prohibited (const bson_t *mechanism_properties,
-                                                const char *mechanism,
-                                                bson_error_t *error)
-{
-   BSON_OPTIONAL_PARAM (mechanism_properties);
-   BSON_ASSERT_PARAM (mechanism);
-   BSON_OPTIONAL_PARAM (error);
-
-   if (mechanism_properties) {
-      MONGOC_URI_ERROR (error, "'%s' authentication mechanism does not accept mechanism properties", mechanism);
-      return false;
-   }
-
-   return true;
-}
-
 typedef struct __supported_mechanism_properties {
    const char *name;
    bson_type_t type;
