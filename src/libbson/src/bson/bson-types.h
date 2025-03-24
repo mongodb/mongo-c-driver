@@ -120,11 +120,11 @@ typedef struct _bson_json_opts_t bson_json_opts_t;
  *
  * This structure is meant to fit in two sequential 64-byte cachelines.
  */
-BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
+BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) typedef struct _bson_t {
    uint32_t flags;       /* Internal flags for the bson_t. */
    uint32_t len;         /* Length of BSON data. */
    uint8_t padding[120]; /* Padding for stack allocation. */
-} bson_t BSON_ALIGNED_END (128);
+} bson_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
 
 /**
  * BSON_INITIALIZER:
@@ -274,7 +274,6 @@ typedef enum {
  *--------------------------------------------------------------------------
  */
 
-BSON_ALIGNED_BEGIN (8)
 typedef struct _bson_value_t {
    bson_type_t value_type;
    int32_t padding;
@@ -328,7 +327,7 @@ typedef struct _bson_value_t {
       } v_symbol;
       bson_decimal128_t v_decimal128;
    } value;
-} bson_value_t BSON_ALIGNED_END (8);
+} bson_value_t;
 
 
 /**
@@ -342,7 +341,6 @@ typedef struct _bson_value_t {
  * This structure is safe to discard on the stack. No cleanup is necessary
  * after using it.
  */
-BSON_ALIGNED_BEGIN (128)
 typedef struct {
    const uint8_t *raw; /* The raw buffer being iterated. */
    uint32_t len;       /* The length of raw. */
@@ -356,7 +354,7 @@ typedef struct {
    uint32_t next_off;  /* The offset of the next field. */
    uint32_t err_off;   /* The offset of the error. */
    bson_value_t value; /* Internal value for various state. */
-} bson_iter_t BSON_ALIGNED_END (128);
+} bson_iter_t;
 
 
 /**
@@ -389,7 +387,6 @@ typedef struct {
  * You may pre-maturely stop the visitation of fields by returning true in your
  * visitor. Returning false will continue visitation to further fields.
  */
-BSON_ALIGNED_BEGIN (8)
 typedef struct {
    /* run before / after descending into a document */
    bool (*visit_before) (const bson_iter_t *iter, const char *key, void *data);
@@ -445,17 +442,17 @@ typedef struct {
                              void *data);
 
    void *padding[7];
-} bson_visitor_t BSON_ALIGNED_END (8);
+} bson_visitor_t;
 
 #define BSON_ERROR_BUFFER_SIZE 503
 
-BSON_ALIGNED_BEGIN (8)
+BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) // Aligned for backwards-compatibility.
 typedef struct _bson_error_t {
    uint32_t domain;
    uint32_t code;
    char message[BSON_ERROR_BUFFER_SIZE];
    uint8_t reserved; // For internal use only!
-} bson_error_t BSON_ALIGNED_END (8);
+} bson_error_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
 
 
 BSON_STATIC_ASSERT2 (error_t, sizeof (bson_error_t) == 512);

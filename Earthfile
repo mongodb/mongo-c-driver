@@ -39,7 +39,6 @@ build:
     RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
         -D ENABLE_MAINTAINER_FLAGS=ON \
         -D ENABLE_SHM_COUNTERS=ON \
-        -D ENABLE_EXTRA_ALIGNMENT=OFF \
         -D ENABLE_SASL=$(echo $sasl | __str upper) \
         -D ENABLE_SNAPPY=ON \
         -D ENABLE_SRV=ON \
