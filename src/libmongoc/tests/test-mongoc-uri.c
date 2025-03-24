@@ -239,6 +239,14 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA-1");
    mongoc_uri_destroy (uri);
 
+   /* should recognize many reserved characters in the userpass for backward compatibility */
+   uri = mongoc_uri_new ("mongodb://user?#[]:pass?#[]@localhost?" MONGOC_URI_AUTHMECHANISM "=SCRAM-SHA-1");
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_username (uri), "user?#[]");
+   ASSERT_CMPSTR (mongoc_uri_get_password (uri), "pass?#[]");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA-1");
+   mongoc_uri_destroy (uri);
+
    /* should fail on invalid escaped characters */
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://u%ser:pwd@localhost:27017");
@@ -3306,6 +3314,69 @@ test_uri_depr (void)
    }
 }
 
+// Additional slashes and commas for embedded URIs given to connection options.
+// e.g. authMechanismProperties=TOKEN_RESOURCE=mongodb://foo,ENVIRONMENT=azure
+//                                                     ^^   ^
+static void
+test_uri_uri_in_options (void)
+{
+#define TEST_QUERY MONGOC_URI_AUTHMECHANISMPROPERTIES "=TOKEN_RESOURCE:mongodb://token-resource,ENVIRONMENT:azure"
+#define TEST_PROPS "{'TOKEN_RESOURCE': 'mongodb://token-resource', 'ENVIRONMENT': 'azure'}"
+
+   capture_logs (true);
+
+   bson_error_t error;
+
+   // Simple.
+   {
+      mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://localhost?" TEST_QUERY, &error);
+      ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+      ASSERT_OR_PRINT (uri, error);
+      bson_t props;
+      ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+      ASSERT_MATCH (&props, TEST_PROPS);
+      mongoc_uri_destroy (uri);
+   }
+
+   // With auth database.
+   {
+      mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://localhost/db?" TEST_QUERY, &error);
+      ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+      ASSERT_OR_PRINT (uri, error);
+      bson_t props;
+      ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+      ASSERT_MATCH (&props, TEST_PROPS);
+      mongoc_uri_destroy (uri);
+   }
+
+   // With userinfo.
+   {
+      mongoc_uri_t *const uri = mongoc_uri_new_with_error ("mongodb://user:pass@localhost/db?" TEST_QUERY, &error);
+      ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+      ASSERT_OR_PRINT (uri, error);
+      bson_t props;
+      ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+      ASSERT_MATCH (&props, TEST_PROPS);
+      mongoc_uri_destroy (uri);
+   }
+
+   // With alternate hosts.
+   {
+      mongoc_uri_t *const uri =
+         mongoc_uri_new_with_error ("mongodb://user:pass@host1:27017,host2:27018/db?" TEST_QUERY, &error);
+      ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
+      ASSERT_OR_PRINT (uri, error);
+      bson_t props;
+      ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+      ASSERT_MATCH (&props, TEST_PROPS);
+      mongoc_uri_destroy (uri);
+   }
+
+   capture_logs (false);
+
+#undef TEST_QUERY
+}
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -3334,4 +3405,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
    TestSuite_Add (suite, "/Uri/parses_long_ipv6", test_parses_long_ipv6);
    TestSuite_Add (suite, "/Uri/depr", test_uri_depr);
+   TestSuite_Add (suite, "/Uri/uri_in_options", test_uri_uri_in_options);
 }
