@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <mongoc/mongoc-prelude.h>
+
 #ifndef MONGOC_OIDC_CALLBACK_PRIVATE_H
 #define MONGOC_OIDC_CALLBACK_PRIVATE_H
 
