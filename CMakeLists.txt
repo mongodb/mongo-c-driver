@@ -392,6 +392,7 @@ set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
 include (CTest)
 if (BUILD_TESTING)
    include (TestFixtures)
+   include (src/libmongoc/tests/import-tests.cmake)
 endif ()
 
 # Ensure the default behavior: don't ignore RPATH settings.
