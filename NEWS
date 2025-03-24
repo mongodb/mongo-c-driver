@@ -10,9 +10,13 @@ Unreleased (2.0.0)
 * `mongoc_server_description_host` changes the return type from `mongoc_host_list_t *` to `const mongoc_host_list_t *`.
 * URI authentication credentials validation (only applicable during creation of a new `mongoc_uri_t` object from a connection string):
   * The requirement that a username is non-empty when specified is now enforced regardless of authentication mechanism.
+  * Username and password specification requirements are now validated and returns a client error for the specified authentication mechanism.
+    * e.g. it is a client error to not specify a username or a password for SCRAM-SHA-1, SCRAM-SHA-256, and GSSAPI.
+    * e.g. it is a client error to specify a password for MONGODB-X509.
+    * e.g. it is a client error to specify a username or a password without the other for MONGODB-AWS.
   * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
   * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
-  * Requirements for the inclusion, exclusion, and supported values of authentication-related URI components (e.g. username and password), options (e.g. `authSource`), and mechanism properties (e.g. `authMechanismProperties` and its key-value pairs) are now validated and return a client error when able for invalid or unsupported configurations according to the specified authentication mechanism (`authMechanism`).
+  * `authMechanismProperties` is now validated and returns a client error for invalid or unsupported properties for the specified authentication mechanism.
   * `authMechanismProperties` now correctly supports `':'` within property values.
     * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
     * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
