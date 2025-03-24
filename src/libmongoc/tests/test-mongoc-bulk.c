@@ -4689,12 +4689,12 @@ test_bulk_write_multiple_errors (void *unused)
 
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'_id': 1}")); // fail via failPoint
-   mongoc_bulk_operation_delete (bulk,
+   mongoc_bulk_operation_remove (bulk,
                                  tmp_bson ("{'_id': 1}")); // fail via failPoint
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 4}")); // succeed
 
-   mongoc_bulk_operation_delete (bulk, tmp_bson ("{'_id': 4}")); // suceed
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'_id': 4}")); // suceed
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 5}")); // suceed
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 5}")); // duplicate key error
