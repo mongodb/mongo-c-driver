@@ -2185,22 +2185,6 @@ bson_copy_to_excluding_noinit_va (const bson_t *src, bson_t *dst, const char *fi
 
 
 void
-bson_copy_to_excluding (const bson_t *src, bson_t *dst, const char *first_exclude, ...)
-{
-   va_list args;
-
-   BSON_ASSERT (src);
-   BSON_ASSERT (dst);
-   BSON_ASSERT (first_exclude);
-
-   bson_init (dst);
-
-   va_start (args, first_exclude);
-   bson_copy_to_excluding_noinit_va (src, dst, first_exclude, args);
-   va_end (args);
-}
-
-void
 bson_copy_to_excluding_noinit (const bson_t *src, bson_t *dst, const char *first_exclude, ...)
 {
    va_list args;
