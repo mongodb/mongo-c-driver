@@ -16,6 +16,7 @@ Unreleased (2.0.0)
   * `authMechanismProperties` now correctly supports `':'` within property values.
     * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
     * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
+  * `authMechanismProperties` now supports percent-encoded commas (`%2C`) within property values as an extension of the Connection String specification.
 * Calling `mongoc_bulk_operation_execute` on the same `mongoc_bulk_operation_t` repeatedly is an error. Previously this was only discouraged in documentation.
 
 ## Removals
