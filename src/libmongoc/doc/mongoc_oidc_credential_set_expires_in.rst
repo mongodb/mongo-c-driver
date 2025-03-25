@@ -17,8 +17,7 @@ The expiry duration is relative to the value returned by :symbol:`bson_get_monot
 
 .. important::
 
-    A value of ``0`` is interpreted as immediate expiration.
-    An unset value is interpreted as infinite expiry duration.
+    An unset value (default) or a value of ``0`` is interpreted as an infinite expiry duration.
 
 Parameters
 ----------
