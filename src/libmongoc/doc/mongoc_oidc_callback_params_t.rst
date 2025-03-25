@@ -136,6 +136,9 @@ This parameter must be set in advance via :symbol:`mongoc_oidc_callback_set_fn()
 
           if (error.code != 0) {
              printf ("client error message: %s\n", error.message);
+          }
+
+          if (user_data->error_message) {
              printf ("custom error message: %s\n", user_data->error_message);
           }
 
