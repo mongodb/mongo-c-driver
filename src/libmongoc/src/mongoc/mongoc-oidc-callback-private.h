@@ -57,13 +57,4 @@ mongoc_oidc_callback_params_get_cancelled_with_timeout (const mongoc_oidc_callba
 void
 mongoc_oidc_callback_params_set_cancelled_with_timeout (mongoc_oidc_callback_params_t *params, bool value);
 
-void
-mongoc_oidc_credential_set_access_token (mongoc_oidc_credential_t *cred, const char *access_token);
-
-void
-mongoc_oidc_credential_set_expires_in (mongoc_oidc_credential_t *cred, int64_t expires_in);
-
-void
-mongoc_oidc_credential_unset_expires_in (mongoc_oidc_credential_t *cred);
-
 #endif // MONGOC_OIDC_CALLBACK_PRIVATE_H

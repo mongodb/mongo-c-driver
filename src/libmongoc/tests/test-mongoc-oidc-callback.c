@@ -132,66 +132,29 @@ test_oidc_callback_params (void)
 static void
 test_oidc_credential (void)
 {
-   // Initialization.
-   {
-      // Normal.
-      {
-         mongoc_oidc_credential_t *const cred = mongoc_oidc_credential_new ("token");
-         ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), "token");
-         ASSERT (!mongoc_oidc_credential_get_expires_in (cred));
-         mongoc_oidc_credential_destroy (cred);
-      }
-
-      // Normal with expires_in.
-      {
-         mongoc_oidc_credential_t *const cred = mongoc_oidc_credential_new_with_expires_in ("token", 123);
-         ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), "token");
-         const int64_t *const expires_in = mongoc_oidc_credential_get_expires_in (cred);
-         ASSERT (expires_in);
-         ASSERT_CMPINT64 (*expires_in, ==, 123);
-         mongoc_oidc_credential_destroy (cred);
-      }
-
-      // Invalid arguments.
-      {
-         ASSERT (!mongoc_oidc_credential_new (NULL));
-         ASSERT (!mongoc_oidc_credential_new_with_expires_in (NULL, 123));
-         ASSERT (!mongoc_oidc_credential_new_with_expires_in ("token", -1));
-      }
-   }
-
-   // Accessors.
+   // Normal.
    {
       mongoc_oidc_credential_t *const cred = mongoc_oidc_credential_new ("token");
-
-      // Normal values.
-      {
-         {
-            const char access_token[] = "copy"; // Ensure a copy is made.
-            mongoc_oidc_credential_set_access_token (cred, access_token);
-         }
-         mongoc_oidc_credential_set_expires_in (cred, 123);
-
-         ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), "copy");
-         ASSERT (mongoc_oidc_credential_get_expires_in (cred));
-         ASSERT_CMPINT64 (*mongoc_oidc_credential_get_expires_in (cred), ==, 123);
-      }
-
-      // "Reset" values.
-      {
-         mongoc_oidc_credential_set_access_token (cred, NULL);
-         mongoc_oidc_credential_unset_expires_in (cred);
-
-         ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), NULL);
-         ASSERT (!mongoc_oidc_credential_get_expires_in (cred));
-      }
-
-      // Owning resources.
-      {
-         mongoc_oidc_credential_set_access_token (cred, "must be freed");
-      }
-
+      ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), "token");
+      ASSERT (!mongoc_oidc_credential_get_expires_in (cred));
       mongoc_oidc_credential_destroy (cred);
+   }
+
+   // Normal with expires_in.
+   {
+      mongoc_oidc_credential_t *const cred = mongoc_oidc_credential_new_with_expires_in ("token", 123);
+      ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), "token");
+      const int64_t *const expires_in = mongoc_oidc_credential_get_expires_in (cred);
+      ASSERT (expires_in);
+      ASSERT_CMPINT64 (*expires_in, ==, 123);
+      mongoc_oidc_credential_destroy (cred);
+   }
+
+   // Invalid arguments.
+   {
+      ASSERT (!mongoc_oidc_credential_new (NULL));
+      ASSERT (!mongoc_oidc_credential_new_with_expires_in (NULL, 123));
+      ASSERT (!mongoc_oidc_credential_new_with_expires_in ("token", -1));
    }
 }
 

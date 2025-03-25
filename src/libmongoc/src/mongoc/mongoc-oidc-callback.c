@@ -240,32 +240,9 @@ mongoc_oidc_credential_get_access_token (const mongoc_oidc_credential_t *cred)
    return cred->access_token;
 }
 
-void
-mongoc_oidc_credential_set_access_token (mongoc_oidc_credential_t *cred, const char *access_token)
-{
-   BSON_ASSERT_PARAM (cred);
-   bson_free (cred->access_token);
-   cred->access_token = bson_strdup (access_token);
-}
-
 const int64_t *
 mongoc_oidc_credential_get_expires_in (const mongoc_oidc_credential_t *cred)
 {
    BSON_ASSERT_PARAM (cred);
    return cred->expires_in_set ? &cred->expires_in : NULL;
-}
-
-void
-mongoc_oidc_credential_set_expires_in (mongoc_oidc_credential_t *cred, int64_t expires_in)
-{
-   BSON_ASSERT_PARAM (cred);
-   cred->expires_in = expires_in;
-   cred->expires_in_set = true;
-}
-
-void
-mongoc_oidc_credential_unset_expires_in (mongoc_oidc_credential_t *cred)
-{
-   BSON_ASSERT_PARAM (cred);
-   cred->expires_in_set = false;
 }
