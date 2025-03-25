@@ -54,8 +54,14 @@ mongoc_oidc_callback_params_set_username (mongoc_oidc_callback_params_t *params,
 bool
 mongoc_oidc_callback_params_get_cancelled_with_timeout (const mongoc_oidc_callback_params_t *params);
 
+void
+mongoc_oidc_callback_params_set_cancelled_with_timeout (mongoc_oidc_callback_params_t *params, bool value);
+
 bool
 mongoc_oidc_callback_params_get_cancelled_with_error (const mongoc_oidc_callback_params_t *params);
+
+void
+mongoc_oidc_callback_params_set_cancelled_with_error (mongoc_oidc_callback_params_t *params, bool value);
 
 
 #endif // MONGOC_OIDC_CALLBACK_PRIVATE_H

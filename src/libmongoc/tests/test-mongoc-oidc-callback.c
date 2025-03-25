@@ -118,7 +118,8 @@ test_oidc_callback_params (void)
 
       // "Reset" values.
       {
-         mongoc_oidc_callback_params_reset (params);
+         mongoc_oidc_callback_params_set_cancelled_with_timeout (params, false);
+         mongoc_oidc_callback_params_set_cancelled_with_error (params, false);
 
          ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
          ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_error (params));

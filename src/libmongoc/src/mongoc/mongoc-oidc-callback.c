@@ -148,7 +148,8 @@ mongoc_oidc_callback_params_set_timeout (mongoc_oidc_callback_params_t *params, 
 }
 
 void
-mongoc_oidc_callback_params_unset_timeout (mongoc_oidc_callback_params_t *params) {
+mongoc_oidc_callback_params_unset_timeout (mongoc_oidc_callback_params_t *params)
+{
    BSON_ASSERT_PARAM (params);
    params->timeout_is_set = false;
 }
@@ -168,14 +169,6 @@ mongoc_oidc_callback_params_set_username (mongoc_oidc_callback_params_t *params,
    params->username = username ? bson_strdup (username) : NULL;
 }
 
-void
-mongoc_oidc_callback_params_reset (mongoc_oidc_callback_params_t *params)
-{
-   BSON_ASSERT_PARAM (params);
-   params->cancelled_with_timeout = false;
-   params->cancelled_with_error = false;
-}
-
 void *
 mongoc_oidc_callback_params_cancel_with_timeout (mongoc_oidc_callback_params_t *params)
 {
@@ -191,6 +184,13 @@ mongoc_oidc_callback_params_get_cancelled_with_timeout (const mongoc_oidc_callba
    return params->cancelled_with_timeout;
 }
 
+void
+mongoc_oidc_callback_params_set_cancelled_with_timeout (mongoc_oidc_callback_params_t *params, bool value)
+{
+   BSON_ASSERT_PARAM (params);
+   params->cancelled_with_timeout = value;
+}
+
 void *
 mongoc_oidc_callback_params_cancel_with_error (mongoc_oidc_callback_params_t *params)
 {
@@ -204,6 +204,13 @@ mongoc_oidc_callback_params_get_cancelled_with_error (const mongoc_oidc_callback
 {
    BSON_ASSERT_PARAM (params);
    return params->cancelled_with_error;
+}
+
+void
+mongoc_oidc_callback_params_set_cancelled_with_error (mongoc_oidc_callback_params_t *params, bool value)
+{
+   BSON_ASSERT_PARAM (params);
+   params->cancelled_with_error = value;
 }
 
 mongoc_oidc_credential_t *

@@ -167,8 +167,6 @@ Timeout Cancellation
 
 The ``cancel_with_timeout`` out parameter indicates cancellation of the callback function due to a timeout.
 
-This out parameter may be unset using :symbol:`mongoc_oidc_callback_params_reset`.
-
 When both ``cancel_with_error`` and ``cancel_with_timeout`` are set, ``cancel_with_timeout`` is ignored.
 
 .. important::
@@ -192,8 +190,6 @@ Error Cancellation
 ``````````````````
 
 The ``cancel_with_error`` out parameter indicates cancellation of the callback function due to an error.
-
-This out parameter may be unset using :symbol:`mongoc_oidc_callback_params_reset`.
 
 When both ``cancel_with_error`` and ``cancel_with_timeout`` are set, ``cancel_with_timeout`` is ignored.
 
@@ -224,4 +220,3 @@ When both ``cancel_with_error`` and ``cancel_with_timeout`` are set, ``cancel_wi
   - :symbol:`mongoc_oidc_callback_params_get_username()`
   - :symbol:`mongoc_oidc_callback_params_cancel_with_timeout()`
   - :symbol:`mongoc_oidc_callback_params_cancel_with_error()`
-  - :symbol:`mongoc_oidc_callback_params_reset()`
