@@ -8,10 +8,12 @@ Synopsis
 
 .. code-block:: c
 
-  int64_t
+  const int64_t *
   mongoc_oidc_callback_params_get_timeout (const mongoc_oidc_callback_params_t *params);
 
 Return a value comparable with :symbol:`bson_get_monotonic_time()` to determine when a timeout must occur.
+
+A ``NULL`` (unset) return value means "infinite" timeout.
 
 Parameters
 ----------

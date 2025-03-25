@@ -46,6 +46,9 @@ void
 mongoc_oidc_callback_params_set_timeout (mongoc_oidc_callback_params_t *params, int64_t timeout);
 
 void
+mongoc_oidc_callback_params_unset_timeout (mongoc_oidc_callback_params_t *params);
+
+void
 mongoc_oidc_callback_params_set_username (mongoc_oidc_callback_params_t *params, const char *username);
 
 bool

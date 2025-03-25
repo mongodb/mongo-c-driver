@@ -68,7 +68,7 @@ test_oidc_callback_params (void)
    mongoc_oidc_callback_params_t *const params = mongoc_oidc_callback_params_new ();
 
    // Initial values.
-   ASSERT_CMPINT64 (mongoc_oidc_callback_params_get_timeout (params), ==, 0);
+   ASSERT (!mongoc_oidc_callback_params_get_timeout (params));
    ASSERT_CMPSTR (mongoc_oidc_callback_params_get_username (params), NULL);
    ASSERT_CMPINT32 (mongoc_oidc_callback_params_get_version (params), ==, MONGOC_PRIVATE_OIDC_CALLBACK_API_VERSION);
    ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
@@ -76,25 +76,53 @@ test_oidc_callback_params (void)
 
    // Input parameters.
    {
-      mongoc_oidc_callback_params_set_timeout (params, 123);
-      mongoc_oidc_callback_params_set_timeout (params, 123);
+      // Normal values.
+      {
+         mongoc_oidc_callback_params_set_timeout (params, 123);
+         {
+            const char username[] = "username";
+            mongoc_oidc_callback_params_set_username (params, username); // Ensure a copy is made.
+         }
+         mongoc_oidc_callback_params_set_version (params, 123);
+
+         const int64_t *timeout = mongoc_oidc_callback_params_get_timeout (params);
+         ASSERT (timeout);
+         ASSERT_CMPINT64 (*timeout, ==, 123);
+         ASSERT_CMPSTR (mongoc_oidc_callback_params_get_username (params), "username");
+         ASSERT_CMPINT32 (mongoc_oidc_callback_params_get_version (params), ==, 123);
+      }
+
+      // "Reset" values.
+      {
+         mongoc_oidc_callback_params_set_username (params, NULL);
+         mongoc_oidc_callback_params_unset_timeout (params);
+         mongoc_oidc_callback_params_set_version (params, MONGOC_PRIVATE_OIDC_CALLBACK_API_VERSION);
+
+         ASSERT_CMPSTR (mongoc_oidc_callback_params_get_username (params), NULL);
+         ASSERT (!mongoc_oidc_callback_params_get_timeout (params));
+         ASSERT_CMPINT32 (
+            mongoc_oidc_callback_params_get_version (params), ==, MONGOC_PRIVATE_OIDC_CALLBACK_API_VERSION);
+      }
    }
 
    // Out parameters.
    {
-      mongoc_oidc_callback_params_cancel_with_timeout (params);
-      mongoc_oidc_callback_params_cancel_with_error (params);
+      // Normal values.
+      {
+         mongoc_oidc_callback_params_cancel_with_timeout (params);
+         mongoc_oidc_callback_params_cancel_with_error (params);
 
-      ASSERT (mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
-      ASSERT (mongoc_oidc_callback_params_get_cancelled_with_error (params));
-   }
+         ASSERT (mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
+         ASSERT (mongoc_oidc_callback_params_get_cancelled_with_error (params));
+      }
 
-   // "Reset" values.
-   {
-      mongoc_oidc_callback_params_reset (params);
+      // "Reset" values.
+      {
+         mongoc_oidc_callback_params_reset (params);
 
-      ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
-      ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_error (params));
+         ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
+         ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_error (params));
+      }
    }
 
    mongoc_oidc_callback_params_destroy (params);

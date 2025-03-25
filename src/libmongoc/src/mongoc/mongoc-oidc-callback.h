@@ -57,7 +57,7 @@ mongoc_oidc_callback_params_get_version (const mongoc_oidc_callback_params_t *pa
 MONGOC_EXPORT (void *)
 mongoc_oidc_callback_params_get_user_data (const mongoc_oidc_callback_params_t *params);
 
-MONGOC_EXPORT (int64_t)
+MONGOC_EXPORT (const int64_t *)
 mongoc_oidc_callback_params_get_timeout (const mongoc_oidc_callback_params_t *params);
 
 MONGOC_EXPORT (const char *)
