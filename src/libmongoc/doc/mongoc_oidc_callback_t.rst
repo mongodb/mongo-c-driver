@@ -149,8 +149,7 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
     mongoc_oidc_callback_params_cancel_with_timeout
     mongoc_oidc_credential_t
     mongoc_oidc_credential_new
+    mongoc_oidc_credential_new_with_expires_in
     mongoc_oidc_credential_destroy
     mongoc_oidc_credential_get_access_token
-    mongoc_oidc_credential_set_access_token
     mongoc_oidc_credential_get_expires_in
-    mongoc_oidc_credential_set_expires_in

@@ -21,10 +21,11 @@ Parameters
 Returns
 -------
 
-A string which must not be modified or freed, or ``NULL``.
+A string which must not be modified or freed.
 
 .. seealso::
 
   - :symbol:`mongoc_oidc_credential_t`
   - :symbol:`mongoc_oidc_callback_fn_t`
-  - :symbol:`mongoc_oidc_credential_set_access_token`
+  - :symbol:`mongoc_oidc_credential_new`
+  - :symbol:`mongoc_oidc_credential_new_with_expires_in`

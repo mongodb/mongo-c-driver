@@ -191,10 +191,36 @@ mongoc_oidc_callback_params_set_cancelled_with_timeout (mongoc_oidc_callback_par
 }
 
 mongoc_oidc_credential_t *
-mongoc_oidc_credential_new (void)
+mongoc_oidc_credential_new (const char *access_token)
 {
+   if (!access_token) {
+      return NULL;
+   }
+
    mongoc_oidc_credential_t *const ret = bson_malloc (sizeof (*ret));
-   *ret = (mongoc_oidc_credential_t){0};
+   *ret = (mongoc_oidc_credential_t){
+      .access_token = bson_strdup (access_token),
+   };
+   return ret;
+}
+
+mongoc_oidc_credential_t *
+mongoc_oidc_credential_new_with_expires_in (const char *access_token, int64_t expires_in)
+{
+   if (!access_token) {
+      return NULL;
+   }
+
+   if (expires_in < 0) {
+      return NULL;
+   }
+
+   mongoc_oidc_credential_t *const ret = bson_malloc (sizeof (*ret));
+   *ret = (mongoc_oidc_credential_t){
+      .access_token = bson_strdup (access_token),
+      .expires_in = expires_in,
+      .expires_in_set = true,
+   };
    return ret;
 }
 

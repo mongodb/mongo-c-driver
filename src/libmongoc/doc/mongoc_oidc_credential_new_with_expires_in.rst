@@ -9,11 +9,13 @@ Synopsis
 .. code-block:: c
 
   mongoc_oidc_credential_t *
-  mongoc_oidc_credential_new (const char *access_token)
+  mongoc_oidc_credential_new_with_expiry (const char *access_token, int64_t expires_in)
 
-Create a new :symbol:`mongoc_oidc_credential_t` object which stores a copy of the provided OIDC access token with an infinite expiry duration.
+Create a new :symbol:`mongoc_oidc_credential_t` object which stores a copy of the provided OIDC access token and its expiry duration (in milliseconds).
 
-To set a finite expiry duration, use :symbol:`mongoc_oidc_credential_new_with_expires_in()`.
+To set an infinite expiry duration, use :symbol:`mongoc_oidc_credential_new()`.
+
+The expiry duration is relative to the value returned by :symbol:`bson_get_monotonic_time()` immediately after the callback function has returned.
 
 .. warning::
 
@@ -24,6 +26,7 @@ Parameters
 
 * ``cred``: a :symbol:`mongoc_oidc_credential_t`.
 * ``access_token``: an OIDC access token. Must not be ``NULL``.
+* ``expires_in``: a non-negative integer.
 
 Returns
 -------

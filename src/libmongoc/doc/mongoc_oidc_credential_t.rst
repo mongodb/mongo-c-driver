@@ -56,9 +56,8 @@ An optional expiry duration (in milliseconds) for the access token.
 
   - :symbol:`mongoc_oidc_callback_t`
   - :symbol:`mongoc_oidc_callback_fn_t`
-  - :symbol:`mongoc_oidc_credential_new()`
+  - :symbol:`mongoc_oidc_credential_new`
+  - :symbol:`mongoc_oidc_credential_new_with_expires_in`
   - :symbol:`mongoc_oidc_credential_destroy()`
   - :symbol:`mongoc_oidc_credential_get_access_token()`
-  - :symbol:`mongoc_oidc_credential_set_access_token()`
   - :symbol:`mongoc_oidc_credential_get_expires_in()`
-  - :symbol:`mongoc_oidc_credential_set_expires_in()`

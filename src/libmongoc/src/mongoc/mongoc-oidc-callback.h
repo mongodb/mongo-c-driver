@@ -67,7 +67,10 @@ MONGOC_EXPORT (void *)
 mongoc_oidc_callback_params_cancel_with_timeout (mongoc_oidc_callback_params_t *params);
 
 MONGOC_EXPORT (mongoc_oidc_credential_t *)
-mongoc_oidc_credential_new (void);
+mongoc_oidc_credential_new (const char *access_token);
+
+MONGOC_EXPORT (mongoc_oidc_credential_t *)
+mongoc_oidc_credential_new_with_expires_in (const char *access_token, int64_t expires_in);
 
 MONGOC_EXPORT (void)
 mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred);
@@ -75,14 +78,8 @@ mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred);
 MONGOC_EXPORT (const char *)
 mongoc_oidc_credential_get_access_token (const mongoc_oidc_credential_t *cred);
 
-MONGOC_EXPORT (void)
-mongoc_oidc_credential_set_access_token (mongoc_oidc_credential_t *cred, const char *access_token);
-
 MONGOC_EXPORT (const int64_t *)
 mongoc_oidc_credential_get_expires_in (const mongoc_oidc_credential_t *cred);
-
-MONGOC_EXPORT (void)
-mongoc_oidc_credential_set_expires_in (mongoc_oidc_credential_t *cred, int64_t expires_in);
 
 BSON_END_DECLS
 
