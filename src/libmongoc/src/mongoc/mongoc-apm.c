@@ -378,20 +378,6 @@ mongoc_apm_command_started_get_service_id (const mongoc_apm_command_started_t *e
 }
 
 
-int32_t
-mongoc_apm_command_started_get_server_connection_id (const mongoc_apm_command_started_t *event)
-{
-   if (event->server_connection_id > INT32_MAX || event->server_connection_id < INT32_MIN) {
-      MONGOC_WARNING ("Server connection ID %" PRId64 " is outside of int32 range. Returning -1. Use "
-                      "mongoc_apm_command_started_get_server_connection_id_int64.",
-                      event->server_connection_id);
-      return MONGOC_NO_SERVER_CONNECTION_ID;
-   }
-
-   return (int32_t) event->server_connection_id;
-}
-
-
 int64_t
 mongoc_apm_command_started_get_server_connection_id_int64 (const mongoc_apm_command_started_t *event)
 {
@@ -474,20 +460,6 @@ mongoc_apm_command_succeeded_get_service_id (const mongoc_apm_command_succeeded_
 }
 
 
-int32_t
-mongoc_apm_command_succeeded_get_server_connection_id (const mongoc_apm_command_succeeded_t *event)
-{
-   if (event->server_connection_id > INT32_MAX || event->server_connection_id < INT32_MIN) {
-      MONGOC_WARNING ("Server connection ID %" PRId64 " is outside of int32 range. Returning -1. Use "
-                      "mongoc_apm_command_succeeded_get_server_connection_id_int64.",
-                      event->server_connection_id);
-      return MONGOC_NO_SERVER_CONNECTION_ID;
-   }
-
-   return (int32_t) event->server_connection_id;
-}
-
-
 int64_t
 mongoc_apm_command_succeeded_get_server_connection_id_int64 (const mongoc_apm_command_succeeded_t *event)
 {
@@ -567,20 +539,6 @@ mongoc_apm_command_failed_get_service_id (const mongoc_apm_command_failed_t *eve
    }
 
    return &event->service_id;
-}
-
-
-int32_t
-mongoc_apm_command_failed_get_server_connection_id (const mongoc_apm_command_failed_t *event)
-{
-   if (event->server_connection_id > INT32_MAX || event->server_connection_id < INT32_MIN) {
-      MONGOC_WARNING ("Server connection ID %" PRId64 " is outside of int32 range. Returning -1. Use "
-                      "mongoc_apm_command_failed_get_server_connection_id_int64.",
-                      event->server_connection_id);
-      return MONGOC_NO_SERVER_CONNECTION_ID;
-   }
-
-   return (int32_t) event->server_connection_id;
 }
 
 
