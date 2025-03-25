@@ -10,22 +10,12 @@ Unreleased (2.0.0)
 * `mongoc_server_description_host` changes the return type from `mongoc_host_list_t *` to `const mongoc_host_list_t *`.
 * URI authentication credentials validation (only applicable during creation of a new `mongoc_uri_t` object from a connection string):
   * The requirement that a username is non-empty when specified is now enforced regardless of authentication mechanism.
-  * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
-  * `authSource` is now validated and returns a client error for invalid or unsupported values for the specified `authMechanism`.
   * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
-  * The requirement that a password is provided is now enforced when the authentication mechanism is specified for:
-    * PLAIN
-    * SCRAM-SHA-1
-    * SCRAM-SHA-256
-* The requirement that neither or both a username and password is provided (optionally with a `AWS_SESSION_TOKEN`) is now enforced for MONGODB-AWS.
-* `authMechanismProperties` is now prohibited (instead of ignored) when the authentication mechanism is specified for:
-  * PLAIN
-  * SCRAM-SHA-1
-  * SCRAM-SHA-256
-  * MONGODB-X509
-* `authMechanismProperties` is now validated and returns a client error for invalid or unsupported fields when the authentication mechanism is specified for:
-  * GSSAPI: supported fields are SERVICE_NAME, CANONICALIZE_HOST_NAME, SERVICE_REALM, and SERVICE_HOST.
-  * MONGODB-AWS: supported fields are AWS_SESSION_TOKEN.
+  * `authMechanism` is now validated and returns a client error for invalid or unsupported values.
+  * Requirements for the inclusion, exclusion, and supported values of authentication-related URI components (e.g. username and password), options (e.g. `authSource`), and mechanism properties (e.g. `authMechanismProperties` and its key-value pairs) are now validated and return a client error when able for invalid or unsupported configurations according to the specified authentication mechanism (`authMechanism`).
+  * `authMechanismProperties` now correctly supports `':'` within property values.
+    * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
+    * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
 * Calling `mongoc_bulk_operation_execute` on the same `mongoc_bulk_operation_t` repeatedly is an error. Previously this was only discouraged in documentation.
 
 ## Removals
@@ -52,6 +42,12 @@ Unreleased (2.0.0)
 * `mongoc_client_find_databases` is removed. Use `mongoc_client_find_databases_with_opts` instead.
 * `mongoc_client_get_max_message_size` is removed.
 * `mongoc_client_get_max_bson_size` is removed.
+* Deprecated API for `mongoc_bulk_operation_t` is removed:
+  * `mongoc_bulk_operation_delete` is removed. Use `mongoc_bulk_operation_remove()` instead.
+  * `mongoc_bulk_operation_delete_one` is removed. Use `mongoc_bulk_operation_remove_one` instead.
+  * `mongoc_bulk_operation_get_hint` is removed. Use `mongoc_bulk_operation_get_server_id` instead.
+  * `mongoc_bulk_operation_set_hint` is removed. Use `mongoc_bulk_operation_set_server_id` instead.
+* Deprecated `mongoc_apm_command_*_get_server_connection_id` functions are removed. Use `mongoc_apm_command_*_get_server_connection_id_int64` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
