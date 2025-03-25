@@ -11,7 +11,7 @@ Synopsis
   int64_t
   mongoc_oidc_callback_params_get_timeout (const mongoc_oidc_callback_params_t *params);
 
-Return the :symbol:`bson_get_monotonic_time()` value used to determine when a timeout must occur.
+Return a value comparable with :symbol:`bson_get_monotonic_time()` to determine when a timeout must occur.
 
 Parameters
 ----------
@@ -21,7 +21,7 @@ Parameters
 Returns
 -------
 
-A :symbol:`bson_get_monotonic_time()` value or ``NULL``.
+A value comparable with :symbol:`bson_get_monotonic_time()`, or ``NULL``.
 
 .. seealso::
 
