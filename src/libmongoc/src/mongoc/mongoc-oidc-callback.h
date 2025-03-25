@@ -87,9 +87,6 @@ mongoc_oidc_credential_get_expires_in (const mongoc_oidc_credential_t *cred);
 MONGOC_EXPORT (void)
 mongoc_oidc_credential_set_expires_in (mongoc_oidc_credential_t *cred, int64_t expires_in);
 
-MONGOC_EXPORT (void)
-mongoc_oidc_credential_unset_expires_in (mongoc_oidc_credential_t *cred);
-
 BSON_END_DECLS
 
 #endif // MONGOC_OIDC_CALLBACK_H

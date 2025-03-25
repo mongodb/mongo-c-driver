@@ -31,4 +31,3 @@ Parameters
   - :symbol:`mongoc_oidc_credential_t`
   - :symbol:`mongoc_oidc_callback_fn_t`
   - :symbol:`mongoc_oidc_credential_get_expires_in`
-  - :symbol:`mongoc_oidc_credential_unset_expires_in`

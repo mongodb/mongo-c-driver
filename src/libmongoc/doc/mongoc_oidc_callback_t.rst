@@ -155,4 +155,3 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
     mongoc_oidc_credential_set_access_token
     mongoc_oidc_credential_get_expires_in
     mongoc_oidc_credential_set_expires_in
-    mongoc_oidc_credential_unset_expires_in

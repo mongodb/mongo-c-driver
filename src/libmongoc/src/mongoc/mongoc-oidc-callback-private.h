@@ -63,5 +63,7 @@ mongoc_oidc_callback_params_get_cancelled_with_error (const mongoc_oidc_callback
 void
 mongoc_oidc_callback_params_set_cancelled_with_error (mongoc_oidc_callback_params_t *params, bool value);
 
+void
+mongoc_oidc_credential_unset_expires_in (mongoc_oidc_credential_t *cred);
 
 #endif // MONGOC_OIDC_CALLBACK_PRIVATE_H
