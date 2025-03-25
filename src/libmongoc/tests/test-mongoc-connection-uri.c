@@ -306,8 +306,8 @@ run_uri_test (const char *uri_string,
 
                         // CDRIVER-4128: CANONICALIZE_HOST_NAME is UTF-8 even when "false" or "true".
                         {
-                           bson_t updated;
-                           bson_copy_to_excluding (&expected_props, &updated, "CANONICALIZE_HOST_NAME", NULL);
+                           bson_t updated = BSON_INITIALIZER;
+                           bson_copy_to_excluding_noinit (&expected_props, &updated, "CANONICALIZE_HOST_NAME", NULL);
                            if (bson_iter_init_find_case (&iter, &expected_props, "CANONICALIZE_HOST_NAME")) {
                               if (BSON_ITER_HOLDS_BOOL (&iter)) {
                                  BSON_APPEND_UTF8 (
