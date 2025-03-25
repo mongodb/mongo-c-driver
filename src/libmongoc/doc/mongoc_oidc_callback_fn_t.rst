@@ -15,7 +15,7 @@ The type of the function pointer stored by :symbol:`mongoc_oidc_callback_t`.
 Parameters
 ----------
 
-* ``params`` - A :symbol:`mongoc_oidc_callback_params_t` object.
+* ``params``: A :symbol:`mongoc_oidc_callback_params_t` object.
 
 Returns
 -------
