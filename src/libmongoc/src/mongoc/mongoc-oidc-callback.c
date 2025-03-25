@@ -165,7 +165,7 @@ mongoc_oidc_callback_params_set_username (mongoc_oidc_callback_params_t *params,
 {
    BSON_ASSERT_PARAM (params);
    bson_free (params->username);
-   params->username = username ? bson_strdup (username) : NULL;
+   params->username = bson_strdup (username);
 }
 
 void *
