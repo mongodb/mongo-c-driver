@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  const char *
+  const int64_t *
   mongoc_oidc_credential_get_expires_in (const mongoc_oidc_credential_t *cred);
 
 Return the optional expiry duration (in milliseconds) for the access token stored in :symbol:`mongoc_oidc_credential_t`.
