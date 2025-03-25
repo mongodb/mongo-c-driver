@@ -1,7 +1,7 @@
-:man_page: mongoc_oidc_credential_new
+:man_page: mongoc_oidc_credential_new_with_expires_in
 
-mongoc_oidc_credential_new()
-============================
+mongoc_oidc_credential_new_with_expires_in()
+============================================
 
 Synopsis
 --------
@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_oidc_credential_t *
-  mongoc_oidc_credential_new_with_expiry (const char *access_token, int64_t expires_in)
+  mongoc_oidc_credential_new_with_expires_in (const char *access_token, int64_t expires_in)
 
 Create a new :symbol:`mongoc_oidc_credential_t` object which stores a copy of the provided OIDC access token and its expiry duration (in milliseconds).
 
