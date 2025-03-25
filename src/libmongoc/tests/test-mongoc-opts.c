@@ -425,15 +425,6 @@ collection_watch (func_ctx_t *ctx, bson_t *cmd)
 
 
 static future_t *
-count (func_ctx_t *ctx, bson_t *cmd)
-{
-   BSON_APPEND_UTF8 (cmd, "count", "collection");
-   return future_collection_count_with_opts (
-      ctx->collection, MONGOC_QUERY_NONE, NULL, 0, 0, ctx->opts, ctx->prefs, &ctx->error);
-}
-
-
-static future_t *
 count_documents (func_ctx_t *ctx, bson_t *cmd)
 {
    BSON_APPEND_UTF8 (cmd, "aggregate", "collection");
@@ -840,8 +831,6 @@ static opt_inheritance_test_t gInheritanceTests[] = {
    OPT_TEST (COLL, collection_read_write_cmd, WRITE_CONCERN),
    OPT_TEST (COLL, collection_watch, READ_CONCERN),
    OPT_TEST (COLL, collection_write_cmd, WRITE_CONCERN),
-   OPT_TEST (COLL, count, READ_CONCERN),
-   OPT_TEST (COLL, count, READ_PREFS),
    OPT_TEST (COLL, count_documents, READ_CONCERN),
    OPT_TEST (COLL, count_documents, READ_PREFS),
    OPT_TEST (COLL, create_index, WRITE_CONCERN),

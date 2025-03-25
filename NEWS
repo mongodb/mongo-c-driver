@@ -48,6 +48,7 @@ Unreleased (2.0.0)
 * Support for LibreSSL (the CMake option `ENABLE_SSL=LIBRESSL`) is removed. Associated API is removed (`MONGOC_ENABLE_SSL_LIBRESSL` and  `mongoc_stream_tls_libressl_new`).
 * `MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED` (value -1) is removed. Use `MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED` (value 0) which is handled equivalently. If specified in a URI, replace: `mongodb://host/?w=-1` with `mongodb://host/?w=0`.
 * The deprecated CMake option `ENABLE_AUTOMATIC_INIT_AND_CLEANUP` is removed. See [Initialization and cleanup](https://mongoc.org/libmongoc/1.30.2/init-cleanup.html) for expected use of `mongoc_init()` and `mongoc_cleanup()`.
+* `mongoc_collection_count` and `mongoc_collection_count_with_opts` are removed. Use `mongoc_collection_count_documents` or `mongoc_collection_estimated_document_count` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 

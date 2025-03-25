@@ -1229,10 +1229,21 @@ count (mongoc_collection_t *collection,
    } else if (!strcmp (name, "estimatedDocumentCount")) {
       r = mongoc_collection_estimated_document_count (collection, &opts, read_prefs, reply, &error);
    } else if (!strcmp (name, "count")) {
-      /* deprecated old count function */
-      r = mongoc_collection_count_with_opts (collection, MONGOC_QUERY_NONE, &filter, 0, 0, &opts, read_prefs, &error);
-      /* fake a reply for the test framework's sake */
-      bson_init (reply);
+      // "count" previously referred to the deprecated helper: `mongoc_collection_count_with_opts`.
+      // Run the "count" command directly to support tests. See: CRUD spec "Count API Details".
+      bson_t *cmd = BCON_NEW ("count", mongoc_collection_get_name (collection));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (cmd, "query", &filter));
+      BSON_ASSERT (bson_concat (cmd, &opts));
+      bool ok = mongoc_collection_command_simple (collection, cmd, read_prefs, reply, &error);
+      if (!ok) {
+         // Set resulting count to -1 to indicate failure.
+         r = -1;
+      } else {
+         bson_iter_t iter;
+         BSON_ASSERT (bson_iter_init_find (&iter, reply, "n"));
+         r = bson_iter_as_int64 (&iter);
+      }
+      bson_destroy (cmd);
    } else {
       test_error ("count() called with unrecognized operation name %s", name);
       return false;
