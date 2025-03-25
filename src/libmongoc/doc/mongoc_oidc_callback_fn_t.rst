@@ -20,7 +20,7 @@ Parameters
 Returns
 -------
 
-A :symbol:`mongoc_oidc_credential_t` object created with :symbol:`mongoc_oidc_credential_new()`, or ``NULL`` to indicate cancellation.
+A :symbol:`mongoc_oidc_credential_t` object created with :symbol:`mongoc_oidc_credential_new()`, or ``NULL`` to indicate an error or timeout.
 
 * The function MUST return a :symbol:`mongoc_oidc_credential_t` object to indicate success.
 * The function MUST return ``NULL`` to indicate an error.

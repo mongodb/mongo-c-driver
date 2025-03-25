@@ -159,8 +159,8 @@ Username
 
 The ``username`` parameter is the value of the username component of the URI of the associated :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` object from which the callback function is invoked.
 
-Timeout Cancellation
-````````````````````
+Cancel With Timeout
+```````````````````
 
 The ``cancel_with_timeout`` out parameter indicates cancellation of the callback function due to a timeout instead of an error.
 
@@ -181,10 +181,10 @@ The ``cancel_with_timeout`` out parameter indicates cancellation of the callback
        // ...
     }
 
-Error Cancellation
-``````````````````
+Error Handling
+``````````````
 
-Returning ``NULL`` (without setting ``cancel_with_timeout``) indicates cancellation due to an error.
+A ``NULL`` return value (without setting ``cancel_with_timeout``) indicates failure to provide an access token due to an error.
 
 .. important::
 
