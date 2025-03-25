@@ -40,7 +40,7 @@ endfunction ()
 
 # Create a fixture that runs a fake Azure IMDS server
 mongo_define_subprocess_fixture(
-    mongoc/fixtures/fake_imds
+    mongoc/fixtures/fake_kms_provider_server
     SPAWN_WAIT 1
     COMMAND
         "$<TARGET_FILE:Python3::Interpreter>" -u --
