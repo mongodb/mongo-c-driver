@@ -39,10 +39,7 @@ The list of currently supported parameters are:
       - The username specified by the URI of the associated client object.
     * - ``cancel_with_timeout``
       - 1
-      - An out parameter indicating cancellation of the callback function due to a timeout.
-    * - ``cancel_with_error``
-      - 1
-      - An out parameter indicating cancellation of the callback function due to an error.
+      - An out parameter indicating cancellation of the callback function due to a timeout instead of an error.
 
 The "Version" column indicates the OIDC callback API versions for which the parameter is applicable.
 
@@ -69,7 +66,7 @@ For example, users may add the following check to their callback function:
        // This callback function was implemented for OIDC callback API version 1.
        if (mongoc_oidc_callback_params_get_version (params) > 1) {
           user_data->error_message = "OIDC callback API has changed: update example_callback_fn!";
-          return mongoc_oidc_callback_params_cancel_with_error (params);
+          return NULL;
        }
 
        // ...
@@ -104,7 +101,7 @@ This parameter must be set in advance via :symbol:`mongoc_oidc_callback_set_fn()
 
        if (/* ... */) {
           user_data->error_message = "OIDC callback failed due to ...";
-          return mongoc_oidc_callback_params_cancel_with_error (params);
+          return NULL;
        }
 
        // ...
@@ -155,7 +152,7 @@ Timeout
 
 The ``timeout`` parameter is used to determine when the callback function should report cancellation due to a timeout.
 
-When :symbol:`bson_get_monotonic_time()` is greater than ``timeout``, the callback function must invoke :symbol:`mongoc_oidc_callback_params_cancel_with_timeout`.
+When :symbol:`bson_get_monotonic_time()` is greater than ``timeout``, the callback function must invoke :symbol:`mongoc_oidc_callback_params_cancel_with_timeout()` and return ``NULL``.
 
 Username
 ````````
@@ -165,9 +162,7 @@ The ``username`` parameter is the value of the username component of the URI of 
 Timeout Cancellation
 ````````````````````
 
-The ``cancel_with_timeout`` out parameter indicates cancellation of the callback function due to a timeout.
-
-When both ``cancel_with_error`` and ``cancel_with_timeout`` are set, ``cancel_with_timeout`` is ignored.
+The ``cancel_with_timeout`` out parameter indicates cancellation of the callback function due to a timeout instead of an error.
 
 .. important::
 
@@ -189,13 +184,11 @@ When both ``cancel_with_error`` and ``cancel_with_timeout`` are set, ``cancel_wi
 Error Cancellation
 ``````````````````
 
-The ``cancel_with_error`` out parameter indicates cancellation of the callback function due to an error.
-
-When both ``cancel_with_error`` and ``cancel_with_timeout`` are set, ``cancel_with_timeout`` is ignored.
+Returning ``NULL`` (without setting ``cancel_with_timeout``) indicates cancellation due to an error.
 
 .. important::
 
-    The callback function MUST return ``NULL``, otherwise the invocation will be interpreted as a success even when ``cancel_with_error`` is set.
+    The callback function MUST return ``NULL``, otherwise the invocation will be interpreted as a success.
 
 .. code-block:: c
 
@@ -204,7 +197,8 @@ When both ``cancel_with_error`` and ``cancel_with_timeout`` are set, ``cancel_wi
        // ...
 
        if (/* ... */) {
-          return mongoc_oidc_callback_params_cancel_with_error (params);
+          // The OIDC callback function could not provide an access token due to an error.
+          return NULL;
        }
 
        // ...
@@ -219,4 +213,3 @@ When both ``cancel_with_error`` and ``cancel_with_timeout`` are set, ``cancel_wi
   - :symbol:`mongoc_oidc_callback_params_get_timeout()`
   - :symbol:`mongoc_oidc_callback_params_get_username()`
   - :symbol:`mongoc_oidc_callback_params_cancel_with_timeout()`
-  - :symbol:`mongoc_oidc_callback_params_cancel_with_error()`

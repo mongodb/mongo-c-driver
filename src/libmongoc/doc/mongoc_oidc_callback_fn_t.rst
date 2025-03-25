@@ -23,14 +23,10 @@ Returns
 A :symbol:`mongoc_oidc_credential_t` object created with :symbol:`mongoc_oidc_credential_new()`, or ``NULL`` to indicate cancellation.
 
 * The function MUST return a :symbol:`mongoc_oidc_credential_t` object to indicate success.
-* The function MUST call :symbol:`mongoc_oidc_callback_params_cancel_with_timeout()` and return ``NULL`` to indicate a timeout.
-* The function MUST call :symbol:`mongoc_oidc_callback_params_cancel_with_error()` and return ``NULL`` to indicate an error.
+* The function MUST return ``NULL`` to indicate an error.
+* The function MUST call :symbol:`mongoc_oidc_callback_params_cancel_with_timeout()` before returning ``NULL`` to indicate a timeout instead of an error.
 
-The ``cancel_with_timeout`` and ``cancel_with_error`` out parameters are ignored if the return value is not ``NULL``.
-
-A ``NULL`` return value without setting either ``cancel_with_timeout`` or ``cancel_with_error`` will be interpreted as a client error.
-
-The ``cancel_with_timeout`` out parameter is ignored when ``cancel_with_error`` is set.
+The ``cancel_with_timeout`` out parameter is ignored if the return value is not ``NULL``.
 
 .. seealso::
 

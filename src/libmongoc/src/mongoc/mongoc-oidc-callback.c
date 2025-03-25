@@ -30,7 +30,6 @@ struct _mongoc_oidc_callback_params_t {
    char *username;
    int64_t timeout; // Guarded by timeout_is_set.
    int32_t version;
-   bool cancelled_with_error;
    bool cancelled_with_timeout;
    bool timeout_is_set;
 };
@@ -189,28 +188,6 @@ mongoc_oidc_callback_params_set_cancelled_with_timeout (mongoc_oidc_callback_par
 {
    BSON_ASSERT_PARAM (params);
    params->cancelled_with_timeout = value;
-}
-
-void *
-mongoc_oidc_callback_params_cancel_with_error (mongoc_oidc_callback_params_t *params)
-{
-   BSON_ASSERT_PARAM (params);
-   params->cancelled_with_error = true;
-   return NULL;
-}
-
-bool
-mongoc_oidc_callback_params_get_cancelled_with_error (const mongoc_oidc_callback_params_t *params)
-{
-   BSON_ASSERT_PARAM (params);
-   return params->cancelled_with_error;
-}
-
-void
-mongoc_oidc_callback_params_set_cancelled_with_error (mongoc_oidc_callback_params_t *params, bool value)
-{
-   BSON_ASSERT_PARAM (params);
-   params->cancelled_with_error = value;
 }
 
 mongoc_oidc_credential_t *

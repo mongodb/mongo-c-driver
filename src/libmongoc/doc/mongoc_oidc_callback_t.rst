@@ -147,7 +147,6 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
     mongoc_oidc_callback_params_get_timeout
     mongoc_oidc_callback_params_get_username
     mongoc_oidc_callback_params_cancel_with_timeout
-    mongoc_oidc_callback_params_cancel_with_error
     mongoc_oidc_credential_t
     mongoc_oidc_credential_new
     mongoc_oidc_credential_destroy

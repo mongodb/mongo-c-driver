@@ -72,7 +72,6 @@ test_oidc_callback_params (void)
    ASSERT_CMPSTR (mongoc_oidc_callback_params_get_username (params), NULL);
    ASSERT_CMPINT32 (mongoc_oidc_callback_params_get_version (params), ==, MONGOC_PRIVATE_OIDC_CALLBACK_API_VERSION);
    ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
-   ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_error (params));
 
    // Input parameters.
    {
@@ -110,19 +109,15 @@ test_oidc_callback_params (void)
       // Normal values.
       {
          mongoc_oidc_callback_params_cancel_with_timeout (params);
-         mongoc_oidc_callback_params_cancel_with_error (params);
 
          ASSERT (mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
-         ASSERT (mongoc_oidc_callback_params_get_cancelled_with_error (params));
       }
 
       // "Reset" values.
       {
          mongoc_oidc_callback_params_set_cancelled_with_timeout (params, false);
-         mongoc_oidc_callback_params_set_cancelled_with_error (params, false);
 
          ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_timeout (params));
-         ASSERT (!mongoc_oidc_callback_params_get_cancelled_with_error (params));
       }
    }
 

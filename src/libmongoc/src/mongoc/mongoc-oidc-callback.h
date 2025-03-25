@@ -66,9 +66,6 @@ mongoc_oidc_callback_params_get_username (const mongoc_oidc_callback_params_t *p
 MONGOC_EXPORT (void *)
 mongoc_oidc_callback_params_cancel_with_timeout (mongoc_oidc_callback_params_t *params);
 
-MONGOC_EXPORT (void *)
-mongoc_oidc_callback_params_cancel_with_error (mongoc_oidc_callback_params_t *params);
-
 MONGOC_EXPORT (mongoc_oidc_credential_t *)
 mongoc_oidc_credential_new (void);
 
