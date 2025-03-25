@@ -288,31 +288,13 @@ bson_copy (const bson_t *bson);
 BSON_EXPORT (void)
 bson_copy_to (const bson_t *src, bson_t *dst);
 
-
-/**
- * bson_copy_to_excluding:
- * @src: A bson_t.
- * @dst: A bson_t to initialize and copy into.
- * @first_exclude: First field name to exclude.
- *
- * Copies @src into @dst excluding any field that is provided.
- * This is handy for situations when you need to remove one or
- * more fields in a bson_t. Note that bson_init() will be called
- * on dst.
- */
-BSON_DEPRECATED_FOR (bson_copy_to_excluding_noinit)
-BSON_EXPORT (void)
-   bson_copy_to_excluding (const bson_t *src, bson_t *dst, const char *first_exclude, ...) BSON_GNUC_NULL_TERMINATED;
-
 /**
  * bson_copy_to_excluding_noinit:
  * @src: A bson_t.
  * @dst: A bson_t to initialize and copy into.
  * @first_exclude: First field name to exclude.
  *
- * The same as bson_copy_to_excluding, but does not call bson_init()
- * on the dst. This version should be preferred in new code, but the
- * old function is left for backwards compatibility.
+ * Does not call bson_init() on the dst.
  */
 BSON_EXPORT (void)
 bson_copy_to_excluding_noinit (const bson_t *src, bson_t *dst, const char *first_exclude, ...)
