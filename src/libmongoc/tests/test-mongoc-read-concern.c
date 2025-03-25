@@ -164,18 +164,6 @@ _test_read_concern_wire_version (bool explicit)
 
    future_destroy (future);
 
-   /*
-    * count
-    */
-   future =
-      future_collection_count_with_opts (collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), 0, 0, &opts, NULL, &error);
-   request =
-      mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
-   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
-   request_destroy (request);
-   ASSERT_CMPINT64 (future_get_int64_t (future), ==, (int64_t) 1);
-
-   future_destroy (future);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);

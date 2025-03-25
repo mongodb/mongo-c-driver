@@ -76,29 +76,6 @@ Example
      }
   }
 
-.. _migrating-from-deprecated-count:
-
-Migrating from deprecated count functions
------------------------------------------
-
-When migrating to :symbol:`mongoc_collection_count_documents` from the deprecated :symbol:`mongoc_collection_count` or :symbol:`mongoc_collection_count_with_opts`, the following query operators in the filter must be replaced:
-
-+-------------+-------------------------------------+
-| Operator    | Replacement                         |
-+=============+=====================================+
-| $where      | `$expr`_                            |
-+-------------+-------------------------------------+
-| $near       | `$geoWithin`_ with `$center`_       |
-+-------------+-------------------------------------+
-| $nearSphere | `$geoWithin`_ with `$centerSphere`_ |
-+-------------+-------------------------------------+
-
-$expr requires MongoDB 3.6+
-
-.. _$expr: https://www.mongodb.com/docs/manual/reference/operator/query/expr/
-.. _$geoWithin: https://www.mongodb.com/docs/manual/reference/operator/query/geoWithin/
-.. _$center: https://www.mongodb.com/docs/manual/reference/operator/query/center/#op._S_center
-.. _$centerSphere: https://www.mongodb.com/docs/manual/reference/operator/query/centerSphere/#op._S_centerSphere
 
 .. seealso::
 
