@@ -81,8 +81,10 @@ function(add_test_cmake_project name path)
         set(_tp_arg_GENERATOR "${CMAKE_GENERATOR}")
     endif()
     # Normalize paths
-    cmake_path(ABSOLUTE_PATH _tp_arg_BUILD_DIR BASE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}" NORMALIZE)
-    cmake_path(ABSOLUTE_PATH path NORMALIZE)
+    if(NOT IS_ABSOLUTE "${_tp_arg_BUILD_DIR}")
+        set(_tp_arg_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/${_tp_arg_BUILD_DIR}")
+    endif()
+    get_filename_component(path "${path}" ABSOLUTE)
     message(VERBOSE "Add test project [${path}]")
 
     # Arguments that will be given during the CMake configure step:
@@ -254,5 +256,6 @@ function(__do_test_project)
 endfunction()
 
 if(__test_project_run)
+    cmake_minimum_required(VERSION 3.20)  # cmake_path/execute_process
     __do_test_project()
 endif()
