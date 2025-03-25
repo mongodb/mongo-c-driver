@@ -51,7 +51,7 @@ Version
 
 The ``version`` parameter is used to communicate backward compatible changes to the OIDC callback API (i.e. the addition of a new parameter).
 
-This parameter be used to detect when existing usage of :symbol:`mongoc_oidc_callback_t` or a relevant callback function may need to be reviewed.
+This parameter may be used to detect when existing usage of :symbol:`mongoc_oidc_callback_t` or a relevant callback function may need to be reviewed.
 
 For example, users may add the following check to their callback function:
 
