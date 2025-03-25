@@ -12,8 +12,8 @@ Versioning Files
 .. file:: VERSION_CURRENT
 
   This file contains the full version number of the current working copy of the
-  project. During development, this should be ``x.y.z-dev``. On release
-  branches, this will have the prerelease tag removed.
+  project. During development, this should be ``x.y.z-dev``. On tagged commits,
+  this will have the prerelease tag removed.
 
   .. note::
 

@@ -469,10 +469,12 @@ Do the following:
 1. Manually update the ``NEWS`` and ``src/libbson/NEWS`` files with the content
    from the release branch that we just published. Commit these changes to the
    new branch.
-2. For a minor release, manually update the :file:`VERSION_CURRENT` file. Example
-   if ``1.28.0`` was just released, update to ``1.29.0-dev``.
-3. Update the :file:`etc/prior_version.txt` file to contain the version that you
-   have just released. This text should match the generated Git tag.
+2. For a non-patch release, manually update the :file:`VERSION_CURRENT` file.
+   Example: if ``1.28.0`` was just released, update to ``1.29.0-dev``.
+3. For a non-patch release, update the :file:`etc/prior_version.txt` file to
+   contain the version that you have just released. This text should match the
+   generated Git tag. (The tag should always be an ancestor of the branch that
+   contains that :file:`etc/prior_version.txt`.)
 
 Push this branch to your fork of the repository::
 

@@ -1,9 +1,8 @@
 include_guard(GLOBAL)
 
 #[[
-    Attempts to find the current build version string. If VERSION_CURRENT exists
-    in the current source directory, uses that. Otherwise, runs calc_release_version.py
-    to compute the version from the Git history.
+    Attempts to find the current build version string by reading VERSION_CURRENT
+    from the current source directory.
 
     The computed build version is set in the parent scope according to `outvar`.
 ]]
