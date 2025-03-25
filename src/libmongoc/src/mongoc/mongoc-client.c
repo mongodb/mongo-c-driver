@@ -2221,43 +2221,6 @@ mongoc_client_find_databases_with_opts (mongoc_client_t *client, const bson_t *o
 }
 
 
-int32_t
-mongoc_client_get_max_message_size (mongoc_client_t *client) /* IN */
-{
-   BSON_ASSERT_PARAM (client);
-
-   return mongoc_cluster_get_max_msg_size (&client->cluster);
-}
-
-
-int32_t
-mongoc_client_get_max_bson_size (mongoc_client_t *client) /* IN */
-{
-   BSON_ASSERT_PARAM (client);
-
-   return mongoc_cluster_get_max_bson_obj_size (&client->cluster);
-}
-
-
-bool
-mongoc_client_get_server_status (mongoc_client_t *client,         /* IN */
-                                 mongoc_read_prefs_t *read_prefs, /* IN */
-                                 bson_t *reply,                   /* OUT */
-                                 bson_error_t *error)             /* OUT */
-{
-   bson_t cmd = BSON_INITIALIZER;
-   bool ret = false;
-
-   BSON_ASSERT_PARAM (client);
-
-   BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
-   ret = mongoc_client_command_simple (client, "admin", &cmd, read_prefs, reply, error);
-   bson_destroy (&cmd);
-
-   return ret;
-}
-
-
 void
 mongoc_client_set_stream_initiator (mongoc_client_t *client, mongoc_stream_initiator_t initiator, void *user_data)
 {

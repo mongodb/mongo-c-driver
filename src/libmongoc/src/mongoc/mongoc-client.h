@@ -208,19 +208,6 @@ MONGOC_EXPORT (mongoc_cursor_t *) mongoc_client_find_databases (mongoc_client_t 
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_client_find_databases_with_opts (mongoc_client_t *client, const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
 
-BSON_DEPRECATED ("This function does not work with a mongoc_client_session_t, so this function is "
-                 "deprecated. Prefer to execute a command directly with mongoc_client_read_command_with_opts")
-MONGOC_EXPORT (bool) mongoc_client_get_server_status (mongoc_client_t *client,
-                                                      mongoc_read_prefs_t *read_prefs,
-                                                      bson_t *reply,
-                                                      bson_error_t *error);
-
-BSON_DEPRECATED ("Use of this function is deprecated")
-MONGOC_EXPORT (int32_t) mongoc_client_get_max_message_size (mongoc_client_t *client);
-
-BSON_DEPRECATED ("Use of this function is deprecated")
-MONGOC_EXPORT (int32_t) mongoc_client_get_max_bson_size (mongoc_client_t *client);
-
 MONGOC_EXPORT (const mongoc_write_concern_t *)
 mongoc_client_get_write_concern (const mongoc_client_t *client);
 

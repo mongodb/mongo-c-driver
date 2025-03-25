@@ -38,13 +38,16 @@ Unreleased (2.0.0)
 * Support for LibreSSL (the CMake option `ENABLE_SSL=LIBRESSL`) is removed. Associated API is removed (`MONGOC_ENABLE_SSL_LIBRESSL` and  `mongoc_stream_tls_libressl_new`).
 * `MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED` (value -1) is removed. Use `MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED` (value 0) which is handled equivalently. If specified in a URI, replace: `mongodb://host/?w=-1` with `mongodb://host/?w=0`.
 * The deprecated CMake option `ENABLE_AUTOMATIC_INIT_AND_CLEANUP` is removed. See [Initialization and cleanup](https://mongoc.org/libmongoc/1.30.2/init-cleanup.html) for expected use of `mongoc_init()` and `mongoc_cleanup()`.
+* `mongoc_client_get_database_names` is removed. Use `mongoc_client_get_database_names_with_opts` instead.
+* `mongoc_client_find_databases` is removed. Use `mongoc_client_find_databases_with_opts` instead.
+* `mongoc_client_get_max_message_size` is removed.
+* `mongoc_client_get_max_bson_size` is removed.
 * Deprecated API for `mongoc_bulk_operation_t` is removed:
   * `mongoc_bulk_operation_delete` is removed. Use `mongoc_bulk_operation_remove()` instead.
   * `mongoc_bulk_operation_delete_one` is removed. Use `mongoc_bulk_operation_remove_one` instead.
   * `mongoc_bulk_operation_get_hint` is removed. Use `mongoc_bulk_operation_get_server_id` instead.
   * `mongoc_bulk_operation_set_hint` is removed. Use `mongoc_bulk_operation_set_server_id` instead.
 * Deprecated `mongoc_apm_command_*_get_server_connection_id` functions are removed. Use `mongoc_apm_command_*_get_server_connection_id_int64` instead.
-
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
@@ -75,6 +78,21 @@ if (!ok) {
   printf ("Failed to send 'killCursors': %s\n", error.message);
 }
 bson_destroy (cmd);
+```
+
+### `mongoc_client_get_server_status`
+
+`mongoc_client_get_server_status` is removed. Use a command helper to run the "serverStatus" command instead:
+
+```c
+bson_t *cmd = BCON_NEW("serverStatus", BCON_INT32(1));
+if (!mongoc_client_command_simple(client, "db", cmd, NULL, &reply, &error)) {
+    printf("Failed to send 'serverStatus': %s\n", error.message);
+} else {
+  // TODO: use `reply`
+}
+bson_destroy(&reply);
+bson_destroy(cmd);
 ```
 
 

@@ -71,7 +71,6 @@ Example
     mongoc_client_get_read_prefs
     mongoc_client_get_server_description
     mongoc_client_get_server_descriptions
-    mongoc_client_get_server_status
     mongoc_client_get_uri
     mongoc_client_get_write_concern
     mongoc_client_new
