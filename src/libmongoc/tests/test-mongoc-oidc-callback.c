@@ -126,6 +126,11 @@ test_oidc_callback_params (void)
       }
    }
 
+   // Owning resources.
+   {
+      mongoc_oidc_callback_params_set_username (params, "must be freed");
+   }
+
    mongoc_oidc_callback_params_destroy (params);
 }
 
@@ -158,6 +163,11 @@ test_oidc_credential (void)
 
       ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), NULL);
       ASSERT (!mongoc_oidc_credential_get_expires_in (cred));
+   }
+
+   // Owning resources.
+   {
+      mongoc_oidc_credential_set_access_token (cred, "must be freed");
    }
 
    mongoc_oidc_credential_destroy (cred);

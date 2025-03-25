@@ -225,6 +225,7 @@ void
 mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred)
 {
    if (cred) {
+      bson_free (cred->access_token);
       bson_free (cred);
    }
 }
