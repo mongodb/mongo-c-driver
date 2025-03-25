@@ -90,7 +90,7 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
           mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new ();
           mongoc_oidc_callback_set_fn (callback, &many_threads_possible);
           mongoc_client_set_oidc_callback (client_a, callback);
-          mongoc_client_set_oidc_callback (client_b, callback); // Not recommended.
+          mongoc_client_set_oidc_callback (client_b, callback);
           mongoc_oidc_callback_destroy (callback);
        }
 
@@ -110,7 +110,7 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
           mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new ();
           mongoc_oidc_callback_set_fn (callback, &many_threads_possible);
           mongoc_client_pool_set_oidc_callback (pool_a, callback);
-          mongoc_client_pool_set_oidc_callback (pool_b, callback); // Not recommended.
+          mongoc_client_pool_set_oidc_callback (pool_b, callback);
           mongoc_oidc_callback_destroy (callback);
        }
 
@@ -119,10 +119,6 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
        mongoc_client_pool_destroy (pool_a);
        mongoc_client_pool_destroy (pool_b);
     }
-
-.. warning::
-
-  Using the same callback function with more than one :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` object at a time is NOT recommended.
 
 .. seealso::
 
