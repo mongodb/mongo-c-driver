@@ -9,9 +9,8 @@ sys.path.append(os.path.normpath(os.path.join(this_path, '../')))
 
 from mongoc_common import *
 
-version = release = os.environ.get('VERSION_RELEASED')
-if not release:
-    raise RuntimeError('Set the "VERSION_RELEASED" environment variable')
+with open(this_path + '/../../../VERSION_CURRENT') as vc:
+    release = version = vc.read()
 
 # -- General configuration ------------------------------------------------
 templates_path = ['_templates']
