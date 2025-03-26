@@ -11,7 +11,7 @@ Unreleased (2.0.0)
 * URI authentication credentials validation (only applicable during creation of a new `mongoc_uri_t` object from a connection string):
   * The requirement that a username is non-empty when specified is now enforced regardless of authentication mechanism.
   * Username and password specification requirements are now validated and returns a client error for the specified authentication mechanism.
-    * e.g. it is a client error to not specify a username or a password for SCRAM-SHA-1, SCRAM-SHA-256, and GSSAPI.
+    * e.g. it is a client error to not specify a username or a password for SCRAM-SHA-1, SCRAM-SHA-256, and PLAIN.
     * e.g. it is a client error to specify a password for MONGODB-X509.
     * e.g. it is a client error to specify a username or a password without the other for MONGODB-AWS.
   * `authSource` is now correctly defaulted to `"$external"` for MONGODB-AWS (instead of the database name or `"admin"`).
