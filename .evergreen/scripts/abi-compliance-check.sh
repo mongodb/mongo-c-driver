@@ -8,12 +8,15 @@ mkdir abi-compliance/changes-install
 mkdir abi-compliance/latest-release-install
 mkdir abi-compliance/dumps
 
-python ./build/calc_release_version.py --next-minor >VERSION_CURRENT
-python ./build/calc_release_version.py --next-minor -p >VERSION_RELEASED
+declare head_commit today
+# The 10 digits of the current commit
+head_commit=$(git rev-parse --revs-only --short=10 "HEAD^{commit}")
+# The YYYYMMDD date
+today=$(date +%Y%m%d)
 
 declare newest current
-newest="$(cat VERSION_RELEASED)"
-current="$(cat VERSION_CURRENT)"
+current="$(cat VERSION_CURRENT)-$today+git$head_commit"
+newest=$(cat etc/prior_version.txt)
 
 declare working_dir
 working_dir="$(pwd)"
