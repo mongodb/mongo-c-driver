@@ -694,7 +694,7 @@ test_exhaust_in_child (void)
 
    /* insert some documents, more than one reply's worth. */
    to_insert = BCON_NEW ("x", BCON_INT32 (1));
-   bulk = mongoc_collection_create_bulk_operation (coll, false, NULL /* wc */);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (coll, NULL);
    for (i = 0; i < 1001; i++) {
       ret = mongoc_bulk_operation_insert_with_opts (bulk, to_insert, NULL /* opts */, &error);
       ASSERT_OR_PRINT (ret, error);

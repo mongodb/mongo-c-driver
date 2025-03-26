@@ -2431,33 +2431,6 @@ mongoc_collection_stats (mongoc_collection_t *collection, const bson_t *options,
 
 
 mongoc_bulk_operation_t *
-mongoc_collection_create_bulk_operation (mongoc_collection_t *collection,
-                                         bool ordered,
-                                         const mongoc_write_concern_t *write_concern)
-{
-   bson_t opts = BSON_INITIALIZER;
-   mongoc_bulk_operation_t *bulk;
-   bool wc_ok = true;
-
-   bson_append_bool (&opts, "ordered", 7, ordered);
-   if (write_concern) {
-      wc_ok = mongoc_write_concern_append ((mongoc_write_concern_t *) write_concern, &opts);
-   }
-
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
-
-   bson_destroy (&opts);
-
-   if (!wc_ok) {
-      _mongoc_set_error (
-         &bulk->result.error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid writeConcern");
-   }
-
-   return bulk;
-}
-
-
-mongoc_bulk_operation_t *
 mongoc_collection_create_bulk_operation_with_opts (mongoc_collection_t *collection, const bson_t *opts)
 {
    mongoc_bulk_opts_t bulk_opts;
