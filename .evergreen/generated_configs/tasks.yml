@@ -1103,7 +1103,7 @@ tasks:
       - debian10-large
       - debian11-large
       - amazon2
-    tags: [earthly, pr-merge-gate, centos7-clang, centos7-gcc, u16-clang, u16-gcc]
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -1143,7 +1143,7 @@ tasks:
       - debian10-large
       - debian11-large
       - amazon2
-    tags: [earthly, pr-merge-gate, centos7-clang, centos7-gcc, u16-clang, u16-gcc]
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -1183,7 +1183,7 @@ tasks:
       - debian10-large
       - debian11-large
       - amazon2
-    tags: [earthly, pr-merge-gate, centos7-clang, centos7-gcc, u16-clang, u16-gcc]
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
         type: setup
@@ -1223,7 +1223,7 @@ tasks:
       - debian10-large
       - debian11-large
       - amazon2
-    tags: [earthly, pr-merge-gate, centos7-clang, centos7-gcc, u16-clang, u16-gcc]
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
         type: setup

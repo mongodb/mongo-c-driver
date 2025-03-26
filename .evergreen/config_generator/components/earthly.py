@@ -146,10 +146,6 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
         case e, (_sasl, _tls, cxx) if re.match(r"^Ubuntu 16|^CentOS 7", e.display_name):
             # Only build if C++ driver is test is disabled
             return cxx == "none"
-        # Skip other platforms where the C++ driver test is disabled, since they would be
-        # redundant
-        case _, (_sasl, _tls, "none"):
-            return False
         # Anything else: Allow it to run:
         case _:
             return True
