@@ -285,13 +285,6 @@ future_functions = [
                      param("const_bson_ptr", "opts")]),
 
     future_function("bool",
-                    "mongoc_collection_stats",
-                    [param("mongoc_collection_ptr", "collection"),
-                     param("const_bson_ptr", "options"),
-                     param("bson_ptr", "stats"),
-                     param("bson_error_ptr", "error")]),
-
-    future_function("bool",
                     "mongoc_collection_insert_many",
                     [param("mongoc_collection_ptr", "collection"),
                      param("const_bson_ptr_ptr", "documents"),

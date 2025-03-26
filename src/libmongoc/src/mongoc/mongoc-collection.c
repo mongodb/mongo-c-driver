@@ -2349,59 +2349,6 @@ mongoc_collection_rename_with_opts (mongoc_collection_t *collection,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_stats --
- *
- *       Fetches statistics about the collection.
- *
- *       The result is stored in @stats, which should NOT be an initialized
- *       bson_t or a leak will occur.
- *
- *       @stats, @options, and @error are optional.
- *
- * Returns:
- *       true on success and @stats is set.
- *       false on failure and @error is set.
- *
- * Side effects:
- *       @stats and @error.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-mongoc_collection_stats (mongoc_collection_t *collection, const bson_t *options, bson_t *stats, bson_error_t *error)
-{
-   bson_iter_t iter;
-   bson_t cmd = BSON_INITIALIZER;
-   bool ret;
-
-   BSON_ASSERT_PARAM (collection);
-
-   if (options && bson_iter_init_find (&iter, options, "scale") && !BSON_ITER_HOLDS_INT32 (&iter)) {
-      _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "'scale' must be an int32 value.");
-      return false;
-   }
-
-   BSON_APPEND_UTF8 (&cmd, "collStats", collection->collection);
-
-   if (options) {
-      bson_concat (&cmd, options);
-   }
-
-   /* Server Selection Spec: "may-use-secondary" commands SHOULD take a read
-    * preference argument and otherwise MUST use the default read preference
-    * from client, database or collection configuration. */
-   ret = mongoc_collection_command_simple (collection, &cmd, collection->read_prefs, stats, error);
-
-   bson_destroy (&cmd);
-
-   return ret;
-}
-
-
 mongoc_bulk_operation_t *
 mongoc_collection_create_bulk_operation_with_opts (mongoc_collection_t *collection, const bson_t *opts)
 {

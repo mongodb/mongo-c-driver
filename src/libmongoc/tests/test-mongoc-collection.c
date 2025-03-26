@@ -2946,82 +2946,6 @@ test_rename (void)
 
 
 static void
-test_stats (void *unused)
-{
-   BSON_UNUSED (unused);
-   mongoc_collection_t *collection;
-   mongoc_client_t *client;
-   bson_error_t error;
-   bson_iter_t iter;
-   bson_t stats;
-   bson_t doc = BSON_INITIALIZER;
-
-   client = test_framework_new_default_client ();
-   ASSERT (client);
-
-   collection = get_test_collection (client, "test_stats");
-   ASSERT (collection);
-
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (collection, &doc, NULL, NULL, &error), error);
-
-   BEGIN_IGNORE_DEPRECATIONS
-   ASSERT_OR_PRINT (mongoc_collection_stats (collection, NULL, &stats, &error), error);
-   END_IGNORE_DEPRECATIONS
-
-   BSON_ASSERT (bson_iter_init_find (&iter, &stats, "ns"));
-
-   BSON_ASSERT (bson_iter_init_find (&iter, &stats, "count"));
-   BSON_ASSERT (bson_iter_as_int64 (&iter) >= 1);
-
-   bson_destroy (&stats);
-
-   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
-
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   bson_destroy (&doc);
-}
-
-
-static void
-test_stats_read_pref (void)
-{
-   mock_server_t *server;
-   mongoc_collection_t *collection;
-   mongoc_client_t *client;
-   mongoc_read_prefs_t *prefs;
-   future_t *future;
-   request_t *request;
-   bson_error_t error;
-   bson_t stats;
-
-   server = mock_mongos_new (WIRE_VERSION_MIN);
-   mock_server_run (server);
-   mock_server_auto_endsessions (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   collection = mongoc_client_get_collection (client, "db", "collection");
-   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-   mongoc_collection_set_read_prefs (collection, prefs);
-   future = future_collection_stats (collection, NULL, &stats, &error);
-   request = mock_server_receives_msg (server,
-                                       MONGOC_MSG_NONE,
-                                       tmp_bson ("{'$db': 'db',"
-                                                 " 'collStats': 'collection',"
-                                                 " '$readPreference': {'mode': 'secondary'}}"));
-
-   reply_to_request_with_ok_and_destroy (request);
-   ASSERT_OR_PRINT (future_get_bool (future), error);
-
-   future_destroy (future);
-   bson_destroy (&stats);
-   mongoc_read_prefs_destroy (prefs);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-}
-
-
-static void
 test_find_and_modify_write_concern (void)
 {
    mongoc_collection_t *collection;
@@ -5501,11 +5425,6 @@ test_collection_install (TestSuite *suite)
                       test_framework_skip_if_auth);
    TestSuite_AddFull (suite, "/Collection/validate", test_validate, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/rename", test_rename);
-   // The collStats command is deprecated in MongoDB 6.0 (maxWireVersion=17) and
-   // may be removed in a future major release.
-   TestSuite_AddFull (
-      suite, "/Collection/stats", test_stats, NULL, NULL, test_framework_skip_if_max_wire_version_more_than_17);
-   TestSuite_AddMockServerTest (suite, "/Collection/stats/read_pref", test_stats_read_pref);
    TestSuite_AddMockServerTest (suite, "/Collection/find_read_concern", test_find_read_concern);
    TestSuite_AddFull (
       suite, "/Collection/getmore_read_concern_live", test_getmore_read_concern_live, NULL, NULL, TestSuite_CheckLive);

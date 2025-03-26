@@ -243,16 +243,6 @@ future_collection_find_indexes_with_opts (
 
 
 future_t *
-future_collection_stats (
-
-   mongoc_collection_ptr collection,
-   const_bson_ptr options,
-   bson_ptr stats,
-   bson_error_ptr error
-);
-
-
-future_t *
 future_collection_insert_many (
 
    mongoc_collection_ptr collection,

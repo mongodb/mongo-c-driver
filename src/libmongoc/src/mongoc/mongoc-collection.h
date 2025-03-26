@@ -244,11 +244,6 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
                                    bson_t *reply,
                                    bson_error_t *error);
 
-BSON_DEPRECATED ("This function does not work with mongoc_client_session_t and is not recommended. Prefer to execute a "
-                 "command directly with mongoc_client_read_command_with_opts.")
-MONGOC_EXPORT (bool)
-   mongoc_collection_stats (mongoc_collection_t *collection, const bson_t *options, bson_t *reply, bson_error_t *error);
-
 MONGOC_EXPORT (mongoc_bulk_operation_t *)
 mongoc_collection_create_bulk_operation_with_opts (mongoc_collection_t *collection, const bson_t *opts)
    BSON_GNUC_WARN_UNUSED_RESULT;
