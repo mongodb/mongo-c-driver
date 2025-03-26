@@ -60,6 +60,16 @@ Unreleased (2.0.0)
 * `mongoc_collection_find` is removed. Use `mongoc_collection_find_with_opts` instead.
 * `mongoc_collection_insert_bulk` is removed. Use `mongoc_collection_insert_many` instead.
 * `mongoc_collection_create_bulk_operation` is removed. Use `mongoc_collection_create_bulk_operation_with_opts` instead.
+* `mongoc_collection_get_last_error` is removed. To get results from write operations, instead use:
+    - `mongoc_collection_update_one`
+    - `mongoc_collection_update_many`
+    - `mongoc_collection_replace_one`
+    - `mongoc_collection_delete_one`
+    - `mongoc_collection_delete_many`
+    - `mongoc_collection_insert_one`
+    - `mongoc_collection_insert_many`
+    - `mongoc_bulkwrite_t`
+    - `mongoc_bulk_operation_t`
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 

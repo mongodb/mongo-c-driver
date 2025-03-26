@@ -2185,34 +2185,6 @@ mongoc_collection_get_name (mongoc_collection_t *collection)
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_collection_get_last_error --
- *
- *       Returns a bulk result.
- *
- * Returns:
- *       NULL or a bson_t that should not be modified or freed. This value
- *       is not guaranteed to be persistent between calls into the
- *       mongoc_collection_t instance, and therefore must be copied if
- *       you would like to keep it around.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-const bson_t *
-mongoc_collection_get_last_error (const mongoc_collection_t *collection) /* IN */
-{
-   BSON_ASSERT_PARAM (collection);
-
-   return collection->gle;
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
  * mongoc_collection_validate --
  *
  *       Helper to call the validate command on the MongoDB server to

@@ -274,9 +274,6 @@ mongoc_collection_set_write_concern (mongoc_collection_t *collection, const mong
 MONGOC_EXPORT (const char *)
 mongoc_collection_get_name (mongoc_collection_t *collection);
 
-BSON_DEPRECATED ("Use of this function is deprecated")
-MONGOC_EXPORT (const bson_t *) mongoc_collection_get_last_error (const mongoc_collection_t *collection);
-
 MONGOC_EXPORT (char *)
 mongoc_collection_keys_to_index_string (const bson_t *keys) BSON_GNUC_WARN_UNUSED_RESULT;
 
