@@ -120,26 +120,6 @@ mongoc_collection_drop_index_with_opts (mongoc_collection_t *collection,
                                         const bson_t *opts,
                                         bson_error_t *error);
 
-BSON_DEPRECATED_FOR (mongoc_collection_create_indexes_with_opts)
-MONGOC_EXPORT (bool) mongoc_collection_create_index (mongoc_collection_t *collection,
-                                                     const bson_t *keys,
-                                                     const mongoc_index_opt_t *opt,
-                                                     bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_create_indexes_with_opts)
-MONGOC_EXPORT (bool) mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
-                                                               const bson_t *keys,
-                                                               const mongoc_index_opt_t *opt,
-                                                               const bson_t *opts,
-                                                               bson_t *reply,
-                                                               bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_create_indexes_with_opts)
-MONGOC_EXPORT (bool) mongoc_collection_ensure_index (mongoc_collection_t *collection,
-                                                     const bson_t *keys,
-                                                     const mongoc_index_opt_t *opt,
-                                                     bson_error_t *error);
-
 BSON_DEPRECATED_FOR (mongoc_collection_find_indexes_with_opts)
 MONGOC_EXPORT (mongoc_cursor_t *) mongoc_collection_find_indexes (mongoc_collection_t *collection, bson_error_t *error)
    BSON_GNUC_WARN_UNUSED_RESULT;
