@@ -454,6 +454,16 @@ future_get_const_mongoc_ss_log_context_ptr (future_t *future)
    FUTURE_TIMEOUT_ABORT;
 }
 
+mongoc_index_model_t_ptr_const_ptr
+future_get_mongoc_index_model_t_ptr_const_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_mongoc_index_model_t_ptr_const_ptr (&future->return_value);
+   }
+
+   FUTURE_TIMEOUT_ABORT;
+}
+
 
 future_t *
 future_new (future_value_type_t return_type, int argc)

@@ -104,6 +104,7 @@ typedef_list = [
             "const mongoc_write_concern_t *"),
     typedef("const_mongoc_ss_log_context_ptr",
             "const mongoc_ss_log_context_t *"),
+    typedef("mongoc_index_model_t_ptr_const_ptr", "mongoc_index_model_t *const *")
 ]
 
 type_list = [T.name for T in typedef_list]
@@ -237,10 +238,10 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
-                    "mongoc_collection_create_index_with_opts",
+                    "mongoc_collection_create_indexes_with_opts",
                     [param("mongoc_collection_ptr", "collection"),
-                     param("const_bson_ptr", "keys"),
-                     param("const_mongoc_index_opt_t", "opt"),
+                     param("mongoc_index_model_t_ptr_const_ptr", "models"),
+                     param("size_t", "num_models"),
                      param("const_bson_ptr", "opts"),
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),

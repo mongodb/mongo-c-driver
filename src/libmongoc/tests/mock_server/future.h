@@ -168,6 +168,9 @@ future_get_const_mongoc_write_concern_ptr (future_t *future);
 const_mongoc_ss_log_context_ptr
 future_get_const_mongoc_ss_log_context_ptr (future_t *future);
 
+mongoc_index_model_t_ptr_const_ptr
+future_get_mongoc_index_model_t_ptr_const_ptr (future_t *future);
+
 
 void future_destroy (future_t *future);
 
