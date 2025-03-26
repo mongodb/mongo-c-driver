@@ -1470,15 +1470,8 @@ test_index_w_write_concern (void)
    mongoc_write_concern_append_bad (bad_wc, opts);
    /* skip this part of the test if sharded cluster */
    if (!is_mongos) {
-      mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, &reply, NULL);
-      {
-         // Check `reply` for expected error.
-         // Some server versions reply with ok:1 reply with writeConcernError.
-         // `mongoc_collection_create_indexes_with_opts` does not check for writeConcernError.
-         bool ok = _mongoc_cmd_check_ok_no_wce (&reply, MONGOC_ERROR_API_VERSION_2, &error);
-         ASSERT (!ok);
-         assert_wc_oob_error (&error);
-      }
+      ASSERT (!mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, &reply, &error));
+      assert_wc_oob_error (&error);
 
       ASSERT (!bson_empty (&reply));
       bson_destroy (&reply);
