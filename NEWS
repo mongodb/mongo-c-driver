@@ -71,6 +71,7 @@ Unreleased (2.0.0)
     - `mongoc_bulkwrite_t`
     - `mongoc_bulk_operation_t`
 * `mongoc_collection_stats` is removed. Use the [$collStats aggregation pipeline stage](https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/) with `mongoc_collection_aggregate` instead.
+* `mongoc_collection_validate` is removed. Run the [validate](https://www.mongodb.com/docs/manual/reference/command/validate/) command directly with `mongoc_client_read_command_with_opts` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 

@@ -2779,74 +2779,6 @@ test_aggregate_server_id_option (void *ctx)
    mongoc_client_destroy (client);
 }
 
-
-static void
-test_validate (void *ctx)
-{
-   mongoc_collection_t *collection;
-   mongoc_client_t *client;
-   bson_iter_t iter;
-   bson_error_t error;
-   bson_t doc = BSON_INITIALIZER;
-   bson_t opts = BSON_INITIALIZER;
-   bson_t reply;
-   bool r;
-   const uint32_t expected_err_domain = MONGOC_ERROR_BSON;
-   const uint32_t expected_err_code = MONGOC_ERROR_BSON_INVALID;
-
-   BSON_UNUSED (ctx);
-
-   client = test_framework_new_default_client ();
-   ASSERT (client);
-
-   collection = get_test_collection (client, "test_validate");
-   ASSERT (collection);
-
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (collection, &doc, NULL, NULL, &error), error);
-
-   BSON_APPEND_BOOL (&opts, "full", true);
-
-   ASSERT_OR_PRINT (mongoc_collection_validate (collection, &opts, &reply, &error), error);
-
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "valid"));
-
-   bson_destroy (&reply);
-
-   /* Make sure we don't segfault when reply is NULL */
-   ASSERT_OR_PRINT (mongoc_collection_validate (collection, &opts, NULL, &error), error);
-
-   bson_reinit (&opts);
-   BSON_APPEND_UTF8 (&opts, "full", "bad_value");
-
-   /* invalidate reply */
-   reply.len = 0;
-   BSON_ASSERT (!bson_validate (&reply, BSON_VALIDATE_NONE, NULL));
-
-   r = mongoc_collection_validate (collection, &opts, &reply, &error);
-   BSON_ASSERT (!r);
-   BSON_ASSERT (error.domain == expected_err_domain);
-   BSON_ASSERT (error.code == expected_err_code);
-
-   /* check that reply has been initialized */
-   BSON_ASSERT (bson_validate (&reply, 0, NULL));
-
-   /* Make sure we don't segfault when reply is NULL */
-   memset (&error, 0, sizeof (error));
-   r = mongoc_collection_validate (collection, &opts, NULL, &error);
-   BSON_ASSERT (!r);
-   BSON_ASSERT (error.domain == expected_err_domain);
-   BSON_ASSERT (error.code == expected_err_code);
-
-   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
-
-   bson_destroy (&reply);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   bson_destroy (&doc);
-   bson_destroy (&opts);
-}
-
-
 static void
 test_rename (void)
 {
@@ -5423,7 +5355,6 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_auth);
-   TestSuite_AddFull (suite, "/Collection/validate", test_validate, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/rename", test_rename);
    TestSuite_AddMockServerTest (suite, "/Collection/find_read_concern", test_find_read_concern);
    TestSuite_AddFull (

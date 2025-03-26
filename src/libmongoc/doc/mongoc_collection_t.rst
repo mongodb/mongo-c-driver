@@ -67,6 +67,5 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_collection_update
     mongoc_collection_update_one
     mongoc_collection_update_many
-    mongoc_collection_validate
     mongoc_collection_write_command_with_opts
 
