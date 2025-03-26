@@ -1139,7 +1139,7 @@ _test_dollar_query (void *ctx)
       read_prefs = NULL;
    }
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson (test->q), NULL, read_prefs);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (test->q), NULL, read_prefs);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server, 0, tmp_bson (test->e));

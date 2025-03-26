@@ -34,7 +34,7 @@ _test_op_msg (const mongoc_uri_t *uri,
    client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 1, 0, tmp_bson (query_or_cmd), NULL, read_prefs);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (query_or_cmd), NULL, read_prefs);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server, 0, tmp_bson (expected_find));

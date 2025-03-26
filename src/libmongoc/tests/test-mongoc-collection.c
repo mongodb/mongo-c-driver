@@ -340,13 +340,6 @@ test_read_prefs_is_valid (void *ctx)
    ASSERT (mongoc_collection_count_with_opts (
               collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), 0, 0, NULL, read_prefs, &error) == -1);
 
-   /* mongoc_collection_find */
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{}"), NULL, read_prefs);
-
-   ASSERT (cursor);
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   mongoc_cursor_destroy (cursor);
-
    /* mongoc_collection_find_with_opts */
    cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, read_prefs);
 
@@ -374,13 +367,6 @@ test_read_prefs_is_valid (void *ctx)
    ASSERT_OR_PRINT (mongoc_collection_count_with_opts (
                        collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), 0, 0, NULL, read_prefs, &error) != -1,
                     error);
-
-   /* mongoc_collection_find */
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{}"), NULL, read_prefs);
-
-   ASSERT (cursor);
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   mongoc_cursor_destroy (cursor);
 
    /* mongoc_collection_find_with_opts */
    cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, read_prefs);
@@ -933,7 +919,7 @@ test_decimal128 (void *ctx)
    count = mongoc_collection_count_documents (collection, &query, NULL, NULL, NULL, &error);
    ASSERT (count > 0);
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
    ASSERT (mongoc_cursor_next (cursor, &dec));
 
    ASSERT (bson_iter_init (&dec_iter, dec));
@@ -3228,7 +3214,7 @@ test_large_return (void *ctx)
 
    BSON_APPEND_OID (&query, "_id", &oid);
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
    BSON_ASSERT (cursor);
    bson_destroy (&query);
 
@@ -3450,25 +3436,7 @@ test_find_limit (void)
    client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   /* test mongoc_collection_find and mongoc_collection_find_with_opts */
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_NONE, 0 /* skip */, 2 /* limit */, 0 /* batch_size */, tmp_bson ("{}"), NULL, NULL);
-
-   future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_msg (server,
-                                       MONGOC_MSG_NONE,
-                                       tmp_bson ("{'$db': 'test',"
-                                                 " 'find': 'test',"
-                                                 " 'filter': {},"
-                                                 " 'limit': {'$numberLong': '2'}}"));
-
-   reply_to_request_simple (request, "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
-   BSON_ASSERT (future_get_bool (future));
-
-   future_destroy (future);
-   request_destroy (request);
-   mongoc_cursor_destroy (cursor);
-
+   /* test mongoc_collection_find_with_opts */
    cursor = mongoc_collection_find_with_opts (
       collection, tmp_bson ("{}"), tmp_bson ("{'limit': {'$numberLong': '2'}}"), NULL);
 
@@ -3510,25 +3478,7 @@ test_find_batch_size (void)
    client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   /* test mongoc_collection_find and mongoc_collection_find_with_opts */
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_NONE, 0 /* skip */, 0 /* limit */, 2 /* batch_size */, tmp_bson ("{}"), NULL, NULL);
-
-   future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_msg (server,
-                                       MONGOC_MSG_NONE,
-                                       tmp_bson ("{'$db': 'test',"
-                                                 " 'find': 'test',"
-                                                 " 'filter': {},"
-                                                 " 'batchSize': {'$numberLong': '2'}}"));
-
-   reply_to_request_simple (request, "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
-   BSON_ASSERT (future_get_bool (future));
-
-   future_destroy (future);
-   request_destroy (request);
-   mongoc_cursor_destroy (cursor);
-
+   /* test mongoc_collection_find_with_opts */
    cursor = mongoc_collection_find_with_opts (
       collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': {'$numberLong': '2'}}"), NULL);
 
@@ -3793,15 +3743,8 @@ test_find_read_concern (void)
    client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   /* No read_concern set - test find and find_with_opts */
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    0 /* skip */,
-                                    0 /* limit */,
-                                    0 /* batch_size */,
-                                    tmp_bson ("{}"),
-                                    NULL,
-                                    NULL);
+   /* No read_concern set */
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
    request =
@@ -3821,14 +3764,11 @@ test_find_read_concern (void)
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
    mongoc_collection_set_read_concern (collection, rc);
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    0 /* skip */,
-                                    0 /* limit */,
-                                    0 /* batch_size */,
-                                    tmp_bson ("{}"),
-                                    NULL,
-                                    NULL);
+   cursor = mongoc_collection_find_with_opts (collection,
+
+                                              tmp_bson ("{}"),
+                                              NULL,
+                                              NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server,
@@ -3853,14 +3793,7 @@ test_find_read_concern (void)
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, "random");
    mongoc_collection_set_read_concern (collection, rc);
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    0 /* skip */,
-                                    0 /* limit */,
-                                    0 /* batch_size */,
-                                    tmp_bson ("{}"),
-                                    NULL,
-                                    NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server,
@@ -3884,14 +3817,7 @@ test_find_read_concern (void)
    /* empty readConcernLevel doesn't send anything */
    rc = mongoc_read_concern_new ();
    mongoc_collection_set_read_concern (collection, rc);
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    0 /* skip */,
-                                    0 /* limit */,
-                                    0 /* batch_size */,
-                                    tmp_bson ("{}"),
-                                    NULL,
-                                    NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server,
@@ -3916,14 +3842,7 @@ test_find_read_concern (void)
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, NULL);
    mongoc_collection_set_read_concern (collection, rc);
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    0 /* skip */,
-                                    0 /* limit */,
-                                    0 /* batch_size */,
-                                    tmp_bson ("{}"),
-                                    NULL,
-                                    NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server,
