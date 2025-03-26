@@ -4257,6 +4257,7 @@ test_index_with_collation (void)
    reply_to_request_with_ok_and_destroy (request);
    ASSERT (future_get_bool (future));
 
+   mongoc_index_model_destroy (im);
    bson_destroy (&reply);
    bson_destroy (&keys);
    future_destroy (future);
