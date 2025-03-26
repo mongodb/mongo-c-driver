@@ -631,30 +631,6 @@ BSON_THREAD_FUN (background_mongoc_collection_write_command_with_opts, data)
 }
 
 static
-BSON_THREAD_FUN (background_mongoc_collection_insert_bulk, data)
-{
-   future_t *future = (future_t *) data;
-   future_value_t return_value;
-
-   return_value.type = future_value_bool_type;
-
-   future_value_set_bool (
-      &return_value,
-      mongoc_collection_insert_bulk (
-         future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
-         future_value_get_mongoc_insert_flags_t (future_get_param (future, 1)),
-         future_value_get_const_bson_ptr_ptr (future_get_param (future, 2)),
-         future_value_get_uint32_t (future_get_param (future, 3)),
-         future_value_get_const_mongoc_write_concern_ptr (future_get_param (future, 4)),
-         future_value_get_bson_error_ptr (future_get_param (future, 5))
-      ));
-
-   future_resolve (future, return_value);
-
-   BSON_THREAD_RETURN;
-}
-
-static
 BSON_THREAD_FUN (background_mongoc_cluster_run_command_parts, data)
 {
    future_t *future = (future_t *) data;
@@ -2109,40 +2085,6 @@ future_collection_write_command_with_opts (
       future_get_param (future, 4), error);
    
    future_start (future, background_mongoc_collection_write_command_with_opts);
-   return future;
-}
-
-future_t *
-future_collection_insert_bulk (
-   mongoc_collection_ptr collection,
-   mongoc_insert_flags_t flags,
-   const_bson_ptr_ptr documents,
-   uint32_t n_documents,
-   const_mongoc_write_concern_ptr write_concern,
-   bson_error_ptr error)
-{
-   future_t *future = future_new (future_value_bool_type,
-                                  6);
-   
-   future_value_set_mongoc_collection_ptr (
-      future_get_param (future, 0), collection);
-   
-   future_value_set_mongoc_insert_flags_t (
-      future_get_param (future, 1), flags);
-   
-   future_value_set_const_bson_ptr_ptr (
-      future_get_param (future, 2), documents);
-   
-   future_value_set_uint32_t (
-      future_get_param (future, 3), n_documents);
-   
-   future_value_set_const_mongoc_write_concern_ptr (
-      future_get_param (future, 4), write_concern);
-   
-   future_value_set_bson_error_ptr (
-      future_get_param (future, 5), error);
-   
-   future_start (future, background_mongoc_collection_insert_bulk);
    return future;
 }
 

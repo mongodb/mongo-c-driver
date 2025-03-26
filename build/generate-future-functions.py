@@ -335,15 +335,6 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
-                    "mongoc_collection_insert_bulk",
-                    [param("mongoc_collection_ptr", "collection"),
-                     param("mongoc_insert_flags_t", "flags"),
-                     param("const_bson_ptr_ptr", "documents"),
-                     param("uint32_t", "n_documents"),
-                     param("const_mongoc_write_concern_ptr", "write_concern"),
-                     param("bson_error_ptr", "error")]),
-
-    future_function("bool",
                     "mongoc_cluster_run_command_parts",
                     [param("mongoc_cluster_ptr", "cluster"),
                      param("mongoc_server_stream_ptr", "server_stream"),

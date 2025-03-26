@@ -690,34 +690,6 @@ test_insert_many (void)
    mongoc_client_destroy (client);
 }
 
-
-static void
-test_insert_bulk_empty (void)
-{
-   mongoc_collection_t *collection;
-   mongoc_database_t *database;
-   mongoc_client_t *client;
-   bson_error_t error;
-   bson_t *bptr = NULL;
-
-   client = test_framework_new_default_client ();
-   database = get_test_database (client);
-   collection = get_test_collection (client, "test_insert_bulk_empty");
-
-   BEGIN_IGNORE_DEPRECATIONS
-   ASSERT (!mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **) &bptr, 0, NULL, &error));
-   END_IGNORE_DEPRECATIONS
-
-   ASSERT_CMPINT (MONGOC_ERROR_COLLECTION, ==, error.domain);
-   ASSERT_CMPINT (MONGOC_ERROR_COLLECTION_INSERT_FAILED, ==, error.code);
-   ASSERT_CONTAINS (error.message, "empty insert");
-
-   mongoc_collection_destroy (collection);
-   mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
-}
-
-
 char *
 make_string (size_t len)
 {
@@ -3362,49 +3334,6 @@ _test_insert_validate (insert_fn_t insert_fn)
 }
 
 static void
-test_insert_bulk_validate (void)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_error_t error;
-   const bson_t *docs_client_invalid[] = {tmp_bson ("{'a': 1}"), tmp_bson ("{'': 2}")};
-   const bson_t *docs_server_invalid[] = {tmp_bson ("{'a': 1}"), tmp_bson ("{'_id': {'$a': 2}}")};
-
-   BEGIN_IGNORE_DEPRECATIONS
-   client = test_framework_new_default_client ();
-   mongoc_client_set_error_api (client, 2);
-   collection = get_test_collection (client, "test_insert_validate");
-
-   /* Invalid documents, validation. */
-   BSON_ASSERT (!mongoc_collection_insert_bulk (
-      collection, MONGOC_INSERT_NONE, docs_client_invalid, 2, NULL /* write concern */, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid document");
-
-   /* Invalid documents, no validation. */
-   BSON_ASSERT (!mongoc_collection_insert_bulk (collection,
-                                                (mongoc_insert_flags_t) MONGOC_INSERT_NO_VALIDATE,
-                                                docs_server_invalid,
-                                                2,
-                                                NULL /* write concern */,
-                                                &error));
-   ASSERT_CMPUINT32 (error.domain, ==, (uint32_t) MONGOC_ERROR_SERVER);
-
-   /* Valid document, validation. */
-   ASSERT_OR_PRINT (mongoc_collection_insert_bulk (collection,
-                                                   MONGOC_INSERT_NONE,
-                                                   docs_client_invalid,
-                                                   1 /* don't include invalid second doc. */,
-                                                   NULL /* write concern */,
-                                                   &error),
-                    error);
-
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   END_IGNORE_DEPRECATIONS
-}
-
-
-static void
 test_insert_one_validate (void)
 {
    _test_insert_validate (insert_one);
@@ -5545,25 +5474,6 @@ test_get_last_error (void)
             {"nInserted" : 0, "nMatched" : 0, "nModified" : 0, "nRemoved" : 1, "nUpserted" : 0, "writeErrors" : []}));
    }
 
-
-   // Test mongoc_collection_insert_bulk:
-   {
-      mongoc_collection_drop (coll, NULL);
-
-      // Clear error:
-      ASSERT_OR_PRINT (mongoc_collection_command_simple (coll, tmp_bson ("{'ping': 1}"), NULL, NULL, &error), error);
-      ASSERT (!mongoc_collection_get_last_error (coll));
-
-      bson_t *docs[] = {tmp_bson ("{'_id': 1}")};
-      ok = mongoc_collection_insert_bulk (coll, MONGOC_INSERT_NONE, (const bson_t **) docs, 1u, NULL, &error);
-      ASSERT_OR_PRINT (ok, error);
-      const bson_t *gle = mongoc_collection_get_last_error (coll);
-      ASSERT_MATCH (
-         gle,
-         BSON_STR (
-            {"nInserted" : 1, "nMatched" : 0, "nModified" : 0, "nRemoved" : 0, "nUpserted" : 0, "writeErrors" : []}));
-   }
-
    // Test mongoc_collection_insert:
    {
       mongoc_collection_drop (coll, NULL);
@@ -5592,7 +5502,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddFull (
       suite, "/Collection/read_prefs_is_valid", test_read_prefs_is_valid, NULL, NULL, test_framework_skip_if_mongos);
    TestSuite_AddLive (suite, "/Collection/insert_many", test_insert_many);
-   TestSuite_AddLive (suite, "/Collection/insert_bulk_empty", test_insert_bulk_empty);
    TestSuite_AddLive (suite, "/Collection/copy", test_copy);
    TestSuite_AddLive (suite, "/Collection/insert", test_insert);
    TestSuite_AddLive (suite, "/Collection/insert/null_string", test_insert_null);
@@ -5700,7 +5609,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/count_documents_live", test_count_documents_live);
    TestSuite_AddMockServerTest (suite, "/Collection/estimated_document_count", test_estimated_document_count);
    TestSuite_AddLive (suite, "/Collection/estimated_document_count_live", test_estimated_document_count_live);
-   TestSuite_AddLive (suite, "/Collection/insert_bulk_validate", test_insert_bulk_validate);
    TestSuite_AddMockServerTest (suite, "/Collection/aggregate_with_batch_size", test_aggregate_with_batch_size);
    TestSuite_AddFull (suite,
                       "/Collection/fam/no_error_on_retry",

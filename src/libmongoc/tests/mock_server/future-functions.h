@@ -311,18 +311,6 @@ future_collection_write_command_with_opts (
 
 
 future_t *
-future_collection_insert_bulk (
-
-   mongoc_collection_ptr collection,
-   mongoc_insert_flags_t flags,
-   const_bson_ptr_ptr documents,
-   uint32_t n_documents,
-   const_mongoc_write_concern_ptr write_concern,
-   bson_error_ptr error
-);
-
-
-future_t *
 future_cluster_run_command_parts (
 
    mongoc_cluster_ptr cluster,

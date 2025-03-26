@@ -161,10 +161,11 @@ test_exhaust_cursor (bool pooled)
          bptr[i] = &b[i];
       }
 
-      BEGIN_IGNORE_DEPRECATIONS
-      ASSERT_OR_PRINT (
-         mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, wr, &error), error);
-      END_IGNORE_DEPRECATIONS
+      bson_t opts = BSON_INITIALIZER;
+      ASSERT (mongoc_write_concern_append (wr, &opts));
+      ASSERT_OR_PRINT (mongoc_collection_insert_many (collection, (const bson_t **) bptr, 10, &opts, NULL, &error),
+                       error);
+      bson_destroy (&opts);
    }
 
    /* create a couple of cursors */
@@ -247,9 +248,11 @@ test_exhaust_cursor (bool pooled)
 
    /* make sure writes fail as well */
    {
-      BEGIN_IGNORE_DEPRECATIONS
-      r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, wr, &error);
-      END_IGNORE_DEPRECATIONS
+      bson_t opts = BSON_INITIALIZER;
+      ASSERT (mongoc_write_concern_append (wr, &opts));
+      ASSERT_OR_PRINT (mongoc_collection_insert_many (collection, (const bson_t **) bptr, 10, &opts, NULL, &error),
+                       error);
+      bson_destroy (&opts);
 
       BSON_ASSERT (!r);
       ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_CLIENT);

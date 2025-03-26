@@ -1232,94 +1232,6 @@ mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection, const
    return cursor;
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_insert_bulk --
- *
- *       Bulk insert documents into a MongoDB collection.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @flags: flags for the insert or 0.
- *       @documents: The documents to insert.
- *       @n_documents: The number of documents to insert.
- *       @write_concern: A write concern or NULL.
- *       @error: a location for an error or NULL.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- *       If the write concern does not dictate checking the result of the
- *       insert, then true may be returned even though the document was
- *       not actually inserted on the MongoDB server or cluster.
- *
- * Side effects:
- *       @collection->gle is setup, depending on write_concern->w value.
- *       @error may be set upon failure if non-NULL.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-mongoc_collection_insert_bulk (mongoc_collection_t *collection,
-                               mongoc_insert_flags_t flags,
-                               const bson_t **documents,
-                               uint32_t n_documents,
-                               const mongoc_write_concern_t *write_concern,
-                               bson_error_t *error)
-{
-   mongoc_write_command_t command;
-   mongoc_write_result_t result;
-   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
-   uint32_t i;
-   bool ret;
-
-   BSON_ASSERT_PARAM (collection);
-   BSON_ASSERT_PARAM (documents);
-
-   if (!write_concern) {
-      write_concern = collection->write_concern;
-   }
-
-   if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
-      for (i = 0; i < n_documents; i++) {
-         if (!_mongoc_validate_new_document (documents[i], _mongoc_default_insert_vflags, error)) {
-            RETURN (false);
-         }
-      }
-   }
-
-   bson_clear (&collection->gle);
-
-   _mongoc_write_result_init (&result);
-
-   write_flags.ordered = !(flags & MONGOC_INSERT_CONTINUE_ON_ERROR);
-
-   _mongoc_write_command_init_insert (&command, NULL, NULL, write_flags, ++collection->client->cluster.operation_id);
-
-   for (i = 0; i < n_documents; i++) {
-      _mongoc_write_command_insert_append (&command, documents[i]);
-   }
-
-   _mongoc_collection_write_command_execute (&command, collection, write_concern, NULL, &result);
-
-   collection->gle = bson_new ();
-   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
-                                       collection->client->error_api_version,
-                                       write_concern,
-                                       /* no error domain override */
-                                       (mongoc_error_domain_t) 0,
-                                       collection->gle,
-                                       error);
-
-   _mongoc_write_result_destroy (&result);
-   _mongoc_write_command_destroy (&command);
-
-   return ret;
-}
-
-
 bool
 mongoc_collection_insert (mongoc_collection_t *collection,
                           mongoc_insert_flags_t flags,
@@ -1447,8 +1359,7 @@ done:
  *
  * mongoc_collection_insert_many --
  *
- *       Insert documents into a MongoDB collection. Replaces
- *       mongoc_collection_insert_bulk.
+ *       Insert documents into a MongoDB collection.
  *
  * Parameters:
  *       @collection: A mongoc_collection_t.

@@ -58,6 +58,7 @@ Unreleased (2.0.0)
   * `mongoc_collection_find_indexes` is removed. Use `mongoc_collection_find_indexes_with_opts` instead.
   * See [MongoDB documentation](https://www.mongodb.com/docs/languages/c/c-driver/current/indexes/) for working with indexes.
 * `mongoc_collection_find` is removed. Use `mongoc_collection_find_with_opts` instead.
+* `mongoc_collection_insert_bulk` is removed. Use `mongoc_collection_insert_many` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
