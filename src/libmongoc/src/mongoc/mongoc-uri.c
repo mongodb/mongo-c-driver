@@ -1367,7 +1367,10 @@ _finalize_auth_source_external (const char *source, const char *mechanism, bson_
    BSON_OPTIONAL_PARAM (error);
 
    if (source && strcasecmp (source, "$external") != 0) {
-      MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires \"$external\" authSource", mechanism);
+      MONGOC_URI_ERROR (error,
+                        "'%s' authentication mechanism requires \"$external\" authSource, but \"%s\" was specified",
+                        mechanism,
+                        source);
       return false;
    }
 

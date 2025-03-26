@@ -612,10 +612,12 @@ _auth_mechanism_source_external_only (const char *mechanism, const char *userpas
                                                            &error);
       ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_new_with_error");
       ASSERT (!uri);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             tmp_str ("'%s' authentication mechanism requires \"$external\" authSource", mechanism));
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         tmp_str ("'%s' authentication mechanism requires \"$external\" authSource, but \"source\" was specified",
+                  mechanism));
       mongoc_uri_destroy (uri);
    }
 
