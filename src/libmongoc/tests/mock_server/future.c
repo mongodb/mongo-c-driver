@@ -334,16 +334,6 @@ future_get_mongoc_query_flags_t (future_t *future)
    FUTURE_TIMEOUT_ABORT;
 }
 
-const_mongoc_index_opt_t
-future_get_const_mongoc_index_opt_t (future_t *future)
-{
-   if (future_wait (future)) {
-      return future_value_get_const_mongoc_index_opt_t (&future->return_value);
-   }
-
-   FUTURE_TIMEOUT_ABORT;
-}
-
 mongoc_server_description_ptr
 future_get_mongoc_server_description_ptr (future_t *future)
 {

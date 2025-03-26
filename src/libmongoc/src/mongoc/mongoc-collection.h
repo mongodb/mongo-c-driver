@@ -26,7 +26,6 @@
 #include <mongoc/mongoc-bulk-operation.h>
 #include <mongoc/mongoc-flags.h>
 #include <mongoc/mongoc-cursor.h>
-#include <mongoc/mongoc-index.h>
 #include <mongoc/mongoc-read-prefs.h>
 #include <mongoc/mongoc-read-concern.h>
 #include <mongoc/mongoc-write-concern.h>

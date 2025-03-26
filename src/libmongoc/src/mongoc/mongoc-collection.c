@@ -28,7 +28,6 @@
 #include <mongoc/mongoc-collection.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-cursor-private.h>
-#include <mongoc/mongoc-index.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-read-concern-private.h>

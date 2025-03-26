@@ -23,7 +23,6 @@
 #include <mongoc/mongoc-collection.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-index.h>
 #include <mongoc/mongoc-gridfs.h>
 #include <mongoc/mongoc-gridfs-private.h>
 #include <mongoc/mongoc-gridfs-file.h>

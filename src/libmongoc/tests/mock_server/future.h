@@ -132,9 +132,6 @@ future_get_mongoc_server_stream_ptr (future_t *future);
 mongoc_query_flags_t
 future_get_mongoc_query_flags_t (future_t *future);
 
-const_mongoc_index_opt_t
-future_get_const_mongoc_index_opt_t (future_t *future);
-
 mongoc_server_description_ptr
 future_get_mongoc_server_description_ptr (future_t *future);
 

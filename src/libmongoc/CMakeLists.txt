@@ -587,7 +587,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-handshake.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-host-list.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-http.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-index.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-interrupt.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-list.c
@@ -713,7 +712,6 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-handshake.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-host-list.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.h
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-index.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-iovec.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-macros.h
