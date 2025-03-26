@@ -400,7 +400,6 @@ install (EXPORT bson-targets
    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}
 )
 
-include (LegacyPackage)
 include (CPack)
 
 if (MONGO_FUZZ)
