@@ -546,7 +546,38 @@ test_mongoc_client_pool_change_openssl_ctx (void)
 
    mongoc_client_pool_destroy (pool);
 }
-#endif
+#endif // MONGOC_ENABLE_SSL_OPENSSL
+
+#if defined(MONGOC_ENABLE_SSL)
+static void
+test_mongoc_client_set_ssl_opts_on_pool (void)
+{
+   // Test calling `mongoc_client_set_ssl_opts` on a pooled client logs an error.
+   mongoc_client_pool_t *pool = test_framework_new_default_client_pool ();
+   mongoc_client_t *client_from_pool = mongoc_client_pool_pop (pool);
+   capture_logs (true);
+   mongoc_client_set_ssl_opts (client_from_pool, mongoc_ssl_opt_get_default ());
+   ASSERT_CAPTURED_LOG ("mongoc_client_set_ssl_opts", MONGOC_LOG_LEVEL_ERROR, "cannot be called on a pooled client");
+   capture_logs (false);
+   mongoc_client_pool_push (pool, client_from_pool);
+   mongoc_client_pool_destroy (pool);
+}
+#endif // MONGOC_ENABLE_SSL
+
+static void
+test_mongoc_client_set_stream_initiator (void)
+{
+   // Test calling `mongoc_client_set_initiator` on a pooled client logs an error.
+   mongoc_client_pool_t *pool = test_framework_new_default_client_pool ();
+   mongoc_client_t *client_from_pool = mongoc_client_pool_pop (pool);
+   capture_logs (true);
+   mongoc_client_set_stream_initiator (client_from_pool, mongoc_client_default_stream_initiator, NULL);
+   ASSERT_CAPTURED_LOG (
+      "mongoc_client_set_stream_initiator", MONGOC_LOG_LEVEL_ERROR, "cannot be called on a pooled client");
+   capture_logs (false);
+   mongoc_client_pool_push (pool, client_from_pool);
+   mongoc_client_pool_destroy (pool);
+}
 
 void
 test_client_pool_install (TestSuite *suite)
@@ -593,4 +624,9 @@ test_client_pool_install (TestSuite *suite)
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    TestSuite_Add (suite, "/ClientPool/openssl/change_ssl_opts", test_mongoc_client_pool_change_openssl_ctx);
 #endif
+
+#if defined(MONGOC_ENABLE_SSL)
+   TestSuite_AddLive (suite, "/ClientPool/mongoc_client_set_ssl_opts", test_mongoc_client_set_ssl_opts_on_pool);
+#endif // MONGOC_ENABLE_SSL
+   TestSuite_AddLive (suite, "/ClientPool/mongoc_client_set_stream_initiator", test_mongoc_client_set_stream_initiator);
 }

@@ -985,7 +985,22 @@ void
 mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opts)
 {
    BSON_ASSERT_PARAM (client);
-   BSON_ASSERT (opts);
+   BSON_ASSERT_PARAM (opts);
+
+   if (!client->topology->single_threaded) {
+      MONGOC_ERROR (
+         "mongoc_client_set_ssl_opts cannot be called on a pooled client. Use mongoc_client_pool_set_ssl_opts.");
+      return;
+   }
+
+   _mongoc_client_set_ssl_opts_for_single_or_pooled (client, opts);
+}
+
+void
+_mongoc_client_set_ssl_opts_for_single_or_pooled (mongoc_client_t *client, const mongoc_ssl_opt_t *opts)
+{
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (opts);
 
    _mongoc_ssl_opts_cleanup (&client->ssl_opts, false /* don't free internal opts */);
 
@@ -1003,7 +1018,7 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opt
 #endif
    }
 }
-#endif
+#endif // MONGOC_ENABLE_SSL
 
 
 mongoc_client_t *
@@ -1118,7 +1133,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
       _mongoc_ssl_opts_from_uri (&ssl_opt, &internal_tls_opts, client->uri);
       /* sets use_ssl = true */
       /* this call creates an ssl ctx only if single-threaded, otherwise client inherits from pool */
-      mongoc_client_set_ssl_opts (client, &ssl_opt);
+      _mongoc_client_set_ssl_opts_for_single_or_pooled (client, &ssl_opt);
       _mongoc_client_set_internal_tls_opts (client, &internal_tls_opts);
    }
 #endif
@@ -2223,6 +2238,21 @@ mongoc_client_find_databases_with_opts (mongoc_client_t *client, const bson_t *o
 
 void
 mongoc_client_set_stream_initiator (mongoc_client_t *client, mongoc_stream_initiator_t initiator, void *user_data)
+{
+   BSON_ASSERT_PARAM (client);
+
+   if (!client->topology->single_threaded) {
+      MONGOC_ERROR ("mongoc_client_set_stream_initiator cannot be called on a pooled client.");
+      return;
+   }
+
+   _mongoc_client_set_stream_initiator_single_or_pooled (client, initiator, user_data);
+}
+
+void
+_mongoc_client_set_stream_initiator_single_or_pooled (mongoc_client_t *client,
+                                                      mongoc_stream_initiator_t initiator,
+                                                      void *user_data)
 {
    BSON_ASSERT_PARAM (client);
 
