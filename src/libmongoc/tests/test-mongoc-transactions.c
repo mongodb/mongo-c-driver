@@ -488,9 +488,9 @@ _test_transient_txn_err (bool hangup)
    TEST_CMD_ERR (mongoc_client_read_write_command_with_opts (client, "db", b, NULL, &opts, &reply, NULL));
    TEST_CMD_ERR (0 < mongoc_collection_count_documents (collection, b, &opts, NULL, &reply, NULL));
 
-   BEGIN_IGNORE_DEPRECATIONS
-   TEST_CMD_ERR (mongoc_collection_create_index_with_opts (collection, b, NULL, &opts, &reply, NULL));
-   END_IGNORE_DEPRECATIONS
+   mongoc_index_model_t *im = mongoc_index_model_new (b, NULL);
+   TEST_CMD_ERR (mongoc_collection_create_indexes_with_opts (collection, &im, 1, &opts, &reply, NULL));
+   mongoc_index_model_destroy (im);
 
    fam = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_append (fam, &opts);

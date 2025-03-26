@@ -28,7 +28,6 @@
 #include <mongoc/mongoc-cursor.h>
 #include <mongoc/mongoc-database.h>
 #include <mongoc/mongoc-gridfs.h>
-#include <mongoc/mongoc-index.h>
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-read-prefs.h>
 #include <mongoc/mongoc-server-api.h>
