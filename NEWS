@@ -50,6 +50,7 @@ Unreleased (2.0.0)
 * Deprecated index management API has been removed:
   * `mongoc_collection_create_index_with_opts`, `mongoc_collection_create_index`, and `mongoc_collection_ensure_index` are removed. Use `mongoc_collection_create_indexes_with_opts` instead.
   * `mongoc_index_opt_t`, `mongoc_index_opt_geo_t` `mongoc_index_opt_wt_t` are removed. Pass options using `bson_t` to `mongoc_collection_create_indexes_with_opts` instead.
+  * `mongoc_collection_find_indexes` is removed. Use `mongoc_collection_find_indexes_with_opts` instead.
   * See [MongoDB documentation](https://www.mongodb.com/docs/languages/c/c-driver/current/indexes/) for working with indexes.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
