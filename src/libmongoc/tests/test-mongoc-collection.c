@@ -1627,6 +1627,7 @@ test_index_geo (void *unused)
       ASSERT_OR_PRINT (r, error);
    }
 
+   mongoc_index_model_destroy (im);
    bson_destroy (&keys);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
