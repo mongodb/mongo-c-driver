@@ -1469,7 +1469,8 @@ test_index_w_write_concern (void)
    bson_reinit (opts);
    mongoc_write_concern_append_bad (bad_wc, opts);
    /* skip this part of the test if sharded cluster */
-   if (!is_mongos) {
+   const bool CDRIVER5945_fixed = false; // TODO(CDRIVER-5945): once fixed, unskip this test
+   if (!is_mongos && CDRIVER5945_fixed) {
       ASSERT (!mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, &reply, &error));
       assert_wc_oob_error (&error);
 
