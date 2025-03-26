@@ -33,6 +33,5 @@ An event notification sent when the driver successfully executes a MongoDB comma
     mongoc_apm_command_succeeded_get_request_id
     mongoc_apm_command_succeeded_get_server_id
     mongoc_apm_command_succeeded_get_service_id
-    mongoc_apm_command_succeeded_get_server_connection_id
     mongoc_apm_command_succeeded_get_server_connection_id_int64
 

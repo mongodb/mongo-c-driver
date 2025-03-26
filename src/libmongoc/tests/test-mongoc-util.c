@@ -4,9 +4,6 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "test-util"
-
 
 static void
 test_command_name (void)

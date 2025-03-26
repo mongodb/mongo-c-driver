@@ -216,14 +216,7 @@ functions:
             set -o errexit
             set -o pipefail
             if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
-                # This is a GitHub PR or patch build, probably branched from master
-                if command -v python3 &>/dev/null; then
-                    # Prefer python3 if it is available
-                    echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-                else
-                    echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-                fi
-                VERSION=$VERSION_CURRENT-${version_id}
+                VERSION=patch-${version_id}
             else
                 VERSION=latest
             fi
@@ -431,19 +424,6 @@ functions:
         env:
           SASL: CYRUS
           SSL: OPENSSL
-        args:
-          - -c
-          - .evergreen/scripts/compile.sh
-  sasl-cyrus-winssl-compile:
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        env:
-          SASL: CYRUS
-          SSL: WINDOWS
         args:
           - -c
           - .evergreen/scripts/compile.sh

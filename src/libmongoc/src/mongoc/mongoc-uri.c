@@ -516,25 +516,46 @@ mongoc_uri_parse_database (mongoc_uri_t *uri, const char *str, const char **end)
 static bool
 mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
 {
-   char *field;
-   char *value;
    const char *end_scan;
-   bson_t properties;
 
-   bson_init (&properties);
+   bson_t properties = BSON_INITIALIZER;
 
-   /* build up the properties document */
-   while ((field = scan_to_unichar (str, ':', "&", &end_scan))) {
+   // Key-value pairs are delimited by ','.
+   for (char *kvp; (kvp = scan_to_unichar (str, ',', "", &end_scan)); bson_free (kvp)) {
       str = end_scan + 1;
-      if (!(value = scan_to_unichar (str, ',', ":&", &end_scan))) {
-         value = bson_strdup (str);
-         str = "";
-      } else {
-         str = end_scan + 1;
+
+      char *const key = scan_to_unichar (kvp, ':', "", &end_scan);
+
+      // Found delimiter: split into key and value.
+      if (key) {
+         char *const value = bson_strdup (end_scan + 1);
+         BSON_APPEND_UTF8 (&properties, key, value);
+         bson_free (key);
+         bson_free (value);
       }
-      bson_append_utf8 (&properties, field, -1, value, -1);
-      bson_free (field);
-      bson_free (value);
+
+      // No delimiter: entire string is the key. Use empty string as value.
+      else {
+         BSON_APPEND_UTF8 (&properties, kvp, "");
+      }
+   }
+
+   // Last (or only) pair.
+   if (*str != '\0') {
+      char *const key = scan_to_unichar (str, ':', "", &end_scan);
+
+      // Found delimiter: split into key and value.
+      if (key) {
+         char *const value = bson_strdup (end_scan + 1);
+         BSON_APPEND_UTF8 (&properties, key, value);
+         bson_free (key);
+         bson_free (value);
+      }
+
+      // No delimiter: entire string is the key. Use empty string as value.
+      else {
+         BSON_APPEND_UTF8 (&properties, str, "");
+      }
    }
 
    /* append our auth properties to our credentials */
@@ -720,9 +741,8 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_SOCKETCHECKINTERVALMS) || !strcasecmp (key, MONGOC_URI_SOCKETTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_LOCALTHRESHOLDMS) || !strcasecmp (key, MONGOC_URI_MAXPOOLSIZE) ||
-          !strcasecmp (key, MONGOC_URI_MAXSTALENESSSECONDS) || !strcasecmp (key, MONGOC_URI_MINPOOLSIZE) ||
-          !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) || !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) ||
-          !strcasecmp (key, MONGOC_URI_SRVMAXHOSTS);
+          !strcasecmp (key, MONGOC_URI_MAXSTALENESSSECONDS) || !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
+          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) || !strcasecmp (key, MONGOC_URI_SRVMAXHOSTS);
 }
 
 bool
@@ -734,11 +754,18 @@ mongoc_uri_option_is_int64 (const char *key)
 bool
 mongoc_uri_option_is_bool (const char *key)
 {
-   return !strcasecmp (key, MONGOC_URI_CANONICALIZEHOSTNAME) || !strcasecmp (key, MONGOC_URI_DIRECTCONNECTION) ||
-          !strcasecmp (key, MONGOC_URI_JOURNAL) || !strcasecmp (key, MONGOC_URI_RETRYREADS) ||
-          !strcasecmp (key, MONGOC_URI_RETRYWRITES) || !strcasecmp (key, MONGOC_URI_SAFE) ||
-          !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTRYONCE) || !strcasecmp (key, MONGOC_URI_TLS) ||
-          !strcasecmp (key, MONGOC_URI_TLSINSECURE) || !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
+   // CDRIVER-5933
+   if (!strcasecmp (key, MONGOC_URI_CANONICALIZEHOSTNAME)) {
+      MONGOC_WARNING (MONGOC_URI_CANONICALIZEHOSTNAME " is deprecated, use " MONGOC_URI_AUTHMECHANISMPROPERTIES
+                                                      " with CANONICALIZE_HOST_NAME instead");
+      return true;
+   }
+
+   return !strcasecmp (key, MONGOC_URI_DIRECTCONNECTION) || !strcasecmp (key, MONGOC_URI_JOURNAL) ||
+          !strcasecmp (key, MONGOC_URI_RETRYREADS) || !strcasecmp (key, MONGOC_URI_RETRYWRITES) ||
+          !strcasecmp (key, MONGOC_URI_SAFE) || !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTRYONCE) ||
+          !strcasecmp (key, MONGOC_URI_TLS) || !strcasecmp (key, MONGOC_URI_TLSINSECURE) ||
+          !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
           !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) || !strcasecmp (key, MONGOC_URI_LOADBALANCED) ||
@@ -1118,9 +1145,15 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
             MONGOC_WARNING ("authMechanismProperties SERVICE_NAME already set, "
                             "ignoring '%s'",
                             key);
-         } else if (!mongoc_uri_parse_auth_mechanism_properties (uri, tmp)) {
-            bson_free (tmp);
-            goto UNSUPPORTED_VALUE;
+         } else {
+            // CDRIVER-5933
+            MONGOC_WARNING (MONGOC_URI_GSSAPISERVICENAME " is deprecated, use " MONGOC_URI_AUTHMECHANISMPROPERTIES
+                                                         " with SERVICE_NAME instead");
+
+            if (!mongoc_uri_parse_auth_mechanism_properties (uri, tmp)) {
+               bson_free (tmp);
+               goto UNSUPPORTED_VALUE;
+            }
          }
          bson_free (tmp);
 
@@ -1316,6 +1349,10 @@ _finalize_auth_username (const char *username,
 
    case _mongoc_uri_finalize_allowed:
    default:
+      if (username && strlen (username) == 0u) {
+         MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires a non-empty username", mechanism);
+         return false;
+      }
       break;
    }
 
@@ -1830,100 +1867,126 @@ error:
 static bool
 mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (uri);
    BSON_ASSERT_PARAM (str);
 
-   char *before_slash = NULL;
-   const char *tmp;
+   const size_t str_len = strlen (str);
 
-   if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
+   if (!bson_utf8_validate (str, str_len, false /* allow_null */)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid UTF-8 in URI");
-      goto error;
+      return false;
    }
 
+   // Save for later.
+   const char *const str_end = str + str_len;
+
+   // Parse and remove scheme and its delimiter.
+   // e.g. "mongodb://user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
+   //       ~~~~~~~~~~
    if (!mongoc_uri_parse_scheme (uri, str, &str)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid URI Schema, expecting 'mongodb://' or 'mongodb+srv://'");
-      goto error;
+      return false;
    }
+   // str -> "user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
 
-   before_slash = scan_to_unichar (str, '/', "", &tmp);
-   if (!before_slash) {
-      // Handle cases of optional delimiting slash
-      char *userpass = NULL;
-      char *hosts = NULL;
+   // From this point forward, use this cursor to find the split between "userhosts" and "dbopts".
+   const char *cursor = str;
 
-      // Skip any "?"s that exist in the userpass
-      userpass = scan_to_unichar (str, '@', "", &tmp);
-      if (!userpass) {
-         // If none found, safely check for "?" indicating beginning of options
-         before_slash = scan_to_unichar (str, '?', "", &tmp);
-      } else {
-         const size_t userpass_len = (size_t) (tmp - str);
-         // Otherwise, see if options exist after userpass and concatenate result
-         hosts = scan_to_unichar (tmp, '?', "", &tmp);
+   // Remove userinfo and its delimiter.
+   // e.g. "user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
+   //       ~~~~~~~~~~
+   {
+      const char *tmp;
 
-         if (hosts) {
-            const size_t hosts_len = (size_t) (tmp - str) - userpass_len;
+      // Only ':' is permitted among RFC-3986 gen-delims (":/?#[]@") in userinfo.
+      // However, continue supporting these characters for backward compatibility, as permitted by the Connection String
+      // spec: for backwards-compatibility reasons, drivers MAY allow reserved characters other than "@" and ":" to be
+      // present in user information without percent-encoding.
+      char *userinfo = scan_to_unichar (cursor, '@', "", &tmp);
 
-            before_slash = bson_strndup (str, userpass_len + hosts_len);
-         }
+      if (userinfo) {
+         cursor = tmp + 1; // Consume userinfo delimiter.
+         bson_free (userinfo);
+      }
+   }
+   // cursor -> "host1:27017,host2:27018/database?key1=value1&key2=value2"
+
+   // Find either the optional auth database delimiter or the query delimiter.
+   // e.g. "host1:27017,host2:27018/database?key1=value1&key2=value2"
+   //                              ^
+   // e.g. "host1:27017,host2:27018?key1=value1&key2=value2"
+   //                              ^
+   {
+      const char *tmp;
+
+      // Only ':', '[', and ']' are permitted among RFC-3986 gen-delims (":/?#[]@") in hostinfo.
+      const char *const terminators = "/?#@";
+
+      char *hostinfo;
+
+      // Optional auth delimiter is present.
+      if ((hostinfo = scan_to_unichar (cursor, '/', terminators, &tmp))) {
+         cursor = tmp; // Include the delimiter.
+         bson_free (hostinfo);
       }
 
-      bson_free (userpass);
-      bson_free (hosts);
-   }
-
-   if (!before_slash) {
-      before_slash = bson_strdup (str);
-      str += strlen (before_slash);
-   } else {
-      str = tmp;
-   }
-
-   if (!mongoc_uri_parse_before_slash (uri, before_slash, error)) {
-      goto error;
-   }
-
-   BSON_ASSERT (str);
-
-   if (*str) {
-      // Check for valid end of hostname delimeter (skip slash if necessary)
-      if (*str != '/' && *str != '?') {
-         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
-         goto error;
+      // Query delimiter is present.
+      else if ((hostinfo = scan_to_unichar (cursor, '?', terminators, &tmp))) {
+         cursor = tmp; // Include the delimiter.
+         bson_free (hostinfo);
       }
 
-      if (*str == '/') {
-         // Try to parse database.
-         str++;
-         if (*str) {
-            if (!mongoc_uri_parse_database (uri, str, &str)) {
+      // Neither delimiter is present. Entire rest of string is part of hostinfo.
+      else {
+         cursor = str_end; // Jump to end of string.
+         BSON_ASSERT (*cursor == '\0');
+      }
+   }
+   // cursor -> "/database?key1=value1&key2=value2"
+
+   // Parse "userhosts". e.g. "user:pass@host1:27017,host2:27018"
+   {
+      char *const userhosts = bson_strndup (str, (size_t) (cursor - str));
+      const bool ret = mongoc_uri_parse_before_slash (uri, userhosts, error);
+      bson_free (userhosts);
+      if (!ret) {
+         return false;
+      }
+   }
+
+   // Parse "dbopts". e.g. "/database?key1=value1&key2=value2"
+   if (*cursor != '\0') {
+      BSON_ASSERT (*cursor == '/' || *cursor == '?');
+
+      // Parse the auth database.
+      if (*cursor == '/') {
+         ++cursor; // Consume the delimiter.
+
+         // No auth database may be present even if the delimiter is present.
+         // e.g. "mongodb://localhost:27017/"
+         if (*cursor != '\0') {
+            if (!mongoc_uri_parse_database (uri, cursor, &cursor)) {
                MONGOC_URI_ERROR (error, "%s", "Invalid database name in URI");
-               goto error;
+               return false;
             }
          }
       }
 
-      if (*str == '?') {
-         // Try to parse options.
-         str++;
-         if (*str) {
-            if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
-               goto error;
+      // Parse the query options.
+      if (*cursor == '?') {
+         ++cursor; // Consume the delimiter.
+
+         // No options may be present even if the delimiter is present.
+         // e.g. "mongodb://localhost:27017?"
+         if (*cursor != '\0') {
+            if (!mongoc_uri_parse_options (uri, cursor, false /* from DNS */, error)) {
+               return false;
             }
          }
       }
    }
 
-   if (!mongoc_uri_finalize (uri, error)) {
-      goto error;
-   }
-
-   bson_free (before_slash);
-   return true;
-
-error:
-   bson_free (before_slash);
-   return false;
+   return mongoc_uri_finalize (uri, error);
 }
 
 
@@ -2119,8 +2182,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
                     storeStrRef (w_str),
                     case (
                        // Special W options:
-                       when (anyOf (eq (int32, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED),
-                                    eq (int32, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED)),
+                       when (eq (int32, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED),
                              // These conflict with journalling:
                              if (eval (mongoc_write_concern_get_journal (write_concern)),
                                  then (error ("Journal conflicts with w value"))),

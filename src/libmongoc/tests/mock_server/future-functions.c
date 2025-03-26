@@ -258,23 +258,6 @@ BSON_THREAD_FUN (background_mongoc_client_read_write_command_with_opts, data)
 }
 
 static
-BSON_THREAD_FUN (background_mongoc_client_kill_cursor, data)
-{
-   future_t *future = (future_t *) data;
-   future_value_t return_value;
-
-   return_value.type = future_value_void_type;
-
-   mongoc_client_kill_cursor (
-      future_value_get_mongoc_client_ptr (future_get_param (future, 0)),
-      future_value_get_int64_t (future_get_param (future, 1)));
-
-   future_resolve (future, return_value);
-
-   BSON_THREAD_RETURN;
-}
-
-static
 BSON_THREAD_FUN (background_mongoc_client_watch, data)
 {
    future_t *future = (future_t *) data;
@@ -1626,24 +1609,6 @@ future_client_read_write_command_with_opts (
       future_get_param (future, 6), error);
    
    future_start (future, background_mongoc_client_read_write_command_with_opts);
-   return future;
-}
-
-future_t *
-future_client_kill_cursor (
-   mongoc_client_ptr client,
-   int64_t cursor_id)
-{
-   future_t *future = future_new (future_value_void_type,
-                                  2);
-   
-   future_value_set_mongoc_client_ptr (
-      future_get_param (future, 0), client);
-   
-   future_value_set_int64_t (
-      future_get_param (future, 1), cursor_id);
-   
-   future_start (future, background_mongoc_client_kill_cursor);
    return future;
 }
 

@@ -174,16 +174,15 @@
       }
     },
     {
-      "description": "Valid connection pool options are parsed correctly, libmongoc version without maxIdleTimeMS",
-      "uri": "mongodb://example.com/?waitQueueTimeoutMS=50000&maxPoolSize=5&minPoolSize=3",
+      "description": "Valid connection pool options are parsed correctly, libmongoc version without maxIdleTimeMS or minPoolSize",
+      "uri": "mongodb://example.com/?waitQueueTimeoutMS=50000&maxPoolSize=5",
       "valid": true,
       "warning": false,
       "hosts": null,
       "auth": null,
       "options": {
         "waitQueueTimeoutMS": 50000,
-        "maxPoolSize": 5,
-        "minPoolSize": 3
+        "maxPoolSize": 5
       }
     }
   ]

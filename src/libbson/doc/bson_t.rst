@@ -127,12 +127,11 @@ Synopsis
   #define BSON_APPEND_VALUE(b, key, val) \
      bson_append_value (b, key, (int) strlen (key), (val))
 
-  BSON_ALIGNED_BEGIN (128)
   typedef struct {
      uint32_t flags;       /* Internal flags for the bson_t. */
      uint32_t len;         /* Length of BSON data. */
      uint8_t padding[120]; /* Padding for stack allocation. */
-  } bson_t BSON_ALIGNED_END (128);
+  } bson_t;
 
 Description
 -----------
@@ -205,7 +204,6 @@ BSON document contains duplicate keys.
     bson_concat
     bson_copy
     bson_copy_to
-    bson_copy_to_excluding
     bson_copy_to_excluding_noinit
     bson_copy_to_excluding_noinit_va
     bson_count_keys

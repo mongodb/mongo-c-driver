@@ -8,7 +8,7 @@
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 
-#if defined(MONGOC_ENABLE_SSL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#if defined(MONGOC_ENABLE_SSL)
 static void
 test_extract_subject (void)
 {
@@ -86,7 +86,7 @@ test_tlsfeature_parsing (void)
 void
 test_x509_install (TestSuite *suite)
 {
-#if defined(MONGOC_ENABLE_SSL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#if defined(MONGOC_ENABLE_SSL)
    TestSuite_Add (suite, "/X509/extract_subject", test_extract_subject);
 #endif
 

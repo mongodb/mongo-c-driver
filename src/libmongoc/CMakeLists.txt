@@ -195,13 +195,6 @@ function(_auto_pick_tls_lib)
       find_package(OpenSSL)
       if(OpenSSL_FOUND)
          _use_named_tls_lib(OPENSSL)
-      else()
-         # No OpenSSL. What about LibreSSL?
-         find_package(LibreSSL)
-         if(LibreSSL_FOUND)
-            message(DEPRECATION "LibreSSL was automatically chosen as the TLS library. Support for LibreSSL is deprecated and may be removed in a future major release. Use ENABLE_SSL option to specify a different TLS library.")
-            _use_named_tls_lib(LIBRESSL)
-         endif()
       endif()
    endif()
 endfunction()
@@ -211,12 +204,10 @@ set(SecureTransport/LINK_LIBRARIES "-framework CoreFoundation" "-framework Secur
 set(SecureTransport/pkg_config_LIBS -framework Corefoundation -framework Security)
 set(SecureChannel/LINK_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib)
 set(SecureChannel/pkg_config_LIBS ${SecureChannel/LINK_LIBRARIES})
-set(LibreSSL/LINK_LIBRARIES LibreSSL::TLS LibreSSL::Crypto)
-set(LibreSSL/pkg_config_LIBS -ltls -lcrypto)
 set(OpenSSL/LINK_LIBRARIES OpenSSL::SSL OpenSSL::Crypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
 set(OpenSSL/pkg_config_LIBS -lssl -lcrypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
 # Use *exactly* the TLS library identified by the given name, which is one of
-#  `OPENSSL`, `LIBRESSL`, `DARWIN`, or `WINDOWS`.
+#  `OPENSSL`, `DARWIN`, or `WINDOWS`.
 function(_use_named_tls_lib libname)
    # Use this property to track what package we import for our TLS libraries:
    set_property(DIRECTORY PROPERTY _mongoc-tls-package NO)
@@ -224,14 +215,6 @@ function(_use_named_tls_lib libname)
       find_package(OpenSSL REQUIRED)
       set(backend OpenSSL)
       set_property(DIRECTORY PROPERTY _mongoc-tls-package OpenSSL)
-   elseif(libname STREQUAL "LIBRESSL")
-      find_package(LibreSSL REQUIRED)
-      set(backend LibreSSL)
-      install(
-         FILES "${mongo-c-driver_SOURCE_DIR}/build/cmake/FindLibreSSL.cmake"
-         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}/3rdParty"
-         )
-      set_property(DIRECTORY PROPERTY _mongoc-tls-package LibreSSL)
    elseif(libname STREQUAL "DARWIN")
       set(backend SecureTransport)
    elseif(libname STREQUAL "WINDOWS")
@@ -260,21 +243,14 @@ set_package_properties(
    TYPE OPTIONAL
    PURPOSE "Provides a cryptography and TLS backend"
 )
-set_package_properties(
-   LibreSSL PROPERTIES
-   DESCRIPTION "an alternative implementation of the OpenSSL interface, created by the OpenBSD project"
-   TYPE OPTIONAL
-   PURPOSE "Provides a cryptography and TLS backend"
-)
 
 mongo_bool01(MONGOC_ENABLE_SSL [[TLS_BACKEND]])
 mongo_bool01(MONGOC_ENABLE_SSL_SECURE_CHANNEL [[TLS_BACKEND STREQUAL "SecureChannel"]])
 mongo_bool01(MONGOC_ENABLE_SSL_SECURE_TRANSPORT [[TLS_BACKEND STREQUAL "SecureTransport"]])
 mongo_bool01(MONGOC_ENABLE_SSL_OPENSSL [[TLS_BACKEND STREQUAL "OpenSSL"]])
-mongo_bool01(MONGOC_ENABLE_SSL_LIBRESSL [[TLS_BACKEND STREQUAL "LibreSSL"]])
 
 mongo_bool01(MONGOC_ENABLE_CRYPTO [[TLS_BACKEND]])
-mongo_bool01(MONGOC_ENABLE_CRYPTO_LIBCRYPTO [[MONGOC_ENABLE_SSL_OPENSSL OR MONGOC_ENABLE_SSL_LIBRESSL]])
+mongo_bool01(MONGOC_ENABLE_CRYPTO_LIBCRYPTO [[MONGOC_ENABLE_SSL_OPENSSL]])
 mongo_bool01(MONGOC_ENABLE_CRYPTO_CNG [[MONGOC_ENABLE_SSL_SECURE_CHANNEL]])
 mongo_bool01(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO [[MONGOC_ENABLE_SSL_SECURE_TRANSPORT]])
 mongo_bool01(MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE [[ENABLE_CRYPTO_SYSTEM_PROFILE]])
@@ -403,12 +379,6 @@ add_feature_info(
    "${MONGOC_ENABLE_SASL}"
    "authenticate with MongoDB servers using SASL: “Simple Authentication and Security Layer” (${SASL_BACKEND})"
 )
-
-if (ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
-   set (MONGOC_NO_AUTOMATIC_GLOBALS 0)
-else ()
-   set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
-endif ()
 
 if (WIN32)
    SET (CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
@@ -678,8 +648,6 @@ set (MONGOC_SOURCES
 
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-libressl.c
 
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-cng.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-cng.c
@@ -759,7 +727,6 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-session.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sleep.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.h
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.h
@@ -879,12 +846,6 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    target_compile_definitions (mcd_rpc PUBLIC ${BSON_STATIC_PUBLIC_DEFINITIONS})
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
-
-set_property(
-   SOURCE ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c
-   APPEND PROPERTY COMPILE_DEFINITIONS
-   "MONGOC_CYRUS_PLUGIN_PATH_PREFIX=$<IF:$<STREQUAL:${CYRUS_PLUGIN_PATH_PREFIX},>,NULL,\"${CYRUS_PLUGIN_PATH_PREFIX}\">"
-)
 
 set (
    UTHASH_INCLUDE_DIR

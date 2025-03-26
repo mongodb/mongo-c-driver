@@ -2545,8 +2545,6 @@ test_kms_tls_cert_expired (void *unused)
    ASSERT_CONTAINS (error.message, "CSSMERR_TP_CERT_EXPIRED");
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    ASSERT_CONTAINS (error.message, "certificate has expired");
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   ASSERT_CONTAINS (error.message, "certificate has expired");
 #endif
 
    mongoc_client_encryption_datakey_opts_destroy (opts);
@@ -2589,8 +2587,6 @@ test_kms_tls_cert_wrong_host (void *unused)
    ASSERT_CONTAINS (error.message, "Host name mismatch");
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    ASSERT_CONTAINS (error.message, "hostname doesn't match certificate");
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   ASSERT_CONTAINS (error.message, "not present in server certificate");
 #endif
 
    mongoc_client_encryption_datakey_opts_destroy (opts);
@@ -2822,8 +2818,6 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_
 #define ASSERT_EXPIRED(error) ASSERT_CONTAINS (error.message, "CSSMERR_TP_CERT_EXPIRED")
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 #define ASSERT_EXPIRED(error) ASSERT_CONTAINS (error.message, "certificate has expired")
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#define ASSERT_EXPIRED(error) ASSERT_CONTAINS (error.message, "certificate has expired")
 #else
 #define ASSERT_EXPIRED(error)
 #endif
@@ -2834,8 +2828,6 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_
 #define ASSERT_INVALID_HOSTNAME(error) ASSERT_CONTAINS (error.message, "Host name mismatch")
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 #define ASSERT_INVALID_HOSTNAME(error) ASSERT_CONTAINS (error.message, "hostname doesn't match certificate")
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#define ASSERT_INVALID_HOSTNAME(error) ASSERT_CONTAINS (error.message, "not present in server certificate")
 #else
 #define ASSERT_INVALID_HOSTNAME(error)
 #endif
@@ -6364,6 +6356,8 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
 static void
 test_kms_retry (void *unused)
 {
+   BSON_UNUSED (unused);
+
    bson_t *aws_masterkey = tmp_bson (BSON_STR ({"region" : "r", "key" : "k", "endpoint" : "127.0.0.1:9003"}));
    bson_t *azure_masterkey = tmp_bson (BSON_STR ({"keyVaultEndpoint" : "127.0.0.1:9003", "keyName" : "foo"}));
    bson_t *gcp_masterkey = tmp_bson (BSON_STR (

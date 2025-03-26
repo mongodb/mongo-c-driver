@@ -180,7 +180,6 @@ buildvariants:
       ASAN: "on"
       CC: gcc
       CFLAGS: -fno-omit-frame-pointer
-      EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF
       SANITIZE: address,undefined
     tasks:
       - name: mock-server-test
@@ -194,7 +193,6 @@ buildvariants:
       ASAN: "on"
       CFLAGS: -fno-omit-frame-pointer
       CHECK_LOG: "ON"
-      EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF
       SANITIZE: address,undefined
     tasks:
       - name: .sanitizers-matrix-asan
@@ -203,7 +201,7 @@ buildvariants:
     expansions:
       CFLAGS: -fno-omit-frame-pointer
       CHECK_LOG: "ON"
-      EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF
+      EXTRA_CONFIGURE_FLAGS: -DENABLE_SHM_COUNTERS=OFF
       SANITIZE: thread
     tasks:
       - name: .sanitizers-matrix-tsan

@@ -30,8 +30,6 @@
 
 #include <inttypes.h>
 
-#define LOG_DOMAIN "test_monitoring"
-
 typedef struct {
    uint32_t n_heartbeat_started;
    uint32_t n_heartbeat_succeeded;

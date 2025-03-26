@@ -43,18 +43,16 @@ typedef enum {
 #define BSON_INLINE_DATA_SIZE 120
 
 
-BSON_ALIGNED_BEGIN (128)
+BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR)
 typedef struct {
    bson_flags_t flags;
    uint32_t len;
    uint8_t data[BSON_INLINE_DATA_SIZE];
-} bson_impl_inline_t BSON_ALIGNED_END (128);
+} bson_impl_inline_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
 
 
 BSON_STATIC_ASSERT2 (impl_inline_t, sizeof (bson_impl_inline_t) == 128);
 
-
-BSON_ALIGNED_BEGIN (128)
 typedef struct {
    bson_flags_t flags; /* flags describing the bson_t */
    /* len is part of the public bson_t declaration. It is not
@@ -71,10 +69,15 @@ typedef struct {
    size_t alloclen;           /* length of buffer that we own. */
    bson_realloc_func realloc; /* our realloc implementation */
    void *realloc_func_ctx;    /* context for our realloc func */
-} bson_impl_alloc_t BSON_ALIGNED_END (128);
+} bson_impl_alloc_t;
 
 
 BSON_STATIC_ASSERT2 (impl_alloc_t, sizeof (bson_impl_alloc_t) <= 128);
+
+// Ensure both `bson_t` implementations have the same alignment requirement:
+BSON_STATIC_ASSERT2 (impls_match_alignment, BSON_ALIGNOF (bson_impl_inline_t) == BSON_ALIGNOF (bson_impl_alloc_t));
+// Ensure `bson_t` has same alignment requirement as implementations:
+BSON_STATIC_ASSERT2 (impls_match_alignment, BSON_ALIGNOF (bson_t) == BSON_ALIGNOF (bson_impl_alloc_t));
 
 
 BSON_END_DECLS

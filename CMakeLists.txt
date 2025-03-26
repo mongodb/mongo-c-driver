@@ -16,7 +16,6 @@ include (ParseVersion)
 ParseVersion ("${BUILD_VERSION}" MONGOC)
 # Defines additional similar variables:
 include (LoadVersion)
-file (WRITE VERSION_CURRENT "${BUILD_VERSION}")
 LoadVersion (VERSION_CURRENT MONGOC)
 
 # Extended version attributes that CMake doesn't (yet) understand, which include
@@ -112,15 +111,13 @@ mongo_bool_setting(USE_BUNDLED_UTF8PROC "Enable building with utf8proc. Needed f
                    ADVANCED)
 mongo_setting(
    ENABLE_SSL [[Enable TLS connection and SCRAM authentication.]]
-   OPTIONS WINDOWS DARWIN OPENSSL LIBRESSL OFF AUTO
+   OPTIONS WINDOWS DARWIN OPENSSL OFF AUTO
    DEFAULT VALUE AUTO
    VALIDATE CODE [[
       if(ENABLE_SSL STREQUAL "DARWIN" AND NOT APPLE)
          message(WARNING "ENABLE_SSL=DARWIN is only supported on Apple platforms")
       elseif(ENABLE_SSL STREQUAL "WINDOWS" AND NOT WIN32)
          message(WARNING "ENABLE_SSL=WINDOWS is only supported on Windows platforms")
-      elseif (ENABLE_SSL STREQUAL "LIBRESSL")
-         message(DEPRECATION "ENABLE_SSL=LIBRESSL is deprecated and may be removed in a future major release")
       endif()
    ]]
 )
@@ -150,18 +147,8 @@ mongo_setting(
          message(WARNING "ENABLE_SASL=SSPI is only supported on Windows platforms")
       endif()
       if(ENABLE_SASL STREQUAL "CYRUS" AND WIN32)
-         message(DEPRECATION "ENABLE_SASL=CYRUS on Windows platforms is deprecated and may be removed in a future major release")
+         message(WARNING "ENABLE_SASL=CYRUS on Windows platforms is unsupported. Use ENABLE_SASL=SSPI or ENABLE_SASL=OFF instead")
       endif()
-   ]]
-)
-
-mongo_setting(CYRUS_PLUGIN_PATH_PREFIX "An absolute path prefix to enable loading Cyrus SASL plugins on Windows"
-   TYPE STRING
-   VISIBLE_IF [[ENABLE_SASL STREQUAL "CYRUS" AND WIN32]]
-   VALIDATE CODE [[
-      if (CYRUS_PLUGIN_PATH_PREFIX)
-         message(DEPRECATION "CYRUS_PLUGIN_PATH_PREFIX is deprecated and may be removed in a future major release")
-      endif ()
    ]]
 )
 
@@ -193,42 +180,6 @@ mongo_bool_setting(
    VALIDATE CODE [[
       if(ENABLE_CRYPTO_SYSTEM_PROFILE AND NOT ENABLE_SSL STREQUAL "OPENSSL")
          message(WARNING "ENABLE_CRYPTO_SYSTEM_PROFILE=TRUE is only applicable when ENABLE_SSL=OPENSSL")
-      endif()
-   ]]
-)
-
-# Deprecated options:
-mongo_bool_setting(
-   ENABLE_AUTOMATIC_INIT_AND_CLEANUP
-      "[Deprecated] Enable automatic initialization of the C driver library"
-   DEFAULT EVAL [[
-         set(DEFAULT OFF)
-         if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-            message(VERBOSE "For backwards compatibility, when using GCC the default of "
-                            "ENABLE_AUTOMATIC_INIT_AND_CLEANUP is ON")
-            set(DEFAULT ON)
-         endif()
-      ]]
-      DEVEL VALUE OFF
-   VALIDATE CODE [[
-      if(ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
-         if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU")
-            message(WARNING "ENABLE_AUTOMATIC_INIT_AND_CLEANUP is only supported on GCC.")
-         endif()
-         message(DEPRECATION
-                  "Enabling ENABLE_AUTOMATIC_INIT_AND_CLEANUP is deprecated and "
-                  "may be removed in a future release")
-      endif()
-   ]]
-)
-mongo_bool_setting(
-   ENABLE_EXTRA_ALIGNMENT
-      "[Deprecated] Enable extra alignment on libbson types"
-   DEFAULT VALUE ON
-      DEVEL VALUE OFF
-   VALIDATE CODE [[
-      if(ENABLE_EXTRA_ALIGNMENT AND MONGO_SANITIZE MATCHES "undefined")
-         message(WARNING "ENABLE_EXTRA_ALIGNMENT=“${ENABLE_EXTRA_ALIGNMENT}” will create conflicts with UndefinedBehaviorSanitizer")
       endif()
    ]]
 )
@@ -349,8 +300,6 @@ endif ()
 if ( (ENABLE_BUILD_DEPENDECIES STREQUAL OFF) AND (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) )
    set (ENABLE_BUILD_DEPENDECIES ON)
 endif ()
-
-mongo_pick(BSON_EXTRA_ALIGN 1 0 ENABLE_EXTRA_ALIGNMENT)
 
 mongo_pick(MONGOC_ENABLE_RDTSCP 1 0 ENABLE_RDTSCP)
 

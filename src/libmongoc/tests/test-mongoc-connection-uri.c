@@ -306,8 +306,8 @@ run_uri_test (const char *uri_string,
 
                         // CDRIVER-4128: CANONICALIZE_HOST_NAME is UTF-8 even when "false" or "true".
                         {
-                           bson_t updated;
-                           bson_copy_to_excluding (&expected_props, &updated, "CANONICALIZE_HOST_NAME", NULL);
+                           bson_t updated = BSON_INITIALIZER;
+                           bson_copy_to_excluding_noinit (&expected_props, &updated, "CANONICALIZE_HOST_NAME", NULL);
                            if (bson_iter_init_find_case (&iter, &expected_props, "CANONICALIZE_HOST_NAME")) {
                               if (BSON_ITER_HOLDS_BOOL (&iter)) {
                                  BSON_APPEND_UTF8 (
@@ -418,6 +418,10 @@ test_connection_uri_cb (void *scenario_vp)
       {.description = "Colon in a key value pair",
        .reason = "libmongoc does not-yet implement MONGODB-OIDC (CDRIVER-4489)",
        .check_substring = true},
+      {.description = "Valid connection pool options are parsed correctly",
+       .reason = "libmongoc does not support minPoolSize (CDRIVER-2390)"},
+      {.description = "minPoolSize=0 does not error",
+       .reason = "libmongoc does not support minPoolSize (CDRIVER-2390)"},
       {.description = NULL},
    };
 

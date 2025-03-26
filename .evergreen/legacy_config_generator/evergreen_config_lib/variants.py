@@ -82,16 +82,13 @@ all_variants = [
     ),
     Variant(
         "openssl",
-        "OpenSSL / LibreSSL",
+        "OpenSSL",
         "archlinux-build",
         [
             "build-and-run-authentication-tests-openssl-1.0.1",
             "build-and-run-authentication-tests-openssl-1.0.2",
             "build-and-run-authentication-tests-openssl-1.1.0",
-            "build-and-run-authentication-tests-openssl-1.0.1-fips",
-            "build-and-run-authentication-tests-libressl-2.5",
-            "build-and-run-authentication-tests-libressl-3.0-auto",
-            "build-and-run-authentication-tests-libressl-3.0",
+            "build-and-run-authentication-tests-openssl-1.0.1-fips"
         ],
         {},
     ),
@@ -114,7 +111,6 @@ all_variants = [
         [
             "release-compile",
             "debug-compile-nosasl-nossl",
-            "debug-compile-no-align",
             ".debug-compile !.sspi .nossl .nosasl",
             ".latest .nossl .nosasl",
         ],
@@ -154,7 +150,7 @@ all_variants = [
         "gcc94-i686",
         "GCC 9.4 (i686) (Ubuntu 20.04)",
         "ubuntu2004-test",
-        ["release-compile", "debug-compile-nosasl-nossl", "debug-compile-no-align", ".latest .nossl .nosasl"],
+        ["release-compile", "debug-compile-nosasl-nossl", ".latest .nossl .nosasl"],
         {"CC": "gcc", "MARCH": "i686"},
     ),
     Variant(
@@ -166,7 +162,6 @@ all_variants = [
             "debug-compile-nosrv",
             "release-compile",
             "debug-compile-nosasl-nossl",
-            "debug-compile-no-align",
             "debug-compile-sasl-openssl",
             "debug-compile-nosasl-openssl",
             ".authentication-tests .openssl",
@@ -188,7 +183,6 @@ all_variants = [
             ".compression !.snappy",
             "release-compile",
             "debug-compile-nosasl-nossl",
-            "debug-compile-no-align",
             "debug-compile-nosrv",
             "debug-compile-sasl-darwinssl",
             "debug-compile-nosasl-nossl",
@@ -253,7 +247,6 @@ all_variants = [
         ["debug-compile-nosasl-nossl", ".latest .nossl .nosasl .server"],
         {"CC": "mingw"},
     ),
-    Variant("mingw", "MinGW-W64", "windows-vsCurrent-large", ["debug-compile-no-align"], {"CC": "mingw"}),
     Variant(
         "rhel8-power",
         "Power (ppc64le) (RHEL 8)",
@@ -275,7 +268,6 @@ all_variants = [
         "ubuntu2004-arm64-large",
         [
             ".compression !.snappy !.zstd",
-            "debug-compile-no-align",
             "release-compile",
             "debug-compile-nosasl-nossl",
             "debug-compile-nosasl-openssl",
@@ -294,7 +286,6 @@ all_variants = [
         [
             "release-compile",
             #      '.compression', --> TODO: waiting on ticket CDRIVER-3258
-            "debug-compile-no-align",
             "debug-compile-nosasl-nossl",
             "debug-compile-nosasl-openssl",
             "debug-compile-sasl-openssl",

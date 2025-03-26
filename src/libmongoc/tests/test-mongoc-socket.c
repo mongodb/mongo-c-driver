@@ -10,9 +10,6 @@
 
 #include "test-libmongoc.h"
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "socket-test"
-
 #define TIMEOUT 10000
 #define WAIT 1000
 
