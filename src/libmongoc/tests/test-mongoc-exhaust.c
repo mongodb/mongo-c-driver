@@ -250,8 +250,7 @@ test_exhaust_cursor (bool pooled)
    {
       bson_t opts = BSON_INITIALIZER;
       ASSERT (mongoc_write_concern_append (wr, &opts));
-      ASSERT_OR_PRINT (mongoc_collection_insert_many (collection, (const bson_t **) bptr, 10, &opts, NULL, &error),
-                       error);
+      r = mongoc_collection_insert_many (collection, (const bson_t **) bptr, 10, &opts, NULL, &error);
       bson_destroy (&opts);
 
       BSON_ASSERT (!r);
