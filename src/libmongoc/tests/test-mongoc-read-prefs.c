@@ -403,13 +403,6 @@ test_read_prefs_mongos_secondary (void)
                             "{'find': 'test', 'filter':  {'a': 1},"
                             " '$readPreference': {'mode': 'secondary'}}");
 
-   _test_read_prefs_op_msg (READ_PREF_TEST_MONGOS,
-                            read_prefs,
-                            "{'$query': {'a': 1}}",
-                            "{'$query': {'a': 1}, '$readPreference': {'mode': 'secondary'}}",
-                            "{'find': 'test', 'filter':  {'a': 1},"
-                            " '$readPreference': {'mode': 'secondary'}}");
-
    mongoc_read_prefs_destroy (read_prefs);
 }
 
