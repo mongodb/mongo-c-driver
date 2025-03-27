@@ -252,7 +252,7 @@ include (CMakeDependentOption)
 
 # Installation paths
 include (GNUInstallDirs)
-# There directory where CMake config packages will be installed, based on the libdir from GNUInstallDirs
+# The directory where CMake config packages will be installed, based on the libdir from GNUInstallDirs
 mongo_setting(
    MONGOC_INSTALL_CMAKEDIR "The directory in which CMake package files will be installed"
    TYPE FILEPATH

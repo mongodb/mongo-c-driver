@@ -9,7 +9,7 @@
 
     • `bson::shared` → `mongo::bson_shared`
     • `bson::static` → `mongo::bson_static`
-    • `bson::bson` • Points to either `bson::shared` or `bson::static`,
+    • `bson::bson` → Points to either `bson::shared` or `bson::static`,
         controlled by `BSON_DEFAULT_IMPORTED_LIBRARY_TYPE`
 ]]
 
@@ -55,7 +55,7 @@ endif()
 
 # Allow the user to tweak what library type is linked for `bson::bson`
 set(BSON_DEFAULT_IMPORTED_LIBRARY_TYPE "${_default_lib_type}"
-    CACHE STRING "The default library type that is used when linking against 'bson::bson' (either SHARED or STATIC, requires that the package was build with the appropriate library type)")
+    CACHE STRING "The default library type that is used when linking against 'bson::bson' (either SHARED or STATIC, requires that the package was built with the appropriate library type)")
 set_property(CACHE BSON_DEFAULT_IMPORTED_LIBRARY_TYPE PROPERTY STRINGS SHARED STATIC)
 
 string(TOLOWER "${BSON_DEFAULT_IMPORTED_LIBRARY_TYPE}" _type)

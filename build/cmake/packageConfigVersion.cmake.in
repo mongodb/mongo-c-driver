@@ -6,7 +6,7 @@
 set(PACKAGE_VERSION "@PROJECT_VERSION@")
 set(__package_version_major "@PROJECT_VERSION_MAJOR@")
 
-# Announce that we are uncompatible unless some condition below is satisfied
+# Announce that we are incompatible unless some condition below is satisfied
 set(PACKAGE_VERSION_COMPATIBLE FALSE)
 
 if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)

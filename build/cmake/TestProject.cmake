@@ -28,7 +28,7 @@ the regex will be passed through as-if they were specified with PASSTHRU_VARS.
 SETTINGS is list of a `[name]=[value]` strings for additional `-D` arguments to
 pass to the sub-project. List arguments *are* supported.
 
-If CONFIG is unspecified, then the generated test will build configure the project
+If CONFIG is unspecified, then the generated test will configure+build the project
 according to the configuration of CTest (passed with the `-C` argument).
 
 The default for GENERATOR is to use the same generator as the host project.
@@ -128,7 +128,7 @@ function(add_test_cmake_project name path)
     list(TRANSFORM _tp_arg_SETTINGS REPLACE ";" $<SEMICOLON> OUTPUT_VARIABLE settings_escaped)
     list(APPEND settings_passthru ${settings_escaped})
 
-    # Add a prefix to each variable to mark it as a pass-thru veriable:
+    # Add a prefix to each variable to mark it as a pass-thru variable:
     list(TRANSFORM settings_passthru PREPEND "-D;TEST_PROJECT_SETTINGS/")
 
     # Generate the test case:
@@ -187,7 +187,7 @@ function(__do_test_project)
     endif()
     foreach(var IN LISTS vars)
         set(value "${${var}}")
-        # The Remove our prefix
+        # Remove our prefix
         string(REGEX REPLACE "^TEST_PROJECT_SETTINGS/" "" varname "${var}")
         # Print the value we received for debugging purposes
         message(STATUS "  • ${varname}=${value}")

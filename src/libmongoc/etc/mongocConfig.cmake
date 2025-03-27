@@ -9,7 +9,7 @@
 
     • `mongoc::shared` → `mongo::mongoc_shared`
     • `mongoc::static` → `mongo::mongoc_static`
-    • `mongoc::mongoc` • Points to either `mongoc::shared` or `mongoc::static`,
+    • `mongoc::mongoc` → Points to either `mongoc::shared` or `mongoc::static`,
         controlled by `MONGOC_DEFAULT_IMPORTED_LIBRARY_TYPE`
 ]]
 
@@ -57,7 +57,7 @@ endif()
 
 # Allow the user to tweak what library type is linked for `mongoc::mongoc`
 set(MONGOC_DEFAULT_IMPORTED_LIBRARY_TYPE "${_default_lib_type}"
-    CACHE STRING "The default library type that is used when linking against 'mongoc::mongoc' (either SHARED or STATIC, requires that the package was build with the appropriate library type)")
+    CACHE STRING "The default library type that is used when linking against 'mongoc::mongoc' (either SHARED or STATIC, requires that the package was built with the appropriate library type)")
 set_property(CACHE MONGOC_DEFAULT_IMPORTED_LIBRARY_TYPE PROPERTY STRINGS SHARED STATIC)
 
 string(TOLOWER "${MONGOC_DEFAULT_IMPORTED_LIBRARY_TYPE}" _type)
