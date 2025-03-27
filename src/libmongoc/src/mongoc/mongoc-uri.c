@@ -512,55 +512,6 @@ mongoc_uri_parse_database (mongoc_uri_t *uri, const char *str, const char **end)
    return true;
 }
 
-static bool
-mongoc_uri_parse_auth_mechanism_properties_kvp (bson_t *properties, const char *kvp)
-{
-   BSON_ASSERT_PARAM (properties);
-   BSON_ASSERT_PARAM (kvp);
-
-   const char *end_scan;
-
-   char *key = scan_to_unichar (kvp, ':', "", &end_scan);
-
-   // Percent-decoding for authMechanismProperties is deferred up to this point.
-   mongoc_uri_do_unescape (&key);
-
-   // Found delimiter: split into key and value.
-   if (key) {
-      char *value = bson_strdup (end_scan + 1);
-
-      // Percent-decoding for authMechanismProperties is deferred up to this point.
-      mongoc_uri_do_unescape (&value);
-
-      if (value) {
-         // Connection String spec: for any option key-value pair that may contain a comma (such as TOKEN_RESOURCE),
-         // drivers MUST document that: a value containing a comma (",") MUST NOT be provided as part of the connection
-         // string. This prevents use of values that would interfere with parsing. Any invalid Values for a given key
-         // MUST be ignored and MUST log a WARN level message.
-         // Connection String spec test: "Comma in a key value pair causes a warning".
-         //
-         // CDRIVER-5580: allow *percent-encoded* commas to be present, as they do not interfere with parsing due to
-         // late percent-decoding of authMechanismProperties. Unencoded commas are always treated as key-value pair
-         // delimiters first and cannot be diagnosed as part of a property value.
-         BSON_APPEND_UTF8 (properties, key, value);
-      }
-
-      bson_free (key);
-      bson_free (value);
-
-      // Percent-decoding failed.
-      if (!value) {
-         return false;
-      }
-   }
-
-   // No delimiter: entire string is the key. Use empty string as value.
-   else {
-      BSON_APPEND_UTF8 (properties, kvp, "");
-   }
-
-   return true;
-}
 
 static bool
 mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
@@ -569,32 +520,51 @@ mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
 
    bson_t properties = BSON_INITIALIZER;
 
-   bool ret = false;
-
    // Key-value pairs are delimited by ','.
-   for (char *kvp; (kvp = scan_to_unichar (str, ',', "", &end_scan)); (bson_free (kvp), str = end_scan + 1)) {
-      if (!mongoc_uri_parse_auth_mechanism_properties_kvp (&properties, kvp)) {
-         goto fail;
+   for (char *kvp; (kvp = scan_to_unichar (str, ',', "", &end_scan)); bson_free (kvp)) {
+      str = end_scan + 1;
+
+      char *const key = scan_to_unichar (kvp, ':', "", &end_scan);
+
+      // Found delimiter: split into key and value.
+      if (key) {
+         char *const value = bson_strdup (end_scan + 1);
+         BSON_APPEND_UTF8 (&properties, key, value);
+         bson_free (key);
+         bson_free (value);
+      }
+
+      // No delimiter: entire string is the key. Use empty string as value.
+      else {
+         BSON_APPEND_UTF8 (&properties, kvp, "");
       }
    }
 
    // Last (or only) pair.
    if (*str != '\0') {
-      if (!mongoc_uri_parse_auth_mechanism_properties_kvp (&properties, str)) {
-         goto fail;
+      char *const key = scan_to_unichar (str, ':', "", &end_scan);
+
+      // Found delimiter: split into key and value.
+      if (key) {
+         char *const value = bson_strdup (end_scan + 1);
+         BSON_APPEND_UTF8 (&properties, key, value);
+         bson_free (key);
+         bson_free (value);
+      }
+
+      // No delimiter: entire string is the key. Use empty string as value.
+      else {
+         BSON_APPEND_UTF8 (&properties, str, "");
       }
    }
 
    /* append our auth properties to our credentials */
    if (!mongoc_uri_set_mechanism_properties (uri, &properties)) {
-      goto fail;
+      bson_destroy (&properties);
+      return false;
    }
-
-   ret = true;
-
-fail:
    bson_destroy (&properties);
-   return ret;
+   return true;
 }
 
 
@@ -910,22 +880,16 @@ mongoc_uri_split_option (mongoc_uri_t *uri, bson_t *options, const char *str, bo
       goto CLEANUP;
    }
 
+   value = bson_strdup (end_key + 1);
+   mongoc_uri_do_unescape (&value);
+   if (!value) {
+      /* do_unescape detected invalid UTF-8 and freed value */
+      MONGOC_URI_ERROR (error, "Value for URI option \"%s\" contains invalid UTF-8", key);
+      goto CLEANUP;
+   }
+
    lkey = bson_strdup (key);
    mongoc_lowercase (key, lkey);
-
-   value = bson_strdup (end_key + 1);
-
-   if (strcmp (lkey, MONGOC_URI_AUTHMECHANISMPROPERTIES) == 0) {
-      // Defer percent-decoding until after key-value pairs are split on unencoded ',' in
-      // mongoc_uri_parse_auth_mechanism_properties.
-   } else {
-      mongoc_uri_do_unescape (&value);
-      if (!value) {
-         /* do_unescape detected invalid UTF-8 and freed value */
-         MONGOC_URI_ERROR (error, "Value for URI option \"%s\" contains invalid UTF-8", key);
-         goto CLEANUP;
-      }
-   }
 
    /* Initial DNS Seedlist Discovery Spec: "A Client MUST only support the
     * authSource, replicaSet, and loadBalanced options through a TXT record, and
