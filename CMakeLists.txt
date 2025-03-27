@@ -255,7 +255,7 @@ include (GNUInstallDirs)
 # The directory where CMake config packages will be installed, based on the libdir from GNUInstallDirs
 mongo_setting(
    MONGOC_INSTALL_CMAKEDIR "The directory in which CMake package files will be installed"
-   TYPE FILEPATH
+   TYPE STRING
    DEFAULT VALUE "${CMAKE_INSTALL_LIBDIR}/cmake"
    VALIDATE CODE [[
       if(IS_ABSOLUTE "${MONGOC_INSTALL_CMAKEDIR}")
