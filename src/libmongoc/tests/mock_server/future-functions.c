@@ -898,27 +898,6 @@ BSON_THREAD_FUN (background_mongoc_gridfs_file_readv, data)
 }
 
 static
-BSON_THREAD_FUN (background_mongoc_gridfs_find_one, data)
-{
-   future_t *future = (future_t *) data;
-   future_value_t return_value;
-
-   return_value.type = future_value_mongoc_gridfs_file_ptr_type;
-
-   future_value_set_mongoc_gridfs_file_ptr (
-      &return_value,
-      mongoc_gridfs_find_one (
-         future_value_get_mongoc_gridfs_ptr (future_get_param (future, 0)),
-         future_value_get_const_bson_ptr (future_get_param (future, 1)),
-         future_value_get_bson_error_ptr (future_get_param (future, 2))
-      ));
-
-   future_resolve (future, return_value);
-
-   BSON_THREAD_RETURN;
-}
-
-static
 BSON_THREAD_FUN (background_mongoc_gridfs_file_remove, data)
 {
    future_t *future = (future_t *) data;
@@ -2407,28 +2386,6 @@ future_gridfs_file_readv (
       future_get_param (future, 4), timeout_msec);
    
    future_start (future, background_mongoc_gridfs_file_readv);
-   return future;
-}
-
-future_t *
-future_gridfs_find_one (
-   mongoc_gridfs_ptr gridfs,
-   const_bson_ptr query,
-   bson_error_ptr error)
-{
-   future_t *future = future_new (future_value_mongoc_gridfs_file_ptr_type,
-                                  3);
-   
-   future_value_set_mongoc_gridfs_ptr (
-      future_get_param (future, 0), gridfs);
-   
-   future_value_set_const_bson_ptr (
-      future_get_param (future, 1), query);
-   
-   future_value_set_bson_error_ptr (
-      future_get_param (future, 2), error);
-   
-   future_start (future, background_mongoc_gridfs_find_one);
    return future;
 }
 
