@@ -36,8 +36,7 @@ MONGOC_QUERY_SECONDARY_OK       Allow query of replica set secondaries.
 MONGOC_QUERY_OPLOG_REPLAY       Used internally by MongoDB.
 MONGOC_QUERY_NO_CURSOR_TIMEOUT  The server normally times out an idle cursor after an inactivity period (10 minutes). This prevents that.
 MONGOC_QUERY_AWAIT_DATA         Use with MONGOC_QUERY_TAILABLE_CURSOR. Block rather than returning no data. After a period, time out.
-MONGOC_QUERY_EXHAUST            Stream the data down full blast in multiple "reply" packets. Faster when you are pulling down a lot of data and you know you want to retrieve it all.
-                                Only applies to cursors created from a find operation (i.e. :symbol:`mongoc_collection_find()`).
+MONGOC_QUERY_EXHAUST            Unused.
 MONGOC_QUERY_PARTIAL            Get partial results from mongos if some shards are down (instead of throwing an error).
 ==============================  =====================================================================================================================================================
 
