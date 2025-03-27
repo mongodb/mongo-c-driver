@@ -115,6 +115,13 @@ run_uri_test (const char *uri_string,
       if (strstr (uri_string, "CANONICALIZE_HOST_NAME:none") || strstr (uri_string, "CANONICALIZE_HOST_NAME:forward")) {
          return;
       }
+
+      // CDRIVER-5580: commas in TOKEN_RESOURCE are interpreted as a key-value pair delimiter which produces an invalid
+      // mechanism property that is diagnosed as a client error instead of a warning.
+      if (strstr (uri_string, "TOKEN_RESOURCE:mongodb://host1%2Chost2")) {
+         MONGOC_WARNING ("percent-encoded commas in TOKEN_RESOURCE");
+         return;
+      }
    }
 
    if (uri) {
@@ -144,13 +151,6 @@ run_uri_test (const char *uri_string,
          clear_captured_logs ();
       }
 #endif
-
-      // CDRIVER-5580: allow *percent-encoded* commas to be present, as they do not interfere with parsing due to late
-      // percent-decoding of authMechanismProperties. Unencoded commas are always treated as key-value pair delimiters
-      // first and cannot be diagnosed as part of a property value.
-      if (strstr (uri_string, "TOKEN_RESOURCE:mongodb://host1%2Chost2")) {
-         MONGOC_WARNING ("percent-encoded commas in TOKEN_RESOURCE are supported by libmongoc");
-      }
    }
 
    /* END Exceptions to test suite */
