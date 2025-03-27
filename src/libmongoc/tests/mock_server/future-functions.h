@@ -177,11 +177,11 @@ future_collection_count_with_opts (
 
 
 future_t *
-future_collection_create_index_with_opts (
+future_collection_create_indexes_with_opts (
 
    mongoc_collection_ptr collection,
-   const_bson_ptr keys,
-   const_mongoc_index_opt_t opt,
+   mongoc_index_model_t_ptr_const_ptr models,
+   size_t num_models,
    const_bson_ptr opts,
    bson_ptr reply,
    bson_error_ptr error

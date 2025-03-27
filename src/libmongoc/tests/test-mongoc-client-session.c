@@ -1738,10 +1738,10 @@ test_drop_index (session_test_t *test)
 static void
 test_create_index (session_test_t *test)
 {
-   BEGIN_IGNORE_DEPRECATIONS
-   test->succeeded = mongoc_collection_create_index_with_opts (
-      test->collection, tmp_bson ("{'a': 1}"), NULL, &test->opts, NULL, &test->error);
-   END_IGNORE_DEPRECATIONS
+   mongoc_index_model_t *im = mongoc_index_model_new (tmp_bson ("{'a': 1}"), NULL);
+   test->succeeded =
+      mongoc_collection_create_indexes_with_opts (test->collection, &im, 1, &test->opts, NULL, &test->error);
+   mongoc_index_model_destroy (im);
 }
 
 static void

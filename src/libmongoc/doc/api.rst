@@ -37,9 +37,6 @@ API Reference
    mongoc_gridfs_bucket_t
    mongoc_gridfs_t
    mongoc_host_list_t
-   mongoc_index_opt_geo_t
-   mongoc_index_opt_t
-   mongoc_index_opt_wt_t
    mongoc_insert_flags_t
    mongoc_iovec_t
    mongoc_optional_t

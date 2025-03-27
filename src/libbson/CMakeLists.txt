@@ -411,7 +411,6 @@ install(
    DESTINATION "${bson_cmake_prefix}"
 )
 
-include (LegacyPackage)
 include (CPack)
 
 if (MONGO_FUZZ)
