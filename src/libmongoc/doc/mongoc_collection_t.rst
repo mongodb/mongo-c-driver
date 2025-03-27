@@ -36,8 +36,6 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_collection_count_with_opts
     mongoc_collection_create_bulk_operation
     mongoc_collection_create_bulk_operation_with_opts
-    mongoc_collection_create_index
-    mongoc_collection_create_index_with_opts
     mongoc_collection_create_indexes_with_opts
     mongoc_collection_delete_many
     mongoc_collection_delete_one
@@ -46,11 +44,9 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_collection_drop_index
     mongoc_collection_drop_index_with_opts
     mongoc_collection_drop_with_opts
-    mongoc_collection_ensure_index
     mongoc_collection_find
     mongoc_collection_find_and_modify
     mongoc_collection_find_and_modify_with_opts
-    mongoc_collection_find_indexes
     mongoc_collection_find_indexes_with_opts
     mongoc_collection_find_with_opts
     mongoc_collection_get_last_error

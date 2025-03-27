@@ -34,7 +34,6 @@
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-cursor.h>
 #include <mongoc/mongoc-database.h>
-#include <mongoc/mongoc-index.h>
 #include <mongoc/mongoc-error.h>
 #include <mongoc/mongoc-flags.h>
 #include <mongoc/mongoc-gridfs.h>

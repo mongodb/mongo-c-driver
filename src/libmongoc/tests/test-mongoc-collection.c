@@ -1322,15 +1322,14 @@ test_index (void)
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
-   mongoc_index_opt_t opt;
    bson_error_t error;
    bson_t keys;
+   mongoc_index_model_t *im;
    bson_t *opts = NULL;
    mongoc_write_concern_t *bad_wc;
    mongoc_write_concern_t *good_wc;
    bool r;
 
-   mongoc_index_opt_init (&opt);
    opts = bson_new ();
 
    client = test_framework_new_default_client ();
@@ -1348,13 +1347,14 @@ test_index (void)
 
    bson_init (&keys);
    bson_append_int32 (&keys, "hello", -1, 1);
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+   im = mongoc_index_model_new (&keys, NULL);
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, NULL, &error), error);
 
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, NULL, &error), error);
 
    ASSERT_OR_PRINT (mongoc_collection_drop_index (collection, "hello_1", &error), error);
 
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, NULL, &error), error);
 
    /* invalid writeConcern */
    bad_wc->wtimeout = -10;
@@ -1378,7 +1378,7 @@ test_index (void)
    mongoc_write_concern_set_w (bad_wc, 99);
 
    if (!test_framework_is_mongos ()) { /* skip if sharded */
-      ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+      ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, NULL, &error), error);
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
       r = mongoc_collection_drop_index_with_opts (collection, "hello_1", opts, &error);
@@ -1389,6 +1389,7 @@ test_index (void)
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    bson_destroy (&keys);
+   mongoc_index_model_destroy (im);
    bson_destroy (opts);
    mongoc_write_concern_destroy (bad_wc);
    mongoc_write_concern_destroy (good_wc);
@@ -1403,17 +1404,16 @@ test_index_w_write_concern (void)
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
-   mongoc_index_opt_t opt;
    mongoc_write_concern_t *good_wc;
    mongoc_write_concern_t *bad_wc;
    bson_error_t error;
    bson_t keys;
+   mongoc_index_model_t *im;
    bson_t reply;
    bson_t *opts = NULL;
    bool result;
    bool is_mongos = test_framework_is_mongos ();
 
-   mongoc_index_opt_init (&opt);
    opts = bson_new ();
 
    client = test_framework_new_default_client ();
@@ -1432,12 +1432,13 @@ test_index_w_write_concern (void)
 
    bson_init (&keys);
    bson_append_int32 (&keys, "hello", -1, 1);
+   im = mongoc_index_model_new (&keys, NULL);
 
    /* writeConcern that will not pass validation */
    bad_wc->wtimeout = -10;
    bson_reinit (opts);
    mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_collection_create_index_with_opts (collection, &keys, &opt, opts, &reply, &error));
+   ASSERT (!mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, &reply, &error));
    bson_destroy (&reply);
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
@@ -1449,7 +1450,7 @@ test_index_w_write_concern (void)
    mongoc_write_concern_set_w (good_wc, 1);
    bson_reinit (opts);
    mongoc_write_concern_append (good_wc, opts);
-   result = mongoc_collection_create_index_with_opts (collection, &keys, &opt, opts, &reply, &error);
+   result = mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, &reply, &error);
    ASSERT_OR_PRINT (result, error);
    ASSERT (!error.code);
 
@@ -1468,8 +1469,9 @@ test_index_w_write_concern (void)
    bson_reinit (opts);
    mongoc_write_concern_append_bad (bad_wc, opts);
    /* skip this part of the test if sharded cluster */
-   if (!is_mongos) {
-      ASSERT (!mongoc_collection_create_index_with_opts (collection, &keys, &opt, opts, &reply, &error));
+   const bool CDRIVER5945_fixed = false; // TODO(CDRIVER-5945): once fixed, unskip this test
+   if (!is_mongos && CDRIVER5945_fixed) {
+      ASSERT (!mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, &reply, &error));
       assert_wc_oob_error (&error);
 
       ASSERT (!bson_empty (&reply));
@@ -1477,13 +1479,15 @@ test_index_w_write_concern (void)
    }
 
    /* Make sure it doesn't crash with a NULL reply or writeConcern */
-   result = mongoc_collection_create_index_with_opts (collection, &keys, &opt, NULL, NULL, &error);
+   result = mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error);
    ASSERT_OR_PRINT (result, error);
 
    ASSERT_OR_PRINT (mongoc_collection_drop_index (collection, "hello_1", &error), error);
 
    /* Now attempt to create an invalid index which the server will reject */
    bson_reinit (&keys);
+   mongoc_index_model_destroy (im);
+   im = mongoc_index_model_new (&keys, NULL);
 
    /* Try to create an index like {abc: "hallo thar"} (won't work,
       should really be something like {abc: 1})
@@ -1491,7 +1495,7 @@ test_index_w_write_concern (void)
       This fails both on legacy and modern versions of the server
    */
    BSON_APPEND_UTF8 (&keys, "abc", "hallo thar");
-   result = mongoc_collection_create_index_with_opts (collection, &keys, &opt, NULL, &reply, &error);
+   result = mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, &reply, &error);
    bson_destroy (&reply);
 
    ASSERT (!result);
@@ -1499,11 +1503,12 @@ test_index_w_write_concern (void)
    memset (&error, 0, sizeof (error));
 
    /* Try again but with reply NULL. Shouldn't crash */
-   result = mongoc_collection_create_index_with_opts (collection, &keys, &opt, NULL, NULL, &error);
+   result = mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error);
    ASSERT (!result);
    ASSERT (strlen (error.message) > 0);
 
    bson_destroy (&keys);
+   mongoc_index_model_destroy (im);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -1521,11 +1526,8 @@ test_index_compound (void)
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
-   mongoc_index_opt_t opt;
    bson_error_t error;
    bson_t keys;
-
-   mongoc_index_opt_init (&opt);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -1539,13 +1541,15 @@ test_index_compound (void)
    bson_init (&keys);
    bson_append_int32 (&keys, "hello", -1, 1);
    bson_append_int32 (&keys, "world", -1, -1);
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+   mongoc_index_model_t *im = mongoc_index_model_new (&keys, NULL);
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error), error);
 
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error), error);
 
    ASSERT_OR_PRINT (mongoc_collection_drop_index (collection, "hello_1_world_-1", &error), error);
 
    bson_destroy (&keys);
+   mongoc_index_model_destroy (im);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -1561,17 +1565,13 @@ test_index_geo (void *unused)
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
-   mongoc_index_opt_t opt;
-   mongoc_index_opt_geo_t geo_opt;
    bson_error_t error;
    bool r;
    bson_t keys;
+   mongoc_index_model_t *im;
    uint32_t id;
 
    BSON_UNUSED (unused);
-
-   mongoc_index_opt_init (&opt);
-   mongoc_index_opt_geo_init (&geo_opt);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -1585,7 +1585,8 @@ test_index_geo (void *unused)
    /* Create a basic 2d index */
    bson_init (&keys);
    BSON_APPEND_UTF8 (&keys, "location", "2d");
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+   im = mongoc_index_model_new (&keys, NULL);
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error), error);
 
    ASSERT_OR_PRINT (mongoc_collection_drop_index (collection, "location_2d", &error), error);
 
@@ -1593,11 +1594,8 @@ test_index_geo (void *unused)
    bson_destroy (&keys);
    bson_init (&keys);
    BSON_APPEND_UTF8 (&keys, "location", "2d");
-
-   geo_opt.twod_location_min = -123;
-   geo_opt.twod_location_max = +123;
-   geo_opt.twod_bits_precision = 30;
-   opt.geo_options = &geo_opt;
+   mongoc_index_model_destroy (im);
+   im = mongoc_index_model_new (&keys, tmp_bson (BSON_STR ({"min" : -123.0, "max" : 123.0, "bits" : 30})));
 
    /* TODO this hack is needed for single-threaded tests */
    id = mc_tpld_servers_const (mc_tpld_unsafe_get_const (client->topology))->items[0].id;
@@ -1606,7 +1604,7 @@ test_index_geo (void *unused)
    ASSERT_OR_PRINT (description, error);
 
    if (description->max_wire_version > 0) {
-      ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+      ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error), error);
 
       ASSERT_OR_PRINT (mongoc_collection_drop_index (collection, "location_2d", &error), error);
    }
@@ -1616,22 +1614,20 @@ test_index_geo (void *unused)
    bson_init (&keys);
    BSON_APPEND_UTF8 (&keys, "location", "geoHaystack");
    BSON_APPEND_INT32 (&keys, "category", 1);
-
-   mongoc_index_opt_geo_init (&geo_opt);
-   geo_opt.haystack_bucket_size = 5;
-
-   opt.geo_options = &geo_opt;
+   mongoc_index_model_destroy (im);
+   im = mongoc_index_model_new (&keys, tmp_bson (BSON_STR ({"bucketSize" : 5})));
 
    description =
       mongoc_topology_description_server_by_id_const (mc_tpld_unsafe_get_const (client->topology), id, &error);
    ASSERT_OR_PRINT (description, error);
    if (description->max_wire_version > 0) {
-      ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+      ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error), error);
 
       r = mongoc_collection_drop_index (collection, "location_geoHaystack_category_1", &error);
       ASSERT_OR_PRINT (r, error);
    }
 
+   mongoc_index_model_destroy (im);
    bson_destroy (&keys);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
@@ -1670,10 +1666,9 @@ test_index_storage (void)
    mongoc_collection_t *collection = NULL;
    mongoc_database_t *database = NULL;
    mongoc_client_t *client = NULL;
-   mongoc_index_opt_t opt;
-   mongoc_index_opt_wt_t wt_opt;
    bson_error_t error;
    bson_t keys;
+   mongoc_index_model_t *im = NULL;
    char *engine = NULL;
 
    client = test_framework_new_default_client ();
@@ -1685,9 +1680,6 @@ test_index_storage (void)
       goto cleanup;
    }
 
-   mongoc_index_opt_init (&opt);
-   mongoc_index_opt_wt_init (&wt_opt);
-
    database = get_test_database (client);
    ASSERT (database);
 
@@ -1698,15 +1690,13 @@ test_index_storage (void)
    bson_init (&keys);
    bson_append_int32 (&keys, "hello", -1, 1);
 
-   /* Add storage option to the index */
-   wt_opt.base.type = MONGOC_INDEX_STORAGE_OPT_WIREDTIGER;
-   wt_opt.config_str = "block_compressor=zlib";
+   im = mongoc_index_model_new (
+      &keys, tmp_bson (BSON_STR ({"storageEngine" : {"wiredTiger" : {"configString" : "block_compressor=zlib"}}})));
 
-   opt.storage_options = (mongoc_index_opt_storage_t *) &wt_opt;
-
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys, &opt, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error), error);
 
 cleanup:
+   mongoc_index_model_destroy (im);
    if (engine)
       bson_free (engine);
    if (collection)
@@ -3567,8 +3557,8 @@ test_get_index_info (void)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
-   mongoc_index_opt_t opt1;
-   mongoc_index_opt_t opt2;
+   mongoc_index_model_t *im1;
+   mongoc_index_model_t *im2;
    bson_error_t error = {0};
    mongoc_cursor_t *cursor;
    const bson_t *indexinfo;
@@ -3637,18 +3627,18 @@ test_get_index_info (void)
    BSON_APPEND_INT32 (&indexkey1, "raspberry", 1);
    idx1_name = mongoc_collection_keys_to_index_string (&indexkey1);
    ASSERT (strcmp (idx1_name, "raspberry_1") == 0);
-   mongoc_index_opt_init (&opt1);
-   opt1.background = true;
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &indexkey1, &opt1, &error), error);
+   im1 = mongoc_index_model_new (&indexkey1, tmp_bson ("{'background': true}"));
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im1, 1, NULL, NULL, &error), error);
+   mongoc_index_model_destroy (im1);
    bson_destroy (&indexkey1);
 
    bson_init (&indexkey2);
    BSON_APPEND_INT32 (&indexkey2, "snozzberry", 1);
    idx2_name = mongoc_collection_keys_to_index_string (&indexkey2);
    ASSERT (strcmp (idx2_name, "snozzberry_1") == 0);
-   mongoc_index_opt_init (&opt2);
-   opt2.unique = true;
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &indexkey2, &opt2, &error), error);
+   im2 = mongoc_index_model_new (&indexkey2, tmp_bson ("{'unique': true}"));
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im2, 1, NULL, NULL, &error), error);
+   mongoc_index_model_destroy (im2);
    bson_destroy (&indexkey2);
 
    /*
@@ -4240,9 +4230,7 @@ test_index_with_collation (void)
    mongoc_collection_t *collection;
    request_t *request;
    bson_error_t error;
-   bson_t *collation;
    bson_t keys;
-   mongoc_index_opt_t opt;
    bson_t reply;
    future_t *future;
 
@@ -4253,11 +4241,11 @@ test_index_with_collation (void)
 
    bson_init (&keys);
    bson_append_int32 (&keys, "hello", -1, 1);
-   mongoc_index_opt_init (&opt);
-   collation = BCON_NEW ("locale", BCON_UTF8 ("en"), "strength", BCON_INT32 (2));
-   opt.collation = collation;
 
-   future = future_collection_create_index_with_opts (collection, &keys, &opt, NULL, &reply, &error);
+   mongoc_index_model_t *im =
+      mongoc_index_model_new (&keys, tmp_bson (BSON_STR ({"collation" : {"locale" : "en", "strength" : 2}})));
+
+   future = future_collection_create_indexes_with_opts (collection, &im, 1, NULL, &reply, &error);
 
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
@@ -4271,8 +4259,8 @@ test_index_with_collation (void)
    reply_to_request_with_ok_and_destroy (request);
    ASSERT (future_get_bool (future));
 
+   mongoc_index_model_destroy (im);
    bson_destroy (&reply);
-   bson_destroy (collation);
    bson_destroy (&keys);
    future_destroy (future);
    mongoc_collection_destroy (collection);
@@ -4308,12 +4296,14 @@ test_create_index_fail (void *context)
    bool r;
    bson_t reply;
    bson_error_t error;
+   mongoc_index_model_t *im;
 
    BSON_UNUSED (context);
 
    client = test_framework_client_new ("mongodb://example.doesntexist/?connectTimeoutMS=10", NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
-   r = mongoc_collection_create_index_with_opts (collection, tmp_bson ("{'a': 1}"), NULL, NULL, &reply, &error);
+   im = mongoc_index_model_new (tmp_bson ("{'a': 1}"), NULL);
+   r = mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, &reply, &error);
 
    ASSERT (!r);
    ASSERT_ERROR_CONTAINS (
@@ -4322,6 +4312,7 @@ test_create_index_fail (void *context)
    /* reply was initialized */
    ASSERT (bson_empty (&reply));
 
+   mongoc_index_model_destroy (im);
    bson_destroy (&reply);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);

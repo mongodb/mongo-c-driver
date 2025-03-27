@@ -53,8 +53,7 @@ _check_index (mongoc_collection_t *collection, const char *index_json)
    bson_t index_key;
    int n;
 
-   cursor = mongoc_collection_find_indexes (collection, &error);
-   ASSERT_OR_PRINT (0 == error.code, error);
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
 
    n = 0;
 

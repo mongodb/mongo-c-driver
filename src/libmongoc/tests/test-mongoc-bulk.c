@@ -128,15 +128,12 @@ oid_created_on_client (const bson_t *doc)
 static void
 create_unique_index (mongoc_collection_t *collection)
 {
-   mongoc_index_opt_t opt;
    bson_error_t error;
 
-   mongoc_index_opt_init (&opt);
-   opt.unique = true;
+   mongoc_index_model_t *im = mongoc_index_model_new (tmp_bson ("{'a': 1}"), tmp_bson ("{'unique': true}"));
 
-   BEGIN_IGNORE_DEPRECATIONS
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, tmp_bson ("{'a': 1}"), &opt, &error), error);
-   END_IGNORE_DEPRECATIONS
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error), error);
+   mongoc_index_model_destroy (im);
 }
 
 
@@ -4689,12 +4686,12 @@ test_bulk_write_multiple_errors (void *unused)
 
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'_id': 1}")); // fail via failPoint
-   mongoc_bulk_operation_delete (bulk,
+   mongoc_bulk_operation_remove (bulk,
                                  tmp_bson ("{'_id': 1}")); // fail via failPoint
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 4}")); // succeed
 
-   mongoc_bulk_operation_delete (bulk, tmp_bson ("{'_id': 4}")); // suceed
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'_id': 4}")); // suceed
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 5}")); // suceed
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 5}")); // duplicate key error

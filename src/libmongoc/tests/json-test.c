@@ -1374,12 +1374,12 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
 
    if (bson_iter_init_find (&iter, &opts, "kmsProviders")) {
-      bson_t kms_providers;
+      bson_t kms_providers = BSON_INITIALIZER;
       bson_t tls_opts = BSON_INITIALIZER;
       bson_t tmp;
 
       bson_iter_bson (&iter, &tmp);
-      bson_copy_to_excluding (
+      bson_copy_to_excluding_noinit (
          &tmp, &kms_providers, "aws", "awsTemporary", "awsTemporaryNoSessionToken", "azure", "gcp", "kmip", NULL);
 
       /* AWS credentials are set from environment variables. */

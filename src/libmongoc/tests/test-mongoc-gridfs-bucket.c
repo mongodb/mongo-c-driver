@@ -71,14 +71,14 @@ _get_index_count (mongoc_collection_t *collection)
    int n;
    const bson_t *info;
 
-   cursor = mongoc_collection_find_indexes (collection, &error);
-   ASSERT_OR_PRINT (0 == error.code, error);
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
 
    n = 0;
 
    while (mongoc_cursor_next (cursor, &info)) {
       n++;
    }
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    mongoc_cursor_destroy (cursor);
 
