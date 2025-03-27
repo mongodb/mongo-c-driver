@@ -41,12 +41,12 @@ find_dependency(bson-1.0 HINTS ${parent_dir} NO_DEFAULT_PATH)
 # The library type that is linked with `bson::bson`
 set(_default_lib_type)
 # Add compat targets for the bson-1.0 package targets
-if(TARGET mongo::bson_shared)
+if(TARGET mongo::bson_shared AND NOT TARGET bson::shared)
     add_library(bson::shared IMPORTED INTERFACE)
     set_property(TARGET bson::shared APPEND PROPERTY INTERFACE_LINK_LIBRARIES mongo::bson_shared)
     set(_default_lib_type SHARED)
 endif()
-if(TARGET mongo::bson_static)
+if(TARGET mongo::bson_static AND NOT TARGET bson::static)
     add_library(bson::static IMPORTED INTERFACE)
     set_property(TARGET bson::static APPEND PROPERTY INTERFACE_LINK_LIBRARIES mongo::bson_static)
     # If static is available, set it as the default library type
@@ -58,6 +58,8 @@ set(BSON_DEFAULT_IMPORTED_LIBRARY_TYPE "${_default_lib_type}"
     CACHE STRING "The default library type that is used when linking against 'bson::bson' (either SHARED or STATIC, requires that the package was built with the appropriate library type)")
 set_property(CACHE BSON_DEFAULT_IMPORTED_LIBRARY_TYPE PROPERTY STRINGS SHARED STATIC)
 
-string(TOLOWER "${BSON_DEFAULT_IMPORTED_LIBRARY_TYPE}" _type)
-add_library(bson::bson IMPORTED INTERFACE)
-set_property(TARGET bson::bson APPEND PROPERTY INTERFACE_LINK_LIBRARIES bson::${_type})
+if(NOT TARGET bson::bson)  # Don't redefine the target if we were already included
+    string(TOLOWER "${BSON_DEFAULT_IMPORTED_LIBRARY_TYPE}" _type)
+    add_library(bson::bson IMPORTED INTERFACE)
+    set_property(TARGET bson::bson APPEND PROPERTY INTERFACE_LINK_LIBRARIES bson::${_type})
+endif()

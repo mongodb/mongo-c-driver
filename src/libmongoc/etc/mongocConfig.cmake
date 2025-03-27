@@ -43,12 +43,12 @@ find_dependency(bson ${mongoc_FIND_VERSION} HINTS ${parent_dir} NO_DEFAULT_PATH)
 # The library type that is linked with `mongoc::mongoc`
 set(_default_lib_type)
 # Add compat targets for the mongoc-1.0 package targets
-if(TARGET mongo::mongoc_shared)
+if(TARGET mongo::mongoc_shared AND NOT TARGET mongoc::shared)
     add_library(mongoc::shared IMPORTED INTERFACE)
     set_property(TARGET mongoc::shared APPEND PROPERTY INTERFACE_LINK_LIBRARIES mongo::mongoc_shared)
     set(_default_lib_type SHARED)
 endif()
-if(TARGET mongo::mongoc_static)
+if(TARGET mongo::mongoc_static AND NOT TARGET mongoc::static)
     add_library(mongoc::static IMPORTED INTERFACE)
     set_property(TARGET mongoc::static APPEND PROPERTY INTERFACE_LINK_LIBRARIES mongo::mongoc_static)
     # If static is available, set it as the default library type
@@ -60,6 +60,8 @@ set(MONGOC_DEFAULT_IMPORTED_LIBRARY_TYPE "${_default_lib_type}"
     CACHE STRING "The default library type that is used when linking against 'mongoc::mongoc' (either SHARED or STATIC, requires that the package was built with the appropriate library type)")
 set_property(CACHE MONGOC_DEFAULT_IMPORTED_LIBRARY_TYPE PROPERTY STRINGS SHARED STATIC)
 
-string(TOLOWER "${MONGOC_DEFAULT_IMPORTED_LIBRARY_TYPE}" _type)
-add_library(mongoc::mongoc IMPORTED INTERFACE)
-set_property(TARGET mongoc::mongoc APPEND PROPERTY INTERFACE_LINK_LIBRARIES mongoc::${_type})
+if(NOT TARGET mongoc::mongoc)  # Don't redefine the target if we were already included
+    string(TOLOWER "${MONGOC_DEFAULT_IMPORTED_LIBRARY_TYPE}" _type)
+    add_library(mongoc::mongoc IMPORTED INTERFACE)
+    set_property(TARGET mongoc::mongoc APPEND PROPERTY INTERFACE_LINK_LIBRARIES mongoc::${_type})
+endif()

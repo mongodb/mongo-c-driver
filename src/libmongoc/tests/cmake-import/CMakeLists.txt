@@ -6,13 +6,14 @@ include(CTest)
 add_compile_definitions("EXPECT_BSON_VERSION=\"${EXPECT_BSON_VERSION}\"")
 add_compile_definitions("EXPECT_MONGOC_VERSION=\"${EXPECT_MONGOC_VERSION}\"")
 
-# set(CMAKE_FIND_DEBUG_MODE TRUE)
-
 if(FIND_BSON)
+    # Call find_package() twice to check that we can be imported twice
+    find_package(bson ${FIND_BSON_ARGS})
     find_package(bson ${FIND_BSON_ARGS})
 endif()
 
 if(FIND_MONGOC)
+    find_package(mongoc ${FIND_MONGOC_ARGS})
     find_package(mongoc ${FIND_MONGOC_ARGS})
 endif()
 
