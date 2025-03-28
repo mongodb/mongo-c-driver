@@ -19,6 +19,9 @@ mkdir %INSTALL_DIR%
 
 set PATH=%PATH%;%INSTALL_DIR%\bin
 
+set major=1
+set version=1.31.0
+
 cd %BUILD_DIR%
 robocopy "%SRCROOT%" "%BUILD_DIR%" /E /XD ".git" "%BUILD_DIR%" "_build" "cmake-build" /NP /NFL /NDL
 
@@ -41,11 +44,11 @@ if errorlevel 1 (
 )
 set MINGW=
 
-if not exist %INSTALL_DIR%\lib\libbson-static-1.0.a (
-  echo libbson-static-1.0.a missing!
+if not exist %INSTALL_DIR%\lib\libbson%major%.a (
+  echo libbson%major%.a missing!
   exit /B 1
 ) else (
-  echo libbson-static-1.0.a check ok
+  echo libbson%major%.a check ok
 )
 
 cd %SRCROOT%
@@ -60,7 +63,7 @@ exit /B 0
 set PKG_CONFIG_PATH=%INSTALL_DIR%\lib\pkgconfig
 
 rem http://stackoverflow.com/questions/2323292
-for /f %%i in ('pkg-config --libs --cflags libbson-1.0') do set PKG_CONFIG_OUT=%%i
+for /f %%i in ('pkg-config --libs --cflags bson%major%') do set PKG_CONFIG_OUT=%%i
 
 echo PKG_CONFIG_OUT is %PKG_CONFIG_OUT%
 

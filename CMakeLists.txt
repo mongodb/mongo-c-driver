@@ -308,31 +308,17 @@ mongo_pick(MONGOC_ENABLE_STATIC_INSTALL 1 0
            [[ENABLE_STATIC AND NOT ENABLE_STATIC STREQUAL "BUILD_ONLY"]])
 
 if (USE_SYSTEM_LIBBSON)
-   # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
-   # but you should use the standard CMAKE_PREFIX_PATH instead.
-   message (STATUS "Searching for libbson CMake packages")
-   find_package (bson-1.0
-      "${PROJECT_VERSION}"
-      HINTS
-      ${BSON_ROOT_DIR})
-
-   if (NOT bson-1.0_FOUND)
-      message (FATAL_ERROR "System libbson not found")
-   endif ()
-
-   message (STATUS "libbson found version \"${bson-1.0_VERSION}\"")
-   message (STATUS "disabling test-libmongoc since using system libbson")
-   SET (ENABLE_TESTS OFF)
+   find_package (bson "${PROJECT_VERSION}" REQUIRED)
+   # Disable test-libmongoc since we are using a system libbson
+   set (ENABLE_TESTS OFF)
 
    set (USING_SYSTEM_BSON TRUE)
-   if (NOT TARGET mongo::bson_shared)
-           message (FATAL_ERROR "System libbson built without shared library target")
+   if (NOT TARGET bson::shared)
+      message (FATAL_ERROR "System libbson built without shared library target")
    endif ()
-   set (BSON_LIBRARIES mongo::bson_shared)
-   if (NOT TARGET mongo::bson_static)
-           message (FATAL_ERROR "System libbson built without static library target")
+   if (NOT TARGET bson::static)
+      message (FATAL_ERROR "System libbson built without static library target")
    endif ()
-   set (BSON_STATIC_LIBRARIES mongo::bson_static)
 endif ()
 
 set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
@@ -405,14 +391,7 @@ add_subdirectory (src/common)
 
 if (NOT USING_SYSTEM_BSON)
    message (STATUS "Using bundled libbson")
-
    add_subdirectory (src/libbson)
-   # Defined in src/libbson/CMakeLists.txt
-   set (BSON_STATIC_LIBRARIES bson_static)
-   set (BSON_LIBRARIES bson_shared)
-   set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
-   set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
-   set (BSON_STATIC_PUBLIC_DEFINITIONS "BSON_STATIC")
 endif ()
 
 if (MSVC)

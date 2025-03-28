@@ -834,14 +834,13 @@ if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    endif()
 endif ()
 
-if (MONGOC_ENABLE_STATIC_BUILD)
+if (TARGET bson::static)
    add_library (mcd_rpc STATIC EXCLUDE_FROM_ALL ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c)
    target_include_directories (mcd_rpc PUBLIC ${PROJECT_SOURCE_DIR}/src)
-   target_link_libraries (mcd_rpc PUBLIC ${BSON_STATIC_LIBRARIES})
+   target_link_libraries (mcd_rpc PUBLIC bson::static)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mcd_rpc PUBLIC -fPIC)
    endif ()
-   target_compile_definitions (mcd_rpc PUBLIC ${BSON_STATIC_PUBLIC_DEFINITIONS})
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
 
@@ -858,7 +857,7 @@ if (ENABLE_SHARED)
       target_sources(mongoc_shared PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libmongoc.rc)
    endif()
    set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
-   target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
+   target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC bson::shared mongo::detail::c_dependencies)
    target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
@@ -929,7 +928,7 @@ endif () # ENABLE_SHARED
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS})
-   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
+   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} bson::static mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
       message (STATUS "Adding -fPIC to compilation of mongoc_static components")
@@ -953,7 +952,6 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    target_compile_definitions (mongoc_static
       PUBLIC
          MONGOC_STATIC
-         ${BSON_STATIC_PUBLIC_DEFINITIONS}
       PRIVATE
          MONGOC_COMPILATION
          ${KMS_MSG_DEFINITIONS}
@@ -1162,7 +1160,6 @@ if (ENABLE_TESTS)
    target_include_directories (test-libmongoc-lib
       PRIVATE
          ${PROJECT_SOURCE_DIR}/tests
-         ${BSON_STATIC_INCLUDE_DIRS}
          ${UTHASH_INCLUDE_DIR}
    )
    target_compile_definitions (test-libmongoc-lib
@@ -1190,7 +1187,6 @@ if (ENABLE_TESTS)
       target_include_directories (${test}
          PRIVATE
             ${PROJECT_SOURCE_DIR}/tests
-            ${BSON_STATIC_INCLUDE_DIRS}
       )
       target_compile_definitions (${test}
          PUBLIC

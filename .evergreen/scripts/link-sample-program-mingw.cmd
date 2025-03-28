@@ -20,6 +20,8 @@ mkdir %INSTALL_DIR%
 
 set PATH=%PATH%;%INSTALL_DIR%\bin
 
+set major=1
+
 cd %BUILD_DIR%
 robocopy "%SRCROOT%" "%BUILD_DIR%" /E /XD ".git" "%BUILD_DIR%" "_build" "cmake-build" /NP /NFL /NDL
 
@@ -61,7 +63,7 @@ exit /B 0
 set PKG_CONFIG_PATH=%INSTALL_DIR%\lib\pkgconfig
 
 rem http://stackoverflow.com/questions/2323292
-for /f %%i in ('pkg-config --libs --cflags libmongoc-1.0') do set PKG_CONFIG_OUT=%%i
+for /f %%i in ('pkg-config --libs --cflags mongoc%major%') do set PKG_CONFIG_OUT=%%i
 
 echo PKG_CONFIG_OUT is %PKG_CONFIG_OUT%
 

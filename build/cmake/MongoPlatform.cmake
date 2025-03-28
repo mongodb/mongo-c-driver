@@ -8,9 +8,9 @@ Use mongo_platform_compile_options and mongo_platform_link_options to add usage
 requirements to this library.
 
 The mongo::detail::c_platform library is installed and exported with the
-bson-targets export set as an implementation detail. It is installed with this
+mongo-platform-targets export set as an implementation detail. It is installed with this
 export set so that it is available to both libbson and libmongoc (attempting to
-install this target in both bson-targets and mongoc-targets export sets would
+install this target in both mongo-platform-targets and mongoc-targets export sets would
 lead to duplicate definitions of mongo::detail::c_platform for downstream
 users).
 
@@ -23,9 +23,9 @@ else ()
    # The system libbson exports the `mongo::detail::c_platform` target.
    # Do not define the `mongo::detail::c_platform` target, to prevent an "already defined" error.
 endif ()
-set_property(TARGET _mongo-platform PROPERTY EXPORT_NAME detail::c_platform)
-install(TARGETS _mongo-platform EXPORT bson-targets)
-
+set_property(TARGET _mongo-platform PROPERTY EXPORT_NAME mongo::detail::c_platform)
+# This export set is installed as part of libbson. Search: PLATFORM-EXPORT-TARGET-INSTALL
+install(TARGETS _mongo-platform EXPORT mongo-platform-targets)
 
 #[[
 Define additional platform-support compile options

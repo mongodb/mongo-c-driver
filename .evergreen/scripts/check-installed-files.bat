@@ -7,6 +7,7 @@ rem Notice that the dll goes in "bin".
 set DLL=%INSTALL_DIR%\bin\mongoc-1.0.dll
 set LIB_DLL=%INSTALL_DIR%\bin\libmongoc-1.0.dll
 set LIB_LIB=%INSTALL_DIR%\lib\libmongoc-1.0.lib
+set major=1
 if "%MINGW%"=="1" (
   if not exist %LIB_DLL% (
     echo %LIB_DLL% is missing!
@@ -32,11 +33,11 @@ if "%MINGW%"=="1" (
     echo libmongoc-1.0.lib check ok
   )
 )
-if not exist %INSTALL_DIR%\lib\pkgconfig\libmongoc-1.0.pc (
-  echo libmongoc-1.0.pc missing!
+if not exist %INSTALL_DIR%\lib\pkgconfig\mongoc%major%.pc (
+  echo mongoc%major%.pc missing!
   exit /B 1
 ) else (
-  echo libmongoc-1.0.pc check ok
+  echo mongoc%major%.pc check ok
 )
 if not exist %INSTALL_DIR%\lib\cmake\mongoc-1.0\mongoc-1.0-config.cmake (
   echo mongoc-1.0-config.cmake missing!
@@ -56,11 +57,11 @@ if not exist %INSTALL_DIR%\lib\cmake\mongoc-1.0\mongoc-targets.cmake (
 ) else (
   echo mongoc-targets.cmake check ok
 )
-if not exist %INSTALL_DIR%\lib\pkgconfig\libmongoc-static-1.0.pc (
-  echo libmongoc-static-1.0.pc missing!
+if not exist %INSTALL_DIR%\lib\pkgconfig\mongoc%major%-static.pc (
+  echo mongoc%major%-static.pc missing!
   exit /B 1
 ) else (
-  echo libmongoc-static-1.0.pc check ok
+  echo mongoc%major%-static.pc check ok
 )
 
 echo on
