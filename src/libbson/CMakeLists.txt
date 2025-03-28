@@ -401,6 +401,17 @@ install (EXPORT bson-targets
    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}
 )
 
+set(bson_cmake_prefix "${MONGOC_INSTALL_CMAKEDIR}/bson-${PROJECT_VERSION}")
+configure_file(
+   ${mongo-c-driver_SOURCE_DIR}/build/cmake/packageConfigVersion.cmake.in
+   bsonConfigVersion.cmake
+   @ONLY
+)
+install(
+   FILES etc/bsonConfig.cmake "${CMAKE_CURRENT_BINARY_DIR}/bsonConfigVersion.cmake"
+   DESTINATION "${bson_cmake_prefix}"
+)
+
 include (LegacyPackage)
 include (CPack)
 
