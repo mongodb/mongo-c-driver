@@ -415,12 +415,6 @@ future_functions = [
                      param("size_t", "min_bytes"),
                      param("uint32_t", "timeout_msec")]),
 
-    future_function("mongoc_gridfs_file_ptr",
-                    "mongoc_gridfs_find_one",
-                    [param("mongoc_gridfs_ptr", "gridfs"),
-                     param("const_bson_ptr", "query"),
-                     param("bson_error_ptr", "error")]),
-
     future_function("bool",
                     "mongoc_gridfs_file_remove",
                     [param("mongoc_gridfs_file_ptr", "file"),

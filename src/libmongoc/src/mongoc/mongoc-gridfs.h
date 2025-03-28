@@ -40,15 +40,6 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t *gridfs, mongoc_stream_t 
 MONGOC_EXPORT (mongoc_gridfs_file_t *)
 mongoc_gridfs_create_file (mongoc_gridfs_t *gridfs, mongoc_gridfs_file_opt_t *opt) BSON_GNUC_WARN_UNUSED_RESULT;
 
-BSON_DEPRECATED_FOR (mongoc_gridfs_find_with_opts)
-MONGOC_EXPORT (mongoc_gridfs_file_list_t *) mongoc_gridfs_find (mongoc_gridfs_t *gridfs, const bson_t *query)
-   BSON_GNUC_WARN_UNUSED_RESULT;
-
-BSON_DEPRECATED_FOR (mongoc_gridfs_find_one_with_opts)
-MONGOC_EXPORT (mongoc_gridfs_file_t *)
-   mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs, const bson_t *query, bson_error_t *error)
-      BSON_GNUC_WARN_UNUSED_RESULT;
-
 MONGOC_EXPORT (mongoc_gridfs_file_list_t *)
 mongoc_gridfs_find_with_opts (mongoc_gridfs_t *gridfs, const bson_t *filter, const bson_t *opts)
    BSON_GNUC_WARN_UNUSED_RESULT;
