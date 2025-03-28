@@ -1407,6 +1407,17 @@ install (
       Devel
 )
 
+set(mongoc_cmake_prefix "${MONGOC_INSTALL_CMAKEDIR}/mongoc-${PROJECT_VERSION}")
+configure_file(
+   ${mongo-c-driver_SOURCE_DIR}/build/cmake/packageConfigVersion.cmake.in
+   mongocConfigVersion.cmake
+   @ONLY
+)
+install(
+   FILES etc/mongocConfig.cmake "${CMAKE_CURRENT_BINARY_DIR}/mongocConfigVersion.cmake"
+   DESTINATION "${mongoc_cmake_prefix}"
+)
+
 if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
    find_package (Sphinx REQUIRED)
    add_subdirectory (doc)
