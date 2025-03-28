@@ -280,7 +280,7 @@ function(_generate_pkg_config_content out)
     set(gx_libs
         $<IF:$<STREQUAL:$<TARGET_PROPERTY:TYPE>,STATIC_LIBRARY>,
             # If linking static, emit the full path to the static library file
-            -l\${libdir}/$<TARGET_FILE_NAME:${target}>,
+            \${libdir}/$<TARGET_FILE_NAME:${target}>,
             # Otherwise, link to the dynamic library namelink
             -L\${libdir} -l$<TARGET_PROPERTY:OUTPUT_NAME>>
         $<GENEX_EVAL:$<TARGET_PROPERTY:pkg_config_LIBS>>
