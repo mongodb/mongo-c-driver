@@ -899,9 +899,9 @@ if (ENABLE_SHARED)
       OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}"
       VERSION 0.0.0
       SOVERSION 0
-      pkg_config_REQUIRES "libbson-1.0"
+      pkg_config_REQUIRES "bson${PROJECT_VERSION_MAJOR}"
       )
-   mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VERSION}.pc)
+   mongo_generate_pkg_config(mongoc_shared INSTALL RENAME mongoc${PROJECT_VERSION_MAJOR}.pc)
 
    if (ENABLE_APPLE_FRAMEWORK)
       set_target_properties (mongoc_shared PROPERTIES
@@ -976,10 +976,10 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    set_target_properties (mongoc_static PROPERTIES
       VERSION 0.0.0
       OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}"
-      pkg_config_REQUIRES "libbson-static-1.0"
+      pkg_config_REQUIRES "bson${PROJECT_VERSION_MAJOR}-static"
       )
    if(MONGOC_ENABLE_STATIC_INSTALL)
-      mongo_generate_pkg_config (mongoc_static FILENAME libmongoc-static-${MONGOC_API_VERSION}.pc INSTALL)
+      mongo_generate_pkg_config (mongoc_static FILENAME mongoc${PROJECT_VERSION_MAJOR}-static.pc INSTALL)
    endif()
 endif ()
 

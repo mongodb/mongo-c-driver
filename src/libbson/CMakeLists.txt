@@ -340,11 +340,11 @@ endfunction()
 
 if(ENABLE_STATIC_LIBBSON_INSTALL AND TARGET bson_static)
    install_export_target(bson_static)
-   mongo_generate_pkg_config(bson_static FILENAME libbson-static-1.0.pc INSTALL)
+   mongo_generate_pkg_config(bson_static FILENAME bson${PROJECT_VERSION_MAJOR}-static.pc INSTALL)
 endif()
 if(ENABLE_SHARED_LIBBSON_INSTALL AND TARGET bson_shared)
    install_export_target(bson_shared)
-   mongo_generate_pkg_config(bson_shared FILENAME libbson-1.0.pc INSTALL)
+   mongo_generate_pkg_config(bson_shared FILENAME bson${PROJECT_VERSION_MAJOR}.pc INSTALL)
 endif()
 
 # Install all headers by doing a recursive directory-install.
