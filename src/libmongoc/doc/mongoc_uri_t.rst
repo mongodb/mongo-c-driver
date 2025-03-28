@@ -133,7 +133,7 @@ Mechanism Properties
 
 The following properties may be specified as key-value pairs for the ``MONGOC_URI_AUTHMECHANISMPROPERTIES`` option.
 
-These properties may only be specified when the corresponding authentication mechanism is also specified.
+Invalid or unsupported properties may be reported as a client error when a corresponding authentication mechanism is also specified.
 
 MONGODB-OIDC
 ^^^^^^^^^^^^
@@ -147,8 +147,8 @@ TOKEN_RESOURCE The URI of the target resource. ``ENVIRONMENT`` must be one of ["
 
 .. warning::
 
-  The value of the ``TOKEN_RESOURCE`` property MUST NOT contain the comma character "," when specified as a connection string query option.
-  Any commas in the value MUST be percent-encoded (as "%2C") to avoid being interpreted as a key-value pair delimiter.
+  A ``TOKEN_RESOURCE`` property value MUST NOT contain the comma character "," when specified as a connection string query option, even when percent-encoded.
+  A value containing a comma character may be set using :symbol:`mongoc_uri_set_mechanism_properties()` instead.
   However, the value MAY contain the colon character ":", as only the first colon is interpreted as a key-value delimiter.
 
 GSSAPI
