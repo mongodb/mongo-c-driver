@@ -112,3 +112,38 @@ add_test_cmake_project(
       "FIND_BSON_ARGS=REQUIRED;OPTIONAL_COMPONENTS;foo"
       "EXPECT_BSON_VERSION=${mongo-c-driver_VERSION_FULL}"
 )
+
+add_test_cmake_project(
+   mongoc/pkg-config/bson-import-shared src/libmongoc/tests/pkg-config-import
+   INSTALL_PARENT
+   SETTINGS
+      PKG_CONFIG_SEARCH=libbson-1.0
+      "EXPECT_BSON_VERSION=${mongo-c-driver_VERSION_FULL}"
+)
+
+add_test_cmake_project(
+   mongoc/pkg-config/bson-import-static src/libmongoc/tests/pkg-config-import
+   INSTALL_PARENT
+   SETTINGS
+      PKG_CONFIG_SEARCH=libbson-static-1.0
+      "EXPECT_BSON_VERSION=${mongo-c-driver_VERSION_FULL}"
+      EXPECT_BSON_STATIC=1
+)
+
+add_test_cmake_project(
+   mongoc/pkg-config/mongoc-import-shared src/libmongoc/tests/pkg-config-import
+   INSTALL_PARENT
+   SETTINGS
+      PKG_CONFIG_SEARCH=libmongoc-1.0
+      "EXPECT_MONGOC_VERSION=${mongo-c-driver_VERSION_FULL}"
+)
+
+add_test_cmake_project(
+   mongoc/pkg-config/mongoc-import-static src/libmongoc/tests/pkg-config-import
+   INSTALL_PARENT
+   SETTINGS
+      PKG_CONFIG_SEARCH=libmongoc-static-1.0
+      "EXPECT_MONGOC_VERSION=${mongo-c-driver_VERSION_FULL}"
+      EXPECT_BSON_STATIC=1
+      EXPECT_MONGOC_STATIC=1
+)
