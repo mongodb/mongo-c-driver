@@ -1507,12 +1507,6 @@ mongoc_cursor_get_limit (const mongoc_cursor_t *cursor)
 
 
 bool
-mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id)
-{
-   return mongoc_cursor_set_server_id (cursor, server_id);
-}
-
-bool
 mongoc_cursor_set_server_id (mongoc_cursor_t *cursor, uint32_t server_id)
 {
    BSON_ASSERT (cursor);
@@ -1532,12 +1526,6 @@ mongoc_cursor_set_server_id (mongoc_cursor_t *cursor, uint32_t server_id)
    return true;
 }
 
-
-uint32_t
-mongoc_cursor_get_hint (const mongoc_cursor_t *cursor)
-{
-   return mongoc_cursor_get_server_id (cursor);
-}
 
 uint32_t
 mongoc_cursor_get_server_id (const mongoc_cursor_t *cursor)
@@ -1580,31 +1568,6 @@ mongoc_cursor_get_max_await_time_ms (const mongoc_cursor_t *cursor)
    }
 
    return 0;
-}
-
-
-/* deprecated for mongoc_cursor_new_from_command_reply_with_opts */
-mongoc_cursor_t *
-mongoc_cursor_new_from_command_reply (mongoc_client_t *client, bson_t *reply, uint32_t server_id)
-{
-   mongoc_cursor_t *cursor;
-   bson_t cmd = BSON_INITIALIZER;
-   bson_t opts = BSON_INITIALIZER;
-
-   BSON_ASSERT_PARAM (client);
-   BSON_ASSERT (reply);
-   /* options are passed through by adding them to reply. */
-   bsonBuildAppend (*reply, insert (opts, not(key ("cursor", "ok", "operationTime", "$clusterTime", "$gleStats"))));
-
-   if (server_id) {
-      bson_append_int64 (&opts, "serverId", 8, server_id);
-   }
-
-   cursor = _mongoc_cursor_cmd_new_from_reply (client, &cmd, &opts, reply);
-   bson_destroy (&cmd);
-   bson_destroy (&opts);
-
-   return cursor;
 }
 
 

@@ -291,7 +291,8 @@ test_reset_callbacks (void)
    /* reset callbacks */
    mongoc_client_set_apm_callbacks (client, NULL, NULL);
    /* destroys cmd_reply */
-   cursor = mongoc_cursor_new_from_command_reply (client, &cmd_reply, sd->id);
+   cursor = mongoc_cursor_new_from_command_reply_with_opts (
+      client, &cmd_reply, tmp_bson ("{'serverId': %" PRIu32 "}", sd->id));
    ASSERT (mongoc_cursor_next (cursor, &b));
    ASSERT_CMPINT (incremented, ==, 1); /* same value as before */
 
