@@ -120,42 +120,6 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
    }
    return false;
 }
-/**
- * Deprecated. Was never supposed to be part of the public API.
- * See mongoc_stream_tls_handshake.
- */
-bool
-mongoc_stream_tls_do_handshake (mongoc_stream_t *stream, int32_t timeout_msec)
-{
-   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
-
-   BSON_UNUSED (timeout_msec);
-
-   BSON_ASSERT (stream_tls);
-
-   MONGOC_ERROR ("This function doesn't do anything. Please call "
-                 "mongoc_stream_tls_handshake()");
-   return false;
-}
-
-
-/**
- * Deprecated. Was never supposed to be part of the public API.
- * See mongoc_stream_tls_handshake.
- */
-bool
-mongoc_stream_tls_check_cert (mongoc_stream_t *stream, const char *host)
-{
-   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
-
-   BSON_UNUSED (host);
-
-   BSON_ASSERT (stream_tls);
-
-   MONGOC_ERROR ("This function doesn't do anything. Please call "
-                 "mongoc_stream_tls_handshake()");
-   return false;
-}
 
 
 /*
@@ -262,11 +226,5 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (
    return mongoc_stream_tls_openssl_new_with_context (base_stream, host, opt, client, ssl_ctx);
 }
 #endif
-
-mongoc_stream_t *
-mongoc_stream_tls_new (mongoc_stream_t *base_stream, mongoc_ssl_opt_t *opt, int client)
-{
-   return mongoc_stream_tls_new_with_hostname (base_stream, NULL, opt, client);
-}
 
 #endif
