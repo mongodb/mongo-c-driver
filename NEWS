@@ -56,6 +56,10 @@ Unreleased (2.0.0)
   * `mongoc_index_opt_t`, `mongoc_index_opt_geo_t` `mongoc_index_opt_wt_t` are removed. Pass options using `bson_t` to `mongoc_collection_create_indexes_with_opts` instead.
   * `mongoc_collection_find_indexes` is removed. Use `mongoc_collection_find_indexes_with_opts` instead.
   * See [MongoDB documentation](https://www.mongodb.com/docs/languages/c/c-driver/current/indexes/) for working with indexes.
+* Deprecated URI API has been removed:
+  * `mongoc_uri_get_service` is removed. Use `mongoc_uri_get_srv_hostname` instead.
+  * `mongoc_uri_get_read_prefs` is removed. Use `mongoc_uri_get_read_prefs_t` instead.
+  * `mongoc_uri_get_ssl` is removed. Use `mongoc_uri_get_tls` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 

@@ -349,12 +349,9 @@ MONGOC_URI_SAFE                            safe                              {tr
     mongoc_uri_get_options
     mongoc_uri_get_password
     mongoc_uri_get_read_concern
-    mongoc_uri_get_read_prefs
     mongoc_uri_get_read_prefs_t
     mongoc_uri_get_replica_set
     mongoc_uri_get_server_monitoring_mode
-    mongoc_uri_get_service
-    mongoc_uri_get_ssl
     mongoc_uri_get_string
     mongoc_uri_get_srv_hostname
     mongoc_uri_get_srv_service_name
