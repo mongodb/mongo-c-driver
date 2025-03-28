@@ -56,6 +56,9 @@ Unreleased (2.0.0)
   * `mongoc_index_opt_t`, `mongoc_index_opt_geo_t` `mongoc_index_opt_wt_t` are removed. Pass options using `bson_t` to `mongoc_collection_create_indexes_with_opts` instead.
   * `mongoc_collection_find_indexes` is removed. Use `mongoc_collection_find_indexes_with_opts` instead.
   * See [MongoDB documentation](https://www.mongodb.com/docs/languages/c/c-driver/current/indexes/) for working with indexes.
+* Deprecated write concern API is removed:
+  * `mongoc_write_concern_get_fsync` is removed. Use `mongoc_write_concern_get_journal` instead.
+  * `mongoc_write_concern_set_fsync` is removed. Use `mongoc_write_concern_set_journal` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
