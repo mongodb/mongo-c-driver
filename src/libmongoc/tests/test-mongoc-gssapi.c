@@ -79,7 +79,7 @@ static BSON_THREAD_FUN (gssapi_kerberos_worker, data)
       }
       bson_destroy (cmd);
       collection = mongoc_client_get_collection (client, "kerberos", "test");
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
+      cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
 
       if (!mongoc_cursor_next (cursor, &doc) && mongoc_cursor_error (cursor, &error)) {
          fflush (stdout);

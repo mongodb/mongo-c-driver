@@ -164,14 +164,11 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
 {
    ENTRY;
 
-   BSON_ASSERT (command);
+   BSON_ASSERT_PARAM (command);
+   BSON_ASSERT_PARAM (document);
 
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
-
-   /* must handle NULL document from mongoc_collection_insert_bulk */
-   if (document) {
-      _mongoc_write_command_insert_append (command, document);
-   }
+   _mongoc_write_command_insert_append (command, document);
 
    EXIT;
 }
@@ -198,7 +195,6 @@ _mongoc_write_command_init_insert_one_idl (mongoc_write_command_t *command,
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
 
    /* near identical to _mongoc_write_command_insert_append but additionally records the inserted id */
-   /* no need to handle NULL document from mongoc_collection_insert_bulk since only called by insert_one */
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
    BSON_ASSERT (document->len >= 5);
 
@@ -243,7 +239,7 @@ _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
 
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
 
-   /* must handle NULL document from mongoc_collection_insert_bulk */
+   /* must handle NULL document from mongoc_collection_insert_many */
    if (document) {
       _mongoc_write_command_insert_append (command, document);
    }

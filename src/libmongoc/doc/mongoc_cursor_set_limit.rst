@@ -22,7 +22,7 @@ Description
 
 Limits the number of documents in the result set.
 
-This function is useful for setting the limit on a cursor after the cursor is created, but before any calls to :symbol:`mongoc_cursor_next`. It can also be used to pass a negative limit: The ``limit`` parameter to ``mongoc_cursor_set_limit`` is signed, although for backward-compatibility reasons the ``limit`` parameter to :symbol:`mongoc_collection_find` is not.
+This function is useful for setting the limit on a cursor after the cursor is created, but before any calls to :symbol:`mongoc_cursor_next`. It can also be used to pass a negative limit: The ``limit`` parameter to ``mongoc_cursor_set_limit`` is signed.
 
 Calling this function after :symbol:`mongoc_cursor_next` has no effect.
 

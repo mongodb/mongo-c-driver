@@ -19,5 +19,5 @@ Parameters
 Description
 -----------
 
-Return the value set with :symbol:`mongoc_cursor_set_limit` or :symbol:`mongoc_collection_find`.
+Return the value set with :symbol:`mongoc_cursor_set_limit` or :symbol:`mongoc_collection_find_with_opts`.
 

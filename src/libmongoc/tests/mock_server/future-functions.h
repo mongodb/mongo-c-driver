@@ -243,16 +243,6 @@ future_collection_find_indexes_with_opts (
 
 
 future_t *
-future_collection_stats (
-
-   mongoc_collection_ptr collection,
-   const_bson_ptr options,
-   bson_ptr stats,
-   bson_error_ptr error
-);
-
-
-future_t *
 future_collection_insert_many (
 
    mongoc_collection_ptr collection,
@@ -306,18 +296,6 @@ future_collection_write_command_with_opts (
    const_bson_ptr command,
    const_bson_ptr opts,
    bson_ptr reply,
-   bson_error_ptr error
-);
-
-
-future_t *
-future_collection_insert_bulk (
-
-   mongoc_collection_ptr collection,
-   mongoc_insert_flags_t flags,
-   const_bson_ptr_ptr documents,
-   uint32_t n_documents,
-   const_mongoc_write_concern_ptr write_concern,
    bson_error_ptr error
 );
 
