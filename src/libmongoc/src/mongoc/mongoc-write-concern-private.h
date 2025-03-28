@@ -25,12 +25,10 @@
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_WRITE_CONCERN_FSYNC_DEFAULT -1
 #define MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT -1
 
 
 struct _mongoc_write_concern_t {
-   int8_t fsync_; /* deprecated */
    int8_t journal;
    int32_t w;
    int64_t wtimeout;

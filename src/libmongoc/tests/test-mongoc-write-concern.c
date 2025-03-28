@@ -53,16 +53,10 @@ test_write_concern_basic (void)
     * Test defaults.
     */
    ASSERT (write_concern);
-   ASSERT (!mongoc_write_concern_get_fsync (write_concern));
    ASSERT (!mongoc_write_concern_get_journal (write_concern));
    ASSERT (mongoc_write_concern_get_w (write_concern) == MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT (!mongoc_write_concern_get_wtimeout_int64 (write_concern));
    ASSERT (!mongoc_write_concern_get_wmajority (write_concern));
-
-   mongoc_write_concern_set_fsync (write_concern, true);
-   ASSERT (mongoc_write_concern_get_fsync (write_concern));
-   mongoc_write_concern_set_fsync (write_concern, false);
-   ASSERT (!mongoc_write_concern_get_fsync (write_concern));
 
    mongoc_write_concern_set_journal (write_concern, true);
    ASSERT (mongoc_write_concern_get_journal (write_concern));
@@ -91,12 +85,11 @@ test_write_concern_basic (void)
    /*
     * Check generated bson.
     */
-   mongoc_write_concern_set_fsync (write_concern, true);
    mongoc_write_concern_set_journal (write_concern, true);
 
    bson = _mongoc_write_concern_get_bson (write_concern);
    ASSERT (bson);
-   ASSERT (bson_iter_init_find (&iter, bson, "fsync") && BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
+   ASSERT (!bson_iter_init_find (&iter, bson, "fsync")); // Deprecated "fsync" removed in C driver 2.0.
    ASSERT (bson_iter_init_find (&iter, bson, "j") && BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
    ASSERT (bson_iter_init_find (&iter, bson, "w") && BSON_ITER_HOLDS_INT32 (&iter) && bson_iter_int32 (&iter) == 3);
 
@@ -122,7 +115,7 @@ test_write_concern_bson_omits_defaults (void)
 
    bson = _mongoc_write_concern_get_bson (write_concern);
    ASSERT (bson);
-   ASSERT (!bson_iter_init_find (&iter, bson, "fsync"));
+   ASSERT (!bson_iter_init_find (&iter, bson, "fsync")); // fsync removed in C driver 2.0.
    ASSERT (!bson_iter_init_find (&iter, bson, "j"));
 
    mongoc_write_concern_destroy (write_concern);
@@ -130,7 +123,7 @@ test_write_concern_bson_omits_defaults (void)
 
 
 static void
-test_write_concern_bson_includes_false_fsync_and_journal (void)
+test_write_concern_bson_includes_false_journal (void)
 {
    mongoc_write_concern_t *write_concern;
    const bson_t *bson;
@@ -142,12 +135,11 @@ test_write_concern_bson_includes_false_fsync_and_journal (void)
     * Check generated bson.
     */
    ASSERT (write_concern);
-   mongoc_write_concern_set_fsync (write_concern, false);
    mongoc_write_concern_set_journal (write_concern, false);
 
    bson = _mongoc_write_concern_get_bson (write_concern);
    ASSERT (bson);
-   ASSERT (bson_iter_init_find (&iter, bson, "fsync") && BSON_ITER_HOLDS_BOOL (&iter) && !bson_iter_bool (&iter));
+   ASSERT (!bson_iter_init_find (&iter, bson, "fsync")); // Deprecated "fsync" removed in C driver 2.0.
    ASSERT (bson_iter_init_find (&iter, bson, "j") && BSON_ITER_HOLDS_BOOL (&iter) && !bson_iter_bool (&iter));
    ASSERT (!bson_iter_init_find (&iter, bson, "w"));
 
@@ -156,40 +148,31 @@ test_write_concern_bson_includes_false_fsync_and_journal (void)
 
 
 static void
-test_write_concern_fsync_and_journal_w1_and_validity (void)
+test_write_concern_journal_w1_validity (void)
 {
    mongoc_write_concern_t *write_concern = mongoc_write_concern_new ();
 
-   /*
-    * Journal and fsync should imply w=1 regardless of w; however, journal and
-    * fsync logically conflict with w=0 and w=-1, so a write concern with such
-    * a combination of options will be considered invalid.
-    */
 
-   /* No write concern needs GLE, but not "valid" */
+   // Journal should imply acknowledgement regardless of w.
+   // Journal is invalid with w=0 and w=-1.
+
+   /* No write concern needs acknowledgement, but not "valid" */
    ASSERT (mongoc_write_concern_is_acknowledged (NULL));
    ASSERT (!mongoc_write_concern_is_valid (NULL));
 
-   /* Default write concern needs GLE and is valid */
+   /* Default write concern needs acknowledgement and is valid */
    ASSERT (write_concern);
    ASSERT (mongoc_write_concern_is_acknowledged (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
    ASSERT (!mongoc_write_concern_journal_is_set (write_concern));
 
-   /* w=0 does not need GLE and is valid */
+   /* w=0 does not need acknowledgement and is valid */
    mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    ASSERT (!mongoc_write_concern_is_acknowledged (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
    ASSERT (!mongoc_write_concern_journal_is_set (write_concern));
 
-   /* fsync=true needs GLE, but it conflicts with w=0 */
-   mongoc_write_concern_set_fsync (write_concern, true);
-   ASSERT (mongoc_write_concern_is_acknowledged (write_concern));
-   ASSERT (!mongoc_write_concern_is_valid (write_concern));
-   ASSERT (!mongoc_write_concern_journal_is_set (write_concern));
-   mongoc_write_concern_set_fsync (write_concern, false);
-
-   /* journal=true needs GLE, but it conflicts with w=0 */
+   /* journal=true needs acknowledgement, but it conflicts with w=0 */
    mongoc_write_concern_set_journal (write_concern, true);
    ASSERT (mongoc_write_concern_is_acknowledged (write_concern));
    ASSERT (!mongoc_write_concern_is_valid (write_concern));
@@ -200,17 +183,8 @@ test_write_concern_fsync_and_journal_w1_and_validity (void)
    mongoc_write_concern_set_w (write_concern, -1);
    ASSERT (mongoc_write_concern_is_valid (write_concern));
 
-   /* fsync=true with w=default needs GLE and is valid */
-   mongoc_write_concern_set_journal (write_concern, false);
-   mongoc_write_concern_set_fsync (write_concern, true);
-   mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
-   ASSERT (mongoc_write_concern_is_acknowledged (write_concern));
-   ASSERT (mongoc_write_concern_is_valid (write_concern));
-   ASSERT (mongoc_write_concern_journal_is_set (write_concern));
-
-   /* journal=true with w=default needs GLE and is valid */
-   mongoc_write_concern_set_journal (write_concern, false);
-   mongoc_write_concern_set_fsync (write_concern, true);
+   /* journal=true with w=default needs acknowledgement and is valid */
+   mongoc_write_concern_set_journal (write_concern, true);
    mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT (mongoc_write_concern_is_acknowledged (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
@@ -317,7 +291,7 @@ test_write_concern_from_iterator (void)
    _test_write_concern_from_iterator ("{'writeConcern': {'j': 'never'}}", false, false);
    _test_write_concern_from_iterator ("{'writeConcern': {'j': 1.0}}", false, false);
    _test_write_concern_from_iterator ("{'writeConcern': {'fsync': 1.0}}", false, false);
-   _test_write_concern_from_iterator ("{'writeConcern': {'fsync': true}}", true, false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'fsync': true}}", false, false);
 }
 
 
@@ -330,25 +304,20 @@ test_write_concern_always_mutable (void)
 
    ASSERT (write_concern);
 
-   mongoc_write_concern_set_fsync (write_concern, true);
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'fsync': true}");
-
    mongoc_write_concern_set_journal (write_concern, true);
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'fsync': true, 'j': true}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'j': true}");
 
    mongoc_write_concern_set_w (write_concern, 2);
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'w': 2, 'fsync': true, 'j': true}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'w': 2, 'j': true}");
 
    mongoc_write_concern_set_wtimeout_int64 (write_concern, 100);
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'w': 2, 'fsync': true, 'j': true, 'wtimeout': 100}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'w': 2, 'j': true, 'wtimeout': 100}");
 
    mongoc_write_concern_set_wmajority (write_concern, 200);
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
-                 "{'w': 'majority', 'fsync': true, 'j': true, 'wtimeout': 200}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'w': 'majority', 'j': true, 'wtimeout': 200}");
 
    mongoc_write_concern_set_wtag (write_concern, "MultipleDC");
-   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
-                 "{'w': 'MultipleDC', 'fsync': true, 'j': true, 'wtimeout': 200}");
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern), "{'w': 'MultipleDC', 'j': true, 'wtimeout': 200}");
 
    mongoc_write_concern_destroy (write_concern);
 }
@@ -635,11 +604,8 @@ test_write_concern_install (TestSuite *suite)
    TestSuite_Add (suite, "/WriteConcern/append", test_write_concern_append);
    TestSuite_Add (suite, "/WriteConcern/basic", test_write_concern_basic);
    TestSuite_Add (suite, "/WriteConcern/bson_omits_defaults", test_write_concern_bson_omits_defaults);
-   TestSuite_Add (suite,
-                  "/WriteConcern/bson_includes_false_fsync_and_journal",
-                  test_write_concern_bson_includes_false_fsync_and_journal);
-   TestSuite_Add (
-      suite, "/WriteConcern/fsync_and_journal_gle_and_validity", test_write_concern_fsync_and_journal_w1_and_validity);
+   TestSuite_Add (suite, "/WriteConcern/bson_includes_false_journal", test_write_concern_bson_includes_false_journal);
+   TestSuite_Add (suite, "/WriteConcern/journal_w1_validity", test_write_concern_journal_w1_validity);
    TestSuite_Add (suite, "/WriteConcern/wtimeout_validity", test_write_concern_wtimeout_validity);
    TestSuite_Add (suite, "/WriteConcern/from_iterator", test_write_concern_from_iterator);
    TestSuite_Add (suite, "/WriteConcern/always_mutable", test_write_concern_always_mutable);

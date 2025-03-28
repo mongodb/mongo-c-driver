@@ -34,11 +34,6 @@ MONGOC_WRITE_CONCERN_W_MAJORITY (majority)  Block until a write has been propaga
 n                                           Block until a write has been propagated to at least ``n`` nodes in the replica set.
 ==========================================  ===============================================================================================================================================================================================================
 
-Deprecations
-------------
-
-:symbol:`mongoc_write_concern_set_fsync` is deprecated.
-
 .. only:: html
 
   Functions
@@ -51,7 +46,6 @@ Deprecations
     mongoc_write_concern_append
     mongoc_write_concern_copy
     mongoc_write_concern_destroy
-    mongoc_write_concern_get_fsync
     mongoc_write_concern_get_journal
     mongoc_write_concern_get_w
     mongoc_write_concern_get_wmajority
@@ -63,7 +57,6 @@ Deprecations
     mongoc_write_concern_is_valid
     mongoc_write_concern_journal_is_set
     mongoc_write_concern_new
-    mongoc_write_concern_set_fsync
     mongoc_write_concern_set_journal
     mongoc_write_concern_set_w
     mongoc_write_concern_set_wmajority
