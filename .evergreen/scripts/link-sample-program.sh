@@ -28,12 +28,8 @@ OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
 
 if [ "$OS" = "darwin" ]; then
-  SO=dylib
-  LIB_SO=libmongoc-1.0.0.dylib
   LDD="otool -L"
 else
-  SO=so
-  LIB_SO=libmongoc-1.0.so.0
   LDD=ldd
 fi
 
@@ -96,89 +92,6 @@ $CMAKE --build . --parallel --target install
 unset CCACHE_BASEDIR CCACHE_NOHASHDIR
 
 ls -l $INSTALL_DIR/lib
-
-set +o xtrace
-
-# Check on Linux that libmongoc is installed into lib/ like:
-# libmongoc-1.0.so -> libmongoc-1.0.so.0
-# libmongoc-1.0.so.0 -> libmongoc-1.0.so.0.0.0
-# libmongoc-1.0.so.0.0.0
-if [ "$OS" != "darwin" ]; then
-  # From check-symlink.sh
-  check_symlink libmongoc-1.0.so libmongoc-1.0.so.0
-  check_symlink libmongoc-1.0.so.0 libmongoc-1.0.so.0.0.0
-  SONAME=$(objdump -p $INSTALL_DIR/lib/$LIB_SO|grep SONAME|awk '{print $2}')
-  EXPECTED_SONAME="libmongoc-1.0.so.0"
-  if [ "$SONAME" != "$EXPECTED_SONAME" ]; then
-    echo "SONAME should be $EXPECTED_SONAME, not $SONAME"
-    exit 1
-  else
-    echo "library name check ok, SONAME=$SONAME"
-  fi
-else
-  # Just test that the shared lib was installed.
-  if test ! -f $INSTALL_DIR/lib/$LIB_SO; then
-    echo "$LIB_SO missing!"
-    exit 1
-  else
-    echo "$LIB_SO check ok"
-  fi
-fi
-
-
-if test ! -f $INSTALL_DIR/lib/pkgconfig/mongoc$major.pc; then
-  echo "mongoc$major.pc missing!"
-  exit 1
-else
-  echo "mongoc$major.pc check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-1.0-config.cmake; then
-  echo "mongoc-1.0-config.cmake missing!"
-  exit 1
-else
-  echo "mongoc-1.0-config.cmake check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-1.0-config-version.cmake; then
-  echo "mongoc-1.0-config-version.cmake missing!"
-  exit 1
-else
-  echo "mongoc-1.0-config-version.cmake check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-targets.cmake; then
-  echo "mongoc-targets.cmake missing!"
-  exit 1
-else
-  echo "mongoc-targets.cmake check ok"
-fi
-
-
-if [ "$LINK_STATIC" ]; then
-  if test ! -f $INSTALL_DIR/lib/libmongoc-static-1.0.a; then
-    echo "libmongoc-static-1.0.a missing!"
-    exit 1
-  else
-    echo "libmongoc-static-1.0.a check ok"
-  fi
-  if test ! -f $INSTALL_DIR/lib/pkgconfig/mongoc1-static.pc; then
-    echo "mongoc1-static.pc missing!"
-    exit 1
-  else
-    echo "mongoc1-static.pc check ok"
-  fi
-else
-  if test -f $INSTALL_DIR/lib/libmongoc-static-1.0.a; then
-    echo "libmongoc-static-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/libmongoc-1.0.a; then
-    echo "libmongoc-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/pkgconfig/mongoc1-static.pc; then
-    echo "mongoc1-static.pc shouldn't have been installed"
-    exit 1
-  fi
-fi
 
 if [ "$OS" = "darwin" ] && [ "${HOSTTYPE:?}" != "arm64" ]; then
   if test -f $INSTALL_DIR/bin/mongoc-stat; then

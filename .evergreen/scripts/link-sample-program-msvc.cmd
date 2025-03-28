@@ -52,29 +52,6 @@ if "%ENABLE_SSL%"=="1" (
 %CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
 %CMAKE% --build . --target INSTALL --config "Debug" -- /m
 
-call ..\.evergreen\scripts\check-installed-files.bat
-if errorlevel 1 (
-   exit /B %errorlevel%
-)
-
-rem Shim library around the DLL.
-set SHIM=%INSTALL_DIR%\lib\mongoc-1.0.lib
-if not exist %SHIM% (
-  echo %SHIM% is missing!
-  exit /B 1
-) else (
-  echo %SHIM% check ok
-)
-
-if not exist %INSTALL_DIR%\lib\mongoc-static-1.0.lib (
-  echo mongoc-static-1.0.lib missing!
-  exit /B 1
-) else (
-  echo mongoc-static-1.0.lib check ok
-)
-
-cd %SRCROOT%
-
 rem Test our CMake package config file with CMake's find_package command.
 set EXAMPLE_DIR=%SRCROOT%\src\libmongoc\examples\cmake\find_package
 

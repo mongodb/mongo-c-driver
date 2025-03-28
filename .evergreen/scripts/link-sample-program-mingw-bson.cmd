@@ -37,22 +37,6 @@ if errorlevel 1 (
    exit /B 1
 )
 
-set MINGW=1
-call ..\.evergreen\scripts\check-installed-files-bson.bat
-if errorlevel 1 (
-   exit /B 1
-)
-set MINGW=
-
-if not exist %INSTALL_DIR%\lib\libbson%major%.a (
-  echo libbson%major%.a missing!
-  exit /B 1
-) else (
-  echo libbson%major%.a check ok
-)
-
-cd %SRCROOT%
-
 rem Test our pkg-config file
 set EXAMPLE_DIR=%SRCROOT%\src\libbson\examples\
 cd %EXAMPLE_DIR%

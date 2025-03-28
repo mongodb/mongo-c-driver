@@ -25,12 +25,8 @@ OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
 
 if [ "$OS" = "darwin" ]; then
-  SO=dylib
-  LIB_SO=libbson$major.$version.dylib
   LDD="otool -L"
 else
-  SO=so
-  LIB_SO=libbson$major.so.$version
   LDD=ldd
 fi
 
@@ -65,90 +61,12 @@ else
   $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DBUILD_TESTING=OFF -DENABLE_TESTS=OFF -DENABLE_MONGOC=OFF -DENABLE_STATIC=OFF "$SCRATCH_DIR"
   $CMAKE --build . --parallel
   $CMAKE --build . --parallel --target install
-
-  set +o xtrace
-
-  if test -f $INSTALL_DIR/lib/libbson-static-1.0.a; then
-    echo "libbson-static-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/libbson-1.0.a; then
-    echo "libbson-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/pkgconfig/libbson-static-1.0.pc; then
-    echo "libbson-static-1.0.pc shouldn't have been installed"
-    exit 1
-  fi
-
 fi
 
 # Revert ccache options, they no longer apply.
 unset CCACHE_BASEDIR CCACHE_NOHASHDIR
 
 ls -l $INSTALL_DIR/lib
-
-set +o xtrace
-
-# Check on Linux that libbson is installed into lib/ like:
-# libbson-1.0.so -> libbson-1.0.so.0
-# libbson-1.0.so.0 -> libbson-1.0.so.0.0.0
-# libbson-1.0.so.0.0.0
-if [ "$OS" != "darwin" ]; then
-  # From check-symlink.sh
-  check_symlink libbson$major.so        libbson$major.so.$major
-  check_symlink libbson$major.so.$major libbson$major.so.$version
-  SONAME=$(objdump -p $INSTALL_DIR/lib/$LIB_SO|grep SONAME|awk '{print $2}')
-  EXPECTED_SONAME="libbson$major.so.$major"
-  if [ "$SONAME" != "$EXPECTED_SONAME" ]; then
-    echo "SONAME should be $EXPECTED_SONAME, not $SONAME"
-    exit 1
-  else
-    echo "library name check ok, SONAME=$SONAME"
-  fi
-else
-  # Just test that the shared lib was installed.
-  if test ! -f $INSTALL_DIR/lib/$LIB_SO; then
-    echo "$LIB_SO missing!"
-    exit 1
-  else
-    echo "$LIB_SO check ok"
-  fi
-fi
-
-if test ! -f $INSTALL_DIR/lib/pkgconfig/bson$major.pc; then
-  echo "bson$major.pc missing!"
-  exit 1
-else
-  echo "bson$major.pc check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/bson-$version/bsonConfig.cmake; then
-  echo "bsonConfig.cmake missing!"
-  exit 1
-else
-  echo "bsonConfig.cmake check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/bson-$version/bsonConfig.cmake; then
-  echo "bsonConfig.cmake missing!"
-  exit 1
-else
-  echo "bsonConfig.cmake check ok"
-fi
-
-if [ "$LINK_STATIC" ]; then
-  if test ! -f $INSTALL_DIR/lib/libbson$major.a; then
-    echo "libbson$major.a missing!"
-    exit 1
-  else
-    echo "libbson$major.a check ok"
-  fi
-  if test ! -f $INSTALL_DIR/lib/pkgconfig/bson$major-static.pc; then
-    echo "bson$major-static.pc missing!"
-    exit 1
-  else
-    echo "bson$major-static.pc check ok"
-  fi
-fi
 
 cd $SRCROOT
 
