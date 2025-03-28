@@ -2555,13 +2555,6 @@ mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri)
 }
 
 
-const char *
-mongoc_uri_get_service (const mongoc_uri_t *uri)
-{
-   return mongoc_uri_get_srv_hostname (uri);
-}
-
-
 /* Initial DNS Seedlist Discovery Spec: `srvServiceName` requires a string value
  * and defaults to "mongodb". */
 static const char *const mongoc_default_srv_service_name = "mongodb";
@@ -2663,13 +2656,6 @@ mongoc_uri_get_string (const mongoc_uri_t *uri)
    return uri->str;
 }
 
-
-const bson_t *
-mongoc_uri_get_read_prefs (const mongoc_uri_t *uri)
-{
-   BSON_ASSERT (uri);
-   return mongoc_read_prefs_get_tags (uri->read_prefs);
-}
 
 char *
 mongoc_uri_unescape (const char *escaped_string)
@@ -2824,11 +2810,6 @@ mongoc_uri_get_tls (const mongoc_uri_t *uri) /* IN */
    return false;
 }
 
-bool
-mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
-{
-   return mongoc_uri_get_tls (uri);
-}
 
 const char *
 mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)

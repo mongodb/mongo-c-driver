@@ -108,9 +108,6 @@ mongoc_uri_new_for_host_port (const char *hostname, uint16_t port) BSON_GNUC_WAR
 MONGOC_EXPORT (const mongoc_host_list_t *)
 mongoc_uri_get_hosts (const mongoc_uri_t *uri);
 
-BSON_DEPRECATED_FOR (mongoc_uri_get_srv_hostname)
-MONGOC_EXPORT (const char *) mongoc_uri_get_service (const mongoc_uri_t *uri);
-
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri);
 
@@ -174,9 +171,6 @@ mongoc_uri_set_option_as_bool (mongoc_uri_t *uri, const char *option, bool value
 MONGOC_EXPORT (bool)
 mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri, const char *option, const char *value);
 
-BSON_DEPRECATED_FOR (mongoc_uri_get_read_prefs_t)
-MONGOC_EXPORT (const bson_t *) mongoc_uri_get_read_prefs (const mongoc_uri_t *uri);
-
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_replica_set (const mongoc_uri_t *uri);
 
@@ -218,8 +212,6 @@ mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri, bson_t *properties
 
 MONGOC_EXPORT (bool)
 mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri, const bson_t *properties);
-
-BSON_DEPRECATED_FOR (mongoc_uri_get_tls) MONGOC_EXPORT (bool) mongoc_uri_get_ssl (const mongoc_uri_t *uri);
 
 MONGOC_EXPORT (bool)
 mongoc_uri_get_tls (const mongoc_uri_t *uri);

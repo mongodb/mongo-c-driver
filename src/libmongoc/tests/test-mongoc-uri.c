@@ -2351,21 +2351,18 @@ test_mongoc_uri_tls_ssl (const char *tls,
 
    bson_snprintf (url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=foo.pem", tlsCertificateKeyFile);
    uri = mongoc_uri_new (url_buffer);
-   ASSERT (mongoc_uri_get_ssl (uri));
    ASSERT (mongoc_uri_get_tls (uri));
    mongoc_uri_destroy (uri);
 
 
    bson_snprintf (url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=foo.pem", tlsCAFile);
    uri = mongoc_uri_new (url_buffer);
-   ASSERT (mongoc_uri_get_ssl (uri));
    ASSERT (mongoc_uri_get_tls (uri));
    mongoc_uri_destroy (uri);
 
 
    bson_snprintf (url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=true", tlsAllowInvalidCertificates);
    uri = mongoc_uri_new (url_buffer);
-   ASSERT (mongoc_uri_get_ssl (uri));
    ASSERT (mongoc_uri_get_tls (uri));
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
@@ -2374,7 +2371,6 @@ test_mongoc_uri_tls_ssl (const char *tls,
 
    bson_snprintf (url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=true", tlsAllowInvalidHostnames);
    uri = mongoc_uri_new (url_buffer);
-   ASSERT (mongoc_uri_get_ssl (uri));
    ASSERT (mongoc_uri_get_tls (uri));
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, false));
@@ -2384,7 +2380,6 @@ test_mongoc_uri_tls_ssl (const char *tls,
    bson_snprintf (
       url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=false&%s=foo.pem", tls, tlsCertificateKeyFile);
    uri = mongoc_uri_new (url_buffer);
-   ASSERT (!mongoc_uri_get_ssl (uri));
    ASSERT (!mongoc_uri_get_tls (uri));
    mongoc_uri_destroy (uri);
 
@@ -2392,7 +2387,6 @@ test_mongoc_uri_tls_ssl (const char *tls,
    bson_snprintf (
       url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=false&%s=foo.pem", tls, tlsCertificateKeyFile);
    uri = mongoc_uri_new (url_buffer);
-   ASSERT (!mongoc_uri_get_ssl (uri));
    ASSERT (!mongoc_uri_get_tls (uri));
    mongoc_uri_destroy (uri);
 
@@ -2400,7 +2394,6 @@ test_mongoc_uri_tls_ssl (const char *tls,
    bson_snprintf (
       url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=false&%s=true", tls, tlsAllowInvalidCertificates);
    uri = mongoc_uri_new (url_buffer);
-   ASSERT (!mongoc_uri_get_ssl (uri));
    ASSERT (!mongoc_uri_get_tls (uri));
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
@@ -2410,7 +2403,6 @@ test_mongoc_uri_tls_ssl (const char *tls,
    bson_snprintf (
       url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=false&%s=false", tls, tlsAllowInvalidHostnames);
    uri = mongoc_uri_new (url_buffer);
-   ASSERT (!mongoc_uri_get_ssl (uri));
    ASSERT (!mongoc_uri_get_tls (uri));
    ASSERT (!mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, true));
    ASSERT (!mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, true));
@@ -2917,7 +2909,8 @@ test_mongoc_uri_duplicates (void)
    RECREATE_URI (MONGOC_URI_READPREFERENCE "=secondary&" MONGOC_URI_READPREFERENCETAGS
                                            "=a:x&" MONGOC_URI_READPREFERENCETAGS "=b:y");
    ASSERT_NO_CAPTURED_LOGS (mongoc_uri_get_string (uri));
-   bson = mongoc_uri_get_read_prefs (uri);
+   rp = mongoc_uri_get_read_prefs_t (uri);
+   bson = mongoc_read_prefs_get_tags (rp);
    ASSERT_EQUAL_BSON (tmp_bson ("[{'a': 'x'}, {'b': 'y'}]"), bson);
 
    RECREATE_URI (MONGOC_URI_REPLICASET "=a&" MONGOC_URI_REPLICASET "=b");
