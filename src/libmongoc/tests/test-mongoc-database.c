@@ -518,7 +518,6 @@ test_get_collection_info (void)
    bson_iter_t col_iter;
    bson_t capped_options = BSON_INITIALIZER;
    bson_t noopts_options = BSON_INITIALIZER;
-   bson_t name_filter = BSON_INITIALIZER;
    const bson_t *doc;
    int num_infos = 0;
 
@@ -551,19 +550,12 @@ test_get_collection_info (void)
    ASSERT_OR_PRINT (collection, error);
    mongoc_collection_destroy (collection);
 
-   /* first we filter on collection name. */
-   BSON_APPEND_UTF8 (&name_filter, "name", noopts_name);
-
    /* We only test with filters since get_collection_names will
     * test w/o filters for us. */
 
    /* Filter on an exact match of name */
-   BEGIN_IGNORE_DEPRECATIONS
-   cursor = mongoc_database_find_collections (database, &name_filter, &error);
-   END_IGNORE_DEPRECATIONS
+   cursor = mongoc_database_find_collections_with_opts (database, tmp_bson ("{'filter': {'name': '%s'}}", noopts_name));
    BSON_ASSERT (cursor);
-   BSON_ASSERT (!error.domain);
-   BSON_ASSERT (!error.code);
 
    while (mongoc_cursor_next (cursor, &doc)) {
       if (bson_iter_init (&col_iter, doc) && bson_iter_find (&col_iter, "name") && BSON_ITER_HOLDS_UTF8 (&col_iter) &&
@@ -574,6 +566,8 @@ test_get_collection_info (void)
          BSON_ASSERT (false);
       }
    }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    BSON_ASSERT (1 == num_infos);
 
@@ -588,64 +582,11 @@ test_get_collection_info (void)
 
    bson_destroy (&capped_options);
    bson_destroy (&noopts_options);
-   bson_destroy (&name_filter);
 
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
 }
 
-static void
-test_get_collection_info_regex (void)
-{
-   mongoc_database_t *database;
-   mongoc_collection_t *collection;
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   bson_error_t error = {0};
-   bson_iter_t col_iter;
-   bson_t name_filter = BSON_INITIALIZER;
-   const bson_t *doc;
-   char *dbname;
-
-   client = test_framework_new_default_client ();
-   BSON_ASSERT (client);
-
-   dbname = gen_collection_name ("test_get_collection_info_regex");
-   database = mongoc_client_get_database (client, dbname);
-   mongoc_database_drop_with_opts (database, NULL, NULL);
-
-   collection = mongoc_database_create_collection (database, "abbbc", NULL, &error);
-   ASSERT_OR_PRINT (collection, error);
-   mongoc_collection_destroy (collection);
-
-   collection = mongoc_database_create_collection (database, "foo", NULL, &error);
-   ASSERT_OR_PRINT (collection, error);
-
-   BSON_APPEND_REGEX (&name_filter, "name", "ab+c", NULL);
-
-   BEGIN_IGNORE_DEPRECATIONS
-   cursor = mongoc_database_find_collections (database, &name_filter, &error);
-   END_IGNORE_DEPRECATIONS
-
-   BSON_ASSERT (cursor);
-   BSON_ASSERT (!error.domain);
-   BSON_ASSERT (!error.code);
-
-   BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
-   BSON_ASSERT (bson_iter_init_find (&col_iter, doc, "name"));
-   BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&col_iter, NULL), "abbbc"));
-
-   /* only one match */
-   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   mongoc_cursor_destroy (cursor);
-
-   bson_destroy (&name_filter);
-   mongoc_collection_destroy (collection);
-   bson_free (dbname);
-   mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
-}
 
 static void
 test_get_collection_info_with_opts_regex (void)
@@ -986,7 +927,6 @@ test_database_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Database/drop", test_drop);
    TestSuite_AddLive (suite, "/Database/create_collection", test_create_collection);
    TestSuite_AddLive (suite, "/Database/get_collection_info", test_get_collection_info);
-   TestSuite_AddLive (suite, "/Database/get_collection_info_regex", test_get_collection_info_regex);
    TestSuite_AddLive (suite, "/Database/get_collection_info_with_opts_regex", test_get_collection_info_with_opts_regex);
    TestSuite_AddMockServerTest (suite, "/Database/get_collection/getmore_cmd", test_get_collection_info_getmore_cmd);
    TestSuite_AddLive (suite, "/Database/get_collection", test_get_collection);

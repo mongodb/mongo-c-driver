@@ -34,10 +34,8 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_database_destroy
     mongoc_database_drop
     mongoc_database_drop_with_opts
-    mongoc_database_find_collections
     mongoc_database_find_collections_with_opts
     mongoc_database_get_collection
-    mongoc_database_get_collection_names
     mongoc_database_get_collection_names_with_opts
     mongoc_database_get_name
     mongoc_database_get_read_concern
