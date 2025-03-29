@@ -346,7 +346,9 @@ set (CMAKE_MACOSX_RPATH ON)
 
 # Distinguish DLL import libs with a .dll.lib suffix. Also prevents filename collisions
 # between static libraries and the import libraries
-set (CMAKE_IMPORT_LIBRARY_SUFFIX .dll.lib)
+if(WIN32)
+   set (CMAKE_IMPORT_LIBRARY_SUFFIX .dll.lib)
+endif()
 
 # https://cmake.org/cmake/help/v3.11/policy/CMP0042.html
 # Enable a CMake 3.0+ policy that sets CMAKE_MACOSX_RPATH by default, and
