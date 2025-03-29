@@ -344,6 +344,10 @@ set (CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 # Install libs with names like @rpath/libmongoc-1.0.0.dylib, not bare names.
 set (CMAKE_MACOSX_RPATH ON)
 
+# Distinguish DLL import libs with a .dll.lib suffix. Also prevents filename collisions
+# between static libraries and the import libraries
+set (CMAKE_IMPORT_LIBRARY_SUFFIX .dll.lib)
+
 # https://cmake.org/cmake/help/v3.11/policy/CMP0042.html
 # Enable a CMake 3.0+ policy that sets CMAKE_MACOSX_RPATH by default, and
 # silence a CMake 3.11 warning that the old behavior is deprecated.
