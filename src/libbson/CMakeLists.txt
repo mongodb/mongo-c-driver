@@ -284,11 +284,11 @@ endif () # ENABLE_EXAMPLES
 #   888   888  888      X88 Y88b.  888  888 888 888
 # 8888888 888  888  88888P'  "Y888 "Y888888 888 888
 
-# Prefix directory for all libbson headers.
+# Infix directory for all libbson headers.
 if(NOT DEFINED BSON_INSTALL_INCLUDEDIR)
    set(BSON_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/bson-${PROJECT_VERSION}")
 endif()
-# Prefix directory for all libbson CMake package files
+# Infix directory for all libbson CMake package files
 if(NOT DEFINED BSON_INSTALL_CMAKEDIR)
    set(BSON_INSTALL_CMAKEDIR "${MONGOC_INSTALL_CMAKEDIR}/bson-${PROJECT_VERSION}")
 endif()
