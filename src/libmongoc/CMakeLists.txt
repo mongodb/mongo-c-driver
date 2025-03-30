@@ -1340,18 +1340,6 @@ endif()
 # Relative include-path will be given the install prefix:
 set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${MONGOC_INSTALL_INCLUDEDIR}")
 
-# Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086.
-if (MONGOC_ENABLE_SSL)
-   configure_file (
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-ssl-1.0.pc.in
-      ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-ssl-1.0.pc
-   @ONLY)
-   install (
-      FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-ssl-1.0.pc
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-   )
-endif ()
-
 install (EXPORT mongoc-targets
    FILE mongoc-targets.cmake
    DESTINATION "${MONGOC_INSTALL_CMAKEDIR}"
