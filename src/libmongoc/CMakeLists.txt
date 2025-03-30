@@ -12,8 +12,6 @@ project (libmongoc
 set(libmongoc_VERSION_PRERELEASE ${mongo-c-driver_VERSION_PRERELEASE})
 set(libmongoc_VERSION_FULL ${mongo-c-driver_VERSION_FULL})
 
-set (MONGOC_API_VERSION 1.0)
-
 include (CheckSchedGetCPU)
 include (CheckStructHasMember)
 include (CheckSymbolExists)
@@ -22,9 +20,6 @@ include (CMakePushCheckState)
 include (InstallRequiredSystemLibraries)
 
 message (STATUS "libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
-
-set (MONGOC_API_VERSION 1.0)
-set (MONGOC_TARGETS_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}")
 
 # Defaults.
 set (MONGOC_ENABLE_COMPRESSION 0)
@@ -1356,19 +1351,6 @@ if (MONGOC_ENABLE_SSL)
       DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
    )
 endif ()
-
-include (CMakePackageConfigHelpers)
-
-write_basic_package_version_file (
-   "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config-version.cmake"
-   VERSION ${MONGOC_VERSION}
-   COMPATIBILITY AnyNewerVersion
-)
-
-configure_file (src/mongoc-config.cmake
-   "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"
-   @ONLY
-)
 
 install (EXPORT mongoc-targets
    FILE mongoc-targets.cmake
