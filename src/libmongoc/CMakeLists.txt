@@ -752,13 +752,6 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h"
 )
 
-if (ENABLE_APPLE_FRAMEWORK)
-   configure_file (
-      "${PROJECT_SOURCE_DIR}/src/mongoc/modules/module.modulemap.in"
-      "${PROJECT_BINARY_DIR}/src/mongoc/modules/module.modulemap"
-   )
-endif ()
-
 set (LIBRARIES
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
@@ -901,17 +894,6 @@ if (ENABLE_SHARED)
       pkg_config_REQUIRES "bson${PROJECT_VERSION_MAJOR}"
       )
    mongo_generate_pkg_config(mongoc_shared INSTALL RENAME mongoc${PROJECT_VERSION_MAJOR}.pc)
-
-   if (ENABLE_APPLE_FRAMEWORK)
-      set_target_properties (mongoc_shared PROPERTIES
-         FRAMEWORK TRUE
-         MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION}
-         MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${MONGOC_VERSION}
-         MACOSX_FRAMEWORK_IDENTIFIER org.mongodb.mongoc
-         OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}"
-         PUBLIC_HEADER "${HEADERS}"
-      )
-   endif () # ENABLE_APPLE_FRAMEWORK
 
    add_executable (mongoc-stat ${mongo-c-driver_SOURCE_DIR}/src/tools/mongoc-stat.c)
    target_compile_options (mongoc-stat PRIVATE ${mongoc-warning-options})
@@ -1328,20 +1310,12 @@ install (
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    INCLUDES DESTINATION ${MONGOC_HEADER_INSTALL_DIR}
-   FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install (
    FILES ${HEADERS}
    DESTINATION "${MONGOC_HEADER_INSTALL_DIR}/mongoc"
 )
-
-if (ENABLE_APPLE_FRAMEWORK)
-   install (
-      FILES "${PROJECT_BINARY_DIR}/src/mongoc/modules/module.modulemap"
-      DESTINATION "${CMAKE_INSTALL_BINDIR}/mongoc.framework/Modules/"
-   )
-endif ()
 
 # Collect link items for the static library to be inserted into the pkg-config
 if(TARGET mongoc_static)

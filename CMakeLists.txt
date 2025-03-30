@@ -172,8 +172,6 @@ mongo_setting(ENABLE_MONGODB_AWS_AUTH "Enable support for the MONGODB-AWS authen
 # Optional features that are DISABLED by default:
 mongo_bool_setting(ENABLE_RDTSCP "Enable fast performance counters using the Intel RDTSCP instruction"
                    DEFAULT VALUE OFF)
-mongo_bool_setting(ENABLE_APPLE_FRAMEWORK "Build libraries as Apple Frameworks on Darwin platforms"
-                   DEFAULT VALUE OFF)
 mongo_bool_setting(
    ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile"
    DEFAULT VALUE OFF
@@ -341,7 +339,7 @@ set (CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
 # Include any custom library paths in the final RPATH.
 set (CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
-# Install libs with names like @rpath/libmongoc-1.0.0.dylib, not bare names.
+# Install libs with names like @rpath/libfoo.dylib, not bare names.
 set (CMAKE_MACOSX_RPATH ON)
 
 # Distinguish DLL import libs with a .dll.lib suffix. Also prevents filename collisions

@@ -129,13 +129,6 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/bson/bson-version.h"
 )
 
-if (ENABLE_APPLE_FRAMEWORK)
-   configure_file (
-      "${PROJECT_SOURCE_DIR}/src/bson/modules/module.modulemap.in"
-      "${PROJECT_BINARY_DIR}/src/bson/modules/module.modulemap"
-   )
-endif ()
-
 # 8888888b.            .d888 d8b          d8b 888    d8b
 # 888  "Y88b          d88P"  Y8P          Y8P 888    Y8P
 # 888    888          888                     888
@@ -236,18 +229,6 @@ set_target_properties(${bson_libs} PROPERTIES
    OUTPUT_NAME "${BSON_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}"
 )
 
-if (ENABLE_APPLE_FRAMEWORK)
-   set_target_properties(bson_shared PROPERTIES
-      FRAMEWORK TRUE
-      MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION}
-      MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${MONGOC_VERSION}
-      MACOSX_FRAMEWORK_IDENTIFIER org.mongodb.bson
-      OUTPUT_NAME "${BSON_OUTPUT_BASENAME}"
-      PUBLIC_HEADER "${HEADERS}"
-   )
-endif ()
-
-
 # 8888888888                                          888
 # 888                                                 888
 # 888                                                 888
@@ -328,7 +309,6 @@ function(install_export_target target)
       ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
       RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
       INCLUDES DESTINATION "${BSON_INSTALL_INCLUDEDIR}"
-      FRAMEWORK DESTINATION "${CMAKE_INSTALL_BINDIR}"
    )
    # Install the unique export set into a file that is qualified by the name of
    # the target itself. The main config-file package will search for the
@@ -362,18 +342,9 @@ install(
    FILES_MATCHING
       PATTERN "*.h"
       PATTERN "*-private.h" EXCLUDE
-      # Don't generate an empty "modules" directory
-      PATTERN "modules" EXCLUDE
       # Don't install jsonsl headers
       PATTERN "jsonsl" EXCLUDE
    )
-
-if (ENABLE_APPLE_FRAMEWORK)
-   install (
-      FILES "${PROJECT_BINARY_DIR}/src/bson/modules/module.modulemap"
-      DESTINATION "${CMAKE_INSTALL_BINDIR}/bson.framework/Modules/"
-   )
-endif ()
 
 # Install the platform libraries from MongoPlatform.cmake. Search: PLATFORM-EXPORT-TARGET-INSTALL
 install(EXPORT mongo-platform-targets
