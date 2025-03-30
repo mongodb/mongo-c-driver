@@ -386,7 +386,7 @@ if (ENABLE_MAN_PAGES OR ENABLE_HTML_DOCS)
    add_custom_target (bson-doc
       ALL
       DEPENDS
-      $<$<BOOL:${ENABLE_MAN_PAGES}>:bson-man>
-      $<$<BOOL:${ENABLE_HTML_DOCS}>:bson-html>
+      $<TARGET_NAME_IF_EXISTS:bson-man>
+      $<TARGET_NAME_IF_EXISTS:bson-html>
    )
 endif ()

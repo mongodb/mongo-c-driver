@@ -1388,13 +1388,13 @@ install(
    DESTINATION "${mongoc_cmake_prefix}"
 )
 
-if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
+if (ENABLE_MAN_PAGES OR ENABLE_HTML_DOCS)
    find_package (Sphinx REQUIRED)
    add_subdirectory (doc)
    add_custom_target (mongoc-doc
       ALL
       DEPENDS
-      $<$<STREQUAL:"${ENABLE_MAN_PAGES}","ON">:mongoc-man>
-      $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:mongoc-html>
+      $<TARGET_NAME_IF_EXISTS:mongoc-man>
+      $<TARGET_NAME_IF_EXISTS:mongoc-html>
    )
 endif ()
