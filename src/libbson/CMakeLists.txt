@@ -290,7 +290,7 @@ if(NOT DEFINED BSON_INSTALL_INCLUDEDIR)
 endif()
 # Infix directory for all libbson CMake package files
 if(NOT DEFINED BSON_INSTALL_CMAKEDIR)
-   set(BSON_INSTALL_CMAKEDIR "${MONGOC_INSTALL_CMAKEDIR}/bson-${PROJECT_VERSION}")
+   set(BSON_INSTALL_CMAKEDIR "${MONGO_C_DRIVER_INSTALL_CMAKEDIR}/bson-${PROJECT_VERSION}")
 endif()
 
 # pkg-config properties:

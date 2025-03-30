@@ -32,6 +32,13 @@ set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
+if(NOT DEFINED MONGOC_INSTALL_INCLUDEDIR)
+   set(MONGOC_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/mongoc-${PROJECT_VERSION}")
+endif()
+if(NOT DEFINED MONGOC_INSTALL_CMAKEDIR)
+   set(MONGOC_INSTALL_CMAKEDIR "${MONGO_C_DRIVER_INSTALL_CMAKEDIR}/mongoc-${PROJECT_VERSION}")
+endif()
+
 # Definition for mongoc-config.h:
 mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
 
@@ -341,7 +348,7 @@ function(_use_sasl libname)
    elseif(libname STREQUAL "CYRUS")
       find_package(SASL2 2.0 REQUIRED)
       target_link_libraries(_mongoc-sasl_backend INTERFACE SASL2::SASL2)
-      install(FILES "${mongo-c-driver_SOURCE_DIR}/build/cmake/FindSASL2.cmake" DESTINATION "${MONGOC_TARGETS_INSTALL_DIR}/3rdParty")
+      install(FILES "${mongo-c-driver_SOURCE_DIR}/build/cmake/FindSASL2.cmake" DESTINATION "${MONGOC_INSTALL_CMAKEDIR}/3rdParty")
       set(backend "Cyrus")
    else()
       message(FATAL_ERROR "Unknown SASL backend “${libname}”")
@@ -844,6 +851,8 @@ set (
 
 if (ENABLE_SHARED)
    add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS})
+   add_library(mongoc::shared ALIAS mongoc_shared)
+   set_property(TARGET mongoc_shared PROPERTY EXPORT_NAME mongoc::shared)
    if(WIN32)
       # Add resource-definition script for Windows shared library (.dll).
       configure_file(libmongoc.rc.in libmongoc.rc)
@@ -888,9 +897,9 @@ if (ENABLE_SHARED)
    )
 
    set_target_properties (mongoc_shared PROPERTIES
-      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}"
-      VERSION 0.0.0
-      SOVERSION 0
+      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}"
+      VERSION "${PROJECT_VERSION}"
+      SOVERSION "${PROJECT_VERSION_MAJOR}"
       pkg_config_REQUIRES "bson${PROJECT_VERSION_MAJOR}"
       )
    mongo_generate_pkg_config(mongoc_shared INSTALL RENAME mongoc${PROJECT_VERSION_MAJOR}.pc)
@@ -910,6 +919,8 @@ endif () # ENABLE_SHARED
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS})
+   add_library(mongoc::static ALIAS mongoc_static)
+   set_property(TARGET mongoc_static PROPERTY EXPORT_NAME mongoc::static)
    target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} bson::static mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
@@ -954,8 +965,8 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          $<BUILD_INTERFACE:${mongo-c-driver_BINARY_DIR}/src/common/src>
    )
    set_target_properties (mongoc_static PROPERTIES
-      VERSION 0.0.0
-      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}"
+      VERSION "${PROJECT_VERSION}"
+      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}"
       pkg_config_REQUIRES "bson${PROJECT_VERSION_MAJOR}-static"
       )
    if(MONGOC_ENABLE_STATIC_INSTALL)
@@ -1132,7 +1143,7 @@ if (ENABLE_TESTS)
       # Remove once support for VS 2013 is dropped.
       target_compile_options(test-libmongoc-lib PRIVATE /wd4756)
    endif ()
-   target_link_libraries (test-libmongoc-lib PUBLIC mongoc_static)
+   target_link_libraries (test-libmongoc-lib PUBLIC mongoc::static)
    # We have tests that test our deprecated api.
    target_compile_options (test-libmongoc-lib
       PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
@@ -1205,9 +1216,9 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
       # Enable unconditional warnings-as-errors for our source code.
       target_compile_options (${example} PRIVATE ${mongoc-warning-options})
 
-      target_link_libraries (${example} mongoc_shared ${LIBRARIES})
+      target_link_libraries (${example} PRIVATE mongoc::shared ${LIBRARIES})
       if (WIN32)
-         target_link_libraries (${example} shlwapi)
+         target_link_libraries (${example} PRIVATE shlwapi)
       endif ()
    endfunction ()
 
@@ -1281,7 +1292,7 @@ if (ENABLE_TESTS AND ENABLE_SHARED AND MONGOC_ENABLE_SSL AND NOT WIN32)
    # Benchmarks require SSL, and do not build on Windows.
    add_executable (benchmark-tls-pooled ${PROJECT_SOURCE_DIR}/tests/benchmark-tls-pooled.c)
    target_compile_options (benchmark-tls-pooled PRIVATE ${mongoc-warning-options})
-   target_link_libraries (benchmark-tls-pooled mongoc_shared ${LIBRARIES})
+   target_link_libraries (benchmark-tls-pooled PRIVATE mongoc::shared ${LIBRARIES})
 endif ()
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
@@ -1299,9 +1310,7 @@ if (ENABLE_SHARED)
    list (APPEND TARGETS_TO_INSTALL mongoc_shared)
 endif ()
 
-set (MONGOC_HEADER_INSTALL_DIR
-   "${CMAKE_INSTALL_INCLUDEDIR}/libmongoc-${MONGOC_API_VERSION}"
-)
+
 
 install (
    TARGETS ${TARGETS_TO_INSTALL}
@@ -1309,12 +1318,12 @@ install (
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-   INCLUDES DESTINATION ${MONGOC_HEADER_INSTALL_DIR}
+   INCLUDES DESTINATION ${MONGOC_INSTALL_INCLUDEDIR}
 )
 
 install (
    FILES ${HEADERS}
-   DESTINATION "${MONGOC_HEADER_INSTALL_DIR}/mongoc"
+   DESTINATION "${MONGOC_INSTALL_INCLUDEDIR}/mongoc"
 )
 
 # Collect link items for the static library to be inserted into the pkg-config
@@ -1334,7 +1343,7 @@ if(TARGET mongoc_static)
 endif()
 
 # Relative include-path will be given the install prefix:
-set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${MONGOC_HEADER_INSTALL_DIR}")
+set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${MONGOC_INSTALL_INCLUDEDIR}")
 
 # Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086.
 if (MONGOC_ENABLE_SSL)
@@ -1362,30 +1371,24 @@ configure_file (src/mongoc-config.cmake
 )
 
 install (EXPORT mongoc-targets
-   NAMESPACE mongo::
    FILE mongoc-targets.cmake
-   DESTINATION ${MONGOC_TARGETS_INSTALL_DIR}
+   DESTINATION "${MONGOC_INSTALL_CMAKEDIR}"
 )
 
-install (
-   FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"
-      "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config-version.cmake"
-   DESTINATION
-      ${MONGOC_TARGETS_INSTALL_DIR}
-   COMPONENT
-      Devel
-)
-
-set(mongoc_cmake_prefix "${MONGOC_INSTALL_CMAKEDIR}/mongoc-${PROJECT_VERSION}")
 configure_file(
    ${mongo-c-driver_SOURCE_DIR}/build/cmake/packageConfigVersion.cmake.in
    mongocConfigVersion.cmake
    @ONLY
 )
+configure_file(
+   etc/mongocConfig.cmake.in
+   mongocConfig.cmake
+   @ONLY
+)
 install(
-   FILES etc/mongocConfig.cmake "${CMAKE_CURRENT_BINARY_DIR}/mongocConfigVersion.cmake"
-   DESTINATION "${mongoc_cmake_prefix}"
+   FILES "${CMAKE_CURRENT_BINARY_DIR}/mongocConfig.cmake"
+         "${CMAKE_CURRENT_BINARY_DIR}/mongocConfigVersion.cmake"
+   DESTINATION "${MONGOC_INSTALL_CMAKEDIR}"
 )
 
 if (ENABLE_MAN_PAGES OR ENABLE_HTML_DOCS)
