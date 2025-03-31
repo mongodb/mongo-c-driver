@@ -136,7 +136,7 @@ add_test_cmake_project(
    mongoc/pkg-config/mongoc-import-shared src/libmongoc/tests/pkg-config-import
    INSTALL_PARENT
    SETTINGS
-      PKG_CONFIG_SEARCH=mongoc1
+      PKG_CONFIG_SEARCH=mongoc${PROJECT_VERSION_MAJOR}
       "EXPECT_MONGOC_VERSION=${mongo-c-driver_VERSION_FULL}"
 )
 
@@ -144,7 +144,7 @@ add_test_cmake_project(
    mongoc/pkg-config/mongoc-import-static src/libmongoc/tests/pkg-config-import
    INSTALL_PARENT
    SETTINGS
-      PKG_CONFIG_SEARCH=mongoc1-static
+      PKG_CONFIG_SEARCH=mongoc${PROJECT_VERSION_MAJOR}-static
       "EXPECT_MONGOC_VERSION=${mongo-c-driver_VERSION_FULL}"
       EXPECT_BSON_STATIC=1
       EXPECT_MONGOC_STATIC=1
