@@ -60,6 +60,8 @@ if(NOT DEFINED UNINSTALL_WRITE_FILE)
     message(FATAL_ERROR "Expected a variable “UNINSTALL_WRITE_FILE” to be defined")
 endif()
 
+# Lock the uninstall file to synchronize with parallel install processes.
+file(LOCK "${UNINSTALL_WRITE_FILE}.lock" GUARD PROCESS RESULT_VARIABLE lockres)
 # Clear out the uninstall script before we begin writing:
 file(WRITE "${UNINSTALL_WRITE_FILE}" "")
 

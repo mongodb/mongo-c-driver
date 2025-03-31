@@ -1,3 +1,25 @@
+libmongoc 1.x (Unreleased)
+==========================
+
+New Features:
+
+* In anticipation of the 2.0 release of mongo-c-driver, new CMake packages and
+  imported targets have been defined (for both `bson` and `mongoc`). To import
+  `mongoc` with the new names, call `find_package` for the `mongoc` package. The
+  new imported targets are named `mongoc::static`, `mongoc::shared`, and
+  `mongoc::mongoc` (which points to either the static or the shared library,
+  depending on an import-time configuration option).
+
+  The new package and target names will remain unchanged when upgrading to the
+  2.0 release, allowing consumers to support both major versions without
+  modifying their CMake project. The current imported target names will be
+  removed from the 2.0 release, and should not be used for
+  forward-compatibility.
+
+  Programs that link to BSON libraries directly should also use the new target
+  names `bson::static`, `bson::shared`, or `bson::bson`.
+
+
 Unreleased (2.0.0)
 ==================
 
@@ -29,13 +51,9 @@ Unreleased (2.0.0)
 * `mongoc_server_description_ismaster` is removed. Use the equivalent `mongoc_server_description_hello` instead.
 * `MONGOC_QUERY_SLAVE_OK` is removed. Use the equivalent `MONGOC_QUERY_SECONDARY_OK` instead.
 * `MONGOC_URI_SLAVEOK` is removed. It was unused.
-* `mongoc_collection_save` is removed. Use `mongoc_collection_insert_one` or `mongoc_collection_replace_one` instead.
 * `mongoc_client_command`, `mongoc_database_command`, and `mongoc_collection_command` are removed. Use `mongoc_client_command_simple`,  `mongoc_database_command_simple`, and `mongoc_collection_command_simple` instead.
 * `MONGOC_URI_MAXIDLETIMEMS` and `MONGOC_URI_WAITQUEUEMULTIPLE` are removed. They were unused.
 * `bson_string_t` and associated functions are removed.
-* `mongoc_cursor_is_alive` is removed. Use the equivalent `mongoc_cursor_more` instead.
-* `mongoc_collection_delete` is removed. Use `mongoc_collection_delete_one` or `mongoc_collection_delete_many` instead.
-* `mongoc_delete_flags_t` and `mongoc_reply_flags_t` are removed.
 * Support for `ENABLE_SASL=CYRUS` on Windows is removed. Use `ENABLE_SASL=SSPI` or `ENABLE_SASL=OFF` instead.
     * The associated Windows-only option `CYRUS_PLUGIN_PATH_PREFIX` is removed.
 * Support for the deprecated `minPoolSize` URI option is removed along with associated API: `MONGOC_URI_MINPOOLSIZE` and `mongoc_client_pool_min_size`.
@@ -46,16 +64,50 @@ Unreleased (2.0.0)
 * `mongoc_client_find_databases` is removed. Use `mongoc_client_find_databases_with_opts` instead.
 * `mongoc_client_get_max_message_size` is removed.
 * `mongoc_client_get_max_bson_size` is removed.
-* Deprecated API for `mongoc_bulk_operation_t` is removed:
-  * `mongoc_bulk_operation_delete` is removed. Use `mongoc_bulk_operation_remove()` instead.
-  * `mongoc_bulk_operation_delete_one` is removed. Use `mongoc_bulk_operation_remove_one` instead.
-  * `mongoc_bulk_operation_get_hint` is removed. Use `mongoc_bulk_operation_get_server_id` instead.
-  * `mongoc_bulk_operation_set_hint` is removed. Use `mongoc_bulk_operation_set_server_id` instead.
-* Deprecated index management API has been removed:
+* Deprecated `mongoc_apm_command_*_get_server_connection_id` functions are removed. Use `mongoc_apm_command_*_get_server_connection_id_int64` instead.
+* Deprecated index management API is removed:
   * `mongoc_collection_create_index_with_opts`, `mongoc_collection_create_index`, and `mongoc_collection_ensure_index` are removed. Use `mongoc_collection_create_indexes_with_opts` instead.
   * `mongoc_index_opt_t`, `mongoc_index_opt_geo_t` `mongoc_index_opt_wt_t` are removed. Pass options using `bson_t` to `mongoc_collection_create_indexes_with_opts` instead.
   * `mongoc_collection_find_indexes` is removed. Use `mongoc_collection_find_indexes_with_opts` instead.
   * See [MongoDB documentation](https://www.mongodb.com/docs/languages/c/c-driver/current/indexes/) for working with indexes.
+* Deprecated cursor API is removed:
+  * `mongoc_cursor_is_alive` is removed. Use the equivalent `mongoc_cursor_more` instead.
+  * `mongoc_cursor_set_hint` is removed. Use the equivalent `mongoc_cursor_set_server_id` instead.
+  * `mongoc_cursor_get_hint` is removed. Use the equivalent `mongoc_cursor_get_server_id` instead.
+  * `mongoc_cursor_new_from_command_reply` is removed. Use `mongoc_cursor_new_from_command_reply_with_opts` instead.
+* Deprecated CRUD API is removed:
+  * `mongoc_collection_save` is removed. Use `mongoc_collection_insert_one` or `mongoc_collection_replace_one` instead.
+  * `mongoc_collection_delete` is removed. Use `mongoc_collection_delete_one` or `mongoc_collection_delete_many` instead.
+  * `mongoc_delete_flags_t` and `mongoc_reply_flags_t` are removed.
+  * `mongoc_collection_find` is removed. Use `mongoc_collection_find_with_opts` instead.
+  * `mongoc_collection_insert_bulk` is removed. Use `mongoc_collection_insert_many` instead.
+  * `mongoc_collection_create_bulk_operation` is removed. Use `mongoc_collection_create_bulk_operation_with_opts` instead.
+  * `mongoc_collection_get_last_error` is removed. To get results from write operations, instead use:
+      * `mongoc_collection_update_one`
+      * `mongoc_collection_update_many`
+      * `mongoc_collection_replace_one`
+      * `mongoc_collection_delete_one`
+      * `mongoc_collection_delete_many`
+      * `mongoc_collection_insert_one`
+      * `mongoc_collection_insert_many`
+      * `mongoc_bulkwrite_t`
+      * `mongoc_bulk_operation_t`
+* `mongoc_collection_stats` is removed. Use the [$collStats aggregation pipeline stage](https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/) with `mongoc_collection_aggregate` instead.
+* `mongoc_collection_validate` is removed. Run the [validate](https://www.mongodb.com/docs/manual/reference/command/validate/) command directly with `mongoc_client_read_command_with_opts` instead.
+* Deprecated API for `mongoc_database_t` is removed:
+  * `mongoc_database_find_collections` is removed. Use `mongoc_database_find_collections_with_opts` instead.
+  * `mongoc_database_get_collection_names` is removed. Use `mongoc_database_get_collection_names_with_opts` instead.
+* Deprecated GridFS API has been removed:
+  * `mongoc_gridfs_find` is removed. Use `mongoc_gridfs_find_with_opts` instead.
+  * `mongoc_gridfs_find_one` is removed. Use `mongoc_gridfs_find_one_with_opts` instead.
+* Deprecated TLS stream API is removed:
+  * `mongoc_stream_tls_do_handshake` is removed. Use `mongoc_stream_tls_handshake` instead.
+  * `mongoc_stream_tls_check_cert` is removed. Use `mongoc_stream_tls_handshake` instead.
+  * `mongoc_stream_tls_new` is removed. Use `mongoc_stream_tls_new_with_hostname` instead.
+* Deprecated URI API has been removed:
+  * `mongoc_uri_get_service` is removed. Use `mongoc_uri_get_srv_hostname` instead.
+  * `mongoc_uri_get_read_prefs` is removed. Use `mongoc_uri_get_read_prefs_t` instead.
+  * `mongoc_uri_get_ssl` is removed. Use `mongoc_uri_get_tls` instead.
 * Deprecated write concern API is removed:
   * `mongoc_write_concern_get_fsync` is removed. Use `mongoc_write_concern_get_journal` instead.
   * `mongoc_write_concern_set_fsync` is removed. Use `mongoc_write_concern_set_journal` instead.

@@ -115,6 +115,13 @@ run_uri_test (const char *uri_string,
       if (strstr (uri_string, "CANONICALIZE_HOST_NAME:none") || strstr (uri_string, "CANONICALIZE_HOST_NAME:forward")) {
          return;
       }
+
+      // CDRIVER-5580: commas in TOKEN_RESOURCE are interpreted as a key-value pair delimiter which produces an invalid
+      // mechanism property that is diagnosed as a client error instead of a warning.
+      if (strstr (uri_string, "TOKEN_RESOURCE:mongodb://host1%2Chost2")) {
+         MONGOC_WARNING ("percent-encoded commas in TOKEN_RESOURCE");
+         return;
+      }
    }
 
    if (uri) {
