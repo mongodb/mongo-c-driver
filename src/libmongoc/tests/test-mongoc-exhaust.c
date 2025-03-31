@@ -465,7 +465,7 @@ test_cursor_server_hint_with_exhaust (void *unused)
                                                                NULL /* read_prefs */);
 
    // Set a bogus server ID.
-   mongoc_cursor_set_hint (cursor, 123);
+   mongoc_cursor_set_server_id (cursor, 123);
 
    // Iterate the cursor.
    const bson_t *result;
