@@ -101,7 +101,7 @@ Unreleased (2.0.0)
 * `mongoc_collection_validate` is removed. Run the [validate](https://www.mongodb.com/docs/manual/reference/command/validate/) command directly with `mongoc_client_read_command_with_opts` instead.
 * Deprecated API for `mongoc_database_t` has been removed:
   * `mongoc_database_find_collections` is removed. Use `mongoc_database_find_collections_with_opts` instead.
-  * `mongoc_database_get_collection_names` is removed. Use `mongoc_database_get_collection_names` instead.
+  * `mongoc_database_get_collection_names` is removed. Use `mongoc_database_get_collection_names_with_opts` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
