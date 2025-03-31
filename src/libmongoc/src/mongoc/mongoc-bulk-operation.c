@@ -312,26 +312,6 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk, /* IN */
 }
 
 void
-mongoc_bulk_operation_delete (mongoc_bulk_operation_t *bulk, const bson_t *selector)
-{
-   ENTRY;
-
-   mongoc_bulk_operation_remove (bulk, selector);
-
-   EXIT;
-}
-
-void
-mongoc_bulk_operation_delete_one (mongoc_bulk_operation_t *bulk, const bson_t *selector)
-{
-   ENTRY;
-
-   mongoc_bulk_operation_remove_one (bulk, selector);
-
-   EXIT;
-}
-
-void
 mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk, const bson_t *document)
 {
    ENTRY;
@@ -926,12 +906,6 @@ mongoc_bulk_operation_set_client_session (mongoc_bulk_operation_t *bulk,
 
 
 uint32_t
-mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk)
-{
-   return mongoc_bulk_operation_get_server_id (bulk);
-}
-
-uint32_t
 mongoc_bulk_operation_get_server_id (const mongoc_bulk_operation_t *bulk)
 {
    BSON_ASSERT_PARAM (bulk);
@@ -939,11 +913,6 @@ mongoc_bulk_operation_get_server_id (const mongoc_bulk_operation_t *bulk)
    return bulk->server_id;
 }
 
-void
-mongoc_bulk_operation_set_hint (mongoc_bulk_operation_t *bulk, uint32_t server_id)
-{
-   mongoc_bulk_operation_set_server_id (bulk, server_id);
-}
 
 void
 mongoc_bulk_operation_set_server_id (mongoc_bulk_operation_t *bulk, uint32_t server_id)

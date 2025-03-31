@@ -87,7 +87,6 @@ typedef_list = [
     typedef("mongoc_iovec_ptr", "mongoc_iovec_t *"),
     typedef("mongoc_server_stream_ptr", "mongoc_server_stream_t *"),
     typedef("mongoc_query_flags_t", None),
-    typedef("const_mongoc_index_opt_t", "const mongoc_index_opt_t *"),
     typedef("mongoc_server_description_ptr", "mongoc_server_description_t *"),
     typedef("mongoc_ss_optype_t", None),
     typedef("mongoc_topology_ptr", "mongoc_topology_t *"),
@@ -104,6 +103,7 @@ typedef_list = [
             "const mongoc_write_concern_t *"),
     typedef("const_mongoc_ss_log_context_ptr",
             "const mongoc_ss_log_context_t *"),
+    typedef("mongoc_index_model_t_ptr_const_ptr", "mongoc_index_model_t *const *")
 ]
 
 type_list = [T.name for T in typedef_list]
@@ -216,10 +216,10 @@ future_functions = [
                      param("const_mongoc_read_prefs_ptr", "read_prefs")]),
 
     future_function("bool",
-                    "mongoc_collection_create_index_with_opts",
+                    "mongoc_collection_create_indexes_with_opts",
                     [param("mongoc_collection_ptr", "collection"),
-                     param("const_bson_ptr", "keys"),
-                     param("const_mongoc_index_opt_t", "opt"),
+                     param("mongoc_index_model_t_ptr_const_ptr", "models"),
+                     param("size_t", "num_models"),
                      param("const_bson_ptr", "opts"),
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
@@ -264,13 +264,6 @@ future_functions = [
                      param("const_bson_ptr", "opts")]),
 
     future_function("bool",
-                    "mongoc_collection_stats",
-                    [param("mongoc_collection_ptr", "collection"),
-                     param("const_bson_ptr", "options"),
-                     param("bson_ptr", "stats"),
-                     param("bson_error_ptr", "error")]),
-
-    future_function("bool",
                     "mongoc_collection_insert_many",
                     [param("mongoc_collection_ptr", "collection"),
                      param("const_bson_ptr_ptr", "documents"),
@@ -311,15 +304,6 @@ future_functions = [
                      param("const_bson_ptr", "command"),
                      param("const_bson_ptr", "opts"),
                      param("bson_ptr", "reply"),
-                     param("bson_error_ptr", "error")]),
-
-    future_function("bool",
-                    "mongoc_collection_insert_bulk",
-                    [param("mongoc_collection_ptr", "collection"),
-                     param("mongoc_insert_flags_t", "flags"),
-                     param("const_bson_ptr_ptr", "documents"),
-                     param("uint32_t", "n_documents"),
-                     param("const_mongoc_write_concern_ptr", "write_concern"),
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
@@ -393,12 +377,6 @@ future_functions = [
                      param("size_t", "iovcnt"),
                      param("size_t", "min_bytes"),
                      param("uint32_t", "timeout_msec")]),
-
-    future_function("mongoc_gridfs_file_ptr",
-                    "mongoc_gridfs_find_one",
-                    [param("mongoc_gridfs_ptr", "gridfs"),
-                     param("const_bson_ptr", "query"),
-                     param("bson_error_ptr", "error")]),
 
     future_function("bool",
                     "mongoc_gridfs_file_remove",

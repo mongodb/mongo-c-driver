@@ -52,5 +52,8 @@ foreach (line IN LISTS lines)
         TIMEOUT 45
         FIXTURES_REQUIRED "${all_fixtures}"
         ENVIRONMENT "${all_env}"
+        # Mark all tests generated from the executable, so they can be (de)selected
+        # for execution separately.
+        LABELS "test-libmongoc-generated"
         )
 endforeach ()

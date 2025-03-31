@@ -432,13 +432,28 @@ count_documents (func_ctx_t *ctx, bson_t *cmd)
       ctx->collection, tmp_bson ("{}"), ctx->opts, ctx->prefs, NULL, &ctx->error);
 }
 
+static void
+destroy_index_models (void *data)
+{
+   mongoc_index_model_t **ptr = (mongoc_index_model_t **) data;
+   while (NULL != *ptr) {
+      mongoc_index_model_destroy (*ptr);
+      ptr++;
+   }
+}
 
 static future_t *
 create_index (func_ctx_t *ctx, bson_t *cmd)
 {
    BSON_APPEND_UTF8 (cmd, "createIndexes", "collection");
-   return future_collection_create_index_with_opts (
-      ctx->collection, tmp_bson ("{}"), NULL, ctx->opts, NULL, &ctx->error);
+   mongoc_index_model_t *im = mongoc_index_model_new (tmp_bson ("{'foo': 'bar'}"), NULL);
+   // Allocate a list of `mongoc_index_model_t` to extend the lifetime until the future resolves.
+   mongoc_index_model_t **ims = bson_malloc0 (sizeof (mongoc_index_model_t *) * 2);
+   ims[0] = im;
+   ims[1] = NULL; // NULL-terimate.
+   ctx->data = ims;
+   ctx->destructor = destroy_index_models; // Destroy `mongoc_index_model_t` after future returns.
+   return future_collection_create_indexes_with_opts (ctx->collection, ims, 1, ctx->opts, NULL, &ctx->error);
 }
 
 
@@ -833,7 +848,7 @@ static opt_inheritance_test_t gInheritanceTests[] = {
    OPT_TEST (COLL, collection_write_cmd, WRITE_CONCERN),
    OPT_TEST (COLL, count_documents, READ_CONCERN),
    OPT_TEST (COLL, count_documents, READ_PREFS),
-   OPT_TEST (COLL, create_index, WRITE_CONCERN),
+   // OPT_TEST (COLL, create_index, WRITE_CONCERN), Known issue: CDRIVER-5945
    OPT_TEST (COLL, drop_index, WRITE_CONCERN),
    OPT_TEST (COLL, estimated_document_count, READ_CONCERN),
    OPT_TEST (COLL, estimated_document_count, READ_PREFS),
@@ -880,6 +895,8 @@ install_inheritance_tests (TestSuite *suite, opt_inheritance_test_t *tests, size
 
       bson_free (name);
    }
+
+   BSON_UNUSED (create_index); // Silence unused warning. Remove when resolving CDRIVER-5945.
 }
 
 

@@ -38,7 +38,7 @@ SASLOption = Literal["Cyrus", "off"]
 "Valid options for the SASL configuration parameter"
 TLSOption = Literal["OpenSSL", "off"]
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["r4.0.0", "none"]
+CxxVersion = Literal["none"] # TODO: Once CXX-3103 is released, add latest C++ release tag.
 "C++ driver refs that are under CI test"
 
 # A separator character, since we cannot use whitespace
@@ -146,10 +146,6 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
         case e, (_sasl, _tls, cxx) if re.match(r"^Ubuntu 16|^CentOS 7", e.display_name):
             # Only build if C++ driver is test is disabled
             return cxx == "none"
-        # Skip other platforms where the C++ driver test is disabled, since they would be
-        # redundant
-        case _, (_sasl, _tls, "none"):
-            return False
         # Anything else: Allow it to run:
         case _:
             return True

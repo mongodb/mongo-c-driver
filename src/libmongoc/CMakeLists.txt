@@ -587,7 +587,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-handshake.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-host-list.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-http.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-index.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-interrupt.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-list.c
@@ -713,7 +712,6 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-handshake.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-host-list.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.h
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-index.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-iovec.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-macros.h
@@ -1044,7 +1042,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cmd.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find-with-opts.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-command-logging-and-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-command-monitoring.c
@@ -1409,7 +1406,16 @@ install (
       Devel
 )
 
-include (LegacyPackage)
+set(mongoc_cmake_prefix "${MONGOC_INSTALL_CMAKEDIR}/mongoc-${PROJECT_VERSION}")
+configure_file(
+   ${mongo-c-driver_SOURCE_DIR}/build/cmake/packageConfigVersion.cmake.in
+   mongocConfigVersion.cmake
+   @ONLY
+)
+install(
+   FILES etc/mongocConfig.cmake "${CMAKE_CURRENT_BINARY_DIR}/mongocConfigVersion.cmake"
+   DESTINATION "${mongoc_cmake_prefix}"
+)
 
 if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
    find_package (Sphinx REQUIRED)

@@ -27,9 +27,8 @@ Description
 The :symbol:`bson_copy_to_excluding_noinit()` function shall copy all fields
 from ``src`` to ``dst`` except those specified by the variadic, NULL terminated
 list of keys starting from ``first_exclude``.
-Works the same way as :symbol:`bson_copy_to_excluding`, except does **not** call
-:symbol:`bson_init` on ``dst``.
-This function should be preferred in new code over :symbol:`bson_copy_to_excluding`.
+
+Does **not** call :symbol:`bson_init` on ``dst``.
 
 .. warning::
 
