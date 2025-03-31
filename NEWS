@@ -21,6 +21,7 @@ Unreleased (2.0.0)
     * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
     * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
 * Calling `mongoc_bulk_operation_execute` on the same `mongoc_bulk_operation_t` repeatedly is an error. Previously this was only discouraged in documentation.
+* Consistently apply `__cdecl` calling convention to declarations in public API. Intended to support consumers built with other [calling conventions](https://learn.microsoft.com/en-us/cpp/build/reference/gd-gr-gv-gz-calling-convention) with MSVC. libmongoc and libbson only support building with `__cdecl`.
 
 ## Removals
 
