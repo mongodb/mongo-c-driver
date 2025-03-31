@@ -32,7 +32,7 @@ endif()
 include(CMakeFindDependencyMacro)
 find_dependency(Threads)  # Required for Threads::Threads
 
-# Import the target files that will be install alongside this file. Only the
+# Import the target files that will be installed alongside this file. Only the
 # targets of libraries that were actually installed alongside this file will be imported
 file(GLOB __targets_files "${CMAKE_CURRENT_LIST_DIR}/*-targets.cmake")
 foreach(__file IN LISTS __targets_files)
