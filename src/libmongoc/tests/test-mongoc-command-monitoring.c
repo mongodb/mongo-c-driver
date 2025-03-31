@@ -291,7 +291,8 @@ test_reset_callbacks (void)
    /* reset callbacks */
    mongoc_client_set_apm_callbacks (client, NULL, NULL);
    /* destroys cmd_reply */
-   cursor = mongoc_cursor_new_from_command_reply (client, &cmd_reply, sd->id);
+   cursor = mongoc_cursor_new_from_command_reply_with_opts (
+      client, &cmd_reply, tmp_bson ("{'serverId': %" PRIu32 "}", sd->id));
    ASSERT (mongoc_cursor_next (cursor, &b));
    ASSERT_CMPINT (incremented, ==, 1); /* same value as before */
 
@@ -648,7 +649,7 @@ _test_query_operation_id (bool pooled)
    }
 
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -978,7 +979,7 @@ test_command_failed_reply_mock (void)
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -1033,7 +1034,7 @@ test_command_failed_reply_hangup (void)
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db2", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
