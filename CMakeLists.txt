@@ -465,7 +465,7 @@ if (ENABLE_MONGOC)
 endif ()
 
 install (FILES COPYING NEWS README.rst THIRD_PARTY_NOTICES
-   DESTINATION ${CMAKE_INSTALL_DATADIR}/mongo-c-driver
+   DESTINATION ${CMAKE_INSTALL_DATADIR}/mongo-c-driver/${PROJECT_VERSION}
 )
 
 if (ENABLE_UNINSTALL)
@@ -477,7 +477,7 @@ if (ENABLE_UNINSTALL)
       # Generate a different script name for uninstalling libbson only:
       set (UNINSTALL_SCRIPT_NAME "uninstall-bson")
    endif ()
-   set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver")
+   set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver/${PROJECT_VERSION}")
    include (GenerateUninstaller)
 endif ()
 
