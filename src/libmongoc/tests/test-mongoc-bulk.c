@@ -4794,7 +4794,7 @@ test_multiple_execution (void)
    mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll = get_test_collection (client, "test_multiple_execution");
    bson_error_t error;
-   mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation (coll, true, NULL);
+   mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation_with_opts (coll, NULL);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{}"));
    ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
    ASSERT (!mongoc_bulk_operation_execute (bulk, NULL, &error));

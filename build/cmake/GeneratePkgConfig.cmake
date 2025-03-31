@@ -225,7 +225,8 @@ function(mongo_generate_pkg_config target)
             file(READ [[@gx_tmpfile@]] content)
             # Insert the install prefix:
             string(REPLACE "%INSTALL_PLACEHOLDER%" "${CMAKE_INSTALL_PREFIX}" content "${content}")
-            # Write it before installing again:
+            # Write it before installing again. Lock the file to sync with parallel installs.
+            file(LOCK [[@inst_tmp@.lock]] GUARD PROCESS)
             file(WRITE [[@inst_tmp@]] "${content}")
         >
         $<$<NOT:@gx_cond@>:

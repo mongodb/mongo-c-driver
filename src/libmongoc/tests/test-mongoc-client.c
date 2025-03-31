@@ -3298,7 +3298,7 @@ test_client_reset_cursors (void)
       This test should timeout and fail if the client does send killCursors. */
 
    coll = mongoc_client_get_collection (client, "test", "test");
-   cursor = mongoc_collection_find (coll, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson (NULL), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (coll, tmp_bson (NULL), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'test', 'find': 'test'}"));

@@ -675,36 +675,6 @@ cleanup:
 
 
 mongoc_cursor_t *
-mongoc_database_find_collections (mongoc_database_t *database, const bson_t *filter, bson_error_t *error)
-{
-   bson_t opts = BSON_INITIALIZER;
-   mongoc_cursor_t *cursor;
-
-   BSON_ASSERT_PARAM (database);
-
-   if (filter) {
-      if (!BSON_APPEND_DOCUMENT (&opts, "filter", filter)) {
-         _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Invalid 'filter' parameter.");
-         bson_destroy (&opts);
-         return NULL;
-      }
-   }
-
-   cursor = mongoc_database_find_collections_with_opts (database, &opts);
-
-   bson_destroy (&opts);
-
-   /* this deprecated API returns NULL on error */
-   if (mongoc_cursor_error (cursor, error)) {
-      mongoc_cursor_destroy (cursor);
-      return NULL;
-   }
-
-   return cursor;
-}
-
-
-mongoc_cursor_t *
 mongoc_database_find_collections_with_opts (mongoc_database_t *database, const bson_t *opts)
 {
    mongoc_cursor_t *cursor;
@@ -723,13 +693,6 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database, const b
    bson_destroy (&cmd);
 
    return cursor;
-}
-
-
-char **
-mongoc_database_get_collection_names (mongoc_database_t *database, bson_error_t *error)
-{
-   return mongoc_database_get_collection_names_with_opts (database, NULL, error);
 }
 
 
