@@ -108,6 +108,9 @@ Unreleased (2.0.0)
   * `mongoc_uri_get_service` is removed. Use `mongoc_uri_get_srv_hostname` instead.
   * `mongoc_uri_get_read_prefs` is removed. Use `mongoc_uri_get_read_prefs_t` instead.
   * `mongoc_uri_get_ssl` is removed. Use `mongoc_uri_get_tls` instead.
+* Deprecated write concern API is removed:
+  * `mongoc_write_concern_get_fsync` is removed. Use `mongoc_write_concern_get_journal` instead.
+  * `mongoc_write_concern_set_fsync` is removed. Use `mongoc_write_concern_set_journal` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 

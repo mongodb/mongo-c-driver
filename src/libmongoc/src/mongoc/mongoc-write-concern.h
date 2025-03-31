@@ -44,12 +44,6 @@ mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern) BSON_GNU
 MONGOC_EXPORT (void)
 mongoc_write_concern_destroy (mongoc_write_concern_t *write_concern);
 
-BSON_DEPRECATED ("The fsync parameter is deprecated")
-MONGOC_EXPORT (bool) mongoc_write_concern_get_fsync (const mongoc_write_concern_t *write_concern);
-
-BSON_DEPRECATED ("The fsync parameter is deprecated")
-MONGOC_EXPORT (void) mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern, bool fsync_);
-
 MONGOC_EXPORT (bool)
 mongoc_write_concern_get_journal (const mongoc_write_concern_t *write_concern);
 

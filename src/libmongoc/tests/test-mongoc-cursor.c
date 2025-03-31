@@ -136,7 +136,6 @@ _test_common_clone_w_concerns (void *ctx)
    mongoc_read_concern_set_level (read_concern, MONGOC_READ_CONCERN_LEVEL_LOCAL);
    write_concern = mongoc_write_concern_new ();
    ASSERT (write_concern);
-   mongoc_write_concern_set_fsync (write_concern, true);
    mongoc_write_concern_set_journal (write_concern, true);
    mongoc_write_concern_set_wmajority (write_concern, 1000);
    cursor->write_concern = write_concern;
@@ -157,7 +156,7 @@ _test_common_clone_w_concerns (void *ctx)
    ASSERT_MATCH (_mongoc_read_concern_get_bson (cloned->read_concern), "{'level': 'local'}");
    bson = _mongoc_write_concern_get_bson (cloned->write_concern);
    ASSERT (bson);
-   ASSERT (bson_iter_init_find (&iter, bson, "fsync") && BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
+   ASSERT (!bson_iter_init_find (&iter, bson, "fsync")); // Deprecated "fsync" removed in C driver 2.0.
    ASSERT (bson_iter_init_find (&iter, bson, "j") && BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
    ASSERT (bson_iter_init_find (&iter, bson, "w") && BSON_ITER_HOLDS_UTF8 (&iter));
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "majority");
