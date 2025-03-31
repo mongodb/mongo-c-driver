@@ -219,36 +219,6 @@ all_tasks = [
         suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, ENABLE_SNAPPY="ON")],
     ),
     LinkTask("link-with-cmake-mac", suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1)]),
-    LinkTask(
-        "link-with-cmake-deprecated",
-        suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1)],
-    ),
-    LinkTask(
-        "link-with-cmake-ssl-deprecated",
-        suffix_commands=[
-            func(
-                "link sample program",
-                BUILD_SAMPLE_WITH_CMAKE=1,
-                BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
-                ENABLE_SSL=1,
-            )
-        ],
-    ),
-    LinkTask(
-        "link-with-cmake-snappy-deprecated",
-        suffix_commands=[
-            func(
-                "link sample program",
-                BUILD_SAMPLE_WITH_CMAKE=1,
-                BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
-                ENABLE_SNAPPY="ON",
-            )
-        ],
-    ),
-    LinkTask(
-        "link-with-cmake-mac-deprecated",
-        suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1)],
-    ),
     LinkTask("link-with-cmake-windows", suffix_commands=[func("link sample program MSVC")]),
     LinkTask(
         "link-with-cmake-windows-ssl",

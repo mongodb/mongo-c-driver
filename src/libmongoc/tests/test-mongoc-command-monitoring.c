@@ -649,7 +649,7 @@ _test_query_operation_id (bool pooled)
    }
 
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -979,7 +979,7 @@ test_command_failed_reply_mock (void)
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -1034,7 +1034,7 @@ test_command_failed_reply_hangup (void)
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db2", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);

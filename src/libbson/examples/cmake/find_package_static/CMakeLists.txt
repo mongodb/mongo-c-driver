@@ -28,8 +28,8 @@ project (hello_bson LANGUAGES C)
 # building libbson.
 # -- sphinx-include-start --
 # Specify the minimum version you require.
-find_package (bson-1.0 1.7 REQUIRED)
+find_package (bson 1.7 REQUIRED)
 
 # The "hello_bson.c" sample program is shared among four tests.
 add_executable (hello_bson ../../hello_bson.c)
-target_link_libraries (hello_bson PRIVATE mongo::bson_static)
+target_link_libraries (hello_bson PRIVATE bson::static)
