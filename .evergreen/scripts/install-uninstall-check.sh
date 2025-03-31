@@ -17,8 +17,8 @@ SRCROOT=$(pwd)
 _full_version=$(cat "$DIR/../../VERSION_CURRENT")
 version="${_full_version%-*}"  # 1.2.3-dev → 1.2.3
 major="${version%%.*}"         # 1.2.3     → 1
-echo "major version: $version"
-echo " full version: $major"
+echo "major version: $major"
+echo " full version: $version"
 
 # Use ccache if able.
 . $DIR/find-ccache.sh
