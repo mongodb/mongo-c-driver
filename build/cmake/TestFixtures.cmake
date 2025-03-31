@@ -11,7 +11,7 @@ set (_MONGOC_PROC_CTL_COMMAND "$<TARGET_FILE:Python3::Interpreter>" -u -- "${_MO
 
 function (mongo_define_subprocess_fixture name)
     cmake_parse_arguments(PARSE_ARGV 1 ARG "" "SPAWN_WAIT;STOP_WAIT;WORKING_DIRECTORY" "COMMAND")
-    string (MAKE_C_IDENTIFIER ident "${name}")
+    string (MAKE_C_IDENTIFIER "${name}" ident)
     if (NOT ARG_SPAWN_WAIT)
         set (ARG_SPAWN_WAIT 1)
     endif ()
@@ -40,7 +40,7 @@ endfunction ()
 
 # Create a fixture that runs a fake Azure IMDS server
 mongo_define_subprocess_fixture(
-    mongoc/fixtures/fake_imds
+    mongoc/fixtures/fake_kms_provider_server
     SPAWN_WAIT 1
     COMMAND
         "$<TARGET_FILE:Python3::Interpreter>" -u --
