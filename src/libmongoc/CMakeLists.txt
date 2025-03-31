@@ -902,6 +902,7 @@ if (ENABLE_SHARED)
    add_executable (mongoc-stat ${mongo-c-driver_SOURCE_DIR}/src/tools/mongoc-stat.c)
    target_compile_options (mongoc-stat PRIVATE ${mongoc-warning-options})
    target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
+   set_property (TARGET mongoc-stat PROPERTY OUTPUT_NAME mongoc${PROJECT_VERSION_MAJOR}-stat)
 
    # mongoc-stat works if shared memory performance counters are enabled.
    if (ENABLE_SHM_COUNTERS)
