@@ -97,6 +97,9 @@ Unreleased (2.0.0)
 * Deprecated API for `mongoc_database_t` is removed:
   * `mongoc_database_find_collections` is removed. Use `mongoc_database_find_collections_with_opts` instead.
   * `mongoc_database_get_collection_names` is removed. Use `mongoc_database_get_collection_names_with_opts` instead.
+* Deprecated GridFS API has been removed:
+  * `mongoc_gridfs_find` is removed. Use `mongoc_gridfs_find_with_opts` instead.
+  * `mongoc_gridfs_find_one` is removed. Use `mongoc_gridfs_find_one_with_opts` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
