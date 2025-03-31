@@ -64,7 +64,6 @@ test-example:
     # Add the example files
     COPY --dir \
         src/libmongoc/examples/cmake \
-        src/libmongoc/examples/cmake-deprecated \
         src/libmongoc/examples/hello_mongoc.c \
         /opt/mongoc-test/
     # Configure and build it

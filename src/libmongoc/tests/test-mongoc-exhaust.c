@@ -161,17 +161,18 @@ test_exhaust_cursor (bool pooled)
          bptr[i] = &b[i];
       }
 
-      BEGIN_IGNORE_DEPRECATIONS
-      ASSERT_OR_PRINT (
-         mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, wr, &error), error);
-      END_IGNORE_DEPRECATIONS
+      bson_t opts = BSON_INITIALIZER;
+      ASSERT (mongoc_write_concern_append (wr, &opts));
+      ASSERT_OR_PRINT (mongoc_collection_insert_many (collection, (const bson_t **) bptr, 10, &opts, NULL, &error),
+                       error);
+      bson_destroy (&opts);
    }
 
    /* create a couple of cursors */
    {
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 5, &q, NULL, NULL);
+      cursor = mongoc_collection_find_with_opts (collection, &q, tmp_bson ("{'exhaust': true, 'batchSize': 5}"), NULL);
 
-      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q, NULL, NULL);
+      cursor2 = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    }
 
    /* Read from the exhaust cursor, ensure that we're in exhaust where we
@@ -203,7 +204,7 @@ test_exhaust_cursor (bool pooled)
     * (putting the client into exhaust), breaks a mid-stream read from a
     * regular cursor */
    {
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 5, &q, NULL, NULL);
+      cursor = mongoc_collection_find_with_opts (collection, &q, tmp_bson ("{'exhaust': true, 'batchSize': 5}"), NULL);
 
       r = mongoc_cursor_next (cursor2, &doc);
       if (!r) {
@@ -247,9 +248,10 @@ test_exhaust_cursor (bool pooled)
 
    /* make sure writes fail as well */
    {
-      BEGIN_IGNORE_DEPRECATIONS
-      r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, wr, &error);
-      END_IGNORE_DEPRECATIONS
+      bson_t opts = BSON_INITIALIZER;
+      ASSERT (mongoc_write_concern_append (wr, &opts));
+      r = mongoc_collection_insert_many (collection, (const bson_t **) bptr, 10, &opts, NULL, &error);
+      bson_destroy (&opts);
 
       BSON_ASSERT (!r);
       ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_CLIENT);
@@ -264,7 +266,7 @@ test_exhaust_cursor (bool pooled)
     * 4. make sure we can read the cursor we made during the exhaust
     */
    {
-      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q, NULL, NULL);
+      cursor2 = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
 
       server_id = cursor->server_id;
       stream = (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes, server_id);
@@ -430,7 +432,8 @@ test_exhaust_cursor_multi_batch (void *context)
    server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 10, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), tmp_bson ("{'exhaust': true, 'batchSize': 10}"), NULL);
 
    i = 0;
    while (mongoc_cursor_next (cursor, &cursor_doc)) {
@@ -462,7 +465,7 @@ test_cursor_server_hint_with_exhaust (void *unused)
                                                                NULL /* read_prefs */);
 
    // Set a bogus server ID.
-   mongoc_cursor_set_hint (cursor, 123);
+   mongoc_cursor_set_server_id (cursor, 123);
 
    // Iterate the cursor.
    const bson_t *result;
@@ -489,8 +492,8 @@ test_cursor_set_max_await_time_ms (void)
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_cursor_set_max_await_time_ms");
 
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), tmp_bson ("{'tailable': true, 'awaitData': true}"), NULL);
 
    ASSERT_CMPINT (0, ==, mongoc_cursor_get_max_await_time_ms (cursor));
    mongoc_cursor_set_max_await_time_ms (cursor, 123);
@@ -578,7 +581,7 @@ _mock_test_exhaust (bool pooled, exhaust_error_when_t error_when, exhaust_error_
    }
 
    collection = mongoc_client_get_collection (client, "db", "test");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'exhaust': true}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_query (
@@ -690,7 +693,7 @@ test_exhaust_in_child (void)
 
    /* insert some documents, more than one reply's worth. */
    to_insert = BCON_NEW ("x", BCON_INT32 (1));
-   bulk = mongoc_collection_create_bulk_operation (coll, false, NULL /* wc */);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (coll, NULL);
    for (i = 0; i < 1001; i++) {
       ret = mongoc_bulk_operation_insert_with_opts (bulk, to_insert, NULL /* opts */, &error);
       ASSERT_OR_PRINT (ret, error);
