@@ -100,6 +100,10 @@ Unreleased (2.0.0)
 * Deprecated GridFS API has been removed:
   * `mongoc_gridfs_find` is removed. Use `mongoc_gridfs_find_with_opts` instead.
   * `mongoc_gridfs_find_one` is removed. Use `mongoc_gridfs_find_one_with_opts` instead.
+* Deprecated TLS stream API is removed:
+  * `mongoc_stream_tls_do_handshake` is removed. Use `mongoc_stream_tls_handshake` instead.
+  * `mongoc_stream_tls_check_cert` is removed. Use `mongoc_stream_tls_handshake` instead.
+  * `mongoc_stream_tls_new` is removed. Use `mongoc_stream_tls_new_with_hostname` instead.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 
