@@ -95,10 +95,10 @@ typedef struct _mongoc_transaction_opt_t mongoc_transaction_opt_t;
  *
  * Returns: A newly allocated mongoc_stream_t or NULL on failure.
  */
-typedef mongoc_stream_t *(*mongoc_stream_initiator_t) (const mongoc_uri_t *uri,
-                                                       const mongoc_host_list_t *host,
-                                                       void *user_data,
-                                                       bson_error_t *error);
+typedef mongoc_stream_t *(BSON_CALL *mongoc_stream_initiator_t) (const mongoc_uri_t *uri,
+                                                                 const mongoc_host_list_t *host,
+                                                                 void *user_data,
+                                                                 bson_error_t *error);
 
 
 MONGOC_EXPORT (mongoc_client_t *)
