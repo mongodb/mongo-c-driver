@@ -23,6 +23,10 @@ New Features:
 Unreleased (2.0.0)
 ==================
 
+## Notes
+
+* A future minor release plans to raise the minimum supported MongoDB Server version from 4.0 to 4.2. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
+
 ## Changes
 
 * Passing `batchSize:0` as an option to `mongoc_client_watch`, `mongoc_database_watch`, or `mongoc_collection_watch`
