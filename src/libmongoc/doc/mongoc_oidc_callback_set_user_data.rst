@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   void
-  mongoc_oidc_callback_set_user_data (const mongoc_oidc_callback_t *callback, void *user_data);
+  mongoc_oidc_callback_set_user_data (mongoc_oidc_callback_t *callback, void *user_data);
 
 Store the provided pointer to user data.
 
