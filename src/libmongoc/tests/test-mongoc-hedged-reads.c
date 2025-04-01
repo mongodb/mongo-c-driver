@@ -49,7 +49,7 @@ test_mongos_hedged_reads_read_pref (void)
     * readPreference. */
    mongoc_collection_set_read_prefs (collection, prefs);
 
-   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   future = future_collection_estimated_document_count (collection, NULL, prefs, NULL, &error);
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
                                        tmp_bson ("{'$db': 'db',"
@@ -68,7 +68,7 @@ test_mongos_hedged_reads_read_pref (void)
    mongoc_read_prefs_set_hedge (prefs, &hedge_doc);
    mongoc_collection_set_read_prefs (collection, prefs);
 
-   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   future = future_collection_estimated_document_count (collection, NULL, prefs, NULL, &error);
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
                                        tmp_bson ("{'$db': 'db',"

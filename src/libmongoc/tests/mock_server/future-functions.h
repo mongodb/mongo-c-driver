@@ -150,33 +150,6 @@ future_collection_aggregate (
 
 
 future_t *
-future_collection_count (
-
-   mongoc_collection_ptr collection,
-   mongoc_query_flags_t flags,
-   const_bson_ptr query,
-   int64_t skip,
-   int64_t limit,
-   const_mongoc_read_prefs_ptr read_prefs,
-   bson_error_ptr error
-);
-
-
-future_t *
-future_collection_count_with_opts (
-
-   mongoc_collection_ptr collection,
-   mongoc_query_flags_t flags,
-   const_bson_ptr query,
-   int64_t skip,
-   int64_t limit,
-   const_bson_ptr opts,
-   const_mongoc_read_prefs_ptr read_prefs,
-   bson_error_ptr error
-);
-
-
-future_t *
 future_collection_create_indexes_with_opts (
 
    mongoc_collection_ptr collection,

@@ -24,6 +24,24 @@ libbson 2.0.0 (Unreleased)
 
 * `BSON_ERROR_BUFFER_SIZE` is reduced from `504` to `503` to reserve the final byte for internal use.
     * The data layout of `bson_error_t` remains otherwise unchanged: the size is still 512 bytes and the offset of the `.code`, `.domain`, and `.message` data members remain unchanged.
+* The pkg-config files `libbson-1.0`, have been renamed to `bson2`, and `bson2-static`, respectively.
+
+### CMake Packages and Imported Targets
+
+The `bson-1.0` CMake package have been removed. Instead, use or `bson`, and
+specify a version or version range to be imported:
+
+```cmake
+find_package(bson 1.30...2.0)
+```
+
+The new package imports different target names:
+
+- `mongo::bson_static` → `bson::static`
+- `mongo::bson_shared` → `bson::shared`
+- The target `bson::bson` is a shim target that points to either the shared
+  library or the static library.
+
 
 ## Removals
 

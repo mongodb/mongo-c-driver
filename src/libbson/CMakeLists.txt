@@ -29,14 +29,9 @@ set(libbson_VERSION_FULL ${mongo-c-driver_VERSION_FULL})
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-# A tag attached to libbson artifacts, denoting the *major* API version, used to
-# potentially co-locate additional future major versions.
-set (BSON_API_VERSION 1.0)
-
 if (APPLE)
    cmake_policy (SET CMP0042 OLD)
 endif ()
-
 
 #  .d8888b.           888    888    d8b
 # d88P  Y88b          888    888    Y8P
@@ -134,13 +129,6 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/bson/bson-version.h"
 )
 
-if (ENABLE_APPLE_FRAMEWORK)
-   configure_file (
-      "${PROJECT_SOURCE_DIR}/src/bson/modules/module.modulemap.in"
-      "${PROJECT_BINARY_DIR}/src/bson/modules/module.modulemap"
-   )
-endif ()
-
 # 8888888b.            .d888 d8b          d8b 888    d8b
 # 888  "Y88b          d88P"  Y8P          Y8P 888    Y8P
 # 888    888          888                     888
@@ -178,13 +166,12 @@ set(bson_libs)
 
 if(ENABLE_STATIC)
    add_library(bson_static STATIC ${all_sources})
+   add_library(bson::static ALIAS bson_static)
+   set_property(TARGET bson_static PROPERTY EXPORT_NAME bson::static)
    list(APPEND bson_libs bson_static)
-   # Define `BSON_STATIC` when building to suppress the annotation __declspec(dllexport).
-   # This prevents consumers of bson_static from exporting the symbols.
-   target_compile_definitions(bson_static PRIVATE BSON_STATIC)
-   # When consumers link against bson_static, suppress the annotation __declspec(dllimport),
-   # since those symbols will be available immediately at the link step:
-   target_compile_definitions(bson_static INTERFACE BSON_STATIC)
+   # Define `BSON_STATIC` to suppress __declspec(dllexport/dllimport) when compiling
+   # and consuming the static library
+   target_compile_definitions(bson_static PUBLIC BSON_STATIC)
 
    if(ENABLE_PIC)
       # User wants static libs to use PIC code.
@@ -193,7 +180,9 @@ if(ENABLE_STATIC)
 endif()
 
 if(ENABLE_SHARED)
-   add_library(bson_shared SHARED  ${all_sources})
+   add_library(bson_shared SHARED ${all_sources})
+   add_library(bson::shared ALIAS bson_shared)
+   set_property(TARGET bson_shared PROPERTY EXPORT_NAME bson::shared)
    if(WIN32)
       # Add resource-definition script for Windows shared library (.dll).
       configure_file(libbson.rc.in libbson.rc)
@@ -235,25 +224,10 @@ mongo_target_requirements(
 )
 
 set_target_properties(${bson_libs} PROPERTIES
-   VERSION "0.0.0"
-   SOVERSION "0"
-   OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}"
+   VERSION "${PROJECT_VERSION}"
+   SOVERSION "${PROJECT_VERSION_MAJOR}"
+   OUTPUT_NAME "${BSON_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}"
 )
-if(TARGET bson_static)
-   set_property(TARGET bson_static PROPERTY OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")
-endif()
-
-if (ENABLE_APPLE_FRAMEWORK)
-   set_target_properties(bson_shared PROPERTIES
-      FRAMEWORK TRUE
-      MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION}
-      MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${MONGOC_VERSION}
-      MACOSX_FRAMEWORK_IDENTIFIER org.mongodb.bson
-      OUTPUT_NAME "${BSON_OUTPUT_BASENAME}"
-      PUBLIC_HEADER "${HEADERS}"
-   )
-endif ()
-
 
 # 8888888888                                          888
 # 888                                                 888
@@ -310,12 +284,22 @@ endif () # ENABLE_EXAMPLES
 #   888   888  888      X88 Y88b.  888  888 888 888
 # 8888888 888  888  88888P'  "Y888 "Y888888 888 888
 
-set (BSON_HEADER_INSTALL_DIR
-   "${CMAKE_INSTALL_INCLUDEDIR}/libbson-${BSON_API_VERSION}"
+# Infix directory for all libbson headers.
+if(NOT DEFINED BSON_INSTALL_INCLUDEDIR)
+   set(BSON_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/bson-${PROJECT_VERSION}")
+endif()
+# Infix directory for all libbson CMake package files
+if(NOT DEFINED BSON_INSTALL_CMAKEDIR)
+   set(BSON_INSTALL_CMAKEDIR "${MONGO_C_DRIVER_INSTALL_CMAKEDIR}/bson-${PROJECT_VERSION}")
+endif()
+
+# pkg-config properties:
+set_directory_properties(PROPERTIES
+   pkg_config_INCLUDE_DIRECTORIES "${BSON_INSTALL_INCLUDEDIR}"
+   pkg_config_NAME "bson"
 )
+
 function(install_export_target target)
-   # Tell pkg-config where the headers are going:
-   set_property(TARGET ${target} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${BSON_HEADER_INSTALL_DIR}")
    # Install the target:
    install(
       TARGETS "${target}"
@@ -324,83 +308,53 @@ function(install_export_target target)
       LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
       ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
       RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-      INCLUDES DESTINATION "${BSON_HEADER_INSTALL_DIR}"
-      FRAMEWORK DESTINATION "${CMAKE_INSTALL_BINDIR}"
+      INCLUDES DESTINATION "${BSON_INSTALL_INCLUDEDIR}"
    )
    # Install the unique export set into a file that is qualified by the name of
    # the target itself. The main config-file package will search for the
-   # possibly-installed exported targets for the known targets. See: bson-config.cmake
+   # possibly-installed exported targets for the known targets.
    install(
       EXPORT "${target}-targets"
-      NAMESPACE mongo::
       FILE "${target}-targets.cmake"
-      DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}"
+      DESTINATION "${BSON_INSTALL_CMAKEDIR}"
    )
 endfunction()
 
 if(ENABLE_STATIC_LIBBSON_INSTALL AND TARGET bson_static)
    install_export_target(bson_static)
-   mongo_generate_pkg_config(bson_static FILENAME libbson-static-1.0.pc INSTALL)
+   mongo_generate_pkg_config(bson_static FILENAME bson${PROJECT_VERSION_MAJOR}-static.pc INSTALL)
 endif()
 if(ENABLE_SHARED_LIBBSON_INSTALL AND TARGET bson_shared)
    install_export_target(bson_shared)
-   mongo_generate_pkg_config(bson_shared FILENAME libbson-1.0.pc INSTALL)
+   mongo_generate_pkg_config(bson_shared FILENAME bson${PROJECT_VERSION_MAJOR}.pc INSTALL)
 endif()
 
-# Install all headers by doing a recursive directory-install.
+# Install all headers by doing a recursive directory-install. In the future, this
+# can be better handled by installing the headers as a file set via target_sources()
 install(
    DIRECTORY
       # Trailing "/" requests directory contents, not the dir itself:
-      src/bson/
+      src/
       # Also get the generated dir:
-      ${PROJECT_BINARY_DIR}/src/bson/
-   DESTINATION "${BSON_HEADER_INSTALL_DIR}/bson"
+      ${PROJECT_BINARY_DIR}/src/
+   DESTINATION "${BSON_INSTALL_INCLUDEDIR}"
    # Only grab the *public* headers.
    FILES_MATCHING
       PATTERN "*.h"
       PATTERN "*-private.h" EXCLUDE
-      # Don't generate an empty "modules" directory
-      PATTERN "modules" EXCLUDE
+      # Don't install jsonsl headers
+      PATTERN "jsonsl" EXCLUDE
    )
 
-if (ENABLE_APPLE_FRAMEWORK)
-   install (
-      FILES "${PROJECT_BINARY_DIR}/src/bson/modules/module.modulemap"
-      DESTINATION "${CMAKE_INSTALL_BINDIR}/bson.framework/Modules/"
-   )
-endif ()
-
-# Generate the config-file package
-include (CMakePackageConfigHelpers)
-write_basic_package_version_file (
-   "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config-version.cmake"
-   VERSION ${BSON_VERSION}
-   COMPATIBILITY AnyNewerVersion
+# Install the platform libraries from MongoPlatform.cmake. Search: PLATFORM-EXPORT-TARGET-INSTALL
+install(EXPORT mongo-platform-targets
+   # The "00" prefix forces the file to sort to the top during globbing, because
+   # we want it to be included first before the libbson targets
+   FILE 00-mongo-platform-targets.cmake
+   DESTINATION "${BSON_INSTALL_CMAKEDIR}"
 )
 
-configure_file (src/bson-config.cmake
-   "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config.cmake"
-   COPYONLY
-)
-
-install (
-   FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config.cmake"
-      "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config-version.cmake"
-   DESTINATION
-      ${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}
-   COMPONENT
-      Devel
-)
-
-# Install the base targets. (Prior targets were installed above)
-install (EXPORT bson-targets
-   NAMESPACE mongo::
-   FILE bson-targets.cmake
-   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}
-)
-
-set(bson_cmake_prefix "${MONGOC_INSTALL_CMAKEDIR}/bson-${PROJECT_VERSION}")
+# Install the CMake config-mode package
 configure_file(
    ${mongo-c-driver_SOURCE_DIR}/build/cmake/packageConfigVersion.cmake.in
    bsonConfigVersion.cmake
@@ -408,7 +362,7 @@ configure_file(
 )
 install(
    FILES etc/bsonConfig.cmake "${CMAKE_CURRENT_BINARY_DIR}/bsonConfigVersion.cmake"
-   DESTINATION "${bson_cmake_prefix}"
+   DESTINATION "${BSON_INSTALL_CMAKEDIR}"
 )
 
 include (CPack)
@@ -432,7 +386,7 @@ if (ENABLE_MAN_PAGES OR ENABLE_HTML_DOCS)
    add_custom_target (bson-doc
       ALL
       DEPENDS
-      $<$<BOOL:${ENABLE_MAN_PAGES}>:bson-man>
-      $<$<BOOL:${ENABLE_HTML_DOCS}>:bson-html>
+      $<TARGET_NAME_IF_EXISTS:bson-man>
+      $<TARGET_NAME_IF_EXISTS:bson-html>
    )
 endif ()

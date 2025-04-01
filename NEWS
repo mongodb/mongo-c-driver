@@ -26,6 +26,7 @@ Unreleased (2.0.0)
 ## Notes
 
 * In a future minor release the minimum supported MongoDB Server version will be raised from 4.0 to 4.2. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
+* Raise required version of libmongocrypt to 1.13.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
 
 ## Changes
 
@@ -48,6 +49,29 @@ Unreleased (2.0.0)
     * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
 * Calling `mongoc_bulk_operation_execute` on the same `mongoc_bulk_operation_t` repeatedly is an error. Previously this was only discouraged in documentation.
 * Consistently apply `__cdecl` calling convention to function declarations in public API. Intended to support consumers building their code using a different [default calling convention](https://learn.microsoft.com/en-us/cpp/build/reference/gd-gr-gv-gz-calling-convention) with MSVC. The mongoc and bson libraries only support being built with the `__cdecl` default calling convention.
+* `mongoc_client_set_ssl_opts` now ignores a pooled `mongoc_client_t` and logs an error. Use `mongoc_client_pool_set_ssl_opts` to set TLS options on a `mongoc_client_pool_t` before popping any clients.
+* `mongoc_client_set_ssl_stream_initiator` now ignores a pooled `mongoc_client_t` and logs an error.
+* The pkg-config files `libmongoc-1.0`, `libmongoc-static-1.0`, `libbson-1.0`,
+  and `libbson-static-1.0` have been renamed to `mongoc2`, `mongoc2-static`,
+  `bson2`, and `bson2-static`, respectively.
+
+### CMake Packages and Imported Targets
+
+The `mongoc-1.0` (and `bson-1.0`) CMake packages have been removed. Instead, use
+`mongoc` or `bson`, and specify a version or version range to be imported:
+
+```cmake
+find_package(mongoc 1.30...2.0)
+```
+
+The new packages import different target names:
+
+- `mongo::mongoc_static` → `mongoc::static`
+- `mongo::mongoc_shared` → `mongoc::shared`
+- The target `mongoc::mongoc` is a shim target that points to either the shared
+  library or the static library.
+
+The BSON library has had similar name changes.
 
 ## Removals
 
@@ -97,6 +121,11 @@ Unreleased (2.0.0)
       * `mongoc_collection_insert_many`
       * `mongoc_bulkwrite_t`
       * `mongoc_bulk_operation_t`
+  * `mongoc_bulk_operation_delete` is removed. Use `mongoc_bulk_operation_remove()` instead.
+  * `mongoc_bulk_operation_delete_one` is removed. Use `mongoc_bulk_operation_remove_one` instead.
+  * `mongoc_bulk_operation_get_hint` is removed. Use `mongoc_bulk_operation_get_server_id` instead.
+  * `mongoc_bulk_operation_set_hint` is removed. Use `mongoc_bulk_operation_set_server_id` instead.
+  * `mongoc_collection_count` and `mongoc_collection_count_with_opts` are removed. Use `mongoc_collection_count_documents` or `mongoc_collection_estimated_document_count` instead.
 * `mongoc_collection_stats` is removed. Use the [$collStats aggregation pipeline stage](https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/) with `mongoc_collection_aggregate` instead.
 * `mongoc_collection_validate` is removed. Run the [validate](https://www.mongodb.com/docs/manual/reference/command/validate/) command directly with `mongoc_client_read_command_with_opts` instead.
 * Deprecated API for `mongoc_database_t` is removed:
@@ -116,6 +145,7 @@ Unreleased (2.0.0)
 * Deprecated write concern API is removed:
   * `mongoc_write_concern_get_fsync` is removed. Use `mongoc_write_concern_get_journal` instead.
   * `mongoc_write_concern_set_fsync` is removed. Use `mongoc_write_concern_set_journal` instead.
+* The `libmongoc-ssl-1.0` pkg-config file has been removed.
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
 

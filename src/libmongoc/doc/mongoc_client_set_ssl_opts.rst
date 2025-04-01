@@ -32,6 +32,8 @@ It is a programming error to call this function on a client from a
 :symbol:`mongoc_client_pool_set_ssl_opts` on the pool before popping any
 clients.
 
+.. versionchanged:: 2.0.0 This function logs an error and immediately returns if ``client`` is from a :symbol:`mongoc_client_pool_t`. Previously this function unsafely applied the options to the pooled client.
+
 Parameters
 ----------
 

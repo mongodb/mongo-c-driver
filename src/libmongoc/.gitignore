@@ -33,7 +33,7 @@ find-and-modify
 hello_mongoc
 mongoc-dump
 mongoc-ping
-mongoc-stat
+mongoc2-stat
 mongoc-tail
 
 # Test binaries

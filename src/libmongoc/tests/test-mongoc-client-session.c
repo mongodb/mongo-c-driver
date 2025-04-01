@@ -1601,15 +1601,6 @@ run_session_test_bulk_operation (void *ctx)
 
 
 static void
-run_count_test (void *ctx)
-{
-   /* CDRIVER-3612: mongoc_collection_estimated_document_count does not support
-    * explicit sessions */
-   _test_implicit_session_lsid (((session_test_helper_t *) ctx)->test_fn);
-}
-
-
-static void
 insert_10_docs (session_test_t *test)
 {
    mongoc_bulk_operation_t *bulk;
@@ -1678,14 +1669,6 @@ test_db_cmd (session_test_t *test)
 {
    test->succeeded = mongoc_database_command_with_opts (
       test->db, tmp_bson ("{'listCollections': 1}"), NULL, &test->opts, NULL, &test->error);
-}
-
-
-static void
-test_count (session_test_t *test)
-{
-   test->succeeded = (-1 != mongoc_collection_count_with_opts (
-                               test->collection, MONGOC_QUERY_NONE, NULL, 0, 0, &test->opts, NULL, &test->error));
 }
 
 
@@ -2747,17 +2730,6 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/write_cmd", test_write_cmd, false);
    add_session_test (suite, "/Session/read_write_cmd", test_read_write_cmd, true);
    add_session_test (suite, "/Session/db_cmd", test_db_cmd, false);
-   {
-      session_test_helper_t *const helper = bson_malloc (sizeof (*helper));
-      *helper = (session_test_helper_t){.test_fn = test_count};
-      TestSuite_AddFull (suite,
-                         "/Session/count",
-                         run_count_test,
-                         bson_free,
-                         helper,
-                         test_framework_skip_if_no_cluster_time,
-                         test_framework_skip_if_no_crypto);
-   }
    add_session_test (suite, "/Session/cursor", test_cursor, true);
    add_session_test (suite, "/Session/drop", test_drop, false);
    add_session_test (suite, "/Session/drop_index", test_drop_index, false);
