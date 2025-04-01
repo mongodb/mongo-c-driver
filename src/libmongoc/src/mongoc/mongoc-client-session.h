@@ -27,10 +27,10 @@
 
 BSON_BEGIN_DECLS
 
-typedef bool (*mongoc_client_session_with_transaction_cb_t) (mongoc_client_session_t *session,
-                                                             void *ctx,
-                                                             bson_t **reply,
-                                                             bson_error_t *error);
+typedef bool (BSON_CALL *mongoc_client_session_with_transaction_cb_t) (mongoc_client_session_t *session,
+                                                                       void *ctx,
+                                                                       bson_t **reply,
+                                                                       bson_error_t *error);
 
 typedef enum {
    MONGOC_TRANSACTION_NONE = 0,

@@ -229,6 +229,14 @@ mongoc_client_uses_server_api (const mongoc_client_t *client);
 bool
 mongoc_client_uses_loadbalanced (const mongoc_client_t *client);
 
+void
+_mongoc_client_set_ssl_opts_for_single_or_pooled (mongoc_client_t *client, const mongoc_ssl_opt_t *opts);
+
+void
+_mongoc_client_set_stream_initiator_single_or_pooled (mongoc_client_t *client,
+                                                      mongoc_stream_initiator_t initiator,
+                                                      void *user_data);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_CLIENT_PRIVATE_H */
