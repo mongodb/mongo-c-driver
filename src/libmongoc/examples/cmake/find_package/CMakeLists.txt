@@ -15,11 +15,7 @@
 # Demonstrates how to use the CMake 'find_package' mechanism to locate
 # and build against libmongoc.
 
-cmake_minimum_required (VERSION 3.0)
-
-if (APPLE)
-   cmake_policy (SET CMP0042 OLD)
-endif ()
+cmake_minimum_required (VERSION 3.0))
 
 project (hello_mongoc LANGUAGES C)
 

@@ -29,10 +29,6 @@ set(libbson_VERSION_FULL ${mongo-c-driver_VERSION_FULL})
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-if (APPLE)
-   cmake_policy (SET CMP0042 OLD)
-endif ()
-
 #  .d8888b.           888    888    d8b
 # d88P  Y88b          888    888    Y8P
 # Y88b.               888    888
