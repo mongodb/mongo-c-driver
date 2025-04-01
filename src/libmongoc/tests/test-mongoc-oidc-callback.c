@@ -151,6 +151,16 @@ test_oidc_credential (void)
       mongoc_oidc_credential_destroy (cred);
    }
 
+   // expires_in == 0 means infinite expiry duration.
+   {
+      mongoc_oidc_credential_t *const cred = mongoc_oidc_credential_new_with_expires_in ("token", 0);
+      ASSERT_CMPSTR (mongoc_oidc_credential_get_access_token (cred), "token");
+      const int64_t *const expires_in = mongoc_oidc_credential_get_expires_in (cred);
+      ASSERT (expires_in);
+      ASSERT_CMPINT64 (*expires_in, ==, 0);
+      mongoc_oidc_credential_destroy (cred);
+   }
+
    // Invalid arguments.
    {
       ASSERT (!mongoc_oidc_credential_new (NULL));
