@@ -13,6 +13,10 @@ Synopsis
 
 Return the optional expiry duration (in milliseconds) for the access token stored in :symbol:`mongoc_oidc_credential_t`.
 
+.. important::
+
+    An unset value (default) or a value of ``0`` is interpreted as an infinite expiry duration.
+
 Parameters
 ----------
 
@@ -21,7 +25,7 @@ Parameters
 Returns
 -------
 
-The expiry duration (in milliseconds), or ``NULL``.
+The expiry duration (in milliseconds), or ``NULL`` when unset.
 
 Lifecycle
 ---------

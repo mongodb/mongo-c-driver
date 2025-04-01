@@ -13,9 +13,11 @@ Synopsis
 
 Create a new :symbol:`mongoc_oidc_credential_t` object which stores a copy of the provided OIDC access token and its expiry duration (in milliseconds).
 
-To set an infinite expiry duration, use :symbol:`mongoc_oidc_credential_new()`.
-
 The expiry duration will be evaluated relative to the value returned by :symbol:`bson_get_monotonic_time()` immediately after the callback function has returned.
+
+.. important::
+
+    An unset value (default) or a value of ``0`` is interpreted as an infinite expiry duration.
 
 .. warning::
 
