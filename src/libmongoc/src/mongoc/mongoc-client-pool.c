@@ -276,7 +276,7 @@ _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
    BSON_ASSERT_PARAM (client);
 
    /* for tests */
-   mongoc_client_set_stream_initiator (
+   _mongoc_client_set_stream_initiator_single_or_pooled (
       client, pool->topology->scanner->initiator, pool->topology->scanner->initiator_context);
 
    pool->client_initialized = true;
@@ -286,7 +286,7 @@ _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
 
 #ifdef MONGOC_ENABLE_SSL
    if (pool->ssl_opts_set) {
-      mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
+      _mongoc_client_set_ssl_opts_for_single_or_pooled (client, &pool->ssl_opts);
    }
 #endif
 }
