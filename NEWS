@@ -23,6 +23,10 @@ New Features:
 Unreleased (2.0.0)
 ==================
 
+## Notes
+
+* Raise required version of libmongocrypt to 1.13.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+
 ## Changes
 
 * Passing `batchSize:0` as an option to `mongoc_client_watch`, `mongoc_database_watch`, or `mongoc_collection_watch`
