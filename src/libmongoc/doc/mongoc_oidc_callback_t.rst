@@ -12,7 +12,7 @@ Synopsis
 
 :symbol:`mongoc_oidc_callback_t` represents a user-defined callback function :symbol:`mongoc_oidc_callback_fn_t` that returns an OIDC access token.
 
-The callback may be used to integrate with OIDC providers that are not supported by the built-in provider integrations (`Authentication Mechanism Properties <_authentication_mechanism_properties>`_).
+The callback may be used to integrate with OIDC providers that are not supported by the built-in provider integrations (:ref:`Authentication Mechanism Properties <authentication_mechanism_properties>`).
 
 Lifecycle
 ---------
