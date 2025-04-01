@@ -1233,8 +1233,7 @@ count (mongoc_collection_t *collection,
       // Run the "count" command directly to support tests. See: CRUD spec "Count API Details".
       bson_t *cmd = BCON_NEW ("count", mongoc_collection_get_name (collection));
       BSON_ASSERT (BSON_APPEND_DOCUMENT (cmd, "query", &filter));
-      BSON_ASSERT (bson_concat (cmd, &opts));
-      bool ok = mongoc_collection_read_command_with_opts (collection, cmd, read_prefs, NULL, reply, &error);
+      bool ok = mongoc_collection_read_command_with_opts (collection, cmd, read_prefs, &opts, reply, &error);
       if (!ok) {
          // Set resulting count to -1 to indicate failure.
          r = -1;
