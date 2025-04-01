@@ -21,11 +21,7 @@ Parameters
 ----------
 
 * ``callback``: a :symbol:`mongoc_oidc_callback_t`.
-
-Returns
--------
-
-A pointer to user-provided data or ``NULL``.
+* ``user_data``: a pointer to user data or ``NULL``.
 
 .. seealso::
 
