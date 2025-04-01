@@ -1234,7 +1234,7 @@ count (mongoc_collection_t *collection,
       bson_t *cmd = BCON_NEW ("count", mongoc_collection_get_name (collection));
       BSON_ASSERT (BSON_APPEND_DOCUMENT (cmd, "query", &filter));
       BSON_ASSERT (bson_concat (cmd, &opts));
-      bool ok = mongoc_collection_command_simple (collection, cmd, read_prefs, reply, &error);
+      bool ok = mongoc_collection_read_command_with_opts (collection, cmd, read_prefs, NULL, reply, &error);
       if (!ok) {
          // Set resulting count to -1 to indicate failure.
          r = -1;
