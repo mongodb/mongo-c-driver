@@ -69,19 +69,12 @@ For example, users may add the following check to their callback function:
 
 .. code-block:: c
 
-    typedef struct {
-       const char *error_message;
-    } user_data_t;
-
     mongoc_oidc_credential_t *
     example_callback_fn (mongoc_oidc_callback_params_t *params)
     {
-       user_data_t *user_data = mongoc_oidc_callback_params_get_user_data (params);
-
-       // This callback function was implemented for OIDC callback API version 1.
+       // A runtime message that new features are available in the OIDC Callback API.
        if (mongoc_oidc_callback_params_get_version (params) > 1) {
-          user_data->error_message = "OIDC callback API has changed: update example_callback_fn!";
-          return NULL;
+          printf ("OIDC Callback API has been updated to a new version!");
        }
 
        // ...
