@@ -44,6 +44,8 @@ Unreleased (2.0.0)
     * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
 * Calling `mongoc_bulk_operation_execute` on the same `mongoc_bulk_operation_t` repeatedly is an error. Previously this was only discouraged in documentation.
 * Consistently apply `__cdecl` calling convention to function declarations in public API. Intended to support consumers building their code using a different [default calling convention](https://learn.microsoft.com/en-us/cpp/build/reference/gd-gr-gv-gz-calling-convention) with MSVC. The mongoc and bson libraries only support being built with the `__cdecl` default calling convention.
+* `mongoc_client_set_ssl_opts` now ignores a pooled `mongoc_client_t` and logs an error. Use `mongoc_client_pool_set_ssl_opts` to set TLS options on a `mongoc_client_pool_t` before popping any clients.
+* `mongoc_client_set_ssl_stream_initiator` now ignores a pooled `mongoc_client_t` and logs an error.
 
 ## Removals
 
