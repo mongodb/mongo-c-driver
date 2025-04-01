@@ -449,20 +449,6 @@ future_value_get_mongoc_query_flags_t (future_value_t *future_value)
 }
 
 void
-future_value_set_const_mongoc_index_opt_t (future_value_t *future_value, const_mongoc_index_opt_t value)
-{
-   future_value->type = future_value_const_mongoc_index_opt_t_type;
-   future_value->value.const_mongoc_index_opt_t_value = value;
-}
-
-const_mongoc_index_opt_t
-future_value_get_const_mongoc_index_opt_t (future_value_t *future_value)
-{
-   BSON_ASSERT (future_value->type == future_value_const_mongoc_index_opt_t_type);
-   return future_value->value.const_mongoc_index_opt_t_value;
-}
-
-void
 future_value_set_mongoc_server_description_ptr (future_value_t *future_value, mongoc_server_description_ptr value)
 {
    future_value->type = future_value_mongoc_server_description_ptr_type;
@@ -614,4 +600,18 @@ future_value_get_const_mongoc_ss_log_context_ptr (future_value_t *future_value)
 {
    BSON_ASSERT (future_value->type == future_value_const_mongoc_ss_log_context_ptr_type);
    return future_value->value.const_mongoc_ss_log_context_ptr_value;
+}
+
+void
+future_value_set_mongoc_index_model_t_ptr_const_ptr (future_value_t *future_value, mongoc_index_model_t_ptr_const_ptr value)
+{
+   future_value->type = future_value_mongoc_index_model_t_ptr_const_ptr_type;
+   future_value->value.mongoc_index_model_t_ptr_const_ptr_value = value;
+}
+
+mongoc_index_model_t_ptr_const_ptr
+future_value_get_mongoc_index_model_t_ptr_const_ptr (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_mongoc_index_model_t_ptr_const_ptr_type);
+   return future_value->value.mongoc_index_model_t_ptr_const_ptr_value;
 }

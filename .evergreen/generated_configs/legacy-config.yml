@@ -94,7 +94,6 @@ functions:
         # Compile a program that links dynamically or statically to libmongoc,
         # using variables from pkg-config or CMake's find_package command.
         export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
-        export BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=${BUILD_SAMPLE_WITH_CMAKE_DEPRECATED}
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
         LINK_STATIC=  .evergreen/scripts/link-sample-program.sh
@@ -111,12 +110,10 @@ functions:
         set -o errexit
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
   link sample program MSVC:
   - command: shell.exec
     type: test
@@ -634,40 +631,6 @@ tasks:
   - func: link sample program
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
-- name: link-with-cmake-deprecated
-  commands:
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-  - func: link sample program
-    vars:
-      BUILD_SAMPLE_WITH_CMAKE: 1
-      BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
-- name: link-with-cmake-ssl-deprecated
-  commands:
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-  - func: link sample program
-    vars:
-      BUILD_SAMPLE_WITH_CMAKE: 1
-      BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
-      ENABLE_SSL: 1
-- name: link-with-cmake-snappy-deprecated
-  commands:
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-  - func: link sample program
-    vars:
-      BUILD_SAMPLE_WITH_CMAKE: 1
-      BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
-      ENABLE_SNAPPY: 'ON'
-- name: link-with-cmake-mac-deprecated
-  commands:
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-  - func: link sample program
-    vars:
-      BUILD_SAMPLE_WITH_CMAKE: 1
-      BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
 - name: link-with-cmake-windows
   commands:
   - func: fetch-det
@@ -16276,11 +16239,8 @@ buildvariants:
   - debug-compile-no-counters
   - compile-tracing
   - link-with-cmake
-  - link-with-cmake-deprecated
   - link-with-cmake-ssl
-  - link-with-cmake-ssl-deprecated
   - link-with-cmake-snappy
-  - link-with-cmake-snappy-deprecated
   - name: link-with-cmake-mac
     distros:
     - macos-14-arm64

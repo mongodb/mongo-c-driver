@@ -133,17 +133,8 @@ mongoc_database_get_read_concern (const mongoc_database_t *database);
 MONGOC_EXPORT (void)
 mongoc_database_set_read_concern (mongoc_database_t *database, const mongoc_read_concern_t *read_concern);
 
-BSON_DEPRECATED_FOR (mongoc_database_find_collections_with_opts)
-MONGOC_EXPORT (mongoc_cursor_t *)
-   mongoc_database_find_collections (mongoc_database_t *database, const bson_t *filter, bson_error_t *error)
-      BSON_GNUC_WARN_UNUSED_RESULT;
-
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_database_find_collections_with_opts (mongoc_database_t *database, const bson_t *opts)
-   BSON_GNUC_WARN_UNUSED_RESULT;
-
-BSON_DEPRECATED_FOR (mongoc_database_get_collection_names_with_opts)
-MONGOC_EXPORT (char **) mongoc_database_get_collection_names (mongoc_database_t *database, bson_error_t *error)
    BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (char **)

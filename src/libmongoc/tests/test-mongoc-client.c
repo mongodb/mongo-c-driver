@@ -1720,31 +1720,6 @@ test_recovering (void *ctx)
 
 
 static void
-test_server_status (void)
-{
-   mongoc_client_t *client;
-   bson_error_t error;
-   bson_iter_t iter;
-   bson_t reply;
-
-   client = test_framework_new_default_client ();
-   BSON_ASSERT (client);
-
-   BEGIN_IGNORE_DEPRECATIONS
-   ASSERT_OR_PRINT (mongoc_client_get_server_status (client, NULL, &reply, &error), error);
-   END_IGNORE_DEPRECATIONS
-
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
-
-   bson_destroy (&reply);
-
-   mongoc_client_destroy (client);
-}
-
-
-static void
 test_get_database_names (void)
 {
    mock_server_t *server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
@@ -3323,7 +3298,7 @@ test_client_reset_cursors (void)
       This test should timeout and fail if the client does send killCursors. */
 
    coll = mongoc_client_get_collection (client, "test", "test");
-   cursor = mongoc_collection_find (coll, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson (NULL), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (coll, tmp_bson (NULL), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'test', 'find': 'test'}"));
@@ -3925,7 +3900,6 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite, "/Client/mongos_seeds_reconnect/single", test_mongos_seeds_reconnect_single);
    TestSuite_AddMockServerTest (suite, "/Client/mongos_seeds_reconnect/pooled", test_mongos_seeds_reconnect_pooled);
    TestSuite_AddFull (suite, "/Client/recovering", test_recovering, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddLive (suite, "/Client/server_status", test_server_status);
    TestSuite_AddMockServerTest (suite, "/Client/database_names", test_get_database_names);
    TestSuite_AddFull (
       suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_no_uds);

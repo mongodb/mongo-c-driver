@@ -26,7 +26,6 @@
 #include <mongoc/mongoc-bulk-operation.h>
 #include <mongoc/mongoc-flags.h>
 #include <mongoc/mongoc-cursor.h>
-#include <mongoc/mongoc-index.h>
 #include <mongoc/mongoc-read-prefs.h>
 #include <mongoc/mongoc-read-concern.h>
 #include <mongoc/mongoc-write-concern.h>
@@ -120,31 +119,6 @@ mongoc_collection_drop_index_with_opts (mongoc_collection_t *collection,
                                         const bson_t *opts,
                                         bson_error_t *error);
 
-BSON_DEPRECATED_FOR (mongoc_collection_create_indexes_with_opts)
-MONGOC_EXPORT (bool) mongoc_collection_create_index (mongoc_collection_t *collection,
-                                                     const bson_t *keys,
-                                                     const mongoc_index_opt_t *opt,
-                                                     bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_create_indexes_with_opts)
-MONGOC_EXPORT (bool) mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
-                                                               const bson_t *keys,
-                                                               const mongoc_index_opt_t *opt,
-                                                               const bson_t *opts,
-                                                               bson_t *reply,
-                                                               bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_create_indexes_with_opts)
-MONGOC_EXPORT (bool) mongoc_collection_ensure_index (mongoc_collection_t *collection,
-                                                     const bson_t *keys,
-                                                     const mongoc_index_opt_t *opt,
-                                                     bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_find_indexes_with_opts)
-MONGOC_EXPORT (mongoc_cursor_t *) mongoc_collection_find_indexes (mongoc_collection_t *collection, bson_error_t *error)
-   BSON_GNUC_WARN_UNUSED_RESULT;
-
-
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection, const bson_t *opts)
    BSON_GNUC_WARN_UNUSED_RESULT;
@@ -163,17 +137,6 @@ mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
                                             const bson_t *opts,
                                             bson_t *reply,
                                             bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_find_with_opts)
-MONGOC_EXPORT (mongoc_cursor_t *) mongoc_collection_find (mongoc_collection_t *collection,
-                                                          mongoc_query_flags_t flags,
-                                                          uint32_t skip,
-                                                          uint32_t limit,
-                                                          uint32_t batch_size,
-                                                          const bson_t *query,
-                                                          const bson_t *fields,
-                                                          const mongoc_read_prefs_t *read_prefs)
-   BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find_with_opts (mongoc_collection_t *collection,
@@ -199,14 +162,6 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
                                const bson_t *opts,
                                bson_t *reply,
                                bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_insert_many)
-MONGOC_EXPORT (bool) mongoc_collection_insert_bulk (mongoc_collection_t *collection,
-                                                    mongoc_insert_flags_t flags,
-                                                    const bson_t **documents,
-                                                    uint32_t n_documents,
-                                                    const mongoc_write_concern_t *write_concern,
-                                                    bson_error_t *error);
 
 MONGOC_EXPORT (bool)
 mongoc_collection_update (mongoc_collection_t *collection,
@@ -289,17 +244,6 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
                                    bson_t *reply,
                                    bson_error_t *error);
 
-BSON_DEPRECATED ("This function does not work with mongoc_client_session_t and is not recommended. Prefer to execute a "
-                 "command directly with mongoc_client_read_command_with_opts.")
-MONGOC_EXPORT (bool)
-   mongoc_collection_stats (mongoc_collection_t *collection, const bson_t *options, bson_t *reply, bson_error_t *error);
-
-BSON_DEPRECATED_FOR (mongoc_collection_create_bulk_operation_with_opts)
-MONGOC_EXPORT (mongoc_bulk_operation_t *)
-   mongoc_collection_create_bulk_operation (mongoc_collection_t *collection,
-                                            bool ordered,
-                                            const mongoc_write_concern_t *write_concern) BSON_GNUC_WARN_UNUSED_RESULT;
-
 MONGOC_EXPORT (mongoc_bulk_operation_t *)
 mongoc_collection_create_bulk_operation_with_opts (mongoc_collection_t *collection, const bson_t *opts)
    BSON_GNUC_WARN_UNUSED_RESULT;
@@ -325,18 +269,8 @@ mongoc_collection_set_write_concern (mongoc_collection_t *collection, const mong
 MONGOC_EXPORT (const char *)
 mongoc_collection_get_name (mongoc_collection_t *collection);
 
-BSON_DEPRECATED ("Use of this function is deprecated")
-MONGOC_EXPORT (const bson_t *) mongoc_collection_get_last_error (const mongoc_collection_t *collection);
-
 MONGOC_EXPORT (char *)
 mongoc_collection_keys_to_index_string (const bson_t *keys) BSON_GNUC_WARN_UNUSED_RESULT;
-
-BSON_DEPRECATED ("This function does not work with mongoc_client_session_t and is not recommended. Prefer to "
-                 "execute a command directly with mongoc_client_read_command_with_opts.")
-MONGOC_EXPORT (bool) mongoc_collection_validate (mongoc_collection_t *collection,
-                                                 const bson_t *options,
-                                                 bson_t *reply,
-                                                 bson_error_t *error);
 
 MONGOC_EXPORT (mongoc_change_stream_t *)
 mongoc_collection_watch (const mongoc_collection_t *coll, const bson_t *pipeline, const bson_t *opts)

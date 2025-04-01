@@ -516,25 +516,46 @@ mongoc_uri_parse_database (mongoc_uri_t *uri, const char *str, const char **end)
 static bool
 mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
 {
-   char *field;
-   char *value;
    const char *end_scan;
-   bson_t properties;
 
-   bson_init (&properties);
+   bson_t properties = BSON_INITIALIZER;
 
-   /* build up the properties document */
-   while ((field = scan_to_unichar (str, ':', "&", &end_scan))) {
+   // Key-value pairs are delimited by ','.
+   for (char *kvp; (kvp = scan_to_unichar (str, ',', "", &end_scan)); bson_free (kvp)) {
       str = end_scan + 1;
-      if (!(value = scan_to_unichar (str, ',', ":&", &end_scan))) {
-         value = bson_strdup (str);
-         str = "";
-      } else {
-         str = end_scan + 1;
+
+      char *const key = scan_to_unichar (kvp, ':', "", &end_scan);
+
+      // Found delimiter: split into key and value.
+      if (key) {
+         char *const value = bson_strdup (end_scan + 1);
+         BSON_APPEND_UTF8 (&properties, key, value);
+         bson_free (key);
+         bson_free (value);
       }
-      bson_append_utf8 (&properties, field, -1, value, -1);
-      bson_free (field);
-      bson_free (value);
+
+      // No delimiter: entire string is the key. Use empty string as value.
+      else {
+         BSON_APPEND_UTF8 (&properties, kvp, "");
+      }
+   }
+
+   // Last (or only) pair.
+   if (*str != '\0') {
+      char *const key = scan_to_unichar (str, ':', "", &end_scan);
+
+      // Found delimiter: split into key and value.
+      if (key) {
+         char *const value = bson_strdup (end_scan + 1);
+         BSON_APPEND_UTF8 (&properties, key, value);
+         bson_free (key);
+         bson_free (value);
+      }
+
+      // No delimiter: entire string is the key. Use empty string as value.
+      else {
+         BSON_APPEND_UTF8 (&properties, str, "");
+      }
    }
 
    /* append our auth properties to our credentials */
@@ -1339,14 +1360,17 @@ _finalize_auth_username (const char *username,
 }
 
 static bool
-_finalize_auth_source_external_required (const char *source, const char *mechanism, bson_error_t *error)
+_finalize_auth_source_external (const char *source, const char *mechanism, bson_error_t *error)
 {
    BSON_OPTIONAL_PARAM (source);
    BSON_ASSERT_PARAM (mechanism);
    BSON_OPTIONAL_PARAM (error);
 
-   if (!source || strcasecmp (source, "$external") != 0) {
-      MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires \"$external\" authSource", mechanism);
+   if (source && strcasecmp (source, "$external") != 0) {
+      MONGOC_URI_ERROR (error,
+                        "'%s' authentication mechanism requires \"$external\" authSource, but \"%s\" was specified",
+                        mechanism,
+                        source);
       return false;
    }
 
@@ -1382,23 +1406,6 @@ _finalize_auth_password (const char *password,
    case _mongoc_uri_finalize_allowed:
    default:
       break;
-   }
-
-   return true;
-}
-
-static bool
-_finalize_auth_mechanism_properties_prohibited (const bson_t *mechanism_properties,
-                                                const char *mechanism,
-                                                bson_error_t *error)
-{
-   BSON_OPTIONAL_PARAM (mechanism_properties);
-   BSON_ASSERT_PARAM (mechanism);
-   BSON_OPTIONAL_PARAM (error);
-
-   if (mechanism_properties) {
-      MONGOC_URI_ERROR (error, "'%s' authentication mechanism does not accept mechanism properties", mechanism);
-      return false;
    }
 
    return true;
@@ -1515,6 +1522,13 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    BSON_ASSERT_PARAM (uri);
    BSON_OPTIONAL_PARAM (error);
 
+   // Most validation of MongoCredential fields below according to the Authentication spec must be deferred to the
+   // implementation of the Authentication Handshake algorithm (i.e. `_mongoc_cluster_auth_node`) due to support for
+   // partial and late setting of credential fields via `mongoc_uri_set_*` functions. Limit validation to requirements
+   // for individual field which are explicitly specified. Do not validate requirements on fields in relation to one
+   // another (e.g. "given field A, field B must..."). The username, password, and authSource credential fields are
+   // exceptions to this rule for both backward compatibility and spec test compliance.
+
    bool ret = false;
 
    bson_iter_t iter;
@@ -1570,9 +1584,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          goto fail;
       }
 
-      // Defer validation of `MongoCredential` fields to `_mongoc_cluster_auth_node` during handshake according to
-      // `saslSupportedMechs`. Defaults for `MongoCredential.source` is handled by `mongoc_uri_get_auth_source` for
-      // backward compatibility.
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // SCRAM-SHA-1, SCRAM-SHA-256, and PLAIN (same validation requirements)
@@ -1583,21 +1595,12 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          goto fail;
       }
 
-      // Authentication spec: source: MUST be specified. Defaults to the database name if
-      // supplied on the connection string or:
-      //   - "admin" (for SCRAM-SHA-1 and SCRAM-SHA-256).
-      //   - "$external" (for PLAIN).
-      // Handled by `mongoc_uri_get_auth_source` for backward compatibility.
-
       // Authentication spec: password: MUST be specified.
       if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_required, error)) {
          goto fail;
       }
 
-      // Authentication spec: mechanism_properties: MUST NOT be specified.
-      if (!_finalize_auth_mechanism_properties_prohibited (mechanism_properties, mechanism, error)) {
-         goto fail;
-      }
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // MONGODB-X509
@@ -1606,6 +1609,11 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // CDRIVER-1959: allow for backward compatibility until the spec states "MUST NOT" instead of "SHOULD NOT" and
       // spec tests are updated accordingly to permit warnings or errors.
       if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_allowed, error)) {
+         goto fail;
+      }
+
+      // Authentication spec: password: MUST NOT be specified.
+      if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_prohibited, error)) {
          goto fail;
       }
 
@@ -1619,19 +1627,11 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
                               bsonBuildError);
             goto fail;
          }
-      } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
+      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
          goto fail;
       }
 
-      // Authentication spec: password: MUST NOT be specified.
-      if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_prohibited, error)) {
-         goto fail;
-      }
-
-      // Authentication spec: mechanism_properties: MUST NOT be specified.
-      if (!_finalize_auth_mechanism_properties_prohibited (mechanism_properties, mechanism, error)) {
-         goto fail;
-      }
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // GSSAPI
@@ -1651,7 +1651,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
                               bsonBuildError);
             goto fail;
          }
-      } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
+      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
          goto fail;
       }
 
@@ -1700,6 +1700,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
             goto fail;
          }
       }
+
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // MONGODB-AWS
@@ -1719,7 +1721,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
                               bsonBuildError);
             goto fail;
          }
-      } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
+      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
          goto fail;
       }
 
@@ -1741,17 +1743,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          goto fail;
       }
 
-      // Authentication spec: if *only* a session token is provided, Drivers MUST raise an error.
-      if (!username && mechanism_properties) {
-         bson_iter_t iter;
-         if (bson_iter_init_find_case (&iter, mechanism_properties, "AWS_SESSION_TOKEN")) {
-            MONGOC_URI_ERROR (error,
-                              "%s",
-                              "'MONGODB-AWS' authentication mechanism requires AWS_SESSION_TOKEN to be accompanied by "
-                              "a username and a password");
-            goto fail;
-         }
-      }
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // Invalid or unsupported authentication mechanism.
@@ -1846,100 +1838,126 @@ error:
 static bool
 mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (uri);
    BSON_ASSERT_PARAM (str);
 
-   char *before_slash = NULL;
-   const char *tmp;
+   const size_t str_len = strlen (str);
 
-   if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
+   if (!bson_utf8_validate (str, str_len, false /* allow_null */)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid UTF-8 in URI");
-      goto error;
+      return false;
    }
 
+   // Save for later.
+   const char *const str_end = str + str_len;
+
+   // Parse and remove scheme and its delimiter.
+   // e.g. "mongodb://user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
+   //       ~~~~~~~~~~
    if (!mongoc_uri_parse_scheme (uri, str, &str)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid URI Schema, expecting 'mongodb://' or 'mongodb+srv://'");
-      goto error;
+      return false;
    }
+   // str -> "user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
 
-   before_slash = scan_to_unichar (str, '/', "", &tmp);
-   if (!before_slash) {
-      // Handle cases of optional delimiting slash
-      char *userpass = NULL;
-      char *hosts = NULL;
+   // From this point forward, use this cursor to find the split between "userhosts" and "dbopts".
+   const char *cursor = str;
 
-      // Skip any "?"s that exist in the userpass
-      userpass = scan_to_unichar (str, '@', "", &tmp);
-      if (!userpass) {
-         // If none found, safely check for "?" indicating beginning of options
-         before_slash = scan_to_unichar (str, '?', "", &tmp);
-      } else {
-         const size_t userpass_len = (size_t) (tmp - str);
-         // Otherwise, see if options exist after userpass and concatenate result
-         hosts = scan_to_unichar (tmp, '?', "", &tmp);
+   // Remove userinfo and its delimiter.
+   // e.g. "user:pass@host1:27017,host2:27018/database?key1=value1&key2=value2"
+   //       ~~~~~~~~~~
+   {
+      const char *tmp;
 
-         if (hosts) {
-            const size_t hosts_len = (size_t) (tmp - str) - userpass_len;
+      // Only ':' is permitted among RFC-3986 gen-delims (":/?#[]@") in userinfo.
+      // However, continue supporting these characters for backward compatibility, as permitted by the Connection String
+      // spec: for backwards-compatibility reasons, drivers MAY allow reserved characters other than "@" and ":" to be
+      // present in user information without percent-encoding.
+      char *userinfo = scan_to_unichar (cursor, '@', "", &tmp);
 
-            before_slash = bson_strndup (str, userpass_len + hosts_len);
-         }
+      if (userinfo) {
+         cursor = tmp + 1; // Consume userinfo delimiter.
+         bson_free (userinfo);
+      }
+   }
+   // cursor -> "host1:27017,host2:27018/database?key1=value1&key2=value2"
+
+   // Find either the optional auth database delimiter or the query delimiter.
+   // e.g. "host1:27017,host2:27018/database?key1=value1&key2=value2"
+   //                              ^
+   // e.g. "host1:27017,host2:27018?key1=value1&key2=value2"
+   //                              ^
+   {
+      const char *tmp;
+
+      // Only ':', '[', and ']' are permitted among RFC-3986 gen-delims (":/?#[]@") in hostinfo.
+      const char *const terminators = "/?#@";
+
+      char *hostinfo;
+
+      // Optional auth delimiter is present.
+      if ((hostinfo = scan_to_unichar (cursor, '/', terminators, &tmp))) {
+         cursor = tmp; // Include the delimiter.
+         bson_free (hostinfo);
       }
 
-      bson_free (userpass);
-      bson_free (hosts);
-   }
-
-   if (!before_slash) {
-      before_slash = bson_strdup (str);
-      str += strlen (before_slash);
-   } else {
-      str = tmp;
-   }
-
-   if (!mongoc_uri_parse_before_slash (uri, before_slash, error)) {
-      goto error;
-   }
-
-   BSON_ASSERT (str);
-
-   if (*str) {
-      // Check for valid end of hostname delimeter (skip slash if necessary)
-      if (*str != '/' && *str != '?') {
-         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
-         goto error;
+      // Query delimiter is present.
+      else if ((hostinfo = scan_to_unichar (cursor, '?', terminators, &tmp))) {
+         cursor = tmp; // Include the delimiter.
+         bson_free (hostinfo);
       }
 
-      if (*str == '/') {
-         // Try to parse database.
-         str++;
-         if (*str) {
-            if (!mongoc_uri_parse_database (uri, str, &str)) {
+      // Neither delimiter is present. Entire rest of string is part of hostinfo.
+      else {
+         cursor = str_end; // Jump to end of string.
+         BSON_ASSERT (*cursor == '\0');
+      }
+   }
+   // cursor -> "/database?key1=value1&key2=value2"
+
+   // Parse "userhosts". e.g. "user:pass@host1:27017,host2:27018"
+   {
+      char *const userhosts = bson_strndup (str, (size_t) (cursor - str));
+      const bool ret = mongoc_uri_parse_before_slash (uri, userhosts, error);
+      bson_free (userhosts);
+      if (!ret) {
+         return false;
+      }
+   }
+
+   // Parse "dbopts". e.g. "/database?key1=value1&key2=value2"
+   if (*cursor != '\0') {
+      BSON_ASSERT (*cursor == '/' || *cursor == '?');
+
+      // Parse the auth database.
+      if (*cursor == '/') {
+         ++cursor; // Consume the delimiter.
+
+         // No auth database may be present even if the delimiter is present.
+         // e.g. "mongodb://localhost:27017/"
+         if (*cursor != '\0') {
+            if (!mongoc_uri_parse_database (uri, cursor, &cursor)) {
                MONGOC_URI_ERROR (error, "%s", "Invalid database name in URI");
-               goto error;
+               return false;
             }
          }
       }
 
-      if (*str == '?') {
-         // Try to parse options.
-         str++;
-         if (*str) {
-            if (!mongoc_uri_parse_options (uri, str, false /* from DNS */, error)) {
-               goto error;
+      // Parse the query options.
+      if (*cursor == '?') {
+         ++cursor; // Consume the delimiter.
+
+         // No options may be present even if the delimiter is present.
+         // e.g. "mongodb://localhost:27017?"
+         if (*cursor != '\0') {
+            if (!mongoc_uri_parse_options (uri, cursor, false /* from DNS */, error)) {
+               return false;
             }
          }
       }
    }
 
-   if (!mongoc_uri_finalize (uri, error)) {
-      goto error;
-   }
-
-   bson_free (before_slash);
-   return true;
-
-error:
-   bson_free (before_slash);
-   return false;
+   return mongoc_uri_finalize (uri, error);
 }
 
 
@@ -2537,13 +2555,6 @@ mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri)
 }
 
 
-const char *
-mongoc_uri_get_service (const mongoc_uri_t *uri)
-{
-   return mongoc_uri_get_srv_hostname (uri);
-}
-
-
 /* Initial DNS Seedlist Discovery Spec: `srvServiceName` requires a string value
  * and defaults to "mongodb". */
 static const char *const mongoc_default_srv_service_name = "mongodb";
@@ -2645,13 +2656,6 @@ mongoc_uri_get_string (const mongoc_uri_t *uri)
    return uri->str;
 }
 
-
-const bson_t *
-mongoc_uri_get_read_prefs (const mongoc_uri_t *uri)
-{
-   BSON_ASSERT (uri);
-   return mongoc_read_prefs_get_tags (uri->read_prefs);
-}
 
 char *
 mongoc_uri_unescape (const char *escaped_string)
@@ -2806,11 +2810,6 @@ mongoc_uri_get_tls (const mongoc_uri_t *uri) /* IN */
    return false;
 }
 
-bool
-mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
-{
-   return mongoc_uri_get_tls (uri);
-}
 
 const char *
 mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)

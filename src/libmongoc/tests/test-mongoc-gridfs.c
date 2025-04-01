@@ -53,8 +53,7 @@ _check_index (mongoc_collection_t *collection, const char *index_json)
    bson_t index_key;
    int n;
 
-   cursor = mongoc_collection_find_indexes (collection, &error);
-   ASSERT_OR_PRINT (0 == error.code, error);
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
 
    n = 0;
 
@@ -276,7 +275,7 @@ test_list (void)
    mongoc_client_t *client;
    bson_error_t error;
    mongoc_gridfs_file_list_t *list;
-   bson_t query, child;
+   bson_t query, opts, child;
    char buf[100];
    int i = 0;
 
@@ -288,14 +287,14 @@ test_list (void)
    prep_files (gridfs);
 
    bson_init (&query);
-   bson_append_document_begin (&query, "$orderby", -1, &child);
+   bson_init (&opts);
+   bson_append_document_begin (&opts, "sort", -1, &child);
    bson_append_int32 (&child, "filename", -1, 1);
-   bson_append_document_end (&query, &child);
-   bson_append_document_begin (&query, "$query", -1, &child);
-   bson_append_document_end (&query, &child);
+   bson_append_document_end (&opts, &child);
 
-   list = mongoc_gridfs_find (gridfs, &query);
+   list = mongoc_gridfs_find_with_opts (gridfs, &query, NULL);
 
+   bson_destroy (&opts);
    bson_destroy (&query);
 
    i = 0;
@@ -311,7 +310,7 @@ test_list (void)
 
    bson_init (&query);
    bson_append_utf8 (&query, "filename", -1, "file.1", -1);
-   ASSERT_OR_PRINT (file = mongoc_gridfs_find_one (gridfs, &query, &error), error);
+   ASSERT_OR_PRINT (file = mongoc_gridfs_find_one_with_opts (gridfs, &query, NULL, &error), error);
    bson_destroy (&query);
 
    ASSERT_CMPINT (strcmp (mongoc_gridfs_file_get_filename (file), "file.1"), ==, 0);
@@ -495,7 +494,7 @@ test_properties (void)
 
    ASSERT (mongoc_collection_insert_one (mongoc_gridfs_get_files (gridfs), doc_in, NULL, NULL, NULL));
 
-   list = mongoc_gridfs_find (gridfs, &query);
+   list = mongoc_gridfs_find_with_opts (gridfs, &query, NULL);
    file = mongoc_gridfs_file_list_next (list);
    file_id = mongoc_gridfs_file_get_id (file);
    ASSERT (file_id);
@@ -860,7 +859,7 @@ test_write_past_end (void)
    ASSERT (mlib_cmp (expected_chunks, ==, cnt));
 
    mongoc_gridfs_file_destroy (file);
-   file = mongoc_gridfs_find_one (gridfs, tmp_bson (NULL), &error);
+   file = mongoc_gridfs_find_one_with_opts (gridfs, tmp_bson (NULL), NULL, &error);
    ASSERT_OR_PRINT (file, error);
 
    BSON_ASSERT (mlib_in_range (size_t, delta + len));
@@ -1022,7 +1021,7 @@ test_long_seek (void *ctx)
    /* new file handle */
    mongoc_gridfs_file_save (file);
    mongoc_gridfs_file_destroy (file);
-   file = mongoc_gridfs_find_one (gridfs, tmp_bson ("{'filename': 'filename'}"), &error);
+   file = mongoc_gridfs_find_one_with_opts (gridfs, tmp_bson ("{'filename': 'filename'}"), NULL, &error);
 
    ASSERT_OR_PRINT (file, error);
 
@@ -1307,7 +1306,7 @@ test_set_id (void)
    /* if we find a file with new id, then file_set_id worked */
    ASSERT_OR_PRINT (mongoc_gridfs_file_set_id (file, &id, &error), error);
    ASSERT (mongoc_gridfs_file_save (file));
-   result = mongoc_gridfs_find_one (gridfs, query, &error);
+   result = mongoc_gridfs_find_one_with_opts (gridfs, query, NULL, &error);
    ASSERT_OR_PRINT (result, error);
 
    mongoc_gridfs_file_destroy (result);
@@ -1353,7 +1352,7 @@ test_inherit_client_config (void)
    gridfs = _get_gridfs (server, client, MONGOC_QUERY_NONE);
 
    /* test read prefs and read concern */
-   future = future_gridfs_find_one (gridfs, tmp_bson ("{}"), &error);
+   future = future_gridfs_find_one_with_opts (gridfs, tmp_bson ("{}"), NULL, &error);
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
                                        tmp_bson ("{'$db': 'db',"
@@ -1407,7 +1406,7 @@ test_find_one_empty (void)
    client = test_framework_new_default_client ();
    gridfs = get_test_gridfs (client, "list", &error);
    ASSERT_OR_PRINT (gridfs, error);
-   ASSERT (!mongoc_gridfs_find_one (gridfs, tmp_bson ("{'x': 'doesntexist'}"), &error));
+   ASSERT (!mongoc_gridfs_find_one_with_opts (gridfs, tmp_bson ("{'x': 'doesntexist'}"), NULL, &error));
 
    /* ensure "error" is cleared if we successfully find no file */
    ASSERT_CMPUINT32 (error.domain, ==, 0);
