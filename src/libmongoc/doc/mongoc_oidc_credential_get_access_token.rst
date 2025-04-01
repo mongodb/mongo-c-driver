@@ -23,6 +23,11 @@ Returns
 
 A string which must not be modified or freed.
 
+Lifecycle
+---------
+
+The string is only valid for the lifetime of the :symbol:`mongoc_oidc_credential_t` object.
+
 .. seealso::
 
   - :symbol:`mongoc_oidc_credential_t`

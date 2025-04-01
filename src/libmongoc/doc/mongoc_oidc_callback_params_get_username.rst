@@ -23,6 +23,11 @@ Returns
 
 A string which must not be modified or freed, or ``NULL``.
 
+Lifecycle
+---------
+
+The string is only valid for the duration of the invocation of the OIDC callback function.
+
 .. seealso::
 
   - :symbol:`mongoc_oidc_callback_params_t`

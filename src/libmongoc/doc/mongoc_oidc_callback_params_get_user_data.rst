@@ -23,6 +23,11 @@ Returns
 
 A pointer to user data or ``NULL``.
 
+Lifecycle
+---------
+
+The lifetime of the object pointed to by ``user_data`` is managed the user.
+
 .. seealso::
 
   - :symbol:`mongoc_oidc_callback_params_t`

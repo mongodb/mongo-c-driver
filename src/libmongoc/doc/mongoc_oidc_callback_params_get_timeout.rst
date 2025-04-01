@@ -25,6 +25,11 @@ Returns
 
 A value comparable with :symbol:`bson_get_monotonic_time()`, or ``NULL``.
 
+Lifecycle
+---------
+
+The pointed-to ``int64_t`` is only valid for the duration of the invocation of the OIDC callback function.
+
 .. seealso::
 
   - :symbol:`mongoc_oidc_callback_params_t`

@@ -23,6 +23,11 @@ Returns
 
 The expiry duration (in milliseconds), or ``NULL``.
 
+Lifecycle
+---------
+
+The pointed-to ``int64_t`` is only valid for the lifetime of the :symbol:`mongoc_oidc_credential_t` object.
+
 .. seealso::
 
   - :symbol:`mongoc_oidc_credential_t`
