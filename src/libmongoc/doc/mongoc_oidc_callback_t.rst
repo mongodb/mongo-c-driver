@@ -82,7 +82,7 @@ The callback function stored by a :symbol:`mongoc_oidc_callback_t` object will b
        mongoc_client_pool_destroy (pool);
     }
 
-If the callback is associated with more than one :symbol:`mongoc_client_t` (in different threads), or with more than one :symbol:`mongoc_client_pool_t` object (even on a single thread), the callback function MUST support invocation by more than one thread at a time:
+If the callback is associated with more than one :symbol:`mongoc_client_t` object (in multiple threads), or with more than one :symbol:`mongoc_client_pool_t` object (even in a single thread), the callback function MUST support invocation by more than one thread at a time:
 
 .. code-block:: c
 
