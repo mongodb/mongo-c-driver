@@ -92,7 +92,7 @@ User Data
 
 The ``user_data`` parameter may be used to pass additional arguments to the callback function or to return additional values out of the callback function.
 
-This parameter must be set in advance via :symbol:`mongoc_oidc_callback_set_fn()` before the :symbol:`mongoc_oidc_callback_t` object is associated with a :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` object.
+This parameter must be set in advance via :symbol:`mongoc_oidc_callback_set_user_data()` before the :symbol:`mongoc_oidc_callback_t` object is associated with a :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` object.
 
 .. warning::
 
