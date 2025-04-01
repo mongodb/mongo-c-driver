@@ -25,7 +25,7 @@ Example
   mongoc_gridfs_file_list_t *list;
   mongoc_gridfs_file_t *file;
 
-  list = mongoc_gridfs_find (gridfs, query);
+  list = mongoc_gridfs_find_with_opts (gridfs, query, NULL);
 
   while ((file = mongoc_gridfs_file_list_next (list))) {
      do_something (file);

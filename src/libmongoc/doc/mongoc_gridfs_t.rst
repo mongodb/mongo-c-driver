@@ -65,8 +65,6 @@ Example
     mongoc_gridfs_create_file_from_stream
     mongoc_gridfs_destroy
     mongoc_gridfs_drop
-    mongoc_gridfs_find
-    mongoc_gridfs_find_one
     mongoc_gridfs_find_one_by_filename
     mongoc_gridfs_find_one_with_opts
     mongoc_gridfs_find_with_opts

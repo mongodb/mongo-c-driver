@@ -101,9 +101,6 @@ mongoc_apm_command_started_get_server_id (const mongoc_apm_command_started_t *ev
 MONGOC_EXPORT (const bson_oid_t *)
 mongoc_apm_command_started_get_service_id (const mongoc_apm_command_started_t *event);
 
-BSON_DEPRECATED_FOR (mongoc_apm_command_started_get_server_connection_id_int64)
-MONGOC_EXPORT (int32_t) mongoc_apm_command_started_get_server_connection_id (const mongoc_apm_command_started_t *event);
-
 MONGOC_EXPORT (int64_t)
 mongoc_apm_command_started_get_server_connection_id_int64 (const mongoc_apm_command_started_t *event);
 
@@ -139,10 +136,6 @@ mongoc_apm_command_succeeded_get_server_id (const mongoc_apm_command_succeeded_t
 
 MONGOC_EXPORT (const bson_oid_t *)
 mongoc_apm_command_succeeded_get_service_id (const mongoc_apm_command_succeeded_t *event);
-
-BSON_DEPRECATED_FOR (mongoc_apm_command_succeeded_get_server_connection_id_int64)
-MONGOC_EXPORT (int32_t)
-   mongoc_apm_command_succeeded_get_server_connection_id (const mongoc_apm_command_succeeded_t *event);
 
 MONGOC_EXPORT (int64_t)
 mongoc_apm_command_succeeded_get_server_connection_id_int64 (const mongoc_apm_command_succeeded_t *event);
@@ -183,9 +176,6 @@ mongoc_apm_command_failed_get_server_id (const mongoc_apm_command_failed_t *even
 
 MONGOC_EXPORT (const bson_oid_t *)
 mongoc_apm_command_failed_get_service_id (const mongoc_apm_command_failed_t *event);
-
-BSON_DEPRECATED_FOR (mongoc_apm_command_failed_get_server_connection_id_int64)
-MONGOC_EXPORT (int32_t) mongoc_apm_command_failed_get_server_connection_id (const mongoc_apm_command_failed_t *event);
 
 MONGOC_EXPORT (int64_t)
 mongoc_apm_command_failed_get_server_connection_id_int64 (const mongoc_apm_command_failed_t *event);
@@ -321,18 +311,19 @@ mongoc_apm_server_heartbeat_failed_get_awaited (const mongoc_apm_server_heartbea
  * callbacks
  */
 
-typedef void (*mongoc_apm_command_started_cb_t) (const mongoc_apm_command_started_t *event);
-typedef void (*mongoc_apm_command_succeeded_cb_t) (const mongoc_apm_command_succeeded_t *event);
-typedef void (*mongoc_apm_command_failed_cb_t) (const mongoc_apm_command_failed_t *event);
-typedef void (*mongoc_apm_server_changed_cb_t) (const mongoc_apm_server_changed_t *event);
-typedef void (*mongoc_apm_server_opening_cb_t) (const mongoc_apm_server_opening_t *event);
-typedef void (*mongoc_apm_server_closed_cb_t) (const mongoc_apm_server_closed_t *event);
-typedef void (*mongoc_apm_topology_changed_cb_t) (const mongoc_apm_topology_changed_t *event);
-typedef void (*mongoc_apm_topology_opening_cb_t) (const mongoc_apm_topology_opening_t *event);
-typedef void (*mongoc_apm_topology_closed_cb_t) (const mongoc_apm_topology_closed_t *event);
-typedef void (*mongoc_apm_server_heartbeat_started_cb_t) (const mongoc_apm_server_heartbeat_started_t *event);
-typedef void (*mongoc_apm_server_heartbeat_succeeded_cb_t) (const mongoc_apm_server_heartbeat_succeeded_t *event);
-typedef void (*mongoc_apm_server_heartbeat_failed_cb_t) (const mongoc_apm_server_heartbeat_failed_t *event);
+typedef void (BSON_CALL *mongoc_apm_command_started_cb_t) (const mongoc_apm_command_started_t *event);
+typedef void (BSON_CALL *mongoc_apm_command_succeeded_cb_t) (const mongoc_apm_command_succeeded_t *event);
+typedef void (BSON_CALL *mongoc_apm_command_failed_cb_t) (const mongoc_apm_command_failed_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_changed_cb_t) (const mongoc_apm_server_changed_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_opening_cb_t) (const mongoc_apm_server_opening_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_closed_cb_t) (const mongoc_apm_server_closed_t *event);
+typedef void (BSON_CALL *mongoc_apm_topology_changed_cb_t) (const mongoc_apm_topology_changed_t *event);
+typedef void (BSON_CALL *mongoc_apm_topology_opening_cb_t) (const mongoc_apm_topology_opening_t *event);
+typedef void (BSON_CALL *mongoc_apm_topology_closed_cb_t) (const mongoc_apm_topology_closed_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_heartbeat_started_cb_t) (const mongoc_apm_server_heartbeat_started_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_heartbeat_succeeded_cb_t) (
+   const mongoc_apm_server_heartbeat_succeeded_t *event);
+typedef void (BSON_CALL *mongoc_apm_server_heartbeat_failed_cb_t) (const mongoc_apm_server_heartbeat_failed_t *event);
 
 /*
  * registering callbacks

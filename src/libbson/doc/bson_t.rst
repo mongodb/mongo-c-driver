@@ -204,7 +204,6 @@ BSON document contains duplicate keys.
     bson_concat
     bson_copy
     bson_copy_to
-    bson_copy_to_excluding
     bson_copy_to_excluding_noinit
     bson_copy_to_excluding_noinit_va
     bson_count_keys

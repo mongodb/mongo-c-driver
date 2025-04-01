@@ -34,11 +34,6 @@ if "%LINK_STATIC%"=="1" (
 %CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
 %CMAKE% --build . --target INSTALL --config "Debug" -- /m
 
-call ..\.evergreen\scripts\check-installed-files-bson.bat
-if errorlevel 1 (
-   exit /B %errorlevel%
-)
-
 rem Test our CMake package config file with CMake's find_package command.
 set EXAMPLE_DIR=%SRCROOT%\src\libbson\examples\cmake\find_package
 

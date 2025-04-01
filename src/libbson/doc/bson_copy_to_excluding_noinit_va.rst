@@ -27,7 +27,7 @@ Description
 
 The :symbol:`bson_copy_to_excluding_noinit_va()` function shall copy all fields from ``src`` to ``dst`` except those specified by ``first_exclude`` and ``args``.
 
-This method works the same way as :symbol:`bson_copy_to_excluding_noinit`, except it takes a va_list. This method does not call :symbol:`bson_init` on ``dst``.
+Does **not** call :symbol:`bson_init` on ``dst``.
 
 .. seealso::
 

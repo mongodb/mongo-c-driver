@@ -1360,14 +1360,17 @@ _finalize_auth_username (const char *username,
 }
 
 static bool
-_finalize_auth_source_external_required (const char *source, const char *mechanism, bson_error_t *error)
+_finalize_auth_source_external (const char *source, const char *mechanism, bson_error_t *error)
 {
    BSON_OPTIONAL_PARAM (source);
    BSON_ASSERT_PARAM (mechanism);
    BSON_OPTIONAL_PARAM (error);
 
-   if (!source || strcasecmp (source, "$external") != 0) {
-      MONGOC_URI_ERROR (error, "'%s' authentication mechanism requires \"$external\" authSource", mechanism);
+   if (source && strcasecmp (source, "$external") != 0) {
+      MONGOC_URI_ERROR (error,
+                        "'%s' authentication mechanism requires \"$external\" authSource, but \"%s\" was specified",
+                        mechanism,
+                        source);
       return false;
    }
 
@@ -1403,23 +1406,6 @@ _finalize_auth_password (const char *password,
    case _mongoc_uri_finalize_allowed:
    default:
       break;
-   }
-
-   return true;
-}
-
-static bool
-_finalize_auth_mechanism_properties_prohibited (const bson_t *mechanism_properties,
-                                                const char *mechanism,
-                                                bson_error_t *error)
-{
-   BSON_OPTIONAL_PARAM (mechanism_properties);
-   BSON_ASSERT_PARAM (mechanism);
-   BSON_OPTIONAL_PARAM (error);
-
-   if (mechanism_properties) {
-      MONGOC_URI_ERROR (error, "'%s' authentication mechanism does not accept mechanism properties", mechanism);
-      return false;
    }
 
    return true;
@@ -1536,6 +1522,13 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    BSON_ASSERT_PARAM (uri);
    BSON_OPTIONAL_PARAM (error);
 
+   // Most validation of MongoCredential fields below according to the Authentication spec must be deferred to the
+   // implementation of the Authentication Handshake algorithm (i.e. `_mongoc_cluster_auth_node`) due to support for
+   // partial and late setting of credential fields via `mongoc_uri_set_*` functions. Limit validation to requirements
+   // for individual field which are explicitly specified. Do not validate requirements on fields in relation to one
+   // another (e.g. "given field A, field B must..."). The username, password, and authSource credential fields are
+   // exceptions to this rule for both backward compatibility and spec test compliance.
+
    bool ret = false;
 
    bson_iter_t iter;
@@ -1591,9 +1584,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          goto fail;
       }
 
-      // Defer validation of `MongoCredential` fields to `_mongoc_cluster_auth_node` during handshake according to
-      // `saslSupportedMechs`. Defaults for `MongoCredential.source` is handled by `mongoc_uri_get_auth_source` for
-      // backward compatibility.
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // SCRAM-SHA-1, SCRAM-SHA-256, and PLAIN (same validation requirements)
@@ -1604,21 +1595,12 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          goto fail;
       }
 
-      // Authentication spec: source: MUST be specified. Defaults to the database name if
-      // supplied on the connection string or:
-      //   - "admin" (for SCRAM-SHA-1 and SCRAM-SHA-256).
-      //   - "$external" (for PLAIN).
-      // Handled by `mongoc_uri_get_auth_source` for backward compatibility.
-
       // Authentication spec: password: MUST be specified.
       if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_required, error)) {
          goto fail;
       }
 
-      // Authentication spec: mechanism_properties: MUST NOT be specified.
-      if (!_finalize_auth_mechanism_properties_prohibited (mechanism_properties, mechanism, error)) {
-         goto fail;
-      }
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // MONGODB-X509
@@ -1627,6 +1609,11 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // CDRIVER-1959: allow for backward compatibility until the spec states "MUST NOT" instead of "SHOULD NOT" and
       // spec tests are updated accordingly to permit warnings or errors.
       if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_allowed, error)) {
+         goto fail;
+      }
+
+      // Authentication spec: password: MUST NOT be specified.
+      if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_prohibited, error)) {
          goto fail;
       }
 
@@ -1640,19 +1627,11 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
                               bsonBuildError);
             goto fail;
          }
-      } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
+      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
          goto fail;
       }
 
-      // Authentication spec: password: MUST NOT be specified.
-      if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_prohibited, error)) {
-         goto fail;
-      }
-
-      // Authentication spec: mechanism_properties: MUST NOT be specified.
-      if (!_finalize_auth_mechanism_properties_prohibited (mechanism_properties, mechanism, error)) {
-         goto fail;
-      }
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // GSSAPI
@@ -1672,7 +1651,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
                               bsonBuildError);
             goto fail;
          }
-      } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
+      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
          goto fail;
       }
 
@@ -1721,6 +1700,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
             goto fail;
          }
       }
+
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // MONGODB-AWS
@@ -1740,7 +1721,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
                               bsonBuildError);
             goto fail;
          }
-      } else if (!_finalize_auth_source_external_required (source, mechanism, error)) {
+      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
          goto fail;
       }
 
@@ -1762,17 +1743,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          goto fail;
       }
 
-      // Authentication spec: if *only* a session token is provided, Drivers MUST raise an error.
-      if (!username && mechanism_properties) {
-         bson_iter_t iter;
-         if (bson_iter_init_find_case (&iter, mechanism_properties, "AWS_SESSION_TOKEN")) {
-            MONGOC_URI_ERROR (error,
-                              "%s",
-                              "'MONGODB-AWS' authentication mechanism requires AWS_SESSION_TOKEN to be accompanied by "
-                              "a username and a password");
-            goto fail;
-         }
-      }
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
    }
 
    // Invalid or unsupported authentication mechanism.
@@ -2584,13 +2555,6 @@ mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri)
 }
 
 
-const char *
-mongoc_uri_get_service (const mongoc_uri_t *uri)
-{
-   return mongoc_uri_get_srv_hostname (uri);
-}
-
-
 /* Initial DNS Seedlist Discovery Spec: `srvServiceName` requires a string value
  * and defaults to "mongodb". */
 static const char *const mongoc_default_srv_service_name = "mongodb";
@@ -2692,13 +2656,6 @@ mongoc_uri_get_string (const mongoc_uri_t *uri)
    return uri->str;
 }
 
-
-const bson_t *
-mongoc_uri_get_read_prefs (const mongoc_uri_t *uri)
-{
-   BSON_ASSERT (uri);
-   return mongoc_read_prefs_get_tags (uri->read_prefs);
-}
 
 char *
 mongoc_uri_unescape (const char *escaped_string)
@@ -2853,11 +2810,6 @@ mongoc_uri_get_tls (const mongoc_uri_t *uri) /* IN */
    return false;
 }
 
-bool
-mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
-{
-   return mongoc_uri_get_tls (uri);
-}
 
 const char *
 mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri)

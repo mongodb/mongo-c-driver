@@ -65,7 +65,6 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_bulk_install);
    TEST_INSTALL (test_cluster_install);
    TEST_INSTALL (test_collection_install);
-   TEST_INSTALL (test_collection_find_install);
    TEST_INSTALL (test_collection_find_with_opts_install);
    TEST_INSTALL (test_connection_uri_install);
    TEST_INSTALL (test_command_logging_and_monitoring_install);

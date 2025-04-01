@@ -16,7 +16,6 @@ include (ParseVersion)
 ParseVersion ("${BUILD_VERSION}" MONGOC)
 # Defines additional similar variables:
 include (LoadVersion)
-file (WRITE VERSION_CURRENT "${BUILD_VERSION}")
 LoadVersion (VERSION_CURRENT MONGOC)
 
 # Extended version attributes that CMake doesn't (yet) understand, which include
@@ -173,8 +172,6 @@ mongo_setting(ENABLE_MONGODB_AWS_AUTH "Enable support for the MONGODB-AWS authen
 # Optional features that are DISABLED by default:
 mongo_bool_setting(ENABLE_RDTSCP "Enable fast performance counters using the Intel RDTSCP instruction"
                    DEFAULT VALUE OFF)
-mongo_bool_setting(ENABLE_APPLE_FRAMEWORK "Build libraries as Apple Frameworks on Darwin platforms"
-                   DEFAULT VALUE OFF)
 mongo_bool_setting(
    ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile"
    DEFAULT VALUE OFF
@@ -249,8 +246,21 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif ()
 
 include (InstallRequiredSystemLibraries)
-include (GNUInstallDirs)
 include (CMakeDependentOption)
+
+# Installation paths
+include (GNUInstallDirs)
+# The directory where CMake config packages will be installed, based on the libdir from GNUInstallDirs
+mongo_setting(
+   MONGO_C_DRIVER_INSTALL_CMAKEDIR "The directory in which CMake package files will be installed"
+   TYPE STRING
+   DEFAULT VALUE "${CMAKE_INSTALL_LIBDIR}/cmake"
+   VALIDATE CODE [[
+      if(IS_ABSOLUTE "${MONGO_C_DRIVER_INSTALL_CMAKEDIR}")
+         message(SEND_ERROR "The CMake installation directory must be a relative path (Got “${MONGO_C_DRIVER_INSTALL_CMAKEDIR}”)")
+      endif()
+   ]]
+)
 
 include(MongoC-Warnings)
 
@@ -296,31 +306,17 @@ mongo_pick(MONGOC_ENABLE_STATIC_INSTALL 1 0
            [[ENABLE_STATIC AND NOT ENABLE_STATIC STREQUAL "BUILD_ONLY"]])
 
 if (USE_SYSTEM_LIBBSON)
-   # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
-   # but you should use the standard CMAKE_PREFIX_PATH instead.
-   message (STATUS "Searching for libbson CMake packages")
-   find_package (bson-1.0
-      "${PROJECT_VERSION}"
-      HINTS
-      ${BSON_ROOT_DIR})
-
-   if (NOT bson-1.0_FOUND)
-      message (FATAL_ERROR "System libbson not found")
-   endif ()
-
-   message (STATUS "libbson found version \"${bson-1.0_VERSION}\"")
-   message (STATUS "disabling test-libmongoc since using system libbson")
-   SET (ENABLE_TESTS OFF)
+   find_package (bson "${PROJECT_VERSION}" REQUIRED)
+   # Disable test-libmongoc since we are using a system libbson
+   set (ENABLE_TESTS OFF)
 
    set (USING_SYSTEM_BSON TRUE)
-   if (NOT TARGET mongo::bson_shared)
-           message (FATAL_ERROR "System libbson built without shared library target")
+   if (NOT TARGET bson::shared)
+      message (FATAL_ERROR "System libbson built without shared library target")
    endif ()
-   set (BSON_LIBRARIES mongo::bson_shared)
-   if (NOT TARGET mongo::bson_static)
-           message (FATAL_ERROR "System libbson built without static library target")
+   if (NOT TARGET bson::static)
+      message (FATAL_ERROR "System libbson built without static library target")
    endif ()
-   set (BSON_STATIC_LIBRARIES mongo::bson_static)
 endif ()
 
 set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
@@ -329,6 +325,7 @@ set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
 include (CTest)
 if (BUILD_TESTING)
    include (TestFixtures)
+   include (src/libmongoc/tests/import-tests.cmake)
 endif ()
 
 # Ensure the default behavior: don't ignore RPATH settings.
@@ -342,8 +339,14 @@ set (CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
 # Include any custom library paths in the final RPATH.
 set (CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
-# Install libs with names like @rpath/libmongoc-1.0.0.dylib, not bare names.
+# Install libs with names like @rpath/libfoo.dylib, not bare names.
 set (CMAKE_MACOSX_RPATH ON)
+
+# Distinguish DLL import libs with a .dll.lib suffix. Also prevents filename collisions
+# between static libraries and the import libraries
+if(WIN32)
+   set (CMAKE_IMPORT_LIBRARY_SUFFIX .dll.lib)
+endif()
 
 # https://cmake.org/cmake/help/v3.11/policy/CMP0042.html
 # Enable a CMake 3.0+ policy that sets CMAKE_MACOSX_RPATH by default, and
@@ -392,14 +395,7 @@ add_subdirectory (src/common)
 
 if (NOT USING_SYSTEM_BSON)
    message (STATUS "Using bundled libbson")
-
    add_subdirectory (src/libbson)
-   # Defined in src/libbson/CMakeLists.txt
-   set (BSON_STATIC_LIBRARIES bson_static)
-   set (BSON_LIBRARIES bson_shared)
-   set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
-   set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
-   set (BSON_STATIC_PUBLIC_DEFINITIONS "BSON_STATIC")
 endif ()
 
 if (MSVC)
@@ -469,7 +465,7 @@ if (ENABLE_MONGOC)
 endif ()
 
 install (FILES COPYING NEWS README.rst THIRD_PARTY_NOTICES
-   DESTINATION ${CMAKE_INSTALL_DATADIR}/mongo-c-driver
+   DESTINATION ${CMAKE_INSTALL_DATADIR}/mongo-c-driver/${PROJECT_VERSION}
 )
 
 if (ENABLE_UNINSTALL)
@@ -481,7 +477,7 @@ if (ENABLE_UNINSTALL)
       # Generate a different script name for uninstalling libbson only:
       set (UNINSTALL_SCRIPT_NAME "uninstall-bson")
    endif ()
-   set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver")
+   set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver/${PROJECT_VERSION}")
    include (GenerateUninstaller)
 endif ()
 

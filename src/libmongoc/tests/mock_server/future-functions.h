@@ -150,38 +150,11 @@ future_collection_aggregate (
 
 
 future_t *
-future_collection_count (
+future_collection_create_indexes_with_opts (
 
    mongoc_collection_ptr collection,
-   mongoc_query_flags_t flags,
-   const_bson_ptr query,
-   int64_t skip,
-   int64_t limit,
-   const_mongoc_read_prefs_ptr read_prefs,
-   bson_error_ptr error
-);
-
-
-future_t *
-future_collection_count_with_opts (
-
-   mongoc_collection_ptr collection,
-   mongoc_query_flags_t flags,
-   const_bson_ptr query,
-   int64_t skip,
-   int64_t limit,
-   const_bson_ptr opts,
-   const_mongoc_read_prefs_ptr read_prefs,
-   bson_error_ptr error
-);
-
-
-future_t *
-future_collection_create_index_with_opts (
-
-   mongoc_collection_ptr collection,
-   const_bson_ptr keys,
-   const_mongoc_index_opt_t opt,
+   mongoc_index_model_t_ptr_const_ptr models,
+   size_t num_models,
    const_bson_ptr opts,
    bson_ptr reply,
    bson_error_ptr error
@@ -243,16 +216,6 @@ future_collection_find_indexes_with_opts (
 
 
 future_t *
-future_collection_stats (
-
-   mongoc_collection_ptr collection,
-   const_bson_ptr options,
-   bson_ptr stats,
-   bson_error_ptr error
-);
-
-
-future_t *
 future_collection_insert_many (
 
    mongoc_collection_ptr collection,
@@ -306,18 +269,6 @@ future_collection_write_command_with_opts (
    const_bson_ptr command,
    const_bson_ptr opts,
    bson_ptr reply,
-   bson_error_ptr error
-);
-
-
-future_t *
-future_collection_insert_bulk (
-
-   mongoc_collection_ptr collection,
-   mongoc_insert_flags_t flags,
-   const_bson_ptr_ptr documents,
-   uint32_t n_documents,
-   const_mongoc_write_concern_ptr write_concern,
    bson_error_ptr error
 );
 
@@ -427,15 +378,6 @@ future_gridfs_file_readv (
    size_t iovcnt,
    size_t min_bytes,
    uint32_t timeout_msec
-);
-
-
-future_t *
-future_gridfs_find_one (
-
-   mongoc_gridfs_ptr gridfs,
-   const_bson_ptr query,
-   bson_error_ptr error
 );
 
 
