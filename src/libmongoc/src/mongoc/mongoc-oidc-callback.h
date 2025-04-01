@@ -63,7 +63,7 @@ mongoc_oidc_callback_params_get_timeout (const mongoc_oidc_callback_params_t *pa
 MONGOC_EXPORT (const char *)
 mongoc_oidc_callback_params_get_username (const mongoc_oidc_callback_params_t *params);
 
-MONGOC_EXPORT (void *)
+MONGOC_EXPORT (mongoc_oidc_credential_t *)
 mongoc_oidc_callback_params_cancel_with_timeout (mongoc_oidc_callback_params_t *params);
 
 MONGOC_EXPORT (mongoc_oidc_credential_t *)

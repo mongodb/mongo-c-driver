@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  void *
+  mongoc_oidc_credential_t *
   mongoc_oidc_callback_params_cancel_with_timeout (mongoc_oidc_callback_params_t *params);
 
 Set the out parameter indicating cancellation of the callback function due to a timeout instead of an error.

@@ -176,7 +176,7 @@ mongoc_oidc_callback_params_set_username (mongoc_oidc_callback_params_t *params,
    params->username = bson_strdup (username);
 }
 
-void *
+mongoc_oidc_credential_t *
 mongoc_oidc_callback_params_cancel_with_timeout (mongoc_oidc_callback_params_t *params)
 {
    BSON_ASSERT_PARAM (params);
