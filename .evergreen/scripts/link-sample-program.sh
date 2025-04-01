@@ -94,16 +94,16 @@ unset CCACHE_BASEDIR CCACHE_NOHASHDIR
 ls -l $INSTALL_DIR/lib
 
 if [ "$OS" = "darwin" ] && [ "${HOSTTYPE:?}" != "arm64" ]; then
-  if test -f $INSTALL_DIR/bin/mongoc-stat; then
-    echo "mongoc-stat shouldn't have been installed"
+  if test -f $INSTALL_DIR/bin/mongoc$major-stat; then
+    echo "mongoc$major-stat shouldn't have been installed"
     exit 1
   fi
 else
-  if test ! -f $INSTALL_DIR/bin/mongoc-stat; then
-    echo "mongoc-stat missing!"
+  if test ! -f $INSTALL_DIR/bin/mongoc$major-stat; then
+    echo "mongoc$major-stat missing!"
     exit 1
   else
-    echo "mongoc-stat check ok"
+    echo "mongoc$major-stat check ok"
   fi
 fi
 
