@@ -80,8 +80,9 @@ test_oidc_callback_params (void)
       {
          mongoc_oidc_callback_params_set_timeout (params, 123);
          {
-            const char username[] = "username";
-            mongoc_oidc_callback_params_set_username (params, username); // Ensure a copy is made.
+            char username[] = "username";
+            mongoc_oidc_callback_params_set_username (params, username);
+            username[0] = '\0'; // Ensure a copy was made.
          }
          mongoc_oidc_callback_params_set_version (params, 123);
 
