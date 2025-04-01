@@ -14,6 +14,21 @@ Represents the parameters of a :symbol:`mongoc_oidc_callback_t`.
 
 The parameters will be passed to the :symbol:`mongoc_oidc_callback_fn_t` stored in an :symbol:`mongoc_oidc_callback_t` object when it is invoked by an :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` object.
 
+.. only:: html
+
+  Functions
+  ---------
+
+  .. toctree::
+    :titlesonly:
+    :maxdepth: 1
+
+    mongoc_oidc_callback_params_get_version
+    mongoc_oidc_callback_params_get_user_data
+    mongoc_oidc_callback_params_get_timeout
+    mongoc_oidc_callback_params_get_username
+    mongoc_oidc_callback_params_cancel_with_timeout
+
 Parameters
 ----------
 
@@ -208,8 +223,3 @@ A ``NULL`` return value (without setting ``cancel_with_timeout``) indicates fail
 
   - :symbol:`mongoc_oidc_callback_t`
   - :symbol:`mongoc_oidc_callback_fn_t`
-  - :symbol:`mongoc_oidc_callback_params_get_version()`
-  - :symbol:`mongoc_oidc_callback_params_get_user_data()`
-  - :symbol:`mongoc_oidc_callback_params_get_timeout()`
-  - :symbol:`mongoc_oidc_callback_params_get_username()`
-  - :symbol:`mongoc_oidc_callback_params_cancel_with_timeout()`

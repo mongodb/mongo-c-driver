@@ -14,6 +14,22 @@ Synopsis
 
 The callback may be used to integrate with OIDC providers that are not supported by the built-in provider integrations (:ref:`Authentication Mechanism Properties <authentication_mechanism_properties>`).
 
+.. only:: html
+
+  Functions
+  ---------
+
+  .. toctree::
+    :titlesonly:
+    :maxdepth: 1
+
+    mongoc_oidc_callback_new
+    mongoc_oidc_callback_destroy
+    mongoc_oidc_callback_get_fn
+    mongoc_oidc_callback_set_fn
+    mongoc_oidc_callback_get_user_data
+    mongoc_oidc_callback_set_user_data
+
 Lifecycle
 ---------
 
@@ -124,32 +140,6 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
 
   - :symbol:`mongoc_client_t`
   - :symbol:`mongoc_client_pool_t`
-
-.. only:: html
-
-  Functions
-  ---------
-
-  .. toctree::
-    :titlesonly:
-    :maxdepth: 1
-
-    mongoc_oidc_callback_fn_t
-    mongoc_oidc_callback_new
-    mongoc_oidc_callback_destroy
-    mongoc_oidc_callback_get_fn
-    mongoc_oidc_callback_set_fn
-    mongoc_oidc_callback_get_user_data
-    mongoc_oidc_callback_set_user_data
-    mongoc_oidc_callback_params_t
-    mongoc_oidc_callback_params_get_version
-    mongoc_oidc_callback_params_get_user_data
-    mongoc_oidc_callback_params_get_timeout
-    mongoc_oidc_callback_params_get_username
-    mongoc_oidc_callback_params_cancel_with_timeout
-    mongoc_oidc_credential_t
-    mongoc_oidc_credential_new
-    mongoc_oidc_credential_new_with_expires_in
-    mongoc_oidc_credential_destroy
-    mongoc_oidc_credential_get_access_token
-    mongoc_oidc_credential_get_expires_in
+  - :symbol:`mongoc_oidc_callback_fn_t`
+  - :symbol:`mongoc_oidc_callback_params_t`
+  - :symbol:`mongoc_oidc_credential_t`
