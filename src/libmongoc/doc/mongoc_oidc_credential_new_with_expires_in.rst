@@ -15,7 +15,7 @@ Create a new :symbol:`mongoc_oidc_credential_t` object which stores a copy of th
 
 To set an infinite expiry duration, use :symbol:`mongoc_oidc_credential_new()`.
 
-The expiry duration is relative to the value returned by :symbol:`bson_get_monotonic_time()` immediately after the callback function has returned.
+The expiry duration will be evaluated relative to the value returned by :symbol:`bson_get_monotonic_time()` immediately after the callback function has returned.
 
 .. warning::
 
