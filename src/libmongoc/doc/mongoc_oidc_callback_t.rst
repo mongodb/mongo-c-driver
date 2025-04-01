@@ -82,7 +82,7 @@ The callback function stored by a :symbol:`mongoc_oidc_callback_t` object will b
        mongoc_client_pool_destroy (pool);
     }
 
-If the callback is associated with more than one :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` object, the callback function MUST support invocation by more than one thread at a time:
+If the callback is associated with more than one :symbol:`mongoc_client_t` (in different threads), or with more than one :symbol:`mongoc_client_pool_t` object (even on a single thread), the callback function MUST support invocation by more than one thread at a time:
 
 .. code-block:: c
 
@@ -107,7 +107,16 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
           mongoc_oidc_callback_destroy (callback);
        }
 
-       // ... client operations ...
+       pthread_t thread_a;
+       pthread_t thread_b;
+
+       if (pthread_create (&thread_a, NULL, /* thread_a_fn */, client_a) != 0) { /* ... */ }
+       if (pthread_create (&thread_b, NULL, /* thread_b_fn */, client_b) != 0) { /* ... */ }
+
+       // ... client operations using multiple threads ...
+
+       if (pthread_join (&thread_a, NULL) != 0) { /* ... */ }
+       if (pthread_join (&thread_b, NULL) != 0) { /* ... */ }
 
        mongoc_client_destroy (client_a);
        mongoc_client_destroy (client_b);
@@ -126,7 +135,7 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
           mongoc_oidc_callback_destroy (callback);
        }
 
-       // ... client pool operations ...
+       // ... client operations using multiple client pools ...
 
        mongoc_client_pool_destroy (pool_a);
        mongoc_client_pool_destroy (pool_b);
