@@ -24,8 +24,7 @@ libbson 2.0.0 (Unreleased)
 
 * `BSON_ERROR_BUFFER_SIZE` is reduced from `504` to `503` to reserve the final byte for internal use.
     * The data layout of `bson_error_t` remains otherwise unchanged: the size is still 512 bytes and the offset of the `.code`, `.domain`, and `.message` data members remain unchanged.
-* The `libbson-1.0` and `libbson-static-1.0` pkg-config modules are now named
-  `bson1` and `bson1-static`, respectively.
+* The pkg-config files `libbson-1.0`, have been renamed to `bson2`, and `bson2-static`, respectively.
 
 ### CMake Packages and Imported Targets
 
