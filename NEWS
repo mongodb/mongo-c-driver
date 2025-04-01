@@ -25,7 +25,7 @@ Unreleased (2.0.0)
 
 ## Notes
 
-* A future minor release plans to raise the minimum supported MongoDB Server version from 4.0 to 4.2. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
+* In a future minor release the minimum supported MongoDB Server version will be raised from 4.0 to 4.2. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
 
 ## Changes
 
