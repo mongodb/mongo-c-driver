@@ -1,24 +1,5 @@
-libbson 1.x (Unreleased)
-========================
-
-New Features:
-
-* In anticipation of the 2.0 release of mongo-c-driver, new CMake packages and
-  imported targets have been defined (for both `bson` and `mongoc`). To import
-  `bson` with the new names, call `find_package` for the `bson` package. The new
-  imported targets are named `bson::static`, `bson::shared`, and `bson::bson`
-  (which points to either the static or the shared library, depending on an
-  import-time configuration option).
-
-  The new package and target names will remain unchanged when upgrading to the
-  2.0 release, allowing consumers to support both major versions without
-  modifying their CMake project. The current imported target names will be
-  removed from the 2.0 release, and should not be used for
-  forward-compatibility.
-
-
-libbson 2.0.0 (Unreleased)
-==========================
+libbson 2.0.0
+=============
 
 ## Changes
 
@@ -55,6 +36,15 @@ The new package imports different target names:
   * `BSON_ALIGNED_BEGIN` and `BSON_ALIGNED_END` now unconditionally apply their requested alignment.
 * Remove deprecated `bson_copy_to_excluding`. Use `bson_copy_to_excluding_noinit` instead.
 
+## Contributors
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Micah Scott
+  * Colby Pike
+  * Ezra Chung
+  * Lin Raymond
 
 libbson 1.30.2
 ==============
