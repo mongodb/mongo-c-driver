@@ -43,6 +43,9 @@ Unreleased (2.0.0)
     * Old behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B', 'C': 'D:E,F:G'}`.
     * New behavior: `authMechanismProperties=A:B,C:D:E,F:G` is parsed as `{'A': 'B': 'C': 'D:E', 'F': 'G'}`.
 * Calling `mongoc_bulk_operation_execute` on the same `mongoc_bulk_operation_t` repeatedly is an error. Previously this was only discouraged in documentation.
+* The pkg-config files `libmongoc-1.0`, `libmongoc-static-1.0`, `libbson-1.0`,
+  and `libbson-static-1.0` have been renamed to `mongoc2`, `mongoc2-static`,
+  `bson2`, and `bson2-static`, respectively.
 
 
 ### CMake Packages and Imported Targets
@@ -99,9 +102,6 @@ The BSON library has had similar name changes.
   * `mongoc_collection_find_indexes` is removed. Use `mongoc_collection_find_indexes_with_opts` instead.
   * See [MongoDB documentation](https://www.mongodb.com/docs/languages/c/c-driver/current/indexes/) for working with indexes.
 * The `libmongoc-ssl-1.0` pkg-config file has been removed.
-* The pkg-config files `libmongoc-1.0`, `libmongoc-static-1.0`, `libbson-1.0`,
-  and `libbson-static-1.0` have been renamed to `mongoc2`, `mongoc2-static`,
-  `bson2`, and `bson2-static`, respectively.
 
 
 ### Forwarding headers (`#include <bson.h>` and `#include <mongoc.h>`)
