@@ -187,9 +187,10 @@ The ``cancel_with_timeout`` out parameter indicates cancellation of the callback
 
     mongoc_oidc_credential_t *
     example_callback_fn (mongoc_oidc_callback_params_t *params) {
-       const int64_t timeout = mongoc_oidc_callback_params_get_timeout (params);
+       const int64_t *timeout = mongoc_oidc_callback_params_get_timeout (params);
 
-       if (bson_get_monotonic_time () > timeout) {
+       // NULL means "infinite" timeout.
+       if (timeout && bson_get_monotonic_time () > *timeout) {
           return mongoc_oidc_callback_params_cancel_with_timeout (params);
        }
 
