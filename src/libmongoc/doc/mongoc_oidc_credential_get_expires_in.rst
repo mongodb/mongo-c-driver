@@ -26,5 +26,5 @@ The expiry duration (in milliseconds), or ``NULL``.
 .. seealso::
 
   - :symbol:`mongoc_oidc_credential_t`
+  - :symbol:`mongoc_oidc_credential_new_with_expires_in`
   - :symbol:`mongoc_oidc_callback_fn_t`
-  - :symbol:`mongoc_oidc_credential_set_expires_in`
