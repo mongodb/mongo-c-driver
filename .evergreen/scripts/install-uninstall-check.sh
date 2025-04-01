@@ -13,6 +13,13 @@ CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
 SRCROOT=$(pwd)
 
+# The major version of the project. Appears in certain install filenames.
+_full_version=$(cat "$DIR/../../VERSION_CURRENT")
+version="${_full_version%-*}"  # 1.2.3-dev → 1.2.3
+major="${version%%.*}"         # 1.2.3     → 1
+echo "major version: $major"
+echo " full version: $version"
+
 # Use ccache if able.
 . $DIR/find-ccache.sh
 find_ccache_and_export_vars "$(pwd)" || true
@@ -20,7 +27,7 @@ find_ccache_and_export_vars "$(pwd)" || true
 SCRATCH_DIR=$(pwd)/.scratch
 rm -rf "$SCRATCH_DIR"
 mkdir -p "$SCRATCH_DIR"
-cp -vr -- "$SRCROOT"/* "$SCRATCH_DIR"
+cp -r -- "$SRCROOT"/* "$SCRATCH_DIR"
 
 if [ "$BSON_ONLY" ]; then
   BUILD_DIR=$SCRATCH_DIR/build-dir-bson
@@ -58,8 +65,8 @@ if [[ -f $DIR/find-ccache.sh ]]; then
   find_ccache_and_export_vars "$SCRATCH_DIR" || true
 fi
 
-$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $BSON_ONLY_OPTION "$SCRATCH_DIR"
-$CMAKE --build .
+$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -DBUILD_TESTING=OFF -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $BSON_ONLY_OPTION "$SCRATCH_DIR"
+$CMAKE --build . --parallel
 if [ "$DESTDIR" ]; then
    DESTDIR=$DESTDIR $CMAKE --build . --target install
 else
@@ -93,29 +100,23 @@ $CMAKE --build . --target uninstall
 
 set +o xtrace
 
-if test -f $INSTALL_DIR/lib/pkgconfig/libbson-1.0.pc; then
-  echo "libbson-1.0.pc found!"
+if test -f $INSTALL_DIR/lib/pkgconfig/bson$major.pc; then
+  echo "bson$major.pc found!"
   exit 1
 else
-  echo "libbson-1.0.pc check ok"
+  echo "bson$major.pc check ok"
 fi
-if test -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-1.0-config.cmake; then
-  echo "bson-1.0-config.cmake found!"
+if test -f $INSTALL_DIR/lib/cmake/bson-$version/bsonConfig.cmake; then
+  echo "bsonConfig.cmake found!"
   exit 1
 else
-  echo "bson-1.0-config.cmake check ok"
+  echo "bsonConfig.cmake check ok"
 fi
-if test -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-1.0-config-version.cmake; then
-  echo "bson-1.0-config-version.cmake found!"
+if test -f $INSTALL_DIR/lib/cmake/bson-$version/bsonConfigVersion.cmake; then
+  echo "bsonConfigVersion.cmake found!"
   exit 1
 else
-  echo "bson-1.0-config-version.cmake check ok"
-fi
-if test -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-targets.cmake; then
-  echo "bson-targets.cmake found!"
-  exit 1
-else
-  echo "bson-targets.cmake check ok"
+  echo "bsonConfigVersion.cmake check ok"
 fi
 if test ! -f $INSTALL_DIR/lib/canary.txt; then
   echo "canary.txt not found!"
@@ -130,11 +131,11 @@ else
   echo "$INSTALL_DIR/lib check ok"
 fi
 if [ -z "$BSON_ONLY" ]; then
-  if test -f $INSTALL_DIR/lib/pkgconfig/libmongoc-1.0.pc; then
-    echo "libmongoc-1.0.pc found!"
+  if test -f $INSTALL_DIR/lib/pkgconfig/mongoc$major.pc; then
+    echo "mongoc$major.pc found!"
     exit 1
   else
-    echo "libmongoc-1.0.pc check ok"
+    echo "mongoc$major.pc check ok"
   fi
   if test -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-1.0-config.cmake; then
     echo "mongoc-1.0-config.cmake found!"
@@ -155,17 +156,17 @@ if [ -z "$BSON_ONLY" ]; then
     echo "mongoc-targets.cmake check ok"
   fi
 fi
-if test -f $INSTALL_DIR/include/libbson-1.0/bson/bson.h; then
+if test -f $INSTALL_DIR/include/bson-$version/bson/bson.h; then
   echo "bson/bson.h found!"
   exit 1
 else
   echo "bson/bson.h check ok"
 fi
-if test -d $INSTALL_DIR/include/libbson-1.0; then
-  echo "$INSTALL_DIR/include/libbson-1.0 found!"
+if test -d $INSTALL_DIR/include/bson-$version; then
+  echo "$INSTALL_DIR/include/bson-$version found!"
   exit 1
 else
-  echo "$INSTALL_DIR/include/libbson-1.0 check ok"
+  echo "$INSTALL_DIR/include/bson-$version check ok"
 fi
 if [ -z "$BSON_ONLY" ]; then
   if test -f $INSTALL_DIR/include/libmongoc-1.0/mongoc/mongoc.h; then

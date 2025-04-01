@@ -5,7 +5,6 @@
 #include <mongoc/mongoc-version.h> // Defines MONGOC_MAJOR_VERSION and other version macros.
 
 #define MONGOC_OUTPUT_BASENAME "@MONGOC_OUTPUT_BASENAME@"
-#define MONGOC_API_VERSION "@MONGOC_API_VERSION@"
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION MONGOC_MAJOR_VERSION,MONGOC_MINOR_VERSION,MONGOC_MICRO_VERSION,0
@@ -30,8 +29,8 @@ BEGIN
             VALUE "CompanyName", "MongoDB, Inc"
             VALUE "FileDescription", "MongoDB Client Library for C"
             VALUE "FileVersion", MONGOC_VERSION_S
-            VALUE "InternalName", MONGOC_OUTPUT_BASENAME "-" MONGOC_API_VERSION
-            VALUE "OriginalFilename", MONGOC_OUTPUT_BASENAME "-" MONGOC_API_VERSION ".dll"
+            VALUE "InternalName", MONGOC_OUTPUT_BASENAME "@PROJECT_VERSION_MAJOR@"
+            VALUE "OriginalFilename", MONGOC_OUTPUT_BASENAME "@PROJECT_VERSION_MAJOR@.dll"
             VALUE "ProductName", "MongoDB C Driver"
             VALUE "ProductVersion", MONGOC_VERSION_S
             VALUE "LegalCopyright", "Copyright 2009-present MongoDB, Inc."

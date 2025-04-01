@@ -160,15 +160,20 @@ function(__do_test_project)
     set(tmp_install_prefix "${TEST_PROJECT_PARENT_BINARY_DIR}/TestProject-install/${test_name_hash}")
     file(REMOVE_RECURSE "${tmp_install_prefix}")
     list(APPEND TEST_PROJECT_SETTINGS/CMAKE_INSTALL_PREFIX "${tmp_install_prefix}")
+    list(APPEND TEST_PROJECT_SETTINGS/CMAKE_PREFIX_PATH "${tmp_install_prefix}")
 
     if(TEST_PROJECT_INSTALL_PARENT)
         cmake_path(ABSOLUTE_PATH tmp_install_prefix NORMALIZE)
         message(STATUS "Installing parent project into [${tmp_install_prefix}]")
         execute_process(
-            COMMAND ${CMAKE_COMMAND}
-                --install "${TEST_PROJECT_PARENT_BINARY_DIR}"
-                --prefix "${tmp_install_prefix}"
-                --config "${TEST_PROJECT_CONFIG}"
+            COMMAND
+                # Suppress DESTDIR
+                ${CMAKE_COMMAND} -E env --unset=DESTDIR
+                # Do the install:
+                ${CMAKE_COMMAND}
+                    --install "${TEST_PROJECT_PARENT_BINARY_DIR}"
+                    --prefix "${tmp_install_prefix}"
+                    --config "${TEST_PROJECT_CONFIG}"
             COMMAND_ERROR_IS_FATAL LAST
         )
     endif()
