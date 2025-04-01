@@ -24,7 +24,6 @@ The expiry duration is relative to the value returned by :symbol:`bson_get_monot
 Parameters
 ----------
 
-* ``cred``: a :symbol:`mongoc_oidc_credential_t`.
 * ``access_token``: an OIDC access token. Must not be ``NULL``.
 * ``expires_in``: a non-negative integer.
 

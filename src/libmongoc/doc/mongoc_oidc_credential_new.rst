@@ -22,7 +22,6 @@ To set a finite expiry duration, use :symbol:`mongoc_oidc_credential_new_with_ex
 Parameters
 ----------
 
-* ``cred``: a :symbol:`mongoc_oidc_credential_t`.
 * ``access_token``: an OIDC access token. Must not be ``NULL``.
 
 Returns
