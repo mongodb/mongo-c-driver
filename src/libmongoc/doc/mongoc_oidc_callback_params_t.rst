@@ -10,7 +10,7 @@ Synopsis
 
   typedef struct _mongoc_oidc_callback_params_t mongoc_oidc_callback_params_t;
 
-Represents the parameters of a :symbol:`mongoc_oidc_callback_t`.
+Represents the in/out parameters of a :symbol:`mongoc_oidc_callback_t`.
 
 The parameters will be passed to the :symbol:`mongoc_oidc_callback_fn_t` stored in an :symbol:`mongoc_oidc_callback_t` object when it is invoked by an :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t` object.
 
