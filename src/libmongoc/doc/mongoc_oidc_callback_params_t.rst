@@ -143,7 +143,7 @@ This parameter must be set in advance via :symbol:`mongoc_oidc_callback_set_user
        // ... client operations ...
 
        {
-          mongoc_oidc_callback_t *callback = mongoc_client_get_oidc_callback (client);
+          const mongoc_oidc_callback_t *callback = mongoc_client_get_oidc_callback (client);
           user_data_t *user_data = (user_data_t *) mongoc_oidc_callback_get_user_data (callback);
 
           if (error.code != 0) {
