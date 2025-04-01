@@ -20,8 +20,8 @@ New Features:
   names `bson::static`, `bson::shared`, or `bson::bson`.
 
 
-Unreleased (2.0.0)
-==================
+libmongoc 2.0.0
+===============
 
 ## Notes
 
@@ -192,6 +192,16 @@ if (!mongoc_client_command_simple(client, "db", cmd, NULL, &reply, &error)) {
 bson_destroy(&reply);
 bson_destroy(cmd);
 ```
+
+## Contributors
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+  * Micah Scott
+  * Jeroen Ooms
 
 
 libmongoc 1.30.2

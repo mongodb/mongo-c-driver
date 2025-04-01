@@ -28,7 +28,7 @@ project (hello_mongoc LANGUAGES C)
 # building libmongoc.
 # -- sphinx-include-start --
 # Specify the minimum version you require.
-find_package (mongoc 1.7 REQUIRED)
+find_package (mongoc 2.0 REQUIRED)
 
 # The "hello_mongoc.c" sample program is shared among four tests.
 add_executable (hello_mongoc ../../hello_mongoc.c)
