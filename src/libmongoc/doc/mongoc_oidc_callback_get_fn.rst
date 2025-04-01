@@ -21,7 +21,7 @@ Parameters
 Returns
 -------
 
-A :symbol:`mongoc_oidc_callback_fn_t` or ``NULL``.
+A :symbol:`mongoc_oidc_callback_fn_t`.
 
 .. seealso::
 
