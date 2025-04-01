@@ -176,37 +176,6 @@ mongoc_gridfs_destroy (mongoc_gridfs_t *gridfs)
 
 /** find all matching gridfs files */
 mongoc_gridfs_file_list_t *
-mongoc_gridfs_find (mongoc_gridfs_t *gridfs, const bson_t *query)
-{
-   return _mongoc_gridfs_file_list_new (gridfs, query, 0);
-}
-
-
-/** find a single gridfs file */
-mongoc_gridfs_file_t *
-mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs, const bson_t *query, bson_error_t *error)
-{
-   mongoc_gridfs_file_list_t *list;
-   mongoc_gridfs_file_t *file;
-
-   ENTRY;
-
-   list = _mongoc_gridfs_file_list_new (gridfs, query, 1);
-
-   file = mongoc_gridfs_file_list_next (list);
-   if (!mongoc_gridfs_file_list_error (list, error) && error) {
-      /* no error, but an error out-pointer was provided - clear it */
-      memset (error, 0, sizeof (*error));
-   }
-
-   mongoc_gridfs_file_list_destroy (list);
-
-   RETURN (file);
-}
-
-
-/** find all matching gridfs files */
-mongoc_gridfs_file_list_t *
 mongoc_gridfs_find_with_opts (mongoc_gridfs_t *gridfs, const bson_t *filter, const bson_t *opts)
 {
    return _mongoc_gridfs_file_list_new_with_opts (gridfs, filter, opts);

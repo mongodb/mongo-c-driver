@@ -59,9 +59,9 @@ BSON_BEGIN_DECLS
  *--------------------------------------------------------------------------
  */
 
-typedef ssize_t (*bson_reader_read_func_t) (void *handle,  /* IN */
-                                            void *buf,     /* IN */
-                                            size_t count); /* IN */
+typedef ssize_t (BSON_CALL *bson_reader_read_func_t) (void *handle,  /* IN */
+                                                      void *buf,     /* IN */
+                                                      size_t count); /* IN */
 
 
 /*
@@ -84,7 +84,7 @@ typedef ssize_t (*bson_reader_read_func_t) (void *handle,  /* IN */
  *--------------------------------------------------------------------------
  */
 
-typedef void (*bson_reader_destroy_func_t) (void *handle); /* IN */
+typedef void (BSON_CALL *bson_reader_destroy_func_t) (void *handle); /* IN */
 
 
 BSON_EXPORT (bson_reader_t *)

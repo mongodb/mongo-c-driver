@@ -37,19 +37,19 @@ typedef struct _mongoc_stream_poll_t {
 
 struct _mongoc_stream_t {
    int type;
-   void (*destroy) (mongoc_stream_t *stream);
-   int (*close) (mongoc_stream_t *stream);
-   int (*flush) (mongoc_stream_t *stream);
-   ssize_t (*writev) (mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec);
-   ssize_t (*readv) (
+   void (BSON_CALL *destroy) (mongoc_stream_t *stream);
+   int (BSON_CALL *close) (mongoc_stream_t *stream);
+   int (BSON_CALL *flush) (mongoc_stream_t *stream);
+   ssize_t (BSON_CALL *writev) (mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec);
+   ssize_t (BSON_CALL *readv) (
       mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec);
-   int (*setsockopt) (mongoc_stream_t *stream, int level, int optname, void *optval, mongoc_socklen_t optlen);
-   mongoc_stream_t *(*get_base_stream) (mongoc_stream_t *stream);
-   bool (*check_closed) (mongoc_stream_t *stream);
-   ssize_t (*poll) (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout);
-   void (*failed) (mongoc_stream_t *stream);
-   bool (*timed_out) (mongoc_stream_t *stream);
-   bool (*should_retry) (mongoc_stream_t *stream);
+   int (BSON_CALL *setsockopt) (mongoc_stream_t *stream, int level, int optname, void *optval, mongoc_socklen_t optlen);
+   mongoc_stream_t *(BSON_CALL *get_base_stream) (mongoc_stream_t *stream);
+   bool (BSON_CALL *check_closed) (mongoc_stream_t *stream);
+   ssize_t (BSON_CALL *poll) (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout);
+   void (BSON_CALL *failed) (mongoc_stream_t *stream);
+   bool (BSON_CALL *timed_out) (mongoc_stream_t *stream);
+   bool (BSON_CALL *should_retry) (mongoc_stream_t *stream);
    void *padding[3];
 };
 
