@@ -31,11 +31,16 @@ _test_oidc_callback_fn_cb (mongoc_oidc_callback_params_t *params)
 static void
 test_oidc_callback_new (void)
 {
-   mongoc_oidc_callback_t *const callback = mongoc_oidc_callback_new ();
+   // Invalid arguments.
+   {
+      ASSERT (!mongoc_oidc_callback_new (NULL));
+   }
+
+   mongoc_oidc_callback_t *const callback = mongoc_oidc_callback_new (&_test_oidc_callback_fn_cb);
+   ASSERT (mongoc_oidc_callback_get_fn (callback) == &_test_oidc_callback_fn_cb);
 
    // Initial values.
    {
-      ASSERT (!mongoc_oidc_callback_get_fn (callback));
       ASSERT (!mongoc_oidc_callback_get_user_data (callback));
    }
 
@@ -43,19 +48,15 @@ test_oidc_callback_new (void)
    {
       int user_data = 0;
 
-      mongoc_oidc_callback_set_fn (callback, &_test_oidc_callback_fn_cb);
       mongoc_oidc_callback_set_user_data (callback, &user_data);
 
-      ASSERT (mongoc_oidc_callback_get_fn (callback) == &_test_oidc_callback_fn_cb);
       ASSERT (mongoc_oidc_callback_get_user_data (callback) == &user_data);
    }
 
    // "Reset" values.
    {
-      mongoc_oidc_callback_set_fn (callback, NULL);
       mongoc_oidc_callback_set_user_data (callback, NULL);
 
-      ASSERT (!mongoc_oidc_callback_get_fn (callback));
       ASSERT (!mongoc_oidc_callback_get_user_data (callback));
    }
 

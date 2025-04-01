@@ -129,13 +129,9 @@ This parameter must be set in advance via :symbol:`mongoc_oidc_callback_set_user
        bson_error_t error;
 
        {
-          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new ();
-          mongoc_oidc_callback_set_fn (callback, &example_callback_fn);
-
           user_data_t *user_data = malloc (sizeof (*user_data));
           *user_data = (user_data_t){.counter = 0, .error_message = NULL};
-          mongoc_oidc_callback_set_user_data (callback, (void *) user_data);
-
+          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (&example_callback_fn, (void *) user_data);
           mongoc_client_set_oidc_callback (client, callback);
           mongoc_oidc_callback_destroy (callback);
        }

@@ -41,10 +41,26 @@ struct _mongoc_oidc_credential_t {
 };
 
 mongoc_oidc_callback_t *
-mongoc_oidc_callback_new (void)
+mongoc_oidc_callback_new (mongoc_oidc_callback_fn_t fn)
 {
+   if (!fn) {
+      return NULL;
+   }
+
    mongoc_oidc_callback_t *const ret = bson_malloc (sizeof (*ret));
-   *ret = (mongoc_oidc_callback_t){0};
+   *ret = (mongoc_oidc_callback_t){.fn = fn};
+   return ret;
+}
+
+mongoc_oidc_callback_t *
+mongoc_oidc_callback_new_with_user_data (mongoc_oidc_callback_fn_t fn, void *user_data)
+{
+   if (!fn) {
+      return NULL;
+   }
+
+   mongoc_oidc_callback_t *const ret = bson_malloc (sizeof (*ret));
+   *ret = (mongoc_oidc_callback_t){.fn = fn, .user_data = user_data};
    return ret;
 }
 
@@ -61,13 +77,6 @@ mongoc_oidc_callback_get_fn (const mongoc_oidc_callback_t *callback)
 {
    BSON_ASSERT_PARAM (callback);
    return callback->fn;
-}
-
-void
-mongoc_oidc_callback_set_fn (mongoc_oidc_callback_t *callback, mongoc_oidc_callback_fn_t fn)
-{
-   BSON_ASSERT_PARAM (callback);
-   callback->fn = fn;
 }
 
 void *

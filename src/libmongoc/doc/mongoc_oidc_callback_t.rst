@@ -24,9 +24,9 @@ The callback may be used to integrate with OIDC providers that are not supported
     :maxdepth: 1
 
     mongoc_oidc_callback_new
+    mongoc_oidc_callback_new_with_user_data
     mongoc_oidc_callback_destroy
     mongoc_oidc_callback_get_fn
-    mongoc_oidc_callback_set_fn
     mongoc_oidc_callback_get_user_data
     mongoc_oidc_callback_set_user_data
 
@@ -56,8 +56,7 @@ The callback function stored by a :symbol:`mongoc_oidc_callback_t` object will b
        mongoc_client_t *client = /* ... */;
 
        {
-          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new ();
-          mongoc_oidc_callback_set_fn (callback, &single_thread_only); // OK
+          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (&single_thread_only);
           mongoc_client_set_oidc_callback (client, callback);
           mongoc_oidc_callback_destroy (callback);
        }
@@ -73,8 +72,7 @@ The callback function stored by a :symbol:`mongoc_oidc_callback_t` object will b
        mongoc_client_pool_t *pool = /* ... */;
 
        {
-          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new ();
-          mongoc_oidc_callback_set_fn (callback, &single_thread_only); // OK
+          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (&single_thread_only);
           mongoc_client_pool_set_oidc_callback (pool, callback);
           mongoc_oidc_callback_destroy (callback);
        }
@@ -103,8 +101,7 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
        mongoc_client_t *client_b = /* ... */;
 
        {
-          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new ();
-          mongoc_oidc_callback_set_fn (callback, &many_threads_possible);
+          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (&many_threads_possible);
           mongoc_client_set_oidc_callback (client_a, callback);
           mongoc_client_set_oidc_callback (client_b, callback);
           mongoc_oidc_callback_destroy (callback);
@@ -123,8 +120,7 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` or :s
        mongoc_client_pool_t *pool_b = /* ... */;
 
        {
-          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new ();
-          mongoc_oidc_callback_set_fn (callback, &many_threads_possible);
+          mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (&many_threads_possible);
           mongoc_client_pool_set_oidc_callback (pool_a, callback);
           mongoc_client_pool_set_oidc_callback (pool_b, callback);
           mongoc_oidc_callback_destroy (callback);

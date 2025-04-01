@@ -34,16 +34,16 @@ typedef struct _mongoc_oidc_credential_t mongoc_oidc_credential_t;
 typedef mongoc_oidc_credential_t *(MONGOC_CALL *mongoc_oidc_callback_fn_t) (mongoc_oidc_callback_params_t *params);
 
 MONGOC_EXPORT (mongoc_oidc_callback_t *)
-mongoc_oidc_callback_new (void);
+mongoc_oidc_callback_new (mongoc_oidc_callback_fn_t fn);
+
+MONGOC_EXPORT (mongoc_oidc_callback_t *)
+mongoc_oidc_callback_new_with_user_data (mongoc_oidc_callback_fn_t fn, void *user_data);
 
 MONGOC_EXPORT (void)
 mongoc_oidc_callback_destroy (mongoc_oidc_callback_t *callback);
 
 MONGOC_EXPORT (mongoc_oidc_callback_fn_t)
 mongoc_oidc_callback_get_fn (const mongoc_oidc_callback_t *callback);
-
-MONGOC_EXPORT (void)
-mongoc_oidc_callback_set_fn (mongoc_oidc_callback_t *callback, mongoc_oidc_callback_fn_t fn);
 
 MONGOC_EXPORT (void *)
 mongoc_oidc_callback_get_user_data (const mongoc_oidc_callback_t *callback);
