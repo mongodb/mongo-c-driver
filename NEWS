@@ -25,6 +25,7 @@ Unreleased (2.0.0)
 
 ## Notes
 
+* In a future minor release the minimum supported MongoDB Server version will be raised from 4.0 to 4.2. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
 * Raise required version of libmongocrypt to 1.13.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
 
 ## Changes
