@@ -17,7 +17,7 @@ The expiry duration will be evaluated relative to the value returned by :symbol:
 
 .. important::
 
-    An unset value (default) or a value of ``0`` is interpreted as an infinite expiry duration.
+    A value of ``0`` is interpreted as an infinite expiry duration.
 
 .. warning::
 

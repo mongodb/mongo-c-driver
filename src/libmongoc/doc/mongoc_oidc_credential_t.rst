@@ -61,11 +61,11 @@ An OIDC access token (a signed JWT token).
 Expiry Duration
 ```````````````
 
-An optional expiry duration (in milliseconds) for the access token.
+An expiry duration (in milliseconds) for the access token. Defaults to ``0``.
 
 .. important::
 
-    An unset value (default) or a value of ``0`` is interpreted as an infinite expiry duration.
+    A value of ``0`` is interpreted as an infinite expiry duration.
 
 .. seealso::
 

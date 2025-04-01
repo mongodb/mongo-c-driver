@@ -78,7 +78,7 @@ mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred);
 MONGOC_EXPORT (const char *)
 mongoc_oidc_credential_get_access_token (const mongoc_oidc_credential_t *cred);
 
-MONGOC_EXPORT (const int64_t *)
+MONGOC_EXPORT (int64_t)
 mongoc_oidc_credential_get_expires_in (const mongoc_oidc_credential_t *cred);
 
 BSON_END_DECLS
