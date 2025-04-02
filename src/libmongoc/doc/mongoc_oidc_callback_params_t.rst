@@ -143,7 +143,7 @@ This parameter must be set in advance via :symbol:`mongoc_oidc_callback_set_user
              printf ("custom error message: %s\n", user_data->error_message);
           }
 
-          printf ("The callback function was invoked %n times!", user_data->counter);
+          printf ("The callback function was invoked %d times!", user_data->counter);
 
           free (user_data);
        }
