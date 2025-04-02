@@ -4,7 +4,40 @@ functions:
       type: setup
       params:
         binary: bash
+        args:
+          - -c
+          - |
+            if [[ -n "$XDG_CACHE_DIR" ]]; then
+                cache_dir="$XDG_CACHE_DIR" # XDG Base Directory specification.
+            elif [[ -n "$LOCALAPPDATA" ]]; then
+                cache_dir="$LOCALAPPDATA" # Windows.
+            elif [[ -n "$USERPROFILE" ]]; then
+                cache_dir="$USERPROFILE/.cache" # Windows (fallback).
+            elif [[ -d "$HOME/Library/Caches" ]]; then
+                cache_dir="$HOME/Library/Caches" # MacOS.
+            elif [[ -n "$HOME" ]]; then
+                cache_dir="$HOME/.cache" # Linux-like.
+            elif [[ -d ~/.cache ]]; then
+                cache_dir="~/.cache" # Linux-like (fallback).
+            else
+                cache_dir="$(pwd)/.cache" # EVG task directory (fallback).
+            fi
+
+            mkdir -p "$cache_dir/mongo-c-driver" || exit
+            cache_dir="$(cd "$cache_dir/mongo-c-driver" && pwd)" || exit
+
+            printf "MONGO_C_DRIVER_CACHE_DIR: %s\n" "$cache_dir" >|expansions.set-cache-dir.yml
+    - command: expansions.update
+      type: setup
+      params:
+        file: expansions.set-cache-dir.yml
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
         working_dir: mongoc
+        include_expansions_in_env:
+          - MONGO_C_DRIVER_CACHE_DIR
         args:
           - -c
           - .evergreen/scripts/abi-compliance-check-setup.sh
@@ -14,10 +47,13 @@ functions:
         binary: bash
         working_dir: mongoc
         add_expansions_to_env: true
+        include_expansions_in_env:
+          - MONGO_C_DRIVER_CACHE_DIR
         args:
           - -c
           - .evergreen/scripts/abi-compliance-check.sh
     - command: s3.put
+      type: system
       params:
         display_name: "ABI Compliance Check: "
         aws_key: ${aws_key}
@@ -26,7 +62,18 @@ functions:
         content_type: text/html
         local_files_include_filter: abi-compliance/compat_reports/**/compat_report.html
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports/
+        remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${task_id}/${execution}/abi-compliance-check/
+    - command: s3.put
+      type: system
+      params:
+        display_name: "ABI Compliance Check: "
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: text/plain
+        local_files_include_filter: abi-compliance/logs/**/log.txt
+        permissions: public-read
+        remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${task_id}/${execution}/abi-compliance-check/
   backtrace:
     - command: subprocess.exec
       params:
@@ -525,6 +572,38 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile-scan-build.sh
+  set-cache-dir:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            if [[ -n "$XDG_CACHE_DIR" ]]; then
+                cache_dir="$XDG_CACHE_DIR" # XDG Base Directory specification.
+            elif [[ -n "$LOCALAPPDATA" ]]; then
+                cache_dir="$LOCALAPPDATA" # Windows.
+            elif [[ -n "$USERPROFILE" ]]; then
+                cache_dir="$USERPROFILE/.cache" # Windows (fallback).
+            elif [[ -d "$HOME/Library/Caches" ]]; then
+                cache_dir="$HOME/Library/Caches" # MacOS.
+            elif [[ -n "$HOME" ]]; then
+                cache_dir="$HOME/.cache" # Linux-like.
+            elif [[ -d ~/.cache ]]; then
+                cache_dir="~/.cache" # Linux-like (fallback).
+            else
+                cache_dir="$(pwd)/.cache" # EVG task directory (fallback).
+            fi
+
+            mkdir -p "$cache_dir/mongo-c-driver" || exit
+            cache_dir="$(cd "$cache_dir/mongo-c-driver" && pwd)" || exit
+
+            printf "MONGO_C_DRIVER_CACHE_DIR: %s\n" "$cache_dir" >|expansions.set-cache-dir.yml
+    - command: expansions.update
+      type: setup
+      params:
+        file: expansions.set-cache-dir.yml
   start-load-balancer:
     - command: subprocess.exec
       type: setup
