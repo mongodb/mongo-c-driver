@@ -28,7 +28,7 @@ class CheckABICompliance(Function):
                 'AWS_SECRET_ACCESS_KEY': '${aws_secret}',
             },
             script='''\
-                aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
+                aws s3 cp abi-compliance/compat_reports s3://mciuploads/mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
                 [[ ! -f ./abi-compliance/abi-error.txt ]]
             '''
         ),
@@ -40,7 +40,7 @@ class CheckABICompliance(Function):
             display_name='ABI Report:',
             local_files_include_filter='mongoc/abi-compliance/compat_reports/**/*.html',
             permissions='public-read',
-            remote_file='${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html',
+            remote_file='mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html',
         ),
     ]
 

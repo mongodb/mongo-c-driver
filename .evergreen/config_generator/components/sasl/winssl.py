@@ -15,8 +15,6 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('windows-64-vs2015', 'vs2015x64', None, [       'cyrus',       ]),
-    ('windows-64-vs2015', 'vs2015x86', None, ['off',                ]),
     ('windows-vsCurrent', 'mingw',     None, [                'sspi']),
     ('windows-vsCurrent', 'vs2017x64', None, ['off', 'cyrus', 'sspi']),
     ('windows-vsCurrent', 'vs2017x86', None, ['off',          'sspi']),

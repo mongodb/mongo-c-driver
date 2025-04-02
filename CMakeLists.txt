@@ -16,7 +16,6 @@ include (ParseVersion)
 ParseVersion ("${BUILD_VERSION}" MONGOC)
 # Defines additional similar variables:
 include (LoadVersion)
-file (WRITE VERSION_CURRENT "${BUILD_VERSION}")
 LoadVersion (VERSION_CURRENT MONGOC)
 
 # Extended version attributes that CMake doesn't (yet) understand, which include
