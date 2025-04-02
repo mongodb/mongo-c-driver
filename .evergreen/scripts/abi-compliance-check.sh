@@ -20,7 +20,7 @@ current="$(cat VERSION_CURRENT)-${today:?}+git${head_commit:?}" # e.g. 2.3.4-dev
 base=$(cat etc/prior_version.txt)                               # e.g. 1.2.3
 
 # Double-check we are testing against the same API major version.
-if [[ "${base_verdir:?}" != 1.* ]]; then
+if [[ "${base:?}" != 1.* ]]; then
   echo "API major version mismatch: base version is ${base:?} but current version is ${current:?}" >&2
   exit 1
 fi
