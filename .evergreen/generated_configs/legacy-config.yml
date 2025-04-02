@@ -16556,29 +16556,6 @@ buildvariants:
   - test-aws-openssl-regular-latest
   - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
-- name: windows-2015
-  display_name: Windows (VS 2015)
-  expansions:
-    CC: Visual Studio 14 2015 Win64
-  run_on: windows-64-vs2015-compile
-  tasks:
-  - .compression !.snappy !.zstd !.latest
-  - release-compile
-  - debug-compile-sspi-winssl
-  - debug-compile-no-align
-  - debug-compile-nosrv
-  - .authentication-tests .winssl
-- name: windows-2015-32
-  display_name: Windows (i686) (VS 2015)
-  expansions:
-    CC: Visual Studio 14 2015
-  run_on: windows-64-vs2015-compile
-  tasks:
-  - .compression !.snappy !.zstd !.latest
-  - release-compile
-  - debug-compile-sspi-winssl
-  - debug-compile-no-align
-  - .authentication-tests .winssl
 - name: mingw-windows2016
   display_name: MinGW-W64 (Windows Server 2016)
   expansions:

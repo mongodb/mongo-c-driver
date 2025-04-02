@@ -2633,15 +2633,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-vs2015-x64-compile
-    run_on: windows-64-vs2015-large
-    tags: [cse-matrix-winssl, compile, windows-64-vs2015, vs2015x64, cse, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: cse-sasl-cyrus-winssl-compile
-        vars:
-          CC: Visual Studio 14 2015 Win64
-      - func: upload-build
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2017x64, cse, sasl-cyrus]
@@ -4074,15 +4065,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-cyrus-winssl-vs2015-x64-compile
-    run_on: windows-64-vs2015-large
-    tags: [sasl-matrix-winssl, compile, windows-64-vs2015, vs2015x64, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-winssl-compile
-        vars:
-          CC: Visual Studio 14 2015 Win64
-      - func: upload-build
   - name: sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-cyrus]
@@ -4698,15 +4680,6 @@ tasks:
       - func: sasl-off-nossl-compile
         vars:
           CC: Visual Studio 15 2017 Win64
-      - func: upload-build
-  - name: sasl-off-winssl-vs2015-x86-compile
-    run_on: windows-64-vs2015-large
-    tags: [sasl-matrix-winssl, compile, windows-64-vs2015, vs2015x86, sasl-off]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-off-winssl-compile
-        vars:
-          CC: Visual Studio 14 2015
       - func: upload-build
   - name: sasl-off-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
