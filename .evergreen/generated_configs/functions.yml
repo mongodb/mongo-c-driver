@@ -28,7 +28,7 @@ functions:
         args:
           - -c
           - |
-            aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
+            aws s3 cp abi-compliance/compat_reports s3://mciuploads/mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
             [[ ! -f ./abi-compliance/abi-error.txt ]]
     - command: s3.put
       params:
@@ -39,7 +39,7 @@ functions:
         content_type: text/html
         local_files_include_filter: mongoc/abi-compliance/compat_reports/**/*.html
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html
   backtrace:
     - command: subprocess.exec
       params:
@@ -164,7 +164,7 @@ functions:
         aws_secret: ${aws_secret}
         bucket: mciuploads
         local_file: build.tar.gz
-        remote_file: ${project}/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz
     - command: archive.targz_extract
       params:
         destination: mongoc
@@ -539,7 +539,7 @@ functions:
         content_type: application/json
         local_file: mongoc/augmented-sbom.json
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/sbom/augmented-sbom.json
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/sbom/augmented-sbom.json
   scan-build:
     - command: subprocess.exec
       type: test
@@ -616,7 +616,7 @@ functions:
         content_type: ${content_type|application/x-gzip}
         local_file: ${build_id}.tar.gz
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz
   upload-docs:
     - command: subprocess.exec
       params:
@@ -627,7 +627,7 @@ functions:
           AWS_SECRET_ACCESS_KEY: ${aws_secret}
         args:
           - -c
-          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
+          - aws s3 cp doc/html s3://mciuploads/mongo-c-driver/docs/libbson/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         display_name: libbson docs
@@ -637,7 +637,7 @@ functions:
         content_type: text/html
         local_file: mongoc/_build/for-docs/src/libbson/doc/html/index.html
         permissions: public-read
-        remote_file: ${project}/docs/libbson/${CURRENT_VERSION}/index.html
+        remote_file: mongo-c-driver/docs/libbson/${CURRENT_VERSION}/index.html
     - command: subprocess.exec
       params:
         binary: bash
@@ -647,7 +647,7 @@ functions:
           AWS_SECRET_ACCESS_KEY: ${aws_secret}
         args:
           - -c
-          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
+          - aws s3 cp doc/html s3://mciuploads/mongo-c-driver/docs/libmongoc/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         display_name: libmongoc docs
@@ -657,7 +657,7 @@ functions:
         content_type: text/html
         local_file: mongoc/_build/for-docs/src/libmongoc/doc/html/index.html
         permissions: public-read
-        remote_file: ${project}/docs/libmongoc/${CURRENT_VERSION}/index.html
+        remote_file: mongo-c-driver/docs/libmongoc/${CURRENT_VERSION}/index.html
   upload-man-pages:
     - command: subprocess.exec
       params:
@@ -685,7 +685,7 @@ functions:
         content_type: text/html
         local_file: mongoc/bson-man-pages.html
         permissions: public-read
-        remote_file: ${project}/man-pages/libbson/${CURRENT_VERSION}/index.html
+        remote_file: mongo-c-driver/man-pages/libbson/${CURRENT_VERSION}/index.html
     - command: s3.put
       params:
         display_name: libmongoc man pages
@@ -695,7 +695,7 @@ functions:
         content_type: text/html
         local_file: mongoc/mongoc-man-pages.html
         permissions: public-read
-        remote_file: ${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html
+        remote_file: mongo-c-driver/man-pages/libmongoc/${CURRENT_VERSION}/index.html
   upload-mo-artifacts:
     - command: subprocess.exec
       params:
@@ -722,7 +722,7 @@ functions:
         local_file: mongoc/mongodb-logs.tar.gz
         optional: true
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-mongodb-logs.tar.gz
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-mongodb-logs.tar.gz
     - command: s3.put
       params:
         display_name: orchestration.log
@@ -733,7 +733,7 @@ functions:
         local_file: mongoc/MO/server.log
         optional: true
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-orchestration.log
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-orchestration.log
     - command: subprocess.exec
       params:
         binary: bash
@@ -776,7 +776,7 @@ functions:
         local_file: mongo-coredumps.tgz
         optional: true
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log
   upload-test-results:
     - command: subprocess.exec
       params:

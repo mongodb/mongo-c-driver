@@ -27,12 +27,12 @@ functions:
         set -o errexit
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp coverage s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/coverage/ --recursive --acl public-read --region us-east-1
+        aws s3 cp coverage s3://mciuploads/mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/coverage/ --recursive --acl public-read --region us-east-1
   - command: s3.put
     params:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
-      remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/coverage/index.html
+      remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/coverage/index.html
       bucket: mciuploads
       permissions: public-read
       local_file: mongoc/coverage/index.html
@@ -60,12 +60,12 @@ functions:
         set -o errexit
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp scan s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/scan/ --recursive --acl public-read --region us-east-1
+        aws s3 cp scan s3://mciuploads/mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/scan/ --recursive --acl public-read --region us-east-1
   - command: s3.put
     params:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
-      remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/scan/index.html
+      remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/scan/index.html
       bucket: mciuploads
       permissions: public-read
       local_file: mongoc/scan.html
@@ -753,7 +753,7 @@ tasks:
     params:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz
+      remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz
       bucket: mciuploads
       permissions: public-read
       local_file: deb.tar.gz
@@ -762,7 +762,7 @@ tasks:
     params:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz
+      remote_file: mongo-c-driver/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz
       bucket: mciuploads
       permissions: public-read
       local_file: deb.tar.gz
@@ -771,7 +771,7 @@ tasks:
     params:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz
+      remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz
       bucket: mciuploads
       permissions: public-read
       local_file: deb-i386.tar.gz
@@ -780,7 +780,7 @@ tasks:
     params:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz
+      remote_file: mongo-c-driver/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz
       bucket: mciuploads
       permissions: public-read
       local_file: deb-i386.tar.gz
@@ -808,7 +808,7 @@ tasks:
     params:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz
+      remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz
       bucket: mciuploads
       permissions: public-read
       local_file: rpm.tar.gz
@@ -817,7 +817,7 @@ tasks:
     params:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz
+      remote_file: mongo-c-driver/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz
       bucket: mciuploads
       permissions: public-read
       local_file: rpm.tar.gz

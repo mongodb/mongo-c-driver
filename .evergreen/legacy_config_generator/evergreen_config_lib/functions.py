@@ -30,7 +30,7 @@ all_functions = OD([
         shell_mongoc(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp coverage s3://mciuploads/${project}/%s/coverage/ --recursive --acl public-read --region us-east-1
+        aws s3 cp coverage s3://mciuploads/mongo-c-driver/%s/coverage/ --recursive --acl public-read --region us-east-1
         ''' % (build_path,), test=False, silent=True),
         s3_put(build_path + '/coverage/index.html', aws_key='${aws_key}',
                aws_secret='${aws_secret}',
@@ -49,7 +49,7 @@ all_functions = OD([
         shell_mongoc(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp scan s3://mciuploads/${project}/%s/scan/ --recursive --acl public-read --region us-east-1
+        aws s3 cp scan s3://mciuploads/mongo-c-driver/%s/scan/ --recursive --acl public-read --region us-east-1
         ''' % (build_path,), test=False, silent=True),
         s3_put(build_path + '/scan/index.html', aws_key='${aws_key}',
                aws_secret='${aws_secret}', local_file='mongoc/scan.html',
