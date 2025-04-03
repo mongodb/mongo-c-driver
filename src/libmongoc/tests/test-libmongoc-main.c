@@ -157,6 +157,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_service_gcp_install);
    TEST_INSTALL (test_mcd_nsinfo_install);
    TEST_INSTALL (test_bulkwrite_install);
+   TEST_INSTALL (test_mongoc_oidc_callback_install);
 
    ret = TestSuite_Run (&suite);
 
