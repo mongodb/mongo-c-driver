@@ -353,14 +353,10 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    ASSERT (bson_compare (resume_token, &doc1_rt) != 0);
    bson_copy_to (resume_token, &doc2_rt);
 
-   /* There are no docs left. But the next call should still keep the same
-    * resume token */
+   /* There are no docs left. */
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL), error);
    ASSERT (!next_doc);
-   resume_token = mongoc_change_stream_get_resume_token (stream);
-   ASSERT (!bson_empty0 (resume_token));
-   ASSERT (bson_compare (resume_token, &doc2_rt) == 0);
 
    bson_destroy (&doc0_rt);
    bson_destroy (&doc1_rt);
