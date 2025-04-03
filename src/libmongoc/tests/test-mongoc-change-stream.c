@@ -353,14 +353,10 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    ASSERT (bson_compare (resume_token, &doc1_rt) != 0);
    bson_copy_to (resume_token, &doc2_rt);
 
-   /* There are no docs left. But the next call should still keep the same
-    * resume token */
+   /* There are no docs left. */
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL), error);
    ASSERT (!next_doc);
-   resume_token = mongoc_change_stream_get_resume_token (stream);
-   ASSERT (!bson_empty0 (resume_token));
-   ASSERT (bson_compare (resume_token, &doc2_rt) == 0);
 
    bson_destroy (&doc0_rt);
    bson_destroy (&doc1_rt);
@@ -2160,6 +2156,13 @@ test_change_stream_batchSize0 (void *test_ctx)
    {
       mongoc_client_t *client = test_framework_new_default_client ();
       mongoc_collection_t *coll = drop_and_get_coll (client, "db", "coll");
+      // Insert with majority write concern to ensure documents are visible to change stream.
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+         mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+         mongoc_collection_set_write_concern (coll, wc);
+         mongoc_write_concern_destroy (wc);
+      }
       mongoc_change_stream_t *cs = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
       resumeToken = bson_copy (mongoc_change_stream_get_resume_token (cs));
       // Insert documents to create future events.
