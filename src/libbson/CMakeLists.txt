@@ -33,10 +33,6 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 # potentially co-locate additional future major versions.
 set (BSON_API_VERSION 1.0)
 
-if (APPLE)
-   cmake_policy (SET CMP0042 OLD)
-endif ()
-
 
 #  .d8888b.           888    888    d8b
 # d88P  Y88b          888    888    Y8P

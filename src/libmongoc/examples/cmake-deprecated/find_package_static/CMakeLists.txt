@@ -17,10 +17,6 @@
 
 cmake_minimum_required (VERSION 2.8)
 
-if (APPLE)
-   cmake_policy (SET CMP0042 OLD)
-endif ()
-
 project (hello_mongoc LANGUAGES C)
 
 # NOTE: For this to work, the CMAKE_PREFIX_PATH variable must be set to point to
