@@ -36,7 +36,8 @@ struct _mongoc_oidc_callback_params_t {
 
 struct _mongoc_oidc_credential_t {
    char *access_token;
-   int64_t expires_in;
+   int64_t expires_in; // Guarded by expires_in_set.
+   bool expires_in_set;
 };
 
 mongoc_oidc_callback_t *
@@ -208,7 +209,7 @@ mongoc_oidc_credential_new (const char *access_token)
    mongoc_oidc_credential_t *const ret = bson_malloc (sizeof (*ret));
    *ret = (mongoc_oidc_credential_t){
       .access_token = bson_strdup (access_token),
-      .expires_in = 0, // Infinite.
+      .expires_in_set = false, // Infinite.
    };
    return ret;
 }
@@ -227,6 +228,7 @@ mongoc_oidc_credential_new_with_expires_in (const char *access_token, int64_t ex
    mongoc_oidc_credential_t *const ret = bson_malloc (sizeof (*ret));
    *ret = (mongoc_oidc_credential_t){
       .access_token = bson_strdup (access_token),
+      .expires_in_set = true,
       .expires_in = expires_in,
    };
    return ret;
@@ -248,9 +250,9 @@ mongoc_oidc_credential_get_access_token (const mongoc_oidc_credential_t *cred)
    return cred->access_token;
 }
 
-int64_t
+const int64_t *
 mongoc_oidc_credential_get_expires_in (const mongoc_oidc_credential_t *cred)
 {
    BSON_ASSERT_PARAM (cred);
-   return cred->expires_in;
+   return cred->expires_in_set ? &cred->expires_in : NULL;
 }
