@@ -41,8 +41,6 @@
 
 BSON_BEGIN_DECLS
 
-/* version corresponding to server 4.0 release */
-#define WIRE_VERSION_4_0 7
 /* first version to support hint for "update" command */
 #define WIRE_VERSION_UPDATE_HINT 8
 /* version corresponding to server 4.2 release */

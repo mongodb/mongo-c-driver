@@ -1444,7 +1444,7 @@ _test_resume (const char *opts,
    char *msg;
    const bson_t *doc = NULL;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_4_0);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);

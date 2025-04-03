@@ -294,82 +294,6 @@ test_not_primary_keep_pool_runner (void *ctx_void)
 }
 
 static void
-test_not_primary_reset_pool (mongoc_client_t *client)
-{
-   mongoc_database_t *db;
-   mongoc_collection_t *coll;
-   mongoc_read_prefs_t *read_prefs;
-   bson_error_t error;
-   bool res;
-   int conn_count;
-   uint32_t primary_id;
-
-   ASSERT (client);
-
-   /* Configure fail points */
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   db = mongoc_client_get_database (client, "admin");
-   /* Store the primary ID. After step down, the primary may be a different
-    * server. We must execute serverStatus against the same server to check
-    * connection counts. */
-   primary_id = mongoc_topology_select_server_id (client->topology,
-                                                  MONGOC_SS_WRITE,
-                                                  TEST_SS_LOG_CONTEXT,
-                                                  NULL /* read prefs */,
-                                                  NULL /* chosen read mode */,
-                                                  NULL /* deprioritized servers */,
-                                                  &error);
-   ASSERT_OR_PRINT (primary_id, error);
-   conn_count = _connection_count (client, primary_id);
-   res = mongoc_database_command_simple (db,
-                                         tmp_bson ("{'configureFailPoint': 'failCommand', "
-                                                   "'mode': {'times': 1}, "
-                                                   "'data': {'failCommands': ['insert'], 'errorCode': 10107}}"),
-                                         read_prefs,
-                                         NULL,
-                                         &error);
-   ASSERT_OR_PRINT (res, error);
-
-   /* Capture logs to swallow warnings about endSessions */
-   capture_logs (true);
-
-   coll = mongoc_client_get_collection (client, "step-down", "step-down");
-
-   /* Execute an insert, verify that it fails with 10107 */
-   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
-   ASSERT (!res);
-   ASSERT_CMPINT (error.code, ==, 10107);
-   ASSERT_CONTAINS (error.message, "failpoint");
-
-   /* Verify that the pool has been cleared */
-   ASSERT_CMPINT ((conn_count + 1), ==, _connection_count (client, primary_id));
-
-   /* Execute an insert into the test collection and verify it succeeds */
-   res = mongoc_collection_insert_one (coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
-   ASSERT_OR_PRINT (res, error);
-
-   mongoc_read_prefs_destroy (read_prefs);
-   mongoc_collection_destroy (coll);
-   mongoc_database_destroy (db);
-}
-
-static void
-test_not_primary_reset_pool_runner (void *ctx_void)
-{
-   int64_t max_wire_version;
-
-   test_ctx_t *ctx = ctx_void;
-
-   /* Only run if version 4.0 */
-   test_framework_get_max_wire_version (&max_wire_version);
-   if (max_wire_version != WIRE_VERSION_4_0) {
-      return;
-   }
-
-   _run_test_single_or_pooled (test_not_primary_reset_pool, ctx->use_pooled);
-}
-
-static void
 test_shutdown_reset_pool (mongoc_client_t *client)
 {
    mongoc_database_t *db;
@@ -430,11 +354,6 @@ static void
 test_shutdown_reset_pool_runner (void *ctx_void)
 {
    test_ctx_t *ctx = ctx_void;
-
-   /* Only run if version >= 4.0 */
-   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_0)) {
-      return;
-   }
 
    _run_test_single_or_pooled (test_shutdown_reset_pool, ctx->use_pooled);
 }
@@ -501,11 +420,6 @@ test_interrupted_shutdown_reset_pool_runner (void *ctx_void)
 {
    test_ctx_t *ctx = ctx_void;
 
-   /* Only run if version >= 4.0 */
-   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_0)) {
-      return;
-   }
-
    _run_test_single_or_pooled (test_interrupted_shutdown_reset_pool, ctx->use_pooled);
 }
 
@@ -536,7 +450,6 @@ test_primary_stepdown_install (TestSuite *suite)
 
    TestPooledAndSingle ("/Stepdown/getmore", test_getmore_iteration_runner);
    TestPooledAndSingle ("/Stepdown/not_primary_keep", test_not_primary_keep_pool_runner);
-   TestPooledAndSingle ("/Stepdown/not_primary_reset", test_not_primary_reset_pool_runner);
    TestPooledAndSingle ("/Stepdown/shutdown_reset_pool", test_shutdown_reset_pool_runner);
    TestPooledAndSingle ("/Stepdown/interrupt_shutdown", test_interrupted_shutdown_reset_pool_runner);
 }
