@@ -2160,6 +2160,13 @@ test_change_stream_batchSize0 (void *test_ctx)
    {
       mongoc_client_t *client = test_framework_new_default_client ();
       mongoc_collection_t *coll = drop_and_get_coll (client, "db", "coll");
+      // Insert with majority write concern to ensure documents are visible to change stream.
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+         mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+         mongoc_collection_set_write_concern (coll, wc);
+         mongoc_write_concern_destroy (wc);
+      }
       mongoc_change_stream_t *cs = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
       resumeToken = bson_copy (mongoc_change_stream_get_resume_token (cs));
       // Insert documents to create future events.
