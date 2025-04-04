@@ -123,6 +123,21 @@ append_vector_packed_bit_from_packed_array (
          ASSERT (bson_iter_next (&copy_iter));
          uint8_t packed_byte = (uint8_t) bson_iter_as_int64 (&copy_iter);
          ASSERT (bson_vector_packed_bit_view_write_packed (view, &packed_byte, 1, i));
+
+         // Read back the packed byte, interpret any masking as a conversion failure.
+         uint8_t packed_byte_check;
+         ASSERT (bson_vector_packed_bit_view_read_packed (view, &packed_byte_check, 1, i));
+         if (packed_byte != packed_byte_check) {
+            bson_set_error (error,
+                            TEST_ERROR_DOMAIN,
+                            TEST_ERROR_CODE,
+                            "byte at index %" PRId64
+                            " with value 0x%02X included write to masked bits (reads as 0x%02X)",
+                            (int64_t) i,
+                            packed_byte,
+                            packed_byte_check);
+            return false;
+         }
       }
       return true;
    } else {
@@ -158,17 +173,6 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
    bson_t vector_from_array = BSON_INITIALIZER;
    bson_error_t vector_from_array_error;
    bool vector_from_array_ok;
-
-   // (Spec test improvement TODO) Patch test cases that have unused bits set to '1' when '0' is required.
-   if (0 == strcmp ("PACKED_BIT with padding", test_case->test_description)) {
-      bson_iter_t iter;
-      ASSERT (bson_iter_init_find (&iter, &expected_bson, test_case->scenario_test_key));
-      uint32_t binary_len;
-      uint8_t *binary;
-      bson_iter_overwrite_binary (&iter, BSON_SUBTYPE_VECTOR, &binary_len, &binary);
-      ASSERT (binary_len > BSON_VECTOR_HEADER_LEN);
-      binary[binary_len - 1] &= (uint8_t) 0xFF << bson_vector_padding_from_header_byte_1 (binary[1]);
-   }
 
    // Try a format conversion from array to the indicated vector format.
    // The spec calls the first header byte "dtype" (combining the element type and element size fields)
@@ -334,14 +338,6 @@ test_bson_vector_json_case (vector_json_test_case_t *test_case)
                expected_byte = bson_iter_as_int64 (&expected_iter);
             } else {
                test_error ("test-vector array element %d has unexpected type, should be int.", (int) byte_count);
-            }
-
-            // (Spec test improvement TODO) Packed writes can't set unused bits to '1' in libbson, but the spec
-            // tests allow padding bits to take on undefined values. Modify the expected values to keep padding bits
-            // zeroed.
-            if (0 == strcmp ("PACKED_BIT with padding", test_case->test_description) &&
-                byte_count == bson_vector_packed_bit_const_view_length_bytes (actual_view) - 1u) {
-               expected_byte &= ((int64_t) 0xFF << *test_case->test_padding) & 0xFF;
             }
 
             // Note, the zero initializer is only needed due to a false positive -Wmaybe-uninitialized warning in
