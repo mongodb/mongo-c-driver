@@ -1469,7 +1469,7 @@ install (
       Devel
 )
 
-set(mongoc_cmake_prefix "${MONGOC_INSTALL_CMAKEDIR}/mongoc-${PROJECT_VERSION}")
+set(mongoc_cmake_prefix "${MONGO_C_DRIVER_INSTALL_CMAKEDIR}/mongoc-${PROJECT_VERSION}")
 configure_file(
    ${mongo-c-driver_SOURCE_DIR}/build/cmake/packageConfigVersion.cmake.in
    mongocConfigVersion.cmake
