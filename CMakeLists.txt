@@ -293,8 +293,21 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif ()
 
 include (InstallRequiredSystemLibraries)
-include (GNUInstallDirs)
 include (CMakeDependentOption)
+
+# Installation paths
+include (GNUInstallDirs)
+# The directory where CMake config packages will be installed, based on the libdir from GNUInstallDirs
+mongo_setting(
+   MONGO_C_DRIVER_INSTALL_CMAKEDIR "The directory in which CMake package files will be installed"
+   TYPE STRING
+   DEFAULT VALUE "${CMAKE_INSTALL_LIBDIR}/cmake"
+   VALIDATE CODE [[
+      if(IS_ABSOLUTE "${MONGO_C_DRIVER_INSTALL_CMAKEDIR}")
+         message(SEND_ERROR "The CMake installation directory must be a relative path (Got “${MONGO_C_DRIVER_INSTALL_CMAKEDIR}”)")
+      endif()
+   ]]
+)
 
 include(MongoC-Warnings)
 
@@ -372,6 +385,7 @@ set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
 include (CTest)
 if (BUILD_TESTING)
    include (TestFixtures)
+   include (src/libmongoc/tests/import-tests.cmake)
 endif ()
 
 # Ensure the default behavior: don't ignore RPATH settings.

@@ -1,5 +1,5 @@
 VERSION --arg-scope-and-set --pass-args 0.7
-LOCALLY
+FROM alpine:3.21
 
 IMPORT ./tools/ AS tools
 
