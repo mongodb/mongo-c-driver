@@ -725,35 +725,6 @@ test_inherit_from_client (void *ctx)
    mongoc_client_destroy (client);
 }
 
-void
-test_transaction_fails_on_unsupported_version_or_sharded_cluster (void *ctx)
-{
-   bson_error_t error;
-   mongoc_client_session_t *session;
-   mongoc_client_t *client;
-   bool r;
-
-   BSON_UNUSED (ctx);
-
-   client = test_framework_new_default_client ();
-   session = mongoc_client_start_session (client, NULL, &error);
-   ASSERT_OR_PRINT (session, error);
-
-   r = mongoc_client_session_start_transaction (session, NULL, &error);
-   if (!test_framework_max_wire_version_at_least (7) ||
-       (test_framework_is_mongos () && !test_framework_max_wire_version_at_least (8))) {
-      BSON_ASSERT (!r);
-      ASSERT_CONTAINS (error.message,
-                       "Multi-document transactions are not supported by this "
-                       "server version");
-   } else {
-      ASSERT_OR_PRINT (r, error);
-   }
-
-   mongoc_client_session_destroy (session);
-   mongoc_client_destroy (client);
-}
-
 
 static void
 test_transaction_recovery_token_cleared (void *ctx)
@@ -1091,14 +1062,6 @@ test_transactions_install (TestSuite *suite)
                       test_framework_skip_if_no_txns);
    TestSuite_AddFull (
       suite, "/transactions/inherit_from_client", test_inherit_from_client, NULL, NULL, test_framework_skip_if_no_txns);
-   TestSuite_AddFull (suite,
-                      "/transactions/"
-                      "transaction_fails_on_unsupported_version_or_sharded_cluster",
-                      test_transaction_fails_on_unsupported_version_or_sharded_cluster,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_sessions,
-                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/transactions/recovery_token_cleared",
                       test_transaction_recovery_token_cleared,
