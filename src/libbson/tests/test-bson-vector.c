@@ -131,9 +131,8 @@ append_vector_packed_bit_from_packed_array (
             bson_set_error (error,
                             TEST_ERROR_DOMAIN,
                             TEST_ERROR_CODE,
-                            "byte at index %" PRId64
-                            " with value 0x%02X included write to masked bits (reads as 0x%02X)",
-                            (int64_t) i,
+                            "byte at index %zu with value 0x%02X included write to masked bits (reads as 0x%02X)",
+                            i,
                             packed_byte,
                             packed_byte_check);
             return false;
