@@ -1,5 +1,9 @@
-libbson 1.x (Unreleased)
-========================
+libbson 1.30.3
+==============
+
+Fixes:
+
+  * Fix CMake configure error on macOS with CMake 4.
 
 New Features:
 
@@ -15,6 +19,11 @@ New Features:
   modifying their CMake project. The current imported target names will be
   removed from the 2.0 release, and should not be used for
   forward-compatibility.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
 
 libbson 1.30.2
 ==============

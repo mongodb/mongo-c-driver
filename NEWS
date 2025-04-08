@@ -1,5 +1,5 @@
-libmongoc 1.x (Unreleased)
-==========================
+libmongoc 1.30.3
+================
 
 New Features:
 
@@ -18,6 +18,13 @@ New Features:
 
   Programs that link to BSON libraries directly should also use the new target
   names `bson::static`, `bson::shared`, or `bson::bson`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+
 
 libmongoc 1.30.2
 ================
