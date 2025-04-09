@@ -682,6 +682,40 @@ test_bulkwrite_two_large_inserts (void *unused)
    bson_free (large_string);
 }
 
+
+// `test_bulkwrite_client_error_no_result` is a regression test for CDRIVER-5969.
+static void
+test_bulkwrite_client_error_no_result (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   bson_error_t error;
+   mongoc_client_t *client = test_framework_new_default_client ();
+   // Trigger a client-side error by adding a too-big document.
+   {
+      mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
+      bson_t too_big = BSON_INITIALIZER;
+      const size_t maxMessageSizeByte = 48000000;
+      char *big_string = bson_malloc (maxMessageSizeByte + 1);
+      memset (big_string, 'a', maxMessageSizeByte);
+      big_string[maxMessageSizeByte] = '\0';
+      BSON_APPEND_UTF8 (&too_big, "big", big_string);
+      ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", &too_big, NULL, &error), error);
+      mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+      ASSERT (bwr.exc);
+      ASSERT (mongoc_bulkwriteexception_error (bwr.exc, &error));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Sending would exceed maxMessageSizeBytes");
+      ASSERT (!bwr.res); // Expect no result.
+      bson_free (big_string);
+      bson_destroy (&too_big);
+      mongoc_bulkwriteresult_destroy (bwr.res);
+      mongoc_bulkwriteexception_destroy (bwr.exc);
+      mongoc_bulkwrite_destroy (bw);
+   }
+
+   mongoc_client_destroy (client);
+}
 void
 test_bulkwrite_install (TestSuite *suite)
 {
@@ -779,6 +813,14 @@ test_bulkwrite_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/bulkwrite/two_large_inserts",
                       test_bulkwrite_two_large_inserts,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
+   );
+
+   TestSuite_AddFull (suite,
+                      "/bulkwrite/client_error_no_result",
+                      test_bulkwrite_client_error_no_result,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
