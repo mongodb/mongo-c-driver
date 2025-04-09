@@ -26,6 +26,7 @@
 #include "util.h"
 #include <common-string-private.h>
 #include <mlib/cmp.h>
+#include <mlib/config.h>
 #include <common-oid-private.h>
 
 typedef struct {

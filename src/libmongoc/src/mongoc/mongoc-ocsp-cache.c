@@ -22,6 +22,7 @@
 #include <mongoc/mongoc-trace-private.h>
 #include <bson/bson.h>
 #include <common-thread-private.h>
+#include <mlib/config.h>
 
 typedef struct _cache_entry_list_t {
    struct _cache_entry_list_t *next;
@@ -43,8 +44,9 @@ static int
 cache_cmp (cache_entry_list_t *out, OCSP_CERTID *id)
 {
    ENTRY;
-   if (!out || !out->id || !id)
+   if (!out || !out->id || !id) {
       RETURN (1);
+   }
    RETURN (OCSP_id_cmp (out->id, id));
 }
 

@@ -26,6 +26,7 @@
 #include <mongoc/utlist.h>
 #include <common-bson-dsl-private.h>
 #include <mlib/cmp.h>
+#include <mlib/config.h>
 
 typedef struct {
    char *name;

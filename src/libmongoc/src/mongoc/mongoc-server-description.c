@@ -30,6 +30,8 @@
 #include <common-atomic-private.h>
 #include <common-oid-private.h>
 
+#include <mlib/config.h>
+
 #include <stdio.h>
 
 #define ALPHA 0.2
@@ -556,28 +558,34 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          }
       } else if (strcmp ("isWritablePrimary", bson_iter_key (&iter)) == 0 ||
                  strcmp (HANDSHAKE_RESPONSE_LEGACY_HELLO, bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter))
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             GOTO (typefailure);
+         }
          is_primary = bson_iter_bool (&iter);
       } else if (strcmp ("helloOk", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter))
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             GOTO (typefailure);
+         }
          sd->hello_ok = bson_iter_bool (&iter);
       } else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_UTF8 (&iter))
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
             GOTO (typefailure);
+         }
          sd->me = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter))
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
             GOTO (typefailure);
+         }
          sd->max_msg_size = bson_iter_int32 (&iter);
       } else if (strcmp ("maxBsonObjectSize", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter))
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
             GOTO (typefailure);
+         }
          sd->max_bson_obj_size = bson_iter_int32 (&iter);
       } else if (strcmp ("maxWriteBatchSize", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter))
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
             GOTO (typefailure);
+         }
          sd->max_write_batch_size = bson_iter_int32 (&iter);
       } else if (strcmp ("logicalSessionTimeoutMinutes", bson_iter_key (&iter)) == 0) {
          if (BSON_ITER_HOLDS_NUMBER (&iter)) {
@@ -589,68 +597,81 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
             GOTO (typefailure);
          }
       } else if (strcmp ("minWireVersion", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter))
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
             GOTO (typefailure);
+         }
          sd->min_wire_version = bson_iter_int32 (&iter);
       } else if (strcmp ("maxWireVersion", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter))
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
             GOTO (typefailure);
+         }
          sd->max_wire_version = bson_iter_int32 (&iter);
       } else if (strcmp ("msg", bson_iter_key (&iter)) == 0) {
          const char *msg;
-         if (!BSON_ITER_HOLDS_UTF8 (&iter))
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
             GOTO (typefailure);
+         }
          msg = bson_iter_utf8 (&iter, NULL);
          if (msg && 0 == strcmp (msg, "isdbgrid")) {
             is_shard = true;
          }
       } else if (strcmp ("setName", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_UTF8 (&iter))
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
             GOTO (typefailure);
+         }
          sd->set_name = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("setVersion", bson_iter_key (&iter)) == 0) {
          mongoc_server_description_set_set_version (sd, bson_iter_as_int64 (&iter));
       } else if (strcmp ("electionId", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_OID (&iter))
+         if (!BSON_ITER_HOLDS_OID (&iter)) {
             GOTO (typefailure);
+         }
          mongoc_server_description_set_election_id (sd, bson_iter_oid (&iter));
       } else if (strcmp ("secondary", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter))
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             GOTO (typefailure);
+         }
          is_secondary = bson_iter_bool (&iter);
       } else if (strcmp ("hosts", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_ARRAY (&iter))
+         if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
             GOTO (typefailure);
+         }
          bson_iter_array (&iter, &len, &bytes);
          bson_destroy (&sd->hosts);
          BSON_ASSERT (bson_init_static (&sd->hosts, bytes, len));
       } else if (strcmp ("passives", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_ARRAY (&iter))
+         if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
             GOTO (typefailure);
+         }
          bson_iter_array (&iter, &len, &bytes);
          bson_destroy (&sd->passives);
          BSON_ASSERT (bson_init_static (&sd->passives, bytes, len));
       } else if (strcmp ("arbiters", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_ARRAY (&iter))
+         if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
             GOTO (typefailure);
+         }
          bson_iter_array (&iter, &len, &bytes);
          bson_destroy (&sd->arbiters);
          BSON_ASSERT (bson_init_static (&sd->arbiters, bytes, len));
       } else if (strcmp ("primary", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_UTF8 (&iter))
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
             GOTO (typefailure);
+         }
          sd->current_primary = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("arbiterOnly", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter))
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             GOTO (typefailure);
+         }
          is_arbiter = bson_iter_bool (&iter);
       } else if (strcmp ("isreplicaset", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter))
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             GOTO (typefailure);
+         }
          is_replicaset = bson_iter_bool (&iter);
       } else if (strcmp ("tags", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_DOCUMENT (&iter))
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
             GOTO (typefailure);
+         }
          bson_iter_document (&iter, &len, &bytes);
          bson_destroy (&sd->tags);
          BSON_ASSERT (bson_init_static (&sd->tags, bytes, len));
@@ -664,8 +685,9 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
 
          sd->last_write_date_ms = bson_iter_date_time (&child);
       } else if (strcmp ("compression", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_ARRAY (&iter))
+         if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
             GOTO (typefailure);
+         }
          bson_iter_array (&iter, &len, &bytes);
          bson_destroy (&sd->compressors);
          BSON_ASSERT (bson_init_static (&sd->compressors, bytes, len));
@@ -681,12 +703,14 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          mongoc_server_description_set_topology_version (sd, &incoming_topology_version);
          bson_destroy (&incoming_topology_version);
       } else if (strcmp ("serviceId", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_OID (&iter))
+         if (!BSON_ITER_HOLDS_OID (&iter)) {
             GOTO (typefailure);
+         }
          bson_oid_copy_unsafe (bson_iter_oid (&iter), &sd->service_id);
       } else if (strcmp ("connectionId", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_NUMBER (&iter))
+         if (!BSON_ITER_HOLDS_NUMBER (&iter)) {
             GOTO (typefailure);
+         }
          sd->server_connection_id = bson_iter_as_int64 (&iter);
       }
    }

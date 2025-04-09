@@ -25,6 +25,8 @@
 #include <mongoc/mongoc-handshake.h>
 #include <mongoc/mongoc-handshake-private.h>
 
+#include <mlib/config.h>
+
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
@@ -1257,9 +1259,12 @@ test_handshake_platform_config (void)
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS));
 #endif
 
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    if (MONGOC_TRACE_ENABLED) {
       BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
    }
+   mlib_diagnostic_pop ();
 
    // Check that `MONGOC_MD_FLAG_ENABLE_ICU` is always unset. libicu dependency
    // was removed in CDRIVER-4680.
