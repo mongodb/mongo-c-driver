@@ -1516,7 +1516,7 @@ test_check_log_message (bson_t *expected, log_message_t *actual, bson_error_t *e
       if (!bson_iter_init_find (&failure_iter, actual->message, "failure")) {
          test_set_error (error, "expected log 'failure' to exist");
          goto done;
-      };
+      }
       if (*failure_is_redacted) {
          if (!check_failure_is_redacted (&failure_iter, error)) {
             test_diagnostics_error_info ("actual log message: %s", tmp_json (actual->message));

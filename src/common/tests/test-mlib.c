@@ -448,7 +448,7 @@ _test_foreach (void)
       ++n_loops;
       (void) i;
       ASSERT (n_loops <= 10);
-   };
+   }
    ASSERT (n_loops == 10);
 
    n_loops = 0;
