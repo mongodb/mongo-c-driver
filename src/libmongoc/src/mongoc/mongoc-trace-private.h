@@ -64,28 +64,26 @@ extern bool gLogTrace;
       ((void) 0)
 
 #define EXIT                                                                                                    \
-   if (1) {                                                                                                     \
+   do {                                                                                                         \
       mlib_diagnostic_push ();                                                                                  \
       mlib_disable_constant_conditional_expression_warnings ();                                                 \
       if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                                  \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, (int) (__LINE__)); \
       }                                                                                                         \
-      return;                                                                                                   \
       mlib_diagnostic_pop ();                                                                                   \
-   } else                                                                                                       \
-      ((void) 0)
+      return;                                                                                                   \
+   } while (0) // do-while instead of if-else to avoid false-positive -Wreturn-type warnings with GCC 11.
 
 #define RETURN(ret)                                                                                             \
-   if (1) {                                                                                                     \
+   do {                                                                                                         \
       mlib_diagnostic_push ();                                                                                  \
       mlib_disable_constant_conditional_expression_warnings ();                                                 \
       if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                                  \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, (int) (__LINE__)); \
       }                                                                                                         \
-      return ret;                                                                                               \
       mlib_diagnostic_pop ();                                                                                   \
-   } else                                                                                                       \
-      ((void) 0)
+      return ret;                                                                                               \
+   } while (0) // do-while instead of if-else to avoid false-positive -Wreturn-type warnings with GCC 11.
 
 #define GOTO(label)                                                                                               \
    if (1) {                                                                                                       \
@@ -95,8 +93,8 @@ extern bool gLogTrace;
          mongoc_log (                                                                                             \
             MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " GOTO: %s():%d %s", BSON_FUNC, (int) (__LINE__), #label); \
       }                                                                                                           \
-      goto label;                                                                                                 \
       mlib_diagnostic_pop ();                                                                                     \
+      goto label;                                                                                                 \
    } else                                                                                                         \
       ((void) 0)
 
