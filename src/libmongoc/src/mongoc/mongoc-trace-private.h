@@ -48,6 +48,7 @@ extern bool gLogTrace;
                      (int) (__LINE__),                          \
                      __VA_ARGS__);                              \
       }                                                         \
+      mlib_diagnostic_pop ();                                   \
    } else                                                       \
       ((void) 0)
 
@@ -58,6 +59,7 @@ extern bool gLogTrace;
       if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                                  \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, "ENTRY: %s():%d", BSON_FUNC, (int) (__LINE__)); \
       }                                                                                                         \
+      mlib_diagnostic_pop ();                                                                                   \
    } else                                                                                                       \
       ((void) 0)
 
@@ -69,6 +71,7 @@ extern bool gLogTrace;
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, (int) (__LINE__)); \
       }                                                                                                         \
       return;                                                                                                   \
+      mlib_diagnostic_pop ();                                                                                   \
    } else                                                                                                       \
       ((void) 0)
 
@@ -80,6 +83,7 @@ extern bool gLogTrace;
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, (int) (__LINE__)); \
       }                                                                                                         \
       return ret;                                                                                               \
+      mlib_diagnostic_pop ();                                                                                   \
    } else                                                                                                       \
       ((void) 0)
 
@@ -92,6 +96,7 @@ extern bool gLogTrace;
             MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " GOTO: %s():%d %s", BSON_FUNC, (int) (__LINE__), #label); \
       }                                                                                                           \
       goto label;                                                                                                 \
+      mlib_diagnostic_pop ();                                                                                     \
    } else                                                                                                         \
       ((void) 0)
 
@@ -115,6 +120,7 @@ extern bool gLogTrace;
                      _bson_str);                                       \
          bson_free (_bson_str);                                        \
       }                                                                \
+      mlib_diagnostic_pop ();                                          \
    } else                                                              \
       ((void) 0)
 
@@ -133,6 +139,7 @@ extern bool gLogTrace;
                      (int) _iovcnt);                                \
          mongoc_log_trace_iovec (MONGOC_LOG_DOMAIN, _iov, _iovcnt); \
       }                                                             \
+      mlib_diagnostic_pop ();                                       \
    } else                                                           \
       ((void) 0)
 
