@@ -28,6 +28,7 @@
 #include <bson/bson-iso8601-private.h>
 
 #include <mlib/cmp.h>
+#include <mlib/config.h>
 #include <common-b64-private.h>
 #include <jsonsl/jsonsl.h>
 
@@ -270,22 +271,25 @@ _noop (void)
 #define STACK_IS_DBPOINTER (STACK_FRAME_TYPE == BSON_JSON_FRAME_DBPOINTER)
 #define FRAME_TYPE_HAS_BSON(_type) ((_type) == BSON_JSON_FRAME_SCOPE || (_type) == BSON_JSON_FRAME_DBPOINTER)
 #define STACK_HAS_BSON FRAME_TYPE_HAS_BSON (STACK_FRAME_TYPE)
-#define STACK_PUSH(frame_type)                       \
-   do {                                              \
-      if (bson->n >= (STACK_MAX - 1)) {              \
-         return;                                     \
-      }                                              \
-      bson->n++;                                     \
-      if (STACK_HAS_BSON) {                          \
-         if (FRAME_TYPE_HAS_BSON (frame_type)) {     \
-            bson_reinit (STACK_BSON_CHILD);          \
-         } else {                                    \
-            bson_destroy (STACK_BSON_CHILD);         \
-         }                                           \
-      } else if (FRAME_TYPE_HAS_BSON (frame_type)) { \
-         bson_init (STACK_BSON_CHILD);               \
-      }                                              \
-      STACK_FRAME_TYPE = frame_type;                 \
+#define STACK_PUSH(frame_type)                                  \
+   do {                                                         \
+      if (bson->n >= (STACK_MAX - 1)) {                         \
+         return;                                                \
+      }                                                         \
+      bson->n++;                                                \
+      mlib_diagnostic_push ();                                  \
+      mlib_disable_constant_conditional_expression_warnings (); \
+      if (STACK_HAS_BSON) {                                     \
+         if (FRAME_TYPE_HAS_BSON (frame_type)) {                \
+            bson_reinit (STACK_BSON_CHILD);                     \
+         } else {                                               \
+            bson_destroy (STACK_BSON_CHILD);                    \
+         }                                                      \
+      } else if (FRAME_TYPE_HAS_BSON (frame_type)) {            \
+         bson_init (STACK_BSON_CHILD);                          \
+      }                                                         \
+      mlib_diagnostic_pop ();                                   \
+      STACK_FRAME_TYPE = frame_type;                            \
    } while (0)
 #define STACK_PUSH_ARRAY(statement)       \
    do {                                   \

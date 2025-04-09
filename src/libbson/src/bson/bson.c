@@ -28,6 +28,8 @@
 #include <string.h>
 #include <math.h>
 
+#include <mlib/config.h>
+
 
 typedef enum {
    BSON_VALIDATE_PHASE_START,
@@ -313,7 +315,10 @@ BSON_STATIC_ASSERT2 (max_alloc_grow_fits_min_sizet, (uint64_t) BSON_MAX_SIZE * 2
 // Add a bytes+length pair only if `_length > 0`.
 // Append failure if `n_bytes` will exceed BSON max size.
 #define BSON_APPEND_BYTES_ADD_ARGUMENT(_list, _bytes, _length)        \
+   mlib_diagnostic_push ();                                           \
+   mlib_disable_constant_conditional_expression_warnings ();          \
    if (BSON_UNLIKELY ((_length) > BSON_MAX_SIZE - (_list).n_bytes)) { \
+      mlib_diagnostic_pop ();                                         \
       goto append_failure;                                            \
    } else if ((_length) > 0) {                                        \
       *(_list).current++ = (_bson_append_bytes_arg){                  \

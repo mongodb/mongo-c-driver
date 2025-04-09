@@ -350,4 +350,9 @@
  */
 #define mlib_typeof(...) MLIB_IF_ELSE (mlib_have_typeof ()) (__typeof__) (__mlib_typeof_is_not_supported) (__VA_ARGS__)
 
+/**
+ * @brief Disable warnings for constant conditional expressions.
+ */
+#define mlib_disable_constant_conditional_expression_warnings() mlib_msvc_warning (disable : 4127)
+
 #endif // MLIB_CONFIG_H_INCLUDED

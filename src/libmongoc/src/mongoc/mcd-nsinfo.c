@@ -20,6 +20,8 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/uthash.h>
 
+#include <mlib/config.h>
+
 typedef struct {
    char *ns; // Hash key.
    int32_t index;
@@ -79,7 +81,11 @@ mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error)
    // Add to hash table.
    ns_to_index_t *entry = bson_malloc (sizeof (*entry));
    *entry = (ns_to_index_t){.index = ns_index, .ns = bson_strdup (ns), .hh = {0}};
+
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    HASH_ADD_KEYPTR (hh, self->n2i, entry->ns, strlen (entry->ns), entry);
+   mlib_diagnostic_pop ();
 
    // Append to buffer.
    bson_t mcd_nsinfo_bson = BSON_INITIALIZER;
@@ -96,7 +102,12 @@ mcd_nsinfo_find (const mcd_nsinfo_t *self, const char *ns)
    BSON_ASSERT_PARAM (ns);
 
    ns_to_index_t *found;
+
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    HASH_FIND_STR (self->n2i, ns, found);
+   mlib_diagnostic_pop ();
+
    if (found == NULL) {
       return -1;
    }
