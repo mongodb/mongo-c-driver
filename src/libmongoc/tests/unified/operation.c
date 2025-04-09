@@ -3961,7 +3961,7 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
                          (int) (duration / 1000),
                          (int) WAIT_FOR_EVENT_TIMEOUT_MS);
          goto done;
-      };
+      }
 
       _operation_hidden_wait (test, client, "waitForEvent");
    }
