@@ -705,6 +705,11 @@ test_change_stream_resumable_error (void)
    reply_to_request_simple (request, not_primary_err);
    request_destroy (request);
 
+   /* The "not primary" error does not cause the client to close connection. Expect a killCursors. */
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{ 'killCursors' : 'coll', 'cursors' : [ { '$numberLong': '124' } ] }"));
+   reply_to_request_with_ok_and_destroy (request);
+
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
    reply_to_request_simple (request, "{'cursor': {'id': 125, 'ns': 'db.coll','firstBatch': []},'ok': 1}");
@@ -713,6 +718,11 @@ test_change_stream_resumable_error (void)
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 125));
    reply_to_request_simple (request, not_primary_err);
    request_destroy (request);
+
+   /* The "not primary" error does not cause the client to close connection. Expect a killCursors. */
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{ 'killCursors' : 'coll', 'cursors' : [ { '$numberLong': '125' } ] }"));
+   reply_to_request_with_ok_and_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
@@ -751,6 +761,11 @@ test_change_stream_resumable_error (void)
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 123));
    reply_to_request_simple (request, "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }");
    request_destroy (request);
+
+   /* The "not primary" error does not cause the client to close connection. Expect a killCursors. */
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{ 'killCursors' : 'coll', 'cursors' : [ { '$numberLong': '123' } ] }"));
+   reply_to_request_with_ok_and_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
