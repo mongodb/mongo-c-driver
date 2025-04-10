@@ -116,6 +116,52 @@ if [[ "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]]; then
   export EnforceProcessCountAcrossBuilds=1
 fi
 
+echo "Checking requested C standard is supported..."
+pushd "$(mktemp -d)"
+cat >CMakeLists.txt <<DOC
+cmake_minimum_required(VERSION 3.30)
+project(c_standard_latest LANGUAGES C)
+set(c_std_version "${C_STD_VERSION:?}")
+if(c_std_version STREQUAL "latest") # Special-case MSVC's /std:clatest flag.
+  include(CheckCCompilerFlag)
+  check_c_compiler_flag("/std:clatest" cflag_std_clatest)
+  if(cflag_std_clatest)
+    message(STATUS "/std:clatest is supported")
+  else()
+    message(FATAL_ERROR "/std:clatest is not supported")
+  endif()
+else()
+  # Ensure "old" standard versions are not compared as "newer" than C11/C17/etc.
+  set(old_std_versions 90 99)
+
+  macro(success)
+    message(STATUS "Latest C standard \${CMAKE_C_STANDARD_LATEST} is newer than \${c_std_version}")
+  endmacro()
+  macro(failure)
+    message(FATAL_ERROR "Latest C standard \${CMAKE_C_STANDARD_LATEST} is older than \${c_std_version}")
+  endmacro()
+
+  if (CMAKE_C_STANDARD_LATEST IN_LIST old_std_versions AND c_std_standard IN_LIST old_std_versions)
+    if (CMAKE_C_STANDARD_LATEST GREATER_EQUAL c_std_version)
+      success() # Both are old: latest >= version
+    else()
+      failure() # Both are old: latest < version
+    endif()
+  elseif(CMAKE_C_STANDARD_LATEST IN_LIST old_std_versions)
+    failure() # latest (old) < version (new)
+  elseif(c_std_version IN_LIST old_std_versions)
+    success() # latest (new) >= version (old)
+  elseif(CMAKE_C_STANDARD_LATEST GREATER_EQUAL c_std_version)
+    success() # Both are new: latest >= version.
+  else()
+    failure() # Both are new: latest < version.
+  endif()
+endif()
+DOC
+"${cmake_binary:?}" -S . -B build
+popd # "$(tmpfile -d)"
+echo "Checking requested C standard is supported... done."
+
 echo "Installing libmongocrypt..."
 # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
 "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" &>output.txt || {

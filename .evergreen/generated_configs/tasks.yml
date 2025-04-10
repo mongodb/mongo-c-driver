@@ -5132,6 +5132,16 @@ tasks:
           CC: clang-12
           CXX: clang++-12
           C_STD_VERSION: 11
+  - name: std-c11-windows-2019-vs2015-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2015x64, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 14 2015
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 11
   - name: std-c11-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c11]
@@ -5732,6 +5742,16 @@ tasks:
           CC: clang-12
           CXX: clang++-12
           C_STD_VERSION: 99
+  - name: std-c99-windows-2019-vs2015-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2015x64, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 14 2015
+          CMAKE_GENERATOR_PLATFORM: x64
+          C_STD_VERSION: 99
   - name: std-c99-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c99]
@@ -5762,36 +5782,6 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 17 2022
           CMAKE_GENERATOR_PLATFORM: x64
           C_STD_VERSION: 99
-  - name: std-clatest-windows-2019-vs2017-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-clatest]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 15 2017
-          CMAKE_GENERATOR_PLATFORM: x64
-          C_STD_VERSION: latest
-  - name: std-clatest-windows-2019-vs2019-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-clatest]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 16 2019
-          CMAKE_GENERATOR_PLATFORM: x64
-          C_STD_VERSION: latest
-  - name: std-clatest-windows-2019-vs2022-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-clatest]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 17 2022
-          CMAKE_GENERATOR_PLATFORM: x64
-          C_STD_VERSION: latest
   - name: tsan-sasl-cyrus-openssl-debian10-clang-compile
     run_on: debian10-large
     tags: [sanitizers-matrix-tsan, compile, debian10, clang, tsan, sasl-cyrus]

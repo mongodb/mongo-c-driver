@@ -28,8 +28,6 @@ class Distro(BaseModel):
         '2019',
         '2022',
         'vsCurrent',
-        'vsCurrent2',
-        'vsMulti',
     ] | None = None
     size: Literal['small', 'large'] | None = None
     arch: Literal['arm64', 'power', 'zseries'] | None = None
@@ -165,20 +163,7 @@ def make_distro_str(distro_name, compiler, arch) -> str:
             distro_str = 'windows-' + \
                 distro_name[len('windows-vsCurrent-'):] + f'-{compiler_str}'
         else:
-            distro_str = 'windows-2019' + f'-{compiler_str}'
-    elif distro_name.startswith('windows-64-vs'):
-        # Abbreviate 'windows-64-vs<type>' as 'vs<type>' and append '-<arch>' if
-        # given in compiler string as 'vs<type><arch>', e.g.:
-        #     ('windows-64-vs2017', 'vs2017x64', None) -> vs2017-x64
-        #     ('windows-64-vs2017', 'mingw',     None) -> vs2017-mingw
-        distro_str = distro_name[len('windows-64-'):] + {
-            'vs2017x64': '-x64',
-            'vs2017x86': '-x86',
-            'vs2019x64': '-x64',
-            'vs2019x86': '-x86',
-            'vs2022x64': '-x64',
-            'vs2022x86': '-x86',
-        }.get(compiler, f'-{compiler}')
+            distro_str = 'windows-2019-' + compiler_str
     else:
         distro_str = distro_name
         if compiler:
@@ -192,6 +177,8 @@ def make_distro_str(distro_name, compiler, arch) -> str:
 
 def to_cc(compiler):
     return {
+        'vs2015x64': 'Visual Studio 14 2015',
+        'vs2015x86': 'Visual Studio 14 2015',
         'vs2017x64': 'Visual Studio 15 2017',
         'vs2017x86': 'Visual Studio 15 2017',
         'vs2019x64': 'Visual Studio 16 2019',
@@ -203,6 +190,8 @@ def to_cc(compiler):
 
 def to_platform(compiler):
     return {
+        'vs2015x64': 'x64',
+        'vs2015x86': 'Win32',
         'vs2017x64': 'x64',
         'vs2017x86': 'Win32',
         'vs2019x64': 'x64',
