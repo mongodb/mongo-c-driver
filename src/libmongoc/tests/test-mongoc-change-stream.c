@@ -68,16 +68,6 @@ _setup_for_resume (mongoc_change_stream_t *stream)
    ASSERT_OR_PRINT (ret, error);
 }
 
-
-static int
-test_framework_skip_if_not_single_version_5 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return (!test_framework_is_replset () && !test_framework_is_mongos ()) ? 1 : 0;
-}
-
 static mongoc_collection_t *
 drop_and_get_coll (mongoc_client_t *client, const char *db_name, const char *coll_name)
 {
@@ -2257,7 +2247,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_single_server,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_single_version_5);
+                      test_framework_skip_if_not_single);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/track_resume_token",
