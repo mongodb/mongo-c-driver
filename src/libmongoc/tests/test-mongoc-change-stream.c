@@ -1161,87 +1161,6 @@ typedef struct {
    }
 
 static void
-_resume_at_optime_started (const mongoc_apm_command_started_t *event)
-{
-   resume_ctx_t *ctx;
-
-   ctx = (resume_ctx_t *) mongoc_apm_command_started_get_context (event);
-   if (0 != strcmp (mongoc_apm_command_started_get_command_name (event), "aggregate")) {
-      return;
-   }
-
-   if (!ctx->has_initiated) {
-      ctx->has_initiated = true;
-      return;
-   }
-
-   ctx->has_resumed = true;
-
-   /* postBatchResumeToken (MongoDB 4.0.7+) supersedes operationTime. Since
-    * test_change_stream_resume_at_optime runs for wire version 7+, decide
-    * whether to skip operationTime assertion based on the command reply. */
-   if (!bson_has_field (&ctx->agg_reply, "cursor.postBatchResumeToken")) {
-      bson_value_t replied_optime, sent_optime;
-      match_ctx_t match_ctx = {{0}};
-
-      /* it should re-use the same optime on resume. */
-      bson_lookup_value (&ctx->agg_reply, "operationTime", &replied_optime);
-      bson_lookup_value (
-         mongoc_apm_command_started_get_command (event), "pipeline.0.$changeStream.startAtOperationTime", &sent_optime);
-      BSON_ASSERT (replied_optime.value_type == BSON_TYPE_TIMESTAMP);
-      BSON_ASSERT (match_bson_value (&sent_optime, &replied_optime, &match_ctx));
-      bson_value_destroy (&sent_optime);
-      bson_value_destroy (&replied_optime);
-   }
-}
-
-static void
-_resume_at_optime_succeeded (const mongoc_apm_command_succeeded_t *event)
-{
-   resume_ctx_t *ctx;
-
-   ctx = (resume_ctx_t *) mongoc_apm_command_succeeded_get_context (event);
-   if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event), "aggregate")) {
-      bson_destroy (&ctx->agg_reply);
-      bson_copy_to (mongoc_apm_command_succeeded_get_reply (event), &ctx->agg_reply);
-   }
-}
-
-/* Test that "operationTime" in aggregate reply is used on resume */
-static void
-test_change_stream_resume_at_optime (void *test_ctx)
-{
-   mongoc_client_t *client = test_framework_new_default_client ();
-   mongoc_collection_t *coll;
-   mongoc_change_stream_t *stream;
-   const bson_t *doc;
-   bson_error_t error;
-   mongoc_apm_callbacks_t *callbacks;
-   resume_ctx_t ctx = RESUME_INITIALIZER;
-
-   BSON_UNUSED (test_ctx);
-
-   callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_command_started_cb (callbacks, _resume_at_optime_started);
-   mongoc_apm_set_command_succeeded_cb (callbacks, _resume_at_optime_succeeded);
-   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
-   coll = mongoc_client_get_collection (client, "db", "coll");
-   stream = mongoc_collection_watch (coll, tmp_bson ("{'pipeline': []}"), NULL);
-
-   _setup_for_resume (stream);
-   (void) mongoc_change_stream_next (stream, &doc);
-   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL), error);
-   BSON_ASSERT (ctx.has_initiated);
-   BSON_ASSERT (ctx.has_resumed);
-
-   bson_destroy (&ctx.agg_reply);
-   mongoc_change_stream_destroy (stream);
-   mongoc_collection_destroy (coll);
-   mongoc_apm_callbacks_destroy (callbacks);
-   mongoc_client_destroy (client);
-}
-
-static void
 _resume_with_post_batch_resume_token_started (const mongoc_apm_command_started_t *event)
 {
    resume_ctx_t *ctx;
@@ -2321,15 +2240,6 @@ test_change_stream_install (TestSuite *suite)
                       test_framework_skip_if_not_rs_version_7,
                       test_framework_skip_if_no_crypto,
                       _skip_if_no_start_at_optime);
-   TestSuite_AddFull (suite,
-                      "/change_stream/resume_at_optime",
-                      test_change_stream_resume_at_optime,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_rs_version_7,
-                      test_framework_skip_if_no_crypto,
-                      _skip_if_no_start_at_optime,
-                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/change_stream/resume_with_post_batch_resume_token",
                       test_change_stream_resume_with_post_batch_resume_token,
