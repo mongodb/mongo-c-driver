@@ -60,6 +60,8 @@ mcd_nsinfo_destroy (mcd_nsinfo_t *self)
    bson_free (self);
 }
 
+mlib_diagnostic_push ();
+mlib_msvc_warning (disable : 4702); // HASH_ADD_KEYPTR
 int32_t
 mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error)
 {
@@ -94,6 +96,7 @@ mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error)
    bson_destroy (&mcd_nsinfo_bson);
    return ns_index;
 }
+mlib_diagnostic_pop ();
 
 int32_t
 mcd_nsinfo_find (const mcd_nsinfo_t *self, const char *ns)
