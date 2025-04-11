@@ -36,17 +36,18 @@ enum {
 BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #endif
 
-#define _bsonDSL_disableWarnings()                                        \
-   if (1) {                                                               \
-      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic push");)                 \
-      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");) \
-   } else                                                                 \
+#define _bsonDSL_disableWarnings()           \
+   if (1) {                                  \
+      mlib_diagnostic_push ();               \
+      mlib_gnu_warning_disable ("-Wshadow"); \
+      mlib_msvc_warning (disable : 4456);    \
+   } else                                    \
       ((void) 0)
 
-#define _bsonDSL_restoreWarnings()                       \
-   if (1) {                                              \
-      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");) \
-   } else                                                \
+#define _bsonDSL_restoreWarnings() \
+   if (1) {                        \
+      mlib_diagnostic_pop ();      \
+   } else                          \
       ((void) 0)
 
 /**

@@ -3084,9 +3084,9 @@ test_bson_array_builder (void)
          bson_t b;
          bson_array_builder_t *bab = bson_array_builder_new ();
          {
-            bson_t *b = TMP_BSON_FROM_JSON ({"A" : 1});
+            bson_t *bb = TMP_BSON_FROM_JSON ({"A" : 1});
             bson_iter_t iter;
-            ASSERT (bson_iter_init_find (&iter, b, "A"));
+            ASSERT (bson_iter_init_find (&iter, bb, "A"));
             ASSERT (bson_array_builder_append_iter (bab, &iter));
          }
          ASSERT (bson_array_builder_build (bab, &b));
