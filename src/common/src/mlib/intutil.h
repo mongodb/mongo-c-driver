@@ -90,9 +90,12 @@ typedef struct mlib_upsized_integer {
  */
 #define mlib_upsize_integer(Value) \
    /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
+   MLIB_IF_MSVC (__pragma (warning(push))) \
+   MLIB_IF_MSVC (__pragma (warning(disable : 4189))) \
    ((sizeof ((Value)) < sizeof (intmax_t) || ((0 & (Value)) - 1) < 0) \
       ? mlib_init(mlib_upsized_integer) {{(intmax_t) (Value)}, true} \
-      : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}})
+      : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}}) \
+   MLIB_IF_MSVC (__pragma (warning(pop)))
 // clang-format on
 
 #endif // MLIB_INTUTIL_H_INCLUDED
