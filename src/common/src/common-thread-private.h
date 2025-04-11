@@ -79,6 +79,8 @@ BSON_BEGIN_DECLS
    } while (0)
 
 #else
+#include <mlib/config.h>
+
 typedef struct {
    pthread_t lock_owner;
    pthread_mutex_t wrapped_mutex;
@@ -113,7 +115,9 @@ typedef struct {
 
 #else
 #include <process.h>
-#define BSON_ONCE_FUN(n) BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c)
+#define BSON_ONCE_FUN(n)                                                        \
+   MLIB_IF_MSVC (__pragma (warning (push)) __pragma (warning (disable : 4100))) \
+   BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c) MLIB_IF_MSVC (__pragma (warning (pop)))
 #define BSON_ONCE_INIT INIT_ONCE_STATIC_INIT
 #define BSON_ONCE_RETURN return true
 #define bson_mutex_destroy DeleteCriticalSection

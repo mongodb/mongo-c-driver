@@ -94,6 +94,7 @@ mongo_cond_ret_is_timedout (int ret)
 static BSON_INLINE int
 mongoc_cond_destroy (mongoc_cond_t *_ignored)
 {
+   (void) _ignored;
    return 0;
 }
 #endif

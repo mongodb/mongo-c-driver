@@ -840,6 +840,9 @@ _mongoc_stream_tls_secure_channel_should_retry (mongoc_stream_t *stream)
 mongoc_stream_t *
 mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
 {
+   BSON_UNUSED (host);
+   BSON_UNUSED (client);
+
    SECURITY_STATUS sspi_status = SEC_E_OK;
    SCHANNEL_CRED schannel_cred;
    mongoc_stream_tls_t *tls;

@@ -11,9 +11,8 @@ int
 main (int argc, char *argv[])
 {
    TestSuite suite;
-   int ret;
 
-   test_libmongoc_init (&suite, "libmongoc", argc, argv);
+   test_libmongoc_init (&suite, argc, argv);
 
    /* libbson */
 
@@ -162,7 +161,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_bulkwrite_install);
    TEST_INSTALL (test_mongoc_oidc_callback_install);
 
-   ret = TestSuite_Run (&suite);
+   const int ret = TestSuite_Run (&suite);
 
    test_libmongoc_destroy (&suite);
 
