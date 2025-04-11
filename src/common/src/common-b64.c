@@ -271,9 +271,9 @@ static const uint8_t mongoc_b64rmap_invalid = 0xff;
 #define mongoc_common_once_t INIT_ONCE
 #define MONGOC_COMMON_ONCE_INIT INIT_ONCE_STATIC_INIT
 #define mongoc_common_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
-#define MONGOC_COMMON_ONCE_FUN(n)                                               \
-   MLIB_IF_MSVC (__pragma (warning (push)) __pragma (warning (disable : 4100))) \
-   BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c) MLIB_IF_MSVC (__pragma (warning (pop)))
+#define MONGOC_COMMON_ONCE_FUN(n)                                                             \
+   BOOL CALLBACK MLIB_IF_MSVC (__pragma (warning (push)) __pragma (warning (disable : 4100))) \
+      n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c) MLIB_IF_MSVC (__pragma (warning (pop)))
 #define MONGOC_COMMON_ONCE_RETURN return true
 #endif
 
