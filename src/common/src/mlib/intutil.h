@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <mlib/config.h>
+
 /**
  * @brief Given an integral type, evaluates to `true` if that type is signed,
  * otherwise `false`
@@ -45,9 +47,12 @@
  * minimal value of that type.
  */
 #define mlib_minof(T) \
+   MLIB_IF_MSVC (__pragma (warning (push))) \
+   MLIB_IF_MSVC (__pragma (warning (disable : 4146))) \
    ((T) (!mlib_is_signed (T) \
         ? (T) 0 \
-        : (T) (-((((T) 1 << (sizeof (T) * CHAR_BIT - 2)) - 1) * 2 + 1) - 1)))
+        : (T) (-((((T) 1 << (sizeof (T) * CHAR_BIT - 2)) - 1) * 2 + 1) - 1))) \
+   MLIB_IF_MSVC (__pragma (warning (pop)))
 // clang-format on
 
 /**
