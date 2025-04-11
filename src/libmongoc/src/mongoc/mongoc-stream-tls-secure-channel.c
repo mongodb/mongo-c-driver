@@ -334,7 +334,6 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
    size_t bytes;
 
    char *to_write = NULL;
-   size_t to_write_len;
 
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
@@ -353,6 +352,9 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
       while (iov_pos < iov[i].iov_len) {
          BSON_ASSERT (buf_end >= buf_tail);
          const size_t buf_remaining = (size_t) (buf_end - buf_tail);
+
+         // Set below and guarded by `to_write`.
+         size_t to_write_len = 0u;
 
          if (buf_head != buf_tail || ((i + 1u < iovcnt) && (buf_remaining > (iov[i].iov_len - iov_pos)))) {
             /* If we have either of:
