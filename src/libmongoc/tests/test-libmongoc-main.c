@@ -19,7 +19,10 @@ main (int argc, char *argv[])
 
 #define TEST_INSTALL(FuncName)                 \
    if (1) {                                    \
+      mlib_diagnostic_push ();                 \
+      mlib_msvc_warning (disable : 4210);      \
       extern void FuncName (TestSuite *suite); \
+      mlib_diagnostic_pop ();                  \
       FuncName (&suite);                       \
    } else                                      \
       ((void) 0)
