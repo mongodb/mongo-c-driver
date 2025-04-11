@@ -40,7 +40,7 @@ MATRIX = [
     ('rhel95',     'gcc',    None, [99, 11, 17, 23]), # GCC 11.5 (max: C2x)
 
     ('windows-vsCurrent', 'vs2015x64', None, [99, 11,   ]), # Max: C11
-    ('windows-vsCurrent', 'vs2017x64', None, [99, 11, 17]), # Max: C17
+    ('windows-vsCurrent', 'vs2017x64', None, [99, 11,   ]), # Max: C11
     ('windows-vsCurrent', 'vs2019x64', None, [99, 11, 17]), # Max: C17
     ('windows-vsCurrent', 'vs2022x64', None, [99, 11, 17]), # Max: C17
 ]

@@ -5362,16 +5362,6 @@ tasks:
           CC: clang-12
           CXX: clang++-12
           C_STD_VERSION: 17
-  - name: std-c17-windows-2019-vs2017-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c17]
-    commands:
-      - func: find-cmake-latest
-      - func: std-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 15 2017
-          CMAKE_GENERATOR_PLATFORM: x64
-          C_STD_VERSION: 17
   - name: std-c17-windows-2019-vs2019-x64-compile
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c17]
