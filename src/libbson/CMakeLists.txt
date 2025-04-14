@@ -33,10 +33,6 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 # potentially co-locate additional future major versions.
 set (BSON_API_VERSION 1.0)
 
-if (APPLE)
-   cmake_policy (SET CMP0042 OLD)
-endif ()
-
 
 #  .d8888b.           888    888    d8b
 # d88P  Y88b          888    888    Y8P
@@ -403,6 +399,17 @@ install (EXPORT bson-targets
    NAMESPACE mongo::
    FILE bson-targets.cmake
    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}
+)
+
+set(bson_cmake_prefix "${MONGO_C_DRIVER_INSTALL_CMAKEDIR}/bson-${PROJECT_VERSION}")
+configure_file(
+   ${mongo-c-driver_SOURCE_DIR}/build/cmake/packageConfigVersion.cmake.in
+   bsonConfigVersion.cmake
+   @ONLY
+)
+install(
+   FILES etc/bsonConfig.cmake "${CMAKE_CURRENT_BINARY_DIR}/bsonConfigVersion.cmake"
+   DESTINATION "${bson_cmake_prefix}"
 )
 
 include (LegacyPackage)

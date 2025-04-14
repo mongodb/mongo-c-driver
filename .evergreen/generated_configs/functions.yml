@@ -4,33 +4,56 @@ functions:
       type: setup
       params:
         binary: bash
-        working_dir: mongoc
         args:
           - -c
-          - .evergreen/scripts/abi-compliance-check-setup.sh
+          - |
+            if [[ -n "$XDG_CACHE_DIR" ]]; then
+                cache_dir="$XDG_CACHE_DIR" # XDG Base Directory specification.
+            elif [[ -n "$LOCALAPPDATA" ]]; then
+                cache_dir="$LOCALAPPDATA" # Windows.
+            elif [[ -n "$USERPROFILE" ]]; then
+                cache_dir="$USERPROFILE/.cache" # Windows (fallback).
+            elif [[ -d "$HOME/Library/Caches" ]]; then
+                cache_dir="$HOME/Library/Caches" # MacOS.
+            elif [[ -n "$HOME" ]]; then
+                cache_dir="$HOME/.cache" # Linux-like.
+            elif [[ -d ~/.cache ]]; then
+                cache_dir="~/.cache" # Linux-like (fallback).
+            else
+                cache_dir="$(pwd)/.cache" # EVG task directory (fallback).
+            fi
+
+            mkdir -p "$cache_dir/mongo-c-driver" || exit
+            cache_dir="$(cd "$cache_dir/mongo-c-driver" && pwd)" || exit
+
+            printf "MONGO_C_DRIVER_CACHE_DIR: %s\n" "$cache_dir" >|expansions.set-cache-dir.yml
+    - command: expansions.update
+      type: setup
+      params:
+        file: expansions.set-cache-dir.yml
     - command: subprocess.exec
       type: setup
       params:
         binary: bash
         working_dir: mongoc
-        add_expansions_to_env: true
+        include_expansions_in_env:
+          - MONGO_C_DRIVER_CACHE_DIR
         args:
           - -c
-          - .evergreen/scripts/abi-compliance-check.sh
+          - .evergreen/scripts/abi-compliance-check-setup.sh
     - command: subprocess.exec
       type: test
       params:
         binary: bash
         working_dir: mongoc
-        env:
-          AWS_ACCESS_KEY_ID: ${aws_key}
-          AWS_SECRET_ACCESS_KEY: ${aws_secret}
+        add_expansions_to_env: true
+        include_expansions_in_env:
+          - MONGO_C_DRIVER_CACHE_DIR
         args:
           - -c
-          - |
-            aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
-            [[ ! -f ./abi-compliance/abi-error.txt ]]
+          - .evergreen/scripts/abi-compliance-check.sh
     - command: s3.put
+      type: system
       params:
         display_name: "ABI Report:"
         aws_key: ${aws_key}
@@ -39,7 +62,18 @@ functions:
         content_type: text/html
         local_files_include_filter: mongoc/abi-compliance/compat_reports/**/*.html
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html
+        remote_file: mongo-c-driver/${branch_name}/${revision}/${version_id}/${build_id}/${task_id}/${execution}/abi-compliance-check/
+    - command: s3.put
+      type: system
+      params:
+        display_name: "ABI Compliance Check: "
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: text/plain
+        local_files_include_filter: abi-compliance/logs/**/log.txt
+        permissions: public-read
+        remote_file: mongo-c-driver/${branch_name}/${revision}/${version_id}/${build_id}/${task_id}/${execution}/abi-compliance-check/
   backtrace:
     - command: subprocess.exec
       params:
@@ -164,7 +198,7 @@ functions:
         aws_secret: ${aws_secret}
         bucket: mciuploads
         local_file: build.tar.gz
-        remote_file: ${project}/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz
     - command: archive.targz_extract
       params:
         destination: mongoc
@@ -229,14 +263,7 @@ functions:
             set -o errexit
             set -o pipefail
             if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
-                # This is a GitHub PR or patch build, probably branched from master
-                if command -v python3 &>/dev/null; then
-                    # Prefer python3 if it is available
-                    echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-                else
-                    echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-                fi
-                VERSION=$VERSION_CURRENT-${version_id}
+                VERSION=patch-${version_id}
             else
                 VERSION=latest
             fi
@@ -546,7 +573,7 @@ functions:
         content_type: application/json
         local_file: mongoc/augmented-sbom.json
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/sbom/augmented-sbom.json
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/sbom/augmented-sbom.json
   scan-build:
     - command: subprocess.exec
       type: test
@@ -558,6 +585,38 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile-scan-build.sh
+  set-cache-dir:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            if [[ -n "$XDG_CACHE_DIR" ]]; then
+                cache_dir="$XDG_CACHE_DIR" # XDG Base Directory specification.
+            elif [[ -n "$LOCALAPPDATA" ]]; then
+                cache_dir="$LOCALAPPDATA" # Windows.
+            elif [[ -n "$USERPROFILE" ]]; then
+                cache_dir="$USERPROFILE/.cache" # Windows (fallback).
+            elif [[ -d "$HOME/Library/Caches" ]]; then
+                cache_dir="$HOME/Library/Caches" # MacOS.
+            elif [[ -n "$HOME" ]]; then
+                cache_dir="$HOME/.cache" # Linux-like.
+            elif [[ -d ~/.cache ]]; then
+                cache_dir="~/.cache" # Linux-like (fallback).
+            else
+                cache_dir="$(pwd)/.cache" # EVG task directory (fallback).
+            fi
+
+            mkdir -p "$cache_dir/mongo-c-driver" || exit
+            cache_dir="$(cd "$cache_dir/mongo-c-driver" && pwd)" || exit
+
+            printf "MONGO_C_DRIVER_CACHE_DIR: %s\n" "$cache_dir" >|expansions.set-cache-dir.yml
+    - command: expansions.update
+      type: setup
+      params:
+        file: expansions.set-cache-dir.yml
   start-load-balancer:
     - command: subprocess.exec
       type: setup
@@ -623,7 +682,7 @@ functions:
         content_type: ${content_type|application/x-gzip}
         local_file: ${build_id}.tar.gz
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz
   upload-docs:
     - command: subprocess.exec
       params:
@@ -634,7 +693,7 @@ functions:
           AWS_SECRET_ACCESS_KEY: ${aws_secret}
         args:
           - -c
-          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
+          - aws s3 cp doc/html s3://mciuploads/mongo-c-driver/docs/libbson/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         display_name: libbson docs
@@ -644,7 +703,7 @@ functions:
         content_type: text/html
         local_file: mongoc/_build/for-docs/src/libbson/doc/html/index.html
         permissions: public-read
-        remote_file: ${project}/docs/libbson/${CURRENT_VERSION}/index.html
+        remote_file: mongo-c-driver/docs/libbson/${CURRENT_VERSION}/index.html
     - command: subprocess.exec
       params:
         binary: bash
@@ -654,7 +713,7 @@ functions:
           AWS_SECRET_ACCESS_KEY: ${aws_secret}
         args:
           - -c
-          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
+          - aws s3 cp doc/html s3://mciuploads/mongo-c-driver/docs/libmongoc/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         display_name: libmongoc docs
@@ -664,7 +723,7 @@ functions:
         content_type: text/html
         local_file: mongoc/_build/for-docs/src/libmongoc/doc/html/index.html
         permissions: public-read
-        remote_file: ${project}/docs/libmongoc/${CURRENT_VERSION}/index.html
+        remote_file: mongo-c-driver/docs/libmongoc/${CURRENT_VERSION}/index.html
   upload-man-pages:
     - command: subprocess.exec
       params:
@@ -692,7 +751,7 @@ functions:
         content_type: text/html
         local_file: mongoc/bson-man-pages.html
         permissions: public-read
-        remote_file: ${project}/man-pages/libbson/${CURRENT_VERSION}/index.html
+        remote_file: mongo-c-driver/man-pages/libbson/${CURRENT_VERSION}/index.html
     - command: s3.put
       params:
         display_name: libmongoc man pages
@@ -702,7 +761,7 @@ functions:
         content_type: text/html
         local_file: mongoc/mongoc-man-pages.html
         permissions: public-read
-        remote_file: ${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html
+        remote_file: mongo-c-driver/man-pages/libmongoc/${CURRENT_VERSION}/index.html
   upload-mo-artifacts:
     - command: subprocess.exec
       params:
@@ -729,7 +788,7 @@ functions:
         local_file: mongoc/mongodb-logs.tar.gz
         optional: true
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-mongodb-logs.tar.gz
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-mongodb-logs.tar.gz
     - command: s3.put
       params:
         display_name: orchestration.log
@@ -740,7 +799,7 @@ functions:
         local_file: mongoc/MO/server.log
         optional: true
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-orchestration.log
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-orchestration.log
     - command: subprocess.exec
       params:
         binary: bash
@@ -783,7 +842,7 @@ functions:
         local_file: mongo-coredumps.tgz
         optional: true
         permissions: public-read
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log
   upload-test-results:
     - command: subprocess.exec
       params:

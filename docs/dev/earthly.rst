@@ -56,11 +56,11 @@ run Earthly from the ``mongo-c-driver`` repository, use `tools/earthly.sh`.
 Testing Earthly
 ===============
 
-To verify that Earthly is running, execute the `+version-current` Earthly
+To verify that Earthly is running, execute the ``+env.u20`` Earthly
 target. This will exercise most Earthly functionality without requiring any
 special parameters or modifying the working directory::
 
-   $ ./tools/earthly.sh +version-current
+   $ ./tools/earthly.sh +env.u20
    Init 🚀
    ————————————————————————————————————————————————————————————————————————————————
 
@@ -230,14 +230,6 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    Which will prompt you for a username and password if you are not already
    authenticated with the host.\ [#creds]_ If you are already authenticated, this
    command will have no effect.
-
-.. earthly-target:: +version-current
-
-   Generates a ``VERSION_CURRENT`` file for the current repository.
-
-   .. earthly-artifact:: +version-current/VERSION_CURRENT
-
-      A plaintext file containing the current version number.
 
 .. earthly-target:: +sbom-generate
 

@@ -17,10 +17,6 @@
 
 cmake_minimum_required (VERSION 2.8)
 
-if (APPLE)
-   cmake_policy (SET CMP0042 OLD)
-endif ()
-
 project (hello_bson LANGUAGES C)
 
 # NOTE: For this to work, the CMAKE_PREFIX_PATH variable must be set to point to
@@ -28,8 +24,8 @@ project (hello_bson LANGUAGES C)
 # building libbson.
 # -- sphinx-include-start --
 # Specify the minimum version you require.
-find_package (bson-1.0 1.7 REQUIRED)
+find_package (bson 1.7 REQUIRED)
 
 # The "hello_bson.c" sample program is shared among four tests.
 add_executable (hello_bson ../../hello_bson.c)
-target_link_libraries (hello_bson PRIVATE mongo::bson_static)
+target_link_libraries (hello_bson PRIVATE bson::static)

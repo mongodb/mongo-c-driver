@@ -1,3 +1,31 @@
+libmongoc 1.30.3
+================
+
+New Features:
+
+* In anticipation of the 2.0 release of mongo-c-driver, new CMake packages and
+  imported targets have been defined (for both `bson` and `mongoc`). To import
+  `mongoc` with the new names, call `find_package` for the `mongoc` package. The
+  new imported targets are named `mongoc::static`, `mongoc::shared`, and
+  `mongoc::mongoc` (which points to either the static or the shared library,
+  depending on an import-time configuration option).
+
+  The new package and target names will remain unchanged when upgrading to the
+  2.0 release, allowing consumers to support both major versions without
+  modifying their CMake project. The current imported target names will be
+  removed from the 2.0 release, and should not be used for
+  forward-compatibility.
+
+  Programs that link to BSON libraries directly should also use the new target
+  names `bson::static`, `bson::shared`, or `bson::bson`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+
+
 libmongoc 1.30.2
 ================
 

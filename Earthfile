@@ -1,5 +1,5 @@
 VERSION --arg-scope-and-set --pass-args 0.7
-LOCALLY
+FROM alpine:3.21
 
 IMPORT ./tools/ AS tools
 
@@ -26,15 +26,15 @@ build:
     LET source_dir=/opt/mongoc/source
     LET build_dir=/opt/mongoc/build
     COPY --dir \
-        src/ \
         build/ \
-        COPYING \
         CMakeLists.txt \
-        README.rst \
-        THIRD_PARTY_NOTICES \
+        COPYING \
         NEWS \
+        README.rst \
+        src/ \
+        THIRD_PARTY_NOTICES \
+        VERSION_CURRENT \
         "$source_dir"
-    COPY +version-current/ $source_dir
     ENV CCACHE_HOME=/root/.cache/ccache
     RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
         -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
@@ -114,20 +114,6 @@ test-cxx-driver:
     ENV CCACHE_HOME=/root/.cache/ccache
     ENV CCACHE_BASE=$source
     RUN --mount=type=cache,target=$CCACHE_HOME cmake --build $build
-
-# version-current :
-#   Create the VERSION_CURRENT file using Git. This file is exported as an artifact at /
-version-current:
-    # Run on Alpine, which does this work the fastest
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.18
-    # Install Python and Git, the only things required for this job:
-    RUN apk add git python3
-    # Copy only the .git/ directory and calc_release_version, which are enough to get the VERSION_CURRENT
-    COPY --dir .git/ build/calc_release_version.py /s/
-    # Calculate it:
-    RUN cd /s/ && \
-        python calc_release_version.py --next-minor > VERSION_CURRENT
-    SAVE ARTIFACT /s/VERSION_CURRENT
 
 # PREP_CMAKE "warms up" the CMake installation cache for the current environment
 PREP_CMAKE:
