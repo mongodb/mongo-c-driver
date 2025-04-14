@@ -1,6 +1,7 @@
 #include <mlib/ckdint.h>
 #include <mlib/cmp.h>
 #include <mlib/config.h>
+#include <mlib/duration.h>
 #include <mlib/intencode.h>
 #include <mlib/intutil.h>
 #include <mlib/loop.h>
@@ -876,6 +877,90 @@ _test_str_view (void)
    }
 }
 
+static void
+_test_duration (void)
+{
+   mlib_duration d = mlib_duration_zero ();
+   mlib_check (mlib_microseconds_count (d), eq, 0);
+
+   // Comparison
+   mlib_check (mlib_duration_cmp (mlib_seconds (4), mlib_seconds (4)) == 0);
+   mlib_check (mlib_duration_cmp (mlib_seconds (4), mlib_seconds (5)) < 0);
+   mlib_check (mlib_duration_cmp (mlib_seconds (4), mlib_seconds (-5)) > 0);
+   // Equality tests
+   mlib_check (mlib_duration_eq (mlib_seconds (4), mlib_milliseconds (4000)));
+   mlib_check (!mlib_duration_eq (mlib_seconds (4), mlib_milliseconds (4001)));
+
+   // Overflow saturates:
+   d = mlib_seconds (mlib_maxof (mlib_duration_rep_t));
+   mlib_check (mlib_duration_eq (d, mlib_duration_max ()));
+
+   d = mlib_duration_mul (d, 16);
+   mlib_check (mlib_duration_eq (d, mlib_duration_max ()));
+
+   // Rounds toward zero
+   d = mlib_milliseconds (1050);
+   mlib_check (mlib_seconds_count (d), eq, 1);
+   d = mlib_milliseconds (-1050);
+   mlib_check (mlib_seconds_count (d), eq, -1);
+   d = mlib_microseconds (1729);
+   mlib_check (mlib_milliseconds_count (d), eq, 1);
+   d = mlib_microseconds (-1729);
+   mlib_check (mlib_milliseconds_count (d), eq, -1);
+
+   d = mlib_duration_add (mlib_seconds (1), mlib_milliseconds (729));
+   mlib_check (mlib_microseconds_count (d), eq, 1729000);
+   d = mlib_duration_add (mlib_seconds (-3), mlib_duration_min ());
+   mlib_check (mlib_duration_eq (d, mlib_duration_min ()));
+   d = mlib_duration_add (mlib_seconds (4), mlib_duration_max ());
+   mlib_check (mlib_duration_eq (d, mlib_duration_max ()));
+
+   d = mlib_duration_sub (mlib_seconds (4), mlib_milliseconds (2271));
+   mlib_check (mlib_milliseconds_count (d), eq, 1729);
+   // Overflow saturates:
+   d = mlib_duration_sub (mlib_milliseconds (-4), mlib_duration_max ());
+   mlib_check (mlib_duration_eq (d, mlib_duration_min ()));
+   d = mlib_duration_sub (mlib_milliseconds (4), mlib_duration_min ());
+   mlib_check (mlib_duration_eq (d, mlib_duration_max ()));
+
+   d = mlib_duration_mul (mlib_seconds (4), 5);
+   mlib_check (mlib_duration_eq (d, mlib_seconds (20)));
+   d = mlib_duration_mul (mlib_duration_max (), 2);
+   mlib_check (mlib_duration_eq (d, mlib_duration_max ()));
+   d = mlib_duration_mul (mlib_duration_max (), -2);
+   mlib_check (mlib_duration_eq (d, mlib_duration_min ()));
+   d = mlib_duration_mul (mlib_duration_min (), 2);
+   mlib_check (mlib_duration_eq (d, mlib_duration_min ()));
+   d = mlib_duration_mul (mlib_duration_min (), -2);
+   mlib_check (mlib_duration_eq (d, mlib_duration_max ()));
+
+   d = mlib_duration_div (mlib_duration_max (), -1);
+   mlib_check (mlib_duration_cmp (d, mlib_duration_zero ()) < 0);
+   d = mlib_duration_div (mlib_duration_min (), -1);
+   mlib_check (mlib_duration_eq (d, mlib_duration_max ()));
+   mlib_assert_aborts () {
+      // Division by zero
+      d = mlib_duration_div (d, 0);
+   }
+
+   // To/from timespec
+   struct timespec ts;
+   ts.tv_sec = 4;
+   ts.tv_nsec = 0;
+   d = mlib_duration_from_timespec (ts);
+   mlib_check (mlib_duration_eq (d, mlib_seconds (4)));
+   //
+   ts.tv_sec = -3;
+   ts.tv_nsec = -4000;
+   d = mlib_duration_from_timespec (ts);
+   mlib_check (mlib_duration_eq (d, mlib_microseconds (-3000004)));
+   //
+   ts = mlib_duration_to_timespec (mlib_microseconds (-5000908));
+   mlib_check (ts.tv_sec, eq, -5);
+   mlib_check (ts.tv_nsec, eq, -908000);
+}
+
+
 void
 test_mlib_install (TestSuite *suite)
 {
@@ -891,6 +976,7 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add (suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add (suite, "/mlib/str_view", _test_str_view);
+   TestSuite_Add (suite, "/mlib/duration", _test_duration);
 }
 
 mlib_diagnostic_pop ();
