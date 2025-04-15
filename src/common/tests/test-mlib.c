@@ -7,6 +7,7 @@
 #include <mlib/loop.h>
 #include <mlib/str.h>
 #include <mlib/test.h>
+#include <mlib/time_point.h>
 
 #include <TestSuite.h>
 
@@ -960,6 +961,45 @@ _test_duration (void)
    mlib_check (ts.tv_nsec, eq, -908000);
 }
 
+static void
+_test_time_point (void)
+{
+   mlib_time_point t = mlib_now ();
+
+   // Offset the time point
+   mlib_time_point later = mlib_later (t, mlib_seconds (1));
+   mlib_check (mlib_time_cmp (t, later) < 0);
+
+   // Difference between two time points is a duration:
+   mlib_duration diff = mlib_time_difference (later, t);
+   mlib_check (mlib_milliseconds_count (diff), eq, 1000);
+
+   // The time is only ever monotonically increasing
+   mlib_foreach_urange (i, 10000) {
+      (void) i;
+      mlib_check (mlib_time_cmp (t, mlib_now ()) <= 0);
+      t = mlib_now ();
+   }
+}
+
+static void
+_test_sleep (void)
+{
+   mlib_time_point start = mlib_now ();
+   int rc = mlib_this_thread_sleep_for (mlib_microseconds (10));
+   mlib_check (rc, eq, 0);
+   mlib_duration t = mlib_time_difference (mlib_now (), start);
+   mlib_check (mlib_microseconds_count (t) >= 10);
+
+   // Sleeping for a negative duration returns immediately with success
+   start = mlib_now ();
+   mlib_check (mlib_this_thread_sleep_for (mlib_seconds (-10)), eq, 0);
+   mlib_check (mlib_milliseconds_count (mlib_time_difference (start, mlib_now ())) < 100);
+
+   // Sleeping until a point in the past returns immediately as well
+   mlib_check (mlib_this_thread_sleep_until (start), eq, 0);
+   mlib_check (mlib_milliseconds_count (mlib_time_difference (start, mlib_now ())) < 100);
+}
 
 void
 test_mlib_install (TestSuite *suite)
@@ -977,6 +1017,8 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add (suite, "/mlib/str_view", _test_str_view);
    TestSuite_Add (suite, "/mlib/duration", _test_duration);
+   TestSuite_Add (suite, "/mlib/time_point", _test_time_point);
+   TestSuite_Add (suite, "/mlib/sleep", _test_sleep);
 }
 
 mlib_diagnostic_pop ();
