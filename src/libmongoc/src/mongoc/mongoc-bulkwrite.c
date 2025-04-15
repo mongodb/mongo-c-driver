@@ -863,6 +863,9 @@ struct _mongoc_bulkwriteresult_t {
    bson_t updateresults;
    bson_t deleteresults;
    bool verboseresults;
+   // `parsed_some_results` becomes true if an ok:1 reply to `bulkWrite` is successfully parsed.
+   // Used to determine whether some writes were successful.
+   bool parsed_some_results;
 };
 
 int64_t
@@ -1332,6 +1335,8 @@ _bulkwritereturn_apply_reply (mongoc_bulkwritereturn_t *self, const bson_t *cmd_
       _bulkwriteexception_append_writeconcernerror (self->exc, code, errmsg, &errInfo);
    }
 
+   self->res->parsed_some_results = true;
+
    return true;
 }
 
@@ -1512,6 +1517,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (opts);
 
+   // `has_successful_results` is set to true if any `bulkWrite` reply indicates some writes succeeded.
    bool has_successful_results = false;
    mongoc_bulkwritereturn_t ret = {0};
    bson_error_t error = {0};
@@ -1946,16 +1952,18 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    }
 
 fail:
-   if (is_ordered) {
-      // Ordered writes stop on first error. If the error reported is for an index > 0, assume some writes suceeded.
-      if (ret.res->errorscount == 0 || (ret.res->first_error_index.isset && ret.res->first_error_index.index > 0)) {
-         has_successful_results = true;
-      }
-   } else {
-      BSON_ASSERT (mcommon_in_range_size_t_signed (ret.res->errorscount));
-      size_t errorscount_sz = (size_t) ret.res->errorscount;
-      if (errorscount_sz < self->n_ops) {
-         has_successful_results = true;
+   if (ret.res->parsed_some_results) {
+      if (is_ordered) {
+         // Ordered writes stop on first error. If the error reported is for an index > 0, assume some writes suceeded.
+         if (ret.res->errorscount == 0 || (ret.res->first_error_index.isset && ret.res->first_error_index.index > 0)) {
+            has_successful_results = true;
+         }
+      } else {
+         BSON_ASSERT (mcommon_in_range_size_t_signed (ret.res->errorscount));
+         size_t errorscount_sz = (size_t) ret.res->errorscount;
+         if (errorscount_sz < self->n_ops) {
+            has_successful_results = true;
+         }
       }
    }
    if (!is_acknowledged || !has_successful_results) {
