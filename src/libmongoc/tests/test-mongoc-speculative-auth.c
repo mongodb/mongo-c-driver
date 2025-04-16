@@ -15,6 +15,9 @@
  */
 
 #include <mongoc/mongoc.h>
+
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 #ifdef _POSIX_VERSION
 #include <sys/utsname.h>
 #endif
@@ -101,7 +104,8 @@ _auto_hello_without_speculative_auth (request_t *request, void *data)
    quotes_replaced = single_quotes_to_double (response_json);
 
    if (mock_server_get_rand_delay (request->server)) {
-      _mongoc_usleep ((int64_t) (rand () % 10) * 1000);
+      int rand_ms = rand () % 10;
+      mlib_this_thread_sleep_for (mlib_milliseconds (rand_ms));
    }
 
    reply_to_request (request, MONGOC_REPLY_NONE, 0, 0, 1, response_json);

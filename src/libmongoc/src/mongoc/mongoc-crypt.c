@@ -35,7 +35,10 @@
 #include <mongoc/mcd-time.h>
 #include <mongoc/service-gcp.h>
 
+#include <mlib/ckdint.h>
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 
 #include <mongocrypt/mongocrypt.h>
 
@@ -586,9 +589,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       }
 
       sleep_usec = mongocrypt_kms_ctx_usleep (kms_ctx);
-      if (sleep_usec > 0) {
-         _mongoc_usleep (sleep_usec);
-      }
+      mlib_this_thread_sleep_for (mlib_microseconds (sleep_usec));
 
       mongoc_stream_destroy (tls_stream);
       tls_stream = _get_stream (endpoint, sockettimeout, ssl_opt, error);

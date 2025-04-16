@@ -1,3 +1,11 @@
+#include "./TestSuite.h"
+#include "./mock_server/future-functions.h"
+#include "./mock_server/future.h"
+#include "./mock_server/mock-rs.h"
+#include "./mock_server/mock-server.h"
+#include "./test-conveniences.h"
+#include "./test-libmongoc.h"
+
 #include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
@@ -7,6 +15,9 @@
 
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
+
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>
@@ -185,7 +196,7 @@ test_topology_scanner_discovery (void)
    request_destroy (request);
 
    /* let client process that response */
-   _mongoc_usleep (250 * 1000);
+   mlib_this_thread_sleep_for (mlib_milliseconds (250));
 
    /* a check of the secondary is scheduled in this scan */
    request = mock_server_receives_any_hello (secondary);
@@ -259,13 +270,13 @@ test_topology_scanner_oscillate (void)
    request_destroy (request);
 
    /* let client process that response */
-   _mongoc_usleep (250 * 1000);
+   mlib_this_thread_sleep_for (mlib_milliseconds (250));
 
    request = mock_server_receives_any_hello (server1);
    reply_to_request_simple (request, server1_response);
 
    /* we don't schedule another check of server0 */
-   _mongoc_usleep (250 * 1000);
+   mlib_this_thread_sleep_for (mlib_milliseconds (250));
 
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
    BSON_ASSERT (scanner->async->ncmds == 0);
@@ -348,7 +359,7 @@ slow_initiator (const mongoc_uri_t *uri, const mongoc_host_list_t *host, void *u
    data = (initiator_data_t *) user_data;
 
    if (host->port == data->slow_port) {
-      _mongoc_usleep (500 * 1000); /* 500 ms is longer than connectTimeoutMS */
+      mlib_this_thread_sleep_for (mlib_milliseconds (500)); /* 500 ms is longer than connectTimeoutMS */
    }
 
    return mongoc_client_default_stream_initiator (uri, host, data->client, err);
@@ -659,7 +670,7 @@ _test_topology_scanner_does_not_renegotiate (bool pooled)
    r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   _mongoc_usleep (1500 * 1000); /* 1.5 seconds */
+   mlib_this_thread_sleep_for (mlib_milliseconds (1500));
 
    r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);

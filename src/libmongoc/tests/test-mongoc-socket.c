@@ -1,3 +1,5 @@
+#include "./test-libmongoc.h"
+
 #include <mongoc/mongoc-errno-private.h>
 #include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-thread-private.h>
@@ -6,6 +8,8 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 
 #include <TestSuite.h>
 #include <test-libmongoc.h>
@@ -77,7 +81,7 @@ static BSON_THREAD_FUN (socket_test_server, data_)
 
    strcpy (buf, "pong");
 
-   _mongoc_usleep (data->server_sleep_ms * 1000);
+   mlib_this_thread_sleep_for (mlib_milliseconds (data->server_sleep_ms));
    r = mongoc_stream_writev (stream, &iov, 1, TIMEOUT);
 
    /* if we sleep the client times out, else assert the client reads the data */
@@ -157,7 +161,7 @@ static BSON_THREAD_FUN (socket_test_client, data_)
       start = bson_get_monotonic_time ();
       while (!mongoc_stream_check_closed (stream)) {
          ASSERT_CMPINT64 (bson_get_monotonic_time (), <, start + 1000 * 1000);
-         _mongoc_usleep (1000);
+         mlib_this_thread_sleep_for (mlib_milliseconds (1));
       }
       BSON_ASSERT (!mongoc_stream_timed_out (stream));
    } else {

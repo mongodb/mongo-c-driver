@@ -1,6 +1,13 @@
+#include "./json-test.h"
+#include "./test-conveniences.h"
+#include "./test-libmongoc.h"
+
 #include <mongoc/mongoc-client-session-private.h>
 
 #include <mongoc/mongoc.h>
+
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 
 #include <json-test.h>
 #include <test-conveniences.h>
@@ -17,7 +24,7 @@ with_transaction_fail_transient_txn (mongoc_client_session_t *session, void *ctx
    BSON_UNUSED (ctx);
    BSON_UNUSED (error);
 
-   _mongoc_usleep (session->with_txn_timeout_ms * 1000);
+   mlib_this_thread_sleep_for (mlib_milliseconds (session->with_txn_timeout_ms));
 
    *reply = bson_new ();
    BSON_APPEND_ARRAY_BUILDER_BEGIN (*reply, "errorLabels", &labels);

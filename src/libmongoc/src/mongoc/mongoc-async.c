@@ -26,6 +26,9 @@
 
 #include <bson/bson.h>
 
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
+
 
 mongoc_async_t *
 mongoc_async_new (void)
@@ -124,7 +127,7 @@ mongoc_async_run (mongoc_async_t *async)
       } else {
          /* currently this does not get hit. we always have at least one command
           * initialized with a stream. */
-         _mongoc_usleep (poll_timeout_msec * 1000);
+         mlib_this_thread_sleep_for (mlib_milliseconds (poll_timeout_msec));
       }
 
       if (nactive > 0) {

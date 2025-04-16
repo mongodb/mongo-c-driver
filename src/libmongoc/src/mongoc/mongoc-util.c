@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 #ifdef _WIN32
 #define _CRT_RAND_S
 #endif
@@ -107,27 +109,7 @@ mongoc_usleep_default_impl (int64_t usec, void *user_data)
 {
    BSON_UNUSED (user_data);
 
-#ifdef _WIN32
-   LARGE_INTEGER ft;
-   HANDLE timer;
-
-   BSON_ASSERT (usec >= 0);
-
-   ft.QuadPart = -(10 * usec);
-   timer = CreateWaitableTimer (NULL, true, NULL);
-   SetWaitableTimer (timer, &ft, 0, NULL, NULL, 0);
-   WaitForSingleObject (timer, INFINITE);
-   CloseHandle (timer);
-#else
-   BSON_ASSERT (usec >= 0);
-   usleep ((useconds_t) usec);
-#endif
-}
-
-void
-_mongoc_usleep (int64_t usec)
-{
-   mongoc_usleep_default_impl (usec, NULL);
+   mlib_this_thread_sleep_for (mlib_microseconds (usec));
 }
 
 

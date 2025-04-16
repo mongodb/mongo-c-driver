@@ -17,6 +17,8 @@
 #include <mongoc/mongoc-config.h>
 
 #include <bson/bson.h>
+
+#include <mlib/duration.h>
 #ifdef MONGOC_HAVE_DNSAPI
 /* for DnsQuery_UTF8 */
 #include <WinDNS.h>

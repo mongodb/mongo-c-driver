@@ -1,3 +1,6 @@
+#include "./json-test.h"
+#include "./test-libmongoc.h"
+
 #include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-set-private.h>
@@ -6,6 +9,9 @@
 #include <mongoc/mongoc-topology-private.h>
 
 #include <mongoc/mongoc.h>
+
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 
 #include <json-test.h>
 #include <test-libmongoc.h>
@@ -796,7 +802,7 @@ test_prose_rtt (void *unused)
 
    /* Sleep for RTT_TEST_INITIAL_SLEEP_SEC seconds to allow multiple heartbeats
     * to succeed. */
-   _mongoc_usleep (RTT_TEST_INITIAL_SLEEP_SEC * 1000 * 1000);
+   mlib_this_thread_sleep_for (mlib_seconds (RTT_TEST_INITIAL_SLEEP_SEC));
 
    /* Set a failpoint to make hello commands take longer. */
    bson_init (&cmd);
@@ -834,7 +840,7 @@ test_prose_rtt (void *unused)
          satisfied = true;
       }
       mongoc_server_description_destroy (sd);
-      _mongoc_usleep (RTT_TEST_TICK_MS * 1000);
+      mlib_this_thread_sleep_for (mlib_milliseconds (RTT_TEST_TICK_MS));
    }
 
    if (!satisfied) {

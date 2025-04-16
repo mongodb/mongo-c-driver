@@ -17,6 +17,12 @@
 
 #include <json-test-operations.h>
 
+#include "./TestSuite.h"
+#include "./json-test-operations.h"
+#include "./json-test.h"
+#include "./test-conveniences.h"
+#include "./test-libmongoc.h"
+
 #include <common-oid-private.h>
 #include <mongoc/mongoc-change-stream-private.h>
 #include <mongoc/mongoc-collection-private.h>
@@ -31,6 +37,9 @@
 #include <mongoc/mongoc-config.h>
 
 #include <bson/bson.h>
+
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 
 #include <TestSuite.h>
 #include <json-test.h>
@@ -2071,7 +2080,7 @@ wait_for_event (json_test_ctx_t *ctx, const bson_t *operation)
          test_error ("Unknown event: %s", event_name);
       }
       if (!satisfied) {
-         _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
+         mlib_this_thread_sleep_for (mlib_milliseconds (WAIT_FOR_EVENT_TICK_MS));
       }
    }
 
@@ -2109,7 +2118,7 @@ wait_for_primary_change (json_test_ctx_t *ctx, const bson_t *operation)
 
       bson_mutex_unlock (&ctx->mutex);
       if (!satisfied) {
-         _mongoc_usleep (10 * 1000);
+         mlib_this_thread_sleep_for (mlib_milliseconds (10));
       }
    }
 
@@ -2419,7 +2428,7 @@ json_test_operation (json_test_ctx_t *ctx,
 
          mongoc_client_destroy (client);
       } else if (!strcmp (op_name, "wait")) {
-         _mongoc_usleep (bson_lookup_int32 (operation, "arguments.ms") * 1000);
+         mlib_this_thread_sleep_for (mlib_milliseconds (bson_lookup_int32 (operation, "arguments.ms")));
       } else if (!strcmp (op_name, "recordPrimary")) {
          /* It doesn't matter who the primary is. We just want to assert in
           * tests later that the primary changed x times after this operation.

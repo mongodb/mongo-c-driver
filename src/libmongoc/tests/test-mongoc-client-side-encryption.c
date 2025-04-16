@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
+#include "./json-test.h"
+#include "./test-libmongoc.h"
+
 #include <common-b64-private.h>
 #include <common-bson-dsl-private.h>
+
+#include <mongoc/mongoc.h>
+
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 
 #include <json-test.h>
 #include <test-libmongoc.h>
@@ -6053,7 +6061,7 @@ static BSON_THREAD_FUN (listen_socket, arg)
    // listen on socket
    r = mongoc_socket_listen (socket, 100);
    BSON_ASSERT (r == 0);
-   _mongoc_usleep (1000); // wait to see if received connection
+   mlib_this_thread_sleep_for (mlib_milliseconds (1));
    mongoc_socket_t *ret = mongoc_socket_accept (socket, bson_get_monotonic_time () + 100);
    if (ret) {
       // not null received a connection and test should fail

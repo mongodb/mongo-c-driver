@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "./mock_server/mock-server.h"
+
 #include <common-string-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
@@ -24,6 +26,9 @@
 #include <mongoc/mongoc-topology-private.h>
 
 #include <mongoc/mongoc.h>
+
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 
 #include <TestSuite.h>
 #include <mock_server/mock-server.h>
@@ -294,7 +299,8 @@ tf_destroy (test_fixture_t *tf)
  * Used to make observations that a scan doesn't occur when a test fixture is
  * configured with a faster heartbeat.
  */
-#define WAIT_TWO_MIN_HEARTBEAT_MS _mongoc_usleep (2 * FAST_HEARTBEAT_MS * 1000)
+#define WAIT_TWO_MIN_HEARTBEAT_MS() \
+   mlib_this_thread_sleep_for (mlib_duration_mul (mlib_milliseconds (FAST_HEARTBEAT_MS), 2))
 
 static void
 _signal_shutdown (test_fixture_t *tf)
@@ -404,7 +410,7 @@ test_connect_hangup (void)
    OBSERVE (tf, !tf->observations->awaited);
 
    /* No retry occurs since the server was never discovered. */
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    tf_destroy (tf);
 }
@@ -429,7 +435,7 @@ test_connect_badreply (void)
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
    /* No retry occurs since the server was never discovered. */
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    tf_destroy (tf);
 }
@@ -475,7 +481,7 @@ test_connect_requestscan (void)
 
    /* Because the request occurred during the scan, no subsequent scan occurs.
     */
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    OBSERVE (tf, tf->observations->n_heartbeat_succeeded == 1);
    OBSERVE (tf, tf->observations->n_heartbeat_failed == 0);
@@ -653,7 +659,7 @@ test_retry_shutdown (void)
    reply_to_request_with_ok_and_destroy (request);
 
    /* No retry occurs. */
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE (tf, tf->observations->n_heartbeat_failed == 0);
@@ -703,7 +709,7 @@ test_repeated_requestscan (void)
    for (i = 0; i < 10; i++) {
       _request_scan (tf);
    }
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    reply_to_request_with_ok_and_destroy (request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
@@ -724,7 +730,7 @@ test_sleep_after_scan (void)
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    reply_to_request_with_ok_and_destroy (request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    /* No subsequent command send. */
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    tf_destroy (tf);
@@ -822,7 +828,7 @@ test_streaming_shutdown (void)
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _signal_shutdown (tf);
    /* This should cancel the hello immediately. */
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    /* No further hello commands should be sent. */
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    request_destroy (request);
@@ -849,7 +855,7 @@ test_streaming_cancel (void)
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
    /* The cancellation closes the connection and waits before creating a new
     * connection. Check that no new heartbeat was started. */
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _request_scan (tf);
    /* The handshake will be handled by the auto responder. */
@@ -999,7 +1005,7 @@ test_moretocome_shutdown (void)
     * processing the last reply. Requesting shutdown cancels. */
    _signal_shutdown (tf);
 
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    /* No further heartbeats are attempted. */
    OBSERVE (tf, tf->observations->n_heartbeat_succeeded == 2);
    request_destroy (request);
@@ -1035,7 +1041,7 @@ test_moretocome_cancel (void)
 
    /* The cancellation closes the connection and waits before creating a new
     * connection. Check that no new heartbeat was started. */
-   WAIT_TWO_MIN_HEARTBEAT_MS;
+   WAIT_TWO_MIN_HEARTBEAT_MS ();
    OBSERVE (tf, tf->observations->n_heartbeat_started == 3);
    _request_scan (tf);
    /* The handshake will be handled by the auto responder. */

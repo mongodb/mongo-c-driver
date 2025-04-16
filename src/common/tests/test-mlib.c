@@ -986,10 +986,11 @@ static void
 _test_sleep (void)
 {
    mlib_time_point start = mlib_now ();
-   int rc = mlib_this_thread_sleep_for (mlib_microseconds (10));
+   int rc = mlib_this_thread_sleep_for (mlib_milliseconds (50));
    mlib_check (rc, eq, 0);
    mlib_duration t = mlib_time_difference (mlib_now (), start);
-   mlib_check (mlib_microseconds_count (t) >= 10);
+   mlib_check (mlib_milliseconds_count (t) >= 50);
+   mlib_check (mlib_milliseconds_count (t) < 200);
 
    // Sleeping for a negative duration returns immediately with success
    start = mlib_now ();
