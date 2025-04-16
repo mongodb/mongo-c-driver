@@ -128,6 +128,10 @@ mlib_time_cmp (mlib_time_point a, mlib_time_point b) mlib_noexcept
    return mlib_duration_cmp (a._time_since_monotonic_start, b._time_since_monotonic_start);
 }
 
+#define mlib_time_cmp(...) MLIB_ARGC_PICK (_mlib_time_cmp, __VA_ARGS__)
+#define _mlib_time_cmp_argc_2 mlib_time_cmp
+#define _mlib_time_cmp_argc_3(L, Op, R) (mlib_time_cmp ((L), (R)) Op 0)
+
 /**
  * @brief Pause the calling thread until at least the specified duration has elapsed.
  *
