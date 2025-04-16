@@ -70,7 +70,7 @@ mlib_now (void) mlib_noexcept
    ret._time_since_monotonic_start = mlib_milliseconds (ms);
    return ret;
 #else
-#error We don't know how to get the current time on this platform
+#error We do not know how to get the current time on this platform
 #endif
 }
 
