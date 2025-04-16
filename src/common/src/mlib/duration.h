@@ -222,14 +222,9 @@ mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
    return mlib_cmp (a._rep, b._rep);
 }
 
-/**
- * @brief Test whether two durations are equal
- */
-static inline bool
-mlib_duration_eq (const mlib_duration a, const mlib_duration b) mlib_noexcept
-{
-   return mlib_duration_cmp (a, b) == mlib_equal;
-}
+#define mlib_duration_cmp(...) MLIB_ARGC_PICK (_mlibDurationCmp, __VA_ARGS__)
+#define _mlibDurationCmp_argc_2 mlib_duration_cmp
+#define _mlibDurationCmp_argc_3(Left, Op, Right) (mlib_duration_cmp ((Left), (Right)) Op 0)
 
 /**
  * @brief Obtain an mlib_duration that corresponds to a `timespec` value
