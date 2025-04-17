@@ -1317,40 +1317,6 @@ test_change_stream_client_watch (void *test_ctx)
    mongoc_client_destroy (client);
 }
 
-
-static int
-_skip_if_rs_version_less_than (const char *version)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   if (!test_framework_skip_if_not_replset ()) {
-      return 0;
-   }
-   if (test_framework_get_server_version () >= test_framework_str_to_version (version)) {
-      return 1;
-   }
-   return 0;
-}
-
-static int
-_skip_if_no_client_watch (void)
-{
-   return _skip_if_rs_version_less_than ("3.8.0");
-}
-
-static int
-_skip_if_no_db_watch (void)
-{
-   return _skip_if_rs_version_less_than ("3.8.0");
-}
-
-static int
-_skip_if_no_start_at_optime (void)
-{
-   return _skip_if_rs_version_less_than ("3.8.0");
-}
-
 static void
 _test_resume (const char *opts,
               const char *expected_change_stream_opts,
@@ -2157,7 +2123,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_read_prefs,
                       NULL,
                       NULL,
-                      _skip_if_no_start_at_optime,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_no_failpoint);
 
    TestSuite_Add (suite, "/change_stream/server_selection_fails", test_change_stream_server_selection_fails);
@@ -2182,8 +2148,7 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_replset,
-                      test_framework_skip_if_no_crypto,
-                      _skip_if_no_start_at_optime);
+                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/change_stream/resume_with_post_batch_resume_token",
                       test_change_stream_resume_with_post_batch_resume_token,
@@ -2191,28 +2156,26 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_not_replset,
                       test_framework_skip_if_no_crypto,
-                      _skip_if_no_start_at_optime,
                       test_framework_skip_if_no_failpoint);
+   TestSuite_AddFull (suite,
+                      "/change_stream/database",
+                      test_change_stream_database_watch,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset);
    TestSuite_AddFull (
-      suite, "/change_stream/database", test_change_stream_database_watch, NULL, NULL, _skip_if_no_db_watch);
-   TestSuite_AddFull (
-      suite, "/change_stream/client", test_change_stream_client_watch, NULL, NULL, _skip_if_no_client_watch);
+      suite, "/change_stream/client", test_change_stream_client_watch, NULL, NULL, test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (suite, "/change_stream/resume_with_first_doc", test_resume_cases);
    TestSuite_AddMockServerTest (suite,
                                 "/change_stream/resume_with_first_doc/post_batch_resume_token",
                                 test_resume_cases_with_post_batch_resume_token);
    TestSuite_AddFull (
-      suite, "/change_stream/error_null_doc", test_error_null_doc, NULL, NULL, _skip_if_no_client_watch);
+      suite, "/change_stream/error_null_doc", test_error_null_doc, NULL, NULL, test_framework_skip_if_not_replset);
    TestSuite_AddFull (
       suite, "/change_stream/live/prose_test_11", prose_test_11, NULL, NULL, test_framework_skip_if_not_replset);
    // Prose test 12 is removed. C driver does not support server 4.0.7.
-   TestSuite_AddFull (suite,
-                      "/change_stream/live/prose_test_13",
-                      prose_test_13,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_replset,
-                      _skip_if_no_start_at_optime);
+   TestSuite_AddFull (
+      suite, "/change_stream/live/prose_test_13", prose_test_13, NULL, NULL, test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_14",
                       prose_test_14,
