@@ -1359,6 +1359,7 @@ _finalize_auth_username (const char *username,
    return true;
 }
 
+// source MUST be "$external"
 static bool
 _finalize_auth_source_external (const char *source, const char *mechanism, bson_error_t *error)
 {
@@ -1376,6 +1377,30 @@ _finalize_auth_source_external (const char *source, const char *mechanism, bson_
 
    return true;
 }
+
+// source MUST be "$external" and defaults to "$external".
+static bool
+_finalize_auth_source_default_external (mongoc_uri_t *uri, const char *source, const char *mechanism, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(uri);
+   BSON_OPTIONAL_PARAM(source);
+   BSON_ASSERT_PARAM(mechanism);
+   BSON_OPTIONAL_PARAM(error);
+
+   if (!source) {
+      bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
+      if (bsonBuildError) {
+          MONGOC_URI_ERROR (error,
+                           "unexpected URI credentials BSON error when attempting to default '%s' "
+                           "authentication source to '$external': %s",
+                           mechanism, bsonBuildError);
+         return false;
+          }
+          return true;
+         } else {
+            return _finalize_auth_source_external (source, mechanism, error);
+         }
+      }
 
 static bool
 _finalize_auth_password (const char *password,
@@ -1618,16 +1643,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       }
 
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
-      if (!source) {
-         bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
-         if (bsonBuildError) {
-            MONGOC_URI_ERROR (error,
-                              "unexpected URI credentials BSON error when attempting to default 'MONGODB-X509' "
-                              "authentication source to '$external': %s",
-                              bsonBuildError);
-            goto fail;
-         }
-      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
+      if (!_finalize_auth_source_default_external (uri, source, mechanism, error)) {
          goto fail;
       }
 
@@ -1642,16 +1658,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       }
 
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
-      if (!source) {
-         bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
-         if (bsonBuildError) {
-            MONGOC_URI_ERROR (error,
-                              "unexpected URI credentials BSON error when attempting to default 'GSSAPI' "
-                              "authentication mechanism source to '$external': %s",
-                              bsonBuildError);
-            goto fail;
-         }
-      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
+      if (!_finalize_auth_source_default_external (uri, source, mechanism, error)) {
          goto fail;
       }
 
@@ -1712,16 +1719,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       }
 
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
-      if (!source) {
-         bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
-         if (bsonBuildError) {
-            MONGOC_URI_ERROR (error,
-                              "unexpected URI credentials BSON error when attempting to default 'MONGODB-AWS' "
-                              "authentication mechanism source to '$external': %s",
-                              bsonBuildError);
-            goto fail;
-         }
-      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
+      if (!_finalize_auth_source_default_external (uri, source, mechanism, error)) {
          goto fail;
       }
 
