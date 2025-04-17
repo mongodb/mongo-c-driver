@@ -1673,77 +1673,6 @@ prose_test_11 (void *ctx)
 
 
 void
-prose_test_12 (void *ctx)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *coll;
-   mongoc_change_stream_t *stream;
-   bson_error_t error;
-   const bson_t *next_doc = NULL;
-   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
-   bson_t opts = BSON_INITIALIZER;
-   const bson_t *resume_token;
-   bson_iter_t iter, child;
-   bson_t expected_token;
-   bson_t expected_doc;
-
-   BSON_UNUSED (ctx);
-
-   client = test_framework_new_default_client ();
-   ASSERT (client);
-
-   coll = drop_and_get_coll (client, "db", "coll_resume");
-   ASSERT (coll);
-
-   /* Set the batch size to 1 so we only get one document per call to next. */
-   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"));
-   ASSERT (stream);
-   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL), error);
-
-   mongoc_write_concern_set_wmajority (wc, 30000);
-   mongoc_write_concern_append (wc, &opts);
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error), error);
-
-   /* Checking that a resume token is returned */
-   ASSERT (mongoc_change_stream_next (stream, &next_doc));
-   ASSERT (next_doc);
-   resume_token = mongoc_change_stream_get_resume_token (stream);
-   ASSERT (!bson_empty0 (resume_token));
-
-   /* Need to now check that we are getting back the _id of the last inserted
-    * document when we iterate to the last document */
-   bson_copy_to (next_doc, &expected_doc);
-   _check_doc_resume_token (&expected_doc, resume_token);
-
-   ASSERT (bson_iter_init_find (&iter, next_doc, "documentKey"));
-   ASSERT (bson_iter_recurse (&iter, &child));
-   ASSERT (bson_iter_find (&child, "_id") && bson_iter_int32 (&child) == 0);
-
-   /* Must check that getResumeToken returns resumeAfter correctly when
-    * specified. */
-   bson_copy_to (resume_token, &expected_token);
-   mongoc_change_stream_destroy (stream);
-   bson_destroy (&opts);
-   bson_init (&opts);
-   BSON_APPEND_DOCUMENT (&opts, "resumeAfter", &expected_token);
-
-   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), &opts);
-   ASSERT (stream);
-
-   resume_token = mongoc_change_stream_get_resume_token (stream);
-   ASSERT (bson_equal (resume_token, &expected_token));
-
-   bson_destroy (&expected_doc);
-   bson_destroy (&expected_token);
-   bson_destroy (&opts);
-   mongoc_write_concern_destroy (wc);
-   mongoc_change_stream_destroy (stream);
-   mongoc_client_destroy (client);
-   mongoc_collection_destroy (coll);
-}
-
-
-void
 prose_test_13 (void *ctx)
 {
    mongoc_client_t *client;
@@ -2281,13 +2210,7 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_not_replset,
                       test_framework_skip_if_max_wire_version_less_than_8);
-   TestSuite_AddFull (suite,
-                      "/change_stream/live/prose_test_12",
-                      prose_test_12,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_replset,
-                      test_framework_skip_if_max_wire_version_more_than_7);
+   // Prose test 12 is removed. C driver does not support server 4.0.7.
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_13",
                       prose_test_13,
