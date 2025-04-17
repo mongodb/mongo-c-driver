@@ -2181,7 +2181,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_start_at_operation_time,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_7,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_no_crypto,
                       _skip_if_no_start_at_optime);
    TestSuite_AddFull (suite,
@@ -2189,7 +2189,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_resume_with_post_batch_resume_token,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_7,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_no_crypto,
                       _skip_if_no_start_at_optime,
                       test_framework_skip_if_no_failpoint);
@@ -2224,7 +2224,7 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_mongos,
-                      test_framework_skip_if_not_rs_version_7);
+                      test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (suite, "/change_streams/prose_test_17", prose_test_17);
    TestSuite_AddMockServerTest (suite, "/change_streams/prose_test_18", prose_test_18);
    TestSuite_AddFull (suite,
