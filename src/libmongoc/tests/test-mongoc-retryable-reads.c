@@ -583,16 +583,12 @@ test_retryable_reads_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_mongos,
-                      test_framework_skip_if_no_failpoint,
-                      // `retryReads=true` is a 4.2+ feature.
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/retryable_reads/sharded/on_same_mongos",
                       test_retry_reads_sharded_on_same_mongos,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_mongos,
-                      test_framework_skip_if_no_failpoint,
-                      // `retryReads=true` is a 4.2+ feature.
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
 }

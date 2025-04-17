@@ -2203,13 +2203,8 @@ test_change_stream_install (TestSuite *suite)
                                 test_resume_cases_with_post_batch_resume_token);
    TestSuite_AddFull (
       suite, "/change_stream/error_null_doc", test_error_null_doc, NULL, NULL, _skip_if_no_client_watch);
-   TestSuite_AddFull (suite,
-                      "/change_stream/live/prose_test_11",
-                      prose_test_11,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_replset,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (
+      suite, "/change_stream/live/prose_test_11", prose_test_11, NULL, NULL, test_framework_skip_if_not_replset);
    // Prose test 12 is removed. C driver does not support server 4.0.7.
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_13",

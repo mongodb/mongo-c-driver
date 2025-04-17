@@ -4931,12 +4931,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/regex", test_regex);
    TestSuite_AddFull (suite, "/Collection/decimal128", test_decimal128, NULL, NULL, skip_unless_server_has_decimal128);
    TestSuite_AddLive (suite, "/Collection/update", test_update);
-   TestSuite_AddFull (suite,
-                      "/Collection/update_pipeline",
-                      test_update_pipeline,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite, "/Collection/update_pipeline", test_update_pipeline, NULL, NULL, TestSuite_CheckLive);
    TestSuite_AddLive (suite, "/Collection/update/multi", test_update_multi);
    TestSuite_AddLive (suite, "/Collection/update/upsert", test_update_upsert);
    TestSuite_AddFull (

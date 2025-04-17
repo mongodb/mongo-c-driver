@@ -1990,7 +1990,7 @@ test_framework_skip_if_no_txns (void)
    }
 
    if (test_framework_skip_if_no_crypto () && test_framework_skip_if_no_sessions () &&
-       test_framework_skip_if_not_mongos () && test_framework_skip_if_max_wire_version_less_than_8 ()) {
+       test_framework_skip_if_not_mongos ()) {
       // Have crypto, sessions, and sharded cluster. Proceed.
       return 1;
    }

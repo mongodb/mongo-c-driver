@@ -1069,7 +1069,6 @@ test_transactions_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
    TestSuite_AddFull (suite,
                       "/transactions/selected_server_pinned_to_mongos",
@@ -1077,7 +1076,6 @@ test_transactions_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_sessions,
-                      test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
    TestSuite_AddMockServerTest (
       suite, "/transactions/get_transaction_opts", test_get_transaction_opts, test_framework_skip_if_no_crypto);

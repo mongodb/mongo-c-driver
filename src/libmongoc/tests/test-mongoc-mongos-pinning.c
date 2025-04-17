@@ -174,7 +174,6 @@ test_mongos_pinning_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
 
    TestSuite_AddFull (suite,
@@ -184,6 +183,5 @@ test_mongos_pinning_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
 }
