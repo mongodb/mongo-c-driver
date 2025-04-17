@@ -563,13 +563,11 @@ void
 test_retryable_reads_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   /* Since we need failpoints, require wire version 7 */
    TestSuite_AddFull (suite,
                       "/retryable_reads/cmd_helpers",
                       test_cmd_helpers,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_7,
                       test_framework_skip_if_mongos,
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
@@ -577,7 +575,6 @@ test_retryable_reads_install (TestSuite *suite)
                       test_retry_reads_off,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_7,
                       test_framework_skip_if_mongos,
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,

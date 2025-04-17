@@ -195,7 +195,6 @@ test_framework_skip_if_slow_or_live (void);
    int test_framework_skip_if_rs_version_##wv (void);                 \
    int test_framework_skip_if_not_rs_version_##wv (void);
 
-WIRE_VERSION_CHECK_DECLS (7)
 WIRE_VERSION_CHECK_DECLS (8)
 WIRE_VERSION_CHECK_DECLS (9)
 /* wire versions 10, 11, 12 were internal to the 5.0 release cycle */

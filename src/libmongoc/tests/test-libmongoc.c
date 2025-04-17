@@ -1984,12 +1984,14 @@ int
 test_framework_skip_if_no_txns (void)
 {
    if (test_framework_skip_if_no_crypto () && test_framework_skip_if_no_sessions () &&
-       test_framework_skip_if_not_replset () && test_framework_skip_if_max_wire_version_less_than_7 ()) {
+       test_framework_skip_if_not_replset ()) {
+      // Have crypto, sessions, and replica set. Proceed.
       return 1;
    }
 
    if (test_framework_skip_if_no_crypto () && test_framework_skip_if_no_sessions () &&
        test_framework_skip_if_not_mongos () && test_framework_skip_if_max_wire_version_less_than_8 ()) {
+      // Have crypto, sessions, and sharded cluster. Proceed.
       return 1;
    }
 
@@ -2252,7 +2254,6 @@ test_framework_skip_if_not_replset (void)
       return (test_framework_max_wire_version_at_least (wv) && test_framework_is_replset ()) ? 0 : 1; \
    }
 
-WIRE_VERSION_CHECKS (7)
 WIRE_VERSION_CHECKS (8)
 WIRE_VERSION_CHECKS (9)
 /* wire versions 10, 11, 12 were internal to the 5.0 release cycle */
