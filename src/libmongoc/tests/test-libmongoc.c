@@ -2254,7 +2254,9 @@ test_framework_skip_if_not_replset (void)
       return (test_framework_max_wire_version_at_least (wv) && test_framework_is_replset ()) ? 0 : 1; \
    }
 
+/* wire version 8 begins with the 4.2 release. */
 WIRE_VERSION_CHECKS (8)
+/* wire version 9 begins with the 4.4 release. */
 WIRE_VERSION_CHECKS (9)
 /* wire versions 10, 11, 12 were internal to the 5.0 release cycle */
 WIRE_VERSION_CHECKS (13)
