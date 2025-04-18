@@ -323,7 +323,6 @@ bson_context_destroy (bson_context_t *context) /* IN */
    bson_free (context);
 }
 
-
 static BSON_ONCE_FUN (_bson_context_init_default)
 {
    _bson_context_init (&gContextDefault, BSON_CONTEXT_DISABLE_PID_CACHE);

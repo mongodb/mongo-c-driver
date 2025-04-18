@@ -2550,7 +2550,7 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
 
 
 void
-test_libmongoc_init (TestSuite *suite, BSON_MAYBE_UNUSED const char *name, int argc, char **argv)
+test_libmongoc_init (TestSuite *suite, int argc, char **argv)
 {
 #if defined(_MSC_VER) && defined(_WIN64)
    SetUnhandledExceptionFilter (windows_exception_handler);

@@ -25,6 +25,8 @@
 
 #include <mongoc/mongoc-cluster-aws-private.h>
 
+#include <mlib/config.h>
+
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <mongoc/mongoc-openssl-private.h>
 #endif

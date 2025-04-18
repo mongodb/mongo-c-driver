@@ -413,6 +413,8 @@ test_mongoc_tls_insecure_nowarning (void)
 void
 test_stream_tls_install (TestSuite *suite)
 {
+   BSON_UNUSED (suite);
+
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 
    /* Disable /TLS/commonName on macOS due to CDRIVER-4256. */

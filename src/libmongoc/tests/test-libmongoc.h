@@ -25,7 +25,7 @@ struct _server_version_t;
 
 
 void
-test_libmongoc_init (struct _TestSuite *suite, const char *name, int argc, char **argv);
+test_libmongoc_init (struct _TestSuite *suite, int argc, char **argv);
 void
 test_libmongoc_destroy (struct _TestSuite *suite);
 
