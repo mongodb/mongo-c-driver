@@ -1,3 +1,26 @@
+/**
+ * @file mlib/time_point.h
+ * @brief A point-in-time type
+ * @date 2025-04-17
+ *
+ * The `mlib_time_point` type represents a stable point-in-time. The time point
+ * itself is relative to a monotonic clock for the program, so it should not be
+ * transmitted or persisted outside of the execution of a program that uses it.
+ *
+ * @copyright Copyright (c) 2025
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef MLIB_TIME_POINT_H_INCLUDED
 #define MLIB_TIME_POINT_H_INCLUDED
 
@@ -121,6 +144,13 @@ mlib_time_difference (mlib_time_point then, mlib_time_point from)
  * @retval <0 If 'a' is before 'b'
  * @retval >0 If 'b' is before 'a'
  * @retval  0 If 'a' and 'b' are equivalent
+ *
+ * @note This is a function-like macro that can be called with an infix operator
+ * as the second argument to do natural time-point comparisons:
+ *
+ * ```
+ *    mlib_time_cmp(a, <=, b)
+ * ```
  */
 static inline enum mlib_cmp_result
 mlib_time_cmp (mlib_time_point a, mlib_time_point b) mlib_noexcept

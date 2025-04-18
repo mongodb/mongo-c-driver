@@ -1,3 +1,31 @@
+/**
+ * @file mlib/duration.h
+ * @brief Duration types and functions
+ * @date 2025-04-17
+ *
+ * This file contains types and functions for working with a "duration" type,
+ * which represents an elapsed amount of time, possibly negative.
+ *
+ * The type `mlib_duration_rep_t` is a typedef of the intregral type that is
+ * used to represent duration units.
+ *
+ * The `mlib_duration` is a trivial object that represents a duration of time.
+ * The internal representation should not be inspected outside of this file.
+ *
+ * @copyright Copyright (c) 2025
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef MLIB_DURATION_H_INCLUDED
 #define MLIB_DURATION_H_INCLUDED
 
@@ -215,6 +243,13 @@ mlib_duration_div (mlib_duration a, int div) mlib_noexcept
  * @retval <0 If `a` is less-than `b`
  * @retval >0 If `b` is less-than `a`
  * @retval  0 If `a` and `b` are equal durations
+ *
+ * @note This is a function-like macro that can be called with an infix operator
+ * as the second argument to do natural duration comparisons:
+ *
+ * ```
+ *    mlib_duration_cmp(a, <=, b)
+ * ```
  */
 static inline enum mlib_cmp_result
 mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
