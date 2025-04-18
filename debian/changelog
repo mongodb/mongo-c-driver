@@ -7,6 +7,10 @@ mongo-c-driver (1.23.1-1+deb12u1) UNRELEASED; urgency=medium
     library may be susceptible to an integer overflow where the function will
     try to free memory at a negative offset. This may result in memory
     corruption.
+  * Fix CVE-2024-6383: The bson_string_append function in MongoDB C Driver may
+    be vulnerable to a buffer overflow where the function might attempt to
+    allocate too small of buffer and may lead to memory corruption of
+    neighbouring heap memory.
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 18 Apr 2025 15:42:31 -0400
 
