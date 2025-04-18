@@ -86,11 +86,26 @@ mlib_now (void) mlib_noexcept
    ret._time_since_monotonic_start = mlib_duration_from_timespec (ts);
    return ret;
 #elif defined(_WIN32)
-   // Win32 API that returns a count of milliseconds. The time value is
-   // monotonically increasing.
-   unsigned long long ms = GetTickCount64 ();
+   // Win32 APIs for the high-performance monotonic counter. These APIs never fail after Windows XP
+   LARGE_INTEGER freq;
+   QueryPerformanceFrequency (&freq);
+   LARGE_INTEGER lits;
+   QueryPerformanceCounter (&lits);
+   // Number of ticks of the perf counter
+   const int64_t ticks = lits.QuadPart;
+   // Number of ticks that the counter emits in one second
+   const int64_t ticks_per_second = freq.QuadPart;
+   // Do some math that avoids an integer overflow when converting to microseconds.
+   // Just one million, used to convert time units to microseconds.
+   const int64_t one_million = 1000000;
+   // Number of whole seconds that have elapsed:
+   const int64_t whole_seconds = ticks / ticks_per_second;
+   // Times one million:
+   const int64_t whole_seconds_1m = whole_seconds * one_million;
+   // Number of microseconds beyond the last whole second:
+   const int64_t subsecond_us = ((ticks % ticks_per_second) * one_million) / ticks_per_second;
    mlib_time_point ret;
-   ret._time_since_monotonic_start = mlib_milliseconds (ms);
+   ret._time_since_monotonic_start = mlib_microseconds (whole_seconds_1m + subsecond_us);
    return ret;
 #else
 #error We do not know how to get the current time on this platform
