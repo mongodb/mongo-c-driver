@@ -14,7 +14,7 @@ class PrepareKerberos(Function):
             script='''\
             if test "${keytab|}" && command -v kinit >/dev/null; then
                 echo "${keytab}" > /tmp/drivers.keytab.base64
-                base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
+                cat /tmp/drivers.keytab.base64 | base64 -d > /tmp/drivers.keytab
                 if touch /etc/krb5.conf 2>/dev/null; then
                     cat .evergreen/etc/kerberos.realm | tee -a /etc/krb5.conf
                 elif command sudo true 2>/dev/null; then
