@@ -423,6 +423,8 @@ test_connection_uri_cb (void *scenario_vp)
        .reason = "libmongoc does not support minPoolSize (CDRIVER-2390)"},
       {.description = "minPoolSize=0 does not error",
        .reason = "libmongoc does not support minPoolSize (CDRIVER-2390)"},
+      {.description = "should throw an exception if neither environment nor callbacks specified (MONGODB-OIDC)",
+       .reason = "libmongoc OIDC callbacks attach to MongoClient, which is not involved by this test"},
       {.description = NULL},
    };
 
