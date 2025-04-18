@@ -11,6 +11,11 @@ mongo-c-driver (1.23.1-1+deb12u1) UNRELEASED; urgency=medium
     be vulnerable to a buffer overflow where the function might attempt to
     allocate too small of buffer and may lead to memory corruption of
     neighbouring heap memory.
+  * Fix CVE-2025-0755: The various bson_append functions in the MongoDB C
+    driver library may be susceptible to buffer overflow when performing
+    operations that could result in a final BSON document which exceeds the
+    maximum allowable size (INT32_MAX), resulting in a segmentation fault and
+    possible application crash.
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 18 Apr 2025 15:42:31 -0400
 
