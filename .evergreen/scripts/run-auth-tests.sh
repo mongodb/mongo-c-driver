@@ -100,7 +100,7 @@ elif command -v otool >/dev/null; then
 fi
 
 # TODO: Remove `skip_for_zseries` when resolving CDRIVER-5990.
-function skip_for_zseries() {
+skip_for_zseries() {
   if $IS_ZSERIES; then
     echo "Skipping test until DEVPROD-16954 is resolved."
     return
