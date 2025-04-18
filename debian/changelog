@@ -1,4 +1,4 @@
-mongo-c-driver (1.23.1-1+deb12u1) UNRELEASED; urgency=medium
+mongo-c-driver (1.23.1-1+deb12u1) bookworm; urgency=medium
 
   * Fix CVE-2023-0437: When calling bson_utf8_validate on some inputs a loop
     with an exit condition that cannot be reached may occur, i.e. an infinite
@@ -17,7 +17,7 @@ mongo-c-driver (1.23.1-1+deb12u1) UNRELEASED; urgency=medium
     maximum allowable size (INT32_MAX), resulting in a segmentation fault and
     possible application crash.
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 18 Apr 2025 15:42:31 -0400
+ -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 18 Apr 2025 16:28:00 -0400
 
 mongo-c-driver (1.23.1-1) unstable; urgency=medium
 
