@@ -99,9 +99,15 @@ elif command -v otool >/dev/null; then
   LD_LIBRARY_PATH="${openssl_lib_prefix}" otool -L "${test_gssapi}" | grep "libssl" || true
 fi
 
-# TODO: Remove `skip_for_zseries` when resolving CDRIVER-5990.
-skip_for_zseries() {
+maybe_skip() {
+  if true; then
+    # TODO: Remove if-block when resolving CDRIVER-5995.
+    echo "Skipping test until DEVPROD-9029 is resolved."
+    return 
+  fi
+
   if $IS_ZSERIES; then
+    # TODO: Remove if-block when resolving CDRIVER-5990.
     echo "Skipping test until DEVPROD-16954 is resolved."
     return
   fi
@@ -113,7 +119,7 @@ if [[ "${ssl}" != "OFF" ]]; then
   # FIXME: CDRIVER-2008 for the cygwin check
   if [[ "${OSTYPE}" != "cygwin" ]]; then
     echo "Authenticating using X.509"
-    LD_LIBRARY_PATH="${openssl_lib_prefix}" skip_for_zseries "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout}"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout}"
   fi
   echo "Connecting to Atlas Free Tier"
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_free:?}&${c_timeout}"
@@ -155,18 +161,18 @@ if [[ "${ssl}" != "OFF" ]]; then
 fi
 
 echo "Authenticating using PLAIN"
-LD_LIBRARY_PATH="${openssl_lib_prefix}" skip_for_zseries "${ping}" "mongodb://${auth_plain:?}@${auth_host}/?authMechanism=PLAIN&${c_timeout}"
+LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_plain:?}@${auth_host}/?authMechanism=PLAIN&${c_timeout}"
 
 echo "Authenticating using default auth mechanism"
 # Though the auth source is named "mongodb-cr", authentication uses the default mechanism (currently SCRAM-SHA-1).
-LD_LIBRARY_PATH="${openssl_lib_prefix}" skip_for_zseries "${ping}" "mongodb://${auth_mongodbcr:?}@${auth_host}/mongodb-cr?${c_timeout}"
+LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_mongodbcr:?}@${auth_host}/mongodb-cr?${c_timeout}"
 
 if [[ "${sasl}" != "OFF" ]]; then
   echo "Authenticating using GSSAPI"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" skip_for_zseries "${ping}" "mongodb://${auth_gssapi:?}@${auth_host}/?authMechanism=GSSAPI&${c_timeout}"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_gssapi:?}@${auth_host}/?authMechanism=GSSAPI&${c_timeout}"
 
   echo "Authenticating with CANONICALIZE_HOST_NAME"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" skip_for_zseries "${ping}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout}"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout}"
 
   declare ld_preload="${LD_PRELOAD:-}"
   if [[ "${ASAN:-}" == "on" ]]; then
@@ -174,13 +180,13 @@ if [[ "${sasl}" != "OFF" ]]; then
   fi
 
   echo "Test threaded GSSAPI auth"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" MONGOC_TEST_GSSAPI_HOST="${auth_host}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi}" LD_PRELOAD="${ld_preload:-}" skip_for_zseries "${test_gssapi}"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" MONGOC_TEST_GSSAPI_HOST="${auth_host}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi}" LD_PRELOAD="${ld_preload:-}" maybe_skip "${test_gssapi}"
   echo "Threaded GSSAPI auth OK"
 
   if [[ "${OSTYPE}" == "cygwin" ]]; then
     echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
-    LD_LIBRARY_PATH="${openssl_lib_prefix}" skip_for_zseries "${ping}" "mongodb://${auth_crossrealm:?}@${auth_host}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${c_timeout}"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_crossrealm:?}@${auth_host}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${c_timeout}"
     echo "Authenticating using GSSAPI (UTF-8 credentials)"
-    LD_LIBRARY_PATH="${openssl_lib_prefix}" skip_for_zseries "${ping}" "mongodb://${auth_gssapi_utf8:?}@${auth_host}/?authMechanism=GSSAPI&${c_timeout}"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_gssapi_utf8:?}@${auth_host}/?authMechanism=GSSAPI&${c_timeout}"
   fi
 fi
