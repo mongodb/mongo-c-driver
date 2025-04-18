@@ -1,6 +1,8 @@
 mongo-c-driver (1.23.1-1+deb12u1) UNRELEASED; urgency=medium
 
-  * 
+  * Fix CVE-2023-0437: When calling bson_utf8_validate on some inputs a loop
+    with an exit condition that cannot be reached may occur, i.e. an infinite
+    loop.
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 18 Apr 2025 15:42:31 -0400
 
