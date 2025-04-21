@@ -1,10 +1,10 @@
 /**
- * @file windows-lean.h
- * @brief Windows.h inclusion shim
- * @date 2025-04-07
+ * @file mlib/platform.h
+ * @brief Operating System Headers and Definitions
+ * @date 2025-04-21
  *
- * This file will conditionally include `<windows.h>`, and wraps it with
- * `WIN32_LEAN_AND_MEAN` and `NOMINMAX`.
+ * This file will conditionally include the general system headers available
+ * for the current host platform.
  *
  * @copyright Copyright (c) 2025
  *
@@ -20,13 +20,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef MLIB_WINDOWS_LEAN_H_INCLUDED
-#define MLIB_WINDOWS_LEAN_H_INCLUDED
+
+#ifndef MLIB_PLATFORM_H_INCLUDED
+#define MLIB_PLATFORM_H_INCLUDED
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+#include <winsock2.h>
+#else
+#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
-#endif // MLIB_WINDOWS_LEAN_H_INCLUDED
+// Feature detection
+#ifdef __has_include
+#if __has_include(<features.h>)
+#include <features.h>
+#endif
+#endif
+
+#endif // MLIB_PLATFORM_H_INCLUDED

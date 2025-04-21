@@ -24,18 +24,10 @@
 #ifndef MLIB_TIME_POINT_H_INCLUDED
 #define MLIB_TIME_POINT_H_INCLUDED
 
-#ifdef __has_include
-#if __has_include(<features.h>)
-#include <features.h>
-#endif
-#endif
-
 #include <mlib/cmp.h>
 #include <mlib/config.h>
 #include <mlib/duration.h>
-
-// Win32 Time APIs
-#include "./windows-lean.h"
+#include <mlib/platform.h>
 
 // Check for POSIX clock functions functions
 #if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 199309L) || (defined(_DEFAULT_SOURCE) && !defined(_WIN32))
