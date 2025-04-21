@@ -24,21 +24,38 @@
 #ifndef MLIB_PLATFORM_H_INCLUDED
 #define MLIB_PLATFORM_H_INCLUDED
 
+// clang-format off
+
+// Windows headers
 #ifdef _WIN32
-#define NOMINMAX
-#include <windows.h>
-#include <winsock2.h>
-#else
-#include <fcntl.h>
-#include <sys/types.h>
-#include <unistd.h>
+    // Check that our WINNT version isn't too old to be used
+    #if defined(_WIN32_WINNT) && (_WIN32_WINNT < 0x601)
+        #undef _WIN32_WINNT
+    #endif
+    #ifndef _WIN32_WINNT
+        // Request a new-enough version of the Win32 API (required for MinGW)
+        #define _WIN32_WINNT 0x601
+    #endif
+    #define NOMINMAX
+    // Winsock must be included before windows.h
+    #include <winsock2.h>
+    #include <windows.h>
+#endif
+
+// POSIX headers
+#if __unix__
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <sys/types.h>
 #endif
 
 // Feature detection
 #ifdef __has_include
-#if __has_include(<features.h>)
-#include <features.h>
+    #if __has_include(<features.h>)
+        #include <features.h>
+    #endif
 #endif
-#endif
+
+// clang-format on
 
 #endif // MLIB_PLATFORM_H_INCLUDED
