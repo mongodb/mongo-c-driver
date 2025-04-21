@@ -174,7 +174,7 @@ if [[ "${sasl}" != "OFF" ]]; then
   fi
 
   echo "Test threaded GSSAPI auth"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" skip_for_zseries MONGOC_TEST_GSSAPI_HOST="${auth_host}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi}" LD_PRELOAD="${ld_preload:-}" "${test_gssapi}"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" MONGOC_TEST_GSSAPI_HOST="${auth_host}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi}" LD_PRELOAD="${ld_preload:-}" skip_for_zseries "${test_gssapi}"
   echo "Threaded GSSAPI auth OK"
 
   if [[ "${OSTYPE}" == "cygwin" ]]; then
