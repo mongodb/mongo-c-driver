@@ -1067,41 +1067,20 @@ _mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri,
    return false;
 #else
    const char *username_from_uri = NULL;
-   char *username_from_subject = NULL;
 
    BSON_ASSERT (uri);
 
    username_from_uri = mongoc_uri_get_username (uri);
    if (username_from_uri) {
       TRACE ("%s", "X509: got username from URI");
-   } else {
-      if (!ssl_opts || !ssl_opts->pem_file) {
-         _mongoc_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                            "cannot determine username for "
-                            "X-509 authentication.");
-         return false;
-      }
-
-      username_from_subject = mongoc_ssl_extract_subject (ssl_opts->pem_file, ssl_opts->pem_pwd);
-      if (!username_from_subject) {
-         _mongoc_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                            "No username provided for X509 authentication.");
-         return false;
-      }
-
-      TRACE ("%s", "X509: got username from certificate");
    }
 
    bson_init (cmd);
    BSON_APPEND_INT32 (cmd, "authenticate", 1);
    BSON_APPEND_UTF8 (cmd, "mechanism", "MONGODB-X509");
-   BSON_APPEND_UTF8 (cmd, "user", username_from_uri ? username_from_uri : username_from_subject);
-
-   bson_free (username_from_subject);
+   if (username_from_uri) {
+      BSON_APPEND_UTF8 (cmd, "user", username_from_uri);
+   }
 
    return true;
 #endif
