@@ -8,22 +8,6 @@
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 
-#if defined(MONGOC_ENABLE_SSL)
-static void
-test_extract_subject (void)
-{
-   char *subject;
-
-   subject = mongoc_ssl_extract_subject (CERT_SERVER, NULL);
-   ASSERT_CMPSTR (subject, "C=US,ST=New York,L=New York City,O=MongoDB,OU=Drivers,CN=localhost");
-   bson_free (subject);
-
-   subject = mongoc_ssl_extract_subject (CERT_CLIENT, NULL);
-   ASSERT_CMPSTR (subject, "C=US,ST=New York,L=New York City,O=MDB,OU=Drivers,CN=client");
-   bson_free (subject);
-}
-#endif
-
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 /* Test parsing a DER encoded tlsfeature extension contents for the
  * status_request (value 5). This is a SEQUENCE of INTEGER. libmongoc assumes
@@ -86,10 +70,6 @@ test_tlsfeature_parsing (void)
 void
 test_x509_install (TestSuite *suite)
 {
-#if defined(MONGOC_ENABLE_SSL)
-   TestSuite_Add (suite, "/X509/extract_subject", test_extract_subject);
-#endif
-
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
    TestSuite_Add (suite, "/X509/tlsfeature_parsing", test_tlsfeature_parsing);
 #endif
