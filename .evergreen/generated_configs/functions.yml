@@ -132,6 +132,20 @@ functions:
         args:
           - -c
           - ./tools/poetry.sh run .evergreen/scripts/clang-format-all.sh
+  cleanup-auth:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        args:
+          - -c
+          - |
+            # Remove temporary files created for auth testing.
+            test -e /tmp/atlas_x509.pem && rm /tmp/atlas_x509.pem
+            test -e /tmp/atlas_x509_pkcs1.pem && rm /tmp/atlas_x509_pkcs1.pem
+            test -e /tmp/drivers.keytab.base64 && rm /tmp/drivers.keytab.base64
+            test -e /tmp/drivers.keytab && rm /tmp/drivers.keytab
   cse-sasl-cyrus-darwinssl-compile:
     - command: expansions.update
       params:
