@@ -5,9 +5,6 @@
  *
  * This file implements the C23 checked-integer-arithmetic functions as macros.
  *
- * The implementation is nearly perfect: The macros necessarily evaluate the
- * operand expressions more than once, so callers should be aware of this caveat.
- *
  * The function-like macros are defined:
  *
  * - `mlib_add(Dst, L, R)` / `mlib_add(Dst, A)`
@@ -159,7 +156,7 @@ mlib_extern_c_begin ();
  * @param T A type specifier for a target integral type for the cast.
  * @param Operand The integral value to be converted.
  *
- * If the cast would result in the operand value chaning, the program will be
+ * If the cast would result in the operand value changing, the program will be
  * terminated with a diagnostic.
  */
 #define mlib_assert_narrow(T, Operand) \
