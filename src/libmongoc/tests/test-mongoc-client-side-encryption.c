@@ -1142,7 +1142,7 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
                           "'endpoint': 'doesnotexist.invalid'}}",
                           mongoc_test_gcp_email,
                           mongoc_test_gcp_privatekey));
-   bson_concat (kms_providers_invalid, tmp_bson ("{'kmip': { 'endpoint': 'doesnotexist.local:5698' }}"));
+   bson_concat (kms_providers_invalid, tmp_bson ("{'kmip': { 'endpoint': 'doesnotexist.invalid:5698' }}"));
 
    client_encryption_opts = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts, kms_providers);
@@ -1447,7 +1447,7 @@ test_custom_endpoint (void *unused)
 
    /* Case 12: KMIP overriding with invalid endpoint. */
    _endpoint_setup (keyvault_client, &client_encryption, &client_encryption_invalid);
-   masterkey = BCON_NEW ("keyId", "1", "endpoint", "doesnotexist.local:5698");
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "doesnotexist.invalid:5698");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts, masterkey);
    res = mongoc_client_encryption_create_datakey (client_encryption, "kmip", datakey_opts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Failed to resolve");
