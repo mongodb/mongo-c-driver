@@ -150,8 +150,7 @@ test_x509_auth (void *unused)
       bson_error_t error = {0};
       bool ok;
       {
-         mongoc_client_t *client = mongoc_client_new_from_uri_with_error (uri, &error);
-         ASSERT_OR_PRINT (client, error);
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
       }
@@ -172,8 +171,7 @@ test_x509_auth (void *unused)
       bson_error_t error = {0};
       bool ok;
       {
-         mongoc_client_t *client = mongoc_client_new_from_uri_with_error (uri, &error);
-         ASSERT_OR_PRINT (client, error);
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
       }
@@ -200,8 +198,7 @@ test_x509_auth (void *unused)
       bson_error_t error = {0};
       bool ok;
       {
-         mongoc_client_t *client = mongoc_client_new_from_uri_with_error (uri, &error);
-         ASSERT_OR_PRINT (client, error);
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
       }
@@ -224,8 +221,7 @@ test_x509_auth (void *unused)
       bson_error_t error = {0};
       bool ok;
       {
-         mongoc_client_t *client = mongoc_client_new_from_uri_with_error (uri, &error);
-         ASSERT_OR_PRINT (client, error);
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
       }
@@ -252,8 +248,7 @@ test_x509_auth (void *unused)
       bson_error_t error = {0};
       bool ok;
       {
-         mongoc_client_t *client = mongoc_client_new_from_uri_with_error (uri, &error);
-         ASSERT_OR_PRINT (client, error);
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
       }
