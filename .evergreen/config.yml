@@ -39,7 +39,6 @@ post:
   - func: stop-mongo-orchestration
   - func: stop-load-balancer
   - func: restore-instance-profile
-  - func: cleanup-auth
 
 include:
   - filename: .evergreen/generated_configs/legacy-config.yml
