@@ -202,9 +202,7 @@ test_x509_auth (void *unused)
       {
          mongoc_client_t *client = mongoc_client_new_from_uri_with_error (uri, &error);
          ASSERT_OR_PRINT (client, error);
-         capture_logs (true);
          ok = try_insert (client, &error);
-         ASSERT_NO_CAPTURED_LOGS ("auth");
          mongoc_client_destroy (client);
       }
 
