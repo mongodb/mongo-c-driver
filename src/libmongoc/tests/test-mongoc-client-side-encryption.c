@@ -1284,18 +1284,13 @@ test_custom_endpoint (void *unused)
     * included.
     * Expect to fail with socket error */
    _endpoint_setup (keyvault_client, &client_encryption, &client_encryption_invalid);
-   masterkey = BCON_NEW ("region",
-                         "us-east-1",
-                         "key",
-                         "arn:aws:kms:us-east-1:579766882180:key/"
-                         "89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
-                         "endpoint",
-                         "kms.us-east-1.amazonaws.com:12345");
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "localhost:12345");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts, masterkey);
-   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", datakey_opts, &keyid, &error);
+   res = mongoc_client_encryption_create_datakey (client_encryption, "kmip", datakey_opts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to connect");
    BSON_ASSERT (!res);
    bson_value_destroy (&keyid);
+
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
