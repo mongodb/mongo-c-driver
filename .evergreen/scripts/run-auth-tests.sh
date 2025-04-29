@@ -18,6 +18,22 @@ mongoc_dir="$(to_absolute "${script_dir}/../..")"
 declare install_dir="${mongoc_dir}/install-dir"
 declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 
+# Creat directory for secrets within Evergreen task directory. Task directory is cleaned up between tasks.
+declare secrets_dir
+secrets_dir="$(to_absolute "${mongoc_dir}/../secrets")"
+mkdir -p "${secrets_dir}" || true
+
+# Create certificate to test X509 auth with Atlas:
+atlas_x509_path="${secrets_dir:?}/atlas_x509.pem"
+echo "${atlas_x509_cert_base64:?}" | base64 --decode > "${secrets_dir:?}/atlas_x509.pem"
+# On Windows, convert certificate to PKCS#1 to work around CDRIVER-4269:
+if $IS_WINDOWS; then
+    openssl pkey -in "${secrets_dir:?}/atlas_x509.pem" -traditional > "${secrets_dir:?}/atlas_x509_pkcs1.pem"
+    openssl x509 -in "${secrets_dir:?}/atlas_x509.pem" >> "${secrets_dir:?}/atlas_x509_pkcs1.pem"
+    atlas_x509_path="$(cygpath -m "${secrets_dir:?}/atlas_x509_pkcs1.pem")"
+fi
+
+
 declare c_timeout="connectTimeoutMS=30000&serverSelectionTryOnce=false"
 
 declare sasl="OFF"
@@ -151,16 +167,6 @@ if [[ "${ssl}" != "OFF" ]]; then
     LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless_srv:?}/?${c_timeout}"
     echo "Connecting to Atlas Serverless"
     LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless:?}&${c_timeout}"
-  fi
-
-  # Create certificate to test X509 auth with Atlas:
-  atlas_x509_path="/tmp/atlas_x509.pem"
-  echo "${atlas_x509_cert_base64:?}" | base64 --decode > /tmp/atlas_x509.pem
-  # On Windows, convert certificate to PKCS#1 to work around CDRIVER-4269:
-  if $IS_WINDOWS; then
-      openssl pkey -in /tmp/atlas_x509.pem -traditional > /tmp/atlas_x509_pkcs1.pem
-      openssl x509 -in /tmp/atlas_x509.pem >> /tmp/atlas_x509_pkcs1.pem
-      atlas_x509_path="$(cygpath -m /tmp/atlas_x509_pkcs1.pem)"
   fi
 
   echo "Connecting to Atlas with X509"
