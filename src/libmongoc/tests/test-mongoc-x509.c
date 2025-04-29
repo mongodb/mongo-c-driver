@@ -134,6 +134,8 @@ try_insert (mongoc_client_t *client, bson_error_t *error)
 static void
 test_x509_auth (void *unused)
 {
+   BSON_UNUSED (unused);
+
    drop_x509_user (true /* ignore "not found" error */);
    create_x509_user ();
 
