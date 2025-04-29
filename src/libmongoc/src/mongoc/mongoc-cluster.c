@@ -1061,6 +1061,7 @@ _mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri, bson_t *cmd /* OUT *
    const char *username_from_uri = NULL;
 
    BSON_ASSERT (uri);
+   BSON_UNUSED (error);
 
    username_from_uri = mongoc_uri_get_username (uri);
    if (username_from_uri) {
