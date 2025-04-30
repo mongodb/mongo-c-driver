@@ -170,7 +170,7 @@ functions:
       file_location: mongo-c-driver/report.json
 
   "send dashboard data" :
-    # Here we begin to generate the request to send the data to SPS
+    # Here we begin to generate the request to send the data to Signal Processing Service (SPS)
     - command: shell.exec
       params:
         script: |
