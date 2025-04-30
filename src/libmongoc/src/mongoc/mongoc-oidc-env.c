@@ -33,6 +33,7 @@ static mongoc_oidc_credential_t *
 mongoc_oidc_env_fn_test (mongoc_oidc_callback_params_t *params)
 {
    BSON_UNUSED (params);
+   // TODO (CDRIVER-4489)
    return NULL;
 }
 
@@ -40,6 +41,7 @@ static mongoc_oidc_credential_t *
 mongoc_oidc_env_fn_azure (mongoc_oidc_callback_params_t *params)
 {
    BSON_UNUSED (params);
+   // TODO (CDRIVER-4489)
    return NULL;
 }
 
@@ -47,6 +49,7 @@ static mongoc_oidc_credential_t *
 mongoc_oidc_env_fn_gcp (mongoc_oidc_callback_params_t *params)
 {
    BSON_UNUSED (params);
+   // TODO (CDRIVER-4489)
    return NULL;
 }
 
@@ -54,6 +57,7 @@ static mongoc_oidc_credential_t *
 mongoc_oidc_env_fn_k8s (mongoc_oidc_callback_params_t *params)
 {
    BSON_UNUSED (params);
+   // TODO (CDRIVER-4489)
    return NULL;
 }
 
