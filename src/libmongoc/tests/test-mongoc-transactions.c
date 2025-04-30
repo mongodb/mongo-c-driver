@@ -412,7 +412,7 @@ _test_transient_txn_err (bool hangup)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_hello (server, WIRE_VERSION_4_0, true /* primary */, false /* tags */, server, NULL);
+   rs_response_to_hello (server, WIRE_VERSION_MIN, true /* primary */, false /* tags */, server, NULL);
 
    client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    /* allow fast reconnect */
@@ -561,7 +561,7 @@ test_unknown_commit_result (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_hello (server, WIRE_VERSION_4_0, true /* primary */, false /* tags */, server, NULL);
+   rs_response_to_hello (server, WIRE_VERSION_MIN, true /* primary */, false /* tags */, server, NULL);
 
    client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    /* allow fast reconnect */
@@ -722,35 +722,6 @@ test_inherit_from_client (void *ctx)
    mongoc_session_opts_destroy (sopt);
    mongoc_client_session_destroy (session);
    mongoc_uri_destroy (uri);
-   mongoc_client_destroy (client);
-}
-
-void
-test_transaction_fails_on_unsupported_version_or_sharded_cluster (void *ctx)
-{
-   bson_error_t error;
-   mongoc_client_session_t *session;
-   mongoc_client_t *client;
-   bool r;
-
-   BSON_UNUSED (ctx);
-
-   client = test_framework_new_default_client ();
-   session = mongoc_client_start_session (client, NULL, &error);
-   ASSERT_OR_PRINT (session, error);
-
-   r = mongoc_client_session_start_transaction (session, NULL, &error);
-   if (!test_framework_max_wire_version_at_least (7) ||
-       (test_framework_is_mongos () && !test_framework_max_wire_version_at_least (8))) {
-      BSON_ASSERT (!r);
-      ASSERT_CONTAINS (error.message,
-                       "Multi-document transactions are not supported by this "
-                       "server version");
-   } else {
-      ASSERT_OR_PRINT (r, error);
-   }
-
-   mongoc_client_session_destroy (session);
    mongoc_client_destroy (client);
 }
 
@@ -943,7 +914,7 @@ test_get_transaction_opts (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_hello (server, WIRE_VERSION_4_0, true /* primary */, false /* tags */, server, NULL);
+   rs_response_to_hello (server, WIRE_VERSION_MIN, true /* primary */, false /* tags */, server, NULL);
 
    client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    BSON_ASSERT (client);
@@ -1092,21 +1063,12 @@ test_transactions_install (TestSuite *suite)
    TestSuite_AddFull (
       suite, "/transactions/inherit_from_client", test_inherit_from_client, NULL, NULL, test_framework_skip_if_no_txns);
    TestSuite_AddFull (suite,
-                      "/transactions/"
-                      "transaction_fails_on_unsupported_version_or_sharded_cluster",
-                      test_transaction_fails_on_unsupported_version_or_sharded_cluster,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_sessions,
-                      test_framework_skip_if_no_crypto);
-   TestSuite_AddFull (suite,
                       "/transactions/recovery_token_cleared",
                       test_transaction_recovery_token_cleared,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
    TestSuite_AddFull (suite,
                       "/transactions/selected_server_pinned_to_mongos",
@@ -1114,7 +1076,6 @@ test_transactions_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_sessions,
-                      test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
    TestSuite_AddMockServerTest (
       suite, "/transactions/get_transaction_opts", test_get_transaction_opts, test_framework_skip_if_no_crypto);

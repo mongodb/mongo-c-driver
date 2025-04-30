@@ -1053,17 +1053,6 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
       GOTO (done);
    }
 
-   if (server_stream->sd->max_wire_version < 7 ||
-       (server_stream->sd->max_wire_version < 8 && server_stream->sd->type == MONGOC_SERVER_MONGOS)) {
-      _mongoc_set_error (error,
-                         MONGOC_ERROR_TRANSACTION,
-                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                         "Multi-document transactions are not supported by this "
-                         "server version");
-      ret = false;
-      GOTO (done);
-   }
-
    /* use "switch" so that static checkers ensure we handle all states */
    switch (session->txn.state) {
    case MONGOC_INTERNAL_TRANSACTION_STARTING:
