@@ -1803,9 +1803,10 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 
          if (username && !mongoc_oidc_env_supports_username (env)) {
             MONGOC_URI_ERROR (error,
-                              "'%s' authentication with %s environment does not accept a username",
+                              "'%s' authentication with %s environment does not accept a %s",
                               mechanism,
-                              mongoc_oidc_env_name (env));
+                              mongoc_oidc_env_name (env),
+                              "username");
             goto fail;
          }
 
