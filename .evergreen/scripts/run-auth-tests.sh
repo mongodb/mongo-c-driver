@@ -22,6 +22,7 @@ declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 declare secrets_dir
 secrets_dir="$(to_absolute "${mongoc_dir}/../secrets")"
 mkdir -p "${secrets_dir}"
+chmod 700 "${secrets_dir}"
 
 # Create certificate to test X509 auth with Atlas:
 atlas_x509_path="${secrets_dir:?}/atlas_x509.pem"
