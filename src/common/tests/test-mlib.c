@@ -1,5 +1,6 @@
 #include "TestSuite.h"
 
+#include <mlib/str.h>
 #include <mlib/intutil.h>
 #include <mlib/config.h>
 #include <mlib/intencode.h>
@@ -646,6 +647,69 @@ _test_ckdint_partial (void)
    }
 }
 
+static void
+_test_str_view (void)
+{
+   mlib_str_view sv = mlib_cstring ("Hello, world!");
+   mlib_check (sv.data, str_eq, "Hello, world!");
+
+   mlib_check (mlib_str_cmp (sv, ==, mlib_cstring ("Hello, world!")));
+   mlib_check (mlib_str_cmp (sv, >, mlib_cstring ("Hello")));
+   // Longer strings are greater than shorter strings
+   mlib_check (mlib_str_cmp (sv, <, mlib_cstring ("ZZZZZ")));
+   // str_view_from duplicates a string view:
+   mlib_check (mlib_str_cmp (sv, ==, mlib_str_view_from (sv)));
+
+   // Substring
+   {
+      sv = mlib_cstring ("foobar");
+      // Implicit length includes everything:
+      mlib_check (mlib_str_cmp (mlib_substr (sv, 2), ==, mlib_cstring ("obar")));
+      // Explicit length trims:
+      mlib_check (mlib_str_cmp (mlib_substr (sv, 2, 1), ==, mlib_cstring ("o")));
+      // Substring over the whole length:
+      mlib_check (mlib_str_cmp (mlib_substr (sv, sv.len), ==, mlib_cstring ("")));
+   }
+
+   // Searching forward:
+   {
+      sv = mlib_cstring ("foobar");
+      mlib_check (mlib_str_find (sv, mlib_cstring ("foo")), eq, 0);
+      mlib_check (mlib_str_find (sv, mlib_cstring ("o")), eq, 1);
+      mlib_check (mlib_str_find (sv, mlib_cstring ("foof")), eq, SIZE_MAX);
+      mlib_check (mlib_str_find (sv, mlib_cstring ("bar")), eq, 3);
+      mlib_check (mlib_str_find (sv, mlib_cstring ("barf")), eq, SIZE_MAX);
+      // Start at index 3
+      mlib_check (mlib_str_find (sv, mlib_cstring ("bar"), 3), eq, 3);
+      // Starting beyond the ocurrence will fail:
+      mlib_check (mlib_str_find (sv, mlib_cstring ("b"), 4), eq, SIZE_MAX);
+      // Empty string is found immediately:
+      mlib_check (mlib_str_find (sv, mlib_cstring ("")), eq, 0);
+   }
+
+   // Splitting
+   {
+      sv = mlib_cstring ("foo bar baz");
+      mlib_str_view a, b;
+      // Trim at index 3, drop one char:
+      mlib_str_split_at (sv, 3, 1, &a, &b);
+      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo")));
+      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("bar baz")));
+      // Trim at index 3, default drop=0:
+      mlib_str_split_at (sv, 3, &a, &b);
+      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo")));
+      mlib_check (mlib_str_cmp (b, ==, mlib_cstring (" bar baz")));
+      // Trim past-the-end
+      mlib_str_split_at (sv, 5000, &a, &b);
+      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo bar baz")));
+      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+      // Drop too many:
+      mlib_str_split_at (sv, 0, 5000, &a, &b);
+      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("")));
+      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+   }
+}
+
 void
 test_mlib_install (TestSuite *suite)
 {
@@ -659,6 +723,7 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/foreach", _test_foreach);
    TestSuite_Add (suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add (suite, "/mlib/ckdint-partial", _test_ckdint_partial);
+   TestSuite_Add (suite, "/mlib/str_view", _test_str_view);
 }
 
 mlib_diagnostic_pop ();
