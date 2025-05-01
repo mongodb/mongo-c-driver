@@ -1793,15 +1793,16 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       // The environment is optional, but if specified it must appear valid.
       if (mechanism_properties && bson_iter_init_find_case (&iter, mechanism_properties, "ENVIRONMENT")) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-            MONGOC_URI_ERROR (error, "'%s' authentication has non-string environment property", mechanism);
+            MONGOC_URI_ERROR (error, "'%s' authentication has non-string %s property", mechanism, "ENVIRONMENT");
             goto fail;
          }
 
          const mongoc_oidc_env_t *env = mongoc_oidc_env_find (bson_iter_utf8 (&iter, NULL));
          if (!env) {
             MONGOC_URI_ERROR (error,
-                              "'%s' authentication has unrecognized environment property '%s'",
+                              "'%s' authentication has unrecognized %s property '%s'",
                               mechanism,
+                              "ENVIRONMENT",
                               bson_iter_utf8 (&iter, NULL));
             goto fail;
          }
@@ -1816,6 +1817,11 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          }
 
          if (bson_iter_init_find_case (&iter, mechanism_properties, "TOKEN_RESOURCE")) {
+            if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+               MONGOC_URI_ERROR (error, "'%s' authentication has non-string %s property", mechanism, "TOKEN_RESOURCE");
+               goto fail;
+            }
+
             if (!mongoc_oidc_env_requires_token_resource (env)) {
                MONGOC_URI_ERROR (error,
                                  "'%s' authentication with %s environment does not accept a %s",
