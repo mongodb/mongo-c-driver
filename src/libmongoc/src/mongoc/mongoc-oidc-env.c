@@ -25,7 +25,7 @@ struct _mongoc_oidc_env_t {
 };
 
 struct _mongoc_oidc_env_callback_t {
-   mongoc_oidc_callback_t *inner;
+   mongoc_oidc_callback_t *inner; // Contains non-owning userdata pointer back to this mongoc_oidc_env_callback_t
    char *token_resource;
 };
 
@@ -111,6 +111,8 @@ mongoc_oidc_env_callback_new (const mongoc_oidc_env_t *env, const char *token_re
    BSON_ASSERT_PARAM (env);
    BSON_OPTIONAL_PARAM (token_resource);
    mongoc_oidc_env_callback_t *env_callback = bson_malloc (sizeof *env_callback);
+   // Note that the callback's user_data points back to this containing mongoc_oidc_env_callback_t.
+   // We expect that the inner callback can only be destroyed via mongoc_oidc_env_callback_destroy.
    *env_callback =
       (mongoc_oidc_env_callback_t){.inner = mongoc_oidc_callback_new_with_user_data (env->callback_fn, env_callback),
                                    .token_resource = bson_strdup (token_resource)};
