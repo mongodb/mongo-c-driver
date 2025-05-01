@@ -25,7 +25,7 @@ struct _mongoc_oidc_env_t {
 };
 
 struct _mongoc_oidc_env_callback_t {
-   mongoc_oidc_callback_t *inner; // Contains non-owning userdata pointer back to this mongoc_oidc_env_callback_t
+   mongoc_oidc_callback_t *inner; // Contains non-owning user_data pointer back to this mongoc_oidc_env_callback_t
    char *token_resource;
 };
 
