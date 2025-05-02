@@ -1011,57 +1011,6 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
    return ctx;
 }
 
-
-char *
-_mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
-{
-   X509_NAME *subject = NULL;
-   X509 *cert = NULL;
-   BIO *certbio = NULL;
-   BIO *strbio = NULL;
-   char *str = NULL;
-   int ret;
-
-   BSON_UNUSED (passphrase);
-
-   if (!filename) {
-      return NULL;
-   }
-
-   certbio = BIO_new (BIO_s_file ());
-   strbio = BIO_new (BIO_s_mem ());
-
-   BSON_ASSERT (certbio);
-   BSON_ASSERT (strbio);
-
-
-   if (BIO_read_filename (certbio, filename) && (cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
-      if ((subject = X509_get_subject_name (cert))) {
-         ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
-
-         if ((ret > 0) && (ret < INT_MAX)) {
-            str = (char *) bson_malloc (ret + 2);
-            BIO_gets (strbio, str, ret + 1);
-            str[ret] = '\0';
-         }
-      }
-   }
-
-   if (cert) {
-      X509_free (cert);
-   }
-
-   if (certbio) {
-      BIO_free (certbio);
-   }
-
-   if (strbio) {
-      BIO_free (strbio);
-   }
-
-   return str;
-}
-
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 #ifdef _WIN32
 
