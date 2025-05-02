@@ -240,42 +240,6 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
    return mongoc_secure_channel_setup_certificate_from_file (opt->pem_file);
 }
 
-static void
-_bson_append_szoid (mcommon_string_append_t *retval, PCCERT_CONTEXT cert, const char *label, void *oid)
-{
-   DWORD oid_len = CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, NULL, 0);
-
-   if (oid_len > 1) {
-      char *tmp = bson_malloc0 (oid_len);
-
-      CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, tmp, oid_len);
-      mcommon_string_append_printf (retval, "%s%s", label, tmp);
-      bson_free (tmp);
-   }
-}
-
-char *
-_mongoc_secure_channel_extract_subject (const char *filename, const char *passphrase)
-{
-   PCCERT_CONTEXT cert;
-   cert = mongoc_secure_channel_setup_certificate_from_file (filename);
-   if (!cert) {
-      return NULL;
-   }
-
-   mcommon_string_append_t retval;
-   mcommon_string_new_as_append (&retval);
-
-   _bson_append_szoid (&retval, cert, "C=", szOID_COUNTRY_NAME);
-   _bson_append_szoid (&retval, cert, ",ST=", szOID_STATE_OR_PROVINCE_NAME);
-   _bson_append_szoid (&retval, cert, ",L=", szOID_LOCALITY_NAME);
-   _bson_append_szoid (&retval, cert, ",O=", szOID_ORGANIZATION_NAME);
-   _bson_append_szoid (&retval, cert, ",OU=", szOID_ORGANIZATIONAL_UNIT_NAME);
-   _bson_append_szoid (&retval, cert, ",CN=", szOID_COMMON_NAME);
-   _bson_append_szoid (&retval, cert, ",STREET=", szOID_STREET_ADDRESS);
-
-   return mcommon_string_from_append_destroy_with_steal (&retval);
-}
 
 bool
 mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)

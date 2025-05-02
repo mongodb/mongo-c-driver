@@ -18,6 +18,40 @@ mongoc_dir="$(to_absolute "${script_dir}/../..")"
 declare install_dir="${mongoc_dir}/install-dir"
 declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 
+# Create directory for secrets within Evergreen task directory. Task directory is cleaned up between tasks.
+declare secrets_dir
+secrets_dir="$(to_absolute "${mongoc_dir}/../secrets")"
+mkdir -p "${secrets_dir}"
+chmod 700 "${secrets_dir}"
+
+# Create certificate to test X509 auth with Atlas:
+atlas_x509_path="${secrets_dir:?}/atlas_x509.pem"
+echo "${atlas_x509_cert_base64:?}" | base64 --decode > "${secrets_dir:?}/atlas_x509.pem"
+# On Windows, convert certificate to PKCS#1 to work around CDRIVER-4269:
+if $IS_WINDOWS; then
+    openssl pkey -in "${secrets_dir:?}/atlas_x509.pem" -traditional > "${secrets_dir:?}/atlas_x509_pkcs1.pem"
+    openssl x509 -in "${secrets_dir:?}/atlas_x509.pem" >> "${secrets_dir:?}/atlas_x509_pkcs1.pem"
+    atlas_x509_path="$(cygpath -m "${secrets_dir:?}/atlas_x509_pkcs1.pem")"
+fi
+
+# Create Kerberos config and keytab files.
+echo "Setting up Kerberos ... begin"
+if command -v kinit >/dev/null; then
+    # Copy host config and append realm:
+    if [ -e /etc/krb5.conf ]; then
+      cat /etc/krb5.conf > "${secrets_dir:?}/krb5.conf"
+    fi
+    cat "${mongoc_dir}/.evergreen/etc/kerberos.realm" >> "${secrets_dir:?}/krb5.conf"
+    # Set up keytab:
+    echo "${keytab:?}" | base64 --decode > "${secrets_dir:?}/drivers.keytab"
+    # Initialize kerberos:
+    KRB5_CONFIG="${secrets_dir:?}/krb5.conf" kinit -k -t "${secrets_dir:?}/drivers.keytab" -p drivers@LDAPTEST.10GEN.CC
+    echo "Setting up Kerberos ... done"
+else
+    echo "No 'kinit' detected"
+    echo "Setting up Kerberos ... skipping"
+fi
+
 declare c_timeout="connectTimeoutMS=30000&serverSelectionTryOnce=false"
 
 declare sasl="OFF"
@@ -61,10 +95,6 @@ esac
 : "${ping:?}"
 : "${test_gssapi:?}"
 : "${ip_addr:?}"
-
-if command -v kinit >/dev/null && [[ -f /tmp/drivers.keytab ]]; then
-  kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC || true
-fi
 
 # Archlinux (which we use for testing various self-installed OpenSSL versions)
 # stores their trust list under /etc/ca-certificates/extracted/.
@@ -158,6 +188,10 @@ if [[ "${ssl}" != "OFF" ]]; then
     echo "Connecting to Atlas Serverless"
     LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless:?}&${c_timeout}"
   fi
+
+  echo "Connecting to Atlas with X509"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_x509:?}&tlsCertificateKeyFile=${atlas_x509_path}&${c_timeout}"
+
 fi
 
 echo "Authenticating using PLAIN"
