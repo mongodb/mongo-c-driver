@@ -526,6 +526,18 @@ mongoc_lowercase (const char *src, char *buf /* OUT */)
    }
 }
 
+void
+mongoc_lowercase_inplace (char *src)
+{
+   for (; *src; ++src) {
+      /* UTF8 non-ascii characters have a 1 at the leftmost bit. If this is the
+       * case, just copy */
+      if ((*src & (0x1 << 7)) == 0) {
+         *src = (char) tolower (*src);
+      }
+   }
+}
+
 bool
 mongoc_parse_port (uint16_t *port, const char *str)
 {

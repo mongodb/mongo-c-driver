@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+#include "bson/bson.h"
+#include "bsonutil/bson-match.h"
 #include "bsonutil/bson-parser.h"
+#include "bsonutil/bson-val.h"
 #include "entity-map.h"
 #include "json-test.h"
 #include "operation.h"
@@ -23,6 +26,7 @@
 #include "test-libmongoc.h"
 #include "test-diagnostics.h"
 #include <mongoc/utlist.h>
+#include <mongoc/mongoc-database-private.h>
 #include "util.h"
 #include <common-string-private.h>
 #include <mlib/cmp.h>
@@ -100,7 +104,14 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // libmongoc does not support the optional findOne helper.
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
-
+   {"types", SKIP_ALL_TESTS},
+   // libmongoc does not support the optional listIndexNames helper.
+   {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
+   {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
+   // libmongoc does not support mapReduce.
+   {"unsupportedCommand", SKIP_ALL_TESTS},
+   // libmongoc does not support the timeoutMS URI option
+   {"timeoutMS", SKIP_ALL_TESTS},
    // libmongoc does not support the optional listIndexNames helper.
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
@@ -110,7 +121,6 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
 
    // libmongoc does not include insertId in InsertOneResult
    {"cancel-server-check", SKIP_ALL_TESTS},
-
    {0},
 };
 // clang-format on
@@ -636,7 +646,7 @@ check_schema_version (test_file_t *test_file)
    // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
    semver_t schema_version;
-   semver_parse ("1.22", &schema_version);
+   semver_parse ("1.23", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -883,7 +893,7 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       mongoc_write_concern_t *wc = NULL;
       bson_t *bulk_opts = NULL;
       bson_t *drop_opts = bson_new ();
-      bson_t *create_opts = bson_new ();
+      bson_t *create_opts = NULL;
       bool ret = false;
 
       bson_iter_bson (&initial_data_iter, &collection_data);
@@ -891,8 +901,13 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       bson_parser_utf8 (parser, "databaseName", &database_name);
       bson_parser_utf8 (parser, "collectionName", &collection_name);
       bson_parser_array (parser, "documents", &documents);
+      bson_parser_doc_optional (parser, "createOptions", &create_opts);
       if (!bson_parser_parse (parser, &collection_data, error)) {
          goto loopexit;
+      }
+
+      if (create_opts == NULL) {
+         create_opts = bson_new ();
       }
 
       wc = mongoc_write_concern_new ();
@@ -915,6 +930,7 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       }
 
       coll = mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name);
+
       if (!mongoc_collection_drop_with_opts (coll, drop_opts, error)) {
          if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
             /* This is not a "ns not found" error. Fail the test. */
@@ -923,6 +939,47 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          /* Clear an "ns not found" error. */
          memset (error, 0, sizeof (bson_error_t));
       }
+
+      // Also drop `enxcol_.<coll>.esc` and `enxcol_.<coll>.ecoc` in case the collection will be used for QE.
+      {
+         char *collection_name_esc = bson_strdup_printf ("enxcol_.%s.esc", collection_name);
+         mongoc_collection_t *coll_esc =
+            mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name_esc);
+         if (!mongoc_collection_drop_with_opts (coll_esc, drop_opts, error)) {
+            if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
+               /* This is not a "ns not found" error. Fail the test. */
+               goto loopexit;
+            }
+            /* Clear an "ns not found" error. */
+            memset (error, 0, sizeof (bson_error_t));
+         }
+         mongoc_collection_destroy (coll_esc);
+         bson_free (collection_name_esc);
+      }
+
+      {
+         char *collection_name_ecoc = bson_strdup_printf ("enxcol_.%s.ecoc", collection_name);
+         mongoc_collection_t *coll_ecoc =
+            mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name_ecoc);
+         if (!mongoc_collection_drop_with_opts (coll_ecoc, drop_opts, error)) {
+            if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
+               /* This is not a "ns not found" error. Fail the test. */
+               goto loopexit;
+            }
+            /* Clear an "ns not found" error. */
+            memset (error, 0, sizeof (bson_error_t));
+         }
+         mongoc_collection_destroy (coll_ecoc);
+         bson_free (collection_name_ecoc);
+      }
+
+      mongoc_collection_t *new_coll = NULL;
+      db = mongoc_client_get_database (test_runner->internal_client, database_name);
+      new_coll = mongoc_database_create_collection (db, collection_name, create_opts, error);
+      if (!new_coll) {
+         goto loopexit;
+      }
+      mongoc_collection_destroy (new_coll);
 
       /* Insert documents if specified. */
       if (bson_count_keys (documents) > 0) {
@@ -946,15 +1003,6 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          if (!mongoc_bulk_operation_execute (bulk_insert, NULL, error)) {
             goto loopexit;
          }
-      } else {
-         mongoc_collection_t *new_coll = NULL;
-         /* Test does not need data inserted, just create the collection. */
-         db = mongoc_client_get_database (test_runner->internal_client, database_name);
-         new_coll = mongoc_database_create_collection (db, collection_name, create_opts, error);
-         if (!new_coll) {
-            goto loopexit;
-         }
-         mongoc_collection_destroy (new_coll);
       }
 
       ret = true;
@@ -1292,6 +1340,21 @@ test_count_matching_events_for_client (
 }
 
 static bool
+skip_cse_list_collections (const bson_t *event)
+{
+   if (!bson_has_field(event, "commandName") || !bson_has_field(event, "databaseName")) {
+      return false;
+   }
+
+   const char *cmdname = bson_lookup_utf8 (event, "commandName");
+   const char *dbname = bson_lookup_utf8 (event, "databaseName");
+   if (cmdname && 0 == strcmp (cmdname, "listCollections") && dbname && 0 == strcmp (dbname, "keyvault")) {
+      return true;
+   }
+   return false;
+}
+
+static bool
 test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for_client, bson_error_t *error)
 {
    bool ret = false;
@@ -1329,10 +1392,33 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
       goto done;
    }
 
-   uint32_t expected_num_events = bson_count_keys (expected_events);
-   uint32_t actual_num_events = 0;
-
    event_t *eiter;
+   int actual_listCollections_count = 0;
+   LL_FOREACH (entity->events, eiter)
+   {
+      if (skip_cse_list_collections (eiter->serialized)) {
+         actual_listCollections_count++;
+      }
+   }
+   eiter = entity->events;
+
+   bson_iter_t iter;
+   int expected_listCollections_count = 0;
+   BSON_FOREACH(expected_events, iter) {
+      bson_t expected_event;
+      bson_iter_bson (&iter, &expected_event);
+      BSON_FOREACH(&expected_event, iter) {
+         bson_t event_contents;
+         bson_iter_bson (&iter, &event_contents);
+         if (skip_cse_list_collections (&event_contents)) {
+            expected_listCollections_count++;
+            break;
+         }
+      }
+   }
+
+   int expected_num_events = bson_count_keys (expected_events);
+   int actual_num_events = 0;
    LL_FOREACH (entity->events, eiter)
    {
       if (event_matches_eventtype (eiter, event_type)) {
@@ -1340,39 +1426,71 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
       }
    }
 
+   {
+      const int difference = (actual_num_events - actual_listCollections_count) - (expected_num_events - expected_listCollections_count);
+      bool too_many_events = difference > 0;
+      bool too_few_events = difference < 0;
+      if (actual_listCollections_count < expected_listCollections_count) {
+         too_few_events = true;
+      }
+
    if (expected_num_events != actual_num_events) {
-      bool too_many_events = actual_num_events > expected_num_events;
       if (ignore_extra_events && *ignore_extra_events) {
          // We can never have too many events
          too_many_events = false;
       }
-      bool too_few_events = actual_num_events < expected_num_events;
       if (too_few_events || too_many_events) {
          test_set_error (
-            error, "expected: %" PRIu32 " events but got %" PRIu32, expected_num_events, actual_num_events);
+            error, "expected: %" PRIi32 " events but got %" PRIi32, expected_num_events, actual_num_events);
          goto done;
       }
    }
 
    eiter = entity->events;
-   bson_iter_t iter;
    BSON_FOREACH (expected_events, iter)
    {
+      bool matched = false;
       while (eiter && !event_matches_eventtype (eiter, event_type)) {
          eiter = eiter->next;
       }
       bson_t expected_event;
       bson_iter_bson (&iter, &expected_event);
-      if (!eiter) {
-         test_set_error (error, "could not find event: %s", tmp_json (&expected_event));
+
+      do {
+         if (!eiter) {
+            break;
+         }
+         matched = test_check_event (test, &expected_event, eiter, error);
+         if (matched) {
+            continue;
+         }
+
+         if (ignore_extra_events) {
+            continue;
+         }
+
+         if (skip_cse_list_collections (eiter->serialized)) {
+            continue;
+         }
+
+         test_set_error (error,
+                         "could not match event\n"
+                         "\texpected: %s\n\n"
+                         "\tactual  : %s\n\n ",
+                         bson_as_canonical_extended_json (&expected_event, NULL),
+                         bson_as_canonical_extended_json (eiter->serialized, NULL));
+         break;
+      } while ((eiter = eiter->next) && !matched);
+
+      if (!matched) {
          goto done;
+         test_set_error (error,
+                         "expectation unmatched\n"
+                         "\texpected: %s\n\n",
+                         tmp_json (&expected_event));
       }
-      if (!test_check_event (test, &expected_event, eiter, error)) {
-         test_diagnostics_error_info ("checking for expected event: %s", tmp_json (&expected_event));
-         goto done;
-      }
-      eiter = eiter->next;
    }
+}
 
    ret = true;
 done:
@@ -1762,16 +1880,24 @@ test_check_outcome_collection (test_t *test, bson_t *collection_data, bson_error
       bson_iter_bson (&eiter, &expected);
       expected_sorted = bson_copy_and_sort (&expected);
 
+      bson_val_t *actual_v = bson_val_from_bson (actual_sorted);
+      bson_val_t *expected_v = bson_val_from_bson (expected_sorted);
 
-      if (!bson_equal (actual_sorted, expected_sorted)) {
+      bson_matcher_context_t matcher_context = {.matcher = bson_matcher_new (), .path = "", .is_root = true};
+      if (!bson_matcher_match (&matcher_context, expected_v, actual_v, error)) {
          test_set_error (error, "expected %s, but got %s", tmp_json (expected_sorted), tmp_json (actual_sorted));
+         const char *got = tmp_json (actual_sorted);
+         printf ("this: %s", got);
          bson_destroy (actual_sorted);
          bson_destroy (expected_sorted);
          goto done;
       }
 
+      bson_matcher_destroy (matcher_context.matcher);
       bson_destroy (actual_sorted);
       bson_destroy (expected_sorted);
+      bson_val_destroy (actual_v);
+      bson_val_destroy (expected_v);
 
       bson_iter_next (&eiter);
    }
