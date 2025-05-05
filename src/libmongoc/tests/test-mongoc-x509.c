@@ -7,22 +7,7 @@
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
-
-#if defined(MONGOC_ENABLE_SSL)
-static void
-test_extract_subject (void)
-{
-   char *subject;
-
-   subject = mongoc_ssl_extract_subject (CERT_SERVER, NULL);
-   ASSERT_CMPSTR (subject, "C=US,ST=New York,L=New York City,O=MongoDB,OU=Drivers,CN=localhost");
-   bson_free (subject);
-
-   subject = mongoc_ssl_extract_subject (CERT_CLIENT, NULL);
-   ASSERT_CMPSTR (subject, "C=US,ST=New York,L=New York City,O=MDB,OU=Drivers,CN=client");
-   bson_free (subject);
-}
-#endif
+#include "test-conveniences.h" // tmp_bson
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 /* Test parsing a DER encoded tlsfeature extension contents for the
@@ -83,11 +68,209 @@ test_tlsfeature_parsing (void)
 }
 #endif /* MONGOC_ENABLE_OCSP_OPENSSL */
 
+#ifdef MONGOC_ENABLE_SSL
+static void
+create_x509_user (void)
+{
+   bson_error_t error;
+
+   mongoc_client_t *client = test_framework_new_default_client ();
+   bool ok =
+      mongoc_client_command_simple (client,
+                                    "$external",
+                                    tmp_bson (BSON_STR ({
+                                       "createUser" : "C=US,ST=New York,L=New York City,O=MDB,OU=Drivers,CN=client",
+                                       "roles" : [ {"role" : "readWrite", "db" : "db"} ]
+                                    })),
+                                    NULL /* read_prefs */,
+                                    NULL /* reply */,
+                                    &error);
+   ASSERT_OR_PRINT (ok, error);
+   mongoc_client_destroy (client);
+}
+
+static void
+drop_x509_user (bool ignore_notfound)
+{
+   bson_error_t error;
+
+   mongoc_client_t *client = test_framework_new_default_client ();
+   bool ok = mongoc_client_command_simple (
+      client,
+      "$external",
+      tmp_bson (BSON_STR ({"dropUser" : "C=US,ST=New York,L=New York City,O=MDB,OU=Drivers,CN=client"})),
+      NULL /* read_prefs */,
+      NULL /* reply */,
+      &error);
+
+   if (!ok) {
+      ASSERT_OR_PRINT (ignore_notfound && NULL != strstr (error.message, "not found"), error);
+   }
+   mongoc_client_destroy (client);
+}
+
+static mongoc_uri_t *
+get_x509_uri (void)
+{
+   bson_error_t error;
+   char *uristr_noauth = test_framework_get_uri_str_no_auth ("db");
+   mongoc_uri_t *uri = mongoc_uri_new_with_error (uristr_noauth, &error);
+   ASSERT_OR_PRINT (uri, error);
+   ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-X509"));
+   ASSERT (mongoc_uri_set_auth_source (uri, "$external"));
+   bson_free (uristr_noauth);
+   return uri;
+}
+
+static bool
+try_insert (mongoc_client_t *client, bson_error_t *error)
+{
+   mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+   bool ok = mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, error);
+   mongoc_collection_destroy (coll);
+   return ok;
+}
+
+static void
+test_x509_auth (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   drop_x509_user (true /* ignore "not found" error */);
+   create_x509_user ();
+
+   // Test auth works:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, CERT_CLIENT));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         ok = try_insert (client, &error);
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT_OR_PRINT (ok, error);
+      mongoc_uri_destroy (uri);
+   }
+
+   // Test auth fails with no client certificate:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         ok = try_insert (client, &error);
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT (!ok);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT,
+                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                             "" /* message differs between server versions */);
+      mongoc_uri_destroy (uri);
+   }
+
+   // Test auth works with explicit username:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (mongoc_uri_set_username (uri, "C=US,ST=New York,L=New York City,O=MDB,OU=Drivers,CN=client"));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, CERT_CLIENT));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         ok = try_insert (client, &error);
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT_OR_PRINT (ok, error);
+      mongoc_uri_destroy (uri);
+   }
+
+   // Test auth fails with wrong username:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (mongoc_uri_set_username (uri, "bad"));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, CERT_CLIENT));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         ok = try_insert (client, &error);
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT (!ok);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT,
+                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                             "" /* message differs between server versions */);
+      mongoc_uri_destroy (uri);
+   }
+
+   // Test auth fails with correct username but wrong certificate:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (mongoc_uri_set_username (uri, "C=US,ST=New York,L=New York City,O=MDB,OU=Drivers,CN=client"));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, CERT_SERVER));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         ok = try_insert (client, &error);
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT (!ok);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT,
+                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                             "" /* message differs between server versions */);
+      mongoc_uri_destroy (uri);
+   }
+   drop_x509_user (false);
+}
+#endif // MONGOC_ENABLE_SSL
+
 void
 test_x509_install (TestSuite *suite)
 {
-#if defined(MONGOC_ENABLE_SSL)
-   TestSuite_Add (suite, "/X509/extract_subject", test_extract_subject);
+#ifdef MONGOC_ENABLE_SSL
+   TestSuite_AddFull (suite, "/X509/auth", test_x509_auth, NULL, NULL, test_framework_skip_if_no_auth);
 #endif
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
