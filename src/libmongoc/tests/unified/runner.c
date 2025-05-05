@@ -1342,7 +1342,7 @@ test_count_matching_events_for_client (
 static bool
 skip_cse_list_collections (const bson_t *event)
 {
-   if (!bson_has_field(event, "commandName") || !bson_has_field(event, "databaseName")) {
+   if (!bson_has_field (event, "commandName") || !bson_has_field (event, "databaseName")) {
       return false;
    }
 
@@ -1404,10 +1404,12 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
 
    bson_iter_t iter;
    int expected_listCollections_count = 0;
-   BSON_FOREACH(expected_events, iter) {
+   BSON_FOREACH (expected_events, iter)
+   {
       bson_t expected_event;
       bson_iter_bson (&iter, &expected_event);
-      BSON_FOREACH(&expected_event, iter) {
+      BSON_FOREACH (&expected_event, iter)
+      {
          bson_t event_contents;
          bson_iter_bson (&iter, &event_contents);
          if (skip_cse_list_collections (&event_contents)) {
@@ -1427,70 +1429,71 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
    }
 
    {
-      const int difference = (actual_num_events - actual_listCollections_count) - (expected_num_events - expected_listCollections_count);
+      const int difference =
+         (actual_num_events - actual_listCollections_count) - (expected_num_events - expected_listCollections_count);
       bool too_many_events = difference > 0;
       bool too_few_events = difference < 0;
       if (actual_listCollections_count < expected_listCollections_count) {
          too_few_events = true;
       }
 
-   if (expected_num_events != actual_num_events) {
-      if (ignore_extra_events && *ignore_extra_events) {
-         // We can never have too many events
-         too_many_events = false;
+      if (expected_num_events != actual_num_events) {
+         if (ignore_extra_events && *ignore_extra_events) {
+            // We can never have too many events
+            too_many_events = false;
+         }
+         if (too_few_events || too_many_events) {
+            test_set_error (
+               error, "expected: %" PRIi32 " events but got %" PRIi32, expected_num_events, actual_num_events);
+            goto done;
+         }
       }
-      if (too_few_events || too_many_events) {
-         test_set_error (
-            error, "expected: %" PRIi32 " events but got %" PRIi32, expected_num_events, actual_num_events);
-         goto done;
-      }
-   }
 
-   eiter = entity->events;
-   BSON_FOREACH (expected_events, iter)
-   {
-      bool matched = false;
-      while (eiter && !event_matches_eventtype (eiter, event_type)) {
-         eiter = eiter->next;
-      }
-      bson_t expected_event;
-      bson_iter_bson (&iter, &expected_event);
+      eiter = entity->events;
+      BSON_FOREACH (expected_events, iter)
+      {
+         bool matched = false;
+         while (eiter && !event_matches_eventtype (eiter, event_type)) {
+            eiter = eiter->next;
+         }
+         bson_t expected_event;
+         bson_iter_bson (&iter, &expected_event);
 
-      do {
-         if (!eiter) {
+         do {
+            if (!eiter) {
+               break;
+            }
+            matched = test_check_event (test, &expected_event, eiter, error);
+            if (matched) {
+               continue;
+            }
+
+            if (ignore_extra_events) {
+               continue;
+            }
+
+            if (skip_cse_list_collections (eiter->serialized)) {
+               continue;
+            }
+
+            test_set_error (error,
+                            "could not match event\n"
+                            "\texpected: %s\n\n"
+                            "\tactual  : %s\n\n ",
+                            bson_as_canonical_extended_json (&expected_event, NULL),
+                            bson_as_canonical_extended_json (eiter->serialized, NULL));
             break;
-         }
-         matched = test_check_event (test, &expected_event, eiter, error);
-         if (matched) {
-            continue;
-         }
+         } while ((eiter = eiter->next) && !matched);
 
-         if (ignore_extra_events) {
-            continue;
+         if (!matched) {
+            goto done;
+            test_set_error (error,
+                            "expectation unmatched\n"
+                            "\texpected: %s\n\n",
+                            tmp_json (&expected_event));
          }
-
-         if (skip_cse_list_collections (eiter->serialized)) {
-            continue;
-         }
-
-         test_set_error (error,
-                         "could not match event\n"
-                         "\texpected: %s\n\n"
-                         "\tactual  : %s\n\n ",
-                         bson_as_canonical_extended_json (&expected_event, NULL),
-                         bson_as_canonical_extended_json (eiter->serialized, NULL));
-         break;
-      } while ((eiter = eiter->next) && !matched);
-
-      if (!matched) {
-         goto done;
-         test_set_error (error,
-                         "expectation unmatched\n"
-                         "\texpected: %s\n\n",
-                         tmp_json (&expected_event));
       }
    }
-}
 
    ret = true;
 done:
