@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <mlib/intencode.h>
 #include <common-thread-private.h>
 #include <mongoc/mongoc-server-monitor-private.h>
 
@@ -28,6 +29,7 @@
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
 #include <common-atomic-private.h>
+#include <mlib/config.h>
 
 #include <inttypes.h>
 
@@ -115,16 +117,18 @@ static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (mongoc_server_monitor_t
 }
 
 #define MONITOR_LOG(sm, ...)                                            \
-   do {                                                                 \
+   if (1) {                                                             \
+      mlib_diagnostic_push ();                                          \
+      mlib_disable_constant_conditional_expression_warnings ();         \
       if (MONGOC_TRACE_ENABLED) {                                       \
          _server_monitor_log (sm, MONGOC_LOG_LEVEL_TRACE, __VA_ARGS__); \
       }                                                                 \
-   } while (0)
+      mlib_diagnostic_pop ();                                           \
+   } else                                                               \
+      ((void) 0)
 
 /* TODO CDRIVER-3710 use MONGOC_LOG_LEVEL_ERROR */
 #define MONITOR_LOG_ERROR(sm, ...) _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
-/* TODO CDRIVER-3710 use MONGOC_LOG_LEVEL_WARNING */
-#define MONITOR_LOG_WARNING(sm, ...) _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
 
 static void
 _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor, bool awaited)
@@ -259,13 +263,6 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor, bs
    mc_tpld_drop_ref (&td);
 }
 
-static int32_t
-_int32_from_le (const void *data)
-{
-   BSON_ASSERT_PARAM (data);
-   return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
-}
-
 static bool
 _server_monitor_send_and_recv_hello_opmsg (mongoc_server_monitor_t *server_monitor,
                                            const bson_t *cmd,
@@ -317,7 +314,7 @@ _server_monitor_send_and_recv_hello_opmsg (mongoc_server_monitor_t *server_monit
       goto fail;
    }
 
-   const int32_t message_length = _int32_from_le (buffer.data);
+   const int32_t message_length = mlib_read_i32le (buffer.data);
 
    // msgHeader consists of four int32 fields.
    const int32_t message_header_length = 4u * sizeof (int32_t);
@@ -430,7 +427,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
       goto fail;
    }
 
-   const int32_t message_length = _int32_from_le (buffer.data);
+   const int32_t message_length = mlib_read_i32le (buffer.data);
 
    // msgHeader consists of four int32 fields.
    const int32_t message_header_length = 4u * sizeof (int32_t);
@@ -699,7 +696,7 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
       GOTO (fail);
    }
 
-   const int32_t message_length = _int32_from_le (buffer.data);
+   const int32_t message_length = mlib_read_i32le (buffer.data);
 
    // msgHeader consists of four int32 fields.
    const int32_t message_header_length = 4u * sizeof (int32_t);

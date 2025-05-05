@@ -2545,8 +2545,6 @@ test_kms_tls_cert_expired (void *unused)
    ASSERT_CONTAINS (error.message, "CSSMERR_TP_CERT_EXPIRED");
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    ASSERT_CONTAINS (error.message, "certificate has expired");
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   ASSERT_CONTAINS (error.message, "certificate has expired");
 #endif
 
    mongoc_client_encryption_datakey_opts_destroy (opts);
@@ -2589,8 +2587,6 @@ test_kms_tls_cert_wrong_host (void *unused)
    ASSERT_CONTAINS (error.message, "Host name mismatch");
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    ASSERT_CONTAINS (error.message, "hostname doesn't match certificate");
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   ASSERT_CONTAINS (error.message, "not present in server certificate");
 #endif
 
    mongoc_client_encryption_datakey_opts_destroy (opts);
@@ -2822,8 +2818,6 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_
 #define ASSERT_EXPIRED(error) ASSERT_CONTAINS (error.message, "CSSMERR_TP_CERT_EXPIRED")
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 #define ASSERT_EXPIRED(error) ASSERT_CONTAINS (error.message, "certificate has expired")
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#define ASSERT_EXPIRED(error) ASSERT_CONTAINS (error.message, "certificate has expired")
 #else
 #define ASSERT_EXPIRED(error)
 #endif
@@ -2834,8 +2828,6 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, tls_test_ce_
 #define ASSERT_INVALID_HOSTNAME(error) ASSERT_CONTAINS (error.message, "Host name mismatch")
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 #define ASSERT_INVALID_HOSTNAME(error) ASSERT_CONTAINS (error.message, "hostname doesn't match certificate")
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#define ASSERT_INVALID_HOSTNAME(error) ASSERT_CONTAINS (error.message, "not present in server certificate")
 #else
 #define ASSERT_INVALID_HOSTNAME(error)
 #endif
@@ -6364,6 +6356,8 @@ _test_retry_with_masterkey (const char *provider, bson_t *masterkey)
 static void
 test_kms_retry (void *unused)
 {
+   BSON_UNUSED (unused);
+
    bson_t *aws_masterkey = tmp_bson (BSON_STR ({"region" : "r", "key" : "k", "endpoint" : "127.0.0.1:9003"}));
    bson_t *azure_masterkey = tmp_bson (BSON_STR ({"keyVaultEndpoint" : "127.0.0.1:9003", "keyName" : "foo"}));
    bson_t *gcp_masterkey = tmp_bson (BSON_STR (
@@ -6372,6 +6366,510 @@ test_kms_retry (void *unused)
    _test_retry_with_masterkey ("aws", aws_masterkey);
    _test_retry_with_masterkey ("azure", azure_masterkey);
    _test_retry_with_masterkey ("gcp", gcp_masterkey);
+}
+
+static mongoc_client_t *
+create_encrypted_client (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   bson_error_t error;
+   mongoc_auto_encryption_opts_t *ao = mongoc_auto_encryption_opts_new ();
+   {
+      bson_t extra = BSON_INITIALIZER;
+      _set_extra_bypass (&extra);
+      _set_extra_crypt_shared (&extra);
+      mongoc_auto_encryption_opts_set_extra (ao, &extra);
+      bson_destroy (&extra);
+   }
+   bson_t *kms_providers =
+      BCON_NEW ("local", "{", "key", BCON_BIN (BSON_SUBTYPE_UUID, (uint8_t *) LOCAL_MASTERKEY, 96), "}");
+   mongoc_auto_encryption_opts_set_keyvault_namespace (ao, "db", "keyvault");
+   mongoc_auto_encryption_opts_set_kms_providers (ao, kms_providers);
+   ASSERT_OR_PRINT (mongoc_client_enable_auto_encryption (client, ao, &error), error);
+   bson_destroy (kms_providers);
+   mongoc_auto_encryption_opts_destroy (ao);
+   return client;
+}
+
+#define ASSERT_COLL_MATCHES_ONE(coll, expect)                                                           \
+   if (1) {                                                                                             \
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts ((coll), tmp_bson ("{}"), NULL, NULL); \
+      const bson_t *got;                                                                                \
+      bool found = mongoc_cursor_next (cursor, &got);                                                   \
+      if (!found) {                                                                                     \
+         ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);                                \
+         test_error ("expected 1 document, but got 0");                                                 \
+      }                                                                                                 \
+      assert_match_bson (got, expect, false);                                                           \
+      ASSERT (!mongoc_cursor_next (cursor, &got)); /* expect exactly one document */                    \
+      mongoc_cursor_destroy (cursor);                                                                   \
+   } else                                                                                               \
+      (void) 0
+
+#define ASSERT_AGG_RETURNS_ONE(coll, pipeline, expect)                                           \
+   if (1) {                                                                                      \
+      mongoc_cursor_t *cursor = mongoc_collection_aggregate ((coll), 0, (pipeline), NULL, NULL); \
+      const bson_t *got;                                                                         \
+      bool found = mongoc_cursor_next (cursor, &got);                                            \
+      if (!found) {                                                                              \
+         ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);                         \
+         test_error ("expected 1 document, but got 0");                                          \
+      }                                                                                          \
+      ASSERT_EQUAL_BSON (expect, got);                                                           \
+      ASSERT (!mongoc_cursor_next (cursor, &got)); /* expect exactly one document */             \
+      mongoc_cursor_destroy (cursor);                                                            \
+   } else                                                                                        \
+      (void) 0
+
+#define ASSERT_AGG_ERROR(coll, pipeline, msg)                                                    \
+   if (1) {                                                                                      \
+      mongoc_cursor_t *cursor = mongoc_collection_aggregate ((coll), 0, (pipeline), NULL, NULL); \
+      const bson_t *got;                                                                         \
+      bool found = mongoc_cursor_next (cursor, &got);                                            \
+      ASSERT (!found);                                                                           \
+      ASSERT (mongoc_cursor_error (cursor, &error));                                             \
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, msg);                \
+      mongoc_cursor_destroy (cursor);                                                            \
+   } else                                                                                        \
+      (void) 0
+
+#define MAKE_BSON(...) tmp_bson (BSON_STR (__VA_ARGS__))
+
+static void
+drop_coll (mongoc_database_t *db, const char *collname)
+{
+   bson_error_t error;
+   mongoc_collection_t *coll = mongoc_database_get_collection (db, collname);
+   bool ok = mongoc_collection_drop (coll, &error);
+   if (!ok && error.code != MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+      test_error ("unexpected error dropping %s: %s", collname, error.message);
+   }
+   mongoc_collection_destroy (coll);
+}
+
+static void
+test_lookup_setup (void)
+{
+   bool ok;
+   bson_error_t error;
+
+   mongoc_client_t *encrypted_client = create_encrypted_client ();
+   mongoc_client_t *setup_client = test_framework_new_default_client ();
+
+
+#define TESTDIR "./src/libmongoc/tests/client_side_encryption_prose/lookup/"
+   // Insert key into key vault:
+   {
+      mongoc_collection_t *keyvault = mongoc_client_get_collection (encrypted_client, "db", "keyvault");
+      mongoc_collection_drop (keyvault, NULL);
+      bson_t *keydoc = get_bson_from_json_file (TESTDIR "key-doc.json");
+      bson_t opts = BSON_INITIALIZER;
+      // Apply majority write concern.
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+         mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+         mongoc_write_concern_append (wc, &opts);
+         mongoc_write_concern_destroy (wc);
+      }
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (keyvault, keydoc, NULL, &opts, &error), error);
+      bson_destroy (&opts);
+      bson_destroy (keydoc);
+      mongoc_collection_destroy (keyvault);
+   }
+
+   // Create collections:
+   {
+      mongoc_database_t *db = mongoc_client_get_database (encrypted_client, "db");
+      // Create db.csfle:
+      {
+         drop_coll (db, "csfle");
+         bson_t *schema = get_bson_from_json_file (TESTDIR "schema-csfle.json");
+         bson_t *create_opts = BCON_NEW ("validator", "{", "$jsonSchema", BCON_DOCUMENT (schema), "}");
+         mongoc_collection_t *coll = mongoc_database_create_collection (db, "csfle", create_opts, &error);
+         ASSERT_OR_PRINT (coll, error);
+         mongoc_collection_destroy (coll);
+         bson_destroy (create_opts);
+         bson_destroy (schema);
+      }
+
+      // Create db.csfle2:
+      {
+         drop_coll (db, "csfle2");
+         bson_t *schema = get_bson_from_json_file (TESTDIR "schema-csfle2.json");
+         bson_t *create_opts = BCON_NEW ("validator", "{", "$jsonSchema", BCON_DOCUMENT (schema), "}");
+         mongoc_collection_t *coll = mongoc_database_create_collection (db, "csfle2", create_opts, &error);
+         ASSERT_OR_PRINT (coll, error);
+         mongoc_collection_destroy (coll);
+         bson_destroy (create_opts);
+         bson_destroy (schema);
+      }
+
+      // Create db.qe:
+      {
+         drop_coll (db, "qe");
+         bson_t *schema = get_bson_from_json_file (TESTDIR "schema-qe.json");
+         bson_t *create_opts = BCON_NEW ("encryptedFields", BCON_DOCUMENT (schema));
+         mongoc_collection_t *coll = mongoc_database_create_collection (db, "qe", create_opts, &error);
+         ASSERT_OR_PRINT (coll, error);
+         mongoc_collection_destroy (coll);
+         bson_destroy (create_opts);
+         bson_destroy (schema);
+      }
+
+      // Create db.qe2:
+      {
+         drop_coll (db, "qe2");
+         bson_t *schema = get_bson_from_json_file (TESTDIR "schema-qe2.json");
+         bson_t *create_opts = BCON_NEW ("encryptedFields", BCON_DOCUMENT (schema));
+         mongoc_collection_t *coll = mongoc_database_create_collection (db, "qe2", create_opts, &error);
+         ASSERT_OR_PRINT (coll, error);
+         mongoc_collection_destroy (coll);
+         bson_destroy (create_opts);
+         bson_destroy (schema);
+      }
+
+      // Create db.no_schema:
+      {
+         drop_coll (db, "no_schema");
+         mongoc_collection_t *coll = mongoc_database_create_collection (db, "noschema", NULL, &error);
+         ASSERT_OR_PRINT (coll, error);
+         mongoc_collection_destroy (coll);
+      }
+
+      // Create db.no_schema2:
+      {
+         drop_coll (db, "no_schema2");
+         mongoc_collection_t *coll = mongoc_database_create_collection (db, "noschema2", NULL, &error);
+         ASSERT_OR_PRINT (coll, error);
+         mongoc_collection_destroy (coll);
+      }
+
+      mongoc_database_destroy (db);
+   }
+#undef TESTDIR
+
+   // Insert initial documents:
+   {
+      mongoc_client_t *client = create_encrypted_client ();
+
+      // Insert to db.csfle:
+      {
+         mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "csfle");
+         ok = mongoc_collection_insert_one (coll, MAKE_BSON ({"csfle" : "csfle"}), NULL, NULL, &error);
+         ASSERT_OR_PRINT (ok, error);
+         mongoc_collection_destroy (coll);
+         // Find document with unencrypted client to check it is encrypted.
+         mongoc_collection_t *coll_unencrypted = mongoc_client_get_collection (setup_client, "db", "csfle");
+         ASSERT_COLL_MATCHES_ONE (coll_unencrypted, MAKE_BSON ({"csfle" : {"$$type" : "binData"}}));
+         mongoc_collection_destroy (coll_unencrypted);
+      }
+
+      // Insert to db.csfle2:
+      {
+         mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "csfle2");
+         ok = mongoc_collection_insert_one (coll, MAKE_BSON ({"csfle2" : "csfle2"}), NULL, NULL, &error);
+         ASSERT_OR_PRINT (ok, error);
+         mongoc_collection_destroy (coll);
+         // Find document with unencrypted client to check it is encrypted.
+         mongoc_collection_t *coll_unencrypted = mongoc_client_get_collection (setup_client, "db", "csfle2");
+         ASSERT_COLL_MATCHES_ONE (coll_unencrypted, MAKE_BSON ({"csfle2" : {"$$type" : "binData"}}));
+         mongoc_collection_destroy (coll_unencrypted);
+      }
+
+      // Insert to db.qe:
+      {
+         mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "qe");
+         ok = mongoc_collection_insert_one (coll, MAKE_BSON ({"qe" : "qe"}), NULL, NULL, &error);
+         ASSERT_OR_PRINT (ok, error);
+         mongoc_collection_destroy (coll);
+         // Find document with unencrypted client to check it is encrypted.
+         mongoc_collection_t *coll_unencrypted = mongoc_client_get_collection (setup_client, "db", "qe");
+         ASSERT_COLL_MATCHES_ONE (coll_unencrypted, MAKE_BSON ({"qe" : {"$$type" : "binData"}}));
+         mongoc_collection_destroy (coll_unencrypted);
+      }
+
+      // Insert to db.qe2:
+      {
+         mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "qe2");
+         ok = mongoc_collection_insert_one (coll, MAKE_BSON ({"qe2" : "qe2"}), NULL, NULL, &error);
+         ASSERT_OR_PRINT (ok, error);
+         mongoc_collection_destroy (coll);
+         // Find document with unencrypted client to check it is encrypted.
+         mongoc_collection_t *coll_unencrypted = mongoc_client_get_collection (setup_client, "db", "qe2");
+         ASSERT_COLL_MATCHES_ONE (coll_unencrypted, MAKE_BSON ({"qe2" : {"$$type" : "binData"}}));
+         mongoc_collection_destroy (coll_unencrypted);
+      }
+
+      // Insert to db.no_schema:
+      {
+         mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "no_schema");
+         ok = mongoc_collection_insert_one (coll, MAKE_BSON ({"no_schema" : "no_schema"}), NULL, NULL, &error);
+         ASSERT_OR_PRINT (ok, error);
+         mongoc_collection_destroy (coll);
+         // Find document with unencrypted client to check it is not encrypted.
+         mongoc_collection_t *coll_unencrypted = mongoc_client_get_collection (setup_client, "db", "no_schema");
+         ASSERT_COLL_MATCHES_ONE (coll_unencrypted, MAKE_BSON ({"no_schema" : "no_schema"}));
+         mongoc_collection_destroy (coll_unencrypted);
+      }
+
+      // Insert to db.no_schema2:
+      {
+         mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "no_schema2");
+         ok = mongoc_collection_insert_one (coll, MAKE_BSON ({"no_schema2" : "no_schema2"}), NULL, NULL, &error);
+         ASSERT_OR_PRINT (ok, error);
+         mongoc_collection_destroy (coll);
+         // Find document with unencrypted client to check it is not encrypted.
+         mongoc_collection_t *coll_unencrypted = mongoc_client_get_collection (setup_client, "db", "no_schema2");
+         ASSERT_COLL_MATCHES_ONE (coll_unencrypted, MAKE_BSON ({"no_schema2" : "no_schema2"}));
+         mongoc_collection_destroy (coll_unencrypted);
+      }
+
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_client_destroy (setup_client);
+   mongoc_client_destroy (encrypted_client);
+}
+
+static void
+test_lookup (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   test_lookup_setup ();
+   bson_error_t error;
+
+   // Case 1: db.csfle joins db.no_schema:
+   {
+      mongoc_client_t *client = create_encrypted_client (); // Create new client to avoid schema caching.
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "csfle");
+
+      bson_t *pipeline = MAKE_BSON ({
+         "pipeline" : [
+            {"$match" : {"csfle" : "csfle"}},
+            {
+               "$lookup" : {
+                  "from" : "no_schema",
+                  "as" : "matched",
+                  "pipeline" : [ {"$match" : {"no_schema" : "no_schema"}}, {"$project" : {"_id" : 0}} ]
+               }
+            },
+            {"$project" : {"_id" : 0}}
+         ]
+      });
+
+      bson_t *expect = MAKE_BSON ({"csfle" : "csfle", "matched" : [ {"no_schema" : "no_schema"} ]});
+      ASSERT_AGG_RETURNS_ONE (coll, pipeline, expect);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+
+   // Case 2: db.qe joins db.no_schema.
+   {
+      mongoc_client_t *client = create_encrypted_client (); // Create new client to avoid schema caching.
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "qe");
+
+      bson_t *pipeline = MAKE_BSON ({
+         "pipeline" : [
+            {"$match" : {"qe" : "qe"}},
+            {
+               "$lookup" : {
+                  "from" : "no_schema",
+                  "as" : "matched",
+                  "pipeline" :
+                     [ {"$match" : {"no_schema" : "no_schema"}}, {"$project" : {"_id" : 0, "__safeContent__" : 0}} ]
+               }
+            },
+            {"$project" : {"_id" : 0, "__safeContent__" : 0}}
+         ]
+      });
+
+      bson_t *expect = MAKE_BSON ({"qe" : "qe", "matched" : [ {"no_schema" : "no_schema"} ]});
+      ASSERT_AGG_RETURNS_ONE (coll, pipeline, expect);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+
+   // Case 3: db.no_schema joins db.csfle:
+   {
+      mongoc_client_t *client = create_encrypted_client (); // Create new client to avoid schema caching.
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "no_schema");
+
+      bson_t *pipeline = MAKE_BSON ({
+         "pipeline" : [
+            {"$match" : {"no_schema" : "no_schema"}},
+            {
+               "$lookup" : {
+                  "from" : "csfle",
+                  "as" : "matched",
+                  "pipeline" : [ {"$match" : {"csfle" : "csfle"}}, {"$project" : {"_id" : 0}} ]
+               }
+            },
+            {"$project" : {"_id" : 0}}
+         ]
+      });
+
+      bson_t *expect = MAKE_BSON ({"no_schema" : "no_schema", "matched" : [ {"csfle" : "csfle"} ]});
+      ASSERT_AGG_RETURNS_ONE (coll, pipeline, expect);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+
+   // Case 4: db.no_schema joins db.qe:
+   {
+      mongoc_client_t *client = create_encrypted_client (); // Create new client to avoid schema caching.
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "no_schema");
+
+      bson_t *pipeline = MAKE_BSON ({
+         "pipeline" : [
+            {"$match" : {"no_schema" : "no_schema"}},
+            {
+               "$lookup" : {
+                  "from" : "qe",
+                  "as" : "matched",
+                  "pipeline" : [ {"$match" : {"qe" : "qe"}}, {"$project" : {"_id" : 0, "__safeContent__" : 0}} ]
+               }
+            },
+            {"$project" : {"_id" : 0}}
+         ]
+      });
+
+      bson_t *expect = MAKE_BSON ({"no_schema" : "no_schema", "matched" : [ {"qe" : "qe"} ]});
+      ASSERT_AGG_RETURNS_ONE (coll, pipeline, expect);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+
+   // Case 5: db.csfle joins db.csfle2:
+   {
+      mongoc_client_t *client = create_encrypted_client (); // Create new client to avoid schema caching.
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "csfle");
+
+      bson_t *pipeline = MAKE_BSON ({
+         "pipeline" : [
+            {"$match" : {"csfle" : "csfle"}},
+            {
+               "$lookup" : {
+                  "from" : "csfle2",
+                  "as" : "matched",
+                  "pipeline" : [ {"$match" : {"csfle2" : "csfle2"}}, {"$project" : {"_id" : 0}} ]
+               }
+            },
+            {"$project" : {"_id" : 0}}
+         ]
+      });
+
+      bson_t *expect = MAKE_BSON ({"csfle" : "csfle", "matched" : [ {"csfle2" : "csfle2"} ]});
+      ASSERT_AGG_RETURNS_ONE (coll, pipeline, expect);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+
+   // Case 6: qe joins db.qe2:
+   {
+      mongoc_client_t *client = create_encrypted_client (); // Create new client to avoid schema caching.
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "qe");
+
+      bson_t *pipeline = MAKE_BSON ({
+         "pipeline" : [
+            {"$match" : {"qe" : "qe"}},
+            {
+               "$lookup" : {
+                  "from" : "qe2",
+                  "as" : "matched",
+                  "pipeline" : [ {"$match" : {"qe2" : "qe2"}}, {"$project" : {"_id" : 0, "__safeContent__" : 0}} ]
+               }
+            },
+            {"$project" : {"_id" : 0, "__safeContent__" : 0}}
+         ]
+      });
+
+      bson_t *expect = MAKE_BSON ({"qe" : "qe", "matched" : [ {"qe2" : "qe2"} ]});
+      ASSERT_AGG_RETURNS_ONE (coll, pipeline, expect);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+
+   // Case 7: db.no_schema joins db.no_schema2:
+   {
+      mongoc_client_t *client = create_encrypted_client (); // Create new client to avoid schema caching.
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "no_schema");
+
+      bson_t *pipeline = MAKE_BSON ({
+         "pipeline" : [
+            {"$match" : {"no_schema" : "no_schema"}},
+            {
+               "$lookup" : {
+                  "from" : "no_schema2",
+                  "as" : "matched",
+                  "pipeline" : [ {"$match" : {"no_schema2" : "no_schema2"}}, {"$project" : {"_id" : 0}} ]
+               }
+            },
+            {"$project" : {"_id" : 0}}
+         ]
+      });
+
+      bson_t *expect = MAKE_BSON ({"no_schema" : "no_schema", "matched" : [ {"no_schema2" : "no_schema2"} ]});
+      ASSERT_AGG_RETURNS_ONE (coll, pipeline, expect);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+
+   // Case 8: db.csfle joins db.qe:
+   {
+      mongoc_client_t *client = create_encrypted_client (); // Create new client to avoid schema caching.
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "csfle");
+
+      bson_t *pipeline = MAKE_BSON ({
+         "pipeline" : [
+            {"$match" : {"csfle" : "qe"}},
+            {
+               "$lookup" : {
+                  "from" : "qe",
+                  "as" : "matched",
+                  "pipeline" : [ {"$match" : {"qe" : "qe"}}, {"$project" : {"_id" : 0}} ]
+               }
+            },
+            {"$project" : {"_id" : 0}}
+         ]
+      });
+
+      ASSERT_AGG_ERROR (coll, pipeline, "not supported");
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+}
+
+static void
+test_lookup_pre81 (void *unused)
+{
+   BSON_UNUSED (unused);
+   test_lookup_setup ();
+   bson_error_t error;
+
+   // Case 9: test error with <8.1
+   {
+      mongoc_client_t *client = create_encrypted_client (); // Create new client to avoid schema caching.
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "csfle");
+
+      bson_t *pipeline = MAKE_BSON ({
+         "pipeline" : [
+            {"$match" : {"csfle" : "no_schema"}},
+            {
+               "$lookup" : {
+                  "from" : "no_schema",
+                  "as" : "matched",
+                  "pipeline" : [ {"$match" : {"no_schema" : "no_schema"}}, {"$project" : {"_id" : 0}} ]
+               }
+            },
+            {"$project" : {"_id" : 0}}
+         ]
+      });
+
+      ASSERT_AGG_ERROR (coll, pipeline, "Upgrade");
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
 }
 
 void
@@ -6389,7 +6887,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/datakey_and_double_encryption",
@@ -6397,7 +6895,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/external_key_vault",
@@ -6405,7 +6903,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_no_auth /* requires auth for error check */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bson_size_limits_and_batch_splitting",
@@ -6413,21 +6911,21 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/views_are_prohibited",
                       test_views_are_prohibited,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/corpus",
                       test_corpus,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/custom_endpoint",
@@ -6435,7 +6933,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
@@ -6444,7 +6942,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "bypassAutoEncryption",
@@ -6452,7 +6950,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "bypassQueryAnalysis",
@@ -6460,7 +6958,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "cryptSharedLibLoaded",
@@ -6468,7 +6966,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       _skip_if_no_crypt_shared);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/valid",
@@ -6476,35 +6974,35 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/expired",
                       test_kms_tls_cert_expired,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/wrong_host",
                       test_kms_tls_cert_wrong_host,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/unique_index_on_keyaltnames",
                       test_unique_index_on_keyaltnames,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/prose_test_16/case1",
                       test_rewrap_with_separate_client_encryption,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/prose_test_16/case2",
@@ -6512,7 +7010,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    /* Other, C driver specific, tests. */
    TestSuite_AddFull (suite,
@@ -6521,28 +7019,28 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/multi_threaded",
                       test_multi_threaded,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/malformed_explicit",
                       test_malformed_explicit,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls_options",
                       test_kms_tls_options,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS, Azure, and GCP */,
                       /* Do not run on Windows due to CDRIVER-4181. Tests use a literal IP with
                          a TLS connection. */
@@ -6622,7 +7120,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/decryption_events/case2",
@@ -6630,7 +7128,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/decryption_events/case3",
@@ -6638,7 +7136,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
 
    TestSuite_AddFull (suite,
@@ -6647,7 +7145,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/qe_docs_example",
@@ -6666,7 +7164,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL, // dtor
                       NULL, // ctx
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms/auto-aws/fail",
@@ -6674,7 +7172,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       _not_have_aws_creds_env);
 
    TestSuite_AddFull (suite,
@@ -6683,7 +7181,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       _have_aws_creds_env);
 
    TestSuite_AddFull (suite,
@@ -6692,7 +7190,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite, "/client_side_encryption/auto_datakeys", test_auto_datakeys, NULL, NULL, NULL);
 
@@ -6821,6 +7319,24 @@ test_client_side_encryption_install (TestSuite *suite)
                          NULL,
                          NULL,
                          // No need to test for server version requirements. Test does not contact server.
+                         test_framework_skip_if_no_client_side_encryption);
+
+      TestSuite_AddFull (suite,
+                         "/client_side_encryption/test_lookup",
+                         test_lookup,
+                         NULL,
+                         NULL,
+                         test_framework_skip_if_max_wire_version_less_than_26 /* require server 8.1+ */,
+                         test_framework_skip_if_single, /* QE not supported on standalone */
+                         test_framework_skip_if_no_client_side_encryption);
+      TestSuite_AddFull (suite,
+                         "/client_side_encryption/test_lookup/pre-8.1",
+                         test_lookup_pre81,
+                         NULL,
+                         NULL,
+                         test_framework_skip_if_max_wire_version_more_than_25 /* require server < 8.1 */,
+                         test_framework_skip_if_max_wire_version_less_than_21 /* require server > 7.0 for QE support */,
+                         test_framework_skip_if_single, /* QE not supported on standalone */
                          test_framework_skip_if_no_client_side_encryption);
    }
 }

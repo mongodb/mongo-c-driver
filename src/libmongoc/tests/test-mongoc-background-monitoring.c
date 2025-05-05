@@ -30,8 +30,6 @@
 
 #include <inttypes.h>
 
-#define LOG_DOMAIN "test_monitoring"
-
 typedef struct {
    uint32_t n_heartbeat_started;
    uint32_t n_heartbeat_succeeded;
@@ -677,8 +675,8 @@ test_flip_flop (void)
       OBSERVE (tf, request);
       reply_to_request_with_ok_and_destroy (request);
       _signal_shutdown (tf);
-      OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == i);
-      OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == i);
+      OBSERVE_SOON (tf, mlib_cmp (tf->observations->n_heartbeat_started, ==, i));
+      OBSERVE_SOON (tf, mlib_cmp (tf->observations->n_heartbeat_succeeded, ==, i));
       _add_server_monitor (tf);
    }
 

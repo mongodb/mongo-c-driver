@@ -9,6 +9,7 @@
 #include "mock_server/future-functions.h"
 #include "test-libmongoc.h"
 #include "mock_server/mock-rs.h"
+#include <mlib/loop.h>
 
 
 typedef struct {
@@ -396,7 +397,6 @@ test_unrecognized_dollar_option (void)
 static void
 test_query_flags (void)
 {
-   int i;
    char *opts;
    char *find_cmd;
    test_collection_find_with_opts_t test_data = {0};
@@ -415,12 +415,12 @@ test_query_flags (void)
       {MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA, "'tailable': true, 'awaitData': true"},
    };
 
-   for (i = 0; i < (sizeof flags_and_frags) / (sizeof (flag_and_name_t)); i++) {
-      opts = bson_strdup_printf ("{%s}", flags_and_frags[i].json_fragment);
-      find_cmd = bson_strdup_printf ("{'find': 'collection', 'filter': {}, %s}", flags_and_frags[i].json_fragment);
+   mlib_foreach_arr (flag_and_name_t, it, flags_and_frags) {
+      opts = bson_strdup_printf ("{%s}", it->json_fragment);
+      find_cmd = bson_strdup_printf ("{'find': 'collection', 'filter': {}, %s}", it->json_fragment);
 
       test_data.opts = opts;
-      test_data.expected_flags = flags_and_frags[i].flag;
+      test_data.expected_flags = it->flag;
       test_data.expected_find_command = find_cmd;
 
       _test_collection_find_with_opts (&test_data);
@@ -451,13 +451,14 @@ test_exhaust (void)
 
    future = future_cursor_next (cursor, &doc);
 
-   /* Find, getMore and killCursors commands spec: "The find command does not
-    * support the exhaust flag from OP_QUERY. Drivers that support exhaust MUST
-    * fallback to existing OP_QUERY wire protocol messages."
-    */
-   request = mock_server_receives_request (server);
-   reply_to_find_request (
-      request, MONGOC_QUERY_SECONDARY_OK | MONGOC_QUERY_EXHAUST, 0, 0, "db.collection", "{}", false /* is_command */);
+   // Expect find command with exhaust flag. Reply with one document.
+   {
+      const bson_t *cmd = tmp_bson (BSON_STR ({"find" : "collection", "filter" : {}}));
+      request = mock_server_receives_msg (server, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED, cmd);
+      const bson_t *reply = tmp_bson (BSON_STR (
+         {"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db.collection", "firstBatch" : [ {} ]}}));
+      reply_to_op_msg_request (request, MONGOC_OP_MSG_FLAG_NONE, reply);
+   }
 
    ASSERT (future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);

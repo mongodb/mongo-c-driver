@@ -128,15 +128,12 @@ oid_created_on_client (const bson_t *doc)
 static void
 create_unique_index (mongoc_collection_t *collection)
 {
-   mongoc_index_opt_t opt;
    bson_error_t error;
 
-   mongoc_index_opt_init (&opt);
-   opt.unique = true;
+   mongoc_index_model_t *im = mongoc_index_model_new (tmp_bson ("{'a': 1}"), tmp_bson ("{'unique': true}"));
 
-   BEGIN_IGNORE_DEPRECATIONS
-   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, tmp_bson ("{'a': 1}"), &opt, &error), error);
-   END_IGNORE_DEPRECATIONS
+   ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, NULL, NULL, &error), error);
+   mongoc_index_model_destroy (im);
 }
 
 
@@ -3753,7 +3750,6 @@ test_bulk_max_batch_size (void)
 static void
 test_bulk_new (void)
 {
-   mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error;
@@ -3761,43 +3757,69 @@ test_bulk_new (void)
    uint32_t r;
 
    client = test_framework_new_default_client ();
-   BSON_ASSERT (client);
+   ASSERT (client);
 
    collection = get_test_collection (client, "bulk_new");
-   BSON_ASSERT (collection);
+   ASSERT (collection);
 
-   bulk = mongoc_bulk_operation_new (true);
-   mongoc_bulk_operation_destroy (bulk);
+   // Can create and destroy:
+   {
+      mongoc_bulk_operation_t *bulk = mongoc_bulk_operation_new (true);
+      mongoc_bulk_operation_destroy (bulk);
+   }
 
-   bulk = mongoc_bulk_operation_new (true);
+   // Execute without a client is an error:
+   {
+      mongoc_bulk_operation_t *bulk = mongoc_bulk_operation_new (true);
+      r = mongoc_bulk_operation_execute (bulk, NULL, &error);
+      ASSERT (!r);
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "requires a client");
+      mongoc_bulk_operation_destroy (bulk);
+   }
 
-   r = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   BSON_ASSERT (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
+   // Execute with a database and no client is an error:
+   {
+      mongoc_bulk_operation_t *bulk = mongoc_bulk_operation_new (true);
+      mongoc_bulk_operation_set_database (bulk, "test");
+      r = mongoc_bulk_operation_execute (bulk, NULL, &error);
+      ASSERT (!r);
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "requires a client");
+      mongoc_bulk_operation_destroy (bulk);
+   }
 
-   mongoc_bulk_operation_set_database (bulk, "test");
-   r = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   BSON_ASSERT (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
+   // Execute with a database and collection and no client is an error:
+   {
+      mongoc_bulk_operation_t *bulk = mongoc_bulk_operation_new (true);
+      mongoc_bulk_operation_set_database (bulk, "test");
+      mongoc_bulk_operation_set_collection (bulk, "test");
+      r = mongoc_bulk_operation_execute (bulk, NULL, &error);
+      ASSERT (!r);
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "requires a client");
+      mongoc_bulk_operation_destroy (bulk);
+   }
 
-   mongoc_bulk_operation_set_collection (bulk, "test");
-   r = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   BSON_ASSERT (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
+   // Execute with no operations is an error:
+   {
+      mongoc_bulk_operation_t *bulk = mongoc_bulk_operation_new (true);
+      mongoc_bulk_operation_set_database (bulk, "test");
+      mongoc_bulk_operation_set_collection (bulk, "test");
+      mongoc_bulk_operation_set_client (bulk, client);
+      r = mongoc_bulk_operation_execute (bulk, NULL, &error);
+      ASSERT (!r);
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "empty bulk write");
+      mongoc_bulk_operation_destroy (bulk);
+   }
 
-   mongoc_bulk_operation_set_client (bulk, client);
-   r = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   BSON_ASSERT (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
-
-   mongoc_bulk_operation_insert (bulk, &empty);
-   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
-
-   mongoc_bulk_operation_destroy (bulk);
+   // Execute with operations is OK:
+   {
+      mongoc_bulk_operation_t *bulk = mongoc_bulk_operation_new (true);
+      mongoc_bulk_operation_set_database (bulk, "test");
+      mongoc_bulk_operation_set_collection (bulk, "test");
+      mongoc_bulk_operation_set_client (bulk, client);
+      mongoc_bulk_operation_insert (bulk, &empty);
+      ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
+      mongoc_bulk_operation_destroy (bulk);
+   }
 
    mongoc_collection_drop (collection, NULL);
 
@@ -4664,12 +4686,12 @@ test_bulk_write_multiple_errors (void *unused)
 
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'_id': 1}")); // fail via failPoint
-   mongoc_bulk_operation_delete (bulk,
+   mongoc_bulk_operation_remove (bulk,
                                  tmp_bson ("{'_id': 1}")); // fail via failPoint
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 4}")); // succeed
 
-   mongoc_bulk_operation_delete (bulk, tmp_bson ("{'_id': 4}")); // suceed
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'_id': 4}")); // suceed
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 5}")); // suceed
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 5}")); // duplicate key error
@@ -4765,6 +4787,23 @@ test_bulk_write_set_client_updates_operation_id_when_client_changes (void)
    mongoc_client_destroy (client2);
    mock_server_destroy (mock_server);
 }
+
+static void
+test_multiple_execution (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = get_test_collection (client, "test_multiple_execution");
+   bson_error_t error;
+   mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation_with_opts (coll, NULL);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{}"));
+   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
+   ASSERT (!mongoc_bulk_operation_execute (bulk, NULL, &error));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "bulk write already executed");
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
 
 void
 test_bulk_install (TestSuite *suite)
@@ -4937,11 +4976,10 @@ test_bulk_install (TestSuite *suite)
                       test_bulk_write_multiple_errors,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_failpoint,
-                      /* Require server 4.2 for failCommand appName */
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddLive (suite, "/BulkOperation/set_client_after_operation", test_bulk_write_set_client_after_operation);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/set_client_updates_operation_id_when_client_changes",
                                 test_bulk_write_set_client_updates_operation_id_when_client_changes);
+   TestSuite_AddLive (suite, "/BulkOperation/multiple_execution", test_multiple_execution);
 }

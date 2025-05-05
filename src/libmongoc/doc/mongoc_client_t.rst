@@ -53,7 +53,6 @@ Example
     :maxdepth: 1
 
     mongoc_client_bulkwrite_new
-    mongoc_client_command
     mongoc_client_command_simple
     mongoc_client_command_simple_with_server_id
     mongoc_client_command_with_opts
@@ -72,7 +71,6 @@ Example
     mongoc_client_get_read_prefs
     mongoc_client_get_server_description
     mongoc_client_get_server_descriptions
-    mongoc_client_get_server_status
     mongoc_client_get_uri
     mongoc_client_get_write_concern
     mongoc_client_new

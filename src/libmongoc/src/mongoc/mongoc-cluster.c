@@ -15,6 +15,7 @@
  */
 
 
+#include <mlib/intencode.h>
 #include <mongoc/mongoc-config.h>
 
 #include <string.h>
@@ -143,15 +144,6 @@ _handle_network_error (mongoc_cluster_t *cluster, mongoc_server_stream_t *server
 
    EXIT;
 }
-
-
-static int32_t
-_int32_from_le (const void *data)
-{
-   BSON_ASSERT_PARAM (data);
-   return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
-}
-
 
 static int32_t
 _compression_level_from_uri (int32_t compressor_id, const mongoc_uri_t *uri)
@@ -345,7 +337,7 @@ _mongoc_cluster_run_command_opquery_recv (
       goto done;
    }
 
-   const int32_t message_length = _int32_from_le (buffer.data);
+   const int32_t message_length = mlib_read_i32le (buffer.data);
 
    if (message_length < message_header_length || message_length > MONGOC_DEFAULT_MAX_MSG_SIZE) {
       RUN_CMD_ERR (MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "invalid message length");
@@ -812,12 +804,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    _mongoc_topology_dup_handshake_cmd (cluster->client->topology, &handshake_command);
 
    if (cluster->requires_auth && speculative_auth_response) {
-      mongoc_ssl_opt_t *ssl_opts = NULL;
-#ifdef MONGOC_ENABLE_SSL
-      ssl_opts = &cluster->client->ssl_opts;
-#endif
-
-      _mongoc_topology_scanner_add_speculative_authentication (&handshake_command, cluster->uri, ssl_opts, scram);
+      _mongoc_topology_scanner_add_speculative_authentication (&handshake_command, cluster->uri, scram);
    }
 
    if (negotiate_sasl_supported_mechs) {
@@ -1061,10 +1048,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
 }
 
 bool
-_mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri,
-                                   const mongoc_ssl_opt_t *ssl_opts,
-                                   bson_t *cmd /* OUT */,
-                                   bson_error_t *error /* OUT */)
+_mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri, bson_t *cmd /* OUT */, bson_error_t *error /* OUT */)
 {
 #ifndef MONGOC_ENABLE_SSL
    _mongoc_set_error (error,
@@ -1075,41 +1059,21 @@ _mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri,
    return false;
 #else
    const char *username_from_uri = NULL;
-   char *username_from_subject = NULL;
 
    BSON_ASSERT (uri);
+   BSON_UNUSED (error);
 
    username_from_uri = mongoc_uri_get_username (uri);
    if (username_from_uri) {
       TRACE ("%s", "X509: got username from URI");
-   } else {
-      if (!ssl_opts || !ssl_opts->pem_file) {
-         _mongoc_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                            "cannot determine username for "
-                            "X-509 authentication.");
-         return false;
-      }
-
-      username_from_subject = mongoc_ssl_extract_subject (ssl_opts->pem_file, ssl_opts->pem_pwd);
-      if (!username_from_subject) {
-         _mongoc_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                            "No username provided for X509 authentication.");
-         return false;
-      }
-
-      TRACE ("%s", "X509: got username from certificate");
    }
 
    bson_init (cmd);
    BSON_APPEND_INT32 (cmd, "authenticate", 1);
    BSON_APPEND_UTF8 (cmd, "mechanism", "MONGODB-X509");
-   BSON_APPEND_UTF8 (cmd, "user", username_from_uri ? username_from_uri : username_from_subject);
-
-   bson_free (username_from_subject);
+   if (username_from_uri) {
+      BSON_APPEND_UTF8 (cmd, "user", username_from_uri);
+   }
 
    return true;
 #endif
@@ -1140,7 +1104,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
-   if (!_mongoc_cluster_get_auth_cmd_x509 (cluster->uri, &cluster->client->ssl_opts, &cmd, error)) {
+   if (!_mongoc_cluster_get_auth_cmd_x509 (cluster->uri, &cmd, error)) {
       return false;
    }
 
@@ -3004,7 +2968,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       GOTO (done);
    }
 
-   const int32_t message_length = _int32_from_le (buffer->data + offset);
+   const int32_t message_length = mlib_read_i32le (buffer->data + offset);
 
    const int32_t max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
@@ -3222,7 +3186,7 @@ _mongoc_cluster_run_opmsg_recv (
       goto done;
    }
 
-   const int32_t message_length = _int32_from_le (buffer.data);
+   const int32_t message_length = mlib_read_i32le (buffer.data);
 
    if (message_length < message_header_length || message_length > server_stream->sd->max_msg_size) {
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
@@ -3507,25 +3471,11 @@ mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
    const int32_t op_code = mcd_rpc_op_compressed_get_original_opcode (rpc);
 
    // Populate the msgHeader fields.
-   {
-      uint32_t storage;
-
-      memcpy (&storage, &message_length, sizeof (storage));
-      storage = BSON_UINT32_TO_LE (storage);
-      memcpy (ptr + 0, &storage, sizeof (storage));
-
-      memcpy (&storage, &request_id, sizeof (storage));
-      storage = BSON_UINT32_TO_LE (storage);
-      memcpy (ptr + 4, &storage, sizeof (storage));
-
-      memcpy (&storage, &response_to, sizeof (storage));
-      storage = BSON_UINT32_TO_LE (storage);
-      memcpy (ptr + 8, &storage, sizeof (storage));
-
-      memcpy (&storage, &op_code, sizeof (storage));
-      storage = BSON_UINT32_TO_LE (storage);
-      memcpy (ptr + 12, &storage, sizeof (storage));
-   }
+   uint8_t *out = ptr;
+   out = mlib_write_i32le (out, message_length);
+   out = mlib_write_i32le (out, request_id);
+   out = mlib_write_i32le (out, response_to);
+   mlib_write_i32le (out, op_code);
 
    // This value may be passed as an argument to an in-out parameter depending
    // on the compressor, not just an out-parameter.

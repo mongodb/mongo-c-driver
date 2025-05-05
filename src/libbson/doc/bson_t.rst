@@ -56,6 +56,9 @@ Synopsis
   #define BSON_APPEND_BINARY(b, key, subtype, val, len) \
      bson_append_binary (b, key, (int) strlen (key), subtype, val, len)
 
+  #define BSON_APPEND_BINARY_UNINIT(b, key, subtype, val, len) \
+     bson_append_binary_uninit (b, key, (int) strlen (key), subtype, val, len)
+
   #define BSON_APPEND_BOOL(b, key, val) \
      bson_append_bool (b, key, (int) strlen (key), val)
 
@@ -124,12 +127,11 @@ Synopsis
   #define BSON_APPEND_VALUE(b, key, val) \
      bson_append_value (b, key, (int) strlen (key), (val))
 
-  BSON_ALIGNED_BEGIN (128)
   typedef struct {
      uint32_t flags;       /* Internal flags for the bson_t. */
      uint32_t len;         /* Length of BSON data. */
      uint8_t padding[120]; /* Padding for stack allocation. */
-  } bson_t BSON_ALIGNED_END (128);
+  } bson_t;
 
 Description
 -----------
@@ -163,6 +165,7 @@ BSON document contains duplicate keys.
     bson_append_array_begin
     bson_append_array_end
     bson_append_binary
+    bson_append_binary_uninit
     bson_append_bool
     bson_append_code
     bson_append_code_with_scope
@@ -191,11 +194,9 @@ BSON document contains duplicate keys.
     bson_append_utf8
     bson_append_value
     bson_array_as_canonical_extended_json
-    bson_array_as_json
     bson_array_as_legacy_extended_json
     bson_array_as_relaxed_extended_json
     bson_as_canonical_extended_json
-    bson_as_json
     bson_as_json_with_opts
     bson_as_legacy_extended_json
     bson_as_relaxed_extended_json
@@ -203,7 +204,6 @@ BSON document contains duplicate keys.
     bson_concat
     bson_copy
     bson_copy_to
-    bson_copy_to_excluding
     bson_copy_to_excluding_noinit
     bson_copy_to_excluding_noinit_va
     bson_count_keys

@@ -195,8 +195,9 @@ test_framework_skip_if_slow_or_live (void);
    int test_framework_skip_if_rs_version_##wv (void);                 \
    int test_framework_skip_if_not_rs_version_##wv (void);
 
-WIRE_VERSION_CHECK_DECLS (7)
+/* wire version 8 begins with the 4.2 release. */
 WIRE_VERSION_CHECK_DECLS (8)
+/* wire version 9 begins with the 4.4 release. */
 WIRE_VERSION_CHECK_DECLS (9)
 /* wire versions 10, 11, 12 were internal to the 5.0 release cycle */
 WIRE_VERSION_CHECK_DECLS (13)
@@ -216,6 +217,8 @@ WIRE_VERSION_CHECK_DECLS (23)
 WIRE_VERSION_CHECK_DECLS (24)
 /* wire version 25 begins with the 8.0 release. */
 WIRE_VERSION_CHECK_DECLS (25)
+/* wire version 26 begins with the 8.1 release. */
+WIRE_VERSION_CHECK_DECLS (26)
 
 #undef WIRE_VERSION_CHECK_DECLS
 

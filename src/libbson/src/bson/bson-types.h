@@ -41,9 +41,6 @@ BSON_BEGIN_DECLS
  *       unicode characters. When iterating UTF-8 sequences, this should
  *       be used to avoid losing the high-bits of non-ascii characters.
  *
- * See also:
- *       bson_string_append_unichar()
- *
  *--------------------------------------------------------------------------
  */
 
@@ -123,20 +120,11 @@ typedef struct _bson_json_opts_t bson_json_opts_t;
  *
  * This structure is meant to fit in two sequential 64-byte cachelines.
  */
-#ifdef BSON_MEMCHECK
-BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
-   uint32_t flags; /* Internal flags for the bson_t. */
-   uint32_t len;   /* Length of BSON data. */
-   char *canary;   /* For leak checks. */
-   uint8_t padding[120 - sizeof (char *)];
-} bson_t BSON_ALIGNED_END (128);
-#else
-BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
+BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) typedef struct _bson_t {
    uint32_t flags;       /* Internal flags for the bson_t. */
    uint32_t len;         /* Length of BSON data. */
    uint8_t padding[120]; /* Padding for stack allocation. */
-} bson_t BSON_ALIGNED_END (128);
-#endif
+} bson_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
 
 /**
  * BSON_INITIALIZER:
@@ -148,12 +136,6 @@ BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
  * bson_t b = BSON_INITIALIZER;
  * ]|
  */
-#ifdef BSON_MEMCHECK
-#define BSON_INITIALIZER          \
-   {                              \
-      3, 5, bson_malloc (1), {5}, \
-   }
-#else
 #define BSON_INITIALIZER \
    {                     \
       3, 5,              \
@@ -161,7 +143,6 @@ BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
          5               \
       }                  \
    }
-#endif
 
 
 BSON_STATIC_ASSERT2 (bson_t, sizeof (bson_t) == 128);
@@ -274,6 +255,7 @@ typedef enum {
    BSON_SUBTYPE_ENCRYPTED = 0x06,
    BSON_SUBTYPE_COLUMN = 0x07,
    BSON_SUBTYPE_SENSITIVE = 0x08,
+   BSON_SUBTYPE_VECTOR = 0x09,
    BSON_SUBTYPE_USER = 0x80,
 } bson_subtype_t;
 
@@ -292,7 +274,6 @@ typedef enum {
  *--------------------------------------------------------------------------
  */
 
-BSON_ALIGNED_BEGIN (8)
 typedef struct _bson_value_t {
    bson_type_t value_type;
    int32_t padding;
@@ -346,7 +327,7 @@ typedef struct _bson_value_t {
       } v_symbol;
       bson_decimal128_t v_decimal128;
    } value;
-} bson_value_t BSON_ALIGNED_END (8);
+} bson_value_t;
 
 
 /**
@@ -360,7 +341,6 @@ typedef struct _bson_value_t {
  * This structure is safe to discard on the stack. No cleanup is necessary
  * after using it.
  */
-BSON_ALIGNED_BEGIN (128)
 typedef struct {
    const uint8_t *raw; /* The raw buffer being iterated. */
    uint32_t len;       /* The length of raw. */
@@ -374,7 +354,7 @@ typedef struct {
    uint32_t next_off;  /* The offset of the next field. */
    uint32_t err_off;   /* The offset of the error. */
    bson_value_t value; /* Internal value for various state. */
-} bson_iter_t BSON_ALIGNED_END (128);
+} bson_iter_t;
 
 
 /**
@@ -407,73 +387,74 @@ typedef struct {
  * You may pre-maturely stop the visitation of fields by returning true in your
  * visitor. Returning false will continue visitation to further fields.
  */
-BSON_ALIGNED_BEGIN (8)
 typedef struct {
    /* run before / after descending into a document */
-   bool (*visit_before) (const bson_iter_t *iter, const char *key, void *data);
-   bool (*visit_after) (const bson_iter_t *iter, const char *key, void *data);
+   bool (BSON_CALL *visit_before) (const bson_iter_t *iter, const char *key, void *data);
+   bool (BSON_CALL *visit_after) (const bson_iter_t *iter, const char *key, void *data);
    /* corrupt BSON, or unsupported type and visit_unsupported_type not set */
-   void (*visit_corrupt) (const bson_iter_t *iter, void *data);
+   void (BSON_CALL *visit_corrupt) (const bson_iter_t *iter, void *data);
    /* normal bson field callbacks */
-   bool (*visit_double) (const bson_iter_t *iter, const char *key, double v_double, void *data);
-   bool (*visit_utf8) (const bson_iter_t *iter, const char *key, size_t v_utf8_len, const char *v_utf8, void *data);
-   bool (*visit_document) (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data);
-   bool (*visit_array) (const bson_iter_t *iter, const char *key, const bson_t *v_array, void *data);
-   bool (*visit_binary) (const bson_iter_t *iter,
-                         const char *key,
-                         bson_subtype_t v_subtype,
-                         size_t v_binary_len,
-                         const uint8_t *v_binary,
-                         void *data);
+   bool (BSON_CALL *visit_double) (const bson_iter_t *iter, const char *key, double v_double, void *data);
+   bool (BSON_CALL *visit_utf8) (
+      const bson_iter_t *iter, const char *key, size_t v_utf8_len, const char *v_utf8, void *data);
+   bool (BSON_CALL *visit_document) (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data);
+   bool (BSON_CALL *visit_array) (const bson_iter_t *iter, const char *key, const bson_t *v_array, void *data);
+   bool (BSON_CALL *visit_binary) (const bson_iter_t *iter,
+                                   const char *key,
+                                   bson_subtype_t v_subtype,
+                                   size_t v_binary_len,
+                                   const uint8_t *v_binary,
+                                   void *data);
    /* normal field with deprecated "Undefined" BSON type */
-   bool (*visit_undefined) (const bson_iter_t *iter, const char *key, void *data);
-   bool (*visit_oid) (const bson_iter_t *iter, const char *key, const bson_oid_t *v_oid, void *data);
-   bool (*visit_bool) (const bson_iter_t *iter, const char *key, bool v_bool, void *data);
-   bool (*visit_date_time) (const bson_iter_t *iter, const char *key, int64_t msec_since_epoch, void *data);
-   bool (*visit_null) (const bson_iter_t *iter, const char *key, void *data);
-   bool (*visit_regex) (
+   bool (BSON_CALL *visit_undefined) (const bson_iter_t *iter, const char *key, void *data);
+   bool (BSON_CALL *visit_oid) (const bson_iter_t *iter, const char *key, const bson_oid_t *v_oid, void *data);
+   bool (BSON_CALL *visit_bool) (const bson_iter_t *iter, const char *key, bool v_bool, void *data);
+   bool (BSON_CALL *visit_date_time) (const bson_iter_t *iter, const char *key, int64_t msec_since_epoch, void *data);
+   bool (BSON_CALL *visit_null) (const bson_iter_t *iter, const char *key, void *data);
+   bool (BSON_CALL *visit_regex) (
       const bson_iter_t *iter, const char *key, const char *v_regex, const char *v_options, void *data);
-   bool (*visit_dbpointer) (const bson_iter_t *iter,
-                            const char *key,
-                            size_t v_collection_len,
-                            const char *v_collection,
-                            const bson_oid_t *v_oid,
-                            void *data);
-   bool (*visit_code) (const bson_iter_t *iter, const char *key, size_t v_code_len, const char *v_code, void *data);
-   bool (*visit_symbol) (
+   bool (BSON_CALL *visit_dbpointer) (const bson_iter_t *iter,
+                                      const char *key,
+                                      size_t v_collection_len,
+                                      const char *v_collection,
+                                      const bson_oid_t *v_oid,
+                                      void *data);
+   bool (BSON_CALL *visit_code) (
+      const bson_iter_t *iter, const char *key, size_t v_code_len, const char *v_code, void *data);
+   bool (BSON_CALL *visit_symbol) (
       const bson_iter_t *iter, const char *key, size_t v_symbol_len, const char *v_symbol, void *data);
-   bool (*visit_codewscope) (const bson_iter_t *iter,
-                             const char *key,
-                             size_t v_code_len,
-                             const char *v_code,
-                             const bson_t *v_scope,
-                             void *data);
-   bool (*visit_int32) (const bson_iter_t *iter, const char *key, int32_t v_int32, void *data);
-   bool (*visit_timestamp) (
+   bool (BSON_CALL *visit_codewscope) (const bson_iter_t *iter,
+                                       const char *key,
+                                       size_t v_code_len,
+                                       const char *v_code,
+                                       const bson_t *v_scope,
+                                       void *data);
+   bool (BSON_CALL *visit_int32) (const bson_iter_t *iter, const char *key, int32_t v_int32, void *data);
+   bool (BSON_CALL *visit_timestamp) (
       const bson_iter_t *iter, const char *key, uint32_t v_timestamp, uint32_t v_increment, void *data);
-   bool (*visit_int64) (const bson_iter_t *iter, const char *key, int64_t v_int64, void *data);
-   bool (*visit_maxkey) (const bson_iter_t *iter, const char *key, void *data);
-   bool (*visit_minkey) (const bson_iter_t *iter, const char *key, void *data);
+   bool (BSON_CALL *visit_int64) (const bson_iter_t *iter, const char *key, int64_t v_int64, void *data);
+   bool (BSON_CALL *visit_maxkey) (const bson_iter_t *iter, const char *key, void *data);
+   bool (BSON_CALL *visit_minkey) (const bson_iter_t *iter, const char *key, void *data);
    /* if set, called instead of visit_corrupt when an apparently valid BSON
     * includes an unrecognized field type (reading future version of BSON) */
-   void (*visit_unsupported_type) (const bson_iter_t *iter, const char *key, uint32_t type_code, void *data);
-   bool (*visit_decimal128) (const bson_iter_t *iter,
-                             const char *key,
-                             const bson_decimal128_t *v_decimal128,
-                             void *data);
+   void (BSON_CALL *visit_unsupported_type) (const bson_iter_t *iter, const char *key, uint32_t type_code, void *data);
+   bool (BSON_CALL *visit_decimal128) (const bson_iter_t *iter,
+                                       const char *key,
+                                       const bson_decimal128_t *v_decimal128,
+                                       void *data);
 
    void *padding[7];
-} bson_visitor_t BSON_ALIGNED_END (8);
+} bson_visitor_t;
 
 #define BSON_ERROR_BUFFER_SIZE 503
 
-BSON_ALIGNED_BEGIN (8)
+BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) // Aligned for backwards-compatibility.
 typedef struct _bson_error_t {
    uint32_t domain;
    uint32_t code;
    char message[BSON_ERROR_BUFFER_SIZE];
    uint8_t reserved; // For internal use only!
-} bson_error_t BSON_ALIGNED_END (8);
+} bson_error_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
 
 
 BSON_STATIC_ASSERT2 (error_t, sizeof (bson_error_t) == 512);

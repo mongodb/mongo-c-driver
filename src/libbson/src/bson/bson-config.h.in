@@ -96,14 +96,6 @@
 #endif
 
 
-/*
- * Define to 1 if you want extra aligned types in libbson
- */
-#define BSON_EXTRA_ALIGN @BSON_EXTRA_ALIGN@
-#if BSON_EXTRA_ALIGN != 1
-# undef BSON_EXTRA_ALIGN
-#endif
-
 
 /*
  * Define to 1 if you have rand_r available on your platform.

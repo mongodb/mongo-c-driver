@@ -84,11 +84,7 @@ sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdev
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --dnf-cmd --setopt=powertools.module_hotfixes=true install utf8proc-devel
 
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-  python3.11 build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
-  python3.11 build/calc_release_version.py -p > VERSION_RELEASED
-  )"
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/VERSION_CURRENT" "/tmp/${build_dir}/VERSION_RELEASED" .
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/VERSION_CURRENT" .
 
 bare_upstream_version=$(rpmspec --srpm -q --qf '%{version}' "$spec_file")
 # Upstream version in the .spec file cannot have hyphen (-); replace the current

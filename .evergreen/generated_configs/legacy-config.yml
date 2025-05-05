@@ -94,7 +94,6 @@ functions:
         # Compile a program that links dynamically or statically to libmongoc,
         # using variables from pkg-config or CMake's find_package command.
         export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
-        export BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=${BUILD_SAMPLE_WITH_CMAKE_DEPRECATED}
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
         LINK_STATIC=  .evergreen/scripts/link-sample-program.sh
@@ -111,12 +110,10 @@ functions:
         set -o errexit
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
   link sample program MSVC:
   - command: shell.exec
     type: test
@@ -354,21 +351,6 @@ tasks:
       script: |-
         set -o errexit
         env SNAPPY="OFF" ZLIB="OFF" ZSTD="ON" .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-no-align
-  tags:
-  - debug-compile
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-nossl
   tags:
@@ -649,40 +631,6 @@ tasks:
   - func: link sample program
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
-- name: link-with-cmake-deprecated
-  commands:
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-  - func: link sample program
-    vars:
-      BUILD_SAMPLE_WITH_CMAKE: 1
-      BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
-- name: link-with-cmake-ssl-deprecated
-  commands:
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-  - func: link sample program
-    vars:
-      BUILD_SAMPLE_WITH_CMAKE: 1
-      BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
-      ENABLE_SSL: 1
-- name: link-with-cmake-snappy-deprecated
-  commands:
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-  - func: link sample program
-    vars:
-      BUILD_SAMPLE_WITH_CMAKE: 1
-      BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
-      ENABLE_SNAPPY: 'ON'
-- name: link-with-cmake-mac-deprecated
-  commands:
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-  - func: link sample program
-    vars:
-      BUILD_SAMPLE_WITH_CMAKE: 1
-      BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
 - name: link-with-cmake-windows
   commands:
   - func: fetch-det
@@ -1245,7 +1193,6 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
-  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-darwinssl
   tags:
@@ -1258,7 +1205,6 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-winssl
   tags:
@@ -1271,7 +1217,6 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
-  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-openssl-nosasl
   tags:
@@ -1284,7 +1229,6 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
-  - func: prepare-kerberos
   - func: run auth tests
 - name: test-mongohouse
   depends_on:
@@ -1311,8 +1255,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
-  - func: prepare-kerberos
+        env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh
   - func: run auth tests
     vars:
       ASAN: 'on'
@@ -1575,63 +1518,6 @@ tasks:
         set -o errexit
         env SASL=OFF SSL=OPENSSL .evergreen/scripts/compile.sh
   - func: run auth tests
-  - func: upload-build
-- name: build-and-run-authentication-tests-libressl-2.5
-  commands:
-  - func: install ssl
-    vars:
-      SSL: libressl-2.5.2
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL=OFF SSL=LIBRESSL .evergreen/scripts/compile.sh
-  - func: run auth tests
-    vars:
-      require_tls12: true
-  - func: upload-build
-- name: build-and-run-authentication-tests-libressl-3.0-auto
-  commands:
-  - func: install ssl
-    vars:
-      SSL: libressl-3.0.2
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL=OFF SSL=AUTO .evergreen/scripts/compile.sh
-  - func: run auth tests
-    vars:
-      require_tls12: true
-  - func: upload-build
-- name: build-and-run-authentication-tests-libressl-3.0
-  commands:
-  - func: install ssl
-    vars:
-      SSL: libressl-3.0.2
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env SASL=OFF SSL=LIBRESSL .evergreen/scripts/compile.sh
-  - func: run auth tests
-    vars:
-      require_tls12: true
   - func: upload-build
 - name: test-latest-server-ipv6-client-ipv6-noauth-nosasl-nossl
   tags:
@@ -16348,11 +16234,8 @@ buildvariants:
   - debug-compile-no-counters
   - compile-tracing
   - link-with-cmake
-  - link-with-cmake-deprecated
   - link-with-cmake-ssl
-  - link-with-cmake-ssl-deprecated
   - link-with-cmake-snappy
-  - link-with-cmake-snappy-deprecated
   - name: link-with-cmake-mac
     distros:
     - macos-14-arm64
@@ -16404,16 +16287,13 @@ buildvariants:
   tags:
   - pr-merge-gate
 - name: openssl
-  display_name: OpenSSL / LibreSSL
+  display_name: OpenSSL
   run_on: archlinux-build
   tasks:
   - build-and-run-authentication-tests-openssl-1.0.1
   - build-and-run-authentication-tests-openssl-1.0.2
   - build-and-run-authentication-tests-openssl-1.1.0
   - build-and-run-authentication-tests-openssl-1.0.1-fips
-  - build-and-run-authentication-tests-libressl-2.5
-  - build-and-run-authentication-tests-libressl-3.0-auto
-  - build-and-run-authentication-tests-libressl-3.0
 - name: clang37
   display_name: clang 3.7 (Archlinux)
   expansions:
@@ -16433,7 +16313,6 @@ buildvariants:
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
-  - debug-compile-no-align
   - .debug-compile !.sspi .nossl .nosasl
   - .latest .nossl .nosasl
 - name: gcc82rhel
@@ -16477,7 +16356,6 @@ buildvariants:
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
-  - debug-compile-no-align
   - .latest .nossl .nosasl
 - name: gcc94
   display_name: GCC 9.4 (Ubuntu 20.04)
@@ -16489,7 +16367,6 @@ buildvariants:
   - debug-compile-nosrv
   - release-compile
   - debug-compile-nosasl-nossl
-  - debug-compile-no-align
   - debug-compile-sasl-openssl
   - debug-compile-nosasl-openssl
   - .authentication-tests .openssl
@@ -16509,7 +16386,6 @@ buildvariants:
   - .compression !.snappy
   - release-compile
   - debug-compile-nosasl-nossl
-  - debug-compile-no-align
   - debug-compile-nosrv
   - debug-compile-sasl-darwinssl
   - debug-compile-nosasl-nossl
@@ -16544,40 +16420,20 @@ buildvariants:
     CC: Visual Studio 15 2017 Win64
   run_on: windows-vsCurrent-large
   tasks:
+  - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-nosasl-openssl
   - debug-compile-sspi-winssl
+  - debug-compile-nosrv
   - .latest .nossl
   - .nosasl .latest .nossl
+  - .compression !.snappy !.zstd !.latest
   - test-dns-winssl
   - test-dns-auth-winssl
   - debug-compile-aws
   - test-aws-openssl-regular-4.4
   - test-aws-openssl-regular-latest
   - .authentication-tests .openssl !.sasl
-  - .authentication-tests .winssl
-- name: windows-2015
-  display_name: Windows (VS 2015)
-  expansions:
-    CC: Visual Studio 14 2015 Win64
-  run_on: windows-64-vs2015-compile
-  tasks:
-  - .compression !.snappy !.zstd !.latest
-  - release-compile
-  - debug-compile-sspi-winssl
-  - debug-compile-no-align
-  - debug-compile-nosrv
-  - .authentication-tests .winssl
-- name: windows-2015-32
-  display_name: Windows (i686) (VS 2015)
-  expansions:
-    CC: Visual Studio 14 2015
-  run_on: windows-64-vs2015-compile
-  tasks:
-  - .compression !.snappy !.zstd !.latest
-  - release-compile
-  - debug-compile-sspi-winssl
-  - debug-compile-no-align
   - .authentication-tests .winssl
 - name: mingw-windows2016
   display_name: MinGW-W64 (Windows Server 2016)
@@ -16587,13 +16443,6 @@ buildvariants:
   tasks:
   - debug-compile-nosasl-nossl
   - .latest .nossl .nosasl .server
-- name: mingw
-  display_name: MinGW-W64
-  expansions:
-    CC: mingw
-  run_on: windows-vsCurrent-large
-  tasks:
-  - debug-compile-no-align
 - name: rhel8-power
   display_name: Power (ppc64le) (RHEL 8)
   expansions:
@@ -16614,7 +16463,6 @@ buildvariants:
   run_on: ubuntu2004-arm64-large
   tasks:
   - .compression !.snappy !.zstd
-  - debug-compile-no-align
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-nosasl-openssl
@@ -16630,7 +16478,6 @@ buildvariants:
   run_on: rhel8-zseries-large
   tasks:
   - release-compile
-  - debug-compile-no-align
   - debug-compile-nosasl-nossl
   - debug-compile-nosasl-openssl
   - debug-compile-sasl-openssl

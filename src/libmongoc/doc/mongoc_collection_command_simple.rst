@@ -27,7 +27,7 @@ Parameters
 Description
 -----------
 
-This is a simplified version of :symbol:`mongoc_collection_command()` that returns the first result document in ``reply``. The collection's read preference, read concern, and write concern are not applied to the command. The parameter ``reply`` is initialized even upon failure to simplify memory management.
+The collection's read preference, read concern, and write concern are not applied to the command. The parameter ``reply`` is initialized even upon failure to simplify memory management.
 
 This function tries to unwrap an embedded error in the command when possible. The unwrapped error will be propagated via the ``error`` parameter. Additionally, the result document is set in ``reply``.
 

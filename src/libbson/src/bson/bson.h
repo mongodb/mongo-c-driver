@@ -27,8 +27,6 @@
 
 #include <bson/bson-macros.h>
 #include <bson/bson-config.h>
-#include <bson/bson-atomic.h> // Deprecated.
-#include <bson/bson-cmp.h>    // Deprecated.
 #include <bson/bson-context.h>
 #include <bson/bson-clock.h>
 #include <bson/bson-decimal128.h>
@@ -36,7 +34,6 @@
 #include <bson/bson-iter.h>
 #include <bson/bson-json.h>
 #include <bson/bson-keys.h>
-#include <bson/bson-md5.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-oid.h>
 #include <bson/bson-reader.h>
@@ -44,6 +41,7 @@
 #include <bson/bson-types.h>
 #include <bson/bson-utf8.h>
 #include <bson/bson-value.h>
+#include <bson/bson-vector.h>
 #include <bson/bson-version.h>
 #include <bson/bson-version-functions.h>
 #include <bson/bson-writer.h>
@@ -290,31 +288,13 @@ bson_copy (const bson_t *bson);
 BSON_EXPORT (void)
 bson_copy_to (const bson_t *src, bson_t *dst);
 
-
-/**
- * bson_copy_to_excluding:
- * @src: A bson_t.
- * @dst: A bson_t to initialize and copy into.
- * @first_exclude: First field name to exclude.
- *
- * Copies @src into @dst excluding any field that is provided.
- * This is handy for situations when you need to remove one or
- * more fields in a bson_t. Note that bson_init() will be called
- * on dst.
- */
-BSON_EXPORT (void)
-bson_copy_to_excluding (const bson_t *src, bson_t *dst, const char *first_exclude, ...) BSON_GNUC_NULL_TERMINATED
-   BSON_GNUC_DEPRECATED_FOR (bson_copy_to_excluding_noinit);
-
 /**
  * bson_copy_to_excluding_noinit:
  * @src: A bson_t.
  * @dst: A bson_t to initialize and copy into.
  * @first_exclude: First field name to exclude.
  *
- * The same as bson_copy_to_excluding, but does not call bson_init()
- * on the dst. This version should be preferred in new code, but the
- * old function is left for backwards compatibility.
+ * Does not call bson_init() on the dst.
  */
 BSON_EXPORT (void)
 bson_copy_to_excluding_noinit (const bson_t *src, bson_t *dst, const char *first_exclude, ...)
@@ -334,7 +314,7 @@ BSON_EXPORT (void)
 bson_destroy (bson_t *bson);
 
 BSON_EXPORT (uint8_t *)
-bson_reserve_buffer (bson_t *bson, uint32_t size);
+bson_reserve_buffer (bson_t *bson, uint32_t total_size);
 
 BSON_EXPORT (bool)
 bson_steal (bson_t *dst, bson_t *src);
@@ -519,7 +499,7 @@ bson_as_canonical_extended_json (const bson_t *bson, size_t *length);
 
 
 /**
- * bson_as_json:
+ * bson_as_legacy_extended_json:
  * @bson: A bson_t.
  * @length: A location for the string length, or NULL.
  *
@@ -531,10 +511,7 @@ bson_as_canonical_extended_json (const bson_t *bson, size_t *length);
  *
  * Returns: A newly allocated string that should be freed with bson_free().
  */
-BSON_EXPORT (char *)
-bson_as_json (const bson_t *bson, size_t *length) BSON_GNUC_DEPRECATED_FOR (bson_as_legacy_extended_json);
 
-// `bson_as_legacy_extended_json` is a non-deprecated form of `bson_as_json`.
 BSON_EXPORT (char *)
 bson_as_legacy_extended_json (const bson_t *bson, size_t *length);
 
@@ -561,11 +538,7 @@ BSON_EXPORT (char *)
 bson_as_relaxed_extended_json (const bson_t *bson, size_t *length);
 
 
-/* like bson_as_json() but for outermost arrays. */
-BSON_EXPORT (char *)
-bson_array_as_json (const bson_t *bson, size_t *length) BSON_GNUC_DEPRECATED_FOR (bson_array_as_legacy_extended_json);
-
-// `bson_array_as_legacy_extended_json` is a non-deprecated form of `bson_array_as_json`.
+/* like bson_as_legacy_extended_json() but for outermost arrays. */
 BSON_EXPORT (char *)
 bson_array_as_legacy_extended_json (const bson_t *bson, size_t *length);
 
@@ -626,10 +599,30 @@ BSON_EXPORT (bool)
 bson_array_builder_append_array (bson_array_builder_t *bab, const bson_t *array);
 
 /**
- * bson_append_binary:
- * @bson: A bson_t to append.
+ * bson_append_array_from_vector:
+ * @bson: A bson_t that will be modified.
  * @key: The key for the field.
- * @subtype: The bson_subtype_t of the binary.
+ * @iter: A bson_iter_t pointing to any supported vector in another bson_t.
+ *
+ * If @iter points to a supported vector type, converts the vector to a BSON array appended to @bson.
+ *
+ * Returns: true if successful; false if append would overflow max size or @iter does not point to a vector in a
+ * supported format.
+ */
+BSON_EXPORT (bool)
+bson_append_array_from_vector (bson_t *bson, const char *key, int key_length, const bson_iter_t *iter);
+
+#define BSON_APPEND_ARRAY_FROM_VECTOR(b, key, iter) bson_append_array_from_vector (b, key, (int) strlen (key), iter)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_array_from_vector (bson_array_builder_t *bab, const bson_iter_t *iter);
+
+/**
+ * bson_append_binary:
+ * @bson: A bson_t.
+ * @key: The key for the field.
+ * @key_length: Optional length of 'key' in bytes, or -1 to use strlen(key).
+ * @subtype: The bson_subtype_t of the binary item.
  * @binary: The binary buffer to append.
  * @length: The length of @binary.
  *
@@ -648,6 +641,30 @@ bson_array_builder_append_binary (bson_array_builder_t *bab,
                                   bson_subtype_t subtype,
                                   const uint8_t *binary,
                                   uint32_t length);
+
+/**
+ * bson_append_binary_uninit:
+ * @bson: A bson_t.
+ * @key: The key for the field.
+ * @key_length: Optional length of 'key' in bytes, or -1 to use strlen(key).
+ * @binary: Output parameter, pointer for the binary data within bson_t to be written.
+ * @length: Length of the binary field to allocate, in bytes.
+ *
+ * Returns: true if successful; false if append would overflow max size.
+ */
+
+BSON_EXPORT (bool)
+bson_append_binary_uninit (
+   bson_t *bson, const char *key, int key_length, bson_subtype_t subtype, uint8_t **binary, uint32_t length);
+
+#define BSON_APPEND_BINARY_UNINIT(b, key, subtype, val, len) \
+   bson_append_binary_uninit (b, key, (int) strlen (key), subtype, val, len)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_binary_uninit (bson_array_builder_t *bab,
+                                         bson_subtype_t subtype,
+                                         uint8_t **binary,
+                                         uint32_t length);
 
 /**
  * bson_append_bool:

@@ -201,7 +201,7 @@ static void
 assert_topology_state (mongoc_topology_t *topology, mongoc_topology_scanner_state_t state)
 {
    ASSERT (topology);
-   ASSERT (topology->scanner_state == state);
+   ASSERT (mlib_cmp (topology->scanner_state, ==, state));
 }
 
 static void
@@ -2427,7 +2427,7 @@ initiator_fail (const mongoc_uri_t *uri, const mongoc_host_list_t *host, void *u
    bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "failing in initiator");
    printf ("failing in initiator\n");
 
-   return false;
+   return NULL;
 }
 
 // Test failure in `mongoc_topology_scanner_node_setup` during retry of scanning

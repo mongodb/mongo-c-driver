@@ -132,9 +132,6 @@ future_get_mongoc_server_stream_ptr (future_t *future);
 mongoc_query_flags_t
 future_get_mongoc_query_flags_t (future_t *future);
 
-const_mongoc_index_opt_t
-future_get_const_mongoc_index_opt_t (future_t *future);
-
 mongoc_server_description_ptr
 future_get_mongoc_server_description_ptr (future_t *future);
 
@@ -167,6 +164,9 @@ future_get_const_mongoc_write_concern_ptr (future_t *future);
 
 const_mongoc_ss_log_context_ptr
 future_get_const_mongoc_ss_log_context_ptr (future_t *future);
+
+mongoc_index_model_t_ptr_const_ptr
+future_get_mongoc_index_model_t_ptr_const_ptr (future_t *future);
 
 
 void future_destroy (future_t *future);

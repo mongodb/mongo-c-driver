@@ -24,14 +24,13 @@ main (int argc, char *argv[])
    } else                                      \
       ((void) 0)
 
-   TEST_INSTALL (test_atomic_install);
    TEST_INSTALL (test_bcon_basic_install);
    TEST_INSTALL (test_bcon_extract_install);
    TEST_INSTALL (test_bson_corpus_install);
    TEST_INSTALL (test_bson_error_install);
    TEST_INSTALL (test_bson_install);
-   TEST_INSTALL (test_bson_sync_install);
    TEST_INSTALL (test_bson_version_install);
+   TEST_INSTALL (test_bson_vector_install);
    TEST_INSTALL (test_clock_install);
    TEST_INSTALL (test_decimal128_install);
    TEST_INSTALL (test_endian_install);
@@ -45,7 +44,6 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_value_install);
    TEST_INSTALL (test_writer_install);
    TEST_INSTALL (test_b64_install);
-   TEST_INSTALL (test_bson_cmp_install);
    TEST_INSTALL (test_mcommon_atomic_install);
    TEST_INSTALL (test_mcommon_oid_install);
    TEST_INSTALL (test_mlib_install);
@@ -67,7 +65,6 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_bulk_install);
    TEST_INSTALL (test_cluster_install);
    TEST_INSTALL (test_collection_install);
-   TEST_INSTALL (test_collection_find_install);
    TEST_INSTALL (test_collection_find_with_opts_install);
    TEST_INSTALL (test_connection_uri_install);
    TEST_INSTALL (test_command_logging_and_monitoring_install);
@@ -86,7 +83,6 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_log_install);
    TEST_INSTALL (test_structured_log_install);
    TEST_INSTALL (test_long_namespace_install);
-   TEST_INSTALL (test_matcher_install);
    TEST_INSTALL (test_mongos_pinning_install);
    TEST_INSTALL (test_queue_install);
    TEST_INSTALL (test_primary_stepdown_install);
@@ -161,6 +157,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_service_gcp_install);
    TEST_INSTALL (test_mcd_nsinfo_install);
    TEST_INSTALL (test_bulkwrite_install);
+   TEST_INSTALL (test_mongoc_oidc_callback_install);
 
    ret = TestSuite_Run (&suite);
 

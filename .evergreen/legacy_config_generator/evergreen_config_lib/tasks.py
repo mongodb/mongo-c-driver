@@ -55,7 +55,7 @@ class CompileTask(NamedTask):
         CFLAGS: str | None = None,
         LDFLAGS: str | None = None,
         EXTRA_CONFIGURE_FLAGS: str | None = None,
-        SSL: Literal["WINDOWS", "DARWIN", "OPENSSL", "OPENSSL_STATIC", "LIBRESSL", "OFF", None] = None,
+        SSL: Literal["WINDOWS", "DARWIN", "OPENSSL", "OPENSSL_STATIC", "OFF", None] = None,
         ENABLE_SHM_COUNTERS: OptToggleStr = None,
         CHECK_LOG: OptToggleStr = None,
         TRACING: OptToggleStr = None,
@@ -151,7 +151,6 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
         CFLAGS="-fno-omit-frame-pointer",
         COMPILE_LIBMONGOCRYPT="ON",
         CHECK_LOG="ON",
-        EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
         PATH="/usr/lib/llvm-3.8/bin:$PATH",
     )
     cls_tags: ClassVar[Sequence[str]] = ["client-side-encryption"]
@@ -187,12 +186,6 @@ all_tasks = [
     CompileTask("debug-compile-compression-zlib", tags=["zlib", "compression"], compression="zlib"),
     CompileTask("debug-compile-compression-snappy", tags=["snappy", "compression"], compression="snappy"),
     CompileTask("debug-compile-compression-zstd", tags=["zstd", "compression"], compression="zstd"),
-    CompileTask(
-        "debug-compile-no-align",
-        tags=["debug-compile"],
-        compression="zlib",
-        EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-    ),
     CompileTask("debug-compile-nosasl-nossl", tags=["debug-compile", "nosasl", "nossl"], SSL="OFF"),
     CompileTask("debug-compile-lto", CFLAGS="-flto"),
     CompileTask("debug-compile-lto-thin", CFLAGS="-flto=thin"),
@@ -226,36 +219,6 @@ all_tasks = [
         suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, ENABLE_SNAPPY="ON")],
     ),
     LinkTask("link-with-cmake-mac", suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1)]),
-    LinkTask(
-        "link-with-cmake-deprecated",
-        suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1)],
-    ),
-    LinkTask(
-        "link-with-cmake-ssl-deprecated",
-        suffix_commands=[
-            func(
-                "link sample program",
-                BUILD_SAMPLE_WITH_CMAKE=1,
-                BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
-                ENABLE_SSL=1,
-            )
-        ],
-    ),
-    LinkTask(
-        "link-with-cmake-snappy-deprecated",
-        suffix_commands=[
-            func(
-                "link sample program",
-                BUILD_SAMPLE_WITH_CMAKE=1,
-                BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
-                ENABLE_SNAPPY="ON",
-            )
-        ],
-    ),
-    LinkTask(
-        "link-with-cmake-mac-deprecated",
-        suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1)],
-    ),
     LinkTask("link-with-cmake-windows", suffix_commands=[func("link sample program MSVC")]),
     LinkTask(
         "link-with-cmake-windows-ssl",
@@ -649,7 +612,6 @@ class AuthTask(MatrixTask):
 
     def post_commands(self) -> Iterable[Value]:
         yield func("fetch-build", BUILD_NAME=self.build_task_name)
-        yield func("prepare-kerberos")
         yield func("run auth tests")
 
     @property
@@ -697,11 +659,10 @@ all_tasks = chain(
                 func("find-cmake-latest"),
                 shell_mongoc(
                     """
-            env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
+            env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh
             """,
                     add_expansions_to_env=True,
                 ),
-                func("prepare-kerberos"),
                 func("run auth tests", ASAN="on"),
             ],
         )
@@ -773,8 +734,6 @@ class SSLTask(Task):
 
         if enable_ssl is not False:
             script += " SSL=" + enable_ssl
-        elif "libressl" in version:
-            script += " SSL=LIBRESSL"
         else:
             script += " SSL=OPENSSL"
 
@@ -818,10 +777,7 @@ all_tasks = chain(
             "l",
             cflags="-Wno-redundant-decls",
         ),
-        SSLTask("openssl-1.1.0", "l"),
-        SSLTask("libressl-2.5", ".2", test_params=dict(require_tls12=True)),
-        SSLTask("libressl-3.0", ".2", enable_ssl="AUTO", test_params=dict(require_tls12=True)),
-        SSLTask("libressl-3.0", ".2", test_params=dict(require_tls12=True)),
+        SSLTask("openssl-1.1.0", "l")
     ],
 )
 

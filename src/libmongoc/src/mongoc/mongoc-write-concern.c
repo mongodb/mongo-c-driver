@@ -42,7 +42,6 @@ mongoc_write_concern_new (void)
 
    write_concern = BSON_ALIGNED_ALLOC0 (mongoc_write_concern_t);
    write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
-   write_concern->fsync_ = MONGOC_WRITE_CONCERN_FSYNC_DEFAULT;
    write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
    write_concern->is_default = true;
 
@@ -59,7 +58,6 @@ mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
 
    if (write_concern) {
       ret = mongoc_write_concern_new ();
-      ret->fsync_ = write_concern->fsync_;
       ret->journal = write_concern->journal;
       ret->w = write_concern->w;
       ret->wtimeout = write_concern->wtimeout;
@@ -86,33 +84,6 @@ mongoc_write_concern_destroy (mongoc_write_concern_t *write_concern)
       bson_free (write_concern->wtag);
       bson_free (write_concern);
    }
-}
-
-
-bool
-mongoc_write_concern_get_fsync (const mongoc_write_concern_t *write_concern)
-{
-   BSON_ASSERT (write_concern);
-   return (write_concern->fsync_ == true);
-}
-
-
-/**
- * mongoc_write_concern_set_fsync:
- * @write_concern: A mongoc_write_concern_t.
- * @fsync_: If the write concern requires fsync() by the server.
- *
- * Set if fsync() should be called on the server before acknowledging a
- * write request.
- */
-void
-mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern, bool fsync_)
-{
-   BSON_ASSERT (write_concern);
-
-   write_concern->fsync_ = !!fsync_;
-   write_concern->is_default = false;
-   write_concern->frozen = false;
 }
 
 
@@ -347,10 +318,6 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
       BSON_APPEND_INT32 (compiled, "w", write_concern->w);
    }
 
-   if (write_concern->fsync_ != MONGOC_WRITE_CONCERN_FSYNC_DEFAULT) {
-      bson_append_bool (compiled, "fsync", 5, !!write_concern->fsync_);
-   }
-
    if (write_concern->journal != MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT) {
       bson_append_bool (compiled, "j", 1, !!write_concern->journal);
    }
@@ -374,9 +341,8 @@ bool
 mongoc_write_concern_is_acknowledged (const mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
-      return (((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) &&
-               (write_concern->w != MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) ||
-              write_concern->fsync_ == true || mongoc_write_concern_get_journal (write_concern));
+      return (((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED)) ||
+              mongoc_write_concern_get_journal (write_concern));
    }
    return true;
 }
@@ -398,10 +364,9 @@ mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
       return false;
    }
 
-   /* Journal or fsync should require acknowledgement.  */
-   if ((write_concern->fsync_ == true || mongoc_write_concern_get_journal (write_concern)) &&
-       (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
-        write_concern->w == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) {
+   /* Journal should require acknowledgement.  */
+   if ((mongoc_write_concern_get_journal (write_concern)) &&
+       (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED)) {
       return false;
    }
 
@@ -511,7 +476,7 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *erro
       if (BSON_ITER_IS_KEY (&inner, "w")) {
          if (BSON_ITER_HOLDS_INT32 (&inner)) {
             w = bson_iter_int32 (&inner);
-            if (w < MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED) {
+            if (w < MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) {
                goto fail;
             }
 
@@ -529,12 +494,8 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *erro
             goto fail;
          }
       } else if (BSON_ITER_IS_KEY (&inner, "fsync")) {
-         if (!BSON_ITER_HOLDS_BOOL (&inner)) {
-            goto fail;
-         }
-         BEGIN_IGNORE_DEPRECATIONS
-         mongoc_write_concern_set_fsync (write_concern, bson_iter_bool (&inner));
-         END_IGNORE_DEPRECATIONS
+         // fsync removed in C driver 2.0.
+         goto fail;
       } else if (BSON_ITER_IS_KEY (&inner, "j")) {
          if (!BSON_ITER_HOLDS_BOOL (&inner)) {
             goto fail;

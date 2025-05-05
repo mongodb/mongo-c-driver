@@ -3961,7 +3961,7 @@ operation_wait_for_event (test_t *test, operation_t *op, result_t *result, bson_
                          (int) (duration / 1000),
                          (int) WAIT_FOR_EVENT_TIMEOUT_MS);
          goto done;
-      };
+      }
 
       _operation_hidden_wait (test, client, "waitForEvent");
    }
@@ -4325,7 +4325,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
    /* Check for a "session" argument in all operations, it can be
     * an argument for any operation. */
    if (op->arguments && bson_has_field (op->arguments, "session")) {
-      bson_t copied;
+      bson_t copied = BSON_INITIALIZER;
       mongoc_client_session_t *session = NULL;
 
       op->session_id = bson_strdup (bson_lookup_utf8 (op->arguments, "session"));
@@ -4335,7 +4335,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
          goto done;
       }
 
-      bson_copy_to_excluding (op->arguments, &copied, "session", NULL);
+      bson_copy_to_excluding_noinit (op->arguments, &copied, "session", NULL);
       bson_destroy (op->arguments);
       op->arguments = bson_copy (&copied);
       bson_destroy (&copied);

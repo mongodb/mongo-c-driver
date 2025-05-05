@@ -15,18 +15,15 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('windows-64-vs2015', 'vs2015x64', None, [       'cyrus',       ]),
-    ('windows-64-vs2015', 'vs2015x86', None, ['off',                ]),
-    ('windows-vsCurrent', 'mingw',     None, [                'sspi']),
-    ('windows-vsCurrent', 'vs2017x64', None, ['off', 'cyrus', 'sspi']),
-    ('windows-vsCurrent', 'vs2017x86', None, ['off',          'sspi']),
+    ('windows-vsCurrent', 'mingw',     None, [       'sspi']),
+    ('windows-vsCurrent', 'vs2017x64', None, ['off', 'sspi']),
+    ('windows-vsCurrent', 'vs2017x86', None, ['off', 'sspi']),
 ]
 
 TEST_MATRIX = [
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.0', '4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('windows-vsCurrent', 'vs2017x64', None, 'sspi', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
     ('windows-vsCurrent', 'mingw',     None, 'sspi',  ['auth'], ['server'], ['8.0', 'latest']),
-    ('windows-vsCurrent', 'vs2017x64', None, 'sspi',  ['auth'], ['server'], ['8.0', 'latest']),
     ('windows-vsCurrent', 'vs2017x86', None, 'sspi',  ['auth'], ['server'], ['8.0', 'latest']),
 ]
 # fmt: on
@@ -42,11 +39,6 @@ class SaslOffWinSSLCompile(WinSSLCompileCommon):
     commands = WinSSLCompileCommon.compile_commands(sasl='OFF')
 
 
-class SaslCyrusWinSSLCompile(WinSSLCompileCommon):
-    name = 'sasl-cyrus-winssl-compile'
-    commands = WinSSLCompileCommon.compile_commands(sasl='CYRUS')
-
-
 class SaslSspiWinSSLCompile(WinSSLCompileCommon):
     name = 'sasl-sspi-winssl-compile'
     commands = WinSSLCompileCommon.compile_commands(sasl='SSPI')
@@ -55,7 +47,6 @@ class SaslSspiWinSSLCompile(WinSSLCompileCommon):
 def functions():
     return merge_defns(
         SaslOffWinSSLCompile.defn(),
-        SaslCyrusWinSSLCompile.defn(),
         SaslSspiWinSSLCompile.defn(),
     )
 
@@ -65,7 +56,6 @@ def tasks():
 
     SASL_TO_FUNC = {
         'off': SaslOffWinSSLCompile,
-        'cyrus': SaslCyrusWinSSLCompile,
         'sspi': SaslSspiWinSSLCompile,
     }
 

@@ -38,6 +38,7 @@
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
+#include <mlib/cmp.h>
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 #include <mongoc/mongoc-ocsp-cache-private.h>
@@ -147,7 +148,7 @@ _mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE 
                      (LPTSTR) &msg,
                      0,
                      NULL);
-      MONGOC_ERROR ("Can't open CA store: 0x%.8X: '%s'", GetLastError (), msg);
+      MONGOC_ERROR ("Can't open CA store: 0x%.8lX: '%s'", GetLastError (), msg);
       LocalFree (msg);
       return false;
    }
@@ -343,13 +344,13 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl, const char *host, bool allow_inva
                case GEN_DNS:
 
                   /* check that we don't have an embedded null byte */
-                  if ((length == bson_strnlen (check, length)) && _mongoc_openssl_hostcheck (check, host)) {
+                  if (mlib_cmp (length, ==, bson_strnlen (check, length)) && _mongoc_openssl_hostcheck (check, host)) {
                      r = 1;
                   }
 
                   break;
                case GEN_IPADD:
-                  if (length == addrlen) {
+                  if (mlib_cmp (length, ==, addrlen)) {
                      if (length == sizeof addr6 && !memcmp (check, &addr6, length)) {
                         r = 1;
                      } else if (length == sizeof addr4 && !memcmp (check, &addr4, length)) {
@@ -390,7 +391,8 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl, const char *host, bool allow_inva
 
                   if (length >= 0) {
                      /* check for embedded nulls */
-                     if ((length == bson_strnlen (check, length)) && _mongoc_openssl_hostcheck (check, host)) {
+                     if (mlib_cmp (length, ==, bson_strnlen (check, length)) &&
+                         _mongoc_openssl_hostcheck (check, host)) {
                         r = 1;
                      }
 
@@ -724,7 +726,6 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts
 
 #define SOFT_FAIL(...) ((stapled_response) ? MONGOC_ERROR (__VA_ARGS__) : MONGOC_DEBUG (__VA_ARGS__))
 
-#define X509_CHECK_SUCCESS 1
 #define OCSP_VERIFY_SUCCESS 1
 
 int
@@ -1009,57 +1010,6 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
    }
 
    return ctx;
-}
-
-
-char *
-_mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
-{
-   X509_NAME *subject = NULL;
-   X509 *cert = NULL;
-   BIO *certbio = NULL;
-   BIO *strbio = NULL;
-   char *str = NULL;
-   int ret;
-
-   BSON_UNUSED (passphrase);
-
-   if (!filename) {
-      return NULL;
-   }
-
-   certbio = BIO_new (BIO_s_file ());
-   strbio = BIO_new (BIO_s_mem ());
-
-   BSON_ASSERT (certbio);
-   BSON_ASSERT (strbio);
-
-
-   if (BIO_read_filename (certbio, filename) && (cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
-      if ((subject = X509_get_subject_name (cert))) {
-         ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
-
-         if ((ret > 0) && (ret < INT_MAX)) {
-            str = (char *) bson_malloc (ret + 2);
-            BIO_gets (strbio, str, ret + 1);
-            str[ret] = '\0';
-         }
-      }
-   }
-
-   if (cert) {
-      X509_free (cert);
-   }
-
-   if (certbio) {
-      BIO_free (certbio);
-   }
-
-   if (strbio) {
-      BIO_free (strbio);
-   }
-
-   return str;
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L

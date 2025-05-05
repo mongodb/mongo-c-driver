@@ -20,7 +20,6 @@ _save_resume_token (const bson_t *doc)
    bson_t resume_token_doc;
    char *as_json = NULL;
    size_t as_json_len;
-   ssize_t r, n_written;
    const bson_value_t *resume_token;
 
    if (!bson_iter_init_find (&iter, doc, "_id")) {
@@ -39,9 +38,9 @@ _save_resume_token (const bson_t *doc)
    BSON_APPEND_VALUE (&resume_token_doc, "resumeAfter", resume_token);
    as_json = bson_as_canonical_extended_json (&resume_token_doc, &as_json_len);
    bson_destroy (&resume_token_doc);
-   n_written = 0;
+   size_t n_written = 0;
    while (n_written < as_json_len) {
-      r = fwrite ((void *) (as_json + n_written), sizeof (char), as_json_len - n_written, file_stream);
+      ssize_t r = fwrite ((void *) (as_json + n_written), sizeof (char), as_json_len - n_written, file_stream);
       if (r == -1) {
          fprintf (stderr, "failed to write to %s\n", RESUME_TOKEN_PATH);
          bson_free (as_json);

@@ -143,7 +143,7 @@ _mongoc_stream_tls_secure_transport_write (mongoc_stream_t *stream, char *buf, s
       now = bson_get_monotonic_time ();
 
       if ((expire - now) < 0) {
-         if (write_ret < buf_len) {
+         if (write_ret < (ssize_t) buf_len) {
             mongoc_counter_streams_timeout_inc ();
          }
 
@@ -201,7 +201,8 @@ _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
       iov_pos = 0;
 
       while (iov_pos < iov[i].iov_len) {
-         if (buf_head != buf_tail || ((i + 1 < iovcnt) && ((buf_end - buf_tail) > (iov[i].iov_len - iov_pos)))) {
+         if (buf_head != buf_tail ||
+             ((i + 1 < iovcnt) && ((size_t) (buf_end - buf_tail) > (iov[i].iov_len - iov_pos)))) {
             /* If we have either of:
              *   - buffered bytes already
              *   - another iovec to send after this one and we don't have more
@@ -209,7 +210,7 @@ _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
              *
              * copy into the buffer */
 
-            bytes = BSON_MIN (iov[i].iov_len - iov_pos, buf_end - buf_tail);
+            bytes = BSON_MIN (iov[i].iov_len - iov_pos, (size_t) (buf_end - buf_tail));
 
             memcpy (buf_tail, (char *) iov[i].iov_base + iov_pos, bytes);
             buf_tail += bytes;
@@ -244,7 +245,7 @@ _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
 
             ret += child_ret;
 
-            if (child_ret < to_write_len) {
+            if ((size_t) child_ret < to_write_len) {
                /* we timed out, so send back what we could send */
 
                RETURN (ret);

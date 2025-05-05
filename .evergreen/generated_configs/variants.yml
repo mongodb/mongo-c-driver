@@ -174,17 +174,12 @@ buildvariants:
     display_name: loadbalanced
     tasks:
       - name: .loadbalanced
-  - name: misc
-    display_name: Miscellaneous
-    tasks:
-      - name: .misc
   - name: mock-server-test
     display_name: Mock Server Test
     expansions:
       ASAN: "on"
       CC: gcc
       CFLAGS: -fno-omit-frame-pointer
-      EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF
       SANITIZE: address,undefined
     tasks:
       - name: mock-server-test
@@ -198,7 +193,6 @@ buildvariants:
       ASAN: "on"
       CFLAGS: -fno-omit-frame-pointer
       CHECK_LOG: "ON"
-      EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF
       SANITIZE: address,undefined
     tasks:
       - name: .sanitizers-matrix-asan
@@ -207,7 +201,7 @@ buildvariants:
     expansions:
       CFLAGS: -fno-omit-frame-pointer
       CHECK_LOG: "ON"
-      EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF
+      EXTRA_CONFIGURE_FLAGS: -DENABLE_SHM_COUNTERS=OFF
       SANITIZE: thread
     tasks:
       - name: .sanitizers-matrix-tsan
@@ -238,6 +232,7 @@ buildvariants:
       - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
       - name: sasl-cyrus-openssl-ubuntu2004-gcc-compile
       - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.2-server-auth
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.4-server-auth
@@ -277,11 +272,18 @@ buildvariants:
       - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
       - name: sasl-cyrus-openssl-debian10-gcc-test-4.2-server-auth
       - name: sasl-cyrus-openssl-debian10-gcc-test-4.2-replica-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-server-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-replica-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-sharded-auth
   - name: sasl-matrix-winssl
     display_name: sasl-matrix-winssl
     expansions: {}
     tasks:
       - name: .sasl-matrix-winssl
+  - name: sbom
+    display_name: SBOM
+    tasks:
+      - name: .sbom
   - name: scan-build-matrix
     display_name: scan-build-matrix
     tasks:

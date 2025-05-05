@@ -51,8 +51,6 @@ bson_oid_init_from_data (bson_oid_t *oid, const uint8_t *data);
 BSON_EXPORT (void)
 bson_oid_init_from_string (bson_oid_t *oid, const char *str);
 BSON_EXPORT (void)
-bson_oid_init_sequence (bson_oid_t *oid, bson_context_t *context) BSON_GNUC_DEPRECATED_FOR (bson_oid_init);
-BSON_EXPORT (void)
 bson_oid_to_string (const bson_oid_t *oid, char str[25]);
 
 

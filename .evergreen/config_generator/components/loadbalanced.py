@@ -83,7 +83,6 @@ def tasks():
                 env={
                     'CC': _COMPILER,
                     'CFLAGS': '-fno-omit-frame-pointer',
-                    'EXTRA_CONFIGURE_FLAGS': '-DENABLE_EXTRA_ALIGNMENT=OFF',
                     'SSL': 'OPENSSL'
                 },
                 working_dir='mongoc',

@@ -41,8 +41,6 @@
 
 BSON_BEGIN_DECLS
 
-/* version corresponding to server 4.0 release */
-#define WIRE_VERSION_4_0 7
 /* first version to support hint for "update" command */
 #define WIRE_VERSION_UPDATE_HINT 8
 /* version corresponding to server 4.2 release */
@@ -83,7 +81,7 @@ BSON_BEGIN_DECLS
 /* Range of wire protocol versions this driver supports. Bumping
  * WIRE_VERSION_MAX must be accompanied by an update to
  * `_mongoc_wire_version_to_server_version`. */
-#define WIRE_VERSION_MIN WIRE_VERSION_4_0 /* a.k.a. minWireVersion */
+#define WIRE_VERSION_MIN WIRE_VERSION_4_2 /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
 struct _mongoc_collection_t;
@@ -228,6 +226,14 @@ mongoc_client_uses_server_api (const mongoc_client_t *client);
  * false. */
 bool
 mongoc_client_uses_loadbalanced (const mongoc_client_t *client);
+
+void
+_mongoc_client_set_ssl_opts_for_single_or_pooled (mongoc_client_t *client, const mongoc_ssl_opt_t *opts);
+
+void
+_mongoc_client_set_stream_initiator_single_or_pooled (mongoc_client_t *client,
+                                                      mongoc_stream_initiator_t initiator,
+                                                      void *user_data);
 
 BSON_END_DECLS
 

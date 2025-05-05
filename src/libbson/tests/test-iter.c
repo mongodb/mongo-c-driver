@@ -18,6 +18,7 @@
 #include <bson/bson.h>
 
 #include "TestSuite.h"
+#include <mlib/intencode.h>
 
 #define FUZZ_N_PASSES 100000
 
@@ -205,18 +206,15 @@ test_bson_iter_fuzz (void)
 {
    uint8_t *data;
    uint32_t len = 512;
-   uint32_t len_le;
    uint32_t r;
    bson_iter_t iter;
    bson_t *b;
    uint32_t i;
    int pass;
 
-   len_le = BSON_UINT32_TO_LE (len);
-
    for (pass = 0; pass < FUZZ_N_PASSES; pass++) {
       data = bson_malloc0 (len);
-      memcpy (data, &len_le, sizeof (len_le));
+      mlib_write_u32le (data, len);
 
       for (i = 4; i < len; i += 4) {
          r = rand ();
@@ -253,8 +251,7 @@ test_bson_iter_fuzz (void)
                BSON_ASSERT (child_len >= 5);
                BSON_ASSERT ((iter.off + child_len) < b->len);
                BSON_ASSERT (child_len < (uint32_t) -1);
-               memcpy (&child_len, child, sizeof (child_len));
-               child_len = BSON_UINT32_FROM_LE (child_len);
+               child_len = mlib_read_u32le (child);
                BSON_ASSERT (child_len >= 5);
             }
          } break;

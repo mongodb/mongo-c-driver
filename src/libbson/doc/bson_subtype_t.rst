@@ -22,6 +22,7 @@ Synopsis
      BSON_SUBTYPE_MD5 = 0x05,
      BSON_SUBTYPE_COLUMN = 0x07,
      BSON_SUBTYPE_SENSITIVE = 0x08,
+     BSON_SUBTYPE_VECTOR = 0x09,
      BSON_SUBTYPE_USER = 0x80,
   } bson_subtype_t;
 

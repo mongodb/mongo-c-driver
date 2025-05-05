@@ -14,7 +14,7 @@ BSON_BEGIN_DECLS
  * @usec: Number of microseconds to sleep for.
  * @user_data: User data provided to mongoc_client_set_usleep_impl().
  */
-typedef void (*mongoc_usleep_func_t) (int64_t usec, void *user_data);
+typedef void (BSON_CALL *mongoc_usleep_func_t) (int64_t usec, void *user_data);
 
 /**
  * mongoc_client_set_usleep_impl:

@@ -25,9 +25,6 @@
 #include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "async"
-
 
 mongoc_async_t *
 mongoc_async_new (void)

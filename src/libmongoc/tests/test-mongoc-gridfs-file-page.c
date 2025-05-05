@@ -109,7 +109,7 @@ test_read (void)
    ASSERT (page->offset == 3);
 
    r = _mongoc_gridfs_file_page_read (page, buf, 50);
-   ASSERT (r == len - 3);
+   ASSERT (mlib_cmp (r, ==, len - 3));
    ASSERT (memcmp (fox + 3, buf, len - 3) == 0);
 
    _mongoc_gridfs_file_page_destroy (page);

@@ -291,7 +291,8 @@ test_reset_callbacks (void)
    /* reset callbacks */
    mongoc_client_set_apm_callbacks (client, NULL, NULL);
    /* destroys cmd_reply */
-   cursor = mongoc_cursor_new_from_command_reply (client, &cmd_reply, sd->id);
+   cursor = mongoc_cursor_new_from_command_reply_with_opts (
+      client, &cmd_reply, tmp_bson ("{'serverId': %" PRIu32 "}", sd->id));
    ASSERT (mongoc_cursor_next (cursor, &b));
    ASSERT_CMPINT (incremented, ==, 1); /* same value as before */
 
@@ -648,7 +649,7 @@ _test_query_operation_id (bool pooled)
    }
 
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -821,49 +822,6 @@ set_cmd_test_callbacks (mongoc_client_t *client, void *context)
 
 
 static void
-test_client_cmd (void)
-{
-   cmd_test_t test;
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   const bson_t *reply;
-
-   cmd_test_init (&test);
-   client = test_framework_new_default_client ();
-   set_cmd_test_callbacks (client, (void *) &test);
-   cursor =
-      mongoc_client_command (client, "admin", MONGOC_QUERY_SECONDARY_OK, 0, 0, 0, tmp_bson ("{'ping': 1}"), NULL, NULL);
-
-   ASSERT (mongoc_cursor_next (cursor, &reply));
-   ASSERT_CMPSTR (test.cmd_name, "ping");
-   ASSERT_MATCH (&test.cmd, "{'ping': 1}");
-   ASSERT_CMPSTR (test.db, "admin");
-   ASSERT_CMPINT (1, ==, test.started_calls);
-   ASSERT_CMPINT (1, ==, test.succeeded_calls);
-   ASSERT_CMPINT (0, ==, test.failed_calls);
-
-   cmd_test_cleanup (&test);
-   mongoc_cursor_destroy (cursor);
-
-   cmd_test_init (&test);
-   cursor =
-      mongoc_client_command (client, "admin", MONGOC_QUERY_SECONDARY_OK, 0, 0, 0, tmp_bson ("{'foo': 1}"), NULL, NULL);
-
-   ASSERT (!mongoc_cursor_next (cursor, &reply));
-   ASSERT_CMPSTR (test.cmd_name, "foo");
-   ASSERT_MATCH (&test.cmd, "{'foo': 1}");
-   ASSERT_CMPSTR (test.db, "admin");
-   ASSERT_CMPINT (1, ==, test.started_calls);
-   ASSERT_CMPINT (0, ==, test.succeeded_calls);
-   ASSERT_CMPINT (1, ==, test.failed_calls);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-   cmd_test_cleanup (&test);
-}
-
-
-static void
 test_client_cmd_simple (void)
 {
    cmd_test_t test;
@@ -955,38 +913,6 @@ test_client_cmd_op_ids (void)
 }
 
 
-static void
-test_killcursors_deprecated (void *unused)
-{
-   cmd_test_t test;
-   mongoc_client_t *client;
-   bool r;
-   bson_error_t error;
-
-   BSON_UNUSED (unused);
-
-   cmd_test_init (&test);
-   client = test_framework_new_default_client ();
-
-   /* connect */
-   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-
-   ASSERT_OR_PRINT (r, error);
-   set_cmd_test_callbacks (client, (void *) &test);
-
-   /* deprecated function without "db" or "collection", skips APM. This sends
-    * OP_KILL_CURSORS. */
-   mongoc_client_kill_cursor (client, 123);
-
-   ASSERT_CMPINT (0, ==, test.started_calls);
-   ASSERT_CMPINT (0, ==, test.succeeded_calls);
-   ASSERT_CMPINT (0, ==, test.failed_calls);
-
-   mongoc_client_destroy (client);
-   cmd_test_cleanup (&test);
-}
-
-
 typedef struct {
    int failed_calls;
    bson_t reply;
@@ -1053,7 +979,7 @@ test_command_failed_reply_mock (void)
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -1108,7 +1034,7 @@ test_command_failed_reply_hangup (void)
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db2", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
@@ -1304,15 +1230,8 @@ test_command_monitoring_install (TestSuite *suite)
       suite, "/command_monitoring/operation_id/query/single/cmd", test_query_operation_id_single_cmd);
    TestSuite_AddMockServerTest (
       suite, "/command_monitoring/operation_id/query/pooled/cmd", test_query_operation_id_pooled_cmd);
-   TestSuite_AddLive (suite, "/command_monitoring/client_cmd", test_client_cmd);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd/op_ids", test_client_cmd_op_ids);
-   TestSuite_AddFull (suite,
-                      "/command_monitoring/killcursors_deprecated",
-                      test_killcursors_deprecated,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddMockServerTest (suite, "/command_monitoring/failed_reply_mock", test_command_failed_reply_mock);
    TestSuite_AddMockServerTest (suite, "/command_monitoring/failed_reply_hangup", test_command_failed_reply_hangup);
    TestSuite_AddMockServerTest (suite, "/command_monitoring/service_id/loadbalanced", test_service_id_loadbalanced);

@@ -17,10 +17,6 @@
 
 cmake_minimum_required (VERSION 3.0)
 
-if (APPLE)
-   cmake_policy (SET CMP0042 OLD)
-endif ()
-
 project (hello_mongoc LANGUAGES C)
 
 # NOTE: For this to work, the CMAKE_PREFIX_PATH variable must be set to point to
@@ -28,8 +24,8 @@ project (hello_mongoc LANGUAGES C)
 # building libmongoc.
 # -- sphinx-include-start --
 # Specify the minimum version you require.
-find_package (mongoc-1.0 1.7 REQUIRED)
+find_package (mongoc 2.0 REQUIRED)
 
 # The "hello_mongoc.c" sample program is shared among four tests.
 add_executable (hello_mongoc ../../hello_mongoc.c)
-target_link_libraries (hello_mongoc PRIVATE mongo::mongoc_shared)
+target_link_libraries (hello_mongoc PRIVATE mongoc::mongoc)

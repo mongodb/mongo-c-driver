@@ -1779,7 +1779,7 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
       return false;
    }
 
-   should_clear_pool = (max_wire_version <= WIRE_VERSION_4_0 || _mongoc_error_is_shutdown (&cmd_error));
+   should_clear_pool = _mongoc_error_is_shutdown (&cmd_error);
 
    tdmod = mc_tpld_modify_begin (topology);
 

@@ -33,6 +33,7 @@
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-sleep.h>
 #include <mlib/cmp.h>
+#include <mlib/loop.h>
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
@@ -69,13 +70,12 @@ _mongoc_hex_md5 (const char *input)
    uint8_t digest[16];
    bson_md5_t md5;
    char digest_str[33];
-   int i;
 
    mcommon_md5_init (&md5);
    mcommon_md5_append (&md5, (const uint8_t *) input, (uint32_t) strlen (input));
    mcommon_md5_finish (&md5, digest);
 
-   for (i = 0; i < sizeof digest; i++) {
+   mlib_foreach_urange (i, sizeof digest) {
       // Expect no truncation.
       int req = bson_snprintf (&digest_str[i * 2], 3, "%02x", digest[i]);
       BSON_ASSERT (req < 3);
@@ -285,7 +285,7 @@ _mongoc_wire_version_to_server_version (int32_t version)
       return "3.4";
    case 6:
       return "3.6";
-   case WIRE_VERSION_4_0:
+   case 7:
       return "4.0";
    case WIRE_VERSION_4_2:
       return "4.2";

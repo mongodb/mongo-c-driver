@@ -20,9 +20,6 @@
 #include <mongoc/mongoc-set-private.h>
 #include <mlib/cmp.h>
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "set"
-
 mongoc_set_t *
 mongoc_set_new (size_t nitems, mongoc_set_item_dtor dtor, void *dtor_ctx)
 {

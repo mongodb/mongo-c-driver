@@ -25,6 +25,7 @@
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
+#include <mlib/intencode.h>
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
 BSON_STATIC_ASSERT (1 == 1);
@@ -1264,45 +1265,107 @@ test_bson_init_static (void)
    bson_destroy (&b);
 }
 
+static void *
+realloc_func_never_called (void *mem, size_t num_bytes, void *ctx)
+{
+   // Reallocate function for tests that should never reallocate
+   BSON_UNUSED (num_bytes);
+   BSON_UNUSED (ctx);
+   BSON_ASSERT (false);
+   return mem;
+}
 
 static void
 test_bson_new_from_buffer (void)
 {
-   bson_t *b;
-   uint8_t *buf = bson_malloc0 (5);
-   size_t len = 5;
-   uint32_t len_le = BSON_UINT32_TO_LE (5);
+   // Buffer size matches document size
+   {
+      size_t len = 5;
+      uint8_t *buf = bson_malloc0 (5);
+      mlib_write_i32le (buf, 5);
 
-   memcpy (buf, &len_le, sizeof (len_le));
+      bson_t *b = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
 
-   b = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
+      BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
+      BSON_ASSERT (len == 5);
+      BSON_ASSERT (b->len == 5);
 
-   BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
-   BSON_ASSERT (len == 5);
-   BSON_ASSERT (b->len == 5);
+      bson_append_utf8 (b, "hello", -1, "world", -1);
 
-   bson_append_utf8 (b, "hello", -1, "world", -1);
+      BSON_ASSERT (len == 32);
+      BSON_ASSERT (b->len == 22);
 
-   BSON_ASSERT (len == 32);
-   BSON_ASSERT (b->len == 22);
+      bson_destroy (b);
+      BSON_ASSERT (buf);
+      bson_free (buf);
+   }
 
-   bson_destroy (b);
+   // Buffer is NULL. An empty document will be allocated.
+   {
+      uint8_t *buf = NULL;
+      size_t len = 0;
 
-   bson_free (buf);
+      bson_t *b = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
 
-   buf = NULL;
-   len = 0;
+      BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
+      BSON_ASSERT (len == 5);
+      BSON_ASSERT (b->len == 5);
 
-   b = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
+      bson_destroy (b);
+      BSON_ASSERT (buf);
+      bson_free (buf);
+   }
 
-   BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
-   BSON_ASSERT (len == 5);
-   BSON_ASSERT (b->len == 5);
+   // Buffer is larger than the document. Expect it to be growable without reallocating.
+   {
+      size_t buf_len = 0x10000;
+      uint8_t *buf = bson_malloc0 (buf_len);
+      uint32_t doc_len_le = BSON_UINT32_TO_LE (5);
 
-   bson_destroy (b);
-   bson_free (buf);
+      memcpy (buf, &doc_len_le, sizeof (doc_len_le));
+
+      bson_t *b = bson_new_from_buffer (&buf, &buf_len, realloc_func_never_called, NULL);
+
+      BSON_ASSERT (b->flags & BSON_FLAG_NO_FREE);
+      BSON_ASSERT (buf_len == 0x10000);
+      BSON_ASSERT (&buf_len == ((bson_impl_alloc_t *) b)->buflen);
+      BSON_ASSERT (b->len == 5);
+
+      bson_append_utf8 (b, "hello", -1, "world", -1);
+
+      BSON_ASSERT (buf_len == 0x10000);
+      BSON_ASSERT (b->len == 22);
+
+      bson_destroy (b);
+      BSON_ASSERT (buf);
+      bson_free (buf);
+   }
+
+   // Otherwise valid, but buffer is smaller than the document size. bson_new_from_buffer() must fail.
+   {
+      uint8_t *buf = NULL;
+      size_t buf_len = SIZE_MAX; // Must be ignored when buf == NULL
+
+      // Start with a valid doc
+      bson_t *valid_doc = bson_new_from_buffer (&buf, &buf_len, bson_realloc_ctx, NULL);
+      BSON_ASSERT (BSON_APPEND_UTF8 (valid_doc, "hello", "world"));
+      ASSERT_CMPUINT32 (valid_doc->len, ==, 22);
+      bson_destroy (valid_doc);
+      ASSERT_CMPSIZE_T (buf_len, ==, 32);
+
+      // Check that a slightly-too-small buffer is rejected
+      buf_len = 21;
+      BSON_ASSERT (!bson_new_from_buffer (&buf, &buf_len, realloc_func_never_called, NULL));
+
+      // Successful return if one more byte is included in the buf_len.
+      buf_len++;
+      bson_t *minimal = bson_new_from_buffer (&buf, &buf_len, realloc_func_never_called, NULL);
+      BSON_ASSERT (minimal != NULL);
+      ASSERT_CMPUINT32 (minimal->len, ==, 22);
+      bson_destroy (minimal);
+      bson_free (buf);
+   }
 }
-
 
 static void
 test_bson_utf8_key (void)
@@ -1751,7 +1814,6 @@ test_bson_steal (void)
    uint8_t *alloc;
    uint8_t *buf;
    size_t len;
-   uint32_t len_le;
 
    /* inline, stack-allocated */
    bson_init (&stack_alloced);
@@ -1797,8 +1859,7 @@ test_bson_steal (void)
    /* test stealing from a bson created with bson_new_from_buffer */
    buf = bson_malloc0 (5);
    len = 5;
-   len_le = BSON_UINT32_TO_LE (5);
-   memcpy (buf, &len_le, sizeof (len_le));
+   mlib_write_u32le (buf, 5);
    heap_alloced = bson_new_from_buffer (&buf, &len, bson_realloc_ctx, NULL);
    ASSERT (bson_steal (&dst, heap_alloced));
    ASSERT (dst.flags & BSON_FLAG_NO_FREE);
@@ -1883,15 +1944,18 @@ test_bson_reserve_buffer_errors (void)
    bson_t bson = BSON_INITIALIZER;
    bson_t child;
    uint8_t data[5] = {0};
-   uint32_t len_le;
 
    /* too big */
-   ASSERT (!bson_reserve_buffer (&bson, (uint32_t) (INT32_MAX - bson.len - 1)));
+   ASSERT (!bson_reserve_buffer (&bson, (uint32_t) (BSON_MAX_SIZE + 1u)));
+   /* exactly the maximum size */
+#if BSON_WORD_SIZE > 32
+   ASSERT (bson_reserve_buffer (&bson, (uint32_t) BSON_MAX_SIZE));
+   ASSERT_CMPUINT32 (bson.len, ==, BSON_MAX_SIZE);
+#endif
+   bson_destroy (&bson);
 
    /* make a static bson, it refuses bson_reserve_buffer since it's read-only */
-   bson_destroy (&bson);
-   len_le = BSON_UINT32_TO_LE (5);
-   memcpy (data, &len_le, sizeof (len_le));
+   mlib_write_u32le (data, 5);
    ASSERT (bson_init_static (&bson, data, sizeof data));
    ASSERT (!bson_reserve_buffer (&bson, 10));
 
@@ -2652,7 +2716,7 @@ test_bson_dsl_build (void)
    // Insert a subdoc
    bson_t *subdoc = TMP_BSON_FROM_JSON ({"child" : [ 1, 2, 3 ], "other" : null});
 
-   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, true))));
+   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, always))));
    ASSERT_BSON_EQUAL (doc, {"subdoc" : {"child" : [ 1, 2, 3 ], "other" : null}});
    bson_destroy (&doc);
 
@@ -2667,7 +2731,7 @@ test_bson_dsl_build (void)
                   doc (kv ("inner1", array ()),
                        kv ("inner2", null),
                        kv ("inner3", array (int32 (1), int32 (2), int32 (3))),
-                       insert (*subdoc, true),
+                       insert (*subdoc, always),
                        kv ("inner4", doc (kv ("innermost", int32 (42)))))));
    ASSERT_BSON_EQUAL (doc, {
       "top" : {

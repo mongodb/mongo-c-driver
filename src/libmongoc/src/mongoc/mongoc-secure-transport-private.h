@@ -31,9 +31,6 @@ BSON_BEGIN_DECLS
 char *
 _mongoc_cfstringref_to_cstring (CFStringRef ref);
 
-char *
-_mongoc_secure_transport_extract_subject (const char *filename, const char *passphrase);
-
 OSStatus
 mongoc_secure_transport_write (SSLConnectionRef connection, const void *data, size_t *data_length);
 OSStatus

@@ -4,27 +4,29 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Supported/used environment variables:
 #   LINK_STATIC              Whether to statically link to libbson
 #   BUILD_SAMPLE_WITH_CMAKE  Link program w/ CMake. Default: use pkg-config.
-#   BUILD_SAMPLE_WITH_CMAKE_DEPRECATED  If BUILD_SAMPLE_WITH_CMAKE is set, then use deprecated CMake scripts instead.
 
 
-echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=$BUILD_SAMPLE_WITH_CMAKE_DEPRECATED"
+echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
 DIR=$(dirname $0)
 . $DIR/find-cmake-latest.sh
 CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
 
+# The major version of the project. Appears in certain install filenames.
+_full_version=$(cat "$DIR/../../VERSION_CURRENT")
+version="${_full_version%-*}"  # 1.2.3-dev → 1.2.3
+major="${version%%.*}"         # 1.2.3     → 1
+echo "major version: $major"
+echo " full version: $version"
+
 # Get the kernel name, lowercased
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
 
 if [ "$OS" = "darwin" ]; then
-  SO=dylib
-  LIB_SO=libbson-1.0.0.dylib
   LDD="otool -L"
 else
-  SO=so
-  LIB_SO=libbson-1.0.so.0.0.0
   LDD=ldd
 fi
 
@@ -52,29 +54,13 @@ fi
 
 if [ "$LINK_STATIC" ]; then
   # Our CMake system builds shared and static by default.
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF "$SCRATCH_DIR"
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DBUILD_TESTING=OFF -DENABLE_TESTS=OFF -DENABLE_MONGOC=OFF "$SCRATCH_DIR"
   $CMAKE --build . --parallel
   $CMAKE --build . --parallel --target install
 else
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF "$SCRATCH_DIR"
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DBUILD_TESTING=OFF -DENABLE_TESTS=OFF -DENABLE_MONGOC=OFF -DENABLE_STATIC=OFF "$SCRATCH_DIR"
   $CMAKE --build . --parallel
   $CMAKE --build . --parallel --target install
-
-  set +o xtrace
-
-  if test -f $INSTALL_DIR/lib/libbson-static-1.0.a; then
-    echo "libbson-static-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/libbson-1.0.a; then
-    echo "libbson-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/pkgconfig/libbson-static-1.0.pc; then
-    echo "libbson-static-1.0.pc shouldn't have been installed"
-    exit 1
-  fi
-
 fi
 
 # Revert ccache options, they no longer apply.
@@ -82,83 +68,10 @@ unset CCACHE_BASEDIR CCACHE_NOHASHDIR
 
 ls -l $INSTALL_DIR/lib
 
-set +o xtrace
-
-# Check on Linux that libbson is installed into lib/ like:
-# libbson-1.0.so -> libbson-1.0.so.0
-# libbson-1.0.so.0 -> libbson-1.0.so.0.0.0
-# libbson-1.0.so.0.0.0
-if [ "$OS" != "darwin" ]; then
-  # From check-symlink.sh
-  check_symlink libbson-1.0.so libbson-1.0.so.0
-  check_symlink libbson-1.0.so.0 libbson-1.0.so.0.0.0
-  SONAME=$(objdump -p $INSTALL_DIR/lib/$LIB_SO|grep SONAME|awk '{print $2}')
-  EXPECTED_SONAME="libbson-1.0.so.0"
-  if [ "$SONAME" != "$EXPECTED_SONAME" ]; then
-    echo "SONAME should be $EXPECTED_SONAME, not $SONAME"
-    exit 1
-  else
-    echo "library name check ok, SONAME=$SONAME"
-  fi
-else
-  # Just test that the shared lib was installed.
-  if test ! -f $INSTALL_DIR/lib/$LIB_SO; then
-    echo "$LIB_SO missing!"
-    exit 1
-  else
-    echo "$LIB_SO check ok"
-  fi
-fi
-
-if test ! -f $INSTALL_DIR/lib/pkgconfig/libbson-1.0.pc; then
-  echo "libbson-1.0.pc missing!"
-  exit 1
-else
-  echo "libbson-1.0.pc check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-1.0-config.cmake; then
-  echo "bson-1.0-config.cmake missing!"
-  exit 1
-else
-  echo "bson-1.0-config.cmake check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-1.0-config-version.cmake; then
-  echo "bson-1.0-config-version.cmake missing!"
-  exit 1
-else
-  echo "bson-1.0-config-version.cmake check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-targets.cmake; then
-  echo "bson-targets.cmake missing!"
-  exit 1
-else
-  echo "bson-targets.cmake check ok"
-fi
-
-if [ "$LINK_STATIC" ]; then
-  if test ! -f $INSTALL_DIR/lib/libbson-static-1.0.a; then
-    echo "libbson-static-1.0.a missing!"
-    exit 1
-  else
-    echo "libbson-static-1.0.a check ok"
-  fi
-  if test ! -f $INSTALL_DIR/lib/pkgconfig/libbson-static-1.0.pc; then
-    echo "libbson-static-1.0.pc missing!"
-    exit 1
-  else
-    echo "libbson-static-1.0.pc check ok"
-  fi
-fi
-
 cd $SRCROOT
 
 if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
-  # Test our CMake package config file with CMake's find_package command.
-  if [ "$BUILD_SAMPLE_WITH_CMAKE_DEPRECATED" ]; then
-    EXAMPLE_DIR=$SRCROOT/src/libbson/examples/cmake-deprecated/find_package
-  else
-    EXAMPLE_DIR=$SRCROOT/src/libbson/examples/cmake/find_package
-  fi
+  EXAMPLE_DIR=$SRCROOT/src/libbson/examples/cmake/find_package
 
   if [ "$LINK_STATIC" ]; then
     EXAMPLE_DIR="${EXAMPLE_DIR}_static"
@@ -174,12 +87,12 @@ else
 
   if [ "$LINK_STATIC" ]; then
     echo "pkg-config output:"
-    echo $(pkg-config --libs --cflags libbson-static-1.0)
-    ./compile-with-pkg-config-static.sh
+    echo $(pkg-config --libs --cflags bson$major-static)
+    env major=$major ./compile-with-pkg-config-static.sh
   else
     echo "pkg-config output:"
-    echo $(pkg-config --libs --cflags libbson-1.0)
-    ./compile-with-pkg-config.sh
+    echo $(pkg-config --libs --cflags bson$major)
+    env major=$major ./compile-with-pkg-config.sh
   fi
 fi
 

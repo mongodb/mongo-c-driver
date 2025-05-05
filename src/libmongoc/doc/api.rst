@@ -30,7 +30,6 @@ API Reference
    mongoc_collection_t
    mongoc_cursor_t
    mongoc_database_t
-   mongoc_delete_flags_t
    mongoc_find_and_modify_opts_t
    mongoc_gridfs_file_list_t
    mongoc_gridfs_file_opt_t
@@ -38,11 +37,12 @@ API Reference
    mongoc_gridfs_bucket_t
    mongoc_gridfs_t
    mongoc_host_list_t
-   mongoc_index_opt_geo_t
-   mongoc_index_opt_t
-   mongoc_index_opt_wt_t
    mongoc_insert_flags_t
    mongoc_iovec_t
+   mongoc_oidc_callback_fn_t
+   mongoc_oidc_callback_params_t
+   mongoc_oidc_callback_t
+   mongoc_oidc_credential_t
    mongoc_optional_t
    mongoc_query_flags_t
    mongoc_rand
@@ -50,7 +50,6 @@ API Reference
    mongoc_read_mode_t
    mongoc_read_prefs_t
    mongoc_remove_flags_t
-   mongoc_reply_flags_t
    mongoc_server_api_t
    mongoc_server_api_version_t
    mongoc_server_description_t

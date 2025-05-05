@@ -34,7 +34,7 @@ _test_op_msg (const mongoc_uri_t *uri,
    client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 1, 0, tmp_bson (query_or_cmd), NULL, read_prefs);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (query_or_cmd), NULL, read_prefs);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server, 0, tmp_bson (expected_find));
@@ -56,49 +56,6 @@ _test_op_msg (const mongoc_uri_t *uri,
    bson_destroy (&b);
 }
 
-
-static void
-_test_command (const mongoc_uri_t *uri,
-               mock_server_t *server,
-               const char *command,
-               mongoc_read_prefs_t *read_prefs,
-               const char *expected_cmd)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-   bson_t b = BSON_INITIALIZER;
-   future_t *future;
-   request_t *request;
-
-   client = test_framework_client_new_from_uri (uri, NULL);
-   collection = mongoc_client_get_collection (client, "test", "test");
-   mongoc_collection_set_read_prefs (collection, read_prefs);
-
-   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 1, 0, tmp_bson (command), NULL, read_prefs);
-
-   future = future_cursor_next (cursor, &doc);
-
-   request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson (expected_cmd));
-
-   reply_to_request (request,
-                     MONGOC_REPLY_NONE, /* flags */
-                     0,                 /* cursorId */
-                     0,                 /* startingFrom */
-                     1,                 /* numberReturned */
-                     "{'ok': 1}");
-
-   /* mongoc_cursor_next returned true */
-   BSON_ASSERT (future_get_bool (future));
-
-   request_destroy (request);
-   future_destroy (future);
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   bson_destroy (&b);
-}
 
 static void
 _test_command_simple (const mongoc_uri_t *uri,
@@ -242,8 +199,6 @@ _test_read_prefs_op_msg (read_pref_test_type_t test_type,
    uri = _get_uri (server, test_type);
 
    if (_can_be_command (query_or_cmd)) {
-      _test_command (uri, server, query_or_cmd, read_prefs, expected_cmd);
-
       _test_command_simple (uri, server, query_or_cmd, read_prefs, expected_cmd);
    }
 
@@ -448,13 +403,6 @@ test_read_prefs_mongos_secondary (void)
                             "{'find': 'test', 'filter':  {'a': 1},"
                             " '$readPreference': {'mode': 'secondary'}}");
 
-   _test_read_prefs_op_msg (READ_PREF_TEST_MONGOS,
-                            read_prefs,
-                            "{'$query': {'a': 1}}",
-                            "{'$query': {'a': 1}, '$readPreference': {'mode': 'secondary'}}",
-                            "{'find': 'test', 'filter':  {'a': 1},"
-                            " '$readPreference': {'mode': 'secondary'}}");
-
    mongoc_read_prefs_destroy (read_prefs);
 }
 
@@ -534,21 +482,21 @@ test_read_prefs_mongos_max_staleness (void)
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 120);
 
-   /* exhaust cursor is required per CDRIVER-3633 so the driver downgrades the
-    * OP_QUERY find command to an OP_QUERY legacy find */
    cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
-                                         0,
-                                         0,
-                                         "{'$query': {'a': 1},"
-                                         " '$readPreference': {'mode': 'secondaryPreferred',"
-                                         "                     'maxStalenessSeconds': 120}}",
-                                         "{}");
 
-   reply_to_find_request (request, MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK, 0, 1, "test.test", "{}", false);
+   // Expect find command with exhaust flag and read preference. Reply with one document.
+   {
+      const bson_t *cmd = tmp_bson (BSON_STR ({
+         "find" : "test",
+         "filter" : {"a" : 1},
+         "$readPreference" : {"mode" : "secondaryPreferred", "maxStalenessSeconds" : {"$numberLong" : "120"}}
+      }));
+      request = mock_server_receives_msg (server, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED, cmd);
+      const bson_t *reply = tmp_bson (
+         BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "test.test", "firstBatch" : [ {} ]}}));
+      reply_to_op_msg_request (request, MONGOC_OP_MSG_FLAG_NONE, reply);
+   }
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));

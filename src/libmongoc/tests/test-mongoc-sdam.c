@@ -153,6 +153,19 @@ test_sdam_cb (void *test_vp)
    BSON_ASSERT_PARAM (test_vp);
    const bson_t *const test = test_vp;
 
+   static const test_skip_t skips[] = {
+      {.description = "Pre-4.2",
+       .check_substring = true,
+       .reason = "libmongoc does not support servers older than 4.2"},
+      {0} // NULL terminated.
+   };
+
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "description"));
+   const char *description = bson_iter_utf8 (&iter, NULL);
+   if (test_should_be_skipped (skips, description)) {
+      return;
+   }
+
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
    client = test_framework_client_new (bson_iter_utf8 (&iter, NULL), NULL);
@@ -533,7 +546,7 @@ test_topology_discovery (void *ctx)
    mongoc_client_t *client;
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd_secondary;
-   mongoc_host_list_t *hl_secondary;
+   const mongoc_host_list_t *hl_secondary;
    mongoc_collection_t *collection;
    bson_t doc = BSON_INITIALIZER;
    bson_t reply;
@@ -597,7 +610,7 @@ test_direct_connection (void *ctx)
    mongoc_client_t *client;
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd_secondary;
-   mongoc_host_list_t *hl_secondary;
+   const mongoc_host_list_t *hl_secondary;
    mongoc_collection_t *collection;
    bson_t doc = BSON_INITIALIZER;
    bson_t reply;
@@ -662,7 +675,7 @@ test_existing_behavior (void *ctx)
    mongoc_client_t *client;
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd_secondary;
-   mongoc_host_list_t *hl_secondary;
+   const mongoc_host_list_t *hl_secondary;
    mongoc_collection_t *collection;
    bson_t doc = BSON_INITIALIZER;
    bson_t reply;

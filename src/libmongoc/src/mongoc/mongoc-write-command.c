@@ -26,6 +26,7 @@
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-opts-private.h>
 #include <common-string-private.h>
+#include <mlib/intencode.h>
 #include <mlib/cmp.h>
 
 #include <inttypes.h>
@@ -163,14 +164,11 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
 {
    ENTRY;
 
-   BSON_ASSERT (command);
+   BSON_ASSERT_PARAM (command);
+   BSON_ASSERT_PARAM (document);
 
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
-
-   /* must handle NULL document from mongoc_collection_insert_bulk */
-   if (document) {
-      _mongoc_write_command_insert_append (command, document);
-   }
+   _mongoc_write_command_insert_append (command, document);
 
    EXIT;
 }
@@ -197,7 +195,6 @@ _mongoc_write_command_init_insert_one_idl (mongoc_write_command_t *command,
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
 
    /* near identical to _mongoc_write_command_insert_append but additionally records the inserted id */
-   /* no need to handle NULL document from mongoc_collection_insert_bulk since only called by insert_one */
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
    BSON_ASSERT (document->len >= 5);
 
@@ -242,7 +239,7 @@ _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
 
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
 
-   /* must handle NULL document from mongoc_collection_insert_bulk */
+   /* must handle NULL document from mongoc_collection_insert_many */
    if (document) {
       _mongoc_write_command_insert_append (command, document);
    }
@@ -697,23 +694,20 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    }
 
    do {
-      uint32_t ulen;
-      memcpy (&ulen, command->payload.data + payload_batch_size + payload_total_offset, 4);
-      ulen = BSON_UINT32_FROM_LE (ulen);
+      const int32_t len = mlib_read_i32le (command->payload.data + payload_batch_size + payload_total_offset);
 
       // Although messageLength is an int32, it should never be negative.
-      BSON_ASSERT (mlib_in_range (int32_t, ulen));
-      const int32_t slen = (int32_t) ulen;
+      BSON_ASSERT (len >= 0);
 
-      if (slen > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
+      if (len > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
          /* Quit if the document is too large */
-         _mongoc_write_command_too_large_error (error, index_offset, slen, max_bson_obj_size);
+         _mongoc_write_command_too_large_error (error, index_offset, len, max_bson_obj_size);
          result->failed = true;
          break;
 
-      } else if (mlib_cmp (payload_batch_size + opmsg_overhead + ulen, <=, max_msg_size) || document_count == 0) {
+      } else if (mlib_cmp (payload_batch_size + opmsg_overhead + len, <=, max_msg_size) || document_count == 0) {
          /* The current batch is still under max batch size in bytes */
-         payload_batch_size += ulen;
+         payload_batch_size += len;
 
          /* If this document filled the maximum document count */
          if (++document_count == max_document_count) {

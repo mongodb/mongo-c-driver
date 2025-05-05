@@ -27,8 +27,6 @@
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <mongoc/mongoc-openssl-private.h>
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#include <tls.h>
 #endif
 #include <mongoc/mongoc-thread-private.h>
 #include <common-b64-private.h>
@@ -45,11 +43,6 @@
 #include <mongoc/mongoc-ocsp-cache-private.h>
 #endif
 
-#ifndef MONGOC_NO_AUTOMATIC_GLOBALS
-#pragma message("Configure the driver with ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF.\
- Automatic cleanup is deprecated and will be removed in version 2.0.")
-#endif
-
 // CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
 #if defined(MONGOC_ENABLE_SASL_CYRUS) && defined(__APPLE__)
 BEGIN_IGNORE_DEPRECATIONS
@@ -57,7 +50,6 @@ BEGIN_IGNORE_DEPRECATIONS
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
-#include <mongoc/mongoc-cyrus-private.h> // _mongoc_cyrus_verifyfile_cb
 
 static void *
 mongoc_cyrus_mutex_alloc (void)
@@ -98,16 +90,21 @@ mongoc_cyrus_mutex_free (void *mutex)
 
 #endif /* MONGOC_ENABLE_SASL_CYRUS */
 
+static bool mongoc_init_called;
+bool
+mongoc_get_init_called (void)
+{
+   return mongoc_init_called;
+}
 
 static BSON_ONCE_FUN (_mongoc_do_init)
 {
+   mongoc_init_called = true;
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    int status;
 #endif
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    _mongoc_openssl_init ();
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   tls_init ();
 #endif
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
@@ -116,13 +113,7 @@ static BSON_ONCE_FUN (_mongoc_do_init)
    sasl_set_mutex (
       mongoc_cyrus_mutex_alloc, mongoc_cyrus_mutex_lock, mongoc_cyrus_mutex_unlock, mongoc_cyrus_mutex_free);
 
-   MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_BEGIN
-   sasl_callback_t callbacks[] = {// Include callback to disable loading plugins.
-                                  {SASL_CB_VERIFYFILE, SASL_CALLBACK_FN (_mongoc_cyrus_verifyfile_cb), NULL},
-                                  {SASL_CB_LIST_END}};
-   MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_END
-
-   status = sasl_client_init (callbacks);
+   status = sasl_client_init (NULL);
    BSON_ASSERT (status == SASL_OK);
 #endif
 
@@ -214,29 +205,6 @@ mongoc_cleanup (void)
    static bson_once_t once = BSON_ONCE_INIT;
    bson_once (&once, _mongoc_do_cleanup);
 }
-
-/*
- * On GCC, just use __attribute__((constructor)) to perform initialization
- * automatically for the application.
- */
-#if defined(__GNUC__) && !defined(MONGOC_NO_AUTOMATIC_GLOBALS)
-static void
-_mongoc_init_ctor (void) __attribute__ ((constructor));
-static void
-_mongoc_init_ctor (void)
-{
-   mongoc_init ();
-}
-
-static void
-_mongoc_init_dtor (void) __attribute__ ((destructor));
-static void
-_mongoc_init_dtor (void)
-{
-   bson_mem_restore_vtable ();
-   mongoc_cleanup ();
-}
-#endif
 
 // CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
 #if defined(MONGOC_ENABLE_SASL_CYRUS) && defined(__APPLE__)

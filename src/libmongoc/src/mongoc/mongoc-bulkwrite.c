@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <mlib/intencode.h>
 #include <mongoc/mongoc-bulkwrite.h>
 
 #include <bson/bson.h>
@@ -864,6 +865,9 @@ struct _mongoc_bulkwriteresult_t {
    bson_t updateresults;
    bson_t deleteresults;
    bool verboseresults;
+   // `parsed_some_results` becomes true if an ok:1 reply to `bulkWrite` is successfully parsed.
+   // Used to determine whether some writes were successful.
+   bool parsed_some_results;
 };
 
 int64_t
@@ -1333,6 +1337,8 @@ _bulkwritereturn_apply_reply (mongoc_bulkwritereturn_t *self, const bson_t *cmd_
       _bulkwriteexception_append_writeconcernerror (self->exc, code, errmsg, &errInfo);
    }
 
+   self->res->parsed_some_results = true;
+
    return true;
 }
 
@@ -1513,6 +1519,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    BSON_ASSERT_PARAM (self);
    BSON_OPTIONAL_PARAM (opts);
 
+   // `has_successful_results` is set to true if any `bulkWrite` reply indicates some writes succeeded.
    bool has_successful_results = false;
    mongoc_bulkwritereturn_t ret = {0};
    bson_error_t error = {0};
@@ -1729,15 +1736,13 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             break;
          }
 
-         if (ops_doc_len >= maxWriteBatchSize) {
+         if (mlib_cmp (ops_doc_len, >=, maxWriteBatchSize)) {
             // Maximum number of operations are readied.
             break;
          }
 
          // Read length of next document.
-         uint32_t doc_len;
-         memcpy (&doc_len, self->ops.data + ops_byte_offset + ops_byte_len, 4);
-         doc_len = BSON_UINT32_FROM_LE (doc_len);
+         const uint32_t doc_len = mlib_read_u32le (self->ops.data + ops_byte_offset + ops_byte_len);
 
          // Check if adding this operation requires adding an `nsInfo` entry.
          // `models_idx` is the index of the model that produced this result.
@@ -1750,7 +1755,7 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
             nsinfo_bson_size = mcd_nsinfo_get_bson_size (md->ns);
          }
 
-         if (opmsg_overhead + ops_byte_len + doc_len + nsinfo_bson_size > maxMessageSizeBytes) {
+         if (mlib_cmp (opmsg_overhead + ops_byte_len + doc_len + nsinfo_bson_size, >, maxMessageSizeBytes)) {
             if (ops_byte_len == 0) {
                // Could not even fit one document within an OP_MSG.
                _mongoc_set_error (&error,
@@ -1946,16 +1951,18 @@ mongoc_bulkwrite_execute (mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t
    }
 
 fail:
-   if (is_ordered) {
-      // Ordered writes stop on first error. If the error reported is for an index > 0, assume some writes suceeded.
-      if (ret.res->errorscount == 0 || (ret.res->first_error_index.isset && ret.res->first_error_index.index > 0)) {
-         has_successful_results = true;
-      }
-   } else {
-      BSON_ASSERT (mlib_in_range (size_t, ret.res->errorscount));
-      size_t errorscount_sz = (size_t) ret.res->errorscount;
-      if (errorscount_sz < self->n_ops) {
-         has_successful_results = true;
+   if (ret.res->parsed_some_results) {
+      if (is_ordered) {
+         // Ordered writes stop on first error. If the error reported is for an index > 0, assume some writes suceeded.
+         if (ret.res->errorscount == 0 || (ret.res->first_error_index.isset && ret.res->first_error_index.index > 0)) {
+            has_successful_results = true;
+         }
+      } else {
+         BSON_ASSERT (mlib_in_range (size_t, ret.res->errorscount));
+         size_t errorscount_sz = (size_t) ret.res->errorscount;
+         if (errorscount_sz < self->n_ops) {
+            has_successful_results = true;
+         }
       }
    }
    if (!is_acknowledged || !has_successful_results) {

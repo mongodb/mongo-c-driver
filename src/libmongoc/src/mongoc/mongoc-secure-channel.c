@@ -64,7 +64,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    file = fopen (filename, "rb");
    if (!file) {
       MONGOC_ERROR ("Couldn't open file '%s'", filename);
-      return false;
+      return NULL;
    }
 
    fseek (file, 0, SEEK_END);
@@ -72,7 +72,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    fseek (file, 0, SEEK_SET);
    if (pem_length < 1) {
       MONGOC_ERROR ("Couldn't determine file size of '%s'", filename);
-      return false;
+      return NULL;
    }
 
    pem = (char *) bson_malloc0 (pem_length);
@@ -240,42 +240,6 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
    return mongoc_secure_channel_setup_certificate_from_file (opt->pem_file);
 }
 
-static void
-_bson_append_szoid (mcommon_string_append_t *retval, PCCERT_CONTEXT cert, const char *label, void *oid)
-{
-   DWORD oid_len = CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, NULL, 0);
-
-   if (oid_len > 1) {
-      char *tmp = bson_malloc0 (oid_len);
-
-      CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, tmp, oid_len);
-      mcommon_string_append_printf (retval, "%s%s", label, tmp);
-      bson_free (tmp);
-   }
-}
-
-char *
-_mongoc_secure_channel_extract_subject (const char *filename, const char *passphrase)
-{
-   PCCERT_CONTEXT cert;
-   cert = mongoc_secure_channel_setup_certificate_from_file (filename);
-   if (!cert) {
-      return NULL;
-   }
-
-   mcommon_string_append_t retval;
-   mcommon_string_new_as_append (&retval);
-
-   _bson_append_szoid (&retval, cert, "C=", szOID_COUNTRY_NAME);
-   _bson_append_szoid (&retval, cert, ",ST=", szOID_STATE_OR_PROVINCE_NAME);
-   _bson_append_szoid (&retval, cert, ",L=", szOID_LOCALITY_NAME);
-   _bson_append_szoid (&retval, cert, ",O=", szOID_ORGANIZATION_NAME);
-   _bson_append_szoid (&retval, cert, ",OU=", szOID_ORGANIZATIONAL_UNIT_NAME);
-   _bson_append_szoid (&retval, cert, ",CN=", szOID_COMMON_NAME);
-   _bson_append_szoid (&retval, cert, ",STREET=", szOID_STREET_ADDRESS);
-
-   return mcommon_string_from_append_destroy_with_steal (&retval);
-}
 
 bool
 mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
@@ -297,14 +261,20 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    fseek (file, 0, SEEK_END);
    length = ftell (file);
    fseek (file, 0, SEEK_SET);
-   if (length < 1) {
+   if (length < 1 || length > LONG_MAX - 1) {
       MONGOC_WARNING ("Couldn't determine file size of '%s'", opt->ca_file);
+      fclose (file);
       return false;
    }
 
-   pem_key = (const char *) bson_malloc0 (length);
-   fread ((void *) pem_key, 1, length, file);
+   // Read the whole file into one nul-terminated string
+   pem_key = (const char *) bson_malloc0 ((size_t) length + 1u);
+   bool read_ok = (size_t) length == fread ((void *) pem_key, 1, length, file);
    fclose (file);
+   if (!read_ok) {
+      MONGOC_WARNING ("Couldn't read certificate file '%s'", opt->ca_file);
+      return false;
+   }
 
    /* If we have private keys or other fuzz, seek to the good stuff */
    pem_key = strstr (pem_key, "-----BEGIN CERTIFICATE-----");

@@ -39,6 +39,7 @@
 #include <common-bson-dsl-private.h>
 #include <common-string-private.h>
 #include <mlib/cmp.h>
+#include <mlib/config.h>
 
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init
@@ -117,16 +118,8 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE);
 #endif
 
-#ifdef MONGOC_NO_AUTOMATIC_GLOBALS
-   _set_bit (bf, byte_count, MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS);
-#endif
-
 #ifdef MONGOC_EXPERIMENTAL_FEATURES
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES);
-#endif
-
-#ifdef MONGOC_ENABLE_SSL_LIBRESSL
-   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL);
 #endif
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
@@ -185,9 +178,12 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS);
 #endif
 
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    if (MONGOC_TRACE_ENABLED) {
       _set_bit (bf, byte_count, MONGOC_MD_FLAG_TRACE);
    }
+   mlib_diagnostic_pop ();
 
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION);
@@ -197,9 +193,12 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH);
 #endif
 
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    if (MONGOC_SRV_ENABLED) {
       _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SRV);
    }
+   mlib_diagnostic_pop ();
 
    mcommon_string_append_t append;
    mcommon_string_set_append (mcommon_string_new_with_capacity ("0x", 2, 2 + byte_count * 2), &append);

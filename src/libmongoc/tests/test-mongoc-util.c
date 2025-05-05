@@ -1,11 +1,10 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-util-private.h>
 
+#include <mlib/config.h>
+
 #include "TestSuite.h"
 #include "test-conveniences.h"
-
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "test-util"
 
 
 static void
@@ -67,12 +66,15 @@ test_lowercase_utf8 (void)
 static void
 test_wire_server_versions (void)
 {
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    /* Ensure valid inclusive range. */
    ASSERT_WITH_MSG (WIRE_VERSION_MIN <= WIRE_VERSION_MAX,
                     "WIRE_VERSION_MAX (%d) must be greater than or equal to "
                     "WIRE_VERSION_MIN (%d)",
                     WIRE_VERSION_MAX,
                     WIRE_VERSION_MIN);
+   mlib_diagnostic_pop ();
 
    /* Bumping WIRE_VERSION_MAX must be accompanied by an update to
     * `_mongoc_wire_version_to_server_version`. */

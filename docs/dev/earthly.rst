@@ -56,11 +56,11 @@ run Earthly from the ``mongo-c-driver`` repository, use `tools/earthly.sh`.
 Testing Earthly
 ===============
 
-To verify that Earthly is running, execute the `+version-current` Earthly
+To verify that Earthly is running, execute the ``+env.u20`` Earthly
 target. This will exercise most Earthly functionality without requiring any
 special parameters or modifying the working directory::
 
-   $ ./tools/earthly.sh +version-current
+   $ ./tools/earthly.sh +env.u20
    Init 🚀
    ————————————————————————————————————————————————————————————————————————————————
 
@@ -90,11 +90,6 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       `+sign-file/signature.asc` for the release. The exported filenames are
       based on the `--version` argument.
 
-   .. rubric:: Parameters
-   .. option:: --sbom_branch <branch>
-
-      Forwarded to `+release-archive --sbom_branch`
-
    .. option:: --version <version>
 
       Affects the output filename and archive prefix paths in
@@ -108,33 +103,28 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. rubric:: Secrets
 
-   Secrets for the `+sbom-download`, `+snyk-test`, and `+sign-file` targets are
-   required for this target.
+   Secrets for the `+snyk-test` and `+sign-file` targets are required for this
+   target.
 
 
 .. program:: +release-archive
 .. earthly-target:: +release-archive
 
-   Generate a source release archive of the repository at a specifiy branch.
-   Requires the secrets for `+sbom-download` and `+snyk-test`.
+   Generate a source release archive of the repository for the specified branch.
+   Requires the secrets for `+snyk-test`.
+   Requires ``etc/augmented-sbom.json`` is present (obtained from Evergreen).
 
    .. earthly-artifact:: +release-archive/release.tar.gz
 
       The resulting source distribution archive for the specified branch. The
       generated archive includes the source tree, but also includes other
-      release artifacts that are generated on-the-fly when invoked e.g. the
-      `+sbom-download/augmented-sbom.json` artifact.
+      release artifacts that are generated on-the-fly when invoked.
 
    .. earthly-artifact:: +release-archive/ssdlc_compliance_report.md
 
       The SSDLC compliance report for the release. This file is based on the
       content of ``etc/ssdlc.md``, which has certain substrings replaced based
       on attributes of the release.
-
-   .. rubric:: Parameters
-   .. option:: --sbom_branch <branch>
-
-      Forwarded as `+sbom-download --branch` to download the augmented SBOM.
 
    .. option:: --ref <git-ref>
 
@@ -150,38 +140,10 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       no effect on the files archived, which is selected by
       `+release-archive --ref`.
 
+.. program:: +sbom-validate
+.. earthly-target:: +sbom-validate
 
-.. program:: +sbom-download
-.. earthly-target:: +sbom-download
-
-   Download an `augmented SBOM <augmented-sbom>` from Silk for a given project
-   branch. This target explicitly disables caching, because the upstream SBOM
-   file can change arbitrarily.
-
-   .. earthly-artifact:: +sbom-download/augmented-sbom.json
-
-      The `augmented SBOM <augmented-sbom>` downloaded from Silk for the requested branch.
-
-   .. rubric:: Parameters
-   .. option:: --branch <branch>
-
-      **Required**. Specifies the branch of the repository from which we are
-      requesting an SBOM.
-
-      .. note::
-
-         It is *required* that the `Silk asset group <silk-asset-group>` has
-         been created for the given branch before the `+sbom-download` target
-         can succeed. See: `+create-silk-asset-group`
-
-   .. rubric:: Secrets
-   .. envvar::
-      SILK_CLIENT_ID
-      SILK_CLIENT_SECRET
-
-      **Required**. [#creds]_
-
-      .. seealso:: `earthly.secrets`
+   Validate the `etc/cyclonedx.sbom.json`.
 
 .. program:: +sign-file
 .. earthly-target:: +sign-file
@@ -231,14 +193,6 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    authenticated with the host.\ [#creds]_ If you are already authenticated, this
    command will have no effect.
 
-.. earthly-target:: +version-current
-
-   Generates a ``VERSION_CURRENT`` file for the current repository.
-
-   .. earthly-artifact:: +version-current/VERSION_CURRENT
-
-      A plaintext file containing the current version number.
-
 .. earthly-target:: +sbom-generate
 
    Updates the `etc/cyclonedx.sbom.json` file **in-place** based on the contents
@@ -249,32 +203,15 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. seealso:: `sbom-lite` and `sbom-lite-updating`
 
+.. earthly-target:: +sbom-generate-new-serial-number
 
-.. program:: +create-silk-asset-group
-.. earthly-target:: +create-silk-asset-group
+   Equivalent to `+sbom-generate` but uses the ``--generate-new-serial-number``
+   flag to generate a new unique serial number and reset the SBOM version to 1.
 
-   Creates a new `Silk asset group <silk-asset-group>` for a branch in the
-   repository. This target executes the `tools/create-silk-asset-group.py`
-   script with the appropriate arguments.
+   After running this target, the contents of the `etc/cyclonedx.sbom.json` file
+   may change.
 
-   .. note:: For branches that execute in CI, running this target manually is
-      not necessary, as it is run automatically for every build.
-
-   .. rubric:: Parameters
-   .. option:: --branch <branch>
-
-      The repository branch for which to create the new asset group. If not
-      specified, the branch name will be inferred by asking Git.
-
-   .. rubric:: Secrets
-   .. envvar::
-         SILK_CLIENT_ID
-         SILK_CLIENT_SECRET
-      :noindex:
-
-      **Required**. [#creds]_
-
-      .. seealso:: `earthly.secrets`
+   .. seealso:: `sbom-lite` and `sbom-lite-updating`
 
 .. program:: +snyk-monitor-snapshot
 .. earthly-target:: +snyk-monitor-snapshot

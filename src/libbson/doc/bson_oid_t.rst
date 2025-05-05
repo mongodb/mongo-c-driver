@@ -70,7 +70,6 @@ You can validate that a string containing a hex-encoded ObjectID is valid using 
     bson_oid_init_from_data
     bson_oid_init_from_string
     bson_oid_init_from_string_unsafe
-    bson_oid_init_sequence
     bson_oid_is_valid
     bson_oid_to_string
 

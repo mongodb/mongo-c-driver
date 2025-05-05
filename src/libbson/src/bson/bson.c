@@ -15,21 +15,20 @@
  */
 
 
+#include <mlib/intencode.h>
 #include <bson/bson.h>
 #include <bson/bson-config.h>
 #include <bson/bson-private.h>
 #include <bson/bson-json-private.h>
 #include <common-string-private.h>
 #include <common-json-private.h>
+#include <common-macros-private.h>
 #include <bson/bson-iso8601-private.h>
 
 #include <string.h>
 #include <math.h>
 
-#ifdef BSON_MEMCHECK
-#pragma message( \
-   "Do not define BSON_MEMCHECK. BSON_MEMCHECK changes the data layout of bson_t. BSON_MEMCHECK is deprecated may be removed in a future major release")
-#endif
+#include <mlib/config.h>
 
 
 typedef enum {
@@ -63,6 +62,36 @@ static const uint8_t gZero;
 /*
  *--------------------------------------------------------------------------
  *
+ * _bson_round_up_alloc_size --
+ *
+ *       Given a potential allocation length in bytes, round up to the
+ *       next power of two without exceeding BSON_MAX_SIZE.
+ *
+ * Returns:
+ *       If the input is <= BSON_MAX_SIZE, returns a value >= the input
+ *       and still <= BSON_MAX_SIZE. If the input was greater than
+ *       BSON_MAX_SIZE, it is returned unmodified.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static BSON_INLINE size_t
+_bson_round_up_alloc_size (size_t size)
+{
+   if (size <= BSON_MAX_SIZE) {
+      size_t power_of_two = bson_next_power_of_two (size);
+      return BSON_MIN (power_of_two, BSON_MAX_SIZE);
+   } else {
+      return size;
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _bson_impl_inline_grow --
  *
  *       Document growth implementation for documents that currently
@@ -80,25 +109,25 @@ static const uint8_t gZero;
 
 static bool
 _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
-                        size_t size)              /* IN */
+                        uint32_t grow_size)       /* IN */
 {
    bson_impl_alloc_t *alloc = (bson_impl_alloc_t *) impl;
    uint8_t *data;
-   size_t req;
 
-   if (((size_t) impl->len + size) <= sizeof impl->data) {
+   MONGOC_DEBUG_ASSERT ((size_t) impl->len <= BSON_MAX_SIZE);
+   MONGOC_DEBUG_ASSERT ((size_t) grow_size <= BSON_MAX_SIZE);
+   size_t req = (size_t) impl->len + (size_t) grow_size;
+
+   if (req <= sizeof impl->data) {
       return true;
    }
 
-   req = bson_next_power_of_two (impl->len + size);
+   req = _bson_round_up_alloc_size (req);
 
    if (req <= BSON_MAX_SIZE) {
       data = bson_malloc (req);
 
       memcpy (data, impl->data, impl->len);
-#ifdef BSON_MEMCHECK
-      bson_free (impl->canary);
-#endif
       alloc->flags &= ~BSON_FLAG_INLINE;
       alloc->parent = NULL;
       alloc->depth = 0;
@@ -122,11 +151,12 @@ _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
  *
  * _bson_impl_alloc_grow --
  *
- *       Document growth implementation for documents containing malloc
- *       based buffers.
+ *       Document growth implementation for non-inline documents, possibly
+ *       containing a reallocatable buffer.
  *
  * Returns:
- *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow.
+ *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow
+ *       or an attempt to grow a buffer with no realloc implementation.
  *
  * Side effects:
  *       None.
@@ -136,21 +166,26 @@ _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
 
 static bool
 _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
-                       size_t size)             /* IN */
+                       uint32_t grow_size)      /* IN */
 {
-   size_t req;
-
-   /*
-    * Determine how many bytes we need for this document in the buffer
+   /* Determine how many bytes we need for this document in the buffer
     * including necessary trailing bytes for parent documents.
+    *
+    * On size assumptions: the previous grow operation has already checked
+    * (len + offset + previous_depth) against BSON_MAX_SIZE. Current depth can be at most (previous_depth + 1). The
+    * caller has checked grow_size against BSON_MAX_SIZE. On the smallest (32-bit) supported size_t, we can still add
+    * these maximum values (2x BSON_MAX_SIZE, 1 additional byte of depth) without arithmetic overflow.
     */
-   req = (impl->offset + impl->len + size + impl->depth);
+   MONGOC_DEBUG_ASSERT ((uint64_t) impl->len + (uint64_t) impl->offset + (uint64_t) impl->depth <=
+                        (uint64_t) BSON_MAX_SIZE);
+   MONGOC_DEBUG_ASSERT ((size_t) grow_size <= BSON_MAX_SIZE);
+   size_t req = impl->offset + (size_t) impl->len + (size_t) grow_size + (size_t) impl->depth;
 
    if (req <= *impl->buflen) {
       return true;
    }
 
-   req = bson_next_power_of_two (req);
+   req = _bson_round_up_alloc_size (req);
 
    if ((req <= BSON_MAX_SIZE) && impl->realloc) {
       *impl->buf = impl->realloc (*impl->buf, req, impl->realloc_func_ctx);
@@ -167,11 +202,16 @@ _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
  *
  * _bson_grow --
  *
- *       Grows the bson_t structure to be large enough to contain @size
- *       bytes.
+ *       Grows the bson_t structure to be large enough to contain @grow_size
+ *       bytes in addition to its current content.
+ *
+ *       The caller is responsible for ensuring @grow_size itself is not
+ *       above BSON_MAX_SIZE, but a final determination of overflow status
+ *       can't be made until we are inside _bson_impl_*_grow().
  *
  * Returns:
- *       true if successful, false if the size would overflow.
+ *       true if successful, false if the size would overflow or the buffer
+ *       needs to grow but does not support reallocation.
  *
  * Side effects:
  *       None.
@@ -180,14 +220,16 @@ _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
  */
 
 static bool
-_bson_grow (bson_t *bson,  /* IN */
-            uint32_t size) /* IN */
+_bson_grow (bson_t *bson,       /* IN */
+            uint32_t grow_size) /* IN */
 {
+   BSON_ASSERT ((size_t) grow_size <= BSON_MAX_SIZE);
+
    if ((bson->flags & BSON_FLAG_INLINE)) {
-      return _bson_impl_inline_grow ((bson_impl_inline_t *) bson, size);
+      return _bson_impl_inline_grow ((bson_impl_inline_t *) bson, grow_size);
    }
 
-   return _bson_impl_alloc_grow ((bson_impl_alloc_t *) bson, size);
+   return _bson_impl_alloc_grow ((bson_impl_alloc_t *) bson, grow_size);
 }
 
 
@@ -241,17 +283,12 @@ _bson_data (const bson_t *bson) /* IN */
 static BSON_INLINE void
 _bson_encode_length (bson_t *bson) /* IN */
 {
-#if BSON_BYTE_ORDER == BSON_LITTLE_ENDIAN
-   memcpy (_bson_data (bson), &bson->len, sizeof (bson->len));
-#else
-   uint32_t length_le = BSON_UINT32_TO_LE (bson->len);
-   memcpy (_bson_data (bson), &length_le, sizeof (length_le));
-#endif
+   mlib_write_u32le (_bson_data (bson), bson->len);
 }
 
 
 typedef struct _bson_append_bytes_arg {
-   const uint8_t *bytes; // Not null.
+   const uint8_t *bytes; // Optional.
    uint32_t length;      // > 0.
 } _bson_append_bytes_arg;
 
@@ -267,6 +304,9 @@ BSON_STATIC_ASSERT2 (size_t_gte_int, SIZE_MAX >= INT_MAX);
 // To support unchecked cast from `uint32_t` to `size_t`.
 BSON_STATIC_ASSERT2 (size_t_gte_uint32_t, SIZE_MAX >= UINT32_MAX);
 
+// Support largest _bson_impl_alloc_grow on smallest size_t
+BSON_STATIC_ASSERT2 (max_alloc_grow_fits_min_sizet, (uint64_t) BSON_MAX_SIZE * 2u + 1u <= (uint64_t) UINT32_MAX);
+
 // Declare local state with the identifier `ident`.
 #define BSON_APPEND_BYTES_LIST_DECLARE(ident)                                \
    _bson_append_bytes_list ident = {.current = (ident).args, .n_bytes = 0u}; \
@@ -275,7 +315,10 @@ BSON_STATIC_ASSERT2 (size_t_gte_uint32_t, SIZE_MAX >= UINT32_MAX);
 // Add a bytes+length pair only if `_length > 0`.
 // Append failure if `n_bytes` will exceed BSON max size.
 #define BSON_APPEND_BYTES_ADD_ARGUMENT(_list, _bytes, _length)        \
+   mlib_diagnostic_push ();                                           \
+   mlib_disable_constant_conditional_expression_warnings ();          \
    if (BSON_UNLIKELY ((_length) > BSON_MAX_SIZE - (_list).n_bytes)) { \
+      mlib_diagnostic_pop ();                                         \
       goto append_failure;                                            \
    } else if ((_length) > 0) {                                        \
       *(_list).current++ = (_bson_append_bytes_arg){                  \
@@ -319,7 +362,9 @@ BSON_STATIC_ASSERT2 (size_t_gte_uint32_t, SIZE_MAX >= UINT32_MAX);
    } else {                                                                                   \
       uint8_t *data = _bson_data ((_bson)) + ((_bson)->len - 1u);                             \
       for (const _bson_append_bytes_arg *arg = (_list).args; arg != (_list).current; ++arg) { \
-         memcpy (data, arg->bytes, arg->length);                                              \
+         if (arg->bytes) {                                                                    \
+            memcpy (data, arg->bytes, arg->length);                                           \
+         }                                                                                    \
          (_bson)->len += arg->length;                                                         \
          data += arg->length;                                                                 \
       }                                                                                       \
@@ -694,16 +739,15 @@ append_failure:
 /*
  *--------------------------------------------------------------------------
  *
- * bson_append_binary --
+ * _bson_append_binary --
  *
- *       Append binary data to @bson. The field will have the
- *       BSON_TYPE_BINARY type.
+ *       Append a BSON_TYPE_BINARY field, optionally copying @binary into the field.
  *
  * Parameters:
  *       @subtype: the BSON Binary Subtype. See bsonspec.org for more
  *                 information.
- *       @binary: a pointer to the raw binary data.
- *       @length: the size of @binary in bytes.
+ *       @binary: Optional pointer to the raw binary data.
+ *       @length: the size of the field's binary data in bytes.
  *
  * Returns:
  *       true if successful; otherwise false.
@@ -714,22 +758,19 @@ append_failure:
  *--------------------------------------------------------------------------
  */
 
-bool
-bson_append_binary (bson_t *bson,           /* IN */
-                    const char *key,        /* IN */
-                    int key_length,         /* IN */
-                    bson_subtype_t subtype, /* IN */
-                    const uint8_t *binary,  /* IN */
-                    uint32_t length)        /* IN */
+static bool
+_bson_append_binary (bson_t *bson,           /* IN */
+                     const char *key,        /* IN */
+                     int key_length,         /* IN */
+                     bson_subtype_t subtype, /* IN */
+                     const uint8_t *binary,  /* IN */
+                     uint32_t length)        /* IN */
 {
    static const uint8_t type = BSON_TYPE_BINARY;
 
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (key);
-
-   if (!binary && length > 0u) {
-      return false;
-   }
+   BSON_OPTIONAL_PARAM (binary);
 
    BSON_APPEND_BYTES_LIST_DECLARE (args);
 
@@ -767,6 +808,87 @@ bson_append_binary (bson_t *bson,           /* IN */
 
 append_failure:
    return false;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_append_binary --
+ *
+ *       Append binary data to @bson. The field will have the
+ *       BSON_TYPE_BINARY type.
+ *
+ * Parameters:
+ *       @subtype: the BSON Binary Subtype. See bsonspec.org for more
+ *                 information.
+ *       @binary: a pointer to the raw binary data.
+ *       @length: the size of @binary in bytes.
+ *
+ * Returns:
+ *       true if successful; otherwise false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+bson_append_binary (bson_t *bson,           /* IN */
+                    const char *key,        /* IN */
+                    int key_length,         /* IN */
+                    bson_subtype_t subtype, /* IN */
+                    const uint8_t *binary,  /* IN */
+                    uint32_t length)        /* IN */
+{
+   if (!binary && length > 0u) {
+      return false;
+   }
+   return _bson_append_binary (bson, key, key_length, subtype, binary, length);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_append_binary_uninit --
+ *
+ *       Append binary data to @bson by framing an uninitialized field to be written by the caller.
+ *       The field will have the BSON_TYPE_BINARY type. On success, the caller MUST write to all
+ *       bytes in the binary data field. The returned `*binary` pointer may be invalidated by
+ *       subsequent modifications to @bson.
+ *
+ * Parameters:
+ *       @subtype: the BSON Binary Subtype. See bsonspec.org for more
+ *                 information.
+ *       @binary: Output parameter for a temporary pointer where the binary item's contents must be written.
+ *       @length: the size of @binary in bytes.
+ *
+ * Returns:
+ *       true if successful; otherwise false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+bson_append_binary_uninit (bson_t *bson,           /* IN */
+                           const char *key,        /* IN */
+                           int key_length,         /* IN */
+                           bson_subtype_t subtype, /* IN */
+                           uint8_t **binary,       /* IN */
+                           uint32_t length)        /* IN */
+{
+   BSON_ASSERT_PARAM (binary);
+   if (_bson_append_binary (bson, key, key_length, subtype, NULL, length)) {
+      *binary = _bson_data (bson) + bson->len - 1u - length;
+      return true;
+   } else {
+      return false;
+   }
 }
 
 
@@ -1772,9 +1894,6 @@ bson_init (bson_t *bson)
 
    BSON_ASSERT (bson);
 
-#ifdef BSON_MEMCHECK
-   impl->canary = bson_malloc (1);
-#endif
    impl->flags = BSON_FLAG_INLINE | BSON_FLAG_STATIC;
    impl->len = 5;
    impl->data[0] = 5;
@@ -1808,7 +1927,6 @@ bool
 bson_init_static (bson_t *bson, const uint8_t *data, size_t length)
 {
    bson_impl_alloc_t *impl = (bson_impl_alloc_t *) bson;
-   uint32_t len_le;
 
    BSON_ASSERT (bson);
    BSON_ASSERT (data);
@@ -1817,9 +1935,9 @@ bson_init_static (bson_t *bson, const uint8_t *data, size_t length)
       return false;
    }
 
-   memcpy (&len_le, data, sizeof (len_le));
+   const uint32_t hdr_len = mlib_read_u32le (data);
 
-   if ((size_t) BSON_UINT32_FROM_LE (len_le) != length) {
+   if (hdr_len != length) {
       return false;
    }
 
@@ -1854,9 +1972,6 @@ bson_new (void)
    impl = (bson_impl_inline_t *) bson;
    impl->flags = BSON_FLAG_INLINE;
    impl->len = 5;
-#ifdef BSON_MEMCHECK
-   impl->canary = bson_malloc (1);
-#endif
    impl->data[0] = 5;
    impl->data[1] = 0;
    impl->data[2] = 0;
@@ -1909,22 +2024,21 @@ bson_sized_new (size_t size)
 bson_t *
 bson_new_from_data (const uint8_t *data, size_t length)
 {
-   uint32_t len_le;
-   bson_t *bson;
-
    BSON_ASSERT (data);
 
    if ((length < 5) || (length > BSON_MAX_SIZE) || data[length - 1]) {
+      // Invalid length, or not null-terminated
       return NULL;
    }
 
-   memcpy (&len_le, data, sizeof (len_le));
+   const int32_t hdr = mlib_read_i32le (data);
 
-   if (length != (size_t) BSON_UINT32_FROM_LE (len_le)) {
+   if (mlib_cmp (hdr, !=, length)) {
+      // Header's declared length is not equal to the length of the data buffer we were given
       return NULL;
    }
 
-   bson = bson_sized_new (length);
+   bson_t *const bson = bson_sized_new (length);
    memcpy (_bson_data (bson), data, length);
    bson->len = (uint32_t) length;
 
@@ -1936,7 +2050,6 @@ bson_t *
 bson_new_from_buffer (uint8_t **buf, size_t *buf_len, bson_realloc_func realloc_func, void *realloc_func_ctx)
 {
    bson_impl_alloc_t *impl;
-   uint32_t len_le;
    uint32_t length;
    bson_t *bson;
 
@@ -1952,19 +2065,20 @@ bson_new_from_buffer (uint8_t **buf, size_t *buf_len, bson_realloc_func realloc_
 
    if (!*buf) {
       length = 5;
-      len_le = BSON_UINT32_TO_LE (length);
       *buf_len = 5;
       *buf = realloc_func (*buf, *buf_len, realloc_func_ctx);
-      memcpy (*buf, &len_le, sizeof (len_le));
+      mlib_write_u32le (*buf, length);
       (*buf)[4] = '\0';
    } else {
       if ((*buf_len < 5) || (*buf_len > BSON_MAX_SIZE)) {
          bson_free (bson);
          return NULL;
       }
-
-      memcpy (&len_le, *buf, sizeof (len_le));
-      length = BSON_UINT32_FROM_LE (len_le);
+      length = mlib_read_u32le (*buf);
+      if (length > *buf_len) {
+         bson_free (bson);
+         return NULL;
+      }
    }
 
    if ((*buf)[length - 1]) {
@@ -2006,19 +2120,14 @@ bson_copy_to (const bson_t *src, bson_t *dst)
    BSON_ASSERT (dst);
 
    if ((src->flags & BSON_FLAG_INLINE)) {
-#ifdef BSON_MEMCHECK
-      dst->len = src->len;
-      dst->canary = bson_malloc (1);
-      memcpy (dst->padding, src->padding, sizeof dst->padding);
-#else
       memcpy (dst, src, sizeof *dst);
-#endif
       dst->flags = (BSON_FLAG_STATIC | BSON_FLAG_INLINE);
       return;
    }
 
    data = _bson_data (src);
-   len = bson_next_power_of_two ((size_t) src->len);
+   len = _bson_round_up_alloc_size ((size_t) src->len);
+   MONGOC_DEBUG_ASSERT (len <= BSON_MAX_SIZE);
 
    adst = (bson_impl_alloc_t *) dst;
    adst->flags = BSON_FLAG_STATIC;
@@ -2081,22 +2190,6 @@ bson_copy_to_excluding_noinit_va (const bson_t *src, bson_t *dst, const char *fi
 
 
 void
-bson_copy_to_excluding (const bson_t *src, bson_t *dst, const char *first_exclude, ...)
-{
-   va_list args;
-
-   BSON_ASSERT (src);
-   BSON_ASSERT (dst);
-   BSON_ASSERT (first_exclude);
-
-   bson_init (dst);
-
-   va_start (args, first_exclude);
-   bson_copy_to_excluding_noinit_va (src, dst, first_exclude, args);
-   va_end (args);
-}
-
-void
 bson_copy_to_excluding_noinit (const bson_t *src, bson_t *dst, const char *first_exclude, ...)
 {
    va_list args;
@@ -2121,12 +2214,6 @@ bson_destroy (bson_t *bson)
       bson_free (*((bson_impl_alloc_t *) bson)->buf);
    }
 
-#ifdef BSON_MEMCHECK
-   if (bson->flags & BSON_FLAG_INLINE) {
-      bson_free (bson->canary);
-   }
-#endif
-
    if (!(bson->flags & BSON_FLAG_STATIC)) {
       bson_free (bson);
    }
@@ -2134,21 +2221,35 @@ bson_destroy (bson_t *bson)
 
 
 uint8_t *
-bson_reserve_buffer (bson_t *bson, uint32_t size)
+bson_reserve_buffer (bson_t *bson, uint32_t total_size)
 {
    if (bson->flags & (BSON_FLAG_CHILD | BSON_FLAG_IN_CHILD | BSON_FLAG_RDONLY)) {
       return NULL;
    }
 
-   if (!_bson_grow (bson, size)) {
-      return NULL;
+   if (total_size > bson->len) {
+      if ((size_t) total_size > BSON_MAX_SIZE) {
+         return NULL;
+      }
+
+      /* Note that the bson_t can also include space for parent or sibling documents (offset) and for trailing bytes
+       * (depth). These sizes will be considered by _bson_grow() but we can assume they are zero in documents without
+       * BSON_FLAG_CHILD or BSON_FLAG_IN_CHILD. If this is called on a document that's part of a bson_writer_t, it is
+       * correct to ignore offset: we set the size of the current document, leaving previous documents alone. */
+      if (!_bson_grow (bson, total_size - bson->len)) {
+         // Will fail due to overflow or when reallocation is needed on a buffer that does not support it.
+         return NULL;
+      }
    }
 
    if (bson->flags & BSON_FLAG_INLINE) {
       /* bson_grow didn't spill over */
-      ((bson_impl_inline_t *) bson)->len = size;
+      ((bson_impl_inline_t *) bson)->len = total_size;
+      BSON_ASSERT (total_size <= BSON_INLINE_DATA_SIZE);
    } else {
-      ((bson_impl_alloc_t *) bson)->len = size;
+      bson_impl_alloc_t *impl = (bson_impl_alloc_t *) bson;
+      impl->len = total_size;
+      BSON_ASSERT (impl->offset <= *impl->buflen && *impl->buflen - impl->offset >= (size_t) total_size);
    }
 
    return _bson_data (bson);
@@ -2179,13 +2280,7 @@ bson_steal (bson_t *dst, bson_t *src)
 
       /* for consistency, src is always invalid after steal, even if inline */
       src->len = 0;
-#ifdef BSON_MEMCHECK
-      bson_free (src->canary);
-#endif
    } else {
-#ifdef BSON_MEMCHECK
-      bson_free (dst->canary);
-#endif
       memcpy (dst, src, sizeof (bson_t));
       alloc = (bson_impl_alloc_t *) dst;
       alloc->flags |= BSON_FLAG_STATIC;
@@ -2368,12 +2463,6 @@ bson_as_canonical_extended_json (const bson_t *bson, size_t *length)
 
 
 char *
-bson_as_json (const bson_t *bson, size_t *length)
-{
-   return bson_as_legacy_extended_json (bson, length);
-}
-
-char *
 bson_as_legacy_extended_json (const bson_t *bson, size_t *length)
 {
    const bson_json_opts_t opts = {BSON_JSON_MODE_LEGACY, BSON_MAX_LEN_UNLIMITED, false};
@@ -2388,12 +2477,6 @@ bson_as_relaxed_extended_json (const bson_t *bson, size_t *length)
    return bson_as_json_with_opts (bson, length, &opts);
 }
 
-
-char *
-bson_array_as_json (const bson_t *bson, size_t *length)
-{
-   return bson_array_as_legacy_extended_json (bson, length);
-}
 
 char *
 bson_array_as_legacy_extended_json (const bson_t *bson, size_t *length)
@@ -2725,10 +2808,18 @@ bson_array_builder_append_value (bson_array_builder_t *bab, const bson_value_t *
    bson_array_builder_append_impl (bson_append_value, value);
 }
 
+
 bool
 bson_array_builder_append_array (bson_array_builder_t *bab, const bson_t *array)
 {
    bson_array_builder_append_impl (bson_append_array, array);
+}
+
+
+bool
+bson_array_builder_append_array_from_vector (bson_array_builder_t *bab, const bson_iter_t *iter)
+{
+   bson_array_builder_append_impl (bson_append_array_from_vector, iter);
 }
 
 
@@ -2739,6 +2830,16 @@ bson_array_builder_append_binary (bson_array_builder_t *bab,
                                   uint32_t length)
 {
    bson_array_builder_append_impl (bson_append_binary, subtype, binary, length);
+}
+
+
+bool
+bson_array_builder_append_binary_uninit (bson_array_builder_t *bab,
+                                         bson_subtype_t subtype,
+                                         uint8_t **binary,
+                                         uint32_t length)
+{
+   bson_array_builder_append_impl (bson_append_binary_uninit, subtype, binary, length);
 }
 
 

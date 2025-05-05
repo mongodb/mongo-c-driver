@@ -26,7 +26,7 @@ test_buffered_basic (void)
    iov.iov_len = sizeof buf;
    iov.iov_base = buf;
    r = mongoc_stream_readv (buffered, &iov, 1, iov.iov_len, -1);
-   if (r != iov.iov_len) {
+   if (mlib_cmp (r, !=, iov.iov_len)) {
       char msg[100];
 
       bson_snprintf (msg, 100, "Expected %lld got %llu", (long long) r, (unsigned long long) iov.iov_len);
@@ -57,7 +57,7 @@ test_buffered_oversized (void)
    iov.iov_len = sizeof buf;
    iov.iov_base = buf;
    r = mongoc_stream_readv (buffered, &iov, 1, iov.iov_len, -1);
-   if (r != iov.iov_len) {
+   if (mlib_cmp (r, !=, iov.iov_len)) {
       char msg[100];
 
       bson_snprintf (msg, 100, "Expected %lld got %llu", (long long) r, (unsigned long long) iov.iov_len);

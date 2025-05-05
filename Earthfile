@@ -26,21 +26,19 @@ build:
     LET source_dir=/opt/mongoc/source
     LET build_dir=/opt/mongoc/build
     COPY --dir \
-        src/ \
         build/ \
-        COPYING \
         CMakeLists.txt \
-        README.rst \
-        THIRD_PARTY_NOTICES \
+        COPYING \
         NEWS \
+        README.rst \
+        src/ \
+        THIRD_PARTY_NOTICES \
+        VERSION_CURRENT \
         "$source_dir"
-    COPY +version-current/ $source_dir
     ENV CCACHE_HOME=/root/.cache/ccache
     RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
-        -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
         -D ENABLE_MAINTAINER_FLAGS=ON \
         -D ENABLE_SHM_COUNTERS=ON \
-        -D ENABLE_EXTRA_ALIGNMENT=OFF \
         -D ENABLE_SASL=$(echo $sasl | __str upper) \
         -D ENABLE_SNAPPY=ON \
         -D ENABLE_SRV=ON \
@@ -66,7 +64,6 @@ test-example:
     # Add the example files
     COPY --dir \
         src/libmongoc/examples/cmake \
-        src/libmongoc/examples/cmake-deprecated \
         src/libmongoc/examples/hello_mongoc.c \
         /opt/mongoc-test/
     # Configure and build it
@@ -115,20 +112,6 @@ test-cxx-driver:
     ENV CCACHE_BASE=$source
     RUN --mount=type=cache,target=$CCACHE_HOME cmake --build $build
 
-# version-current :
-#   Create the VERSION_CURRENT file using Git. This file is exported as an artifact at /
-version-current:
-    # Run on Alpine, which does this work the fastest
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.18
-    # Install Python and Git, the only things required for this job:
-    RUN apk add git python3
-    # Copy only the .git/ directory and calc_release_version, which are enough to get the VERSION_CURRENT
-    COPY --dir .git/ build/calc_release_version.py /s/
-    # Calculate it:
-    RUN cd /s/ && \
-        python calc_release_version.py --next-minor > VERSION_CURRENT
-    SAVE ARTIFACT /s/VERSION_CURRENT
-
 # PREP_CMAKE "warms up" the CMake installation cache for the current environment
 PREP_CMAKE:
     COMMAND
@@ -161,22 +144,12 @@ multibuild:
         --sasl=Cyrus --sasl=off \
         --c_compiler=gcc --c_compiler=clang \
         --test_mongocxx_ref=master
-    # Note: At time of writing, Ubuntu does not support LibreSSL, so run those
-    #   tests on a separate BUILD line that does not include Ubuntu:
-    BUILD +run --targets "test-example" \
-        --env=alpine3.16 --env=alpine3.17 --env=alpine3.18 --env=alpine3.19 \
-        --env=archlinux \
-        --tls=LibreSSL \
-        --sasl=Cyrus --sasl=off \
-        --c_compiler=gcc --c_compiler=clang \
-        --test_mongocxx_ref=master
 
 # release-archive :
 #   Create a release archive of the source tree. (Refer to dev docs)
 release-archive:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM alpine:3.20
     RUN apk add git bash
-    ARG --required sbom_branch
     ARG --required prefix
     ARG --required ref
 
@@ -198,7 +171,9 @@ release-archive:
         LET base = "mongo_c_driver_latest_release"
     END
 
-    COPY (+sbom-download/augmented-sbom.json --branch=$sbom_branch) cyclonedx.sbom.json
+    # The augmented SBOM must be manually obtained from a recent execution of
+    # the `sbom` task in an Evergreen patch or commit build in advance.
+    COPY etc/augmented-sbom.json cyclonedx.sbom.json
 
     # The full link to the build for this commit
     LET waterfall_url = "https://spruce.mongodb.com/version/${base}_${revision}"
@@ -218,7 +193,7 @@ release-archive:
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM alpine:3.20
     RUN apk add curl
     RUN curl --location --silent --fail "https://pgp.mongodb.com/c-driver.pub" -o /c-driver.pub
     SAVE ARTIFACT /c-driver.pub
@@ -248,10 +223,8 @@ sign-file:
 #   Generate a signed release artifact. Refer to the "Earthly" page of our dev docs for more information.
 #   (Refer to dev docs)
 signed-release:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM alpine:3.20
     RUN apk add git
-    # We need to know which branch to get the SBOM from
-    ARG --required sbom_branch
     # The version of the release. This affects the filepaths of the output and is the default for --ref
     ARG --required version
     # The Git revision of the repository to be archived. By default, archives the tag of the given version
@@ -269,7 +242,7 @@ signed-release:
     LET rel_tgz = "$rel_dir/$stem.tar.gz"
     LET rel_asc = "$rel_dir/$stem.tar.gz.asc"
     # Make the release archive:
-    COPY (+release-archive/ --branch=$sbom_branch --prefix=$stem --ref=$ref) $rel_dir/
+    COPY (+release-archive/ --prefix=$stem --ref=$ref) $rel_dir/
     RUN mv $rel_dir/release.tar.gz $rel_tgz
     # Sign the release archive:
     COPY (+sign-file/signature.asc --file $rel_tgz) $rel_asc
@@ -280,15 +253,15 @@ signed-release:
 
 # This target is simply an environment in which the SilkBomb executable is available.
 silkbomb:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
-    # Alias the silkbom executable to a simpler name:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0
+    # Alias the silkbomb executable to a simpler name:
     RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
 
 # sbom-generate :
 #   Generate/update the etc/cyclonedx.sbom.json file from the etc/purls.txt file.
 #
 # This target will update the existing etc/cyclonedx.sbom.json file in-place based
-# on the content of etc/purls.txt.
+# on the content of etc/purls.txt and etc/cyclonedx.sbom.json.
 sbom-generate:
     FROM +silkbomb
     # Copy in the relevant files:
@@ -296,66 +269,50 @@ sbom-generate:
     COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
     # Update the SBOM file:
     RUN silkbomb update \
+        --refresh \
+        --no-update-sbom-version \
         --purls purls.txt \
         --sbom-in cyclonedx.sbom.json \
         --sbom-out cyclonedx.sbom.json
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
 
-# sbom-download :
-#   Download an augmented SBOM from the Silk server for the given branch. Exports
-#   the artifact as /augmented-sbom.json
+# sbom-generate-new-serial-number:
+#   Equivalent to +sbom-generate but includes the --generate-new-serial-number
+#   flag to generate a new unique serial number and reset the SBOM version to 1.
 #
-# Requires credentials for silk access.
-sbom-download:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
-    ARG --required branch
-    # Run the SilkBomb tool to download the artifact that matches the requested branch
+# This target will update the existing etc/cyclonedx.sbom.json file in-place based
+# on the content of etc/purls.txt and etc/cyclonedx.sbom.json.
+sbom-generate-new-serial-number:
     FROM +silkbomb
-    # Set --no-cache, because the remote artifact could change arbitrarily over time
-    RUN --no-cache \
-        --secret SILK_CLIENT_ID \
-        --secret SILK_CLIENT_SECRET \
-        silkbomb download \
-            --sbom-out augmented-sbom.json \
-            --silk-asset-group mongo-c-driver-${branch}
-    # Export as /augmented-sbom.json
-    SAVE ARTIFACT augmented-sbom.json
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Update the SBOM file:
+    RUN silkbomb update \
+        --refresh \
+        --generate-new-serial-number \
+        --purls purls.txt \
+        --sbom-in cyclonedx.sbom.json \
+        --sbom-out cyclonedx.sbom.json
+    # Save the result back to the host:
+    SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
 
-# create-silk-asset-group :
-#   Create an asset group in Silk for the Git branch if one is not already defined.
-#
-# Requires credentials for Silk access.
-#
-# If --branch is not specified, it will be inferred from the current Git branch
-create-silk-asset-group:
-    ARG branch
-    # Get a default value for $branch
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.19
-    IF test "${branch}" = ""
-        LOCALLY
-        LET branch=$(git rev-parse --abbrev-ref HEAD)
-        RUN --no-cache echo "Inferred asset-group name from Git HEAD to be “${branch}”"
-    END
-    # Reset to alpine from the LOCALLY above
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.19
-    RUN apk add python3
-    # Copy in the script
-    COPY tools/create-silk-asset-group.py /opt/
-    # # Run the creation script. Refer to tools/create-silk-asset-group.py for details
-    RUN --no-cache \
-        --secret SILK_CLIENT_ID \
-        --secret SILK_CLIENT_SECRET \
-        python /opt/create-silk-asset-group.py \
-            --branch=${branch} \
-            --project=mongo-c-driver \
-            --code-repo-url=https://github.com/mongodb/mongo-c-driver \
-            --sbom-lite-path=etc/cyclonedx.sbom.json \
-            --exist-ok
-
+# sbom-validate:
+#   Validate the SBOM Lite for the given branch.
+sbom-validate:
+    FROM +silkbomb
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Run the SilkBomb tool to download the artifact that matches the requested branch
+    RUN silkbomb validate \
+            --purls purls.txt \
+            --sbom-in cyclonedx.sbom.json \
+            --exclude jira
 
 snyk:
-    FROM --platform=linux/amd64 artifactory.corp.mongodb.com/dockerhub/library/ubuntu:24.04
+    FROM --platform=linux/amd64 ubuntu:24.04
     RUN apt-get update && apt-get -y install curl
     RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
     RUN chmod a+x /usr/local/bin/snyk
@@ -427,7 +384,7 @@ test-vcpkg-manifest-mode:
         make test-manifest-mode
 
 vcpkg-base:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.18
+    FROM alpine:3.18
     RUN apk add cmake curl gcc g++ musl-dev ninja-is-really-ninja zip unzip tar \
                 build-base git pkgconf perl bash linux-headers
     ENV VCPKG_ROOT=/opt/vcpkg-git
@@ -486,7 +443,7 @@ env.alpine3.19:
     DO --pass-args +ALPINE_ENV --version=3.19
 
 env.archlinux:
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/archlinux
+    FROM --pass-args tools+init-env --from archlinux
     RUN pacman-key --init
     ARG --required purpose
 
@@ -507,7 +464,7 @@ env.centos7:
 ALPINE_ENV:
     COMMAND
     ARG --required version
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/alpine:$version
+    FROM --pass-args tools+init-env --from alpine:$version
     # XXX: On Alpine, we just use the system's CMake. At time of writing, it is
     # very up-to-date and much faster than building our own from source (since
     # Kitware does not (yet) provide libmuslc builds of CMake)
@@ -529,7 +486,7 @@ ALPINE_ENV:
 UBUNTU_ENV:
     COMMAND
     ARG --required version
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/ubuntu:$version
+    FROM --pass-args tools+init-env --from ubuntu:$version
     RUN __install curl build-essential
     ARG --required purpose
 
@@ -547,7 +504,7 @@ UBUNTU_ENV:
 CENTOS_ENV:
     COMMAND
     ARG --required version
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/centos:$version
+    FROM --pass-args tools+init-env --from centos:$version
     # Update repositories to use vault.centos.org
     RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
         sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*

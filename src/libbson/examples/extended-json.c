@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 int
-main (int argc, char *argv[])
+main (void)
 {
    {
       // bson_as_canonical_extended_json ... begin

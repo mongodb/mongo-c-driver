@@ -44,6 +44,7 @@
 #include "TestSuite.h"
 #include <common-string-private.h>
 #include <common-json-private.h>
+#include <mlib/config.h>
 
 #define SKIP_LINE_BUFFER_SIZE 1024
 
@@ -136,9 +137,12 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       } else if ((0 == strcmp ("-f", argv[i])) || (0 == strcmp ("--no-fork", argv[i]))) {
          suite->flags |= TEST_NOFORK;
       } else if ((0 == strcmp ("-t", argv[i])) || (0 == strcmp ("--trace", argv[i]))) {
+         mlib_diagnostic_push ();
+         mlib_disable_constant_conditional_expression_warnings ();
          if (!MONGOC_TRACE_ENABLED) {
             test_error ("-t requires mongoc compiled with -DENABLE_TRACING=ON.");
          }
+         mlib_diagnostic_pop ();
          suite->flags |= TEST_TRACE;
       } else if (0 == strcmp ("-F", argv[i])) {
          if (argc - 1 == i) {

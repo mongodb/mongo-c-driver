@@ -79,9 +79,7 @@ test_cmd_helpers (void *ctx)
    bson_t reply;
    bson_error_t error;
    bson_iter_t iter;
-   mongoc_cursor_t *cursor;
    mongoc_database_t *database;
-   const bson_t *doc;
 
    BSON_UNUSED (ctx);
 
@@ -171,30 +169,6 @@ test_cmd_helpers (void *ctx)
    _set_failpoint (client);
    ASSERT (!mongoc_client_command_simple_with_server_id (client, "test", cmd, NULL, server_id, NULL, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
-
-
-   /* deprecated command helpers (which goes through cursor logic) function must
-    * not retry. */
-   _set_failpoint (client);
-   cursor = mongoc_client_command (client, "test", MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
-   mongoc_cursor_destroy (cursor);
-
-   _set_failpoint (client);
-   cursor = mongoc_database_command (database, MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
-   mongoc_cursor_destroy (cursor);
-
-   _set_failpoint (client);
-   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 1, 1, cmd, NULL, NULL);
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 10107, "Failing command");
-   mongoc_cursor_destroy (cursor);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -589,13 +563,11 @@ void
 test_retryable_reads_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   /* Since we need failpoints, require wire version 7 */
    TestSuite_AddFull (suite,
                       "/retryable_reads/cmd_helpers",
                       test_cmd_helpers,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_7,
                       test_framework_skip_if_mongos,
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
@@ -603,7 +575,6 @@ test_retryable_reads_install (TestSuite *suite)
                       test_retry_reads_off,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_7,
                       test_framework_skip_if_mongos,
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
@@ -612,16 +583,12 @@ test_retryable_reads_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_mongos,
-                      test_framework_skip_if_no_failpoint,
-                      // `retryReads=true` is a 4.2+ feature.
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/retryable_reads/sharded/on_same_mongos",
                       test_retry_reads_sharded_on_same_mongos,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_mongos,
-                      test_framework_skip_if_no_failpoint,
-                      // `retryReads=true` is a 4.2+ feature.
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
 }

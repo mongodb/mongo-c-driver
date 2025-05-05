@@ -28,6 +28,8 @@
 
 #include <limits.h>
 
+#include <mlib/config.h>
+
 #include "TestSuite.h"
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <common-json-private.h>
@@ -205,28 +207,6 @@ test_bson_oid_init (void)
 }
 
 
-static void
-test_bson_oid_init_sequence (void)
-{
-   bson_context_t *context;
-   bson_oid_t oid;
-   bson_oid_t oid2;
-   int i;
-
-   BEGIN_IGNORE_DEPRECATIONS
-   context = bson_context_new (BSON_CONTEXT_NONE);
-   bson_oid_init_sequence (&oid, context);
-   for (i = 0; i < 10000; i++) {
-      bson_oid_init_sequence (&oid2, context);
-      BSON_ASSERT (false == bson_oid_equal (&oid, &oid2));
-      BSON_ASSERT (0 > bson_oid_compare (&oid, &oid2));
-      bson_oid_copy (&oid2, &oid);
-   }
-   bson_context_destroy (context);
-   END_IGNORE_DEPRECATIONS
-}
-
-
 static char *
 get_time_as_string (const bson_oid_t *oid)
 {
@@ -259,7 +239,10 @@ test_bson_oid_get_time_t (void)
 
    /* if time_t is a signed int32, then a negative value may be interpreted
     * as a negative date when printing. */
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    if (sizeof (time_t) == 8) {
+      mlib_diagnostic_pop ();
       bson_oid_init_from_string (&oid, "7FFFFFFF0000000000000000");
       str = get_time_as_string (&oid);
       ASSERT_CMPSTR (str, "2038-01-19T03:14:07Z");
@@ -476,7 +459,6 @@ test_oid_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/bson/oid/init", test_bson_oid_init);
    TestSuite_Add (suite, "/bson/oid/init_from_string", test_bson_oid_init_from_string);
-   TestSuite_Add (suite, "/bson/oid/init_sequence", test_bson_oid_init_sequence);
    TestSuite_Add (suite, "/bson/oid/init_with_threads", test_bson_oid_init_with_threads);
    TestSuite_Add (suite, "/bson/oid/hash", test_bson_oid_hash);
    TestSuite_Add (suite, "/bson/oid/compare", test_bson_oid_compare);

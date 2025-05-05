@@ -162,22 +162,12 @@
 #define BSON_ALIGN_OF_PTR (BSON_ALIGNOF (void *))
 #endif
 
-#ifdef BSON_EXTRA_ALIGN
-#if defined(_MSC_VER)
-#define BSON_ALIGNED_BEGIN(_N) __declspec (align (_N))
-#define BSON_ALIGNED_END(_N)
-#else
-#define BSON_ALIGNED_BEGIN(_N)
-#define BSON_ALIGNED_END(_N) __attribute__ ((aligned (_N)))
-#endif
-#else
 #if defined(_MSC_VER)
 #define BSON_ALIGNED_BEGIN(_N) __declspec (align (BSON_ALIGN_OF_PTR))
 #define BSON_ALIGNED_END(_N)
 #else
 #define BSON_ALIGNED_BEGIN(_N)
 #define BSON_ALIGNED_END(_N) __attribute__ ((aligned ((_N) > BSON_ALIGN_OF_PTR ? BSON_ALIGN_OF_PTR : (_N))))
-#endif
 #endif
 
 
@@ -207,6 +197,18 @@
 #define BSON_NORETURN __attribute__ ((__noreturn__))
 #else
 #define BSON_NORETURN
+#endif
+
+
+#if defined(__GNUC__)
+#define BSON_RESTRICT __restrict__
+#elif defined(_MSC_VER)
+#define BSON_RESTRICT __restrict
+#elif !defined(__cplusplus)
+// C99 (not C++)
+#define BSON_RESTRICT restrict
+#else
+#define BSON_RESTRICT
 #endif
 
 
@@ -329,23 +331,39 @@ _bson_assert_failed_on_param (const char *param, const char *func)
 #define BSON_TYPEOF typeof
 #endif
 
+/**
+ * @brief Statically annotate an entity as deprecated, including the given deprecation message
+ *
+ * @param Message The message to be included in a deprecation warning. This
+ * should be a string literal.
+ */
+#define BSON_DEPRECATED(Message) _bsonDeprecatedImpl (Message)
 
-#if BSON_GNUC_CHECK_VERSION(3, 1)
-#define BSON_GNUC_DEPRECATED __attribute__ ((__deprecated__))
+// Pick the appropriate implementation of a deprecation attribute
+#if defined(_MSC_VER)
+// For MSVC, emit __declspec(deprecated(Msg))
+#define _bsonDeprecatedImpl(Msg) __declspec (deprecated (Msg))
+#elif defined(__GNUC__) && (defined(__clang__) || BSON_GNUC_CHECK_VERSION(4, 5))
+// For new enough Clang and GCC, emit __attribute__((__deprecated__(Msg)))
+#define _bsonDeprecatedImpl(Msg) __attribute__ ((__deprecated__ (Msg)))
+#elif defined(__GNUC__)
+// For older GCC, emit deprecation attribute without the message
+#define _bsonDeprecatedImpl(Msg) __attribute__ ((__deprecated__))
 #else
-#define BSON_GNUC_DEPRECATED
+// For other compilers, emit nothing
+#define _bsonDeprecatedImpl(Msg)
 #endif
+
+#define BSON_DEPRECATED_FOR(F) BSON_DEPRECATED ("This API is deprecated. Use " #F " instead.")
+
+#define BSON_GNUC_DEPRECATED BSON_DEPRECATED ("This API is deprecated")
+#define BSON_GNUC_DEPRECATED_FOR(F) BSON_DEPRECATED_FOR (F)
 
 #define BSON_CONCAT_IMPL(a, ...) a##__VA_ARGS__
 #define BSON_CONCAT(a, ...) BSON_CONCAT_IMPL (a, __VA_ARGS__)
 #define BSON_CONCAT3(a, b, c) BSON_CONCAT (a, BSON_CONCAT (b, c))
 #define BSON_CONCAT4(a, b, c, d) BSON_CONCAT (BSON_CONCAT (a, b), BSON_CONCAT (c, d))
 
-#if BSON_GNUC_CHECK_VERSION(4, 5)
-#define BSON_GNUC_DEPRECATED_FOR(f) __attribute__ ((deprecated ("Use " #f " instead")))
-#else
-#define BSON_GNUC_DEPRECATED_FOR(f) BSON_GNUC_DEPRECATED
-#endif
 
 /**
  * @brief String-ify the given argument

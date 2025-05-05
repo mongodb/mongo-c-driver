@@ -148,7 +148,7 @@ $ mongod --auth --setParameter enableTestCommands=1 --dbpath db/
 In another terminal, use the `mongosh` shell to create a user:
 
 ```
-$ mongosh --eval "db.createUser({user: 'admin', pwd: 'pass', roles: ['root']})" admin
+$ mongosh --eval "db.createUser({user: 'bob', pwd: 'pwd123', roles: ['root']})" admin
 ```
 
 Authentication in MongoDB 3.0 and later uses SCRAM-SHA-1, which in turn
@@ -157,8 +157,8 @@ requires a driver built with SSL.
 Set the user and password environment variables, then build and run the tests:
 
 ```
-$ export MONGOC_TEST_USER=admin
-$ export MONGOC_TEST_PASSWORD=pass
+$ export MONGOC_TEST_USER=bob
+$ export MONGOC_TEST_PASSWORD=pwd123
 $ ./test-libmongoc
 ```
 
@@ -289,8 +289,9 @@ The set of mock KMS servers running in the background and their corresponding in
 | 8999 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999
 | 9000 | ca.pem | expired.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000
 | 9001 | ca.pem | wrong-host.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001
-| 9002 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port --require_client_cert 9002
+| 9002 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --require_client_cert --port 9002
 | 5698 | ca.pem | server.pem | python -u kms_kmip_server.py
+| 9003 | ca.pem | server.pem | python kms_failpoint_server.py --port 9003
 
 The path to `ca.pem` and `client.pem` must be passed through the following environment variables:
 
