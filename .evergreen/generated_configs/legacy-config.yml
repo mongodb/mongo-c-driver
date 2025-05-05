@@ -1245,7 +1245,6 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
-  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-darwinssl
   tags:
@@ -1258,7 +1257,6 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-winssl
   tags:
@@ -1271,7 +1269,6 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
-  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-openssl-nosasl
   tags:
@@ -1284,7 +1281,6 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
-  - func: prepare-kerberos
   - func: run auth tests
 - name: test-mongohouse
   depends_on:
@@ -1312,7 +1308,6 @@ tasks:
       script: |-
         set -o errexit
         env SANITIZE=address SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' .evergreen/scripts/compile.sh
-  - func: prepare-kerberos
   - func: run auth tests
     vars:
       ASAN: 'on'

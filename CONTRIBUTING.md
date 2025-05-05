@@ -148,7 +148,7 @@ $ mongod --auth --setParameter enableTestCommands=1 --dbpath db/
 In another terminal, use the `mongosh` shell to create a user:
 
 ```
-$ mongosh --eval "db.createUser({user: 'admin', pwd: 'pass', roles: ['root']})" admin
+$ mongosh --eval "db.createUser({user: 'bob', pwd: 'pwd123', roles: ['root']})" admin
 ```
 
 Authentication in MongoDB 3.0 and later uses SCRAM-SHA-1, which in turn
@@ -157,8 +157,8 @@ requires a driver built with SSL.
 Set the user and password environment variables, then build and run the tests:
 
 ```
-$ export MONGOC_TEST_USER=admin
-$ export MONGOC_TEST_PASSWORD=pass
+$ export MONGOC_TEST_USER=bob
+$ export MONGOC_TEST_PASSWORD=pwd123
 $ ./test-libmongoc
 ```
 
