@@ -493,7 +493,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    int64_t started = bson_get_monotonic_time ();
    const mongoc_server_stream_t *server_stream;
    bson_t reply_local;
-   bson_error_t error_local;
    bson_iter_t iter;
    bson_t encrypted = BSON_INITIALIZER;
    bson_t decrypted = BSON_INITIALIZER;
@@ -508,9 +507,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    if (!reply) {
       reply = &reply_local;
    }
-   if (!error) {
-      error = &error_local;
-   }
+   bson_error_reset (error);
 
    if (_mongoc_cse_is_enabled (cluster->client)) {
       bson_destroy (&encrypted);
