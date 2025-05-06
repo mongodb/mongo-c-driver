@@ -438,6 +438,43 @@ _test_int_encoding (void)
 }
 
 static void
+_test_int_parse (void)
+{
+   const int64_t bogus_value = 2424242424242424242;
+   // We aren't interested in testing `strtoll`, so we focus on special cases
+   // in i64_parse that differ from `strtoll`
+   struct case_ {
+      const char *in;
+      int64_t value;
+      int ec;
+   } cases[] = {
+      // Basics:
+      {"0", 0},
+      {"1", 1},
+      {"+1", 1},
+      {"-1", -1},
+      // Differences from strtoll
+      // We require at least one digit immediately
+      {"a1", bogus_value, EINVAL},
+      {"", bogus_value, EINVAL},
+      // No space skipping
+      {" 1", bogus_value, EINVAL},
+      {" +42", bogus_value, EINVAL},
+      // No trailing characters
+      {"123a", bogus_value, EINVAL},
+      // strtoll: Set ERANGE if the value is too large
+      {"123456789123456789123", bogus_value, ERANGE},
+      // Difference: We generate EINVAL if its not an integer, even if strtoll says ERANGE
+      {"123456789123456789123abc", bogus_value, EINVAL},
+   };
+   mlib_foreach_arr (struct case_, test, cases) {
+      mlib_i64_parse_result res = mlib_i64_parse (test->in);
+      mlib_check (res.value, eq, test->value);
+      mlib_check (res.ec, eq, test->ec);
+   }
+}
+
+static void
 _test_foreach (void)
 {
    int n_loops = 0;
@@ -720,6 +757,7 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/in-range", _test_in_range);
    TestSuite_Add (suite, "/mlib/assert-aborts", _test_assert_aborts);
    TestSuite_Add (suite, "/mlib/int-encoding", _test_int_encoding);
+   TestSuite_Add (suite, "/mlib/int-parse", _test_int_parse);
    TestSuite_Add (suite, "/mlib/foreach", _test_foreach);
    TestSuite_Add (suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add (suite, "/mlib/ckdint-partial", _test_ckdint_partial);
