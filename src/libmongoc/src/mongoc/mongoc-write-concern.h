@@ -53,6 +53,16 @@ mongoc_write_concern_journal_is_set (const mongoc_write_concern_t *write_concern
 MONGOC_EXPORT (void)
 mongoc_write_concern_set_journal (mongoc_write_concern_t *write_concern, bool journal);
 
+/**
+ * @brief Clear the `journal` attribute of a write concern object
+ *
+ * @param write_concern The write concern object to be modified
+ * @retval true If the `journal` attribute was previously set (regardless of value)
+ * @retval false Otherwise
+ */
+MONGOC_EXPORT (bool)
+mongoc_write_concern_journal_unset (mongoc_write_concern_t *write_concern);
+
 MONGOC_EXPORT (int32_t)
 mongoc_write_concern_get_w (const mongoc_write_concern_t *write_concern);
 
@@ -65,6 +75,16 @@ mongoc_write_concern_get_wtag (const mongoc_write_concern_t *write_concern);
 MONGOC_EXPORT (void)
 mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern, const char *tag);
 
+/**
+ * @brief Clear the `w` and `wtag` attributes of a write concern object.
+ *
+ * @param write_concern The write concern object to be modified
+ * @retval true If the `w` or `wtag` attributes were previously set
+ * @retval false Otherwise
+ */
+MONGOC_EXPORT (bool)
+mongoc_write_concern_w_unset (mongoc_write_concern_t *write_concern);
+
 MONGOC_EXPORT (int32_t)
 mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern);
 
@@ -76,6 +96,16 @@ mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern, int32_
 
 MONGOC_EXPORT (void)
 mongoc_write_concern_set_wtimeout_int64 (mongoc_write_concern_t *write_concern, int64_t wtimeout_msec);
+
+/**
+ * @brief Unset the `wTimeout` attribute of a write concern object.
+ *
+ * @param write_concern The write concern object to be modified
+ * @retval true If the `wtimeout` attribute was previously set.
+ * @retval false Otherwise
+ */
+MONGOC_EXPORT (bool)
+mongoc_write_concern_wtimeout_unset (mongoc_write_concern_t *write_concern);
 
 MONGOC_EXPORT (bool)
 mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern);

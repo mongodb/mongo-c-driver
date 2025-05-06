@@ -63,18 +63,6 @@ test_aggregate_w_write_concern (void *ctx)
    mongoc_cursor_next (cursor, &doc);
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   mongoc_cursor_destroy (cursor);
-
-   /* writeConcern that will not pass mongoc_write_concern_is_valid */
-   bad_wc->wtimeout = -10;
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, pipeline, opts, NULL);
-   ASSERT (cursor);
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT_ERROR_CONTAINS (
-      cursor->error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
-   bad_wc->wtimeout = 0;
 
    mongoc_write_concern_destroy (good_wc);
    mongoc_write_concern_destroy (bad_wc);
@@ -1302,20 +1290,12 @@ test_index (void)
 
    ASSERT_OR_PRINT (mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, NULL, &error), error);
 
-   /* invalid writeConcern */
-   bad_wc->wtimeout = -10;
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_collection_drop_index_with_opts (collection, "hello_1", opts, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
-
    /* valid writeConcern on all configs*/
    mongoc_write_concern_set_w (good_wc, 1);
    bson_reinit (opts);
    mongoc_write_concern_append (good_wc, opts);
+   error.code = 0;
+   error.domain = 0;
    ASSERT_OR_PRINT (mongoc_collection_drop_index_with_opts (collection, "hello_1", opts, &error), error);
    ASSERT (!error.code);
    ASSERT (!error.domain);
@@ -1380,22 +1360,12 @@ test_index_w_write_concern (void)
    bson_append_int32 (&keys, "hello", -1, 1);
    im = mongoc_index_model_new (&keys, NULL);
 
-   /* writeConcern that will not pass validation */
-   bad_wc->wtimeout = -10;
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, &reply, &error));
-   bson_destroy (&reply);
-
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
-
    /* valid writeConcern on all server configs */
    mongoc_write_concern_set_w (good_wc, 1);
    bson_reinit (opts);
    mongoc_write_concern_append (good_wc, opts);
+   error.code = 0;
+   error.domain = 0;
    result = mongoc_collection_create_indexes_with_opts (collection, &im, 1, opts, &reply, &error);
    ASSERT_OR_PRINT (result, error);
    ASSERT (!error.code);
@@ -1409,8 +1379,6 @@ test_index_w_write_concern (void)
 
    /* writeConcern that will result in writeConcernError */
    mongoc_write_concern_set_w (bad_wc, 99);
-
-   ASSERT (!error.code);
 
    bson_reinit (opts);
    mongoc_write_concern_append_bad (bad_wc, opts);
@@ -1870,21 +1838,12 @@ test_drop (void)
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
-   /* invalid writeConcern */
-   bad_wc->wtimeout = -10;
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (collection, doc, NULL, NULL, &error), error);
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_collection_drop_with_opts (collection, opts, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
-
    /* valid writeConcern */
    mongoc_write_concern_set_w (good_wc, 1);
    bson_reinit (opts);
    mongoc_write_concern_append (good_wc, opts);
+   error.code = 0;
+   error.domain = 0;
    ASSERT_OR_PRINT (mongoc_collection_drop_with_opts (collection, opts, &error), error);
    ASSERT (!error.code);
    ASSERT (!error.domain);
@@ -2450,26 +2409,15 @@ test_rename (void)
    ASSERT (found);
    ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
 
-   /* invalid writeConcern */
-   bad_wc->wtimeout = -10;
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_collection_rename_with_opts (collection, dbname, "test_rename.3", false, opts, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
-   ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
-
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
-
    /* valid writeConcern on all configs */
    mongoc_write_concern_set_w (good_wc, 1);
    bson_reinit (opts);
    mongoc_write_concern_append (good_wc, opts);
+   error.code = 0;
+   error.domain = 0;
    r = mongoc_collection_rename_with_opts (collection, dbname, "test_rename.3", false, opts, &error);
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.3");
-
    ASSERT (!error.code);
    ASSERT (!error.domain);
 

@@ -43,7 +43,7 @@ mongoc_write_concern_new (void)
    write_concern = BSON_ALIGNED_ALLOC0 (mongoc_write_concern_t);
    write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
    write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
-   write_concern->is_default = true;
+   write_concern->_wtimeout = -1;
 
    bson_init (&write_concern->compiled);
 
@@ -60,10 +60,9 @@ mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
       ret = mongoc_write_concern_new ();
       ret->journal = write_concern->journal;
       ret->w = write_concern->w;
-      ret->wtimeout = write_concern->wtimeout;
+      ret->_wtimeout = write_concern->_wtimeout;
       ret->frozen = false;
       ret->wtag = bson_strdup (write_concern->wtag);
-      ret->is_default = write_concern->is_default;
    }
 
    return ret;
@@ -116,9 +115,18 @@ mongoc_write_concern_set_journal (mongoc_write_concern_t *write_concern, bool jo
 {
    BSON_ASSERT (write_concern);
 
-   write_concern->journal = !!journal;
-   write_concern->is_default = false;
+   write_concern->journal = (int8_t) journal;
    write_concern->frozen = false;
+}
+
+bool
+mongoc_write_concern_journal_unset (mongoc_write_concern_t *write_concern)
+{
+   BSON_ASSERT_PARAM (write_concern);
+   bool was_set = write_concern->journal != MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
+   write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
+   write_concern->frozen = false;
+   return was_set;
 }
 
 
@@ -147,10 +155,10 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern, int32_t w)
    BSON_ASSERT (write_concern);
    BSON_ASSERT (w >= -3);
 
+   // Clear the w tag string, if it was set:
+   mongoc_write_concern_set_wtag (write_concern, NULL);
+
    write_concern->w = w;
-   if (w != MONGOC_WRITE_CONCERN_W_DEFAULT) {
-      write_concern->is_default = false;
-   }
    write_concern->frozen = false;
 }
 
@@ -166,7 +174,10 @@ int64_t
 mongoc_write_concern_get_wtimeout_int64 (const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT (write_concern);
-   return write_concern->wtimeout;
+   if (write_concern->_wtimeout < 0) {
+      return 0;
+   }
+   return write_concern->_wtimeout;
 }
 
 
@@ -186,11 +197,19 @@ mongoc_write_concern_set_wtimeout_int64 (mongoc_write_concern_t *write_concern, 
       return;
    }
 
-   write_concern->wtimeout = wtimeout_msec;
-   write_concern->is_default = false;
+   write_concern->_wtimeout = wtimeout_msec;
    write_concern->frozen = false;
 }
 
+bool
+mongoc_write_concern_wtimeout_unset (mongoc_write_concern_t *write_concern)
+{
+   BSON_ASSERT_PARAM (write_concern);
+   bool was_set = write_concern->_wtimeout >= 0;
+   write_concern->_wtimeout = -1;
+   write_concern->frozen = false;
+   return was_set;
+}
 
 bool
 mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern)
@@ -218,11 +237,10 @@ mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern, int32
    BSON_ASSERT (write_concern);
 
    write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
-   write_concern->is_default = false;
    write_concern->frozen = false;
 
    if (wtimeout_msec >= 0) {
-      write_concern->wtimeout = wtimeout_msec;
+      write_concern->_wtimeout = wtimeout_msec;
    }
 }
 
@@ -245,11 +263,26 @@ mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern, const char
 {
    BSON_ASSERT (write_concern);
 
-   bson_free (write_concern->wtag);
+   if (!wtag) {
+      // Calling with NULL is the same as unsetting `w`
+      mongoc_write_concern_w_unset (write_concern);
+      return;
+   }
+
    write_concern->wtag = bson_strdup (wtag);
    write_concern->w = MONGOC_WRITE_CONCERN_W_TAG;
-   write_concern->is_default = false;
    write_concern->frozen = false;
+}
+
+bool
+mongoc_write_concern_w_unset (mongoc_write_concern_t *write_concern)
+{
+   const bool was_set = write_concern->w != MONGOC_WRITE_CONCERN_W_DEFAULT;
+   bson_free (write_concern->wtag);
+   write_concern->wtag = NULL;
+   write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
+   write_concern->frozen = false;
+   return was_set;
 }
 
 /**
@@ -281,7 +314,11 @@ _mongoc_write_concern_get_bson (mongoc_write_concern_t *write_concern)
 bool
 mongoc_write_concern_is_default (const mongoc_write_concern_t *write_concern)
 {
-   return !write_concern || write_concern->is_default;
+   // Check if any attribute is not set to its default value
+   return write_concern                                                     //
+          && write_concern->journal == MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT //
+          && write_concern->w == MONGOC_WRITE_CONCERN_W_DEFAULT             //
+          && write_concern->_wtimeout < 0;
 }
 
 
@@ -322,8 +359,8 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
       bson_append_bool (compiled, "j", 1, !!write_concern->journal);
    }
 
-   if (write_concern->wtimeout) {
-      bson_append_int64 (compiled, "wtimeout", 8, write_concern->wtimeout);
+   if (write_concern->_wtimeout > 0) {
+      bson_append_int64 (compiled, "wtimeout", 8, write_concern->_wtimeout);
    }
 }
 
@@ -367,10 +404,6 @@ mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
    /* Journal should require acknowledgement.  */
    if ((mongoc_write_concern_get_journal (write_concern)) &&
        (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED)) {
-      return false;
-   }
-
-   if (write_concern->wtimeout < 0) {
       return false;
    }
 

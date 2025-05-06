@@ -188,21 +188,12 @@ test_create_with_write_concern (void *ctx)
 
    name = gen_collection_name ("create_collection");
 
-   /* writeConcern that will not pass mongoc_write_concern_is_valid */
-   bad_wc->wtimeout = -10;
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   collection = mongoc_database_create_collection (database, name, opts, &error);
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
-   ASSERT (!collection);
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
-
    /* valid writeConcern on all configs */
    mongoc_write_concern_set_w (good_wc, 1);
    bson_reinit (opts);
    mongoc_write_concern_append (good_wc, opts);
+   error.code = 0;
+   error.domain = 0;
    collection = mongoc_database_create_collection (database, name, opts, &error);
    ASSERT_OR_PRINT (collection, error);
    ASSERT (!error.code);
@@ -212,7 +203,6 @@ test_create_with_write_concern (void *ctx)
    mongoc_collection_destroy (collection);
 
    /* writeConcern that results in writeConcernError */
-   bad_wc->wtimeout = 0;
    mongoc_write_concern_set_w (bad_wc, 99);
    if (!test_framework_is_mongos ()) { /* skip if sharded */
       bson_reinit (opts);
@@ -408,29 +398,22 @@ test_drop (void)
 
    ASSERT_OR_PRINT (r, error);
 
+   error.code = 0;
+   error.domain = 0;
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
    BSON_ASSERT (!error.domain);
    BSON_ASSERT (!error.code);
 
    mongoc_database_destroy (database);
-
-   /* invalid writeConcern */
-   bad_wc->wtimeout = -10;
    database = mongoc_client_get_database (client, dbname);
-
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_database_drop_with_opts (database, opts, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
 
    /* valid writeConcern */
    mongoc_write_concern_set_w (good_wc, 1);
 
    bson_reinit (opts);
    mongoc_write_concern_append (good_wc, opts);
+   error.code = 0;
+   error.domain = 0;
    ASSERT_OR_PRINT (mongoc_database_drop_with_opts (database, opts, &error), error);
    BSON_ASSERT (!error.code);
    BSON_ASSERT (!error.domain);
@@ -573,6 +556,8 @@ test_get_collection_info (void)
 
    mongoc_cursor_destroy (cursor);
 
+   error.code = 0;
+   error.domain = 0;
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
    BSON_ASSERT (!error.domain);
    BSON_ASSERT (!error.code);
@@ -622,9 +607,6 @@ test_get_collection_info_with_opts_regex (void)
 
    cursor = mongoc_database_find_collections_with_opts (database, &opts);
    BSON_ASSERT (cursor);
-
-   BSON_ASSERT (!error.domain);
-   BSON_ASSERT (!error.code);
 
    BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
    BSON_ASSERT (bson_iter_init_find (&col_iter, doc, "name"));
@@ -803,6 +785,8 @@ test_get_collection_names (void)
 
       /* ensure that if users happen to pass nameOnly in opts we don't
        * append it again and cause a "duplicate field" server error */
+      error.code = 0;
+      error.domain = 0;
       if (explicit_nameonly) {
          names = mongoc_database_get_collection_names_with_opts (database, tmp_bson ("{'nameOnly': true}"), &error);
       } else {
@@ -837,6 +821,8 @@ test_get_collection_names (void)
    bson_free (name4);
    bson_free (name5);
 
+   error.code = 0;
+   error.domain = 0;
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
    BSON_ASSERT (!error.domain);
    BSON_ASSERT (!error.code);

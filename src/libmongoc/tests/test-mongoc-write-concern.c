@@ -218,11 +218,6 @@ test_write_concern_wtimeout_validity (void)
    ASSERT (mongoc_write_concern_get_wmajority (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
 
-   /* Manually assigning a negative wtimeout will make the write concern invalid
-    */
-   write_concern->wtimeout = -1;
-   ASSERT (!mongoc_write_concern_is_valid (write_concern));
-
    mongoc_write_concern_destroy (write_concern);
 }
 

@@ -13,7 +13,7 @@ static void
 compare_write_concern (const mongoc_write_concern_t *wc_correct, const mongoc_write_concern_t *wc)
 {
    ASSERT_CMPINT32 (wc_correct->w, ==, wc->w);
-   ASSERT_CMPINT64 (wc_correct->wtimeout, ==, wc->wtimeout);
+   ASSERT_CMPINT64 (wc_correct->_wtimeout, ==, wc->_wtimeout);
    ASSERT_CMPINT (wc_correct->journal, ==, wc->journal);
 }
 

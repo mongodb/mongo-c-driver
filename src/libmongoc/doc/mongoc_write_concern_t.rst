@@ -42,25 +42,6 @@ n                                           Block until a write has been propaga
   .. toctree::
     :titlesonly:
     :maxdepth: 1
+    :glob:
 
-    mongoc_write_concern_append
-    mongoc_write_concern_copy
-    mongoc_write_concern_destroy
-    mongoc_write_concern_get_journal
-    mongoc_write_concern_get_w
-    mongoc_write_concern_get_wmajority
-    mongoc_write_concern_get_wtag
-    mongoc_write_concern_get_wtimeout
-    mongoc_write_concern_get_wtimeout_int64
-    mongoc_write_concern_is_acknowledged
-    mongoc_write_concern_is_default
-    mongoc_write_concern_is_valid
-    mongoc_write_concern_journal_is_set
-    mongoc_write_concern_new
-    mongoc_write_concern_set_journal
-    mongoc_write_concern_set_w
-    mongoc_write_concern_set_wmajority
-    mongoc_write_concern_set_wtag
-    mongoc_write_concern_set_wtimeout
-    mongoc_write_concern_set_wtimeout_int64
-
+    mongoc_write_concern_*
