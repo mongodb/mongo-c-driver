@@ -1,3 +1,16 @@
+libbson 2.0.1
+=============
+
+Fixes:
+
+  * Fix CMake configure error on macOS with CMake 4.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libbson 2.0.0
 =============
 
