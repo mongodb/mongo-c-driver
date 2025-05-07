@@ -327,27 +327,6 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile-openssl-static.sh
-  prepare-kerberos:
-    - command: subprocess.exec
-      type: setup
-      params:
-        binary: bash
-        working_dir: mongoc
-        silent: true
-        args:
-          - -c
-          - |
-            if test "${keytab|}" && command -v kinit >/dev/null; then
-                echo "${keytab}" > /tmp/drivers.keytab.base64
-                base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
-                if touch /etc/krb5.conf 2>/dev/null; then
-                    cat .evergreen/etc/kerberos.realm | tee -a /etc/krb5.conf
-                elif command sudo true 2>/dev/null; then
-                    cat .evergreen/etc/kerberos.realm | sudo tee -a /etc/krb5.conf
-                else
-                    echo "Cannot append kerberos.realm to /etc/krb5.conf; skipping." 1>&2
-                fi
-            fi
   restore-instance-profile:
     - command: subprocess.exec
       params:

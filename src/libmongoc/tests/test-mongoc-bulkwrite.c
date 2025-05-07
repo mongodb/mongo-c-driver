@@ -219,6 +219,7 @@ test_bulkwrite_double_execute (void *ctx)
    // Execute.
    {
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+      ASSERT (bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION (bwr);
       mongoc_bulkwriteresult_destroy (bwr.res);
       mongoc_bulkwriteexception_destroy (bwr.exc);
@@ -251,6 +252,7 @@ test_bulkwrite_double_execute (void *ctx)
 
    {
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+      ASSERT (!bwr.res); // No result due to no successful writes.
       ASSERT (bwr.exc);
       ASSERT (mongoc_bulkwriteexception_error (bwr.exc, &error));
       ASSERT_ERROR_CONTAINS (
@@ -309,6 +311,7 @@ test_bulkwrite_serverid (void *ctx)
    // Execute.
    {
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bwo);
+      ASSERT (bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION (bwr);
       // Expect the selected server is reported as used.
       uint32_t used_serverid = mongoc_bulkwriteresult_serverid (bwr.res);
@@ -381,6 +384,7 @@ test_bulkwrite_serverid_on_retry (void *ctx)
    // Execute.
    {
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bwo);
+      ASSERT (bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION (bwr);
       // Expect a different server was used due to retry.
       uint32_t used_serverid = mongoc_bulkwriteresult_serverid (bwr.res);
@@ -444,6 +448,7 @@ test_bulkwrite_extra (void *ctx)
    // Execute.
    {
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bwo);
+      ASSERT (bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION (bwr);
       mongoc_bulkwriteresult_destroy (bwr.res);
       mongoc_bulkwriteexception_destroy (bwr.exc);
@@ -486,6 +491,7 @@ test_bulkwrite_no_verbose_results (void *ctx)
    // Execute.
    {
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL /* opts */);
+      ASSERT (bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION (bwr);
       // Expect no verbose results.
       ASSERT (NULL == mongoc_bulkwriteresult_insertresults (bwr.res));
@@ -558,6 +564,7 @@ test_bulkwrite_many_namespaces (void *ctx)
    // Execute.
    {
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL /* opts */);
+      ASSERT (bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION (bwr);
       mongoc_bulkwriteresult_destroy (bwr.res);
       mongoc_bulkwriteexception_destroy (bwr.exc);
@@ -606,6 +613,7 @@ test_bulkwrite_execute_requires_client (void *ctx)
    // Attempt execution without assigning a client
    {
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+      ASSERT (!bwr.res); // No result due to no successful writes.
       ASSERT (bwr.exc);
       ASSERT (mongoc_bulkwriteexception_error (bwr.exc, &error));
       ASSERT_ERROR_CONTAINS (error,
@@ -620,6 +628,7 @@ test_bulkwrite_execute_requires_client (void *ctx)
    {
       mongoc_bulkwrite_set_client (bw, client);
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+      ASSERT (bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION (bwr);
       mongoc_bulkwriteresult_destroy (bwr.res);
       mongoc_bulkwriteexception_destroy (bwr.exc);
@@ -667,8 +676,8 @@ test_bulkwrite_two_large_inserts (void *unused)
    ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", docs[1], NULL, &error), error);
 
    mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bw_opts);
-   ASSERT_NO_BULKWRITEEXCEPTION (bwr);
    ASSERT (bwr.res);
+   ASSERT_NO_BULKWRITEEXCEPTION (bwr);
    const bson_t *insertresults = mongoc_bulkwriteresult_insertresults (bwr.res);
    ASSERT_MATCH (insertresults,
                  BSON_STR ({"0" : {"insertedId" : "over_2mib_1"}}, {"1" : {"insertedId" : "over_2mib_2"}}));
@@ -682,6 +691,40 @@ test_bulkwrite_two_large_inserts (void *unused)
    bson_free (large_string);
 }
 
+
+// `test_bulkwrite_client_error_no_result` is a regression test for CDRIVER-5969.
+static void
+test_bulkwrite_client_error_no_result (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   bson_error_t error;
+   mongoc_client_t *client = test_framework_new_default_client ();
+   // Trigger a client-side error by adding a too-big document.
+   {
+      mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
+      bson_t too_big = BSON_INITIALIZER;
+      const size_t maxMessageSizeByte = 48000000;
+      char *big_string = bson_malloc (maxMessageSizeByte + 1);
+      memset (big_string, 'a', maxMessageSizeByte);
+      big_string[maxMessageSizeByte] = '\0';
+      BSON_APPEND_UTF8 (&too_big, "big", big_string);
+      ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll", &too_big, NULL, &error), error);
+      mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, NULL);
+      ASSERT (!bwr.res); // No result due to no successful writes.
+      ASSERT (bwr.exc);
+      ASSERT (mongoc_bulkwriteexception_error (bwr.exc, &error));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Sending would exceed maxMessageSizeBytes");
+      bson_free (big_string);
+      bson_destroy (&too_big);
+      mongoc_bulkwriteresult_destroy (bwr.res);
+      mongoc_bulkwriteexception_destroy (bwr.exc);
+      mongoc_bulkwrite_destroy (bw);
+   }
+
+   mongoc_client_destroy (client);
+}
 void
 test_bulkwrite_install (TestSuite *suite)
 {
@@ -779,6 +822,14 @@ test_bulkwrite_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/bulkwrite/two_large_inserts",
                       test_bulkwrite_two_large_inserts,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
+   );
+
+   TestSuite_AddFull (suite,
+                      "/bulkwrite/client_error_no_result",
+                      test_bulkwrite_client_error_no_result,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0

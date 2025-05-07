@@ -58,44 +58,6 @@ mongoc_ssl_opt_get_default (void)
    return &gMongocSslOptDefault;
 }
 
-char *
-mongoc_ssl_extract_subject (const char *filename, const char *passphrase)
-{
-   char *retval;
-
-   if (!filename) {
-      MONGOC_ERROR ("No filename provided to extract subject from");
-      return NULL;
-   }
-
-#ifdef _WIN32
-   if (_access (filename, 0) != 0) {
-#else
-   if (access (filename, R_OK) != 0) {
-#endif
-      MONGOC_ERROR ("Can't extract subject from unreadable file: '%s'", filename);
-      return NULL;
-   }
-
-#if defined(MONGOC_ENABLE_SSL_OPENSSL)
-   retval = _mongoc_openssl_extract_subject (filename, passphrase);
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   MONGOC_WARNING ("libtls doesn't support automatically extracting subject from "
-                   "certificate to use with authentication");
-   retval = NULL;
-#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-retval = _mongoc_secure_transport_extract_subject (filename, passphrase);
-#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-retval = _mongoc_secure_channel_extract_subject (filename, passphrase);
-#endif
-
-   if (!retval) {
-      MONGOC_ERROR ("Can't extract subject from file '%s'", filename);
-   }
-
-   return retval;
-}
-
 void
 _mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt, _mongoc_internal_tls_opts_t *internal, mongoc_uri_t *uri)
 {
