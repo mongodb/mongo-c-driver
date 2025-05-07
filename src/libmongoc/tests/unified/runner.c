@@ -1021,7 +1021,7 @@ test_create_entities (test_t *test, bson_error_t *error)
       bson_t entity_bson;
 
       bson_iter_bson (&iter, &entity_bson);
-      if (!entity_map_create (test->entity_map, &entity_bson, error)) {
+      if (!entity_map_create (test->entity_map, &entity_bson, test->cluster_time_after_initial_data, error)) {
          return false;
       }
    }
