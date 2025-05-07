@@ -149,6 +149,56 @@ fail:
 }
 
 
+// `decode_object` decodes a cryptographic object from a blob.
+// Returns NULL on error.
+static LPBYTE
+decode_object (const char *structType,
+               const LPBYTE data,
+               DWORD data_len,
+               DWORD *out_len,
+               const char *descriptor,
+               const char *filename)
+{
+   // Get needed output length:
+   if (!CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
+                             structType,                              /* lpszStructType */
+                             data,                                    /* pbEncoded */
+                             data_len,                                /* cbEncoded */
+                             0,                                       /* dwFlags */
+                             NULL,                                    /* pDecodePara */
+                             NULL,                                    /* pvStructInfo */
+                             out_len                                  /* pcbStructInfo */
+                             )) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to decode %s from '%s': %s", descriptor, filename, msg);
+      bson_free (msg);
+      return NULL;
+   }
+
+   if (*out_len == 0) {
+      return NULL;
+   }
+   LPBYTE out = (LPBYTE) bson_malloc (*out_len);
+
+   if (!CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
+                             structType,                              /* lpszStructType */
+                             data,                                    /* pbEncoded */
+                             data_len,                                /* cbEncoded */
+                             0,                                       /* dwFlags */
+                             NULL,                                    /* pDecodePara */
+                             out,                                     /* pvStructInfo */
+                             out_len                                  /* pcbStructInfo */
+                             )) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to decode %s from '%s': %s", descriptor, filename, msg);
+      bson_free (msg);
+      bson_free (out);
+      return NULL;
+   }
+
+   return out;
+}
+
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 {
@@ -204,34 +254,9 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
          goto fail;
       }
 
-      success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
-                                     PKCS_RSA_PRIVATE_KEY,                    /* lpszStructType */
-                                     encoded_private,                         /* pbEncoded */
-                                     encoded_private_len,                     /* cbEncoded */
-                                     0,                                       /* dwFlags */
-                                     NULL,                                    /* pDecodePara */
-                                     NULL,                                    /* pvStructInfo */
-                                     &blob_private_rsa_len);                  /* pcbStructInfo */
-      if (!success) {
-         char *msg = mongoc_winerr_to_string (GetLastError ());
-         MONGOC_ERROR ("Failed to parse private key. %s", msg);
-         bson_free (msg);
-         goto fail;
-      }
-
-      blob_private_rsa = (LPBYTE) bson_malloc0 (blob_private_rsa_len);
-      success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                                     PKCS_RSA_PRIVATE_KEY,
-                                     encoded_private,
-                                     encoded_private_len,
-                                     0,
-                                     NULL,
-                                     blob_private_rsa,
-                                     &blob_private_rsa_len);
-      if (!success) {
-         char *msg = mongoc_winerr_to_string (GetLastError ());
-         MONGOC_ERROR ("Failed to parse private key: %s", msg);
-         bson_free (msg);
+      blob_private_rsa = decode_object (
+         PKCS_RSA_PRIVATE_KEY, encoded_private, encoded_private_len, &blob_private_rsa_len, "private key", filename);
+      if (NULL == blob_private_rsa) {
          goto fail;
       }
    } else if (NULL != (pem_private = strstr (pem, "-----BEGIN PRIVATE KEY-----"))) {
@@ -240,36 +265,9 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
          goto fail;
       }
 
-      // Call to get necessary output length:
-      success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
-                                     PKCS_PRIVATE_KEY_INFO,                   /* lpszStructType */
-                                     encrypted_private,                       /* pbEncoded */
-                                     encrypted_private_len,                   /* cbEncoded */
-                                     0,                                       /* dwFlags */
-                                     NULL,                                    /* pDecodePara */
-                                     NULL,                                    /* pvStructInfo */
-                                     &blob_private_len);                      /* pcbStructInfo */
-      if (!success) {
-         char *msg = mongoc_winerr_to_string (GetLastError ());
-         MONGOC_ERROR ("Failed to parse private key: %s", msg);
-         bson_free (msg);
-         goto fail;
-      }
-
-      blob_private = (LPBYTE) bson_malloc0 (blob_private_len);
-      // Call again to decode:
-      success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                                     PKCS_PRIVATE_KEY_INFO,
-                                     encrypted_private,
-                                     encrypted_private_len,
-                                     0,
-                                     NULL,
-                                     blob_private,
-                                     &blob_private_len);
-      if (!success) {
-         char *msg = mongoc_winerr_to_string (GetLastError ());
-         MONGOC_ERROR ("Failed to parse private key: %s", msg);
-         bson_free (msg);
+      blob_private = decode_object (
+         PKCS_PRIVATE_KEY_INFO, encoded_private, encoded_private_len, &blob_private_rsa_len, "private key", filename);
+      if (!blob_private) {
          goto fail;
       }
 
@@ -280,44 +278,13 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
          goto fail;
       }
 
-      // Call to get necessary output length:
-      success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
-                                     PKCS_RSA_PRIVATE_KEY,                    /* lpszStructType */
-                                     privateKeyInfo->PrivateKey.pbData,       /* pbEncoded */
-                                     privateKeyInfo->PrivateKey.cbData,       /* cbEncoded */
-                                     0,                                       /* dwFlags */
-                                     NULL,                                    /* pDecodePara */
-                                     NULL,                                    /* pvStructInfo */
-                                     &blob_private_rsa_len);                  /* pcbStructInfo */
-      if (!success) {
-         LPTSTR msg = NULL;
-         FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                        NULL,
-                        GetLastError (),
-                        LANG_NEUTRAL,
-                        (LPTSTR) &msg,
-                        0,
-                        NULL);
-         char *msg = mongoc_winerr_to_string (GetLastError ());
-         MONGOC_ERROR ("Failed to parse private key: %s", msg);
-         bson_free (msg);
-         goto fail;
-      }
-
-      blob_private_rsa = (LPBYTE) bson_malloc0 (blob_private_rsa_len);
-      // Call again to decode:
-      success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                                     PKCS_RSA_PRIVATE_KEY,
-                                     privateKeyInfo->PrivateKey.pbData, /* pbEncoded */
-                                     privateKeyInfo->PrivateKey.cbData, /* cbEncoded */
-                                     0,
-                                     NULL,
-                                     blob_private_rsa,
-                                     &blob_private_rsa_len);
-      if (!success) {
-         char *msg = mongoc_winerr_to_string (GetLastError ());
-         MONGOC_ERROR ("Failed to parse private key: %s", msg);
-         bson_free (msg);
+      blob_private_rsa = decode_object (PKCS_RSA_PRIVATE_KEY,
+                                        privateKeyInfo->PrivateKey.pbData,
+                                        privateKeyInfo->PrivateKey.cbData,
+                                        &blob_private_rsa_len,
+                                        "private key",
+                                        filename);
+      if (!blob_private_rsa) {
          goto fail;
       }
    } else {
