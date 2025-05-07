@@ -867,13 +867,23 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
    test_file = test->test_file;
    test_runner = test_file->test_runner;
 
-   if (!test_file->initial_data) {
-      return true;
-   }
-
    mongoc_client_session_t *sess = mongoc_client_start_session (test_runner->internal_client, NULL, error);
    if (sess == NULL) {
       return false;
+   }
+
+   if (!test_file->initial_data) {
+      // Send a "ping" command with the session to get a cluster time.
+      bson_t opts = BSON_INITIALIZER;
+      bool ok = mongoc_client_session_append (sess, &opts, error);
+      ok = ok && mongoc_client_command_with_opts (
+                    test_runner->internal_client, "db", tmp_bson ("{'ping': 1}"), NULL, &opts, NULL, error);
+      if (ok) {
+         test->cluster_time_after_initial_data = bson_copy (mongoc_client_session_get_cluster_time (sess));
+      }
+      mongoc_client_session_destroy (sess);
+      bson_destroy (&opts);
+      return ok;
    }
 
    BSON_FOREACH (test_file->initial_data, initial_data_iter)
