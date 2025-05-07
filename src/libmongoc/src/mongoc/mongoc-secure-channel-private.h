@@ -32,10 +32,6 @@
 
 BSON_BEGIN_DECLS
 
-
-char *
-_mongoc_secure_channel_extract_subject (const char *filename, const char *passphrase);
-
 bool
 mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt);
 

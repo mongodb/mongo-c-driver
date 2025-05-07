@@ -6887,7 +6887,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/datakey_and_double_encryption",
@@ -6895,7 +6895,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/external_key_vault",
@@ -6903,7 +6903,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_no_auth /* requires auth for error check */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bson_size_limits_and_batch_splitting",
@@ -6911,21 +6911,21 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/views_are_prohibited",
                       test_views_are_prohibited,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/corpus",
                       test_corpus,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/custom_endpoint",
@@ -6933,7 +6933,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
@@ -6942,7 +6942,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "bypassAutoEncryption",
@@ -6950,7 +6950,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "bypassQueryAnalysis",
@@ -6958,7 +6958,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "cryptSharedLibLoaded",
@@ -6966,7 +6966,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       _skip_if_no_crypt_shared);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/valid",
@@ -6974,35 +6974,35 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/expired",
                       test_kms_tls_cert_expired,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/wrong_host",
                       test_kms_tls_cert_wrong_host,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/unique_index_on_keyaltnames",
                       test_unique_index_on_keyaltnames,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/prose_test_16/case1",
                       test_rewrap_with_separate_client_encryption,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/prose_test_16/case2",
@@ -7010,7 +7010,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    /* Other, C driver specific, tests. */
    TestSuite_AddFull (suite,
@@ -7019,28 +7019,28 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/multi_threaded",
                       test_multi_threaded,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/malformed_explicit",
                       test_malformed_explicit,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls_options",
                       test_kms_tls_options,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS, Azure, and GCP */,
                       /* Do not run on Windows due to CDRIVER-4181. Tests use a literal IP with
                          a TLS connection. */
@@ -7120,7 +7120,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/decryption_events/case2",
@@ -7128,7 +7128,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/decryption_events/case3",
@@ -7136,7 +7136,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
 
    TestSuite_AddFull (suite,
@@ -7145,7 +7145,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/qe_docs_example",
@@ -7164,7 +7164,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL, // dtor
                       NULL, // ctx
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms/auto-aws/fail",
@@ -7172,7 +7172,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       _not_have_aws_creds_env);
 
    TestSuite_AddFull (suite,
@@ -7181,7 +7181,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       _have_aws_creds_env);
 
    TestSuite_AddFull (suite,
@@ -7190,7 +7190,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite, "/client_side_encryption/auto_datakeys", test_auto_datakeys, NULL, NULL, NULL);
 

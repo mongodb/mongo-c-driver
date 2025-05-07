@@ -22,7 +22,7 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('macos-14', 'clang', None, 'cyrus', ['auth'], ['server'], ['4.0', '4.2', '4.4', '5.0']),
+    ('macos-14', 'clang', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
 
     ('macos-11-arm64', 'clang', None, 'cyrus', ['auth'], ['server'], ['6.0', '7.0',                ]),
     ('macos-14-arm64', 'clang', None, 'cyrus', ['auth'], ['server'], ['6.0', '7.0', '8.0', 'latest']),

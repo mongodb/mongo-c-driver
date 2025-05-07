@@ -4976,9 +4976,7 @@ test_bulk_install (TestSuite *suite)
                       test_bulk_write_multiple_errors,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_failpoint,
-                      /* Require server 4.2 for failCommand appName */
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddLive (suite, "/BulkOperation/set_client_after_operation", test_bulk_write_set_client_after_operation);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/set_client_updates_operation_id_when_client_changes",

@@ -38,6 +38,7 @@
 #include <mongoc/mongoc-compression-private.h>
 #include <mongoc/utlist.h>
 #include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-oidc-env-private.h>
 
 #include <common-bson-dsl-private.h>
 #include <common-string-private.h>
@@ -1359,6 +1360,7 @@ _finalize_auth_username (const char *username,
    return true;
 }
 
+// source MUST be "$external"
 static bool
 _finalize_auth_source_external (const char *source, const char *mechanism, bson_error_t *error)
 {
@@ -1375,6 +1377,34 @@ _finalize_auth_source_external (const char *source, const char *mechanism, bson_
    }
 
    return true;
+}
+
+// source MUST be "$external" and defaults to "$external".
+static bool
+_finalize_auth_source_default_external (mongoc_uri_t *uri,
+                                        const char *source,
+                                        const char *mechanism,
+                                        bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (uri);
+   BSON_OPTIONAL_PARAM (source);
+   BSON_ASSERT_PARAM (mechanism);
+   BSON_OPTIONAL_PARAM (error);
+
+   if (!source) {
+      bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
+      if (bsonBuildError) {
+         MONGOC_URI_ERROR (error,
+                           "unexpected URI credentials BSON error when attempting to default '%s' "
+                           "authentication source to '$external': %s",
+                           mechanism,
+                           bsonBuildError);
+         return false;
+      }
+      return true;
+   } else {
+      return _finalize_auth_source_external (source, mechanism, error);
+   }
 }
 
 static bool
@@ -1517,6 +1547,25 @@ _finalize_auth_aws_mechanism_properties (const bson_t *mechanism_properties, bso
 }
 
 static bool
+_finalize_auth_oidc_mechanism_properties (const bson_t *mechanism_properties, bson_error_t *error)
+{
+   BSON_OPTIONAL_PARAM (mechanism_properties);
+   BSON_ASSERT_PARAM (error);
+
+   static const supported_mechanism_properties supported_properties[] = {
+      {"ENVIRONMENT", BSON_TYPE_UTF8},
+      {"TOKEN_RESOURCE", BSON_TYPE_UTF8},
+      {0},
+   };
+
+   if (mechanism_properties) {
+      return _supported_mechanism_properties_check (supported_properties, mechanism_properties, "MONGODB-OIDC", error);
+   }
+
+   return true;
+}
+
+static bool
 mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (uri);
@@ -1618,16 +1667,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       }
 
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
-      if (!source) {
-         bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
-         if (bsonBuildError) {
-            MONGOC_URI_ERROR (error,
-                              "unexpected URI credentials BSON error when attempting to default 'MONGODB-X509' "
-                              "authentication source to '$external': %s",
-                              bsonBuildError);
-            goto fail;
-         }
-      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
+      if (!_finalize_auth_source_default_external (uri, source, mechanism, error)) {
          goto fail;
       }
 
@@ -1642,16 +1682,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       }
 
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
-      if (!source) {
-         bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
-         if (bsonBuildError) {
-            MONGOC_URI_ERROR (error,
-                              "unexpected URI credentials BSON error when attempting to default 'GSSAPI' "
-                              "authentication mechanism source to '$external': %s",
-                              bsonBuildError);
-            goto fail;
-         }
-      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
+      if (!_finalize_auth_source_default_external (uri, source, mechanism, error)) {
          goto fail;
       }
 
@@ -1712,16 +1743,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       }
 
       // Authentication spec: source: MUST be "$external" and defaults to "$external".
-      if (!source) {
-         bsonBuildAppend (uri->credentials, kv (MONGOC_URI_AUTHSOURCE, cstr ("$external")));
-         if (bsonBuildError) {
-            MONGOC_URI_ERROR (error,
-                              "unexpected URI credentials BSON error when attempting to default 'MONGODB-AWS' "
-                              "authentication mechanism source to '$external': %s",
-                              bsonBuildError);
-            goto fail;
-         }
-      } else if (!_finalize_auth_source_external (source, mechanism, error)) {
+      if (!_finalize_auth_source_default_external (uri, source, mechanism, error)) {
          goto fail;
       }
 
@@ -1741,6 +1763,83 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
                            "'%s' authentication mechanism does not accept a username or a password without the other",
                            mechanism);
          goto fail;
+      }
+
+      // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
+   }
+
+   // MONGODB-OIDC
+   else if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
+      // Authentication spec: username: MAY be specified (with callback/environment defined meaning).
+      if (!_finalize_auth_username (username, mechanism, _mongoc_uri_finalize_allowed, error)) {
+         goto fail;
+      }
+
+      // Authentication spec: source: MUST be "$external" and defaults to "$external".
+      if (!_finalize_auth_source_default_external (uri, source, mechanism, error)) {
+         goto fail;
+      }
+
+      // Authentication spec: password: MUST NOT be specified.
+      if (!_finalize_auth_password (password, mechanism, _mongoc_uri_finalize_prohibited, error)) {
+         goto fail;
+      }
+
+      // mechanism_properties are allowed for MONGODB-OIDC.
+      if (!_finalize_auth_oidc_mechanism_properties (mechanism_properties, error)) {
+         goto fail;
+      }
+
+      // The environment is optional, but if specified it must appear valid.
+      if (mechanism_properties && bson_iter_init_find_case (&iter, mechanism_properties, "ENVIRONMENT")) {
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+            MONGOC_URI_ERROR (error, "'%s' authentication has non-string %s property", mechanism, "ENVIRONMENT");
+            goto fail;
+         }
+
+         const mongoc_oidc_env_t *env = mongoc_oidc_env_find (bson_iter_utf8 (&iter, NULL));
+         if (!env) {
+            MONGOC_URI_ERROR (error,
+                              "'%s' authentication has unrecognized %s property '%s'",
+                              mechanism,
+                              "ENVIRONMENT",
+                              bson_iter_utf8 (&iter, NULL));
+            goto fail;
+         }
+
+         if (username && !mongoc_oidc_env_supports_username (env)) {
+            MONGOC_URI_ERROR (error,
+                              "'%s' authentication with %s environment does not accept a %s",
+                              mechanism,
+                              mongoc_oidc_env_name (env),
+                              "username");
+            goto fail;
+         }
+
+         if (bson_iter_init_find_case (&iter, mechanism_properties, "TOKEN_RESOURCE")) {
+            if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+               MONGOC_URI_ERROR (error, "'%s' authentication has non-string %s property", mechanism, "TOKEN_RESOURCE");
+               goto fail;
+            }
+
+            if (!mongoc_oidc_env_requires_token_resource (env)) {
+               MONGOC_URI_ERROR (error,
+                                 "'%s' authentication with %s environment does not accept a %s",
+                                 mechanism,
+                                 mongoc_oidc_env_name (env),
+                                 "TOKEN_RESOURCE");
+               goto fail;
+            }
+         } else {
+            if (mongoc_oidc_env_requires_token_resource (env)) {
+               MONGOC_URI_ERROR (error,
+                                 "'%s' authentication with %s environment requires a %s",
+                                 mechanism,
+                                 mongoc_oidc_env_name (env),
+                                 "TOKEN_RESOURCE");
+               goto fail;
+            }
+         }
       }
 
       // Defer remaining validation of `MongoCredential` fields to Authentication Handshake.
@@ -1870,9 +1969,9 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       const char *tmp;
 
       // Only ':' is permitted among RFC-3986 gen-delims (":/?#[]@") in userinfo.
-      // However, continue supporting these characters for backward compatibility, as permitted by the Connection String
-      // spec: for backwards-compatibility reasons, drivers MAY allow reserved characters other than "@" and ":" to be
-      // present in user information without percent-encoding.
+      // However, continue supporting these characters for backward compatibility, as permitted by the Connection
+      // String spec: for backwards-compatibility reasons, drivers MAY allow reserved characters other than "@" and
+      // ":" to be present in user information without percent-encoding.
       char *userinfo = scan_to_unichar (cursor, '@', "", &tmp);
 
       if (userinfo) {

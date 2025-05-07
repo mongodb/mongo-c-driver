@@ -1,3 +1,10 @@
+libmongoc 2.1.0 (Unreleased)
+============================
+
+## Notes
+
+* The minimum supported MongoDB Server version is raised from 4.0 to 4.2. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
+
 libmongoc 1.30.3
 ================
 
