@@ -104,14 +104,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // libmongoc does not support the optional findOne helper.
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
-   {"types", SKIP_ALL_TESTS},
-   // libmongoc does not support the optional listIndexNames helper.
-   {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
-   {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
-   // libmongoc does not support mapReduce.
-   {"unsupportedCommand", SKIP_ALL_TESTS},
-   // libmongoc does not support the timeoutMS URI option
-   {"timeoutMS", SKIP_ALL_TESTS},
+
    // libmongoc does not support the optional listIndexNames helper.
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
@@ -121,6 +114,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
 
    // libmongoc does not include insertId in InsertOneResult
    {"cancel-server-check", SKIP_ALL_TESTS},
+
    {0},
 };
 // clang-format on
