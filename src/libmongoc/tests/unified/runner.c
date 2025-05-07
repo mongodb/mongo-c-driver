@@ -1469,10 +1469,6 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
                continue;
             }
 
-            if (ignore_extra_events) {
-               continue;
-            }
-
             if (is_keyvault_listcollections (eiter->serialized)) {
                continue;
             }
@@ -1487,11 +1483,11 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
          } while ((eiter = eiter->next) && !matched);
 
          if (!matched) {
-            goto done;
             test_set_error (error,
                             "expectation unmatched\n"
                             "\texpected: %s\n\n",
                             tmp_json (&expected_event));
+            goto done;
          }
       }
    }
