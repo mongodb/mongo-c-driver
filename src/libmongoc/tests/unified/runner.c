@@ -948,6 +948,8 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          if (!mongoc_collection_drop_with_opts (coll_esc, drop_opts, error)) {
             if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
                /* This is not a "ns not found" error. Fail the test. */
+               mongoc_collection_destroy (coll_esc);
+               bson_free (collection_name_esc);
                goto loopexit;
             }
             /* Clear an "ns not found" error. */
@@ -964,6 +966,8 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          if (!mongoc_collection_drop_with_opts (coll_ecoc, drop_opts, error)) {
             if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
                /* This is not a "ns not found" error. Fail the test. */
+               mongoc_collection_destroy (coll_ecoc);
+               bson_free (collection_name_ecoc);
                goto loopexit;
             }
             /* Clear an "ns not found" error. */
@@ -1339,8 +1343,11 @@ test_count_matching_events_for_client (
    return true;
 }
 
+// `is_keyvault_listcollections` returns true if a `listCollections` event produced by libmongoc should be ignored.
+// The extra events are caused by operations on the key vault collection. Unlike other drivers, libmongoc does not
+// create a separate client for key vault operations.
 static bool
-skip_cse_list_collections (const bson_t *event)
+is_keyvault_listcollections (const bson_t *event)
 {
    if (!bson_has_field (event, "commandName") || !bson_has_field (event, "databaseName")) {
       return false;

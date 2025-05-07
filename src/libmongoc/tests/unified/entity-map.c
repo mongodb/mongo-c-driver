@@ -35,7 +35,6 @@
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <common-string-private.h>
-#include "json-test.h"
 
 #define REDUCED_HEARTBEAT_FREQUENCY_MS 500
 #define REDUCED_MIN_HEARTBEAT_FREQUENCY_MS 50
@@ -926,7 +925,9 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
 
    if (auto_encryption_opts) {
-      _parse_and_set_auto_encryption_opts (client, auto_encryption_opts, error);
+      if (!_parse_and_set_auto_encryption_opts (client, auto_encryption_opts, error)) {
+         goto done;
+      }
    }
 
    ret = true;
@@ -1387,7 +1388,9 @@ _parse_and_set_auto_encryption_opts (mongoc_client_t *client, bson_t *opts, bson
       mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra_options);
    }
 
-   mongoc_client_enable_auto_encryption (client, auto_encryption_opts, error);
+   if (!mongoc_client_enable_auto_encryption (client, auto_encryption_opts, error)) {
+      goto done;
+   }
    ret = true;
 
 done:
