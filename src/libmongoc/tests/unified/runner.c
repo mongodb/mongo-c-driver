@@ -1397,7 +1397,7 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
    int actual_listCollections_count = 0;
    LL_FOREACH (entity->events, eiter)
    {
-      if (skip_cse_list_collections (eiter->serialized)) {
+      if (is_keyvault_listcollections (eiter->serialized)) {
          actual_listCollections_count++;
       }
    }
@@ -1413,7 +1413,7 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
       {
          bson_t event_contents;
          bson_iter_bson (&iter, &event_contents);
-         if (skip_cse_list_collections (&event_contents)) {
+         if (is_keyvault_listcollections (&event_contents)) {
             expected_listCollections_count++;
             break;
          }
@@ -1473,7 +1473,7 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
                continue;
             }
 
-            if (skip_cse_list_collections (eiter->serialized)) {
+            if (is_keyvault_listcollections (eiter->serialized)) {
                continue;
             }
 
@@ -1884,24 +1884,16 @@ test_check_outcome_collection (test_t *test, bson_t *collection_data, bson_error
       bson_iter_bson (&eiter, &expected);
       expected_sorted = bson_copy_and_sort (&expected);
 
-      bson_val_t *actual_v = bson_val_from_bson (actual_sorted);
-      bson_val_t *expected_v = bson_val_from_bson (expected_sorted);
 
-      bson_matcher_context_t matcher_context = {.matcher = bson_matcher_new (), .path = "", .is_root = true};
-      if (!bson_matcher_match (&matcher_context, expected_v, actual_v, error)) {
+      if (!bson_equal (actual_sorted, expected_sorted)) {
          test_set_error (error, "expected %s, but got %s", tmp_json (expected_sorted), tmp_json (actual_sorted));
-         const char *got = tmp_json (actual_sorted);
-         printf ("this: %s", got);
          bson_destroy (actual_sorted);
          bson_destroy (expected_sorted);
          goto done;
       }
 
-      bson_matcher_destroy (matcher_context.matcher);
       bson_destroy (actual_sorted);
       bson_destroy (expected_sorted);
-      bson_val_destroy (actual_v);
-      bson_val_destroy (expected_v);
 
       bson_iter_next (&eiter);
    }
