@@ -1694,7 +1694,9 @@ entity_session_new (entity_map_t *entity_map,
    if (!session) {
       goto done;
    }
-   mongoc_client_session_advance_cluster_time (session, cluster_time_after_initial_data);
+   if (cluster_time_after_initial_data) {
+      mongoc_client_session_advance_cluster_time (session, cluster_time_after_initial_data);
+   }
    entity->value = session;
    /* Ending a session destroys the session object.
     * After a session is ended, match assertions may be made on the lsid.

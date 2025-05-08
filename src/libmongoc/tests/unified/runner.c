@@ -879,7 +879,11 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       ok = ok && mongoc_client_command_with_opts (
                     test_runner->internal_client, "db", tmp_bson ("{'ping': 1}"), NULL, &opts, NULL, error);
       if (ok) {
-         test->cluster_time_after_initial_data = bson_copy (mongoc_client_session_get_cluster_time (sess));
+         // Check for cluster time (not available on standalone).
+         const bson_t *ct = mongoc_client_session_get_cluster_time (sess);
+         if (ct) {
+            test->cluster_time_after_initial_data = bson_copy (ct);
+         }
       }
       mongoc_client_session_destroy (sess);
       bson_destroy (&opts);
@@ -1003,7 +1007,11 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
    }
 
    // Obtain cluster time to advance client sessions. See DRIVERS-2816.
-   test->cluster_time_after_initial_data = bson_copy (mongoc_client_session_get_cluster_time (sess));
+   // Check for cluster time (not available on standalone).
+   const bson_t *ct = mongoc_client_session_get_cluster_time (sess);
+   if (ct) {
+      test->cluster_time_after_initial_data = bson_copy (ct);
+   }
    mongoc_client_session_destroy (sess);
    return true;
 }
