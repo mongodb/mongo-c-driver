@@ -3779,7 +3779,7 @@ test_failure_to_auth_logs (void *unused)
    mongoc_uri_t *uri = test_framework_get_uri ();
    mongoc_uri_set_username (uri, "foo");
    mongoc_uri_set_password (uri, "bar");
-   mongoc_client_t *client = mongoc_client_new_from_uri (uri);
+   mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    capture_logs (true);
    bool ok = mongoc_client_command_simple (
