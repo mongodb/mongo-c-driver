@@ -532,6 +532,7 @@ test_destroy (test_t *test)
    bson_destroy (test->run_on_requirements);
    bson_free (test->description);
    bson_free (test->skip_reason);
+   bson_destroy (test->cluster_time_after_initial_data);
    bson_free (test);
 }
 
@@ -866,8 +867,27 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
    test_file = test->test_file;
    test_runner = test_file->test_runner;
 
+   mongoc_client_session_t *sess = mongoc_client_start_session (test_runner->internal_client, NULL, error);
+   if (sess == NULL) {
+      return false;
+   }
+
    if (!test_file->initial_data) {
-      return true;
+      // Send a "ping" command with the session to get a cluster time.
+      bson_t opts = BSON_INITIALIZER;
+      bool ok = mongoc_client_session_append (sess, &opts, error);
+      ok = ok && mongoc_client_command_with_opts (
+                    test_runner->internal_client, "db", tmp_bson ("{'ping': 1}"), NULL, &opts, NULL, error);
+      if (ok) {
+         // Check for cluster time (not available on standalone).
+         const bson_t *ct = mongoc_client_session_get_cluster_time (sess);
+         if (ct) {
+            test->cluster_time_after_initial_data = bson_copy (ct);
+         }
+      }
+      mongoc_client_session_destroy (sess);
+      bson_destroy (&opts);
+      return ok;
    }
 
    BSON_FOREACH (test_file->initial_data, initial_data_iter)
@@ -899,6 +919,9 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
       bulk_opts = bson_new ();
       mongoc_write_concern_append (wc, bulk_opts);
+      if (!mongoc_client_session_append (sess, bulk_opts, error)) {
+         goto loopexit;
+      }
 
       /* Drop the collection. */
       /* Check if the server supports majority write concern on 'drop' and
@@ -912,6 +935,12 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          // From spec: "test runner SHOULD use a single mongos for handling initialData"
          BSON_APPEND_INT32 (drop_opts, "serverId", 1);
          BSON_APPEND_INT32 (create_opts, "serverId", 1);
+      }
+      if (!mongoc_client_session_append (sess, create_opts, error)) {
+         goto loopexit;
+      }
+      if (!mongoc_client_session_append (sess, drop_opts, error)) {
+         goto loopexit;
       }
 
       coll = mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name);
@@ -972,9 +1001,18 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       bson_parser_destroy (parser);
       mongoc_database_destroy (db);
       if (!ret) {
+         mongoc_client_session_destroy (sess);
          return false;
       }
    }
+
+   // Obtain cluster time to advance client sessions. See DRIVERS-2816.
+   // Check for cluster time (not available on standalone).
+   const bson_t *ct = mongoc_client_session_get_cluster_time (sess);
+   if (ct) {
+      test->cluster_time_after_initial_data = bson_copy (ct);
+   }
+   mongoc_client_session_destroy (sess);
    return true;
 }
 
@@ -1001,7 +1039,7 @@ test_create_entities (test_t *test, bson_error_t *error)
       bson_t entity_bson;
 
       bson_iter_bson (&iter, &entity_bson);
-      if (!entity_map_create (test->entity_map, &entity_bson, error)) {
+      if (!entity_map_create (test->entity_map, &entity_bson, test->cluster_time_after_initial_data, error)) {
          return false;
       }
    }

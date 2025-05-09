@@ -3833,7 +3833,7 @@ operation_create_entities (test_t *test, operation_t *op, result_t *result, bson
    {
       bson_t entity;
       bson_iter_bson (&entity_iter, &entity);
-      bool create_ret = entity_map_create (test->entity_map, &entity, error);
+      bool create_ret = entity_map_create (test->entity_map, &entity, test->cluster_time_after_initial_data, error);
       bson_destroy (&entity);
       if (!create_ret) {
          goto done;
