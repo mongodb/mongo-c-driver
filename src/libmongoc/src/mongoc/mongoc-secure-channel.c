@@ -70,12 +70,13 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    fseek (file, 0, SEEK_END);
    pem_length = ftell (file);
    fseek (file, 0, SEEK_SET);
-   if (pem_length < 1) {
+   if (pem_length < 1 || length > LONG_MAX - 1) {
       MONGOC_ERROR ("Couldn't determine file size of '%s'", filename);
       return NULL;
    }
 
-   pem = (char *) bson_malloc0 (pem_length);
+   // Read the whole file into one nul-terminated string
+   pem = (char *) bson_malloc0 ((size_t) pem_length + 1u);
    fread ((void *) pem, 1, pem_length, file);
    fclose (file);
 
