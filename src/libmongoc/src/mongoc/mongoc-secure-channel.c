@@ -293,7 +293,6 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
 
    /* If we have private keys or other fuzz, seek to the good stuff */
    pem_key = strstr (pem, "-----BEGIN CERTIFICATE-----");
-   /*printf ("%s\n", pem_key);*/
 
    if (!pem_key) {
       MONGOC_WARNING ("Couldn't find certificate in '%s'", opt->ca_file);
